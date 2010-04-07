@@ -66,7 +66,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -80,8 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
 
@@ -94,7 +94,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-/* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
+/* define the parameters for a 1.4,.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
@@ -466,19 +466,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable,
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable,
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -2128,7 +2117,7 @@ int main( int argc, char *argv[] )
     if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)
-         bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts, subBankSize);
+	bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts);
 
       if ( vrbflg ) fprintf( stdout,
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
@@ -2157,9 +2146,9 @@ int main( int argc, char *argv[] )
         LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
       /* create ccMat for bank veto */
       bankVetoData.ccMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateCOMPLEX8Vector( bankVetoData.length * bankVetoData.length );
       bankVetoData.normMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateVector( bankVetoData.length );
       /* point to response and spectrum */
       bankVetoData.spec = spec.data;
       bankVetoData.resp = resp.data;
@@ -2174,6 +2163,8 @@ int main( int argc, char *argv[] )
               &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
       }
     }
+    /* set the workspace vectors to null before they are allocated later */
+    XLALInitBankVetoData(&bankVetoData);
 
     /*
      *
@@ -2181,6 +2172,8 @@ int main( int argc, char *argv[] )
      *
      */
 
+
+    /* Analyze all templates from a given subbank at once. */
     for ( subBankCurrent = subBankHead, thisTemplateIndex = 0;
         subBankCurrent;
         subBankCurrent = subBankCurrent->next, thisTemplateIndex++ )
@@ -2306,6 +2299,7 @@ int main( int argc, char *argv[] )
         if (templateFFTDataVector) XLALDestroyCOMPLEX8Vector(templateFFTDataVector);
         if (plan) XLALDestroyREAL4FFTPlan( plan );
       }
+
 
       ccFlag = 1;
       /* loop over data segments */
@@ -2514,18 +2508,14 @@ int main( int argc, char *argv[] )
            for each segment now!!! */
         if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
+	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
-          dynRange, fLow, spec.deltaF, chan.deltaT);
-          ccFlag = 0;
-          /*char filename[10];
-          sprintf(filename, "ccmat%d.dat",i);
-          FILE *FP = NULL;
-          FP = fopen(filename,"w");
-          for(j = 0; j < bankVetoData.ccMat->length; ++j)
-          {
-            fprintf(FP, "%e\n",bankVetoData.ccMat->data[j]);
-          }*/
+          XLALBankVetoCCMat( &bankVetoData, 
+			     fcDataParams->ampVec,
+			     subBankCurrent->subBankSize, 
+			     dynRange, fLow, spec.deltaF,chan.deltaT);
+
+	  ccFlag = 0;
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
@@ -2885,13 +2875,15 @@ int main( int argc, char *argv[] )
     LALFree( bankVetoData.qVecArray );
     LALFree( bankVetoData.qtildeVecArray );
     LALFree( bankVetoData.fcInputArray );
-    XLALDestroyVector( bankVetoData.ccMat );
+    XLALDestroyCOMPLEX8Vector( bankVetoData.ccMat );
     XLALDestroyVector( bankVetoData.normMat );
     /* XLALDestroyVector( bankVetoData.normMat ); */
     fcFilterParams->qVec = NULL;
     fcFilterParams->qtildeVec = NULL;
   }
 
+  /* Free other bankVeto memory */
+  XLALDestroyBankVetoData(&bankVetoData);
 
   if ( fcFilterParams->filterOutputVetoParams )
   {
@@ -2906,7 +2898,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
-
   /* free the template bank */
   if ( subBankHead )
   {
@@ -2946,7 +2937,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
-
   /* free the random parameters structure */
   if ( randSeedType != unset )
   {
@@ -4562,10 +4552,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Search Engine\n"
-            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 

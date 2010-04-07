@@ -38,13 +38,13 @@
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOLwXMLRingdownRead.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/SegmentsIO.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -101,6 +101,7 @@ static void print_usage(char *program)
       "  [--user-tag]      usertag     set the process_params usertag\n"\
       "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
+      "  [--write-compress]            write a compressed xml file\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
@@ -143,7 +144,8 @@ static void print_usage(char *program)
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
       "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
-      "  [--h1-snr-cut]         snr        reject triggers below this snr\n"\
+      "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"\
+      "                                    there are no h2 triggers present\n"\
       "                                   needed when --h1-h2-consistency is given\n"\
       "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
       "  [--do-veto]         do_veto   veto cetain segments\n"\
@@ -197,6 +199,7 @@ int main( int argc, char *argv[] )
   UINT4  numTriples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
   UINT4  N = 0;
+  INT4 outCompress = 0;
   UINT4  slideH1H2Together = 0;
 
   LALDetector          aDet;
@@ -254,6 +257,7 @@ int main( int argc, char *argv[] )
     {"h1-h2-consistency",   no_argument,   &h1h2Consistency,          1 },
     {"do-veto",             no_argument,   &doVeto,                   1 },
     {"complete-coincs",     no_argument,   &completeCoincs,           1 },
+    {"write-compress",      no_argument,   &outCompress,              1 },
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
     {"l1-slide",            required_argument, 0,                    'e'},
@@ -308,16 +312,10 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -678,10 +676,8 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "RINgdown Coincidence Analysis\n" 
-            "Lisa Goggin based on thinca.c by Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf(stdout, lalappsGitID);
+            "Lisa Goggin based on thinca.c by Steve Fairhurst\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
@@ -910,6 +906,17 @@ if ( vrbflg)
         "%s", comment );
     snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
+  }
+
+  if ( outCompress )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--write-compress" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
 
@@ -1331,7 +1338,7 @@ if ( vrbflg)
         }
       }
       LAL_CALL( LALRingdownH1H2Consistency(&status,  &coincRingdownList,
-           h1snrCut, &vetoSegs[LAL_IFO_H2]), &status);
+           h1snrCut, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
           XLALCountCoincInspiral(coincRingdownList));
@@ -1492,7 +1499,7 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag && ifoTag)
+  if ( userTag && ifoTag && !outCompress)
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
@@ -1501,18 +1508,48 @@ cleanexit:
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
   }
-  else if ( ifoTag )
+  else if  ( !userTag && ifoTag && !outCompress ) 
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
-  else if ( userTag )
+  else if ( userTag && !ifoTag && !outCompress )
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml", 
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && ifoTag && outCompress)
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s_%s-%d-%d.xml.gz",   
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s_%s-%d-%d.xml.gz",   
+        ifos, ifoTag, userTag, startCoincidence,
+        endCoincidence - startCoincidence );
+  }
+  else if  ( !userTag && ifoTag && outCompress ) 
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml.gz", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag && !ifoTag && outCompress )
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE_%s-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( !userTag && !ifoTag && outCompress )
+  {
+    snprintf( fileName, FILENAME_MAX, "%s-RINCA-%d-%d.xml.gz",
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE-%d-%d.xml.gz",
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else

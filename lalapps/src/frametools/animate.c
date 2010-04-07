@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <FrameL.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -33,6 +32,7 @@
 #include <lal/LALMoment.h>
 #include <lal/Units.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/LALFrameL.h>
 
 #define TRUE       1
 #define FALSE      0
@@ -65,7 +65,7 @@ int main( void )
 #else
 
 /* This routine is pipes output into the xmgr graphing program */
-void graphout(float x1,float x2,int thistime, int last) {
+static void graphout(float x1,float x2,int thistime, int last) {
    static int count=0;
    printf("&\n");                            /* end of set marker             */
    /* first time we draw the plot */
@@ -123,11 +123,11 @@ int main( int argc, char *argv[] )
     static LALStatus  status;
     FrStream         *stream = NULL;
     FrChanIn          channelIn;
-    REAL4             time, numSeconds;
+    REAL4             itime, numSeconds=0;
     INT4              i, numPoints=4096, inarg = 1;
     CHAR             *dirname;
     REAL4TimeSeries   series;
-    LIGOTimeGPS       epoch;
+    LIGOTimeGPS       epoch = {0,0};
     BOOLEAN           epochSet = FALSE;
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
     highpassParam.nMax = 4;
     highpassParam.f1 = -1.0;
     highpassParam.a1 = -1.0;
-    
+
     /*******************************************************************
     * PARSE ARGUMENTS (arg stores the current position)               *
     *******************************************************************/
@@ -152,7 +152,7 @@ int main( int argc, char *argv[] )
         LALPrintError( USAGE, *argv );
         return 0;
     }
-    
+
     while ( inarg < argc ) {
         /* Parse output file option. */
         if ( !strcmp( argv[inarg], "--help" ) ) {
@@ -249,28 +249,28 @@ int main( int argc, char *argv[] )
     /* get the data */
     LALFrGetREAL4TimeSeries( &status, &series, &channelIn, stream);
 
-    while ( !(status.statusCode) && 
+    while ( !(status.statusCode) &&
             (series.epoch.gpsSeconds < epoch.gpsSeconds + (INT4)(numSeconds))){
 
         /* filter it if the highpass parameters were set */
-        if (highpass){ 
+        if (highpass){
             LALButterworthREAL4TimeSeries(&status, &series, &highpassParam);
         }
 
         /* print out the contents */
         for (i=0 ; i<32 ; i++ ){
-            time= i * series.deltaT;
-            printf("%e\t%e\n", time,0.0);
+            itime= i * series.deltaT;
+            printf("%e\t%e\n", itime,0.0);
         }
         for (i=32 ; i<numPoints ; i++) {
-            time= i * series.deltaT;
-            printf("%e\t%e\n", time, series.data->data[i]);
+            itime= i * series.deltaT;
+            printf("%e\t%e\n", itime, series.data->data[i]);
         }
 
         /* put out information for the graphing program */
         graphout(0, 0+numPoints * series.deltaT, series.epoch.gpsSeconds,
-                (status.statusCode == FRAMESTREAMH_EDONE || 
-                 (series.epoch.gpsSeconds + (INT4)(numPoints*series.deltaT) 
+                (status.statusCode == FRAMESTREAMH_EDONE ||
+                 (series.epoch.gpsSeconds + (INT4)(numPoints*series.deltaT)
                   >= epoch.gpsSeconds + (INT4)(numSeconds)) ));
 
         /* get the data */
@@ -280,9 +280,9 @@ int main( int argc, char *argv[] )
     /* close the frame stream */
     LALFrClose( &status, &stream );
 
-    /* 
-    * output the sound file 
-    * sprintf(fname, "%s", channelIn.name); 
+    /*
+    * output the sound file
+    * sprintf(fname, "%s", channelIn.name);
     * LALTimeSeriesToSound( &status, tSeries, fname, 1);
      */
 

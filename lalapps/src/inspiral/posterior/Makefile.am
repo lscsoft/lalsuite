@@ -1,14 +1,8 @@
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
 SUBDIRS = SPINspiral
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
+if LALINSPIRAL
 if LALFRAME
 
 if LALMETAIO
@@ -18,7 +12,7 @@ endif
 
 frame_progs = lalapps_followupMcmc
 lalapps_followupMcmc_SOURCES = followupMcmc.c
-
+endif
 endif
 
 bin_PROGRAMS = $(metaio_progs) $(frame_progs)

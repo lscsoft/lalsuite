@@ -64,7 +64,7 @@ LALappsTSAReadMapFile(LALStatus*,
 		      CHARVector*);
 
 void
-LALappsTSAWriteMapFile(LALStatus*,
+LALappsTSAWriteMapFile(
 		       TSAMap*,
 		       CHARVector*);
 
@@ -79,7 +79,7 @@ LALappsTSADestroyMap(LALStatus *status,
 		     TSAMap    **map);
 
 void
-LALappsTSAWritePGM(LALStatus  *status,
+LALappsTSAWritePGM(
 		   TSAMap     *map,
 		   CHARVector *UserNameOverride);
 
@@ -96,7 +96,7 @@ LALappsTSASortCache(LALStatus         *status,
 		    TSAcache          *inputCache,
 		    UINT4              ignoreMissing);
 void
-LALappsTSALoadCacheFile(LALStatus    *status,
+LALappsTSALoadCacheFile(
 			CHARVector   *filename,
 			TSAcache    **mapCache);
 
@@ -106,16 +106,15 @@ LALappsTSACropMap(LALStatus*,
 		  UINT4);
 
 void
-LALappsTSADestroyCache(LALStatus       *status,
-		       TSAcache       **mapCache);
+LALappsTSADestroyCache(TSAcache       **mapCache);
 
 void
-LALappsDetermineFilename(LALStatus                    *status,
+LALappsDetermineFilename(
 			 TrackSearchMapMarkingParams  imageBorders,
 			 CHARVector                 **thisFilename, 
 			 const CHAR*                  myFileExt);
 void
-LALappsCreateR4FromR8TimeSeries(LALStatus               *status,
+LALappsCreateR4FromR8TimeSeries(
 				REAL4TimeSeries        **R4TS,
 				REAL8TimeSeries         *R8TS);
 

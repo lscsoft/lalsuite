@@ -251,7 +251,7 @@ void LALappsTSAReadMapFile( LALStatus         *status,
  * End LALappsTSAReadMapFile
  */
 
-void LALappsTSAWriteMapFile( LALStatus         *status,
+void LALappsTSAWriteMapFile(
 			     TSAMap            *tfImage,
 			     CHARVector        *fileNameVec
 			     )
@@ -266,7 +266,7 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
   if (fileNameVec == NULL)
     {
       dflag=1;
-      LALappsDetermineFilename(status,
+      LALappsDetermineFilename(
 			       tfImage->imageBorders,
 			       &thisFilename,
 			       ".dat");
@@ -412,7 +412,7 @@ void LALappsTSAWriteMapFile( LALStatus         *status,
  */
 
 void
-LALappsDetermineFilename(LALStatus                   *status,
+LALappsDetermineFilename(
 			 TrackSearchMapMarkingParams  imageBorders,
 			 CHARVector                 **thisFilename,
 			 const CHAR*                  myExt)
@@ -517,7 +517,7 @@ LALappsTSADestroyMap(LALStatus *status,
 
 
 void
-LALappsTSAWritePGM(LALStatus  *status,
+LALappsTSAWritePGM(
 		   TSAMap     *map,
 		   CHARVector *overrideMask)
 {
@@ -555,7 +555,7 @@ LALappsTSAWritePGM(LALStatus  *status,
       strcpy(basicMask->data,overrideMask->data);
     }
   else
-    LALappsDetermineFilename(status,
+    LALappsDetermineFilename(
 			     map->imageBorders,
 			     &basicMask,
 			     "");
@@ -686,10 +686,12 @@ LALappsTSASortCache(LALStatus   *status,
 {
   TSAMap      *tempMap=NULL;
   UINT4        i=0;
-  UINT4        index=0;
+  UINT4        lal_index=0;
   UINT4        STOP=0;
   REAL8        tmpTime=0;
   CHARVector  *tmpFilename=NULL;
+
+  ignoreMissingFiles = 0;
 
   /*
    * Value of -1 in mapStartTime means file IO problem
@@ -721,28 +723,28 @@ LALappsTSASortCache(LALStatus   *status,
   while (STOP < inputCache->numMapFilenames-1)
     {
       STOP=0;
-      while (index < inputCache->numMapFilenames-1)
+      while (lal_index < inputCache->numMapFilenames-1)
 	{
-	  if (inputCache->mapStartTime[index] >
-	      inputCache->mapStartTime[index+1])
+	  if (inputCache->mapStartTime[lal_index] >
+	      inputCache->mapStartTime[lal_index+1])
 	    {
 	      /*
 	       * Swap the entries
 	       */
-	      tmpTime=inputCache->mapStartTime[index];
-	      strcpy(tmpFilename->data,inputCache->filename[index]->data);
-	      inputCache->mapStartTime[index]=inputCache->mapStartTime[index+1];
-	      strcpy(inputCache->filename[index]->data,
-		     inputCache->filename[index+1]->data);
-	      inputCache->mapStartTime[index+1]=tmpTime;
-	      strcpy(inputCache->filename[index+1]->data,
+	      tmpTime=inputCache->mapStartTime[lal_index];
+	      strcpy(tmpFilename->data,inputCache->filename[lal_index]->data);
+	      inputCache->mapStartTime[lal_index]=inputCache->mapStartTime[lal_index+1];
+	      strcpy(inputCache->filename[lal_index]->data,
+		     inputCache->filename[lal_index+1]->data);
+	      inputCache->mapStartTime[lal_index+1]=tmpTime;
+	      strcpy(inputCache->filename[lal_index+1]->data,
 		     tmpFilename->data);
 	    }
 	  else
 	    STOP++;
-	  index++;
+	  lal_index++;
 	}
-      index=0;
+      lal_index=0;
     }
   XLALDestroyCHARVector(tmpFilename);
 
@@ -753,7 +755,7 @@ LALappsTSASortCache(LALStatus   *status,
  */
 
 void
-LALappsTSALoadCacheFile(LALStatus    *status,
+LALappsTSALoadCacheFile(
 			CHARVector   *filename,
 			TSAcache    **mapCache)
 {
@@ -804,10 +806,6 @@ LALappsTSALoadCacheFile(LALStatus    *status,
     for (i=0;i<(*mapCache)->numMapFilenames;i++)
       {
 	fscanf(inputFilePtr,"%s\n",(*mapCache)->filename[i]->data);
-	LALappsTSassert((inputFilePtr != EOF),
-			TRACKSEARCHTOOLBOXC_EALLOC,
-			TRACKSEARCHTOOLBOXC_EMSGALLOC);
-		
 	/*
 	 * Ignore blank lines
 	 */
@@ -821,7 +819,7 @@ LALappsTSALoadCacheFile(LALStatus    *status,
  */
 
 void
-LALappsTSADestroyCache(LALStatus       *status,
+LALappsTSADestroyCache(
 		       TSAcache       **cache)
 {
   UINT4   i=0;
@@ -843,7 +841,7 @@ LALappsTSADestroyCache(LALStatus       *status,
  * End LALappsTSADestroyCache
  */
 
-void LALappsCreateR4FromR8TimeSeries(LALStatus             *status,
+void LALappsCreateR4FromR8TimeSeries(
 				     REAL4TimeSeries      **R4TS,
 				     REAL8TimeSeries       *R8TS)
 
@@ -884,7 +882,7 @@ void LALappsPSD_Check(REAL8TimeSeries       *dataIn)
 
   memset(&status, 0, sizeof(status));
   print_real8tseries(dataIn,"PreCast_REAL8_Tseries.diag");
-  LALappsCreateR4FromR8TimeSeries(&status,&R4TimeSeries,dataIn);
+  LALappsCreateR4FromR8TimeSeries(&R4TimeSeries,dataIn);
   print_real4tseries(R4TimeSeries,"PostCast_REAL4_Tseries.diag");
 
   size=dataIn->data->length/2 +1;
@@ -948,7 +946,6 @@ void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
   LALSPrintTimeSeries(fseries, file);
 #else
   FILE *fp = fopen(file, "w");
-  LALStatus   status=blank_status;
   REAL8   timeT;
   size_t i;
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
@@ -968,7 +965,6 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   LALDPrintTimeSeries(fseries, file);
 #else
   FILE *fp = fopen(file, "w");
-  LALStatus   status=blank_status;
   REAL8   timeT;
   size_t i;
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
@@ -1057,7 +1053,6 @@ void print_lalUnit(LALUnit unit,const char *file)
 {
   FILE *fp = fopen(file,"w");
   CHARVector *unitString=NULL;
-  LALStatus  status=blank_status;
 
   unitString=XLALCreateCHARVector(maxFilenameLength);
   XLALUnitAsString(unitString->data,unitString->length,&unit);

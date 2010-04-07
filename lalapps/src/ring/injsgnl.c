@@ -23,9 +23,10 @@
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
 #include <lal/GenerateRing.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRingdownRead.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 

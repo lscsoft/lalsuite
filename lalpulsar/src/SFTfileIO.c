@@ -64,19 +64,12 @@ NRCSID (SFTFILEIOC, "$Id$");
 /** blocksize used in SFT-reading for the CRC-checksum computation (has to be multiple of 8 !!) */
 #define BLOCKSIZE 8192 * 8
 
-/*----- Macros ----- */
-
-/* use boinc_fopen() instead of fopen() for Einstein@Home/BOINC */
-#ifdef EAH_BOINC
-/* for Einstein@Home we know how many SFTs we're using, and realloc
-   apparently fragments the memory quite much on Windows */
-#define REALLOC_BLOCKSIZE 8000
-extern FILE* boinc_fopen(const char* path, const char* mode);
-#define fopen boinc_fopen
-#define LALFopen boinc_fopen
-#else
-#define REALLOC_BLOCKSIZE 100
+/** size of blocks allocated for SFT data. For Einstein@home SFTs this should be set to 8000 (externally) */
+#ifndef SFTFILEIO_REALLOC_BLOCKSIZE
+#define SFTFILEIO_REALLOC_BLOCKSIZE 100
 #endif
+
+/*----- Macros ----- */
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
@@ -350,11 +343,11 @@ LALSFTdataFind (LALStatus *status,
 		  /* we realloc SFT-memory blockwise in order to
 		   * improve speed in debug-mode (using LALMalloc/LALFree)
 		   */
-		  ret->data = LALRealloc ( ret->data, (ret->length + REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
+		  ret->data = LALRealloc ( ret->data, (ret->length + SFTFILEIO_REALLOC_BLOCKSIZE) * sizeof( *(ret->data) ) );
 		  if ( ret->data == NULL )
 		    {
 		      XLALPrintError("Memeory reallocation for SFTs failed: nSFT:%d, length:%d, add:%d\n",
-				     numSFTs, ret->length, REALLOC_BLOCKSIZE);
+				     numSFTs, ret->length, SFTFILEIO_REALLOC_BLOCKSIZE);
 		      XLALDestroyStringVector ( fnames );
 		      LALDestroySFTCatalog ( status->statusPtr, &ret );
 		      if ( this_comment ) LALFree ( this_comment );
@@ -362,10 +355,10 @@ LALSFTdataFind (LALStatus *status,
 		      ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
 		    }
 		  /* properly initialize data-fields pointers to NULL to avoid SegV when Freeing */
-		  for ( j=0; j < REALLOC_BLOCKSIZE; j ++ )
+		  for ( j=0; j < SFTFILEIO_REALLOC_BLOCKSIZE; j ++ )
 		    memset ( &(ret->data[ret->length + j]), 0, sizeof( ret->data[0] ) );
 
-		  ret->length += REALLOC_BLOCKSIZE;
+		  ret->length += SFTFILEIO_REALLOC_BLOCKSIZE;
 		}
 
 	      desc = &(ret->data[numSFTs - 1]);
@@ -1268,7 +1261,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
   ASSERT (timestamps, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
   ASSERT (*timestamps == NULL, status, SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
 
-  if ( (fp = fopen( fname, "r")) == NULL) {
+  if ( (fp = LALFopen( fname, "r")) == NULL) {
     XLALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
     ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
   }
@@ -1665,7 +1658,7 @@ LALWriteSFTfile (LALStatus  *status,
 
 
   /* open the file for writing */
-  fp = fopen(outfname, "wb");
+  fp = LALFopen(outfname, "wb");
   if (fp == NULL) {
     LALFree (rawheader);
     LALFree (rawdata);

@@ -88,9 +88,9 @@ struct CommandLineArgsTag {
   INT4 testactuation;
   INT4 requirehistories;   /* flag that causes program to exit if histories are not present */
   char *FrCacheFile;       /* Frame cache file for corresponding time */
-  char *exc_chan;          /* excitation channel name */    
-  char *darm_chan;         /* darm channel name */ 
-  char *darmerr_chan;      /* darm_err  channel name */ 
+  char *exc_chan;          /* excitation channel name */
+  char *darm_chan;         /* darm channel name */
+  char *darmerr_chan;      /* darm_err  channel name */
   char *asq_chan;          /* asq channel name */
   char *filterfile;        /* file with filter coefficients */
   char *frametype;
@@ -132,7 +132,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA);
 int WriteFiltersFile(struct CommandLineArgsTag CLA);
 
 /* Frees the memory */
-int FreeMem(void);                                        
+int FreeMem(void);
 
 
 /************************************* MAIN PROGRAM *************************************/
@@ -144,7 +144,7 @@ int main(int argc,char *argv[])
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadData(CommandLineArgs)) return 2;
   if (ReadFiltersFile(CommandLineArgs)) return 3;
-  
+
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
@@ -174,16 +174,16 @@ int main(int argc,char *argv[])
     {
       LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
       TESTSTATUS( &status );
-    }else if(CommandLineArgs.testactuation){      
+    }else if(CommandLineArgs.testactuation){
       LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
       TESTSTATUS( &status );
     }else{
       LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
       TESTSTATUS( &status );
     }
-    
+
   if (WriteFiltersFile(CommandLineArgs)) return 7;
-  
+
   if(FreeMem()) return 8;
 
   return 0;
@@ -213,7 +213,7 @@ static FrChanIn chanin_exc;
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
   chanin_darmerr.name = CLA.darmerr_chan;
-  chanin_exc.name  = CLA.exc_chan; 
+  chanin_exc.name  = CLA.exc_chan;
 
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
@@ -258,7 +258,7 @@ static FrChanIn chanin_exc;
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.AS_Q,&chanin_asq,framestream);
   TESTSTATUS( &status );
-  
+
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM,&chanin_darm,framestream);
@@ -288,7 +288,7 @@ static FrChanIn chanin_exc;
   /* check input data epoch agrees with command line arguments */
   if ( InputData.AS_Q.epoch.gpsSeconds != CLA.GPSStart )
     {
-      fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.", 
+      fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.",
 	      InputData.AS_Q.epoch.gpsSeconds, CLA.GPSStart);
       return 1;
     }
@@ -351,12 +351,12 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
       return 1;
     }
-  
+
   i=0; /* start at line 0 */
   /* get GPS time of file to later agrees with starting GPS */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &fileGPS, gpsstr);
-  if ( strcmp(gpsstr, "GPS" ) ) 
+  if ( strcmp(gpsstr, "GPS" ) )
     {
       fprintf(stderr,"ERROR: First line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "GPS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -377,21 +377,21 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
 	  if ( fileGPS ==  (int)(OutputData.h.epoch.gpsSeconds
 				 +OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2))
 	    {
-	      fprintf(stdout,"GPS end time of time series (%d) agrees with filters file GPS time (%d). I may have already written this frame (GPS: %d). \n", 
-		      (int)(OutputData.h.epoch.gpsSeconds+OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2) ,fileGPS, 
-		      OutputData.h.epoch.gpsSeconds+InputData.wings);	
+	      fprintf(stdout,"GPS end time of time series (%d) agrees with filters file GPS time (%d). I may have already written this frame (GPS: %d). \n",
+		      (int)(OutputData.h.epoch.gpsSeconds+OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2) ,fileGPS,
+		      OutputData.h.epoch.gpsSeconds+InputData.wings);
 	      fprintf(stdout,"Exiting gracefully!\n");
 	      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
 	      exit (0);
 	    }
 
-	  fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
+	  fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n",
 		  OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
 	  fprintf(stderr,"Filter histories required to continue. Exiting!\n");
 	  LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
 	  return 1;
 	}
-      fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
+      fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n",
 	      OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
       fprintf(stderr,"Will NOT use filter histories in file %s.\n",CLA.filterfile);
 
@@ -404,7 +404,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", sensingstr);
-  if ( strcmp(sensingstr, "SENSING" ) ) 
+  if ( strcmp(sensingstr, "SENSING" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "SENSING");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -414,7 +414,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &InputData.CinvUSF, usfstr);
-  if ( strcmp(usfstr, "UPSAMPLING_FACTOR" ) ) 
+  if ( strcmp(usfstr, "UPSAMPLING_FACTOR" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "UPSAMPLING_FACTOR");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -426,7 +426,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &InputData.CinvDelay, delaystr);
-  if ( strcmp(delaystr, "DELAY" ) ) 
+  if ( strcmp(delaystr, "DELAY" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "DELAY");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -441,16 +441,16 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   for(j=0; j < InputData.NCinv; j++)
     {
       Corders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    }
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
+      return 1;
     }
-   
+
   /* Allocate inverse sensing funtion filters */
-  InputData.Cinv=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NCinv); 
+  InputData.Cinv=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NCinv);
 
   /* Allocate inverse sensing function filter */
   for(n = 0; n < InputData.NCinv; n++)
@@ -474,11 +474,11 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read direct coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      
+
       for (j=0; j < (int) InputData.Cinv[n].directCoef->length; j++)
 	{
 	  InputData.Cinv[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
+	}
       /* read recursive coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
@@ -491,7 +491,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       thisline = Filters->lines->tokens[i];	/* get line i */
       if (historyflag)
 	{
-	  
+
 	  for (j=0; j < (int) InputData.Cinv[n].history->length; j++)
 	    {
 	      InputData.Cinv[n].history->data[j]=strtod(thisline, &thisline);
@@ -503,7 +503,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", servostr);
-  if ( strcmp(servostr, "SERVO" ) ) 
+  if ( strcmp(servostr, "SERVO" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "SERVO");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -518,16 +518,16 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   for(j=0; j < InputData.ND; j++)
     {
       Dorders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    }
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
+      return 1;
     }
-   
+
   /* Allocate inverse sensing funtion filters */
-  InputData.D=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.ND); 
+  InputData.D=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.ND);
 
   /* Allocate inverse sensing function filter */
   for(n = 0; n < InputData.ND; n++)
@@ -550,11 +550,11 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read direct coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      
+
       for (j=0; j < (int) InputData.D[n].directCoef->length; j++)
 	{
 	  InputData.D[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
+	}
       /* read recursive coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
@@ -567,7 +567,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       thisline = Filters->lines->tokens[i];	/* get line i */
       if (historyflag)
 	{
-	  
+
 	  for (j=0; j < (int) InputData.D[n].history->length; j++)
 	    {
 	      InputData.D[n].history->data[j]=strtod(thisline, &thisline);
@@ -579,7 +579,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", aastr);
-  if ( strcmp(aastr, "ACTUATION_ANALOG" ) ) 
+  if ( strcmp(aastr, "ACTUATION_ANALOG" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "ACTUATION_ANALOG");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -589,7 +589,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%" LAL_INT4_FORMAT " %s", &InputData.AADelay, delaystr);
-  if ( strcmp(delaystr, "DELAY" ) ) 
+  if ( strcmp(delaystr, "DELAY" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "DELAY");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -604,16 +604,16 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   for(j=0; j < InputData.NAA; j++)
     {
       AAorders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    }
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
+      return 1;
     }
-   
+
   /* Allocate inverse sensing funtion filters */
-  InputData.AA=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAA); 
+  InputData.AA=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAA);
 
   /* Allocate inverse sensing function filter */
   for(n = 0; n < InputData.NAA; n++)
@@ -636,11 +636,11 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read direct coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      
+
       for (j=0; j < (int) InputData.AA[n].directCoef->length; j++)
 	{
 	  InputData.AA[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
+	}
       /* read recursive coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
@@ -653,7 +653,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       thisline = Filters->lines->tokens[i];	/* get line i */
       if (historyflag)
 	{
-	  
+
 	  for (j=0; j < (int) InputData.AA[n].history->length; j++)
 	    {
 	      InputData.AA[n].history->data[j]=strtod(thisline, &thisline);
@@ -666,7 +666,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", axstr);
-  if ( strcmp(axstr, "ACTUATION_X" ) ) 
+  if ( strcmp(axstr, "ACTUATION_X" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "ACTUATION_X");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -681,16 +681,16 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   for(j=0; j < InputData.NAX; j++)
     {
       AXorders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    }
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
+      return 1;
     }
-   
+
   /* Allocate inverse sensing funtion filters */
-  InputData.AX=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAX); 
+  InputData.AX=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAX);
 
   /* Allocate inverse sensing function filter */
   for(n = 0; n < InputData.NAX; n++)
@@ -713,11 +713,11 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read direct coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      
+
       for (j=0; j < (int) InputData.AX[n].directCoef->length; j++)
 	{
 	  InputData.AX[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
+	}
       /* read recursive coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
@@ -730,7 +730,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       thisline = Filters->lines->tokens[i];	/* get line i */
       if (historyflag)
 	{
-	  
+
 	  for (j=0; j < (int) InputData.AX[n].history->length; j++)
 	    {
 	      InputData.AX[n].history->data[j]=strtod(thisline, &thisline);
@@ -742,7 +742,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   i++; /*advance one line */
   thisline = Filters->lines->tokens[i];	/* get line i */
   sscanf (thisline,"%s", aystr);
-  if ( strcmp(aystr, "ACTUATION_Y" ) ) 
+  if ( strcmp(aystr, "ACTUATION_Y" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "ACTUATION_Y");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
@@ -757,16 +757,16 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   for(j=0; j < InputData.NAY; j++)
     {
       AYorders[j]=strtol(thisline, &thisline,10);
-    }  
-  if ( strcmp(thisline, " FILTERS_ORDERS" ) ) 
+    }
+  if ( strcmp(thisline, " FILTERS_ORDERS" ) )
     {
       fprintf(stderr,"ERROR: Line (%s) of file %s is not properly terminated by '%s' marker!\n\n", thisline, CLA.filterfile, "FILTERS_ORDERS");
       LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
-      return 1;      
+      return 1;
     }
-   
+
   /* Allocate inverse sensing funtion filters */
-  InputData.AY=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAY); 
+  InputData.AY=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter) * InputData.NAY);
 
   /* Allocate inverse sensing function filter */
   for(n = 0; n < InputData.NAY; n++)
@@ -789,11 +789,11 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       /* read direct coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
-      
+
       for (j=0; j < (int) InputData.AY[n].directCoef->length; j++)
 	{
 	  InputData.AY[n].directCoef->data[j]=strtod(thisline, &thisline);
-	}      
+	}
       /* read recursive coeffs */
       i++;/*advance one line */
       thisline = Filters->lines->tokens[i];	/* get line i */
@@ -806,7 +806,7 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       thisline = Filters->lines->tokens[i];	/* get line i */
       if (historyflag)
 	{
-	  
+
 	  for (j=0; j < (int) InputData.AY[n].history->length; j++)
 	    {
 	      InputData.AY[n].history->data[j]=strtod(thisline, &thisline);
@@ -840,13 +840,13 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 
   fprintf(FiltersFile,"%d ",InputData.NCinv);
   n=0;
-  while (n < InputData.NCinv) 
-    { 
+  while (n < InputData.NCinv)
+    {
       fprintf(FiltersFile,"%d ",InputData.Cinv[n].directCoef->length);
       n++;
     }
   fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
+
   for(n = 0; n < InputData.NCinv; n++)
     {
       /* write direct coeffs */
@@ -855,7 +855,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 	  fprintf(FiltersFile,"%1.16e ", InputData.Cinv[n].directCoef->data[j]);
 	}
       fprintf(FiltersFile,"\n");
-      
+
       /* write recursive coeffs */
       for (j=0; j < (int)InputData.Cinv[n].recursCoef->length; j++)
 	{
@@ -867,7 +867,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.Cinv[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.Cinv[n].history->data[j]);
-	} 
+	}
       fprintf(FiltersFile,"\n");
     }
 
@@ -876,13 +876,13 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 
   fprintf(FiltersFile,"%d ",InputData.ND);
   n=0;
-  while (n < InputData.ND) 
-    { 
+  while (n < InputData.ND)
+    {
       fprintf(FiltersFile,"%d ",InputData.D[n].directCoef->length);
       n++;
     }
   fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
+
   for(n = 0; n < InputData.ND; n++)
     {
       /* write direct coeffs */
@@ -891,7 +891,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 	  fprintf(FiltersFile,"%1.16e ", InputData.D[n].directCoef->data[j]);
 	}
       fprintf(FiltersFile,"\n");
-      
+
       /* write recursive coeffs */
       for (j=0; j < (int)InputData.D[n].recursCoef->length; j++)
 	{
@@ -903,7 +903,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.D[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.D[n].history->data[j]);
-	} 
+	}
       fprintf(FiltersFile,"\n");
     }
 
@@ -913,13 +913,13 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 
   fprintf(FiltersFile,"%d ",InputData.NAA);
   n=0;
-  while (n < InputData.NAA) 
-    { 
+  while (n < InputData.NAA)
+    {
       fprintf(FiltersFile,"%d ",InputData.AA[n].directCoef->length);
       n++;
     }
   fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
+
   for(n = 0; n < InputData.NAA; n++)
     {
       /* write direct coeffs */
@@ -928,7 +928,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 	  fprintf(FiltersFile,"%1.16e ", InputData.AA[n].directCoef->data[j]);
 	}
       fprintf(FiltersFile,"\n");
-      
+
       /* write recursive coeffs */
       for (j=0; j < (int)InputData.AA[n].recursCoef->length; j++)
 	{
@@ -940,22 +940,22 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.AA[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.AA[n].history->data[j]);
-	} 
+	}
       fprintf(FiltersFile,"\n");
     }
-  
+
   /* x-arm actuation section */
   fprintf(FiltersFile,"ACTUATION_X\n");
 
   fprintf(FiltersFile,"%d ",InputData.NAX);
   n=0;
-  while (n < InputData.NAX) 
-    { 
+  while (n < InputData.NAX)
+    {
       fprintf(FiltersFile,"%d ",InputData.AX[n].directCoef->length);
       n++;
     }
   fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
+
   for(n = 0; n < InputData.NAX; n++)
     {
       /* write direct coeffs */
@@ -964,7 +964,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 	  fprintf(FiltersFile,"%1.16e ", InputData.AX[n].directCoef->data[j]);
 	}
       fprintf(FiltersFile,"\n");
-      
+
       /* write recursive coeffs */
       for (j=0; j < (int)InputData.AX[n].recursCoef->length; j++)
 	{
@@ -976,22 +976,22 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.AX[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.AX[n].history->data[j]);
-	} 
+	}
       fprintf(FiltersFile,"\n");
     }
-  
+
   /* y-arm actuation section */
   fprintf(FiltersFile,"ACTUATION_Y\n");
 
   fprintf(FiltersFile,"%d ",InputData.NAY);
   n=0;
-  while (n < InputData.NAY) 
-    { 
+  while (n < InputData.NAY)
+    {
       fprintf(FiltersFile,"%d ",InputData.AY[n].directCoef->length);
       n++;
     }
   fprintf(FiltersFile,"FILTERS_ORDERS\n");
-  
+
   for(n = 0; n < InputData.NAY; n++)
     {
       /* write direct coeffs */
@@ -1000,7 +1000,7 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
 	  fprintf(FiltersFile,"%1.16e ", InputData.AY[n].directCoef->data[j]);
 	}
       fprintf(FiltersFile,"\n");
-      
+
       /* write recursive coeffs */
       for (j=0; j < (int)InputData.AY[n].recursCoef->length; j++)
 	{
@@ -1012,18 +1012,18 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
       for (j=0; j < (int)InputData.AY[n].history->length; j++)
 	{
 	  fprintf(FiltersFile,"%1.16e ", InputData.AY[n].history->data[j]);
-	} 
+	}
       fprintf(FiltersFile,"\n");
     }
 
 
-  fclose(FiltersFile);  
+  fclose(FiltersFile);
   return 0;
 }
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   struct option long_options[] = {
@@ -1058,7 +1058,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {0, 0, 0, 0}
   };
   char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:H:T:S:z:";
-  
+
   /* Initialize default values */
   CLA->f=0.0;
   CLA->To=0.0;
@@ -1120,19 +1120,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'E':
       /* name of excitation channel */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'A':
       /* name of as_q channel */
       CLA->asq_chan=optarg;
-      break;    
+      break;
     case 'D':
       /* name of darm channel */
       CLA->darm_chan=optarg;
-      break;    
+      break;
     case 'R':
       /* name of darm err channel */
       CLA->darmerr_chan=optarg;
-      break;    
+      break;
     case 's':
       /* GPS start */
       CLA->GPSStart=atof(optarg);
@@ -1171,7 +1171,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'r':
       /*  output residual signal */
-      CLA->testsensing=1; 
+      CLA->testsensing=1;
       break;
     case 'c':
       /* output control signal */
@@ -1193,19 +1193,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* output calibration factors (the code will output them into the residual signal
 	 hence the testsensing=1) */
       InputData.outalphas=1;
-      CLA->testsensing=1;       
+      CLA->testsensing=1;
       break;
     case 'H':
-      CLA->requirehistories=atoi(optarg);       
+      CLA->requirehistories=atoi(optarg);
       break;
     case 'T':
-      CLA->frametype=optarg;       
+      CLA->frametype=optarg;
       break;
     case 'S':
-      CLA->strainchannel=optarg;       
+      CLA->strainchannel=optarg;
       break;
     case 'z':
-      CLA->datadir=optarg;       
+      CLA->datadir=optarg;
       break;
     case 'h':
       /* print usage/help message */
@@ -1237,7 +1237,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
       fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
       fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
-      fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
+      fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");
       exit(0);
       break;
     default:
@@ -1254,13 +1254,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No calibration line frequency specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
   if(CLA->To == 0.0)
     {
       fprintf(stderr,"No integration time for the factors specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
   if(CLA->G0Re == 0.0 )
     {
       fprintf(stderr,"No real part of open loop gain specified.\n");
@@ -1302,55 +1302,55 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
   if(CLA->filterfile == NULL)
     {
       fprintf(stderr,"No filter file specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->darmerr_chan == NULL)
     {
       fprintf(stderr,"No darm err channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->frametype == NULL)
     {
       fprintf(stderr,"No frame type specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->strainchannel == NULL)
     {
       fprintf(stderr,"No strain channel specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
    if(CLA->datadir == NULL)
     {
       fprintf(stderr,"No data directory specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
-    }      
+    }
 
    if ( (InputData.wings < 2) || (InputData.wings%2 != 0) )
      {
@@ -1388,7 +1388,7 @@ int FreeMem(void)
     TESTSTATUS( &status );
     LALDDestroyVector(&status,&InputData.Cinv[p].recursCoef);
     TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.Cinv[p].history);   
+    LALDDestroyVector(&status,&InputData.Cinv[p].history);
     TESTSTATUS( &status );
   }
   LALFree(InputData.Cinv);
@@ -1398,7 +1398,7 @@ int FreeMem(void)
     TESTSTATUS( &status );
     LALDDestroyVector(&status,&InputData.D[p].recursCoef);
     TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.D[p].history);   
+    LALDDestroyVector(&status,&InputData.D[p].history);
     TESTSTATUS( &status );
   }
   LALFree(InputData.D);
@@ -1408,7 +1408,7 @@ int FreeMem(void)
     TESTSTATUS( &status );
     LALDDestroyVector(&status,&InputData.AA[p].recursCoef);
     TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.AA[p].history);   
+    LALDDestroyVector(&status,&InputData.AA[p].history);
     TESTSTATUS( &status );
   }
   LALFree(InputData.AA);
@@ -1418,7 +1418,7 @@ int FreeMem(void)
     TESTSTATUS( &status );
     LALDDestroyVector(&status,&InputData.AX[p].recursCoef);
     TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.AX[p].history);   
+    LALDDestroyVector(&status,&InputData.AX[p].history);
     TESTSTATUS( &status );
   }
   LALFree(InputData.AX);
@@ -1428,7 +1428,7 @@ int FreeMem(void)
     TESTSTATUS( &status );
     LALDDestroyVector(&status,&InputData.AY[p].recursCoef);
     TESTSTATUS( &status );
-    LALDDestroyVector(&status,&InputData.AY[p].history);   
+    LALDDestroyVector(&status,&InputData.AY[p].history);
     TESTSTATUS( &status );
   }
   LALFree(InputData.AY);
@@ -1448,7 +1448,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
- 
+
   return 0;
 }
 

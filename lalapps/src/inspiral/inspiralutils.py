@@ -8,7 +8,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import os, sys, copy, shutil
+import os, sys, copy, shutil, glob
 import ConfigParser
 import optparse
 import tempfile
@@ -21,6 +21,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue import lal
+import inspiral
 
 ##############################################################################
 # Functions used in setting up the dag:
@@ -76,6 +77,23 @@ def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
       str(gps_end_time - gps_start_time)  + ".cache"
 
   return hipeCache
+
+##############################################################################
+def hipe_pfn_cache(cachename,globpat):
+  """
+  create and return the name of a pfn cache containing files that match
+  globpat. This is needed to manage the .input files that hipe creates.
+  
+  cachename = the name of the pfn cache file
+  globpat = the pattern to search for
+  """
+  cache_fh = open(cachename,"w")
+  for file in glob.glob(globpat):
+    lfn = os.path.basename(file)
+    pfn = "file://" + os.path.join(os.getcwd(),file)
+    print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
+  cache_fh.close()
+  return cachename
 
 ##############################################################################
 def tmpltbank_cache(datafind_filename):
@@ -162,7 +180,33 @@ def science_segments(ifo, config, generate_segments = True):
   return segFindFile
 
 ##############################################################################
-# Function to set up the veto-category xml files from the vetoDefFile
+# the hardware injection script part one to get segments for it to use later
+def run_hardware_inj_part_one(config,ifos):
+
+  mkdir('logs')
+  hwinjDefurl = config.get("hwinjpage_meta", "hwinj-def-server-url")
+  hwinjDefFile = config.get("hwinjpage_meta", "hwinj-def-file")
+
+  print "Downloading HW injection list " + hwinjDefFile + " from " \
+        + hwinjDefurl
+  hwinjDefFile, info = urllib.urlretrieve(hwinjDefurl + '/' + hwinjDefFile,
+        hwinjDefFile)
+  config.set('hwinjpage','source-xml',hwinjDefFile)
+  ifostr = ''
+  for ifo in ifos:
+	ifostr = ifostr + '--' + ifo.lower() + '-injection '
+
+  hwinjpageCall = ' '.join([config.get("condor","hwinjscript"),
+	"--gps-start-time",config.get("input","gps-start-time"),
+	"--gps-end-time",config.get("input","gps-end-time"),
+	"--segment-db",config.get("segfind","segment-url"),
+	"--segment-dir","./",ifostr,
+	"--source-xml",hwinjDefFile,"--part=1"])
+
+  make_external_call(hwinjpageCall)
+
+#####################################################################
+# Function to set lp the veto-category xml files from the vetoDefFile
 def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
   """
   Generate veto category xml files for each ifo using the
@@ -493,7 +537,7 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    site = "local", dax=None, tmpltbankCache = None):
+    dax = False, tmpltbankCache = None, local_exec_dir = None):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -506,8 +550,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   vetoFiles = dictionary of veto files
   tmpltbankCache = lal.Cache of template bank files
   """
-  # don't create a pegasus workflow for local dags
-  if site=="local": dax=None
+  # remember what directory we are in to construct the pegasus exec dir
+  ihopeDir = os.path.split(os.getcwd())[-1]
+
   # make the directory for running hipe
   mkdir(hipeDir)
 
@@ -522,7 +567,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
-        "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
+        "tmpltbank", "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
         "sire-inj", "condor-max-jobs", "calibration"]
   else:
@@ -558,6 +603,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   else:
     usertag = hipeDir.upper()
 
+  # template banks should not have a usertag so they can be 
+  # passed between sub-dags more easily
+  if hipeDir == "datafind":
+    hipecp.remove_option("pipeline","user-tag")
+  else:
+    hipecp.set("tmpltbank","user-tag","")
+
   if vetoCat:
     # set the old usertag in inspiral and inspinj, 
     # so that we pick up the correct xml inputs
@@ -580,14 +632,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipecp.set("thinca", "do-veto", "")
 
   # set the usertag
-  hipecp.set("pipeline", "user-tag",usertag)
-
-  # setup the ldgsubmitdax specific stuff if it exists
-  try:
-    hipecp.add_section("ldgsubmitdax")
-    hipecp.set("ldgsubmitdax","gsiftp",config.get("ldgsubmitdax","gsiftp"))
-    hipecp.set("ldgsubmitdax","pool",config.get("ldgsubmitdax","pool"))
-  except: pass
+  if hipeDir == "datafind":
+    # we don't set a usertag for the datafind directory
+    pass
+  else:
+    hipecp.set("pipeline", "user-tag",usertag)
 
   if injSeed:
     # copy over the arguments from the relevant injection section
@@ -635,6 +684,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   hipeCommand = config.get("condor","hipe")
   hipeCommand += " --log-path " + logPath
   hipeCommand += " --config-file " + iniFile
+  if dax:
+    hipeCommand += " --dax "
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
     hipeCommand += " --" + item[0] + " " + item[1]
@@ -670,7 +721,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-categories")
   hipeCommand = test_and_add_hipe_arg(hipeCommand,"disable-dag-priorities")
-  if dax: hipeCommand += " --dax --datafind " 
+
   # run lalapps_inspiral_hipe
   make_external_call(hipeCommand)
 
@@ -681,50 +732,51 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       os.symlink("../datafind/cache", "cache")
     except: pass
 
-  # symlink in the template banks, and add them to the inspiral hipe cache
+  # symlink in the template banks needed by the inspiral jobs
   if tmpltbankCache:
     symlinkedCache = symlink_tmpltbank(tmpltbankCache, hipeDir)
 
-    inspiral_hipe_file = open(hipe_cache(ifos, usertag, \
+  iniBase = iniFile.rstrip("ini")
+  if hipeDir == "datafind":
+    hipeDag = iniBase + "dag"  
+    hipeDax = iniBase + "dax"  
+  else:
+    hipeDag = iniBase + usertag + ".dag"  
+    hipeDax = iniBase + usertag + ".dax"  
+
+  hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
+  hipeNode = pipeline.CondorDAGManNode(hipeJob)
+
+  # add the maxjob categories to the dagman node class
+  # FIXME pegasus should handle this in the dax schema itself
+  for cp_opt in config.options('condor-max-jobs'):
+    hipeNode.add_maxjobs_category(cp_opt,config.getint('condor-max-jobs',cp_opt))
+
+  # collapse the short running jobs in the veto sub-dags
+  if vetoCat:
+    hipeNode.set_cluster_jobs('horizontal')
+
+  # sweep up the .input files hipe generates
+  hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
+    'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
+
+  # tell pegasus where ihope wants us to run the jobs
+  hipeJob.set_pegasus_exec_dir(os.path.join(
+    local_exec_dir, '/'.join(os.getcwd().split('/')[-1:])))
+
+  if hipeDir == "datafind":
+    # grab the segment files managed by hipe and put them in the df cache
+    # since it is inherited by all the other sub-workflows
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
+      'segment_files.cache', '../segments/*txt' )))
+    hipeNode.add_output_file( hipe_cache(ifos, None, \
         hipecp.getint("input", "gps-start-time"), \
-        hipecp.getint("input", "gps-end-time")), "a")
-    symlinkedCache.tofile(inspiral_hipe_file)
-    inspiral_hipe_file.close()
-
-  # make hipe job/node
-  # check to see if it should be a dax
-  hipeDax = None
-  hipeDag = iniFile.rstrip("ini") + usertag + ".dag"  
-  if dax: 
-      hipeDax = iniFile.rstrip("ini") + usertag + ".dax"
-      hipeDag = iniFile.rstrip("ini") + usertag + ".dax.dag"
-  if hipeDax:
-     ldg_submit_dax_command = config.get("condor","ldgsubmitdax") + ' '
-     ldg_submit_dax_command += '--ini-file '+iniFile + ' '
-     ldg_submit_dax_command += '--pegasus-cache '+hipeDax + '.peg_cache '
-     ldg_submit_dax_command += '--no-submit '+ ' '
-     ldg_submit_dax_command += '--properties-file '+config.get("ldgsubmitdax","properties-file") + ' '
-     ldg_submit_dax_command += '--sites-file '+config.get("ldgsubmitdax","sites-file") + ' '
-     ldg_submit_dax_command += '--verbose '+' '
-     ldg_submit_dax_command += hipeDax +' '+ site
-
-     print ldg_submit_dax_command
-     popen = subprocess.call(ldg_submit_dax_command.split())
-     #popen = subprocess.Popen(ldg_submit_dax_command.split())
-     #popen.communicate()
-     #status = popen.returncode
-
-     #make_external_call(ldg_submit_dax_command,show_stdout=True, show_command=True)
- 
-  #print os.getcwd()
-  #print ldg_submit_dax_command
- 
-  hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir)
-  hipeNode = pipeline.CondorDAGNode(hipeJob)
-
-  hipeNode.add_output_file( hipe_cache(ifos, usertag, \
-      hipecp.getint("input", "gps-start-time"), \
-      hipecp.getint("input", "gps-end-time")) )
+        hipecp.getint("input", "gps-end-time")) )
+  else:
+    hipeNode.set_user_tag(usertag)
+    hipeNode.add_output_file( hipe_cache(ifos, usertag, \
+        hipecp.getint("input", "gps-start-time"), \
+        hipecp.getint("input", "gps-end-time")) )
 
   # return to the original directory
   os.chdir("..")
@@ -802,7 +854,6 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   plotcp.set("pipeline","inj-suffix",injectionSuffix)
   plotcp.set("pipeline","found-suffix",injectionSuffix)
   plotcp.set("pipeline","missed-suffix",injectionSuffix)
-  plotcp.set("pipeline","bank-suffix",bankSuffix)
   plotcp.set("pipeline","trigbank-suffix",bankSuffix)
   plotcp.set("pipeline","zerolag-suffix",zerolagSuffix)
   plotcp.set("pipeline","trig-suffix",zerolagSuffix)
@@ -895,7 +946,8 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
   # make hipe job/node
   plotDag = iniFile.rstrip("ini") + usertag + ".dag"
   plotJob = pipeline.CondorDAGManJob(plotDag, plotDir)
-  plotNode = pipeline.CondorDAGNode(plotJob)
+  plotNode = pipeline.CondorDAGManNode(plotJob)
+  plotNode.set_user_tag(usertag)
 
   # return to the original directory
   os.chdir("..")
@@ -962,7 +1014,7 @@ def pipedownSetup(dag,config,logPath,pipedownDir,\
   # make pipedown job/node
   pipeDag = iniFile.rstrip("ini") + "dag"
   pipeJob = pipeline.CondorDAGManJob(pipeDag, pipedownDir)
-  pipeNode = pipeline.CondorDAGNode(pipeJob)
+  pipeNode = pipeline.CondorDAGManNode(pipeJob)
   dag.add_node(pipeNode)
   if parentNodes: 
     for thisDag in parentNodes:
@@ -1117,7 +1169,53 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
 
   return dag
 
-
+##############################################################################
+# Functino to set up a HW inj page job
+def hwinj_setup(cp,ifos,veto_categories):
+  """
+  run ligolw_cbc_hardware injection page
+  """
+  cp.set('hwinjpage','part','2')
+  # Add range cache file option here later
+  cp.set('hwinjpage','segment-dir','./')
+  for ifo in ifos:
+    cp.set('hwinjpage',ifo.lower()+'-injections','')
+  hwInjNodes = []
+  cp.set('condor','hwinjscript',(cp.get('condor','hwinjscript'))[1:])
+  hwInjJob = inspiral.HWinjPageJob(cp)
+  hwInjJob.set_experiment_start_time(cp.get("input","gps-start-time"))
+  hwInjJob.set_experiment_end_time(cp.get("input","gps-end-time"))
+  hwInjJob.set_sub_file('hardware_inj/hwinjpage.sub')
+  hwInjJob.set_universe('vanilla')
+  hwInjJob.add_condor_cmd('initialdir','hardware_inj')
+  hwInjJob.add_condor_cmd('getenv','True')
+  veto_categories.append(None)
+  for veto in veto_categories:
+    if cp.get("pipeline","user-tag"):
+      usertag = cp.get("pipeline", "user-tag") + "_" + "FULL_DATA"
+    else:
+      usertag = "FULL_DATA"
+    if veto: usertag += "_CAT_" + str(veto) + "_VETO"
+    cacheFile = hipe_cache( ifos,usertag, \
+         cp.getint("input", "gps-start-time"), \
+         cp.getint("input", "gps-end-time"))
+    if not os.path.isfile("full_data/" + cacheFile):
+      print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
+      print>>sys.stderr, "does not exist! This might cause later failures."
+    ifoprefix=''
+    for ifo in ifos:
+      cp.set('hwinjpage',ifo.lower()+'-injections','')
+      ifoprefix+=ifo
+    outfilename = ifoprefix+'_hwinjections'
+    if veto:
+      outfilename += '_CAT_'+str(veto)
+    outfilename += '.html'
+    hwInjNode = inspiral.HWinjPageNode(hwInjJob)
+    hwInjNode.set_input_cache('../full_data/'+cacheFile)
+    hwInjNode.set_cache_string('*COIRE_SECOND*')
+    hwInjNode.set_output_file(outfilename)
+    hwInjNodes.append(hwInjNode)
+  return hwInjNodes
 
 ##############################################################################
 # Function to set up lalapps_followup_pipe
@@ -1191,7 +1289,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
 
   # add job to dag
   followupJob = pipeline.CondorDAGManJob(followupDag, followupDir)
-  followupNode = pipeline.CondorDAGNode(followupJob)
+  followupNode = pipeline.CondorDAGManNode(followupJob)
 
 
   # write the pre-script to run lalapps_followup_pipe at the appropriate time

@@ -62,8 +62,7 @@
 #include <lalappsfrutils.h>
 #include <lal/FrameStream.h>
 #include <lal/LogPrintf.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 #include <processtable.h>
 #include "inspiral.h"
@@ -334,19 +333,8 @@ int main( INT4 argc, CHAR *argv[] )
   proctable.processTable = (ProcessTable *)LALCalloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow ( &(proctable.processTable->start_time) );
 
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
 
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
@@ -358,7 +346,7 @@ int main( INT4 argc, CHAR *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
-
+#if 0
   /* now the process params table */
   LAL_CALL( LALUserVarGetProcParamsTable ( &status, &this_proc_param, PROGRAM_NAME), &status);
   procparams.processParamsTable = this_proc_param;
@@ -371,6 +359,7 @@ int main( INT4 argc, CHAR *argv[] )
                                       process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
+#endif
 
 
   /* and finally the simInspiralTable itself */

@@ -22,13 +22,13 @@ SFTdir="./testSFTs"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LAL_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    if [ -n "$LALPULSAR_PREFIX" ]; then
+	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
     else
 	echo
-	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
-	echo "This might indicate an incomplete LAL installation"
+	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+	echo "This might indicate an incomplete LAL+LALPULSAR installation"
 	echo
 	exit 1
     fi
@@ -160,11 +160,11 @@ echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 echo
 echo "----- CFS v1: "
-cat $outfile_v1 | sed -e"/^%.*/{d}"
+cat $outfile_v1 | grep -v "%%"
 echo "----- CFS v2 WITH noise-weights: "
-cat $outfile_v2NWon | sed -e"/^%.*/{d}"
+cat $outfile_v2NWon | grep -v "%%"
 echo "----- CFS v2 WITHOUT noise-weights: "
-cat $outfile_v2NWoff | sed -e"/^%.*/{d}"
+cat $outfile_v2NWoff | grep -v "%%"
 
 
 echo

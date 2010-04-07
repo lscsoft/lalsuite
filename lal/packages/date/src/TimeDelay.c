@@ -38,21 +38,12 @@ detectors.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TimeDelayCP}
-\idx{LALTimeDelay()}
 
 
 \subsubsection*{Description}
 
-The function LALTimeDelay() computes the difference in time of arrival of a
-signal at two detectors from the same source.  The two detectors and the source
-are passed in a \texttt{TwoDetectorsAndASource} structure.  The time delay is
-defined to be $\delta t = t_2 - t_1$ where $t_1$ is the time the signal arrives
-at the first detector and $t_2$ is the time the signal arrives at the second
-detector.
-
-The function LALTimeDelayFromEarthCenter() Computes difference in arrival time
-of the same signal at detector and at center of Earth-fixed frame.  Equivalent
-to LALTimeDelay() with detector 1 set to the geocenter.
+The function XLALTimeDelayFromEarthCenter() Computes difference in arrival
+time of the same signal at detector and at center of Earth-fixed frame.
 
 The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
@@ -83,7 +74,6 @@ a GMST which gives us the orientation of the Earth.
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALError.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
@@ -144,30 +134,6 @@ XLALArrivalTimeDiff(
 }
 
 
-/* <lalVerbatim file="TimeDelayCP"> */
-void
-LALTimeDelay(
-	LALStatus *stat,
-	REAL8 *p_time_diff,
-	const TwoDetsTimeAndASource *p_dets_time_and_source
-)
-{ /* </lalVerbatim> */
-	INITSTATUS(stat, "LALTimeDelay", TIMEDELAYC);
-	ATTATCHSTATUSPTR(stat);
-	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-	ASSERT(p_dets_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-
-	XLALPrintDeprecationWarning("LALTimeDelay", "XLALArrivalTimeDiff");
-
-	*p_time_diff = -XLALArrivalTimeDiff(p_dets_time_and_source->p_det_and_time1->p_detector->location, p_dets_time_and_source->p_det_and_time2->p_detector->location, p_dets_time_and_source->p_source->longitude, p_dets_time_and_source->p_source->latitude, p_dets_time_and_source->p_det_and_time1->p_gps);
-
-	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
-
-	DETATCHSTATUSPTR(stat);
-	RETURN(stat);
-}
-
-
 /* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
 double XLALTimeDelayFromEarthCenter(
 	const double detector_earthfixed_xyz_metres[3],
@@ -176,7 +142,7 @@ double XLALTimeDelayFromEarthCenter(
 	const LIGOTimeGPS *gpstime
 )
 {/* </lalVerbatim> */
-	const double earth_center[3] = {0.0, 0.0, 0.0};
+	static const double earth_center[3] = {0.0, 0.0, 0.0};
 
 	/*
 	 * This is positive when the wavefront arrives at the detector
@@ -184,29 +150,6 @@ double XLALTimeDelayFromEarthCenter(
 	 */
 
 	return XLALArrivalTimeDiff(detector_earthfixed_xyz_metres, earth_center, source_right_ascension_radians, source_declination_radians, gpstime);
-}
-
-
-/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
-void LALTimeDelayFromEarthCenter(
-	LALStatus *stat,
-	REAL8 *p_time_diff,
-	const DetTimeAndASource *p_det_time_and_source
-)
-{/* </lalVerbatim> */
-	INITSTATUS(stat, "LALTimeDelayFromEarthCenter", TIMEDELAYC);
-	ATTATCHSTATUSPTR(stat);
-	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-
-	XLALPrintDeprecationWarning("LALTimeDelayFromEarthCenter", "XLALTimeDelayFromEarthCenter");
-
-	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_det_and_time->p_gps);
-
-	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
-
-	DETATCHSTATUSPTR(stat);
-	RETURN(stat);
 }
 
 

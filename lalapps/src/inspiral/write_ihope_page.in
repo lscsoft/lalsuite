@@ -14,9 +14,13 @@ import sys
 import copy
 import os
 import re
-from optparse import *
 import glob
+import StringIO
+from optparse import *
 from glue  import markup
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue.ligolw.utils import print_tables
 from glue.markup import oneliner as e
 import ConfigParser
 sys.path.append('@PYTHONLIBDIR@')
@@ -296,7 +300,7 @@ def write_results(page, opts, section,injection=None):
   elif section=='allinj':
      page = write_injection(page, opts,section,pipedown='pipedown')
   elif section=='hardware_injections':
-    page = write_injection(page, opts,section)
+    page = write_hw_injection(page, opts)
   elif section=='full_data':
     page=write_analysis(page,opts,thisSearch='full_data',
                         pipedown='pipedown')
@@ -500,7 +504,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   else:
     print 'Error in write_analysis function: thisSearch is not valid'
     sys.exit(1)
-  IJdir = injection + '_summary_plots'
+  IJdir = injection + '_summary_plots/'
   PDdir = pipedown + '/'
   if opts.symlink_plots:
     symlink_plot_directory(opts.datadir + ZLdir,\
@@ -564,7 +568,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'ifar3'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "IFAR and loudest event tables at CAT_3 (these include the hardware injections)."
+  titles[section] = "IFAR and loudest event tables at CAT_3 (hardware injections removed)."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1] + '*'
   htmltags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
@@ -643,28 +647,72 @@ def write_datainfo(page,opts):
   page.add("Segments were generated using the following information:")
   page = add_config_section(page, "segments")
 
-  page = heading(page, "Selected segments", "Switch details on/off")  
-  try:
-    page.add("<p>The SELECTED_SEGS are the times analyzed by ihope. They correspond to the science segments retrieved using the parameters above minus the times flagged by category 1 DQ flags.</p>")
-    page.p(e.br())
-    
-    segs = get_segments_tag("SELECTED_SEGS")
-    keys = ("segments","H1","H2","L1","G1","V1","T1") 
-    page = write_table(page, segs, keys)
-  except:
-    pass
-  page.div.close() #heading
-  
+  liveTimes = {}
+  liveTimes[1] = {}
+  segs = get_segments_tag("SELECTED_SEGS")
+  for ifo in get_ifos():
+    liveTimes[1][ifo] = float(segs[ifo][2])/86400
 
   # for each category, we loop over each ifo and create a table
   # with the time analysed.
   i=0
   for cat in ("CATEGORY_1_VETO_SEGS","CATEGORY_2_VETO_SEGS",\
       "CATEGORY_3_VETO_SEGS","CATEGORY_4_VETO_SEGS","CATEGORY_5_VETO_SEGS",):
+    vetSegs = get_segments_tag(cat)
     i=i+1
+    if i > 2:
+      cumVetSegs = get_segments_tag("COMBINED_CAT_"+str(i)+"_VETO_SEGS")
+    else:
+      cumVetSegs = vetSegs
     msg = "Category " +str(i) + " veto segments (flags and time)"
     page = heading(page, msg) 
-    try:
+    msg = "Single detector live times:"
+    page.add(msg)
+    key = 0
+    keys = []
+    data = {}
+    keys.append(key)
+    data[key] = ['Ifo','Live time(days)','Duty cycle (percent)']
+    if i != 1:
+      liveTimes[i] = {}
+    for ifo in get_ifos():
+      key += 1
+      if i == 2:
+        liveTimes[i][ifo] = liveTimes[i-1][ifo] - float(vetSegs[ifo][2])/86400
+      elif i > 2:
+        liveTimes[i][ifo] = liveTimes[1][ifo] - float(cumVetSegs[ifo][2])/86400
+      keys.append(key)
+      data[key]=[ifo,str(round(liveTimes[i][ifo],3)),str(round(liveTimes[i][ifo]*100/opts.daydur,3))]
+    page = write_table(page, data,keys,printKeys = False)
+
+    msg = "Coincident live times (only available if pipedown has finished)"
+    page.add(msg)
+    key = 0
+    keys = []
+    data = {}
+    keys.append(key)
+    data[key] = ['Coincidence','Coincidence time(days)','Percent of duration']
+    totTime = 0
+    for coinc in get_ifo_coinc():
+      key += 1
+      summGlob = datadir + '/pipedown/' + coinc + '-FULL_DATA'
+      if i != 1:
+        summGlob += '_CAT_' + str(i) + '_VETO'
+      summGlob += '_LOUDEST_ALL_DATA_EVENTS_BY_COMBINED_FAR_SUMMARY-*.xml'
+      summFiles = glob.glob(summGlob)
+      if len(summFiles) == 1:
+        xmldoc = utils.load_filename(summFiles[0])
+        loudest_event_table = table.get_table(xmldoc, 'loudest_events')
+        time = loudest_event_table[0].all_data_duration__Px_days_xP_
+        keys.append(key)
+        data[key] = [coinc,str(round(time,3)),str(round(time*100/opts.daydur,3))]  
+        totTime += time
+    key += 1
+    if totTime != 0:
+      keys.append(key)
+      data[key] = ['Total',str(round(totTime,3)),str(round(totTime*100/opts.daydur,3))]
+    page = write_table(page, data,keys,printKeys = False)
+    for iterafsaf in [1]:
       msg = "This category includes the following flags : "
       page.add(msg)
       key = 0
@@ -673,35 +721,43 @@ def write_datainfo(page,opts):
       keys.append(str(key))
       formFlags[str(key)] = ['IFO','Flag','Version','Start padding (s)', 'End padding (s)','Start time','End time']
       key += 1
+      seg_filename = datadir +'/segments/' + hipecp.get("segments", "veto-def-file")
+      xmldoc = utils.load_filename( seg_filename, gz = seg_filename.endswith(".gz") )
+      veto_def_tab = table.get_table(xmldoc,'veto_definer')
+      output = StringIO.StringIO()
+      tableList = ['veto_definer']
+      columnList = ['ifo', 'name', 'version', 'start_pad', 'end_pad', 'category', 'start_time', 'end_time']
+      print_tables.print_tables(xmldoc, output, 'wiki', tableList = tableList, columnList = columnList,
+        round_floats = False, format_links = False, print_table_names = False )
+      flags = output.getvalue().split('\n') 
+      output.close()
       for ifo in ifos:
-        command = 'ligolw_print -t veto_definer -c ifo -c name -c version '
-        command += '-c start_pad -c end_pad -c category -c start_time -c end_time '
-        command += datadir +'/segments/' + hipecp.get("segments", "veto-def-file")
-        command += """ -d " " | awk '{ if ($6 == '""" + str(i) + """' && """
-        command += '''$1 == "''' + ifo + '''")'''
-        command += """ printf("%s %s %s %s %s %s %s\\n",$1,$2,$3,$4,$5,$7,$8) }'"""      
-        flags, status = \
-          make_external_call(command, opts.debug, opts.debug, True)
-        flags = flags.split('\n') 
-        flags.pop()
-        for flag in flags:
+        for line in flags:
+          if line == '' or line == '||ifo||name||version||start pad||end pad||category||start time||end time||':
+            continue
+          flag = line.split('||')
+          flag.pop(0)
+          flag.pop(-1)
+          if int(flag[5]) != i:
+            continue
+          if flag[0] != ifo:
+            continue
+          flag.pop(6)
           keys.append(str(key))
-          formFlags[str(key)] = flag.split(' ')
+          formFlags[str(key)] = flag
           key += 1
 
       page = write_table(page, formFlags,keys,printKeys = False)
 
-      msg="Cumulative time vetoed at category "+str(i)+" according to "+cat
+      if i != 1:
+        msg="Cumulative time vetoed at category "+str(i)+" according to txt files in segments directory. Does not include CAT 1 vetoed time."
+      else:
+        msg = "Time vetoed at category 1 according to *" + cat + "*txt"
       page.add(msg)
 
-      segs = get_segments_tag(cat)
-      keys = ("segments","H1","H2","L1","G1","V1","T1")
-      page = write_table(page, segs, keys) 
+      vetKeys = ("segments","H1","H2","L1","G1","V1","T1")
+      page = write_table(page, cumVetSegs, vetKeys) 
       page.div.close()
-    except:     
-      msg = "Problems parsing category veto segment list "+str(i)
-      logText(logfile, msg,"warning")
-      page.div.close()    
 
   for tag in ["SCIENCE_SEGMENTS"] :
     page = heading(page, tag +" summary ")
@@ -931,9 +987,19 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   configs[section] = 'veto-inspiral'
   images_dirs[section] = images_dir
 
+  section = 'ifar2'
+  sections.append(section)
+  titles[section] = "IFAR at CAT_2 (including hardware injections)."
+  tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1]+'*'
+  imagetags[section] = ['cumhist_uncombined_ifar','cumhist_combined_ifar']
+  captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
+  comments[section] = None
+  configs[section] = 'plotifar'
+  images_dirs[section] = PDdir
+
   section = 'ifar3'
   sections.append(section)
-  titles[section] = "IFAR at CAT_3 (including hardware injections)." 
+  titles[section] = "IFAR at CAT_3 (hardware injections removed)." 
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1]+'*'
   imagetags[section] = ['cumhist_uncombined_ifar','cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
@@ -951,9 +1017,19 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   configs[section] = 'plotifar'
   images_dirs[section] = PDdir
 
+  section = 'plotcumhist2'
+  sections.append(section)
+  titles[section] = "Effective SNR at CAT_2 (including hardware injections)"
+  tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_2*'+ifartag[2]+'*'
+  imagetags[section] = ['cumhist']
+  captions[section] = 'Effective SNR vs number of triggers'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
   section = 'plotcumhist3'
   sections.append(section)
-  titles[section] = "Effective SNR at CAT_3 (including hardware injections)"
+  titles[section] = "Effective SNR at CAT_3 (hardware injections removed)"
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_3*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
@@ -981,10 +1057,20 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   configs[section] = None
   images_dirs[section] = PDdir
 
+  section = 'printlc2zl'
+  sections.append(section)
+  htmlOnly.append(section)
+  titles[section] = "Loudest zero lag events after CAT_2 (including hardware injections)."
+  tags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
+  captions[section] = 'Loudest events after Category 2 vetoes (including hardware injections).'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
   section = 'printlc3zl'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest zero lag events after CAT_3 (including hardware injections)."
+  titles[section] = "Loudest zero lag events after CAT_3 (hardware injections removed)."
   tags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest events after Category 3 vetoes (including hardware injections).'
   comments[section] = None
@@ -1001,7 +1087,28 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'printlcsl'
+  section = 'printlcsl2'
+  sections.append(section)
+  htmlOnly.append(section)
+  titles[section] = "Loudest time slide events after CAT_2."
+  tags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST_SLIDE_EVENTS_BY_COMBINED_FAR*'
+  captions[section] = 'Loudest time slide events after Category 2 vetoes.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section = 'printlcsl3'
+  sections.append(section)
+  htmlOnly.append(section)
+  titles[section] = "Loudest time slide events after CAT_3."
+  tags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST_SLIDE_EVENTS_BY_COMBINED_FAR*'
+  captions[section] = 'Loudest time slide events after Category 3 vetoes.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+
+  section = 'printlcsl4'
   sections.append(section)
   htmlOnly.append(section)
   titles[section] = "Loudest time slide events after CAT_4."
@@ -1212,7 +1319,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   webdir = opts.webdir
   ini = opts.config_file
   ifos = get_ifos()
-  images_dir = injection + '_summary_plots'
+  images_dir = injection + '_summary_plots/'
   if opts.symlink_plots:
     symlink_plot_directory(opts.datadir + images_dir,\
                       opts.physdir + images_dir)
@@ -1391,6 +1498,79 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   return page
 
+# ***************************************************************************
+
+def write_hw_injection(page, opts):
+  """
+  Creates the injection section
+
+  @param page: the HTML document page.
+  @type page: markup.py document
+  @param opts: the main options variable
+  @type opts: write_ihope_page options
+  @return: an update of HTML document
+  """
+  webdir = opts.webdir
+  copy_plot_directory(opts.datadir + "hardware_inj",\
+      opts.physdir + "hardware_inj")  
+
+  page.add("This section summarizes the analysis of the hardware injections.<br/>")
+  
+  sections = []
+  htmlOnly = []
+  htmlAndPlot = []
+  titles = {}
+  tags = {}
+  htmltags = {}
+  imagetags = {}
+  captions = {}
+  comments = {}
+  configs = {}
+  images_dirs = {}
+
+  section = 'hwinjpage1'
+  sections.append(section)
+  htmlAndPlot.append(section)
+  titles[section] = "Hardware injection summary page at CAT 1"
+  tags[section] = '*hwinjections.'
+  htmltags[section] = '*hwinjections_table.'
+  imagetags[section] = None
+  captions[section] = ''
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = "hardware_inj"
+
+  section = 'hwinjpage2'
+  sections.append(section)
+  htmlAndPlot.append(section)
+  titles[section] = "Hardware injection summary page at CAT 2"
+  tags[section] = '*hwinjections_CAT_2*'
+  htmltags[section] = '*hwinjections_CAT_2_table*'
+  imagetags[section] = None
+  captions[section] = ''
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = "hardware_inj"
+
+  for section in sections:
+      page = heading(page, titles[section])
+      if comments[section] is not None:
+        page.p(comments[section])
+      page = add_config_section(page, configs[section])
+      if section in htmlOnly:
+        page = html_insert(page,opts, html_tag=htmltags[section],\
+          caption=captions[section],directory=images_dirs[section])
+      elif section in htmlAndPlot:
+        page = html_and_plot(page, opts, cachefile_tag=tags[section],\
+          caption=captions[section],image_tag=imagetags[section],\
+          directory=images_dirs[section],html_tag=htmltags[section])
+      else:
+        page = fom(page, opts, cachefile_tag=tags[section],\
+          caption=captions[section],image_tag=imagetags[section],\
+          directory=images_dirs[section])
+      page.div.close() # for each heading
+
+  return page
 
 # ***************************************************************************
 def write_about(page, opts):
@@ -1904,7 +2084,6 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       print >> sys.stdout, '... Done'
 
 
-
 def symlink_plot_directory(dataDir,webDir):
   '''
   A function to symlink, rather than copy, the plot directory to the html
@@ -2329,6 +2508,7 @@ except:
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # note the / at the end
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
+opts.daydur = int(opts.duration) / 86400
 opts.webdir = './'
 opts.datadir = opts.ihope_directory + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
@@ -2396,7 +2576,7 @@ if opts.summary is True and opts.playground is True:
 if opts.summary is True and opts.full_data_slide is True:
   html_sections['play_full_slide_summary'] = \
       "Summary of playground with full data slides"
-  defaultPafe='play_full_slide_summary'
+  defaultPage='play_full_slide_summary'
 if opts.summary is True and opts.full_data is True:
   html_sections['fullsummary'] = "Summary of full data"
   defaultPage = 'fullsummary'

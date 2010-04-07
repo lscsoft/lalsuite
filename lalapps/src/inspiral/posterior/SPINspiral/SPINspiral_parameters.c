@@ -28,7 +28,7 @@
 #include <getopt.h>
 
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <SPINspiral.h>
 

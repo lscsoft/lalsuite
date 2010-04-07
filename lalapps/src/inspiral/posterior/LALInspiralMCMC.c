@@ -835,8 +835,9 @@ INT4 XLALMCMCDifferentialEvolution(
 	same=1;
 	while(paraHead)
 	{
-		paraHead->value+=paraB->value-paraA->value;
-		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value) same=0;
+		paraHead->value+=paraB->value;
+		paraHead->value-=paraA->value;
+		if(paraHead->value!=paraA->value && paraHead->value!=paraB->value && paraA->value!=paraB->value) same=0;
 		paraB=paraB->next; paraA=paraA->next;
 		paraHead=paraHead->next;
 	}
@@ -930,20 +931,8 @@ XLALMCMCSetParameter(parameter,"long",XLALMCMCGetParameter(parameter,"long")-del
 	newlong=XLALMCMCGetParameter(parameter,"long");
 	newlat=XLALMCMCGetParameter(parameter,"lat");
 	REAL8 dtold,dtnew,deltat;
-	DetTimeAndASource DTAAS; /* This holds the source and the detector */
-	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = longi;
-	source.equatorialCoords.latitude = lat;
-	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
-	det_gps.p_gps=&(inputMCMC->epoch);
-	DTAAS.p_source = &(source.equatorialCoords);
-	DTAAS.p_det_and_time=&det_gps;
-	DTAAS.p_det_and_time->p_detector = inputMCMC->detector[0]; /* Select detector */
-	LALTimeDelayFromEarthCenter(&status,&dtold,&DTAAS); /* Compute time delay */
-	source.equatorialCoords.longitude=newlong;
-	source.equatorialCoords.latitude=newlat;
-	LALTimeDelayFromEarthCenter(&status,&dtnew,&DTAAS); /* Compute time delay */
+	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, longi, lat, &(inputMCMC->epoch)); /* Compute time delay */
+	dtnew = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=XLALMCMCGetParameter(parameter,"time");
 	XLALMCMCSetParameter(parameter,"time",deltat);
@@ -1031,20 +1020,8 @@ void XLALMCMCRotateSky(
 	
 	/* Compute change in tgeocentre for this change in sky location */
 	REAL8 dtold,dtnew,deltat;
-	DetTimeAndASource DTAAS; /* This holds the source and the detector */
-	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = longi;
-	source.equatorialCoords.latitude = lat;
-	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
-	det_gps.p_gps=&(inputMCMC->epoch);
-	DTAAS.p_source = &(source.equatorialCoords);
-	DTAAS.p_det_and_time=&det_gps;
-	DTAAS.p_det_and_time->p_detector = inputMCMC->detector[0]; /* Select detector */
-	LALTimeDelayFromEarthCenter(&status,&dtold,&DTAAS); /* Compute time delay */
-	source.equatorialCoords.longitude=newlong;
-	source.equatorialCoords.latitude=newlat;
-	LALTimeDelayFromEarthCenter(&status,&dtnew,&DTAAS); /* Compute time delay */
+	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, longi, lat, &(inputMCMC->epoch)); /* Compute time delay */
+	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=XLALMCMCGetParameter(parameter,"time");
 	XLALMCMCSetParameter(parameter,"time",deltat);	
@@ -1075,6 +1052,28 @@ int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	return(0);
 }
 
+/* ******************************************
+ XLALMCMCJumpSingle
+********************************************/
+void XLALMCMCJumpSingle(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter,
+  gsl_matrix       *covMat
+)
+{
+ LALMCMCParam *paraHead=NULL;
+ INT4 dim,i;
+ REAL4 step;
+
+ dim=parameter->dimension;
+ step=XLALUniformDeviate(inputMCMC->randParams);
+ /* Pick dimension to change */
+ i=(UINT4)floor(step*(REAL4)dim);
+ step=XLALNormalDeviate(inputMCMC->randParams);
+ step*=sqrt(gsl_matrix_get(covMat,i,i));
+ for(paraHead=parameter->param;i>0;paraHead=paraHead->next,i--);
+ paraHead->value+=step;
+}
 
 /* ******************************************
   XLALMCMCJump

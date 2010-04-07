@@ -42,7 +42,7 @@ int isnan( double );
 #define OPEN_ENDED_DELTA_T (OPEN_ENDED_DURATION/NUM_OPEN_ENDED_POINTS)
 
 const char *program;
-void err_exit( const char *fmt, ... )
+static void err_exit( const char *fmt, ... )
 {
   va_list ap;
   fprintf( stderr, "%s error: ", program );
@@ -332,7 +332,7 @@ int main( int argc, char *argv[] )
 #if 0
       vect = FrVectNew1D( factorStatusName, FR_VECT_4S, factorStatus->data->length, factorStatus->deltaT, seconds, dimensionless );
       vect->startX[0] = 0.0;
-      memcpy( vect->data, factorStatus->data->data, factorStatus->data->length * sizeof( *factorStatus->data->data ) ); 
+      memcpy( vect->data, factorStatus->data->data, factorStatus->data->length * sizeof( *factorStatus->data->data ) );
       proc = FrProcDataNewV( frame, vect );
       proc->timeOffset = 0;
       proc->type       = 1;

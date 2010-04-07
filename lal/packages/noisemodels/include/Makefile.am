@@ -1,5 +1,5 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALNoiseModels.h
+pkginclude_HEADERS = \
+	LALNoiseModels.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link

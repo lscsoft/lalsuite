@@ -1,0 +1,3 @@
+vcsID:
+	@cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la
+BUILT_SOURCES += vcsID

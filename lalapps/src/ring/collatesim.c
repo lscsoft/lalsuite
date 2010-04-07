@@ -44,11 +44,11 @@
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLRingdownRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 
@@ -146,16 +146,10 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+
   this_proc_param = procparams.processParamsTable =
     (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );

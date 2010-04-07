@@ -30,7 +30,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Aggregation.h>
 #include <lal/XLALError.h>
-#include <lal/LIGOMetadataTables.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 #include <lal/PrintFTSeries.h>
@@ -308,7 +307,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (ifo == NULL)
   {
     /* allocate memory for ifo */
-    ifo = (CHAR *)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+    ifo = (CHAR *)calloc(LAL_AGGREGATION_IFO_MAX, sizeof(CHAR));
 
     /* get ifo from frame_type */
     strncpy(ifo, frame_type, 2);

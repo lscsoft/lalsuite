@@ -64,9 +64,9 @@
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -81,8 +81,8 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DopplerScan.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 
@@ -166,6 +166,7 @@ INT4 V1file = 0;
 REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration     = 0;
 CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
+CHAR   chiaFileName[FILENAME_MAX]; /* name of chia trigbank for follow-up studies */
 /* CHAR  *cohbankFileName = NULL; name of input template bank  */
 UINT4  cohSNROut            = 0;    /* default is not to write frame */
 UINT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
@@ -189,6 +190,7 @@ double raStep = 1.0;
 double decStep = 1.0;
 UINT4  estimParams = 0;
 UINT4  followup = 0;
+UINT4  exttrig = 0;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -218,7 +220,9 @@ int main( int argc, char *argv[] )
   SummValueTable       *this_summ_value = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
+  SearchSummvarsTable  *inputChiaFiles = NULL;
   SearchSummaryTable   *searchSummList = NULL;
+  SearchSummaryTable   *chiaSearchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
 
@@ -230,6 +234,7 @@ int main( int argc, char *argv[] )
   REAL4 inj_alphabeta = 0;
 
   CHAR   fileName[FILENAME_MAX];
+  CHAR   fileNameTmp[FILENAME_MAX];
   CHAR   framename[FILENAME_MAX];
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
@@ -261,6 +266,7 @@ int main( int argc, char *argv[] )
   INT4   timeptDiff[3]    = {0,0,0};
   UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
   INT4   numTriggers      = 0;
+  INT4   numChiaTriggers  = 0;
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
   UINT4  cohFileID        = 1;
@@ -268,6 +274,8 @@ int main( int argc, char *argv[] )
   REAL4  chisq_dof[4]     = {1.0,1.0,1.0,1.0};
   REAL8  snrsqArray[4]    = {1.0,1.0,1.0,1.0};
   REAL4  eff_snr_denom_fac = 250.0; /* CHECK: Hard-wired! */
+  MultiInspiralTable   *chiaTrigList = NULL;
+  MultiInspiralTable   *thisChiaTrigger  = NULL;
 
   REAL4 totMass = 0.0;
   REAL8 muMass = 0.0;
@@ -320,16 +328,9 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
 
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -361,25 +362,44 @@ int main( int argc, char *argv[] )
   snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
             "data sample rate" );
   this_search_summvar->value = (REAL8) sampleRate;
-  
+
   /* Assess no. of points in skygrid for sky-map storage */
-  raStep *= LAL_PI_180;
-  decStep *= LAL_PI_180;
-  scanInit.dAlpha = raStep;
-  scanInit.dDelta = decStep;
+  if ( exttrig ) {
+    scanInit.dAlpha = LAL_TWOPI;
+    scanInit.dDelta = LAL_PI;
+  }
+  else {
+    /* raStep and decStep are expected to be in degrees */
+    scanInit.dAlpha = raStep * LAL_PI_180;
+    scanInit.dDelta = decStep * LAL_PI_180;
+  }
   scanInit.gridType = 1; /* (DopplerGridType) gridType = 1 is isotropic */
-  /* scanInit.skyRegionString = "allsky";*/
   scanInit.skyRegionString = XLALMalloc( strlen(ALLSKYSTR) + 1 );
   strcpy ( scanInit.skyRegionString, ALLSKYSTR );
-  InitDopplerSkyScan( &status, &thisScan, &scanInit);
+  LAL_CALL( InitDopplerSkyScan( &status, &thisScan, &scanInit), &status );
 
-  k = 0; 
+  k = 0;
   /* Loop over points in the sky-position grid */
   for ( skyGrid = thisScan.skyGrid ; skyGrid ; skyGrid = skyGrid->next ) {
     k++;
   }
   numBeamPoints = k;
+  if ( exttrig ) {
+    /* raStep and decStep are expected to be ra and dec, respectively,
+       of external trigger, in radians */
+    thisScan.skyGrid->Alpha = raStep;
+    thisScan.skyGrid->Delta = decStep;
+  }
+  if ( followup && exttrig ) {
+    numChiaTriggers = XLALReadMultiInspiralTriggerFile( &chiaTrigList,
+          &thisChiaTrigger, &chiaSearchSummList, &inputChiaFiles, chiaFileName );
+    thisScan.skyGrid->Alpha = chiaTrigList->ra;
+    thisScan.skyGrid->Delta = chiaTrigList->dec;
+  }
 
+  if( vrbflg ) fprintf(stdout," No of beam points is %d\n", numBeamPoints);
+  if( vrbflg ) fprintf(stdout,"alpha is = %f\n", thisScan.skyGrid->Alpha );
+  if( vrbflg ) fprintf(stdout,"delta is = %f\n", thisScan.skyGrid->Delta );
   k=0;
   /* Set the dynamic range; needed for distNorm, templateNorm calculation */
   dynRange = pow( 2.0, dynRangeExponent );
@@ -570,7 +590,9 @@ int main( int argc, char *argv[] )
 	  }
 	}
 	if ( (numDetectors == 4) ) threeSiteCase = 1;
-   
+        /* CHECK: For the exttrig mode of the follow-ups we are using time-series SNR output */  
+        if ( followup && exttrig ) threeSiteCase = 0;
+
         /* Initialize the necessary structures for thisCoinc-ident trigger*/
         
         if( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
@@ -656,6 +678,8 @@ int main( int argc, char *argv[] )
         cohInspFilterParams->nullStatH1H2Out         = cohInspInitParams->nullStatH1H2Out;
         cohInspFilterParams->nullStatOut             = cohInspInitParams->nullStatOut;
         cohInspFilterParams->numTmplts               = 1;
+        cohInspFilterParams->numBeamPoints           = numBeamPoints;
+        cohInspFilterParams->threeSiteCase           = threeSiteCase;
         cohInspFilterParams->fLow                    = fLow;
         cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
         cohInspFilterParams->numDetectors            = cohInspInitParams->numDetectors;
@@ -663,11 +687,12 @@ int main( int argc, char *argv[] )
         cohInspFilterParams->decStep                 = decStep;
         cohInspFilterParams->estimParams             = estimParams;
         cohInspFilterParams->followup                = followup;
+        cohInspFilterParams->exttrig                 = exttrig;
         /* initParams not needed anymore */
         free( cohInspInitParams );
         cohInspInitParams = NULL;
         
-        if (vrbflg)  fprintf( stdout, "deltaT:%f cohSNRThresh:%f numTmplts:%d\n", cohInspFilterParams->deltaT,cohInspFilterParams->cohSNRThresh,cohInspFilterParams->numTmplts);
+        if (vrbflg)  fprintf( stdout, "deltaT:%f cohSNRThresh:%f numTmplts:%d, numBeamPoints:%d\n", cohInspFilterParams->deltaT,cohInspFilterParams->cohSNRThresh,cohInspFilterParams->numTmplts,cohInspFilterParams->numBeamPoints);
         
         for( j=0; j<LAL_NUM_IFO; j++ ) 
           {
@@ -1322,7 +1347,14 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf(stdout, "done\n");
           
         }
-      
+     
+      if ( followup && !exttrig ) {
+        snprintf( fileNameTmp, FILENAME_MAX, "%s-ALLSKY", fileName);
+      }
+      else {
+        snprintf( fileNameTmp, FILENAME_MAX, "%s", fileName);
+      }
+ 
       if (eventsOut )
         { 
           memset( &results, 0, sizeof(LIGOLwXMLStream) );
@@ -1330,22 +1362,22 @@ int main( int argc, char *argv[] )
             {
               if ( outCompress )
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileName);
+                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
                 }
               else
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
+                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
                 }
             }
           else 
             {
               if ( outCompress )
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );                
+                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );                
                 }
               else 
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
                 }            
             }
           if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
@@ -1485,6 +1517,19 @@ int main( int argc, char *argv[] )
     LALFree( thisSearchSumm );
   }
 
+  if ( followup && exttrig ) {
+    while ( chiaSearchSummList )  {
+      thisSearchSumm = chiaSearchSummList;
+      chiaSearchSummList = chiaSearchSummList->next;
+      LALFree( thisSearchSumm );
+    }
+    while ( inputChiaFiles ) {
+      thisInputFile = inputChiaFiles;
+      inputChiaFiles = thisInputFile->next;
+      LALFree( thisInputFile );
+    }
+  }
+
   while ( coincHead )        {
     thisCoinc = coincHead;
     coincHead = coincHead->next;
@@ -1526,6 +1571,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"
 #define USAGE2 \
 "  --bank-file FILE             read template bank parameters from FILE\n"\
+"  --chia-file FILE             read chia trigger parameters from FILE (for followups)\n"\
 "  --sample-rate N              set data sample rate to N\n"\
 "  --segment-length N           set N to same value used in inspiral.c\n"\
 "  --dynamic-range-exponent N   set N to same value used in inspiral.c\n"\
@@ -1536,8 +1582,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
 "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
 "  [--numCohTrigs]   numCohTrigs number of coherent snr frames per output frame-file\n"\
-"  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
-"  --cdata-length SEC          set length of CData segments (in seconds) \n"\
+"  --cohsnr-threshold RHO        set signal-to-noise threshold to RHO\n"\
+"  --cdata-length  cohSegLength  set length of CData segments (in seconds) \n"\
 "  --null-stat-regul nullStatRegul  a regulator for computing the ratio-statistic\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
@@ -1546,6 +1592,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --dec-step        decStep    declination step-size (in degrees)\n"\
 "  --estimate-params estimParams  turn on parameter estimation\n"\
 "  --followup        followup   output parameter estimates required in follow-up studies \n"\
+"  --exttrig         exttrig    use raStep and decStep as sky-position angles (in radians) for external-trigger search \n"\
 "\n"
 #define USAGE3 \
 "  --write-events               write events\n"\
@@ -1576,6 +1623,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"user-tag",                 required_argument, 0,                 'B'},
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
      {"bank-file",                required_argument, 0,                 'u'},
+     {"chia-file",                required_argument, 0,                 'U'},
      {"sample-rate",              required_argument, 0,                 'r'},
      {"segment-length",           required_argument, 0,                 'l'},
      {"dynamic-range-exponent",   required_argument, 0,                 'e'}, 
@@ -1601,6 +1649,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"dec-step",                 required_argument, 0,                 'D'},
      {"estimate-params",          no_argument,       &estimParams,       1 },
      {"followup",                 no_argument,       &followup,          1 },
+     {"exttrig",                  no_argument,       &exttrig,           1 },
      {"output-path",              required_argument, 0,                 'P'},
      {"H1-framefile",             required_argument, 0,                 'A'},
      {"H2-framefile",             required_argument, 0,                 'Z'},
@@ -1621,7 +1670,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:s:C:r:u:v:",
+	   "A:B:a:b:D:G:I:L:l:e:g:W:X:Y:t:w:n:P:R:T:V:Z:d:f:h:p:s:C:r:u:U:v:",
            long_options, &option_index );
 
        if ( c == -1 )
@@ -1787,7 +1836,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
            bankDuration=atoi(duration);        
            ADD_PROCESS_PARAM( "string", "%s", cohbankFileName );
            duration=NULL;
-       break;
+           break;
+
+         case 'U':
+           /* create storage for the chia trigger filename */
+           strcpy(chiaFileName, optarg);
+           char tmpName[256];
+           char *dur =NULL;
+           strcpy(tmpName, chiaFileName);
+           dur = strtok(tmpName,"-");
+           dur = strtok(NULL,"-");
+           dur = strtok(NULL,"-");
+           dur = strtok(NULL,".");
+           bankDuration=atoi(dur);
+           ADD_PROCESS_PARAM( "string", "%s", chiaFileName );
+           duration=NULL;
+           break;
 
            /* Read in time-slide steps for all detectors */
            /* Read in time-slide step for G1 */
@@ -1834,10 +1898,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
          case 'v':
            /* print version information and exit */
            fprintf( stdout, "LIGO/LSC Multi-Detector Search Code\n" 
-                 "Bose/Seader <sukanta@wsu.edu>\n"
-                 "CVS Version: " CVS_ID_STRING "\n"
-                 "CVS Tag: " CVS_NAME_STRING "\n" );
-           fprintf( stdout, lalappsGitID );
+                 "Bose/Seader <sukanta@wsu.edu>\n");
+           XLALOutputVersionString(stderr, 0);
            exit( 0 );
            break;
 

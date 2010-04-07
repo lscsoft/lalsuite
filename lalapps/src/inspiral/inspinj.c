@@ -35,16 +35,15 @@
 #include <lalapps.h>
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
 #include <processtable.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <lal/Ring.h>
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 
@@ -269,7 +268,7 @@ static void print_usage(char *program)
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
-      " [--inclStd]  incStd       std dev for gaussian inclination dist\n"\
+      " [--incl-std]  inclStd       std dev for gaussian inclination dist\n"\
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
@@ -948,7 +947,7 @@ int main( int argc, char *argv[] )
     {"longitude",               required_argument, 0,                'v'},
     {"latitude",                required_argument, 0,                'z'},
     {"i-distr",                 required_argument, 0,                'I'},
-    {"inclStd",                 required_argument, 0,                'B'},
+    {"incl-std",                required_argument, 0,                'B'},
     {"fixed-inc",               required_argument, 0,                'C'},   
     {"polarization",            required_argument, 0,                'S'},
     {"sourcecomplete",          required_argument, 0,                'H'},
@@ -983,19 +982,8 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -1650,11 +1638,8 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "LIGO/LSC inspiral injection engine\n"
-            "The CBC group \n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+        fprintf( stdout, "LIGO/LSC inspiral injection engine\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
@@ -1901,7 +1886,7 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "Must specify width for gaussian inclination distribution; "\
-        "use --inclStd.\n" );
+        "use --incl-std.\n" );
     exit( 1 );
   }
   if ( ( iDistr == fixedInclDist ) && ( fixed_inc < 0. ) )
@@ -2283,7 +2268,9 @@ int main( int argc, char *argv[] )
     /* populate the sim_ringdown table */ 
    if ( writeSimRing )
    {
-       memcpy( simRingTable->waveform, waveform,
+       memcpy( simRingTable->waveform, "Ringdown",
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+       memcpy( simRingTable->coordinates, "EQUATORIAL",
           sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;
@@ -2299,13 +2286,14 @@ int main( int argc, char *argv[] )
        simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
        simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
        simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
-       simRingTable->epsilon = 0; 
-       simRingTable->amplitude = 0; 
+       simRingTable->epsilon = 0.01; 
+       simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
        simRingTable->eff_dist_h = simTable->eff_dist_h; 
        simRingTable->eff_dist_l = simTable->eff_dist_l; 
-       simRingTable->hrss = 0;
-       simRingTable->hrss_h = 0;
-       simRingTable->hrss_l = 0;
+       simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
+       // need hplus & hcross in each detector to populate these
+       simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
     }
 
     /* increment current time, avoiding roundoff error;

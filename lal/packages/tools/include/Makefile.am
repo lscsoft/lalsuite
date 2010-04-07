@@ -1,7 +1,6 @@
 pkginclude_HEADERS = \
 	Calibration.h \
 	CoherentEstimation.h \
-	CoincInspiralEllipsoid.h \
 	ComputeDataQualityVector.h \
 	DetResponse.h \
 	DetectorSite.h \
@@ -12,15 +11,11 @@ pkginclude_HEADERS = \
 	LALCalibration.h \
 	LALDetectors.h \
 	LALTrigScanCluster.h \
-	LIGOMetadataTables.h \
-	LIGOMetadataUtils.h \
 	ResampleTimeSeries.h \
 	Segments.h \
 	Sequence.h \
 	Skymap.h \
-	TemplateBankGeneration.h \
 	TimeSeries.h \
-	TrigScanEThincaCommon.h \
 	Units.h
 
 MOSTLYCLEANFILES = .dvi-dep

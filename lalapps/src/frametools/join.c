@@ -22,7 +22,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 
 struct options {
@@ -124,7 +124,7 @@ static struct options parse_command_line(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	static const char history[] = "Created by " PACKAGE "-" VERSION ".";
+	char history[] = "Created by " PACKAGE "-" VERSION ".";
 	FILE *devnull;
 	struct options options;
 	int i;

@@ -64,22 +64,21 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Random.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/lalGitID.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/GenerateBurst.h>
 
-
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
+#include <LALAppsVCSInfo.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -99,6 +98,7 @@ extern int optind, opterr, optopt;
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
 
+/* FIXME:  should be "lalapps_StringSearch" to match the executable */
 #define PROGRAM_NAME "StringSearch"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
@@ -135,6 +135,7 @@ struct CommandLineArgsTag {
   INT4 printsnrflag;          /* flag set to 1 if user wants to print the snr */
   INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
   INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
+  char *comment;              /* for "comment" columns in some tables */
 } CommandLineArgs;
 
 typedef 
@@ -182,7 +183,9 @@ MetadataTable  procparams;
 MetadataTable  searchsumm;
 
 CHAR outfilename[256];
-CHAR ifo[4]; 
+CHAR ifo[4];
+
+double chi2cut[4][3]; 
 
 REAL4 SAMPLERATE;
 
@@ -198,6 +201,9 @@ PassBandParamStruc highpassParams;
 
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+
+/* Reads options in the option file */
+int ReadOptionFile(void);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
@@ -252,7 +258,12 @@ int main(int argc,char *argv[])
   highpassParams.a1   = -1;
   highpassParams.f2   = CommandLineArgs.flow;
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
+  printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
+  /****** ReadOptionFile ******/
+  printf("ReadOptionFile()\n");
+  if (ReadOptionFile()) return 1;
+
   /****** ReadData ******/
   printf("ReadData()\n");
   if (ReadData(CommandLineArgs)) return 2;
@@ -397,7 +408,7 @@ int AddInjections(struct CommandLineArgsTag CLA){
   /* new injection code is double precision, so we need to create a
    * buffer to put the injections in and then quantize to single precision
    * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, GV.ht_proc->data->length);
+  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, (UINT4)GV.ht_proc->data->length);
   memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
   /* Inject the signals into ht_proc -> for printing
@@ -487,7 +498,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int p, pp;
+  int p, pp, ifoindex;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
@@ -513,18 +524,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       
       timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
       
-      if ( *thisEvent ){ /* create a new event */
-	(*thisEvent)->next = XLALCreateSnglBurst();
-	*thisEvent = (*thisEvent)->next;
-      }
-      else /* create the list */
-	*thisEvent = events = XLALCreateSnglBurst();
-            
-      if ( ! *thisEvent ){ /* allocation error */
-	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
-	return 1;
-      }
-
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
       while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
 	     && p<(int)(3*vector->length/4)){
@@ -541,19 +540,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	p++;
       }
 
-      peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pmax );
+      peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
       duration = GV.ht_proc->deltaT * ( pend - pstart );
-
-      starttime = timeNS + (INT8)( 1e9 * GV.ht_proc->deltaT * pstart );
-
-      /* Now copy stuff into event */
-      strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
-      strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
-      strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
+      starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
       
-      /* give trigger a 1 sample fuzz on either side */
-      starttime -= GV.ht_proc->deltaT *1e9;
-      duration += 2*GV.ht_proc->deltaT;
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
@@ -561,6 +551,46 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
         chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
         ndof += (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
       }
+
+ 
+      /* get the ifo index */
+      if(CLA.ChannelName[0]=='L'&&CLA.ChannelName[1]=='1')     /* L1 case */
+	ifoindex=0; 
+      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='1')/* H1 case */
+	ifoindex=1; 
+      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='2')/* H2 case */
+	ifoindex=2; 
+      else                                                     /* V1 case */
+	ifoindex=3; 
+      
+      /* Apply the \chi^{2} cut */
+      if( chi2cut[ifoindex][0]    > -9999
+	  && chi2cut[ifoindex][1] > -9999
+	  && chi2cut[ifoindex][2] > -9999 )
+	if(log10(chi2/ndof)>chi2cut[ifoindex][0]
+	   && log10(chi2/ndof)> chi2cut[ifoindex][1]*log10(fabs(maximum))+chi2cut[ifoindex][2]) continue;
+      
+
+      if ( *thisEvent ){ /* create a new event */
+	(*thisEvent)->next = XLALCreateSnglBurst();
+	*thisEvent = (*thisEvent)->next;
+      }
+      else /* create the list */
+	*thisEvent = events = XLALCreateSnglBurst();
+            
+      if ( ! *thisEvent ){ /* allocation error */
+	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
+	return 1;
+      }
+
+      /* Now copy stuff into event */
+      strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
+      strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
+      strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
+      
+      /* give trigger a 1 sample fuzz on either side */
+      starttime -= round( 1e9 * GV.ht_proc->deltaT );
+      duration += 2 * GV.ht_proc->deltaT;
 
       XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
       XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
@@ -1072,60 +1102,108 @@ int ReadData(struct CommandLineArgsTag CLA){
 
 
 
+/*******************************************************************************/
+
+int ReadOptionFile(void){
+ 
+  FILE * OptionFile;
+  int i,p;
+  char line[80], ifoname[4];
+  float par0, par1, par2;
+
+  /* open option.txt file */
+  /* FIXME : the name of the file could be given in the command line */
+  OptionFile = fopen ("option.txt","r");
+
+  /* default parameters */
+  for(i=0; i<4; i++) for(p=0; p<3; p++) chi2cut[i][p]=-9999.1;
+  
+  /* if the file does not exist, no chi2 cuts */
+  if (OptionFile==NULL){
+    printf("\tNo option file --> no chi2 selection\n");
+    return 0;
+  }
+  
+  /* Read the file line by line */
+  while(fgets(line,sizeof(line),OptionFile)){
+    sscanf (line,"%s %f %f %f",ifoname,&par0,&par1,&par2);
+
+    /* Get the parameter for the specified ifo */
+    if(ifoname[0]=='L'&&ifoname[1]=='1'){     /* L1 case */
+      chi2cut[0][0]=par0; chi2cut[0][1]=par1; chi2cut[0][2]=par2; 
+    }
+    else if(ifoname[0]=='H'&&ifoname[1]=='1'){/* H1 case */
+      chi2cut[1][0]=par0; chi2cut[1][1]=par1; chi2cut[1][2]=par2; 
+    }
+    else if(ifoname[0]=='H'&&ifoname[1]=='2'){/* H2 case */
+      chi2cut[2][0]=par0; chi2cut[2][1]=par1; chi2cut[2][2]=par2; 
+    }
+    else if(ifoname[0]=='V'&&ifoname[1]=='1'){/* V1 case */
+      chi2cut[3][0]=par0; chi2cut[3][1]=par1; chi2cut[3][2]=par2; 
+    }
+    else par0=par1; /* nothing happens */
+    
+  }
+  printf("\tChi2 selection parameters\n");
+  printf("\t-9999.1 means no selection\n");
+  printf("\tL1: %f %f %f \n",chi2cut[0][0],chi2cut[0][1],chi2cut[0][2]);
+  printf("\tH1: %f %f %f \n",chi2cut[1][0],chi2cut[1][1],chi2cut[1][2]);
+  printf("\tH2: %f %f %f \n",chi2cut[2][0],chi2cut[2][1],chi2cut[2][2]);
+  printf("\tV1: %f %f %f \n",chi2cut[3][0],chi2cut[3][1],chi2cut[3][2]);
+  
+  fclose(OptionFile);
+  
+  return 0;
+}
+
 
 /*******************************************************************************/
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
+  static char default_comment[] = "";
   INT4 errflg = 0;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
-    {"bw-flow",                     required_argument, NULL,           'f'},
-    {"bank-freq-start",             required_argument, NULL,           'L'}, 
-    {"bank-lowest-hifreq-cutoff",   required_argument, NULL,           'H'},
-    {"max-mismatch",                required_argument, NULL,           'M'},
-    {"threshold",                   required_argument, NULL,           't'},
-    {"frame-cache",                 required_argument, NULL,           'F'},
-    {"channel-name",                required_argument, NULL,           'C'},
-    {"outfile",                     required_argument, NULL,           'o'},
-    {"gps-end-time",                required_argument, NULL,           'E'},
-    {"gps-start-time",              required_argument, NULL,           'S'},
-    {"injection-file",              required_argument, NULL,           'i'},
-    {"short-segment-duration",      required_argument, NULL,           'd'},
-    {"settling-time",               required_argument, NULL,           'T'},
-    {"sample-rate",                 required_argument, NULL,           's'},
-    {"trig-start-time",             required_argument, NULL,           'g'},
-    {"pad",                         required_argument, NULL,           'p'},
-    {"cusp-search",                 no_argument, NULL,          'c' },
-    {"kink-search",                 no_argument, NULL,          'k' },
-    {"test-gaussian-data",          no_argument, NULL,          'n' },
-    {"test-white-spectrum",         no_argument, NULL,          'w' },
-    {"cluster-events",              required_argument, NULL,          'l' },
-    {"print-spectrum",              no_argument, NULL,          'a' },
-    {"print-fd-filter",             no_argument, NULL,          'b' },    
-    {"print-snr",                   no_argument, NULL,          'r' },        
-    {"print-td-filter",             no_argument, NULL,          'x' },        
-    {"print-data",                  no_argument, NULL,          'y' },        
-    {"print-injection",             no_argument, NULL,          'z' },        
-    {"help",                        no_argument, NULL,          'h' },
+    {"bw-flow",                   required_argument,	NULL,	'f'},
+    {"bank-freq-start",           required_argument,	NULL,	'L'},
+    {"bank-lowest-hifreq-cutoff", required_argument,	NULL,	'H'},
+    {"max-mismatch",              required_argument,	NULL,	'M'},
+    {"threshold",                 required_argument,	NULL,	't'},
+    {"frame-cache",               required_argument,	NULL,	'F'},
+    {"channel",                   required_argument,	NULL,	'C'},
+    {"output",                    required_argument,	NULL,	'o'},
+    {"gps-end-time",              required_argument,	NULL,	'E'},
+    {"gps-start-time",            required_argument,	NULL,	'S'},
+    {"injection-file",            required_argument,	NULL,	'i'},
+    {"short-segment-duration",    required_argument,	NULL,	'd'},
+    {"settling-time",             required_argument,	NULL,	'T'},
+    {"sample-rate",               required_argument,	NULL,	's'},
+    {"trig-start-time",           required_argument,	NULL,	'g'},
+    {"pad",                       required_argument,	NULL,	'p'},
+    {"cusp-search",               no_argument,	NULL,	'c'},
+    {"kink-search",               no_argument,	NULL,	'k'},
+    {"test-gaussian-data",        no_argument,	NULL,	'n'},
+    {"test-white-spectrum",       no_argument,	NULL,	'w'},
+    {"cluster-events",            required_argument,	NULL,	'l'},
+    {"print-spectrum",            no_argument,	NULL,	'a'},
+    {"print-fd-filter",           no_argument,	NULL,	'b'},
+    {"print-snr",                 no_argument,	NULL,	'r'},
+    {"print-td-filter",           no_argument,	NULL,	'x'},
+    {"print-data",                no_argument,	NULL,	'y'},
+    {"print-injection",           no_argument,	NULL,	'z'},
+    {"user-tag",                  required_argument,	NULL,	'j'},
+    {"help",                      no_argument,	NULL,	'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwabrxyzl:f:L:M:D:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   optarg = NULL;
   /* set up xml output stuff */
   /* create the process and process params tables */
   procTable.processTable = XLALCreateProcessTableRow();
   XLALGPSTimeNow(&(procTable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-	exit(1);
-    }
-  else
-    {
-      if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
-	exit(1);
-    }
+  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+    exit(1);
   procparams.processParamsTable = NULL;
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
@@ -1159,6 +1237,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->printfirflag=0;
   CLA->printdataflag=0;
   CLA->printinjectionflag=0;
+  CLA->comment=default_comment;
   
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1292,6 +1371,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       CLA->printfilterflag=1;
       ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
+    case 'j':
+      /* --user-tag */
+      CLA->comment = optarg;
+      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      break;
     case 'r':
       /* fake gaussian noise flag */
       CLA->printsnrflag=1;
@@ -1322,9 +1406,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--bank-freq-start (-L)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
+      fprintf(stdout,"\t--channel (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
-      fprintf(stdout,"\t--outfile (-o)\t\tSTRING\t Name of xml output file.\n");
+      fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate filter.\n");
@@ -1343,7 +1427,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1394,6 +1478,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
+      fprintf(stderr,"Try %s -h \n",argv[0]);
+      return 1;
+    }      
+  if(!(CLA->ChannelName[0] == 'V' || CLA->ChannelName[0] == 'H' || CLA->ChannelName[0] == 'L'))
+    {
+      fprintf(stderr,"The channel name is  not well specified\n");
+      fprintf(stderr,"It should start with H1, H2, L1 or V1\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      

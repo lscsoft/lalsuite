@@ -19,12 +19,6 @@ STOPP_BAYES_SRCS = stopp_bayes.c
 OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
                    olapredfcn_args.c olapredfcn_bars.c
 
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
 ## frame and stochastic library dependant programs
 if FRAME
 if LALFRAME
@@ -62,7 +56,7 @@ pkgpython_DATA = stochastic.py
 endif
 endif
 
-INCLUDES          = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
+INCLUDES          = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD             = $(top_builddir)/src/lalapps/liblalapps.la
 
 if LALSTOCHASTIC
@@ -88,3 +82,6 @@ lalapps_stochastic_bayes: $(srcdir)/stochastic_bayes.in python_config.sed
 	sed -f python_config.sed $(srcdir)/stochastic_bayes.in > \
 		lalapps_stochastic_bayes
 	chmod +x lalapps_stochastic_bayes
+
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

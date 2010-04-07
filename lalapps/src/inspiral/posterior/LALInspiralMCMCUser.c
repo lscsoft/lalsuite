@@ -371,7 +371,10 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 	m2 = mc2mass2(mc,eta);
 	/* This term is the sqrt of m-m term in F.I.M, ignoring dependency on f and eta */
 	parameter->logPrior+=-(5.0/6.0)*logmc;
-
+	if(XLALMCMCCheckParameter(parameter,"logdist"))
+		parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
+	else
+		parameter->logPrior+=2.0*XLALMCMCGetParameter(parameter,"distMpc");
 	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
@@ -484,11 +487,6 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
 	
-	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
-	det_gps.p_gps=&(inputMCMC->epoch);
-	DetTimeAndASource DTAAS; /* This holds the source and the detector */
-	DTAAS.p_source = &(source.equatorialCoords);
-	DTAAS.p_det_and_time=&det_gps;
 	/* This also holds the source and the detector, LAL has two different structs for this! */
 	LALDetAndSource det_source;
 	det_source.pSource=&source;
@@ -511,13 +509,12 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		modelout = fopen(modelname,"w");
 #endif		
 	
-		det_gps.p_detector = (inputMCMC->detector[det_i]); /* Select detector */
-		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
+		TimeFromGC = XLALTimeDelayFromEarthCenter(inputMCMC->detector[det_i]->location, source.equatorialCoords.longitude, source.equatorialCoords.latitude, &(inputMCMC->epoch)); /* Compute time delay */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		
 		
 		
@@ -614,7 +611,11 @@ in the frequency domain */
 	template.eta = eta;
 	template.massChoice = totalMassAndEta;
 	template.fLower = inputMCMC->fLow;
-	template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	if(XLALMCMCCheckParameter(parameter,"distMpc"))
+		template.distance = XLALMCMCGetParameter(parameter,"distMpc"); /* This must be in Mpc, contrary to the docs */
+	else if(XLALMCMCCheckParameter(parameter,"logdist"))
+		template.distance=exp(XLALMCMCGetParameter(parameter,"logdist"));
+
 	template.order=LAL_PNORDER_TWO;
 	template.approximant=inputMCMC->approximant;
 	template.tSampling = 1.0/inputMCMC->deltaT;
@@ -691,12 +692,6 @@ in the frequency domain */
 
 	ci = cos(XLALMCMCGetParameter(parameter,"iota")); /* cos iota */
 
-	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
-	det_gps.p_gps=&(inputMCMC->epoch);
-	DetTimeAndASource DTAAS; /* This holds the source and the detector */
-	DTAAS.p_source = &(source.equatorialCoords);
-	DTAAS.p_det_and_time=&det_gps;
-
 	/* This also holds the source and the detector, LAL has two different structs for this! */
 	LALDetAndSource det_source;
 	det_source.pSource=&source;
@@ -709,8 +704,7 @@ in the frequency domain */
 		#endif
 		chisq=0.0;
 		/* Compute time delay */
-		det_gps.p_detector = (inputMCMC->detector[det_i]); /* Select detector */
-		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
+		TimeFromGC = XLALTimeDelayFromEarthCenter(inputMCMC->detector[det_i]->location, source.equatorialCoords.longitude, source.equatorialCoords.latitude, &(inputMCMC->epoch)); /* Compute time delay */
 		REAL8 time_sin;
 		REAL8 time_cos;
 
@@ -718,38 +712,41 @@ in the frequency domain */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		REAL8 hc,hs;
 		
-		for(idx=lowBin;idx<=highBin;idx++){
+		for(idx=lowBin;idx<highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
 /* Version derived 19/08/08 */
-			REAL8 hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
-			REAL8 hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
+			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
+			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
 			resp_r = det_resp.plus * hc - det_resp.cross * hs;
 			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
-
+			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
+		}
 
 /* Gaussian version */
 /* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
 that LAL uses. Please check this whenever any change is made */
-			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-
+	
 /* Student-t version */
 /*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
 			#endif
-		}
+		
+
+
 		#if DEBUGMODEL !=0
 			fclose(modelout);
 		#endif
@@ -881,12 +878,6 @@ in the frequency domain */
 
 	ci = cos(XLALMCMCGetParameter(parameter,"iota")); /* cos iota */
 
-	LALPlaceAndGPS det_gps; /* This will hold the detector site and epoch of observation */
-	det_gps.p_gps=&(inputMCMC->epoch);
-	DetTimeAndASource DTAAS; /* This holds the source and the detector */
-	DTAAS.p_source = &(source.equatorialCoords);
-	DTAAS.p_det_and_time=&det_gps;
-
 	/* This also holds the source and the detector, LAL has two different structs for this! */
 	LALDetAndSource det_source;
 	det_source.pSource=&source;
@@ -899,8 +890,7 @@ in the frequency domain */
 		#endif
 		chisq=0.0;
 		/* Compute time delay */
-		det_gps.p_detector = (inputMCMC->detector[det_i]); /* Select detector */
-		LALTimeDelayFromEarthCenter(&status,&TimeFromGC,&DTAAS); /* Compute time delay */
+		TimeFromGC = XLALTimeDelayFromEarthCenter(inputMCMC->detector[det_i]->location, source.equatorialCoords.longitude, source.equatorialCoords.latitude, &(inputMCMC->epoch)); /* Compute time delay */
 		REAL8 time_sin;
 		REAL8 time_cos;
 
@@ -908,7 +898,7 @@ in the frequency domain */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
 		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=ci;
+		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);

@@ -104,21 +104,21 @@ LALappsTrackSearchCalibrate( LALStatus*,
 			     TSSearchParams);
 
 void 
-LALappsTrackSearchBandPassing( LALStatus*,
+LALappsTrackSearchBandPassing(
 			       REAL4TimeSeries*,
 			       TSSearchParams);
 
 void 
-LALappsTracksearchRemoveHarmonics( LALStatus*,
+LALappsTracksearchRemoveHarmonics(
 				   REAL4TimeSeries*,
 				   TSSearchParams);
 
-void LALappsTracksearchRemoveHarmonicsFromSegments(LALStatus*,
+void LALappsTracksearchRemoveHarmonicsFromSegments(
 						   REAL4TimeSeries*,
 						   TSSegmentVector*,
 						   TSSearchParams);
 void 
-LALappsTrackSearchPerformInjection( LALStatus*,
+LALappsTrackSearchPerformInjection(
 				    REAL4TimeSeries*,
 				    REAL4TimeSeries*,
 				    TSSearchParams);
@@ -130,7 +130,7 @@ LALappsTrackSearchWhitenSegments( LALStatus*,
 				  TSSearchParams);
 
 void 
-LALappsTrackSearchInitialize(LALStatus*,
+LALappsTrackSearchInitialize(
 			     int argc,
 			     char* argv[],
 			     TSSearchParams*,
@@ -145,7 +145,7 @@ LALappsGetFrameData(LALStatus*,
 		    CHAR*);
 
 void
-LALappsGetAsciiData(LALStatus*,
+LALappsGetAsciiData(
 		    TSSearchParams*,
 		    REAL4TimeSeries*,
 		    CHARVector*);
@@ -189,17 +189,17 @@ LALappsWriteCurveList(LALStatus*,
 		      TSSearchParams*);
 
 void
-LALappsWriteSearchConfig(LALStatus*,
+LALappsWriteSearchConfig(
 			 const CHAR*,
 			 TSSearchParams);
 
 void
-LALappsWriteSearchResults(LALStatus*,
+LALappsWriteSearchResults(
 			  const CHAR*,
 			  TrackSearchOut);
 
 void
-LALappsWriteBreveResults(LALStatus*,
+LALappsWriteBreveResults(
 			 const CHAR*,
 			 TrackSearchOut);
 

@@ -51,10 +51,8 @@
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-#include <lal/lalGitID.h>
 #include <lal/LALErrno.h>
-#include <lalappsGitID.h>
-
+#include <LALAppsVCSInfo.h>
 
 NRCSID( SPININJC, "$Id$");
 RCSID( "$Id$" );
@@ -517,20 +515,16 @@ void LALSetSiteParameters(LALStatus *status,
 {
   SkyPosition           skyPos;
   LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
   LALDetAndSource       detAndSource;
   REAL4 cosiota, splus, scross;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
   LALDetAMResponse      resp;
-  REAL8                 time_diff_ns;
+  REAL8                 time_diff;
   
   /* set up params for the site end times and detector response */
   memset( &skyPos, 0, sizeof(SkyPosition) );
   memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
   memset( &detAndSource, 0, sizeof(LALDetAndSource) );
   
   skyPos.longitude = this_inj->longitude;
@@ -539,12 +533,7 @@ void LALSetSiteParameters(LALStatus *status,
   
   source.equatorialCoords = skyPos;
   source.orientation      = this_inj->polarization;
-  
-  placeAndGPS.p_gps = &(this_inj->geocent_end_time);
-  
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = &skyPos;
-  
+
   detAndSource.pSource = &source;
 
   /*
@@ -556,16 +545,12 @@ void LALSetSiteParameters(LALStatus *status,
   this_inj->h_end_time = this_inj->l_end_time = this_inj->geocent_end_time;
   
   /* lho */
-  placeAndGPS.p_detector = &lho;
-  LAL_CALL( LALTimeDelayFromEarthCenter( status, &time_diff_ns,
-                                         &detTimeAndSource ), status );
-  XLALGPSAdd( &(this_inj->h_end_time), time_diff_ns );
+  time_diff = XLALTimeDelayFromEarthCenter( lho.location, this_inj->longitude, this_inj->latitude, &(this_inj->geocent_end_time) );
+  XLALGPSAdd( &(this_inj->h_end_time), time_diff );
 
   /* llo */
-  placeAndGPS.p_detector = &llo;
-  LAL_CALL( LALTimeDelayFromEarthCenter( status,  &time_diff_ns,
-                                         &detTimeAndSource ), status);
-  XLALGPSAdd( &(this_inj->l_end_time), time_diff_ns );
+  time_diff = XLALTimeDelayFromEarthCenter( llo.location, this_inj->longitude, this_inj->latitude, &(this_inj->geocent_end_time) );
+  XLALGPSAdd( &(this_inj->l_end_time), time_diff );
 
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO times                */
@@ -664,19 +649,8 @@ void LALParserInspiralInjection(LALStatus *status,
     calloc( 1, sizeof(ProcessTable) );
 
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
