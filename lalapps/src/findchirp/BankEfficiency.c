@@ -49,7 +49,7 @@ main (INT4 argc, CHAR **argv )
   UserParametersIn       userParam;
 
   /* --- signal related --- */
-  REAL4Vector            signal;
+  REAL4Vector            signalvec;
   static RandomInspiralSignalIn randIn;
 
   /* --- template bank related --- */
@@ -97,7 +97,7 @@ main (INT4 argc, CHAR **argv )
   templateBank.snglInspiralTable = NULL;
   memset( &templateBank, 0, sizeof( MetadataTable ) );
   memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
-  memset( &signal, 0, sizeof( REAL4Vector ) );
+  memset( &signalvec, 0, sizeof( REAL4Vector ) );
   memset( &mybank, 0, sizeof( Mybank ) );
   memset( &insptmplt, 0, sizeof( InspiralTemplate ) );
   memset( &coarseBankIn, 0, sizeof( InspiralCoarseBankIn ) );
@@ -146,21 +146,21 @@ main (INT4 argc, CHAR **argv )
   /* --- Allocate memory -------------------------------------------------- */
   /* --- First, estimate the size of the signal --- */
   LAL_CALL(BankEfficiencyGetMaximumSize(&status,
-      randIn, coarseBankIn, userParam, &(signal.length)),
+      randIn, coarseBankIn, userParam, &(signalvec.length)),
       &status);
 
   /* --- Set size of the other vectors --- */
-  randIn.psd.length     = signal.length/2 + 1;
-  correlation.length    = signal.length;
+  randIn.psd.length     = signalvec.length/2 + 1;
+  correlation.length    = signalvec.length;
   /* --- Allocate memory for some vectors --- */
-  signal.data      = (REAL4*)LALCalloc(1, sizeof(REAL4) * signal.length);
+  signalvec.data      = (REAL4*)LALCalloc(1, sizeof(REAL4) * signalvec.length);
   correlation.data = (REAL4*)LALCalloc(1, sizeof(REAL4) * correlation.length);
   randIn.psd.data  = (REAL8*)LALCalloc(1, sizeof(REAL8) * randIn.psd.length);
   /* --- Allocate memory for BCV filtering only --- */
   if (userParam.template == BCV)
   {
   	INT4 n;
-  	n = signal.length;
+  	n = signalvec.length;
     bankefficiencyBCV.FilterBCV1.length = n;
     bankefficiencyBCV.FilterBCV2.length = n;
     bankefficiencyBCV.FilterBCV1.data = (REAL4*)LALCalloc(1, sizeof(REAL4) * n);
@@ -190,8 +190,8 @@ main (INT4 argc, CHAR **argv )
   }
 
   /* --- Estimate the fft's plans ----------------------------------------- */
-  LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
-  LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
+  LALCreateForwardRealFFTPlan(&status, &fwdp, signalvec.length, 0);
+  LALCreateReverseRealFFTPlan(&status, &revp, signalvec.length, 0);
 
   /* --- The overlap structure -------------------------------------------- */
   overlapin.nBegin      = 0;
@@ -206,11 +206,11 @@ main (INT4 argc, CHAR **argv )
   if ((userParam.template == BCV) )
   {
     LAL_CALL( BankEfficiencyCreatePowerVector(&status,
-       &(bankefficiencyBCV.powerVector), randIn, signal.length),  &status);
+       &(bankefficiencyBCV.powerVector), randIn, signalvec.length),  &status);
 
     BankEfficiencyCreateBCVMomentVector(
         &(bankefficiencyBCV.moments), &coarseBankIn.shf,randIn.param.tSampling,
-        randIn.param.fLower, signal.length);
+        randIn.param.fLower, signalvec.length);
   }
 
   /* ------------------------------------------------------------------------ */
@@ -229,17 +229,17 @@ main (INT4 argc, CHAR **argv )
     /* --- initialisation for each simulation --- */
     BankEfficiencyInitOverlapOutputIn(&overlapOutputBestTemplate);
 
-    /* --- set the fcutoff (signal,overlap) --- */
+    /* --- set the fcutoff (signalvec,overlap) --- */
     randIn.param.fCutoff = userParam.signalfFinal;
     randIn.param.inclination = 0.;
     randIn.param.distance = 1.;
 
     /* --- generate the signal waveform --- */
     LAL_CALL(BankEfficiencyGenerateInputData(&status,
-        &signal, &randIn, userParam), &status);
+        &signalvec, &randIn, userParam), &status);
 
     /* --- populate the main structure of the overlap ---*/
-    overlapin.signal = signal;
+    overlapin.signal = signalvec;
 
     /*  --- populate the insptmplt with the signal parameter --- */
     insptmplt = randIn.param; /* set the sampling and other common parameters */
@@ -551,7 +551,7 @@ main (INT4 argc, CHAR **argv )
   LALFree(randIn.psd.data);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
 
-  LALFree(signal.data);
+  LALFree(signalvec.data);
   LALFree(correlation.data);
 
   LALDestroyRealFFTPlan(&status,&fwdp);
@@ -2033,7 +2033,7 @@ void BankEfficiencyCreatePsd(
 
 void BankEfficiencyGenerateInputData(
   LALStatus               *status,
-  REAL4Vector             *signal,
+  REAL4Vector             *signalvec,
   RandomInspiralSignalIn  *randIn,
   UserParametersIn         userParam)
 {
@@ -2048,7 +2048,7 @@ void BankEfficiencyGenerateInputData(
   if (randnStartPad==1)
   {
     randIn->param.nStartPad = (int)( (float)rand() /
-        (float)RAND_MAX*signal->length/2);
+        (float)RAND_MAX*signalvec->length/2);
   }
 
   trial = 0 ;
@@ -2127,7 +2127,7 @@ void BankEfficiencyGenerateInputData(
           }
         }
       }
-      LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+      LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
       CHECKSTATUSPTR(status);
     }
     else /* EOB , T1 and so on*/
@@ -2162,7 +2162,7 @@ void BankEfficiencyGenerateInputData(
         randIn->param.mass1 = 11; /*dummy but valid values overwritten later*/
         randIn->param.mass1 = 11;
 
-        LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+        LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
         CHECKSTATUSPTR(status);
         randIn->param.massChoice = temp;
       }
@@ -2203,7 +2203,7 @@ void BankEfficiencyGenerateInputData(
       }
 
       /*Here, we  randomize the masses*/
-      LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+      LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
       CHECKSTATUSPTR(status);
     }
   }
@@ -2216,7 +2216,7 @@ void BankEfficiencyGenerateInputData(
   if (randIn->type == 1)
   {
     randIn->param.massChoice = m1Andm2;
-    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+    LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
     CHECKSTATUSPTR(status);
   }
 
@@ -2224,7 +2224,7 @@ void BankEfficiencyGenerateInputData(
   if (vrbflg)
   {
   BankEfficiencyPrintMessage(" ... done\n");
-  BankEfficiencySaveVector(BANKEFFICIENCY_ASCIISIGNAL, *signal,
+  BankEfficiencySaveVector(BANKEFFICIENCY_ASCIISIGNAL, *signalvec,
      randIn->param.tSampling);
   }
 
