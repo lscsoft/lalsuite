@@ -114,6 +114,14 @@ struct coh_PTF_params {
   int          writeFilterOutput;
 };
 
+struct bankTemplateOverlaps {
+  REAL8Array  *PTFM[LAL_NUM_IFO];
+};
+
+struct bankDataOverlaps {
+  COMPLEX8VectorSequence *PTFqVec[LAL_NUM_IFO];
+};
+
 typedef struct tagRingDataSegments
 {
   UINT4                    numSgmnt;
@@ -149,3 +157,50 @@ int cohPTF_output_tmpltbank(
     ProcessParamsTable *processParamsTable,
     struct coh_PTF_params *params
     );
+
+void initialise_sub_bank(
+InspiralTemplate        *PTFBankTemplates,
+FindChirpTemplate       *bankFcTmplts,
+UINT4                    subBankSize,
+UINT4                    numPoints,
+UINT4                    spinBank);
+
+void cohPTFTemplateOverlaps(
+    FindChirpTemplate          *fcTmplt1,
+    FindChirpTemplate          *fcTmplt2,
+    REAL4FrequencySeries       *invspec,
+    UINT4                      spinBank,
+    REAL8Array                 *PTFM);
+
+void cohPTFBankFilters(
+    FindChirpTemplate          *fcTmplt,
+    UINT4                      spinBank,
+    COMPLEX8FrequencySeries    *sgmnt,
+    COMPLEX8FFTPlan            *invBankPlan,
+    COMPLEX8VectorSequence     *PTFqVec,
+    COMPLEX8VectorSequence     *PTFBankqVec);
+
+REAL4 cohPTFDataNormalize(
+    COMPLEX8FrequencySeries    *sgmnt,
+    REAL4FrequencySeries       *invspec);
+
+REAL4 calculate_bank_veto(
+UINT4           numPoints,
+UINT4           position,
+UINT4           subBankSize,
+UINT4           vecLength,
+UINT4           vecLengthTwo,
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+REAL8Array      *PTFM[LAL_NUM_IFO+1],
+struct coh_PTF_params      *params,
+struct bankTemplateOverlaps *bankOverlaps,
+struct bankDataOverlaps *dataOverlaps,
+REAL4TimeSeries         *pValues[10] );
+
+void free_bank_veto_memory(
+  struct bankTemplateOverlaps *bankOverlaps,
+  InspiralTemplate        *PTFBankTemplates,
+  FindChirpTemplate       *bankFcTmplts,
+  UINT4 subBankSize,
+  UINT4 numSegments);

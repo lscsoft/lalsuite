@@ -246,7 +246,7 @@ cohPTFNormalize(
 {
   UINT4         i, j, k, kmin, len, kmax,numPoints,vecLength;
   REAL8         f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
-  COMPLEX8     *PTFq, *qtilde, *inputData;
+  COMPLEX8     *qtilde, *inputData;
   COMPLEX8Vector *qtildeVec,qVec;
   REAL4        *det         = NULL;
   COMPLEX8     *PTFQtilde   = NULL;
@@ -436,4 +436,197 @@ cohPTFNormalize(
 
   
   XLALDestroyCOMPLEX8Vector( qtildeVec );
+}
+
+void
+cohPTFTemplateOverlaps(
+    FindChirpTemplate          *fcTmplt1,
+    FindChirpTemplate          *fcTmplt2,
+    REAL4FrequencySeries       *invspec,
+    UINT4                      spinBank,
+    REAL8Array                 *PTFM
+    )
+{
+  UINT4         i, j, k, kmin, kmax, len,vecLen;
+  REAL8         f_min, deltaF, fFinal;
+  COMPLEX8     *PTFQtilde1   = NULL;
+  COMPLEX8     *PTFQtilde2   = NULL;
+
+
+  PTFQtilde1 = fcTmplt1->PTFQtilde->data;
+  PTFQtilde2 = fcTmplt2->PTFQtilde->data;
+
+  vecLen = 5;
+
+  if (! spinBank )
+  {
+    vecLen = 2;
+    for ( k = kmin; k < kmax ; ++k )
+    {
+      PTFQtilde1[k].im = PTFQtilde1[k+len].re;
+//      PTFQtilde1[k + len].re = PTFQtilde1[k].im;
+      PTFQtilde1[k + len].im = -PTFQtilde1[k].re;
+      PTFQtilde2[k].im = PTFQtilde2[k+len].re;
+//      PTFQtilde2[k + len].re = PTFQtilde2[k].im;
+      PTFQtilde2[k + len].im = -PTFQtilde2[k].re;
+    }
+  }
+
+  deltaF    = invspec->deltaF;
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
+  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
+    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
+/*  fFinal    = 200;*/
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+  len       = invspec->data->length;
+
+  for( i = 0; i < vecLen; ++i )
+  {
+    for ( j = 0; j < vecLen; ++j )
+    {
+      for ( k = kmin; k < kmax ; ++k )
+      {
+        PTFM->data[vecLen * i + j] += (PTFQtilde1[k + i * len].re *
+                            PTFQtilde2[k + j * len].re +
+                            PTFQtilde1[k + i * len].im *
+                            PTFQtilde2[k + j * len].im )
+                            * invspec->data->data[k] ;
+      }
+      PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
+      /* Use the symmetry of M */
+      /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
+    }
+  }
+
+}
+
+void cohPTFBankFilters(
+    FindChirpTemplate          *fcTmplt,
+    UINT4                      spinBank,
+    COMPLEX8FrequencySeries    *sgmnt,
+    COMPLEX8FFTPlan            *invBankPlan,
+    COMPLEX8VectorSequence     *PTFqVec,
+    COMPLEX8VectorSequence     *PTFBankqVec)
+{
+  UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
+  REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
+  COMPLEX8       *inputData,*qtilde;
+  COMPLEX8Vector *qtildeVec,qVec;
+  REAL4          *det         = NULL;
+  COMPLEX8       *PTFQtilde   = NULL;  
+
+
+  numPoints   = PTFqVec->vectorLength;
+  halfNumPoints = 3*numPoints/4 - numPoints/4;
+  len       = sgmnt->data->length;
+  PTFQtilde = fcTmplt->PTFQtilde->data;
+  deltaF    = sgmnt->deltaF;
+  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  f_min     = (REAL4) fcTmplt->tmplt.fLower;
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
+/*  fFinal    = 200;*/
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+  qVec.length = numPoints;
+  qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
+  qtilde = qtildeVec->data;
+
+  if (! spinBank )
+  {
+    vecLen = 1;
+    for ( k = kmin; k < kmax ; ++k )
+    {
+      PTFQtilde[k].im = PTFQtilde[k+len].re;
+//      PTFQtilde[k +len].re = PTFQtilde[k].im;
+      PTFQtilde[k + len].im = -PTFQtilde[k].re;
+    }
+  }
+
+  /* Data params */
+  inputData   = sgmnt->data->data;
+  length      = sgmnt->data->length;
+
+  for ( i = 0; i < vecLen; ++i )
+  {
+    memset( qtildeVec->data, 0,
+        qtildeVec->length * sizeof(COMPLEX8) );
+    /* qtilde positive frequency, not DC or nyquist */
+    for ( k = kmin; k < kmax ; ++k )
+    {
+      r = inputData[k].re;
+      s = inputData[k].im;
+      x = PTFQtilde[i * (numPoints / 2 + 1) + k].re;
+      y = 0 - PTFQtilde[i * (numPoints / 2 + 1) + k].im; /* cplx conj */
+
+      qtilde[k].re = 4. * (r*x - s*y)*deltaF;
+      qtilde[k].im = 4. * (r*y + s*x)*deltaF;
+    }
+
+    qVec.data = PTFqVec->data + (i * numPoints);
+
+    /* inverse fft to get q */
+    XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invBankPlan );
+  }
+  XLALDestroyCOMPLEX8Vector( qtildeVec );
+
+  for ( i = 0; i < vecLen ; i++ )
+  {
+    for ( j = numPoints/4; j < 3*numPoints/4; ++j )
+    {
+      PTFBankqVec->data[i*halfNumPoints + (j-numPoints/4)] = \
+          PTFqVec->data[i*numPoints + j];
+    }
+  }
+
+  /*FILE *outfile;
+
+  outfile = fopen("A_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
+  }
+  fclose(outfile);
+
+  outfile = fopen("B_timeseries.dat","w");
+  for ( i = 0; i < numPoints; ++i)
+  {
+    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
+  }
+  fclose(outfile);*/
+
+}
+
+
+REAL4 cohPTFDataNormalize(
+    COMPLEX8FrequencySeries    *sgmnt,
+    REAL4FrequencySeries       *invspec)
+{
+  REAL4 overlap = 0;
+  UINT4 k,kmin,kmax,len;
+  REAL8 f_min, fFinal,deltaF;
+
+  deltaF    = sgmnt->deltaF;
+  len       = sgmnt->data->length;
+  f_min     = 40;
+  fFinal    = 1000;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+
+
+  for ( k = kmin; k < kmax ; ++k )
+  {
+    overlap += (sgmnt->data->data[k].re *
+        sgmnt->data->data[k].re +
+        sgmnt->data->data[k].im *
+        sgmnt->data->data[k].im )
+        / invspec->data->data[k] ;
+  }
+  return overlap;
+ 
 }

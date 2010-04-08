@@ -179,6 +179,7 @@ int main( int argc, char **argv )
   UINT4                   eventId = 0;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
+  UINT4                   spinTemplates = 0;
   char                    spinFileName[256];
   char                    noSpinFileName[256];
   
@@ -225,6 +226,7 @@ int main( int argc, char **argv )
 
   /* Initialise some of the input file names */
   if ( params->spinBank )
+    spinTemplates = 1;
     strncpy(spinFileName,params->spinBank,sizeof(spinFileName)-1);
   if ( params->noSpinBank )
     strncpy(noSpinFileName,params->noSpinBank,sizeof(noSpinFileName)-1);

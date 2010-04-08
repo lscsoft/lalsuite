@@ -156,6 +156,8 @@ int main( int argc, char **argv )
   InspiralTemplate        *PTFtemplate = NULL;
   InspiralTemplate        *PTFbankhead = NULL;
   FindChirpTemplate       *fcTmplt     = NULL;
+  InspiralTemplate        *PTFBankTemplates = NULL;
+  FindChirpTemplate       *bankFcTmplts = NULL;
   FindChirpTmpltParams    *fcTmpltParams      = NULL;
   FindChirpInitParams     *fcInitParams = NULL;
   UINT4                   numPoints,ifoNumber,spinTemplate;
@@ -179,8 +181,10 @@ int main( int argc, char **argv )
   UINT4                   eventId = 0;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
+  UINT4                   spinBank = 0;
   char                    spinFileName[256];
   char                    noSpinFileName[256];
+  REAL4                   dataNorms[LAL_NUM_IFO];
   
   startTime = time(NULL);
 
@@ -225,7 +229,10 @@ int main( int argc, char **argv )
 
   /* Initialise some of the input file names */
   if ( params->spinBank )
+  {
+    spinBank = 1;
     strncpy(spinFileName,params->spinBank,sizeof(spinFileName)-1);
+  }
   if ( params->noSpinBank )
     strncpy(noSpinFileName,params->noSpinBank,sizeof(noSpinFileName)-1);
 
@@ -384,6 +391,67 @@ int main( int argc, char **argv )
   /* Create an inverser FFT plan */
   invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
+  /* Create the templates needed for the bank veto, if necessary */
+  UINT4 subBankSize = 10;
+  struct bankTemplateOverlaps *bankOverlaps;
+  struct bankDataOverlaps *dataOverlaps;
+  if ( 1 )
+  {
+    bankOverlaps = LALCalloc( (subBankSize+1)*(subBankSize+1),
+        sizeof( *bankOverlaps));
+    dataOverlaps = LALCalloc(subBankSize,sizeof( *dataOverlaps));
+    PTFBankTemplates = LALCalloc( subBankSize, sizeof( *PTFBankTemplates ));
+    bankFcTmplts = LALCalloc( subBankSize, sizeof( *bankFcTmplts ));
+    initialise_sub_bank(PTFBankTemplates,bankFcTmplts,
+        subBankSize,numPoints,spinBank);
+    for ( ui=0 ; ui < subBankSize ; ui++ )
+    {
+      if (! spinBank)
+      {
+        generate_PTF_template(&(PTFBankTemplates[ui]),fcTmplt,
+            fcTmpltParams);
+        for ( uj = 0 ; uj < (numPoints +2) ; uj++ )
+          bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
+      } 
+      else
+        generate_PTF_template(&(PTFBankTemplates[ui]),&(bankFcTmplts[ui]),
+            fcTmpltParams);
+    }
+    /* Calculate the overlap between templates for bank veto */
+    for ( ui = 0 ; ui < subBankSize; ui++ )
+    {
+      for ( uj = 0; uj < subBankSize ; uj++ )
+      {
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( params->haveTrig[ifoNumber] )
+          {
+            if ( spinBank )
+            {
+              bankOverlaps[ui*(subBankSize+1)+uj].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 5, 5 );
+              memset( bankOverlaps[ui*(subBankSize+1)+uj].PTFM[ifoNumber]->data,
+                  0, 25 * sizeof(REAL8) );
+            }
+            else
+            {
+              bankOverlaps[ui*(subBankSize+1)+uj].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 2, 2 );
+              memset( bankOverlaps[ui*(subBankSize+1)+uj].PTFM[ifoNumber]->data,
+                  0, 4 * sizeof(REAL8) );
+            }
+            cohPTFTemplateOverlaps(&(bankFcTmplts[ui]),&(bankFcTmplts[uj]),
+                invspec[ifoNumber],spinBank,
+                bankOverlaps[ui*(subBankSize+1)+uj].PTFM[ifoNumber]);
+          }
+        }
+      }
+    }
+ 
+    verbose("Generated bank veto filters at %ld \n", time(NULL)-startTime);
+        
+  }
+
   /* Read in the tmpltbank xml file */
   if ( params->spinBank )
   {
@@ -424,29 +492,59 @@ int main( int argc, char **argv )
 
   PTFbankhead = PTFtemplate;
   /*fake_template (PTFtemplate);*/
-
-  for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
+  for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
   {
-    /* Determine if we can model this template as non-spinning */
-    if (i >= numNoSpinTmplts)
-      spinTemplate = 1;
-    else
-      spinTemplate = 0;
-    PTFtemplate->approximant = FindChirpPTF;
-    PTFtemplate->order = LAL_PNORDER_TWO;
-    PTFtemplate->fLower = 38.;
-    /* Generate the Q freq series of the template */
-    generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
-
-    verbose("Generated template %d at %ld \n", i, time(NULL)-startTime);
-
-    if (spinTemplate)
-      verbose("Generated spin template %d at %ld \n",i,time(NULL)-startTime);
-    else
-      verbose("Generated no spin template %d at %ld \n",i,time(NULL)-startTime);
-
-    for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
+    if ( 1 )
     {
+      /* Calculate overlap between template and data for bank veto */
+      for ( ui = 0 ; ui < subBankSize ; ui++ )
+      {
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( params->haveTrig[ifoNumber] )
+          {
+            if (spinBank)
+              dataOverlaps[ui].PTFqVec[ifoNumber] =
+                  XLALCreateCOMPLEX8VectorSequence ( 5, 3*numPoints/4 - numPoints/4 );
+            else
+              dataOverlaps[ui].PTFqVec[ifoNumber] =
+                  XLALCreateCOMPLEX8VectorSequence ( 1, 3*numPoints/4 - numPoints/4 );
+            cohPTFBankFilters(&(bankFcTmplts[ui]),spinBank,
+                &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
+                dataOverlaps[ui].PTFqVec[ifoNumber]);
+          }
+        }
+        /* Calculate overlap between data and itself for bank veto */
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( params->haveTrig[ifoNumber] )
+          {
+            dataNorms[ifoNumber] = cohPTFDataNormalize(&segments[ifoNumber]->sgmnt[j],invspec[ifoNumber]);
+            fprintf(stderr,"%e \n",dataNorms[ifoNumber]);
+          }
+        }
+      }
+      verbose("Generated bank veto filters for segment %d at %ld \n",j, time(NULL)-startTime);
+    }
+    PTFtemplate = PTFbankhead;
+
+    for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
+    {
+      /* Determine if we can model this template as non-spinning */
+      if (i >= numNoSpinTmplts)
+        spinTemplate = 1;
+      else
+        spinTemplate = 0;
+      PTFtemplate->approximant = FindChirpPTF;
+      PTFtemplate->order = LAL_PNORDER_TWO;
+      PTFtemplate->fLower = 38.;
+      /* Generate the Q freq series of the template */
+      generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
+
+      if (spinTemplate)
+        verbose("Generated spin template %d at %ld \n",i,time(NULL)-startTime);
+      else
+        verbose("Generated no spin template %d at %ld \n",i,time(NULL)-startTime);
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if ( params->haveTrig[ifoNumber] )
@@ -483,6 +581,37 @@ int main( int argc, char **argv )
           cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],NULL,
               PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
               spinTemplate);
+
+          if ( 1 )
+          {
+          for ( ui = 0 ; ui < subBankSize ; ui++ )
+          {
+            if ( spinBank )
+            {
+              bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 5, 5 );
+              bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 5, 5 );
+              memset( bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]->data,0, 25 * sizeof(REAL8) );
+              memset( bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber]->data,0, 25 * sizeof(REAL8) );
+            }
+            else
+            {
+              bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 2, 2 );
+              bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber]=
+                  XLALCreateREAL8ArrayL( 2, 2, 2 );
+              memset( bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]->data,0, 4 * sizeof(REAL8) );
+              memset( bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber]->data,0, 4 * sizeof(REAL8) );
+            }
+            cohPTFTemplateOverlaps(&(bankFcTmplts[ui]),fcTmplt,
+                invspec[ifoNumber],spinBank,
+                bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]);
+            cohPTFTemplateOverlaps(fcTmplt,&(bankFcTmplts[ui]),
+                invspec[ifoNumber],spinBank,
+                bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber]);
+          }
+          }
 
           verbose("Made filters for ifo %d,segment %d, template %d at %ld \n", 
               ifoNumber,j,i,time(NULL)-startTime);
@@ -529,6 +658,21 @@ int main( int argc, char **argv )
           j,i,time(NULL)-startTime);
       XLALDestroyREAL4TimeSeries(cohSNR);
     }
+    if ( 1 )
+    {
+      for ( ui = 0 ; ui < subBankSize ; ui++ )
+      {
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          if ( dataOverlaps[ui].PTFqVec[ifoNumber] )
+            XLALDestroyCOMPLEX8VectorSequence( dataOverlaps[ui].PTFqVec[ifoNumber]);
+          if ( bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber] )
+            XLALDestroyREAL8Array( bankOverlaps[ui*(subBankSize+1)+subBankSize].PTFM[ifoNumber]);
+          if ( bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber] )
+            XLALDestroyREAL8Array( bankOverlaps[subBankSize*(subBankSize+1)+ui].PTFM[ifoNumber] );
+        }
+      }
+    }
   }
   cohPTF_output_events_xml( params->outputFile, eventList, procpar, params );
 
@@ -538,6 +682,9 @@ int main( int argc, char **argv )
   coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets);
+  free_bank_veto_memory(bankOverlaps,PTFBankTemplates,bankFcTmplts,subBankSize,numSegments);
+  if (dataOverlaps)
+    LALFree(dataOverlaps);
   verbose("Generated output xml file, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
   LALCheckMemoryLeaks();
@@ -1447,6 +1594,33 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
   }
 
+
+  if ( 1 )
+  {
+    for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
+    {
+      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+      {
+        check = 1;
+        for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
+        {
+          if (l < 0)
+            l = 0;
+          if (l > (INT4)(cohSNR->data->length-1))
+            break;
+          if (cohSNR->data->data[l] > cohSNR->data->data[i-numPoints/4])
+          {
+            check = 0;
+            break;
+          }
+        }
+//        if (check)
+//        {
+//          calculate_bank_veto
+//        }
+      }
+    }
+  }
   /*outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
