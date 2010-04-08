@@ -1154,6 +1154,7 @@ void LALPSpinInspiralRDEngine (
       XLALDestroyCOMPLEX8Vector( modefreqs );
       ABORTXLAL( status );
     }  
+  fprintf(stderr,"modefreq=%11.3e\n",modefreqs->data[0].re/2./LAL_PI);
   omegaRD=modefreqs->data[0].re * unitHz / LAL_PI / 2.;    
   /* If Nyquist freq. <  220 QNM freq., do not attach RD */
   /* Note that we cancelled a factor of 2 occuring on both sides */
