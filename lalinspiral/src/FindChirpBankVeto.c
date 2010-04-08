@@ -45,6 +45,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/LALComplex.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <time.h>
@@ -444,23 +445,17 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		}//end autocorrelation computation
 
 	    }
+
 	    /*
 	     * Fill in the cross-correlation matrix with computed values.
 	     * The matrix is hermitian so the imaginary flips sign.
 	     */
-	    /* FIXME, THIS COMMENTED OUT BIT IS "CORRECT"
+
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrReal;
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) crossCorrImag;
 
 	    bankVetoData->ccMat->data[col*bankVetoData->length + row].re = (REAL4) crossCorrReal;
 	    bankVetoData->ccMat->data[col*bankVetoData->length + row].im = (REAL4) -crossCorrImag;
-            */
-
-	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrReal;
-	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) 0.0-crossCorrImag;
-
-	    bankVetoData->ccMat->data[col*bankVetoData->length + row].re = (REAL4) crossCorrReal;
-	    bankVetoData->ccMat->data[col*bankVetoData->length + row].im = (REAL4) crossCorrImag;
 
 	    /* Store normalization factors normMat(i) = sqrt(<hi|hi>) (see below) */
 	    if ( row == col )
@@ -503,32 +498,27 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 {
 
     /* SNR (and derived quantities) for reference (input) template */
-    REAL8 rowSNR_real = 0;
-    REAL8 rowSNR_imag = 0;
-    REAL8 rowSNR_mag = 0;
-    REAL8 rowSNR_phi = 0;
+    COMPLEX8 rowSNR = {0.0,0.0};
 
     /* SNR (and derived quantities) for comparison templates */
-    REAL8 colSNR_real = 0;
-    REAL8 colSNR_imag = 0;
+    COMPLEX8 colSNR = {0.0,0.0};
 
     /* index to loop over comparison templates */
-    UINT8 col;
+    UINT4 col;
 
     /* Time index at which to get the SNR of the comparison template.  This
      * will be related to the SNR index of the input template by the time shift
      * introduced in the templates in the cross-correlation computation. */
-    UINT8 snrIndexCol;
+    UINT4 snrIndexCol;
 
     /* The time shift between the reference and comparison template */
     REAL4 deltaTimeShift;
 
     /* temporary storage for cross-corr data */
-    COMPLEX16 crossCorr;
-    REAL8 crossCorr_mag;
+    COMPLEX8 crossCorr;
 
     /* complex cross correlation */
-    COMPLEX16 chisq;
+    COMPLEX8 chisq;
 
     /* normalization factor to make chi-sq distributed */
     REAL4 bankNorm;
@@ -536,20 +526,13 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     /* Output of function */
     REAL4 chisq_mag = 0;
 
-
     /* Handle trivial case */
     if (bankVetoData->length == 1) return 0;
 
     /* Lookup SNR for template A at time given by snrIndexRow */
-    rowSNR_real = bankVetoData->qVecArray[row]->data[snrIndexRow].re
-      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
-    rowSNR_imag = bankVetoData->qVecArray[row]->data[snrIndexRow].im
-      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
+    rowSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[row]->data[snrIndexRow],
+             sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm) );
 
-    rowSNR_mag = sqrt(rowSNR_real * rowSNR_real + rowSNR_imag * rowSNR_imag);
-    rowSNR_phi = atan2(rowSNR_imag, rowSNR_real);
-
-    chisq_mag = 0;
     *dof = 0;
 
     /*
@@ -559,37 +542,35 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
      */
     for (col = 0; col < bankVetoData->length; col++)
     {
+
+        /* don't do the diagonal case as it is trivial */
 	if (row == col) continue;
-	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
 
-	/* Phase shift the cross correlation of template B with template B by rowSNR_phi */
-	crossCorr.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(rowSNR_phi)
-	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(rowSNR_phi);
-	crossCorr.im = bankVetoData->ccMat->data[row*bankVetoData->length + col].im * cos(rowSNR_phi)
-	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(rowSNR_phi);
+	crossCorr = bankVetoData->ccMat->data[row*bankVetoData->length + col];
 
-	crossCorr_mag = crossCorr.re * crossCorr.re + crossCorr.im * crossCorr.im;
-	bankNorm = 2.0 - crossCorr_mag;
+        /* having the crossCorr == 0 means that we are outside the valid range for this subbank */
+	if (crossCorr.re == 0 && crossCorr.im == 0) continue;
+
+	/* this keeps track of the normalization factor to make it \chi^2 distributed */
+	bankNorm = 2.0 - XLALCOMPLEX8Abs2(crossCorr);
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
 	/* Look at the col SNR deltaTimeShift/deltaT samples in the past.  The choice of sign
 	 * depends on the sign convention choice made in computing ccmat. */
+	/* FIXME there are not any time shifts yet, so this is a no-op for now */
+	/* i.e. SNRIndexCol = SNRIndexRow */
 	deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
 	snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
 
-	colSNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
-	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
-	colSNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
-	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
-
-	chisq.re = colSNR_real - crossCorr.re * (rowSNR_mag);
-	chisq.im = colSNR_imag - crossCorr.im * (rowSNR_mag);
-	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
+	/* Get the "column" snr in the same way as the row */
+	colSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[col]->data[snrIndexCol],
+		                      sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm) );
+	/* Subtract the expected SNR from the measured one */
+	chisq = XLALCOMPLEX8Sub(colSNR, XLALCOMPLEX8Mul(rowSNR, crossCorr));
+	/* Square the result */
+	chisq_mag += XLALCOMPLEX8Abs2(chisq);
 	(*dof)+=2;
-
     }
-
-    /*FIXME Normalization now not necessarily chisquare distributed */
     return chisq_mag;
 }
 
