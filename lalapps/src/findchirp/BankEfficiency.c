@@ -672,6 +672,7 @@ void BankEfficiencyPrintResults(
   RandomInspiralSignalIn   randIn,
   BankEfficiencySimulation simulation)
 {
+  (void)simulation;
   fprintf(stdout,
   "%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %d\n",
       result.mass1_trigger, result.mass2_trigger,
