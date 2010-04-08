@@ -287,10 +287,10 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 tmpltRowImag = 0;
     REAL8 tmpltColReal = 0;
     REAL8 tmpltColImag = 0;
-    REAL8 tmpltRowRealShifted = 0;
-    REAL8 tmpltRowImagShifted = 0;
-    REAL8 tmpltColRealShifted = 0;
-    REAL8 tmpltColImagShifted = 0;
+    //REAL8 tmpltRowRealShifted = 0;
+    //REAL8 tmpltRowImagShifted = 0;
+    //REAL8 tmpltColRealShifted = 0;
+    //REAL8 tmpltColImagShifted = 0;
 
     /*
      * The cumulative real and imaginary parts of the cross-correlation
@@ -317,13 +317,13 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 spectralDensity;
 
    /* Parameters used to time shift templates */
-     REAL8 phaseOffsetRow;
-     REAL8 phaseOffsetCol;
+   //REAL8 phaseOffsetRow;
+   //REAL8 phaseOffsetCol;
 
     /* PSD bucket frequency used for chirp time offset */
-    double fBucket = 150.0;
+    //double fBucket = 150.0;
     /* FIXME this should be uncommented when time shifts are added to the bank veto */
-    UNUSED(fBucket);
+
     UNUSED(deltaT);
 
     /* Allocate memory for workspace and the autocorrelation if necessary */
@@ -392,12 +392,13 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 			tmpltColReal = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
 			tmpltColImag = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-			
-			/*
+			 
+			/* FIXME this is not currently being done
 			 * Time shift tmpltRow forward by timeshift[row] and
 			 * tmpltCol forward by timeshift[col].
 			 */
 
+			/*
 			phaseOffsetRow = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[row]);
 			phaseOffsetCol = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[col]);
 
@@ -406,15 +407,20 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 			tmpltColRealShifted = tmpltColReal*cos(phaseOffsetCol) - tmpltColImag*sin(phaseOffsetCol);
 			tmpltColImagShifted = tmpltColImag*cos(phaseOffsetCol) + tmpltColReal*sin(phaseOffsetCol);
-
+			*/
 
 			/*
 			 *  tmpltRow* x tmpltCol/Sn = (tmpltRowReal-i*tmpltRowImag) x (tmpltColReal+i*tmpltColImag) / Sn =
 			 *     (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag) / Sn +
 			 *   i*(tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal) / Sn
 			 */
+			/* FIXME put this back once time shifts are added
 			crossCorrReal += (REAL8) (tmpltRowRealShifted*tmpltColRealShifted + tmpltRowImagShifted*tmpltColImagShifted)/spectralDensity;
 			crossCorrImag += (REAL8) (tmpltRowRealShifted*tmpltColImagShifted - tmpltRowImagShifted*tmpltColRealShifted)/spectralDensity;
+			*/
+
+			crossCorrReal += (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
+			crossCorrImag += (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
 		    }
 
 		    if ( row == col )
@@ -565,10 +571,14 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	/* Get the "column" snr in the same way as the row */
 	colSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[col]->data[snrIndexCol],
 		                      sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm) );
+
 	/* Subtract the expected SNR from the measured one */
-	chisq = XLALCOMPLEX8Sub(colSNR, XLALCOMPLEX8Mul(rowSNR, crossCorr));
+	//chisq = XLALCOMPLEX8Sub(colSNR, XLALCOMPLEX8Mul(crossCorr,rowSNR));
 	/* Square the result */
-	chisq_mag += XLALCOMPLEX8Abs2(chisq);
+	//chisq_mag += XLALCOMPLEX8Abs2(chisq);
+	chisq_mag += abs(XLALCOMPLEX8Abs2(colSNR) - XLALCOMPLEX8Abs2(rowSNR)*XLALCOMPLEX8Abs2(crossCorr));
+
+	//fprintf(stderr, "rmag %.2f cmag %.2f ratio %.2f ccmag %.2f r %.2f + %.2fi c %.2f + %.2fi cc %.2f + %.2fi chisq %.2f + %.2fi chisqmag %.2f\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im) / sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(crossCorr.re*crossCorr.re+crossCorr.im*crossCorr.im), rowSNR.re, rowSNR.im, colSNR.re, colSNR.im, crossCorr.re, crossCorr.im, chisq.re, chisq.im, chisq_mag);
 	(*dof)+=2;
     }
     return chisq_mag;
