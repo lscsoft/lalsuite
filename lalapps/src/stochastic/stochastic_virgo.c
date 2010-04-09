@@ -641,7 +641,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* generate hann windows */
     hannWindow1 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate1));
     hannWindow2 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate2));
-                
+
     /* construct Tukey windows */
     /* FIXME:  do you know about XLALCreateTukeyREAL4Window()? */
     for (i = 0; (unsigned) i < hannWindow1->data->length / 2; i++)
