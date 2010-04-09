@@ -135,8 +135,7 @@ static void coh_PTF_cleanup(
 int main( int argc, char **argv )
 {
   INT4 i,j,k;
-  UINT4 ui,uj,uk;
-  static LALStatus      status;
+  UINT4 ui;
   struct coh_PTF_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
@@ -571,9 +570,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
                        char *ifoChannel, char *dataCache  )
 {
   int stripPad = 0;
-  int ninj;
   REAL4TimeSeries *channel = NULL;
-  UINT4 j;
 
   /* compute the start and duration needed to pad data */
   params->frameDataStartTime = params->startTime;

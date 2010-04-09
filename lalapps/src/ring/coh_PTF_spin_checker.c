@@ -29,7 +29,7 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
 static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
 static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
 static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       char *ifoChannel, char *dataCache );
+                       const char *ifoChannel, const char *dataCache );
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
     REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
@@ -72,22 +72,6 @@ cohPTFNormalize(
     COMPLEX8FFTPlan            *invPlan,
     UINT4                      spinTemplate
     );
-void cohPTFmodBasesUnconstrainedStatistic(
-    REAL4TimeSeries         *cohSNR,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    struct coh_PTF_params   *params,
-    UINT4                   spinTemplate,
-    UINT4                   singleDetector,
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
-    INT4                    segmentNumber,
-    REAL4TimeSeries         *pValues[10],
-    REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *nullSNR,
-    REAL4TimeSeries         *traceSNR
-    );
 int cohPTFspinChecker(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
@@ -97,23 +81,8 @@ int cohPTFspinChecker(
     REAL8                   *Fcross,
     INT4                    segmentNumber
 );
-void cohPTFaddTriggers(
-    struct coh_PTF_params   *params,
-    MultiInspiralTable      **eventList,
-    MultiInspiralTable      **thisEvent,
-    REAL4TimeSeries         *cohSNR,
-    InspiralTemplate        PTFTemplate,
-    UINT4                   *eventId,
-    UINT4                   spinTrigger,
-    UINT4                   singleDetector,
-    REAL4TimeSeries         *pValues[10],
-    REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *nullSNR,
-    REAL4TimeSeries         *traceSNR
-);
 
 static void coh_PTF_cleanup(
-    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
@@ -136,8 +105,7 @@ static void coh_PTF_cleanup(
 
 int main( int argc, char **argv )
 {
-  INT4 i,j,k;
-  static LALStatus      status;
+  INT4 i,j;
   struct coh_PTF_params      *params    = NULL;
   ProcessParamsTable      *procpar   = NULL;
   REAL4FFTPlan            *fwdplan   = NULL;
@@ -170,15 +138,11 @@ int main( int argc, char **argv )
   REAL8                   *Fplus;
   REAL8                   *Fcross;
   REAL8                   detLoc[3];
-  REAL4TimeSeries         *cohSNR = NULL;
   REAL4TimeSeries         *pValues[10];
   REAL4TimeSeries         *gammaBeta[2];
-  REAL4TimeSeries         *nullSNR;
-  REAL4TimeSeries         *traceSNR;
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
   MultiInspiralTable      *thisEvent = NULL;
-  UINT4                   eventId = 0;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
   char                    bankFileName[256];
@@ -223,8 +187,6 @@ int main( int argc, char **argv )
   }   
   gammaBeta[0] = NULL;
   gammaBeta[1] = NULL;
-  nullSNR = NULL;
-  traceSNR = NULL;
 
   if (numDetectors == 0 )
   {
@@ -438,7 +400,7 @@ int main( int argc, char **argv )
   verbose("Generated output xml files, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
 
-  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
+  coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets);
   while ( PTFSpinTmpltHead )
@@ -488,12 +450,10 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
 
 /* gets the data, performs any injections, and conditions the data */
 static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       char *ifoChannel, char *dataCache  )
+                       const char *ifoChannel, const char *dataCache  )
 {
   int stripPad = 0;
-  int ninj;
   REAL4TimeSeries *channel = NULL;
-  UINT4 j;
 
   /* compute the start and duration needed to pad data */
   params->frameDataStartTime = params->startTime;
@@ -1306,7 +1266,6 @@ int cohPTFspinChecker(
 }
         
 static void coh_PTF_cleanup(
-    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,

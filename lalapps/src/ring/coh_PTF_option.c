@@ -44,10 +44,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
   static struct coh_PTF_params localparams;
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  const CHAR                  *ifoArg[LAL_NUM_IFO] =
-                                   {"g1-triggers", "h1-triggers",
-                                    "h2-triggers", "l1-triggers",
-                                    "t1-triggers", "v1-triggers"};
   struct option long_options[] =
   {
     { "verbose", no_argument, &vrbflg, 1 },
@@ -63,6 +59,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1},
     { "do-null-stream"     ,no_argument, &localparams.doNullStream,1},
     { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
+    { "do-bank-veto"       ,no_argument, &localparams.doBankVeto,1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
     {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
@@ -320,7 +317,6 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   UINT4 ifoNumber;
   INT8 startTime;
   INT8 endTime;
-  int validChannelIFO;
 
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
@@ -376,7 +372,9 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
   sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
 
-  sanity_check( ! ((params->segmentsToDoList  != "^-$") && (params->analyzeInjSegsOnly)));
+// This needs fixing. Need a check on whether segmentsToDoList and 
+// analyzeInjSegsOnly have been given.
+//  sanity_check( ! ((params->segmentsToDoList  != "^-$") && (params->analyzeInjSegsOnly)));
 
   return 0;
 }
@@ -462,6 +460,9 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
   fprintf( stderr, "--trig-time-window=window Keep loudest trigger within window seconds\n" );
+  fprintf( stderr, "--do-null-stream Calculate Null SNR for potential triggers\n");
+  fprintf( stderr, "--do-trace-snr Calculate Trace SNR for potential triggers \n");
+  fprintf( stderr, "--do-bank-veto Calculate Bank Veto for potential triggers \n");
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );

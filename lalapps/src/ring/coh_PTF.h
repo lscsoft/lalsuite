@@ -106,6 +106,7 @@ struct coh_PTF_params {
   int          analyzeInjSegsOnly;
   int          doNullStream;
   int          doTraceSNR;
+  int          doBankVeto;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -165,6 +166,25 @@ UINT4                    subBankSize,
 UINT4                    numPoints,
 UINT4                    spinBank);
 
+void
+cohPTFTemplate (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+    );
+
+void
+cohPTFNormalize(
+    FindChirpTemplate          *fcTmplt,
+    REAL4FrequencySeries       *invspec,
+    REAL8Array                 *PTFM,
+    REAL8Array                 *PTFN,
+    COMPLEX8VectorSequence     *PTFqVec,
+    COMPLEX8FrequencySeries    *sgmnt,
+    COMPLEX8FFTPlan            *invPlan,
+    UINT4                      spinTemplate
+    );
+
 void cohPTFTemplateOverlaps(
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
@@ -189,18 +209,21 @@ UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
 UINT4           vecLength,
-UINT4           vecLengthTwo,
 REAL4           a[LAL_NUM_IFO],
 REAL4           b[LAL_NUM_IFO],
+REAL4           SNR,
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
 struct coh_PTF_params      *params,
 struct bankTemplateOverlaps *bankOverlaps,
+struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
-REAL4TimeSeries         *pValues[10] );
+REAL4TimeSeries         *pValues[10],
+REAL4TimeSeries         *gammaBeta[2] );
 
 void free_bank_veto_memory(
-  struct bankTemplateOverlaps *bankOverlaps,
+  struct bankTemplateOverlaps *bankNormOverlaps,
   InspiralTemplate        *PTFBankTemplates,
   FindChirpTemplate       *bankFcTmplts,
   UINT4 subBankSize,
-  UINT4 numSegments);
+  struct bankTemplateOverlaps *bankOverlaps,
+  struct bankDataOverlaps *dataOverlaps);

@@ -239,7 +239,6 @@ int cohPTF_output_tmpltbank(
 /* routine to create process table */
 ProcessTable *ring_create_process_table( struct coh_PTF_params *params )
 {
-  LALStatus status = blank_status;
   ProcessTable *processTable = NULL;
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );
@@ -352,26 +351,6 @@ int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
   LALCPrintFrequencySeries( series, fname );
   return 0;
 }
-
-
-/* routine to write a ringdown template bank */
-int write_bank( RingTemplateBank *bank )
-{
-  const char *fname = "RING_BANK.dat";
-  FILE *fp;
-  UINT4 tmplt;
-  verbose( "writing template bank to file %s\n", fname );
-  fp = fopen( fname, "w" );
-  fprintf( fp, "# template bank\n" );
-  fprintf( fp, "# template phase=%e\n", bank->tmplt->phase );
-  fprintf( fp, "# frequency (Hz)\tquality\n" );
-  for ( tmplt = 0; tmplt < bank->numTmplt; ++tmplt )
-    fprintf( fp, "%e\t%e\n", bank->tmplt[tmplt].frequency,
-        bank->tmplt[tmplt].quality );
-  fclose( fp );
-  return 0;
-}
-
 
 /* routine to construct an appropriately-formatted filename from series name */
 static int generate_file_name( char *fname, size_t size,

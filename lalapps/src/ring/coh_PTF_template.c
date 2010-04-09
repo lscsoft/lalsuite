@@ -248,7 +248,6 @@ cohPTFNormalize(
   REAL8         f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
   COMPLEX8     *qtilde, *inputData;
   COMPLEX8Vector *qtildeVec,qVec;
-  REAL4        *det         = NULL;
   COMPLEX8     *PTFQtilde   = NULL;
   
 
@@ -276,7 +275,7 @@ cohPTFNormalize(
   f_min     = 40;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-/*  fFinal    = 200;*/
+  fFinal    = 1000;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -362,7 +361,7 @@ cohPTFNormalize(
 
   /* A routine to print out the M^IJ information */
  
-  FILE *outfile;
+//  FILE *outfile;
   /*
   outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
@@ -456,8 +455,19 @@ cohPTFTemplateOverlaps(
   PTFQtilde1 = fcTmplt1->PTFQtilde->data;
   PTFQtilde2 = fcTmplt2->PTFQtilde->data;
 
-  vecLen = 5;
+  len       = invspec->data->length;
+  deltaF    = invspec->deltaF;
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
+  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
+    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
+  fFinal    = 1000;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
+  vecLen = 5;
   if (! spinBank )
   {
     vecLen = 2;
@@ -472,17 +482,6 @@ cohPTFTemplateOverlaps(
     }
   }
 
-  deltaF    = invspec->deltaF;
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
-  f_min     = 40;
-  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
-  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
-    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
-/*  fFinal    = 200;*/
-  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
-  len       = invspec->data->length;
 
   for( i = 0; i < vecLen; ++i )
   {
@@ -501,6 +500,7 @@ cohPTFTemplateOverlaps(
       /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
     }
   }
+//  fprintf(stderr,"PTFM calc in func: %e \n",PTFM->data[0]);
 
 }
 
@@ -516,7 +516,6 @@ void cohPTFBankFilters(
   REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
-  REAL4          *det         = NULL;
   COMPLEX8       *PTFQtilde   = NULL;  
 
 
@@ -531,7 +530,7 @@ void cohPTFBankFilters(
   f_min     = 40;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-/*  fFinal    = 200;*/
+  fFinal    = 1000;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -547,6 +546,8 @@ void cohPTFBankFilters(
       PTFQtilde[k + len].im = -PTFQtilde[k].re;
     }
   }
+  else
+    vecLen = 5;
 
   /* Data params */
   inputData   = sgmnt->data->data;
@@ -627,6 +628,7 @@ REAL4 cohPTFDataNormalize(
         sgmnt->data->data[k].im )
         / invspec->data->data[k] ;
   }
+  overlap = overlap * deltaF;
   return overlap;
  
 }
