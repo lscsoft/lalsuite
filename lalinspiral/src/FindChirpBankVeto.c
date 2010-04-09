@@ -537,8 +537,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	/* Square the result */
 	chisq_mag += XLALCOMPLEX8Abs2(chisq);
 
-	//fprintf(stderr, "rmag %.2f cmag %.2f chisqmag %.2f colSNR %.2f + %.2fi expSNR %.2f + %.2fi\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im), chisq_mag, colSNR.re, colSNR.im, expSNR.re, expSNR.im);
-
 	(*dof)+=2;
     }
     return chisq_mag;
