@@ -142,7 +142,6 @@ int main( int argc, char **argv )
   REAL4TimeSeries         *gammaBeta[2];
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
-  MultiInspiralTable      *thisEvent = NULL;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
   char                    bankFileName[256];
@@ -476,7 +475,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
           params->strainData,
-          params->highpassFrequency, 1. );
+          params->highpassFrequency);
       stripPad = 1;
     }
     else
