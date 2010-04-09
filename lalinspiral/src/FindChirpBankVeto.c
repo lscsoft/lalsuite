@@ -57,7 +57,6 @@ NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 #define UNUSED(expr) do { (void)(expr); } while(0)
 
 /* Some static function prototypes */
-
 static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
 static int compareTemplateByMass (const void * a, const void * b);
@@ -71,6 +70,18 @@ InspiralTemplate *
 XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
 InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
+
+/* helper function */
+
+static COMPLEX8 rotate(REAL4 a, REAL4 phi)
+	{
+	COMPLEX8 out;
+        //out.re = a.re * cos(phi) - a.im * sin(phi); 
+	//out.im = a.im * cos(phi) + a.re * sin(phi);
+        out.re = a * cos(phi); 
+	out.im = a * sin(phi);
+	return out;
+	}
 
 /* FIXME this should be used when time offsets are applied to the bank veto */
 /* A convenience function to compute the time between two frequencies       */
@@ -508,6 +519,7 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
     /* SNR (and derived quantities) for comparison templates */
     COMPLEX8 colSNR = {0.0,0.0};
+    COMPLEX8 expSNR = {0.0,0.0};
 
     /* index to loop over comparison templates */
     UINT4 col;
@@ -571,14 +583,17 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	/* Get the "column" snr in the same way as the row */
 	colSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[col]->data[snrIndexCol],
 		                      sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm) );
+	
+	expSNR = rotate(XLALCOMPLEX8Abs(rowSNR)*XLALCOMPLEX8Abs(crossCorr), XLALCOMPLEX8Arg(rowSNR) - XLALCOMPLEX8Arg(crossCorr));
 
 	/* Subtract the expected SNR from the measured one */
-	//chisq = XLALCOMPLEX8Sub(colSNR, XLALCOMPLEX8Mul(crossCorr,rowSNR));
-	/* Square the result */
-	//chisq_mag += XLALCOMPLEX8Abs2(chisq);
-	chisq_mag += abs(XLALCOMPLEX8Abs2(colSNR) - XLALCOMPLEX8Abs2(rowSNR)*XLALCOMPLEX8Abs2(crossCorr));
+	chisq = XLALCOMPLEX8Sub(colSNR, expSNR);
 
-	//fprintf(stderr, "rmag %.2f cmag %.2f ratio %.2f ccmag %.2f r %.2f + %.2fi c %.2f + %.2fi cc %.2f + %.2fi chisq %.2f + %.2fi chisqmag %.2f\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im) / sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(crossCorr.re*crossCorr.re+crossCorr.im*crossCorr.im), rowSNR.re, rowSNR.im, colSNR.re, colSNR.im, crossCorr.re, crossCorr.im, chisq.re, chisq.im, chisq_mag);
+	/* Square the result */
+	chisq_mag += XLALCOMPLEX8Abs2(chisq);
+
+	//fprintf(stderr, "rmag %.2f cmag %.2f chisqmag %.2f colSNR %.2f + %.2fi expSNR %.2f + %.2fi\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), sqrt(colSNR.re*colSNR.re+colSNR.im*colSNR.im), chisq_mag, colSNR.re, colSNR.im, expSNR.re, expSNR.im);
+
 	(*dof)+=2;
     }
     return chisq_mag;
