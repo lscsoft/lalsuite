@@ -54,9 +54,11 @@ $Id$
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 /* macro to "use" unused function parameters */
+
 #define UNUSED(expr) do { (void)(expr); } while(0)
 
 /* Some static function prototypes */
+
 static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
 static int compareTemplateByMass (const void * a, const void * b);
@@ -76,26 +78,10 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 static COMPLEX8 rotate(REAL4 a, REAL4 phi)
 	{
 	COMPLEX8 out;
-        //out.re = a.re * cos(phi) - a.im * sin(phi); 
-	//out.im = a.im * cos(phi) + a.re * sin(phi);
         out.re = a * cos(phi); 
 	out.im = a * sin(phi);
 	return out;
 	}
-
-/* FIXME this should be used when time offsets are applied to the bank veto */
-/* A convenience function to compute the time between two frequencies       */
-#if 0
-static double
-chirp_time_between_f1_and_f2 (double m1,
-			      double m2,
-			      double fLower,
-			      double fUpper,
-			      int order)
-{
-    return XLALFindChirpChirpTime(m1,m2,fLower,order) - XLALFindChirpChirpTime(m1,m2,fUpper,order);
-}
-#endif
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
@@ -249,11 +235,12 @@ XLALComputeFullChisq(
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq, angle, snri, snrk;
+
   /* input, params and norm are unused */
   UNUSED(input);
   UNUSED(params);
-  /* test isn't being done */
 
+  /* test isn't being done */
   if (!bankVetoData->acorrMat) return 0.0;
   chisq = 0;
   chisqnorm = 0;
@@ -274,8 +261,6 @@ XLALComputeFullChisq(
     chisq += tmp * tmp * norm / chisqnorm;
   }
 
-  /*chisq /= chisqnorm;*/
-
   return chisq;
 }
 
@@ -294,14 +279,11 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
      * and added to the cross-correlation integral.  One should remember
      * that the ROW variable gets the complex conjugate in the integral.
      */
+
     REAL8 tmpltRowReal = 0;
     REAL8 tmpltRowImag = 0;
     REAL8 tmpltColReal = 0;
     REAL8 tmpltColImag = 0;
-    //REAL8 tmpltRowRealShifted = 0;
-    //REAL8 tmpltRowImagShifted = 0;
-    //REAL8 tmpltColRealShifted = 0;
-    //REAL8 tmpltColImagShifted = 0;
 
     /*
      * The cumulative real and imaginary parts of the cross-correlation
@@ -327,14 +309,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 sqResp;
     REAL8 spectralDensity;
 
-   /* Parameters used to time shift templates */
-   //REAL8 phaseOffsetRow;
-   //REAL8 phaseOffsetCol;
-
-    /* PSD bucket frequency used for chirp time offset */
-    //double fBucket = 150.0;
-    /* FIXME this should be uncommented when time shifts are added to the bank veto */
-
     UNUSED(deltaT);
 
     /* Allocate memory for workspace and the autocorrelation if necessary */
@@ -347,6 +321,9 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     if ( !bankVetoData->revplan)
       bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
 
+    /* FIXME no time shifts are done yet, we have to linearly shift the phase during
+     * the inner product too
+     */
     /* Decide how to time shift each template if necessary */
     if (!bankVetoData->timeshift)
     {
@@ -354,12 +331,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	/* FIXME TIME SHIFTS ARE TURNED OFF, BUT THIS CODE IS IN PLACE IF SOMEONE WANTS TO INVESTIGATE IT						*/
-	/*    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,	*/
-	/*					   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,						*/
-	/*					   fBucket,												*/
-	/*					   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal,						*/
-	/*					   7) );												*/
 	bankVetoData->timeshift->data[row] = 0.0;
 	}
     }
@@ -404,32 +375,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 			tmpltColReal = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
 			tmpltColImag = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
 			 
-			/* FIXME this is not currently being done
-			 * Time shift tmpltRow forward by timeshift[row] and
-			 * tmpltCol forward by timeshift[col].
-			 */
-
-			/*
-			phaseOffsetRow = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[row]);
-			phaseOffsetCol = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[col]);
-
-			tmpltRowRealShifted = tmpltRowReal*cos(phaseOffsetRow) - tmpltRowImag*sin(phaseOffsetRow);
-			tmpltRowImagShifted = tmpltRowImag*cos(phaseOffsetRow) + tmpltRowReal*sin(phaseOffsetRow);
-
-			tmpltColRealShifted = tmpltColReal*cos(phaseOffsetCol) - tmpltColImag*sin(phaseOffsetCol);
-			tmpltColImagShifted = tmpltColImag*cos(phaseOffsetCol) + tmpltColReal*sin(phaseOffsetCol);
-			*/
-
-			/*
-			 *  tmpltRow* x tmpltCol/Sn = (tmpltRowReal-i*tmpltRowImag) x (tmpltColReal+i*tmpltColImag) / Sn =
-			 *     (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag) / Sn +
-			 *   i*(tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal) / Sn
-			 */
-			/* FIXME put this back once time shifts are added
-			crossCorrReal += (REAL8) (tmpltRowRealShifted*tmpltColRealShifted + tmpltRowImagShifted*tmpltColImagShifted)/spectralDensity;
-			crossCorrImag += (REAL8) (tmpltRowRealShifted*tmpltColImagShifted - tmpltRowImagShifted*tmpltColRealShifted)/spectralDensity;
-			*/
-
 			crossCorrReal += (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
 			crossCorrImag += (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
 		    }
