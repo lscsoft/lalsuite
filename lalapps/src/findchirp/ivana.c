@@ -110,7 +110,7 @@ int main( int argc, char **argv )
   VetoFile vetoFile[MAXVETOFILES];
   VetoFile *vFile;
   int nvetofiles = 0;
-  int ivfile, jvfile;
+  int ivfile;
 
   /*-- Params that can be overridden with command-line arguments --*/
   /* clusWindow determines how candidate events are grouped into clusters.
@@ -137,7 +137,6 @@ int main( int argc, char **argv )
 
   int debug=0;
   double dur;
-  double tLastNeg = 0.0;
   double tUseNeg = 0.0, tUsePos;
   double tUse, tDur;
   float tSnr;
