@@ -1548,9 +1548,9 @@ cleanexit:
   else if ( !userTag && !ifoTag && outCompress )
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+        ifos, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+        ifos, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
