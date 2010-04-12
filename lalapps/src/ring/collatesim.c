@@ -426,18 +426,4 @@ int main( int argc, char *argv[] )
     eventHead = eventHead->next;
     LALFree( thisEvent );
   }
-  
-  
 }
-    
-    
-  
-    
-                                                 
-         
-                    
-    
-      
-      
-      
-      
