@@ -454,7 +454,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 {
 	*proc_param = XLALCreateProcessParamsTableRow(process);
 	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
-	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), "%s", type);
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
 	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value ? value : "");
 

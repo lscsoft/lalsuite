@@ -228,10 +228,10 @@ static void print_usage(void)
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const ProcessTable *process, const char *type, const char *param, const char *value)
 {
 	*proc_param = XLALCreateProcessParamsTableRow(process);
-	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
-	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->program, sizeof((*proc_param)->program), "%s", PROGRAM_NAME);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), "%s", type);
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
-	snprintf((*proc_param)->value, sizeof((*proc_param)->value), value);
+	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value);
 
 	return(&(*proc_param)->next);
 }
@@ -952,7 +952,7 @@ int main(int argc, char *argv[])
 	search_summary_head->nnodes = 1;
 	search_summary_head->out_start_time = *XLALINT8NSToGPS(&search_summary_head->in_start_time, options.gps_start_time);
 	search_summary_head->out_end_time = *XLALINT8NSToGPS(&search_summary_head->in_end_time, options.gps_end_time);
-	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), process_table_head->ifos);
+	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), "%s", process_table_head->ifos);
 
 
 	/*
