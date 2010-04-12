@@ -1881,12 +1881,6 @@ class InspInjFindNode( InspiralAnalysisNode ):
     """
     InspiralAnalysisNode.__init__(self, job)
 
-  def get_input_from_cache(self, cache):
-    """
-    Retrieves
-    """
-    self.add_var_arg(filename)
-
 
 ##############################################################################
 #Plotting Jobs and Nodes
@@ -2570,7 +2564,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
-    self.__sim_type = None
+    self.__sim_tag = None
     self.__output_format = None
     self.__columns = None
 
@@ -2828,6 +2822,44 @@ class PlotIfarNode(pipeline.SqliteNode):
     """
     return self.__datatype
 
+class PlotFMJob(pipeline.SqliteJob):
+  """
+  A plotfm job. The static options are read from the [plotfm] seciont.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which objects are read.
+    """
+    exec_name = 'plotfm'
+    sections = ['plot_input', 'plotfm']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+class PlotFMNode(pipeline.SqliteNode):
+  """
+  A PlotFM node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PlotFMJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.__sim_tag = None
+
+  def set_sim_tag(self, sim_tag):
+    """
+    Sets the --sim-tag option.
+    """
+    self.add_var_opt('sim-tag', sim_tag)
+    self.__sim_tag = sim_tag
+
+  def get_sim_tag(self):
+    """
+    Gets sim-tag option.
+    """
+    return self.__sim_tag
+
+
+    
 #############################################################################
 class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """

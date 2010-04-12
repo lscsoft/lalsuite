@@ -242,6 +242,7 @@ ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
 ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
 printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
 plotifar_job = inspiral.PlotIfarJob(cp)
+plotfm_job = inspiral.PlotFMJob(cp)
 
 # MVSC jobs
 mvsc_get_doubles_job = inspiral.MvscGetDoublesJob(cp)
@@ -278,6 +279,7 @@ minifup_cm_job.set_sub_file( '.'.join([ basename, 'closest_missed', 'minifollowu
 plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', 'sub' ]) )
 plotslides_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotslides', 'sub' ]) )
 plotcumhist_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotcumhist', 'sub' ]) )
+plotfm_job.set_sub_file( '.'.join([ basename, 'plotfm', 'sub' ]) )
 if options.generate_all_data_plots:
   plotslides_job.set_sub_file( '.'.join([ basename, 'plotslides', 'sub' ]) )
   plotcumhist_job.set_sub_file( '.'.join([ basename, 'plotcumhist', 'sub' ]) )
@@ -988,6 +990,18 @@ for result_db in result_dbs_cache:
           minifup_node.add_parent( printmissed_node )
           dag.add_node( minifup_node )
 
+        # create the plotfm node
+        plotfm_node = inspiral.PlotFMNode( plotfm_job )
+        plotfm_node.set_category('plotfm')
+        plotfm_node.set_tmp_space( tmp_space )
+        plotfm_node.add_file_arg( result_db.path() )
+        plotfm_node.set_sim_tag( sim_tag )
+        plotfm_node.set_user_tag( '_'.join([sim_tag, veto_cat]) )
+        
+        plotfm_node.add_parent( ccfar_node )
+        dag.add_node( plotfm_node )
+
+
 
   ############################################################################
   # Plotting: Generate all result plots
@@ -1042,7 +1056,7 @@ for result_db in result_dbs_cache:
     plotifar_node.add_parent( ccfar_node )
 
     dag.add_node( plotifar_node )
-  
+ 
   
 ##############################################################################
 ##############################################################################
