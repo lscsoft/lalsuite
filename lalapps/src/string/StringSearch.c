@@ -90,10 +90,7 @@ extern int optind, opterr, optopt;
 	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
 
 #define SCALE 1e20
-#define MAXTEMPLATES 1000
-
-#define DELTATMAX 1
-#define NSAMPLE 2000
+#define MAXTEMPLATES 50
 
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
