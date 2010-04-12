@@ -109,6 +109,7 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 #define MAX_PATH 4096
 
 /* function to read the next line of data from the input file list */
+char *get_next_line( char *line, size_t size, FILE *fp );
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;

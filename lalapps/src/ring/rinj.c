@@ -100,6 +100,9 @@ RCSID( "$Id$" );
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 
 extern int vrbflg;
+
+ProcessParamsTable *next_process_param( const char *name, const char *type,
+    const char *fmt, ... );
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
