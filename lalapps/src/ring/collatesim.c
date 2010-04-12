@@ -98,7 +98,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
 int main( int argc, char *argv[] )
 {
   /* lal initialization variables */
-  LALStatus stat = blank_status;
+  LALStatus status = blank_status;
 
   /*  program option variables */
   extern int vrbflg;
@@ -376,40 +376,40 @@ int main( int argc, char *argv[] )
   /* write the main output file containing found injections */
   if ( vrbflg ) fprintf( stdout, "writing output xml files... " );
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &stat, &xmlStream, outputFileName ), &stat );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, outputFileName ), &status );
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
   XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ),
-      &stat );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, proctable,
-        process_table ), &stat );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,
+        process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
   free( proctable.processTable );
   
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream,
-        process_params_table ), &stat );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams,
-        process_params_table ), &stat );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+        process_params_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams,
+        process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* Write the results to the ringdown table */
   if ( eventHead )
   {
     if ( vrbflg ) fprintf( stdout, "sim_ringdown... " );
     outputTable.simRingdownTable = eventHead;
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream,
-          sim_ringdown_table ), &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable,
-          sim_ringdown_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
+          sim_ringdown_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable,
+          sim_ringdown_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status);
   }
 
   /* close the output file */
-  LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+  LAL_CALL( LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
   /*
