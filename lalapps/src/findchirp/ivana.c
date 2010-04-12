@@ -98,7 +98,7 @@ int main( int argc, char **argv )
   char* tokptr;
   FILE* fd;
   int timeBase = 0;
-  double timeBaseD;
+  double timeBaseD=0.0;
   double tTemp1, tTemp2;
 
   Range range[MAXTIMERANGES];
@@ -125,11 +125,11 @@ int main( int argc, char **argv )
   int pctprec = 1;
 
   double tCand, tCandLast=-999.0, tDeadNeg=-2.0e9, tDeadPos=-2.0e9;
-  float snrCand, chisqCand;
+  float snrCand=0.0, chisqCand;
   double tdead1, tdead2;
-  int iCandS, iCandNS, iCandSnr, iCandChisq;
+  int iCandS=0, iCandNS=0, iCandSnr=0, iCandChisq=0;
   int status, status2, ostatus, candeof=0;
-  int iveto, iarg, iposarg=0, ipos, pass, clusPass;
+  int iveto, iarg, iposarg=0, ipos, pass=0, clusPass=0;
   char ttext[64];
   double secfrac;
   int allPast = 0;
@@ -137,10 +137,10 @@ int main( int argc, char **argv )
 
   int debug=0;
   double dur;
-  double tUseNeg = 0.0, tUsePos;
-  double tUse, tDur;
+  double tUseNeg = 0.0, tUsePos=0.0;
+  double tUse=0.0, tDur=0.0;
   float tSnr;
-  float snrThresh;
+  float snrThresh=0.0;
   int usevfile;
 
   struct MetaioParseEnvironment candParseEnv, outParseEnv;
