@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed ), &status);
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed + i_chunk ), &status);
       }
 
       /* output ASCII time-series if requested */
@@ -1443,6 +1443,8 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
  * returns outSeries
  *
  * NOTE: inSeries is allowed to be identical to outSeries!
+ *
+ * NOTE2: if seed==0, then time(NULL) is used as random-seed!
  *
  */
 void
