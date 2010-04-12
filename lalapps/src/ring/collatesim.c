@@ -95,13 +95,14 @@ char *get_next_line( char *line, size_t size, FILE *fp )
   return s;
 }
 
+extern int vrbflg;
+
 int main( int argc, char *argv[] )
 {
   /* lal initialization variables */
   LALStatus status = blank_status;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *inputGlob = NULL;
   char *inputFileName = NULL;

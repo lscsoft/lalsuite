@@ -82,6 +82,7 @@ int distCut = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
+extern int vrbflg;
 
 /*
  * 
@@ -160,8 +161,6 @@ static void print_usage(char *program)
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-
-  extern int vrbflg;
 
   LALPlaygroundDataMask dataType = unspecified_data_type;
   INT4  startCoincidence = -1;
