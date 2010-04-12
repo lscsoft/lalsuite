@@ -130,7 +130,7 @@ int main( int argc, char *argv[] )
 
   UINT4                 numEvents = 0;
   UINT4                 numEventsKept = 0;
-  INT8 ta;
+  INT8 ta=0.0;
   INT8 tb;
   
  /*
