@@ -84,7 +84,7 @@ int printWaveform = 0;
 
 int main ( int argc, char *argv[] )
 {
-  static LALStatus      stat;
+  static LALStatus      status;
   UINT4 i;
   REAL4 m1 = 0.0;
   REAL4 m2 = 0.0;
@@ -308,7 +308,7 @@ int main ( int argc, char *argv[] )
   if (phiOrder){
     ppnParams.ppn = phiPPN;
   }
-  LAL_CALL( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ), &stat );
+  LAL_CALL( LALGeneratePPNInspiral( &status, &waveform, &ppnParams ), &status );
   LALPrintError( "%d: %s\n", ppnParams.termCode, ppnParams.termDescription );
   if ( ppnParams.dfdt > 2.0 ) {
     LALPrintError( "Waveform sampling interval is too large:\n"
@@ -352,11 +352,11 @@ int main ( int argc, char *argv[] )
     spectrum.deltaF = df;
     spectrum.data = NULL;
 
-    LAL_CALL( LALCreateVector( &stat, &(spectrum.data), 
+    LAL_CALL( LALCreateVector( &status, &(spectrum.data), 
           1 + (INT4)( (ppnParams.fStop - ppnParams.fStart)/spectrum.deltaF ) ), 
-        &stat );
+        &status );
 
-    LAL_CALL( LALReadNoiseSpectrum( &stat, &spectrum, specFile), &stat);
+    LAL_CALL( LALReadNoiseSpectrum( &status, &spectrum, specFile), &status);
 
     sum = 0.0;
     norm = (spectrum.data->data[0] * spectrum.data->data[0]);
