@@ -215,8 +215,8 @@ int main( int argc, char *argv[] )
   REAL4 lmax;
   REAL4 deltaL;
   REAL4 deltaA;
-  REAL4 fmin;
-  REAL4 fmax;
+  REAL4 f_min;
+  REAL4 f_max;
   REAL4 deltaf;
 
   /* set up inital debugging values */
@@ -713,11 +713,11 @@ int main( int argc, char *argv[] )
     /* uniform in log frequency */
     {
       /* set frequency, f0, and quality factor Q */
-      fmin = log10(minFreq);
-      fmax = log10(maxFreq);
-      deltaf = fmax - fmin;
+      f_min = log10(minFreq);
+      f_max = log10(maxFreq);
+      deltaf = f_max - f_min;
       LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
-      expt = fmin + deltaf * u;
+      expt = f_min + deltaf * u;
       this_inj->frequency = pow(10.0,(REAL4) expt);
     }    
     else if ( injdistr == 1)
