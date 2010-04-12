@@ -510,6 +510,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
  */
 
 
+#if 0
 /*
  * Repeating arithmetic sequence.
  */
@@ -530,6 +531,7 @@ static double sequence_arithmetic_next(double low, double high, double delta)
 
 	return x;
 }
+#endif
 
 
 /*
@@ -554,6 +556,7 @@ static double sequence_geometric_next(double low, double high, double ratio)
 }
 
 
+#if 0
 /*
  * Random amplitude presets.
  */
@@ -573,6 +576,7 @@ static double sequence_preset_next(gsl_rng *rng)
 
 	return presets[gsl_rng_uniform_int(rng, sizeof(presets)/sizeof(*presets))];
 }
+#endif
 
 
 /* 
