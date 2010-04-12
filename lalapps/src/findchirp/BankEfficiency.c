@@ -3088,7 +3088,7 @@ void BankEfficiencyParseParameters(
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);
-      sprintf(userParam->tag,argv[i]);
+      sprintf(userParam->tag, "%s", argv[i]);
     }
     /* no user parameters requeste, only flags below*/
     else if (!strcmp(argv[i],"--ambiguity")) {
@@ -3170,7 +3170,7 @@ void BankEfficiencyParseGetInt(
       sprintf(msg, "Expect a int after option %s (got %s)\n ",
           argv[*bank_index],
           argv[*bank_index+1]);
-      fprintf(stderr, msg);
+      fprintf(stderr, "%s", msg);
       exit( 1 );
     }
   }
@@ -3179,7 +3179,7 @@ void BankEfficiencyParseGetInt(
     sprintf(msg, "Expect a int after option %s (got %s)\n ",
         argv[*bank_index],
         argv[*bank_index+1]);
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s", msg);
     exit( 1 );
   }
   *bank_index =*bank_index + 1;
@@ -3195,7 +3195,7 @@ void BankEfficiencyParseGetString(
   {
     sprintf(msg, "Expect a string after %s\n ",
         argv[*bank_index] );
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s", msg);
     exit( 1 );
   }
   *bank_index =*bank_index + 1;
@@ -3220,7 +3220,7 @@ void BankEfficiencyParseGetDouble(
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
           argv[*bank_index],
           argv[*bank_index+1]);
-      fprintf(stderr, msg);
+      fprintf(stderr, "%s", msg);
     }
   }
   else
@@ -3228,7 +3228,7 @@ void BankEfficiencyParseGetDouble(
     sprintf(msg, "Expect a float after option %s (got %s)\n ",
         argv[*bank_index],
         argv[*bank_index+1]);
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s", msg);
   }
   *bank_index =*bank_index + 1;
 }
@@ -3260,7 +3260,7 @@ void BankEfficiencyParseGetDouble2(
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
           argv[*bank_index],
           argv[*bank_index+1],argv[*bank_index+2]);
-          fprintf(stderr,msg);
+          fprintf(stderr, "%s", msg);
     }
   }
   else
@@ -3268,7 +3268,7 @@ void BankEfficiencyParseGetDouble2(
     sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
         argv[*bank_index],
         argv[*bank_index+1],argv[*bank_index+2]);
-    fprintf(stderr, msg);
+    fprintf(stderr, "%s", msg);
   }
   *bank_index = *bank_index +2 ;
 }
@@ -3371,7 +3371,7 @@ void BankEfficiencyUpdateParams(
       sprintf(msg,
           "--signal-max-total-mass (%f) must be > twice the minimal mass (%f) ",
           userParam->maxTotalMass, randIn->mMin );
-          fprintf(stderr, msg);
+          fprintf(stderr, "%s", msg);
           exit(1);
     }
   }
@@ -3383,7 +3383,7 @@ void BankEfficiencyUpdateParams(
       sprintf(msg,
           "--min-total-mass (%f) must be < twice the maximal mass (%f) ",
           userParam->maxTotalMass , randIn->mMax );
-          fprintf(stderr, msg);
+          fprintf(stderr, "%s", msg);
           exit(1);
       }
     }
@@ -3413,7 +3413,7 @@ void BankEfficiencyUpdateParams(
       "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. "
       "If particular injection is requested,  you must choose either"
       " (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-      fprintf(stderr, msg);
+      fprintf(stderr, "%s", msg);
       exit(1);
     }
   }
@@ -3426,7 +3426,7 @@ void BankEfficiencyUpdateParams(
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. "
      "If particular injection is requested,  you must choose either "
      "(--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     fprintf(stderr, msg);
+     fprintf(stderr, "%s", msg);
      exit(1);
    }
   }
@@ -3442,7 +3442,7 @@ void BankEfficiencyUpdateParams(
          "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error."
          " If particular injection is requested, you must choose"
          " either (--m1,--m2) or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     fprintf(stderr, msg);
+     fprintf(stderr, "%s", msg);
      exit(1);
    }
   }
