@@ -165,7 +165,9 @@ def extrapolation_coeffs(rank_by, N, reputations, t):
 	# get just the loudest N in reputations
 	#
 
-	if len(reputations) < 2:
+	if len(reputations) < N and len(reputations) >= 2:
+		print >>sys.stderr,"Warning: found a category with less than N=%i background triggers, using the number available: %i"%(N,len(reputations))
+	elif len(reputations) < 2:
 		print >>sys.stderr,"Warning: found a category with less than 2 background triggers, cannot perform extrapolation for this category"
 		return (0, (0, 0))
 
@@ -179,9 +181,9 @@ def extrapolation_coeffs(rank_by, N, reputations, t):
 		X0 = 0.
 
 		for idx in range(len(x)):
-			sigmasq = y[0]**2. / y[idx]
-			Y0 += numpy.log(1. * y[idx] / y[0]) / sigmasq
-			X0 += (x[idx]**2. - x[0]**2.) / sigmasq
+			sigmasq = 1. / y[idx]
+			Y0 += numpy.log(1. * y[idx] / y[0]) * (x[idx]**2. - x[0]**2.) / sigmasq
+			X0 += (x[idx]**2. - x[0]**2.)**2. / sigmasq
 
 		B = Y0 / X0
 		A = y[0] * numpy.exp(-B * x[0]**2.)

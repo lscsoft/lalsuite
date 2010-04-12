@@ -1,47 +1,32 @@
-## Process this file with automake to produce Makefile.in
-# $Id$
-if LALFRAME
-FRAMEPROGRAMS = \
-	lalapps_mkcalfac \
-	lalapps_mkcalref \
-	lalapps_dumpcalframe \
-	lalapps_makecalframe \
-	lalapps_readcalframe \
-	lalapps_getresp
-lalapps_mkcalfac_SOURCES = mkcalfac.c
-lalapps_mkcalref_SOURCES = mkcalref.c
-lalapps_dumpcalframe_SOURCES = dumpcalframe.c
-lalapps_makecalframe_SOURCES = makecalframe.c LALASCIIFileRead.c LALASCIIFileRead.h
-lalapps_readcalframe_SOURCES = readcalframe.c
-lalapps_getresp_SOURCES = getresp.c
-endif
 
 lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c LALASCIIFileRead.c LALASCIIFileRead.h
-lalapps_ComputeStrainDriverDMT_SOURCES = ComputeStrainDriverDMT.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
-lalapps_NoiseComparison_SOURCES = NoiseComparison.c
 
 bin_PROGRAMS = \
-	$(FRAMEPROGRAMS) \
-	lalapps_NoiseComparison \
 	lalapps_ComputeFactors \
-	lalapps_ComputeStrainDriver \
-	lalapps_ComputeStrainDriverDMT
+	lalapps_ComputeStrainDriver
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_strain_pipe lalapps_noise_comp_pipe
-pkgpython_DATA = mkcal.py strain.py
+pkgpython_DATA = strain.py
 endif
 
-EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh mkcal.py \
-	     simplereadcalframe.c \
-  strain_pipe.in noise_comp_pipe.in \
-  mkcal.py strain.py ComputeStrain.c
-MOSTLYCLEANFILES = *.ilwd *.gwf
-CLEANFILES = python_config.sed lalapps_strain_pipe lalapps_noise_comp_pipe
+EXTRA_DIST = \
+	strain_pipe.in \
+	noise_comp_pipe.in \
+	strain.py
+
+MOSTLYCLEANFILES = \
+	*.ilwd \
+	*.gwf
+
+CLEANFILES = \
+	python_config.sed \
+	lalapps_strain_pipe \
+	lalapps_noise_comp_pipe
 
 python_config.sed:
 	-rm -f python_config.sed
