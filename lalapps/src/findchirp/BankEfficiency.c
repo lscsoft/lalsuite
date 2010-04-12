@@ -2486,20 +2486,20 @@ void BankEfficiencyCreateListFromTmplt(
   LALStatus         *status,
   InspiralTemplate  *params,
   Mybank             mybank,
-  INT4               index)
+  INT4               bank_index)
 {
   INITSTATUS(status, "BankEfficiencyCreateListFromTmplt", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
   /* Right now only t03 and psi0psi3 bank exists so we
      only need those information in principle and nothing else*/
-  params->mass1  = mybank.mass1[index];
-  params->mass2  = mybank.mass2[index];
-  params->fFinal = mybank.fFinal[index];
-  params->t0     = mybank.tau0[index];
-  params->t3     = mybank.tau3[index];
-  params->psi0   = mybank.psi0[index];
-  params->psi3   = mybank.psi3[index];
-  params->eccentricity  = mybank.eccentricity[index];
+  params->mass1  = mybank.mass1[bank_index];
+  params->mass2  = mybank.mass2[bank_index];
+  params->fFinal = mybank.fFinal[bank_index];
+  params->t0     = mybank.tau0[bank_index];
+  params->t3     = mybank.tau3[bank_index];
+  params->psi0   = mybank.psi0[bank_index];
+  params->psi3   = mybank.psi3[bank_index];
+  params->eccentricity  = mybank.eccentricity[bank_index];
 
   DETATCHSTATUSPTR(status);
 }
@@ -3153,23 +3153,23 @@ void BankEfficiencyParseParameters(
 
 void BankEfficiencyParseGetInt(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   INT4    *data)
 {
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp1;
 
-  tmp1 = argv[*index+1];
+  tmp1 = argv[*bank_index+1];
 
-  if ( argv[*index+1] != NULL )
+  if ( argv[*bank_index+1] != NULL )
   {
-    *data = strtol(argv[*index+1], &tmp  , 10);
+    *data = strtol(argv[*bank_index+1], &tmp  , 10);
     if (*data==0 && tmp1[0] != '0')
     {
       sprintf(msg, "Expect a int after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
+          argv[*bank_index],
+          argv[*bank_index+1]);
       fprintf(stderr, msg);
       exit( 1 );
     }
@@ -3177,66 +3177,66 @@ void BankEfficiencyParseGetInt(
   else
   {
     sprintf(msg, "Expect a int after option %s (got %s)\n ",
-        argv[*index],
-        argv[*index+1]);
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, msg);
     exit( 1 );
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 void BankEfficiencyParseGetString(
   CHAR    **argv,
-  INT4    *index)
+  INT4    *bank_index)
 {
   CHAR msg[2048];
 
-  if (argv[*index+1]==NULL)
+  if (argv[*bank_index+1]==NULL)
   {
     sprintf(msg, "Expect a string after %s\n ",
-        argv[*index] );
+        argv[*bank_index] );
     fprintf(stderr, msg);
     exit( 1 );
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 
 void BankEfficiencyParseGetDouble(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   REAL8   *data)
 {
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp2 ;
-  tmp2 = argv[*index+1];
+  tmp2 = argv[*bank_index+1];
 
-  if (argv[*index+1] != NULL)
+  if (argv[*bank_index+1] != NULL)
   {
-    *data = strtod(argv[*index+1], &tmp  );
+    *data = strtod(argv[*bank_index+1], &tmp  );
     if (*data == 0 && tmp2[0]!='0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
+          argv[*bank_index],
+          argv[*bank_index+1]);
       fprintf(stderr, msg);
     }
   }
   else
   {
     sprintf(msg, "Expect a float after option %s (got %s)\n ",
-        argv[*index],
-        argv[*index+1]);
+        argv[*bank_index],
+        argv[*bank_index+1]);
     fprintf(stderr, msg);
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 
 void BankEfficiencyParseGetDouble2(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   REAL8   *data1,
   REAL8   *data2)
 {
@@ -3244,33 +3244,33 @@ void BankEfficiencyParseGetDouble2(
   CHAR msg[2048];
   CHAR *tmp2 , *tmp1;
 
-  tmp1 = argv[*index+1];
-  tmp2=  argv[*index+2];
+  tmp1 = argv[*bank_index+1];
+  tmp2=  argv[*bank_index+2];
 
   *data1 = 0 ;
   *data2 = 0 ;
 
-  if (argv[*index+1]!=NULL && argv[*index+2]!=NULL)
+  if (argv[*bank_index+1]!=NULL && argv[*bank_index+2]!=NULL)
   {
-    *data1 = strtod(argv[*index+1], &tmp  );
-    *data2 = strtod(argv[*index+2], &tmp  );
+    *data1 = strtod(argv[*bank_index+1], &tmp  );
+    *data2 = strtod(argv[*bank_index+2], &tmp  );
     if ((!(*data1) && tmp1[0]!='0')
        ||  (!(*data2) && tmp2[0]!='0'))
     {
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
-          argv[*index],
-          argv[*index+1],argv[*index+2]);
+          argv[*bank_index],
+          argv[*bank_index+1],argv[*bank_index+2]);
           fprintf(stderr,msg);
     }
   }
   else
   {
     sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
-        argv[*index],
-        argv[*index+1],argv[*index+2]);
+        argv[*bank_index],
+        argv[*bank_index+1],argv[*bank_index+2]);
     fprintf(stderr, msg);
   }
-  *index = *index +2 ;
+  *bank_index = *bank_index +2 ;
 }
 
 
@@ -4039,27 +4039,27 @@ void BankEfficiencyInspiralCreateFineBank(
 REAL4 BankEfficiencyComputeEMatch(
   RandomInspiralSignalIn *randIn,
   Mybank                   mybank,
-  INT4                     index)
+  INT4                     bank_index)
 {
   REAL8 dt0;
   REAL8 dt3;
   REAL8 g00, g01, g11;
   REAL8 match = 0;
 
-  BankEfficiencyValidity(index, 0,mybank.size,
+  BankEfficiencyValidity(bank_index, 0,mybank.size,
       "Requested template index larger than banksize!");
 
 
 
-  dt0 = -(randIn->param.t0 - mybank.tau0[index]);
-  dt3 = -(randIn->param.t3 - mybank.tau3[index]);
+  dt0 = -(randIn->param.t0 - mybank.tau0[bank_index]);
+  dt3 = -(randIn->param.t3 - mybank.tau3[bank_index]);
 
-  g00 = mybank.gamma3[index] - mybank.gamma1[index] *
-      mybank.gamma1[index] / mybank.gamma0[index];
-  g01 = mybank.gamma4[index] - mybank.gamma1[index] *
-      mybank.gamma2[index] / mybank.gamma0[index];
-  g11 = mybank.gamma5[index] - mybank.gamma2[index] *
-      mybank.gamma2[index] / mybank.gamma0[index];
+  g00 = mybank.gamma3[bank_index] - mybank.gamma1[bank_index] *
+      mybank.gamma1[bank_index] / mybank.gamma0[bank_index];
+  g01 = mybank.gamma4[bank_index] - mybank.gamma1[bank_index] *
+      mybank.gamma2[bank_index] / mybank.gamma0[bank_index];
+  g11 = mybank.gamma5[bank_index] - mybank.gamma2[bank_index] *
+      mybank.gamma2[bank_index] / mybank.gamma0[bank_index];
   /*fprintf(stderr, "dt0=%f dt3=%f g00=%f g01=%f g11=%f\n",dt0,dt3,g00,g11,g01);*/
   match = 1 - (g00*dt0*dt0 + 2*g01*dt0*dt3 + g11*dt3*dt3);
 
@@ -4563,20 +4563,20 @@ void GetClosestValidTemplate(
   )
 {
   REAL4 distance = -1e16;
-  UINT4 index =  0;
+  UINT4 bank_index =  0;
   UINT4 *index_backup;
   REAL4 ematch=-1e16;
 
   if (bank.approximant == BCV)
   {
     UINT4 i = 0;
-    index = 0;
+    bank_index = 0;
     while (i < bank.size)
     {
       if (bank.used[i]==0)
       {
         bank.used[i] = 1;
-        index = i;
+        bank_index = i;
         i = bank.size+1;
       }
       else
@@ -4584,7 +4584,7 @@ void GetClosestValidTemplate(
         i++;
       }
     }
-    *fast_index = index;
+    *fast_index = bank_index;
   }
   else
   {
@@ -4606,15 +4606,15 @@ void GetClosestValidTemplate(
       if ((ematch > distance) && bank.used[i] == 0)
       {
         distance = ematch;
-        index = i;
+        bank_index = i;
       }
     }
 
     for (i=0; i<bank.size; i++)
       bank.used[i] = index_backup[i];
 
-    bank.used[index] = 1;
- *fast_index = index;
+    bank.used[bank_index] = 1;
+ *fast_index = bank_index;
      free(index_backup);
   }
 
