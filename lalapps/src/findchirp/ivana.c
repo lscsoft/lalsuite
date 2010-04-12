@@ -70,7 +70,7 @@ typedef struct VetoFile_struct {
 
 
 /*====== Function prototypes ================================================*/
-void PrintUsage();
+void PrintUsage(void);
 void InitRange( Range* range, double t1, double t2 );
 void AbortAll( MetaioParseEnv candEnv, VetoFile vetoFile[], int nvetofiles,
 	       MetaioParseEnv outEnv );
@@ -1420,7 +1420,7 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
 
 
 /*===========================================================================*/
-void PrintUsage()
+void PrintUsage(void)
 {
   printf( "Id: $\n" );
   printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n"
