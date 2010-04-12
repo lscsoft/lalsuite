@@ -1382,10 +1382,11 @@ if ( vrbflg)
         /* keep only the requested coincs */
         if( slideH1H2Together )
         {
+          char slide_ifos[] = "H1H2";
           if ( vrbflg ) fprintf( stdout,
               "Throwing out slide coincs found only as H1H2 doubles.\n" );
           numCoincInSlide = XLALCoincRingdownIfosDiscard(
-              &coincRingdownList, "H1H2" );
+              &coincRingdownList, slide_ifos );
           if ( vrbflg ) fprintf( stdout,
               "Kept %d non-H1H2 coincs in slide.\n", numCoincInSlide );
         }
