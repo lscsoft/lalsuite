@@ -235,6 +235,7 @@ XLALComputeFullChisq(
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq, angle, snri, snrk;
+  UINT4 numsamps = bankVetoData->acorrMatSize;
 
   /* input, params and norm are unused */
   UNUSED(input);
@@ -247,15 +248,22 @@ XLALComputeFullChisq(
 
   angle = atan2(q[snrIX].im, q[snrIX].re);
   snri = q[snrIX].re * cos(angle) + q[snrIX].im * sin(angle);
+  /* have the dof vary with snr^1/2 up until snr = 1000 */
+  //if (snri < 1000) numsamps = (UINT4) ceil((double) numsamps * sqrt(snri) / 31.622776601683793);
   *dof = 0;
 
-  for (k = 0; k < bankVetoData->acorrMatSize; k++)
+  for (k = 0; k < numsamps; k++)
   {
     /* we skipped saving the first sample of the autocorrelation which is why */
     /* we need the -1 in the snrk here */
     C = bankVetoData->acorrMat->data[i * bankVetoData->acorrMatSize + k];
     chisqnorm = 1.0 - C * C;
     snrk = q[snrIX-k-1].re * cos(angle) + q[snrIX-k-1].im * sin(angle);
+    (*dof) += 1;
+    tmp = snrk - C * snri;
+    chisq += tmp * tmp * norm / chisqnorm;
+    /* Other side */
+    snrk = q[snrIX+k+1].re * cos(angle) + q[snrIX+k+1].im * sin(angle);
     (*dof) += 1;
     tmp = snrk - C * snri;
     chisq += tmp * tmp * norm / chisqnorm;
