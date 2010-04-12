@@ -83,6 +83,14 @@ static COMPLEX8 rotate(REAL4 a, REAL4 phi)
 	return out;
 	}
 
+static COMPLEX16 rotate_complex16(COMPLEX16 a, REAL8 phi)
+	{
+	COMPLEX16 out;
+        out.re = a.re * cos(phi) - a.im * sin(phi); 
+	out.im = a.re * sin(phi) + a.im * cos(phi);
+	return out;
+	}
+
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
   bankVetoData->acorr = NULL;
@@ -292,6 +300,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 tmpltRowImag = 0;
     REAL8 tmpltColReal = 0;
     REAL8 tmpltColImag = 0;
+    COMPLEX16 tmp = {0.0, 0.0};
+    REAL8 tphase = 0.0;
 
     /*
      * The cumulative real and imaginary parts of the cross-correlation
@@ -317,7 +327,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 sqResp;
     REAL8 spectralDensity;
 
-    UNUSED(deltaT);
+    //UNUSED(deltaT);
 
     /* Allocate memory for workspace and the autocorrelation if necessary */
     if ( !bankVetoData->acorr )
@@ -339,7 +349,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	bankVetoData->timeshift->data[row] = 0.0;
+	bankVetoData->timeshift->data[row] = (REAL8) 2.0 * deltaT;
 	}
     }
 
@@ -373,8 +383,10 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 			       bankVetoData->resp->data[sample].im *
 			       bankVetoData->resp->data[sample].im ) * dynRange * dynRange;
 
+		    /* time shifting stuff */
 		    spectralDensity = bankVetoData->spec->data[sample]*sqResp;
-
+		    tphase = (REAL8) (col - row) * 2.0 * LAL_PI * bankVetoData->timeshift->data[col] * sample * deltaF;
+		  
 		    if ( spectralDensity != 0 )
 		    {
 			tmpltRowReal = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
@@ -382,9 +394,14 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 			tmpltColReal = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
 			tmpltColImag = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-			 
-			crossCorrReal += (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
-			crossCorrImag += (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
+		
+			tmp.re = (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
+			tmp.im = (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
+			/* Apply time shift */
+			tmp = rotate_complex16(tmp, tphase);
+	 
+			crossCorrReal += (REAL8) tmp.re;
+			crossCorrImag += (REAL8) tmp.im;
 		    }
 
 		    if ( row == col )
@@ -451,6 +468,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im /=
 	      (bankVetoData->normMat->data[row] *bankVetoData->normMat->data[col]);
+	    //fprintf(stderr, "ccmat[%d,%d] = %.2f+%.2fi\n", row, col, bankVetoData->ccMat->data[row*bankVetoData->length + col].re, bankVetoData->ccMat->data[row*bankVetoData->length + col].im);
 	}
     } /* end norm loop */
 
@@ -530,8 +548,10 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	 * depends on the sign convention choice made in computing ccmat. */
 	/* FIXME there are not any time shifts yet, so this is a no-op for now */
 	/* i.e. SNRIndexCol = SNRIndexRow */
-	deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
-	snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	deltaTimeShift = ((REAL4) col - (REAL4) row) * bankVetoData->timeshift->data[col];
+	if (deltaTimeShift > 0) snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	else snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	//fprintf(stderr, "snrIndexRow %d snrIndexCol %d\n", snrIndexRow, snrIndexCol);
 
 	/* Get the "column" snr in the same way as the row */
 	colSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[col]->data[snrIndexCol],
@@ -545,6 +565,8 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 	/* Square the result */
 	chisq_mag += XLALCOMPLEX8Abs2(chisq);
 
+	//fprintf(stderr, "%.2f %.2f expSNR %.2f colSNR %.2f\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), chisq_mag, XLALCOMPLEX8Abs(expSNR), XLALCOMPLEX8Abs(colSNR));
+
 	(*dof)+=2;
     }
     return chisq_mag;
@@ -554,10 +576,12 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 InspiralTemplate *
 XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
   {
+  UNUSED(num);
+  return bankHead;
   /*return XLALFindChirpSortTemplatesByEta(bankHead, num);*/
   /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);*/
-  breakUpRegions(bankHead);
-  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  //breakUpRegions(bankHead);
+  //return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   //return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
