@@ -501,7 +501,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, hardware );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT " ", hardware );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT " ", hardware );
         break;
 
       case 'D':

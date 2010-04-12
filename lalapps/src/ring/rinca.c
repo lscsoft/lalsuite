@@ -523,7 +523,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, numSlides );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", numSlides );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, numSlides );
         break;
 
       case 'n':
@@ -566,7 +566,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         startCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startCoincidence );
         break;
 
       case 't':
@@ -591,7 +591,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         endCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endCoincidence );
         break;
 
       case 'x':
@@ -692,11 +692,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximization interval must be positive:\n "
-              "(%ld ms specified)\n",
+              "(%" LAL_INT8_FORMAT " ms specified)\n",
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld",  maximizationInterval );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT,  maximizationInterval );
         break;
 
       case '*':
@@ -1019,7 +1019,7 @@ if ( vrbflg)
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %ld ms window\n",
+          fprintf( stdout, "Clustering triggers for over %" LAL_INT8_FORMAT " ms window\n",
               maximizationInterval);
         }
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
