@@ -382,7 +382,6 @@ int ring_params_sanity_check( struct ring_params *params )
     /* record ifo name */
     validChannelIFO = sscanf( params->channel, "%2[A-Z1-9]", params->ifoName );
     sanity_check( validChannelIFO );
-    sanity_check( params->ifoName );
 
     /* check that injection type is specified if an injection file is given */
 
