@@ -186,9 +186,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4TimeSeries dataWindow1, dataWindow2;
 
   /* hann window */
-  INT4 hannLength1, hannLength2;
-  LALWindowParams hannParams1, hannParams2;
-  REAL4Vector *hannWindow1, *hannWindow2;
+  REAL4Window *hannWindow1 = NULL, *hannWindow2 = NULL;
   
   /* data structures for PSDs */
   INT4 overlapPSDLength1,overlapPSDLength2;
@@ -196,7 +194,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 windowPSDLength1,windowPSDLength2;
   INT4 filterLength;
   INT4 numPointInf, numPointSup;
-  LALWindowParams winparPSD1, winparPSD2;
   AverageSpectrumParams specparPSD1,specparPSD2;
   REAL4FrequencySeries PSDTemp1,PSDTemp2,avPSD1,avPSD2;
   REAL4Vector *PSD1[numSegments], *PSD2[numSegments];
@@ -416,41 +413,26 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (hannDuration != 0)
    {
-    /* generate pure Hann windows */
-    hannLength1 = (UINT4)(hannDuration * resampleRate1);
-    hannLength2 = (UINT4)(hannDuration * resampleRate2);
-    hannParams1.length = hannLength1;
-    hannParams2.length = hannLength2;
-    hannParams1.type =hannParams2.type = Hann;
-
-    /* allocate memory for hann window */
-    hannWindow1 = hannWindow2 = NULL;
-    LAL_CALL( LALSCreateVector(&status, &hannWindow1, hannLength1), &status );
-    LAL_CALL( LALSCreateVector(&status, &hannWindow2, hannLength2), &status );
-    memset( hannWindow1->data, 0,
-            hannWindow1->length * sizeof(*hannWindow1->data));
-    memset( hannWindow2->data, 0,
-            hannWindow2->length * sizeof(*hannWindow2->data));
-
     /* generate hann windows */
-    LAL_CALL( LALWindow(&status, hannWindow1, &hannParams1), &status );
-    LAL_CALL( LALWindow(&status, hannWindow2, &hannParams2), &status );
-                
-    /* construct Tukey windows */
-    for (i = 0; i < hannLength1 / 2; i++)
-      dataWindow1.data->data[i] = hannWindow1->data[i];
-    for (i = 0; i < hannLength2 / 2; i++)
-      dataWindow2.data->data[i] = hannWindow2->data[i];
+    hannWindow1 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate1));
+    hannWindow2 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate2));
 
-    for (i = segmentLength1 - (hannLength1 / 2); i < segmentLength1; i++)
+    /* construct Tukey windows */
+    /* FIXME:  do you know about XLALCreateTukeyREAL4Window()? */
+    for (i = 0; (unsigned) i < hannWindow1->data->length / 2; i++)
+      dataWindow1.data->data[i] = hannWindow1->data->data[i];
+    for (i = 0; (unsigned) i < hannWindow2->data->length / 2; i++)
+      dataWindow2.data->data[i] = hannWindow2->data->data[i];
+
+    for (i = segmentLength1 - (hannWindow1->data->length / 2); i < segmentLength1; i++)
      {
       dataWindow1.data->data[i] = 
-      hannWindow1->data[i - segmentLength1 + hannLength1];
+      hannWindow1->data->data[i - segmentLength1 + hannWindow1->data->length];
      }                   
-    for (i = segmentLength2 - (hannLength2 / 2); i < segmentLength2; i++)
+    for (i = segmentLength2 - (hannWindow2->data->length / 2); i < segmentLength2; i++)
      {
       dataWindow2.data->data[i] = 
-      hannWindow2->data[i - segmentLength2 + hannLength2];
+      hannWindow2->data->data[i - segmentLength2 + hannWindow2->data->length];
      }           
    }
 
@@ -493,13 +475,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (verbose_flag)
    fprintf(stdout, "Creating window for PSD estimation...\n");
-  winparPSD1.type = winparPSD2.type = Hann; 
-  winparPSD1.length = windowPSDLength1;
-  winparPSD2.length = windowPSDLength2;
-  LAL_CALL(LALCreateREAL4Window(&status,&specparPSD1.window,&winparPSD1), 
-            &status);
-  LAL_CALL(LALCreateREAL4Window(&status,&specparPSD2.window,&winparPSD2), 
-            &status);
+  specparPSD1.window = XLALCreateHannREAL4Window(windowPSDLength1);
+  specparPSD2.window = XLALCreateHannREAL4Window(windowPSDLength2);
 
   /* set metadata fields for PSDs */
   strncpy(PSDTemp1.name, "PSDTemp1", LALNameLength);
@@ -1220,12 +1197,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan2),&status);
   LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
- 
-  if (hannDuration != 0)
-   {
-    LAL_CALL( LALDestroyVector(&status, &hannWindow1), &status );
-    LAL_CALL( LALDestroyVector(&status, &hannWindow2), &status );
-   }
+
+  XLALDestroyREAL4Window(hannWindow1);
+  XLALDestroyREAL4Window(hannWindow2);
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTemp1.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTemp2.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(hBarTilde1.data)), &status );
