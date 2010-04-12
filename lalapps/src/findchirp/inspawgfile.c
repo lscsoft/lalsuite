@@ -361,7 +361,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %Li\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( detector.transfer->epoch ), epoch );
     ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
 	    == 1 );
@@ -423,7 +423,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %Li\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( output.epoch ), epoch );
     ok &= ( fscanf( fp, "# deltaT = %lf\n", &( output.deltaT ) )
 	    == 1 );
