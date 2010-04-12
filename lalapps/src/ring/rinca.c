@@ -1340,7 +1340,7 @@ if ( vrbflg)
            h1snrCut, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
-          XLALCountCoincInspiral(coincRingdownList));
+          XLALCountCoincInspiral((CoincInspiralTable*)coincRingdownList));
    }
 
 
