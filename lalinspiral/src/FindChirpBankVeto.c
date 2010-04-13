@@ -349,7 +349,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	bankVetoData->timeshift->data[row] = (REAL8) 2.0 * deltaT;
+	bankVetoData->timeshift->data[row] = (REAL8) 8.0 * deltaT;
 	}
     }
 
