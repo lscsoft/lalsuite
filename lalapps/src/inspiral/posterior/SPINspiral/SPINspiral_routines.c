@@ -140,9 +140,9 @@ double GMST(double GPSsec)
  * 
  * All quantities are in radians
  */
-double rightAscension(double longi, double GMST)
+double rightAscension(double longi, double gmst)
 {
-  return fmod(longi + GMST + mtpi,tpi);  //Bring it between 0 and 2pi
+  return fmod(longi + gmst + mtpi,tpi);  //Bring it between 0 and 2pi
 }
 // ****************************************************************************************************************************************************  
 
@@ -156,9 +156,9 @@ double rightAscension(double longi, double GMST)
  * All quantities are in radians.
  * In fact, 'longitude' is something like the Greenwich hour angle of the corresponding RA.
  */
-double longitude(double rightAscension, double GMST)
+double longitude(double rightAscension, double gmst)
 {
-  return fmod(rightAscension - GMST + mtpi,tpi);
+  return fmod(rightAscension - gmst + mtpi,tpi);
 }
 // ****************************************************************************************************************************************************  
 
