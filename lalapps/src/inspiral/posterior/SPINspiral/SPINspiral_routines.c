@@ -258,11 +258,11 @@ void crossProduct(double vec1[3], double vec2[3], double result[3])
  * Rotates vector x clockwise around axis (looking along axis while it is pointing towards you).
  * axis must be a UNIT VECTOR
  */
-void rotate(double x[3], double angle, double axis[3])
+void rotate(double x[3], double ang, double axis[3])
 {
   int i, j;
-  double cosa = cos(-angle);
-  double sina = sin(-angle);
+  double cosa = cos(-ang);
+  double sina = sin(-ang);
   double omcosa = 1.0 - cosa;
   double R[3][3] = {{cosa+axis[0]*axis[0]*omcosa, 
                      axis[0]*axis[1]*omcosa-axis[2]*sina,
