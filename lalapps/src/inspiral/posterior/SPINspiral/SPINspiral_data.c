@@ -419,7 +419,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
   char          filenames[1000]="";
   int           filecount = 0;
   double        from, to, delta;
-  double        *injection;
+  double        *injection=NULL;
   int p = run.nFrame[ifonr] - 1;
   int fr_index=run.nFrame[ifonr]-1;
   
@@ -736,7 +736,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
   int               PSDrange;
   double                 sum;
   int                 FTsize;
-  double         *filtercoef;
+  double    *filtercoef=NULL;
   int                  ncoef; 
   char    filenames[2000];
   long             filestart;
