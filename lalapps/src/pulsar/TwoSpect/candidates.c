@@ -19,10 +19,8 @@
 
 #include <math.h>
 #include <lal/LALMalloc.h>
-#include <lal/RealFFT.h>
 #include "candidates.h"
 #include "templates.h"
-#include "TwoSpect.h"
 
 
 //////////////////////////////////////////////////////////////
@@ -86,7 +84,7 @@ void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth,
 // Cluster candidates by frequency and period using templates:
 // option = 0 uses Gaussian templates (default)
 // option = 1 uses exact templates
-void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, INT4 numofcandidates, INT4 option)
+void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, INT4 numofcandidates, INT4 option)
 {
 
    INT4 ii, jj, kk, loc, loc2, numcandoutlist;
@@ -216,8 +214,8 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   if (option==1) makeTemplate(template, cand, params, plan);
                   else makeTemplateGaussians(template, cand, params);
                   farStruct *farval = new_farStruct();
-                  estimateFAR(farval, template, 10000, 0.01, ffplanenoise);
-                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise);
+                  estimateFAR(farval, template, 10000, 0.01, ffplanenoise, fbinaveratios);
+                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                   REAL8 snr = (R - farval->distMean)/farval->distSigma;
                   if (R > farval->far && snr > bestSNR) {
                      bestSNR = snr;
