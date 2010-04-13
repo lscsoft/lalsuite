@@ -421,7 +421,7 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
   double        from, to, delta;
   double        *injection;
   int p = run.nFrame[ifonr] - 1;
-  int index=run.nFrame[ifonr]-1;
+  int fr_index=run.nFrame[ifonr]-1;
   
   
   // 'from' and 'to' are determined so that the range specified by 'before_tc' and 'after_tc'
@@ -463,18 +463,18 @@ void dataFT(struct interferometer *ifo[], int ifonr, int networkSize, struct run
         exit(1);
       }
       filestart= (long) run.FrameGPSstart[ifonr][p];
-      index = p;
+      fr_index = p;
     }
     
     // Assemble the filename character string:
     while (((double)filestart) < to){
       if(filecount == 0) // Fill in filename for first file:
-        sprintf(filenames,"%s",run.FrameName[ifonr][index]);
+        sprintf(filenames,"%s",run.FrameName[ifonr][fr_index]);
       else // Append filename for following files:
-        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
-      filestart += run.FrameLength[ifonr][index];
+        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][fr_index]);
+      filestart += run.FrameLength[ifonr][fr_index];
       filecount += 1;
-      index += 1;
+      fr_index += 1;
     }
   }
   
@@ -742,7 +742,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
   long             filestart;
   int            filecount=0;
   int p = run.nFrame[ifonr] - 1;
-  int index=run.nFrame[ifonr]-1;
+  int fr_index=run.nFrame[ifonr]-1;
   
   // Starting time of first(!) frame file to be read:
   if(run.commandSettingsFlag[15] == 0){
@@ -760,7 +760,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
     
   }
   else{
-    if (run.commandSettingsFlag[13] == 0){ run.PSDstart = (double) run.FrameGPSstart[ifonr][0]; filestart = (long) run.FrameGPSstart[ifonr][0]; index = 0;}
+    if (run.commandSettingsFlag[13] == 0){ run.PSDstart = (double) run.FrameGPSstart[ifonr][0]; filestart = (long) run.FrameGPSstart[ifonr][0]; fr_index = 0;}
     else {
       filestart = (long) run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]; 
       if(run.PSDstart+Nseconds >= (double)(run.FrameGPSstart[ifonr][run.nFrame[ifonr]-1]+run.FrameLength[ifonr][run.nFrame[ifonr]-1])){
@@ -775,7 +775,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
           exit(1);
         }
         filestart= (long) run.FrameGPSstart[ifonr][p];
-        index = p;
+        fr_index = p;
       }
     }
     
@@ -783,12 +783,12 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
     // Assemble the filename character string:
     while (((double)filestart) < (((double)ifo[ifonr]->noiseGPSstart)+Nseconds)){
       if(filecount == 0) // Fill in filename for first file:
-        sprintf(filenames,"%s",run.FrameName[ifonr][index]);
+        sprintf(filenames,"%s",run.FrameName[ifonr][fr_index]);
       else // Append filename for following files:
-        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][index]);
-      filestart += run.FrameLength[ifonr][index];
+        sprintf(filenames,"%s %s",filenames,run.FrameName[ifonr][fr_index]);
+      filestart += run.FrameLength[ifonr][fr_index];
       filecount += 1;
-      index += 1;
+      fr_index += 1;
     }
   }
   
