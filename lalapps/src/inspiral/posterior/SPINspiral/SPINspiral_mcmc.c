@@ -1613,7 +1613,7 @@ void setTemperatureLadder(struct MCMCvariables *mcmc)
   double tempratio = 0.0;
   
   if(mcmc->nTemps < 3) { 
-    exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-1));
+    tempratio = exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-1));
   } else {
     tempratio = exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-2));
   }
