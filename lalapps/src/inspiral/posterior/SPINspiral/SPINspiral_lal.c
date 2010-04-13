@@ -1309,7 +1309,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
  * \brief Compose the waveform approximant from the family name and pN order
  */
 // ****************************************************************************************************************************************************  
-void getWaveformApproximant(char* familyName, int length, double PNorder, char* waveformApproximant) {
+void getWaveformApproximant(const char* familyName, int length, double PNorder, char* waveformApproximant) {
   int PNorderTimesTwo = (int)rint(PNorder*2.0);
   switch(PNorderTimesTwo) {
   case 2:
