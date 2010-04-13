@@ -155,7 +155,7 @@ struct StringTemplateTag {
   REAL4 f;                    /* Template frequency */
   REAL4 norm;                 /* Template normalisation */
   REAL4 mismatch;             /* Template mismatch relative to last one */
-  REAL4FrequencySeries StringFilter; /* Frequency domain filter corresponding to this template */
+  REAL4FrequencySeries *StringFilter; /* Frequency domain filter corresponding to this template */
   REAL4Vector *waveform_t;    /* Template waveform - time-domain */
   COMPLEX8Vector *waveform_f; /* Template waveform - frequency domain */
   REAL4Vector *auto_cor;      /* Auto-correlation vector */
@@ -165,7 +165,6 @@ struct StringTemplateTag {
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
-INT4 lalDebugLevel=3;
 FrCache *framecache;          /* frame reading variables */
 FrStream *framestream=NULL;
 
@@ -663,8 +662,8 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       
       /* multiply FT of data and String Filter and deltaT */
       for ( p = 0 ; p < (int) vtilde->length; p++ ){
-	vtilde->data[p].re *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
-	vtilde->data[p].im *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
+	vtilde->data[p].re *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
+	vtilde->data[p].im *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
       }
       
       if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
@@ -707,10 +706,10 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
  
   for (m = 0; m < NTemplates; m++){
     
-    /* create the space for the filter */
-    strtemplate[m].StringFilter.deltaF=GV.Spec->deltaF;
-    strtemplate[m].StringFilter.data = XLALCreateREAL4Vector(GV.Spec->data->length);
-            
+    /* Initialize the filter */
+    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.Spec->data->length);
+    strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
+                
     /* populate vtilde with the template divided by the noise */
     for ( p = 0; p < (int) vtilde->length; p++ ){
       vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
@@ -737,18 +736,18 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
     for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
       re = vtilde->data[p].re * GV.ht_proc->deltaT;
       im = vtilde->data[p].im * GV.ht_proc->deltaT;
-      strtemplate[m].StringFilter.data->data[p] = (re * re + im * im);
+      strtemplate[m].StringFilter->data->data[p] = (re * re + im * im);
     }
     
     /* set DC and Nyquist to 0*/
-    strtemplate[m].StringFilter.data->data[0] =
-      strtemplate[m].StringFilter.data->data[vtilde->length-1] = 0;
+    strtemplate[m].StringFilter->data->data[0] =
+      strtemplate[m].StringFilter->data->data[vtilde->length-1] = 0;
         
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
       filterfilename[sizeof(outfilename)-1] = '\0';
-      LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), filterfilename );
+      LALSPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
     /* print out the time domain FIR filter */
@@ -966,12 +965,12 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
   int segmentLength;
   int segmentStride;
   REAL4Window  *window4;
-
+  
   GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
-  GV.Spec->data = XLALCreateREAL4Vector(GV.seg_length / 2 + 1);
+  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
   GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
   GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
-
+  
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
     for ( p = 0 ; p < (int)GV.Spec->data->length; p++ )
       GV.Spec->data->data[p]=2/SAMPLERATE;
@@ -981,15 +980,15 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
     segmentLength = GV.seg_length;
     segmentStride = GV.seg_length/2;
     window4  = NULL;
-
     window4 = XLALCreateHannREAL4Window( segmentLength );
+    
     if(XLALREAL4AverageSpectrumMedianMean( GV.Spec, GV.ht_proc, segmentLength,
 					   segmentStride, window4, GV.fplan ))
-	return 1;
-
-      XLALDestroyREAL4Window( window4 );
-    }
-
+      return 1;
+    
+    XLALDestroyREAL4Window( window4 );
+  }
+  
   return 0;
 }
 
@@ -1653,15 +1652,11 @@ int FreeMem(void){
   int m;
   
   XLALDestroyREAL4TimeSeries(GV.ht_proc);
-  XLALDestroyREAL4Vector(GV.Spec->data);
+  XLALDestroyREAL4FrequencySeries(GV.Spec);
   
-  for (m=0; m < NTemplates; m++){
-    XLALDestroyREAL4Vector(strtemplate[m].StringFilter.data);
-    XLALDestroyREAL4Vector(strtemplate[m].waveform_t);
-    XLALDestroyREAL4Vector(strtemplate[m].auto_cor);
-    XLALDestroyCOMPLEX8Vector(strtemplate[m].waveform_f);
-  }
-
+  for (m=0; m < MAXTEMPLATES; m++)
+    XLALDestroyREAL4FrequencySeries(strtemplate[m].StringFilter);
+    
   XLALDestroyREAL4FFTPlan( GV.fplan );
   XLALDestroyREAL4FFTPlan( GV.rplan );
   
