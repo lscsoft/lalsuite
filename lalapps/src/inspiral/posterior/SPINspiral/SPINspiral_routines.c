@@ -156,9 +156,9 @@ double rightAscension(double longi, double gmst)
  * All quantities are in radians.
  * In fact, 'longitude' is something like the Greenwich hour angle of the corresponding RA.
  */
-double longitude(double rightAscension, double gmst)
+double longitude(double ra, double gmst)
 {
-  return fmod(rightAscension - gmst + mtpi,tpi);
+  return fmod(ra - gmst + mtpi,tpi);
 }
 // ****************************************************************************************************************************************************  
 
