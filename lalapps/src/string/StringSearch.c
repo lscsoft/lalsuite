@@ -143,7 +143,7 @@ struct GlobalVariablesTag {
   REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
   REAL4TimeSeries *ht_V;      /* raw input data (Virgo data) */
   REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
-  REAL4FrequencySeries Spec;  /* average spectrum */
+  REAL4FrequencySeries *Spec; /* average spectrum */
   RealFFTPlan *fplan;         /* fft plans */
   RealFFTPlan *rplan;         /* fft plans */
   INT4 seg_length;
@@ -155,7 +155,7 @@ struct StringTemplateTag {
   REAL4 f;                    /* Template frequency */
   REAL4 norm;                 /* Template normalisation */
   REAL4 mismatch;             /* Template mismatch relative to last one */
-  REAL4FrequencySeries StringFilter; /* Frequency domain filter corresponding to this template */
+  REAL4FrequencySeries *StringFilter; /* Frequency domain filter corresponding to this template */
   REAL4Vector *waveform_t;    /* Template waveform - time-domain */
   COMPLEX8Vector *waveform_f; /* Template waveform - frequency domain */
   REAL4Vector *auto_cor;      /* Auto-correlation vector */
@@ -165,7 +165,6 @@ struct StringTemplateTag {
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
-INT4 lalDebugLevel=3;
 FrCache *framecache;          /* frame reading variables */
 FrStream *framestream=NULL;
 
@@ -185,10 +184,9 @@ CHAR ifo[4];
 
 double chi2cut[4][3];         /* chi2 cut parameters (3 per ifo) */
 
-long double veto_start[1000][10000];/* start of veto segments  by 100000s slices */
-long double veto_end[1000][10000];  /* end of veto segments  by 100000s slices */
-int veto_first_index;         /* index of the first slice */
-int nseg[1000];               /* number of veto segment by 100000s slices */
+long double veto_start[50000];/* start of veto segments */
+long double veto_end[50000];  /* end of veto segments */
+int nseg;                     /* number of veto segments */
 
 REAL4 SAMPLERATE;
 
@@ -320,7 +318,7 @@ int main(int argc,char *argv[])
   /****** AvgSpectrum ******/
   printf("AvgSpectrum()\n");
   if (AvgSpectrum(CommandLineArgs)) return 9;  
-  if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" );
+  if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( GV.Spec, "Spectrum.txt" );
   
   /****** CreateTemplateBank ******/
   printf("CreateTemplateBank()\n");
@@ -510,7 +508,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int s, p, pp, ifoindex, veto_index, veto;
+  int s, p, pp, ifoindex, veto;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
@@ -558,32 +556,19 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* Apply vetoes */
-      if (CLA.VetoFile != NULL && veto_first_index>0 ){
+      if ( nseg>0 ){
 
 	/* time of the event given with nano-seconds */
 	eventtime=(double)peaktime/1e9;
-	/* what is the number of the slice ? */
-	veto_index=(int)eventtime/100000;/* Slices of 100000sec */
-	veto_index-=veto_first_index;
 
 	/* the event is vetoed by default unless... */
 	veto=1;
-
-	if(veto_index>=0){
-	
-	  /* first, check the last segment of the previous slice, if any */
-	  if(veto_index>0 && 
-	     eventtime>=veto_start[veto_index-1][nseg[veto_index-1]-1] 
-	     && eventtime<veto_end[veto_index-1][nseg[veto_index-1]-1])
-	    veto=0;
-	    
-	  /* then check all the segments of the slice */
-	  for(s=0; veto==1&&s<nseg[veto_index]; s++){
-	    if(eventtime>=veto_start[veto_index][s] && eventtime<veto_end[veto_index][s])
-	      veto=0;
-	  }
+		    
+	/* then check all the segments of the slice */
+	for(s=0; veto==1&&s<nseg; s++){
+	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=0;
 	}
-
+	
 	/* rejection if veto */
 	if(veto) continue;
       }
@@ -677,8 +662,8 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       
       /* multiply FT of data and String Filter and deltaT */
       for ( p = 0 ; p < (int) vtilde->length; p++ ){
-	vtilde->data[p].re *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
-	vtilde->data[p].im *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc->deltaT;
+	vtilde->data[p].re *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
+	vtilde->data[p].im *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
       }
       
       if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
@@ -688,7 +673,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
 	 match-filter definition */
       
       for ( p = 0 ; p < (int)vector->length; p++ )
-	vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
+	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
       
       if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
     }
@@ -721,14 +706,14 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
  
   for (m = 0; m < NTemplates; m++){
     
-    /* create the space for the filter */
-    strtemplate[m].StringFilter.deltaF=GV.Spec.deltaF;
-    strtemplate[m].StringFilter.data = XLALCreateREAL4Vector(GV.Spec.data->length);
-            
+    /* Initialize the filter */
+    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.Spec->data->length);
+    strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
+                
     /* populate vtilde with the template divided by the noise */
     for ( p = 0; p < (int) vtilde->length; p++ ){
-      vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec.data->data[p]));
-      vtilde->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/(GV.Spec.data->data[p]));
+      vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
+      vtilde->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/(GV.Spec->data->data[p]));
     }
     
     /* reverse FFT vtilde into vector */
@@ -736,7 +721,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
              
     /* multiply times df to make sure units are correct */
     for ( p = 0 ; p < (int)vector->length; p++ )
-      vector->data[p] *= GV.Spec.deltaF;
+      vector->data[p] *= GV.Spec->deltaF;
 
     /* perform the truncation; the truncation is CLA.TruncSecs/2 because 
        we are dealing with the sqrt of the filter at the moment*/
@@ -751,18 +736,18 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
     for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
       re = vtilde->data[p].re * GV.ht_proc->deltaT;
       im = vtilde->data[p].im * GV.ht_proc->deltaT;
-      strtemplate[m].StringFilter.data->data[p] = (re * re + im * im);
+      strtemplate[m].StringFilter->data->data[p] = (re * re + im * im);
     }
     
     /* set DC and Nyquist to 0*/
-    strtemplate[m].StringFilter.data->data[0] =
-      strtemplate[m].StringFilter.data->data[vtilde->length-1] = 0;
+    strtemplate[m].StringFilter->data->data[0] =
+      strtemplate[m].StringFilter->data->data[vtilde->length-1] = 0;
         
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
       filterfilename[sizeof(outfilename)-1] = '\0';
-      LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), filterfilename );
+      LALSPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
     /* print out the time domain FIR filter */
@@ -809,26 +794,26 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
 
   fMax = (1.0/GV.ht_proc->deltaT) / 2.0;
-  f_min_index = CLA.fbankstart / GV.Spec.deltaF;
-  f_max_index = fMax / GV.Spec.deltaF;
+  f_min_index = CLA.fbankstart / GV.Spec->deltaF;
+  f_max_index = fMax / GV.Spec->deltaF;
   integral = XLALCreateREAL4Vector(f_max_index-f_min_index);
   epsilon=0;
 
   /* first template : f_cutoff = fbankhighfcutofflow */
-  f_cut = (int)(CLA.fbankhighfcutofflow/GV.Spec.deltaF)*GV.Spec.deltaF;
-  f_cut_index = CLA.fbankhighfcutofflow / GV.Spec.deltaF;
+  f_cut = (int)(CLA.fbankhighfcutofflow/GV.Spec->deltaF)*GV.Spec->deltaF;
+  f_cut_index = CLA.fbankhighfcutofflow / GV.Spec->deltaF;
 
   /* compute (t1|t1) */
   t1t1=0.0;
-  integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/GV.Spec.data->data[f_min_index]*GV.Spec.deltaF;
+  integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/GV.Spec->data->data[f_min_index]*GV.Spec->deltaF;
   for( p = f_min_index ; p < f_max_index; p++ ){
-    f = p*GV.Spec.deltaF;
+    f = p*GV.Spec->deltaF;
     
-    if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
-    else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
+    if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
+    else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
 
     if(p>0) /* keep the integral in memory (to run faster) */
-      integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
+      integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
   }
   
   strtemplate[0].findex=f_cut_index;
@@ -841,26 +826,26 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   
   /* find the next cutoffs given the maximal mismatch */
   for(pcut=f_cut_index+1; pcut<f_max_index; pcut++){
-    f_cut = pcut*GV.Spec.deltaF;
+    f_cut = pcut*GV.Spec->deltaF;
    
     t2t2=integral->data[strtemplate[k-1].findex-f_min_index];
     t1t2=integral->data[strtemplate[k-1].findex-f_min_index];
     
     /* compute (t2|t2) and (t1|t2) */
     for( p = strtemplate[k-1].findex+1 ; p < f_max_index; p++ ){
-      f = p*GV.Spec.deltaF;
+      f = p*GV.Spec->deltaF;
       
       /* (t2|t2) */
       if(f<=f_cut)
-	t2t2 += 4*pow(pow(f,CLA.power),2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
+	t2t2 += 4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
       else 
-	t2t2 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
+	t2t2 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
 
       /* (t1|t2) */
       if(f<=f_cut)
-	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f) /GV.Spec.data->data[p]*GV.Spec.deltaF;
+	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f) /GV.Spec->data->data[p]*GV.Spec->deltaF;
       else 
-	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f)*exp(1-f/f_cut) /GV.Spec.data->data[p]*GV.Spec.deltaF;
+	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f)*exp(1-f/f_cut) /GV.Spec->data->data[p]*GV.Spec->deltaF;
     }
         
     previous_epsilon = epsilon;
@@ -895,7 +880,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   /* Now, the point is to store the template waveform vector */
   vector = XLALCreateREAL4Vector( GV.seg_length);
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
-  f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec.deltaF+0.5);
+  f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec->deltaF+0.5);
   for (m = 0; m < NTemplates; m++){
     
     /* create the space for the waveform vectors */
@@ -905,7 +890,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
     
     /* populate with the template waveform */
     for ( p = f_low_cutoff_index; p < (int)strtemplate[m].waveform_f->length; p++ ){
-      f=p*GV.Spec.deltaF;
+      f=p*GV.Spec->deltaF;
       if(f<=strtemplate[m].f) 
 	strtemplate[m].waveform_f->data[p].re = pow(f,CLA.power);
       else 
@@ -921,7 +906,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
     strtemplate[m].waveform_f->data[0].im = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].im = 0;
     
     for (p=0 ; p<(int) vtilde->length; p++){
-      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re/GV.Spec.data->data[p];
+      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re/GV.Spec->data->data[p];
       vtilde->data[p].im = 0;
     }
     
@@ -931,8 +916,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
 
     /* The vector is reshuffled in the right order */
     for ( p = 0 ; p < GV.seg_length/2; p++ ){
-      strtemplate[m].waveform_t->data[p] = vector->data[GV.seg_length/2+p]*GV.Spec.deltaF;;
-      strtemplate[m].waveform_t->data[GV.seg_length/2+p] = vector->data[p]*GV.Spec.deltaF;;
+      strtemplate[m].waveform_t->data[p] = vector->data[GV.seg_length/2+p]*GV.Spec->deltaF;;
+      strtemplate[m].waveform_t->data[GV.seg_length/2+p] = vector->data[p]*GV.Spec->deltaF;;
     }
 
     /* Normalize the autocorrelation by the central value */
@@ -980,30 +965,30 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
   int segmentLength;
   int segmentStride;
   REAL4Window  *window4;
-
+  
   GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
-  GV.Spec.data = XLALCreateREAL4Vector(GV.seg_length / 2 + 1);
+  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
   GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
   GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
-
+  
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
-    for ( p = 0 ; p < (int)GV.Spec.data->length; p++ )
-      GV.Spec.data->data[p]=2/SAMPLERATE;
-    GV.Spec.deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
+    for ( p = 0 ; p < (int)GV.Spec->data->length; p++ )
+      GV.Spec->data->data[p]=2/SAMPLERATE;
+    GV.Spec->deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
   }
   else{
     segmentLength = GV.seg_length;
     segmentStride = GV.seg_length/2;
     window4  = NULL;
-
     window4 = XLALCreateHannREAL4Window( segmentLength );
-    if(XLALREAL4AverageSpectrumMedianMean( &GV.Spec, GV.ht_proc, segmentLength,
+    
+    if(XLALREAL4AverageSpectrumMedianMean( GV.Spec, GV.ht_proc, segmentLength,
 					   segmentStride, window4, GV.fplan ))
-	return 1;
-
-      XLALDestroyREAL4Window( window4 );
-    }
-
+      return 1;
+    
+    XLALDestroyREAL4Window( window4 );
+  }
+  
   return 0;
 }
 
@@ -1089,6 +1074,8 @@ int ReadData(struct CommandLineArgsTag CLA){
       /* Fill REAL8 data vector */
       for (p=0; p<(int)GV.ht_V->data->length; p++)
 	GV.ht->data->data[p] = (REAL8)GV.ht_V->data->data[p];
+
+      XLALDestroyREAL4TimeSeries(GV.ht_V);
     }
     else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
@@ -1139,8 +1126,7 @@ int ReadData(struct CommandLineArgsTag CLA){
   for (p=0; p<(int)GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
   
   XLALFrClose(framestream);
-  if(CLA.ChannelName[0]=='V') XLALDestroyREAL4TimeSeries(GV.ht_V);
-  
+   
   return 0;
 }
 
@@ -1151,54 +1137,36 @@ int ReadData(struct CommandLineArgsTag CLA){
 int ReadVetoFile(struct CommandLineArgsTag CLA){
  
   FILE *VetoFile;
-  int i, seg_index, veto_index;
+  int seg_index;
   char line[1024];
   long double gps_start, gps_end, duration;
  
   /* Open the veto file */
   VetoFile = fopen (CLA.VetoFile,"r");
 
+  /* Initialization */
+  nseg=0;
+
   /* If the file does not exist, no veto are applied */
   if (VetoFile==NULL){
     printf("\tNo Veto file --> no veto are applied\n");
-    veto_first_index=-1;
     return 0;
   }
-
-  /* Initialization */
-  veto_first_index=-1;
-  veto_index=0;
-  for(i=0; i<1000; i++) nseg[i]=0;
 
   /* Read the file line by line */
   while(fgets(line,sizeof(line),VetoFile)){
     sscanf (line,"%d %Lf %Lf %Lf",&seg_index,&gps_start,&gps_end,&duration);
     
-    veto_index=(int)gps_start/100000;/* Slices of 100000sec */
-    if(veto_index<7000) continue;
-
-    /* Store the start and the end of each segment organized in slices */    
-    if(seg_index==1){
-      veto_first_index=veto_index;
-      veto_index-=veto_first_index;
-      veto_start[veto_index][nseg[veto_index]]=gps_start;
-      veto_end[veto_index][nseg[veto_index]]=gps_end;
-      nseg[veto_index]++;
+    /* Store the start and the end of each segment */    
+    veto_start[nseg]=gps_start;
+    veto_end[nseg]=gps_end;
+    nseg++;
+    if(nseg==50000){ 
+      printf("\tToo many segments in the veto file\n"); 
+      return 1;
     }
-    else{
-      veto_index-=veto_first_index;
-      if(veto_index>999){ printf("\tToo many slices in the veto file\n"); return 1; }
-      veto_start[veto_index][nseg[veto_index]]=gps_start;
-      veto_end[veto_index][nseg[veto_index]]=gps_end;
-      nseg[veto_index]++;
-      if(nseg[veto_index]==10000){ 
-	printf("\tToo many segments in one slice (veto file)\n"); 
-	return 1;
-      }
-    }
-
   }
-
+  
   fclose(VetoFile);
   
   return 0;
@@ -1352,8 +1320,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   /* initialise veto stuff */
   memset(veto_start, 0, sizeof(veto_start));
   memset(veto_end, 0, sizeof(veto_end));
-  memset(nseg, 0, sizeof(nseg));
-
+  
   /* Scan through list of command line arguments */
   while ( 1 )
   {
@@ -1686,15 +1653,11 @@ int FreeMem(void){
   int m;
   
   XLALDestroyREAL4TimeSeries(GV.ht_proc);
-  XLALDestroyREAL4Vector(GV.Spec.data);
+  XLALDestroyREAL4FrequencySeries(GV.Spec);
   
-  for (m=0; m < NTemplates; m++){
-    XLALDestroyREAL4Vector(strtemplate[m].StringFilter.data);
-    XLALDestroyREAL4Vector(strtemplate[m].waveform_t);
-    XLALDestroyREAL4Vector(strtemplate[m].auto_cor);
-    XLALDestroyCOMPLEX8Vector(strtemplate[m].waveform_f);
-  }
-
+  for (m=0; m < MAXTEMPLATES; m++)
+    XLALDestroyREAL4FrequencySeries(strtemplate[m].StringFilter);
+    
   XLALDestroyREAL4FFTPlan( GV.fplan );
   XLALDestroyREAL4FFTPlan( GV.rplan );
   
