@@ -1074,6 +1074,8 @@ int ReadData(struct CommandLineArgsTag CLA){
       /* Fill REAL8 data vector */
       for (p=0; p<(int)GV.ht_V->data->length; p++)
 	GV.ht->data->data[p] = (REAL8)GV.ht_V->data->data[p];
+
+      XLALDestroyREAL4TimeSeries(GV.ht_V);
     }
     else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
@@ -1124,8 +1126,7 @@ int ReadData(struct CommandLineArgsTag CLA){
   for (p=0; p<(int)GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
   
   XLALFrClose(framestream);
-  if(CLA.ChannelName[0]=='V') XLALDestroyREAL4TimeSeries(GV.ht_V);
-  
+   
   return 0;
 }
 
