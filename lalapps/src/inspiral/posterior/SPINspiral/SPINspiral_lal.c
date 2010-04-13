@@ -1164,19 +1164,19 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   
-  REAL4TimeSeries signal;        // GW signal 
+  REAL4TimeSeries signalvec;        // GW signal 
   
-  memset( &signal, 0, sizeof(REAL4TimeSeries) );
+  memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
   
   //REAL4TimeSeries chan;        // channel
   
   //memset( &chan, 0, sizeof(REAL4TimeSeries) );
   
   
-  //signal.epoch.gpsSeconds = (INT4)par->par[2];  // Can't use par[i] anymore...
-  //signal.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signal.epoch.gpsSeconds));  // Can't use par[i] anymore...
+  //signalvec.epoch.gpsSeconds = (INT4)par->par[2];  // Can't use par[i] anymore...
+  //signalvec.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signalvev.epoch.gpsSeconds));  // Can't use par[i] anymore...
   
-  //waveform->f->epoch = waveform->phi->epoch = waveform->a->epoch = signal.epoch; 
+  //waveform->f->epoch = waveform->phi->epoch = waveform->a->epoch = signalvec.epoch; 
   INT8 waveformStartTime;
   
   //  waveformStartTime = par->par[2];  // Can't use par[i] anymore...
@@ -1205,14 +1205,14 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   /* set the parameters for the signal time series */
-  signal.deltaT = waveform->phi->deltaT;
+  signalvec.deltaT = waveform->phi->deltaT;
   
-  signal.sampleUnits = lalADCCountUnit;
-  signal.f0 = 0.0;
-  signal.data = NULL;
+  signalvec.sampleUnits = lalADCCountUnit;
+  signalvec.f0 = 0.0;
+  signalvec.data = NULL;
   /* simulate the detectors response to the inspiral */
-  LALSCreateVector( status, &(signal.data), (UINT4)length );
-  XLALGPSSetREAL8( &(signal.epoch), ifo->FTstart);
+  LALSCreateVector( status, &(signalvec.data), (UINT4)length );
+  XLALGPSSetREAL8( &(signalvec.epoch), ifo->FTstart);
   
   
   /* set the parameters for the signal time series */
@@ -1227,7 +1227,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   waveform->position.system=COORDINATESYSTEM_GEOGRAPHIC;
   
-  LALSimulateCoherentGW( status, &signal, waveform, &detector );//////////////////this is were F+,x are being computed.
+  LALSimulateCoherentGW( status, &signalvec, waveform, &detector );//////////////////this is were F+,x are being computed.
   
   //LALFloatToGPS( status, &(chan.epoch), &(ifo->FTstart));
   
@@ -1237,17 +1237,17 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   
-  // signal.deltaT = waveform->phi->deltaT;
-  // signal.f0 = 0.0;
-  // signal.data = NULL;
+  // signalvec.deltaT = waveform->phi->deltaT;
+  // signalvec.f0 = 0.0;
+  // signalvec.data = NULL;
   
-  //      LALSSInjectTimeSeries(status, &chan, &signal );
+  //      LALSSInjectTimeSeries(status, &chan, &signalvec );
   
-  for ( i = 0; i < signal.data->length && i < length; i++ ){
+  for ( i = 0; i < signalvec.data->length && i < length; i++ ){
     
     //printf("%d\t%10.10e\n", i, chan.data->data[i]);
     
-    wave[i] = signal.data->data[i]; // wave is my array of doubles to send back the waveform to the rest of SPINspiral.
+    wave[i] = signalvec.data->data[i]; // wave is my array of doubles to send back the waveform to the rest of SPINspiral.
   }
   
   /*********TIME DELAY***********/
@@ -1258,14 +1258,14 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //  LALPlaceAndGPS        det1_and_gps;
   
   //  det1_and_gps.p_detector = detector.site;
-  // det1_and_gps.p_gps      = &(signal.epoch);
+  // det1_and_gps.p_gps      = &(signalvec.epoch);
   
   // det1_and_source.p_det_and_time = &det1_and_gps;
   //  det1_and_source.p_source       = &(waveform->position);
   
   // LALTimeDelayFromEarthCenter(status, &delay, &det1_and_source);
   
-  LALSDestroyVector( status, &( signal.data ) );
+  LALSDestroyVector( status, &( signalvec.data ) );
   // LALSDestroyVector( status, &( chan.data ) );
   
   // if(waveform->position.system==COORDINATESYSTEM_EQUATORIAL) printf("youpi\n");
