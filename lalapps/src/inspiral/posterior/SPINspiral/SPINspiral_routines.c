@@ -400,11 +400,11 @@ void vec2coord(double x[3], double *sinlati, double *longi)
 // ****************************************************************************************************************************************************  
 void setSeed(int *seed)
 {
-  struct timeval time;
+  struct timeval time_now;
   struct timezone tz;
   if(*seed==0) {
-    gettimeofday(&time, &tz);
-    *seed = time.tv_usec;
+    gettimeofday(&time_now, &tz);
+    *seed = time_now.tv_usec;
   }
 }
 // ****************************************************************************************************************************************************  
