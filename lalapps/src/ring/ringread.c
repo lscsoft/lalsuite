@@ -109,6 +109,7 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 #define MAX_PATH 4096
 
 /* function to read the next line of data from the input file list */
+char *get_next_line( char *line, size_t size, FILE *fp );
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
@@ -120,14 +121,14 @@ char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
   /* lal initialization variables */
-  LALStatus stat = blank_status;
+  LALStatus status = blank_status;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifoName = NULL;
@@ -501,7 +502,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, hardware );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT " ", hardware );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT " ", hardware );
         break;
 
       case 'D':
@@ -920,8 +921,8 @@ int main( int argc, char *argv[] )
     /* check for events and playground */
     if ( dataType != all_data )
     {
-      LAL_CALL( LALPlaygroundInSearchSummary( &stat, searchSummaryTable,
-            &inPlay, &outPlay ), &stat );
+      LAL_CALL( LALPlaygroundInSearchSummary( &status, searchSummaryTable,
+            &inPlay, &outPlay ), &status );
       outPlayNS = XLALGPSToINT8NS ( &outPlay );
 
       if ( dataType == playground_only )
@@ -1056,7 +1057,7 @@ int main( int argc, char *argv[] )
           if ( prevEvent ) prevEvent->next = thisEvent->next;
           tmpEvent = thisEvent;
           thisEvent = thisEvent->next;
-          LAL_CALL ( LALFreeSnglRingdown ( &stat, &tmpEvent ), &stat);
+          LAL_CALL ( LALFreeSnglRingdown ( &status, &tmpEvent ), &status);
         }
       }
 
@@ -1106,8 +1107,8 @@ int main( int argc, char *argv[] )
   if ( injectFileName || sortTriggers )
   {
     if ( vrbflg ) fprintf( stdout, "sorting ringdown trigger list..." );
-    LAL_CALL( LALSortSnglRingdown( &stat, &eventHead, 
-          *LALCompareSnglRingdownByTime ), &stat );
+    LAL_CALL( LALSortSnglRingdown( &status, &eventHead, 
+          *LALCompareSnglRingdownByTime ), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
@@ -1122,8 +1123,8 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, 
         "keeping only triggers from %s, discarding others...", ifoName );
-    LAL_CALL( LALIfoCutSingleRingdown( &stat, &eventHead, ifoName ), &stat );
-    LALIfoCountSingleRingdown( &stat, &numEventsInIFO, eventHead, 
+    LAL_CALL( LALIfoCutSingleRingdown( &status, &eventHead, ifoName ), &status );
+    LALIfoCountSingleRingdown( &status, &numEventsInIFO, eventHead, 
         XLALIFONumber(ifoName) );
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
@@ -1213,7 +1214,7 @@ int main( int argc, char *argv[] )
             if ( prevEvent ) prevEvent->next = thisEvent->next;
             tmpEvent = thisEvent;
             thisEvent = thisEvent->next;
-            LAL_CALL ( LALFreeSnglRingdown ( &stat, &tmpEvent ), &stat);
+            LAL_CALL ( LALFreeSnglRingdown ( &status, &tmpEvent ), &status);
             ++numEventsProcessed;
             ++numEventsDiscard;
             if ( vrbflg ) fprintf( stdout, "-" );
@@ -1333,7 +1334,7 @@ int main( int argc, char *argv[] )
         {
           thisEvent = tmpEvent;
           tmpEvent = tmpEvent->next;
-          LAL_CALL ( LALFreeSnglRingdown ( &stat, &thisEvent ), &stat);
+          LAL_CALL ( LALFreeSnglRingdown ( &status, &thisEvent ), &status);
           ++numEventsDiscard;
           ++numEventsProcessed;
           if ( vrbflg ) fprintf( stdout, "-" );
@@ -1365,8 +1366,8 @@ int main( int argc, char *argv[] )
   if ( eventHead && clusterchoice )
   {
     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
-    LAL_CALL( LALClusterSnglRingdownTable( &stat, eventHead,
-          cluster_dt, clusterchoice ), &stat );
+    LAL_CALL( LALClusterSnglRingdownTable( &status, eventHead,
+          cluster_dt, clusterchoice ), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
     /* count the number of triggers surviving the clustering */
@@ -1390,36 +1391,36 @@ int main( int argc, char *argv[] )
   /* write the main output file containing found injections */
   if ( vrbflg ) fprintf( stdout, "writing output xml files... " );
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &stat, &xmlStream, outputFileName ), &stat );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, outputFileName ), &status );
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
-      &stat );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, proctable, 
-        process_table ), &stat );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+        process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
   free( proctable.processTable );
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-        process_params_table ), &stat );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
-        process_params_table ), &stat );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+        process_params_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, 
+        process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* Write the found injections to the sim table */
   if ( simEventHead )
   {
     if ( vrbflg ) fprintf( stdout, "sim_ringdown... " );
     outputTable.simRingdownTable = simEventHead;
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-          sim_ringdown_table ), &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
-          sim_ringdown_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          sim_ringdown_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
+          sim_ringdown_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
   }
 
   /* Write the results to the ringdown table */
@@ -1427,15 +1428,15 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "sngl_ringdown... " );
     outputTable.snglRingdownTable = eventHead;
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-          sngl_ringdown_table ), &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
-          sngl_ringdown_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+          sngl_ringdown_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
+          sngl_ringdown_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status);
   }
 
   /* close the output file */
-  LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+  LAL_CALL( LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
   /* write out the TAMA file if it is requested */
@@ -1466,20 +1467,20 @@ int main( int argc, char *argv[] )
     /* open the missed injections file and write the missed injections to it */
     if ( vrbflg ) fprintf( stdout, "writing missed injections... " );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LAL_CALL( LALOpenLIGOLwXMLFile( &stat, &xmlStream, missedFileName ), 
-        &stat );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, missedFileName ), 
+        &status );
 
     if ( missedSimHead )
     {
       outputTable.simRingdownTable = missedSimHead;
-      LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, sim_ringdown_table ),
-          &stat );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
-            sim_ringdown_table ), &stat );
-      LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat );
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sim_ringdown_table ),
+          &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
+            sim_ringdown_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream ), &status );
     }
 
-    LAL_CALL( LALCloseLIGOLwXMLFile( &stat, &xmlStream ), &stat );
+    LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream ), &status );
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
@@ -1566,7 +1567,7 @@ int main( int argc, char *argv[] )
   {
     thisEvent = eventHead;
     eventHead = eventHead->next;
-    LAL_CALL ( LALFreeSnglRingdown ( &stat, &thisEvent ), &stat);
+    LAL_CALL ( LALFreeSnglRingdown ( &status, &thisEvent ), &status);
   }
 
   /* free the process params */
