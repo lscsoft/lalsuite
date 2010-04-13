@@ -304,7 +304,7 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   double alpha=0.0;
-  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,G=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
+  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,g=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
   double cst4=0.0,x1=0.0,x2=0.0,x3=0.0;
   
   omega_orb=pi*f_lower;
@@ -314,19 +314,19 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   Y = spin/l_L;                                                                                                    //Y = |S|/|L|, Eq.43
   Gsq = 1.0 + 2.0*pSpCosTh1*Y + Y*Y;                                                                                      //G^2, Eq.46
-  G   = sqrt(Gsq);
+  g   = sqrt(Gsq);
   
   cst4 = l_L+pSpCosTh1*spin;
   x = mu*M;
   x1 = x*x*x;
-  x = G*l_L;
+  x = g*l_L;
   x2 = x*x*x;
   x3 = spin*spin*spin;
   alpha = pSpPhi1 - 5.0/(96.0*x1) * (1.0+0.75*m2/m1) * 
-    (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*G*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
+    (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*g*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
   
-  slamL = cst5/(l_L*G);                                                                                            //sin(lambda_L), Eq.48a
-  clamL = cst4/(l_L*G);                                                                                            //cos(lambda_L), Eq.48b
+  slamL = cst5/(l_L*g);                                                                                            //sin(lambda_L), Eq.48a
+  clamL = cst4/(l_L*g);                                                                                            //cos(lambda_L), Eq.48b
   
   //Construct Eq.41e
   facVec(n_J0,clamL,tvec1);                                                                                        //tvec1 = J0^*cos(lambda_L)
@@ -350,9 +350,9 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   n_S[1] = -(-n_J0[1] + n_J0[0]*n_L[2]*e - n_L[0]*n_J0[2]*e - n_L[0]*n_J0[0]*n_L[1]*e2 - n_L[1]*n_L[1]*n_J0[1]*e2 - n_L[1]*n_L[2]*n_J0[2]*e2) / (1.0 + n_L[0]*e3 + n_L[1]*n_L[1]*e2 + n_L[2]*n_L[2]*e2);  //-n_L[1];
   n_S[2] = -(-n_J0[2] - n_J0[0]*n_L[1]*e + n_L[0]*n_J0[1]*e - n_L[0]*n_J0[0]*n_L[2]*e2 - n_L[1]*n_J0[1]*n_L[2]*e2 - n_L[2]*n_L[2]*n_J0[2]*e2) / (1.0 + n_L[0]*e3 + n_L[1]*n_L[1]*e2 + n_L[2]*n_L[2]*e2);  //-n_L[2];
   
-  n_S[0] = n_S[0]*G*l_L - l_L*n_L[0];
-  n_S[1] = n_S[1]*G*l_L - l_L*n_L[1];
-  n_S[2] = n_S[2]*G*l_L - l_L*n_L[2];
+  n_S[0] = n_S[0]*g*l_L - l_L*n_L[0];
+  n_S[1] = n_S[1]*g*l_L - l_L*n_L[1];
+  n_S[2] = n_S[2]*g*l_L - l_L*n_L[2];
   
   double xloc[3],yloc[3],zloc[3];                        // coordinates in the global frame (in which N is defined) of the local vectors (e.g. z=N)                                                                          
   for(i=0;i<3;i++) zloc[i] = n_N[i];                                                             
