@@ -678,7 +678,7 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
 // ****************************************************************************************************************************************************  
 {
   int p=0, tempi=mcmc->iTemp;
-  double gamma=0.0;
+  double s_gamma=0.0;
   double ran=0.0, largejump1=0.0, largejumpall=0.0;
   
   largejumpall = 1.0;
@@ -717,25 +717,25 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
           mcmc->param[tempi][p] = mcmc->nParam[tempi][p];
           mcmc->logL[tempi] = mcmc->nlogL[tempi];
           if(mcmc->adaptiveMCMC==1){
-            gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] + gamma*(1.0 - mcmc->acceptRateTarget)); //Accept - increase sigma
+            s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] + s_gamma*(1.0 - mcmc->acceptRateTarget)); //Accept - increase sigma
             sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);              //Bring the sigma between 0 and 2pi
           }
           mcmc->accepted[tempi][p] += 1;
         } else {                                                                        //Reject proposal
           mcmc->nParam[tempi][p] = mcmc->param[tempi][p];
           if(mcmc->adaptiveMCMC==1){
-            gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget); //Reject - decrease sigma
+            s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget); //Reject - decrease sigma
             sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);              //Bring the sigma between 0 and 2pi
-            //mcmc->adaptSigma[tempi][p] = max(0.01*mcmc->adaptSigma[tempi][p], mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget);
+            //mcmc->adaptSigma[tempi][p] = max(0.01*mcmc->adaptSigma[tempi][p], mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget);
           }
         }
       } else {  //If new state not within boundaries
         mcmc->nParam[tempi][p] = mcmc->param[tempi][p];
         if(mcmc->adaptiveMCMC==1) {
-          gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-          mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget);   //Reject - decrease sigma
+          s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+          mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget);   //Reject - decrease sigma
           sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);                                     //Bring the sigma between 0 and 2pi
         }
       } //if(mcmc->acceptPrior[tempi]==1)
