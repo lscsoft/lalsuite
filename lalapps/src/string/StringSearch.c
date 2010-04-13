@@ -185,10 +185,9 @@ CHAR ifo[4];
 
 double chi2cut[4][3];         /* chi2 cut parameters (3 per ifo) */
 
-long double veto_start[1000][10000];/* start of veto segments  by 100000s slices */
-long double veto_end[1000][10000];  /* end of veto segments  by 100000s slices */
-int veto_first_index;         /* index of the first slice */
-int nseg[1000];               /* number of veto segment by 100000s slices */
+long double veto_start[50000];/* start of veto segments */
+long double veto_end[50000];  /* end of veto segments */
+int nseg;                     /* number of veto segments */
 
 REAL4 SAMPLERATE;
 
@@ -510,7 +509,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int s, p, pp, ifoindex, veto_index, veto;
+  int s, p, pp, ifoindex, veto;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
@@ -558,32 +557,19 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* Apply vetoes */
-      if (CLA.VetoFile != NULL && veto_first_index>0 ){
+      if ( nseg>0 ){
 
 	/* time of the event given with nano-seconds */
 	eventtime=(double)peaktime/1e9;
-	/* what is the number of the slice ? */
-	veto_index=(int)eventtime/100000;/* Slices of 100000sec */
-	veto_index-=veto_first_index;
 
 	/* the event is vetoed by default unless... */
 	veto=1;
-
-	if(veto_index>=0){
-	
-	  /* first, check the last segment of the previous slice, if any */
-	  if(veto_index>0 && 
-	     eventtime>=veto_start[veto_index-1][nseg[veto_index-1]-1] 
-	     && eventtime<veto_end[veto_index-1][nseg[veto_index-1]-1])
-	    veto=0;
-	    
-	  /* then check all the segments of the slice */
-	  for(s=0; veto==1&&s<nseg[veto_index]; s++){
-	    if(eventtime>=veto_start[veto_index][s] && eventtime<veto_end[veto_index][s])
-	      veto=0;
-	  }
+		    
+	/* then check all the segments of the slice */
+	for(s=0; veto==1&&s<nseg; s++){
+	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=0;
 	}
-
+	
 	/* rejection if veto */
 	if(veto) continue;
       }
@@ -1151,54 +1137,36 @@ int ReadData(struct CommandLineArgsTag CLA){
 int ReadVetoFile(struct CommandLineArgsTag CLA){
  
   FILE *VetoFile;
-  int i, seg_index, veto_index;
+  int seg_index;
   char line[1024];
   long double gps_start, gps_end, duration;
  
   /* Open the veto file */
   VetoFile = fopen (CLA.VetoFile,"r");
 
+  /* Initialization */
+  nseg=0;
+
   /* If the file does not exist, no veto are applied */
   if (VetoFile==NULL){
     printf("\tNo Veto file --> no veto are applied\n");
-    veto_first_index=-1;
     return 0;
   }
-
-  /* Initialization */
-  veto_first_index=-1;
-  veto_index=0;
-  for(i=0; i<1000; i++) nseg[i]=0;
 
   /* Read the file line by line */
   while(fgets(line,sizeof(line),VetoFile)){
     sscanf (line,"%d %Lf %Lf %Lf",&seg_index,&gps_start,&gps_end,&duration);
     
-    veto_index=(int)gps_start/100000;/* Slices of 100000sec */
-    if(veto_index<7000) continue;
-
-    /* Store the start and the end of each segment organized in slices */    
-    if(seg_index==1){
-      veto_first_index=veto_index;
-      veto_index-=veto_first_index;
-      veto_start[veto_index][nseg[veto_index]]=gps_start;
-      veto_end[veto_index][nseg[veto_index]]=gps_end;
-      nseg[veto_index]++;
+    /* Store the start and the end of each segment */    
+    veto_start[nseg]=gps_start;
+    veto_end[nseg]=gps_end;
+    nseg++;
+    if(nseg==50000){ 
+      printf("\tToo many segments in the veto file\n"); 
+      return 1;
     }
-    else{
-      veto_index-=veto_first_index;
-      if(veto_index>999){ printf("\tToo many slices in the veto file\n"); return 1; }
-      veto_start[veto_index][nseg[veto_index]]=gps_start;
-      veto_end[veto_index][nseg[veto_index]]=gps_end;
-      nseg[veto_index]++;
-      if(nseg[veto_index]==10000){ 
-	printf("\tToo many segments in one slice (veto file)\n"); 
-	return 1;
-      }
-    }
-
   }
-
+  
   fclose(VetoFile);
   
   return 0;
@@ -1352,8 +1320,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   /* initialise veto stuff */
   memset(veto_start, 0, sizeof(veto_start));
   memset(veto_end, 0, sizeof(veto_end));
-  memset(nseg, 0, sizeof(nseg));
-
+  
   /* Scan through list of command line arguments */
   while ( 1 )
   {
