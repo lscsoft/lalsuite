@@ -41,7 +41,6 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>   // www.fftw.org                                                   
-#include <FrameL.h>  // from LIGOtools package: www.ldas-sw.ligo.caltech.edu/ligotools 
 #include <time.h>
 #include <remez.h>   // FIR-filter design routine:  www.janovetz.com/jake              
 #include <gsl/gsl_rng.h>
@@ -53,6 +52,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/LALFrameL.h>
 
 
 #define TRUE (1==1)

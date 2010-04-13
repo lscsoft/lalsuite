@@ -1,4 +1,4 @@
-if FRAME
+if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
 bin_PROGRAMS = lalapps_spinspiral
