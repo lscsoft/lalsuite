@@ -364,12 +364,12 @@ static void print_missing_argument(const char *prog, const char *arg)
 
 static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
-	int index;
+	int option_index;
 	int got_all_arguments = 1;
 	int arg_is_missing;
 
-	for(index = 0; long_options[index].name; index++) {
-		switch(long_options[index].val) {
+	for(option_index = 0; long_options[option_index].name; option_index++) {
+		switch(long_options[option_index].val) {
 		case 'A':
 			arg_is_missing = !options->bandwidth;
 			break;
@@ -431,7 +431,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 		}
 		if(arg_is_missing) {
-			print_missing_argument(prog, long_options[index].name);
+			print_missing_argument(prog, long_options[option_index].name);
 			got_all_arguments = 0;
 		}
 	}
