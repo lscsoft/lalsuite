@@ -53,6 +53,7 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALFrameL.h>
+#include <lal/LALConstants.h>
 
 
 #define TRUE (1==1)

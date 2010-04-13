@@ -727,7 +727,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
   if(Nseconds > 1025.0) fprintf(stderr, "\n ***  Warning: you're using %6.1f seconds of data for the PSD estimation;  ~256s is recommended  ***\n\n",Nseconds);
   
   
-  double wss=0.0,log2=log(2.0);  // squared & summed window coefficients  etc.
+  double wss=0.0;              // squared & summed window coefficients  etc.
   int     i, j, M, N, dummyN;
   int             samplerate;
   int           lower, upper;  // indices of lower & upper frequency bounds in FT vector
@@ -957,7 +957,7 @@ void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run
   
   // Normalise & log the summed PSD's:
   for(i=0; i<PSDrange; ++i)
-    PSD[i] = log(PSD[i]) + log2;
+    PSD[i] = log(PSD[i]) + LAL_LN2;
   
   if(run.beVerbose>=2) printf("ok.\n");
   if(run.beVerbose>=2) printf(" | Averaged over %d overlapping segments of %1.0fs each (%.0f s total).\n", K-1, Mseconds*2, Nseconds);
