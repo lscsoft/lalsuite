@@ -1243,7 +1243,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   //      LALSSInjectTimeSeries(status, &chan, &signalvec );
   
-  for ( i = 0; i < signalvec.data->length && i < length; i++ ){
+  for ( i = 0; i < (int)signalvec.data->length && i < length; i++ ){
     
     //printf("%d\t%10.10e\n", i, chan.data->data[i]);
     
