@@ -235,7 +235,7 @@ gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment 
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
-if ! tmp=`eval $cmdline`; then
+if ! eval "time $cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
