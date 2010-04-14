@@ -1139,6 +1139,7 @@ XLALComputeFullChisq(
 InspiralTemplate *
 XLALFindChirpSortTemplates(
   InspiralTemplate *bankHead,
+  FindChirpBankVetoData *bvdata,
   UINT4 num);
 
 #ifdef  __cplusplus
