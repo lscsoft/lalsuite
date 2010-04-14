@@ -276,6 +276,7 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
 UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
+UINT4 autochisqStride      = 1;         /* Stride for autochisq         */
 UINT4 autochisqTwo         = 0;         /* flag for two sided auto chsq */
 
 UINT4 ccFlag = 0;
@@ -2114,7 +2115,7 @@ int main( int argc, char *argv[] )
     bankVetoData.acorrMatSize = autochisqLength;
     bankVetoData.two_sided_auto_chisq = autochisqTwo;
     bankVetoData.time_freq_bank_veto = timeFreqBankVeto;
-
+    bankVetoData.autochisqStride = autochisqStride;
 
     /*
      *
@@ -3434,6 +3435,7 @@ fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
 fprintf( a, "  --autochisq-length N         set the DOF of the autochisq to N in (1,1000)\n");\
+fprintf( a, "  --autochisq-stride N         set the stride of the autochisq to N in (1,1000)\n");\
 fprintf( a, "  --autochisq-two-sided        do a two-sided auto chisq test instead of one-sided.\n");\
 fprintf( a, "  --bank-veto-time-freq        do a time-frequency bank veto. \n");\
 fprintf( a, "\n");\
@@ -3599,6 +3601,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
     {"autochisq-length",        required_argument, 0,                 0 },
+    {"autochisq-stride",        required_argument, 0,                 0 },
     {"autochisq-two-sided",     no_argument,       &autochisqTwo    ,'}'},
     {"bank-veto-time-freq",     no_argument,       &timeFreqBankVeto,'}'},
     {"band-pass-template",      no_argument,       0,                '}'},
@@ -3657,6 +3660,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( !strcmp( long_options[option_index].name, "autochisq-length") )
         {
           autochisqLength = atoi(optarg);
+	  /* FIXME have a sensible upper bound for dof computed from arguments */
+          if (autochisqLength < 1 || autochisqLength > 1000)
+          {
+          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
+                  long_options[option_index].name, optarg);
+          exit( 1 );
+          }
+          break;
+        }
+        /* check for autochisq long options */
+        if ( !strcmp( long_options[option_index].name, "autochisq-stride") )
+        {
+          autochisqStride = atoi(optarg);
 	  /* FIXME have a sensible upper bound for dof computed from arguments */
           if (autochisqLength < 1 || autochisqLength > 1000)
           {
