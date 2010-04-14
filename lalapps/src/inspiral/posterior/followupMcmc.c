@@ -68,7 +68,7 @@
 const double Msun = 1.9889194662e30;   /* solar mass kg */
 const double Mpc  = 3.08568025e22;     /* metres in a Mpc (LAL:3.0856775807e22) */
 const double G    = 6.67259e-11;       /* 6.674215e-11; */ 
-const double c    = 299792458.0;       /* speed of light m/s */ 
+const double C    = 299792458.0;       /* speed of light m/s */ 
 const double pi   = 3.141592653589793; 
 const double earthRadiusEquator = 6378137.0;           /* (WGS84 value)                    */
 const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.257223563) */
@@ -2673,7 +2673,7 @@ void localParameters(vector *parameter, interferometer *ifo,
   scalprod =   ifo->positionVector[0] * lineofsight[0]
              + ifo->positionVector[1] * lineofsight[1]
              + ifo->positionVector[2] * lineofsight[2];
-  *timeshift = (-1.0) * scalprod / c;
+  *timeshift = (-1.0) * scalprod / C;
   /* (negative timeshift means signal arrives earlier than at geocenter etc.) */
   /*-- determine ALTITUDE (with respect to ifo'): --*/
   *altitude = angle(ifo->normalVector, lineofsight); 
@@ -3168,7 +3168,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
 {
   double eta     = vectorGetValue(parameter,"massratio");
   double mt      = mc2mt(vectorGetValue(parameter,"chirpmass"), eta)*Msun;
-  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(c);
+  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(C);
   double log_eta = log(eta);
   double a[5];
   long i;
@@ -3178,7 +3178,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
   double complex cosinechirp;
   double phase = vectorGetValue(parameter,"phase");
 
-  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(c);
+  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(C);
   ampliConst = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)
                    -vectorGetValue(parameter,"logdistance")-log(Mpc));
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
@@ -3243,7 +3243,7 @@ void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcr
   double m2 = mc2mass2(vectorGetValue(parameter,"chirpmass"), eta);
   double totalmass = (m1+m2);              /* still in units if Msun */
   double reducedmass = eta*totalmass;      /* also in units if Msun  */
-  double taufactor = 3.0*log(c)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
+  double taufactor = 3.0*log(C)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
   double MomegaLSO  = 0.0138 * 1e6 * Msun;
   double MomegaMECO = (-((54.0+6.0*eta-6.0*sqrt(1539.0-(1008.0+19.0*eta)*eta))/(81.0-(57.0-eta)*eta))/27)*Msun;
   double maxMomega, oldMomega=-HUGE_VAL;
@@ -3366,7 +3366,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
 	   )
     params.distance  = exp(vectorGetValue(parameter,"logdistance"));          /* distance in Mpc */
   else                                                     
-    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(c)); /* distance in seconds */
+    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(C)); /* distance in seconds */
 
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
   sineCoef   = Fcross * (-1.0*cos(vectorGetValue(parameter,"inclination")));
