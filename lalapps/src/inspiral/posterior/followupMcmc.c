@@ -210,7 +210,7 @@ interferometer *ifoPointer(interferometer *ifolist, int ifoN, char locationStrin
 void parseParameterOptionString(char *input, char **parnames[], double **parvalues, int *n);
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 int noVectorStrg(char *input);
-void printhelpmessage();
+void printhelpmessage(void);
 int init(DataFramework *DFarg[], McmcFramework *MFarg[],
          int *coherentN,
          int argc, char *argv[],
@@ -312,7 +312,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
                  double logprior, double loglikelihood, double logposterior);
 void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry);
 
-void printtime();
+void printtime(void);
 void DateTimeString(char *charvec);
 void savePSD(DataFramework *DF, char *filename);
 void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN);
@@ -765,7 +765,7 @@ int noVectorStrg(char *input)
 }
 
 
-void printhelpmessage()
+void printhelpmessage(void)
 {
   printf(" | \n");
   printf(" | Coherent follow-up MCMC code.\n");
@@ -4964,7 +4964,7 @@ void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
 }
 
 
-void printtime()
+void printtime(void)
 /* prints time (& date) to screen */
 {
   time_t tm;
