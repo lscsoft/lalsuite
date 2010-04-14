@@ -51,11 +51,11 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>   /* FFT library: www.fftw.org                                      */
-#include <FrameL.h>  /* Frame library: http://lappweb.in2p3.fr/virgo/FrameL            */
 #include <time.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALFrameL.h>
 #include <gsl/gsl_rng.h>     /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Generation.html */
 #include <gsl/gsl_randist.h> /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Distributions.html */
 #include <gsl/gsl_vector.h>
