@@ -266,6 +266,7 @@ void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplu
 void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter);
 void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *filenameT);
 
+double loglikelihoodOLD(DataFramework *DF, int waveform, vector *parameter);
 double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *parameter);
 double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector *parameter,
                           double indivSNRs[]);
