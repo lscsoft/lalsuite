@@ -268,7 +268,7 @@ void initialise(int argc, char *argv[]){
 			if(nifo==0) {IFOnames=malloc(sizeof(char **)); ChannelNames=malloc(sizeof(char **));}
 			else	{IFOnames=realloc(IFOnames,(nifo+1)*sizeof(CHAR **)); ChannelNames=realloc(ChannelNames,(nChannel+1)*sizeof(char **));}
 			IFOnames[nifo]=malloc(strlen(optarg)+1);
-            printf("strlen(optarg)=%i, optarg=%s\n",strlen(optarg),optarg);
+            printf("strlen(optarg)=%zu, optarg=%s\n",strlen(optarg),optarg);
 			ChannelNames[nifo]=malloc(MAXSTR+1);
 			/*strcpy(IFOnames[nifo],optarg);*/
             sprintf(IFOnames[nifo],"%s",optarg);
