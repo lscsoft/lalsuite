@@ -62,14 +62,14 @@ NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
 static int compareTemplateByMass (const void * a, const void * b);
-static int compareTemplateByEta (const void * a, const void * b);
+static int compareTemplateByFfinal (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead);
 static InspiralTemplate *
 XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
 InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
 InspiralTemplate *
-XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
+XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num );
 InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 
@@ -271,10 +271,13 @@ XLALComputeFullChisq(
     tmp = snrk - C * snri;
     chisq += tmp * tmp * norm / chisqnorm;
     /* Other side */
-    snrk = q[snrIX+k+1].re * cos(angle) + q[snrIX+k+1].im * sin(angle);
-    (*dof) += 1;
-    tmp = snrk - C * snri;
-    chisq += tmp * tmp * norm / chisqnorm;
+    if (bankVetoData->two_sided_auto_chisq)
+      {
+      snrk = q[snrIX+k+1].re * cos(angle) + q[snrIX+k+1].im * sin(angle);
+      (*dof) += 1;
+      tmp = snrk - C * snri;
+      chisq += tmp * tmp * norm / chisqnorm;
+      }
   }
 
   return chisq;
@@ -349,7 +352,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	bankVetoData->timeshift->data[row] = (REAL8) 8.0 * deltaT;
+	if (bankVetoData->time_freq_bank_veto) bankVetoData->timeshift->data[row] = (REAL8) 2.0 * deltaT;
+	else bankVetoData->timeshift->data[row] = 0.0;
 	}
     }
 
@@ -574,14 +578,14 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
 
 InspiralTemplate *
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
+XLALFindChirpSortTemplates( InspiralTemplate *bankHead, FindChirpBankVetoData *bvdata, UINT4 num)
   {
   UNUSED(num);
-  return bankHead;
-  /*return XLALFindChirpSortTemplatesByEta(bankHead, num);*/
+  //return bankHead;
+  if (bvdata->time_freq_bank_veto) return XLALFindChirpSortTemplatesByFfinal(bankHead, num);
   /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);*/
-  //breakUpRegions(bankHead);
-  //return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  breakUpRegions(bankHead);
+  return XLALFindChirpSortTemplatesByLevel(bankHead,num);
   //return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
@@ -642,7 +646,7 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
 }
 
 InspiralTemplate *
-XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
+XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num )
   {
   InspiralTemplate **bankArray = NULL;
   InspiralTemplate *bankFirst = NULL;
@@ -655,7 +659,7 @@ XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
     bankArray[i] = bankHead; /* populate pointer array */
   }
 
-  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByEta);
+  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByFfinal);
 
   bankFirst = bankHead = bankArray[0];
   /* repopulate linked list */
@@ -738,19 +742,32 @@ static int compareTemplateByChirpMass (const void * a, const void * b)
   return 0;
 }
 
-static int compareTemplateByEta (const void * a, const void * b)
+static REAL4 imr_ring(double m1, double m2){
+        double chi = 0.0;
+	double totalMass = m1+m2;
+        double eta = m1*m2/pow(totalMass,2.);
+        double piM = totalMass*LAL_PI*LAL_MTSUN_SI;
+        double fRing = (1. - 0.63*pow(1.-chi,0.3))/2. +
+                1.4690e-01*eta + -1.2281e-01*eta*chi + -2.6091e-02*eta*pow(chi,2.) +
+                -2.4900e-02*pow(eta,2.) + 1.7013e-01*pow(eta,2.)*chi +
+                2.3252e+00*pow(eta,3.);
+        fRing /= piM;
+        return (REAL4) fRing;
+        }
+
+static int compareTemplateByFfinal (const void * a, const void * b)
 {
   REAL4 m1Val1 = (*(InspiralTemplate * const *)a)->mass1;
   REAL4 m2Val1 = (*(InspiralTemplate * const *)a)->mass2;
   REAL4 m1Val2 = (*(InspiralTemplate * const *)b)->mass1;
   REAL4 m2Val2 = (*(InspiralTemplate * const *)b)->mass2;
 
-  REAL4 eta1 = m1Val1 * m2Val1 / (m1Val1 + m2Val1);
-  REAL4 eta2 = m1Val2 * m2Val2 / (m1Val2 + m2Val2);
+  REAL4 ffinal1 = imr_ring(m1Val1, m2Val1);
+  REAL4 ffinal2 = imr_ring(m1Val2, m2Val2);
 
-  if ( eta1 > eta2 ) return 1;
-  if ( eta1 == eta2 ) return 0;
-  if ( eta1 < eta2 ) return -1;
+  if ( ffinal1 > ffinal2 ) return 1;
+  if ( ffinal1 == ffinal2 ) return 0;
+  if ( ffinal1 < ffinal2 ) return -1;
   return 0;
 }
 
