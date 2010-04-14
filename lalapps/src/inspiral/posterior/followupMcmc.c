@@ -231,7 +231,7 @@ double spectrumAdvLigo(double f);
 double spectrumVirgo(double f);
 double spectrumGeo(double f);
 void normalise(double vec[3]);
-void rotate(double x[3], double angle, double axis[3]);
+void rotate(double x[3], double ang, double axis[3]);
 int righthanded(double x[3], double y[3], double z[3]);
 void orthoproject(double x[3], double vec1[3], double vec2[3]);
 double angle(double x[3], double y[3]);
@@ -2467,14 +2467,14 @@ void normalise(double vec[3])
 }
 
 
-void rotate(double x[3], double angle, double axis[3])
+void rotate(double x[3], double ang, double axis[3])
 /* rotates vector x clockwise around `axis'               */
 /* (looking along axis while it is pointing towards you). */
 /*   !!  `axis' must be a UNIT VECTOR  !!                 */
 {
   int i, j;
-  double cosa = cos(-angle);
-  double sina = sin(-angle);
+  double cosa = cos(-ang);
+  double sina = sin(-ang);
   double R[3][3] = {{cosa+axis[0]*axis[0]*(1.0-cosa), 
                      axis[0]*axis[1]*(1.0-cosa)-axis[2]*sina,
                      axis[0]*axis[2]*(1.0-cosa)+axis[1]*sina},
