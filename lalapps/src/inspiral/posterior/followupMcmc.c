@@ -5277,7 +5277,7 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
     j=0;
     while (templatefilename[j]) ++j;
     templatefilename[j-4] = 0;
-    sprintf(templatefilename, "%s-%d-%s.csv", templatefilename, i+1, DF[i].ifo->name);
+    sprintf(templatefilename, "%s-%ld-%s.csv", templatefilename, i+1, DF[i].ifo->name);
     printf(" : writing \"%s\"\n", templatefilename);
     textfile = fopen(templatefilename, "w");
     fprintf(textfile, "\"f\",\"logPSD\",\"dataReal\",\"dataImag\",\"templateReal\",\"templateImag\"\n");
