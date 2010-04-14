@@ -193,13 +193,13 @@ int verbose = 1;                /* verbosity flag (set through "--quiet" option)
 gsl_rng *GSLrandom;             /* GSL random number generator                   */
 
 void vectorInit(vector *vec);
-void vectorAdd(vector *vec, char name[], double value);
+void vectorAdd(vector *vec, const char name[], double value);
 void vectorSetup(vector *vec, int signal);
 void vectorDispose(vector *vec);
 void vectorCopy(vector *vec1, vector *vec2);
-void vectorSetValue(vector *vec, char name[], double value);
-double vectorGetValue(vector *vec, char name[]);
-int vectorIsElement(vector *vec, char name[]);
+void vectorSetValue(vector *vec, const char name[], double value);
+double vectorGetValue(vector *vec, const char name[]);
+int vectorIsElement(vector *vec, const char name[]);
 void vectorPrint(vector *vec);
 
 int char2template(char *templatename);
@@ -271,7 +271,7 @@ double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector
                           double indivSNRs[]);
 
 void clearMF(McmcFramework *MF);
-int parindex(McmcFramework *MF, char parametername[]);
+int parindex(McmcFramework *MF, const char parametername[]);
 
 void setcov(McmcFramework *MF, int parameter1, int parameter2, double covariance);
 void setvar(McmcFramework *MF, int parameter, double variance);
@@ -310,7 +310,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                  long iteration, long accepted, 
                  double logprior, double loglikelihood, double logposterior);
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry);
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry);
 
 void printtime(void);
 void DateTimeString(char *charvec);
@@ -334,7 +334,7 @@ void vectorInit(vector *vec)
 }
 
 
-void vectorAdd(vector *vec, char name[], double value)
+void vectorAdd(vector *vec, const char name[], double value)
 /* Takes a given vector and adds a new dimension (name & value). */
 {
   int newdim=0;
@@ -471,7 +471,7 @@ void vectorCopy(vector *vec1, vector *vec2)
 }
 
 
-void vectorSetValue(vector *vec, char name[], double value)
+void vectorSetValue(vector *vec, const char name[], double value)
 {
   int i, notfound=1;
   if (vec->dimension > 0) {
@@ -489,7 +489,7 @@ void vectorSetValue(vector *vec, char name[], double value)
 }
 
 
-double vectorGetValue(vector *vec, char name[])
+double vectorGetValue(vector *vec, const char name[])
 {
   int i, notfound=1;
   double result=0.0;
@@ -509,7 +509,7 @@ double vectorGetValue(vector *vec, char name[])
 }
 
 
-int vectorIsElement(vector *vec, char name[])
+int vectorIsElement(vector *vec, const char name[])
 /* returns 1 if 'vec' has an element named 'name', and zero otherwise. */
 {
   int i, notfound=1;
@@ -3943,7 +3943,7 @@ void clearMF(McmcFramework *MF)
 }
 
 
-int parindex(McmcFramework *MF, char parametername[])
+int parindex(McmcFramework *MF, const char parametername[])
 /* returns index (w.r.t. that MF->startvalue vector) */
 /* of parameter named 'parametername'.               */
 {
@@ -4949,7 +4949,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
 }
 
 
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add an entry (i.e. a line) to the (existing!) "general" log file.             */
 /* This file is kept in CSV format as well; it contains two columns of (quoted?) */
