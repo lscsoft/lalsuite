@@ -708,6 +708,8 @@ tagFindChirpBankVetoData
   REAL4FFTPlan		 *revplan;
   UINT4 		 acorrMatSize;
   REAL4Vector            *timeshift;
+  UINT4			 two_sided_auto_chisq;
+  UINT4			 time_freq_bank_veto;
 }
 FindChirpBankVetoData;
 /* </lalVerbatim> */
