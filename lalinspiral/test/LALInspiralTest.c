@@ -91,8 +91,8 @@ NRCSID (LALINSPIRALTESTC,"$Id$");
 
 INT4 lalDebugLevel=0;
 
-void printf_timeseries (int n, float *signal, double delta, double t0) ;
-void printf_timeseries (int n, float *signal, double delta, double t0)
+void printf_timeseries (int n, float *sig, double delta, double t0) ;
+void printf_timeseries (int n, float *sig, double delta, double t0)
 {
   int i=0;
   FILE *outfile1;
@@ -100,7 +100,7 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
   outfile1=fopen("wave1.dat","a");
 
   do
-     fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
+     fprintf (outfile1,"%e %e\n", i*delta+t0, *(sig+i));
   while (n-++i);
 
   fprintf(outfile1,"&\n");

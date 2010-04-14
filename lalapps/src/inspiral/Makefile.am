@@ -36,12 +36,6 @@ CORSESRC	= corse.c
 SKYMAPSRC	= skymap.c
 COINJSRC	= coinj.c
 
-## make sure LALAPPSgitID.h is re-generated at every 'make'
-.PHONY: gitID
-gitID:
-	cd $(top_builddir)/misc && $(MAKE) gitID
-BUILT_SOURCES = gitID
-
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
@@ -208,10 +202,13 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     followup0_page.in cbc_pipedown.in ihope_daily_page.in \
 	     check_flag.in flag_triggers.in glitch_probe.in $(DATA)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/misc
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = $(bin_SCRIPTS) python_config.sed
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
+
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

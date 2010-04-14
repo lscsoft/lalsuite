@@ -67,9 +67,6 @@ int finite(double);
 
 #include <lalapps.h>
 
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
-
 /* local includes */
 #include "HeapToplist.h"
 
@@ -151,9 +148,10 @@ typedef struct {
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
-  CHAR *logstring;                          /**< log containing max-info on this search setup */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
+  CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
+  CHAR *logstring;                          /**< log containing max-info on the whole search setup */
 } ConfigVariables;
 
 
@@ -254,6 +252,8 @@ typedef struct {
   BOOLEAN GPUready;		/**< use special single-precision  'GPU-ready' version */
 
   BOOLEAN version;		/**< output version information */
+
+  CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -280,9 +280,9 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
-void OutputVersion ( void );
 
 CHAR *append_string ( CHAR *str1, const CHAR *append );
+
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -290,6 +290,9 @@ void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
 BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 
+/* ---------- Fstat-atoms related functions ----------*/
+int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
+CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
@@ -325,7 +328,7 @@ int main(int argc,char *argv[])
   UserInput_t uvar = empty_UserInput;
   ConfigVariables GV = empty_ConfigVariables;		/**< global container for various derived configuration settings */
 
-  lalDebugLevel = 0;
+  lalDebugLevel = LALERROR;	/* only output error-messages by default */
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -335,6 +338,11 @@ int main(int argc,char *argv[])
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars(&status, &uvar), &status);
 
+  if ( (GV.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    XLALPrintError("XLALGetVersionString(0) failed.\n");
+    exit(1);
+  }
+
   /* do ALL cmdline and cfgfile handling */
   LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
 
@@ -343,7 +351,7 @@ int main(int argc,char *argv[])
 
   if ( uvar.version )
     {
-      OutputVersion();
+      printf ( "%s\n", GV.VCSInfoString );
       exit (0);
     }
 
@@ -530,7 +538,24 @@ int main(int argc,char *argv[])
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
 	  thisFCand.Mmunu.Sinv_Tsft = GV.Tsft;
-	}
+
+	  /* if outputting FstatAtoms, we need to renormalize them too ! */
+	  if ( Fstat.multiFstatAtoms )
+	    {
+	      UINT4 X, alpha;
+	      for ( X=0; X < Fstat.multiFstatAtoms->length; X++ )
+		{
+		  FstatAtoms *thisAtomList = Fstat.multiFstatAtoms->data[X];
+		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
+		    {
+		      thisAtomList->Fa_alpha[alpha].re *= norm;
+		      thisAtomList->Fa_alpha[alpha].im *= norm;
+		      thisAtomList->Fb_alpha[alpha].re *= norm;
+		      thisAtomList->Fb_alpha[alpha].im *= norm;
+		    } /* for alpha < numSFTs */
+		} /* for X < numDet */
+	    } /* if outputFstatAtoms */
+	} /* if SignalOnly */
       thisFCand.Fstat   = Fstat;
 
       /* push new value onto scan-line buffer */
@@ -583,6 +608,45 @@ int main(int argc,char *argv[])
 			   gsl_vector_int_get(Fstat_histogram, bin) + 1);
 
       }
+
+
+      /* ----- output F-stat atoms into files: one file per Doppler-position ---------- */
+      /* F-stat 'atoms' = per-SFT components {a,b,Fa,Fb}_alpha) */
+      if (uvar.outputFstatAtoms)
+	{
+	  FILE *fpFstatAtoms = NULL;
+	  CHAR *fnameAtoms = NULL;
+	  CHAR *dopplerName;
+	  UINT4 len;
+
+	  if ( (dopplerName = XLALPulsarDopplerParams2String ( &dopplerpos )) == NULL )
+	    {
+	      return COMPUTEFSTATISTIC_EXLAL;
+	    }
+	  len = strlen(uvar.outputFstatAtoms) + strlen(dopplerName) + 10;
+	  if ( (fnameAtoms = LALMalloc (len)) == NULL )
+	    {
+	      LogPrintf( LOG_CRITICAL, "Failed to LALMalloc(%d)\n", len );
+	      return COMPUTEFSTATISTIC_EMEM;
+	    }
+	  sprintf (fnameAtoms, "%s_%s.dat", uvar.outputFstatAtoms, dopplerName );
+
+	  if ( (fpFstatAtoms = fopen (fnameAtoms, "wb")) == NULL)
+	    {
+	      LALPrintError ("\nError opening file '%s' for writing..\n\n", fnameAtoms );
+	      return (COMPUTEFSTATISTIC_ESYS);
+	    }
+	  LALFree ( fnameAtoms );
+	  LALFree ( dopplerName );
+
+	  fprintf (fpFstatAtoms, "%s", GV.logstring );
+
+	  XLALoutputMultiFstatAtoms ( fpFstatAtoms, Fstat.multiFstatAtoms );
+	  XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
+	  Fstat.multiFstatAtoms = NULL;
+
+	  fclose (fpFstatAtoms);
+	} /* if outputFstatAtoms */
 
     } /* while more Doppler positions to scan */
 
@@ -862,6 +926,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+
+  LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
@@ -1231,7 +1297,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.SSBprec = uvar->SSBprecision;
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
-  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
+  cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs; 
+  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL );
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar->dAlpha;
@@ -1304,11 +1371,11 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   struct tm utc;
   time_t tp;
 #define BUFLEN 1024
-  CHAR dateStr[BUFLEN], line[BUFLEN];
+  CHAR dateStr[BUFLEN];
+  CHAR line[BUFLEN];
   CHAR *cmdline = NULL;
   UINT4 i, numDet, numSpins = PULSAR_MAX_SPINS;
   CHAR *ret = NULL;
-  CHAR *id1, *id2;
 
   INITSTATUS( status, "getLogString", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -1319,14 +1386,7 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   LALFree ( cmdline );
   ret = append_string ( ret, line );
 
-  /* add code version ID (only useful for git-derived versions) */
-  id1 = XLALClearLinebreaks ( lalGitID );
-  id2 = XLALClearLinebreaks ( lalappsGitID );
-  snprintf (line, BUFLEN, "%%%% %s\n%%%% %s\n", id1, id2 );
-  LALFree ( id1 );
-  LALFree ( id2 );
-  ret = append_string ( ret, line );
-
+  ret = append_string ( ret, cfg->VCSInfoString );
 
   numDet = cfg->multiSFTs->length;
   tp = time(NULL);
@@ -1444,6 +1504,8 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->ephemeris->ephemS);
   LALFree(cfg->ephemeris);
 
+  if ( cfg->VCSInfoString )
+    XLALFree ( cfg->VCSInfoString );
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
 
@@ -1892,17 +1954,6 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
 
 } /* XLALCenterIsLocalMax() */
 
-/** Simply output version information to stdout */
-void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
-
-  return;
-
-} /* OutputVersion() */
-
 /** Mini helper-function: append string 'str2' to string 'str1',
  * returns pointer to new concatenated string
  */
@@ -1931,3 +1982,96 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
   return outstr;
 
 } /* append_string() */
+
+
+int
+XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms )
+{
+  const char *fn = "XLALoutputMultiFstatAtoms()";
+  UINT4 X, alpha;
+
+  if ( !fp || !multiAtoms )
+    XLAL_ERROR (fn, XLAL_EINVAL );
+
+  fprintf ( fp, "%% GPS                a(t_i)     b(t_i)            Fa(t_i)                 Fb(t_i)\n");
+
+  for ( X=0; X < multiAtoms->length; X++ )
+    {
+      FstatAtoms *thisAtom = multiAtoms->data[X];
+      for ( alpha=0; alpha < multiAtoms->data[X]->length; alpha ++ )
+	{
+	  fprintf ( fp, "%f   % f  % f     % f  % f     % f  % f\n",
+		    GPS2REAL8(thisAtom->timestamps[alpha]),
+		    thisAtom->a_alpha[alpha],
+		    thisAtom->b_alpha[alpha],
+		    thisAtom->Fa_alpha[alpha].re, thisAtom->Fa_alpha[alpha].im,
+		    thisAtom->Fb_alpha[alpha].re, thisAtom->Fb_alpha[alpha].im
+		    );
+	} /* for alpha < numSFTs */
+    } /* for X < numDet */
+
+  return XLAL_SUCCESS;
+} /* XLALoutputMultiFstatAtoms() */
+
+/** Turn pulsar doppler-params into a single string that can be used for filenames
+ * The format is
+ * tRefNNNNNN_RAXXXXX_DECXXXXXX_FreqXXXXX[_f1dotXXXXX][_f2dotXXXXx][_f3dotXXXXX]
+ */
+CHAR*
+XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
+{
+  const CHAR *fn = "XLALPulsarDopplerParams2String()";
+#define MAXLEN 1024
+  CHAR buf[MAXLEN];
+  CHAR *ret = NULL;
+  int len;
+  UINT4 i;
+
+  if ( !par )
+    {
+      LogPrintf(LOG_CRITICAL, "%s: NULL params input.\n", fn );
+      XLAL_ERROR_NULL( fn, XLAL_EDOM);
+    }
+
+  len = snprintf ( buf, MAXLEN, "tRef%09d_RA%.9g_DEC%.9g_Freq%.15g",
+		      par->refTime.gpsSeconds,
+		      par->Alpha,
+		      par->Delta,
+		      par->fkdot[0] );
+  if ( len >= MAXLEN )
+    {
+      LogPrintf(LOG_CRITICAL, "%s: filename-size (%d) exceeded maximal length (%d): '%s'!\n", fn, len, MAXLEN, buf );
+      XLAL_ERROR_NULL( fn, XLAL_EDOM);
+    }
+
+  for ( i = 1; i < PULSAR_MAX_SPINS; i++)
+    {
+      if ( par->fkdot[i] )
+	{
+	  CHAR buf1[MAXLEN];
+	  len = snprintf ( buf1, MAXLEN, "%s_f%ddot%.7g", buf, i, par->fkdot[i] );
+	  if ( len >= MAXLEN )
+	    {
+	      LogPrintf(LOG_CRITICAL, "%s: filename-size (%d) exceeded maximal length (%d): '%s'!\n", fn, len, MAXLEN, buf1 );
+	      XLAL_ERROR_NULL( fn, XLAL_EDOM);
+	    }
+	  strcpy ( buf, buf1 );
+	}
+    }
+
+  if ( par->orbit )
+    {
+      LogPrintf(LOG_NORMAL, "%s: orbital params not supported in Doppler-filenames yet\n", fn );
+    }
+
+  len = strlen(buf) + 1;
+  if ( (ret = LALMalloc ( len )) == NULL )
+    {
+      LogPrintf(LOG_CRITICAL, "%s: failed to LALMalloc(%d)!\n", fn, len );
+      XLAL_ERROR_NULL( fn, XLAL_ENOMEM);
+    }
+
+  strcpy ( ret, buf );
+
+  return ret;
+} /* PulsarDopplerParams2String() */

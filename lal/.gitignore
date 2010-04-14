@@ -49,9 +49,7 @@ lib/git_info.sed
 lib/git_version
 lib/lal-version
 libtool
-misc/__lalGitID.h
 misc/lal-user-env.*sh
-misc/lalGitID.h
 misc/uninstall-lal.sh
 packages/*/doc/main.pdf
 packages/*/include/*.tex

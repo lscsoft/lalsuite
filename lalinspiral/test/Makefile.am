@@ -1,20 +1,65 @@
-AMCFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
 
 if LALSUPPORT
 check_PROGRAMS = \
+	BCVTemplates \
+	BCVTemplatesFlatMesh \
 	BasicInjectTest \
-	GeneratePPNInspiralTest \
+	CoarseTest \
+	CoarseTest2 \
+	FindChirpBCVSpinTest \
+	FindChirpBankVetoTest \
+	FindChirpTDTest \
+	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
+	GeneratePPNInspiralTest \
+	GetOrientationEllipse \
+	InjectionInterfaceTest \
+	InspiralBCVSpinBankTest \
+	InspiralSpinBankTest \
+	LALInspiralSpinningBHBinariesTest \
+	LALInspiralTest \
+	LALSTPNWaveformTest \
+	MetricTest \
+	MetricTestBCV \
+	MetricTestPTF \
+	PNTemplates \
 	RandomInspiralSignalTest
 TESTS = $(check_PROGRAMS)
-else
-check_PROGRAMS =
-TESTS =
+FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
 
-EXTRA_DIST = RandomInspiralSignalTest.par
+# non-building test
+# BCVSpinTemplates
+# ChirpSpace
+# FilterTest
+# FindChirpACTDTest
+# FindChirpBCVTest
+# FindChirpSPTest
+# FindChirpTmpltTest
+# InspiralSpinBankwNDTemplateBankTest
+# NRWaveInjectTest
+# RingTest
+# TestRingdown
 
-CLEANFILES = *.out
+# failing test
+# LALHybridTest
+# NRWaveIOTest
+# SpaceCovering
+
+# requires lalstochastic
+# CoherentInspiralFilterTest
+# CoherentInspiralInputTest
+
+EXTRA_DIST = \
+	NRWaveIOTest.cfg \
+	NRWaveIOTest.data \
+	RandomInspiralSignalTest.par \
+	injection.xml
+
+CLEANFILES = \
+	*.out \
+	*.dat
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null

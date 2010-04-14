@@ -25,22 +25,24 @@
 
 typedef struct
 {
-   REAL4Vector *f;         //First PSD frequencies
-   REAL4Vector *fpr;       //Second PSD frequencies
-   REAL4Vector *ffdata;    //Doubly Fourier transformed data
-   REAL4Vector *backgrnd;  //TF Noise background
-   REAL4Vector *antweights;   //Antenna pattern weights (F**2)
+   REAL8Vector *f;         //First PSD frequencies
+   REAL8Vector *fpr;       //Second PSD frequencies
+   REAL8Vector *ffdata;    //Doubly Fourier transformed data
+   REAL8Vector *backgrnd;  //TF Noise background
+   REAL8Vector *antweights;   //Antenna pattern weights (F**2)
 } ffdataStruct;
 
 typedef struct
 {
-   REAL4 fmin;
-   REAL4 fspan;
+   REAL8 fmin;
+   REAL8 fspan;
    REAL8 Tobs;
-   REAL4 Tcoh;
+   REAL8 Tcoh;
    REAL8 searchstarttime;
-   REAL4 ra;
-   REAL4 dec;
+   REAL8 Pmin;
+   REAL8 Pmax;
+   REAL8 dfmin;
+   REAL8 dfmax;
    REAL4 dopplerMultiplier;
    INT4 blksize;
    INT4 maxbinshift;
@@ -50,49 +52,47 @@ typedef struct
 
 typedef struct
 {
-   REAL4 fsig; /* 0 value means candidate not valid */
-   REAL4 period;
-   REAL4 moddepth;
+   REAL8 fsig; /* 0 value means candidate not valid */
+   REAL8 period;
+   REAL8 moddepth;
    REAL4 ra;
    REAL4 dec;
-   //REAL4 Tobs;
-   //REAL4 Tcoh;
-   //REAL4 fmin;
-   //REAL4 fspan;
-   REAL4 stat;
-   REAL4 snr;
+   REAL8 stat;
+   REAL8 snr;
+   REAL8 prob;
 } candidate;
 
 typedef struct
 {
-   REAL4Vector *maxima;
+   REAL8Vector *maxima;
    INT4Vector *locations;
    INT4 columns;
 } ihsMaximaStruct;
 
 typedef struct
 {
-   REAL4 ihs;
+   REAL8 ihs;
    INT4 loc;
 } ihsVals;
 
 typedef struct
 {
-   REAL4Vector *ihsfar;
-   REAL4Vector *ihsdistMean;
-   REAL4Vector *ihsdistSigma;
+   REAL8Vector *ihsfar;
+   REAL8Vector *ihsdistMean;
+   REAL8Vector *ihsdistSigma;
 } ihsfarStruct;
 
 typedef struct
 {
-   REAL4 far;
-   REAL4 distMean;
-   REAL4 distSigma;
+   REAL8 far;
+   REAL8 distMean;
+   REAL8 distSigma;
+   REAL8Vector *topRvalues;
 } farStruct;
 
 typedef struct
 {
-   REAL4Vector *templatedata;       //weights
+   REAL8Vector *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
    INT4Vector *firstfftfrequenciesofpixels;  //pixel frequency values
 } templateStruct;

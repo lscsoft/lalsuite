@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include <gsl/gsl_linalg.h>
+
 #include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/XLALError.h>
@@ -318,6 +320,81 @@ void XLALSkymapKernelConstruct(
     }
 
     kernel->logNormalization = 0.5 * log(det22(b));
+
+}
+
+// Construct a XLALSkymapKernel object in the given memory from
+//     a plan
+//     direction properties (time delays, interpolation weights and
+//         antenna patterns)
+//     the noise-weighted inner product of the template with itself
+//     the amplitude calibration error
+
+void XLALSkymapUncertainKernelConstruct(
+        XLALSkymapPlanType* plan,
+        XLALSkymapDirectionPropertiesType* properties,
+        double* wSw,
+        double* error,
+        XLALSkymapKernelType* kernel
+        )
+{
+	
+    int i, j, k;
+	
+    double a[XLALSKYMAP_N][XLALSKYMAP_N];
+	
+    // compute the signal covariance matrix
+
+    for (i = 0; i != plan->n; ++i)
+    {
+        for (j = 0; j != plan->n; ++j)
+        {
+            a[i][j] = 0;
+            for (k = 0; k != 2; ++k)
+            {
+                a[i][j] += properties->f[i][k] * properties->f[j][k]; // antenna factors
+            }
+            a[i][j] *= wSw[i] * wSw[j]; // snr factors
+        }
+        a[i][i] *= 1 + error[i] * error[i]; // error factors
+        a[i][i] += wSw[i]; // noise covariance
+    }
+
+    // invert the covariance
+
+    gsl_matrix_view m = gsl_matrix_view_array_with_tda(a[0], plan->n, plan->n, XLALSKYMAP_N);
+    gsl_permutation* p = gsl_permutation_alloc(plan->n);
+    int s;
+
+    gsl_linalg_LU_decomp(&m.matrix, p, &s);
+
+    gsl_matrix_view inverse = gsl_matrix_view_array_with_tda(kernel->k[0], plan->n, plan->n, XLALSKYMAP_N);
+
+    gsl_linalg_LU_invert(&m.matrix, p, &inverse.matrix);
+
+    gsl_permutation_free(p);
+
+    // subtract inverse signal covariance from inverse noise covariance
+
+    for (i = 0; i != plan->n; ++i)
+    {
+        for (j = 0; j != plan->n; ++j)
+	{
+	    kernel->k[i][j] = -kernel->k[i][j];
+	}
+	kernel->k[i][i] += 1. / wSw[i];
+    }
+
+    // log normalization
+
+    kernel->logNormalization = 0;
+    for (i = 0; i != plan->n; ++i)
+    {
+        // accumulate the log determinant of the noise covariance
+        kernel->logNormalization += log(wSw[i]);
+    }
+    kernel->logNormalization -= gsl_linalg_LU_lndet(&m.matrix); // log determinant of the signal covariance
+    kernel->logNormalization *= 0.5; // square root
 
 }
 

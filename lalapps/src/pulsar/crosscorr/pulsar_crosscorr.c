@@ -690,7 +690,14 @@ int main(int argc, char *argv[]){
     if (listLength > 1) {
 
       while (paramCounter < nParams) {
+        f_current = uvar_f0 + (uvar_fResolution*freqCounter);
+
         if (uvar_QCoeffs) {
+
+          q1_current = uvar_q1 + (delta_q1*q1Counter);
+          q2_current = uvar_q2 + (delta_q2*q2Counter);
+          n_current = uvar_brakingindex + (delta_n*nCounter);
+
   	  skyCounter++;
 	  if (skyCounter == nSkyPatches) {
 	    skyCounter = 0;
@@ -709,12 +716,12 @@ int main(int argc, char *argv[]){
 	    freqCounter++;
           }
 
-          q1_current = uvar_q1 + (delta_q1*q1Counter);
-          q2_current = uvar_q2 + (delta_q2*q2Counter);
-          n_current = uvar_brakingindex + (delta_n*nCounter);
-
 
         } else {
+
+  	  fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
+	  fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
+
 	  skyCounter++;
 	  if (skyCounter == nSkyPatches) {
 	    skyCounter = 0;
@@ -728,12 +735,8 @@ int main(int argc, char *argv[]){
 	    fdotCounter = 0;
 	    freqCounter++;
 	  }
-  	  fdot_current = uvar_fdot + (delta_fdot*fdotCounter);
-	  fddot_current = uvar_fddot + (delta_fddot*fddotCounter);
 
         }
-
-        f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
    	LAL_CALL( InitDoppParams(&status, fdots, &thisPoint, refTime, f_current, q1_current, q2_current, n_current,
 				 fdot_current, fddot_current), &status);
@@ -824,10 +827,9 @@ int main(int argc, char *argv[]){
 	     gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
 
 
- 	     LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
+    	     LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),
 		  	    &status);
-
 
 	     LAL_CALL( LALCalculateSigmaAlphaSq( &status, &sigmasq->data[ualphacounter],
 						    freq1, freq2, psd1, psd2),
@@ -846,6 +848,7 @@ int main(int argc, char *argv[]){
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 	     }
+
 	     ualphacounter++;
 
              }
@@ -1341,7 +1344,7 @@ void GetBeamInfo(LALStatus *status,
 
       beamtmp->beamfn.a = (AMcoef->a->data[0]);
       beamtmp->beamfn.b = (AMcoef->b->data[0]);
-		
+	
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);
     XLALDestroyDetectorStateSeries(detState);

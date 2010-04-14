@@ -24,11 +24,8 @@ doc/lalapps.pdf
 doc/lalapps.toc
 lalapps-*.tar.gz
 lalapps.spec
-lalappsGitID.h
 libtool
-misc/__lalappsGitID.h
 misc/lalapps-user-env.*sh
-misc/lalappsGitID.h
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrain

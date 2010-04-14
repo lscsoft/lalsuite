@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 NORESAMP="1"
 #NOCLEANUP="1"
@@ -15,7 +15,11 @@ fi
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 pfs_code="${fdsdir}lalapps_PredictFStat"
-gct_code="${builddir}lalapps_HierarchSearchGCT"
+if test $# -eq 0 ; then
+    gct_code="${builddir}lalapps_HierarchSearchGCT"
+else
+    gct_code="$@"
+fi
 
 SFTdir="./TestSFTs"
 
@@ -126,7 +130,7 @@ else
 fi
 
 # construct MFD cmd:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=$IFO --refTime=$refTime --Tsft=$Tsft "
+mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=$IFO --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
 
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
@@ -152,19 +156,20 @@ for ((x=1; x <= $Nsegments; x++))
     
     startGPS=${segs[${x}]}
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
-    echo "Segment: "$x"  "$startGPS" "$endGPS
+    #echo "Segment: "$x"  "$startGPS" "$endGPS
     # construct pfs cmd
     pfs_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTdir/*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
 
     cmdline="$pfs_code $pfs_CL"
-    echo $cmdline
+    echo "  "$cmdline
     if ! tmp=`eval $cmdline`; then
 	echo "Error.. something failed when running '$pfs_code' ..."
 	exit 1
     fi
-    resPFS=`echo $tmp | awk '{printf "%g", $1}'`
+    resPFS=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
+    #resPFS=`echo $tmp | awk '{printf "%g", $1}'`
     TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
-    #echo " Segment: "$x"   2F: "$resPFS"   Sum of 2F: "$TwoFsum
+    echo "Segment: "$x"   2F: "$resPFS
     echo
 done
 TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
@@ -181,6 +186,10 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match)"
 echo "----------------------------------------------------------------------"
 echo
+
+if [ -e "checkpoint.cpt" ]; then
+    rm checkpoint.cpt # delete checkpoint to start correctly
+fi
 
 outfile_gct1="__tmp_GCT1.dat"
                                                                                            
@@ -208,9 +217,13 @@ echo " STEP 4: run HierarchSearchGCT without Resampling (perfect match)"
 echo "----------------------------------------------------------------------"
 echo
 
+if [ -e "checkpoint.cpt" ]; then
+    rm checkpoint.cpt # delete checkpoint to start correctly
+fi
+
 outfile_gct2="__tmp_GCT2.dat"
 
-gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime -d1"
+gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTdir/*'  --ephemE=$edat --ephemS=$sdat --skyGridFile='$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -293,7 +306,6 @@ echo "----------------------------------------------------------------------"
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2
+    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2 checkpoint.cpt
     echo "Cleaned up."
 fi
-

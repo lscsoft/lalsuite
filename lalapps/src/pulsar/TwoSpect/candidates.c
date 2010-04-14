@@ -22,6 +22,7 @@
 #include <lal/RealFFT.h>
 #include "candidates.h"
 #include "templates.h"
+#include "TwoSpect.h"
 
 
 //////////////////////////////////////////////////////////////
@@ -36,12 +37,9 @@ candidate * new_candidate(void)
    cand->moddepth = 0.0;
    cand->ra = 0.0;
    cand->dec = 0.0;
-   //cand->Tobs = 0;
-   //cand->Tcoh = 0;
-   //cand->fmin = 0;
-   //cand->fspan = 0;
    cand->stat = 0.0;
    cand->snr = 0.0;
+   cand->prob = 0.0;
    
    return cand;
 
@@ -58,12 +56,9 @@ void free_candidate(candidate *cand)
    cand->moddepth = 0.0;
    cand->ra = 0.0;
    cand->dec = 0.0;
-   //cand->Tobs = 0;
-   //cand->Tcoh = 0;
-   //cand->fmin = 0;
-   //cand->fspan = 0;
-   cand->stat = 0;
-   cand->snr = 0;
+   cand->stat = 0.0;
+   cand->snr = 0.0;
+   cand->prob = 0.0;
    
    XLALFree((candidate*)cand);
 
@@ -72,23 +67,7 @@ void free_candidate(candidate *cand)
 
 //////////////////////////////////////////////////////////////
 // Load candidate data
-/* void loadCandidateData(candidate *out, REAL4 fsig, REAL4 period, REAL4 moddepth, 
-   REAL4 Tobs, REAL4 Tcoh, REAL4 fmin, REAL4 fspan, REAL4 stat, REAL4 snr)
-{
-
-   out->fsig = fsig;
-   out->period = period;
-   out->moddepth = moddepth;
-   out->Tobs = Tobs;
-   out->Tcoh = Tcoh;
-   out->fmin = fmin;
-   out->fspan = fspan;
-   out->stat = stat;
-   out->snr = snr;
-
-} */
-
-void loadCandidateData(candidate *out, REAL4 fsig, REAL4 period, REAL4 moddepth, REAL4 ra, REAL4 dec, REAL4 stat, REAL4 snr)
+void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 snr, REAL8 prob)
 {
 
    out->fsig = fsig;
@@ -98,6 +77,7 @@ void loadCandidateData(candidate *out, REAL4 fsig, REAL4 period, REAL4 moddepth,
    out->dec = dec;
    out->stat = stat;
    out->snr = snr;
+   out->prob = prob;
 
 }
 
@@ -106,11 +86,11 @@ void loadCandidateData(candidate *out, REAL4 fsig, REAL4 period, REAL4 moddepth,
 // Cluster candidates by frequency and period using templates:
 // option = 0 uses Gaussian templates (default)
 // option = 1 uses exact templates
-void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, INT4 numofcandidates, INT4 option)
+void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, INT4 numofcandidates, INT4 option)
 {
 
    INT4 ii, jj, kk, loc, loc2, numcandoutlist;
-   REAL4 avefsig, aveperiod, mindf, maxdf;
+   REAL8 avefsig, aveperiod, mindf, maxdf;
    
    INT4Vector *locs = XLALCreateINT4Vector((UINT4)numofcandidates);
    INT4Vector *locs2 = XLALCreateINT4Vector((UINT4)numofcandidates);
@@ -125,8 +105,8 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
    if (option!=0 || option!=1) option = 0;
    
    //Make FFT plan if option 1 is given
-   REAL4FFTPlan *plan = NULL;
-   if (option==1) plan = XLALCreateForwardREAL4FFTPlan((UINT4)floor(2*(params->Tobs/params->Tcoh)-1), 0);
+   REAL8FFTPlan *plan = NULL;
+   if (option==1) plan = XLALCreateForwardREAL8FFTPlan((UINT4)floor(2*(params->Tobs/params->Tcoh)-1), 0);
    
    numcandoutlist = 0;
    for (ii=0; ii<numofcandidates; ii++) {
@@ -204,10 +184,10 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             aveperiod = 0.0;
             mindf = 0.0;
             maxdf = 0.0;
-            REAL4 weight = 0;
-            REAL4 bestmoddepth = 0;
-            REAL4 bestR = 0;
-            REAL4 bestSNR = 0;
+            REAL8 weight = 0.0;
+            REAL8 bestmoddepth = 0.0;
+            REAL8 bestR = 0.0;
+            REAL8 bestSNR = 0.0;
             for (kk=0; kk<loc2; kk++) {
                avefsig += in[locs2->data[kk]]->fsig*in[locs2->data[kk]]->snr;
                aveperiod += in[locs2->data[kk]]->period*in[locs2->data[kk]]->snr;
@@ -215,7 +195,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                if (mindf > in[locs2->data[kk]]->moddepth || mindf == 0.0) mindf = in[locs2->data[kk]]->moddepth;
                if (maxdf < in[locs2->data[kk]]->moddepth) maxdf = in[locs2->data[kk]]->moddepth;
                
-               if (loc2==1) {
+               if (loc2==1 && aveperiod/weight >= params->Pmin && aveperiod/weight <= params->Pmax) {
                   bestSNR = in[locs2->data[kk]]->snr;
                   bestmoddepth = in[locs2->data[kk]]->moddepth;
                   bestR = in[locs2->data[kk]]->stat;
@@ -226,20 +206,20 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             avefsig = avefsig/weight;
             aveperiod = aveperiod/weight;
             
-            if (loc2 > 1) {
+            if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
                for (kk=0; kk<numofmoddepths; kk++) {
                   
                   candidate *cand = new_candidate();
-                  loadCandidateData(cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, in[0]->ra, in[0]->dec, 0, 0);
+                  loadCandidateData(cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, in[0]->ra, in[0]->dec, 0, 0, 0.0);
                   templateStruct *template = new_templateStruct(params->templatelength);
                   if (option==1) makeTemplate(template, cand, params, plan);
                   else makeTemplateGaussians(template, cand, params);
                   farStruct *farval = new_farStruct();
-                  estimateFAR(farval, template, 0.01, ffplanenoise);
-                  REAL4 R = calculateR(ffdata->ffdata, template, ffplanenoise);
-                  REAL4 snr = (R - farval->distMean)/farval->distSigma;
-                  if (snr > bestSNR) {
+                  estimateFAR(farval, template, 10000, 0.01, ffplanenoise);
+                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise);
+                  REAL8 snr = (R - farval->distMean)/farval->distSigma;
+                  if (R > farval->far && snr > bestSNR) {
                      bestSNR = snr;
                      bestmoddepth = mindf + kk*0.5/params->Tcoh;
                      bestR = R;
@@ -253,9 +233,12 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                }
             }
             
-            out[numcandoutlist] = new_candidate();
-            loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR);
-            numcandoutlist++;
+            if (bestSNR != 0.0) {
+               out[numcandoutlist] = new_candidate();
+               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, 0.0);
+               numcandoutlist++;
+            }
+            
             loc2 = 0;
          }
       }
@@ -280,7 +263,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
    XLALDestroyINT4Vector(locs);
    XLALDestroyINT4Vector(locs2);
    XLALDestroyINT4Vector(usedcandidate);
-   if (option==1) XLALDestroyREAL4FFTPlan(plan);
+   if (option==1) XLALDestroyREAL8FFTPlan(plan);
    
 }
 
