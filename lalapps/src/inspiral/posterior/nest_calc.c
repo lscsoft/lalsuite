@@ -132,7 +132,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	static LALStatus status;
 	REAL4 accept;
 	REAL8 *logZarray,*logwarray,*Harray,*oldZarray,*Wtarray;
-	REAL8 logw,H=0.0,logLmin,logWt,logZ,logZnew,deltaZ;
+	REAL8 logw,H=0.0,logLmin,logWt,logZ=-DBL_MAX,logZnew,deltaZ;
 	REAL8 MCMCfail=0;
 	REAL8 logZnoise=0.0;
 	REAL8 logLmax=-DBL_MAX;
