@@ -615,12 +615,12 @@ BankEfficiencyInspiralOverlapBCV(
   REAL4Vector                 *correlation,
   BankEfficiencyBCV           *bankefficiencyBCV);
 
-void BankEfficiencyParseGetInt(CHAR **argv, INT4  *index, INT4 *data);
-void BankEfficiencyParseGetDouble(CHAR **argv, INT4  *index, REAL8 *data);
-void BankEfficiencyParseGetDouble2(CHAR **argv, INT4  *index, REAL8 *data1, 
+void BankEfficiencyParseGetInt(CHAR **argv, INT4  *bank_index, INT4 *data);
+void BankEfficiencyParseGetDouble(CHAR **argv, INT4  *bank_index, REAL8 *data);
+void BankEfficiencyParseGetDouble2(CHAR **argv, INT4  *bank_index, REAL8 *data1, 
   REAL8 *data2);
 
-void BankEfficiencyParseGetString(CHAR **argv, INT4  *index );
+void BankEfficiencyParseGetString(CHAR **argv, INT4  *bank_index );
 CHAR* BankEfficiencyGetStringFromGridType(INT4 input);
 CHAR* BankEfficiencyGetStringFromSimulationType(INT4 input);
 CHAR* BankEfficiencyGetStringFromDetector(INT4 input);
@@ -751,13 +751,13 @@ void GetClosestValidTemplate(Mybank bank, RandomInspiralSignalIn randIn,
 void GetTau03FromMasses(RandomInspiralSignalIn randIn,REAL4 *tau0, REAL4 *tau3);
   
 REAL4 BankEfficiencyComputeEMatch(
-  RandomInspiralSignalIn *randIn, Mybank mybank, INT4 index);
+  RandomInspiralSignalIn *randIn, Mybank mybank, INT4 bank_index);
 
 void BankEfficiencyCreateListFromTmplt(
   LALStatus         *status,
   InspiralTemplate  *insptmplt, 
   Mybank             mybank,
-  INT4               index);
+  INT4               bank_index);
 
 void  BankEfficiencyFinalise(
   LALStatus              *status,

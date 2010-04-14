@@ -20,8 +20,6 @@
 #ifndef __IHS_H__
 #define __IHS_H__
 
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
 #include "TwoSpectTypes.h"
 
 ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 columns);
@@ -34,13 +32,11 @@ void incHarmSum(ihsVals *out, REAL8Vector *in);
 
 ihsfarStruct * new_ihsfarStruct(INT4 columns);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
-void genIhsFar(ihsfarStruct *out, ffdataStruct *ffdata, INT4 columns, REAL8 threshold);
+void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise);
 
 void ihsSums(REAL8Vector *out, REAL8Vector *ihss, INT4 cols);
 
-void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, REAL8Vector *aveFFnoise, inputParamsStruct *inputParams, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4 ra, REAL4 dec);
-
-//REAL8Vector * ihsSums(REAL8Vector *ihss, INT4 cols);
+void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, inputParamsStruct *inputParams, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL8Vector *fbinavgs, REAL8Vector *fbinrmss);
 
 REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma);
 REAL8 ihsLoc(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma);

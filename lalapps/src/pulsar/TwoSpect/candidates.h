@@ -20,15 +20,13 @@
 #ifndef __CANDIDATES_H__
 #define __CANDIDATES_H__
 
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
 #include "TwoSpectTypes.h"
 
 
 candidate * new_candidate(void);
 void free_candidate(candidate *cand);
 void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 snr, REAL8 prob);
-void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, INT4 numofcandidates, INT4 option);
+void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, INT4 numofcandidates, INT4 option);
 
 
 

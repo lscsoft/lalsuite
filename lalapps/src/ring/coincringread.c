@@ -131,6 +131,7 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
 int distanceCut = 0;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -138,7 +139,6 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status ;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -520,7 +520,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "cluster window must be > 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
@@ -560,7 +560,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }
