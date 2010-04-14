@@ -340,7 +340,6 @@ int main( int argc, char *argv[])
 	INT4 segnum=0;
 	RandomParams *randparam=NULL;
 	RandomParams *datarandparam=NULL;
-	InspiralTemplate insptemplate;
 	REAL4 TSoffset;
 	LIGOTimeGPS realstart,segmentStart;
 	REAL8 networkSNR=0.0;
@@ -423,7 +422,6 @@ int main( int argc, char *argv[])
 	
 	/* Prepare for injections */
 	UINT4 Ninj=0;
-	CoherentGW InjectGW;
 	PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
@@ -914,8 +912,6 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
-	double dmax = HighMassFlag?500.0:100.0;
-	double dmin=1.0;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
