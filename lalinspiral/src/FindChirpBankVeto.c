@@ -260,7 +260,7 @@ XLALComputeFullChisq(
   //if (snri < 1000) numsamps = (UINT4) ceil((double) numsamps * sqrt(snri) / 31.622776601683793);
   *dof = 0;
 
-  for (k = 0; k < numsamps; k++)
+  for (k = 0; k < numsamps; k+=bankVetoData->autochisqStride)
   {
     /* we skipped saving the first sample of the autocorrelation which is why */
     /* we need the -1 in the snrk here */
@@ -472,7 +472,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im /=
 	      (bankVetoData->normMat->data[row] *bankVetoData->normMat->data[col]);
-	    //fprintf(stderr, "ccmat[%d,%d] = %.2f+%.2fi\n", row, col, bankVetoData->ccMat->data[row*bankVetoData->length + col].re, bankVetoData->ccMat->data[row*bankVetoData->length + col].im);
 	}
     } /* end norm loop */
 
