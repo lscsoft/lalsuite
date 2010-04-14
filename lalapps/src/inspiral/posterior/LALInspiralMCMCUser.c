@@ -146,6 +146,9 @@ void MCMCInitTest(
   LALMCMCParameter  *parameter,
   SnglInspiralTable *inspiralTable)
 {/* </lalVerbatim> */
+  /* FIXME: this function doesn't use the inspiralTable argument, the
+   * correct fix is to modify this function not to take inspiralTable as
+   * an argument, this simply supresses the unused parameter warning */
   (void)inspiralTable;
 
   /* create the parameters and set the boundaries */
@@ -165,6 +168,9 @@ REAL8 MCMCLikelihoodTest(
   double x,y;
   double a,b;
 
+  /* FIXME: this function doesn't use the inputMCMC argument, the
+   * correct fix is to modify this function not to take inputMCMC as
+   * an argument, this simply supresses the unused parameter warning */
   (void)inputMCMC;
 
   x   = XLALMCMCGetParameter( parameter, "x" );
@@ -300,6 +306,9 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   REAL8 mNS,mComp,logmc;
   REAL8 mc,eta;
 
+  /* FIXME: this function doesn't use the inputMCMC argument, the
+   * correct fix is to modify this function not to take inputMCMC as
+   * an argument, this simply supresses the unused parameter warning */
   (void)inputMCMC;
 
   /* Priors for the GRB component masses */

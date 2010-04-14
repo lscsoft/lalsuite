@@ -881,6 +881,7 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	double mcmin,mcmax;
 	double deltaLong=0.001;
 	double deltaLat=0.001;
+	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	fprintf(stderr,"Using longitude = %f, latitude = %f\n",manual_RA,manual_dec);
@@ -908,6 +909,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 {
 	double etamin=0.03;
 	double mcmin,mcmax;
+	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
@@ -932,6 +934,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 	REAL8 trg_time,mcmin,mcmax;
 	REAL4 localetawin;
+	iT=NULL;
 	parameter->param = NULL;
 	parameter->dimension = 0;
 	trg_time = manual_end_time;
