@@ -3948,7 +3948,7 @@ int parindex(McmcFramework *MF, const char parametername[])
 /* returns index (w.r.t. that MF->startvalue vector) */
 /* of parameter named 'parametername'.               */
 {
-  int i, index=-1;
+  int i, j=-1;
   int notfound=1;
   if (MF->startvalue.dimension > 0) {
     i=0;
@@ -3959,12 +3959,12 @@ int parindex(McmcFramework *MF, const char parametername[])
       printf(" : ERROR: requesting unknown vector element in 'parindex(...,\"%s\")'!\n", 
              parametername);
     else
-      index = i;
+      j = i;
   }
   else
     printf(" : ERROR: empty 'startvalue' vector in 'parindex(...,\"%s\")'!\n", 
            parametername);
-  return index;
+  return j;
 }
 
 
