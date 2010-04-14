@@ -707,6 +707,7 @@ tagFindChirpBankVetoData
   REAL4Vector		 *acorrMat;
   REAL4FFTPlan		 *revplan;
   UINT4 		 acorrMatSize;
+  UINT4			 autochisqStride;
   REAL4Vector            *timeshift;
   UINT4			 two_sided_auto_chisq;
   UINT4			 time_freq_bank_veto;
