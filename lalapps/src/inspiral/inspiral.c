@@ -276,6 +276,8 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
 UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
+UINT4 autochisqTwo         = 0;         /* flag for two sided auto chsq */
+
 UINT4 ccFlag = 0;
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -2107,9 +2109,11 @@ int main( int argc, char *argv[] )
       }
     }
 
-    /* set the autocorrelation chisq length */
+    /* set the autocorrelation chisq length and type */
 
     bankVetoData.acorrMatSize = autochisqLength;
+    bankVetoData.two_sided_auto_chisq = autochisqTwo;
+    bankVetoData.time_freq_bank_veto = timeFreqBankVeto;
 
 
     /*
@@ -3430,6 +3434,8 @@ fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
 fprintf( a, "  --autochisq-length N         set the DOF of the autochisq to N in (1,1000)\n");\
+fprintf( a, "  --autochisq-two-sided        do a two-sided auto chisq test instead of one-sided.\n");\
+fprintf( a, "  --bank-veto-time-freq        do a time-frequency bank veto. \n");\
 fprintf( a, "\n");\
 fprintf( a, "  --maximization-interval MSEC set length of interval (in ms) for\n");\
 fprintf( a, "                                 maximization of triggers over the template bank.\n");\
@@ -3593,6 +3599,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
     {"autochisq-length",        required_argument, 0,                 0 },
+    {"autochisq-two-sided",     no_argument,       &autochisqTwo    ,'}'},
+    {"bank-veto-time-freq",     no_argument,       &timeFreqBankVeto,'}'},
     {"band-pass-template",      no_argument,       0,                '}'},
     {"taper-template",          required_argument, 0,                '{'},
     {"cdata-length",            required_argument, 0,                '|'},
