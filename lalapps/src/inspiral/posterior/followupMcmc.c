@@ -385,7 +385,7 @@ void vectorAdd(vector *vec, char name[], double value)
 }
 
 
-void vectorSetup(vector *vec, int signal)
+void vectorSetup(vector *vec, int signal_type)
 /* Set up parameter vector according to given signal type. */
 /* !! Vector needs to be pre-initialised !!                */
 {
@@ -399,14 +399,14 @@ void vectorSetup(vector *vec, int signal)
     vectorAdd(vec, "polarisation", 0.0);  /* w.r.t. earth frame                    */
     vectorAdd(vec, "time", 0.0);          /* w.r.t. earth frame (at geocentre)     */
     /* signal-specific parameters: */
-    if (signal == InspiralNoSpin){
+    if (signal_type == InspiralNoSpin){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logdistance", 0.0);
       vectorAdd(vec, "chirpmass", 0.0);
       vectorAdd(vec, "massratio", 0.0);
       vectorAdd(vec, "inclination", 0.0);
     }
-    else if (signal == BurstSineGaussian){
+    else if (signal_type == BurstSineGaussian){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logamplitude", 0.0);
       vectorAdd(vec, "logsigma", 0.0);
