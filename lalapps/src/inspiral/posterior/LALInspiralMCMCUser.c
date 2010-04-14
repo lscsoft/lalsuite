@@ -146,6 +146,7 @@ void MCMCInitTest(
   LALMCMCParameter  *parameter,
   SnglInspiralTable *inspiralTable)
 {/* </lalVerbatim> */
+  (void)inspiralTable;
 
   /* create the parameters and set the boundaries */
   parameter->param = NULL;
@@ -164,6 +165,8 @@ REAL8 MCMCLikelihoodTest(
   double x,y;
   double a,b;
 
+  (void)inputMCMC;
+
   x   = XLALMCMCGetParameter( parameter, "x" );
   y   = XLALMCMCGetParameter( parameter, "y" );
 
@@ -180,6 +183,8 @@ INT4 MCMCPriorTest(
   LALMCMCInput     *inputMCMC,
   LALMCMCParameter *parameter)
 {/* </lalVerbatim> */
+  (void)inputMCMC;
+  (void)parameter;
 
   /* always return prior of 1.0 */
 
@@ -294,6 +299,9 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
   REAL8 mNS,mComp,logmc;
   REAL8 mc,eta;
+
+  (void)inputMCMC;
+
   /* Priors for the GRB component masses */
 #define m1min 1.0
 #define m1max 3.0
