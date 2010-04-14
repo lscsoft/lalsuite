@@ -162,7 +162,7 @@ REAL8 MCMCLikelihoodTest(
 {/* </lalVerbatim> */
 
   double x,y;
-  double a,b,d;
+  double a,b;
 
   x   = XLALMCMCGetParameter( parameter, "x" );
   y   = XLALMCMCGetParameter( parameter, "y" );
@@ -203,7 +203,7 @@ return inrange;
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT){
 REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
-REAL4 mtot,eta,mwindow,localetawin;
+REAL4 eta,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
 trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
@@ -248,7 +248,7 @@ return;
 void NestInitInjNINJAHighMass(LALMCMCParameter *parameter, void *iT){
 REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
-REAL4 mtot,eta,mwindow,localetawin;
+REAL4 eta,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
 trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
@@ -582,7 +582,6 @@ in the frequency domain */
 {
 	REAL8 logL=0.0;
 	UINT4 det_i;
-	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL4FFTPlan *likelihoodPlan=NULL;
@@ -590,11 +589,10 @@ in the frequency domain */
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
-	INT4 i,NtimeModel;
+	INT4 NtimeModel;
 	LALDetAMResponse det_resp;
-	int Fdomain;
 	REAL8 chisq=0.0;
-	REAL8 real,imag,f,t;
+	REAL8 real,imag;
 	TofVIn TofVparams;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
@@ -773,7 +771,6 @@ in the frequency domain */
 {
 	REAL8 logL=0.0;
 	UINT4 det_i;
-	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL8 resp_r,resp_i,ci;
@@ -782,11 +779,9 @@ in the frequency domain */
 	UINT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
 	REAL4FFTPlan *likelihoodPlan=NULL;
-	int Fdomain;
 	REAL8 chisq=0.0;
-	REAL8 real,imag,f,t;
+	REAL8 real,imag;
 	TofVIn TofVparams;
-	FILE *modelout;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
 	REAL8 ChirpISCOLength;
@@ -902,7 +897,6 @@ in the frequency domain */
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 
 		for(i=lowBin;i<Nmodel/2;i++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);
