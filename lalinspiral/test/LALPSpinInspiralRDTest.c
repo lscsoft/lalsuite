@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Jolien Creighton, Thomas Cokelaer, Michele Vallisneri, Riccardo Sturani
+*  Copyright (C) 2010 Riccardo Sturani
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -73,8 +73,6 @@ int main() {
     REAL8       dt;
     REAL8       a1, a2, om;
     
-    REAL8 max=0.;
-
     const REAL8 omf=0.065;
     const REAL8 fi =40.;
     REAL8 omi,ff;
@@ -88,8 +86,8 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 1.4;
-    injParams.mass2 = 1.4*5.;
+    injParams.mass1 = 10.;
+    injParams.mass2 = 10.;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
@@ -103,21 +101,21 @@ int main() {
     //injParams.f_final  = ff;
     omi=injParams.f_lower*(injParams.mass1+injParams.mass2)*LAL_MTSUN_SI*LAL_PI;
 
-    fprintf(stdout,"**** Test:  %11.4e < om < %11.4e\n",omi,omf);
-    fprintf(stdout,"**** Test:  %11.4e < f  < %11.4e\n",fi,ff);
-
     /* Polar angles of the source arrival direction*/
+    //Inclination sets the initial phase
     injParams.inclination  = 0.;
+    // theta0 fixes the angle between the observation direction and J
     injParams.theta0       = 0.;
+    // phi0 is the angle between the x axis in a tetrad set by J and the projection of the line of sight in the plane orthognal to J
     injParams.phi0         = 0.;
 
     injParams.spin1x = 0.;
     injParams.spin1y = 0.;
-    injParams.spin1z = 0.;
+    injParams.spin1z = 0.6;
 
-    injParams.spin2x = 0.;
+    injParams.spin2x = 0.6;
     injParams.spin2y = 0.;
-    injParams.spin2z = 0.9;
+    injParams.spin2z = 0.;
 
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
@@ -129,7 +127,6 @@ int main() {
     if ( mystatus.statusCode )
     {
       fprintf( stderr, "LALPSpinInspiralRDTest: error generating waveform %d\n",mystatus.statusCode );
-      fprintf(stderr,"*** Test: h defined %s %11.3e\n",thewaveform.h->name,thewaveform.h->data->data[0]);
       exit( 1 );
     }
 
@@ -138,34 +135,18 @@ int main() {
     outputfile = fopen(filename,"w");
 
     length  = thewaveform.h->data->length;
-    
-    fprintf(stderr,"*** Test: Length=%d\n",length);
 
-    if (thewaveform.h) {
-      fprintf(stderr,"*** Test: h defined %s %11.3e\n",thewaveform.h->name,thewaveform.h->data->data[0]);
-      fprintf(stderr,"          phi: %11.3e  shift %11.3e\n",thewaveform.phi->data->data[0],thewaveform.shift->data->data[0]);
-    }
     dt      = thewaveform.phi->deltaT;
-
-    //    phi0    = thewaveform.phi->data->data[0];
-
 
     for(i = 0; i < length; i++) {
         a1  = thewaveform.h->data->data[2*i];
         a2  = thewaveform.h->data->data[2*i+1];
 	om  = thewaveform.f->data->data[i];
 
-	if ( fabs(a1) > max) max = a1;
-	if ( fabs(a2) > max) max = a2;
-
-	//phi     = thewaveform.phi->data->data[i] - phi0;
-        //shift   = thewaveform.shift->data->data[i];
-
         fprintf(outputfile,"%e\t%e\t%e\t%e\n",i*dt,a1,a2,om);
     }
 
     fclose(outputfile);
-    fprintf(stderr,"*** Test: Max = %11.3e\n",max);
     fprintf(stderr,"*** Test: waveform saved in %s\n          Final time %11.3e\n", filename, i*dt);
 
     return 0;
