@@ -4755,7 +4755,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
   struct listelement *search=NULL;
   int  listlength=0, recycle = 0;
   int  i, j;
-  double maximp, impsum, random, probsum;
+  double maximp, impsum, randomn, probsum;
   time_t starttime, endtime;
   double seconds;
   int n = samplesize;
@@ -4869,10 +4869,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
       search = search->next;
     }
     /* draw a parameter set: */
-    random = gsl_ran_flat(GSLrandom, 0.0, impsum);
+    randomn = gsl_ran_flat(GSLrandom, 0.0, impsum);
     search = list;
     probsum = list->impratio;
-    while (probsum < random) {
+    while (probsum < randomn) {
       search = search->next;
       probsum += search->impratio;
     }
