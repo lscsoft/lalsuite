@@ -793,7 +793,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	REAL8 mcmin,mcmax,m1min,m1max,m2min,m2max;
 	REAL8 deltaLong=0.01;
 	REAL8 deltaLat=0.01;
-	REAL8 trueLong,trueLat;
+	REAL8 trueLong=0.0,trueLat=0.0;
 	
 	parameter->param = NULL;
 	parameter->dimension = 0;
