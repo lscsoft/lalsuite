@@ -57,7 +57,7 @@ static double all_sky_average(struct detectors detectors)
 }
 
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	struct detectors detectors;
 	/* galactic core */
