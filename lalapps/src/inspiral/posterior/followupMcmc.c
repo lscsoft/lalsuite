@@ -310,7 +310,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                  long iteration, long accepted, 
-                 double log_prior, double loglikelihood, double logposterior);
+                 double log_prior, double log_likelihood, double logposterior);
 void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry);
 
 void printtime(void);
@@ -4892,7 +4892,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                   long iteration, long accepted, 
-                  double log_prior, double loglikelihood, double logposterior)
+                  double log_prior, double log_likelihood, double logposterior)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add a line to the MCMC log file. The MCMC log file is a text file             */
 /* in CSV (comma-seperated-values) format.                                       */
@@ -4939,7 +4939,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
   else { /* append to existing file: */
     logfile = fopen(MF->csvfilename, "a");
     fprintf(logfile, "%ld,%ld,%.6f,%.6f,%.6f", iteration, accepted, 
-            log_prior, loglikelihood, logposterior);
+            log_prior, log_likelihood, logposterior);
     for (i=0; i<outvector.dimension; ++i)
       if (!vectorIsElement(&MF->fixed, outvector.name[i]))
         fprintf(logfile, ",%.14e", outvector.value[i]);
