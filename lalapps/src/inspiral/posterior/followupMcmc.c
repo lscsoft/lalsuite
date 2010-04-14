@@ -3469,7 +3469,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     fftw_complex *InvFTinput=NULL;
     double *InvFToutput=NULL;
     double *amplitude;
-    long imax;
+    long imax=0;
     double pmax, pleft, pright, instant;
 
     fftw_plan InvFTplan;
