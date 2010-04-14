@@ -3469,7 +3469,7 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     double *InvFToutput=NULL;
     double *amplitude;
     long imax;
-    double p, pmax, pleft, pright, instant;
+    double pmax, pleft, pright, instant;
 
     fftw_plan InvFTplan;
     InvFTinput  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*DF->FTSize);
@@ -5236,8 +5236,6 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
 {
   double complex *FourierTemplate=NULL;
   long i, j, maxftsize;
-  double absdiff, chisquared=0.0;
-  double logfactor;
   double locdeltat, locpolar, locazi, localti;
   vector localparameter;
   FILE *textfile;
