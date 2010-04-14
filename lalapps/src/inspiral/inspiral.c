@@ -278,6 +278,7 @@ UINT4 subBankSize          = 0;         /* num templates in a subbank   */
 UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
 UINT4 autochisqStride      = 1;         /* Stride for autochisq         */
 UINT4 autochisqTwo         = 0;         /* flag for two sided auto chsq */
+UINT4 timeFreqBankVeto     = 0;         /* flag for experimental bank veto option */
 
 UINT4 ccFlag = 0;
 /* output parameters */
@@ -2515,8 +2516,6 @@ int main( int argc, char *argv[] )
         } /* end of loop over templates in subbank */
 
         /* If doing bank veto compute CC Matrix */
-        /* I removed the ccFlag dependence - this is being computed
-           for each segment now!!! */
         if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
 	  
