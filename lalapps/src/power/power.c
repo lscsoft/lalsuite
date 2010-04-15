@@ -700,11 +700,16 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'X':
+#if 0
 		options->diagnostics = malloc(sizeof(*options->diagnostics));
 		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
+#else
+		sprintf(msg, "--dump-diagnostics given but diagnostic code not included at compile time");
+		args_are_bad = 1;
+#endif
 		break;
 
 	case 'Z':
