@@ -55,7 +55,7 @@ build-stamp:  config.status
 	dh_testdir
 
 # moved to install
-#	$(MAKE)
+#	$(MAKE) V=1
 
 	touch $@
 
