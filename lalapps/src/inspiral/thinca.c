@@ -97,6 +97,8 @@ int completeCoincs = 0;
 INT4 numExtTriggers = 0;
 ExtTriggerTable   *exttrigHead = NULL;
 
+extern int vrbflg;
+
 /*
  * 
  * USAGE
@@ -233,8 +235,6 @@ fprintf( a, "                                   specified in the source file\n")
 fprintf( a, "\n");\
 fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 
-
-
 /*
  * 
  * MAIN
@@ -244,8 +244,6 @@ fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-
-  extern int vrbflg;
 
   LALPlaygroundDataMask dataType = unspecified_data_type;
   INT4  startCoincidence = -1;

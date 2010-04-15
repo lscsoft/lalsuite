@@ -128,11 +128,12 @@ RCSID("$Id$");
   snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
   snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+extern int vrbflg;
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
 
-  extern int vrbflg;
   static INT4  writeUniqTrigs = 0;
   static INT4  usePlayground = 1;
   static INT4  allData = 0;

@@ -73,6 +73,7 @@ snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int checkTimes = 0;
+extern int vrbflg;
 
 /*
  *
@@ -113,7 +114,6 @@ int main( int argc, char *argv[] )
 {
   static LALStatus      status;
 
-  extern int vrbflg;
   LALPlaygroundDataMask  dataType = unspecified_data_type;
   SnglInspiralParameterTest  test = unspecified_test;
 

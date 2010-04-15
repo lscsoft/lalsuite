@@ -73,6 +73,8 @@ snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+extern int vrbflg;
+
 /*
  *
  * USAGE
@@ -107,8 +109,6 @@ static void print_usage(char *program)
 
 int main( int argc, char *argv[] )
 {
-  extern int vrbflg;
-
   static LALStatus      status;
 
   INT4  startTime = -1;
