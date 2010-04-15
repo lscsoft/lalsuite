@@ -2699,8 +2699,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %d, end time %d\n",
           gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
-      fprintf( stderr, "gps channel time interval: %ld ns\n"
-          "computed input data length: %ld ns\n",
+      fprintf( stderr, "gps channel time interval: %" LAL_UINT8_FORMAT " ns\n"
+          "computed input data length: %" LAL_UINT8_FORMAT " ns\n",
           gpsChanIntervalNS, inputDataLengthNS );
       exit( 1 );
     }

@@ -499,9 +499,9 @@ int main( int argc, char *argv[] )
                 kmax = k; /* final trigger's k value */
                 caseID[k] = 1;
                 memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
-                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
+                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", thisCoinc->snglInspiral[k]->channel );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
-                if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
+                if( vrbflg ) fprintf(stdout,"eventID = %lld\n",eventID );
                 chisq[l] = thisCoinc->snglInspiral[k]->chisq;
                 chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
                 snrsqArray[l] = pow( (REAL8) thisCoinc->snglInspiral[k]->snr,2);
@@ -512,11 +512,14 @@ int main( int argc, char *argv[] )
                    to get slideSign = 5000 for negative slides */
                 slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 
-                if( vrbflg ) fprintf( stdout, "eventID = %Ld, slideNumber = %d, slideSign = %d, triggerNumber = %d \n", eventID, slideNumber, slideSign, triggerNumber);
+                if( vrbflg )
+                  fprintf( stdout, "eventID = %lld, slideNumber = %" LAL_UINT8_FORMAT \
+                      ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
+                      LAL_UINT8_FORMAT "\n", eventID, slideNumber, slideSign, triggerNumber);
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
-                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
+                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%lld", caseIDChars[k], eventID );
 
                 /* slideSign=0 is the same as a positive time slide */
                 if(slideSign != 0)
@@ -528,7 +531,10 @@ int main( int argc, char *argv[] )
                     tempTime[l] -= slideStep[k]*slideNumber;
                   }
 
-                if( vrbflg ) fprintf( stdout, "ifo number = %d, slideSign = %d, slideStep = %e, slideNumber = %d, tempTime = %e \n", l, slideSign, slideStep[k], slideNumber, tempTime[l]);
+                if( vrbflg )
+                  fprintf( stdout, "ifo number = %d, slideSign = %" LAL_UINT8_FORMAT \
+                      ", slideStep = %e, slideNumber = %" LAL_UINT8_FORMAT \
+                      ", tempTime = %e \n", l, slideSign, slideStep[k], slideNumber, tempTime[l]);
 
                 ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
                 if(slideSign != 0)
@@ -826,8 +832,8 @@ int main( int argc, char *argv[] )
           if ( (caseID[k] == 1) && (l < numDetectors) ) {
             /* CHECK: timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);*/
             timeptDiff[l] = rint( (slideNS[0] - slideNS[l])*1e-9 * sampleRate);
-            /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %Ld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
-            if( vrbflg ) fprintf(stdout,"slideNS[0] = %Ld, slideNS[2nd] = %Ld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
+            /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %lld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
+            if( vrbflg ) fprintf(stdout,"slideNS[0] = %lld, slideNS[2nd] = %lld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
 
             l++;
           }
@@ -1096,13 +1102,13 @@ int main( int argc, char *argv[] )
           {
 	    if ( threeSiteCase ) {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+			"SNR_%lld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+			"SNR_%lld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
 	    }
@@ -1112,7 +1118,7 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->cohH1H2SNROut )
           {
             snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2SNR_%Ld", eventID );
+                      "H1H2SNR_%lld", eventID );
             strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
             outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
           }
@@ -1121,7 +1127,7 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->nullStatH1H2Out )
           {
             snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2_NullStat_%Ld", eventID );
+                      "H1H2_NullStat_%lld", eventID );
             strcpy( cohInspFilterParams->nullStatH1H2Vec->name, "Coherent");
             outFrameNullStatH1H2 = fr_add_proc_REAL4TimeSeries( outFrameNullStatH1H2, cohInspFilterParams->nullStatH1H2Vec, "none", cohdataStr );
           }
@@ -1131,13 +1137,13 @@ int main( int argc, char *argv[] )
           {
 	    if ( threeSiteCase ) {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+			"NullStat_%lld", eventID );
 	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+			"NullStat_%lld", eventID );
 	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
 	    }

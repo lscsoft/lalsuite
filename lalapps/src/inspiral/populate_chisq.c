@@ -1625,7 +1625,7 @@ int main(int argc, char *argv[])
                     {
                         analyseTag = 1;
                         if (vrbflg)
-                            fprintf(stdout, "Found trigger (%f,%f) @ t=%ld\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trigEndTimeNS);
+                            fprintf(stdout, "Found trigger (%f,%f) @ t=%" LAL_INT8_FORMAT "\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trigEndTimeNS);
                     }
                 }
             }
@@ -1636,7 +1636,7 @@ int main(int argc, char *argv[])
             if (analyseTag) {
                 if (vrbflg) {
                     fprintf(stdout,
-                            "filtering segment %d/%d [%ld-%ld] "
+                            "filtering segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] "
                             "against template %d/%d (%e,%e)\n",
                             fcSegVec->data[i].number,
                             fcSegVec->length, fcSegStartTimeNS,
@@ -1779,7 +1779,7 @@ int main(int argc, char *argv[])
                                 fcFilterParams->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
                             
                             if (vrbflg)
-                                fprintf(stdout,"Event at %ld has chisq=%f\n",trigEndTimeNS,currentTrigger->chisq);
+                                fprintf(stdout,"Event at %" LAL_INT8_FORMAT " has chisq=%f\n",trigEndTimeNS,currentTrigger->chisq);
 
                             currentTrigger->chisq_dof = numChisqBins;
                         }
@@ -3669,14 +3669,14 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
     if (trigStartTimeNS) {
         if (trigStartTimeNS < gpsStartTimeNS) {
             fprintf(stderr,
-                    "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld",
+                    "trigStartTimeNS = %" LAL_INT8_FORMAT "\nis less than gpsStartTimeNS = %" LAL_INT8_FORMAT,
                     trigStartTimeNS, gpsStartTimeNS);
         }
     }
     if (trigEndTimeNS) {
         if (trigEndTimeNS > gpsEndTimeNS) {
             fprintf(stderr,
-                    "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld",
+                    "trigEndTimeNS = %" LAL_INT8_FORMAT "\nis greater than gpsEndTimeNS = %" LAL_INT8_FORMAT,
                     trigEndTimeNS, gpsEndTimeNS);
         }
     }
@@ -3756,12 +3756,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         if (inputDataLengthNS != gpsChanIntervalNS) {
             fprintf(stderr,
                     "length of input data and data chunk do not match\n");
-            fprintf(stderr, "start time: %ld, end time %ld\n",
+            fprintf(stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
                     gpsStartTimeNS / 1000000000LL,
                     gpsEndTimeNS / 1000000000LL);
             fprintf(stderr,
-                    "gps channel time interval: %ld ns\n"
-                    "computed input data length: %ld ns\n",
+                    "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
+                    "computed input data length: %" LAL_INT8_FORMAT " ns\n",
                     gpsChanIntervalNS, inputDataLengthNS);
             exit(1);
         }

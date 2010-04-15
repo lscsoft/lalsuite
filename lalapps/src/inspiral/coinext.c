@@ -1632,7 +1632,7 @@ int arg_parse_check( int argc, char *argv[])
                  long_options[option_index].name );
         exit( 1 );
       }  
-      ADD_PROCESS_PARAM( "int" , "%ld", waitingTime);
+      ADD_PROCESS_PARAM( "int" , "%d", waitingTime);
     }
       break;
       
@@ -1657,7 +1657,7 @@ int arg_parse_check( int argc, char *argv[])
                  long_options[option_index].name );
         exit( 1 );
       } 
-      ADD_PROCESS_PARAM( "float" , "%s", snrCut);              
+      ADD_PROCESS_PARAM( "float" , "%f", snrCut);              
     }
       break;
       

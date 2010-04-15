@@ -2049,17 +2049,17 @@ int main( int argc, char *argv[] )
   
   if ( userTag && outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml.gz",
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( userTag && !outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml", 
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( !userTag && outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml.gz",
         rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else

@@ -2209,7 +2209,7 @@ int main( int argc, char *argv[] )
         fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
         if ( vrbflg ) fprintf( stdout,
             "Creating template in fcInputArray[%d] at %p\n", subBankIndex,
-            fcFilterInput );
+            (void *)fcFilterInput );
 
         /*  generate template */
         switch ( approximant )
@@ -2329,7 +2329,7 @@ int main( int argc, char *argv[] )
             (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) ) )
         {
           if ( vrbflg ) fprintf( stdout,
-              "skipping segment %d/%d [%ld-%ld] (outside trig time)\n",
+              "skipping segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] (outside trig time)\n",
               fcSegVec->data[i].number, fcSegVec->length,
               fcSegStartTimeNS, fcSegEndTimeNS );
 
@@ -2382,14 +2382,14 @@ int main( int argc, char *argv[] )
             fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Using template in fcInputArray[%d] at %p\n", subBankIndex,
-                fcFilterInput );
+                (void *)fcFilterInput );
             fcFilterParams->qVec=bankVetoData.qVecArray[subBankIndex];
             fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
-                fcFilterParams->qVec );
+                (void *)fcFilterParams->qVec );
             if ( vrbflg ) fprintf( stdout,
-                "filtering segment %d/%d [%ld-%ld] "
+                "filtering segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] "
                 "against template %d/%d (%e,%e)\n",
                 fcSegVec->data[i].number, fcSegVec->length,
                 fcSegStartTimeNS, fcSegEndTimeNS,
@@ -2472,7 +2472,7 @@ int main( int argc, char *argv[] )
           else /* not analyzeTag */
           {
             if ( vrbflg ) fprintf( stdout,
-                "skipping segment %d/%d [%ld-%ld]\n",
+                "skipping segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "]\n",
                 fcSegVec->data[i].number, fcSegVec->length,
                 fcSegStartTimeNS, fcSegEndTimeNS );
           }
@@ -2536,12 +2536,12 @@ int main( int argc, char *argv[] )
             fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using template in fcInputArray[%d] at %p\n",
-                subBankIndex, fcFilterInput );
+                subBankIndex, (void *)fcFilterInput );
             fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using qVec in qVecArray[%d] at %p\n",
-                subBankIndex, fcFilterParams->qVec );
+                subBankIndex, (void *)fcFilterParams->qVec );
 
             /* determine if FindChirpFilterSegment returned any events */
             switch ( approximant )
@@ -2666,7 +2666,7 @@ int main( int argc, char *argv[] )
                     {
                       cDataForFrame = 1;
                       snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                   "%Ld", tempTmplt->event_id->id );
+                                   "%lld", tempTmplt->event_id->id );
                       snprintf( coherentInputData->name,
                                    LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
@@ -4536,7 +4536,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf(stderr,"invalid power spectrum for colored Gaussian noise;"
                   "colorSpec must be either LIGO or advLIGO "
-                  "(%f specified)", colorSpec);
+                  "(%u specified)", colorSpec);
           exit( 1 );
         }
         coloredGaussian = 1;
@@ -5076,7 +5076,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigStartTimeNS < gpsStartTimeNS )
     {
       fprintf( stderr,
-          "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld",
+          "trigStartTimeNS = %" LAL_INT8_FORMAT "\nis less than gpsStartTimeNS = %" LAL_INT8_FORMAT,
           trigStartTimeNS, gpsStartTimeNS );
     }
   }
@@ -5085,7 +5085,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigEndTimeNS > gpsEndTimeNS )
     {
       fprintf( stderr,
-          "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld",
+          "trigEndTimeNS = %" LAL_INT8_FORMAT "\nis greater than gpsEndTimeNS = %" LAL_INT8_FORMAT,
           trigEndTimeNS, gpsEndTimeNS );
     }
   }
@@ -5180,10 +5180,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( inputDataLengthNS != gpsChanIntervalNS )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
-      fprintf( stderr, "start time: %ld, end time %ld\n",
+      fprintf( stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
           gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
-      fprintf( stderr, "gps channel time interval: %ld ns\n"
-          "computed input data length: %ld ns\n",
+      fprintf( stderr, "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
+          "computed input data length: %" LAL_INT8_FORMAT "ns\n",
           gpsChanIntervalNS, inputDataLengthNS );
       exit( 1 );
     }
