@@ -87,7 +87,7 @@ install: build
 	    --disable-debug                                                   \
 	    --disable-gcc-flags ;                                                    \
 	PYTHON="/usr/bin/python$$v"                                                    \
-	$(MAKE) ;                                                                    \
+	$(MAKE) V=1 ;                                                                    \
 	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install ;                           \
 	PYTHON="/usr/bin/python$$v"                                                    \
