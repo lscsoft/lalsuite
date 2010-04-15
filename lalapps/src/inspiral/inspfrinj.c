@@ -148,7 +148,7 @@ int    writeRawData     = 0;            /* write the raw data to frame  */
 int    writeInjOnly     = 0;            /* write the inj data to frame  */
 int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
 int    writeReal8Frame  = 0;            /* write frames as real 8       */
-UINT4  outCompress = 0;
+int    outCompress = 0;
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 

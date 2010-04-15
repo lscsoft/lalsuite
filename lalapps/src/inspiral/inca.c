@@ -149,7 +149,7 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
   CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
-  UINT4 outCompress = 0;
+  INT4  outCompress = 0;
 
   LIGOTimeGPS slideData = {0,0};
   INT8  slideDataNS = 0;

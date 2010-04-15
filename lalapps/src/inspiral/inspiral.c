@@ -276,8 +276,8 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
 UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
 UINT4 autochisqStride      = 1;         /* Stride for autochisq         */
-UINT4 autochisqTwo         = 0;         /* flag for two sided auto chsq */
-UINT4 timeFreqBankVeto     = 0;         /* flag for experimental bank veto option */
+INT4  autochisqTwo         = 0;         /* flag for two sided auto chsq */
+INT4  timeFreqBankVeto     = 0;         /* flag for experimental bank veto option */
 
 UINT4 ccFlag = 0;
 /* output parameters */
