@@ -2262,7 +2262,8 @@ int main( int argc, char *argv[] )
         COMPLEX8Vector *templateFFTDataVector = NULL;
         REAL4FFTPlan *plan = NULL;
         REAL8 deltaF;
-        INT4 kmax, numPoints, nb2;
+        INT4 kmax, numPoints;
+        UINT4 nb2;
         snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
                   "TEMPLATE");
         memcpy(&templateTimeSeries, &chan, sizeof(REAL4TimeSeries));

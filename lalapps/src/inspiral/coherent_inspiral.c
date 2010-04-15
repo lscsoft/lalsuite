@@ -829,7 +829,7 @@ int main( int argc, char *argv[] )
         l = 0;
         /* Before the data gets filtered, I need to make the c-data snippets commensurate */
         for(k=0 ; k<LAL_NUM_IFO ; k++ ) {
-          if ( (caseID[k] == 1) && (l < numDetectors) ) {
+          if ( (caseID[k] == 1) && (l < (INT4)numDetectors) ) {
             /* CHECK: timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);*/
             timeptDiff[l] = rint( (slideNS[0] - slideNS[l])*1e-9 * sampleRate);
             /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %lld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
@@ -1230,7 +1230,7 @@ int main( int argc, char *argv[] )
         cohInspBeamVec = NULL;
         cohInspCVec = NULL;
         
-        for(j=0;j< (numDetectors-1);j++)
+        for(j=0;j< ((INT4)numDetectors-1);j++)
           {
             tempTime[j] = 0.0;
             timeptDiff[j] = 0;
