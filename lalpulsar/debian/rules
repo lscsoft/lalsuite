@@ -51,7 +51,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 

@@ -61,7 +61,6 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 
