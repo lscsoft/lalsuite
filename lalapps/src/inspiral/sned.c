@@ -1302,7 +1302,7 @@ int main( int argc, char *argv[] )
   {
     /* open the output xml file */
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    snprintf( fname, sizeof(fname), outputFile );
+    snprintf( fname, sizeof(fname), "%s", outputFile );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname ), &status );
 
     /* write out the process and process params tables */

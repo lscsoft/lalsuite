@@ -1255,7 +1255,7 @@ int main( int argc, char *argv[] )
     {
       /* write ifo name in ifoName list */
       XLALReturnIFO(ifo,ifoNumber);
-      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifo );
+      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "%s", ifo );
       numIFO++;
 
       /* store the argument in the process_params table */
@@ -2255,7 +2255,7 @@ cleanexit:
   }
   /* write process table */
 
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
@@ -2272,7 +2272,7 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
-  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
         search_summary_table ), &status );

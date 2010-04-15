@@ -553,7 +553,7 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable->nnodes = 1;
 
   /* fill the ifos field of the search summary table */
-  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
 
   /* make sure all the output table pointers are null */
   savedEvents.snglInspiralTable = NULL;

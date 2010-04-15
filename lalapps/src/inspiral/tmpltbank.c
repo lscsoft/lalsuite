@@ -1069,18 +1069,18 @@ int main ( int argc, char *argv[] )
   if ( numCoarse )
   {
     templateBank.snglInspiralTable = tmplt;
-    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
     snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
         "tmpltbank" );
     snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-        channelName );
+        "%s", channelName );
     while( (tmplt = tmplt->next) )
     {
-      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
       snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "tmpltbank" );
       snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-          channelName );
+          "%s", channelName );
     }
   }
 
