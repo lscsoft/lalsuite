@@ -55,7 +55,7 @@
 
 char *ifo = NULL;
 
-int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent, 
+static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent, 
     FrEvent *frameEvent )
 {
   FrEvent              *frEvt   = NULL;
@@ -107,7 +107,7 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
 }
 
 
-int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
+static int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
     FrSimEvent       *frSimEvent )
 {
   FrSimEvent           *frSimEvt   = NULL;

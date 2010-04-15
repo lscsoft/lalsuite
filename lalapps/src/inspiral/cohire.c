@@ -117,7 +117,7 @@ static void print_usage(char *program)
 }
 
 /* function to read the next line of data from the input file list */
-char *get_next_line( char *line, size_t size, FILE *fp )
+static char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
   do

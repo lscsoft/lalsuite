@@ -195,7 +195,7 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
 
 
 
-ProcessParamsTable *next_process_param( const char *name, const char *type,
+static ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
   ProcessParamsTable *pp;
