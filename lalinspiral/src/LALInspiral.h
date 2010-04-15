@@ -1306,7 +1306,7 @@ void LALPSpinInspiralRDTemplates (
     REAL4Vector      *signalvec1,
     REAL4Vector      *signalvec2,
     InspiralTemplate *params
-   ) ;
+   );
 
 void LALPSpinInspiralRD(
      LALStatus *status,

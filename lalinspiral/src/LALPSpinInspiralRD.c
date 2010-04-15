@@ -35,25 +35,25 @@
  * \vspace{0.1in}
  * \input{LALPSpinInspiralRDCP}
  * \idx{\verb&LALPSpinInspiralRD()&}
- * \begin{itemize}
+ * \begin{description}
  * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
- * \end{itemize}
+ * \end{description}
  *
  * \input{LALPSpinInspiralRDTemplatesCP}
  * \idx{\verb&LALPSpinInspiralRDTemplates()&}
- * \begin{itemize}
+ * \begin{description}
  * \item {\tt signalvec1:} Output containing the $+$ inspiral waveform.
  * \item {\tt signalvec2:} Output containing the $\times$ inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
- * \end{itemize}
+ * \end{description}
  *
  * \input{LALPSpinInspiralRDInjectionCP}
  * \idx{\verb&LALPSpinInspiralRDInjection()&}
- * \begin{itemize}
+ * \begin{description}
  * \item {\tt signalvec:} Output containing the inspiral waveform.
  * \item {\tt params:} Input containing binary chirp parameters.
- * \end{itemize}
+ * \end{description}
  *
  * \subsubsection*{Description}
  * This codes provide complete waveforms for generically spinning binary systems.
@@ -85,30 +85,29 @@
  * 
  **** </lalLaTeX>  */
 
+/** \defgroup psird Complete phenomenological spin-inspiral waveforms
+ * 
+ * This code provides complete waveforms for generically spinning binary 
+ * systems.
+ *
+ */
 
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
 
-NRCSID (LALPSPININSPIRALRDMC, "$Id$");
-
-
-/*
- *
- * private structure with PN parameters
- *
- */
+NRCSID (LALPSPININSPIRALRDC, "$Id$");
 
 typedef struct LALPSpinInspiralRDstructparams {
   REAL8 eta;                  ///< symmetric mass ratio
-  REAL8 dm;
+  REAL8 dm;                   ///< \f$m_1-m_2\f$
   REAL8 m1m2;                 ///< \f$m_1/m_2\f$
   REAL8 m2m1;                 ///< \f$m_2/m_1\f$
   REAL8 m2m;
   REAL8 m1m;
-  REAL8 wdotorb[8];           ///< \f$ \f$
-  REAL8 wdotorblog;
+  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$\dot\omega_{orb}\f$
+  REAL8 wdotorblog;           ///< Log coefficient of the PN expansion of of \f$\dot\omega_{orb}\f$
   REAL8 wdotspin15S1LNh;
   REAL8 wdotspin15S2LNh;
   REAL8 wdotspin20S1S2;
@@ -123,14 +122,14 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 S2dot25;
   REAL8 LNhdot15;
   REAL8 LNhdot20;
-  REAL8 epnorb[4];
-  REAL8 epnspin15S1dotLNh;
-  REAL8 epnspin15S2dotLNh;
-  REAL8 epnspin20S1S2;
-  REAL8 epnspin20S1S2dotLNh;
-  REAL8 epnspin20S1S1;
-  REAL8 epnspin20S1S1dotLNh;
-  REAL8 epnspin20S2S2;
+  REAL8 epnorb[4];           ///< Coefficients of the PN expansion of the energy
+  REAL8 epnspin15S1dotLNh;   ///< Coeff. of the \f$S_1\cdot L\f$ term in energy
+  REAL8 epnspin15S2dotLNh;   ///< Coeff. of the \f$S_2\cdot L\f$ term in energy
+  REAL8 epnspin20S1S2;       ///< Coeff. of the \f$S_1\cdot S_2\f$ term in energy
+  REAL8 epnspin20S1S2dotLNh; ///< Coeff. of the \f$S_{1,2}\cdot L\f$ term in energy
+  REAL8 epnspin20S1S1;       ///< Coeff. of the \f$S_1\cdot S_1\f$ term in energy
+  REAL8 epnspin20S1S1dotLNh; 
+  REAL8 epnspin20S2S2;       ///< Coeff. of the \f$S_2\cdot S_2\f$ term in energy
   REAL8 epnspin20S2S2dotLNh;
   REAL8 epnspin25S1dotLNh;
   REAL8 epnspin25S2dotLNh;
@@ -143,27 +142,31 @@ typedef struct LALPSpinInspiralRDstructparams {
  *
  */
 
+/**
+ * \ingroup psird
+ * \brief Module to compute detivative of dynamical variables 
+ */
 void LALPSpinInspiralRDderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams ) {
 
-  REAL8 Phi;                    ///< half of the main GW phase, this is \f$Phi\f$ of eq.3.11 of arXiv:0810.5336
-  REAL8 omega;                  ///< time-derivative of the orbital phase
-  REAL8 omega2;                 ///< omega squared
-  REAL8 LNhx,LNhy,LNhz;         ///< orbital angolar momentum unit vector
-  REAL8 S1x,S1y,S1z;            ///< dimension-less spin variable S/M^2
+  REAL8 Phi;                    // half of the main GW phase, this is \f$Phi\f$ of eq.3.11 of arXiv:0810.5336
+  REAL8 omega;                  // time-derivative of the orbital phase
+  REAL8 omega2;                 // omega squared
+  REAL8 LNhx,LNhy,LNhz;         // orbital angolar momentum unit vector
+  REAL8 S1x,S1y,S1z;            // dimension-less spin variable S/M^2
   REAL8 S2x,S2y,S2z;
-  REAL8 alphadotcosi;           ///< alpha is the right ascension of L, i(iota) the angle between L and J 
-  REAL8 LNhS1,LNhS2;            ///< scalar products
-  REAL8 domega;                 ///< derivative of omega
-  REAL8 dLNhx,dLNhy,dLNhz;      ///< derivatives of \f$\hat L_N\f$ components
-  REAL8 dS1x,dS1y,dS1z;         ///< derivative of \f$S_i\f$
+  REAL8 alphadotcosi;           // alpha is the right ascension of L, i(iota) the angle between L and J 
+  REAL8 LNhS1,LNhS2;            // scalar products
+  REAL8 domega;                 // derivative of omega
+  REAL8 dLNhx,dLNhy,dLNhz;      // derivatives of \f$\hat L_N\f$ components
+  REAL8 dS1x,dS1y,dS1z;         // derivative of \f$S_i\f$
   REAL8 dS2x,dS2y,dS2z;
-  REAL8 S1S2,S1S1,S2S2;         ///< Scalar products
+  REAL8 S1S2,S1S1,S2S2;         // Scalar products
   REAL8 energy;
   
   LALPSpinInspiralRDparams *params = (LALPSpinInspiralRDparams*)mparams;
 
-  REAL8 v, v2, v3, v4, v5, v6, v7, v11;                                        ///< support variables
-  REAL8 tmpx,tmpy,tmpz,cross1x,cross1y,cross1z,cross2x,cross2y,cross2z,LNhxy;  ///< support variables
+  REAL8 v, v2, v3, v4, v5, v6, v7, v11;                                        // support variables
+  REAL8 tmpx,tmpy,tmpz,cross1x,cross1y,cross1z,cross2x,cross2y,cross2z,LNhxy;  // support variables
 
   /* --- computation start here --- */
   Phi   = values->data[0];
@@ -335,18 +338,20 @@ void LALPSpinInspiralRDderivatives(REAL8Vector *values, REAL8Vector *dvalues, vo
 } /* end of LALPSpinInspiralRDderivatives*/
 
 
-/*  <lalVerbatim file="LALPSpinInspiralRDCP"> */
-void
-LALPSpinInspiralRD (
+/**
+ * \ingroup psird
+ * \brief Main module to produce waveforms 
+ */
+void LALPSpinInspiralRD (
    LALStatus        *status,
    REAL4Vector      *signalvec,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
+{
 
    UINT4 count;
    InspiralInit paramsInit;
-   INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDMC);
+   INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec,  status,
@@ -381,23 +386,24 @@ LALPSpinInspiralRD (
 }
 
 
-NRCSID (LALPSPININSPIRALRDTEMPLATESMC,"$Id$");
+NRCSID (LALPSPININSPIRALRDTEMPLATESC,"$Id$");
 
-/*  <lalVerbatim file="LALPSpinInspiralRDTemplatesCP"> */
-void
-LALPSpinInspiralRDTemplates (
+/**
+ * \ingroup psird
+ * \brief Module to produce waveform templates 
+ */
+void LALPSpinInspiralRDTemplates (
    LALStatus        *status,
    REAL4Vector      *signalvec1,
    REAL4Vector      *signalvec2,
    InspiralTemplate *params
    )
-{ /* </lalVerbatim> */
-
+{
    UINT4 count;
 
    InspiralInit paramsInit;
 
-   INITSTATUS(status, "LALPSpinInspiralRDTemplates", LALPSPININSPIRALRDTEMPLATESMC);
+   INITSTATUS(status, "LALPSpinInspiralRDTemplates", LALPSPININSPIRALRDTEMPLATESC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1,  status,
@@ -439,16 +445,17 @@ LALPSpinInspiralRDTemplates (
 
 NRCSID (LALPSPININSPIRALRDINJECTIONC,"$Id$");
 
-/*  <lalVerbatim file="LALPSpinInspiralRDInjectionCP"> */
-void
-LALPSpinInspiralRDForInjection (
+/**
+ * \ingroup psird
+ * \brief Module to produce injection waveforms  
+ */
+void LALPSpinInspiralRDForInjection (
 			     LALStatus        *status,
 			     CoherentGW       *waveform,
 			     InspiralTemplate *params,
 			     PPNParamStruc    *ppnParams
 			    )
 {
-  /* </lalVerbatim> */
   UINT4 count,i;
 
   REAL4Vector *hh=NULL;/* pointers to generated amplitude  data */
@@ -620,9 +627,14 @@ LALPSpinInspiralRDForInjection (
  *
  */
 
-/*  <lalVerbatim file="LALPSpinInspiralRDForInjectionCP"> */
+NRCSID (LALPSPININSPIRALRDENGINEC,"$Id$");
+
+/**
+ * \ingroup psird
+ * \brief Module actually computing PSIRD waveforms  
+ */
 void LALPSpinInspiralRDEngine (
-                LALStatus        *status,			      
+                LALStatus        *status,
                 REAL4Vector      *signalvec1,
                 REAL4Vector      *signalvec2,
                 REAL4Vector      *hh,
@@ -633,7 +645,6 @@ void LALPSpinInspiralRDEngine (
                 InspiralTemplate *params,
 		InspiralInit     *paramsInit
                 )
-     /* </lalVerbatim> */
 
 {
 
@@ -641,25 +652,25 @@ void LALPSpinInspiralRDEngine (
   LALPSpinInspiralRDparams PSIRDparameters;
   
   /* declare code parameters and variables*/
-  INT4		nn = 11+1;              ///< number of dynamical variables, the extra one is the energy
-  UINT4 	count,apcount;          ///< integration steps performed 
-  UINT4		maxlength;              ///< maximum signal vector length
-  UINT4 	length;                 ///< signal vector length
-  UINT4		i,j,k,l;                ///< counters          
-  UINT4         subsampling=2;          ///< multiplies the rate           
+  INT4		nn = 11+1;              // number of dynamical variables, the extra one is the energy
+  UINT4 	count,apcount;          // integration steps performed 
+  UINT4		maxlength;              // maximum signal vector length
+  UINT4 	length;                 // signal vector length
+  UINT4		i,j,k,l;                // counters          
+  UINT4         subsampling=2;          // multiplies the rate           
 
-  rk4In 	in4;                    ///< used to setup the Runge-Kutta integration
+  rk4In 	in4;                    // used to setup the Runge-Kutta integration
   rk4GSLIntegrator *integrator;
 
-  expnCoeffs 	ak;                     ///<Coefficients in a generic PN expansion (E, flux...)
+  expnCoeffs 	ak;                     //Coefficients in a generic PN expansion (E, flux...)
 
   REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
-  ///< support variables
+  // support variables
 
-  REAL8 	lengths;                ///<length in seconds
+  REAL8 	lengths;                //length in seconds
   REAL4         v2=0.;
-  REAL8 	m;                      ///< Total mass in SI units
-  REAL8 	t;                      ///< time (units of total mass)
+  REAL8 	m;                      // Total mass in SI units
+  REAL8 	t;                      // time (units of total mass)
   REAL8 	unitHz;
   REAL8  	dt;
   REAL8         LNhztol = 1.0e-8;
@@ -713,13 +724,13 @@ void LALPSpinInspiralRDEngine (
   COMPLEX8Vector  *modefreqs;
   INT4            xlalStatus22,xlalStatus21,xlalStatus20;
   UINT4           nmodes;
-  COMPLEX16       MultSphHarm2P2;     ///< Spin-weighted spherical harmonics 2,2
-  COMPLEX16       MultSphHarm2M2;     ///< Spin-weighted spherical harmonics 2,-2
-  COMPLEX16       MultSphHarm2P1;     ///< Spin-weighted spherical harmonics 2,1
-  COMPLEX16       MultSphHarm2M1;     ///< Spin-weighted spherical harmonics 2,-1
-  COMPLEX16       MultSphHarm20;      ///< Spin-weighted spherical harmonics 2,0
+  COMPLEX16       MultSphHarm2P2;     // Spin-weighted spherical harmonics 2,2
+  COMPLEX16       MultSphHarm2M2;     // Spin-weighted spherical harmonics 2,-2
+  COMPLEX16       MultSphHarm2P1;     // Spin-weighted spherical harmonics 2,1
+  COMPLEX16       MultSphHarm2M1;     // Spin-weighted spherical harmonics 2,-1
+  COMPLEX16       MultSphHarm20;      // Spin-weighted spherical harmonics 2,0
   REAL4           x1, x2;
-  REAL8           y_1, y_2, z1, z2;   ///< spherical harmonics needed to compute (h+,hx) from hlm
+  REAL8           y_1, y_2, z1, z2;   // Spherical harmonics needed to compute (h+,hx) from hlm
 
   REAL4 inc, phiangle;
 
@@ -730,7 +741,8 @@ void LALPSpinInspiralRDEngine (
 
   INT4 count0;
 
-  INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDMC);
+
+  INITSTATUS(status, "LALPSpinInspiralRDEngine", LALPSPININSPIRALRDENGINEC);
   ATTATCHSTATUSPTR(status);
   
   /* set parameters from InspiralTemplate structure*/
@@ -1090,9 +1102,8 @@ void LALPSpinInspiralRDEngine (
       else
 	ABORTXLAL( status );
     }
-  
   /* main integration loop*/
-  
+      
   t = 0.0;
   count = 0;
 
@@ -1191,6 +1202,7 @@ void LALPSpinInspiralRDEngine (
     shift22->data[count] = alpha;
 
     in4.x = t/m;
+
     LALRungeKutta4(status->statusPtr, &newvalues, integrator, (void*)mparams);
     CHECKSTATUSPTR(status);
 
@@ -1569,10 +1581,10 @@ void LALPSpinInspiralRDEngine (
    XLALDestroyREAL4Vector ( h20 );
    XLALDestroyREAL4Vector ( h21 );
    XLALDestroyREAL4Vector ( hap );
-   
+
    DETATCHSTATUSPTR(status);
    RETURN(status);
 
   /*End*/
-  
+   
 }
