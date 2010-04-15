@@ -371,9 +371,11 @@ int main(int argc, char *argv[])
     SearchSummvarsTable *inputFiles = NULL;
     SearchSummaryTable *searchSummList = NULL;
 
+#if 0
     /* template bank veto structures */
     FindChirpSubBank *subBankHead = NULL;
     FindChirpSubBank *subBankCurrent = NULL;
+#endif
 
     /* inspiral events */
     INT4 numEvents = 0;

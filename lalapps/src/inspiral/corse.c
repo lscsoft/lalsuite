@@ -1116,8 +1116,6 @@ int main( int argc, char *argv[] )
   {
     CoincInspiralSlideTable *slideHeads = NULL;
     CoincInspiralSlideTable *thisSlideHead = NULL;
-    CoincInspiralTable      *thisEvent = NULL;
-    CoincInspiralTable      *prevEvent = NULL;
 
     XLALCreateCoincSlideTable( &slideHeads, numSlides );
 

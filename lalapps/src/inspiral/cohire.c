@@ -205,9 +205,6 @@ int main( int argc, char *argv[] )
 
   /*CHECK:*/
   MetadataTable                 savedEvents;
-  MultiInspiralTable    *tempTable = NULL;
-  LIGOLwXMLStream       results;
-  CHAR   xmlname[FILENAME_MAX];
 
   /*
    *

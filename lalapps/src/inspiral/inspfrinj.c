@@ -951,7 +951,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   };
   int c;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
-  LALStatus             status = blank_status;
 
 
   /*

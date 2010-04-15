@@ -148,7 +148,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
                             SimInspiralTable *thisinj     /** [in]   injection data */)
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
-  INT4 len, lenPlus, lenCross, k, lenIni;
+  INT4 len, lenPlus, lenCross, k;
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
@@ -460,7 +460,6 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   REAL4FFTPlan *pfwd;
   COMPLEX8FrequencySeries *fftData;
   UINT4 k;
-  UINT4 length;
 
   /* create the time series */
   chan = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
