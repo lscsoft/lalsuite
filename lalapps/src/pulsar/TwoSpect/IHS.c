@@ -226,9 +226,9 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
    }
    XLALDestroyREAL8Vector(noise);
    
-   /* FILE *IHSFAR = fopen("./ihsdist1col.dat","w");
+   FILE *IHSFAR = fopen("./ihsdist1col.dat","w");
    for (ii=0; ii<(INT4)ihss->length; ii++) fprintf(IHSFAR,"%g\n",ihss->data[ii]);
-   fclose(IHSFAR); */
+   fclose(IHSFAR);
    
    //Calculate the IHS sum values for the IHS trials
    ihsMaximaStruct *ihsmaxima = new_ihsMaxima(trials, columns);
@@ -392,7 +392,12 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL8 fsig, per0, B;
    REAL8 ihsfomfar = 6.0;
    
-   //for (ii=0; ii<(INT4)ffdata->f->length; ii++) fprintf(stderr,"%g\n",ihsmaxima->maxima->data[ii]);
+   FILE *IHSVALS;
+   IHSVALS = fopen("./realihsvals.dat","w");
+   
+   for (ii=0; ii<(INT4)ffdata->f->length; ii++) fprintf(IHSVALS,"%g\n",ihsmaxima->maxima->data[ii]);
+   
+   fclose(IHSVALS);
    
    //Need to shift the start bin location by the number of removed bins in the maxima struct
    INT4 mincols = (INT4)floorf(2.0*inputParams->dfmin*inputParams->Tcoh)+1;
