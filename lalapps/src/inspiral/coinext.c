@@ -38,6 +38,8 @@ include
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
+
+#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"
