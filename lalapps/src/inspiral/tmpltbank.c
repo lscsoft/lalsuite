@@ -40,7 +40,6 @@
 #include <regex.h>
 #include <time.h>
 
-#include <FrameL.h>
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -69,6 +68,7 @@
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 

@@ -48,7 +48,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -81,6 +80,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DopplerScan.h>
+#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 

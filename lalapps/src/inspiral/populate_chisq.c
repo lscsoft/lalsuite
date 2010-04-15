@@ -43,8 +43,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -82,6 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"

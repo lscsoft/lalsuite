@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -82,6 +80,8 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/VectorOps.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );

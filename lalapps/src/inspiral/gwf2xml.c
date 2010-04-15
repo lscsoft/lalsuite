@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>

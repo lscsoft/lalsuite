@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -68,6 +66,7 @@
 #include <lal/Units.h>
 #include <lal/FindChirpSP.h>
 #include <lal/Inject.h>
+#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 
