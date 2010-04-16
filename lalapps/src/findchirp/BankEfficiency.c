@@ -1610,22 +1610,31 @@ void BankEfficiencyPrintResultsXml(
 {
   LALStatus             status = blank_status;
   MetadataTable         templateBank;
-  CHAR                  ifo[3];               /* two character ifo code       */
+  CHAR                  ifo[3];           /* two character ifo code */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS           gpsStartTime    = { 0, 0 }; /* input data GPS start time*/
-  LIGOTimeGPS           gpsEndTime  = { 0, 0 };     /* input data GPS end time*/
+  /* GPS times do not appear to have been implemeted - the only place they
+     were used was in the broken snprintf statement. Commenting out to 
+     stop unused variable warnings */
+/*  LIGOTimeGPS        gpsStartTime = { 0, 0 };*//* input data GPS start time*/
+/*  LIGOTimeGPS        gpsEndTime  = { 0, 0 };*//* input data GPS end time*/
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
+  snprintf( fname, sizeof(fname), 
+           BANKEFFICIENCY_XMLRESULTS );
+  /* Original code for the above snprintf statement should have been as below,
+     but it looks like the gps times were never implemented - you just end
+     up with "BankEfficiency-Reults.xmlsimulation00"            
   snprintf( fname, sizeof(fname),
-           BANKEFFICIENCY_XMLRESULTS ,
+           "%s%s%d%d", BANKEFFICIENCY_XMLRESULTS,
            "simulation",
            gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  */
 
   if (trigger.ntrial == 1)
   {
@@ -1674,7 +1683,6 @@ void BankEfficiencyPrintResultsXml(
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* finally write sngl inspiral table column's names */
-
     PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
   }
   else
@@ -2405,8 +2413,9 @@ void BankEfficiencyBankPrintXML(
   CHAR                  ifo[3];         /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS gpsStartTime  = { 0, 0 }; /* input data GPS start time    */
-  LIGOTimeGPS gpsEndTime    = { 0, 0 }; /* input data GPS end time      */
+  /* gps times do not appear to be implemented */
+/* LIGOTimeGPS gpsStartTime  = { 0, 0 };*/ /* input data GPS start time */
+/* LIGOTimeGPS gpsEndTime    = { 0, 0 };*/ /* input data GPS end time   */
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR  ifoName[3][LIGOMETA_IFO_MAX];
   MetadataTable         processParamsTable;
@@ -2423,9 +2432,16 @@ void BankEfficiencyBankPrintXML(
   
 
   /* --- first we create the filename --- */
-  snprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
-           ifo, gpsStartTime.gpsSeconds,
+  snprintf( fname, sizeof(fname), 
+           BANKEFFICIENCY_XMLBANK );
+  /* Original code for the above snprintf statement should have been as below,
+     but it looks like the gps times were never implemented 
+  snprintf( fname, sizeof(fname),
+           "%s%s%d%d", BANKEFFICIENCY_XMLBANK,
+           ifo,
+           gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  */
 
   /* -- we start to fill the xml file here --- */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
@@ -3135,7 +3151,7 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],"--compute-moments")) {
       coarseBankIn->computeMoments = 1;
     }
-    else if (!strcmp(argv[i],"--xml-output")) {
+    else if (!strcmp(argv[i],"--print-xml")) {
       userParam->printResultXml = 1;
     }
     else if (!strcmp(argv[i],"--print-prototype")) {
@@ -3615,10 +3631,14 @@ void BankEfficiencyAscii2Xml(void)
   UINT8  id = 0;
 
   ResultIn trigger;
-
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI,eccI_fl;
-  REAL4 polarisation,inclination;
-  REAL4 bestEMatch;
+  /* Initialising below variables to 0.0 to stop compilation warnings.
+     Are they actually used!? Someone has commented out the lines where
+     they are read in! */
+  REAL4 tau0 = 0.0, tau3 = 0.0, tau0I = 0.0, tau3I = 0.0;
+  REAL4 psi0 = 0.0, psi3 = 0.0, phaseI = 0.0; 
+  REAL4 ecc = 0.0, eccI = 0.0, eccI_fl = 0.0;
+  REAL4 polarisation = 0.0, inclination = 0.0;
+  REAL4 bestEMatch = 0.0; 
 
   FILE *input1;
   FILE *input2;
@@ -3629,7 +3649,7 @@ void BankEfficiencyAscii2Xml(void)
   SnglInspiralTable     *inputData = NULL;
 
   INT4 numFileTriggers = 0;
-  INT4 nStartPad;
+  INT4 nStartPad = 0; /* Not currently being read in so initialised here */
 
   char sbuf[2048];
   CHAR fname[256]="";
@@ -3779,9 +3799,11 @@ void BankEfficiencyAscii2Xml(void)
     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max,
     &bestEMatch);*/
 
-    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", &trigger.mass1_trigger, &trigger.mass2_trigger,
+    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", 
+      &trigger.mass1_trigger, &trigger.mass2_trigger,
       &tau0, &tau3, &tau0I, &tau3I,
-      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, &trigger.fend_inject,
+      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, 
+      &trigger.fend_inject,
       &trigger.rho_final, &trigger.bin );
 
 
