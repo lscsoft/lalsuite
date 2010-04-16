@@ -24,10 +24,11 @@ for d in injections* noninjections; do
     # check if the string job went to the end
     for outfile in lalapps_StringSearch*.out; do
     
+
 	if ! grep -q "StringJob is done" ${outfile}; then
 	    echo "*****************************************************"
 	    echo "***** ${d}/logs/${outfile} :"
-	    echo "      JOB aborted !"
+	    echo "      JOB aborted or not finished !"
 	fi
     done
 
