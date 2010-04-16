@@ -11,7 +11,7 @@ for d in injections* noninjections; do
     cd ${d}/logs
 
     # check if error files are empty
-    for errfile in datafind*.err lalapps_binj*.out lalapps_StringSearch*.err burca*.err; do
+    for errfile in datafind* lalapps_binj*.out lalapps_StringSearch*.err ligolw_add* ligolw_burca* ligolw_sqlite*; do
 
 	if [ -s ${errfile} ]; then
 	    echo "*****************************************************"
