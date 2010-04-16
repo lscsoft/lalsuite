@@ -447,6 +447,88 @@ cohPTFTemplateOverlaps(
     )
 {
   UINT4         i, j, k, kmin, kmax, len,vecLen;
+  REAL8         f_min, deltaF, fFinal,test1,test2;
+  COMPLEX8     *PTFQtilde1   = NULL;
+  COMPLEX8     *PTFQtilde2   = NULL;
+
+
+  PTFQtilde1 = fcTmplt1->PTFQtilde->data;
+  PTFQtilde2 = fcTmplt2->PTFQtilde->data;
+
+  len       = invspec->data->length;
+  deltaF    = invspec->deltaF;
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
+  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
+    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
+  fFinal    = 1000;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+
+  vecLen = 5;
+  if (! spinBank )
+  {
+    vecLen = 2;
+    for ( k = kmin; k < kmax ; ++k )
+    {
+      PTFQtilde1[k].im = PTFQtilde1[k+len].re;
+//      PTFQtilde1[k + len].re = PTFQtilde1[k].im;
+      PTFQtilde1[k + len].im = -PTFQtilde1[k].re;
+      PTFQtilde2[k].im = PTFQtilde2[k+len].re;
+//      PTFQtilde2[k + len].re = PTFQtilde2[k].im;
+      PTFQtilde2[k + len].im = -PTFQtilde2[k].re;
+    }
+  }
+
+//  fprintf(stderr,"Calculating PTFM overlap \n");
+
+  for( i = 0; i < vecLen; ++i )
+  {
+    for ( j = 0; j < vecLen; ++j )
+    {
+      test1 = 0;
+      test2 = 0;
+      for ( k = kmin; k < kmax ; ++k )
+      {
+        PTFM->data[vecLen * i + j] += (PTFQtilde1[k + i * len].re *
+                            PTFQtilde2[k + j * len].re +
+                            PTFQtilde1[k + i * len].im *
+                            PTFQtilde2[k + j * len].im )
+                            * invspec->data->data[k] ;
+      
+/*        if ( i == j)
+        {
+        if (PTFM->data[vecLen * i + j] > test1)
+        {
+          if (PTFM->data[vecLen * i + j] > test2)
+          {
+            fprintf(stderr,"WTF!: %e %e %e \n",PTFM->data[vecLen * i + j],test1,test2);
+          }
+        }
+        }*/
+      }
+      PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
+      /* Use the symmetry of M */
+      /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
+//      fprintf(stderr, "PTFM: %e \n",PTFM->data[vecLen * i + j]);
+    }
+  }
+//  fprintf(stderr,"PTFM calc in func: %e \n",PTFM->data[0]);
+
+}
+
+void
+cohPTFComplexTemplateOverlaps(
+    FindChirpTemplate          *fcTmplt1,
+    FindChirpTemplate          *fcTmplt2,
+    REAL4FrequencySeries       *invspec,
+    UINT4                      spinBank,
+    COMPLEX8Array                 *PTFM
+    )
+{
+  UINT4         i, j, k, kmin, kmax, len,vecLen;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde1   = NULL;
   COMPLEX8     *PTFQtilde2   = NULL;
@@ -482,6 +564,7 @@ cohPTFTemplateOverlaps(
     }
   }
 
+//  fprintf(stderr,"Calculating PTFM overlap \n");
 
   for( i = 0; i < vecLen; ++i )
   {
@@ -489,15 +572,22 @@ cohPTFTemplateOverlaps(
     {
       for ( k = kmin; k < kmax ; ++k )
       {
-        PTFM->data[vecLen * i + j] += (PTFQtilde1[k + i * len].re *
+        PTFM->data[vecLen * i + j].re += (PTFQtilde1[k + i * len].re *
                             PTFQtilde2[k + j * len].re +
                             PTFQtilde1[k + i * len].im *
                             PTFQtilde2[k + j * len].im )
                             * invspec->data->data[k] ;
+        PTFM->data[vecLen * i + j].im += (-PTFQtilde1[k + i * len].re *
+                            PTFQtilde2[k + j * len].im +
+                            PTFQtilde1[k + i * len].im *
+                            PTFQtilde2[k + j * len].re )
+                            * invspec->data->data[k] ;
       }
-      PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
+      PTFM->data[vecLen * i + j].re *= 4.0 * deltaF ;
+      PTFM->data[vecLen * i + j].im *= 4.0 * deltaF ;
       /* Use the symmetry of M */
       /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
+//      fprintf(stderr, "PTFM: %e \n",PTFM->data[vecLen * i + j].re,PTFM->data[vecLen * i + j].im);
     }
   }
 //  fprintf(stderr,"PTFM calc in func: %e \n",PTFM->data[0]);
@@ -578,10 +668,9 @@ void cohPTFBankFilters(
 
   for ( i = 0; i < vecLen ; i++ )
   {
-    for ( j = numPoints/4; j < 3*numPoints/4; ++j )
+    for ( j = numPoints/4 - 5000; j < 3*numPoints/4 + 5000; ++j )
     {
-      PTFBankqVec->data[i*halfNumPoints + (j-numPoints/4)] = \
-          PTFqVec->data[i*numPoints + j];
+      PTFBankqVec->data[i*(halfNumPoints+10000) + (j-numPoints/4+5000)] = PTFqVec->data[i*numPoints + j];
     }
   }
 

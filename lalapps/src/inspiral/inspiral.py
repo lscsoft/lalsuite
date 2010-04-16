@@ -922,6 +922,10 @@ class PTFInspiralNode(InspiralAnalysisNode):
     """
     return self.__injections
 
+  def set_seed(self,seed):
+    self.add_var_opt('random-seed',seed)
+    
+
 class PTFSpinCheckerNode(InspiralAnalysisNode):
   """
   An InspiralNode runs an instance of the inspiral code in a Condor DAG.

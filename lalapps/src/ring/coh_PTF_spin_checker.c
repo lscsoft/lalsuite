@@ -1015,14 +1015,10 @@ int cohPTFspinChecker(
   {
     for (j = 0; j < vecLengthTwo; j++)
     {
-      if (i == j)
-      {
+      if (i == j && gsl_matrix_get(b2,i,j) > 1E-5)
         gsl_matrix_set(b2i,i,j,1./gsl_matrix_get(b2,i,j));
-      }
       else
-      {
         gsl_matrix_set(b2i,i,j,0.);
-      }
     }
   }
 
@@ -1191,6 +1187,7 @@ int cohPTFspinChecker(
     ptfSNR = AdotA + BdotB + pow(pow(AdotA-BdotB,2) + 4*AdotB*AdotB,0.5);
     ptfSNR *= 0.5;
 
+
     if (singleDetector)
       normSNR = (Pcomp[0]*Pcomp[0]+Pcomp[1]*Pcomp[1])*normScale;
     else
@@ -1221,20 +1218,15 @@ int cohPTFspinChecker(
     }
 
     /* Decide if bigger than thresholds */
-    if (ptfSNR > 58.291802780433379)
+    if (ptfSNR > params->spinSNR2threshold)
       ptfCount++;
-    if (normSNR > 46.05170169440018)
+    if (normSNR > params->nonspinSNR2threshold)
       normCount++;
-    /*fprintf(tempFP,"%f %f %f %f %f %f %f %f %f \n",distance,psi,beta,lamda,theta,varphi,phi,ptfSNR,normSNR);*/
-    /*fprintf(stdout,"%f %f %f\n",AdotA,BdotB,AdotB);*/
-    /*fprintf(stdout,"%f %f \n",ptfSNR,normSNR);*/
 
   }
 
   if (ptfCount > normCount)
     passCheck = 1;
-
-  /*fprintf(stdout,"PTF count: %d, NORM count: %d \n",ptfCount,normCount);*/
 
   gsl_matrix_free(B2);
   gsl_matrix_free(N2);

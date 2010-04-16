@@ -102,13 +102,14 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "inverse-spec-length",     required_argument, 0, 'T' },
     { "trig-start-time",         required_argument, 0, 'u' },
     { "trig-end-time",           required_argument, 0, 'U' },
+    { "sub-bank-size",           required_argument, 0, 'v' },
     { "block-duration",          required_argument, 0, 'w' },
     { "pad-data",                required_argument, 0, 'W' },
     { "right-ascension",         required_argument, 0, 'f' },
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:T:u:U:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:T:u:U:v:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -244,6 +245,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'U': /* trig-end-time */
         localparams.trigEndTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
+        break;
+      case 'v': /* bank veto sub bank size */
+        localparams.BVsubBankSize = atoi( optarg);
         break;
       case 'w': /* block-duration */
         localparams.duration = atof( optarg );
@@ -391,6 +395,17 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
     fprintf(stderr,"code and not --bank-file.\n");
     sanity_check(! params->bankFile );
   }
+  if ( params->doBankVeto && (! params->BVsubBankSize) )
+  {
+    fprintf(stderr, "When using --do-bank-veto you must also supply ");
+    fprintf(stderr, "--sub-bank-size. \n" );
+    sanity_check(!( params->doBankVeto && (! params->BVsubBankSize)));
+  }
+  if ( params->BVsubBankSize && (! params->doBankVeto) )
+  {
+    fprintf(stderr, "Supplying --sub-bank-size will do nothing if ");
+    fprintf(stderr, "--do-bank-veto is not given. \n" );
+  }
   sanity_check(params->spinBank || params->noSpinBank);
   return 0;
 }
@@ -463,6 +478,7 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--do-null-stream Calculate Null SNR for potential triggers\n");
   fprintf( stderr, "--do-trace-snr Calculate Trace SNR for potential triggers \n");
   fprintf( stderr, "--do-bank-veto Calculate Bank Veto for potential triggers \n");
+  fprintf( stderr, "--sub-bank-size Number of templates to use for bank veto \n");
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );

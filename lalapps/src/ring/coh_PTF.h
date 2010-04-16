@@ -88,6 +88,7 @@ struct coh_PTF_params {
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
   UINT4        numEvents;
+  UINT4        BVsubBankSize;
   char         outputFile[256];
   const char  *spinBank;
   const char  *noSpinBank;
@@ -117,6 +118,10 @@ struct coh_PTF_params {
 
 struct bankTemplateOverlaps {
   REAL8Array  *PTFM[LAL_NUM_IFO];
+};
+
+struct bankComplexTemplateOverlaps {
+  COMPLEX8Array  *PTFM[LAL_NUM_IFO];
 };
 
 struct bankDataOverlaps {
@@ -160,6 +165,7 @@ int cohPTF_output_tmpltbank(
     );
 
 void initialise_sub_bank(
+struct coh_PTF_params   *params,
 InspiralTemplate        *PTFBankTemplates,
 FindChirpTemplate       *bankFcTmplts,
 UINT4                    subBankSize,
@@ -192,6 +198,15 @@ void cohPTFTemplateOverlaps(
     UINT4                      spinBank,
     REAL8Array                 *PTFM);
 
+void
+cohPTFComplexTemplateOverlaps(
+    FindChirpTemplate          *fcTmplt1,
+    FindChirpTemplate          *fcTmplt2,
+    REAL4FrequencySeries       *invspec,
+    UINT4                      spinBank,
+    COMPLEX8Array                 *PTFM
+    );
+
 void cohPTFBankFilters(
     FindChirpTemplate          *fcTmplt,
     UINT4                      spinBank,
@@ -218,7 +233,26 @@ struct bankTemplateOverlaps *bankOverlaps,
 struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
+REAL4TimeSeries         *gammaBeta[2],
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+INT4            timeOffsetPoints[LAL_NUM_IFO] );
+
+REAL4 calculate_bank_veto_max_phase(
+UINT4           numPoints,
+UINT4           position,
+UINT4           subBankSize,
+UINT4           vecLength,
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+REAL4           SNR,
+REAL8Array      *PTFM[LAL_NUM_IFO+1],
+struct coh_PTF_params      *params,
+struct bankComplexTemplateOverlaps *bankOverlaps,
+struct bankTemplateOverlaps *bankNormOverlaps,
+struct bankDataOverlaps *dataOverlaps,
+REAL4TimeSeries         *pValues[10],
 REAL4TimeSeries         *gammaBeta[2] );
+
 
 void free_bank_veto_memory(
   struct bankTemplateOverlaps *bankNormOverlaps,

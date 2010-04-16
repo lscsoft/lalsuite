@@ -87,7 +87,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     UINT4                   subBankSize,
-    struct bankTemplateOverlaps *bankOverlaps,
+    struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
     struct bankDataOverlaps *dataOverlaps
 );
@@ -112,7 +112,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
     REAL4TimeSeries         *nullSNR,
-    REAL4TimeSeries         *traceSNR
+    REAL4TimeSeries         *traceSNR,
+    REAL4TimeSeries         *bankVeto
 );
 
 static void coh_PTF_cleanup(
@@ -395,10 +396,49 @@ int main( int argc, char **argv )
   /* Create an inverse FFT plan */
   invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
+  /* Read in the tmpltbank xml file */
+  if ( params->spinBank )
+  {
+    numSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFSpinTemplate,
+      spinFileName,startTemplate, stopTemplate );
+    if (numSpinTmplts != 0 )
+    {
+      PTFtemplate = PTFSpinTemplate;
+      numTmplts = numSpinTmplts;
+    }
+    else
+      params->spinBank = NULL;
+      spinBank = 0;
+  }
+  if ( params->noSpinBank )
+  {
+    numNoSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFNoSpinTemplate,
+      noSpinFileName,startTemplate, stopTemplate );
+    if ( numNoSpinTmplts != 0 )
+    {
+      PTFtemplate = PTFNoSpinTemplate;
+      numTmplts = numNoSpinTmplts;
+    }
+    else
+      params->noSpinBank = NULL;
+  }
+  if ( params->spinBank && params->noSpinBank )
+  {
+    for (i = 0; (i < numNoSpinTmplts); PTFtemplate = PTFtemplate->next, i++)
+    {
+      if (i == (numNoSpinTmplts - 1))
+      {
+        PTFtemplate->next = PTFSpinTemplate;
+        numTmplts = numSpinTmplts + numNoSpinTmplts;
+      }
+    }
+    PTFtemplate = PTFNoSpinTemplate;
+  }
+
   /* Create the templates needed for the bank veto, if necessary */
-  UINT4 subBankSize = 10;
+  UINT4 subBankSize = params->BVsubBankSize;
   struct bankTemplateOverlaps *bankNormOverlaps = NULL;
-  struct bankTemplateOverlaps *bankOverlaps = NULL;
+  struct bankComplexTemplateOverlaps *bankOverlaps = NULL;
   struct bankDataOverlaps *dataOverlaps = NULL;
   
   if ( params->doBankVeto )
@@ -408,7 +448,7 @@ int main( int argc, char **argv )
     dataOverlaps = LALCalloc(subBankSize,sizeof( *dataOverlaps));
     PTFBankTemplates = LALCalloc( subBankSize, sizeof( *PTFBankTemplates ));
     bankFcTmplts = LALCalloc( subBankSize, sizeof( *bankFcTmplts ));
-    initialise_sub_bank(PTFBankTemplates,bankFcTmplts,
+    initialise_sub_bank(params,PTFBankTemplates,bankFcTmplts,
         subBankSize,numPoints,spinBank);
     for ( ui=0 ; ui < subBankSize ; ui++ )
     {
@@ -456,44 +496,6 @@ int main( int argc, char **argv )
         
   }
 
-  /* Read in the tmpltbank xml file */
-  if ( params->spinBank )
-  {
-    numSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFSpinTemplate, 
-      spinFileName,startTemplate, stopTemplate );
-    if (numSpinTmplts != 0 )
-    {
-      PTFtemplate = PTFSpinTemplate;
-      numTmplts = numSpinTmplts;
-    }
-    else
-      params->spinBank = NULL;
-  }
-  if ( params->noSpinBank )
-  {
-    numNoSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFNoSpinTemplate, 
-      noSpinFileName,startTemplate, stopTemplate );
-    if ( numNoSpinTmplts != 0 )
-    {
-      PTFtemplate = PTFNoSpinTemplate;
-      numTmplts = numNoSpinTmplts;
-    }
-    else
-      params->noSpinBank = NULL;
-  }
-  if ( params->spinBank && params->noSpinBank )
-  {
-    for (i = 0; (i < numNoSpinTmplts); PTFtemplate = PTFtemplate->next, i++)
-    {
-      if (i == (numNoSpinTmplts - 1))
-      {
-        PTFtemplate->next = PTFSpinTemplate;
-        numTmplts = numSpinTmplts + numNoSpinTmplts;
-      }
-    }
-    PTFtemplate = PTFNoSpinTemplate;
-  }
-
   PTFbankhead = PTFtemplate;
   /*fake_template (PTFtemplate);*/
   for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
@@ -511,13 +513,13 @@ int main( int argc, char **argv )
             {
               dataOverlaps[ui].PTFqVec[ifoNumber] =
                   XLALCreateCOMPLEX8VectorSequence ( 5, 3*numPoints/4 - numPoints/4 );
-              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateREAL8ArrayL( 2, 5, 5 );
+              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,5,5);
             }
             else
             {
               dataOverlaps[ui].PTFqVec[ifoNumber] =
                   XLALCreateCOMPLEX8VectorSequence ( 1, 3*numPoints/4 - numPoints/4 );
-              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateREAL8ArrayL( 2, 2, 2 );
+              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,2,2);
             }
             cohPTFBankFilters(&(bankFcTmplts[ui]),spinBank,
                 &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
@@ -594,16 +596,16 @@ int main( int argc, char **argv )
           {
             if ( spinBank )
             {
-              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,25*sizeof(REAL8));
+              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,25*sizeof(COMPLEX8));
             }
             else
             {
-              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,4*sizeof(REAL8));
+              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,4*sizeof(COMPLEX8));
             }
-            cohPTFTemplateOverlaps(&(bankFcTmplts[ui]),fcTmplt,
+            cohPTFComplexTemplateOverlaps(&(bankFcTmplts[ui]),fcTmplt,
                 invspec[ifoNumber],spinBank,
                 bankOverlaps[ui].PTFM[ifoNumber]);
-            cohPTFTemplateOverlaps(fcTmplt,&(bankFcTmplts[ui]),
+            cohPTFComplexTemplateOverlaps(fcTmplt,&(bankFcTmplts[ui]),
                 invspec[ifoNumber],spinBank,
                 bankOverlaps[ui].PTFM[ifoNumber]);
           }
@@ -636,7 +638,7 @@ int main( int argc, char **argv )
           j,i,time(NULL)-startTime);      
 
       /* From this we want to construct triggers */
-      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR);
+      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       for ( k = 0 ; k < 10 ; k++ )
@@ -665,7 +667,7 @@ int main( int argc, char **argv )
           if ( dataOverlaps[ui].PTFqVec[ifoNumber] )
             XLALDestroyCOMPLEX8VectorSequence( dataOverlaps[ui].PTFqVec[ifoNumber]);
           if ( bankOverlaps[ui].PTFM[ifoNumber] )
-            XLALDestroyREAL8Array( bankOverlaps[ui].PTFM[ifoNumber]);
+            XLALDestroyCOMPLEX8Array( bankOverlaps[ui].PTFM[ifoNumber]);
         }
       }
     }
@@ -1121,7 +1123,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     UINT4                   subBankSize,
-    struct bankTemplateOverlaps *bankOverlaps,
+    struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
     struct bankDataOverlaps *dataOverlaps
 )
@@ -1612,7 +1614,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
         }
         if (check)
         {
-          bankVeto->data->data[i-numPoints/4] =calculate_bank_veto(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta);
+          bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta);
         }
       } 
     }
@@ -1696,7 +1698,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
     REAL4TimeSeries         *nullSNR,
-    REAL4TimeSeries         *traceSNR
+    REAL4TimeSeries         *traceSNR,
+    REAL4TimeSeries         *bankVeto
 )
 {
   UINT4 i;
@@ -1757,6 +1760,11 @@ UINT8 cohPTFaddTriggers(
           currEvent->null_statistic = nullSNR->data->data[i];
         if (params->doTraceSNR)
           currEvent->null_stat_degen = traceSNR->data->data[i];
+        if (params->doBankVeto)
+        {
+          currEvent->bank_chisq = bankVeto->data->data[i];
+          currEvent->bank_chisq_dof = params->BVsubBankSize;
+        }
         if (pValues[0])
           currEvent->h1quad.re = pValues[0]->data->data[i];
         if (pValues[1]) 
