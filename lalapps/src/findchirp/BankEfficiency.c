@@ -34,6 +34,7 @@ RCSID(  "$Id$");
 RandomParams  *randParams=NULL;
 INT4          randnStartPad = 0;  /* injections always at the same time if zero*/
 INT4          ascii2xml = 0;
+INT4          xml_status;
 
 /* --- Main program ------------------------------------------------------- */
 int
@@ -1683,7 +1684,7 @@ void BankEfficiencyPrintResultsXml(
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* finally write sngl inspiral table column's names */
-    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
+    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
   }
   else
   {
@@ -1725,7 +1726,7 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
+    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
     PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
@@ -3680,7 +3681,7 @@ void BankEfficiencyAscii2Xml(void)
     {
       fprintf(stderr,"error while opening input file %s\n", fname);
       fprintf(stderr,"the xml file will not contains parameters information\n");
-      PRINT_LIGOLW_XML_HEADER(output);
+      xml_status = PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
     }
   else
@@ -3712,7 +3713,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
       fprintf(stderr," done %d\n", numFileTriggers);
-      myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+      xml_status = myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
       while(inputData)
       {
       /*      id = inputData->event_id->id;*/
@@ -3779,11 +3780,11 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(output, "\n");
 
     }
-       myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
+       xml_status = myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
 
     }
 
-  PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
+  xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
@@ -3824,7 +3825,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
   fprintf(stderr,"read %d lines...done\n", countline);
-  PRINT_LIGOLW_XML_TABLE_FOOTER(output);
+  xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
   fclose(output);
