@@ -1267,7 +1267,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
 /** construct the channel name corresponding to a particular mode
   and polarization in frame file containing nr data */
-CHAR* XLALGetNinjaChannelName(CHAR *polarisation, UINT4 l, INT4 m)
+CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, UINT4 l, INT4 m)
 {
   /* variables */
   CHAR sign;
