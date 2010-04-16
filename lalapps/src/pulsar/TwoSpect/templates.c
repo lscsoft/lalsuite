@@ -250,7 +250,7 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    return dprobRdR;
    
 }
-void gsl_probRtimesDprobRdR(REAL8 R, void *param, REAL8 *probR, REAL8 *dprobRdR)
+void gsl_probRtimesDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
@@ -326,7 +326,7 @@ void gsl_probRtimesDprobRdR(REAL8 R, void *param, REAL8 *probR, REAL8 *dprobRdR)
    }
    prob /= LAL_E;
    
-   *probR = prob-pars->threshold;
+   *probabilityR = prob-pars->threshold;
    *dprobRdR = -(prob+pars->threshold)*sumwsq;
    
 }
