@@ -3705,8 +3705,10 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stderr, "reading triggers from file: %s\n",
           BANKEFFICIENCY_XMLBANK);
+      CHAR *filename = XLALCalloc(strlen(BANKEFFICIENCY_XMLBANK), sizeof(CHAR));
       numFileTriggers = LALSnglInspiralTableFromLIGOLw( &inputData,
-          BANKEFFICIENCY_XMLBANK , 0, -1 );
+          filename, 0, -1 );
+      XLALFree(filename);
 
 
       fprintf(stderr," done %d\n", numFileTriggers);

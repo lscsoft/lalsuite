@@ -20,6 +20,7 @@
 #include <processtable.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gsl/gsl_histogram.h>
 #include <gsl/gsl_matrix.h>
 #include <lalapps.h>
