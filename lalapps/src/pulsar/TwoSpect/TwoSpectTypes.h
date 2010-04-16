@@ -29,9 +29,6 @@ typedef struct
    REAL8Vector *f;         //First PSD frequencies
    REAL8Vector *fpr;       //Second PSD frequencies
    REAL8Vector *ffdata;    //Doubly Fourier transformed data
-   REAL8Vector *backgrnd;  //TF Noise background
-   REAL8Vector *antweights;   //Antenna pattern weights (F**2)
-   REAL8 backgrndavg;     //TF noise background average
 } ffdataStruct;
 
 typedef struct
