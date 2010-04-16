@@ -2,7 +2,7 @@ Source: lalstochastic
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), zlib1g-dev, lal-dev (>= 6.4), libmetaio-dev (>=8.2), lalmetaio-dev (>= 1.0), pkg-config, python
+Build-Depends: debhelper (>= 5), zlib1g-dev, lal-dev (>= 6.4), libmetaio-dev (>=8.2), lalmetaio-dev (>= 1.0), pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalstochastic

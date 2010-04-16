@@ -36,7 +36,7 @@ Pulsar library.
 %build
 source /opt/lscsoft/lscsoft-user-env.sh
 %configure --disable-gcc-flags
-%{__make}
+%{__make} V=1
 
 %install
 %makeinstall

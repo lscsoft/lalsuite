@@ -268,7 +268,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         localparams.padData = atof( optarg );
         break;
       case 'V': /* version */
-        PRINT_VERSION( "ring" );
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
       case '?':
         error( "unknown error while parsing options\n" );
