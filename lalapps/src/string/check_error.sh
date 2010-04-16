@@ -10,7 +10,7 @@ for d in injections* noninjections; do
 
     for errfile in datafind*.err lalapps_binj*.out lalapps_StringSearch*.err burca*.err; do
 
-	if [ ! -s ${errfile} ]; then
+	if [ -s ${errfile} ]; then
 	    echo "*****************************************************"
 	    echo "***** ${d}/logs/${errfile} :"
 	    cat ${errfile}
