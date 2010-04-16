@@ -190,8 +190,7 @@ void LALParserInspiralInjection(LALStatus *status,
                                 InspiralInjectionParameters *);
 
 
-void LALCheckInspiralInjectionParameters(LALStatus *status, 
-                                         InspiralInjectionParameters params);
+void XLALCheckInspiralInjectionParameters(InspiralInjectionParameters params);
 
 
 
@@ -932,7 +931,7 @@ void LALParserInspiralInjection(LALStatus *status,
   }
 
   /* Let us check now the validity of the arguments */
-  LAL_CALL( LALCheckInspiralInjectionParameters(status,  *params), status);
+  XLALCheckInspiralInjectionParameters(*params);
 
 
   
@@ -984,8 +983,7 @@ void LALParserInspiralInjection(LALStatus *status,
 }
 
 
-void LALCheckInspiralInjectionParameters(LALStatus *status, 
-                                         InspiralInjectionParameters params)
+void XLALCheckInspiralInjectionParameters(InspiralInjectionParameters params)
 { 
   if ( params.fLower <= 5 || params.fLower >=1000)
     {
