@@ -58,22 +58,18 @@ NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 #define UNUSED(expr) do { (void)(expr); } while(0)
 
 /* Some static function prototypes */
-
 static int compareTemplateByLevel (const void * a, const void * b);
 static int compareTemplateByChirpMass (const void * a, const void * b);
 static int compareTemplateByMass (const void * a, const void * b);
 static int compareTemplateByFfinal (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead);
-static InspiralTemplate *
-XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
-InspiralTemplate *
-XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
-InspiralTemplate *
-XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num );
-InspiralTemplate *
-XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
+static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size);
+static InspiralTemplate * XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
+static InspiralTemplate * XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
+static InspiralTemplate * XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num );
+static InspiralTemplate * XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
 
-/* helper function */
+/* helper functions */
 
 static COMPLEX8 rotate(REAL4 a, REAL4 phi)
 	{
@@ -304,7 +300,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 tmpltColReal = 0;
     REAL8 tmpltColImag = 0;
     COMPLEX16 tmp = {0.0, 0.0};
-    REAL8 tphase = 0.0;
+    /* FIXME someday this could track time offset phase */
+    /*REAL8 tphase = 0.0; */
 
     /*
      * The cumulative real and imaginary parts of the cross-correlation
@@ -352,7 +349,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	if (bankVetoData->time_freq_bank_veto) bankVetoData->timeshift->data[row] = (REAL8) 2.0 * deltaT;
+	/* FIXME someday maybe this could use time offsets */
+	if (bankVetoData->time_freq_bank_veto) bankVetoData->timeshift->data[row] = (REAL8) 0.0 * deltaT;
 	else bankVetoData->timeshift->data[row] = 0.0;
 	}
     }
@@ -387,9 +385,9 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 			       bankVetoData->resp->data[sample].im *
 			       bankVetoData->resp->data[sample].im ) * dynRange * dynRange;
 
-		    /* time shifting stuff */
 		    spectralDensity = bankVetoData->spec->data[sample]*sqResp;
-		    tphase = (REAL8) (col - row) * 2.0 * LAL_PI * bankVetoData->timeshift->data[col] * sample * deltaF;
+		    /*FIXME time shifting stuff */
+		    /*tphase = (REAL8) (col - row) * 2.0 * LAL_PI * bankVetoData->timeshift->data[col] * sample * deltaF;*/
 		  
 		    if ( spectralDensity != 0 )
 		    {
@@ -401,8 +399,8 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		
 			tmp.re = (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
 			tmp.im = (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
-			/* Apply time shift */
-			tmp = rotate_complex16(tmp, tphase);
+			/* FIXME Apply time shift */
+			/*tmp = rotate_complex16(tmp, tphase);*/
 	 
 			crossCorrReal += (REAL8) tmp.re;
 			crossCorrImag += (REAL8) tmp.im;
@@ -577,15 +575,18 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
 
 InspiralTemplate *
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, FindChirpBankVetoData *bvdata, UINT4 num)
+XLALFindChirpSortTemplates( InspiralTemplate *bankHead, FindChirpBankVetoData *bvdata, UINT4 num, UINT4 max_subbank_size)  
   {
-  UNUSED(num);
-  //return bankHead;
-  if (bvdata->time_freq_bank_veto) return XLALFindChirpSortTemplatesByFfinal(bankHead, num);
-  /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);*/
+  /* Either do something clever */
+  if (bvdata->time_freq_bank_veto) 
+  {
+    bankHead = XLALFindChirpSortTemplatesByFfinal(bankHead, num);
+    breakUpSubBanks(bankHead, num, max_subbank_size);
+    return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  } 
+  /* Or just randomly choose templates */
   breakUpRegions(bankHead);
   return XLALFindChirpSortTemplatesByLevel(bankHead,num);
-  //return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
 
@@ -670,6 +671,18 @@ XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+
+static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size)
+  {
+  UINT4 cnt = 0;
+  while (bankHead)
+    {
+    bankHead->level = (UINT4) cnt % (num / size);
+    cnt++;
+    bankHead = bankHead->next;
+    }
+  return 0;
+  }
 
 
 static int  breakUpRegions(InspiralTemplate *bankHead)
