@@ -1140,7 +1140,9 @@ InspiralTemplate *
 XLALFindChirpSortTemplates(
   InspiralTemplate *bankHead,
   FindChirpBankVetoData *bvdata,
-  UINT4 num);
+  UINT4 num,
+  UINT4 max_subbank_size
+);
 
 #ifdef  __cplusplus
 #pragma {
