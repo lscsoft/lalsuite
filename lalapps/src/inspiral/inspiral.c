@@ -2129,7 +2129,7 @@ int main( int argc, char *argv[] )
     if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)
-	bankHead = XLALFindChirpSortTemplates( bankHead, &bankVetoData, numTmplts);
+	bankHead = XLALFindChirpSortTemplates( bankHead, &bankVetoData, numTmplts, subBankSize);
 
       if ( vrbflg ) fprintf( stdout,
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
@@ -3673,7 +3673,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           autochisqStride = atoi(optarg);
 	  /* FIXME have a sensible upper bound for dof computed from arguments */
-          if (autochisqLength < 1 || autochisqLength > 1000)
+          if (autochisqStride < 1 || autochisqStride > 1000)
           {
           fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
                   long_options[option_index].name, optarg);
