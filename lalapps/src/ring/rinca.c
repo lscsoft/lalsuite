@@ -82,6 +82,7 @@ int distCut = 0;
 int h1h2Consistency = 0;
 int doVeto = 0;
 int completeCoincs = 0;
+extern int vrbflg;
 
 /*
  * 
@@ -160,8 +161,6 @@ static void print_usage(char *program)
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-
-  extern int vrbflg;
 
   LALPlaygroundDataMask dataType = unspecified_data_type;
   INT4  startCoincidence = -1;
@@ -524,7 +523,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, numSlides );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", numSlides );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, numSlides );
         break;
 
       case 'n':
@@ -567,7 +566,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         startCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startCoincidence );
         break;
 
       case 't':
@@ -592,7 +591,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         endCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endCoincidence );
         break;
 
       case 'x':
@@ -693,11 +692,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximization interval must be positive:\n "
-              "(%ld ms specified)\n",
+              "(%" LAL_INT8_FORMAT " ms specified)\n",
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld",  maximizationInterval );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT,  maximizationInterval );
         break;
 
       case '*':
@@ -784,7 +783,7 @@ int main( int argc, char *argv[] )
     if ( haveTrig[ifoNumber] )
     {
       /* write ifo name in ifoName list */
-      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifoList[ifoNumber] );
+      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "%s", ifoList[ifoNumber] );
       numIFO++;
 
       /* store the argument in the process_params table */
@@ -1020,7 +1019,7 @@ if ( vrbflg)
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %ld ms window\n",
+          fprintf( stdout, "Clustering triggers for over %" LAL_INT8_FORMAT " ms window\n",
               maximizationInterval);
         }
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
@@ -1341,7 +1340,7 @@ if ( vrbflg)
            h1snrCut, &vetoSegs[LAL_IFO_H1], &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
-          XLALCountCoincInspiral(coincRingdownList));
+          XLALCountCoincInspiral((CoincInspiralTable*)coincRingdownList));
    }
 
 
@@ -1383,10 +1382,11 @@ if ( vrbflg)
         /* keep only the requested coincs */
         if( slideH1H2Together )
         {
+          char slide_ifos[] = "H1H2";
           if ( vrbflg ) fprintf( stdout,
               "Throwing out slide coincs found only as H1H2 doubles.\n" );
           numCoincInSlide = XLALCoincRingdownIfosDiscard(
-              &coincRingdownList, "H1H2" );
+              &coincRingdownList, slide_ifos );
           if ( vrbflg ) fprintf( stdout,
               "Kept %d non-H1H2 coincs in slide.\n", numCoincInSlide );
         }
@@ -1548,9 +1548,9 @@ cleanexit:
   else if ( !userTag && !ifoTag && outCompress )
   {
     snprintf( fileName, FILENAME_MAX, "%s-RINCA-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+        ifos, startCoincidence, endCoincidence - startCoincidence );
     snprintf( fileSlide, FILENAME_MAX, "%s-RINCA_SLIDE-%d-%d.xml.gz",
-        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+        ifos, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
@@ -1575,7 +1575,7 @@ cleanexit:
   }
   /* write process table */
 
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
@@ -1592,7 +1592,7 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
-  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
         search_summary_table ), &status );

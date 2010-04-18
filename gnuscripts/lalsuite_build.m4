@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 2
+# serial 3
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -151,4 +151,35 @@ AC_DEFUN([LALSUITE_ENABLE_LALXML],
 if test "$lalpulsar" = "false"; then
   lalxml=false
 fi
+])
+
+AC_DEFUN([LALSUITE_ENABLE_BOINC],
+[AC_ARG_ENABLE(
+  [boinc],
+  AC_HELP_STRING([--enable-boinc],[enable BOINC support [default=no]]),
+  [ case "${enableval}" in
+      yes) boinc=true;;
+      no) boinc=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
+    esac
+  ], [ boinc=false ] )
+AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+])
+
+AC_DEFUN([LALSUITE_CHECK_BOINC],
+[AC_MSG_CHECKING([whether LAL has been compiled with BOINC support])
+AC_TRY_RUN([
+#include <lal/LALConfig.h>
+#ifdef LAL_BOINC_ENABLED
+int main( void ) { return 0; }
+#else
+int main( void ) { return 1; }
+#endif
+],
+AC_MSG_RESULT([yes])
+[boinc=true],
+AC_MSG_RESULT([no])
+[boinc=false],
+AC_MSG_RESULT([unknown])
+[boinc=false])
 ])

@@ -14,10 +14,10 @@ bin_SCRIPTS = lalapps_cosmicstring_pipe
 pkgpython_DATA = cosmicstring.py
 endif
 
-pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
+#pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
 
-EXTRA_DIST = cosmicstring.py $(DATA) lalapps_cosmicstring_pipe \
-             efficiency.m false_alarm.m string_injections.m
+EXTRA_DIST = cosmicstring.py $(DATA) lalapps_cosmicstring_pipe
+#             efficiency.m false_alarm.m string_injections.m
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
