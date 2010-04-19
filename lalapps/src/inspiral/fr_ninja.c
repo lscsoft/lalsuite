@@ -17,8 +17,6 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
- *
- * Revision: $Id$
  */
 
 #include <math.h>
@@ -42,14 +40,9 @@
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
-/* cvs info */
-RCSID("$Id$");
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
-#define PROGRAM_NAME "fr_ninja"
+/* program info */
+RCSID(LALAPPS_VCS_IDENT_ID);
+#define PROGRAM_NAME "lalapps_fr_ninja"
 
 /* defines */
 /* TODO: how long can a FrHistory comment string be? */
@@ -306,7 +299,7 @@ INT4 main(INT4 argc, CHAR **argv)
   snprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
   snprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
   snprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
-  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  snprintf(creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, LALAPPS_VCS_ID);
 
   /* define frame */
   frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
