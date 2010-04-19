@@ -86,7 +86,7 @@ static COMPLEX16 rotate_complex16(COMPLEX16 a, REAL8 phi)
 	out.im = a.re * sin(phi) + a.im * cos(phi);
 	return out;
 	}
-#endif 
+#endif
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
