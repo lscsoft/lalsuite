@@ -62,7 +62,6 @@ RCSID("$Id$");
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
 
-
 /* verbose flag */
 extern int vrbflg;
 
@@ -77,7 +76,7 @@ INT4 main(INT4 argc, CHAR **argv)
   /* counters */
   int c;
   UINT4 i;
-  
+
   /* mode counters */
   UINT4 l, m;
 
@@ -340,7 +339,7 @@ INT4 main(INT4 argc, CHAR **argv)
       hcross[l][m] = NULL;
 
       /* generate channel names */
-      plus_channel[l][m] = XLALGetNinjaChannelName( "plus", l, m - MAX_L);
+      plus_channel[l][m] = XLALGetNinjaChannelName("plus", l, m - MAX_L);
       cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m - MAX_L);
 
       /* initilise waveform time series */
@@ -388,8 +387,8 @@ INT4 main(INT4 argc, CHAR **argv)
         }
       }
 
-     /* add channels to frame */
-     if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
+      /* add channels to frame */
+      if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
       {
         XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[l][m]);
         XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[l][m]);
