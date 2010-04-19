@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
   
   if(runstate->data) {
     /* Test the created data */  
-    //DataTest();
+    DataTest();
     
     /* TemplateStatPhase() test */
 	//TemplateStatPhaseTest();
@@ -706,21 +706,53 @@ void DataTest(void)
       IfoPtr = IfoPtr->next;
     }
 
-    REAL4 m1 = 10.0;
-    addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
-    REAL4 m2 = 1.4;
-    addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
-    REAL4 inc = 0.0;
-    addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
-    REAL4 phii = 0.0;
-    addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
-	ProcessParamsTable *procparam=getProcParamVal(ppt,"--trigtime");
-	LIGOTimeGPS trigger_time;
-	char * chartmp;
-	LALStringToGPS(&status,&trigger_time,procparam->value,&chartmp);
-	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
-	addVariable(runstate->data->modelParams,"time",&tc,REAL8_t);
+    IfoPtr=runstate->data;
+	SimInspiralTable *injTable=NULL;
+	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(ppt,"--injXML")->value,0,0));
+	//REAL4 m1 = 10.0;
+    //addVariable(runstate->data->modelParams,"m1",&m1,REAL4_t);
+    //REAL4 m2 = 1.4;
+    //addVariable(runstate->data->modelParams,"m2",&m2,REAL4_t);
+	//REAL4 inc = 0.0;
+    //addVariable(runstate->data->modelParams,"inc",&inc,REAL4_t);
+    //REAL4 phii = 0.0;
+    //addVariable(runstate->data->modelParams,"phii",&phii,REAL4_t);
+	//ProcessParamsTable *procparam=getProcParamVal(ppt,"--trigtime");
+	//LIGOTimeGPS trigger_time;
+	//char * chartmp;
+	//LALStringToGPS(&status,&trigger_time,procparam->value,&chartmp);
+	//REAL8 tc = XLALGPSGetREAL8(&trigger_time);
+	//addVariable(runstate->data->modelParams,"time",&tc,REAL8_t);
 	
+	REAL8 mc = injTable->mchirp;
+	REAL8 eta = injTable->eta;
+    REAL8 iota = injTable->inclination;
+    REAL8 phi = injTable->coa_phase;
+	LIGOTimeGPS trigger_time=injTable->geocent_end_time;
+	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
+	REAL8 ra_current = injTable->longitude;
+	REAL8 dec_current = injTable->latitude;
+	REAL8 psi_current = injTable->polarization;
+	REAL8 distMpc_current = injTable->distance;
+	
+	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
+    fprintf(stdout, " trying 'templateLAL' likelihood...\n");
+    numberI4 = TaylorT1;
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    numberI4 = LAL_PNORDER_TWO;
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
+    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
+
+printf("Likelihood %g\n", likelihood);
+/*
     LALTemplateGeneratePPN(runstate->data);
 	  executeFT(runstate->data);
 	  
@@ -764,7 +796,7 @@ void DataTest(void)
 				  runstate->data->freqData->data->data[i].im);
 	  }
 	  
-	  
+*/	  
     fprintf(stdout," ----------\n");
 }
 

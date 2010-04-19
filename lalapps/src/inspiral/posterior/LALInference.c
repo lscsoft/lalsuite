@@ -1139,6 +1139,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		ifoPtr = ifoPtr->next;
     }
     irs->currentLikelihood=NullLogLikelihood(irs->data);
+	printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
   }
   else
     fprintf(stdout, " initialize(): no data read.\n");

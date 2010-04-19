@@ -285,13 +285,13 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	INT4 Ninj=0;
 	INT4 event=0;
 	int i=0,j=0;
-	CoherentGW InjectGW;
-	PPNParamStruc InjParams;
+	//CoherentGW InjectGW;
+	//PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
 	REAL8 SNR=0,NetworkSNR=0;
 	DetectorResponse det;
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
-	memset(&InjParams,0,sizeof(PPNParamStruc));
+	//memset(&InjParams,0,sizeof(PPNParamStruc));
 	COMPLEX16FrequencySeries *injF=NULL;
 	LALIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
@@ -302,8 +302,8 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
           thisData  = thisData->next;
 	}
-	InjParams.deltaT = MindeltaT;
-	InjParams.fStartIn=(REAL4)minFlow;
+	//InjParams.deltaT = MindeltaT;
+	//InjParams.fStartIn=(REAL4)minFlow;
 	
 	if(!getProcParamVal(commandLine,"--injXML")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(getProcParamVal(commandLine,"--event")) event= atoi(getProcParamVal(commandLine,"--event")->value);
@@ -315,14 +315,14 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	if(Ninj<event) fprintf(stderr,"Error reading event %d from %s\n",event,getProcParamVal(commandLine,"--injXML")->value);
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 
-	memset(&InjectGW,0,sizeof(InjectGW));
+	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
     printf("Injecting approximant %s\n", injTable->waveform);
 	REPORTSTATUS(&status);
 	printf("Approximant %x\n", injapprox);
-	LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
-	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
+	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
+	//if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
 		
 	/* Begin loop over interferometers */
 	while(IFOdata){
