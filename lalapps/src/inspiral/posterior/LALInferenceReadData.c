@@ -318,12 +318,12 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
 	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
+    printf("Injecting approximant %s\n", injTable->waveform);
 	REPORTSTATUS(&status);
 	printf("Approximant %x\n", injapprox);
 	LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
 	if(status.statusCode!=0) {fprintf(stderr,"Error generating injection!\n"); REPORTSTATUS(&status); }
-
-
+		
 	/* Begin loop over interferometers */
 	while(IFOdata){
 		memset(&det,0,sizeof(det));
