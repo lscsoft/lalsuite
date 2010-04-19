@@ -59,15 +59,15 @@ NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 /* Some static function prototypes */
 static int compareTemplateByLevel (const void * a, const void * b);
-static int compareTemplateByChirpMass (const void * a, const void * b);
-static int compareTemplateByMass (const void * a, const void * b);
+/*static int compareTemplateByChirpMass (const void * a, const void * b);*/
+/*static int compareTemplateByMass (const void * a, const void * b);*/
 static int compareTemplateByFfinal (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead);
 static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size);
 static InspiralTemplate * XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
-static InspiralTemplate * XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
+/*static InspiralTemplate * XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );*/
 static InspiralTemplate * XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num );
-static InspiralTemplate * XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
+/*static InspiralTemplate * XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );*/
 
 /* helper functions */
 
@@ -78,7 +78,7 @@ static COMPLEX8 rotate(REAL4 a, REAL4 phi)
 	out.im = a * sin(phi);
 	return out;
 	}
-
+#if 0
 static COMPLEX16 rotate_complex16(COMPLEX16 a, REAL8 phi)
 	{
 	COMPLEX16 out;
@@ -86,6 +86,7 @@ static COMPLEX16 rotate_complex16(COMPLEX16 a, REAL8 phi)
 	out.im = a.re * sin(phi) + a.im * cos(phi);
 	return out;
 	}
+#endif 
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
@@ -590,7 +591,7 @@ XLALFindChirpSortTemplates( InspiralTemplate *bankHead, FindChirpBankVetoData *b
   }
 
 
-
+#if 0
 InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   {
@@ -617,7 +618,9 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+#endif
 
+#if 0
 InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   {
@@ -644,6 +647,7 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+#endif
 
 InspiralTemplate *
 XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num )
@@ -742,7 +746,7 @@ static int compareTemplateByLevel (const void * a, const void * b)
   return 0;
 }
 
-
+#if 0
 static int compareTemplateByChirpMass (const void * a, const void * b)
 {
   REAL4 mVal1 = (*(InspiralTemplate * const *)a)->chirpMass;
@@ -753,6 +757,7 @@ static int compareTemplateByChirpMass (const void * a, const void * b)
   if ( mVal1 < mVal2 ) return -1;
   return 0;
 }
+#endif
 
 static REAL4 imr_ring(double m1, double m2){
         double chi = 0.0;
@@ -783,7 +788,7 @@ static int compareTemplateByFfinal (const void * a, const void * b)
   return 0;
 }
 
-
+#if 0
 static int compareTemplateByMass (const void * a, const void * b)
 {
   REAL4 mVal1 = (*(InspiralTemplate * const *)a)->mass1 + (*(InspiralTemplate * const *)a)->mass2;
@@ -794,4 +799,4 @@ static int compareTemplateByMass (const void * a, const void * b)
   if ( mVal1 < mVal2 ) return -1;
   return 0;
 }
-
+#endif
