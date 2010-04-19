@@ -126,7 +126,7 @@ void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, Use
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                               UsefulStageVariables *usefulparams );
-static inline UINT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
+static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv,
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -221,7 +221,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* GCT helper variables */
   UINT4 ic, ic2, ic3, ifine, ifreq_fg, if1dot_fg;
-  UINT4 fveclength, ifreq, U1idx;
+  UINT4 fveclength, ifreq;
+  INT4  U1idx;
   REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
@@ -2052,14 +2053,14 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 /** Calculate the U1 index for a given point in parameter space */
-static inline UINT4 ComputeU1idx( REAL8 freq_event,
+static inline INT4 ComputeU1idx( REAL8 freq_event,
 				  REAL8 f1dot_eventB1,
 				  REAL8 A1,
 				  REAL8 U1start,
 				  REAL8 U1winInv)
 {
 	/* compute the index of global-correlation coordinate U1, Eq. (1) */
-  return (UINT4) ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
+  return (((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5;
 
 } /* ComputeU1idx */
 
