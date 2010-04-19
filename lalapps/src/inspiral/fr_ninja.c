@@ -1,7 +1,7 @@
 /*
  * fr_ninja.c - save numerical relativity waveforms as a frame
  *
- * Copyright (C) 2007, 2008 Adam Mercer
+ * Copyright (C) 2007,2008,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
