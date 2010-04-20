@@ -235,7 +235,8 @@ struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
 REAL4TimeSeries         *gammaBeta[2],
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-INT4            timeOffsetPoints[LAL_NUM_IFO] );
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+UINT4           singleDetector );
 
 REAL4 calculate_bank_veto_max_phase(
 UINT4           numPoints,

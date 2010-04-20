@@ -17,9 +17,9 @@ UINT4                    spinBank)
   UINT4 i;
   srand(params->randomSeed);
 
-  REAL4 maxmass1 = 30.;
-  REAL4 minmass1 = 28.;
-  REAL4 minmass2 = 28.;
+  REAL4 maxmass1 = 29.2;
+  REAL4 minmass1 = 28.8;
+  REAL4 minmass2 = 28.8;
 /*  REAL4 maxmass1 = 30.;
   REAL4 minmass1 = 29.;
   REAL4 minmass2 = 28.;*/
@@ -62,7 +62,8 @@ struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
 REAL4TimeSeries         *gammaBeta[2],
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-INT4            timeOffsetPoints[LAL_NUM_IFO] )
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+UINT4           singleDetector )
 {
   UINT4 ui,uj,uk,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
   REAL4 overlapCount,PTFMcomp,pVals1,pVals2;
@@ -107,9 +108,11 @@ INT4            timeOffsetPoints[LAL_NUM_IFO] )
               PTFMcomp = PTFMtest->data[bankVecLength * uj + uk];
             }
             pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-            pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+            if (! singleDetector)
+              pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
             pVals2 = a[ifoNumber]*pValues[uk]->data->data[position-numPoints/4];
-            pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
+            if (! singleDetector)
+              pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
             overlapCount += pVals1*pVals2*PTFMcomp;
 //            fprintf(stderr,"Overlap contributions: %e %e %e %d %d %e %e\n",pVals1,pVals2,PTFMcomp,ui,subBankSize,pValues[uj]->data->data[position-numPoints/4],pValues[uj]->data->data[position-numPoints/4]);
           }
@@ -135,7 +138,8 @@ INT4            timeOffsetPoints[LAL_NUM_IFO] )
         if ( params->haveTrig[ifoNumber] )
         {
           pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-          pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+          if (! singleDetector )
+            pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
           if ( position+timeOffsetPoints[ifoNumber] >= 3*numPoints/4 +5000)
           {
             calTimeOffset = 3*numPoints/4 -1;
@@ -185,9 +189,11 @@ INT4            timeOffsetPoints[LAL_NUM_IFO] )
             PTFMtest = bankOverlaps[ui].PTFM[ifoNumber];
             PTFMcomp = PTFMtest->data[bankVecLength * uj + uk];
             pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-            pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+            if (! singleDetector)
+              pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
             pVals2 = a[ifoNumber]*pValues[uk]->data->data[position-numPoints/4];
-            pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
+            if (! singleDetector)
+              pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
             alpha += pVals1*pVals2 * PTFMcomp;
 //            fprintf(stderr,"alpha: %e %e %e \n",PTFMcomp,pVals1,pVals2);
           }
@@ -204,10 +210,10 @@ INT4            timeOffsetPoints[LAL_NUM_IFO] )
 
     bankVeto += bankVetoTemp;
 
-    fprintf(stderr,"BV comps: %e %e %e %e\n",TjwithS,alpha,SNR,TjwithS2);
+//    fprintf(stderr,"BV comps: %e %e %e %e\n",TjwithS,alpha,SNR,TjwithS2);
   }
 
-  fprintf(stderr,"Bank Veto %e \n", bankVeto);  
+//  fprintf(stderr,"Bank Veto %e \n", bankVeto);  
 
   return bankVeto;
 
@@ -232,7 +238,7 @@ COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 UINT4           singleDetector )
 {
-  fprintf(stderr,"Entering bank veto calculator\n");
+//  fprintf(stderr,"Entering bank veto calculator\n");
   UINT4 ui,uj,uk,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
   REAL4 overlapCount,PTFMcomp,pVals1,pVals2;
   REAL4 bankVeto;
@@ -258,15 +264,13 @@ UINT4           singleDetector )
   cSNR.re = 0;
   cSNR.im = 0;
 
-  for ( uj = 0; uj < vecLength; uj++ )
+  for ( uj = 0; uj < 1; uj++ )
   {
     for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
     {
       if ( params->haveTrig[ifoNumber] )
       {
-        pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-        if (! singleDetector)
-          pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+        pVals1 = 1;
         if ( position+timeOffsetPoints[ifoNumber] >= 3*numPoints/4 +5000)
         {
           calTimeOffset = 3*numPoints/4 -1;
@@ -293,9 +297,9 @@ UINT4           singleDetector )
   for ( ui = 0 ; ui < subBankSize + 1 ; ui++ )
   {
     overlapCount = 0;
-    for ( uj = 0; uj < vecLength; uj++ )
+    for ( uj = 0; uj < 1; uj++ )
     {
-      for ( uk = 0; uk < vecLength ; uk++ )
+      for ( uk = 0; uk < 1 ; uk++ )
       {
         for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
         {
@@ -310,39 +314,36 @@ UINT4           singleDetector )
               PTFMtest = bankNormOverlaps[ui].PTFM[ifoNumber];
               PTFMcomp = PTFMtest->data[bankVecLength * uj + uk];
             }
-            pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-            if (! singleDetector)
-              pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
-            pVals2 = a[ifoNumber]*pValues[uk]->data->data[position-numPoints/4];
-            if (! singleDetector)
-              pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
+            pVals1 = 1;
+            pVals2 = 1;
             overlapCount += pVals1*pVals2*PTFMcomp;
-            fprintf(stderr,"Overlap contributions: %e %e %e %d %d\n",pVals1,pVals2,PTFMcomp,ui,subBankSize);
+//            fprintf(stderr,"Overlap contributions: %e %e %e %d %d\n",pVals1,pVals2,PTFMcomp,ui,subBankSize);
           }
         }
       }
     }
     overlapQwithQ[ui] = pow(overlapCount,0.5);
-    fprintf(stderr,"Norm factors: %e %e \n", overlapCount,overlapQwithQ[ui]);
+//    fprintf(stderr,"Norm factors: %e %e \n", overlapCount,overlapQwithQ[ui]);
  }
 
   /* Now we can calculate the bank veto itself */
   bankVeto = 0;
+
+  cSNR.re = cSNR.re / overlapQwithQ[subBankSize];
+  cSNR.im = cSNR.im / overlapQwithQ[subBankSize];
 
   for ( ui = 0 ; ui < subBankSize ; ui++ )
   {
     /* Calculate the SNR between the bank template and the noise */
     TjwithS.re = 0;
     TjwithS.im = 0;
-    for ( uj = 0; uj < vecLength; uj++ )
+    for ( uj = 0; uj < 1; uj++ )
     {
       for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
       {
         if ( params->haveTrig[ifoNumber] )
         {
-          pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-          if (! singleDetector)
-            pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+          pVals1 = 1;
           if ( position+timeOffsetPoints[ifoNumber] >= 3*numPoints/4 +5000)
           {
             calTimeOffset = 3*numPoints/4 +4999;
@@ -369,7 +370,7 @@ UINT4           singleDetector )
             TjwithS.re += pVals1 * Qoverlap.re;
             TjwithS.im += pVals1 * Qoverlap.im;
           }
-          fprintf(stderr,"TjwithS cont: %e %e %e %e %e\n,",Qoverlap.re,Qoverlap.im,pVals1,cosPhase,sinPhase);
+//          fprintf(stderr,"TjwithS cont: %e %e %e %e %e\n,",Qoverlap.re,Qoverlap.im,pVals1,cosPhase,sinPhase);
         }
       }
     }
@@ -379,9 +380,9 @@ UINT4           singleDetector )
     /* Calculate the overlap between the bank template and the interesting one*/
     alpha.re = 0;
     alpha.im = 0;
-    for ( uj = 0; uj < vecLength; uj++ )
+    for ( uj = 0; uj < 1; uj++ )
     {
-      for ( uk = 0; uk < vecLength ; uk++ )
+      for ( uk = 0; uk < 1 ; uk++ )
       {
         for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
         {
@@ -389,15 +390,11 @@ UINT4           singleDetector )
           {
             PTFMComptest = bankOverlaps[ui].PTFM[ifoNumber];
             PTFMComplexcomp = PTFMComptest->data[bankVecLength * uj + uk];
-            pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
-            if (! singleDetector)
-              pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
-            pVals2 = a[ifoNumber]*pValues[uk]->data->data[position-numPoints/4];
-            if (! singleDetector)
-              pVals2 += b[ifoNumber]*pValues[uk+vecLength]->data->data[position-numPoints/4];
+            pVals1 = 1;
+            pVals2 = 1;
             alpha.re += pVals1*pVals2 * PTFMComplexcomp.re;
             alpha.im += pVals1*pVals2 * PTFMComplexcomp.im;
-            fprintf(stderr,"alpha: %e %e %e %e \n",PTFMComplexcomp.re,PTFMComplexcomp.im,pVals1,pVals2);
+//            fprintf(stderr,"alpha: %e %e %e %e \n",PTFMComplexcomp.re,PTFMComplexcomp.im,pVals1,pVals2);
           }
         }
       }
@@ -405,16 +402,17 @@ UINT4           singleDetector )
     alpha.re = alpha.re / (overlapQwithQ[ui]*overlapQwithQ[subBankSize]);
     alpha.im = alpha.im / (overlapQwithQ[ui]*overlapQwithQ[subBankSize]);
 
-    bankVetoTemp.re = TjwithS.re - alpha.re * cSNR.re + alpha.im * cSNR.im;
-    bankVetoTemp.im = TjwithS.im - alpha.im * cSNR.re - alpha.re * cSNR.im;
+    bankVetoTemp.re = TjwithS.re - alpha.re * cSNR.re - alpha.im * cSNR.im;
+    bankVetoTemp.im = TjwithS.im + alpha.im * cSNR.re - alpha.re * cSNR.im;
     bankVetoTemp.re = bankVetoTemp.re / pow( 1 - pow(alpha.re,2) - pow(alpha.im,2),0.5);
     bankVetoTemp.im = bankVetoTemp.im / pow( 1 - pow(alpha.re,2) - pow(alpha.im,2),0.5);
     bankVeto += pow(bankVetoTemp.re,2) + pow(bankVetoTemp.im,2);
-    fprintf(stderr,"BV comps: %e %e %e %e %e %e\n",TjwithS.re,TjwithS.im,alpha.re,alpha.im,cSNR.re,cSNR.im);
-    fprintf(stderr,"BankVeto : %e \n", bankVeto);
+//    fprintf(stderr,"BV comps: %e %e %e %e %e %e\n",TjwithS.re,TjwithS.im,alpha.re,alpha.im,cSNR.re,cSNR.im);
+//    fprintf(stderr,"BankVeto : %e \n", bankVeto);
+    fprintf(stderr,"%e %e %e %e \n", bankVetoTemp.re,bankVetoTemp.im,pValues[0]->data->data[position-numPoints/4],pValues[1]->data->data[position-numPoints/4]);
   }
 
-  fprintf(stderr,"Bank Veto %e \n", bankVeto);  
+//  fprintf(stderr,"Bank Veto %e \n", bankVeto);  
 
   return bankVeto;
 

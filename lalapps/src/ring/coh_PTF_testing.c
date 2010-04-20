@@ -1594,7 +1594,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   {
     for ( i = numPoints/4; i < 3*numPoints/4 ; ++i ) /* Main loop over time */
     {
-      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+      /*if (cohSNR->data->data[i-numPoints/4] > params->threshold)
       {
         check = 1;
         for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
@@ -1610,10 +1610,10 @@ void cohPTFmodBasesUnconstrainedStatistic(
           }
         }
         if (check)
-        {
+        {*/
           bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
-        }
-      } 
+//        }
+//      } 
     }
   }
   /*outfile = fopen("cohSNR_timeseries.dat","w");
@@ -1623,12 +1623,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-/*  outfile = fopen("bank_veto_timeseries.dat","w");
+  outfile = fopen("bank_veto_timeseries.dat","w");
   for ( i = 0; i < bankVeto->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,bankVeto->data->data[i]);
   }
-  fclose(outfile);*/
+  fclose(outfile);
 
   /*
   outfile = fopen("nullSNR_timeseries.dat","w");
