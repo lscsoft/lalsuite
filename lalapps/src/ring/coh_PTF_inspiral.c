@@ -29,7 +29,7 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
 static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
 static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
 static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       const char *ifoChannel, const char *dataCache );
+               const char *ifoChannel, const char *dataCache, UINT4 ifoNumber );
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
     REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
@@ -271,7 +271,7 @@ int main( int argc, char **argv )
       else if ( ifoNumber == LAL_IFO_V1 )
           params->doubleData = 0;
       channel[ifoNumber] = coh_PTF_get_data(params,params->channel[ifoNumber],\
-                               params->dataCache[ifoNumber] );
+                               params->dataCache[ifoNumber],ifoNumber );
       rescale_data (channel[ifoNumber],1E20);
 
       /* compute the spectrum */
@@ -711,7 +711,7 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
 
 /* gets the data, performs any injections, and conditions the data */
 static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       const char *ifoChannel, const char *dataCache  )
+             const char *ifoChannel, const char *dataCache, UINT4 ifoNumber  )
 {
   int stripPad = 0;
   REAL4TimeSeries *channel = NULL;
@@ -726,7 +726,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
     if ( params->simData )
       channel = get_simulated_data( ifoChannel, &params->startTime,
           params->duration, params->strainData, params->sampleRate,
-          params->randomSeed, 1E-20 );
+          params->randomSeed+100 * ifoNumber, 1E-20 );
     else if ( params->zeroData )
     {
       channel = get_zero_data( ifoChannel, &params->startTime,
@@ -1625,7 +1625,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 //      } 
     }
   }
-  /*outfile = fopen("cohSNR_timeseries.dat","w");
+/*  outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);

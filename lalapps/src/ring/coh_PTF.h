@@ -251,7 +251,9 @@ struct bankComplexTemplateOverlaps *bankOverlaps,
 struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
-REAL4TimeSeries         *gammaBeta[2] );
+REAL4TimeSeries         *gammaBeta[2],
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+UINT4 singleDetector );
 
 
 void free_bank_veto_memory(

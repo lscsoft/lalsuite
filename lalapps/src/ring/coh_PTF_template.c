@@ -361,7 +361,7 @@ cohPTFNormalize(
 
   /* A routine to print out the M^IJ information */
  
-//  FILE *outfile;
+  FILE *outfile;
   /*
   outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
@@ -405,7 +405,7 @@ cohPTFNormalize(
   /*Routines for printing the A and B time series */
   
   
-  /*outfile = fopen("A_timeseries.dat","w");
+/*  outfile = fopen("A_timeseries.dat","w");
   for ( i = 0; i < numPoints; ++i)
   {
     fprintf (outfile,"%f %f %f \n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re);
