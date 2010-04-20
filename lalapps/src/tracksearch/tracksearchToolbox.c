@@ -420,7 +420,6 @@ LALappsDetermineFilename(
 		  TRACKSEARCHTOOLBOXC_EFAIL,
 		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
   *thisFilename=XLALCreateCHARVector(maxFilenameLength);
-
   sprintf((*thisFilename)->data,
 	  "MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:%s",
 	  imageBorders.mapStartGPS.gpsSeconds,
