@@ -1257,21 +1257,19 @@ void LALappsGetFrameData(TSSearchParams*     params,
   FrStream             *stream = NULL;
   FrCache              *frameCache = NULL;
   FrChanIn              channelIn;
-  REAL4TimeSeries      *tmpData=NULL;
-  REAL8TimeSeries      *convertibleREAL8Data=NULL;
-  REAL8TimeSeries      *tmpREAL8Data=NULL;
-  INT2TimeSeries       *convertibleINT2Data=NULL;
-  INT2TimeSeries       *tmpINT2Data=NULL;
-  INT4TimeSeries       *convertibleINT4Data=NULL;
-  INT4TimeSeries       *tmpINT4Data=NULL;
-  PassBandParamStruc    bandPassParams;
-  UINT4                 loadPoints=0;
-  UINT4                 i=0;
   /*
-  UINT4                 extraResampleTime=1; Seconds of extra data
-					       to always load on each
-					       end of segment prior to
-					       resampling!*/
+    REAL4TimeSeries      *tmpData=NULL;
+    REAL8TimeSeries      *convertibleREAL8Data=NULL;
+    REAL8TimeSeries      *tmpREAL8Data=NULL;
+    INT2TimeSeries       *convertibleINT2Data=NULL;
+    INT2TimeSeries       *tmpINT2Data=NULL;
+    INT4TimeSeries       *convertibleINT4Data=NULL;
+    INT4TimeSeries       *tmpINT4Data=NULL;
+    PassBandParamStruc    bandPassParams;
+    UINT4                 loadPoints=0;
+  */
+
+  UINT4                 i=0;
   LALTYPECODE           dataTypeCode=0;
   LIGOTimeGPS           bufferedDataStartGPS;
   REAL8                 bufferedDataStart=0;
@@ -1279,7 +1277,6 @@ void LALappsGetFrameData(TSSearchParams*     params,
   REAL8                 bufferedDataStop=0;
   REAL8                 bufferedDataTimeInterval=0;
   UINT4                 errcode=0;
-  UINT4                 i=0;
   REAL8                 elementSum=0;
   REAL8                 elementAvg=0;
   LALStatus           status;/* Error containing structure */
@@ -1712,6 +1709,7 @@ void LALappsDoTrackSearch(
   /*
    * DO THE AUTO ADJUSTMENTS!!!
    */
+
   if (params.autoLambda)
     {
       /* Do the calculate of Lh given parameters */
@@ -1720,14 +1718,12 @@ void LALappsDoTrackSearch(
       lal_errhandler = LAL_ERR_RTRN;
       errcode = LAL_CALL( LALTracksearchFindLambdaMedian(&status,*tfmap,&params),
 			  &status);
-
       if ( errcode != 0 )
 	{
 	  fprintf(stderr,"Error calling automagic Lambda selection routine.\n");
 	  fprintf(stderr,"%s\n",status.statusDescription);
 	  fflush(stderr);
 	}
-
       tsInputs.high=params.StartThresh;
       tsInputs.low=params.LinePThresh;
       /*Reset to show the auto selected values.*/
@@ -1736,10 +1732,12 @@ void LALappsDoTrackSearch(
 
     }
   /*Determine MAP file name to save output to.*/
-    LALappsDetermineFilename(&status,
+
+  LALappsDetermineFilename(
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
+
   /* Perform the analysis on the data seg given.*/
   tsInputs.allocFlag = 1;
   errcode = LAL_CALL( LALSignalTrackSearch(&status,&outputCurves,tfmap,&tsInputs),
@@ -1757,14 +1755,16 @@ void LALappsDoTrackSearch(
       fprintf(stderr,"Curves returned   : %i\n",outputCurves.numberOfCurves);
       fprintf(stdout,"MAP file may be corrupted?\n");
       fprintf(stdout,"Moving corrupted MAP from %s",outputCandidateFilename->data);
-      LALappsDetermineFilename(&status,
+      if (outputFilename)
+	XLALDestroyCHARVector(outputFilename);
+      LALappsDetermineFilename(
 			       tsMarkers,
 			       &outputCandidateFilename,
 			       ".corruptedF");
       fprintf(stdout," to %s\n",outputCandidateFilename->data);
       fflush(stdout);
     }
-  
+
   /* 
    * Call tracksearch again to free any temporary ram in 
    * variable outputCurves which is no longer required
@@ -1849,6 +1849,8 @@ void LALappsDoTrackSearch(
       fprintf(stderr,"%s\n",status.statusDescription);
       fflush(stderr);
     }
+
+
   /*
    * Record user request thresholds into output data structure
    * as a simple reference
@@ -1861,10 +1863,13 @@ void LALappsDoTrackSearch(
   /* 
    * Dump out list of surviving candidates
    */
+  /*
   LALappsDetermineFilename(
 			   tsMarkers,
 			   &outputCandidateFilename,
 			   ".candidates");
+  */
+
   LALappsWriteSearchResults(
 			    outputCandidateFilename->data,
 			    outputCurvesThreshold);
@@ -1887,7 +1892,6 @@ void LALappsDoTrackSearch(
     XLALDestroyCHARVector(outputFilenameMask);
   if (outputCandidateFilename)
     XLALDestroyCHARVector(outputCandidateFilename);
-
   /*************************************************************/
 }
 /* 
@@ -2249,7 +2253,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 		       inputs,
 		       mapMarkerParams,
 		       params);
-
+  fprintf(stdout,"END OF DO TRACKSEARCH");
   if (params.verbosity > quiet)
     {
       fprintf(stdout,"Analyzed TFR. \n");
