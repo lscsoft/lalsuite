@@ -37,8 +37,8 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
  * NOTE: This is really useful for testing time shifting in the bank veto code
  * which is currently disabled.  However when it is enabled you can change the
  * hash define SHIFTUNITS to 1
- * 
- * 
+ *
+ *
  * author: Stephen Privitera
  * contact: sprivite@ligo.caltech.edu
  * date: 11/20/2009
@@ -195,11 +195,11 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
  */
 static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
 {
-    /* Force all time shifts to be integral multiples of deltaT          
-     * FIXME right now the bank veto does not do timeshifts, so these    
-     * are set to 0 because SHIFTUNITS = 0 as defined at the top, 
+    /* Force all time shifts to be integral multiples of deltaT
+     * FIXME right now the bank veto does not do timeshifts, so these
+     * are set to 0 because SHIFTUNITS = 0 as defined at the top,
      * change it when the bank veto supports time shifting.
-     */ 
+     */
 
     UINT4 thisShift;
     UINT4 templateIndex;
