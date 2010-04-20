@@ -131,8 +131,6 @@ INT4 XLALPSpinInspiralRingdownWave (
 
   dt = 1.0 / params -> tSampling;
 
-  dt = 1.0 / params -> tSampling;
-
   if ( modefreqs->length != nmodes )
     {
       XLAL_ERROR( func, XLAL_EBADLEN );

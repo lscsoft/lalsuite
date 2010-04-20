@@ -511,7 +511,7 @@ void LALPSpinInspiralRDForInjection (
   /* Call the engine function */
   /* Uncomment the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
-  //params->fCutoff     = ppnParams->fStop;
+  params->fCutoff     = ppnParams->fStop;
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
@@ -1123,6 +1123,7 @@ void LALPSpinInspiralRDEngine (
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
   omegamatch = params->fCutoff * unitHz;
+  fprintf(stdout,"** LALPSIRD: omegamatch=%12.6f\n",omegamatch);
 
   /* The number of Ring Down modes is hard-coded here, it cannot exceed 3*/
   nmodes = 3;
@@ -1243,7 +1244,7 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    omegamatch= 0.0548 - 5.63e-03*(S1z+S2z) + 2.16e-3*(S1x*S2x+S1y*S2y) + 1.36e-2*(S1x*S1x+S1y*S1y+S2x*S2x+S2y*S2y) - 0.81e-3*(S1z*S1z+S2z*S2z);
+    //    omegamatch= 0.0548 - 5.63e-03*(S1z+S2z) + 2.16e-3*(S1x*S2x+S1y*S2y) + 1.36e-2*(S1x*S1x+S1y*S1y+S2x*S2x+S2y*S2y) - 0.81e-3*(S1z*S1z+S2z*S2z);
 
   }
 
@@ -1368,46 +1369,47 @@ void LALPSpinInspiralRDEngine (
   
     } while ((omega < fracRD*omegaRD)&&( t < trac));
      
-  }
-
-  else fprintf(stderr,"** PSIRD: No phen part added\n");
-
-  /* Smoothing the matching with the ring down*/
-  count0=count;
-
-  t0=t-dt;
-  Psi0=Psi-omegaRD*t0/m-tAs*omrac*pow((1.-t0/tAs),3.)/3./m;
-
-  do {
+    /* Smoothing the matching with the ring down*/
+    count0=count;
     
-    omegaold=omega;
-    omega=omegaRD - omrac * (1.-t/tAs)*(1.-t/tAs);
-    
-    fap->data[count] =  omega;
-    Psiold=Psi;
-    Psi = omegaRD*t/m + tAs*omrac*pow((1.-t/tAs),3.)/3./m + Psi0;
+    t0=t-dt;
+    Psi0=Psi-omegaRD*t0/m-tAs*omrac*pow((1.-t0/tAs),3.)/3./m;
+
+    do {
       
-    v2old=v2;
-    v2=pow(omega,2./3.);
-    amp22*=sqrt(v2old/v2);
+      omegaold=omega;
+      omega=omegaRD - omrac * (1.-t/tAs)*(1.-t/tAs);
+      
+      fap->data[count] =  omega;
+      Psiold=Psi;
+      Psi = omegaRD*t/m + tAs*omrac*pow((1.-t/tAs),3.)/3./m + Psi0;
+      
+      v2old=v2;
+      v2=pow(omega,2./3.);
+      amp22*=sqrt(v2old/v2);
 
-    h22->data[2*count] = (REAL4)(amp22 * ( cos(2.*(Psi+alpha))*c4i2 + cos(2.*(Psi-alpha)) *s4i2 ) );
-    h22->data[2*count+1] = (REAL4)(amp22 * (-sin(2.*(Psi+alpha))*c4i2 + sin(2.*(Psi-alpha)) * s4i2 ) );
+      fprintf(stdout,"t=%11.3e a22=%11.3e\n",t/m-90.,amp22);
+      
+      h22->data[2*count] = (REAL4)(amp22 * ( cos(2.*(Psi+alpha))*c4i2 + cos(2.*(Psi-alpha)) *s4i2 ) );
+      h22->data[2*count+1] = (REAL4)(amp22 * (-sin(2.*(Psi+alpha))*c4i2 + sin(2.*(Psi-alpha)) * s4i2 ) );
+      
+      h21->data[2*count] = (REAL4) (amp22 * si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) );
+      h21->data[2*count+1] = (REAL4)(-amp22 * si * ( cos(2.*Psi-alpha)*s2i2 + cos(2.*Psi+alpha)*c2i2 ) );
+      
+      h20->data[2*count] = (REAL4)(amp20 * s2i * cos( 2.* Psi));
+      h20->data[2*count+1] = 0.;
+      
+      phap->data[count] =  (REAL8)( Psi );
+      
+      shift22->data[count] = alpha;
+      
+      count++;
+      t+=dt;
 
-    h21->data[2*count] = (REAL4) (amp22 * si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) );
-    h21->data[2*count+1] = (REAL4)(-amp22 * si * ( cos(2.*Psi-alpha)*s2i2 + cos(2.*Psi+alpha)*c2i2 ) );
-    
-    h20->data[2*count] = (REAL4)(amp20 * s2i * cos( 2.* Psi));
-    h20->data[2*count+1] = 0.;
-    
-    phap->data[count] =  (REAL8)( Psi );
-        
-    shift22->data[count] = alpha;
-    
-    count++;
-    t+=dt;
+    } while ((omega < fracRD*omegaRD) && (omegaold < omega) );
 
-  } while ((omega < fracRD*omegaRD) && (omegaold < omega) );
+  }
+  else fprintf(stderr,"** PSIRD: No phen part added\n");
 
   if (omegaold>omega) count--;
   *countback=count;
@@ -1418,8 +1420,7 @@ void LALPSpinInspiralRDEngine (
   LALFree(dummy.data);
   
   /*--------------------------------------------------------------
-   * Attach the ringdown waveform to the end of inspiral if
-   * the approximant is SpinTayloRD
+   * Attach the ringdown waveform to the end of inspiral
    -------------------------------------------------------------*/
 
   apcount=count;
