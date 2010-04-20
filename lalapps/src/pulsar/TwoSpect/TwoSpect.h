@@ -36,7 +36,7 @@ ffdataStruct * new_ffdata(inputParamsStruct *param);
 void free_ffdata(ffdataStruct *data);
 
 REAL8Vector * readInSFTs(inputParamsStruct *input);
-REAL8Vector * ffPlaneNoise(inputParamsStruct *param, ffdataStruct *ffdata);
+REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights);
 
 void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata, INT4Vector *binshifts);
 void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *params);
