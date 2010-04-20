@@ -707,7 +707,10 @@ tagFindChirpBankVetoData
   REAL4Vector		 *acorrMat;
   REAL4FFTPlan		 *revplan;
   UINT4 		 acorrMatSize;
+  UINT4			 autochisqStride;
   REAL4Vector            *timeshift;
+  UINT4			 two_sided_auto_chisq;
+  UINT4			 time_freq_bank_veto;
 }
 FindChirpBankVetoData;
 /* </lalVerbatim> */
@@ -1136,7 +1139,10 @@ XLALComputeFullChisq(
 InspiralTemplate *
 XLALFindChirpSortTemplates(
   InspiralTemplate *bankHead,
-  UINT4 num);
+  FindChirpBankVetoData *bvdata,
+  UINT4 num,
+  UINT4 max_subbank_size
+);
 
 #ifdef  __cplusplus
 #pragma {
