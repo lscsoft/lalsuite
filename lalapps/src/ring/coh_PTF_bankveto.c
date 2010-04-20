@@ -228,10 +228,11 @@ struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
 REAL4TimeSeries         *gammaBeta[2],
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 UINT4           singleDetector )
 {
-//  fprintf(stderr,"Entering bank veto calculator\n");
+  fprintf(stderr,"Entering bank veto calculator\n");
   UINT4 ui,uj,uk,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
   REAL4 overlapCount,PTFMcomp,pVals1,pVals2;
   REAL4 bankVeto;
@@ -251,8 +252,40 @@ UINT4           singleDetector )
   gammaBetaMag = pow(gammaBetaMag,0.5);
   cosPhase = gammaBeta[0]->data->data[position - numPoints/4]/gammaBetaMag;
   sinPhase = gammaBeta[1]->data->data[position - numPoints/4]/gammaBetaMag;
-  cSNR.re = SNR * cosPhase;
-  cSNR.im = SNR * sinPhase;  
+
+  /* We need to seperate SNR into a complex number */
+
+  cSNR.re = 0;
+  cSNR.im = 0;
+
+  for ( uj = 0; uj < vecLength; uj++ )
+  {
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ifoNumber++ )
+    {
+      if ( params->haveTrig[ifoNumber] )
+      {
+        pVals1 = a[ifoNumber]*pValues[uj]->data->data[position-numPoints/4];
+        if (! singleDetector)
+          pVals1 += b[ifoNumber]*pValues[uj+vecLength]->data->data[position-numPoints/4];
+        if ( position+timeOffsetPoints[ifoNumber] >= 3*numPoints/4 +5000)
+        {
+          calTimeOffset = 3*numPoints/4 -1;
+          fprintf(stderr,"Overflow occured in time shifting in bank veto\n");
+        }
+        else if  ( position+timeOffsetPoints[ifoNumber] < numPoints/4 - 5000)
+        {
+          calTimeOffset = numPoints/4;
+          fprintf(stderr,"Overflow occured in time shifting in bank veto\n");
+        }
+        else
+          calTimeOffset =position+timeOffsetPoints[ifoNumber];
+         
+        Qoverlap = PTFqVec[ifoNumber]->data[uj*numPoints + calTimeOffset];
+        cSNR.re += pVals1 * Qoverlap.re;
+        cSNR.im += pVals1 * Qoverlap.im; 
+      }
+    }
+  }
 
   /* We need to calculate normalization factors of (Q_i,Q_i)*/
   halfNumPoints = 3*numPoints/4 - numPoints/4 + 10000;
