@@ -100,6 +100,9 @@ RCSID( "$Id$" );
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 
 extern int vrbflg;
+
+ProcessParamsTable *next_process_param( const char *name, const char *type,
+    const char *fmt, ... );
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
@@ -156,13 +159,11 @@ int main( int argc, char *argv[] )
   REAL4  deltaM;
   SkyPosition           skyPos;
   LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
-  REAL8                 time_diff_ns;
+  REAL8                 time_diff;
   REAL4                 splus, scross, cosiota;
   
   /* waveform */
@@ -214,8 +215,8 @@ int main( int argc, char *argv[] )
   REAL4 lmax;
   REAL4 deltaL;
   REAL4 deltaA;
-  REAL4 fmin;
-  REAL4 fmax;
+  REAL4 f_min;
+  REAL4 f_max;
   REAL4 deltaf;
 
   /* set up inital debugging values */
@@ -712,11 +713,11 @@ int main( int argc, char *argv[] )
     /* uniform in log frequency */
     {
       /* set frequency, f0, and quality factor Q */
-      fmin = log10(minFreq);
-      fmax = log10(maxFreq);
-      deltaf = fmax - fmin;
+      f_min = log10(minFreq);
+      f_max = log10(maxFreq);
+      deltaf = f_max - f_min;
       LAL_CALL(  LALUniformDeviate(&status,&u,randParams),&status );
-      expt = fmin + deltaf * u;
+      expt = f_min + deltaf * u;
       this_inj->frequency = pow(10.0,(REAL4) expt);
     }    
     else if ( injdistr == 1)
@@ -787,8 +788,6 @@ int main( int argc, char *argv[] )
 
     memset( &skyPos, 0, sizeof(SkyPosition) );
     memset( &source, 0, sizeof(LALSource) );
-    memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-    memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
     memset( &detAndSource, 0, sizeof(LALDetAndSource) );
 
     skyPos.longitude = this_inj->longitude;
@@ -797,13 +796,9 @@ int main( int argc, char *argv[] )
 
     source.equatorialCoords = skyPos;
     source.orientation      = this_inj->polarization;
-    
-    placeAndGPS.p_gps = &(this_inj->geocent_start_time);
-    
-    detTimeAndSource.p_det_and_time = &placeAndGPS;
-    detTimeAndSource.p_source = &skyPos;
+
     detAndSource.pSource = &source;
-                    
+
     /* calculate h0 */
     this_inj->amplitude = XLALBlackHoleRingAmplitude( this_inj->frequency,
         this_inj->quality, this_inj->distance, this_inj->epsilon );
@@ -821,10 +816,8 @@ int main( int argc, char *argv[] )
     scross = -2.0 * cosiota; 
       
     /* lho */
-    placeAndGPS.p_detector = &lho;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff_ns,
-          &detTimeAndSource ), &status );
-    XLALGPSAdd(&(this_inj->h_start_time), time_diff_ns);
+    time_diff = XLALTimeDelayFromEarthCenter( lho.location, skyPos.longitude, skyPos.latitude, &(this_inj->geocent_start_time) );
+    XLALGPSAdd(&(this_inj->h_start_time), time_diff);
 
     /* compute the response of the LHO detectors */
     detAndSource.pDetector = &lho;
@@ -839,10 +832,8 @@ int main( int argc, char *argv[] )
     this_inj->hrss_h = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
 
     /* llo */
-    placeAndGPS.p_detector = &llo;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status,  &time_diff_ns,
-          &detTimeAndSource ), &status);
-    XLALGPSAdd(&(this_inj->l_start_time), time_diff_ns);
+    time_diff = XLALTimeDelayFromEarthCenter( llo.location, skyPos.longitude, skyPos.latitude, &(this_inj->geocent_start_time) );
+    XLALGPSAdd(&(this_inj->l_start_time), time_diff);
 
     /* compute the response of the LLO detector */
     detAndSource.pDetector = &llo;

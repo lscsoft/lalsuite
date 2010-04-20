@@ -20,27 +20,30 @@
 #ifndef __TEMPLATES_H__
 #define __TEMPLATES_H__
 
-#include <lal/RealFFT.h>
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include "candidates.h"
 #include "TwoSpect.h"
-#include "TwoSpectTypes.h"
 
+struct gsl_probR_pars {
+   templateStruct *templatestruct;
+   REAL8Vector *ffplanenoise;
+   REAL8 threshold;
+};
 
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
-//void estimateFAR(farStruct *out, REAL4Vector *weights, topbinsStruct *topbinsstruct, REAL4 thresh, REAL4Vector *ffplanenoise);
-void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise);
+void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios);
 
 templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);
-//void makeTemplateGaussians(ffdataStruct *out, candidate *in);
-//void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan);
 void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params);
-void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan);
+void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL8FFTPlan *plan);
 
-REAL4 sincxoverxsqminusone(REAL4 overage);
+REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R);
+REAL8 sincxoverxsqminusone(REAL8 overage);
+
+void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise);
+REAL8 gsl_probR(REAL8 R, void *pars);
+REAL8 gsl_dprobRdR(REAL8 R, void *pars);
+void gsl_probRtimesDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
 
 #endif
 

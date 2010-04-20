@@ -22,17 +22,6 @@ EXTRA_DIST = \
 sysconf_DATA = lalapps-user-env.sh lalapps-user-env.csh
 BUILT_SOURCES = lalapps-user-env.sh lalapps-user-env.csh
 CLEANFILES = lalapps-user-env.sh lalapps-user-env.csh
-MAINTAINERCLEANFILES = __lalappsGitID.h lalappsGitID.h
-
-noinst_HEADERS = lalappsGitID.h
-lalappsGitID.h: gitID
-
-.PHONY: gitID
-gitID:
-	if test -f $(top_srcdir)/misc/generateGitID.sh; then \
-	$(SHELL) $(top_srcdir)/misc/generateGitID.sh $(top_srcdir) lalapps; \
-	fi
-
 
 if HAVE_PYTHON
 lalapps-user-env.sh: Makefile

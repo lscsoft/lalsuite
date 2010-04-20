@@ -457,13 +457,11 @@ LALGalacticInspiralParamsToSimInspiralTable(
   PPNParamStruc         ppnParams;
   SkyPosition           skyPos;
   LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
-  REAL8     time_diff_ns;
+  REAL8     time_diff;
   REAL4                 splus, scross, cosiota;
 
   INITSTATUS( status, "LALGalacticParamsToSimInspiral", SIMINSPIRALUTILSC );
@@ -516,8 +514,6 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* set up params for the site end times and detector response */
   memset( &skyPos, 0, sizeof(SkyPosition) );
   memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
   memset( &detAndSource, 0, sizeof(LALDetAndSource) );
 
   skyPos.longitude = output->longitude;
@@ -526,11 +522,6 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
   source.equatorialCoords = skyPos;
   source.orientation      = output->polarization;
-
-  placeAndGPS.p_gps = &(output->geocent_end_time);
-
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = &skyPos;
 
   detAndSource.pSource = &source;
 
@@ -546,18 +537,12 @@ LALGalacticInspiralParamsToSimInspiralTable(
   output->h_end_time = output->l_end_time = input->geocentEndTime;
 
   /* ligo hanford observatory */
-  placeAndGPS.p_detector = &lho;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  XLALGPSAdd(&(output->h_end_time), time_diff_ns);
+  time_diff = XLALTimeDelayFromEarthCenter( lho.location, skyPos.longitude, skyPos.latitude, &(output->geocent_end_time) );
+  XLALGPSAdd(&(output->h_end_time), time_diff);
 
   /* ligo livingston observatory */
-  placeAndGPS.p_detector = &llo;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  XLALGPSAdd(&(output->l_end_time), time_diff_ns);
+  time_diff = XLALTimeDelayFromEarthCenter( llo.location, skyPos.longitude, skyPos.latitude, &(output->geocent_end_time) );
+  XLALGPSAdd(&(output->l_end_time), time_diff);
 
 
   /*
@@ -618,11 +603,9 @@ LALInspiralSiteTimeAndDist(
 /* </lalVerbatim> */
 {
   LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
-  REAL8                 time_diff_ns;
+  REAL8                 time_diff;
   REAL4                 splus, scross, cosiota;
 
   INITSTATUS( status, "LALInspiralSiteTimeAndDist", SIMINSPIRALUTILSC );
@@ -641,19 +624,10 @@ LALInspiralSiteTimeAndDist(
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
 
   memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
   memset( &detAndSource, 0, sizeof(LALDetAndSource) );
-
 
   source.equatorialCoords = *skyPos;
   source.orientation      = output->polarization;
-
-  placeAndGPS.p_gps = &(output->geocent_end_time);
-
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = skyPos;
-  detTimeAndSource.p_det_and_time->p_detector = detector;
 
   detAndSource.pSource = &source;
   detAndSource.pDetector = detector;
@@ -662,10 +636,8 @@ LALInspiralSiteTimeAndDist(
   *endTime = output->geocent_end_time;
 
   /* calculate the detector end time */
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns,
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  XLALGPSAdd(endTime, time_diff_ns);
+  time_diff = XLALTimeDelayFromEarthCenter( detector->location, skyPos->longitude, skyPos->latitude, &(output->geocent_end_time) );
+  XLALGPSAdd(endTime, time_diff);
 
   /* initialize distance with real distance and compute splus and scross */
   *effDist = 2.0 * output->distance;

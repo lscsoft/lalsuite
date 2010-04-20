@@ -1104,6 +1104,8 @@ pegasus.selector.site=RoundRobin
 pegasus.selector.replica=Default
 
 pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
+
+pegasus.dir.submit.subwf.labelbased=true
 """
 pegprop_fh.close()
 

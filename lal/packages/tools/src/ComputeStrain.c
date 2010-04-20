@@ -560,8 +560,7 @@ static REAL4TimeSeries exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
-LALWindowParams winparams;
+REAL4Window *asqwin=NULL, *excwin=NULL, *darmwin=NULL;  /* windows */
 INT4 k,m;
 
 REAL4 deltaT=input->DARM_ERR.deltaT, To=input->To;
@@ -579,36 +578,23 @@ INT4 length = input->DARM_ERR.data->length;
   LALCreateVector(status->statusPtr,&exc.data,(UINT4)(To/input->EXC.deltaT +0.5));
   CHECKSTATUSPTR( status );
 
-  /* Create Window vectors */
-  LALCreateVector(status->statusPtr,&asqwin,(UINT4)(To/input->AS_Q.deltaT +0.5));
-  CHECKSTATUSPTR( status );
-  LALCreateVector(status->statusPtr,&darmwin,(UINT4)(To/input->DARM.deltaT +0.5));
-  CHECKSTATUSPTR( status );
-  LALCreateVector(status->statusPtr,&excwin,(UINT4)(To/input->EXC.deltaT +0.5));
-  CHECKSTATUSPTR( status );
-
   /* assign time spacing for local time series */
   asq.deltaT=input->AS_Q.deltaT;
   darm.deltaT=input->DARM.deltaT;
   exc.deltaT=input->EXC.deltaT;
 
-  winparams.type=Hann;
-
   /* windows for time domain channels */
   /* asq */
-  winparams.length=(INT4)(To/asq.deltaT +0.5);
-  LALWindow(status->statusPtr,asqwin,&winparams);
-  CHECKSTATUSPTR( status );
+  asqwin = XLALCreateHannREAL4Window((UINT4)(To/input->AS_Q.deltaT +0.5));
+  ASSERT( asqwin != NULL, status, LAL_EXLAL, LAL_MSGEXLAL );
 
   /* darm */
-  winparams.length=(INT4)(To/darm.deltaT +0.5);
-  LALWindow(status->statusPtr,darmwin,&winparams);
-  CHECKSTATUSPTR( status );
+  darmwin = XLALCreateHannREAL4Window((UINT4)(To/input->DARM.deltaT +0.5));
+  ASSERT( darmwin != NULL, status, LAL_EXLAL, LAL_MSGEXLAL );
 
   /* exc */
-  winparams.length=(INT4)(To/exc.deltaT +0.5);
-  LALWindow(status->statusPtr,excwin,&winparams);
-  CHECKSTATUSPTR( status );
+  excwin = XLALCreateHannREAL4Window((UINT4)(To/input->EXC.deltaT +0.5));
+  ASSERT( excwin != NULL, status, LAL_EXLAL, LAL_MSGEXLAL );
 
   for(m=0; m < (UINT4)(deltaT*length) / To; m++)
     {
@@ -617,15 +603,15 @@ INT4 length = input->DARM_ERR.data->length;
       /* assign and window the data */
       for(k=0;k<(INT4)(To/asq.deltaT +0.5);k++)
 	{
-	  asq.data->data[k] = input->AS_Q.data->data[m * (UINT4)(To/asq.deltaT) + k] * 2.0 * asqwin->data[k];
+	  asq.data->data[k] = input->AS_Q.data->data[m * (UINT4)(To/asq.deltaT) + k] * 2.0 * asqwin->data->data[k];
 	}
       for(k=0;k<(INT4)(input->To/darm.deltaT +0.5);k++)
 	{
-	  darm.data->data[k] = input->DARM.data->data[m *(UINT4)(To/darm.deltaT) + k] * 2.0 * darmwin->data[k];
+	  darm.data->data[k] = input->DARM.data->data[m *(UINT4)(To/darm.deltaT) + k] * 2.0 * darmwin->data->data[k];
 	}
       for(k=0;k<(INT4)(input->To/exc.deltaT +0.5);k++)
 	{
-	  exc.data->data[k] = input->EXC.data->data[m * (UINT4)(To/exc.deltaT) + k] * 2.0 * excwin->data[k];
+	  exc.data->data[k] = input->EXC.data->data[m * (UINT4)(To/exc.deltaT) + k] * 2.0 * excwin->data->data[k];
 	}
 
       /* set params to call LALComputeCalibrationFactors */
@@ -665,12 +651,9 @@ INT4 length = input->DARM_ERR.data->length;
   LALDestroyVector(status->statusPtr,&asq.data);
   CHECKSTATUSPTR( status );
 
-  LALDestroyVector(status->statusPtr,&asqwin);
-  CHECKSTATUSPTR( status );
-  LALDestroyVector(status->statusPtr,&darmwin);
-  CHECKSTATUSPTR( status );
-  LALDestroyVector(status->statusPtr,&excwin);
-  CHECKSTATUSPTR( status );
+  XLALDestroyREAL4Window(asqwin);
+  XLALDestroyREAL4Window(darmwin);
+  XLALDestroyREAL4Window(excwin);
 
   DETATCHSTATUSPTR( status );
   RETURN (status);

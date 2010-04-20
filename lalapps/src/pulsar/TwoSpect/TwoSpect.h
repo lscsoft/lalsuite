@@ -20,42 +20,38 @@
 #ifndef __TWOSPECT_H__
 #define __TWOSPECT_H__
 
-#include <lal/LALStdlib.h>
-#include <lal/DetResponse.h>
-#include <lal/AVFactories.h>
+
+#include <time.h>
+
+#include <lal/RealFFT.h>
+
 #include <gsl/gsl_rng.h>
 #include "TwoSpectTypes.h"
-#include "templates.h"
 
 
 inputParamsStruct * new_inputParams(void);
 void free_inputParams(inputParamsStruct *input);
 
-ffdataStruct * new_ffdata(inputParamsStruct *param, INT4 mode);
+ffdataStruct * new_ffdata(inputParamsStruct *param);
 void free_ffdata(ffdataStruct *data);
-//void makeFakeBinarySigFF(ffdataStruct *ffdata, inputParamsStruct *input);
 
+REAL8Vector * readInSFTs(inputParamsStruct *input);
+REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights);
 
-REAL4Vector * gaussRandNumVector(REAL4 sigma, UINT4 length, gsl_rng *ptrToGenerator);
-REAL4Vector * expRandNumVector(REAL4 mu, UINT4 length, gsl_rng *ptrToGenerator);
-REAL4Vector * readInSFTs(inputParamsStruct *input);
-REAL4Vector * slideTFdata(inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
-REAL4Vector * slideBackgroundData(inputParamsStruct *input, REAL4Vector *background, INT4Vector *binshifts);
-REAL4Vector * ffPlaneNoise(inputParamsStruct *param, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights);
-REAL4Vector * tfWeightMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *params);
-REAL4Vector * tfRngMeans(REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-//REAL4Vector * makeFakeBinarySigTF(signalParamsStruct *in);
-REAL4Vector * makeSecondFFT(REAL4Vector *tfdata, inputParamsStruct *params);
+void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata, INT4Vector *binshifts);
+void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *params);
+void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
+void makeSecondFFT(REAL8Vector *out, REAL8Vector *tfdata, inputParamsStruct *params, REAL8FFTPlan *plan);
 
-REAL4 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise);
-REAL4 gaussRandNum(REAL4 sigma, gsl_rng *ptrToGenerator);
-REAL4 expRandNum(REAL4 mu, gsl_rng *ptrToGenerator);
-REAL4 maxModDepth(REAL4 period, REAL4 cohtime);
-REAL4 minPeriod(REAL4 moddepth, REAL4 cohtime);
-REAL4 calcMean(REAL4Vector *vector);
-REAL4 calcStddev(REAL4Vector *vector);
-REAL4 calcRms(REAL4Vector *vector);
-
+REAL8 calculateR(REAL8Vector *ffdata, templateStruct *templatestruct, REAL8Vector *noise, REAL8Vector *fbinaveratios);
+REAL8 avgTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+REAL8 rmsTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
+REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
+REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime);
+REAL8 calcMean(REAL8Vector *vector);
+REAL8 calcStddev(REAL8Vector *vector);
+REAL8 calcRms(REAL8Vector *vector);
 
 
 #endif

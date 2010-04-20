@@ -80,8 +80,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
-#include "LALASCIIFileRead.h"
-
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -244,18 +242,18 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char lalconfargs[16384];
   char headerinfo[16384];
   int i;
-  REAL4TimeSeries *alpha = NULL;
+  REAL4TimeSeries *alphare = NULL;
   REAL4TimeSeries *alphaim = NULL;
-  REAL4TimeSeries *gamma = NULL;
+  REAL4TimeSeries *gammare = NULL;
   REAL4TimeSeries *gammaim = NULL;
-  char alphaName[] = "Xn:CAL-CAV_FAC";
-  char gammaName[] = "Xn:CAL-OLOOP_FAC";
+  char alphareName[] = "Xn:CAL-CAV_FAC";
+  char gammareName[] = "Xn:CAL-OLOOP_FAC";
   char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
   char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
 
-  char *cnames[] = { alphaName, gammaName, alphaimName, gammaimName, dqName };
+  char *cnames[] = { alphareName, gammareName, alphaimName, gammaimName, dqName };
 
   for (i = 0; i < 5; i++)
       memcpy(cnames[i], CLA.ifo, 2);  /* set the proper name of the channels */
@@ -371,9 +369,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALFrameAddINT4TimeSeriesProcData( frame, &OutputDQ);
 
   /* Add in the factors data */
-  alpha = XLALCreateREAL4TimeSeries( alphaName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT,
+  alphare = XLALCreateREAL4TimeSeries( alphareName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT,
 				     &lalDimensionlessUnit,  OutputData.alpha.data->length);
-  gamma = XLALCreateREAL4TimeSeries( gammaName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT,
+  gammare = XLALCreateREAL4TimeSeries( gammareName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT,
 				     &lalDimensionlessUnit,  OutputData.alphabeta.data->length);
   alphaim = XLALCreateREAL4TimeSeries( alphaimName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT,
 				       &lalDimensionlessUnit,  OutputData.alpha.data->length);
@@ -382,19 +380,19 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   for (i=0; i < (int)OutputData.alpha.data->length; i++)
     {
-      alpha->data->data[i]=OutputData.alpha.data->data[i].re;
+      alphare->data->data[i]=OutputData.alpha.data->data[i].re;
       alphaim->data->data[i]=OutputData.alpha.data->data[i].im;
-      gamma->data->data[i]=OutputData.alphabeta.data->data[i].re;
+      gammare->data->data[i]=OutputData.alphabeta.data->data[i].re;
       gammaim->data->data[i]=OutputData.alphabeta.data->data[i].im;
     }
 
-  XLALFrameAddCalFac( frame, alpha, atoi(&CLA.frametype[9]) );
+  XLALFrameAddCalFac( frame, alphare, atoi(&CLA.frametype[9]) );
   XLALFrameAddCalFac( frame, alphaim, atoi(&CLA.frametype[9]) );
-  XLALFrameAddCalFac( frame, gamma, atoi(&CLA.frametype[9]));
+  XLALFrameAddCalFac( frame, gammare, atoi(&CLA.frametype[9]));
   XLALFrameAddCalFac( frame, gammaim, atoi(&CLA.frametype[9]));
 
-  XLALDestroyREAL4TimeSeries( gamma );
-  XLALDestroyREAL4TimeSeries( alpha );
+  XLALDestroyREAL4TimeSeries( gammare );
+  XLALDestroyREAL4TimeSeries( alphare );
   XLALDestroyREAL4TimeSeries( gammaim );
   XLALDestroyREAL4TimeSeries( alphaim );
 

@@ -58,7 +58,6 @@ LALCoherentEstimation ( LALStatus          *stat,
   REAL8 mDelay; /* max of time delays */
   REAL8 tmid; /* mid time point */
   LALDetAMResponse *F; /* response functions */
-  DetTimeAndASource dtS; /* for time delays */
   LALPlaceAndGPS pGPS; /* for time delays */
   LALDetAndSource dAs; /* for responses */
   LALSource source; /* for responses */
@@ -171,10 +170,8 @@ LALCoherentEstimation ( LALStatus          *stat,
   if(!(tDelays = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8)))) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
-  dtS.p_source = params->position;
 
   /* delays are computed wrt to center of data stretch */
-  dtS.p_det_and_time = &pGPS;
   pGPS.p_gps = &t0;
   tmid = 0.5 * (REAL8)(in->data[0].data->length) * in->data[0].deltaT;
   pGPS.p_gps->gpsSeconds += (INT4)floor(tmid);
@@ -198,10 +195,7 @@ LALCoherentEstimation ( LALStatus          *stat,
     pGPS.p_detector = dAs.pDetector = params->detectors + i;
 
     /* tDelays = arrival time at detector - arrival time a center of Earth */
-    TRY ( LALTimeDelayFromEarthCenter( stat->statusPtr,
-				       tDelays + i,
-				       &dtS ), stat );
-
+    tDelays[i] = XLALTimeDelayFromEarthCenter(params->detectors[i].location, params->position->longitude, params->position->latitude, &t0);
 
     /* JC: isnan is not allowed
     if(isnan(tDelays[i])) {

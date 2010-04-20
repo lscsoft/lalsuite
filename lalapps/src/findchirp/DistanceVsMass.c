@@ -31,7 +31,7 @@
 int main (int argc, char **argv)
 {
 
-	double totalMass, eta, flso, fOld, x, sevenBy3=7./3.;
+	double totalMass, eta, fOld, x, sevenBy3=7./3.;
 	double pwrSpec, LO;
 	double freq;
 	double rhorms, rmsD, idealD, Crms, integral;  
