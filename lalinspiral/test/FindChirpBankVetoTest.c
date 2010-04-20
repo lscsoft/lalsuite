@@ -18,6 +18,7 @@
 #define TEMPLATE_LENGTH 1024
 #define DELTAT 0.25
 #define DYNRANGE 2.0
+#define SHIFTUNITS 0.0
 
 static void initBankVetoData( FindChirpBankVetoData *bankVetoData,REAL4Vector *ampVec,UINT4 subBankSize,UINT4 templateLength);
 static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4 subBankSize,UINT4 templateLength,REAL4 deltaF);
@@ -33,6 +34,11 @@ static int writeCCmatToFile(COMPLEX8Vector *ccmat,UINT4 subBankSize,CHAR *ccFile
  * expected result.  Any matrix that fails the test is printed to file.  The program
  * exits with exit value equal to the number of matrices that failed the test.
  *
+ * NOTE: This is really useful for testing time shifting in the bank veto code
+ * which is currently disabled.  However when it is enabled you can change the
+ * hash define SHIFTUNITS to 1
+ * 
+ * 
  * author: Stephen Privitera
  * contact: sprivite@ligo.caltech.edu
  * date: 11/20/2009
@@ -189,7 +195,12 @@ static void makeDeltaFunctionTemplates(FindChirpBankVetoData *bankVetoData,UINT4
  */
 static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
 {
-    /* Force all time shifts to be integral multiples of deltaT */
+    /* Force all time shifts to be integral multiples of deltaT          
+     * FIXME right now the bank veto does not do timeshifts, so these    
+     * are set to 0 because SHIFTUNITS = 0 as defined at the top, 
+     * change it when the bank veto supports time shifting.
+     */ 
+
     UINT4 thisShift;
     UINT4 templateIndex;
 
@@ -203,7 +214,7 @@ static void timeshiftTemplates(REAL4Vector *timeshift,REAL4 deltaT,UINT4 trial)
 		      ? shiftAmount
 		      : 0 );
 
-	timeshift->data[templateIndex] = ((REAL4)thisShift)*deltaT;
+	timeshift->data[templateIndex] = SHIFTUNITS * ((REAL4)thisShift)*deltaT;
     }
     return;
 }
