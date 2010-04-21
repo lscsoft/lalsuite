@@ -97,7 +97,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   
   // *** MEMORY ALLOCATION ********************************************************************************************************************************************************
   
-  int i=0,j=0,j1=0,j2=0,injectionWF=0;
+  int i=0,j=0,j_1=0,j_2=0,injectionWF=0;
   
   //Allocate memory for (most of) the MCMCvariables struct
   allocateMCMCvariables(&mcmc);
@@ -199,7 +199,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   mcmc.iIter = -1;
   for(mcmc.iTemp=0;mcmc.iTemp<mcmc.nTemps;mcmc.iTemp++) {
     mcmc.iTemp = mcmc.iTemp;
-    for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.param[mcmc.iTemp][j1] = mcmc.param[0][j1];
+    for(j_1=0;j_1<mcmc.nMCMCpar;j_1++) mcmc.param[mcmc.iTemp][j_1] = mcmc.param[0][j_1];
     mcmc.logL[mcmc.iTemp] = mcmc.logL[0];
     writeMCMCoutput(mcmc, ifo);  //Write output line with injection parameters to screen and/or file (iteration -1)
   }
@@ -212,7 +212,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   
   // *** Initialise covariance matrix (initially diagonal), to do updates in the first block ***
   mcmc.corrUpdate[0] = mcmc.correlatedUpdates; // = 0 for no corr.upd, 1 to refresh matrix only once, 2 to refresh it every nCorr iterations
-  for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.covar[mcmc.iTemp][j1][j1] = mcmc.parSigma[j1];
+  for(j_1=0;j_1<mcmc.nMCMCpar;j_1++) mcmc.covar[mcmc.iTemp][j_1][j_1] = mcmc.parSigma[j_1];
   
   
   
@@ -253,7 +253,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   mcmc.iIter = 0;
   for(mcmc.iTemp=0;mcmc.iTemp<mcmc.nTemps;mcmc.iTemp++) {
     mcmc.iTemp = mcmc.iTemp;
-    for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.param[mcmc.iTemp][j1] = mcmc.param[0][j1];
+    for(j_1=0;j_1<mcmc.nMCMCpar;j_1++) mcmc.param[mcmc.iTemp][j_1] = mcmc.param[0][j_1];
     mcmc.logL[mcmc.iTemp] = mcmc.logL[0];
     writeMCMCoutput(mcmc, ifo);  //Write output line to screen and/or file
   }
@@ -276,8 +276,8 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
         mcmc.logL[mcmc.iTemp] = mcmc.logL[0];
         mcmc.nlogL[mcmc.iTemp] = mcmc.nlogL[0];
 	
-        for(j1=0;j1<mcmc.nMCMCpar;j1++) {
-          for(j2=0;j2<=j1;j2++) mcmc.covar[mcmc.iTemp][j1][j2] = mcmc.covar[0][j1][j2];
+        for(j_1=0;j_1<mcmc.nMCMCpar;j_1++) {
+          for(j_2=0;j_2<=j_1;j_2++) mcmc.covar[mcmc.iTemp][j_1][j_2] = mcmc.covar[0][j_1][j_2];
         }
       }
       mcmc.corrUpdate[mcmc.iTemp] = mcmc.corrUpdate[0];
@@ -359,7 +359,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
 	  
           // *** Save state to calculate correlations ***
           if(mcmc.iHist[mcmc.iTemp]<mcmc.nCorr) {
-            for(j1=0;j1<mcmc.nMCMCpar;j1++) mcmc.hist[mcmc.iTemp][j1][mcmc.iHist[mcmc.iTemp]] = mcmc.param[mcmc.iTemp][j1];
+            for(j_1=0;j_1<mcmc.nMCMCpar;j_1++) mcmc.hist[mcmc.iTemp][j_1][mcmc.iHist[mcmc.iTemp]] = mcmc.param[mcmc.iTemp][j_1];
             mcmc.iHist[mcmc.iTemp] += 1;
           }
 	  
@@ -678,7 +678,7 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
 // ****************************************************************************************************************************************************  
 {
   int p=0, tempi=mcmc->iTemp;
-  double gamma=0.0;
+  double s_gamma=0.0;
   double ran=0.0, largejump1=0.0, largejumpall=0.0;
   
   largejumpall = 1.0;
@@ -717,25 +717,25 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
           mcmc->param[tempi][p] = mcmc->nParam[tempi][p];
           mcmc->logL[tempi] = mcmc->nlogL[tempi];
           if(mcmc->adaptiveMCMC==1){
-            gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] + gamma*(1.0 - mcmc->acceptRateTarget)); //Accept - increase sigma
+            s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] + s_gamma*(1.0 - mcmc->acceptRateTarget)); //Accept - increase sigma
             sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);              //Bring the sigma between 0 and 2pi
           }
           mcmc->accepted[tempi][p] += 1;
         } else {                                                                        //Reject proposal
           mcmc->nParam[tempi][p] = mcmc->param[tempi][p];
           if(mcmc->adaptiveMCMC==1){
-            gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget); //Reject - decrease sigma
+            s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+            mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget); //Reject - decrease sigma
             sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);              //Bring the sigma between 0 and 2pi
-            //mcmc->adaptSigma[tempi][p] = max(0.01*mcmc->adaptSigma[tempi][p], mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget);
+            //mcmc->adaptSigma[tempi][p] = max(0.01*mcmc->adaptSigma[tempi][p], mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget);
           }
         }
       } else {  //If new state not within boundaries
         mcmc->nParam[tempi][p] = mcmc->param[tempi][p];
         if(mcmc->adaptiveMCMC==1) {
-          gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
-          mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - gamma*mcmc->acceptRateTarget);   //Reject - decrease sigma
+          s_gamma = mcmc->adaptScale[tempi][p]*pow(1.0/((double)(mcmc->iIter+1)),1.0/6.0);
+          mcmc->adaptSigma[tempi][p] = max(0.0,mcmc->adaptSigma[tempi][p] - s_gamma*mcmc->acceptRateTarget);   //Reject - decrease sigma
           sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);                                     //Bring the sigma between 0 and 2pi
         }
       } //if(mcmc->acceptPrior[tempi]==1)
@@ -1270,41 +1270,41 @@ void updateCovarianceMatrix(struct MCMCvariables *mcmc)
 // ****************************************************************************************************************************************************  
 void CholeskyDecompose(double **A, struct MCMCvariables *mcmc)
 {
-  int j1=0,j2=0,j3=0,notposdef=0;
+  int j_1=0,j_2=0,j_3=0,notposdef=0;
   int n=mcmc->nMCMCpar;
   double sum=0.0;
   
-  for(j1=0;j1<n;j1++){
-    if(mcmc->parFix[j1]==0) {
-      sum = A[j1][j1];
-      for(j2=0;j2<j1;j2++){
-        if(mcmc->parFix[j2]==0) {
-          sum -= A[j1][j2]*A[j1][j2];
+  for(j_1=0;j_1<n;j_1++){
+    if(mcmc->parFix[j_1]==0) {
+      sum = A[j_1][j_1];
+      for(j_2=0;j_2<j_1;j_2++){
+        if(mcmc->parFix[j_2]==0) {
+          sum -= A[j_1][j_2]*A[j_1][j_2];
         }
       }
       if(sum<0.0) {
         notposdef=1;
       } else {
-        A[j1][j1]=sqrt(sum);
-        for(j2=j1+1;j2<n;j2++){
-          if(mcmc->parFix[j2]==0){
-            sum = A[j2][j1];
-            for(j3=0;j3<j1;j3++){
-              if(mcmc->parFix[j3]==0){
-                sum -= A[j2][j3]*A[j1][j3];
+        A[j_1][j_1]=sqrt(sum);
+        for(j_2=j_1+1;j_2<n;j_2++){
+          if(mcmc->parFix[j_2]==0){
+            sum = A[j_2][j_1];
+            for(j_3=0;j_3<j_1;j_3++){
+              if(mcmc->parFix[j_3]==0){
+                sum -= A[j_2][j_3]*A[j_1][j_3];
               }
             }
           }
-          A[j2][j1] = sum/A[j1][j1];
+          A[j_2][j_1] = sum/A[j_1][j_1];
         }
       }
     }
   }
   if(notposdef==1) {
     //printf("  CholeskyDecompose():  Matrix %i is not positive definite\n",mcmc->iTemp);
-    for(j1=0;j1<n;j1++){
-      for(j2=0;j2<n;j2++){
-        A[j1][j2] = 0.0;
+    for(j_1=0;j_1<n;j_1++){
+      for(j_2=0;j_2<n;j_2++){
+        A[j_1][j_2] = 0.0;
       }
     }
   }
@@ -1613,7 +1613,7 @@ void setTemperatureLadder(struct MCMCvariables *mcmc)
   double tempratio = 0.0;
   
   if(mcmc->nTemps < 3) { 
-    exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-1));
+    tempratio = exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-1));
   } else {
     tempratio = exp(log(mcmc->maxTemp)/(double)(mcmc->nTemps-2));
   }
