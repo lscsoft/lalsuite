@@ -85,7 +85,7 @@ def parse_args():
     parser.error('incorrect number of command line options specified')
 
   # check that both --sed and --file are not specified
-  if (opts.sed is True) and (opts.sed_file is True):
+  if opts.sed and opts.sed_file:
     parser.error('cannot specify both --sed and --sed-file')
 
   return opts, args[0], args[1], args[2]
@@ -269,13 +269,20 @@ if git_ok:
                infile)
 
     # create tmp file
-    subprocess.Popen(sed_cmd, stdout=open(tmpfile, "w")).wait()
+    # FIXME: subprocess.check_call becomes available in Python 2.5
+    sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
+    if sed_retcode:
+      raise GitInvocationError, "Failed call (modulo quoting): " \
+          + " ".join(sed_cmd) + " > " + tmpfile
 
-    # update vcs header, if appropriate
-    if (os.access(dstfile, os.F_OK) and not filecmp.cmp(dstfile, tmpfile)) or not os.access(dstfile, os.F_OK):
-      os.rename(tmpfile, dstfile)
-    else:
+    # create tmp file
+    subprocess.check_call(sed_cmd, stdout=open(tmpfile, "w"))
+
+    # only update vcs header if appropriate
+    if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
       os.remove(tmpfile)
+    else:
+      os.rename(tmpfile, dstfile)
   else:
     # output version info
     print 'Id: %s' % info.id
