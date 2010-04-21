@@ -2262,7 +2262,7 @@ int main( int argc, char *argv[] )
         COMPLEX8Vector *templateFFTDataVector = NULL;
         REAL4FFTPlan *plan = NULL;
         REAL8 deltaF;
-        INT4 kmax, numPoints;
+        INT4 kmax, num_points;
         UINT4 nb2;
         snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
                   "TEMPLATE");
@@ -2272,14 +2272,14 @@ int main( int argc, char *argv[] )
         if ( approximant==FindChirpSP )
           {
           nb2 = fcTmpltParams->xfacVec->length;
-          numPoints = (int) floor( (nb2-1) * 2.0);
-          templateTimeSeriesVector = XLALCreateREAL4Vector(numPoints);
+          num_points = (INT4) floor( (nb2-1) * 2.0);
+          templateTimeSeriesVector = XLALCreateREAL4Vector(num_points);
           templateFFTDataVector = XLALCreateCOMPLEX8Vector(nb2);
-          numPoints = templateTimeSeriesVector->length;
+          num_points = templateTimeSeriesVector->length;
 
-          deltaF = 1.0 / ( fcTmpltParams->deltaT * (REAL8) numPoints / 2.0);
-          kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ?
-            fcFilterInput->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
+          deltaF = 1.0 / ( fcTmpltParams->deltaT * (REAL8) num_points / 2.0);
+          kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF < num_points/2 ?
+            fcFilterInput->fcTmplt->tmplt.fFinal / deltaF : num_points/2;
 
           for (i = 0; i < nb2; i++)
             {
@@ -2294,7 +2294,7 @@ int main( int argc, char *argv[] )
               templateFFTDataVector->data[i].im = 0;
               }
             }
-          plan = XLALCreateReverseREAL4FFTPlan( numPoints, 0);
+          plan = XLALCreateReverseREAL4FFTPlan( num_points, 0);
           if ( XLALREAL4ReverseFFT( templateTimeSeriesVector, templateFFTDataVector, plan) )  fprintf(stderr, "\n\nFFT FAILED\n\n");
           templateTimeSeries.data = templateTimeSeriesVector;
           }
