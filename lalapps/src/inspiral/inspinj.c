@@ -764,12 +764,12 @@ XLALDestroyREAL8Vector(pN);
 void drawMassFromSource( SimInspiralTable* table )
 { 
   REAL4 m1, m2, eta;
-  int index=0;
+  int mass_index=0;
 
   /* choose masses from the mass-list */  
-  index = (int)( num_mass * XLALUniformDeviate( randParams ) );
-  m1=mass_data[index].mass1;
-  m2=mass_data[index].mass2;
+  mass_index = (int)( num_mass * XLALUniformDeviate( randParams ) );
+  m1=mass_data[mass_index].mass1;
+  m2=mass_data[mass_index].mass2;
 
   eta=m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   table->mass1 = m1;
@@ -787,12 +787,12 @@ void drawMassFromSource( SimInspiralTable* table )
 
 void drawMassSpinFromNR( SimInspiralTable* table )
 { 
-  int index=0;
+  int mass_index=0;
 
   /* choose masses from the mass-list */  
-  index = (int)( num_nr * XLALUniformDeviate( randParams ) );
+  mass_index = (int)( num_nr * XLALUniformDeviate( randParams ) );
   XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal, 
-      nrSimArray[index]);
+      nrSimArray[mass_index]);
 }
 
 /*
