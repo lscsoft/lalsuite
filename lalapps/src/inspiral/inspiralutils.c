@@ -311,7 +311,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
   REAL8 startFreq, startFreqHz, massTotal;
   REAL8 thisSNR;
   SimInspiralTable *simTableOut=NULL;
-  SimInspiralTable *thisInjOut;
+  SimInspiralTable *thisInjOut=NULL;
 
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
@@ -418,7 +418,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   FrHistory *thisHist;
   CHAR *comment=NULL;
   CHAR *token=NULL;
-  REAL8 ret;
+  REAL8 ret=0;
 
   frFile =  XLALFrOpenURL( url );
   frame = FrameRead (frFile);

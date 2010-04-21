@@ -869,8 +869,8 @@ void drawLocationFromExttrig( SimInspiralTable* table )
  */
 int main( int argc, char *argv[] )
 { 
-  LIGOTimeGPS gpsStartTime;
-  LIGOTimeGPS gpsEndTime;
+  LIGOTimeGPS gpsStartTime = {-1,0};
+  LIGOTimeGPS gpsEndTime = {-1,0};
   LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
@@ -904,8 +904,6 @@ int main( int argc, char *argv[] )
   int aligned = 0;
 
   status=blank_status;
-  gpsStartTime.gpsSeconds=-1;
-  gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
   /* available letters: H */
