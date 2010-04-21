@@ -132,7 +132,8 @@ def check_call_out(command):
 
 def in_git_repository():
   """
-  Return True if we are in a git repository and False if not.
+  Return True if git is available and we are in a git repository; else
+  return False.
 
   NB: Unfortunately there is a magic number without any documentation to back
   it up. It turns out that git status returns non-zero exit codes for all sorts
@@ -240,60 +241,61 @@ if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
 # change to src_dir
 os.chdir(src_dir)
 
-# check if git is available and we are in a repository
-git_ok = in_git_repository()
-
 # generate version information output, if appropriate
-if git_ok:
+# NB: First assume that git works and we are in a repository since
+# checking it is expensive and rarely necessary.
+try:
   info = generate_git_version_info()
-
-  if options.sed_file:
-    # output sed command file to stdout
-    print 's+@ID@+%s+g' % info.id
-    print 's+@DATE@+%s+g' % info.date
-    print 's+@BRANCH@+%s+g' % info.branch
-    print 's+@TAG@+%s+g' % info.tag
-    print 's+@AUTHOR@+%s+g' % info.author
-    print 's+@COMMITTER@+%s+g' % info.committer
-    print 's+@STATUS@+%s+g' % info.status
-  elif options.sed:
-    # generate sed command line options
-    sed_cmd = ('sed',
-               '-e', 's/@ID@/%s/' % info.id,
-               '-e', 's/@DATE@/%s/' % info.date,
-               '-e', 's/@BRANCH@/%s/' % info.branch,
-               '-e', 's/@TAG@/%s/' % info.tag,
-               '-e', 's/@AUTHOR@/%s/' % info.author,
-               '-e', 's/@COMMITTER@/%s/' % info.committer,
-               '-e', 's/@STATUS@/%s/' % info.status,
-               infile)
-
-    # create tmp file
-    # FIXME: subprocess.check_call becomes available in Python 2.5
-    sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
-    if sed_retcode:
-      raise GitInvocationError, "Failed call (modulo quoting): " \
-          + " ".join(sed_cmd) + " > " + tmpfile
-
-    # create tmp file
-    subprocess.check_call(sed_cmd, stdout=open(tmpfile, "w"))
-
-    # only update vcs header if appropriate
-    if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
-      os.remove(tmpfile)
-    else:
-      os.rename(tmpfile, dstfile)
+except GitInvocationError:
+  # We expect a failure if either git is not available or we are not
+  # in a repository. Any other failure is unexpected and should throw an
+  # error.
+  if not in_git_repository():
+      sys.exit(0)
   else:
-    # output version info
-    print 'Id: %s' % info.id
-    print 'Date: %s' % info.date
-    print 'Branch: %s' % info.branch
-    print 'Tag: %s' % info.tag
-    print 'Author: %s' % info.author
-    print 'Committer: %s' % info.committer
-    print 'Status: %s' % info.status
+      sys.exit("Unexpected failure in discovering the git version")
 
-# exit
-sys.exit(0)
+if options.sed_file:
+  # output sed command file to stdout
+  print 's+@ID@+%s+g' % info.id
+  print 's+@DATE@+%s+g' % info.date
+  print 's+@BRANCH@+%s+g' % info.branch
+  print 's+@TAG@+%s+g' % info.tag
+  print 's+@AUTHOR@+%s+g' % info.author
+  print 's+@COMMITTER@+%s+g' % info.committer
+  print 's+@STATUS@+%s+g' % info.status
+elif options.sed:
+  # generate sed command line options
+  sed_cmd = ('sed',
+             '-e', 's/@ID@/%s/' % info.id,
+             '-e', 's/@DATE@/%s/' % info.date,
+             '-e', 's/@BRANCH@/%s/' % info.branch,
+             '-e', 's/@TAG@/%s/' % info.tag,
+             '-e', 's/@AUTHOR@/%s/' % info.author,
+             '-e', 's/@COMMITTER@/%s/' % info.committer,
+             '-e', 's/@STATUS@/%s/' % info.status,
+             infile)
+
+  # create tmp file
+  # FIXME: subprocess.check_call becomes available in Python 2.5
+  sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
+  if sed_retcode:
+    raise GitInvocationError, "Failed call (modulo quoting): " \
+        + " ".join(sed_cmd) + " > " + tmpfile
+
+  # only update vcs header if appropriate
+  if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
+    os.remove(tmpfile)
+  else:
+    os.rename(tmpfile, dstfile)
+else:
+  # output version info
+  print 'Id: %s' % info.id
+  print 'Date: %s' % info.date
+  print 'Branch: %s' % info.branch
+  print 'Tag: %s' % info.tag
+  print 'Author: %s' % info.author
+  print 'Committer: %s' % info.committer
+  print 'Status: %s' % info.status
 
 # vim: syntax=python tw=72 ts=2 et
