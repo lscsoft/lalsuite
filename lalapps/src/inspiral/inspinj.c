@@ -393,7 +393,7 @@ read_nr_data( char* filename )
 {
   SimInspiralTable  *nrSimHead = NULL;
   SimInspiralTable  *thisEvent= NULL;
-  INT4               i = 0;
+  INT4               j = 0;
 
   num_nr = SimInspiralTableFromLIGOLw( &nrSimHead, filename, 0, 0 );
 
@@ -420,13 +420,13 @@ read_nr_data( char* filename )
     exit( 1 );
   }
 
-  for( i = 0, thisEvent=nrSimHead; i < num_nr; 
-      ++i, thisEvent = thisEvent->next )
+  for( j = 0, thisEvent=nrSimHead; j < num_nr; 
+      ++j, thisEvent = thisEvent->next )
   {
-    nrSimArray[i] = thisEvent;
-    if (i > 0)
+    nrSimArray[j] = thisEvent;
+    if (j > 0)
     {
-      nrSimArray[i-1]->next = NULL;
+      nrSimArray[j-1]->next = NULL;
     }
   }
 }
@@ -443,7 +443,7 @@ read_source_data( char* filename )
 {
   char line[256];
   FILE *fp;
-  int i;
+  int j, k;
 
   fp = fopen (filename, "r" );
   if ( ! fp )
@@ -472,7 +472,7 @@ read_source_data( char* filename )
     exit( 1 );
   }
 
-  i = 0;
+  j = 0;
   while ( fgets( line, sizeof( line ), fp ) )
     if ( line[0] == '#' )
       continue;
@@ -483,8 +483,8 @@ read_source_data( char* filename )
       int c;
 
       c = sscanf( line, "%s %c%le:%le %c%le:%le %le %le %le",
-          source_data[i].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
-          &source_data[i].dist, &source_data[i].lum, &source_data[i].fudge );
+          source_data[j].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
+          &source_data[j].dist, &source_data[j].lum, &source_data[j].fudge );
       if ( c != 10 )
       {
         fprintf( stderr, "error parsing source datafile %s\n", sourceFileName );
@@ -492,14 +492,14 @@ read_source_data( char* filename )
       }
 
       /* by convention, overall sign is carried only on hours/degrees entry */
-      source_data[i].ra  = ( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
-      source_data[i].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
+      source_data[j].ra  = ( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
+      source_data[j].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
 
       if ( ra_sgn == '-' )
-        source_data[i].ra *= -1;
+        source_data[j].ra *= -1;
       if ( dec_sgn == '-' )
-        source_data[i].dec *= -1;
-      ++i;
+        source_data[j].dec *= -1;
+      ++j;
     }
 
   /* close file */
@@ -519,11 +519,11 @@ read_source_data( char* filename )
   norm = mwLuminosity;
 
   /* calculate the fractions of the different sources */
-  for ( i = 0; i < num_source; ++i )
-    norm += ratioVec[i] = source_data[i].lum * source_data[i].fudge;
+  for ( k = 0; k < num_source; ++k )
+    norm += ratioVec[k] = source_data[k].lum * source_data[k].fudge;
   fracVec[0] = ratioVec[0] / norm;
-  for ( i = 1; i < num_source; ++i )
-    fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
+  for ( k = 1; k < num_source; ++k )
+    fracVec[k] = fracVec[k-1] + ratioVec[k] / norm;
 }
 
 /*
@@ -806,20 +806,20 @@ void drawFromSource( REAL8 *rightAscension,
     CHAR   name[LIGOMETA_SOURCE_MAX] )
 {
   REAL4 u;
-  int i;
+  int j;
 
   u=XLALUniformDeviate( randParams );
 
   /* draw from the source table */
-  for ( i = 0; i < num_source; ++i )
+  for ( j = 0; j < num_source; ++j )
   {
-    if ( u < fracVec[i] )
+    if ( u < fracVec[j] )
     {
       /* put the parameters */
-      *rightAscension = source_data[i].ra;
-      *declination    = source_data[i].dec;
-      *distance = source_data[i].dist/1000.0;
-      memcpy( name, source_data[i].name,
+      *rightAscension = source_data[j].ra;
+      *declination    = source_data[j].dec;
+      *distance = source_data[j].dist/1000.0;
+      memcpy( name, source_data[j].name,
           sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
       return;
     }
