@@ -692,19 +692,19 @@ XLALSortCoincInspiralByStat (
 int
 XLALCoincInspiralIfos (
     CoincInspiralTable  *coincInspiral,
-    char                *ifos
+    const char          *ifos
     );
 
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char                *ifos
     );
 
 int
 XLALCoincInspiralIfosDiscard(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     );
 
 UINT8
