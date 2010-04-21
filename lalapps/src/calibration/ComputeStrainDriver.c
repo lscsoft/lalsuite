@@ -80,8 +80,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
-#include "LALASCIIFileRead.h"
-
 extern char *optarg;
 extern int optind, opterr, optopt;
 

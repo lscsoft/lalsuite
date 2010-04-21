@@ -181,7 +181,6 @@ int ring_output_events_xml(
 /* routine to create process table */
 ProcessTable *ring_create_process_table( struct ring_params *params )
 {
-  LALStatus status = blank_status;
   ProcessTable *processTable = NULL;
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );

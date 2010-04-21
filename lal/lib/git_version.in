@@ -75,7 +75,7 @@ def parse_args():
   parser = optparse.OptionParser(usage=usage)
   parser.add_option('--sed', action='store_true', default=False,
       help='output sed commands for version replacement')
-  parser.add_option('--file', action='store_true', default=False,
+  parser.add_option('--sed-file', action='store_true', default=False,
       help='output sed file for version replacement')
 
   # parse command line options
@@ -86,8 +86,8 @@ def parse_args():
     parser.error('incorrect number of command line options specified')
 
   # check that both --sed and --file are not specified
-  if (opts.sed is True) and (opts.file is True):
-    parser.error('cannot specify both --sed and --file')
+  if (opts.sed is True) and (opts.sed_file is True):
+    parser.error('cannot specify both --sed and --sed-file')
 
   return opts, args[0], args[1], args[2]
 
@@ -225,7 +225,7 @@ if git_ok:
 if git_ok:
   info = generate_git_version_info()
 
-  if options.file:
+  if options.sed_file:
     # output sed command file to stdout
     print 's+@ID@+%s+g' % info.id
     print 's+@DATE@+%s+g' % info.date

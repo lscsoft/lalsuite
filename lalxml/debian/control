@@ -2,7 +2,7 @@ Source: lalxml
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), zlib1g-dev, libxml2-dev (>= 2.6), libgsl0-dev (>= 1.9), lal-dev (>= 6.4), lalpulsar-dev (>= 1.0), pkg-config, python
+Build-Depends: debhelper (>= 5), zlib1g-dev, libxml2-dev (>= 2.6), libgsl0-dev (>= 1.9), lal-dev (>= 6.4), lalpulsar-dev (>= 1.0), pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalxml
