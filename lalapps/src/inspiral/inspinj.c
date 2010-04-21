@@ -1709,10 +1709,6 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
-      case 'vv':
-        vrbflg = 1;
-        break;
-
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         print_usage(argv[0]);
