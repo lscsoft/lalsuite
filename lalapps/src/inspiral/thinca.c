@@ -2011,7 +2011,7 @@ int main( int argc, char *argv[] )
         }
       }
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList,
-           &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], 
+           &accuracyParams, snrCut, summValueList, &vetoSegs[LAL_IFO_H1],
            &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
