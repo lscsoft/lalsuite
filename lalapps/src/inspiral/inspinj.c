@@ -232,22 +232,22 @@ static void print_usage(char *program)
       " [--verbose]               print progress information\n"\
       " [--user-tag] usertag      set the usertag \n"\
       " [--output ] name          overwrite the standard file naming convention\n"\
-      " [--write-compress]        write a compressed xml file\n"\
-      "\n"\
+      " [--write-compress]        write a compressed xml file\n\n");\
+  fprintf(stderr,
       "Waveform details:\n"\
       " [--seed] randomSeed       seed for random number generator (default : 1)\n"\
       "  --f-lower freq           lower cut-off frequency.\n"\
       "  --waveform wfm           set waveform type to wfm\n"\
-      "  --amp-order              set PN order in amplitude\n"\
-      "\n"\
+      "  --amp-order              set PN order in amplitude\n\n");
+  fprintf(stderr,
       "Time distribution information:\n"\
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
       "  [--time-step] step       space injections by average of step seconds\n"\
       "                           (suggestion : 2630 / pi seconds)\n"\
       "  [--time-interval] int    distribute injections in an interval, int s\n"\
-      "                           (default : 0 seconds)\n"\
-      "\n"\
+      "                           (default : 0 seconds)\n\n");
+  fprintf(stderr,
       "Source distribution information:\n"\
       "  --l-distr  locDist       set the source location distribution,\n"\
       "                           locDist must be one of:\n"\
@@ -280,8 +280,8 @@ static void print_usage(char *program)
       " [--exttrig-file] exttrig  XML file containing external trigger\n"\
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
-      "                           min/max distance required if d-distr not 'source'\n"\
-      "\n"\
+      "                           min/max distance required if d-distr not 'source'\n\n");
+  fprintf(stderr,
       "Mass distribution information:\n"\
       " --m-distr massDist        set the mass distribution of injections\n"\
       "                           must be one of:\n"\
@@ -308,8 +308,8 @@ static void print_usage(char *program)
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\n"\
-      "\n"\
+      " [--max-mratio] maxr       set the maximum mass ratio\\n");
+  fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
       "  --enable-spin            enables spinning injections\n"\
@@ -325,16 +325,15 @@ static void print_usage(char *program)
       "                           to abskappa1min (0.0)\n"\
       "  [--max-abskappa1] abskappa1max \n"\
       "                           Set the maximum absolute value of cos(S1.L_N) \n"\
-      "                           to abskappa1max (1.0)\n"\
-      "\n"\
+      "                           to abskappa1max (1.0)\n\n");
+  fprintf(stderr,
       "Tapering the injection waveform:\n"\
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
       "                            (start|end|startend) \n)"\
-      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
-      "\n"\
+      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n\n");
+  fprintf(stderr,
       "Output:\n"\
-      " [--write-sim-ring]        Writes a sim_ringdown table\n"\
-      "\n");
+      " [--write-sim-ring]        Writes a sim_ringdown table\n\n");
 }
 
 
