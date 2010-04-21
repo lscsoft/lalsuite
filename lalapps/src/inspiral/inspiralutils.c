@@ -98,11 +98,11 @@ REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     pow( LAL_MTSUN_SI / chanDeltaT, -1.0/6.0 );
   REAL8 sigmaSq = 4.0 * ( chanDeltaT / (REAL8) nPoints ) * 
     distNorm * distNorm * a * a; 
-  REAL8 fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
+  REAL8 f_max = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
   REAL8 f = 0;
 
   for ( k = cut, f = spec->deltaF * cut; 
-      k < spec->data->length && f < fmax; 
+      k < spec->data->length && f < f_max;
       ++k, f = spec->deltaF * k )
   {
     sigmaSqSum += 
