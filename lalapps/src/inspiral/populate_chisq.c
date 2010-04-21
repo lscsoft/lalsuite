@@ -1619,15 +1619,15 @@ int main(int argc, char *argv[])
             for (currentTrigger = inspiralEventList; currentTrigger && !analyseTag; currentTrigger = currentTrigger->next) {
                 if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
                     /* Also need to check for time here... */
-                    INT8 trigEndTimeNS;
+                    INT8 trig_end_time_ns;
 
-                    trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                    trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                    if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                    if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                     {
                         analyseTag = 1;
                         if (vrbflg)
-                            fprintf(stdout, "Found trigger (%f,%f) @ t=%" LAL_INT8_FORMAT "\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trigEndTimeNS);
+                            fprintf(stdout, "Found trigger (%f,%f) @ t=%" LAL_INT8_FORMAT "\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trig_end_time_ns);
                     }
                 }
             }
@@ -1763,15 +1763,15 @@ int main(int argc, char *argv[])
                 /* Now go through the list of triggers again and fill in chisq values */
                 for (currentTrigger = inspiralEventList; currentTrigger; currentTrigger = currentTrigger->next) {
                     if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
-                        INT8 trigEndTimeNS;
+                        INT8 trig_end_time_ns;
 
-                        trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                        trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                        if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                        if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                         {
                             INT4                       timeIndex;
 
-                            timeIndex = 1 + (INT4) ((trigEndTimeNS - fcSegStartTimeNS) / (1e9 * deltaT));
+                            timeIndex = 1 + (INT4) ((trig_end_time_ns - fcSegStartTimeNS) / (1e9 * deltaT));
 
                             /* we store chisq distributed with 2p - 2 degrees of freedom */
                             /* in the database. params->chisqVec->data = r^2 = chisq / p */
@@ -1781,7 +1781,7 @@ int main(int argc, char *argv[])
                                 fcFilterParams->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
                             
                             if (vrbflg)
-                                fprintf(stdout,"Event at %" LAL_INT8_FORMAT " has chisq=%f\n",trigEndTimeNS,currentTrigger->chisq);
+                                fprintf(stdout,"Event at %" LAL_INT8_FORMAT " has chisq=%f\n",trig_end_time_ns,currentTrigger->chisq);
 
                             currentTrigger->chisq_dof = numChisqBins;
                         }
