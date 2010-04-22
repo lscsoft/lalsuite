@@ -41,7 +41,6 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>   // www.fftw.org                                                   
-#include <FrameL.h>  // from LIGOtools package: www.ldas-sw.ligo.caltech.edu/ligotools 
 #include <time.h>
 #include <remez.h>   // FIR-filter design routine:  www.janovetz.com/jake              
 #include <gsl/gsl_rng.h>
@@ -53,6 +52,8 @@
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/LALFrameL.h>
+#include <lal/LALConstants.h>
 
 
 #define TRUE (1==1)
@@ -590,7 +591,7 @@ void LALHpHcNonSpinning(LALStatus *status, CoherentGW *waveform, SimInspiralTabl
 //double LALFpFc(CoherentGW *waveform, double *wave, int *l, int length, struct parSet *par, int ifonr);
 double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injParams, PPNParamStruc *ppnParams, double *wave, int length, struct parSet *par, struct interferometer *ifo, int ifonr);
 
-void getWaveformApproximant(char* familyName, int length, double PNorder, char* waveformApproximant);
+void getWaveformApproximant(const char* familyName, int length, double PNorder, char* waveformApproximant);
 void LALfreedomSpin(CoherentGW *waveform);
 void LALfreedomNoSpin(CoherentGW *waveform);
 
@@ -602,7 +603,7 @@ double signalToNoiseRatio(struct parSet *par, struct interferometer *ifo[], int 
 double parMatch(struct parSet* par1, int waveformVersion1, int injectionWF1, struct parSet* par2, int waveformVersion2, int injectionWF2, struct interferometer *ifo[], int networkSize, struct runPar run);
 double overlapWithData(struct parSet *par, struct interferometer *ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run);
 double parOverlap(struct parSet* par1, int waveformVersion1, int injectionWF1, struct parSet* par2, int waveformVersion2, int injectionWF2, struct interferometer* ifo[], int ifonr, struct runPar run);
-double vecOverlap(fftw_complex *vec1, fftw_complex *vec2, double * noise, int j1, int j2, double deltaFT);
+double vecOverlap(fftw_complex *vec1, fftw_complex *vec2, double * noise, int j_1, int j_2, double deltaFT);
 void signalFFT(fftw_complex * FFTout, struct parSet *par, struct interferometer *ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run);
 double matchBetweenParameterArrayAndTrueParameters(double * pararray, struct interferometer *ifo[], struct MCMCvariables mcmc, struct runPar run);
 //void computeFisherMatrixIFO(struct parSet *par, int npar, struct interferometer *ifo[], int networkSize, int ifonr, double **matrix);

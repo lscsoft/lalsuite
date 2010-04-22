@@ -51,7 +51,7 @@
 void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
 {
   int i = 0;
-  int c;
+  int C;
   int nIFO = 0;
   int nChannel = 0;
   int nCache = 0;
@@ -96,8 +96,8 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   
   
   int option_index = 0;
-  while( (c = getopt_long(argc, argv, "i:m:e:t:d:n:d:a:",long_options, &option_index)) != -1) {
-    switch(c) {
+  while( (C = getopt_long(argc, argv, "i:m:e:t:d:n:d:a:",long_options, &option_index)) != -1) {
+    switch(C) {
       
       
       // *** Treat (untranslated) long options:
