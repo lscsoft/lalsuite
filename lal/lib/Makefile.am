@@ -1,6 +1,6 @@
 EXTRA_DIST = \
 	LALVCSInfo.h.in \
-	git_version
+	generate_vcs_info.py
 
 lib_LTLIBRARIES = liblal.la
 
@@ -43,10 +43,9 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 
 LALVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version
+._vcsinfo: $(srcdir)/generate_vcs_info.py
 	@echo "creating LALVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-	./git_version --sed LAL $$sourced $$buildd
+	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LAL $(srcdir) .
 
 all-local: include-link
 include-link: LALVCSInfo.h

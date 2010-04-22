@@ -1,6 +1,4 @@
-#!@PYTHON@
-#
-# git_version - determine git version info
+# generate_vcs_info.py - determine git version info
 #
 # Based on generateGitID.sh by Reinhard Prix
 #
