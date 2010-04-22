@@ -1175,12 +1175,10 @@ int main( int argc, char *argv[] )
                   {
                     while( thisEvent )
                       {
-                        MultiInspiralTable *tempEvent = thisEvent;
                         tempTable->next = (MultiInspiralTable *) LALCalloc( 1, sizeof(MultiInspiralTable) );
                         tempTable = tempTable->next;
                         memcpy(tempTable, thisEvent, sizeof(MultiInspiralTable) );
                         thisEvent = thisEvent->next;
-                        
                         LALFree( tempEvent );
                         tempEvent = NULL;
                       }
