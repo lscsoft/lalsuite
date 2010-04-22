@@ -2283,7 +2283,7 @@ int main( int argc, char *argv[] )
 
           for (i = 0; i < nb2; i++)
             {
-            if (1 || (i * deltaF) > fLow && i < kmax)
+            if (1 || (((i * deltaF) > fLow) && (i < kmax)))
               {
               templateFFTDataVector->data[i].re = fcFilterInput->fcTmplt->data->data[i].re * fcTmpltParams->xfacVec->data[i];
               templateFFTDataVector->data[i].im = fcFilterInput->fcTmplt->data->data[i].im * fcTmpltParams->xfacVec->data[i];
