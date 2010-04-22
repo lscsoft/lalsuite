@@ -24,6 +24,8 @@ liblalframe_la_SOURCES = \
 	LALFrameIO.c \
 	LALFrameVCSInfo.c
 
+liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
+
 CLEANFILES = \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh

@@ -24,6 +24,7 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/fft/src/libfft.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
+liblal_la_LDFLAGS = -version-info $(LIBVERSION)
 
 BUILT_SOURCES = \
 	._vcsinfo \
