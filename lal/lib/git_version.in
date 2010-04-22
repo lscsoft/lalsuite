@@ -151,14 +151,6 @@ def generate_git_version_info():
 
   git_path = check_call_out(('/usr/bin/which', 'git'))
 
-  # determine current time and treat it as the build time
-  build_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime())
-
-  # determine builder
-  git_builder_name = check_call_out((git_path, 'config', 'user.name'))
-  git_builder_email = check_call_out((git_path, 'config', 'user.email'))
-  git_builder = "%s <%s>" % (git_builder_name, git_builder_email)
-
   # determine basic info about the commit
   # %H -- full git hash id
   # %ct -- commit time
