@@ -209,78 +209,79 @@ def generate_git_version_info():
 # main program entry point
 #
 
-# parse command line options
-options, project, src_dir, build_dir = parse_args()
+if __name__ == "__main__":
+  # parse command line options
+  options, project, src_dir, build_dir = parse_args()
 
-# filenames
-basename = '%sVCSInfo.h' % project
-infile = '%s/%s.in' % (src_dir, basename)
-tmpfile= '%s/%s.tmp' % (build_dir, basename)
-srcfile = '%s/%s' % (src_dir, basename)
-dstfile = '%s/%s' % (build_dir, basename)
+  # filenames
+  basename = '%sVCSInfo.h' % project
+  infile = '%s/%s.in' % (src_dir, basename)
+  tmpfile= '%s/%s.tmp' % (build_dir, basename)
+  srcfile = '%s/%s' % (src_dir, basename)
+  dstfile = '%s/%s' % (build_dir, basename)
 
-# copy vcs header to build_dir, if appropriate
-if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
-  shutil.copy(srcfile, dstfile)
+  # copy vcs header to build_dir, if appropriate
+  if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
+    shutil.copy(srcfile, dstfile)
 
-# change to src_dir
-os.chdir(src_dir)
+  # change to src_dir
+  os.chdir(src_dir)
 
-# generate version information output, if appropriate
-# NB: First assume that git works and we are in a repository since
-# checking it is expensive and rarely necessary.
-try:
-  info = generate_git_version_info()
-except GitInvocationError:
-  # We expect a failure if either git is not available or we are not
-  # in a repository. Any other failure is unexpected and should throw an
-  # error.
-  if not in_git_repository():
-      sys.exit(0)
+  # generate version information output, if appropriate
+  # NB: First assume that git works and we are in a repository since
+  # checking it is expensive and rarely necessary.
+  try:
+    info = generate_git_version_info()
+  except GitInvocationError:
+    # We expect a failure if either git is not available or we are not
+    # in a repository. Any other failure is unexpected and should throw an
+    # error.
+    if not in_git_repository():
+        sys.exit(0)
+    else:
+        sys.exit("Unexpected failure in discovering the git version")
+
+  if options.sed_file:
+    # output sed command file to stdout
+    print 's/@ID@/%s/g' % info.id
+    print 's/@DATE@/%s/g' % info.date
+    print 's/@BRANCH@/%s/g' % info.branch
+    print 's/@TAG@/%s/g' % info.tag
+    print 's/@AUTHOR@/%s/g' % info.author
+    print 's/@COMMITTER@/%s/g' % info.committer
+    print 's/@STATUS@/%s/g' % info.status
+  elif options.sed:
+    # generate sed command line options
+    sed_cmd = ('sed',
+               '-e', 's/@ID@/%s/' % info.id,
+               '-e', 's/@DATE@/%s/' % info.date,
+               '-e', 's/@BRANCH@/%s/' % info.branch,
+               '-e', 's/@TAG@/%s/' % info.tag,
+               '-e', 's/@AUTHOR@/%s/' % info.author,
+               '-e', 's/@COMMITTER@/%s/' % info.committer,
+               '-e', 's/@STATUS@/%s/' % info.status,
+               infile)
+
+    # create tmp file
+    # FIXME: subprocess.check_call becomes available in Python 2.5
+    sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
+    if sed_retcode:
+      raise GitInvocationError, "Failed call (modulo quoting): " \
+          + " ".join(sed_cmd) + " > " + tmpfile
+
+    # only update vcs header if appropriate
+    if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
+      os.remove(tmpfile)
+    else:
+      os.rename(tmpfile, dstfile)
   else:
-      sys.exit("Unexpected failure in discovering the git version")
-
-if options.sed_file:
-  # output sed command file to stdout
-  print 's/@ID@/%s/g' % info.id
-  print 's/@DATE@/%s/g' % info.date
-  print 's/@BRANCH@/%s/g' % info.branch
-  print 's/@TAG@/%s/g' % info.tag
-  print 's/@AUTHOR@/%s/g' % info.author
-  print 's/@COMMITTER@/%s/g' % info.committer
-  print 's/@STATUS@/%s/g' % info.status
-elif options.sed:
-  # generate sed command line options
-  sed_cmd = ('sed',
-             '-e', 's/@ID@/%s/' % info.id,
-             '-e', 's/@DATE@/%s/' % info.date,
-             '-e', 's/@BRANCH@/%s/' % info.branch,
-             '-e', 's/@TAG@/%s/' % info.tag,
-             '-e', 's/@AUTHOR@/%s/' % info.author,
-             '-e', 's/@COMMITTER@/%s/' % info.committer,
-             '-e', 's/@STATUS@/%s/' % info.status,
-             infile)
-
-  # create tmp file
-  # FIXME: subprocess.check_call becomes available in Python 2.5
-  sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
-  if sed_retcode:
-    raise GitInvocationError, "Failed call (modulo quoting): " \
-        + " ".join(sed_cmd) + " > " + tmpfile
-
-  # only update vcs header if appropriate
-  if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
-    os.remove(tmpfile)
-  else:
-    os.rename(tmpfile, dstfile)
-else:
-  # output version info
-  print 'Id: %s' % info.id
-  print 'Date: %s' % info.date
-  print 'Branch: %s' % info.branch
-  print 'Tag: %s' % info.tag
-  print 'Author: %s' % info.author
-  print 'Committer: %s' % info.committer
-  print 'Status: %s' % info.status
+    # output version info
+    print 'Id: %s' % info.id
+    print 'Date: %s' % info.date
+    print 'Branch: %s' % info.branch
+    print 'Tag: %s' % info.tag
+    print 'Author: %s' % info.author
+    print 'Committer: %s' % info.committer
+    print 'Status: %s' % info.status
 
 # vim: syntax=python tw=72 ts=2 et
