@@ -53,37 +53,37 @@
 FrameH *fr_add_proc_REAL4TimeSeries (
     FrameH          *frame,
     REAL4TimeSeries *chan,
-    char            *unit,
+    const char      *unit,
     const char      *suffix
     );
 FrameH *fr_add_proc_REAL8TimeSeries (
     FrameH          *frame,
     REAL8TimeSeries *chan,
-    char            *unit,
+    const char      *unit,
     const char      *suffix
     );
 FrameH *fr_add_proc_REAL4FrequencySeries (
     FrameH               *frame,
     REAL4FrequencySeries *chan,
-    char                 *unit,
+    const char           *unit,
     const char           *suffix
     );
 FrameH *fr_add_proc_REAL8FrequencySeries (
     FrameH               *frame,
     REAL8FrequencySeries *chan,
-    char                 *unit,
+    const char           *unit,
     const char           *suffix
     );
 FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     FrameH                  *frame,
     COMPLEX8FrequencySeries *chan,
-    char                    *unit,
+    const char              *unit,
     const char              *suffix
     );
 FrameH *fr_add_proc_COMPLEX8TimeSeries (
     FrameH                        *frame,
     COMPLEX8TimeSeries            *chan,
-    char                          *unit,
+    const char                    *unit,
     const char                    *suffix
     );
 

@@ -40,7 +40,7 @@
 FrameH *fr_add_proc_REAL4TimeSeries (
     FrameH                     *frame,
     REAL4TimeSeries            *chan,
-    char                       *unit,
+    const char                 *unit,
     const char                 *suffix
     )
 {
@@ -72,7 +72,7 @@ FrameH *fr_add_proc_REAL4TimeSeries (
 FrameH *fr_add_proc_REAL8TimeSeries (
     FrameH                     *frame,
     REAL8TimeSeries            *chan,
-    char                       *unit,
+    const char                 *unit,
     const char                 *suffix
     )
 {
@@ -105,7 +105,7 @@ FrameH *fr_add_proc_REAL8TimeSeries (
 FrameH *fr_add_proc_REAL4FrequencySeries (
     FrameH                     *frame,
     REAL4FrequencySeries       *chan,
-    char                       *unit,
+    const char                 *unit,
     const char                 *suffix
     )
 {
@@ -130,7 +130,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
 FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     FrameH                        *frame,
     COMPLEX8FrequencySeries       *chan,
-    char                          *unit,
+    const char                    *unit,
     const char                    *suffix
     )
 {
@@ -155,7 +155,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
 FrameH *fr_add_proc_COMPLEX8TimeSeries (
     FrameH                        *frame,
     COMPLEX8TimeSeries            *chan,
-    char                          *unit,
+    const char                    *unit,
     const char                    *suffix
     )
 {
@@ -183,7 +183,7 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
 FrameH *fr_add_proc_REAL8FrequencySeries (
     FrameH                     *frame,
     REAL8FrequencySeries       *chan,
-    char                       *unit,
+    const char                 *unit,
     const char                 *suffix
     )
 {
@@ -196,6 +196,7 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   struct FrProcData *proc;
   size_t i;
   char *channel = fdata.name;
+  char *tmp_unit = NULL;
 
   snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
@@ -222,8 +223,12 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
     frame->dt     = epoch_diff( &fdata.tend, &fdata.tbeg );
   }
 
+  /* FIXME: work around for FrameL const string issue */
+  tmp_unit = (char *)calloc(strlen(fdata.unit), sizeof(char));
+  memcpy(tmp_unit, fdata.unit, strlen(fdata.unit));
+
   vect = FrVectNew1D( channel, fdata.type, fdata.size, fdata.step,
-      IS_TIME( fdata.dom) ? seconds : hertz, fdata.unit );
+      IS_TIME( fdata.dom) ? seconds : hertz, tmp_unit );
   proc = calloc( 1, sizeof( *proc ) );
   proc->classe     = FrProcDataDef();
 #if defined FR_VERS && FR_VERS < 5000
@@ -239,6 +244,9 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   {
     vect->dataF[i] = fdata.data[i];
   }
+
+  /* FIXME: work around for FrameL const string issue */
+  free(tmp_unit);
 
   return frame;
 }
