@@ -138,7 +138,7 @@ def in_git_repository():
   of success conditions, but I cannot find any documentation of them. 128 was
   determined empirically. I sure hope that it's portable.
   """
-  ret_code, git_path = call_out(('/usr/bin/which', 'git'))
+  ret_code, git_path = call_out(('which', 'git'))
   return (ret_code != 1) and not git_path.startswith('no') \
       and (call_out((git_path, 'status'))[0] != 128)
 
@@ -147,7 +147,7 @@ def generate_git_version_info():
   # info object
   info = git_info()
 
-  git_path = check_call_out(('/usr/bin/which', 'git'))
+  git_path = check_call_out(('which', 'git'))
 
   # determine basic info about the commit
   # %H -- full git hash id
