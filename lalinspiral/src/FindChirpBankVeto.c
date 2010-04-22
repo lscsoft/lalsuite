@@ -45,6 +45,7 @@ $Id$
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/LALComplex.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <time.h>
@@ -53,34 +54,39 @@ $Id$
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 /* macro to "use" unused function parameters */
+
 #define UNUSED(expr) do { (void)(expr); } while(0)
 
 /* Some static function prototypes */
-
 static int compareTemplateByLevel (const void * a, const void * b);
-static int compareTemplateByChirpMass (const void * a, const void * b);
-static int compareTemplateByMass (const void * a, const void * b);
-static int compareTemplateByEta (const void * a, const void * b);
+/*static int compareTemplateByChirpMass (const void * a, const void * b);*/
+/*static int compareTemplateByMass (const void * a, const void * b);*/
+static int compareTemplateByFfinal (const void * a, const void * b);
 static int  breakUpRegions(InspiralTemplate *bankHead);
-static InspiralTemplate *
-XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
-InspiralTemplate *
-XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );
-InspiralTemplate *
-XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num );
-InspiralTemplate *
-XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );
+static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size);
+static InspiralTemplate * XLALFindChirpSortTemplatesByLevel( InspiralTemplate *bankHead, UINT4 num);
+/*static InspiralTemplate * XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num );*/
+static InspiralTemplate * XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num );
+/*static InspiralTemplate * XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num );*/
 
-/* A convenience function to compute the time between two frequencies */
-static double
-chirp_time_between_f1_and_f2 (double m1,
-			      double m2,
-			      double fLower,
-			      double fUpper,
-			      int order)
-{
-    return XLALFindChirpChirpTime(m1,m2,fLower,order) - XLALFindChirpChirpTime(m1,m2,fUpper,order);
-}
+/* helper functions */
+
+static COMPLEX8 rotate(REAL4 a, REAL4 phi)
+	{
+	COMPLEX8 out;
+        out.re = a * cos(phi); 
+	out.im = a * sin(phi);
+	return out;
+	}
+#if 0
+static COMPLEX16 rotate_complex16(COMPLEX16 a, REAL8 phi)
+	{
+	COMPLEX16 out;
+        out.re = a.re * cos(phi) - a.im * sin(phi); 
+	out.im = a.re * sin(phi) + a.im * cos(phi);
+	return out;
+	}
+#endif
 
 void XLALInitBankVetoData(FindChirpBankVetoData *bankVetoData)
 {
@@ -234,20 +240,24 @@ XLALComputeFullChisq(
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq, angle, snri, snrk;
+  UINT4 numsamps = bankVetoData->acorrMatSize;
+
   /* input, params and norm are unused */
   UNUSED(input);
   UNUSED(params);
-  /* test isn't being done */
 
+  /* test isn't being done */
   if (!bankVetoData->acorrMat) return 0.0;
   chisq = 0;
   chisqnorm = 0;
 
   angle = atan2(q[snrIX].im, q[snrIX].re);
   snri = q[snrIX].re * cos(angle) + q[snrIX].im * sin(angle);
+  /* have the dof vary with snr^1/2 up until snr = 1000 */
+  //if (snri < 1000) numsamps = (UINT4) ceil((double) numsamps * sqrt(snri) / 31.622776601683793);
   *dof = 0;
 
-  for (k = 0; k < bankVetoData->acorrMatSize; k++)
+  for (k = 0; k < numsamps; k+=bankVetoData->autochisqStride)
   {
     /* we skipped saving the first sample of the autocorrelation which is why */
     /* we need the -1 in the snrk here */
@@ -257,9 +267,15 @@ XLALComputeFullChisq(
     (*dof) += 1;
     tmp = snrk - C * snri;
     chisq += tmp * tmp * norm / chisqnorm;
+    /* Other side */
+    if (bankVetoData->two_sided_auto_chisq)
+      {
+      snrk = q[snrIX+k+1].re * cos(angle) + q[snrIX+k+1].im * sin(angle);
+      (*dof) += 1;
+      tmp = snrk - C * snri;
+      chisq += tmp * tmp * norm / chisqnorm;
+      }
   }
-
-  /*chisq /= chisqnorm;*/
 
   return chisq;
 }
@@ -279,14 +295,14 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
      * and added to the cross-correlation integral.  One should remember
      * that the ROW variable gets the complex conjugate in the integral.
      */
+
     REAL8 tmpltRowReal = 0;
     REAL8 tmpltRowImag = 0;
     REAL8 tmpltColReal = 0;
     REAL8 tmpltColImag = 0;
-    REAL8 tmpltRowRealShifted = 0;
-    REAL8 tmpltRowImagShifted = 0;
-    REAL8 tmpltColRealShifted = 0;
-    REAL8 tmpltColImagShifted = 0;
+    COMPLEX16 tmp = {0.0, 0.0};
+    /* FIXME someday this could track time offset phase */
+    /*REAL8 tphase = 0.0; */
 
     /*
      * The cumulative real and imaginary parts of the cross-correlation
@@ -312,17 +328,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 sqResp;
     REAL8 spectralDensity;
 
-   /* Parameters used to time shift templates */
-     REAL8 phaseOffsetRow;
-     REAL8 phaseOffsetCol;
-
-    /* PSD bucket frequency used for chirp time offset */
-    double fBucket = 150.0;
-    UNUSED(deltaT);
-
-    /* FIXME this should be a command line argument */
-     /*200 points of autocorrelation function stored */
-    bankVetoData->acorrMatSize = 200;
+    //UNUSED(deltaT);
 
     /* Allocate memory for workspace and the autocorrelation if necessary */
     if ( !bankVetoData->acorr )
@@ -334,19 +340,19 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     if ( !bankVetoData->revplan)
       bankVetoData->revplan = XLALCreateReverseREAL4FFTPlan((templateLength-1) * 2 , 0);
 
+    /* FIXME no time shifts are done yet, we have to linearly shift the phase during
+     * the inner product too
+     */
     /* Decide how to time shift each template if necessary */
-    if ( !bankVetoData->timeshift)
+    if (!bankVetoData->timeshift)
     {
 	bankVetoData->timeshift = XLALCreateREAL4Vector(bankVetoData->length);
 
 	for (row = 0; row < subBankSize; row++ )
 	{
-	    bankVetoData->timeshift->data[row] = (REAL4) ( chirp_time_between_f1_and_f2(bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass1,
-						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.mass2,
-						   fBucket,
-						   bankVetoData->fcInputArray[row]->fcTmplt->tmplt.fFinal,
-						   7) );
-
+	/* FIXME someday maybe this could use time offsets */
+	if (bankVetoData->time_freq_bank_veto) bankVetoData->timeshift->data[row] = (REAL8) 0.0 * deltaT;
+	else bankVetoData->timeshift->data[row] = 0.0;
 	}
     }
 
@@ -373,7 +379,7 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		/* Begin computation of the cross-correlation. */
 		for ( sample = startIndex; sample < templateLength; sample++ )
 		{
-		    //if ( (sample > sampleMaxTmpltRow) || (sample > sampleMaxTmpltCol) ) break;
+		    if ( (sample > sampleMaxTmpltRow) || (sample > sampleMaxTmpltCol) ) break;
 
 		    sqResp = ( bankVetoData->resp->data[sample].re *
 			       bankVetoData->resp->data[sample].re +
@@ -381,7 +387,9 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 			       bankVetoData->resp->data[sample].im ) * dynRange * dynRange;
 
 		    spectralDensity = bankVetoData->spec->data[sample]*sqResp;
-
+		    /*FIXME time shifting stuff */
+		    /*tphase = (REAL8) (col - row) * 2.0 * LAL_PI * bankVetoData->timeshift->data[col] * sample * deltaF;*/
+		  
 		    if ( spectralDensity != 0 )
 		    {
 			tmpltRowReal = (bankVetoData->fcInputArray[row]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
@@ -389,28 +397,14 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 
 			tmpltColReal = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].re)*ampVec->data[sample];
 			tmpltColImag = (bankVetoData->fcInputArray[col]->fcTmplt->data->data[sample].im)*ampVec->data[sample];
-
-			/*
-			 * Time shift tmpltRow forward by timeshift[row] and
-			 * tmpltCol forward by timeshift[col].
-			 */
-			phaseOffsetRow = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[row]);
-			phaseOffsetCol = 2.0*LAL_PI*((REAL8)deltaF)*((REAL8)sample)*((REAL8)bankVetoData->timeshift->data[col]);
-
-			tmpltRowRealShifted = tmpltRowReal*cos(phaseOffsetRow) - tmpltRowImag*sin(phaseOffsetRow);
-			tmpltRowImagShifted = tmpltRowImag*cos(phaseOffsetRow) + tmpltRowReal*sin(phaseOffsetRow);
-
-			tmpltColRealShifted = tmpltColReal*cos(phaseOffsetCol) - tmpltColImag*sin(phaseOffsetCol);
-			tmpltColImagShifted = tmpltColImag*cos(phaseOffsetCol) + tmpltColReal*sin(phaseOffsetCol);
-
-
-			/*
-			 *  tmpltRow* x tmpltCol/Sn = (tmpltRowReal-i*tmpltRowImag) x (tmpltColReal+i*tmpltColImag) / Sn =
-			 *     (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag) / Sn +
-			 *   i*(tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal) / Sn
-			 */
-			crossCorrReal += (REAL8) (tmpltRowRealShifted*tmpltColRealShifted + tmpltRowImagShifted*tmpltColImagShifted)/spectralDensity;
-			crossCorrImag += (REAL8) (tmpltRowRealShifted*tmpltColImagShifted - tmpltRowImagShifted*tmpltColRealShifted)/spectralDensity;
+		
+			tmp.re = (REAL8) (tmpltRowReal*tmpltColReal + tmpltRowImag*tmpltColImag)/spectralDensity;
+			tmp.im = (REAL8) (tmpltRowReal*tmpltColImag - tmpltRowImag*tmpltColReal)/spectralDensity;
+			/* FIXME Apply time shift */
+			/*tmp = rotate_complex16(tmp, tphase);*/
+	 
+			crossCorrReal += (REAL8) tmp.re;
+			crossCorrImag += (REAL8) tmp.im;
 		    }
 
 		    if ( row == col )
@@ -441,10 +435,12 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
 		}//end autocorrelation computation
 
 	    }
+
 	    /*
 	     * Fill in the cross-correlation matrix with computed values.
 	     * The matrix is hermitian so the imaginary flips sign.
 	     */
+
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].re = (REAL4) crossCorrReal;
 	    bankVetoData->ccMat->data[row*bankVetoData->length + col].im = (REAL4) crossCorrImag;
 
@@ -492,32 +488,28 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 {
 
     /* SNR (and derived quantities) for reference (input) template */
-    REAL8 rowSNR_real = 0;
-    REAL8 rowSNR_imag = 0;
-    REAL8 rowSNR_mag = 0;
-    REAL8 rowSNR_phi = 0;
+    COMPLEX8 rowSNR = {0.0,0.0};
 
     /* SNR (and derived quantities) for comparison templates */
-    REAL8 colSNR_real = 0;
-    REAL8 colSNR_imag = 0;
+    COMPLEX8 colSNR = {0.0,0.0};
+    COMPLEX8 expSNR = {0.0,0.0};
 
     /* index to loop over comparison templates */
-    UINT8 col;
+    UINT4 col;
 
     /* Time index at which to get the SNR of the comparison template.  This
      * will be related to the SNR index of the input template by the time shift
      * introduced in the templates in the cross-correlation computation. */
-    UINT8 snrIndexCol;
+    UINT4 snrIndexCol;
 
     /* The time shift between the reference and comparison template */
     REAL4 deltaTimeShift;
 
     /* temporary storage for cross-corr data */
-    COMPLEX16 crossCorr;
-    REAL8 crossCorr_mag;
+    COMPLEX8 crossCorr;
 
     /* complex cross correlation */
-    COMPLEX16 chisq;
+    COMPLEX8 chisq;
 
     /* normalization factor to make chi-sq distributed */
     REAL4 bankNorm;
@@ -525,20 +517,13 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     /* Output of function */
     REAL4 chisq_mag = 0;
 
-
     /* Handle trivial case */
     if (bankVetoData->length == 1) return 0;
 
     /* Lookup SNR for template A at time given by snrIndexRow */
-    rowSNR_real = bankVetoData->qVecArray[row]->data[snrIndexRow].re
-      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
-    rowSNR_imag = bankVetoData->qVecArray[row]->data[snrIndexRow].im
-      * sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm);
+    rowSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[row]->data[snrIndexRow],
+             sqrt(bankVetoData->fcInputArray[row]->fcTmplt->norm) );
 
-    rowSNR_mag = sqrt(rowSNR_real * rowSNR_real + rowSNR_imag * rowSNR_imag);
-    rowSNR_phi = atan2(rowSNR_imag, rowSNR_real);
-
-    chisq_mag = 0;
     *dof = 0;
 
     /*
@@ -548,53 +533,65 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
      */
     for (col = 0; col < bankVetoData->length; col++)
     {
+
+        /* don't do the diagonal case as it is trivial */
 	if (row == col) continue;
-	if (bankVetoData->ccMat->data[row*bankVetoData->length + col].re == 0 && bankVetoData->ccMat->data[row*bankVetoData->length + col].im == 0) continue;
 
-	/* Phase shift the cross correlation of template B with template B by rowSNR_phi */
-	crossCorr.re = bankVetoData->ccMat->data[row*bankVetoData->length + col].re * cos(rowSNR_phi)
-	                 - bankVetoData->ccMat->data[row*bankVetoData->length + col].im * sin(rowSNR_phi);
-	crossCorr.im = bankVetoData->ccMat->data[row*bankVetoData->length + col].im * cos(rowSNR_phi)
-	                 + bankVetoData->ccMat->data[row*bankVetoData->length + col].re * sin(rowSNR_phi);
+	crossCorr = bankVetoData->ccMat->data[row*bankVetoData->length + col];
 
-	crossCorr_mag = crossCorr.re * crossCorr.re + crossCorr.im * crossCorr.im;
-	bankNorm = 2.0 - crossCorr_mag;
+        /* having the crossCorr == 0 means that we are outside the valid range for this subbank */
+	if (crossCorr.re == 0 && crossCorr.im == 0) continue;
+
+	/* this keeps track of the normalization factor to make it \chi^2 distributed */
+	bankNorm = 2.0 - XLALCOMPLEX8Abs2(crossCorr);
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
 	/* Look at the col SNR deltaTimeShift/deltaT samples in the past.  The choice of sign
 	 * depends on the sign convention choice made in computing ccmat. */
-	deltaTimeShift = bankVetoData->timeshift->data[row] - bankVetoData->timeshift->data[col];
-	snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	/* FIXME there are not any time shifts yet, so this is a no-op for now */
+	/* i.e. SNRIndexCol = SNRIndexRow */
+	deltaTimeShift = ((REAL4) col - (REAL4) row) * bankVetoData->timeshift->data[col];
+	if (deltaTimeShift > 0) snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	else snrIndexCol = snrIndexRow - (UINT4) round(deltaTimeShift/deltaT);
+	//fprintf(stderr, "snrIndexRow %d snrIndexCol %d\n", snrIndexRow, snrIndexCol);
 
-	colSNR_real = bankVetoData->qVecArray[col]->data[snrIndexCol].re
-	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
-	colSNR_imag = bankVetoData->qVecArray[col]->data[snrIndexCol].im
-	  * sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm);
+	/* Get the "column" snr in the same way as the row */
+	colSNR = XLALCOMPLEX8MulReal( bankVetoData->qVecArray[col]->data[snrIndexCol],
+		                      sqrt(bankVetoData->fcInputArray[col]->fcTmplt->norm) );
+	
+	expSNR = rotate(XLALCOMPLEX8Abs(rowSNR)*XLALCOMPLEX8Abs(crossCorr), XLALCOMPLEX8Arg(rowSNR) - XLALCOMPLEX8Arg(crossCorr));
 
-	chisq.re = colSNR_real - crossCorr.re * (rowSNR_mag);
-	chisq.im = colSNR_imag - crossCorr.im * (rowSNR_mag);
-	chisq_mag += (chisq.re*chisq.re + chisq.im*chisq.im) / bankNorm;
-	(*dof)++;
+	/* Subtract the expected SNR from the measured one */
+	chisq = XLALCOMPLEX8Sub(colSNR, expSNR);
 
+	/* Square the result */
+	chisq_mag += XLALCOMPLEX8Abs2(chisq);
+
+	//fprintf(stderr, "%.2f %.2f expSNR %.2f colSNR %.2f\n", sqrt(rowSNR.re*rowSNR.re + rowSNR.im*rowSNR.im), chisq_mag, XLALCOMPLEX8Abs(expSNR), XLALCOMPLEX8Abs(colSNR));
+
+	(*dof)+=2;
     }
-
-    /*FIXME Normalization now not necessarily chisquare distributed */
     return chisq_mag;
 }
 
 
 InspiralTemplate *
-XLALFindChirpSortTemplates( InspiralTemplate *bankHead, UINT4 num)
+XLALFindChirpSortTemplates( InspiralTemplate *bankHead, FindChirpBankVetoData *bvdata, UINT4 num, UINT4 max_subbank_size)  
   {
-  /*return XLALFindChirpSortTemplatesByEta(bankHead, num);*/
-  /*bankHead = XLALFindChirpSortTemplatesByChirpMass(bankHead,num);*/
+  /* Either do something clever */
+  if (bvdata->time_freq_bank_veto) 
+  {
+    bankHead = XLALFindChirpSortTemplatesByFfinal(bankHead, num);
+    breakUpSubBanks(bankHead, num, max_subbank_size);
+    return XLALFindChirpSortTemplatesByLevel(bankHead,num);
+  } 
+  /* Or just randomly choose templates */
   breakUpRegions(bankHead);
   return XLALFindChirpSortTemplatesByLevel(bankHead,num);
-  //return XLALFindChirpSortTemplatesByChirpMass(bankHead,num);
   }
 
 
-
+#if 0
 InspiralTemplate *
 XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   {
@@ -621,7 +618,9 @@ XLALFindChirpSortTemplatesByChirpMass( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+#endif
 
+#if 0
 InspiralTemplate *
 XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   {
@@ -648,9 +647,10 @@ XLALFindChirpSortTemplatesByMass( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+#endif
 
 InspiralTemplate *
-XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
+XLALFindChirpSortTemplatesByFfinal( InspiralTemplate *bankHead, UINT4 num )
   {
   InspiralTemplate **bankArray = NULL;
   InspiralTemplate *bankFirst = NULL;
@@ -663,7 +663,7 @@ XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
     bankArray[i] = bankHead; /* populate pointer array */
   }
 
-  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByEta);
+  qsort(bankArray, num, sizeof(InspiralTemplate *), compareTemplateByFfinal);
 
   bankFirst = bankHead = bankArray[0];
   /* repopulate linked list */
@@ -675,6 +675,18 @@ XLALFindChirpSortTemplatesByEta( InspiralTemplate *bankHead, UINT4 num )
   LALFree(bankArray);
   return bankFirst;
 }
+
+static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size)
+  {
+  UINT4 cnt = 0;
+  while (bankHead)
+    {
+    bankHead->level = (UINT4) cnt % (num / size);
+    cnt++;
+    bankHead = bankHead->next;
+    }
+  return 0;
+  }
 
 
 static int  breakUpRegions(InspiralTemplate *bankHead)
@@ -734,7 +746,7 @@ static int compareTemplateByLevel (const void * a, const void * b)
   return 0;
 }
 
-
+#if 0
 static int compareTemplateByChirpMass (const void * a, const void * b)
 {
   REAL4 mVal1 = (*(InspiralTemplate * const *)a)->chirpMass;
@@ -745,24 +757,38 @@ static int compareTemplateByChirpMass (const void * a, const void * b)
   if ( mVal1 < mVal2 ) return -1;
   return 0;
 }
+#endif
 
-static int compareTemplateByEta (const void * a, const void * b)
+static REAL4 imr_ring(double m1, double m2){
+        double chi = 0.0;
+	double totalMass = m1+m2;
+        double eta = m1*m2/pow(totalMass,2.);
+        double piM = totalMass*LAL_PI*LAL_MTSUN_SI;
+        double fRing = (1. - 0.63*pow(1.-chi,0.3))/2. +
+                1.4690e-01*eta + -1.2281e-01*eta*chi + -2.6091e-02*eta*pow(chi,2.) +
+                -2.4900e-02*pow(eta,2.) + 1.7013e-01*pow(eta,2.)*chi +
+                2.3252e+00*pow(eta,3.);
+        fRing /= piM;
+        return (REAL4) fRing;
+        }
+
+static int compareTemplateByFfinal (const void * a, const void * b)
 {
   REAL4 m1Val1 = (*(InspiralTemplate * const *)a)->mass1;
   REAL4 m2Val1 = (*(InspiralTemplate * const *)a)->mass2;
   REAL4 m1Val2 = (*(InspiralTemplate * const *)b)->mass1;
   REAL4 m2Val2 = (*(InspiralTemplate * const *)b)->mass2;
 
-  REAL4 eta1 = m1Val1 * m2Val1 / (m1Val1 + m2Val1);
-  REAL4 eta2 = m1Val2 * m2Val2 / (m1Val2 + m2Val2);
+  REAL4 ffinal1 = imr_ring(m1Val1, m2Val1);
+  REAL4 ffinal2 = imr_ring(m1Val2, m2Val2);
 
-  if ( eta1 > eta2 ) return 1;
-  if ( eta1 == eta2 ) return 0;
-  if ( eta1 < eta2 ) return -1;
+  if ( ffinal1 > ffinal2 ) return 1;
+  if ( ffinal1 == ffinal2 ) return 0;
+  if ( ffinal1 < ffinal2 ) return -1;
   return 0;
 }
 
-
+#if 0
 static int compareTemplateByMass (const void * a, const void * b)
 {
   REAL4 mVal1 = (*(InspiralTemplate * const *)a)->mass1 + (*(InspiralTemplate * const *)a)->mass2;
@@ -773,4 +799,4 @@ static int compareTemplateByMass (const void * a, const void * b)
   if ( mVal1 < mVal2 ) return -1;
   return 0;
 }
-
+#endif

@@ -206,9 +206,7 @@ static FrChanIn chanin_exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
-
-LALWindowParams winparams;
+REAL4Window *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 
 REAL4 magexc,magasq,magdarm;
 
@@ -255,31 +253,18 @@ FILE *fpAlpha=NULL;
   TESTSTATUS( &status );
 
 
-  /* Create Window vectors */
-  LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
-  TESTSTATUS( &status );
-  LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
-  TESTSTATUS( &status );
-  LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
-  TESTSTATUS( &status );
-
-  winparams.type=Hann;
-
   /* windows for time domain channels */
   /* asq */
-  winparams.length=(INT4)(CLA.t/asq.deltaT +0.5);
-  LALWindow(&status,asqwin,&winparams);
-  TESTSTATUS( &status );
+  asqwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/asq.deltaT +0.5));
+  if( !asqwin ) return -1;
 
   /* darm */
-  winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
-  LALWindow(&status,darmwin,&winparams);
-  TESTSTATUS( &status );
+  darmwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/darm.deltaT +0.5));
+  if( !darmwin ) return -1;
 
   /* exc */
-  winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
-  LALWindow(&status,excwin,&winparams);
-  TESTSTATUS( &status );
+  excwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/exc.deltaT +0.5));
+  if( !excwin ) return -1;
 
   /* setup series for frame file output */
   snprintf( a_name, sizeof( a_name ), "%s:" A_CHANNEL, GV.ifo );
@@ -346,15 +331,15 @@ FILE *fpAlpha=NULL;
       /* Window the data */
       for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
 	{
-	  asq.data->data[k] *= 2.0*asqwin->data[k];
+	  asq.data->data[k] *= 2.0*asqwin->data->data[k];
 	}
       for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
 	{
-	  darm.data->data[k] *= 2.0*darmwin->data[k];
+	  darm.data->data[k] *= 2.0*darmwin->data->data[k];
 	}
       for(k=0;k<(INT4)(CLA.t/exc.deltaT +0.5);k++)
 	{
-	  exc.data->data[k] *= 2.0*excwin->data[k];
+	  exc.data->data[k] *= 2.0*excwin->data->data[k];
 	}
 
       /* set params to call LALComputeCalibrationFactors */
@@ -419,12 +404,9 @@ FILE *fpAlpha=NULL;
   LALDestroyVector(&status,&asq.data);
   TESTSTATUS( &status );
 
-  LALDestroyVector(&status,&asqwin);
-  TESTSTATUS( &status );
-  LALDestroyVector(&status,&darmwin);
-  TESTSTATUS( &status );
-  LALDestroyVector(&status,&excwin);
-  TESTSTATUS( &status );
+  XLALDestroyREAL4Window(asqwin);
+  XLALDestroyREAL4Window(darmwin);
+  XLALDestroyREAL4Window(excwin);
 
   fclose(fpAlpha);
 

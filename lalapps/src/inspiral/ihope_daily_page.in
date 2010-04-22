@@ -97,7 +97,7 @@ html_template = """
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Snr vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;high-rate times<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="template" onclick="switchViewIframe()">Breakdown by template<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="bankchisq" onclick="switchViewIframe()">Bank &chi;<sup>2</sup><br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="bankchisq" onclick="switchViewIframe()">&chi;<sup>2</sup><br>
   </form>
 
 
@@ -385,7 +385,7 @@ def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
 
 
 def make_title(ifo, veto_level, cluster, start_time, desc = None):
-    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 4"]
+    veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1, 2 & 3", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
                          '100MILLISEC_CLUSTERED':'100 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
@@ -505,7 +505,7 @@ def make_csv(config, ifo, category, cluster, start, end):
             out_f.close()
         else:
             # Create unfiltered 
-            os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
+            os.system('ligolw_print -i %s/%s-INSPIRAL_%s.cache -t sngl_inspiral -c end_time -c end_time_ns -c ifo -c snr -c mass1 -c mass2 -c mtotal -c eta -c event_duration -c template_duration -c eff_distance -c chisq -c chisq_dof -c bank_chisq -c bank_chisq_dof  -c cont_chisq -c cont_chisq_dof > %s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'],ifo, cluster, config['tmp_dir'], ifo, cluster))
 
             # Remove time outside the given range
             in_f  = open('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
@@ -554,7 +554,7 @@ def make_csv(config, ifo, category, cluster, start, end):
     vetoed_times = segmentlist([])
 
     for c in range(1,category+1):
-        if os.exists('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c)):
+        if os.path.exists('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c)):
             f = open('%s/VETOCATS_%s_%d.p' % (config['tmp_dir'], ifo, c))
             t = pickle.load(f)
             f.close()
@@ -604,7 +604,7 @@ def make_database(config, ifo, level, cluster, start, end):
         os.remove(dbname)
 
     # Create the database and sngl_inspiral table
-    os.system("sqlite3 %s 'CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)'" % dbname)
+    os.system("sqlite3 %s 'CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int, cont_chisq float, cont_chisq_dof int)'" % dbname)
     
     # populate it
     os.system('sqlite3 -separator , %s  ".import %s/%s-%d-INSPIRAL_%s.csv sngl_inspiral"' % (dbname, config['tmp_dir'], ifo, level, cluster))
@@ -955,6 +955,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                 #for i in imgs:
                 #    print >>out, '<img src="%s"><p>' % i.split('/')[-1]
                 print >>out, '<img src="%s_%d_%s_bank_veto.png"><p>' % (ifo, cat, cluster)
+                print >>out, '<img src="%s_%d_%s_cont_veto.png"><p>' % (ifo, cat, cluster)
 
                 print >>out, '</body>'
                 print >>out, '</html>'
@@ -1089,16 +1090,16 @@ def setup_memory_db(config, ifo, level, cluster):
     conn = sqlite3.connect(':memory:')
     cursor = conn.cursor()
 
-    cursor.execute('CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int)')
+    cursor.execute('CREATE TABLE sngl_inspiral (end_time int, end_time_ns int, ifo char(2), snr float, mass1 float, mass2 float, mtotal float, eta float, event_duration float, template_duration float, eff_distance float, chisq float, chisq_dof int, bank_chisq float, bank_chisq_dof int, cont_chisq float, cont_chisq_dof int)')
 
     f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, level, cluster))
-    totypes = [int, int, str, float, float, float, float, float, float, float, float, float, int, float, int]
+    totypes = [int, int, str, float, float, float, float, float, float, float, float, float, int, float, int, float, int]
 
     for l in f:
         vals = l.strip().split(',')
         typed_vals = tuple( map(lambda x,y: x(y), totypes, vals) )
 
-        cursor.execute('INSERT INTO sngl_inspiral VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', typed_vals)
+        cursor.execute('INSERT INTO sngl_inspiral VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', typed_vals)
 
     # make it fast
     cursor.execute('CREATE INDEX sngl_inspiral_snr ON sngl_inspiral(snr)')
@@ -1177,20 +1178,26 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
     f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
 
     snrs   = []
-    chisqs = []
+    bank_chisqs = []
+    cont_chisqs = []
 
     for l in f:
-        data = l.split(',')
-        dof  = int(data[14])
-        rho  = float(data[3])
-        chisq = float(data[13])
+        data  = l.split(',')
+        rho   = float(data[3])
+
+        bank_chisq = float(data[13])
+        bank_dof   = int(data[14])
+
+        # Now using continuous chisq
+        cont_chisq = float(data[15])
+        cont_dof   = int(data[16])
 
         snrs.append(rho)
-        chisqs.append(chisq / (2 * dof - 2))
+        bank_chisqs.append(bank_chisq / (2 * bank_dof - 2))
+        cont_chisqs.append(cont_chisq / cont_dof)
 
     pylab.figure(0)
-
-    pylab.plot(snrs,chisqs,'rx')
+    pylab.plot(snrs,bank_chisqs,'rx')
     pylab.yscale('log')
 
     if snrs:
@@ -1198,14 +1205,33 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
             pylab.xscale('log')
 
         pylab.xlim(5.0,max(snrs) * 1.1)
-        pylab.ylim(min(chisqs) * 0.9, max(chisqs) * 1.1)
+        pylab.ylim(min(bank_chisqs) * 0.9, max(bank_chisqs) * 1.1)
 
     pylab.grid()
     pylab.xlabel('snr')
-    pylab.ylabel('chisq / (2p-2)')
+    pylab.ylabel('bank_chisq / (2p-2)')
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
 
     pylab.savefig('%s/%s_%d_%s_bank_veto.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+
+    pylab.figure(1)
+    pylab.plot(snrs,cont_chisqs,'rx')
+    pylab.yscale('log')
+
+    if snrs:
+        if max(snrs) > 11:
+            pylab.xscale('log')
+
+        pylab.xlim(5.0,max(snrs) * 1.1)
+        pylab.ylim(min(cont_chisqs) * 0.9, max(cont_chisqs) * 1.1)
+
+    pylab.grid()
+    pylab.xlabel('snr')
+    pylab.ylabel('cont. chisq / dof')
+    pylab.title(make_title(ifo, veto_level, cluster, start_time))
+
+    pylab.savefig('%s/%s_%d_%s_cont_veto.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 def plot_bank_veto_old(config, ifo, veto_level, cluster, start_time, end_time):

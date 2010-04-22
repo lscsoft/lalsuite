@@ -21,6 +21,8 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c
 
+liblalmetaio_la_LDFLAGS = -version-info $(LIBVERSION)
+
 EXTRA_DIST = \
 	git_version \
 	LALMetaIOConfig.h.in \

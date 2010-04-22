@@ -364,12 +364,12 @@ static void print_missing_argument(const char *prog, const char *arg)
 
 static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
-	int index;
+	int option_index;
 	int got_all_arguments = 1;
 	int arg_is_missing;
 
-	for(index = 0; long_options[index].name; index++) {
-		switch(long_options[index].val) {
+	for(option_index = 0; long_options[option_index].name; option_index++) {
+		switch(long_options[option_index].val) {
 		case 'A':
 			arg_is_missing = !options->bandwidth;
 			break;
@@ -431,7 +431,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 		}
 		if(arg_is_missing) {
-			print_missing_argument(prog, long_options[index].name);
+			print_missing_argument(prog, long_options[option_index].name);
 			got_all_arguments = 0;
 		}
 	}
@@ -454,7 +454,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 {
 	*proc_param = XLALCreateProcessParamsTableRow(process);
 	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
-	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), "%s", type);
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
 	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value ? value : "");
 
@@ -700,11 +700,16 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'X':
+#if 0
 		options->diagnostics = malloc(sizeof(*options->diagnostics));
 		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
+#else
+		sprintf(msg, "--dump-diagnostics given but diagnostic code not included at compile time");
+		args_are_bad = 1;
+#endif
 		break;
 
 	case 'Z':
