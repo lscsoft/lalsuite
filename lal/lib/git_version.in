@@ -159,17 +159,24 @@ def generate_git_version_info():
   git_builder_email = check_call_out((git_path, 'config', 'user.email'))
   git_builder = "%s <%s>" % (git_builder_name, git_builder_email)
 
-  # determine git id
-  git_id = check_call_out((git_path, 'log', '-1', '--pretty=format:%H'))
+  # determine basic info about the commit
+  # %H -- full git hash id
+  # %ct -- commit time
+  # %an, %ae -- author name, email
+  # %cn, %ce -- committer name, email
+  git_id, git_udate, git_author_name, git_author_email, \
+    git_committer_name, git_committer_email = \
+    check_call_out((git_path, 'log', '-1',
+    '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(",")
 
-  # determine commit date, iso utc
-  git_udate = float(check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%ct')))
-  git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(git_udate))
+  git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000',
+    time.gmtime(float(git_udate)))
+  git_author = '%s <%s>' % (git_author_name, git_author_email)
+  git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
 
   # determine branch
-  branch_match = check_call_out((git_path, 'rev-parse', '--symbolic-full-name',
-    'HEAD'))
+  branch_match = check_call_out((git_path, 'rev-parse',
+    '--symbolic-full-name', 'HEAD'))
   if branch_match == "HEAD":
     git_branch = None
   else:
@@ -180,18 +187,6 @@ def generate_git_version_info():
     '--tags', git_id))
   if status != 0:
     git_tag = None
-
-  # determine author and committer
-  git_author_name = check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%an'))
-  git_author_email = check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%ae'))
-  git_author = '%s <%s>' % (git_author_name, git_author_email)
-  git_committer_name = check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%cn'))
-  git_committer_email = check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%ce'))
-  git_committer = '%s <%s>' % (git_committer_name, git_committer_email)
 
   # refresh index
   check_call_out((git_path, 'update-index', '-q', '--refresh'))
