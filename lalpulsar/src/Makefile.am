@@ -171,13 +171,12 @@ lalpulsar-user-env.csh: Makefile
 EXTRA_DIST = \
 	LALPulsarConfig.h.in \
 	LALPulsarVCSInfo.h.in \
-	git_version.in
+	generate_vcs_info.py
 
 LALPulsarVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALPulsarConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALPulsarConfig.h
 	@echo "creating LALPulsarVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALPulsar $$sourced $$buildd
+	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALPulsar $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

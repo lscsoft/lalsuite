@@ -101,13 +101,12 @@ lalburst-user-env.csh: Makefile
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
 	LALBurstVCSInfo.h.in \
-	git_version
+	generate_vcs_info.py
 
 LALBurstVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALBurstConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALBurstConfig.h
 	@echo "creating LALBurstVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALBurst $$sourced $$buildd
+	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALBurst $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

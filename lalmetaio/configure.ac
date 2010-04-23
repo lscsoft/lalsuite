@@ -13,7 +13,6 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   src/Makefile
 ])
-AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
