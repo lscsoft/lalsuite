@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
   # filenames
   basename = '%sVCSInfo.h' % project
-  infile = '%s/%s.in' % (src_dir, basename)
+  infile = '%s.in' % basename  # used after chdir to src_dir
   tmpfile= '%s/%s.tmp' % (build_dir, basename)
   srcfile = '%s/%s' % (src_dir, basename)
   dstfile = '%s/%s' % (build_dir, basename)
