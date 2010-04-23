@@ -502,7 +502,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * VIRGO 3km Interferometric Detector. */
 /*@{*/
 #define LAL_VIRGO_DETECTOR_NAME               	"VIRGO"	/**< VIRGO detector name string */
-#define LAL_VIRGO_DETECTOR_PREFIX             	"V2"	/**< VIRGO detector prefix string */
+#define LAL_VIRGO_DETECTOR_PREFIX             	"V1"	/**< VIRGO detector prefix string */
 #define LAL_VIRGO_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO vertex longitude (rad) */
 #define LAL_VIRGO_DETECTOR_LATITUDE_RAD       	0.76151183984	/**< VIRGO vertex latitude (rad) */
 #define LAL_VIRGO_DETECTOR_ELEVATION_SI       	51.884	/**< VIRGO vertex elevation (rad) */

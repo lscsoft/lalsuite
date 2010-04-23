@@ -43,12 +43,12 @@
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/lalGitID.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
+#include <lal/LIGOLwXMLRingdownRead.h>
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -131,6 +131,7 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
 int distanceCut = 0;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -138,7 +139,6 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status ;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -223,16 +223,10 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -388,9 +382,8 @@ int main( int argc, char *argv[] )
 
       case 'V':
         fprintf( stdout, "Coincident Ringdown Reader and Injection Analysis\n"
-            "Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n" );
-        fprintf(stdout, lalappsGitID);
+            "Steve Fairhurst\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
@@ -527,7 +520,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "cluster window must be > 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
@@ -567,7 +560,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }

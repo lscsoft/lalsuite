@@ -29,9 +29,6 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 endif
 
 
-configure:
-	sh ./00boot
-	
 config.status : configure
 	dh_testdir
 #	LDFLAGS="-Wl,-z,defs"
@@ -50,7 +47,7 @@ build : build-stamp
 build-stamp :  config.status
 	dh_testdir
 
-	$(MAKE)
+	$(MAKE) V=1
 	-yes "" | $(MAKE) dvi
 #	-yes "" | $(MAKE) check
 #	-yes "" | $(MAKE) distcheck
@@ -64,7 +61,6 @@ clean:
 	rm -f build-stamp 
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 

@@ -40,15 +40,14 @@
 #include <lal/Date.h>
 #include <lal/TimeDelay.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/CoincInspiralEllipsoid.h>
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
 #include <lalapps.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 #include <processtable.h>
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -469,16 +468,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -997,10 +988,8 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "The Hierarchical INspiral Coincidence Analysis\n" 
-            "Steve Fairhurst\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+            "Steve Fairhurst\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
@@ -1902,16 +1891,14 @@ int main( int argc, char *argv[] )
     
     for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) 
     {
-      /* FIXME:  this code is executed even if there are no veto segments
-       * (!?), so this function call fails.  It failed in the old code,
-       * too, but there was no error checking so the code would keep
-       * running.  Someone else will have to figure out how to untangle
-       * this, for now I turn off error checking here too and clear the
-       * error flag (this reproduces the old behaviour, but clearly
-       * something else should be done) */
-      if ( XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
-                                 &slideTimes[ifoNumber] ) < 0 )
-        /*exit(1)*/ XLALClearErrno();
+      /* If the veto segment list wasn't initialized, then don't try to slide 
+       * it.  The rest of the code, except possibly the H1H2 consistency test,
+       * does not try to use vetoSegs if it wasn't loaded / initialized. */
+      if ( vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+      {
+        XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+            &slideTimes[ifoNumber] );
+      }
     }
 
     /* don't analyze zero-lag if numSlides>0 */

@@ -1,6 +1,6 @@
 AC_INIT([lalpulsar],[1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -49,12 +49,20 @@ AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
                    [LALPulsar Configure Date])
 
+# boinc
+LALSUITE_ENABLE_BOINC
+
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+
+# boinc requires a c++ compiler
+if test "${boinc}" = "true" ; then
+  AC_PROG_CXX
+fi
 
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -103,11 +111,26 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
+# for boinc enabled build do checks for lal in c++ mode
+if test "${boinc}" = "true" ; then
+  AC_LANG_PUSH([C++])
+fi
+
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+
+# check that lal has been buil with boinc support, for boinc build
+if test "${boinc}" = "true" ; then
+  LALSUITE_CHECK_BOINC
+fi
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
+
+# back to c mode
+if test "${boinc}" = "true" ; then
+  AC_LANG_POP([C++])
+fi
 
 # add gcc specific flags
 if test "$GCC" = yes; then

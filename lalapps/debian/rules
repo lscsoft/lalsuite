@@ -21,9 +21,11 @@ METAIOPREFIX = /opt/lscsoft/libmetaio
 LALPREFIX = /opt/lscsoft/lal
 LALFRAMEPREFIX = /opt/lscsoft/lalframe
 LALMETAIOPREFIX = /opt/lscsoft/lalmetaio
-LALXMLPREFIX = /opt/lscsoft/lalxml
 LALBURSTPREFIX = /opt/lscsoft/lalburst
+LALINSPIRALPREFIX = /opt/lscsoft/lalinspiral
+LALPULSARPREFIX = /opt/lscsoft/lalpulsar
 LALSTOCHPREFIX = /opt/lscsoft/lalstochastic
+LALXMLPREFIX = /opt/lscsoft/lalxml
 
 CFLAGS = -Wall -g
 
@@ -33,16 +35,13 @@ else
 	CFLAGS += -O2
 endif
 
-configure:
-	sh ./00boot
-
 config.status: configure
 	dh_testdir
 
 #	LDFLAGS="-Wl,-z,defs" \
 # moved to install
 #	CFLAGS="$(CFLAGS)" \
-#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
+#	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALINSPIRALPREFIX)/lib/pkgconfig:$(LALPULSARPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
 #	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 #	    --prefix=$(PREFIX) \
 #	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
@@ -56,7 +55,7 @@ build-stamp:  config.status
 	dh_testdir
 
 # moved to install
-#	$(MAKE)
+#	$(MAKE) V=1
 
 	touch $@
 
@@ -65,7 +64,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 
@@ -79,7 +77,7 @@ install: build
 	for v in 2.4 2.5; do                                                         \
 	PYTHON="/usr/bin/python$$v"                                                    \
 	CFLAGS="$(CFLAGS)"                                                    \
-	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig \
+	PKG_CONFIG_PATH=$(FRAMEPREFIX)/lib/pkgconfig:$(METAIOPREFIX)/lib/pkgconfig:$(LALPREFIX)/lib/pkgconfig:$(LALFRAMEPREFIX)/lib/pkgconfig:$(LALMETAIOPREFIX)/lib/pkgconfig:$(LALBURSTPREFIX)/lib/pkgconfig:$(LALINSPIRALPREFIX)/lib/pkgconfig:$(LALPULSARPREFIX)/lib/pkgconfig:$(LALSTOCHPREFIX)/lib/pkgconfig:$(LALXMLPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX)                                                \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info   \
@@ -88,7 +86,7 @@ install: build
 	    --disable-debug                                                   \
 	    --disable-gcc-flags ;                                                    \
 	PYTHON="/usr/bin/python$$v"                                                    \
-	$(MAKE) ;                                                                    \
+	$(MAKE) V=1 ;                                                                    \
 	PYTHON="/usr/bin/python$$v"                                                    \
 	$(MAKE) DESTDIR=$(CURDIR)/debian/lalapps install ;                           \
 	PYTHON="/usr/bin/python$$v"                                                    \

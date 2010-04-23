@@ -50,10 +50,10 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -142,19 +142,8 @@ int main ( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -306,9 +295,8 @@ int main ( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "Inspiral Template Bank Splitter\n" 
-            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
-            "CVS Version: " CVS_ID_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 

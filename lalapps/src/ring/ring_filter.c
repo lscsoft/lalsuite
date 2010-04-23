@@ -72,7 +72,7 @@ SnglRingdownTable * ring_filter(
     )
 {
   SnglRingdownTable       *events = NULL; /* head of linked list of events */
-  REAL4TimeSeries          signal;
+  REAL4TimeSeries          signalvec;
   REAL4TimeSeries          result;
   COMPLEX8FrequencySeries  stilde;
   COMPLEX8FrequencySeries  rtilde;
@@ -86,15 +86,15 @@ SnglRingdownTable * ring_filter(
 
   segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
 
-  memset( &signal, 0, sizeof( signal ) );
+  memset( &signalvec, 0, sizeof( signalvec ) );
   memset( &result, 0, sizeof( result ) );
   memset( &stilde, 0, sizeof( stilde ) );
   memset( &rtilde, 0, sizeof( rtilde ) );
 
-  signal.deltaT = 1.0/params->sampleRate;
-  signal.sampleUnits = lalStrainUnit;
+  signalvec.deltaT = 1.0/params->sampleRate;
+  signalvec.sampleUnits = lalStrainUnit;
   rtilde.deltaF = 1.0 / params->segmentDuration;
-  signal.data = XLALCreateREAL4Vector( segmentLength );
+  signalvec.data = XLALCreateREAL4Vector( segmentLength );
   stilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
   rtilde.data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
   result.data = XLALCreateREAL4Vector( segmentLength );
@@ -109,10 +109,10 @@ SnglRingdownTable * ring_filter(
     verbose( "creating template %d\n", tmplt );
 
     /* make template and fft it */
-    XLALComputeRingTemplate( &signal, thisTmplt );
-    snprintf( signal.name, sizeof(signal.name), "TMPLT_%u", tmplt );
-/* write_REAL4TimeSeries( &signal ); */
-    XLALREAL4TimeFreqFFT( &stilde, &signal, fwdPlan );
+    XLALComputeRingTemplate( &signalvec, thisTmplt );
+    snprintf( signalvec.name, sizeof(signalvec.name), "TMPLT_%u", tmplt );
+/* write_REAL4TimeSeries( &signalvec ); */
+    XLALREAL4TimeFreqFFT( &stilde, &signalvec, fwdPlan );
     snprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
 /* write_COMPLEX8FrequencySeries( &stilde ); */
 
@@ -155,7 +155,7 @@ SnglRingdownTable * ring_filter(
   XLALDestroyREAL4Vector( result.data );
   XLALDestroyCOMPLEX8Vector( rtilde.data );
   XLALDestroyCOMPLEX8Vector( stilde.data );
-  XLALDestroyREAL4Vector( signal.data );
+  XLALDestroyREAL4Vector( signalvec.data );
 
   return events;
 }

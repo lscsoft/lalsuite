@@ -11,7 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-Requires: lal libframe python
+BuildRequires: python
+Requires: libframe lal
 Prefix: %{_prefix}
 
 %description
@@ -23,7 +24,7 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: lal-devel
+Requires: libframe-devel lal-devel
 %description devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
@@ -35,7 +36,7 @@ library.
 %build
 source /opt/lscsoft/lscsoft-user-env.sh
 %configure --disable-gcc-flags
-%{__make}
+%{__make} V=1
 
 %install
 %makeinstall
@@ -54,7 +55,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{_prefix}/share/lalframe/*
 
 %files devel
 %defattr(-,root,root)

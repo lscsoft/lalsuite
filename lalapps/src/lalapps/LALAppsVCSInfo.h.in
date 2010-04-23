@@ -40,25 +40,16 @@ extern "C" {
 #define LALAPPS_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALAPPS_VCS_IDENT_ID "$" "Id: @ID@ " "$"
-#define LALAPPS_VCS_IDENT_DATE "$" "Date: @DATE@ " "$"
-#define LALAPPS_VCS_IDENT_BRANCH "$" "Branch: @BRANCH@ " "$"
-#define LALAPPS_VCS_IDENT_TAG "$" "Tag: @TAG@ " "$"
-#define LALAPPS_VCS_IDENT_AUTHOR "$" "Author: @AUTHOR@ " "$"
-#define LALAPPS_VCS_IDENT_COMMITTER "$" "Committer: @COMMITTER@ " "$"
-#define LALAPPS_VCS_IDENT_STATUS "$" "Status: @STATUS@ " "$"
+#define LALAPPS_VCS_IDENT_ID "$" "LALAppsId: @ID@ " "$"
+#define LALAPPS_VCS_IDENT_DATE "$" "LALAppsDate: @DATE@ " "$"
+#define LALAPPS_VCS_IDENT_BRANCH "$" "LALAppsBranch: @BRANCH@ " "$"
+#define LALAPPS_VCS_IDENT_TAG "$" "LALAppsTag: @TAG@ " "$"
+#define LALAPPS_VCS_IDENT_AUTHOR "$" "LALAppsAuthor: @AUTHOR@ " "$"
+#define LALAPPS_VCS_IDENT_COMMITTER "$" "LALAppsCommitter: @COMMITTER@ " "$"
+#define LALAPPS_VCS_IDENT_STATUS "$" "LALAppsStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-static const struct tagLALVCSInfo lalAppsVCSInfo = { \
-  LALAPPS_VERSION, \
-  LALAPPS_VCS_ID, \
-  LALAPPS_VCS_DATE, \
-  LALAPPS_VCS_BRANCH, \
-  LALAPPS_VCS_TAG, \
-  LALAPPS_VCS_AUTHOR, \
-  LALAPPS_VCS_COMMITTER, \
-  LALAPPS_VCS_STATUS \
-};
+extern struct tagLALVCSInfo lalAppsVCSInfo;
 
 #ifdef __cplusplus
 }

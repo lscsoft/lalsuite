@@ -1,6 +1,6 @@
-AC_INIT([lalapps],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([src/config.h.in])
+AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([\
@@ -22,9 +22,9 @@ AC_CONFIG_FILES([\
   src/string/Makefile \
   src/pulsar/Makefile \
   src/pulsar/FDS_isolated/Makefile \
+  src/pulsar/FDS_isolated/OptimizedCFS/Makefile \
   src/pulsar/FDS_isolated/ResamplingFstat/Makefile \
   src/pulsar/Injections/Makefile \
-  src/pulsar/FDS_griphyn/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
@@ -36,12 +36,12 @@ AC_CONFIG_FILES([\
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
   src/zmsearch/Makefile \
-  src/detresponse/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
+  src/pulsar/TwoSpect/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
@@ -65,17 +65,22 @@ LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
+LALAPPS_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
+LALSUITE_ENABLE_BOINC
+LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
-LALAPPS_ENABLE_LALFRAME
-LALAPPS_ENABLE_LALMETAIO
-LALAPPS_ENABLE_LALXML
-LALAPPS_ENABLE_LALBURST
-LALAPPS_ENABLE_LALPULSAR
-LALAPPS_ENABLE_LALSTOCHASTIC
-LALAPPS_ENABLE_NIGHTLY
+LALAPPS_ENABLE_PSS
+
+LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALMETAIO
+LALSUITE_ENABLE_LALBURST
+LALSUITE_ENABLE_LALINSPIRAL
+LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALSTOCHASTIC
+LALSUITE_ENABLE_LALXML
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
@@ -113,6 +118,11 @@ fi
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
+# boinc requires a c++ compiler
+if test "${boinc}" = "true" ; then
+  AC_PROG_CXX
+fi
+
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
@@ -124,25 +134,30 @@ AC_PROG_LN_S
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
-  AC_CHECK_PROGS([CONDOR_VERSION],[condor_version],[false])
-  if test "x$CONDOR_VERSION" != "xfalse"; then
-    AC_MSG_CHECKING([Condor version])
-    CONDOR_VERS=`$CONDOR_VERSION | grep CondorVersion | awk '{print $2}'`
-    AC_MSG_RESULT([$CONDOR_VERS])
-  fi
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
   if test "x$CONDOR_COMPILE" = "xfalse"; then
     AC_MSG_ERROR([condor_compile not found])
   fi
+
+  # does condor_compile suffer from condorbug 19343
+  AC_MSG_CHECKING([if condor_compile suffers from bug 19343])
+  if $CONDOR_COMPILE $CC -print-prog-name=ld 1>/dev/null 2>/dev/null; then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    LD=/usr/bin/ld
+  fi
+
+  # enable condor compile
   CC="$CONDOR_COMPILE $CC"
   AM_LDFLAGS="$AM_LDFLAGS -all-static"
   AC_DISABLE_SHARED
   AC_SUBST([AM_LDFLAGS])
   AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
-  # FIXME condor_compile should correctly identify the linker
-  LD="/usr/bin/ld"
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
+AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
+
 
 # further program checks
 LT_INIT
@@ -183,6 +198,32 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 AC_CHECK_HEADERS([getopt.h])
+
+# check for boinc
+if test "${boinc}" = "true" ; then
+  if test -n "$BOINC_PREFIX}" ; then
+    # do compilation checks with c++
+    AC_LANG_PUSH([C++])
+
+    # has lal build built with boinc support
+    LALSUITE_CHECK_BOINC
+
+    # point to boinc headers and libraries
+    CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
+    LDFLAGS="$LDFLAGS -L$BOINC_PREFIX/lib"
+
+    # check for boinc libraries
+    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
+    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
+
+    # check for boinc headers
+    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
+
+    # go back to c
+    AC_LANG_POP([C++])
+  fi
+fi
+BOINC_ENABLE_VAL="`eval test x$boinc = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -262,15 +303,64 @@ if test "${cfitsio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([CFITSIO],[cfitsio])
 
+# check for pss
+if test "${pss}" = "true"; then
+  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
+  lal_pre_pss_LIBS="$LIBS"
+  LIBS="$PSS_LIBS $LIBS"
+  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([pss_set_gw],[pss],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([app_star],[pssnovas],,
+                 [pss="false"]
+                 [LIBS="$lal_pre_pss_LIBS"])
+fi
+
+# check for pss headers
+if test "${pss}" = "true"; then
+  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$PSS_CFLAGS $CPPFLAGS"
+  AC_CHECK_HEADERS([pss_sfdb.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_gw.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_astro.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([novas.h],,
+                   [pss="false"]
+                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([PSS],[pss])
+
+# use c++ mode for build build
+if test "${boinc}" = "true" ; then
+   AC_LANG_PUSH([C++])
+fi
+
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.1],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.1],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[LALSnglInspiralTableFromLIGOLw],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+
+# back to c mode
+if test "${boinc}" = "true" ; then
+   AC_LANG_POP([C++])
+fi
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
@@ -297,9 +387,16 @@ if test "$GCC" = yes; then
   fi
 fi
 
+# add -all-static to AM_LDFLAGS for --enable-static-binaries
+if test "${static_binaries}" = "true"; then
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
+fi
+
 # restore all static to ldflags
 if test "${allstatic}" = "true" ; then
-  LDFLAGS="-all-static $LDFLAGS"
+  LDFLAGS="-static -all-static $LDFLAGS"
 fi
 
 AC_OUTPUT
@@ -314,11 +411,14 @@ echo "
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
                 LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
+                LAL Inspiral library support is $LALINSPIRAL_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
+                PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps

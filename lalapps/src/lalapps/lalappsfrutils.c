@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: lalappsfrutils.c
  *
  * Author: Brown, D. A.
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -37,16 +37,16 @@
  */
 
 
-FrameH *fr_add_proc_REAL4TimeSeries ( 
-    FrameH                     *frame, 
+FrameH *fr_add_proc_REAL4TimeSeries (
+    FrameH                     *frame,
     REAL4TimeSeries            *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
   char          chname[256];
   struct        series fdata;
-  
+
   if ( suffix )
   {
     snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
@@ -54,11 +54,11 @@ FrameH *fr_add_proc_REAL4TimeSeries (
   else
   {
     snprintf( chname, sizeof(chname), "%s", chan->name );
-  } 
+  }
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &(chan->epoch), 
+    epoch_add( &fdata.tend, &(chan->epoch),
         chan->deltaT * (REAL8) chan->data->length );
     fdata.dom = Time;
     fdata.type = FR_VECT_4R;
@@ -69,16 +69,16 @@ FrameH *fr_add_proc_REAL4TimeSeries (
     return fr_add_proc_data( frame, &fdata );
 }
 
-FrameH *fr_add_proc_REAL8TimeSeries ( 
-    FrameH                     *frame, 
+FrameH *fr_add_proc_REAL8TimeSeries (
+    FrameH                     *frame,
     REAL8TimeSeries            *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
   char          chname[256];
   struct        series fdata;
-  
+
   if ( suffix )
   {
     snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
@@ -86,11 +86,11 @@ FrameH *fr_add_proc_REAL8TimeSeries (
   else
   {
     snprintf( chname, sizeof(chname), "%s", chan->name );
-  } 
+  }
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &(chan->epoch), 
+    epoch_add( &fdata.tend, &(chan->epoch),
         chan->deltaT * (REAL8) chan->data->length );
     fdata.dom = Time;
     fdata.type = FR_VECT_8R;
@@ -102,10 +102,10 @@ FrameH *fr_add_proc_REAL8TimeSeries (
 }
 
 
-FrameH *fr_add_proc_REAL4FrequencySeries ( 
-    FrameH                     *frame, 
+FrameH *fr_add_proc_REAL4FrequencySeries (
+    FrameH                     *frame,
     REAL4FrequencySeries       *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -116,7 +116,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &chan->epoch, 
+    epoch_add( &fdata.tend, &chan->epoch,
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_4R;
@@ -127,10 +127,10 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
     return fr_add_proc_data( frame, &fdata );
 }
 
-FrameH *fr_add_proc_COMPLEX8FrequencySeries ( 
-    FrameH                        *frame, 
+FrameH *fr_add_proc_COMPLEX8FrequencySeries (
+    FrameH                        *frame,
     COMPLEX8FrequencySeries       *chan,
-    const char                    *unit,
+    char                          *unit,
     const char                    *suffix
     )
 {
@@ -141,7 +141,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &chan->epoch, 
+    epoch_add( &fdata.tend, &chan->epoch,
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_8C;
@@ -155,9 +155,9 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
 FrameH *fr_add_proc_COMPLEX8TimeSeries (
     FrameH                        *frame,
     COMPLEX8TimeSeries            *chan,
-    const char                    *unit,
+    char                          *unit,
     const char                    *suffix
-    ) 
+    )
 {
   char          chname[256];
   struct        series fdata;
@@ -166,7 +166,7 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &chan->epoch, 
+    epoch_add( &fdata.tend, &chan->epoch,
 	chan->deltaT * (REAL8) chan->data->length );
     fdata.dom = Time;
     fdata.type = FR_VECT_8C;
@@ -180,10 +180,10 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
 
 
 
-FrameH *fr_add_proc_REAL8FrequencySeries ( 
-    FrameH                     *frame, 
+FrameH *fr_add_proc_REAL8FrequencySeries (
+    FrameH                     *frame,
     REAL8FrequencySeries       *chan,
-    const char                 *unit,
+    char                       *unit,
     const char                 *suffix
     )
 {
@@ -195,13 +195,13 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   struct FrVect     *vect;
   struct FrProcData *proc;
   size_t i;
-  const char *channel = fdata.name;
+  char *channel = fdata.name;
 
   snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
-    epoch_add( &fdata.tend, &chan->epoch, 
+    epoch_add( &fdata.tend, &chan->epoch,
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_8R;

@@ -37,7 +37,9 @@
 #define _USERINPUT_H
 
 #include <lal/ConfigFile.h>
+#if 0
 #include <lal/LIGOMetadataTables.h>
+#endif
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -183,7 +185,9 @@ void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALGetDebugLevel (LALStatus *, int argc, char *argv[], CHAR optchar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
+#if 0
 void LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname);
+#endif
 
 #ifdef  __cplusplus
 }

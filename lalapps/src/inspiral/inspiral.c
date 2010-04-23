@@ -66,7 +66,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -80,8 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
 
@@ -94,7 +94,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-/* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
+/* define the parameters for a 1.4,.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
@@ -239,6 +239,7 @@ LALPNOrder order;                       /* pN order of waveform         */
 CHAR *orderName = NULL;                 /* pN order of the waveform     */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;           /* flag for filtering inj. only */
+REAL4  CDataLength      = 1;            /* set length of c-data snippet (sec) */
 
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
@@ -274,6 +275,11 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
+UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
+UINT4 autochisqStride      = 1;         /* Stride for autochisq         */
+UINT4 autochisqTwo         = 0;         /* flag for two sided auto chsq */
+UINT4 timeFreqBankVeto     = 0;         /* flag for experimental bank veto option */
+
 UINT4 ccFlag = 0;
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -465,19 +471,8 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable,
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
-    }
-  else
-    {
-      LAL_CALL( populate_process_table( &status, proctable.processTable,
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
-    }
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
+      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -2116,6 +2111,13 @@ int main( int argc, char *argv[] )
       }
     }
 
+    /* set the autocorrelation chisq length and type */
+
+    bankVetoData.acorrMatSize = autochisqLength;
+    bankVetoData.two_sided_auto_chisq = autochisqTwo;
+    bankVetoData.time_freq_bank_veto = timeFreqBankVeto;
+    bankVetoData.autochisqStride = autochisqStride;
+
     /*
      *
      * split the template bank into subbanks for the bank veto
@@ -2127,7 +2129,7 @@ int main( int argc, char *argv[] )
     if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)
-         bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts, subBankSize);
+	bankHead = XLALFindChirpSortTemplates( bankHead, &bankVetoData, numTmplts, subBankSize);
 
       if ( vrbflg ) fprintf( stdout,
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
@@ -2156,9 +2158,9 @@ int main( int argc, char *argv[] )
         LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
       /* create ccMat for bank veto */
       bankVetoData.ccMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateCOMPLEX8Vector( bankVetoData.length * bankVetoData.length );
       bankVetoData.normMat =
-        XLALCreateVector( bankVetoData.length * bankVetoData.length );
+        XLALCreateVector( bankVetoData.length );
       /* point to response and spectrum */
       bankVetoData.spec = spec.data;
       bankVetoData.resp = resp.data;
@@ -2173,6 +2175,8 @@ int main( int argc, char *argv[] )
               &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
       }
     }
+    /* set the workspace vectors to null before they are allocated later */
+    XLALInitBankVetoData(&bankVetoData);
 
     /*
      *
@@ -2180,6 +2184,8 @@ int main( int argc, char *argv[] )
      *
      */
 
+
+    /* Analyze all templates from a given subbank at once. */
     for ( subBankCurrent = subBankHead, thisTemplateIndex = 0;
         subBankCurrent;
         subBankCurrent = subBankCurrent->next, thisTemplateIndex++ )
@@ -2305,6 +2311,7 @@ int main( int argc, char *argv[] )
         if (templateFFTDataVector) XLALDestroyCOMPLEX8Vector(templateFFTDataVector);
         if (plan) XLALDestroyREAL4FFTPlan( plan );
       }
+
 
       ccFlag = 1;
       /* loop over data segments */
@@ -2509,22 +2516,16 @@ int main( int argc, char *argv[] )
         } /* end of loop over templates in subbank */
 
         /* If doing bank veto compute CC Matrix */
-        /* I removed the ccFlag dependence - this is being computed
-           for each segment now!!! */
         if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
+	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
-          dynRange, fLow, spec.deltaF, chan.deltaT);
-          ccFlag = 0;
-          /*char filename[10];
-          sprintf(filename, "ccmat%d.dat",i);
-          FILE *FP = NULL;
-          FP = fopen(filename,"w");
-          for(j = 0; j < bankVetoData.ccMat->length; ++j)
-          {
-            fprintf(FP, "%e\n",bankVetoData.ccMat->data[j]);
-          }*/
+          XLALBankVetoCCMat( &bankVetoData, 
+			     fcDataParams->ampVec,
+			     subBankCurrent->subBankSize, 
+			     dynRange, fLow, spec.deltaF,chan.deltaT);
+
+	  ccFlag = 0;
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
@@ -2660,7 +2661,7 @@ int main( int argc, char *argv[] )
 
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,
-                          tempTmplt, 0.5, numPoints / 4 ), &status );
+                          tempTmplt, CDataLength/2, numPoints / 4 ), &status );
 
                     if ( coherentInputData )
                     {
@@ -2884,13 +2885,15 @@ int main( int argc, char *argv[] )
     LALFree( bankVetoData.qVecArray );
     LALFree( bankVetoData.qtildeVecArray );
     LALFree( bankVetoData.fcInputArray );
-    XLALDestroyVector( bankVetoData.ccMat );
+    XLALDestroyCOMPLEX8Vector( bankVetoData.ccMat );
     XLALDestroyVector( bankVetoData.normMat );
     /* XLALDestroyVector( bankVetoData.normMat ); */
     fcFilterParams->qVec = NULL;
     fcFilterParams->qtildeVec = NULL;
   }
 
+  /* Free other bankVeto memory */
+  XLALDestroyBankVetoData(&bankVetoData);
 
   if ( fcFilterParams->filterOutputVetoParams )
   {
@@ -2905,7 +2908,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
-
   /* free the template bank */
   if ( subBankHead )
   {
@@ -2945,7 +2947,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
-
   /* free the random parameters structure */
   if ( randSeedType != unset )
   {
@@ -3432,6 +3433,10 @@ fprintf( a, "  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEF
 fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
+fprintf( a, "  --autochisq-length N         set the DOF of the autochisq to N in (1,1000)\n");\
+fprintf( a, "  --autochisq-stride N         set the stride of the autochisq to N in (1,1000)\n");\
+fprintf( a, "  --autochisq-two-sided        do a two-sided auto chisq test instead of one-sided.\n");\
+fprintf( a, "  --bank-veto-time-freq        do a time-frequency bank veto. \n");\
 fprintf( a, "\n");\
 fprintf( a, "  --maximization-interval MSEC set length of interval (in ms) for\n");\
 fprintf( a, "                                 maximization of triggers over the template bank.\n");\
@@ -3449,6 +3454,7 @@ fprintf( a, "  --band-pass-template         Band-pass filter the time-domain ins
 fprintf( a, "  --taper-template OPT         Taper the inspiral template using option OPT\n");\
 fprintf( a, "                                 (start|end|startend) \n");\
 fprintf( a, "\n");\
+fprintf( a, "  --cdata-length               Length of c-data snippet (in seconds) \n");\
 fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
 fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
 fprintf( a, "                                 with optional MASK (bns|bcv) \n");\
@@ -3593,8 +3599,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-coeff",          required_argument, 0,                '['},
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
+    {"autochisq-length",        required_argument, 0,                 0 },
+    {"autochisq-stride",        required_argument, 0,                 0 },
+    {"autochisq-two-sided",     no_argument,       &autochisqTwo    ,'}'},
+    {"bank-veto-time-freq",     no_argument,       &timeFreqBankVeto,'}'},
     {"band-pass-template",      no_argument,       0,                '}'},
     {"taper-template",          required_argument, 0,                '{'},
+    {"cdata-length",            required_argument, 0,                '|'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3631,7 +3642,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv,
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:.:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3643,6 +3654,33 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     switch ( c )
     {
       case 0:
+
+        /* check for autochisq long options */
+        if ( !strcmp( long_options[option_index].name, "autochisq-length") )
+        {
+          autochisqLength = atoi(optarg);
+	  /* FIXME have a sensible upper bound for dof computed from arguments */
+          if (autochisqLength < 1 || autochisqLength > 1000)
+          {
+          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
+                  long_options[option_index].name, optarg);
+          exit( 1 );
+          }
+          break;
+        }
+        /* check for autochisq long options */
+        if ( !strcmp( long_options[option_index].name, "autochisq-stride") )
+        {
+          autochisqStride = atoi(optarg);
+	  /* FIXME have a sensible upper bound for dof computed from arguments */
+          if (autochisqStride < 1 || autochisqStride > 1000)
+          {
+          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
+                  long_options[option_index].name, optarg);
+          exit( 1 );
+          }
+          break;
+        }
         /* if this option set a flag, do nothing else now */
         if ( long_options[option_index].flag != 0 )
         {
@@ -4559,10 +4597,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Search Engine\n"
-            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
-            "CVS Version: " CVS_ID_STRING "\n"
-            "CVS Tag: " CVS_NAME_STRING "\n" );
-        fprintf( stdout, lalappsGitID );
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 
@@ -4908,7 +4944,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-
+      case '|':
+        CDataLength = atof( optarg );
+        if ( CDataLength < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "Length of c-data snippet must be positive: "
+              "(%f specified)\n",
+              long_options[option_index].name, CDataLength );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );

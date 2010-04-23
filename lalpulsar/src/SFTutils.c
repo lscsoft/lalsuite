@@ -1110,7 +1110,7 @@ XLALGetSiteInfo ( const CHAR *name )
 
   /* first turn the free-form 'detector-name' into a well-defined channel-prefix */
   if ( ( channel = XLALGetChannelPrefix ( name ) ) == NULL ) {
-    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
+    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
   }
 
   if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {

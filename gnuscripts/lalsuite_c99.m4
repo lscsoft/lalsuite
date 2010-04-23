@@ -1,6 +1,7 @@
-# autoconf macros to detect a c99 compiler
-# taken from autoconf-2.63
+# lalsuite_c99.m4 - c99 detection macro taken from autoconf-2.63
 #
+# serial 1
+
 # This file is part of Autoconf.			-*- Autoconf -*-
 # Programming languages support.
 # Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008 Free

@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
   /*set_debug_level("ALLDBG");*/
 
-  LALappsTSAInitialize(&status,
+  LALappsTSAInitialize(
 		       argc,
 		       argv,
 		       &params);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
    */
   if (params.multiCacheFilename)
     {
-      LALappsTSALoadCacheFile(&status,
+      LALappsTSALoadCacheFile(
 			      params.multiCacheFilename,
 			      &multiSetCache);
       /*
@@ -97,8 +97,7 @@ int main(int argc, char *argv[])
 	}
 
       if (multiSetCache)
-	LALappsTSADestroyCache(&status,
-			       &multiSetCache);
+	LALappsTSADestroyCache(&multiSetCache);
     }
   else
     {
@@ -131,7 +130,7 @@ int main(int argc, char *argv[])
  * Averager Routines
  */
 void
-LALappsTSAInitialize(LALStatus        *status,
+LALappsTSAInitialize(
 		     int               argc,
 		     char*             argv[],
 		     TSAparams        *params)
@@ -675,7 +674,7 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
       if (params->verbosity > quiet)
 	fprintf(stdout,"Loading map cache file\n");
 
-      LALappsTSALoadCacheFile(status,
+      LALappsTSALoadCacheFile(
 			      params->cacheFilename,
 			      &cache);
       /*
@@ -777,7 +776,7 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
       if (params->verbosity > quiet)
 	fprintf(stdout,"Writing Merged Map\n");
 
-      LALappsTSAWriteMapFile(status,
+      LALappsTSAWriteMapFile(
 			     mergeResultMap,
 			     NULL);
       /*
@@ -815,7 +814,7 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
 
       for (i=0;i<cache->numMapFilenames;i++)
 	{
-	  LALappsTSAWriteMapFile(status,
+	  LALappsTSAWriteMapFile(
 				 mapArray[i],
 				 NULL);
 	}
@@ -833,8 +832,7 @@ LALappsTSAProcessSingleCache(LALStatus    *status,
   /*
    * Deallocate the cache file structure
    */
-  LALappsTSADestroyCache(status,
-			 &cache);
+  LALappsTSADestroyCache(&cache);
   return;
 }
 /*
@@ -888,7 +886,7 @@ tsaTest(
       fprintf(stderr,"Writing to disk\n");
       fileNameVector=XLALCreateCHARVector(64);
       strcpy(fileNameVector->data,"TestFile.dat");
-      LALappsTSAWriteMapFile(status,testMapA,fileNameVector);
+      LALappsTSAWriteMapFile(testMapA,fileNameVector);
       fprintf(stderr,"Reading from disk\n");
       LALappsTSAReadMapFile(status,&testMapB,fileNameVector);
       /*
@@ -900,14 +898,14 @@ tsaTest(
       testMapB->imageBorders.mapStopGPS.gpsSeconds=slipPoint+128;
       testMapB->imageBorders.mapStopGPS.gpsNanoSeconds=1;
       fprintf(stderr,"Writing the READ map back to disk!\n");
-      LALappsTSAWriteMapFile(status,testMapB,NULL);
+      LALappsTSAWriteMapFile(testMapB,NULL);
       fprintf(stderr,"Merging both maps structs\n");
       LALappsTSAMergeMap(status,
 			 &testMapMerge,
 			 *testMapA,
 			 *testMapB);
       fprintf(stderr,"Writing the MERGED map back to disk!\n");
-      LALappsTSAWriteMapFile(status,testMapMerge,NULL);
+      LALappsTSAWriteMapFile(testMapMerge,NULL);
       fprintf(stderr,"Collapsing Output test map\n");
       /*
        * Should collapse every two time bins and no 
@@ -920,7 +918,7 @@ tsaTest(
 			    &testMapMerge,
 			    collapseParams);
       fprintf(stderr,"Writing COLLAPSED map back to disk!\n");
-      LALappsTSAWriteMapFile(status,testMapMerge,NULL);
+      LALappsTSAWriteMapFile(testMapMerge,NULL);
       fprintf(stderr,"Deallocating\n");
       LALappsTSADestroyMap(status,&testMapA);
       LALappsTSADestroyMap(status,&testMapB);

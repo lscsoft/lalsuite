@@ -2,6 +2,8 @@
 
 #FstatFollowUp.tcl - Uses the coherent ComputeFStatistic_v2 code to follow up on a given parameter space.
 
+puts "[info hostname]"
+
 foreach {var value} {
 	outlier_index unknown
 	config_file unknown
@@ -12,7 +14,6 @@ foreach {var value} {
 	dec_band unknown
 	f0 unknown
 	f0_band unknown
-	param_time unknown
 	fdot unknown
 	f1_band unknown
 	coherence_time unknown
@@ -30,11 +31,27 @@ foreach {var value} $argv {
 	global $var
 	set $var $value
 	}
-	
-source config_file
+
+source config_file_${iteration}
+
+if {$min_gps != "NA"} {
+	if {$min_gps > $start_time} {
+		set start_time $min_gps
+		}
+	}
+
+if {$max_gps != "NA"} {
+	if {$max_gps < $end_time} {
+		set end_time $max_gps
+		}
+	}
 
 proc clear_gps {IFO gps} {
-	global veto_segment_list segment_list
+	global veto_segment_list segment_list start_time end_time SFT_length
+	if {($gps < $start_time) || ($gps + $SFT_length > $end_time)} {
+		return 0
+		}
+
 	foreach {start stop ifo} $veto_segment_list {
 		if {($gps >= $start) & ($gps < $stop) & ($ifo == $IFO) } {
 			return 0
@@ -177,7 +194,7 @@ set highest_freq [expr $f0 + $f0_band/2.0 + $frequency_band_wings]
 
 foreach {IFO sft_location} $sft_location_files {
 	
-	set band_passed_directory "$outlier_dir/temp_sft_${iteration}_$IFO/"
+	set band_passed_directory "$scratch_dir/temp_sft_${outlier_index}_${iteration}_$IFO/"
 	file mkdir $band_passed_directory
 	
 	set SFT_FILE [open $sft_location "r"]
@@ -190,12 +207,21 @@ foreach {IFO sft_location} $sft_location_files {
 		if {($sft_gps > $GPS_start) & ($sft_gps < ($GPS_start + $coherence_time))} {
 			#puts $line
 
-			exec $script_dir/lalapps_ConvertToSFTv2 -i $line -I $IFO -o $band_passed_directory -f $lowest_freq -F $highest_freq 2>@stdout
+			exec $script_dir/lalapps_ConvertToSFTv2 -i $line -I $IFO -o $band_passed_directory -f [expr $lowest_freq - 0.5] -F [expr $highest_freq + 0.5] 2>@stdout
 			}
 		}
 	close $SFT_FILE
 
 	cd ${band_passed_directory}
+
+	if {$do_injection} {
+		set inj_directory "$scratch_dir/temp_inj_${outlier_index}_${iteration}_$IFO/"
+		file mkdir $inj_directory
+		puts "$script_dir/lalapps_Makefakedata_v4 --outSFTbname $inj_directory --IFO $IFO --ephemDir $ephem_dir --ephemYear $ephem_year --startTime $GPS_start --duration $coherence_time --fmin $lowest_freq --Band [expr $f0_band + $frequency_band_wings*2] --refTime $injection_gps_time --Alpha $ra_orig --Delta $dec_orig --aPlus $aplus --aCross $across --psi $psi_orig --phi0 $phi_orig --Freq $f0_orig --f1dot $spindown_orig --noiseSFTs './*' 2>@stdout"
+		exec $script_dir/lalapps_Makefakedata_v4 --outSFTbname $inj_directory --IFO $IFO --ephemDir $ephem_dir --ephemYear $ephem_year --startTime $GPS_start --duration $coherence_time --fmin $lowest_freq --Band [expr $f0_band + $frequency_band_wings*2] --refTime $injection_gps_time --Alpha $ra_orig --Delta $dec_orig --aPlus $aplus --aCross $across --psi $psi_orig --phi0 $phi_orig --Freq $f0_orig --f1dot $spindown_orig --noiseSFTs './*' 2>@stdout
+
+		cd ${inj_directory}
+		}
 
 	set OUTFILE [open $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft "w"]
 	fconfigure $OUTFILE -encoding binary -translation { binary binary }
@@ -207,18 +233,12 @@ foreach {IFO sft_location} $sft_location_files {
 		}
 	close $OUTFILE
 
-	#exec /bin/bash -c "'cat *.sft > $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft'"
-	#foreach {sft} [glob  -directory "$band_passed_directory" "*.sft"] {
-
-		#exec find $band_passed_directory -name \*.sft | xargs cat >> $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft
-	#	exec cat $sft >> $outlier_dir/sft_${iteration}/${IFO}_${GPS_start}-${coherence_time}.sft
-	#	}
-
-	puts finished
-
 	cd $outlier_dir
 
-	#exec rm -rf $band_passed_directory
+	if {$do_injection} {
+		exec rm -rf $inj_directory
+		}
+	exec rm -rf $band_passed_directory
 
 	}
 
@@ -236,36 +256,65 @@ set dfreq_resolution [expr 2 * ( sqrt( 4*5*9*$mismatch/(pow(acos( -1.0),2)*pow($
 #Determine spacing in right ascension (ra), declination (dec), 
 #using the template grid of the actual code
 
+set orig_ra_band $ra_band
+if { cos($dec)<0.005 } { 
+	set ra_band 6.283
+	} {
+	set ra_band [expr $ra_band / cos($dec)]
+	}
 
+if { $ra_band>6.283 } { set ra_band 6.283 }
 
-
-set freq_step_size  $f0_band/$max_number_of_jobs
+set freq_step_size  [expr $f0_band*1.0/$max_number_of_jobs ]
 
 
 set dag_name "$outlier_dir/run_${iteration}.dag"
 set DAG_FILE [open $dag_name "w"]
 
 set outlier_condorA_sub "$outlier_dir/run_${iteration}_A.sub"
-set outlier_condorB_sub "$outlier_dir/run_${iteration}_B.sub"
 
+#FIXME: Should approriately apportion the parameter space when max_number_of_jobs > 1
+#At the moment does not do this
 for {set job 0} {$job < $max_number_of_jobs} {incr job} {
-
-	puts $DAG_FILE "JOB A$job $outlier_condorA_sub"
-	puts $DAG_FILE "VARS A$job JobID=\"$job\" argList=\" --Alpha [expr $ra - $ra_band/2.0 ] --Delta [expr $dec - $dec_band/2.0]  --AlphaBand $ra_band --DeltaBand $dec_band --Freq [expr $f0 - $f0_band/2.0 + $freq_step_size*$job] --FreqBand $freq_step_size --dFreq $freq_resolution --f1dot [expr $f1 - $f1_band/2.0] --f1dotBand $f1_band --df1dot $dfreq_resolution --DataFiles $sft_dir/* --ephemDir $ephem_dir --ephemYear $ephem_year --NumCandidatesToKeep $num_candidates_to_keep --refTime $param_time --gridType $grid_type --metricType $metric_type --metricMismatch $mismatch --TwoFthreshold $min_Fstat_to_keep --outputFstat $results_dir/result_$job.txt --outputLoudest $results_dir/loudest_$job.txt --outputFstatHist $results_dir/hist_$job.txt \""
-	puts $DAG_FILE ""
-
+	
+	if {abs($dec + $dec_band/2.0) < 1.3} {
+		puts $DAG_FILE "JOB A${outlier_index}_${job} $outlier_condorA_sub"
+		puts $DAG_FILE [join [list VARS A${outlier_index}_${job} JobID=\"${outlier_index}_${job}\" argList=\" \
+			--Alpha [expr $ra - $ra_band/2.0 ] \
+			--Delta [expr $dec - $dec_band/2.0] \
+			--AlphaBand $ra_band \
+			--DeltaBand $dec_band \
+			--Freq [expr $f0 - $f0_band/2.0 + $freq_step_size*$job] \
+			--FreqBand $freq_step_size \
+			--dFreq $freq_resolution \
+			--f1dot [expr $f1 - $f1_band/2.0] \
+			--f1dotBand $f1_band \
+			--df1dot $dfreq_resolution \
+			--DataFiles $sft_dir/$sft_prefix \
+			--ephemDir $ephem_dir \
+			--ephemYear $ephem_year \
+			--NumCandidatesToKeep $num_candidates_to_keep \
+			--refTime $param_time \
+			--gridType $grid_type \
+			--metricType $metric_type \
+			--metricMismatch $mismatch \
+			--TwoFthreshold $min_Fstat_to_keep \
+			--outputFstat $results_dir/result_${job}.txt \
+			--outputLoudest $results_dir/loudest_${job}.txt \
+			--outputFstatHist $results_dir/hist_${job}.txt \
+			\"]]
+		puts $DAG_FILE ""
+		} else {
+		set dec_factor [expr ceil($ra_band/$orig_ra_band)]
+		set ra_mini_band [expr $ra_band*1.0/$dec_factor]
+		set ra_start [expr $ra - $ra_band/2.0 ]
+		for {set dec_job 0} {$dec_job < $dec_factor} {incr dec_job} {
+			puts $DAG_FILE "JOB A${outlier_index}_${job}_${dec_job} $outlier_condorA_sub"
+			puts $DAG_FILE "VARS A${outlier_index}_${job}_${dec_job} JobID=\"${outlier_index}_${job}_${dec_job}\" argList=\" --Alpha [expr $ra_start + $ra_mini_band * $dec_job] --Delta [expr $dec - $dec_band/2.0]  --AlphaBand $ra_mini_band --DeltaBand $dec_band --Freq [expr $f0 - $f0_band/2.0 + $freq_step_size*$job] --FreqBand $freq_step_size --dFreq $freq_resolution --f1dot [expr $f1 - $f1_band/2.0] --f1dotBand $f1_band --df1dot $dfreq_resolution --DataFiles $sft_dir/$sft_prefix --ephemDir $ephem_dir --ephemYear $ephem_year --NumCandidatesToKeep $num_candidates_to_keep --refTime $param_time --gridType $grid_type --metricType $metric_type --metricMismatch $mismatch --TwoFthreshold $min_Fstat_to_keep --outputFstat $results_dir/result_${job}_${dec_job}.txt --outputLoudest $results_dir/loudest_${job}_${dec_job}.txt --outputFstatHist $results_dir/hist_${job}_${dec_job}.txt \""
+			puts $DAG_FILE ""
+			}
+		}
 	}
-
-puts $DAG_FILE "JOB B0 $outlier_condorB_sub"
-	puts $DAG_FILE "VARS B0 JobID=\"0\" argList=\"outlier_index $outlier_index config_file $config_file work_dir $work_dir \""
-	puts $DAG_FILE ""
-
-
-puts -nonewline $DAG_FILE  "PARENT"
-for {set job 0} {$job < $max_number_of_jobs} {incr job} {
-	puts -nonewline $DAG_FILE  " A$job"
-	}
-puts $DAG_FILE " CHILD B0"
 
 close $DAG_FILE
 
@@ -286,17 +335,4 @@ set FILE [open $outlier_condorA_sub "w"]
 puts $FILE [subst $outlier_condorA_sub_text]
 close $FILE
 
-set outlier_condorB_sub_text {
-universe = vanilla 
-executable = $script_dir/FstatFollowUpExamine.tcl
-output = $std_out_err_dir/node_${iteration}_0.out.\$(JobID)
-error = $std_out_err_dir/node_${iteration}.err.\$(JobID)
-log = ${log_file_dir}/${search_name}_${outlier_index}_${iteration}.log
-notify_user=jcbetzwieser@gmail.com
-arguments = \$(arglist)
-queue
-}
 
-set FILE [open $outlier_condorB_sub "w"]
-puts $FILE [subst $outlier_condorB_sub_text]
-close $FILE

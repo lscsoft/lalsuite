@@ -17,6 +17,7 @@ DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
 PREFIX = /opt/lscsoft/lalxml
 LALPREFIX = /opt/lscsoft/lal
+LALPULSARPREFIX = /opt/lscsoft/lalpulsar
 
 CFLAGS = -Wall -g
 
@@ -26,15 +27,12 @@ else
 	CFLAGS += -O2
 endif
 
-configure:
-	sh ./00boot
-
 config.status: configure
 	dh_testdir
 
 #	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
-	PKG_CONFIG_PATH=$(LALPREFIX)/lib/pkgconfig \
+				 PKG_CONFIG_PATH=$(LALPREFIX)/lib/pkgconfig:$(LALPULSARPREFIX)/lib/pkgconfig \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
@@ -45,7 +43,7 @@ build: build-stamp
 build-stamp:  config.status
 	dh_testdir
 
-	$(MAKE)
+	$(MAKE) V=1
 
 	touch $@
 
@@ -54,7 +52,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp
 
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean
 

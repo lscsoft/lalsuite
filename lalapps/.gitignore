@@ -24,11 +24,8 @@ doc/lalapps.pdf
 doc/lalapps.toc
 lalapps-*.tar.gz
 lalapps.spec
-lalappsGitID.h
 libtool
-misc/__lalappsGitID.h
 misc/lalapps-user-env.*sh
-misc/lalappsGitID.h
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrain
@@ -73,6 +70,7 @@ src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
 src/inspiral/lalapps_cbc_pipedown
+src/inspiral/lalapps_check_flag
 src/inspiral/lalapps_check_hipe_times
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
@@ -82,10 +80,12 @@ src/inspiral/lalapps_coinj
 src/inspiral/lalapps_coire
 src/inspiral/lalapps_compare_ini
 src/inspiral/lalapps_corse
+src/inspiral/lalapps_flag_triggers
 src/inspiral/lalapps_followup0_page
 src/inspiral/lalapps_followup0_pipe
 src/inspiral/lalapps_fr_ninja
 src/inspiral/lalapps_generate_upper_limits
+src/inspiral/lalapps_glitch_probe
 src/inspiral/lalapps_gwf2xml
 src/inspiral/lalapps_ihope
 src/inspiral/lalapps_ihope_daily_page
@@ -105,6 +105,7 @@ src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
+src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
 src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
@@ -182,6 +183,7 @@ src/pulsar/SideBand/lalapps_SideBandMCMC
 src/pulsar/TDS_isolated/lalapps_heterodyne_pulsar
 src/pulsar/TDS_isolated/lalapps_pulsar_parameter_estimation
 src/pulsar/TimingTests/lalapps_TEMPOcomparison
+src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
@@ -207,6 +209,7 @@ src/pulsar/lalapps_ComputeWeightedMultiAMCoeffs
 src/pulsar/lalapps_FreqAverager
 src/pulsar/lalapps_FreqAverager_v2
 src/pulsar/lalapps_GetSFTVelocities
+src/pulsar/lalapps_PrintDetectorState
 src/pulsar/lalapps_create_solar_system_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts

@@ -40,8 +40,6 @@
 #include <sys/time.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <lalappsGitID.h>
-
 
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
@@ -67,9 +65,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLArray.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
@@ -81,8 +80,8 @@
 #include <lal/Units.h>
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
-#include <lal/lalGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 NRCSID(POWERC, "$Id$");
 RCSID("$Id$");
@@ -365,12 +364,12 @@ static void print_missing_argument(const char *prog, const char *arg)
 
 static int all_required_arguments_present(char *prog, struct option *long_options, const struct options *options)
 {
-	int index;
+	int option_index;
 	int got_all_arguments = 1;
 	int arg_is_missing;
 
-	for(index = 0; long_options[index].name; index++) {
-		switch(long_options[index].val) {
+	for(option_index = 0; long_options[option_index].name; option_index++) {
+		switch(long_options[option_index].val) {
 		case 'A':
 			arg_is_missing = !options->bandwidth;
 			break;
@@ -432,7 +431,7 @@ static int all_required_arguments_present(char *prog, struct option *long_option
 			break;
 		}
 		if(arg_is_missing) {
-			print_missing_argument(prog, long_options[index].name);
+			print_missing_argument(prog, long_options[option_index].name);
 			got_all_arguments = 0;
 		}
 	}
@@ -455,7 +454,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 {
 	*proc_param = XLALCreateProcessParamsTableRow(process);
 	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
-	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), "%s", type);
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
 	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value ? value : "");
 
@@ -701,11 +700,16 @@ static struct options *parse_command_line(int argc, char *argv[], const ProcessT
 		break;
 
 	case 'X':
+#if 0
 		options->diagnostics = malloc(sizeof(*options->diagnostics));
 		options->diagnostics->LIGOLwXMLStream = XLALOpenLIGOLwXMLFile(optarg);
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8FrequencySeries = XLALWriteLIGOLwXMLArrayREAL8FrequencySeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries = XLALWriteLIGOLwXMLArrayREAL8TimeSeries;
 		options->diagnostics->XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries = XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries;
+#else
+		sprintf(msg, "--dump-diagnostics given but diagnostic code not included at compile time");
+		args_are_bad = 1;
+#endif
 		break;
 
 	case 'Z':
@@ -1549,16 +1553,9 @@ int main(int argc, char *argv[])
 	 */
 
 	_process_table = XLALCreateProcessTableRow();
-	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-	{
-		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 9))
-			exit(1);
-	}
-	else
-	{
-		if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 9))
-			exit(1);
-	}
+	if(XLALPopulateProcessTable(_process_table, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 9))
+		exit(1);
+
 	XLALGPSTimeNow(&_process_table->start_time);
 
 	/*

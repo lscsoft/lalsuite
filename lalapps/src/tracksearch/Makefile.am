@@ -84,3 +84,6 @@ CLEANFILES = lalapps_tracksearch_handler \
 
 MOSTLYCLEANFILES = *.candidates *.dat *.pgm *.aux *.raw *.diag \
 	*.pyc tsaMap* Candidate* Pre-*
+
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

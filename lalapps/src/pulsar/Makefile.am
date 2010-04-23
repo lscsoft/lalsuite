@@ -1,11 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
-SUBDIRS =  MakeSFTs Injections FDS_isolated FDS_griphyn hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan
+SUBDIRS =  MakeSFTs Injections FDS_isolated hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan TwoSpect
 
 if LALFRAME
 # this only requires LALFrame because of usage of LALFrameL.h
@@ -16,12 +15,11 @@ endif
 
 bin_PROGRAMS = $(LALFRAMEPROGS) lalapps_Calibrate60sSFTs lalapps_Calibrate1800SFTs lalapps_FreqAverager lalapps_psd \
 	lalapps_ComputePSD  lalapps_FreqAverager_v2 lalapps_GetSFTVelocities lalapps_create_solar_system_ephemeris \
-        lalapps_ComputeWeightedMultiAMCoeffs lalapps_make_job_input_data
+        lalapps_ComputeWeightedMultiAMCoeffs lalapps_make_job_input_data lalapps_PrintDetectorState
 
 if LALFRAME
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
-
 
 lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
 lalapps_Calibrate1800SFTs_SOURCES = Calibrate1800SFTs.c Calibrate1800SFTs.h
@@ -33,7 +31,7 @@ lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_create_solar_system_ephemeris_SOURCES = create_solar_system_ephemeris.c
 lalapps_ComputeWeightedMultiAMCoeffs_SOURCES = ComputeWeightedMultiAMCoeffs.c
 lalapps_make_job_input_data_SOURCES = make_job_input_data.c
-
+lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 
 EXTRA_DIST = \
 make_locked_data_list \
@@ -65,3 +63,7 @@ S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt
+
+## make sure lalapps.la is rebuilt when appropriate
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common

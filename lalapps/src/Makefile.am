@@ -1,5 +1,5 @@
 if LALPULSAR
-LALPULSARDIRS = pulsar detresponse
+LALPULSARDIRS = pulsar
 endif
 
 SUBDIRS = \

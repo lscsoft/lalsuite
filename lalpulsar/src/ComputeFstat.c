@@ -127,7 +127,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const ComputeFParams *params		/**< addition computational params */
 			    )
 {
-
+  const char *fn = "ComputeFStatFreqBand()";
   UINT4 numDetectors, numBins, k;
   REAL8 deltaF, fStart;
   Fcomponents Fstat;
@@ -148,6 +148,12 @@ void ComputeFStatFreqBand ( LALStatus *status,
   ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
+  if ( params->returnAtoms )
+    {
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+    }
 
   /** something to improve/cleanup -- the start frequency is available both
       from the fstatvector and from the input doppler point -- they could be inconsistent
@@ -238,7 +244,22 @@ ComputeFStat ( LALStatus *status,
     ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
   }
 
-  /* check if that skyposition SSB+AMcoef were already buffered */
+  /* ----- prepare return of 'FstatAtoms' if requested */
+  if ( params->returnAtoms )
+    {
+      if ( (retF.multiFstatAtoms = LALMalloc ( sizeof(*retF.multiFstatAtoms) )) == NULL ){
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+      retF.multiFstatAtoms->length = numDetectors;
+      if ( (retF.multiFstatAtoms->data = LALMalloc ( numDetectors * sizeof(*retF.multiFstatAtoms->data) )) == NULL ) {
+	LALFree ( retF.multiFstatAtoms );
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+
+    } /* if returnAtoms */
+
+
+  /* ----- check if that skyposition SSB+AMcoef were already buffered */
   if ( cfBuffer
        && ( cfBuffer->multiDetStates == multiDetStates )
        && ( cfBuffer->Alpha == doppler->Alpha )
@@ -400,6 +421,13 @@ ComputeFStat ( LALStatus *status,
 	      LALPrintError ("\nXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
+	  if ( params->returnAtoms )
+	    {
+	      retF.multiFstatAtoms->data[X] = FcX.multiFstatAtoms->data[0];	/* copy pointer to IFO-specific Fstat-atoms 'contents' */
+	      /* free 'container', but not *contents*, which have been linked above */
+	      LALFree ( FcX.multiFstatAtoms->data );
+	      LALFree ( FcX.multiFstatAtoms );
+	    }
 	}
 
 #ifndef LAL_NDEBUG
@@ -517,7 +545,26 @@ XLALComputeFaFb ( Fcomponents *FaFb,
     freqIndex1 = freqIndex0 + sfts->data[0].data->length;
   }
 
-  /* find highest non-zero spindown-entry */
+  /* ----- prepare return of 'FstatAtoms' if requested */
+  if ( params->returnAtoms )
+    {
+      if ( (FaFb->multiFstatAtoms = LALMalloc ( sizeof(*FaFb->multiFstatAtoms) )) == NULL ){
+	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
+      }
+      FaFb->multiFstatAtoms->length = 1;	/* in this function: single-detector only */
+      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms) )) == NULL ){
+	LALFree (FaFb->multiFstatAtoms);
+	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
+      }
+      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtoms ( numSFTs )) == NULL ) {
+	LALFree ( FaFb->multiFstatAtoms->data );
+	LALFree ( FaFb->multiFstatAtoms );
+	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
+      }
+    } /* if returnAtoms */
+
+
+  /* ----- find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
     if ( fkdot[spdnOrder] )
       break;
@@ -551,6 +598,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
       REAL8 lambda_alpha, kappa_max, kappa_star;
+      COMPLEX8 Fa_alpha, Fb_alpha;
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
@@ -676,12 +724,32 @@ XLALComputeFaFb ( Fcomponents *FaFb,
       a_alpha = (*a_al);
       b_alpha = (*b_al);
 
-      Fa.re += a_alpha * realQXP;
-      Fa.im += a_alpha * imagQXP;
+      Fa_alpha.re = a_alpha * realQXP;
+      Fa_alpha.im = a_alpha * imagQXP;
+      Fa.re += Fa_alpha.re;
+      Fa.im += Fa_alpha.im;
 
-      Fb.re += b_alpha * realQXP;
-      Fb.im += b_alpha * imagQXP;
+      Fb_alpha.re = b_alpha * realQXP;
+      Fb_alpha.im = b_alpha * imagQXP;
+      Fb.re += Fb_alpha.re;
+      Fb.im += Fb_alpha.im;
 
+      /* store per-SFT F-stat 'atoms' for transient-CW search */
+      if ( params->returnAtoms )
+	{
+	  COMPLEX8 tmp;
+	  FaFb->multiFstatAtoms->data[0]->timestamps[alpha] = SFT_al->epoch;
+	  FaFb->multiFstatAtoms->data[0]->a_alpha[alpha]    = a_alpha;
+	  FaFb->multiFstatAtoms->data[0]->b_alpha[alpha]    = b_alpha;
+	  tmp = Fa_alpha;
+	  tmp.re *= norm;
+	  tmp.im *= norm;
+	  FaFb->multiFstatAtoms->data[0]->Fa_alpha[alpha]   = tmp;
+	  tmp = Fb_alpha;
+	  tmp.re *= norm;
+	  tmp.im *= norm;
+	  FaFb->multiFstatAtoms->data[0]->Fb_alpha[alpha]   = tmp;
+	}
 
       /* advance pointers over alpha */
       a_al ++;
@@ -716,6 +784,8 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		  const CmplxAMCoeffs *amcoe,
 		  const ComputeFParams *params)       /**< addition computational params */
 {
+  const char *fn = "XLALComputeFaFbCmplx()";
+
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -756,12 +826,17 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
     }
-#endif
-
   if ( params->upsampling > 1 ) {
     fprintf (stderr, "\n===== WARNING: XLALComputeFaFbCmplx() should not be used with upsampled-SFTs!\n");
     XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
   }
+
+  if ( params->returnAtoms )
+    {
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL);
+    }
+#endif
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -971,6 +1046,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params)       /**< addition computational params */
 {
+  const char *fn = "XLALComputeFaFbXavie()";
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -1009,6 +1085,11 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
       LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    }
+  if ( params->returnAtoms )
+    {
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL);
     }
 #endif
 
@@ -2548,3 +2629,75 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
+/** Function to allocate a 'FstatAtoms' struct of num timestamps
+ */
+FstatAtoms *
+XLALCreateFstatAtoms ( UINT4 num )
+{
+  const CHAR *fn = __func__;
+  FstatAtoms *ret;
+
+  if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
+    goto failed;
+
+  ret->length = num;
+
+  if ( num == 0 )	/* allow num=0: return just 'head' with NULL arrays */
+    return ret;
+
+  if ( (ret->timestamps = LALMalloc ( num * sizeof( *ret->timestamps) ) ) == NULL )
+    goto failed;
+  if ( (ret->a_alpha = LALMalloc ( num * sizeof( *ret->a_alpha) )) == NULL )
+    goto failed;
+  if ( (ret->b_alpha = LALMalloc ( num * sizeof( *ret->b_alpha) )) == NULL )
+    goto failed;
+  if ( (ret->Fa_alpha = LALMalloc ( num * sizeof( *ret->Fa_alpha) )) == NULL )
+    goto failed;
+  if ( (ret->Fb_alpha = LALMalloc ( num * sizeof( *ret->Fb_alpha) )) == NULL )
+    goto failed;
+
+  return ret;
+
+ failed:
+  XLALDestroyFstatAtoms ( ret );
+  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+
+} /* XLALCreateFstatAtoms() */
+
+/** Function to destroy an FstatAtoms struct
+ */
+void
+XLALDestroyFstatAtoms ( FstatAtoms *atoms )
+{
+  if ( !atoms )
+    return;
+  if ( atoms->Fb_alpha )   LALFree ( atoms->Fb_alpha );
+  if ( atoms->Fa_alpha )   LALFree ( atoms->Fa_alpha );
+  if ( atoms->a_alpha )    LALFree ( atoms->a_alpha );
+  if ( atoms->b_alpha )    LALFree ( atoms->b_alpha );
+  if ( atoms->timestamps ) LALFree ( atoms->timestamps );
+  LALFree ( atoms );
+
+  return;
+
+} /* XLALDestroyFstatAtoms() */
+
+
+/** Function to destroy a multi-FstatAtoms struct
+ */
+void
+XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiFstatAtoms )
+{
+  UINT4 X;
+  if ( !multiFstatAtoms)
+    return;
+
+  for ( X=0; X < multiFstatAtoms->length; X++ )
+    XLALDestroyFstatAtoms ( multiFstatAtoms->data[X] );
+
+  LALFree ( multiFstatAtoms->data );
+  LALFree ( multiFstatAtoms );
+
+  return;
+
+} /* XLALDestroyMultiFstatAtoms() */

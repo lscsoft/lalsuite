@@ -50,16 +50,15 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataBurstUtils.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-#include <lal/lalGitID.h>
-
 
 #include <lalapps.h>
 #include <processtable.h>
-#include <lalappsGitID.h>
 
+#include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
 
@@ -105,6 +104,7 @@ struct options {
 	double minf;
 	double maxhrss;
 	double minhrss;
+	char *output;
 	double q;
 	unsigned long seed;
 	double time_step;
@@ -133,6 +133,7 @@ static struct options options_defaults(void)
 	defaults.minhrss = XLAL_REAL8_FAIL_NAN;
 	defaults.minA = XLAL_REAL8_FAIL_NAN;
 	defaults.maxA = XLAL_REAL8_FAIL_NAN;
+	defaults.output = NULL;
 	defaults.q = XLAL_REAL8_FAIL_NAN;
 	defaults.seed = 0;
 	defaults.time_step = 210.0 / LAL_PI;
@@ -195,6 +196,9 @@ static void print_usage(void)
 "	real hrss multiply by sqrt(2) pi f/Q.) \n" \
 "\n" \
 	); fprintf(stderr, 
+"--output filename\n" \
+"	Select output name (default is too hard to explain).\n" \
+"\n" \
 "--population name\n" \
 "	Select the injection population to synthesize.  Allowed values are\n" \
 "	\"targeted\", \"string_cusp\", and \"all_sky_sinegaussian\",\n" \
@@ -224,10 +228,10 @@ static void print_usage(void)
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const ProcessTable *process, const char *type, const char *param, const char *value)
 {
 	*proc_param = XLALCreateProcessParamsTableRow(process);
-	snprintf((*proc_param)->program, sizeof((*proc_param)->program), PROGRAM_NAME);
-	snprintf((*proc_param)->type, sizeof((*proc_param)->type), type);
+	snprintf((*proc_param)->program, sizeof((*proc_param)->program), "%s", PROGRAM_NAME);
+	snprintf((*proc_param)->type, sizeof((*proc_param)->type), "%s", type);
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
-	snprintf((*proc_param)->value, sizeof((*proc_param)->value), value);
+	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value);
 
 	return(&(*proc_param)->next);
 }
@@ -258,6 +262,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		{"min-frequency", required_argument, NULL, 'K'},
 		{"max-hrss", required_argument, NULL, 'L'},
 		{"min-hrss", required_argument, NULL, 'M'},
+		{"output", required_argument, NULL, 'V'},
 		{"population", required_argument, NULL, 'N'},
 		{"q", required_argument, NULL, 'O'},
 		{"ra-dec", required_argument, NULL, 'U'},
@@ -417,6 +422,10 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
+	case 'V':
+		options.output = optarg;
+		break;
+
 	case 0:
 		/* option sets a flag */
 		break;
@@ -479,6 +488,15 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		exit(1);
 	}
 
+	if(!options.output) {
+		int max_length = 100;	/* ARGH:  ugly */
+		options.output = calloc(max_length + 1, sizeof(*options.output));
+		if(options.user_tag)
+			snprintf(options.output, max_length, "HL-INJECTIONS_%s-%d-%d.xml", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+		else
+			snprintf(options.output, max_length, "HL-INJECTIONS-%d-%d.xml", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
+	}
+
 	return options;
 }
 
@@ -492,6 +510,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
  */
 
 
+#if 0
 /*
  * Repeating arithmetic sequence.
  */
@@ -512,6 +531,7 @@ static double sequence_arithmetic_next(double low, double high, double delta)
 
 	return x;
 }
+#endif
 
 
 /*
@@ -536,6 +556,7 @@ static double sequence_geometric_next(double low, double high, double ratio)
 }
 
 
+#if 0
 /*
  * Random amplitude presets.
  */
@@ -555,6 +576,7 @@ static double sequence_preset_next(gsl_rng *rng)
 
 	return presets[gsl_rng_uniform_int(rng, sizeof(presets)/sizeof(*presets))];
 }
+#endif
 
 
 /* 
@@ -758,7 +780,6 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 static SimBurst *random_all_sky_btlwnb(double minf, double maxf, double minband, double maxband, double mindur, double maxdur, double minEoverr2, double maxEoverr2, gsl_rng *rng)
 {
 	double ra, dec, psi;
-	SimBurst *sim_burst;
 
 	random_location_and_polarization(&ra, &dec, &psi, rng);
 
@@ -837,17 +858,11 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
  */
 
 
-static void write_xml(const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_head, const SimBurst *sim_burst, struct options options)
+static void write_xml(const char *filename, const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_head, const SimBurst *sim_burst)
 {
-	char fname[256];
 	LIGOLwXMLStream *xml;
 
-	if(options.user_tag)
-		snprintf(fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", options.user_tag, (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-	else
-		snprintf(fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", (int) (options.gps_start_time / LAL_INT8_C(1000000000)), (int) ((options.gps_end_time - options.gps_start_time) / LAL_INT8_C(1000000000)));
-
-	xml = XLALOpenLIGOLwXMLFile(fname);
+	xml = XLALOpenLIGOLwXMLFile(filename);
 
 	/* process table */
 	if(XLALWriteLIGOLwXMLProcessTable(xml, process_table_head)) {
@@ -913,16 +928,9 @@ int main(int argc, char *argv[])
 
 
 	process_table_head = XLALCreateProcessTableRow();
-	if (strcmp(CVS_REVISION, "$Revi" "sion$"))
-	{
-		if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0))
-			exit(1);
-	}
-	else
-	{
-		if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0))
-			exit(1);
-	}
+	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+		exit(1);
+
 	XLALGPSTimeNow(&process_table_head->start_time);
 	snprintf(process_table_head->ifos, sizeof(process_table_head->ifos), "H1,H2,L1");
 
@@ -948,7 +956,7 @@ int main(int argc, char *argv[])
 	search_summary_head->nnodes = 1;
 	search_summary_head->out_start_time = *XLALINT8NSToGPS(&search_summary_head->in_start_time, options.gps_start_time);
 	search_summary_head->out_end_time = *XLALINT8NSToGPS(&search_summary_head->in_end_time, options.gps_end_time);
-	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), process_table_head->ifos);
+	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), "%s", process_table_head->ifos);
 
 
 	/*
@@ -1035,7 +1043,7 @@ int main(int argc, char *argv[])
 
 	XLALGPSTimeNow(&process_table_head->end_time);
 	search_summary_head->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
-	write_xml(process_table_head, process_params_table_head, search_summary_head, sim_burst_table_head, options);
+	write_xml(options.output, process_table_head, process_params_table_head, search_summary_head, sim_burst_table_head);
 
 	/* done */
 

@@ -1,14 +1,5 @@
 #!/usr/bin/env @PYTHONPROG@
 
-usage = \
-"""
-Program to construct post-processing dag.
-"""
-
-__author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
-
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, re
@@ -22,8 +13,18 @@ sys.path.append('@PYTHONLIBDIR@')
 from glue import pipeline
 from glue import lal
 from glue import iterutils
+from glue.ligolw import ligolw
 from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process
+from glue import git_version
 import inspiral
+
+__prog__ = 'cbc_pipedown'
+__author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
+
+description = \
+"Program to construct post-processing dag."
 
 ##############################################################################
 # Function Definitions
@@ -64,7 +65,11 @@ def get_veto_segments_name( veto_cat_num, cumulative = True ):
 
 ##############################################################################
 # parse command-line arguments
-parser = OptionParser( version = "", usage = usage )
+parser = OptionParser( 
+  version = git_version.verbose_msg,
+  usage   = "%prog [options]",
+  description = description
+  )
 
 parser.add_option( "", "--ihope-cache", action = "store", type = "string",
   default = None,
@@ -111,6 +116,12 @@ if not options.config_file:
   raise ValueError, "A config-file is required."
 if not options.log_path:
   raise ValueError, "A log-path is required."
+
+##############################################################################
+# Create log file
+logdoc = ligolw.Document()
+logdoc.appendChild(ligolw.LIGO_LW())
+proc_id = process.register_to_xmldoc(logdoc, __prog__, options.__dict__, version = git_version.id)
 
 ##############################################################################
 # parse the ini file and initialize
@@ -232,6 +243,12 @@ ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
 printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
 plotifar_job = inspiral.PlotIfarJob(cp)
 
+# MVSC jobs
+mvsc_get_doubles_job = inspiral.MvscGetDoublesJob(cp)
+mvsc_train_forest_job = inspiral.MvscTrainForestJob(cp)
+mvsc_use_forest_job = inspiral.MvscUseForestJob(cp)
+mvsc_update_sql_job = inspiral.MvscUpdateSqlJob(cp)
+
 # set submit file names
 t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', 'sub' ]) )
 t2c_sim_job.set_sub_file( '.'.join([ basename, 'simulation', 'thinca_to_coinc', 'sub' ]) )
@@ -244,6 +261,10 @@ dbaddinj_job.set_sub_file( '.'.join([ basename, 'dbaddinj', 'sub' ]) )
 inspinjfind_job.set_sub_file( '.'.join([ basename, 'inspinjfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
 cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
+mvsc_get_doubles_job.set_sub_file( '.'.join([ basename, 'mvsc_get_doubles', 'sub' ]) )
+mvsc_train_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_train_forest', 'sub' ]) )
+mvsc_use_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_use_forest', 'sub' ]) )
+mvsc_update_sql_job.set_sub_file( '.'.join([ basename, 'mvsc_update_sql', 'sub' ]) )
 ucfar_job.set_sub_file( '.'.join([ basename, 'uncombined', 'cfar', 'sub' ]) )
 ccfar_job.set_sub_file( '.'.join([ basename, 'combined', 'cfar', 'sub' ]) )
 printlc_job.set_sub_file( '.'.join([ basename, 'printlc', 'sub' ]) )
@@ -290,8 +311,8 @@ for tag in user_tags:
   # determine whether or not this was an injection run by checking if there
   # is an injection file for this tag
 
-  file_sieve = '_'.join([ r'INJECTIONS_[0-9][0-9][0-9][0-9]', tag.split('_CAT')[0] ])
-  inj_file = inj_cache.sieve( description = file_sieve, exact_match = True )
+  file_sieve = '_'.join([ r'INJECTIONS_[0-9]{1,}', tag.split('_CAT')[0] ]) + r'$'
+  inj_file = [ entry for entry in inj_cache if re.match(file_sieve, entry.description) is not None ]
   if len(inj_file) == 0:
     simulation = False
   elif len(inj_file) == 1:
@@ -638,6 +659,77 @@ for result_db in result_dbs_cache:
   dag.add_node(comp_durs_node)
   
   ############################################################################
+  # Step 4: MVSC Calculation
+
+  if 'FULL_DATA' in tag and veto_cat in sim_caches:
+    print "\tsetting up MVSC nodes..."
+    rank_nodes = []
+    zl_rank_nodes = []
+    info_pat_files = []
+    dat_files = []
+
+    # loop over pairs of detectors
+    for comb in list(iterutils.choices(list(instruments), 2)):
+      comb = ','.join(comb)
+
+      # mvsc_get_doubles_node
+      mvsc_get_doubles_node = inspiral.MvscGetDoublesNode( mvsc_get_doubles_job )
+      mvsc_get_doubles_node.set_instruments( comb )
+      mvsc_get_doubles_node.set_databases( [result_db.path()] )
+      mvsc_get_doubles_node.set_trainingstr( tag + "_training" )
+      mvsc_get_doubles_node.set_testingstr( tag + "_testing" )
+      mvsc_get_doubles_node.set_zerolagstr( tag + "_zerolag" )
+      mvsc_get_doubles_node.add_parent( comp_durs_node )
+      mvsc_get_doubles_node.finalize()
+      dag.add_node( mvsc_get_doubles_node )
+      for file in mvsc_get_doubles_node.get_output_files():
+        if file.endswith('_info.pat'): info_pat_files.append(file)
+
+      # loop over round robin
+      mvsc_train_forest_nodes = []
+      for i in range(mvsc_get_doubles_node.number):
+        file_for_this_set = mvsc_get_doubles_node.out_file_group[i]
+
+        # mvsc_train_forest_node
+        mvsc_train_forest_node = inspiral.MvscTrainForestNode( mvsc_train_forest_job )
+        mvsc_train_forest_node.add_training_file( file_for_this_set[0] )
+        mvsc_train_forest_node.add_parent( mvsc_get_doubles_node )
+        mvsc_train_forest_node.finalize()
+        dag.add_node( mvsc_train_forest_node )
+        mvsc_train_forest_nodes.append( mvsc_train_forest_node )
+
+        # mvsc_use_forest_node
+        rank_node = inspiral.MvscUseForestNode( mvsc_use_forest_job )
+        rank_node.set_trained_file( mvsc_train_forest_nodes[i].trainedforest )
+        rank_node.set_file_to_rank( file_for_this_set[1] )
+        rank_node.add_parent( mvsc_train_forest_node )
+        rank_node.finalize()
+        dag.add_node( rank_node )
+        rank_nodes.append( rank_node )
+
+        dat_files.extend( rank_node.get_output_files() )
+      # finish loop over round robin
+
+      # mvsc_use_forest_node for zerolag
+      zl_rank_node = inspiral.MvscUseForestNode( mvsc_use_forest_job )
+      zl_rank_node.set_trained_file( mvsc_train_forest_nodes[0].trainedforest )
+      zl_rank_node.set_file_to_rank( mvsc_get_doubles_node.zerolag_file[0] )
+      zl_rank_node.add_parent( mvsc_train_forest_nodes[0] )
+      zl_rank_node.finalize()
+      dag.add_node( zl_rank_node )
+      zl_rank_nodes.append( zl_rank_node )
+
+      dat_files.extend( zl_rank_node.get_output_files() )
+    # finish loop over pairs of detectors
+
+    mvsc_update_sql_node = inspiral.MvscUpdateSqlNode( mvsc_update_sql_job )
+    for inputfile in [result_db.path()] + info_pat_files + dat_files:
+      mvsc_update_sql_node.add_var_arg( inputfile )
+    for p_node in zl_rank_nodes + rank_nodes:
+      mvsc_update_sql_node.add_parent( p_node )
+    dag.add_node( mvsc_update_sql_node )
+
+  ############################################################################
   # Step 5a: Setup a CfarNode to compute the uncombined false alarm rates
   
   print "\tsetting up cfar nodes:"
@@ -652,6 +744,8 @@ for result_db in result_dbs_cache:
   
   # set parent node
   ucfar_node.add_parent( comp_durs_node )
+  if 'FULL_DATA' in tag and veto_cat in sim_caches:
+    ucfar_node.add_parent( mvsc_update_sql_node )
   
   dag.add_node( ucfar_node )
   
@@ -962,7 +1056,12 @@ dag.add_maxjobs_category('minifollowups', 15)
 dag.write_sub_files()
 dag.write_dag()
 
+# write process end time to log file and write log file
+process.set_process_end_time(proc_id)
+utils.write_filename(logdoc, basename+'.log.xml', xsl_file = "ligolw.xsl")
+
 print "Finished!"
 print "Now run:\n\tcondor_submit_dag %s" % os.path.basename(dag.get_dag_file())
+
 sys.exit(0)
 

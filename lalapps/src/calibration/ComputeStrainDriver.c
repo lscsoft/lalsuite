@@ -80,8 +80,6 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
-#include "LALASCIIFileRead.h"
-
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -177,7 +175,7 @@ int main(int argc,char *argv[])
       INT4 t0, dt;
 
       site = CommandLineArgs.ifo[0];
-      
+
       t0 = CommandLineArgs.GPSStart+InputData.wings;
       dt = CommandLineArgs.GPSEnd-CommandLineArgs.GPSStart-2*InputData.wings;
 
@@ -242,19 +240,20 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char allargs[16384];
   char lalappsconfargs[16384];
   char lalconfargs[16384];
-  char headerinfo[16384]; 
+  char headerinfo[16384];
   int i;
-  REAL4TimeSeries *alpha = NULL;
+  REAL4TimeSeries *alphare = NULL;
   REAL4TimeSeries *alphaim = NULL;
-  REAL4TimeSeries *gamma = NULL;
+  REAL4TimeSeries *gammare = NULL;
   REAL4TimeSeries *gammaim = NULL;
-  char alphaName[] = "Xn:CAL-CAV_FAC";
-  char gammaName[] = "Xn:CAL-OLOOP_FAC";
+  char alphareName[] = "Xn:CAL-CAV_FAC";
+  char gammareName[] = "Xn:CAL-OLOOP_FAC";
   char alphaimName[] = "Xn:CAL-CAV_FAC_Im";
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
+  char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
 
-  char *cnames[] = { alphaName, gammaName, alphaimName, gammaimName, dqName };
+  char *cnames[] = { alphareName, gammareName, alphaimName, gammaimName, dqName };
 
   for (i = 0; i < 5; i++)
       memcpy(cnames[i], CLA.ifo, 2);  /* set the proper name of the channels */
@@ -295,7 +294,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   if(!XLALResizeREAL4TimeSeries(&(InputData.AS_Q), (int)(InputData.wings/InputData.AS_Q.deltaT),
 			   InputData.AS_Q.data->length-2*(UINT4)(InputData.wings/InputData.AS_Q.deltaT)))
     XLAL_ERROR(func, XLAL_EFUNC);
-  
+
   /* based on IFO name, choose the correct detector */
   if ( 0 == strcmp(CLA.ifo, "H2") )
     detectorFlags = LAL_LHO_2K_DETECTOR_BIT;
@@ -306,7 +305,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   else
     return 1;  /* Error: not a recognized name */
   site = CLA.ifo[0];
-  
+
   /* based on series metadata, generate standard filename */
   FrDuration = OutputData.h.deltaT * OutputData.h.data->length;
   t0 = OutputData.h.epoch.gpsSeconds;
@@ -329,18 +328,18 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, headerinfo);
 
   /* Add lalapps info */
-  snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s", 
+  snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
 	       LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, LALAPPS_CONFIGURE_DATE , LALAPPS_CONFIGURE_ARGS );
-  FrHistoryAdd( frame, lalappsconfargs);  
+  FrHistoryAdd( frame, lalappsconfargs);
 
   /* Add lal info */
   snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
 	       LAL_VERSION , lalHeaderVCSInfo.vcsTag, lalHeaderVCSInfo.vcsId, LAL_CONFIGURE_DATE , LAL_CONFIGURE_ARGS );
-  FrHistoryAdd( frame, lalconfargs);  
+  FrHistoryAdd( frame, lalconfargs);
 
   /* Create string with all command line arguments and add it to history */
   strcat(allargs, "Command line run: ");
-  
+
   for(i = 0; i < argc; i++)
     {
       strcat(allargs,argv[i]);
@@ -353,9 +352,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   getdomainname(domainname,sizeof(domainname));
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
-  
+
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
-  FrHistoryAdd( frame, "Frequency validity range: 40Hz-5kHz.");
+  FrHistoryAdd( frame, freqInfo);
 
   /* String containing the filter file cvs info (first line in filter file) */
   FrHistoryAdd( frame, InputData.filter_vc_info);
@@ -370,30 +369,30 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   XLALFrameAddINT4TimeSeriesProcData( frame, &OutputDQ);
 
   /* Add in the factors data */
-  alpha = XLALCreateREAL4TimeSeries( alphaName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
+  alphare = XLALCreateREAL4TimeSeries( alphareName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT,
 				     &lalDimensionlessUnit,  OutputData.alpha.data->length);
-  gamma = XLALCreateREAL4TimeSeries( gammaName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT, 
+  gammare = XLALCreateREAL4TimeSeries( gammareName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT,
 				     &lalDimensionlessUnit,  OutputData.alphabeta.data->length);
-  alphaim = XLALCreateREAL4TimeSeries( alphaimName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT, 
+  alphaim = XLALCreateREAL4TimeSeries( alphaimName, &OutputData.alpha.epoch, 0.0, OutputData.alpha.deltaT,
 				       &lalDimensionlessUnit,  OutputData.alpha.data->length);
-  gammaim = XLALCreateREAL4TimeSeries( gammaimName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT, 
+  gammaim = XLALCreateREAL4TimeSeries( gammaimName, &OutputData.alphabeta.epoch, 0.0, OutputData.alphabeta.deltaT,
 				       &lalDimensionlessUnit,  OutputData.alphabeta.data->length);
 
   for (i=0; i < (int)OutputData.alpha.data->length; i++)
     {
-      alpha->data->data[i]=OutputData.alpha.data->data[i].re;
+      alphare->data->data[i]=OutputData.alpha.data->data[i].re;
       alphaim->data->data[i]=OutputData.alpha.data->data[i].im;
-      gamma->data->data[i]=OutputData.alphabeta.data->data[i].re;
+      gammare->data->data[i]=OutputData.alphabeta.data->data[i].re;
       gammaim->data->data[i]=OutputData.alphabeta.data->data[i].im;
     }
 
-  XLALFrameAddCalFac( frame, alpha, atoi(&CLA.frametype[9]) );
+  XLALFrameAddCalFac( frame, alphare, atoi(&CLA.frametype[9]) );
   XLALFrameAddCalFac( frame, alphaim, atoi(&CLA.frametype[9]) );
-  XLALFrameAddCalFac( frame, gamma, atoi(&CLA.frametype[9]));
+  XLALFrameAddCalFac( frame, gammare, atoi(&CLA.frametype[9]));
   XLALFrameAddCalFac( frame, gammaim, atoi(&CLA.frametype[9]));
 
-  XLALDestroyREAL4TimeSeries( gamma );
-  XLALDestroyREAL4TimeSeries( alpha );
+  XLALDestroyREAL4TimeSeries( gammare );
+  XLALDestroyREAL4TimeSeries( alphare );
   XLALDestroyREAL4TimeSeries( gammaim );
   XLALDestroyREAL4TimeSeries( alphaim );
 
@@ -405,17 +404,17 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
     snprintf( fname2, sizeof( fname2 ), "%s/%c-%s%s-%d-%d.gwf", CLA.datadirL2,site, CLA.frametype,"_L2", t0, dt );
     snprintf( tmpfname2, sizeof( tmpfname2 ), "%s.tmp", fname2 );
-    
+
     /* write first to tmpfile then rename it */
     frfile = FrFileONew( tmpfname2, -1); /* 1 = GZIP */
     if ( ! frfile )
       return 1;  /* Error: could not open frame file */
-    
+
     FrameWrite( frame, frfile );
     FrFileOEnd( frfile );
     /* now rename */
     if ( rename( tmpfname2, fname2 ) < 0 )
-      return 1; /* Error: system error */      
+      return 1; /* Error: system error */
   }
 
   return 0;
@@ -509,7 +508,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.AS_Q,&chanin_asq,framestream);
   TESTSTATUS( &status );
-  
+
   LALFrSetPos(&status,&pos1,framestream);
   TESTSTATUS( &status );
   LALFrGetREAL4TimeSeries(&status,&InputData.DARM,&chanin_darm,framestream);
@@ -549,7 +548,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
   /* check input data epoch agrees with command line arguments */
   if ( InputData.DARM_ERR.epoch.gpsSeconds != CLA.GPSStart )
     {
-      fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.", 
+      fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.",
 	      InputData.DARM_ERR.epoch.gpsSeconds, CLA.GPSStart);
       return 1;
     }
@@ -597,7 +596,7 @@ static FrChanIn chanin_lay;  /* light in y-arm */
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 errflg=0;
   struct option long_options[] = {
@@ -625,7 +624,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {0, 0, 0, 0}
   };
   char args[] = "hrcdux:C:F:s:e:i:t:o:H:T:S:z:v:wy:p:";
-  
+
   /* Initialize default values */
   CLA->To=0.0;
   CLA->FrCacheFile=NULL;
@@ -782,7 +781,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No integration time for the factors specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
@@ -800,13 +799,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
   if(CLA->filterfile == NULL)
     {
       fprintf(stderr,"No filter file specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
    if(CLA->ifo == NULL)
     {
       fprintf(stderr,"No ifo specified.\n");
@@ -818,18 +817,18 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No frame type specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
    if(CLA->strainchannel == NULL)
     {
       fprintf(stderr,"No strain channel specified.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
-    }      
+    }
    if(CLA->datadirL1 != NULL)
     {
       fprintf(stdout,"Warning: L1 frame directory specified, but Level 1 "
               "frames are not going to be produced anymore.\n");
-    }      
+    }
    if(CLA->datadirL2 == NULL)
     {
       fprintf(stderr,"No L2 frame directory specified.\n");
@@ -876,7 +875,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALDDestroyVector(&status,&InputData.Cinv->recursCoef);
   TESTSTATUS( &status );
-  LALDDestroyVector(&status,&InputData.Cinv->history);   
+  LALDDestroyVector(&status,&InputData.Cinv->history);
   TESTSTATUS( &status );
   LALFree(InputData.Cinv);
 
@@ -884,7 +883,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALDDestroyVector(&status,&InputData.A->recursCoef);
   TESTSTATUS( &status );
-  LALDDestroyVector(&status,&InputData.A->history);   
+  LALDDestroyVector(&status,&InputData.A->history);
   TESTSTATUS( &status );
   LALFree(InputData.A);
 
@@ -892,7 +891,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALDDestroyVector(&status,&InputData.AW->recursCoef);
   TESTSTATUS( &status );
-  LALDDestroyVector(&status,&InputData.AW->history);   
+  LALDDestroyVector(&status,&InputData.AW->history);
   TESTSTATUS( &status );
   LALFree(InputData.AW);
 
@@ -900,7 +899,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
   LALDDestroyVector(&status,&InputData.D->recursCoef);
   TESTSTATUS( &status );
-  LALDDestroyVector(&status,&InputData.D->history);   
+  LALDDestroyVector(&status,&InputData.D->history);
   TESTSTATUS( &status );
   LALFree(InputData.D);
 
@@ -921,7 +920,7 @@ int FreeMem(void)
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
- 
+
   return 0;
 }
 

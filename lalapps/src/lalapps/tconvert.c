@@ -88,7 +88,7 @@ const char *tz = NULL;
 
 enum { GPS_EPOCH, UNIX_EPOCH } epoch = GPS_EPOCH; /* default is GPS epoch */
 enum { SIDEREAL_HMS, SIDEREAL_RAD } sidereal_format = SIDEREAL_HMS; /* default isHH:MM:SS */
-enum { OUTPUT_DEFAULT, OUTPUT_DATE, OUTPUT_SECS, OUTPUT_JD, OUTPUT_MJD, OUTPUT_LEAPS, OUTPUT_GMST } output_type = OUTPUT_DEFAULT; 
+enum { OUTPUT_DEFAULT, OUTPUT_DATE, OUTPUT_SECS, OUTPUT_JD, OUTPUT_MJD, OUTPUT_LEAPS, OUTPUT_GMST } output_type = OUTPUT_DEFAULT;
 enum { SITE_UNSPECIFIED, SITE_LHO, SITE_LLO } site = SITE_UNSPECIFIED;
 int utc_flag = 1; /* default is universal time rather than local time */
 
@@ -120,12 +120,12 @@ int main( int argc, char *argv[] )
   }
   if ( tz )
     set_zone( tz );
-  
+
   while ( arg )
   {
     if ( is_integer( arg ) ) /* argument is an integer seconds since epoch */
     {
-      if ( output_type == OUTPUT_DEFAULT && ! verbose ) 
+      if ( output_type == OUTPUT_DEFAULT && ! verbose )
         output_type = OUTPUT_DATE;
       switch ( epoch )
       {
@@ -143,7 +143,7 @@ int main( int argc, char *argv[] )
     }
     else /* assume argument is a date string */
     {
-      if ( output_type == OUTPUT_DEFAULT && ! verbose ) 
+      if ( output_type == OUTPUT_DEFAULT && ! verbose )
         output_type = OUTPUT_SECS;
 
       if ( utc_flag )
@@ -506,7 +506,7 @@ time_t gps_to_unix( int gps_sec, int *leap )
   }
 
   /* posix definition of the unix time */
-  unix_sec = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600 
+  unix_sec = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600
     + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
     + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
     + ((utc.tm_year+299)/400)*86400;

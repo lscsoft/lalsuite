@@ -165,7 +165,7 @@ double parMatch(struct parSet* par1, int waveformVersion1, int injectionWF1, str
 {
   double overlap11=0.0, overlap12=0.0, overlap22=0.0;
   int ifonr;
-  fftw_complex *FFT1, *FFT2; 
+  fftw_complex *FFT1=NULL, *FFT2=NULL; 
   
   
   /*
@@ -266,15 +266,15 @@ double parOverlap(struct parSet* par1, int waveformVersion1, int injectionWF1, s
  * \brief Compute the overlap in the frequency domain between two waveforms with parameter sets par1 and par2
  */
 // ****************************************************************************************************************************************************  
-double vecOverlap(fftw_complex *vec1, fftw_complex *vec2, double * noise, int j1, int j2, double deltaFT)
+double vecOverlap(fftw_complex *vec1, fftw_complex *vec2, double * noise, int j_1, int j_2, double deltaFT)
 //Compute the overlap of vectors vec1 and vec2, between indices j1 and j2
 {
   int j=0;
   double overlap = 0.0;
   
   // Sum over the Fourier frequencies within operational range (some 40-1500 Hz or similar):
-  for (j=j1; j<=j2; ++j){
-    overlap += 4.0*creal( vec1[j]*conj(vec2[j]) / noise[j-j1] ) / deltaFT;   
+  for (j=j_1; j<=j_2; ++j){
+    overlap += 4.0*creal( vec1[j]*conj(vec2[j]) / noise[j-j_1] ) / deltaFT;   
   }
   return overlap;
   

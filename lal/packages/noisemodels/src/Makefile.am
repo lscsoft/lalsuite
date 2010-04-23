@@ -3,29 +3,15 @@ noinst_LTLIBRARIES = libnoisemodels.la
 libnoisemodels_la_SOURCES = \
 LALAddVectors.c\
 LALColoredNoise.c\
-LALInspiralWaveCorrelate.c\
 LALGEOPsd.c\
 LALEGOPsd.c\
 LALLIGOIPsd.c\
 LALNoiseSpectralDensity.c\
-LALInspiralComputeChisq.c\
-LALInspiralComputeSNRIntegrand.c\
-LALInspiralFindEvents.c\
-LALInspiralFindEventsCluster.c\
-LALInspiralFindLoudestEvent.c\
-LALInspiralWaveNormalise.c\
-LALInspiralWaveNormaliseLSO.c\
-LALInspiralWaveOverlap.c\
-LALRandomInspiralSignal.c\
 LALStatsREAL4Vector.c\
 LALTAMAPsd.c\
 LALVIRGOPsd.c\
-LALAdvLIGOPsd.c\
-LALDiscoverInspiralEvents.c\
-LALEstimateEffectiveDistance.c\
-LALEvaluateInspiralChisqTest.c\
-LALTruncateInvSpectrum.c
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+LALAdvLIGOPsd.c
+INCLUDES = -I$(top_builddir)/include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

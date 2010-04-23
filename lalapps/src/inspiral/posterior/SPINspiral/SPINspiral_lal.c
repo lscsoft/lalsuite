@@ -304,7 +304,7 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   double alpha=0.0;
-  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,G=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
+  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,g=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
   double cst4=0.0,x1=0.0,x2=0.0,x3=0.0;
   
   omega_orb=pi*f_lower;
@@ -314,19 +314,19 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   Y = spin/l_L;                                                                                                    //Y = |S|/|L|, Eq.43
   Gsq = 1.0 + 2.0*pSpCosTh1*Y + Y*Y;                                                                                      //G^2, Eq.46
-  G   = sqrt(Gsq);
+  g   = sqrt(Gsq);
   
   cst4 = l_L+pSpCosTh1*spin;
   x = mu*M;
   x1 = x*x*x;
-  x = G*l_L;
+  x = g*l_L;
   x2 = x*x*x;
   x3 = spin*spin*spin;
   alpha = pSpPhi1 - 5.0/(96.0*x1) * (1.0+0.75*m2/m1) * 
-    (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*G*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
+    (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*g*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
   
-  slamL = cst5/(l_L*G);                                                                                            //sin(lambda_L), Eq.48a
-  clamL = cst4/(l_L*G);                                                                                            //cos(lambda_L), Eq.48b
+  slamL = cst5/(l_L*g);                                                                                            //sin(lambda_L), Eq.48a
+  clamL = cst4/(l_L*g);                                                                                            //cos(lambda_L), Eq.48b
   
   //Construct Eq.41e
   facVec(n_J0,clamL,tvec1);                                                                                        //tvec1 = J0^*cos(lambda_L)
@@ -350,9 +350,9 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   n_S[1] = -(-n_J0[1] + n_J0[0]*n_L[2]*e - n_L[0]*n_J0[2]*e - n_L[0]*n_J0[0]*n_L[1]*e2 - n_L[1]*n_L[1]*n_J0[1]*e2 - n_L[1]*n_L[2]*n_J0[2]*e2) / (1.0 + n_L[0]*e3 + n_L[1]*n_L[1]*e2 + n_L[2]*n_L[2]*e2);  //-n_L[1];
   n_S[2] = -(-n_J0[2] - n_J0[0]*n_L[1]*e + n_L[0]*n_J0[1]*e - n_L[0]*n_J0[0]*n_L[2]*e2 - n_L[1]*n_J0[1]*n_L[2]*e2 - n_L[2]*n_L[2]*n_J0[2]*e2) / (1.0 + n_L[0]*e3 + n_L[1]*n_L[1]*e2 + n_L[2]*n_L[2]*e2);  //-n_L[2];
   
-  n_S[0] = n_S[0]*G*l_L - l_L*n_L[0];
-  n_S[1] = n_S[1]*G*l_L - l_L*n_L[1];
-  n_S[2] = n_S[2]*G*l_L - l_L*n_L[2];
+  n_S[0] = n_S[0]*g*l_L - l_L*n_L[0];
+  n_S[1] = n_S[1]*g*l_L - l_L*n_L[1];
+  n_S[2] = n_S[2]*g*l_L - l_L*n_L[2];
   
   double xloc[3],yloc[3],zloc[3];                        // coordinates in the global frame (in which N is defined) of the local vectors (e.g. z=N)                                                                          
   for(i=0;i<3;i++) zloc[i] = n_N[i];                                                             
@@ -392,9 +392,9 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //snprintf(waveformApproximant,128,"SpinTayloronePointFivePN"); //Set it manually
   //printf("\n  %s\n\n",waveformApproximant);
   
-  LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),waveformApproximant);
-  //LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
-  //LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+  snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
   
   /* this is given in Mpc */    
   injParams->distance = (float)exp(pLogDl);//d_L;
@@ -663,10 +663,10 @@ void LALHpHc15(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //snprintf(waveformApproximant,128,"SpinTaylorthreePointFivePN"); //Set it manually
   //printf("\n  %s\n\n",waveformApproximant);
   
-  LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),waveformApproximant);
-  //LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
-  //LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
-  //LALSnprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");
+  snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");
   
   // This is given in Mpc:
   injParams->distance = (float)exp(pLogDl); // d_L;
@@ -846,7 +846,7 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   getWaveformApproximant("SpinTaylor",128,PNorder,waveformApproximant);  //Spinning
   //snprintf(waveformApproximant,128,"SpinTaylorthreePointFivePN"); //Set it manually
   
-  LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),waveformApproximant);
+  snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
   
   // This is given in Mpc:
   injParams.distance = (float)exp(pLogDl); // d_L;
@@ -1012,7 +1012,7 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
   //getWaveformApproximant("SpinTaylor",128,PNorder,waveformApproximant);  //Spinning
   //printf("\n  %s\n\n",waveformApproximant);
   
-  LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),waveformApproximant);
+  snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
   Approximant injapprox;
   LALGetApproximantFromString(&status,injParams.waveform,&injapprox);
   if(injapprox!=GeneratePPN) fprintf(stderr,"\n *** Warning:  not using GeneratePPN approximant causes incoherent injections ***\n");
@@ -1164,19 +1164,19 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   
-  REAL4TimeSeries signal;        // GW signal 
+  REAL4TimeSeries signalvec;        // GW signal 
   
-  memset( &signal, 0, sizeof(REAL4TimeSeries) );
+  memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
   
   //REAL4TimeSeries chan;        // channel
   
   //memset( &chan, 0, sizeof(REAL4TimeSeries) );
   
   
-  //signal.epoch.gpsSeconds = (INT4)par->par[2];  // Can't use par[i] anymore...
-  //signal.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signal.epoch.gpsSeconds));  // Can't use par[i] anymore...
+  //signalvec.epoch.gpsSeconds = (INT4)par->par[2];  // Can't use par[i] anymore...
+  //signalvec.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signalvev.epoch.gpsSeconds));  // Can't use par[i] anymore...
   
-  //waveform->f->epoch = waveform->phi->epoch = waveform->a->epoch = signal.epoch; 
+  //waveform->f->epoch = waveform->phi->epoch = waveform->a->epoch = signalvec.epoch; 
   INT8 waveformStartTime;
   
   //  waveformStartTime = par->par[2];  // Can't use par[i] anymore...
@@ -1205,14 +1205,14 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   /* set the parameters for the signal time series */
-  signal.deltaT = waveform->phi->deltaT;
+  signalvec.deltaT = waveform->phi->deltaT;
   
-  signal.sampleUnits = lalADCCountUnit;
-  signal.f0 = 0.0;
-  signal.data = NULL;
+  signalvec.sampleUnits = lalADCCountUnit;
+  signalvec.f0 = 0.0;
+  signalvec.data = NULL;
   /* simulate the detectors response to the inspiral */
-  LALSCreateVector( status, &(signal.data), (UINT4)length );
-  XLALGPSSetREAL8( &(signal.epoch), ifo->FTstart);
+  LALSCreateVector( status, &(signalvec.data), (UINT4)length );
+  XLALGPSSetREAL8( &(signalvec.epoch), ifo->FTstart);
   
   
   /* set the parameters for the signal time series */
@@ -1227,7 +1227,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   waveform->position.system=COORDINATESYSTEM_GEOGRAPHIC;
   
-  LALSimulateCoherentGW( status, &signal, waveform, &detector );//////////////////this is were F+,x are being computed.
+  LALSimulateCoherentGW( status, &signalvec, waveform, &detector );//////////////////this is were F+,x are being computed.
   
   //LALFloatToGPS( status, &(chan.epoch), &(ifo->FTstart));
   
@@ -1237,17 +1237,17 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   
-  // signal.deltaT = waveform->phi->deltaT;
-  // signal.f0 = 0.0;
-  // signal.data = NULL;
+  // signalvec.deltaT = waveform->phi->deltaT;
+  // signalvec.f0 = 0.0;
+  // signalvec.data = NULL;
   
-  //      LALSSInjectTimeSeries(status, &chan, &signal );
+  //      LALSSInjectTimeSeries(status, &chan, &signalvec );
   
-  for ( i = 0; i < signal.data->length && i < length; i++ ){
+  for ( i = 0; i < (int)signalvec.data->length && i < length; i++ ){
     
     //printf("%d\t%10.10e\n", i, chan.data->data[i]);
     
-    wave[i] = signal.data->data[i]; // wave is my array of doubles to send back the waveform to the rest of SPINspiral.
+    wave[i] = signalvec.data->data[i]; // wave is my array of doubles to send back the waveform to the rest of SPINspiral.
   }
   
   /*********TIME DELAY***********/
@@ -1258,14 +1258,14 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //  LALPlaceAndGPS        det1_and_gps;
   
   //  det1_and_gps.p_detector = detector.site;
-  // det1_and_gps.p_gps      = &(signal.epoch);
+  // det1_and_gps.p_gps      = &(signalvec.epoch);
   
   // det1_and_source.p_det_and_time = &det1_and_gps;
   //  det1_and_source.p_source       = &(waveform->position);
   
   // LALTimeDelayFromEarthCenter(status, &delay, &det1_and_source);
   
-  LALSDestroyVector( status, &( signal.data ) );
+  LALSDestroyVector( status, &( signalvec.data ) );
   // LALSDestroyVector( status, &( chan.data ) );
   
   // if(waveform->position.system==COORDINATESYSTEM_EQUATORIAL) printf("youpi\n");
@@ -1309,7 +1309,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
  * \brief Compose the waveform approximant from the family name and pN order
  */
 // ****************************************************************************************************************************************************  
-void getWaveformApproximant(char* familyName, int length, double PNorder, char* waveformApproximant) {
+void getWaveformApproximant(const char* familyName, int length, double PNorder, char* waveformApproximant) {
   int PNorderTimesTwo = (int)rint(PNorder*2.0);
   switch(PNorderTimesTwo) {
   case 2:

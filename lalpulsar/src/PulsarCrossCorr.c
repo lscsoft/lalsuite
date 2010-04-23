@@ -242,7 +242,6 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
 
   /* this is the sft reference time  - the pulsar reference time */
   timeDiff = XLALGPSDiff( (epoch), &(dopp->refTime));
-
   fhat = dopp->fkdot[0]; /* initialization */
   factor = 1.0;
   for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
@@ -250,7 +249,6 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
     fhat += dopp->fkdot[k] * factor;
   }
   *out = fhat * (1 + vDotn_c);
-
 
   DETATCHSTATUSPTR (status);
 
@@ -272,7 +270,7 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   UINT4 k;
   REAL8 alpha, delta;
   REAL8 rDotn_c, phihat, factor, timeDiff;
-  LIGOTimeGPS ssbt;
+  REAL8 epoch_plus_rdotn;
 
   INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -293,10 +291,11 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   /* phi(t) = phi_0 + 2pi(f_0 t + 0.5 f_1 t^2) + 2pi (f_0 + f_1 t) r.n/c */
 
   /* this is the sft reference time  - the pulsar reference time */
-  XLALGPSSetREAL8(&ssbt, XLALGPSGetREAL8((epoch)) + rDotn_c);
-
-  timeDiff = XLALGPSDiff( &ssbt, &(dopp->refTime) );
-
+  /* we need to convert epoch to REAL8 first before adding rdotn
+   * because if LIGOTimeGPS only has INT4 accuracy. converting rdotn into LIGOTimeGPS
+   * will introduce rounding errors*/
+  epoch_plus_rdotn = XLALGPSGetREAL8(epoch) + rDotn_c;
+  timeDiff = epoch_plus_rdotn - XLALGPSGetREAL8(&(dopp->refTime));
 
   phihat = 0.0;
 
@@ -305,7 +304,6 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
  for (k = 1;  k <= PULSAR_MAX_SPINS; k++) {
     factor *= timeDiff / k;
     phihat += dopp->fkdot[k-1] * factor;
-
   }
 
   *out = LAL_TWOPI * ( phihat );
@@ -359,6 +357,9 @@ void LALCalculateAveUalpha(LALStatus *status,
 			COMPLEX16 *out,
 			REAL8     phiI,
 			REAL8     phiJ,
+			REAL8 	  freqI,
+			REAL8 	  freqJ,
+			REAL8 	  deltaF,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq)
@@ -368,10 +369,10 @@ void LALCalculateAveUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateAveUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ;
+  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
-  im = 0.1 * sin(-deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
+  im = - 0.1 * sin(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
@@ -395,6 +396,9 @@ void LALCalculateUalpha(LALStatus *status,
 			CrossCorrAmps amplitudes,
 			REAL8     phiI,
 			REAL8     phiJ,
+			REAL8 	  freqI,
+			REAL8 	  freqJ,
+			REAL8 	  deltaF,
 			CrossCorrBeamFn beamfnsI,
 			CrossCorrBeamFn beamfnsJ,
 			REAL8     sigmasq,
@@ -410,8 +414,11 @@ void LALCalculateUalpha(LALStatus *status,
   INITSTATUS (status, "CalculateUalpha", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ;
+  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
 
+/*printf("%f %f\n", deltaPhi, LAL_PI * (freqI - freqJ)/deltaF);*/
+
+ 
   /*if not averaging over psi, calculate F+, Fx exactly*/
   if (psi) {
     FplusI = (beamfnsI.a * cos(2.0*(*psi))) + (beamfnsI.b * sin(2.0*(*psi)));
@@ -420,14 +427,12 @@ void LALCalculateUalpha(LALStatus *status,
     FcrossJ = (beamfnsJ.b * cos(2.0 * (*psi))) - (beamfnsJ.a * sin(2.0 * (*psi)));;
 
     /*calculate G_IJ*/
-    re = 0.25 * ( (cos(deltaPhi)*
-		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq)) )
-		-(sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
+    re = 0.25 * ( (cos(deltaPhi)* (FplusI*FplusJ * amplitudes.Aplussq + FcrossI*FcrossJ * amplitudes.Acrosssq) )
+		- (sin(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ) * amplitudes.AplusAcross)) );
 
 
-    im = 0.25 * ( -(cos(deltaPhi) * ((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
-	          - (sin(deltaPhi) *
-		   ((FplusI*FplusJ * amplitudes.Aplussq) + (FcrossI*FcrossJ * amplitudes.Acrosssq))) );
+    im = 0.25 * ( -(cos(deltaPhi)*((FplusI*FcrossJ - FcrossI*FplusJ)*amplitudes.AplusAcross))
+	          - (sin(deltaPhi) * (FplusI*FplusJ*amplitudes.Aplussq + FcrossI*FcrossJ * amplitudes.Acrosssq)) );
 
   /*calculate estimators*/
   gplus->re = 0.25*cos(deltaPhi)*FplusI*FplusJ;
@@ -462,6 +467,7 @@ void LALCalculateUalpha(LALStatus *status,
   out->im = -im/(sigmasq);
 
 
+
   DETATCHSTATUSPTR (status);
 
   /* normal exit */
@@ -491,7 +497,6 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   for (i=0; i < (INT4)yalpha->length; i++) {
 
   *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
-
   }
 
   DETATCHSTATUSPTR (status);

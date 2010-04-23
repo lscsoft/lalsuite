@@ -38,7 +38,7 @@
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Inject.h>
 #include <lal/FileIO.h>
 #include <lal/Units.h>
@@ -53,8 +53,8 @@
 #include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/Date.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
+
+#include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
 
@@ -235,10 +235,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "%s - Numerical Relativity MDC Injection Program\n" \
-            "CVS Version: %s\nCVS Tag: %s\n", PROGRAM_NAME, CVS_ID_STRING, \
-            CVS_NAME_STRING );
-        fprintf( stdout, lalappsGitID );
+        fprintf( stdout, "%s - Numerical Relativity MDC Injection Program\n", PROGRAM_NAME);
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
 

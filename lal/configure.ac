@@ -1,6 +1,6 @@
-AC_INIT([lal],[6.3.2.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
-AC_CONFIG_SRCDIR([include/config.h.in])
+AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
 AC_CONFIG_MACRO_DIR([misc])
 AC_CONFIG_FILES([ \
@@ -72,31 +72,11 @@ AC_CONFIG_FILES([ \
   packages/fft/include/Makefile \
   packages/fft/src/Makefile \
   packages/fft/test/Makefile \
-  packages/inspiral/Makefile \
-  packages/inspiral/doc/Makefile \
-  packages/inspiral/include/Makefile \
-  packages/inspiral/src/Makefile \
-  packages/inspiral/test/Makefile \
   packages/noisemodels/Makefile \
   packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
   packages/noisemodels/test/Makefile \
-  packages/bank/Makefile \
-  packages/bank/doc/Makefile \
-  packages/bank/include/Makefile \
-  packages/bank/src/Makefile \
-  packages/bank/test/Makefile \
-  packages/ring/Makefile \
-  packages/ring/doc/Makefile \
-  packages/ring/include/Makefile \
-  packages/ring/src/Makefile \
-  packages/ring/test/Makefile \
-  packages/findchirp/Makefile \
-  packages/findchirp/doc/Makefile \
-  packages/findchirp/include/Makefile \
-  packages/findchirp/src/Makefile \
-  packages/findchirp/test/Makefile \
   packages/support/Makefile \
   packages/support/doc/Makefile \
   packages/support/include/Makefile \
@@ -110,13 +90,30 @@ AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
 ])
-AH_TEMPLATE([LAL_SIZEOF_DOUBLE],[The number of bytes in a double.])
-AH_TEMPLATE([LAL_SIZEOF_FLOAT],[The number of bytes in a float.])
 AH_BOTTOM([
 #endif /* CONFIG_H__LAL */
 ])
 
 AC_CANONICAL_HOST
+
+# set library api info
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 LAL_WITH_CC
 LAL_WITH_CFLAGS
@@ -127,6 +124,7 @@ LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
+LALSUITE_ENABLE_BOINC
 LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_DEBUG
@@ -156,7 +154,7 @@ AC_DEFINE_UNQUOTED([LAL_PREFIX],["$lal_prefix"],[LAL Install Prefix])
 
 # check for pthreads
 lal_pthread_available="yes"
-ACX_PTHREAD(,[lal_pthread_available="no"])
+AX_PTHREAD(,[lal_pthread_available="no"])
 if test "$lal_pthread_lock" = "true" ; then
   if test "$lal_pthread_available" = "yes" ; then
     LIBS="$PTHREAD_LIBS $LIBS"
@@ -173,6 +171,11 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+
+# boinc requires a c++ compiler
+if test "${boinc}" = "true" ; then
+  AC_PROG_CXX
+fi
 
 # check for programs
 AC_PROG_CPP
@@ -237,7 +240,6 @@ esac
 
 # initialise lalsupport libs
 LALSUPPORT_LIBADD=""
-lal_save_LIBS="$LIBS"
 
 # system library checks
 AC_CHECK_LIB([m],[sin])
@@ -304,12 +306,36 @@ else
   else
     AC_CHECK_LIB([mkl],[DftiCreateDescriptor],,[AC_MSG_ERROR([could not find the Intel FFT library])])
   fi
-  AC_CHECK_HEADERS([mkl_fft.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
+  AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
 
 # check for fft headers
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
+fi
+
+# check for boinc
+if test "${boinc}" = "true" ; then
+  if test -n "$BOINC_PREFIX}" ; then
+    # do compilation checks with c++
+    AC_LANG_PUSH([C++])
+
+    # set boinc flags
+    BOINC_CFLAGS="-I$BOINC_PREFIX/include"
+    BOINC_LIBS="-L$BOINC_PREFIX/lib -lboinc_api -lboinc"
+    CPPFLAGS="$CPPFLAGS $BOINC_CFLAGS"
+    LIBS="$LIBS $BOINC_LIBS"
+
+    # check for boinc libraries
+    AC_CHECK_LIB([boinc],[boinc_fopen],[true],[boinc=false])
+    AC_CHECK_LIB([boinc_api],[boinc_finish],[true],[boinc=false],[-lboinc])
+
+    # check for boinc headers
+    AC_CHECK_HEADERS([boinc/boinc_api.h],,[boinc=false])
+
+    # go back to c
+    AC_LANG_POP([C++])
+  fi
 fi
 
 # define what is being enabled
@@ -319,12 +345,14 @@ fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
 fi
+if test "${boinc}" = "true"; then
+  AC_DEFINE([LAL_BOINC_ENABLED],[1],[Define if using boinc library])
+  AC_SUBST(BOINC_CFLAGS)
+  AC_SUBST(BOINC_LIBS)
+fi
 
 # record the libraries needed for linking lal
-LALLIBADD="$LIBS"
-LIBS="$lal_save_LIBS"
-AC_SUBST(LALLIBADD)
-LAL_LIBADD="$LIBS $LALLIBADD"
+LAL_LIBADD="$LIBS"
 AC_SUBST(LAL_LIBADD)
 AC_SUBST(LALSUPPORT_LIBADD)
 
@@ -334,8 +362,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-LAL_CHECK_SIZEOF([float],[4])
-LAL_CHECK_SIZEOF([double],[8])
 
 # checks for library functions
 AC_CHECK_FUNCS([getopt])
@@ -351,6 +377,7 @@ AC_SUBST([pkgdocdir])
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
+AM_CONDITIONAL([BOINC],[test x$boinc = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
@@ -371,12 +398,14 @@ AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
 cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
+boincenabled="`test x${boinc} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
                 CUDA support is $cudaenabled
+                BOINC support is $boincenabled
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

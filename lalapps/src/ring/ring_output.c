@@ -28,14 +28,14 @@
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/lalGitID.h>
-#include <lalappsGitID.h>
 
 #include "processtable.h"
 #include "lalapps.h"
 #include "errutil.h"
 #include "gpstime.h"
 #include "ring.h"
+
+#include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
 
@@ -181,22 +181,12 @@ int ring_output_events_xml(
 /* routine to create process table */
 ProcessTable *ring_create_process_table( struct ring_params *params )
 {
-  LALStatus status = blank_status;
   ProcessTable *processTable = NULL;
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );
 
-  /* call lalapps routine to populate the process table */
-  if (strcmp(params->cvsRevision, "$Revi" "sion$"))
-  {
-    XLALPopulateProcessTable(processTable, params->programName,
-        params->cvsRevision, params->cvsSource, params->cvsDate, 0);
-  }
-  else
-  {
-    XLALPopulateProcessTable(processTable, params->programName,
-        lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
-  }
+  XLALPopulateProcessTable(processTable, params->programName,
+      LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
   strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );

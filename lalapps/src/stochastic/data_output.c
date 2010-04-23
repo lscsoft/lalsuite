@@ -1,14 +1,14 @@
 /*
  * data_output.c - SGWB Standalone Analysis Pipeline
  *               - Data Output Functions
- * 
- * Copyright (C) 2002-2006,2009 Adam Mercer
- * 
+ *
+ * Copyright (C) 2002-2006,2009,2010 Adam Mercer
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -108,7 +108,7 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   FrameWrite(frame, frfile);
 
   /* free frame */
-  FrVectFree(vect); 
+  FrVectFree(vect);
   vect=NULL;
 
   /* end frame file */
@@ -117,7 +117,7 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
 
 /* save out xml tables */
 void save_xml_file(LALStatus *status,
-    CHAR *program_name,
+    const CHAR *program_name,
     CHAR *output_path,
     CHAR *base_name,
     StochasticTable *stoch_table,

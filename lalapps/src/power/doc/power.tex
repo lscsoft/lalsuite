@@ -1704,6 +1704,7 @@ E
 [\option{--min-e-over-r2}~\parm{\(\Msol/\text{\parsec}^{2}\)}]
 [\option{--max-frequency}~\parm{Hertz}]
 [\option{--min-frequency}~\parm{Hertz}]
+[\option{--output}~\parm{filename}]
 [\option{--population}~\parm{name}]
 [\option{--q}~\parm{value}]
 [\option{--ra-dec}~\parm{radians},\parm{radians}]
@@ -1809,6 +1810,11 @@ be \(Q / (\sqrt{2} \pi f)\).
 Set the lower bound of the range of injection \(h_{\text{rss}}\) values.
 This only affects sine-Gaussian injections.  See \option{--max-hrss} for
 more information.
+
+\item[\option{--output} \parm{filename}]
+Set the name of the output file.  The default complies with the file naming
+convention described in LIGO-T010150-00-E.  Try for yourself to see what it
+does.  If the filename ends in \texttt{.gz} it will be gzip compressed.
 
 \item[\option{--population} \parm{name}]
 Select the injection population.  The allowed names are \option{targeted},

@@ -18,13 +18,13 @@ testDIR3="./mfdv4_TEST3"
 
 
 if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LAL_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LAL_PREFIX}/share/lal";
+    if [ -n "$LALPULSAR_PREFIX" ]; then
+	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
     else
 	echo
-	echo "Need environment-variable LAL_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lal)"
-	echo "This might indicate an incomplete LAL installation"
+	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
+	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+	echo "This might indicate an incomplete LAL+LALPULSAR installation"
 	echo
 	exit 1
     fi

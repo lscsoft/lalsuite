@@ -1,3 +1,7 @@
+# lalpulsar.m4 - lalpulsar specific autoconf macros
+#
+# serial 2
+
 AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
   AC_HELP_STRING([--enable-gcc-flags],[turn on strict gcc warning flags (default=yes)]),

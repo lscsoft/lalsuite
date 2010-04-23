@@ -60,8 +60,8 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
+#include <lal/LALFrameL.h>
 
-#include <FrameL.h>
 #include <series.h>
 
 extern char *optarg;
@@ -90,8 +90,8 @@ struct CommandLineArgsTag {
   REAL8 W0Im;              /* Imaginary part of whitening filter at cal line freq. */
   char *FrCacheFile;       /* Frame cache file */
   char *SegmentsFile;      /* Text file with the segments */
-  char *exc_chan;          /* excitation channel name */    
-  char *darm_chan;         /* darm channel name */ 
+  char *exc_chan;          /* excitation channel name */
+  char *darm_chan;         /* darm channel name */
   char *asq_chan;          /* asq channel name */
   char *alphafile;         /* file to store factors */
   int   outputframes;      /* flag to indicate that frame file output is requested */
@@ -102,11 +102,11 @@ typedef
 struct SegmentListTag {
   INT4 gpsstart;          /* GPS Seconds of start of segment group */
   INT4 gpsend;            /* number of segments starting at tgps */
-  INT4 seglength;         /* length of segment in seconds */       
+  INT4 seglength;         /* length of segment in seconds */
 } SegmentList;
 
 
-typedef 
+typedef
 struct GlobalVariablesTag {
 COMPLEX16 Rf0,Cf0,Af0;              /* Response, sensing and actuation function values at the frequency of the calibration line */
 SegmentList SL[MAXLINESEGS];        /* Structure containing science segement info */
@@ -134,17 +134,17 @@ GlobalVariables GV;   /* A bunch of stuff is stored in here; mainly to protect i
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 
 /* Reads time segment, cache, response,sensing and actuation files */
-int ReadFiles(struct CommandLineArgsTag CLA);             
+int ReadFiles(struct CommandLineArgsTag CLA);
 
-/* Produces a table of calibration factors for a science segment; 
+/* Produces a table of calibration factors for a science segment;
 the factors are calculated every interval CLA.t */
-int GetFactors(struct CommandLineArgsTag CLA);   
+int GetFactors(struct CommandLineArgsTag CLA);
 
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
 {
-int i; 
+int i;
 
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
@@ -170,13 +170,13 @@ int i;
 
       if(GetFactors(CommandLineArgs)) return 5;
     }
-  
+
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();
- 
+
   return 0;
 }
 
@@ -206,9 +206,7 @@ static FrChanIn chanin_exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
-
-LALWindowParams winparams;
+REAL4Window *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 
 REAL4 magexc,magasq,magdarm;
 
@@ -218,7 +216,7 @@ LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate
 LIGOTimeGPS tend; /* end time */
 INT8 tendns; /* end time in nanoseconds */
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
- 
+
 FILE *fpAlpha=NULL;
 
   chanin_asq.type  = ADCDataChannel;
@@ -227,7 +225,7 @@ FILE *fpAlpha=NULL;
 
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
-  chanin_exc.name  = CLA.exc_chan; 
+  chanin_exc.name  = CLA.exc_chan;
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
   LALFrSeek(&status,&localgpsepoch,framestream);
@@ -255,31 +253,18 @@ FILE *fpAlpha=NULL;
   TESTSTATUS( &status );
 
 
-  /* Create Window vectors */
-  LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
-  TESTSTATUS( &status );
-  LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
-  TESTSTATUS( &status );
-  LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
-  TESTSTATUS( &status );
-
-  winparams.type=Hann;
-   
   /* windows for time domain channels */
   /* asq */
-  winparams.length=(INT4)(CLA.t/asq.deltaT +0.5);
-  LALWindow(&status,asqwin,&winparams);
-  TESTSTATUS( &status );
-  
+  asqwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/asq.deltaT +0.5));
+  if( !asqwin ) return -1;
+
   /* darm */
-  winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
-  LALWindow(&status,darmwin,&winparams);
-  TESTSTATUS( &status );
+  darmwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/darm.deltaT +0.5));
+  if( !darmwin ) return -1;
 
   /* exc */
-  winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
-  LALWindow(&status,excwin,&winparams);
-  TESTSTATUS( &status );
+  excwin = XLALCreateHannREAL4Window((UINT4)(CLA.t/exc.deltaT +0.5));
+  if( !excwin ) return -1;
 
   /* setup series for frame file output */
   snprintf( a_name, sizeof( a_name ), "%s:" A_CHANNEL, GV.ifo );
@@ -290,7 +275,8 @@ FILE *fpAlpha=NULL;
   tend.gpsNanoSeconds = tendns % (INT8)(1000000000);
   a.name  = a_name;
   ab.name = ab_name;
-  a.unit  = ab.unit = "none";
+  strncpy(a.unit, "none", sizeof(a.unit));
+  strncpy(ab.unit, "none", sizeof(a.unit));
   a.dom   = ab.dom  = Time;
   a.type  = ab.type = FR_VECT_8C;
   a.tbeg  = ab.tbeg = GV.gpsepoch;
@@ -307,7 +293,7 @@ FILE *fpAlpha=NULL;
 
   /* Open user input factors file */
   fpAlpha=fopen(CLA.alphafile,"w");
-  if (fpAlpha==NULL) 
+  if (fpAlpha==NULL)
     {
       fprintf(stderr,"Could not open %s!\n",CLA.alphafile);
       return 1;
@@ -345,17 +331,17 @@ FILE *fpAlpha=NULL;
       /* Window the data */
       for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
 	{
-	  asq.data->data[k] *= 2.0*asqwin->data[k];
+	  asq.data->data[k] *= 2.0*asqwin->data->data[k];
 	}
       for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
 	{
-	  darm.data->data[k] *= 2.0*darmwin->data[k];
+	  darm.data->data[k] *= 2.0*darmwin->data->data[k];
 	}
       for(k=0;k<(INT4)(CLA.t/exc.deltaT +0.5);k++)
 	{
-	  exc.data->data[k] *= 2.0*excwin->data[k];
+	  exc.data->data[k] *= 2.0*excwin->data->data[k];
 	}
-      
+
       /* set params to call LALComputeCalibrationFactors */
       params.darmCtrl = &darm;
       params.asQ = &asq;
@@ -367,7 +353,7 @@ FILE *fpAlpha=NULL;
       params.digital.im = CLA.D0Im;
       params.whitener.re = CLA.W0Re;
       params.whitener.im = CLA.W0Im;
-	  
+
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
@@ -382,16 +368,16 @@ FILE *fpAlpha=NULL;
 	      factors.asq.re*2/CLA.t,factors.asq.im*2/CLA.t,
 	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
 	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
- 
+
       /* put factors into series for frame output */
       a.data[2*m]    = factors.alpha.re;
       a.data[2*m+1]  = factors.alpha.im;
       ab.data[2*m]   = factors.alphabeta.re;
       ab.data[2*m+1] = factors.alphabeta.im;
 
-      gtime += CLA.t;	
+      gtime += CLA.t;
       localgpsepoch.gpsSeconds = (INT4)gtime;
-      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);      
+      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);
     }
 
   /* output frame data if desired */
@@ -418,15 +404,12 @@ FILE *fpAlpha=NULL;
   LALDestroyVector(&status,&asq.data);
   TESTSTATUS( &status );
 
-  LALDestroyVector(&status,&asqwin);
-  TESTSTATUS( &status );
-  LALDestroyVector(&status,&darmwin);
-  TESTSTATUS( &status );
-  LALDestroyVector(&status,&excwin);
-  TESTSTATUS( &status );
+  XLALDestroyREAL4Window(asqwin);
+  XLALDestroyREAL4Window(darmwin);
+  XLALDestroyREAL4Window(excwin);
 
   fclose(fpAlpha);
-  
+
   return 0;
 }
 
@@ -441,7 +424,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
  /* ------ Open and read Segment file ------ */
  i=0;
  fpSeg=fopen(CLA.SegmentsFile,"r");
- if (fpSeg==NULL) 
+ if (fpSeg==NULL)
    {
      fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.SegmentsFile);
      return 1;
@@ -459,7 +442,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
      i++;
    }
  GV.numsegs=i;
- fclose(fpSeg);     
+ fclose(fpSeg);
  /* -- close Sensing file -- */
 
  return 0;
@@ -467,11 +450,11 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
   optarg = NULL;
-  
+
   /* Initialize default values */
   CLA->f=0.0;
   CLA->t=0.0;
@@ -537,19 +520,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'E':
       /* name of excitation channel */
       CLA->exc_chan=optarg;
-      break;    
+      break;
     case 'A':
       /* name of as_q channel */
       CLA->asq_chan=optarg;
-      break;    
+      break;
     case 'D':
       /* name of darm channel */
       CLA->darm_chan=optarg;
-      break;    
+      break;
     case 'b':
       /* name of darm channel */
       CLA->alphafile=optarg;
-      break;    
+      break;
     case 'o':
       /* output frame files */
       CLA->outputframes=1;
@@ -593,79 +576,79 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"No calibration line frequency specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->t == 0)
     {
       fprintf(stderr,"No time interval to calculate factors.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->t < 0.0005)
     {
       fprintf(stderr,"Time interval to calculate factors too small (<0.0005).\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->G0Re == 0.0 )
     {
       fprintf(stderr,"No real part of open loop gain specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->G0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of open loop gain specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->D0Re == 0.0 )
     {
       fprintf(stderr,"No real part of digital filter specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->D0Im == 0.0 )
     {
       fprintf(stderr,"No imaginary part of digital filter specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->alphafile == NULL)
     {
       fprintf(stderr,"No output factors file specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
   if(CLA->SegmentsFile == NULL)
     {
       fprintf(stderr,"No segments file specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
-    }      
+    }
    if (CLA->outputframes)
    {
      if (!CLA->version)

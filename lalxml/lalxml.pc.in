@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALXML
 Description: LAL XML Library Support
 Version: @VERSION@
-Requires: lal libxml-2.0
+Requires: gsl libxml-2.0 lal lalpulsar
 Libs: -L${libdir} -llalxml
 Cflags: -I${includedir}

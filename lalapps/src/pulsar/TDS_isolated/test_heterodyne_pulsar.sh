@@ -74,7 +74,7 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-# check that LAL_PREFIX is set
+# check that LALPULSAR_PREFIX is set
 if [ -n "$LALPULSAR_PREFIX" ]; then
 	EEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/earth05-09.dat
         SEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/sun05-09.dat
@@ -183,8 +183,9 @@ echo Performing coarse heterodyne - mode 0 - and outputting to text file
 $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --freq-factor 2
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-	echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+	echo lalapps_heterodyne_pulsar exited with error $ret_code!
 	exit 2
 fi
 
@@ -203,8 +204,9 @@ echo Performing coarse heterodyne - mode 0 - and outputting to binary file
 $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --binary-output --freq-factor 2
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -221,8 +223,9 @@ echo Performing coarse heterodyne - mode 0 - with offset parameter file
 $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --freq-factor 2
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -244,8 +247,9 @@ echo Performing fine heterodyne - mode 1 - using text file
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.txt --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -264,8 +268,9 @@ echo Performing fine heterodyne - mode 1 - using binary file
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.bin --binary-input --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -283,8 +288,9 @@ echo Performing fine heterodyne - mode 2 - using update from offset parameter fi
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 2 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -302,8 +308,9 @@ echo Performing fine heterodyne - mode 1 - using offset parameter file
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
@@ -322,8 +329,9 @@ echo Performing entire heterodyne in one go - mode 3
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 3 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $LOCATION/cachefile --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-	echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+	echo lalapps_heterodyne_pulsar exited with error $ret_code!
 	exit 2
 fi
 
@@ -341,8 +349,9 @@ echo Performing updating heterodyne of already fine heterodyned data
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --heterodyne-flag 4 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE3 --resample-rate $SRATE3 --filter-knee 0 --data-file $FINEFILE.off2 --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --stddev-thresh 5
 
 # check the exit status of the code
-if [ $? != "0" ]; then
-        echo lalapps_heterodyne_pulsar exited with error $?!
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
         exit 2
 fi
 
