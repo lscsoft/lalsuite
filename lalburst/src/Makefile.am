@@ -44,6 +44,8 @@ liblalburst_la_SOURCES = \
 	TrackSearch.c \
 	check_series_macros.h
 
+liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
+
 CLEANFILES = \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
