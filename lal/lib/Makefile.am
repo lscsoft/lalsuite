@@ -45,7 +45,7 @@ LALVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py
 	@echo "creating LALVCSInfo.h"
-	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LAL $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LAL $(srcdir) $$PWD
 
 all-local: include-link
 include-link: LALVCSInfo.h

@@ -95,6 +95,6 @@ LALFrameVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALFrameConfig.h
 	@echo "creating LALFrameVCSInfo.h"
-	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALFrame $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALFrame $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

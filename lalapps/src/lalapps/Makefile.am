@@ -72,6 +72,6 @@ LALAppsVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py
 	@echo "creating LALAppsVCSInfo.h"
-	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALApps $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALApps $(srcdir) $$PWD
 
 TESTS = lalapps_version

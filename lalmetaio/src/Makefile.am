@@ -84,6 +84,6 @@ LALMetaIOVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALMetaIOConfig.h
 	@echo "creating LALMetaIOVCSInfo.h"
-	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALMetaIO $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALMetaIO $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

@@ -107,6 +107,6 @@ LALBurstVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALBurstConfig.h
 	@echo "creating LALBurstVCSInfo.h"
-	$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALBurst $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALBurst $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
