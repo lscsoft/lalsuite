@@ -767,6 +767,8 @@ LALMallocLong( size_t n, const char *file, int line )
   lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
   if ( ! q )
   {
+    XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+    XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
     if ( lalDebugLevel & LALMEMINFO )
     {
       LALPrintError( "LALMalloc meminfo: out of memory\n" );
@@ -809,6 +811,8 @@ LALCallocLong( size_t m, size_t n, const char *file, int line )
   lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
   if ( ! q )
   {
+    XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+    XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
     if ( lalDebugLevel & LALMEMINFO )
     {
       LALPrintError( "LALCalloc meminfo: out of memory\n" );
@@ -849,6 +853,8 @@ LALReallocLong( void *q, size_t n, const char *file, const int line )
     q = PushAlloc( PadAlloc( p, n, 0, "LALRealloc" ), n, file, line );
     if ( ! q )
     {
+      XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
+      XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
       if ( lalDebugLevel & LALMEMINFO )
       {
         LALPrintError( "LALRealloc meminfo: out of memory\n" );
