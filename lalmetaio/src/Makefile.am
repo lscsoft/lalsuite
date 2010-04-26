@@ -21,10 +21,12 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c
 
+liblalmetaio_la_LDFLAGS = -version-info $(LIBVERSION)
+
 EXTRA_DIST = \
-	git_version \
 	LALMetaIOConfig.h.in \
-	LALMetaIOVCSInfo.h.in
+	LALMetaIOVCSInfo.h.in \
+	generate_vcs_info.py
 
 CLEANFILES = \
 	lalmetaio-user-env.sh \
@@ -80,9 +82,8 @@ lalmetaio-user-env.csh: Makefile
 
 LALMetaIOVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALMetaIOConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALMetaIOConfig.h
 	@echo "creating LALMetaIOVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALMetaIO $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALMetaIO $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

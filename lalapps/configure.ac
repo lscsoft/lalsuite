@@ -45,7 +45,6 @@ AC_CONFIG_FILES([\
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
-AC_CONFIG_FILES([src/lalapps/git_version],[chmod +x src/lalapps/git_version])
 AM_INIT_AUTOMAKE([foreign])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
 AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
@@ -67,7 +66,7 @@ LALAPPS_WITH_EXTRA_LIBS
 LALAPPS_ENABLE_GCC_FLAGS
 LALAPPS_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
-LALAPPS_ENABLE_BOINC
+LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
@@ -206,7 +205,7 @@ if test "${boinc}" = "true" ; then
     AC_LANG_PUSH([C++])
 
     # has lal build built with boinc support
-    LALAPPS_CHECK_BOINC
+    LALSUITE_CHECK_BOINC
 
     # point to boinc headers and libraries
     CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"

@@ -24,6 +24,8 @@ liblalframe_la_SOURCES = \
 	LALFrameIO.c \
 	LALFrameVCSInfo.c
 
+liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
+
 CLEANFILES = \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
@@ -77,7 +79,7 @@ lalframe-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
-	git_version \
+	generate_vcs_info.py \
 	FrameSeries.m4 \
 	FrameSeriesRead.m4 \
 	FrameSeriesWrite.m4 \
@@ -91,9 +93,8 @@ FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 
 LALFrameVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALFrameConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALFrameConfig.h
 	@echo "creating LALFrameVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALFrame $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALFrame $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

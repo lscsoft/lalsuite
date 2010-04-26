@@ -245,7 +245,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
   int i1=0,i2=0;
   
   double t=0.0,tau=0.0,tau18=0.0,tau28=0.0,tau38=0.0,tau58=0.0,tau_18=0.0,tau_28=0.0,tau_38=0.0,tau_58=0.0,tau_68=0.0;
-  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,G=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
+  double omega_orb=0.0,l_L=0.0,Y=0.0,Gsq=0.0,g=0.0,slamL=0.0,clamL=0.0,LdotN=0.0;
   double hplus=0.0,hcross=0.0,locpolar=0.0,sin2polar=0.0,cos2polar=0.0,Fplus=0.0,Fcross=0.0;
   double cst4=0.0,x1=0.0,x2=0.0,x3=0.0;
   double taperx[length],omegas[length];
@@ -303,21 +303,21 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
 	
         Y = spin/l_L;                                                                                                    //Y = |S|/|L|, Eq.43
         Gsq = 1.0 + 2.0*pSpCosTh1*Y + Y*Y;                                                                                      //G^2, Eq.46
-        G   = sqrt(Gsq);
+        g   = sqrt(Gsq);
 	
         cst4 = l_L + pSpCosTh1*spin;
         x = mu*Mtot;
         x1 = x*x*x;
-        x = G*l_L;
+        x = g*l_L;
         x2 = x*x*x;
         x3 = spin*spin*spin;
         alpha = pSpPhi1 - 5.0/(96.0*x1) * (1.0+0.75*m2/m1) * 
-          (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*G*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
+          (2.0*x2 - 3.0*pSpCosTh1*spin*cst4*g*l_L - 3.0*pSpCosTh1*x3*(1.0-pSpCosTh1*pSpCosTh1) * asinh(cst4/cst5));                                            //Eq.47
         if(fabs(alpha1)<1.e-30) alpha1 = alpha;  //Save initial alpha
         //alpha2 = alpha;                         //Save final alpha
 	
-        slamL = cst5/(l_L*G);                                                                                            //sin(lambda_L), Eq.48a
-        clamL = cst4/(l_L*G);                                                                                            //cos(lambda_L), Eq.48b
+        slamL = cst5/(l_L*g);                                                                                            //sin(lambda_L), Eq.48a
+        clamL = cst4/(l_L*g);                                                                                            //cos(lambda_L), Eq.48b
 	
 	
         //Construct Eq.41e
@@ -353,7 +353,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
         //if((omega_orb/pi<40.002 || fabs(t)<0.2) && beVerbose>=1) {
         //if(beVerbose>=1) {
         //printf("i: %8d   t: %10g   f: %10g   x: %10g\n",i,t,omega_orb/pi,taperx[i]);
-        //printf("omg_orb: %10g  phi_orb: %10g  l_L: %10g  S: %10g  k: %10g  Y: %10g  G: %10g  alpha: %10g  slamL: %10g  clamL: %10g \n",  omega_orb,phi_orb,l_L,spin,pSpCosTh1,Y,G,alpha,slamL,clamL);
+        //printf("omg_orb: %10g  phi_orb: %10g  l_L: %10g  S: %10g  k: %10g  Y: %10g  g: %10g  alpha: %10g  slamL: %10g  clamL: %10g \n",  omega_orb,phi_orb,l_L,spin,pSpCosTh1,Y,g,alpha,slamL,clamL);
         //printf("i: %8d   t: %10g  alpha_c: %10g   alpha0: %10g   alpha: %10g  alpha/2pi: %10g\n",  i,t,pSpPhi1,alpha0,alpha,alpha/tpi);
         //}
 	

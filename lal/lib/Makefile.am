@@ -1,6 +1,6 @@
 EXTRA_DIST = \
 	LALVCSInfo.h.in \
-	git_version
+	generate_vcs_info.py
 
 lib_LTLIBRARIES = liblal.la
 
@@ -24,6 +24,7 @@ liblal_la_DEPENDENCIES = \
 	$(top_builddir)/packages/fft/src/libfft.la \
 	$(top_builddir)/packages/noisemodels/src/libnoisemodels.la
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
+liblal_la_LDFLAGS = -version-info $(LIBVERSION)
 
 BUILT_SOURCES = \
 	._vcsinfo \
@@ -42,10 +43,9 @@ LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 
 LALVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version
+._vcsinfo: $(srcdir)/generate_vcs_info.py
 	@echo "creating LALVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-	./git_version --sed LAL $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LAL $(srcdir) $$PWD
 
 all-local: include-link
 include-link: LALVCSInfo.h

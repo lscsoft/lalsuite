@@ -21,6 +21,7 @@
 #define __TWOSPECTTYPES_H__
 
 #include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
 #include <lal/LALDetectors.h>
 
 typedef struct
@@ -28,8 +29,6 @@ typedef struct
    REAL8Vector *f;         //First PSD frequencies
    REAL8Vector *fpr;       //Second PSD frequencies
    REAL8Vector *ffdata;    //Doubly Fourier transformed data
-   REAL8Vector *backgrnd;  //TF Noise background
-   REAL8Vector *antweights;   //Antenna pattern weights (F**2)
 } ffdataStruct;
 
 typedef struct
@@ -95,6 +94,7 @@ typedef struct
    REAL8Vector *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
    INT4Vector *firstfftfrequenciesofpixels;  //pixel frequency values
+   INT4Vector *secondfftfrequencies;
 } templateStruct;
 
 

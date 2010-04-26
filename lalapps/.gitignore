@@ -124,7 +124,6 @@ src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/defaults.py
-src/lalapps/git_version
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version

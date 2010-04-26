@@ -14,7 +14,6 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
-AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -50,7 +49,7 @@ AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
                    [LALPulsar Configure Date])
 
 # boinc
-LAL_ENABLE_BOINC
+LALSUITE_ENABLE_BOINC
 
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
@@ -121,7 +120,7 @@ LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
 
 # check that lal has been buil with boinc support, for boinc build
 if test "${boinc}" = "true" ; then
-  LAL_CHECK_BOINC
+  LALSUITE_CHECK_BOINC
 fi
 
 # check for lalsupport, needed for test suite

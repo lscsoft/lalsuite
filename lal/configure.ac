@@ -84,7 +84,6 @@ AC_CONFIG_FILES([ \
   packages/support/test/Makefile
 ])
 AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
-AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
@@ -96,6 +95,25 @@ AH_BOTTOM([
 
 AC_CANONICAL_HOST
 
+# set library api info
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
 LAL_WITH_CC
 LAL_WITH_CFLAGS
 LAL_WITH_EXTRA_CFLAGS
@@ -105,7 +123,7 @@ LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
-LAL_ENABLE_BOINC
+LALSUITE_ENABLE_BOINC
 LAL_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_DEBUG
