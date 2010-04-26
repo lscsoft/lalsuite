@@ -218,7 +218,6 @@ src/ring/lalapps_ringread
 src/ring/lalapps_rinj
 src/ring/lalapps_spheroidal_harmonic
 src/stamp-h1
-src/stochastic/lalapps_olapredfcn
 src/stochastic/lalapps_stochastic
 src/stochastic/lalapps_stochastic_bayes
 src/stochastic/lalapps_stochastic_fake
