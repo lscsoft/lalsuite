@@ -563,12 +563,12 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	/* time of the event given with nano-seconds */
 	eventtime=(double)peaktime/1e9;
 
-	/* the event is vetoed by default unless... */
-	veto=1;
+	/* the event is OK by default unless... */
+	veto=0;
 		    
-	/* then check all the segments of the slice */
-	for(s=0; veto==1&&s<nseg; s++){
-	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=0;
+	/* ...it is inside a veto segment */
+	for(s=0; veto==0&&s<nseg; s++){
+	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=1;
 	}
 	
 	/* rejection if veto */
