@@ -69,15 +69,14 @@ lalxml-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
+	generate_vcs_info.py \
 	LALXMLConfig.h.in \
-	LALXMLVCSInfo.h.in \
-	git_version.in
+	LALXMLVCSInfo.h.in
 
 LALXMLVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALXMLConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALXMLConfig.h
 	@echo "creating LALXMLVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALXML $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALXML $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

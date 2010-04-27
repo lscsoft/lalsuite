@@ -5085,7 +5085,7 @@ double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa
    }
    else if( caseID[5] ) {
      /*If it has come this far, v1 must be detector 3 */
-     thisEvent->eff_dist_v = sqrt(sigmasq[2])/pow((C_Real2*C_Real1+C_Im2*C_Im2),.5);
+     thisEvent->eff_dist_v = sqrt(sigmasq[2])/pow((C_Real2*C_Real2+C_Im2*C_Im2),.5);
    }
  }
  else {
