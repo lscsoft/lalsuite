@@ -268,7 +268,7 @@ void initialise(int argc, char *argv[]){
 			if(nifo==0) {IFOnames=malloc(sizeof(char **)); ChannelNames=malloc(sizeof(char **));}
 			else	{IFOnames=realloc(IFOnames,(nifo+1)*sizeof(CHAR **)); ChannelNames=realloc(ChannelNames,(nChannel+1)*sizeof(char **));}
 			IFOnames[nifo]=malloc(strlen(optarg)+1);
-            printf("strlen(optarg)=%i, optarg=%s\n",strlen(optarg),optarg);
+            printf("strlen(optarg)=%zu, optarg=%s\n",strlen(optarg),optarg);
 			ChannelNames[nifo]=malloc(MAXSTR+1);
 			/*strcpy(IFOnames[nifo],optarg);*/
             sprintf(IFOnames[nifo],"%s",optarg);
@@ -340,7 +340,6 @@ int main( int argc, char *argv[])
 	INT4 segnum=0;
 	RandomParams *randparam=NULL;
 	RandomParams *datarandparam=NULL;
-	InspiralTemplate insptemplate;
 	REAL4 TSoffset;
 	LIGOTimeGPS realstart,segmentStart;
 	REAL8 networkSNR=0.0;
@@ -423,7 +422,6 @@ int main( int argc, char *argv[])
 	
 	/* Prepare for injections */
 	UINT4 Ninj=0;
-	CoherentGW InjectGW;
 	PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
@@ -795,7 +793,7 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	REAL8 mcmin,mcmax,m1min,m1max,m2min,m2max;
 	REAL8 deltaLong=0.01;
 	REAL8 deltaLat=0.01;
-	REAL8 trueLong,trueLat;
+	REAL8 trueLong=0.0,trueLat=0.0;
 	
 	parameter->param = NULL;
 	parameter->dimension = 0;
@@ -883,6 +881,7 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	double mcmin,mcmax;
 	double deltaLong=0.001;
 	double deltaLat=0.001;
+	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	fprintf(stderr,"Using longitude = %f, latitude = %f\n",manual_RA,manual_dec);
@@ -910,12 +909,11 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 {
 	double etamin=0.03;
 	double mcmin,mcmax;
+	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
-	double dmax = HighMassFlag?500.0:100.0;
-	double dmin=1.0;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
@@ -936,6 +934,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 	REAL8 trg_time,mcmin,mcmax;
 	REAL4 localetawin;
+	iT=NULL;
 	parameter->param = NULL;
 	parameter->dimension = 0;
 	trg_time = manual_end_time;

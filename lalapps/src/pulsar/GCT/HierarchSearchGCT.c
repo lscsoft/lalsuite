@@ -414,7 +414,7 @@ int MAIN( int argc, char *argv[]) {
     return HIERARCHICALSEARCH_ESUB;
   }
 
-  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
+  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
 
   if ( uvar_version )
     {
@@ -889,8 +889,7 @@ int MAIN( int argc, char *argv[]) {
         }
         
         /* show progress */
-        fprintf(stderr, "sky:%d f1dot:%d\n",
-                skyGridCounter+1, ifdot+1 );
+        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d", skyGridCounter+1, ifdot+1 );
 
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
@@ -938,8 +937,8 @@ int MAIN( int argc, char *argv[]) {
 
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintf(LOG_DEBUG, "CG:%d, FG:%ld\n",coarsegrid.length,finegrid.length);
-
+        LogPrintfVerbatim(LOG_NORMAL, " CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
+        
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
 
@@ -1220,8 +1219,9 @@ int MAIN( int argc, char *argv[]) {
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
                       thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
-        
+#ifdef EAH_BOINC
         SET_CHECKPOINT;
+#endif
         
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
