@@ -68,13 +68,15 @@ endif
 
 if HAVE_PYTHON
 pkgpython_DATA = ring.py
-bin_SCRIPTS = lalapps_ring_pipe
+bin_SCRIPTS = \
+	lalapps_ring_pipe \
+	lalapps_ringcorse
 endif
 
 pkgdata_DATA = ring_test.ini
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-CLEANFILES = python_config.sed lalapps_ring_pipe
+CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse
 EXTRA_DIST = ring.c ring_pipe.in ring.py $(DATA)
 
 python_config.sed:
@@ -86,6 +88,11 @@ python_config.sed:
 lalapps_ring_pipe: $(srcdir)/ring_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/ring_pipe.in > lalapps_ring_pipe
 	chmod +x lalapps_ring_pipe
+
+lalapps_ringcorse: $(srcdir)/ringcorse.in python_config.sed
+	sed -f python_config.sed $(srcdir)/ringcorse.in > lalapps_ringcorse
+	chmod +x lalapps_ringcorse
+
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
