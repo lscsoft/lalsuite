@@ -81,6 +81,9 @@ static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
         LALCalloc( 1, sizeof(SnglInspiralTable) );
     }
 
+    /* FIXME: work around for FrameL const string issue */
+    union { const char *c; char *s; } u;
+
     /* read data from the frEvt */
     snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, "%s", frEvt->name);
     snglEvt->snr = frEvt->amplitude;
@@ -88,13 +91,13 @@ static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
     timeAfter = frEvt->timeAfter;
     XLALGPSAdd(&snglEvt->end_time,timeAfter);
-    snglEvt->eff_distance = FrEventGetParam ( frEvt, "distance (Mpc)");
-    snglEvt->mass1 = FrEventGetParam ( frEvt, "mass1");
-    snglEvt->mass2 = FrEventGetParam ( frEvt, "mass2" );
-    snglEvt->tau0 =FrEventGetParam ( frEvt, "tau0" );
-    snglEvt->tau3 = FrEventGetParam ( frEvt, "tau1p5" );
-    snglEvt->coa_phase = FrEventGetParam ( frEvt, "phase" );
-    snglEvt->chisq = FrEventGetParam ( frEvt, "chi2" );
+    u.c = "distance (Mpc)"; snglEvt->eff_distance = FrEventGetParam ( frEvt, u.s );
+    u.c = "mass1"; snglEvt->mass1 = FrEventGetParam ( frEvt, u.s );
+    u.c = "mass2"; snglEvt->mass2 = FrEventGetParam ( frEvt, u.s );
+    u.c = "tau0"; snglEvt->tau0 =FrEventGetParam ( frEvt, u.s );
+    u.c = "tau1p5"; snglEvt->tau3 = FrEventGetParam ( frEvt, u.s );
+    u.c = "phase"; snglEvt->coa_phase = FrEventGetParam ( frEvt, u.s );
+    u.c = "chi2"; snglEvt->chisq = FrEventGetParam ( frEvt, u.s );
 
     /* populate additional colums */
     snglEvt->mtotal = snglEvt->mass1 + snglEvt->mass2;
@@ -132,17 +135,21 @@ static int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
 
+    /* FIXME: work around for FrameL const string issue */
+    union { const char *c; char *s; } u;
+
     /* read data from the frSimEvt */
     snprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, "%s", frSimEvt->name);
     simEvt->geocent_end_time.gpsSeconds = frSimEvt->GTimeS;
     simEvt->geocent_end_time.gpsNanoSeconds = frSimEvt->GTimeN;
     simEvt->v_end_time = simEvt->geocent_end_time;
 
-    simEvt->distance = FrSimEventGetParam ( frSimEvt, "distance");
+
+    u.c = "distance"; simEvt->distance = FrSimEventGetParam ( frSimEvt, u.s );
     simEvt->eff_dist_v = simEvt->distance;
 
-    simEvt->mass1 = FrSimEventGetParam ( frSimEvt, "m1");
-    simEvt->mass2 = FrSimEventGetParam ( frSimEvt, "m2" );
+    u.c = "m1"; simEvt->mass1 = FrSimEventGetParam ( frSimEvt, u.s );
+    u.c = "m2"; simEvt->mass2 = FrSimEventGetParam ( frSimEvt, u.s );
   }
 
   return ( numSim );
@@ -306,9 +313,13 @@ int main( int argc, char *argv[] )
   tStart   = FrFileITStart(iFile);
   tEnd     = FrFileITEnd(iFile);
   duration = tEnd - tStart;
-  
+
+  /* FIXME: work around for FrameL const string issue */
+  union { const char *c; char *s; } u;
+
   /* read in the events */
-  frameEvent = FrEventReadT(iFile, "*clustered", tStart, duration, 
+  u.c = "*clustered";
+  frameEvent = FrEventReadT(iFile, u.s, tStart, duration, 
       snrMin, snrMax);
 
 
@@ -328,7 +339,8 @@ int main( int argc, char *argv[] )
    *
    */
 
-  frSimEvent  = FrSimEventReadT (iFile, "cb*", tStart, duration, 
+  u.c = "cb*";
+  frSimEvent  = FrSimEventReadT (iFile, u.s, tStart, duration, 
       simMin, simMax);
 
   /*Write out details of events to SnglInspiralTable*/
