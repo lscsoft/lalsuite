@@ -138,7 +138,6 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   struct FrVect     *vect;
   struct FrProcData *proc;
   size_t i;
-  char *tmp_unit = NULL;
 
   if ( ser->type != FR_VECT_4R && ser->type != FR_VECT_8C &&
        ser->type != FR_VECT_8R )
@@ -162,11 +161,10 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   }
 
   /* FIXME: work around for FrameL const string issue */
-  tmp_unit = (char *)calloc(strlen(ser->unit), sizeof(char));
-  memcpy(tmp_unit, ser->unit, strlen(ser->unit));
+  union { const char *c; char *s; } u = {ser->unit};
 
   vect = FrVectNew1D( channel, ser->type, ser->size, ser->step,
-      IS_TIME( ser->dom) ? seconds : hertz, tmp_unit );
+      IS_TIME( ser->dom) ? seconds : hertz, u.s );
   proc = calloc( 1, sizeof( *proc ) );
   proc->classe     = FrProcDataDef();
 #if defined FR_VERS && FR_VERS < 5000
@@ -210,9 +208,6 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
         ser->type );
     return NULL;
   }
-
-  /* FIXME: work around for FrameL const string issue */
-  free(tmp_unit);
 
   return frame;
 }
