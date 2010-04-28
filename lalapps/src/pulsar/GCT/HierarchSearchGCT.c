@@ -1150,18 +1150,12 @@ int MAIN( int argc, char *argv[]) {
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
 
-	    if (U1idx < 0) {
+	    if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
 	      fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
 	      return(HIERARCHICALSEARCH_ECG);
 	    }
 
             for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
-
-              /* consider only relevant frequency values (do not step outside coarse grid) */
-              if ( U1idx >= fveclength ) {
-                fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
-                return(HIERARCHICALSEARCH_ECG);
-              }
 
 	      /* Add the 2F value to the 2F sum */
 	      TwoF_tmp = coarsegrid.list[U1idx].TwoF;
