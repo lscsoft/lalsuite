@@ -622,13 +622,14 @@ int MAIN( int argc, char *argv[]) {
     gammaRefine = uvar_gammaRefine;
   }
   else {
-    sigmasq=0.0;
+    sigmasq = 0.0; /* second moment of segments' midpoints */
     for (k = 0; k < nStacks; k++) {
       midTstackGPS = midTstack->data[k];
       timeDiffSeg = XLALGPSDiff( &midTstackGPS, &tMidGPS );
       sigmasq = sigmasq + (timeDiffSeg * timeDiffSeg);
     }
     sigmasq = sigmasq / (nStacks * tStack * tStack);
+    /* Refinement factor (approximate) */
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
   }
 
@@ -1150,31 +1151,31 @@ int MAIN( int argc, char *argv[]) {
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
 
-	    if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
-	      fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
-	      return(HIERARCHICALSEARCH_ECG);
-	    }
+            if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+              return(HIERARCHICALSEARCH_ECG);
+            }
 
             for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
 
-	      /* Add the 2F value to the 2F sum */
-	      TwoF_tmp = coarsegrid.list[U1idx].TwoF;
-	      sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
-	      finegrid.list[ifine].sumTwoF = sumTwoF_tmp;
+              /* Add the 2F value to the 2F sum */
+              TwoF_tmp = coarsegrid.list[U1idx].TwoF;
+              sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
+              finegrid.list[ifine].sumTwoF = sumTwoF_tmp;
 
-	      /* Increase the number count */
-	      if (TwoF_tmp > TwoFthreshold) {
-		finegrid.list[ifine].nc++;
-	      }
+              /* Increase the number count */
+              if (TwoF_tmp > TwoFthreshold) {
+                finegrid.list[ifine].nc++;
+              }
                 
 #ifdef DIAGNOSISMODE
-	      /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
-	      if (finegrid.list[ifine].nc > nc_max) {
-		nc_max = finegrid.list[ifine].nc;
-	      }
-	      if (sumTwoF_tmp > sumTwoFmax) {
-		sumTwoFmax = sumTwoF_tmp;
-	      }
+              /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
+              if (finegrid.list[ifine].nc > nc_max) {
+                nc_max = finegrid.list[ifine].nc;
+              }
+              if (sumTwoF_tmp > sumTwoFmax) {
+                sumTwoFmax = sumTwoF_tmp;
+              }
 #endif
 
               /* -------------- Single-trial check ------------- */
