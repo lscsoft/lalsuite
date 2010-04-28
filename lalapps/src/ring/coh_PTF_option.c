@@ -60,6 +60,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "do-null-stream"     ,no_argument, &localparams.doNullStream,1},
     { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
     { "do-bank-veto"       ,no_argument, &localparams.doBankVeto,1},
+    { "do-auto-veto"       ,no_argument, &localparams.doAutoVeto,1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
     {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
@@ -95,10 +96,13 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "only-template-numbers",   required_argument, 0, 'N' },
     { "output-file",             required_argument, 0, 'o' },
     { "bank-file",               required_argument, 0, 'O' },
+    { "num-auto-chisq-points",   required_argument, 0, 'p' },
+    { "auto-veto-time-step",     required_argument, 0, 'P' },
     { "random-seed",             required_argument, 0, 'r' },
     { "dynamic-range-factor",    required_argument, 0, 'R' },
     { "sample-rate",             required_argument, 0, 's' },
     { "segment-duration",        required_argument, 0, 'S' },
+    { "bank-veto-templates",     required_argument, 0, 't' },
     { "inverse-spec-length",     required_argument, 0, 'T' },
     { "trig-start-time",         required_argument, 0, 'u' },
     { "trig-end-time",           required_argument, 0, 'U' },
@@ -109,7 +113,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:T:u:U:v:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -225,6 +229,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'O': /* bank-file */
         localparams.bankFile = optarg;
         break;
+      case 'p': /* num auto chisq points */
+        localparams.numAutoPoints = atoi( optarg );
+        break;
+      case 'P': /* Auto veto time step */
+        localparams.autoVetoTimeStep = atof( optarg );
+        break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
         break;
@@ -236,6 +246,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'S': /* segment-duration */
         localparams.segmentDuration = atof( optarg );
+        break;
+      case 't': /* bank veto template bank */
+        localparams.bankVetoBankName = optarg;
         break;
       case 'T': /* inverse-spec-length */
         localparams.invSpecLen = atof( optarg );
@@ -406,6 +419,12 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
     fprintf(stderr, "Supplying --sub-bank-size will do nothing if ");
     fprintf(stderr, "--do-bank-veto is not given. \n" );
   }
+  if ( params->doAutoVeto && (! (params->autoVetoTimeStep && params->numAutoPoints)))
+  {
+    fprintf(stderr, "When using --do-auto-veto you must also supply ");
+    fprintf(stderr, "--num-auto-chisq-points and --auto-veto-time-step\n");
+    sanity_check(params->doAutoVeto && params->autoVetoTimeStep && params->numAutoPoints);
+  }
   sanity_check(params->spinBank || params->noSpinBank);
   return 0;
 }
@@ -479,6 +498,10 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--do-trace-snr Calculate Trace SNR for potential triggers \n");
   fprintf( stderr, "--do-bank-veto Calculate Bank Veto for potential triggers \n");
   fprintf( stderr, "--sub-bank-size Number of templates to use for bank veto \n");
+  fprintf( stderr, "--bank-veto-templates File containing templates to use for bank veto \n");
+  fprintf( stderr, "--do-auto-veto Calculate Auto Veto for potential triggers \n");
+  fprintf( stderr, "--num-auto-chisq-points Number of points to use in calculating auto veto \n");
+  fprintf( stderr, "--auto-veto-time-step Seperation between points for auto veto \n");
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );

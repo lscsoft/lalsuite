@@ -470,16 +470,7 @@ cohPTFTemplateOverlaps(
   vecLen = 5;
   if (! spinBank )
   {
-    vecLen = 2;
-    for ( k = kmin; k < kmax ; ++k )
-    {
-      PTFQtilde1[k].im = PTFQtilde1[k+len].re;
-//      PTFQtilde1[k + len].re = PTFQtilde1[k].im;
-      PTFQtilde1[k + len].im = -PTFQtilde1[k].re;
-      PTFQtilde2[k].im = PTFQtilde2[k+len].re;
-//      PTFQtilde2[k + len].re = PTFQtilde2[k].im;
-      PTFQtilde2[k + len].im = -PTFQtilde2[k].re;
-    }
+    vecLen = 1;
   }
 
 //  fprintf(stderr,"Calculating PTFM overlap \n");
@@ -552,16 +543,7 @@ cohPTFComplexTemplateOverlaps(
   vecLen = 5;
   if (! spinBank )
   {
-    vecLen = 2;
-    for ( k = kmin; k < kmax ; ++k )
-    {
-      PTFQtilde1[k].im = PTFQtilde1[k+len].re;
-//      PTFQtilde1[k + len].re = PTFQtilde1[k].im;
-      PTFQtilde1[k + len].im = -PTFQtilde1[k].re;
-      PTFQtilde2[k].im = PTFQtilde2[k+len].re;
-//      PTFQtilde2[k + len].re = PTFQtilde2[k].im;
-      PTFQtilde2[k + len].im = -PTFQtilde2[k].re;
-    }
+    vecLen = 1;
   }
 
 //  fprintf(stderr,"Calculating PTFM overlap \n");
@@ -629,12 +611,6 @@ void cohPTFBankFilters(
   if (! spinBank )
   {
     vecLen = 1;
-    for ( k = kmin; k < kmax ; ++k )
-    {
-      PTFQtilde[k].im = PTFQtilde[k+len].re;
-//      PTFQtilde[k +len].re = PTFQtilde[k].im;
-      PTFQtilde[k + len].im = -PTFQtilde[k].re;
-    }
   }
   else
     vecLen = 5;
@@ -720,4 +696,80 @@ REAL4 cohPTFDataNormalize(
   overlap = overlap * deltaF;
   return overlap;
  
+}
+
+void autoVetoOverlaps(
+    FindChirpTemplate          *fcTmplt,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    REAL4FrequencySeries       *invspec,
+    COMPLEX8FFTPlan            *invBankPlan,
+    UINT4                      spinBank,
+    UINT4                      numAutoPoints, 
+    UINT4                      timeStepPoints,
+    UINT4                      ifoNumber )
+{
+  UINT4          i, j, k, kmin, len, kmax,vecLen,numPoints;
+  REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y;
+  COMPLEX8       *qtilde;
+  COMPLEX8Vector *qtildeVec,*qVec;
+  COMPLEX8       *PTFQtilde   = NULL;
+
+  len         = invspec->data->length;
+  PTFQtilde = fcTmplt->PTFQtilde->data;
+  numPoints   = len*2 -2;
+  deltaF      = invspec->deltaF;
+  deltaT    = 1.0 / ( deltaF * (REAL4) len);
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  f_min     = (REAL4) fcTmplt->tmplt.fLower;
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
+  fFinal    = 1000;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+  qVec = XLALCreateCOMPLEX8Vector( numPoints );
+  qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
+  qtilde = qtildeVec->data;
+
+  if (! spinBank )
+    vecLen = 1;
+  else
+    vecLen = 5;
+
+//  FILE *outfile;
+
+//  outfile = fopen("auto_correlation_timeseries.dat","w");
+
+  for ( i = 0; i < vecLen; ++i )
+  {
+    for ( j=0; j < vecLen; ++j )
+    {
+      memset( qtildeVec->data, 0,
+          qtildeVec->length * sizeof(COMPLEX8) );
+      /* qtilde positive frequency, not DC or nyquist */
+      for ( k = kmin; k < kmax ; ++k )
+      {
+        r = PTFQtilde[i * (len ) + k].re;
+        s = PTFQtilde[i * (len ) + k].im;
+        x = PTFQtilde[j * (len ) + k].re;
+        y = 0 - PTFQtilde[j * (len ) + k].im; /* cplx conj */
+
+        qtilde[k].re = 4. * (r*x - s*y)*deltaF/ invspec->data->data[k];
+        qtilde[k].im = 4. * (r*y + s*x)*deltaF/ invspec->data->data[k];
+      }
+
+      /* inverse fft to get q */
+      XLALCOMPLEX8VectorFFT( qVec, qtildeVec, invBankPlan );
+      for ( k = 1; k < numAutoPoints+1 ; k++ )
+      {
+        autoTempOverlaps[k-1].timeStepDelay = - k * timeStepPoints;
+        autoTempOverlaps[k-1].PTFM[ifoNumber]->data[i*vecLen + j] = qVec->data[numPoints - k * timeStepPoints];
+      }
+/*      for (k = 0 ; k < numPoints ; k++)
+      {
+        fprintf(outfile,"%e %e \n", qVec->data[k].re,qVec->data[k].im);
+      }*/
+    }
+  }
+  XLALDestroyCOMPLEX8Vector( qtildeVec);
+  XLALDestroyCOMPLEX8Vector( qVec );
 }

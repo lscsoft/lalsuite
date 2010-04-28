@@ -3,11 +3,6 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_blas.h>
 
 #include "coh_PTF.h"
 
@@ -86,10 +81,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
+    REAL4TimeSeries         *autoVeto,
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
-    struct bankDataOverlaps *dataOverlaps
+    struct bankDataOverlaps *dataOverlaps,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps
 );
 int cohPTFspinChecker(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
@@ -113,7 +110,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *gammaBeta[2],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto
+    REAL4TimeSeries         *bankVeto,
+    REAL4TimeSeries         *autoVeto
 );
 
 static void coh_PTF_cleanup(
@@ -161,6 +159,7 @@ int main( int argc, char **argv )
   InspiralTemplate        *PTFbankhead = NULL;
   FindChirpTemplate       *fcTmplt     = NULL;
   InspiralTemplate        *PTFBankTemplates = NULL;
+  InspiralTemplate        *PTFBankvetoHead = NULL;
   FindChirpTemplate       *bankFcTmplts = NULL;
   FindChirpTmpltParams    *fcTmpltParams      = NULL;
   FindChirpInitParams     *fcInitParams = NULL;
@@ -180,6 +179,7 @@ int main( int argc, char **argv )
   REAL4TimeSeries         *nullSNR;
   REAL4TimeSeries         *traceSNR;
   REAL4TimeSeries         *bankVeto;
+  REAL4TimeSeries         *autoVeto;
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
   MultiInspiralTable      *thisEvent = NULL;
@@ -231,6 +231,7 @@ int main( int argc, char **argv )
   nullSNR = NULL;
   traceSNR = NULL;
   bankVeto = NULL;
+  autoVeto = NULL;
 
   /* Initialise some of the input file names */
   if ( params->spinBank )
@@ -436,32 +437,40 @@ int main( int argc, char **argv )
   }
 
   /* Create the templates needed for the bank veto, if necessary */
-  UINT4 subBankSize = params->BVsubBankSize;
+  UINT4 subBankSize;
   struct bankTemplateOverlaps *bankNormOverlaps = NULL;
   struct bankComplexTemplateOverlaps *bankOverlaps = NULL;
   struct bankDataOverlaps *dataOverlaps = NULL;
   
   if ( params->doBankVeto )
   {
+    subBankSize = read_sub_bank(params,&PTFBankTemplates);
     bankNormOverlaps = LALCalloc( subBankSize,sizeof( *bankNormOverlaps));
     bankOverlaps = LALCalloc( subBankSize,sizeof( *bankOverlaps));
     dataOverlaps = LALCalloc(subBankSize,sizeof( *dataOverlaps));
-    PTFBankTemplates = LALCalloc( subBankSize, sizeof( *PTFBankTemplates ));
     bankFcTmplts = LALCalloc( subBankSize, sizeof( *bankFcTmplts ));
-    initialise_sub_bank(params,PTFBankTemplates,bankFcTmplts,
-        subBankSize,numPoints,spinBank);
+    for (ui =0 ; ui < subBankSize; ui++)
+    {
+      bankFcTmplts[ui].PTFQtilde = 
+          XLALCreateCOMPLEX8VectorSequence( 1, numPoints / 2 + 1 );
+    }
+    PTFBankvetoHead = PTFBankTemplates;
+    
     for ( ui=0 ; ui < subBankSize ; ui++ )
     {
-      if (! spinBank)
+/*      if (! spinBank)
+      {*/
+      generate_PTF_template(PTFBankTemplates,fcTmplt,
+          fcTmpltParams);
+      PTFBankTemplates = PTFBankTemplates->next;
+      for ( uj = 0 ; uj < (numPoints/2 +1) ; uj++ )
       {
-        generate_PTF_template(&(PTFBankTemplates[ui]),fcTmplt,
-            fcTmpltParams);
-        for ( uj = 0 ; uj < (numPoints +2) ; uj++ )
-          bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
-      } 
+        bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
+      }
+/*      } 
       else
         generate_PTF_template(&(PTFBankTemplates[ui]),&(bankFcTmplts[ui]),
-            fcTmpltParams);
+            fcTmpltParams);*/
     }
     /* Calculate the overlap between templates for bank veto */
     for ( ui = 0 ; ui < subBankSize; ui++ )
@@ -470,7 +479,7 @@ int main( int argc, char **argv )
       {
         if ( params->haveTrig[ifoNumber] )
         {
-          if ( spinBank )
+/*          if ( spinBank )
           {
             bankNormOverlaps[ui].PTFM[ifoNumber]=
                 XLALCreateREAL8ArrayL( 2, 5, 5 );
@@ -478,16 +487,15 @@ int main( int argc, char **argv )
                 0, 25 * sizeof(REAL8) );
           }
           else
-          {
-            bankNormOverlaps[ui].PTFM[ifoNumber]=
-                XLALCreateREAL8ArrayL( 2, 2, 2 );
-            memset( bankNormOverlaps[ui].PTFM[ifoNumber]->data,
-                0, 4 * sizeof(REAL8) );
-          }
+          {*/
+          bankNormOverlaps[ui].PTFM[ifoNumber]=
+              XLALCreateREAL8ArrayL( 2, 1, 1 );
+          memset( bankNormOverlaps[ui].PTFM[ifoNumber]->data,
+              0, 1 * sizeof(REAL8) );
+//          }
           cohPTFTemplateOverlaps(&(bankFcTmplts[ui]),&(bankFcTmplts[ui]),
-              invspec[ifoNumber],spinBank,
+              invspec[ifoNumber],0,
               bankNormOverlaps[ui].PTFM[ifoNumber]);
-//          fprintf(stderr,"PTFM calc %e \n", bankNormOverlaps[ui].PTFM[ifoNumber]->data[2 * 0 + 0] );
         }
       }
     }
@@ -495,6 +503,33 @@ int main( int argc, char **argv )
     verbose("Generated bank veto filters at %ld \n", time(NULL)-startTime);
         
   }
+
+  /* Create the structures needed for the auto veto, if necessary */
+  UINT4 timeStepPoints = 0;
+  struct bankComplexTemplateOverlaps *autoTempOverlaps = NULL;
+
+  if ( params->doAutoVeto )
+  {
+    autoTempOverlaps = LALCalloc( params->numAutoPoints,
+        sizeof( *autoTempOverlaps));
+    timeStepPoints = params->autoVetoTimeStep*params->sampleRate;
+    for (uj = 0; uj < params->numAutoPoints; uj++ )
+    {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          autoTempOverlaps[uj].PTFM[ifoNumber] =
+              XLALCreateCOMPLEX8ArrayL( 2, 1, 1 );
+          memset( autoTempOverlaps[uj].PTFM[ifoNumber]->data,
+              0, 1 * sizeof(COMPLEX8) );
+        }
+        else
+          autoTempOverlaps[uj].PTFM[ifoNumber] = NULL;
+      }
+    }
+  }
+    
 
   PTFbankhead = PTFtemplate;
   /*fake_template (PTFtemplate);*/
@@ -509,19 +544,20 @@ int main( int argc, char **argv )
         {
           if ( params->haveTrig[ifoNumber] )
           {
-            if (spinBank)
+/*            if (spinBank)
             {
               dataOverlaps[ui].PTFqVec[ifoNumber] =
                   XLALCreateCOMPLEX8VectorSequence ( 5, 3*numPoints/4 - numPoints/4 + 10000);
               bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,5,5);
             }
             else
-            {
-              dataOverlaps[ui].PTFqVec[ifoNumber] =
-                  XLALCreateCOMPLEX8VectorSequence ( 1, 3*numPoints/4 - numPoints/4 + 10000);
-              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,2,2);
-            }
-            cohPTFBankFilters(&(bankFcTmplts[ui]),spinBank,
+            {*/
+            dataOverlaps[ui].PTFqVec[ifoNumber] =
+                XLALCreateCOMPLEX8VectorSequence ( 1, 
+                3*numPoints/4 - numPoints/4 + 10000);
+            bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,1,1);
+//            }
+            cohPTFBankFilters(&(bankFcTmplts[ui]),0,
                 &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
                 dataOverlaps[ui].PTFqVec[ifoNumber]);
           }
@@ -572,10 +608,19 @@ int main( int argc, char **argv )
             (1.0/params->sampleRate),&lalDimensionlessUnit,
             3*numPoints/4 - numPoints/4);
       if ( params->doBankVeto )
+      {
         bankVeto = XLALCreateREAL4TimeSeries("bankVeto",
             &segStartTime,PTFtemplate->fLower,
             (1.0/params->sampleRate),&lalDimensionlessUnit,
             3*numPoints/4 - numPoints/4);
+      }
+      if ( params->doAutoVeto )
+      {
+        autoVeto = XLALCreateREAL4TimeSeries("autoVeto",
+            &segStartTime,PTFtemplate->fLower,
+            (1.0/params->sampleRate),&lalDimensionlessUnit,
+            3*numPoints/4 - numPoints/4);
+      }
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if ( params->haveTrig[ifoNumber] )
@@ -594,18 +639,23 @@ int main( int argc, char **argv )
           {
           for ( ui = 0 ; ui < subBankSize ; ui++ )
           {
-            if ( spinBank )
+            /*if ( spinBank )
             {
               memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,25*sizeof(COMPLEX8));
             }
             else
-            {
-              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,4*sizeof(COMPLEX8));
-            }
+            {*/
+            memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,1*sizeof(COMPLEX8));
+//            }
             cohPTFComplexTemplateOverlaps(&(bankFcTmplts[ui]),fcTmplt,
-                invspec[ifoNumber],spinBank,
+                invspec[ifoNumber],0,
                 bankOverlaps[ui].PTFM[ifoNumber]);
           }
+          }
+          if ( params->doAutoVeto )
+          {
+            autoVetoOverlaps(fcTmplt,autoTempOverlaps,invspec[ifoNumber],
+                invPlan,0,params->numAutoPoints,timeStepPoints,ifoNumber);
           }
 
           verbose("Made filters for ifo %d,segment %d, template %d at %ld \n", 
@@ -626,16 +676,15 @@ int main( int argc, char **argv )
       
       /* Calculate the cohSNR time series */
       cohPTFmodBasesUnconstrainedStatistic(cohSNR,PTFM,PTFqVec,params,
-                               spinTemplate,singleDetector,timeOffsets,
-                               Fplus,Fcross,j,pValues,gammaBeta,nullSNR,
-                               traceSNR,bankVeto,subBankSize,bankOverlaps,
-                               bankNormOverlaps,dataOverlaps);
+          spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
+          gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,subBankSize,
+          bankOverlaps,bankNormOverlaps,dataOverlaps,autoTempOverlaps);
      
       verbose("Made coherent statistic for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);      
 
       /* From this we want to construct triggers */
-      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto);
+      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       for ( k = 0 ; k < 10 ; k++ )
@@ -651,6 +700,7 @@ int main( int argc, char **argv )
       if (nullSNR) XLALDestroyREAL4TimeSeries(nullSNR);
       if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
       if (bankVeto) XLALDestroyREAL4TimeSeries(bankVeto);
+      if (autoVeto) XLALDestroyREAL4TimeSeries(autoVeto);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       XLALDestroyREAL4TimeSeries(cohSNR);
@@ -677,7 +727,40 @@ int main( int argc, char **argv )
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets);
+  
+  while ( PTFBankvetoHead )
+  {
+    InspiralTemplate *thisTmplt;
+    thisTmplt = PTFBankvetoHead;
+    PTFBankvetoHead = PTFBankvetoHead->next;
+    if ( thisTmplt->event_id )
+    {
+      LALFree( thisTmplt->event_id );
+    }
+    LALFree( thisTmplt );
+  }
+
   free_bank_veto_memory(bankNormOverlaps,PTFBankTemplates,bankFcTmplts,subBankSize,bankOverlaps,dataOverlaps);
+
+  if ( autoTempOverlaps )
+  {
+    for (uj = 0; uj < params->numAutoPoints; uj++ )
+    {
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if ( params->haveTrig[ifoNumber] )
+        {
+          if ( autoTempOverlaps[uj].PTFM[ifoNumber] )
+          {
+            XLALDestroyCOMPLEX8Array( autoTempOverlaps[uj].PTFM[ifoNumber] );
+          }
+        }
+      }
+    }
+    LALFree( autoTempOverlaps );
+  }
+
+
   verbose("Generated output xml file, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
   LALCheckMemoryLeaks();
@@ -1119,10 +1202,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
+    REAL4TimeSeries         *autoVeto,
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
-    struct bankDataOverlaps *dataOverlaps
+    struct bankDataOverlaps *dataOverlaps,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps
 )
 
 {
@@ -1171,6 +1256,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   FILE *outfile;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
+  REAL4 *v1p,*v2p;
   REAL4 u1N[vecLength],u2N[vecLength],v1N[vecLength],v2N[vecLength];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
   REAL4 recSNR,traceSNRsq;
@@ -1178,15 +1264,20 @@ void cohPTFmodBasesUnconstrainedStatistic(
   REAL4 pValsTemp[vecLengthTwo];
   REAL4 betaGammaTemp[2];
   REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO];
-  REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
 
-  gsl_matrix *B2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
-  gsl_matrix *Binv2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_matrix *BNull = gsl_matrix_alloc(vecLength,vecLength);
   gsl_matrix *B2Null = gsl_matrix_alloc(vecLength,vecLength);
+  gsl_matrix *Bankeigenvecs[subBankSize+1];
+  gsl_vector *Bankeigenvals[subBankSize+1];
+  gsl_matrix *Autoeigenvecs = NULL;
+  gsl_vector *Autoeigenvals = NULL;
+  for (i = 0; i < subBankSize+1; i++)
+  {
+    Bankeigenvecs[i] = NULL;
+    Bankeigenvals[i] = NULL;  
+  }
   gsl_permutation *p = gsl_permutation_alloc(vecLengthTwo);
   gsl_permutation *pNull = gsl_permutation_alloc(vecLength);
-  gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc (vecLengthTwo);
   gsl_eigen_symmv_workspace *matTempNull = gsl_eigen_symmv_alloc (vecLength);
   gsl_matrix *eigenvecs = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_vector *eigenvals = gsl_vector_alloc(vecLengthTwo);
@@ -1199,57 +1290,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     b[i] = Fcross[segmentNumber*LAL_NUM_IFO+i];
   }
 
-  /* Create and invert the Bmatrix */
-  for (i = 0; i < vecLength; i++ )
-  {
-    for (j = 0; j < vecLength; j++ )
-    {
-      zh[i*vecLength+j] = 0;
-      sh[i*vecLength+j] = 0;
-      yu[i*vecLength+j] = 0;
-      for( k = 0; k < LAL_NUM_IFO; k++)
-      {
-        if ( params->haveTrig[k] )
-        {
-          /* Note that PTFM is always 5x5 even for non-spin */
-          zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*5+j];
-          sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*5+j];
-          yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*5+j];
-        }
-      }
-    }
-  }
-
-  for (i = 0; i < vecLengthTwo; i++ )
-  {
-    for (j = 0; j < vecLengthTwo; j++ )
-    {
-      if ( i < vecLength && j < vecLength )
-      {
-        gsl_matrix_set(B2,i,j,zh[i*vecLength+j]);
-      }
-      else if ( i > (vecLength-1) && j > (vecLength-1))
-      {
-        gsl_matrix_set(B2,i,j,sh[(i-vecLength)*vecLength + (j-vecLength)]);
-      }
-      else if ( i < vecLength && j > (vecLength-1))
-      {
-        gsl_matrix_set(B2,i,j, yu[i*vecLength + (j-vecLength)]);
-      }
-      else if ( i > (vecLength-1) && j < vecLength)
-      {
-        gsl_matrix_set(B2,i,j,yu[j*vecLength + (i-vecLength)]);
-      }
-      else
-        fprintf(stderr,"BUGGER! Something went wrong.");
-      gsl_matrix_set(Binv2,i,j,gsl_matrix_get(B2,i,j));
-      /*fprintf(stdout,"%f ",gsl_matrix_get(B2,i,j));*/
-    }
-    /*fprintf(stdout,"\n");*/
-  }
-
-  /* Here we compute the eigenvalues and eigenvectors of B2 */
-  gsl_eigen_symmv (Binv2,eigenvals,eigenvecs,matTemp);
+  calculate_bmatrix(params,eigenvecs,eigenvals,a,b,PTFM,vecLength,vecLengthTwo,5);
 
   /* Create B matrix for the null stream, if required */
   if ( params->doNullStream )
@@ -1292,53 +1333,22 @@ void cohPTFmodBasesUnconstrainedStatistic(
     timeOffsetPoints[i]=(int)(timeOffsets[segmentNumber*LAL_NUM_IFO+i]/deltaT);
   }
 
+  v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+  v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+
+
   for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* Main loop over time */
   {
-    for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
-    {
-      v1[j] = 0.;
-      v2[j] = 0.;
-      for( k = 0; k < LAL_NUM_IFO; k++)
-      {
-        if ( params->haveTrig[k] )
-        {
-          if (j < vecLength)
-          {
-            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
-            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
-          }
-          else
-          {
-            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
-            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
-          }
-        }
-      }
-    }
+    calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,timeOffsetPoints,
+        eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo);
 
-    /* Now we rotate the v1 and v2 to be in orthogonal basis */
-    /* We can use gsl multiplication stuff to do this */
-    /* BLAS stuff is stupid so we'll do it explicitly! */
-   
-    for ( j = 0 ; j < vecLengthTwo ; j++ )
-    {
-      u1[j] = 0.;
-      u2[j] = 0.;
-      for ( k = 0 ; k < vecLengthTwo ; k++ )
-      {
-        u1[j] += gsl_matrix_get(eigenvecs,k,j)*v1[k];
-        u2[j] += gsl_matrix_get(eigenvecs,k,j)*v2[k];
-      }
-      u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
-      u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
-    }
     /* Compute the dot products */
     v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
     for (j = 0; j < vecLengthTwo; j++)
     {
-      v1_dot_u1 += u1[j] * u1[j];
-      v1_dot_u2 += u1[j] * u2[j];
-      v2_dot_u2 += u2[j] * u2[j];
+      v1_dot_u1 += v1p[j] * v1p[j];
+      v1_dot_u2 += v1p[j] * v2p[j];
+      v2_dot_u2 += v2p[j] * v2p[j];
     }
     if (spinTemplate == 0)
     {
@@ -1351,14 +1361,14 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
     /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
-//    if (cohSNR->data->data[i-numPoints/4] > params->threshold )
-//    {
+    if (cohSNR->data->data[i-numPoints/4] > params->threshold )
+    {
       /* IF louder than threshold calculate maximized quantities */
       v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
       for (j = 0; j < vecLengthTwo; j++)
       {
-        u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
-        u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        u1[j] = v1p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+        u2[j] = v2p[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
         v1[j] = u1[j] * gsl_vector_get(eigenvals,j);
         v2[j] = u2[j] * gsl_vector_get(eigenvals,j);
         v1_dot_u1 += v1[j]*u1[j];
@@ -1437,12 +1447,15 @@ void cohPTFmodBasesUnconstrainedStatistic(
         
       }
 
-//    }
+    }
   }
+
+  LALFree(v1p);
+  LALFree(v2p);
 
   /* This function used to calculate signal based vetoes. */
   /* Calculations will only be done if necessary */
-  /* Current vetoes are: Null SNR*/
+  /* Current vetoes are: Null SNR,Trace SNR,bank veto*/
 
   UINT4 check;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
@@ -1588,13 +1601,98 @@ void cohPTFmodBasesUnconstrainedStatistic(
       }
     }
   }
-
+  
+  struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
 
   if ( params->doBankVeto )
   {
     for ( i = numPoints/4; i < 3*numPoints/4 ; ++i ) /* Main loop over time */
     {
-      /*if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+      {
+        check = 1;
+        for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
+        {
+          if (l < 0)
+            l = 0;
+          if (l > (INT4)(cohSNR->data->length-1))
+            break;
+          if (cohSNR->data->data[l] > cohSNR->data->data[i-numPoints/4])
+          {
+            check = 0;
+            break;
+          }
+        }
+        if (check)
+        {
+          if (! singleDetector)
+          {
+            for ( j = 0 ; j < subBankSize+1 ; j++ )
+            {
+              if (! Bankeigenvecs[j] )
+              {
+                Bankeigenvecs[j] = gsl_matrix_alloc(2,2);
+                Bankeigenvals[j] = gsl_vector_alloc(2);
+                if (j == subBankSize)
+                {
+                  calculate_bmatrix(params,Bankeigenvecs[j],Bankeigenvals[j],
+                      a,b,PTFM,1,2,5);
+                }
+                else
+                {
+                  calculate_bmatrix(params,Bankeigenvecs[j],Bankeigenvals[j],
+                      a,b,bankNormOverlaps[j].PTFM,1,2,1);
+                }
+              }
+            }
+
+            if (! bankCohOverlaps)
+            {
+              bankCohOverlaps = LALCalloc(subBankSize,sizeof(*bankCohOverlaps));
+              for ( j = 0 ; j < subBankSize; j++ )
+              {
+                bankCohOverlaps[j].rotReOverlaps = gsl_matrix_alloc(2,2);
+                bankCohOverlaps[j].rotImOverlaps = gsl_matrix_alloc(2,2);
+                calculate_coherent_bank_overlaps(params,bankOverlaps[j],
+                    bankCohOverlaps[j],a,b,Bankeigenvecs[subBankSize],
+                    Bankeigenvals[subBankSize],Bankeigenvecs[j],
+                    Bankeigenvals[j]);
+              }
+            }
+            bankVeto->data->data[i-numPoints/4] = calculate_bank_veto_max_phase_coherent(numPoints,i,subBankSize,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankCohOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
+          }
+//          autoVeto->data->data[i-numPoints/4] =calculate_bank_veto(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
+          if (singleDetector)
+            bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
+            
+        }
+      } 
+    }
+    for ( j = 0 ; j < subBankSize+1 ; j++ )
+    {
+      if (Bankeigenvecs[j])
+        gsl_matrix_free(Bankeigenvecs[j]);
+      if (Bankeigenvals[j])
+        gsl_vector_free(Bankeigenvals[j]);
+    }
+    if (bankCohOverlaps)
+    {
+      for ( j = 0 ; j < subBankSize ; j++ )
+      {
+        gsl_matrix_free(bankCohOverlaps[j].rotReOverlaps);
+        gsl_matrix_free(bankCohOverlaps[j].rotImOverlaps);
+      }
+      LALFree(bankCohOverlaps);
+    }
+  }
+
+  struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
+
+  if ( params->doAutoVeto )
+  {
+    for ( i = numPoints/4; i < 3*numPoints/4 ; ++i ) /* Main loop over time */
+    {
+/*      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
       {
         check = 1;
         for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
@@ -1611,11 +1709,49 @@ void cohPTFmodBasesUnconstrainedStatistic(
         }
         if (check)
         {*/
-          bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
+          if (! singleDetector)
+          {
+            if (! Autoeigenvecs )
+            {
+              Autoeigenvecs = gsl_matrix_alloc(2,2);
+              Autoeigenvals = gsl_vector_alloc(2);
+              calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
+                  a,b,PTFM,1,2,5);
+            }
+
+            if (! autoCohOverlaps)
+            {
+              autoCohOverlaps = LALCalloc(params->numAutoPoints,sizeof(*autoCohOverlaps));
+              for ( j = 0 ; j < params->numAutoPoints; j++ )
+              {
+                autoCohOverlaps[j].rotReOverlaps = gsl_matrix_alloc(2,2);
+                autoCohOverlaps[j].rotImOverlaps = gsl_matrix_alloc(2,2);
+                calculate_coherent_bank_overlaps(params,autoTempOverlaps[j],
+                    autoCohOverlaps[j],a,b,Autoeigenvecs,
+                    Autoeigenvals,Autoeigenvecs,Autoeigenvals);
+              }
+            }
+          }
+          autoVeto->data->data[i-numPoints/4] = calculate_auto_veto_max_phase_coherent(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
 //        }
-//      } 
+//      }
+
+    }
+    if ( Autoeigenvecs )
+      gsl_matrix_free( Autoeigenvecs );
+    if ( Autoeigenvals )
+      gsl_vector_free( Autoeigenvals );
+    if (autoCohOverlaps)
+    {
+      for ( j = 0 ; j < params->numAutoPoints ; j++ )
+      {
+        gsl_matrix_free(autoCohOverlaps[j].rotReOverlaps);
+        gsl_matrix_free(autoCohOverlaps[j].rotImOverlaps);
+      }
+      LALFree(autoCohOverlaps);
     }
   }
+
   /*outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
@@ -1623,10 +1759,17 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-  outfile = fopen("bank_veto_timeseries.dat","w");
+/*  outfile = fopen("bank_veto_timeseries.dat","w");
   for ( i = 0; i < bankVeto->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,bankVeto->data->data[i]);
+  }
+  fclose(outfile);*/
+
+  outfile = fopen("auto_veto_timeseries.dat","w");
+  for ( i = 0; i < autoVeto->data->length; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,autoVeto->data->data[i]);
   }
   fclose(outfile);
 
@@ -1667,13 +1810,10 @@ void cohPTFmodBasesUnconstrainedStatistic(
   fclose(outfile);
   */
 
-  gsl_matrix_free(B2);
-  gsl_matrix_free(Binv2);
   gsl_matrix_free(BNull);
   gsl_matrix_free(B2Null);
   gsl_permutation_free(p);
   gsl_permutation_free(pNull);
-  gsl_eigen_symmv_free(matTemp);
   gsl_eigen_symmv_free(matTempNull);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
@@ -1696,7 +1836,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *gammaBeta[2],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
-    REAL4TimeSeries         *bankVeto
+    REAL4TimeSeries         *bankVeto,
+    REAL4TimeSeries         *autoVeto
 )
 {
   UINT4 i;
@@ -1761,6 +1902,12 @@ UINT8 cohPTFaddTriggers(
         {
           currEvent->bank_chisq = bankVeto->data->data[i];
           currEvent->bank_chisq_dof = params->BVsubBankSize;
+        }
+        if (params->doAutoVeto)
+        {
+          currEvent->cont_chisq = autoVeto->data->data[i];
+          fprintf(stderr, "Auto Veto %e \n",currEvent->cont_chisq);
+          currEvent->cont_chisq_dof = params->numAutoPoints;
         }
         if (pValues[0])
           currEvent->h1quad.re = pValues[0]->data->data[i];

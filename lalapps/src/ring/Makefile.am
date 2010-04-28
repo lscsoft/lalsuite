@@ -52,7 +52,7 @@ lalapps_ring_SOURCES = \
 	spectrm.h \
 	segment.c \
 	segment.h
-lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c \
+lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c coh_PTF_utils.c \
          errutil.c errutil.h \
          gpstime.c gpstime.h \
          injsgnl.c injsgnl.h \
@@ -60,7 +60,7 @@ lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c
          getresp.c getresp.h \
          spectrm.c spectrm.h \
          segment.c segment.h
-lalapps_coh_PTF_testing_SOURCES = coh_PTF_testing.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c \
+lalapps_coh_PTF_testing_SOURCES = coh_PTF_testing.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c coh_PTF_utils.c \
          errutil.c errutil.h \
          gpstime.c gpstime.h \
          injsgnl.c injsgnl.h \

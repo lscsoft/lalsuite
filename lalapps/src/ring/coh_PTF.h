@@ -47,6 +47,12 @@
 #include <lal/Ring.h>
 #include <LALAppsVCSInfo.h>
 
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_eigen.h>
+#include <gsl/gsl_blas.h>
+
 
 enum { write_frame, write_ascii };
 
@@ -89,6 +95,9 @@ struct coh_PTF_params {
   const char  *templatesToDoList;
   UINT4        numEvents;
   UINT4        BVsubBankSize;
+  const char  *bankVetoBankName;
+  UINT4        numAutoPoints;
+  REAL4        autoVetoTimeStep;
   char         outputFile[256];
   const char  *spinBank;
   const char  *noSpinBank;
@@ -108,6 +117,7 @@ struct coh_PTF_params {
   int          doNullStream;
   int          doTraceSNR;
   int          doBankVeto;
+  int          doAutoVeto;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -117,15 +127,21 @@ struct coh_PTF_params {
 };
 
 struct bankTemplateOverlaps {
-  REAL8Array  *PTFM[LAL_NUM_IFO];
+  REAL8Array  *PTFM[LAL_NUM_IFO+1];
 };
 
 struct bankComplexTemplateOverlaps {
   COMPLEX8Array  *PTFM[LAL_NUM_IFO];
+  INT4           timeStepDelay;
 };
 
 struct bankDataOverlaps {
-  COMPLEX8VectorSequence *PTFqVec[LAL_NUM_IFO];
+  COMPLEX8VectorSequence *PTFqVec[LAL_NUM_IFO+1];
+};
+
+struct bankCohTemplateOverlaps {
+  gsl_matrix *rotReOverlaps;
+  gsl_matrix *rotImOverlaps;
 };
 
 typedef struct tagRingDataSegments
@@ -163,6 +179,10 @@ int cohPTF_output_tmpltbank(
     ProcessParamsTable *processParamsTable,
     struct coh_PTF_params *params
     );
+
+UINT4 read_sub_bank(
+struct coh_PTF_params   *params,
+InspiralTemplate        **PTFBankTemplates);
 
 void initialise_sub_bank(
 struct coh_PTF_params   *params,
@@ -219,6 +239,16 @@ REAL4 cohPTFDataNormalize(
     COMPLEX8FrequencySeries    *sgmnt,
     REAL4FrequencySeries       *invspec);
 
+void autoVetoOverlaps(
+    FindChirpTemplate          *fcTmplt,
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    REAL4FrequencySeries       *invspec,
+    COMPLEX8FFTPlan            *invBankPlan,
+    UINT4                      spinBank,
+    UINT4                      numAutoPoints,
+    UINT4                      timeStepPoints,
+    UINT4                      ifoNumber );
+
 REAL4 calculate_bank_veto(
 UINT4           numPoints,
 UINT4           position,
@@ -229,7 +259,7 @@ REAL4           b[LAL_NUM_IFO],
 REAL4           SNR,
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
 struct coh_PTF_params      *params,
-struct bankTemplateOverlaps *bankOverlaps,
+struct bankComplexTemplateOverlaps *bankOverlaps,
 struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 REAL4TimeSeries         *pValues[10],
@@ -257,11 +287,80 @@ COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 UINT4 singleDetector );
 
+REAL4 calculate_bank_veto_max_phase_coherent(
+UINT4           numPoints,
+UINT4           position,
+UINT4           subBankSize,
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+REAL4           SNR,
+REAL8Array      *PTFM[LAL_NUM_IFO+1],
+struct coh_PTF_params      *params,
+struct bankCohTemplateOverlaps *cohBankOverlaps,
+struct bankTemplateOverlaps *bankNormOverlaps,
+struct bankDataOverlaps *dataOverlaps,
+REAL4TimeSeries         *pValues[10],
+REAL4TimeSeries         *gammaBeta[2],
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+gsl_matrix *Bankeigenvecs[subBankSize],
+gsl_vector *Bankeigenvals[subBankSize]);
+
+REAL4 calculate_auto_veto_max_phase_coherent(
+UINT4           numPoints,
+UINT4           position,
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+struct coh_PTF_params      *params,
+struct bankCohTemplateOverlaps *cohAutoOverlaps,
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+gsl_matrix *Autoeigenvecs,
+gsl_vector *Autoeigenvals);
+
+void calculate_coherent_bank_overlaps(
+  struct coh_PTF_params   *params,
+  struct bankComplexTemplateOverlaps bankOverlaps,
+  struct bankCohTemplateOverlaps cohBankOverlaps,
+  REAL4           a[LAL_NUM_IFO],
+  REAL4           b[LAL_NUM_IFO],
+  gsl_matrix *eigenvecs,
+  gsl_vector *eigenvals,
+  gsl_matrix *Bankeigenvecs,
+  gsl_vector *Bankeigenvals
+);
+
 
 void free_bank_veto_memory(
   struct bankTemplateOverlaps *bankNormOverlaps,
   InspiralTemplate        *PTFBankTemplates,
   FindChirpTemplate       *bankFcTmplts,
   UINT4 subBankSize,
-  struct bankTemplateOverlaps *bankOverlaps,
+  struct bankComplexTemplateOverlaps *bankOverlaps,
   struct bankDataOverlaps *dataOverlaps);
+
+void calculate_bmatrix(
+  struct coh_PTF_params   *params,
+  gsl_matrix *eigenvecs,
+  gsl_vector *eigenvals,
+  REAL4 a[LAL_NUM_IFO],
+  REAL4 b[LAL_NUM_IFO],
+  REAL8Array              *PTFM[LAL_NUM_IFO+1],
+  UINT4 vecLength,
+  UINT4 vecLengthTwo,
+  UINT4 PTFMlen);
+
+void calculate_rotated_vectors(
+    struct coh_PTF_params   *params,
+    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+    REAL4 *u1,
+    REAL4 *u2,
+    REAL4 a[LAL_NUM_IFO],
+    REAL4 b[LAL_NUM_IFO],
+    INT4  timeOffsetPoints[LAL_NUM_IFO],
+    gsl_matrix *eigenvecs,
+    gsl_vector *eigenvals,
+    UINT4 numPoints,
+    UINT4 position,
+    UINT4 vecLength,
+    UINT4 vecLengthTwo);
