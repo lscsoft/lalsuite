@@ -15,8 +15,6 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
- *
- * Revision: $Id$
  */
 
 
@@ -68,14 +66,8 @@
 #include <processtable.h>
 #include "inspiral.h"
 
-
-RCSID( "$Id$" );
-
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
+/* program info */
+RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapps_ninja"
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
