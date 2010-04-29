@@ -33,12 +33,6 @@ src/calibration/lalapps_noise_comp_pipe
 src/calibration/lalapps_strain_pipe
 src/config.h
 src/config.h.in
-src/detresponse/lalapps_bar_response
-src/detresponse/lalapps_detresponse
-src/detresponse/lalapps_ifo_response
-src/detresponse/lalapps_ifo_skyavg_ts
-src/detresponse/lalapps_test_earth
-src/detresponse/lalapps_test_gridding
 src/findchirp/lalapps_BankEfficiency
 src/findchirp/lalapps_DistanceVsMass
 src/findchirp/lalapps_InspiralOverlap
