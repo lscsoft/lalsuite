@@ -318,7 +318,10 @@ os.chdir("../")
 for (job, executable) in cp.items("condor"):
   if job != "universe":
     shutil.copy( executable, analysisDirectory + "/executables" )
-    executable = "../executables/" + executable.split("/")[-1]
+    if job == "hardware_inj_page":
+      executable = "executables/" + executable.split("/")[-1]
+    else:
+      executable = "../executables/" + executable.split("/")[-1]
     cp.set("condor", job, executable)
 
 os.chdir(analysisDirectory)
@@ -918,11 +921,21 @@ if opts.run_plots:
 # Set up jobs for HW injection page
 
 if opts.run_hardware_inj:
-  if opts.run_full_data:
-    HWinjNodes =
-    inspiralutils.hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir)
-    for node in HWinjNodes:
-    	dag.add_node(node)
+  # Set up parents correctly
+  parentNodes = []
+  if opts.run_search:
+    if opts.run_full_data:
+      parentNodes.append(hipeAnalysisNode)
+
+    if opts.run_full_data:
+      for category in veto_categories:
+        parentNodes.append(hipeAnalysisVetoNode[category])
+
+  HWinjNodes = inspiralutils.hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir)
+  for node in HWinjNodes:
+    for parent in parentNodes:
+      node.add_parent(parent)
+    dag.add_node(node)
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe

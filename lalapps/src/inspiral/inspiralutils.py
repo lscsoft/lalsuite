@@ -196,7 +196,7 @@ def get_hwinj_segments(config,ifos,hw_inj_dir):
   for ifo in ifos:
 	ifostr = ifostr + '--' + ifo.lower() + '-injection '
 
-  hwinjpageCall = ' '.join([config.get("condor","hardware_inj_page"),
+  hwinjpageCall = ' '.join(['../'+config.get("condor","hardware_inj_page"),
 	"--gps-start-time",config.get("input","gps-start-time"),
 	"--gps-end-time",config.get("input","gps-end-time"),
 	"--segment-db",config.get("segfind","segment-url"),
@@ -1205,8 +1205,8 @@ def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
     outfilename += cp.get("input","gps-start-time") + str(hwinj_length) + '.html'
 
     hwInjNode = inspiral.HWinjPageNode(hwInjJob)
-    hwInjNode.set_start_time(cp.get("input","gps-start-time"))
-    hwInjNode.set_end_time(cp.get("input","gps-end-time"))
+    hwInjNode.set_start(cp.get("input","gps-start-time"))
+    hwInjNode.set_end(cp.get("input","gps-end-time"))
 
     hwInjNode.set_input_cache(os.path.join('full_data', cacheFile))
     hwInjNode.set_cache_string('*COIRE_SECOND*')
@@ -1215,9 +1215,9 @@ def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
     hwInjNode.set_segment_dir(hw_inj_dir)
     hwInjNode.set_output_file(os.path.join(hw_inj_dir, outfilename))
 
-    hwInjNode.add_var,opt("analyze-injections",None)
+    hwInjNode.add_var_opt('analyze-injections','')
     for ifo in ifos:
-      hwInjJob.add_var_opt(ifo.lower()+'-injections',None)
+      hwInjNode.add_var_opt(ifo.lower()+'-injections','')
 
     hwInjNodes.append(hwInjNode)
 
