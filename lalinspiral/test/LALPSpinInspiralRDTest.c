@@ -73,8 +73,8 @@ int main() {
     REAL8       dt;
     REAL8       a1, a2, om;
     
-    const REAL8 omf=0.065;
-    const REAL8 fi =40.;
+    const REAL8 omf=0.058;
+    const REAL8 fi =35.;
     REAL8 omi,ff;
 
     CHAR message[256];
@@ -86,8 +86,8 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 10.;
-    injParams.mass2 = 10.;
+    injParams.mass1 = 1.;
+    injParams.mass2 = 100.;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
@@ -111,15 +111,15 @@ int main() {
 
     injParams.spin1x = 0.;
     injParams.spin1y = 0.;
-    injParams.spin1z = 0.6;
+    injParams.spin1z = 0.;
 
-    injParams.spin2x = 0.6;
-    injParams.spin2y = 0.;
+    injParams.spin2x = 0.;
+    injParams.spin2y = 0.8;
     injParams.spin2z = 0.;
 
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
-    ppnParams.deltaT = 1.0 / 4096.0;
+    ppnParams.deltaT = 1.0 / 4096.0 /4.;
     ppnParams.fStop  = ff;
 
     /* --- now we can call the injection function --- */
