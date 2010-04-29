@@ -2370,7 +2370,7 @@ XLALSortCoincInspiral (
 int
 XLALCoincInspiralIfos (
     CoincInspiralTable  *coincInspiral,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {
@@ -2402,7 +2402,7 @@ XLALCoincInspiralIfos (
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {
@@ -2447,7 +2447,7 @@ XLALCoincInspiralIfosCut(
 int
 XLALCoincInspiralIfosDiscard(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {

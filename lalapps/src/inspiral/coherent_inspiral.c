@@ -48,7 +48,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -81,6 +80,7 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DopplerScan.h>
+#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -165,21 +165,20 @@ INT4 V1file = 0;
 /* input time-slide parameters */
 REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration     = 0;
-CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 CHAR   chiaFileName[FILENAME_MAX]; /* name of chia trigbank for follow-up studies */
-/* CHAR  *cohbankFileName = NULL; name of input template bank  */
-UINT4  cohSNROut            = 0;    /* default is not to write frame */
-UINT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
-UINT4  nullStatOut       = 0;    /* default is not to write frame */
-UINT4  nullStatH1H2Out       = 0;    /* default is not to write frame */
-UINT4  eventsOut            = 0;    /* default is not to write events */
+CHAR  *cohbankFileName = NULL; /* name of input template bank  */
+INT4   cohSNROut            = 0;    /* default is not to write frame */
+INT4   cohH1H2SNROut      = 0;    /* default is not to write frame */
+INT4   nullStatOut       = 0;    /* default is not to write frame */
+INT4   nullStatH1H2Out       = 0;    /* default is not to write frame */
+INT4   eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
 REAL4  cohSegLength     = 0.0625; /* This should match value (sec) used in inspiral.c */
 REAL4  nullStatRegul        = 0.1;
-UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
+INT4   maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
-UINT4  outCompress = 0;
+INT4   outCompress = 0;
 INT4   numCohTrigs      = 400; /*optional argument that can be reset */
 INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
@@ -188,9 +187,9 @@ LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
 
 double raStep = 1.0;
 double decStep = 1.0;
-UINT4  estimParams = 0;
-UINT4  followup = 0;
-UINT4  exttrig = 0;
+INT4  estimParams = 0;
+INT4  followup = 0;
+INT4  exttrig = 0;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -499,9 +498,9 @@ int main( int argc, char *argv[] )
                 kmax = k; /* final trigger's k value */
                 caseID[k] = 1;
                 memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
-                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
+                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", thisCoinc->snglInspiral[k]->channel );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
-                if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
+                if( vrbflg ) fprintf(stdout,"eventID = %lld\n",eventID );
                 chisq[l] = thisCoinc->snglInspiral[k]->chisq;
                 chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
                 snrsqArray[l] = pow( (REAL8) thisCoinc->snglInspiral[k]->snr,2);
@@ -512,11 +511,14 @@ int main( int argc, char *argv[] )
                    to get slideSign = 5000 for negative slides */
                 slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 
-                if( vrbflg ) fprintf( stdout, "eventID = %Ld, slideNumber = %d, slideSign = %d, triggerNumber = %d \n", eventID, slideNumber, slideSign, triggerNumber);
+                if( vrbflg )
+                  fprintf( stdout, "eventID = %lld, slideNumber = %" LAL_UINT8_FORMAT \
+                      ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
+                      LAL_UINT8_FORMAT "\n", eventID, slideNumber, slideSign, triggerNumber);
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
-                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
+                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%lld", caseIDChars[k], eventID );
 
                 /* slideSign=0 is the same as a positive time slide */
                 if(slideSign != 0)
@@ -528,7 +530,10 @@ int main( int argc, char *argv[] )
                     tempTime[l] -= slideStep[k]*slideNumber;
                   }
 
-                if( vrbflg ) fprintf( stdout, "ifo number = %d, slideSign = %d, slideStep = %e, slideNumber = %d, tempTime = %e \n", l, slideSign, slideStep[k], slideNumber, tempTime[l]);
+                if( vrbflg )
+                  fprintf( stdout, "ifo number = %d, slideSign = %" LAL_UINT8_FORMAT \
+                      ", slideStep = %e, slideNumber = %" LAL_UINT8_FORMAT \
+                      ", tempTime = %e \n", l, slideSign, slideStep[k], slideNumber, tempTime[l]);
 
                 ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
                 if(slideSign != 0)
@@ -823,11 +828,11 @@ int main( int argc, char *argv[] )
         l = 0;
         /* Before the data gets filtered, I need to make the c-data snippets commensurate */
         for(k=0 ; k<LAL_NUM_IFO ; k++ ) {
-          if ( (caseID[k] == 1) && (l < numDetectors) ) {
+          if ( (caseID[k] == 1) && (l < (INT4)numDetectors) ) {
             /* CHECK: timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);*/
             timeptDiff[l] = rint( (slideNS[0] - slideNS[l])*1e-9 * sampleRate);
-            /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %Ld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
-            if( vrbflg ) fprintf(stdout,"slideNS[0] = %Ld, slideNS[2nd] = %Ld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
+            /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %lld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
+            if( vrbflg ) fprintf(stdout,"slideNS[0] = %lld, slideNS[2nd] = %lld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
 
             l++;
           }
@@ -1096,13 +1101,13 @@ int main( int argc, char *argv[] )
           {
 	    if ( threeSiteCase ) {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+			"SNR_%lld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+			"SNR_%lld", eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
 	    }
@@ -1112,7 +1117,7 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->cohH1H2SNROut )
           {
             snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2SNR_%Ld", eventID );
+                      "H1H2SNR_%lld", eventID );
             strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
             outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
           }
@@ -1121,7 +1126,7 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->nullStatH1H2Out )
           {
             snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2_NullStat_%Ld", eventID );
+                      "H1H2_NullStat_%lld", eventID );
             strcpy( cohInspFilterParams->nullStatH1H2Vec->name, "Coherent");
             outFrameNullStatH1H2 = fr_add_proc_REAL4TimeSeries( outFrameNullStatH1H2, cohInspFilterParams->nullStatH1H2Vec, "none", cohdataStr );
           }
@@ -1131,13 +1136,13 @@ int main( int argc, char *argv[] )
           {
 	    if ( threeSiteCase ) {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+			"NullStat_%lld", eventID );
 	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
 	    }
 	    else {
 	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+			"NullStat_%lld", eventID );
 	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
 	    }
@@ -1170,12 +1175,10 @@ int main( int argc, char *argv[] )
                   {
                     while( thisEvent )
                       {
-                        MultiInspiralTable *tempEvent = thisEvent;
                         tempTable->next = (MultiInspiralTable *) LALCalloc( 1, sizeof(MultiInspiralTable) );
                         tempTable = tempTable->next;
                         memcpy(tempTable, thisEvent, sizeof(MultiInspiralTable) );
                         thisEvent = thisEvent->next;
-                        
                         LALFree( tempEvent );
                         tempEvent = NULL;
                       }
@@ -1224,7 +1227,7 @@ int main( int argc, char *argv[] )
         cohInspBeamVec = NULL;
         cohInspCVec = NULL;
         
-        for(j=0;j< (numDetectors-1);j++)
+        for(j=0;j< ((INT4)numDetectors-1);j++)
           {
             tempTime[j] = 0.0;
             timeptDiff[j] = 0;
@@ -1473,7 +1476,10 @@ int main( int argc, char *argv[] )
   XLALFree(scanInit.skyRegionString);
   thisScan.state = STATE_FINISHED;
   LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
-  
+
+  if (cohbankFileName)
+    free(cohbankFileName);
+
   free( proctable.processTable ); 
   while( procparams.processParamsTable )
     {
@@ -1822,10 +1828,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'u':
            /* create storage for the bank filename */
-           /*optarg_len = strlen( optarg ) + 1;
-           bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( bankFileName, optarg, optarg_len );*/
-           strcpy(cohbankFileName, optarg);
+           optarg_len = strlen( optarg ) + 1;
+           cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+           memcpy(cohbankFileName, optarg, optarg_len );
            char tempName[256];
            char *duration =NULL;
            strcpy(tempName, cohbankFileName);

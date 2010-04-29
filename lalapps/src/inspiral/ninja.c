@@ -35,7 +35,6 @@
 #include <string.h>
  
 #include <lalapps.h>
-#include <FrameL.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -62,6 +61,8 @@
 #include <lalappsfrutils.h>
 #include <lal/FrameStream.h>
 #include <lal/LogPrintf.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 #include <processtable.h>

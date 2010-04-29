@@ -38,6 +38,8 @@ include
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/Date.h>
+
+#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"
@@ -328,7 +330,7 @@ int checkCGNtrigger( void )
   int i,nifo;
   int counter=0;
   int numEvents=0;
-  int index=0;
+  int trigger_index=0;
   int newTrigger=0;
   char command[256];
   char input[256];
@@ -426,10 +428,10 @@ int checkCGNtrigger( void )
     for ( thisExt=headExt; thisExt; thisExt=thisExt->next ) {
 
       /* check if there is a new CGN */
-      index=checkGPS( thisExt->start_time, thisExt->start_time_ns );
+      trigger_index=checkGPS( thisExt->start_time, thisExt->start_time_ns );
       counter++;
 
-      if (index==-1) {
+      if (trigger_index==-1) {
 
         /* store new trigger in external triggers structure */
         extList[numberStoredCGN].gps=thisExt->start_time;
@@ -467,7 +469,7 @@ int checkCGNtrigger( void )
       }  else {
 
         /* old trigger found -> set pointer to correct table */
-        extList[index].table=thisExt;                
+        extList[trigger_index].table=thisExt;                
       }
     }
   }
@@ -1197,13 +1199,13 @@ void startAnalysisJob(ExternalList* eList, int nifo)
 
 /****************************** 
 getIFOname:
-return the IFO name corresponding to 'index'
+return the IFO name corresponding to 'ifo_index'
 ********************************/
-char* getIFOname(int index)
+char* getIFOname(int ifo_index)
 {
   static char ifoname[3];
 
-  switch (index) {
+  switch (ifo_index) {
   case 0:
     sprintf(ifoname, "L1");
     break;
@@ -1213,7 +1215,7 @@ char* getIFOname(int index)
   case 2:
     sprintf(ifoname, "H2");
   }
-  /*printf("ifoname: %s,  index: %d\n",ifoname, index);
+  /*printf("ifoname: %s,  ifo_index: %d\n",ifoname, ifo_index);
     fflush(stdout);*/
   return ifoname;
 }
@@ -1247,23 +1249,23 @@ getPeriod:
 *******************************/
 int getPeriod( long gps )
 {
-  int index=-1;
+  int period_index=-1;
   int i; 
 
   /* search for corresponding time period */
   for (i=0;i<numberPeriods;i++) {
     if (gps>startPeriod[i] && gps<endPeriod[i]) {
-      index=i;
+      period_index=i;
     }
   }
 
   /* check if a correct period was found */
-  if (index==-1) {
+  if (period_index==-1) {
     sprintf(message,"GPS time %9ld lies outside of senseful range!", gps);
     printOut(2, message);
   }
 
-  return index;
+  return period_index;
 }
 
 /*******************************
@@ -1632,7 +1634,7 @@ int arg_parse_check( int argc, char *argv[])
                  long_options[option_index].name );
         exit( 1 );
       }  
-      ADD_PROCESS_PARAM( "int" , "%ld", waitingTime);
+      ADD_PROCESS_PARAM( "int" , "%d", waitingTime);
     }
       break;
       
@@ -1657,7 +1659,7 @@ int arg_parse_check( int argc, char *argv[])
                  long_options[option_index].name );
         exit( 1 );
       } 
-      ADD_PROCESS_PARAM( "float" , "%s", snrCut);              
+      ADD_PROCESS_PARAM( "float" , "%f", snrCut);              
     }
       break;
       

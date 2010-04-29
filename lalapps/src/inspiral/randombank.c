@@ -91,7 +91,7 @@ INT4  randomSeed        = 0;            /* value of sim rand seed       */
 
 /* output parameters */
 CHAR  *userTag          = NULL;
-UINT4                 outCompress = 0;
+INT4                 outCompress = 0;
 
 int main ( int argc, char *argv[] )
 {

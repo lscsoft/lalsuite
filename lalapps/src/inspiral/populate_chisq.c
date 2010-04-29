@@ -43,8 +43,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -82,6 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
@@ -371,9 +371,11 @@ int main(int argc, char *argv[])
     SearchSummvarsTable *inputFiles = NULL;
     SearchSummaryTable *searchSummList = NULL;
 
+#if 0
     /* template bank veto structures */
     FindChirpSubBank *subBankHead = NULL;
     FindChirpSubBank *subBankCurrent = NULL;
+#endif
 
     /* inspiral events */
     INT4 numEvents = 0;
@@ -519,7 +521,7 @@ int main(int argc, char *argv[])
     searchsumm.searchSummaryTable->nnodes = 1;
 
     /* fill the ifos field of the search summary table */
-    snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo);
+    snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
 
     /* make sure all the output table pointers are null */
     savedEvents.snglInspiralTable = NULL;
@@ -1617,15 +1619,15 @@ int main(int argc, char *argv[])
             for (currentTrigger = inspiralEventList; currentTrigger && !analyseTag; currentTrigger = currentTrigger->next) {
                 if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
                     /* Also need to check for time here... */
-                    INT8 trigEndTimeNS;
+                    INT8 trig_end_time_ns;
 
-                    trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                    trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                    if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                    if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                     {
                         analyseTag = 1;
                         if (vrbflg)
-                            fprintf(stdout, "Found trigger (%f,%f) @ t=%ld\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trigEndTimeNS);
+                            fprintf(stdout, "Found trigger (%f,%f) @ t=%" LAL_INT8_FORMAT "\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trig_end_time_ns);
                     }
                 }
             }
@@ -1636,7 +1638,7 @@ int main(int argc, char *argv[])
             if (analyseTag) {
                 if (vrbflg) {
                     fprintf(stdout,
-                            "filtering segment %d/%d [%ld-%ld] "
+                            "filtering segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] "
                             "against template %d/%d (%e,%e)\n",
                             fcSegVec->data[i].number,
                             fcSegVec->length, fcSegStartTimeNS,
@@ -1761,15 +1763,15 @@ int main(int argc, char *argv[])
                 /* Now go through the list of triggers again and fill in chisq values */
                 for (currentTrigger = inspiralEventList; currentTrigger; currentTrigger = currentTrigger->next) {
                     if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
-                        INT8 trigEndTimeNS;
+                        INT8 trig_end_time_ns;
 
-                        trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                        trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                        if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                        if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                         {
                             INT4                       timeIndex;
 
-                            timeIndex = 1 + (INT4) ((trigEndTimeNS - fcSegStartTimeNS) / (1e9 * deltaT));
+                            timeIndex = 1 + (INT4) ((trig_end_time_ns - fcSegStartTimeNS) / (1e9 * deltaT));
 
                             /* we store chisq distributed with 2p - 2 degrees of freedom */
                             /* in the database. params->chisqVec->data = r^2 = chisq / p */
@@ -1779,7 +1781,7 @@ int main(int argc, char *argv[])
                                 fcFilterParams->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
                             
                             if (vrbflg)
-                                fprintf(stdout,"Event at %ld has chisq=%f\n",trigEndTimeNS,currentTrigger->chisq);
+                                fprintf(stdout,"Event at %" LAL_INT8_FORMAT " has chisq=%f\n",trig_end_time_ns,currentTrigger->chisq);
 
                             currentTrigger->chisq_dof = numChisqBins;
                         }
@@ -3669,14 +3671,14 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
     if (trigStartTimeNS) {
         if (trigStartTimeNS < gpsStartTimeNS) {
             fprintf(stderr,
-                    "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld",
+                    "trigStartTimeNS = %" LAL_INT8_FORMAT "\nis less than gpsStartTimeNS = %" LAL_INT8_FORMAT,
                     trigStartTimeNS, gpsStartTimeNS);
         }
     }
     if (trigEndTimeNS) {
         if (trigEndTimeNS > gpsEndTimeNS) {
             fprintf(stderr,
-                    "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld",
+                    "trigEndTimeNS = %" LAL_INT8_FORMAT "\nis greater than gpsEndTimeNS = %" LAL_INT8_FORMAT,
                     trigEndTimeNS, gpsEndTimeNS);
         }
     }
@@ -3756,12 +3758,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         if (inputDataLengthNS != gpsChanIntervalNS) {
             fprintf(stderr,
                     "length of input data and data chunk do not match\n");
-            fprintf(stderr, "start time: %ld, end time %ld\n",
+            fprintf(stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
                     gpsStartTimeNS / 1000000000LL,
                     gpsEndTimeNS / 1000000000LL);
             fprintf(stderr,
-                    "gps channel time interval: %ld ns\n"
-                    "computed input data length: %ld ns\n",
+                    "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
+                    "computed input data length: %" LAL_INT8_FORMAT " ns\n",
                     gpsChanIntervalNS, inputDataLengthNS);
             exit(1);
         }

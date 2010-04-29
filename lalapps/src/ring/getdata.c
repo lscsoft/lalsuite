@@ -169,8 +169,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
     LIGOTimeGPS *epoch,
     REAL8        duration,
     int          strainData,
-    REAL8        dblHighPassFreq,
-    REAL8        dblScale
+    REAL8        dblHighPassFreq
     )
 {
   REAL4TimeSeries *series;

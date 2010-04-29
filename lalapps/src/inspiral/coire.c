@@ -153,6 +153,7 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -160,7 +161,6 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status ;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -629,11 +629,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "custer window must be > 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", cluster_dt );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT, cluster_dt );
         /* convert cluster time from ms to ns */
         cluster_dt *= 1000000LL;
         break;
@@ -669,11 +669,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%lld", injectWindowNS );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT, injectWindowNS );
         /* convert inject time from ms to ns */
         injectWindowNS *= LAL_INT8_C(1000000);
         break;

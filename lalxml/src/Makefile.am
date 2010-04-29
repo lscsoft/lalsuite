@@ -69,6 +69,7 @@ lalxml-user-env.csh: Makefile
 	echo "endif" >>$@
 
 EXTRA_DIST = \
+	generate_vcs_info.py \
 	LALXMLConfig.h.in \
 	LALXMLVCSInfo.h.in
 

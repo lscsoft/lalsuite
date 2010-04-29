@@ -1122,7 +1122,19 @@ and then
 
     ./pegasus_submit_dax
 
-from a condor submit machine.
+from a condor submit machine. 
+
+From the analysis directory on the condor submit machine, you can run the
+command
+
+    pegasus-status --long -t -i `./pegasus_basedir`
+
+to check the status of your workflow. Once the workflow has finished you 
+can run the command
+
+    pegasus-analyzer -t -i `./pegasus_basedir`
+
+to debug any failed jobs.
 """
 
 ##############################################################################

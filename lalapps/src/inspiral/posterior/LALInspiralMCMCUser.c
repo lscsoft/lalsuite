@@ -146,6 +146,10 @@ void MCMCInitTest(
   LALMCMCParameter  *parameter,
   SnglInspiralTable *inspiralTable)
 {/* </lalVerbatim> */
+  /* FIXME: this function doesn't use the inspiralTable argument, the
+   * correct fix is to modify this function not to take inspiralTable as
+   * an argument, this simply supresses the unused parameter warning */
+  (void)inspiralTable;
 
   /* create the parameters and set the boundaries */
   parameter->param = NULL;
@@ -162,7 +166,12 @@ REAL8 MCMCLikelihoodTest(
 {/* </lalVerbatim> */
 
   double x,y;
-  double a,b,d;
+  double a,b;
+
+  /* FIXME: this function doesn't use the inputMCMC argument, the
+   * correct fix is to modify this function not to take inputMCMC as
+   * an argument, this simply supresses the unused parameter warning */
+  (void)inputMCMC;
 
   x   = XLALMCMCGetParameter( parameter, "x" );
   y   = XLALMCMCGetParameter( parameter, "y" );
@@ -180,6 +189,8 @@ INT4 MCMCPriorTest(
   LALMCMCInput     *inputMCMC,
   LALMCMCParameter *parameter)
 {/* </lalVerbatim> */
+  (void)inputMCMC;
+  (void)parameter;
 
   /* always return prior of 1.0 */
 
@@ -203,7 +214,7 @@ return inrange;
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT){
 REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
-REAL4 mtot,eta,mwindow,localetawin;
+REAL4 eta,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
 trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
@@ -248,7 +259,7 @@ return;
 void NestInitInjNINJAHighMass(LALMCMCParameter *parameter, void *iT){
 REAL8 trg_time,mcmin,mcmax;
 SimInspiralTable *injTable = (SimInspiralTable *)iT;
-REAL4 mtot,eta,mwindow,localetawin;
+REAL4 eta,localetawin;
 parameter->param = NULL;
 parameter->dimension = 0;
 trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
@@ -294,6 +305,12 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 {
   REAL8 mNS,mComp,logmc;
   REAL8 mc,eta;
+
+  /* FIXME: this function doesn't use the inputMCMC argument, the
+   * correct fix is to modify this function not to take inputMCMC as
+   * an argument, this simply supresses the unused parameter warning */
+  (void)inputMCMC;
+
   /* Priors for the GRB component masses */
 #define m1min 1.0
 #define m1max 3.0
@@ -582,7 +599,6 @@ in the frequency domain */
 {
 	REAL8 logL=0.0;
 	UINT4 det_i;
-	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL4FFTPlan *likelihoodPlan=NULL;
@@ -590,11 +606,10 @@ in the frequency domain */
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
-	INT4 i,NtimeModel;
+	INT4 NtimeModel;
 	LALDetAMResponse det_resp;
-	int Fdomain;
 	REAL8 chisq=0.0;
-	REAL8 real,imag,f,t;
+	REAL8 real,imag;
 	TofVIn TofVparams;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
@@ -773,7 +788,6 @@ in the frequency domain */
 {
 	REAL8 logL=0.0;
 	UINT4 det_i;
-	CHAR name[10] = "inspiral";
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
 	REAL8 resp_r,resp_i,ci;
@@ -782,11 +796,9 @@ in the frequency domain */
 	UINT4 i,NtimeModel;
 	LALDetAMResponse det_resp;
 	REAL4FFTPlan *likelihoodPlan=NULL;
-	int Fdomain;
 	REAL8 chisq=0.0;
-	REAL8 real,imag,f,t;
+	REAL8 real,imag;
 	TofVIn TofVparams;
-	FILE *modelout;
 	memset(&template,0,sizeof(InspiralTemplate));
 /* Populate the template */
 	REAL8 ChirpISCOLength;
@@ -902,7 +914,6 @@ in the frequency domain */
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		int lowBin = (int)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		int highBin = (int)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 
 		for(i=lowBin;i<Nmodel/2;i++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) i)*deltaF);

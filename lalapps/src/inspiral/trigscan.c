@@ -73,6 +73,8 @@ snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+extern int vrbflg;
+
 /*
  *
  * USAGE
@@ -107,8 +109,6 @@ static void print_usage(char *program)
 
 int main( int argc, char *argv[] )
 {
-  extern int vrbflg;
-
   static LALStatus      status;
 
   INT4  startTime = -1;
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] )
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
-  UINT4                 outCompress = 0;
+  INT4                  outCompress = 0;
 
   long int              gpstime;
 
@@ -323,7 +323,7 @@ int main( int argc, char *argv[] )
         }
         startTime = (INT4) gpstime;
         startTimeGPS.gpsSeconds = startTime;
-        ADD_PROCESS_PARAM( "int", "%ld", startTime );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startTime );
         break;
 
       case 'r':
@@ -349,7 +349,7 @@ int main( int argc, char *argv[] )
         }
         endTime = (INT4) gpstime;
         endTimeGPS.gpsSeconds = endTime;
-        ADD_PROCESS_PARAM( "int", "%ld", endTime );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endTime );
         break;
 
       case '*':
