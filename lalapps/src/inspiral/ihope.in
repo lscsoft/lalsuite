@@ -1127,7 +1127,7 @@ from a condor submit machine.
 From the analysis directory on the condor submit machine, you can run the
 command
 
-    pegasus-status -t -i `./pegasus_basedir`
+    pegasus-status --long -t -i `./pegasus_basedir`
 
 to check the status of your workflow. Once the workflow has finished you 
 can run the command
