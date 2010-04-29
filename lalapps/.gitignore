@@ -28,17 +28,8 @@ libtool
 misc/lalapps-user-env.*sh
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
-src/calibration/lalapps_ComputeStrain
 src/calibration/lalapps_ComputeStrainDriver
-src/calibration/lalapps_ComputeStrainDriverDMT
-src/calibration/lalapps_NoiseComparison
-src/calibration/lalapps_dumpcalframe
-src/calibration/lalapps_getresp
-src/calibration/lalapps_makecalframe
-src/calibration/lalapps_mkcalfac
-src/calibration/lalapps_mkcalref
 src/calibration/lalapps_noise_comp_pipe
-src/calibration/lalapps_readcalframe
 src/calibration/lalapps_strain_pipe
 src/config.h
 src/config.h.in
