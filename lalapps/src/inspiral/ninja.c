@@ -165,7 +165,7 @@ int main(INT4 argc, CHAR *argv[])
   lalDebugLevel = 0;
   LAL_CALL(LALGetDebugLevel(&status, argc, argv, 'd'), &status);
 
-  uvar_outFile = (CHAR *)LALCalloc(1,257 * sizeof(CHAR));
+  uvar_outFile = (CHAR *)LALCalloc(1, FILENAME_MAX * sizeof(CHAR));
   strcpy(uvar_outFile, "ninja_out.xml");
 
   LAL_CALL(LALRegisterBOOLUserVar(&status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);
