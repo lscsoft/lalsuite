@@ -59,12 +59,7 @@
 #include "inspiral.h"
 
 /* cvs information */
-RCSID( "$Id$" );
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
+RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapp_mdc_ninja"
 
 /* defines */
