@@ -112,12 +112,12 @@ typedef struct
  * local helper function prototypes
  */
 
-int get_nr_metadata_from_framehistory(NinjaMetaData *data, FrHistory *history);
-int get_mode_index_from_channel_name(INT4  *mode_l, INT4  *mode_m, CHAR  *name);
-int get_minmax_modes(INT4 *min, INT4 *max, FrameH *frame);
-int get_metadata_from_string(NinjaMetaData *data, CHAR *comment);
-int metadata_in_range(NinjaMetaData *data, NrParRange *range);
-int parse_group_list ( NrParRange *range, CHAR *list);
+static int get_nr_metadata_from_framehistory(NinjaMetaData *data, FrHistory *history);
+static int get_mode_index_from_channel_name(INT4  *mode_l, INT4  *mode_m, CHAR  *name);
+static int get_minmax_modes(INT4 *min, INT4 *max, FrameH *frame);
+static int get_metadata_from_string(NinjaMetaData *data, CHAR *comment);
+static int metadata_in_range(NinjaMetaData *data, NrParRange *range);
+static int parse_group_list ( NrParRange *range, CHAR *list);
 
 /* main program entry */
 int main(INT4 argc, CHAR *argv[])
@@ -393,7 +393,7 @@ int main(INT4 argc, CHAR *argv[])
 
 /* metadata is stored in the history field comment
    -- this function parses the comment to fill the metadata struct */
-int get_nr_metadata_from_framehistory(NinjaMetaData *data,
+static int get_nr_metadata_from_framehistory(NinjaMetaData *data,
                                       FrHistory *history)
 {
   UINT4 stringlen = 128;
@@ -416,7 +416,7 @@ int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 }
 
 
-int get_metadata_from_string(NinjaMetaData *data,
+static int get_metadata_from_string(NinjaMetaData *data,
                              CHAR *comment)
 {
   CHAR *token;
@@ -506,7 +506,7 @@ int get_metadata_from_string(NinjaMetaData *data,
 }
 
 
-int metadata_in_range(NinjaMetaData *data, NrParRange *range)
+static int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 {
 
   INT4 ret, k;
@@ -544,7 +544,7 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range)
 }
 
 
-int get_minmax_modes(INT4 *min,
+static int get_minmax_modes(INT4 *min,
                      INT4 *max,
                      FrameH *frame)
 {
@@ -574,7 +574,7 @@ int get_minmax_modes(INT4 *min,
 }
 
 /* very hackish -- need to make this better */
-int get_mode_index_from_channel_name(INT4 *mode_l,
+static int get_mode_index_from_channel_name(INT4 *mode_l,
                                      INT4 *mode_m,
                                      CHAR *name)
 {
@@ -626,7 +626,7 @@ int get_mode_index_from_channel_name(INT4 *mode_l,
 
 /** take a list of numrel group names separated by ";" and parse it to
     get a vector of NumRelGroup */
-int parse_group_list(NrParRange *range,
+static int parse_group_list(NrParRange *range,
                        CHAR *list)
 {
   UINT4 numGroups = 0;
