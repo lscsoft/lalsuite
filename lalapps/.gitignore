@@ -231,6 +231,7 @@ src/ring/lalapps_qnmode_table
 src/ring/lalapps_rinca
 src/ring/lalapps_ring
 src/ring/lalapps_ring_pipe
+src/ring/lalapps_ringcorse
 src/ring/lalapps_ringdown_amplitude
 src/ring/lalapps_ringdown_waveform
 src/ring/lalapps_ringread
