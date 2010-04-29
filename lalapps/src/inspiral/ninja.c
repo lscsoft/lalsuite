@@ -549,7 +549,7 @@ static int get_minmax_modes(INT4 *min,
                      FrameH *frame)
 {
   int ret = 1;
-  INT4 mode_l, mode_m, locmin, locmax;
+  INT4 mode_l = -1, mode_m, locmin, locmax;
   FrSimData *sim;
 
   locmin = 10;
