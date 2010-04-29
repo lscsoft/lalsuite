@@ -1199,10 +1199,10 @@ def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
       print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
       print>>sys.stderr, "does not exist! This might cause later failures."
 
-    outfilename = os.path.join(hw_inj_dir, ''.join(ifos) + 'HWINJ_SUMMARY')
+    outfilename = os.path.join(hw_inj_dir, ''.join(ifos) + '-HWINJ_SUMMARY')
     if veto:
       outfilename += '_CAT_' + str(veto)
-    outfilename += cp.get("input","gps-start-time") + str(hwinj_length) + '.html'
+    outfilename += '-' + cp.get("input","gps-start-time") + '-' + str(hwinj_length) + '.html'
 
     hwInjNode = inspiral.HWinjPageNode(hwInjJob)
     hwInjNode.set_start(cp.get("input","gps-start-time"))
