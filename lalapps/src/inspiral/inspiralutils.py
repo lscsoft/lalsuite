@@ -181,29 +181,31 @@ def science_segments(ifo, config, generate_segments = True):
 
 ##############################################################################
 # the hardware injection script part one to get segments for it to use later
-def run_hardware_inj_part_one(config,ifos):
+def get_hwinj_segments(config,ifos,hw_inj_dir):
 
-  mkdir('logs')
-  hwinjDefurl = config.get("hwinjpage_meta", "hwinj-def-server-url")
-  hwinjDefFile = config.get("hwinjpage_meta", "hwinj-def-file")
+  os.chdir(hw_inj_dir)
 
-  print "Downloading HW injection list " + hwinjDefFile + " from " \
+  hwinjDefurl = config.get("hardware-injections", "hwinj-def-server-url")
+  hwinjDefFile = config.get("hardware-injections", "hwinj-def-file")
+
+  print "Downloading hardware injection list " + hwinjDefFile + " from " \
         + hwinjDefurl
   hwinjDefFile, info = urllib.urlretrieve(hwinjDefurl + '/' + hwinjDefFile,
         hwinjDefFile)
-  config.set('hwinjpage','source-xml',hwinjDefFile)
   ifostr = ''
   for ifo in ifos:
 	ifostr = ifostr + '--' + ifo.lower() + '-injection '
 
-  hwinjpageCall = ' '.join([config.get("condor","hwinjscript"),
+  hwinjpageCall = ' '.join([config.get("condor","hardware_inj_page"),
 	"--gps-start-time",config.get("input","gps-start-time"),
 	"--gps-end-time",config.get("input","gps-end-time"),
 	"--segment-db",config.get("segfind","segment-url"),
 	"--segment-dir","./",ifostr,
-	"--source-xml",hwinjDefFile,"--part=1"])
+	"--source-xml",hwinjDefFile,"--get-segment-list"])
 
   make_external_call(hwinjpageCall)
+
+  os.chdir("..")
 
 #####################################################################
 # Function to set lp the veto-category xml files from the vetoDefFile
@@ -1170,51 +1172,55 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   return dag
 
 ##############################################################################
-# Functino to set up a HW inj page job
-def hwinj_setup(cp,ifos,veto_categories):
+# Function to set up a HW inj page job
+def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
   """
-  run ligolw_cbc_hardware injection page
+  run ligolw_cbc_hardware injection page, soring the input and output in
+  the subdirectory hardware_injection_summary
   """
-  cp.set('hwinjpage','part','2')
-  # Add range cache file option here later
-  cp.set('hwinjpage','segment-dir','./')
-  for ifo in ifos:
-    cp.set('hwinjpage',ifo.lower()+'-injections','')
   hwInjNodes = []
-  cp.set('condor','hwinjscript',(cp.get('condor','hwinjscript'))[1:])
+  hwinj_length = cp.getint("input","gps-end-time") - cp.getint("input","gps-start-time")
+
   hwInjJob = inspiral.HWinjPageJob(cp)
-  hwInjJob.set_experiment_start_time(cp.get("input","gps-start-time"))
-  hwInjJob.set_experiment_end_time(cp.get("input","gps-end-time"))
-  hwInjJob.set_sub_file('hardware_inj/hwinjpage.sub')
-  hwInjJob.set_universe('vanilla')
-  hwInjJob.add_condor_cmd('initialdir','hardware_inj')
-  hwInjJob.add_condor_cmd('getenv','True')
+
   veto_categories.append(None)
   for veto in veto_categories:
     if cp.get("pipeline","user-tag"):
       usertag = cp.get("pipeline", "user-tag") + "_" + "FULL_DATA"
     else:
       usertag = "FULL_DATA"
-    if veto: usertag += "_CAT_" + str(veto) + "_VETO"
-    cacheFile = hipe_cache( ifos,usertag, \
-         cp.getint("input", "gps-start-time"), \
-         cp.getint("input", "gps-end-time"))
-    if not os.path.isfile("full_data/" + cacheFile):
+
+    if veto: 
+      usertag += "_CAT_" + str(veto) + "_VETO"
+
+    cacheFile = hipe_cache( ifos, usertag, cp.getint("input", "gps-start-time"), cp.getint("input", "gps-end-time") )
+    
+    if not os.path.isfile(os.path.join("full_data", cacheFile)):
       print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
       print>>sys.stderr, "does not exist! This might cause later failures."
-    ifoprefix=''
-    for ifo in ifos:
-      cp.set('hwinjpage',ifo.lower()+'-injections','')
-      ifoprefix+=ifo
-    outfilename = ifoprefix+'_hwinjections'
+
+    outfilename = os.path.join(hw_inj_dir, ''.join(ifos) + 'HWINJ_SUMMARY')
     if veto:
-      outfilename += '_CAT_'+str(veto)
-    outfilename += '.html'
+      outfilename += '_CAT_' + str(veto)
+    outfilename += cp.get("input","gps-start-time") + str(hwinj_length) + '.html'
+
     hwInjNode = inspiral.HWinjPageNode(hwInjJob)
-    hwInjNode.set_input_cache('../full_data/'+cacheFile)
+    hwInjNode.set_start_time(cp.get("input","gps-start-time"))
+    hwInjNode.set_end_time(cp.get("input","gps-end-time"))
+
+    hwInjNode.set_input_cache(os.path.join('full_data', cacheFile))
     hwInjNode.set_cache_string('*COIRE_SECOND*')
-    hwInjNode.set_output_file(outfilename)
+
+    hwInjNode.set_source_xml(os.path.join(hw_inj_dir,cp.get("hardware-injections", "hwinj-def-file")))
+    hwInjNode.set_segment_dir(hw_inj_dir)
+    hwInjNode.set_output_file(os.path.join(hw_inj_dir, outfilename))
+
+    hwInjNode.add_var,opt("analyze-injections",None)
+    for ifo in ifos:
+      hwInjJob.add_var_opt(ifo.lower()+'-injections',None)
+
     hwInjNodes.append(hwInjNode)
+
   return hwInjNodes
 
 ##############################################################################

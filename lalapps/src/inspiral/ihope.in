@@ -291,6 +291,7 @@ shutil.copy( opts.config_file, analysisDirectory )
 opts.config_file = opts.config_file.split("/")[-1]
 
 os.chdir(analysisDirectory)
+inspiralutils.mkdir('logs')
 
 # parse the ini file:
 cp = ConfigParser.ConfigParser()
@@ -426,11 +427,10 @@ for ifo in ifos:
 
 os.chdir("..")
 
+hw_inj_dir = "hardware_injection_summary"
 if opts.run_hardware_inj:
-  inspiralutils.mkdir("hardware_inj")
-  os.chdir("hardware_inj")
-  inspiralutils.run_hardware_inj_part_one(cp,ifos)
-  os.chdir("..")
+  inspiralutils.mkdir(hw_inj_dir)
+  inspiralutils.get_hwinj_segments(cp,ifos,hw_inj_dir)
 
 # create the list of files that will be concatenated into the ihope cache
 cachelist = []
@@ -919,7 +919,8 @@ if opts.run_plots:
 
 if opts.run_hardware_inj:
   if opts.run_full_data:
-    HWinjNodes = inspiralutils.hwinj_setup(cp,ifos,veto_categories)
+    HWinjNodes =
+    inspiralutils.hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir)
     for node in HWinjNodes:
     	dag.add_node(node)
 
