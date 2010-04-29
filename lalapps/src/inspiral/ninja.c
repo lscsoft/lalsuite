@@ -161,10 +161,10 @@ int main(INT4 argc, CHAR *argv[])
 
   /* default debug level */
   lal_errhandler = LAL_ERR_EXIT;
-
   lalDebugLevel = 0;
   LAL_CALL(LALGetDebugLevel(&status, argc, argv, 'd'), &status);
 
+  /* set default output file */
   uvar_outFile = (CHAR *)LALCalloc(1, FILENAME_MAX * sizeof(CHAR));
   strcpy(uvar_outFile, "ninja_out.xml");
 
