@@ -1213,7 +1213,7 @@ def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
 
     hwInjNode.set_source_xml(os.path.join(hw_inj_dir,cp.get("hardware-injections", "hwinj-def-file")))
     hwInjNode.set_segment_dir(hw_inj_dir)
-    hwInjNode.set_output_file(os.path.join(hw_inj_dir, outfilename))
+    hwInjNode.set_output_file(outfilename)
 
     hwInjNode.add_var_opt('analyze-injections','')
     for ifo in ifos:
