@@ -120,7 +120,7 @@ int metadata_in_range(NinjaMetaData *data, NrParRange *range);
 int parse_group_list ( NrParRange *range, CHAR *list);
 
 /* main program entry */
-int main( INT4 argc, CHAR *argv[] )
+int main(INT4 argc, CHAR *argv[])
 {
   LALStatus status = blank_status;
 
