@@ -125,11 +125,6 @@ src/pulsar/FDS_binary/lalapps_GenerateBinaryMesh
 src/pulsar/FDS_binary/lalapps_GenerateRandomBinaryInput
 src/pulsar/FDS_binary/lalapps_GenerateSearchInput
 src/pulsar/FDS_binary/lalapps_MakeSubMesh
-src/pulsar/FDS_griphyn/lalapps_ClusterComputeF
-src/pulsar/FDS_griphyn/lalapps_GatherLFN
-src/pulsar/FDS_griphyn/lalapps_QueryMetadataEphemeris
-src/pulsar/FDS_griphyn/lalapps_QueryMetadataLFN
-src/pulsar/FDS_griphyn/lalapps_narrowBandExtract
 src/pulsar/FDS_isolated/ResamplingFstat/lalapps_ComputeFStatistic_resamp
 src/pulsar/FDS_isolated/lalapps_ComputeFStatAnalyticMonteCarloUpperLimit
 src/pulsar/FDS_isolated/lalapps_ComputeFStatistic
