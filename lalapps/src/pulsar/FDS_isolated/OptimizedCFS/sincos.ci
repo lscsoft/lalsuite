@@ -95,7 +95,7 @@ static const REAL4* cosLUTdiff = sincosLUTdiff + (SINCOS_LUT_RES/4);
 static void local_sin_cos_2PI_LUT_init (void)
 {
   static const REAL8 step = LAL_TWOPI / (REAL8)SINCOS_LUT_RES;
-  static const REAL8 div  = 1.0 / ( 1 << SINCOS_SHIFT );
+  static const REAL8 divide  = 1.0 / ( 1 << SINCOS_SHIFT );
   REAL8 start, end, true_mid, linear_mid;
   int i;
 
@@ -105,7 +105,7 @@ static void local_sin_cos_2PI_LUT_init (void)
     end = sin( ( i + 1 ) * step );
     linear_mid = ( start + end ) * 0.5;
     sincosLUTbase[i] = start + ( ( true_mid - linear_mid ) * 0.5 );
-    sincosLUTdiff[i] = ( end - start ) * div;
+    sincosLUTdiff[i] = ( end - start ) * divide;
     start = end;
   }
 }
