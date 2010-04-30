@@ -431,7 +431,7 @@ main(int argc, char *argv[])
 		gprefix = "gPtole_ij = \\\n"; mprefix = "mPtole = ";
 	      }
 
-              fprintf ( fpMetric, gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
+              fprintf ( fpMetric, "%s", gprefix ); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, g_ij );
               fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 
 	    } /* if fpMetric */
@@ -503,7 +503,7 @@ main(int argc, char *argv[])
 		const CHAR *gprefix = "gFlat_ij = \\\n";
 		const CHAR *mprefix = "mFlat = ";
 
-		fprintf ( fpMetric, gprefix); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gFlat_ij );
+		fprintf ( fpMetric, "%s", gprefix); XLALfprintfGSLmatrix ( fpMetric, METRIC_FORMAT, gFlat_ij );
 		fprintf ( fpMetric, "\n%s %.16g;\n\n", mprefix, mm );
 	      } /* if fpMetric */
 

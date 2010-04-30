@@ -114,9 +114,9 @@ int main(int argc,char *argv[])
   if (bintempfileflag) {
     if (ReadOrbitalParams(primarytemplatefile,&primaryrandparams)) return 2;
     /* primaryrandparams.start=primarystart; */
-    snprintf(primaryrandparams.noisedir,256,primarynoisedir);
-    snprintf(primaryrandparams.sftbase,256,primarysftbase);
-    snprintf(primaryrandparams.stampsfile,256,primarystampsfile);
+    snprintf(primaryrandparams.noisedir,256,"%s",primarynoisedir);
+    snprintf(primaryrandparams.sftbase,256,"%s",primarysftbase);
+    snprintf(primaryrandparams.stampsfile,256,"%s",primarystampsfile);
     randparams=&primaryrandparams;
 
     /*printf("done primary template read\n");*/
@@ -124,9 +124,9 @@ int main(int argc,char *argv[])
     if (coflag) {
       if (ReadOrbitalParams(secondarytemplatefile,&secondaryrandparams)) return 2;
       /* secondaryrandparams.start=secondarystart; */
-      snprintf(secondaryrandparams.noisedir,256,secondarynoisedir);
-      snprintf(secondaryrandparams.sftbase,256,secondarysftbase);
-      snprintf(secondaryrandparams.stampsfile,256,secondarystampsfile);
+      snprintf(secondaryrandparams.noisedir,256,"%s",secondarynoisedir);
+      snprintf(secondaryrandparams.sftbase,256,"%s",secondarysftbase);
+      snprintf(secondaryrandparams.stampsfile,256,"%s",secondarystampsfile);
       /*printf("done secondary template read\n");*/
 
       if (primaryrandparams.start<secondaryrandparams.start) {
@@ -140,9 +140,9 @@ int main(int argc,char *argv[])
   }
   else {
     randparams=&primaryrandparams;
-    snprintf(randparams->noisedir,256,primarynoisedir);
-    snprintf(randparams->sftbase,256,primarysftbase);
-    snprintf(randparams->stampsfile,256,primarystampsfile);
+    snprintf(randparams->noisedir,256,"%s",primarynoisedir);
+    snprintf(randparams->sftbase,256,"%s",primarysftbase);
+    snprintf(randparams->stampsfile,256,"%s",primarystampsfile);
   }
 
   /*printf("sorted the template boundaries\n");*/
@@ -304,7 +304,7 @@ int ReadOrbitalParams(char *templatefile,RandomParameters *randomparams)
   if (ReadMeshFileHeader(fp,&BMFheader)) return 2;
   
   /* extract the parameters from the header */
-  snprintf(randomparams->detector,256,BMFheader.det);
+  snprintf(randomparams->detector,256,"%s",BMFheader.det);
 
   randomparams->sma=(REAL8range *)LALMalloc(sizeof(REAL8range));
   randomparams->sma->min=BMFheader.sma_MIN;
@@ -596,12 +596,12 @@ int GenRandomParams(RandomParameters *randparams)
       switch (c) {
       case 'S':
 	temp=optarg;
-	sprintf(primarytemplatefile,temp);
+	sprintf(primarytemplatefile,"%s",temp);
 	bintempfileflag=1;
 	break;
       case 's':
 	temp=optarg;
-	sprintf(secondarytemplatefile,temp);
+	sprintf(secondarytemplatefile,"%s",temp);
 	break;
       case 'A':
 	primarystart=atoi(optarg);
@@ -690,39 +690,39 @@ int GenRandomParams(RandomParameters *randparams)
 	break;
       case 'm':
 	temp=optarg;
-	sprintf(primarystampsfile,temp);
+	sprintf(primarystampsfile,"%s",temp);
 	break; 
       case 'M':
 	temp=optarg;
-	sprintf(secondarystampsfile,temp);
+	sprintf(secondarystampsfile,"%s",temp);
 	break; 
       case 'n':
 	temp=optarg;
-	sprintf(primarynoisedir,temp);
+	sprintf(primarynoisedir,"%s",temp);
 	break; 
       case 'N':
 	temp=optarg;
-	sprintf(secondarynoisedir,temp);
+	sprintf(secondarynoisedir,"%s",temp);
 	break; 
       case 'd':
 	temp=optarg;
-	sprintf(primarysftbase,temp);
+	sprintf(primarysftbase,"%s",temp);
 	break; 
       case 'D':
 	temp=optarg;
-	sprintf(secondarysftbase,temp);
+	sprintf(secondarysftbase,"%s",temp);
 	break; 
       case 'i':
 	temp=optarg;
-	sprintf(infile,temp);
+	sprintf(infile,"%s",temp);
 	break;
       case 'o':
 	temp=optarg;
-	sprintf(primaryoutputfile,temp);
+	sprintf(primaryoutputfile,"%s",temp);
 	break;
       case 'x':
 	temp=optarg;
-	sprintf(secondaryoutputfile,temp);
+	sprintf(secondaryoutputfile,"%s",temp);
 	break;
       case 'h':
 	/* print usage/help message */

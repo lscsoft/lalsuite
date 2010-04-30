@@ -215,7 +215,7 @@ int ReadFullBank(void)
   gamYY=BMFheader.metric_YY;
   RA=BMFheader.RA;
   dec=BMFheader.dec;
-  sprintf(ifo,BMFheader.det);
+  sprintf(ifo,"%s",BMFheader.det);
 
   /* do a quick check that the targeted area lies within the full mesh boundaries */
   if ((sma0<smaMIN)||(sma0>smaMAX)) {
@@ -383,7 +383,7 @@ INT4 OutputSortedDist(void)
     BMFheader.metric_XY=gamXY;
     BMFheader.metric_YY=gamYY;
     sprintf(BMFheader.version,"v1_sub");
-    sprintf(BMFheader.det,ifo);
+    sprintf(BMFheader.det,"%s",ifo);
     BMFheader.RA=RA;
     BMFheader.dec=dec;
 
@@ -466,19 +466,19 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'f':
       temp=optarg;
-      sprintf(fullbankfile,temp);
+      sprintf(fullbankfile,"%s",temp);
       break; 
     case 's':
       temp=optarg;
-      sprintf(subbankfile,temp);
+      sprintf(subbankfile,"%s",temp);
       break;
     case 'E':
       temp=optarg;
-      sprintf(ephemfile,temp);
+      sprintf(ephemfile,"%s",temp);
       break;
     case 'y':
       temp=optarg;
-      sprintf(yr,temp);
+      sprintf(yr,"%s",temp);
       break;
     case 'N':
       Nsub=atoi(optarg);

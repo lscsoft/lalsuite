@@ -904,19 +904,19 @@ int ReadEphemeris(char *ephemdir,char *year,EphemerisData **edat)
       switch (c) {
       case 'D':
 	temp=optarg;
-	sprintf(datadir,temp);
+	sprintf(datadir,"%s",temp);
 	break;
       case 'O':
 	temp=optarg;
-	sprintf(outdir,temp);
+	sprintf(outdir,"%s",temp);
 	break;
       case 'S':
 	temp=optarg;
-	sprintf(sourcefile,temp);
+	sprintf(sourcefile,"%s",temp);
 	break;
       case 's':
 	temp=optarg;
-	sprintf(sourcename,temp);
+	sprintf(sourcename,"%s",temp);
 	break;
       case 'a':
 	start=atoi(optarg);
@@ -932,15 +932,15 @@ int ReadEphemeris(char *ephemdir,char *year,EphemerisData **edat)
 	break;
       case 'E':
 	temp=optarg;
-	sprintf(ephdir,temp);
+	sprintf(ephdir,"%s",temp);
 	break;
       case 'y':
 	temp=optarg;
-	sprintf(yr,temp);
+	sprintf(yr,"%s",temp);
 	break;
       case 'I':
 	temp=optarg;
-	sprintf(det,temp);
+	sprintf(det,"%s",temp);
 	break;
       case 'h':
 	/* print usage/help message */
