@@ -286,7 +286,7 @@ inputs.noverlap);
     return 1;
   }
   
-  fprintf(stderr, "sizeof(coeffArray) = %d\n", sizeof(coeffArray));
+  fprintf(stderr, "sizeof(coeffArray) = %lu\n", sizeof(coeffArray));
   
   if(verbose){
     fprintf(stderr, "The array size for ephemeris file %s is %d.\n",

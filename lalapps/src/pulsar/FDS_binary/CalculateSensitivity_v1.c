@@ -605,7 +605,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
       errorcode=fread((void*)((*SFTData)[dataparams->sftno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
 	perror(filelist[filenum]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
+	fprintf(stderr, "The SFT data was truncated.  Only read %zu not %d complex floats\n", errorcode, ndeltaf);
 	return 6;
       }
 	
