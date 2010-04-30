@@ -750,8 +750,9 @@ void DataTest(void)
     numberI4 = LAL_PNORDER_TWO;
     addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
+    nulllikelihood = NullLogLikelihood(runstate->data);
+printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nulllikelihood, likelihood-nulllikelihood);
 
-printf("Likelihood %g\n", likelihood);
 /*
     LALTemplateGeneratePPN(runstate->data);
 	  executeFT(runstate->data);
