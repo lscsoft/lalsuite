@@ -1103,7 +1103,7 @@ int MAIN( int argc, char *argv[]) {
             */
 
             /* Check U1 index value */
-            if ( ifreq != U1idx ) {
+            if ( (INT4)ifreq != U1idx ) {
               fprintf(stderr, "ERROR:  Incorrect Frequency-Index!\n ----> Seg: %03d  ifreq: %d   cg U1: %d \n",
                                 k, ifreq, U1idx);
               return(HIERARCHICALSEARCH_ECG);
