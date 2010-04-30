@@ -16,6 +16,8 @@ STOCH_PREPROCESS_SRCS = stochastic_preprocess.c stochastic_virgo.h
 
 STOPP_SRCS       = stopp.c
 STOPP_BAYES_SRCS = stopp_bayes.c
+OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
+                   olapredfcn_args.c olapredfcn_bars.c
 
 ## frame and stochastic library dependant programs
 if FRAME
@@ -39,7 +41,13 @@ lalapps_stopp_bayes_SOURCES     = $(STOPP_BAYES_SRCS)
 endif
 endif
 
-bin_PROGRAMS      = ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
+## stochastic library programs
+if LALSTOCHASTIC
+STOCHASTICPROGRAMS = lalapps_olapredfcn
+lalapps_olapredfcn_SOURCES      = $(OLAPREDFCN_SRCS)
+endif
+
+bin_PROGRAMS      = ${STOCHASTICPROGRAMS} ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
 
 if LALSTOCHASTIC
 if HAVE_PYTHON
