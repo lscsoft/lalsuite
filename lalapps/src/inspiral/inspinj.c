@@ -232,22 +232,22 @@ static void print_usage(char *program)
       " [--verbose]               print progress information\n"\
       " [--user-tag] usertag      set the usertag \n"\
       " [--output ] name          overwrite the standard file naming convention\n"\
-      " [--write-compress]        write a compressed xml file\n"\
-      "\n"\
+      " [--write-compress]        write a compressed xml file\n\n");\
+  fprintf(stderr,
       "Waveform details:\n"\
       " [--seed] randomSeed       seed for random number generator (default : 1)\n"\
       "  --f-lower freq           lower cut-off frequency.\n"\
       "  --waveform wfm           set waveform type to wfm\n"\
-      "  --amp-order              set PN order in amplitude\n"\
-      "\n"\
+      "  --amp-order              set PN order in amplitude\n\n");
+  fprintf(stderr,
       "Time distribution information:\n"\
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
       "  [--time-step] step       space injections by average of step seconds\n"\
       "                           (suggestion : 2630 / pi seconds)\n"\
       "  [--time-interval] int    distribute injections in an interval, int s\n"\
-      "                           (default : 0 seconds)\n"\
-      "\n"\
+      "                           (default : 0 seconds)\n\n");
+  fprintf(stderr,
       "Source distribution information:\n"\
       "  --l-distr  locDist       set the source location distribution,\n"\
       "                           locDist must be one of:\n"\
@@ -280,8 +280,8 @@ static void print_usage(char *program)
       " [--exttrig-file] exttrig  XML file containing external trigger\n"\
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
-      "                           min/max distance required if d-distr not 'source'\n"\
-      "\n"\
+      "                           min/max distance required if d-distr not 'source'\n\n");
+  fprintf(stderr,
       "Mass distribution information:\n"\
       " --m-distr massDist        set the mass distribution of injections\n"\
       "                           must be one of:\n"\
@@ -308,8 +308,8 @@ static void print_usage(char *program)
       " [--mean-mass2] m2mean     set the mean value for mass2\n"\
       " [--stdev-mass2] m2std     set the standard deviation for mass2\n"\
       " [--min-mratio] minr       set the minimum mass ratio\n"\
-      " [--max-mratio] maxr       set the maximum mass ratio\n"\
-      "\n"\
+      " [--max-mratio] maxr       set the maximum mass ratio\\n");
+  fprintf(stderr,
       "Spin distribution information:\n"\
       "  --disable-spin           disables spinning injections\n"\
       "  --enable-spin            enables spinning injections\n"\
@@ -325,16 +325,15 @@ static void print_usage(char *program)
       "                           to abskappa1min (0.0)\n"\
       "  [--max-abskappa1] abskappa1max \n"\
       "                           Set the maximum absolute value of cos(S1.L_N) \n"\
-      "                           to abskappa1max (1.0)\n"\
-      "\n"\
+      "                           to abskappa1max (1.0)\n\n");
+  fprintf(stderr,
       "Tapering the injection waveform:\n"\
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
       "                            (start|end|startend) \n)"\
-      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n"\
-      "\n"\
+      "  [--band-pass-injection]  sets the tapering method of the injected waveform\n\n");
+  fprintf(stderr,
       "Output:\n"\
-      " [--write-sim-ring]        Writes a sim_ringdown table\n"\
-      "\n");
+      " [--write-sim-ring]        Writes a sim_ringdown table\n\n");
 }
 
 
@@ -393,7 +392,7 @@ read_nr_data( char* filename )
 {
   SimInspiralTable  *nrSimHead = NULL;
   SimInspiralTable  *thisEvent= NULL;
-  INT4               i = 0;
+  INT4               j = 0;
 
   num_nr = SimInspiralTableFromLIGOLw( &nrSimHead, filename, 0, 0 );
 
@@ -420,13 +419,13 @@ read_nr_data( char* filename )
     exit( 1 );
   }
 
-  for( i = 0, thisEvent=nrSimHead; i < num_nr; 
-      ++i, thisEvent = thisEvent->next )
+  for( j = 0, thisEvent=nrSimHead; j < num_nr; 
+      ++j, thisEvent = thisEvent->next )
   {
-    nrSimArray[i] = thisEvent;
-    if (i > 0)
+    nrSimArray[j] = thisEvent;
+    if (j > 0)
     {
-      nrSimArray[i-1]->next = NULL;
+      nrSimArray[j-1]->next = NULL;
     }
   }
 }
@@ -443,7 +442,7 @@ read_source_data( char* filename )
 {
   char line[256];
   FILE *fp;
-  int i;
+  int j, k;
 
   fp = fopen (filename, "r" );
   if ( ! fp )
@@ -472,7 +471,7 @@ read_source_data( char* filename )
     exit( 1 );
   }
 
-  i = 0;
+  j = 0;
   while ( fgets( line, sizeof( line ), fp ) )
     if ( line[0] == '#' )
       continue;
@@ -483,8 +482,8 @@ read_source_data( char* filename )
       int c;
 
       c = sscanf( line, "%s %c%le:%le %c%le:%le %le %le %le",
-          source_data[i].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
-          &source_data[i].dist, &source_data[i].lum, &source_data[i].fudge );
+          source_data[j].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
+          &source_data[j].dist, &source_data[j].lum, &source_data[j].fudge );
       if ( c != 10 )
       {
         fprintf( stderr, "error parsing source datafile %s\n", sourceFileName );
@@ -492,14 +491,14 @@ read_source_data( char* filename )
       }
 
       /* by convention, overall sign is carried only on hours/degrees entry */
-      source_data[i].ra  = ( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
-      source_data[i].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
+      source_data[j].ra  = ( ra_h + ra_m / 60.0 ) * LAL_PI / 12.0;
+      source_data[j].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
 
       if ( ra_sgn == '-' )
-        source_data[i].ra *= -1;
+        source_data[j].ra *= -1;
       if ( dec_sgn == '-' )
-        source_data[i].dec *= -1;
-      ++i;
+        source_data[j].dec *= -1;
+      ++j;
     }
 
   /* close file */
@@ -519,11 +518,11 @@ read_source_data( char* filename )
   norm = mwLuminosity;
 
   /* calculate the fractions of the different sources */
-  for ( i = 0; i < num_source; ++i )
-    norm += ratioVec[i] = source_data[i].lum * source_data[i].fudge;
+  for ( k = 0; k < num_source; ++k )
+    norm += ratioVec[k] = source_data[k].lum * source_data[k].fudge;
   fracVec[0] = ratioVec[0] / norm;
-  for ( i = 1; i < num_source; ++i )
-    fracVec[i] = fracVec[i-1] + ratioVec[i] / norm;
+  for ( k = 1; k < num_source; ++k )
+    fracVec[k] = fracVec[k-1] + ratioVec[k] / norm;
 }
 
 /*
@@ -764,12 +763,12 @@ XLALDestroyREAL8Vector(pN);
 void drawMassFromSource( SimInspiralTable* table )
 { 
   REAL4 m1, m2, eta;
-  int index=0;
+  int mass_index=0;
 
   /* choose masses from the mass-list */  
-  index = (int)( num_mass * XLALUniformDeviate( randParams ) );
-  m1=mass_data[index].mass1;
-  m2=mass_data[index].mass2;
+  mass_index = (int)( num_mass * XLALUniformDeviate( randParams ) );
+  m1=mass_data[mass_index].mass1;
+  m2=mass_data[mass_index].mass2;
 
   eta=m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   table->mass1 = m1;
@@ -787,12 +786,12 @@ void drawMassFromSource( SimInspiralTable* table )
 
 void drawMassSpinFromNR( SimInspiralTable* table )
 { 
-  int index=0;
+  int mass_index=0;
 
   /* choose masses from the mass-list */  
-  index = (int)( num_nr * XLALUniformDeviate( randParams ) );
+  mass_index = (int)( num_nr * XLALUniformDeviate( randParams ) );
   XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal, 
-      nrSimArray[index]);
+      nrSimArray[mass_index]);
 }
 
 /*
@@ -806,20 +805,20 @@ void drawFromSource( REAL8 *rightAscension,
     CHAR   name[LIGOMETA_SOURCE_MAX] )
 {
   REAL4 u;
-  int i;
+  int j;
 
   u=XLALUniformDeviate( randParams );
 
   /* draw from the source table */
-  for ( i = 0; i < num_source; ++i )
+  for ( j = 0; j < num_source; ++j )
   {
-    if ( u < fracVec[i] )
+    if ( u < fracVec[j] )
     {
       /* put the parameters */
-      *rightAscension = source_data[i].ra;
-      *declination    = source_data[i].dec;
-      *distance = source_data[i].dist/1000.0;
-      memcpy( name, source_data[i].name,
+      *rightAscension = source_data[j].ra;
+      *declination    = source_data[j].dec;
+      *distance = source_data[j].dist/1000.0;
+      memcpy( name, source_data[j].name,
           sizeof(CHAR) * LIGOMETA_SOURCE_MAX );
       return;
     }
@@ -869,8 +868,8 @@ void drawLocationFromExttrig( SimInspiralTable* table )
  */
 int main( int argc, char *argv[] )
 { 
-  LIGOTimeGPS gpsStartTime;
-  LIGOTimeGPS gpsEndTime;
+  LIGOTimeGPS gpsStartTime = {-1,0};
+  LIGOTimeGPS gpsEndTime = {-1,0};
   LIGOTimeGPS currentGpsTime;
   long gpsDuration;
 
@@ -904,8 +903,6 @@ int main( int argc, char *argv[] )
   int aligned = 0;
 
   status=blank_status;
-  gpsStartTime.gpsSeconds=-1;
-  gpsEndTime.gpsSeconds=-1;
 
   /* getopt arguments */
   /* available letters: H */
@@ -1711,10 +1708,6 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
-      case 'vv':
-        vrbflg = 1;
-        break;
-
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         print_usage(argv[0]);
@@ -2049,17 +2042,17 @@ int main( int argc, char *argv[] )
   
   if ( userTag && outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml.gz",
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( userTag && !outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml", 
         rand_seed, userTag, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else if ( !userTag && outCompress )
   {
-    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml.gz",
+    snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%ld.xml.gz",
         rand_seed, gpsStartTime.gpsSeconds, gpsDuration );
   }
   else

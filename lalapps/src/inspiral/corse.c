@@ -632,7 +632,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "injection coincidence window must be >= 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, injectWindowNS );
           exit( 1 );
         }
@@ -1116,8 +1116,6 @@ int main( int argc, char *argv[] )
   {
     CoincInspiralSlideTable *slideHeads = NULL;
     CoincInspiralSlideTable *thisSlideHead = NULL;
-    CoincInspiralTable      *thisEvent = NULL;
-    CoincInspiralTable      *prevEvent = NULL;
 
     XLALCreateCoincSlideTable( &slideHeads, numSlides );
 

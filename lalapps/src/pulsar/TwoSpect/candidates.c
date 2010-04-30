@@ -186,6 +186,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             REAL8 bestmoddepth = 0.0;
             REAL8 bestR = 0.0;
             REAL8 bestSNR = 0.0;
+            REAL8 bestProb = 1.0;
             for (kk=0; kk<loc2; kk++) {
                avefsig += in[locs2->data[kk]]->fsig*in[locs2->data[kk]]->snr;
                aveperiod += in[locs2->data[kk]]->period*in[locs2->data[kk]]->snr;
@@ -214,13 +215,17 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   if (option==1) makeTemplate(template, cand, params, plan);
                   else makeTemplateGaussians(template, cand, params);
                   farStruct *farval = new_farStruct();
-                  estimateFAR(farval, template, 10000, 0.01, ffplanenoise, fbinaveratios);
+                  //estimateFAR(farval, template, 10000, 0.01, ffplanenoise, fbinaveratios);
+                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
                   REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
+                  REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R);
                   REAL8 snr = (R - farval->distMean)/farval->distSigma;
-                  if (R > farval->far && snr > bestSNR) {
+                  //if (R > farval->far && snr > bestSNR) {
+                  if (R > farval->far && prob < bestProb) {
                      bestSNR = snr;
                      bestmoddepth = mindf + kk*0.5/params->Tcoh;
                      bestR = R;
+                     bestProb = prob;
                   }
                   free_candidate(cand);
                   cand = NULL;
@@ -233,7 +238,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             
             if (bestSNR != 0.0) {
                out[numcandoutlist] = new_candidate();
-               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, 0.0);
+               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, bestProb);
                numcandoutlist++;
             }
             

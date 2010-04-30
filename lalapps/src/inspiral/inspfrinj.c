@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -68,6 +66,7 @@
 #include <lal/Units.h>
 #include <lal/FindChirpSP.h>
 #include <lal/Inject.h>
+#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -149,7 +148,7 @@ int    writeRawData     = 0;            /* write the raw data to frame  */
 int    writeInjOnly     = 0;            /* write the inj data to frame  */
 int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
 int    writeReal8Frame  = 0;            /* write frames as real 8       */
-UINT4  outCompress = 0;
+int    outCompress = 0;
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
@@ -952,7 +951,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   };
   int c;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
-  LALStatus             status = blank_status;
 
 
   /*

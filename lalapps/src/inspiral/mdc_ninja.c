@@ -59,12 +59,7 @@
 #include "inspiral.h"
 
 /* cvs information */
-RCSID( "$Id$" );
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
+RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapp_mdc_ninja"
 
 /* defines */
@@ -78,20 +73,10 @@ static void output_multi_channel_frame( INT4 num_ifos, INT4 gpsStart,
     INT4 gpsEnd, REAL4TimeSeries *injData[LAL_NUM_IFO], CHAR *frameType, CHAR *outDir );
 static void write_mdc_log_file( CHAR *filename, SimInspiralTable *injections,
     INT4 gps_start, CHAR *set_name );
-
-int get_spectrum(REAL8Sequence *spectrum,
-    InterferometerNumber ifoNumber,
-    REAL8         deltaF,
-    REAL8         strainHighPassFreq,
-    REAL8         dynRange);
-
-void add_colored_noise(LALStatus       *status,
-    REAL4TimeSeries *chan,
-    INT4            ifoNumber,
-    RandomParams    *randParams,
-    REAL8           dynRange,
-    REAL8           strainHighpassFreq);
-
+static int get_spectrum(REAL8Sequence *spectrum, InterferometerNumber ifoNumber,
+    REAL8 deltaF, REAL8 strainHighPassFreq, REAL8 dynRange);
+static void add_colored_noise(LALStatus *status, REAL4TimeSeries *chan, INT4 ifoNumber,
+    RandomParams *randParams, REAL8 dynRange, REAL8 strainHighpassFreq);
 
 /* getopt flags */
 extern int vrbflg;
@@ -1019,13 +1004,12 @@ static void write_mdc_log_file(CHAR *filename,
   fclose(output);
 }
 
-
-void add_colored_noise(LALStatus       *status,
+static void add_colored_noise(LALStatus *status,
     REAL4TimeSeries *chan,
-    INT4            ifoNumber,
-    RandomParams    *randParams,
-    REAL8           dynRange,
-    REAL8           strainHighPassFreq)
+    INT4 ifoNumber,
+    RandomParams *randParams,
+    REAL8 dynRange,
+    REAL8 strainHighPassFreq)
 {
 
   UINT4 k;
@@ -1098,11 +1082,11 @@ void add_colored_noise(LALStatus       *status,
 }
 
 
-int get_spectrum(REAL8Sequence *spectrum,
+static int get_spectrum(REAL8Sequence *spectrum,
     InterferometerNumber ifoNumber,
-    REAL8         deltaF,
-    REAL8         strainHighPassFreq,
-    REAL8         dynRange)
+    REAL8 deltaF,
+    REAL8 strainHighPassFreq,
+    REAL8 dynRange)
 {
   UINT4 k;
   INT4 kmin = strainHighPassFreq / deltaF > 1 ? strainHighPassFreq / deltaF : 1 ;

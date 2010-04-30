@@ -1,7 +1,7 @@
 /*
  * fr_ninja.c - save numerical relativity waveforms as a frame
  *
- * Copyright (C) 2007, 2008 Adam Mercer
+ * Copyright (C) 2007,2008,2010 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
- *
- * Revision: $Id$
  */
 
 #include <math.h>
@@ -36,20 +34,14 @@
 #include <lal/NRWaveInject.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
-/* cvs info */
-RCSID("$Id$");
-#define CVS_ID_STRING "$Id$"
-#define CVS_NAME_STRING "$Name$"
-#define CVS_REVISION "$Revision$"
-#define CVS_SOURCE "$Source$"
-#define CVS_DATE "$Date$"
-#define PROGRAM_NAME "fr_ninja"
+/* program info */
+RCSID(LALAPPS_VCS_IDENT_ID);
+#define PROGRAM_NAME "lalapps_fr_ninja"
 
 /* defines */
 /* TODO: how long can a FrHistory comment string be? */
@@ -61,7 +53,6 @@ RCSID("$Id$");
 
 /* function prototypes */
 static void print_usage(FILE *ptr, CHAR *program);
-
 
 /* verbose flag */
 extern int vrbflg;
@@ -77,7 +68,7 @@ INT4 main(INT4 argc, CHAR **argv)
   /* counters */
   int c;
   UINT4 i;
-  
+
   /* mode counters */
   UINT4 l, m;
 
@@ -307,7 +298,7 @@ INT4 main(INT4 argc, CHAR **argv)
   snprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
   snprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
   snprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
-  snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
+  snprintf(creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, LALAPPS_VCS_ID);
 
   /* define frame */
   frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
@@ -340,7 +331,7 @@ INT4 main(INT4 argc, CHAR **argv)
       hcross[l][m] = NULL;
 
       /* generate channel names */
-      plus_channel[l][m] = XLALGetNinjaChannelName( "plus", l, m - MAX_L);
+      plus_channel[l][m] = XLALGetNinjaChannelName("plus", l, m - MAX_L);
       cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m - MAX_L);
 
       /* initilise waveform time series */
@@ -388,8 +379,8 @@ INT4 main(INT4 argc, CHAR **argv)
         }
       }
 
-     /* add channels to frame */
-     if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
+      /* add channels to frame */
+      if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
       {
         XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[l][m]);
         XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[l][m]);

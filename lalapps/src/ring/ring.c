@@ -268,7 +268,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
       channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
           &params->frameDataStartTime, params->frameDataDuration, 
           params->strainData,
-          params->geoHighpassFrequency, params->geoScale );
+          params->geoHighpassFrequency);
       stripPad = 1;
     }
     else

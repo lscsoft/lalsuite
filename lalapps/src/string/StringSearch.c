@@ -184,8 +184,8 @@ CHAR ifo[4];
 
 double chi2cut[4][3];         /* chi2 cut parameters (3 per ifo) */
 
-long double veto_start[50000];/* start of veto segments */
-long double veto_end[50000];  /* end of veto segments */
+long double veto_start[100000];/* start of veto segments */
+long double veto_end[100000];  /* end of veto segments */
 int nseg;                     /* number of veto segments */
 
 REAL4 SAMPLERATE;
@@ -350,6 +350,8 @@ int main(int argc,char *argv[])
   /****** FreeMem ******/
   printf("FreeMem()\n");
   if (FreeMem()) return 14;
+
+  printf("StringJob is done\n");
   
   return 0;
 }
@@ -561,12 +563,12 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	/* time of the event given with nano-seconds */
 	eventtime=(double)peaktime/1e9;
 
-	/* the event is vetoed by default unless... */
-	veto=1;
+	/* the event is OK by default unless... */
+	veto=0;
 		    
-	/* then check all the segments of the slice */
-	for(s=0; veto==1&&s<nseg; s++){
-	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=0;
+	/* ...it is inside a veto segment */
+	for(s=0; veto==0&&s<nseg; s++){
+	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=1;
 	}
 	
 	/* rejection if veto */
@@ -1161,7 +1163,7 @@ int ReadVetoFile(struct CommandLineArgsTag CLA){
     veto_start[nseg]=gps_start;
     veto_end[nseg]=gps_end;
     nseg++;
-    if(nseg==50000){ 
+    if(nseg==100000){ 
       printf("\tToo many segments in the veto file\n"); 
       return 1;
     }

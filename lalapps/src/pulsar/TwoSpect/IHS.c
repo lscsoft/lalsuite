@@ -392,7 +392,12 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL8 fsig, per0, B;
    REAL8 ihsfomfar = 6.0;
    
-   //for (ii=0; ii<(INT4)ffdata->f->length; ii++) fprintf(stderr,"%g\n",ihsmaxima->maxima->data[ii]);
+   /* FILE *IHSVALS;
+   IHSVALS = fopen("./realihsvals.dat","w");
+   
+   for (ii=0; ii<(INT4)ffdata->f->length; ii++) fprintf(IHSVALS,"%g\n",ihsmaxima->maxima->data[ii]);
+   
+   fclose(IHSVALS); */
    
    //Need to shift the start bin location by the number of removed bins in the maxima struct
    INT4 mincols = (INT4)floorf(2.0*inputParams->dfmin*inputParams->Tcoh)+1;

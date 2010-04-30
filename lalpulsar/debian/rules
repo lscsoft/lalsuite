@@ -42,7 +42,7 @@ build: build-stamp
 build-stamp:  config.status
 	dh_testdir
 
-	$(MAKE)
+	$(MAKE) V=1
 
 	touch $@
 
@@ -51,7 +51,6 @@ clean:
 	dh_testroot
 	rm -f build-stamp 
 
-	-$(MAKE) vcs-clean
 	-$(MAKE) distclean
 	dh_clean 
 

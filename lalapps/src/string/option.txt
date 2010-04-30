@@ -9,7 +9,7 @@ log10(chi2) > PAR[0]
 The cut is not applied if this file is missing
 or if one IFO is missing
 -------------------------
-L1  0.7  2  -2.5
-V1  0.7  2  -2.6
-H1  0.7  2  -2.5
-H2  0.7  2  -2.5
+L1  0.5  1.8  -2.3
+H1  0.5  1.8  -2.4
+H2  0.5  1.8  -2.4
+V1  0.5  1.8  -2.3

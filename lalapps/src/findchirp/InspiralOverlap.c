@@ -108,14 +108,15 @@ main (  int argc, char **argv )
    static UINT4 psdLength, quietFlag = 0, optFlag=0;
    static REAL8 df, norm;
    static REAL4Vector signalvec, correlation;
-/*   void   *noisemodel = LALLIGOIPsd;*/
-   void   *noisemodel = LALVIRGOPsd;
+   void (*noisemodel)(LALStatus*, REAL8*, REAL8) = NULL;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
    static REAL8FrequencySeries shf;
    static RealFFTPlan *fwdp=NULL,*revp=NULL;
    static InspiralTemplate tmpltParams, params;
    static InspiralWaveNormaliseIn normin;
+
+   noisemodel = &LALVIRGOPsd;
    
    lalDebugLevel = 1; 
    quietFlag = 0;	

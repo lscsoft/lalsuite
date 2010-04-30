@@ -118,216 +118,173 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, RE
 
 
 
-void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise)
+void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios)
 {
    
-   const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_steffenson;
+   INT4 ii;
+   
+   //Set up solver
+   //const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_steffenson;
+   const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_newton;
+   //const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_secant;
    gsl_root_fdfsolver *s = gsl_root_fdfsolver_alloc(T);
    gsl_function_fdf FDF;
-   struct gsl_probR_pars params = {templatestruct, ffplanenoise, thresh};
    
+   //Scale the ffplanenoise values so the solver doesn't have problems
+   REAL8 scalefactor = 0.0;
+   REAL8Vector *ffplanenoise_s = XLALCreateREAL8Vector(ffplanenoise->length);
+   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
+      scalefactor += ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ];
+   }
+   scalefactor = (REAL8)(templatestruct->templatedata->length)/scalefactor;
+   for (ii=0; ii<(INT4)ffplanenoise_s->length; ii++) ffplanenoise_s->data[ii] = ffplanenoise->data[ii]*scalefactor;
+   
+   //Include the various parameters in the struct required by GSL
+   struct gsl_probR_pars params = {templatestruct, ffplanenoise_s, fbinaveratios, thresh};
+   
+   //Assign GSL function the necessary parts
    FDF.f = &gsl_probR;
    FDF.df = &gsl_dprobRdR;
    FDF.fdf = &gsl_probRtimesDprobRdR;
    FDF.params = &params;
    
-   REAL8 rootguess = 0.0;
-   REAL8 sumwsq = 0.0;
-   INT4 ii;
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) rootguess += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]/sumwsq;
+   //Start off with an initial guess
+   REAL8 rootguess = 10.0;
+   REAL8 initialroot = rootguess;
    
-   gsl_root_fdfsolver_set (s, &FDF, rootguess);
+   //Set the solver at the beginning
+   gsl_root_fdfsolver_set(s, &FDF, initialroot);
    
+   //And now find the root
    ii = 0;
    INT4 max_iter = 100;
    INT4 status;
    REAL8 root;
+   INT4 maxRootTries = 5;
+   INT4 rootTries = 1;
    do {
       ii++;
       status = gsl_root_fdfsolver_iterate(s);
       root = rootguess;
       rootguess = gsl_root_fdfsolver_root(s);
-      status = gsl_root_test_delta (rootguess, root, 0, thresh*0.1);
-   } while (status == GSL_CONTINUE && ii<max_iter);
+      status = gsl_root_test_delta(rootguess, root, 0, thresh*0.1);
+      
+      //If the new root is negative, we need to try again with a higher value for the initial guess or if the new root is going to give a slope of zero, we should try with a smaller value for the initial guess. Each new try will add to rootTries which if we try too many times will cause this loop to exit and start a simulation to assess the distribution and threshold value.
+      if (rootguess <= 0.0) {
+         initialroot *= 2.0;
+         gsl_root_fdfsolver_set(s, &FDF, initialroot);
+         rootTries++;
+         if (status!=GSL_CONTINUE) status = GSL_CONTINUE;
+      } else if (status==GSL_CONTINUE && gsl_dprobRdR(rootguess, &params)==0.0) {
+         initialroot *= 0.5;
+         gsl_root_fdfsolver_set(s, &FDF, initialroot);
+         rootTries++;
+      }
+   } while (status==GSL_CONTINUE && ii<max_iter && rootTries<=maxRootTries);
    
-   out->far = rootguess;
-   out->distMean = 0.0;
-   out->distSigma = 1.0; //TODO: Get the real value of sigma
+   //Run simulations if we didn't find a solution numerically
+   if (status==GSL_CONTINUE || ii==max_iter || rootTries>maxRootTries) {
+      fprintf(stderr,"Numerical solver did not converge. Running simulation...\n");
+      estimateFAR(out, templatestruct, (INT4)roundf(10000*.01/thresh), thresh, ffplanenoise, fbinaveratios);
+   } else {
+      rootguess /= scalefactor;
+      
+      //Output values
+      out->far = rootguess;
+      out->distMean = 0.0;
+      out->distSigma = 1.0; //TODO: Get the real value of sigma
+   }
    
+   //Cleanup
    gsl_root_fdfsolver_free(s);
+   XLALDestroyREAL8Vector(ffplanenoise_s);
    
 }
 REAL8 gsl_probR(REAL8 R, void *param)
 {
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
-   INT4 ii, jj;
-   REAL8 prob = 0.0;
-   REAL8 sumwsq = 0.0;
-   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) sumwsq += pars->templatestruct->templatedata->data[ii]*pars->templatestruct->templatedata->data[ii];
    
-   REAL8 fact1, fact2, sumval, prodval, shiftamt;
-   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) {
-      fact1 = fact2 = sumval = shiftamt = 0.0;
-      prodval = 0.0;
-      
-      INT4 prodfactorposneg = 1;
-      if (ii==0) {
-         for (jj=1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      } else if (ii==(INT4)pars->templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)pars->templatestruct->templatedata->length-1; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      } else {
-         for (jj=0; jj<ii; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-         for (jj=ii+1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      }
-      
-      prodval = prodfactorposneg*exp(prodval);
-      
-      if (ii==0) {
-         for (jj=1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      } else if (ii==(INT4)pars->templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)pars->templatestruct->templatedata->length-1; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      } else {
-         for (jj=0; jj<ii; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-         for (jj=ii+1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      }
-      
-      sumval += shiftamt;
-      
-      fact1 = (-R*sumwsq-sumval)/(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ]);
-      fact2 = ((REAL8)pars->templatestruct->templatedata->length-1.0)*log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ]);
-      
-      prob += exp(fact1+fact2)/prodval;
-   }
-   prob /= LAL_E;
+   REAL8 returnval = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R);
    
-   return prob-pars->threshold;
+   returnval -= pars->threshold;
+   
+   return returnval;
    
 }
 REAL8 gsl_dprobRdR(REAL8 R, void *param)
 {
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
-   INT4 ii;
-   REAL8 sumwsq = 0.0;
-   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) sumwsq += pars->templatestruct->templatedata->data[ii]*pars->templatestruct->templatedata->data[ii];
    
-   REAL8 dprobRdR = -(gsl_probR(R, pars)+pars->threshold)*sumwsq;
+   INT4 ii, jj;
+   REAL8 dprobRdR = 0.0;
+   REAL8 sumwsq = 0.0;
+   REAL8Vector *expectnoise = XLALCreateREAL8Vector(pars->templatestruct->templatedata->length);
+   INT4 numweights = 0;
+   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) {
+      if (pars->templatestruct->templatedata->data[ii]!=0.0) numweights++;
+      sumwsq += pars->templatestruct->templatedata->data[ii]*pars->templatestruct->templatedata->data[ii];
+      expectnoise->data[ii] = pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ]*pars->fbinaveratios->data[ pars->templatestruct->firstfftfrequenciesofpixels->data[ii] ];
+   }
+   
+   REAL8 fact1, sumval, prodval;
+   for (ii=0; ii<numweights; ii++) {
+      sumval = 0.0;
+      prodval = 1.0;
+      
+      for (jj=0; jj<numweights; jj++) sumval += pars->templatestruct->templatedata->data[jj]*expectnoise->data[jj];
+      if ((-R*sumwsq-sumval)/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]) < log(LAL_REAL4_MIN)) fact1 = 0.0;
+      else fact1 = exp((-R*sumwsq-sumval)/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]));
+      
+      if (ii==0) {
+         for (jj=1; jj<numweights; jj++) {
+            REAL8 calcval = 1.0 - pars->templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
+         }
+      } else if (ii==numweights-1) {
+         for (jj=0; jj<numweights-1; jj++) {
+            REAL8 calcval = 1.0 - pars->templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
+         }
+      } else {
+         for (jj=0; jj<ii; jj++) {
+            REAL8 calcval = 1.0 - pars->templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
+         }
+         for (jj=ii+1; jj<numweights; jj++) {
+            REAL8 calcval = 1.0 - pars->templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
+         }
+      }
+      prodval *= pars->templatestruct->templatedata->data[ii]*expectnoise->data[ii];
+      
+      //fprintf(stderr,"dProb R/dR: %.6f %.7g %.7g\n",R,fact1,prodval);
+      
+      if (prodval!=0.0) dprobRdR += fact1/prodval;
+      
+   }
+   
+   dprobRdR *= -sumwsq;
+   
+   //Cleanup
+   XLALDestroyREAL8Vector(expectnoise);
    
    return dprobRdR;
    
 }
-void gsl_probRtimesDprobRdR(REAL8 R, void *param, REAL8 *probR, REAL8 *dprobRdR)
+void gsl_probRtimesDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
-   INT4 ii, jj;
-   REAL8 prob = 0.0;
-   REAL8 sumwsq = 0.0;
-   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) sumwsq += pars->templatestruct->templatedata->data[ii]*pars->templatestruct->templatedata->data[ii];
    
-   REAL8 fact1, fact2, sumval, prodval, shiftamt;
-   for (ii=0; ii<(INT4)pars->templatestruct->templatedata->length; ii++) {
-      fact1 = fact2 = sumval = shiftamt = 0.0;
-      prodval = 0.0;
-      
-      INT4 prodfactorposneg = 1;
-      if (ii==0) {
-         for (jj=1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      } else if (ii==(INT4)pars->templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)pars->templatestruct->templatedata->length-1; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      } else {
-         for (jj=0; jj<ii; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-         for (jj=ii+1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) {
-            if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])>0.0) {
-               prodval += log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ])<0.0) {
-               prodval += log(-(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ] - pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
-         }
-      }
-      
-      prodval = prodfactorposneg*exp(prodval);
-      
-      if (ii==0) {
-         for (jj=1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      } else if (ii==(INT4)pars->templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)pars->templatestruct->templatedata->length-1; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      } else {
-         for (jj=0; jj<ii; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-         for (jj=ii+1; jj<(INT4)pars->templatestruct->templatedata->length; jj++) sumval += pars->templatestruct->templatedata->data[jj]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[jj] ];
-      }
-      
-      sumval += shiftamt;
-      
-      fact1 = (-R*sumwsq-sumval)/(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ]);
-      fact2 = ((REAL8)pars->templatestruct->templatedata->length-1.0)*log(pars->templatestruct->templatedata->data[ii]*pars->ffplanenoise->data[ pars->templatestruct->secondfftfrequencies->data[ii] ]);
-      
-      prob += exp(fact1+fact2)/prodval;
-   }
-   prob /= LAL_E;
+   *probabilityR = gsl_probR(R, pars);
    
-   *probR = prob-pars->threshold;
-   *dprobRdR = -(prob+pars->threshold)*sumwsq;
+   *dprobRdR = gsl_dprobRdR(R, pars);
    
 }
 
@@ -340,76 +297,56 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    INT4 ii, jj;
    REAL8 prob = 0.0;
    REAL8 sumwsq = 0.0;
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
-   
-   REAL8 fact1, fact2, sumval, prodval, shiftamt;
+   REAL8Vector *expectnoise = XLALCreateREAL8Vector(templatestruct->templatedata->length);
+   INT4 numweights = 0;
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
-      fact1 = fact2 = sumval = shiftamt = 0.0;
-      prodval = 0.0;
+      if (templatestruct->templatedata->data[ii]!=0.0) numweights++;
+      sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
+      expectnoise->data[ii] = ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ];
+   }
+   
+   REAL8 fact1, sumval, prodval;
+   for (ii=0; ii<numweights; ii++) {
+      sumval = 0.0;
+      prodval = 1.0;
       
-      INT4 prodfactorposneg = 1;
+      for (jj=0; jj<numweights; jj++) sumval += templatestruct->templatedata->data[jj]*expectnoise->data[jj];
+      if ((-R*sumwsq-sumval)/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]) < log(LAL_REAL4_MIN)) fact1 = 0.0;
+      else fact1 = exp((-R*sumwsq-sumval)/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]));
+      
       if (ii==0) {
-         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) {
-            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
-               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
-               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
+         for (jj=1; jj<numweights; jj++) {
+            REAL8 calcval = 1.0 - templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
          }
-      } else if (ii==(INT4)templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) {
-            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
-               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
-               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
+      } else if (ii==numweights-1) {
+         for (jj=0; jj<numweights-1; jj++) {
+            REAL8 calcval = 1.0 - templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
          }
       } else {
          for (jj=0; jj<ii; jj++) {
-            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
-               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
-               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
+            REAL8 calcval = 1.0 - templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
          }
-         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) {
-            if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])>0.0) {
-               prodval += log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]);
-               //prodfactorposneg *= 1;
-            } else if ((templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])<0.0) {
-               prodval += log(-(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ] - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]));
-               prodfactorposneg *= -1;
-            }
+         for (jj=ii+1; jj<numweights; jj++) {
+            REAL8 calcval = 1.0 - templatestruct->templatedata->data[jj]*expectnoise->data[jj]/(templatestruct->templatedata->data[ii]*expectnoise->data[ii]);
+            prodval *= calcval;
+            if (prodval<LAL_REAL4_MIN) prodval = 0.0;
          }
       }
       
-      prodval = prodfactorposneg*exp(prodval);
+      //fprintf(stderr,"Prob R: %.6f %.7g %.7g\n",R,fact1,prodval);
       
-      if (ii==0) {
-         for (jj=1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
-      } else if (ii==(INT4)templatestruct->templatedata->length-1) {
-         for (jj=0; jj<(INT4)templatestruct->templatedata->length-1; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
-      } else {
-         for (jj=0; jj<ii; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
-         for (jj=ii+1; jj<(INT4)templatestruct->templatedata->length; jj++) sumval += templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ];
-      }
+      if (prodval!=0.0) prob += fact1/prodval;
       
-      sumval += shiftamt;
-      
-      fact1 = (-R*sumwsq-sumval)/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]);
-      fact2 = ((REAL8)templatestruct->templatedata->length-1.0)*log(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]);
-      
-      prob += exp(fact1+fact2)/prodval;
    }
-   prob /= LAL_E;
    
-   prob = log10(prob);
+   //Cleanup
+   XLALDestroyREAL8Vector(expectnoise);
    
    return prob;
    
