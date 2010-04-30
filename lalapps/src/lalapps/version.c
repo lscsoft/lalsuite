@@ -18,9 +18,8 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <lalapps.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALMalloc.h>
 
 int main( void )
 {
