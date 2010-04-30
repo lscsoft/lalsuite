@@ -20,7 +20,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+
 #include <lal/LALMalloc.h>
+
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
