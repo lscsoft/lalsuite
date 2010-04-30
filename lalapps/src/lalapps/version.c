@@ -23,12 +23,14 @@
 
 int main( void )
 {
+  /* setup error handler */
   set_debug_level( "LALMSGLVL3" );
   lal_errhandler = LAL_ERR_EXIT;
 
   /* print version information */
   XLALOutputVersionString(stderr, 1);
 
+  /* clean up and exit */
   LALCheckMemoryLeaks();
   return 0;
 }
