@@ -422,7 +422,8 @@ main(int argc, char *argv[])
 
 	  if ( fpMetric )
 	    {
-	      const CHAR *gprefix, *mprefix;
+	      const CHAR *gprefix = NULL;
+	      const CHAR *mprefix = NULL;
 	      if ( metricType == METRIC_PHASE ) {
 		gprefix = "gPh_ij = \\\n"; mprefix = "mPh = ";
 	      } else if ( metricType == METRIC_ORBITAL ) {
