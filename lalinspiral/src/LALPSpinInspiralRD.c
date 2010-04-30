@@ -511,7 +511,7 @@ void LALPSpinInspiralRDForInjection (
   /* Call the engine function */
   /* Uncomment the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
-  params->fCutoff     = ppnParams->fStop;
+  //params->fCutoff     = ppnParams->fStop;
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
@@ -1298,7 +1298,7 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
+    //omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
 
   }
 
@@ -1344,7 +1344,7 @@ void LALPSpinInspiralRDEngine (
     rett=0;
     omega=omegaold;
     energy=enold;
-    fprintf(stderr,"en=%11.3e  om=%11.3e\n",energy,omega);
+    //fprintf(stderr,"en=%11.3e  om=%11.3e\n",energy,omega);
   }
   /* if code stopped due to co-ord singularity write an error message */
   else if ((LNhx*LNhx + LNhy*LNhy + LNhz*LNhz) < (1.0 - LNhztol)){
@@ -1406,7 +1406,7 @@ void LALPSpinInspiralRDEngine (
   /* Now the phenomenological part is added */
   if (rett==1) {
 
-    fprintf(stdout,"** LALPSIRD: Start of the phen phase at t=%11.3e ****\n",t);
+    //fprintf(stdout,"** LALPSIRD: Start of the phen phase at t=%11.3e ****\n",t);
 
     trac=tAs*(1.-1.5*om1/(omegaRD-om0));
     omrac=4./27.*pow(omegaRD-om0,3.)/om1/om1;
@@ -1481,7 +1481,7 @@ void LALPSpinInspiralRDEngine (
     t0=t-dt;
     Psi0=Psi-omegaRD*t0/m-tAs*omrac*pow((1.-t0/tAs),3.)/3./m;
 
-    fprintf(stdout,"** LALPSIRD: start of the second phen phase at t=%11.3e ****\n",t);
+    //fprintf(stdout,"** LALPSIRD: start of the second phen phase at t=%11.3e ****\n",t);
 
     do {
       
