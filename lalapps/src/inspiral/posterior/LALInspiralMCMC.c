@@ -1021,7 +1021,7 @@ void XLALMCMCRotateSky(
 	/* Compute change in tgeocentre for this change in sky location */
 	REAL8 dtold,dtnew,deltat;
 	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, longi, lat, &(inputMCMC->epoch)); /* Compute time delay */
-	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
+	dtnew = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=XLALMCMCGetParameter(parameter,"time");
 	XLALMCMCSetParameter(parameter,"time",deltat);	

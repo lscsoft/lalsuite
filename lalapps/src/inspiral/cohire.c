@@ -117,7 +117,7 @@ static void print_usage(char *program)
 }
 
 /* function to read the next line of data from the input file list */
-char *get_next_line( char *line, size_t size, FILE *fp )
+static char *get_next_line( char *line, size_t size, FILE *fp )
 {
   char *s;
   do
@@ -128,6 +128,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
+extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -135,7 +136,6 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status;
 
   /*  program option variables */
-  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -205,9 +205,6 @@ int main( int argc, char *argv[] )
 
   /*CHECK:*/
   MetadataTable                 savedEvents;
-  MultiInspiralTable    *tempTable = NULL;
-  LIGOLwXMLStream       results;
-  CHAR   xmlname[FILENAME_MAX];
 
   /*
    *

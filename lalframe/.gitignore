@@ -21,7 +21,6 @@ libtool
 src/FrameSeries.c
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
-src/git_version
 src/lalframe-user-env.csh
 src/lalframe-user-env.sh
 src/stamp-h2

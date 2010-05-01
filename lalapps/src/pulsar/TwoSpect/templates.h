@@ -25,6 +25,7 @@
 struct gsl_probR_pars {
    templateStruct *templatestruct;
    REAL8Vector *ffplanenoise;
+   REAL8Vector *fbinaveratios;
    REAL8 threshold;
 };
 
@@ -40,7 +41,7 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
 REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R);
 REAL8 sincxoverxsqminusone(REAL8 overage);
 
-void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise);
+void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios);
 REAL8 gsl_probR(REAL8 R, void *pars);
 REAL8 gsl_dprobRdR(REAL8 R, void *pars);
 void gsl_probRtimesDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);

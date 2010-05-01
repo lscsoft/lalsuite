@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -76,6 +74,7 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/LALFrameL.h>
 
 #include "inspiral.h"
 
@@ -99,11 +98,11 @@ REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     pow( LAL_MTSUN_SI / chanDeltaT, -1.0/6.0 );
   REAL8 sigmaSq = 4.0 * ( chanDeltaT / (REAL8) nPoints ) * 
     distNorm * distNorm * a * a; 
-  REAL8 fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
+  REAL8 f_max = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
   REAL8 f = 0;
 
   for ( k = cut, f = spec->deltaF * cut; 
-      k < spec->data->length && f < fmax; 
+      k < spec->data->length && f < f_max;
       ++k, f = spec->deltaF * k )
   {
     sigmaSqSum += 
@@ -149,7 +148,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
                             SimInspiralTable *thisinj     /** [in]   injection data */)
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
-  INT4 len, lenPlus, lenCross, k, lenIni;
+  INT4 len, lenPlus, lenCross, k;
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
@@ -312,7 +311,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
   REAL8 startFreq, startFreqHz, massTotal;
   REAL8 thisSNR;
   SimInspiralTable *simTableOut=NULL;
-  SimInspiralTable *thisInjOut;
+  SimInspiralTable *thisInjOut=NULL;
 
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
@@ -419,7 +418,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   FrHistory *thisHist;
   CHAR *comment=NULL;
   CHAR *token=NULL;
-  REAL8 ret;
+  REAL8 ret=0;
 
   frFile =  XLALFrOpenURL( url );
   frame = FrameRead (frFile);
@@ -461,7 +460,6 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   REAL4FFTPlan *pfwd;
   COMPLEX8FrequencySeries *fftData;
   UINT4 k;
-  UINT4 length;
 
   /* create the time series */
   chan = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
