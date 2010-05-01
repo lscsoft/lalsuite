@@ -681,7 +681,8 @@ static int  breakUpSubBanks(InspiralTemplate *bankHead, UINT4 num, UINT4 size)
   UINT4 cnt = 0;
   while (bankHead)
     {
-    bankHead->level = (UINT4) cnt % (num / size);
+    if (num / size > 0) bankHead->level = (UINT4) cnt % (num / size);
+    else bankHead->level = 0;
     cnt++;
     bankHead = bankHead->next;
     }

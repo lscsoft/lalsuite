@@ -43,7 +43,7 @@ struct series
   int         type;
   double      step;
   float       f0;
-  char *unit;
+  const char *unit;
   size_t      size;
   float      *data;
   double     *ddata;

@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
@@ -55,7 +55,14 @@
 
 char *ifo = NULL;
 
-int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent, 
+/* FIXME: work around for FrameL const string issue */
+static char * ignore_const(const char *s)
+{
+  union {const char *c; char *s; } u = {s};
+  return u.s;
+}
+
+static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent, 
     FrEvent *frameEvent )
 {
   FrEvent              *frEvt   = NULL;
@@ -82,32 +89,32 @@ int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     }
 
     /* read data from the frEvt */
-    snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, frEvt->name);
+    snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, "%s", frEvt->name);
     snglEvt->snr = frEvt->amplitude;
     snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
     snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
     timeAfter = frEvt->timeAfter;
     XLALGPSAdd(&snglEvt->end_time,timeAfter);
-    snglEvt->eff_distance = FrEventGetParam ( frEvt, "distance (Mpc)");
-    snglEvt->mass1 = FrEventGetParam ( frEvt, "mass1");
-    snglEvt->mass2 = FrEventGetParam ( frEvt, "mass2" );
-    snglEvt->tau0 =FrEventGetParam ( frEvt, "tau0" );
-    snglEvt->tau3 = FrEventGetParam ( frEvt, "tau1p5" );
-    snglEvt->coa_phase = FrEventGetParam ( frEvt, "phase" );
-    snglEvt->chisq = FrEventGetParam ( frEvt, "chi2" );
+    snglEvt->eff_distance = FrEventGetParam ( frEvt, ignore_const("distance (Mpc)") );
+    snglEvt->mass1 = FrEventGetParam ( frEvt, ignore_const("mass1") );
+    snglEvt->mass2 = FrEventGetParam ( frEvt, ignore_const("mass2") );
+    snglEvt->tau0 =FrEventGetParam ( frEvt, ignore_const("tau0") );
+    snglEvt->tau3 = FrEventGetParam ( frEvt, ignore_const("tau1p5") );
+    snglEvt->coa_phase = FrEventGetParam ( frEvt, ignore_const("phase") );
+    snglEvt->chisq = FrEventGetParam ( frEvt, ignore_const("chi2") );
 
     /* populate additional colums */
     snglEvt->mtotal = snglEvt->mass1 + snglEvt->mass2;
     snglEvt->eta = (snglEvt->mass1 * snglEvt->mass2) /
       (snglEvt->mtotal * snglEvt->mtotal);
     snglEvt->mchirp = pow( snglEvt->eta, 0.6) * snglEvt->mtotal;
-    snprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, ifo);
+    snprintf(snglEvt->ifo, LIGOMETA_IFO_MAX, "%s", ifo);
   }
   return( numEvt );
 }
 
 
-int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
+static int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
     FrSimEvent       *frSimEvent )
 {
   FrSimEvent           *frSimEvt   = NULL;
@@ -133,16 +140,17 @@ int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
     }
 
     /* read data from the frSimEvt */
-    snprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, frSimEvt->name);
+    snprintf(simEvt->waveform, LIGOMETA_SEARCH_MAX, "%s", frSimEvt->name);
     simEvt->geocent_end_time.gpsSeconds = frSimEvt->GTimeS;
     simEvt->geocent_end_time.gpsNanoSeconds = frSimEvt->GTimeN;
     simEvt->v_end_time = simEvt->geocent_end_time;
 
-    simEvt->distance = FrSimEventGetParam ( frSimEvt, "distance");
+
+    simEvt->distance = FrSimEventGetParam ( frSimEvt, ignore_const("distance") );
     simEvt->eff_dist_v = simEvt->distance;
 
-    simEvt->mass1 = FrSimEventGetParam ( frSimEvt, "m1");
-    simEvt->mass2 = FrSimEventGetParam ( frSimEvt, "m2" );
+    simEvt->mass1 = FrSimEventGetParam ( frSimEvt, ignore_const("m1") );
+    simEvt->mass2 = FrSimEventGetParam ( frSimEvt, ignore_const("m2") );
   }
 
   return ( numSim );
@@ -306,9 +314,9 @@ int main( int argc, char *argv[] )
   tStart   = FrFileITStart(iFile);
   tEnd     = FrFileITEnd(iFile);
   duration = tEnd - tStart;
-  
+
   /* read in the events */
-  frameEvent = FrEventReadT(iFile, "*clustered", tStart, duration, 
+  frameEvent = FrEventReadT(iFile, ignore_const("*clustered"), tStart, duration, 
       snrMin, snrMax);
 
 
@@ -328,7 +336,7 @@ int main( int argc, char *argv[] )
    *
    */
 
-  frSimEvent  = FrSimEventReadT (iFile, "cb*", tStart, duration, 
+  frSimEvent  = FrSimEventReadT (iFile, ignore_const("cb*"), tStart, duration, 
       simMin, simMax);
 
   /*Write out details of events to SnglInspiralTable*/

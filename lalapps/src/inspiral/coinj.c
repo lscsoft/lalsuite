@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 
   UINT4                Nsamples,det_idx,i,inj_num=0;
   ActuationParametersType actuationParams[LAL_NUM_IFO];
-  ActuationParametersType actData;
+  ActuationParametersType actData = {0,0,0,0,0,0,0};
   ResponseType injectionResponse=noResponse;
   FILE *                outfile;
   LIGOLwXMLStream                *xmlfp=NULL;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
   const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-  NoiseFunc *PSD;
+  NoiseFunc *PSD = NULL;
   REAL8 PSDscale=1.0;
   int c;
   int repeatLoop=0;

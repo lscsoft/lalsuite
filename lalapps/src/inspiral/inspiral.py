@@ -369,46 +369,17 @@ class HWinjPageJob(InspiralAnalysisJob):
     """
     @cp: ConfigParser object from which options are read.
     """
-    exec_name = 'hwinjscript'
-    sections = ['hwinjpage']
+    exec_name = "hardware_inj_page"
+    universe = "vanilla"
+    sections = "[hardware-injection-page]"
     extension = 'html'
-    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
-#    self.add_condor_cmd('getenv', 'True')
-    self.__gps_start_time = None
-    self.__gps_end_time = None
-    # overwrite standard log file names
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
     self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-
-  def set_experiment_start_time(self, experiment_start_time):
-    """
-    Sets the experiment-start-time option. This is a required option.
-    @experiment_start_time: gps start time of the experiment the thinca_to_coinc
-    job is in.
-    """
-    self.add_opt('gps-start-time', experiment_start_time)
-    self.__gps_start_time = experiment_start_time
-
-  def set_experiment_end_time(self, experiment_end_time):
-    """
-    Sets the experiment-end-time option. This is a required option.
-    @experiment_end_time: gps end time of the experiment the thinca_to_coinc
-    job is in.
-    """
-    self.add_opt('gps-end-time', experiment_end_time)
-    self.__gps_end_time = experiment_end_time
-
-  def get_experiment_start_time(self, experiment_start_time):
-    """
-    Returns the value of the experiment-start-time option.
-    """
-    return self.__gps_start_time
-
-  def get_experiment_end_time(self, experiment_end_time):
-    """
-    Returns the value of the experiment-end-time option.
-    """
-    return self.__gps_start_time
+    self.set_sub_file(exec_name + '.sub')
 
 class SireJob(InspiralAnalysisJob):
   """
@@ -1254,15 +1225,25 @@ class HWinjPageNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self, job)
     self.__input_cache = None
     self.__cache_string = None
-    self.__outfile=None
+    self.__outfile = None
+    self.__segment_dir = None
+    self.__source_xml = None
 
   def set_input_cache(self, input_cache_name):
     """
     @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
     to read.
     """
-    self.add_file_opt('cache-file',input_cache_name)
+    self.add_var_opt('cache-file',input_cache_name)
     self.__input_cache = input_cache_name
+
+  def set_source_xml(self, source_xml):
+    """
+    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
+    to read.
+    """
+    self.add_var_opt('source-xml',source_xml)
+    self.__source_xml = source_xml
 
   def set_cache_string(self,cache_string):
     """
@@ -1278,6 +1259,11 @@ class HWinjPageNode(InspiralAnalysisNode):
     self.add_var_opt('outfile',outfile_name)
     self.__outfile=outfile_name
 
+  def set_segment_dir(self,dir):
+    """
+    @dir: directory in which to find hwinj segments
+    """
+    self.add_var_opt('segment-dir',dir)
 
 class SireNode(InspiralAnalysisNode):
   """
@@ -1880,12 +1866,6 @@ class InspInjFindNode( InspiralAnalysisNode ):
     @job: A CondorDAGJob that can run an instance of ligolw_inspinjfind.
     """
     InspiralAnalysisNode.__init__(self, job)
-
-  def get_input_from_cache(self, cache):
-    """
-    Retrieves
-    """
-    self.add_var_arg(filename)
 
 
 ##############################################################################
@@ -2570,7 +2550,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
-    self.__sim_type = None
+    self.__sim_tag = None
     self.__output_format = None
     self.__columns = None
 
@@ -2828,6 +2808,44 @@ class PlotIfarNode(pipeline.SqliteNode):
     """
     return self.__datatype
 
+class PlotFMJob(pipeline.SqliteJob):
+  """
+  A plotfm job. The static options are read from the [plotfm] seciont.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which objects are read.
+    """
+    exec_name = 'plotfm'
+    sections = ['plot_input', 'plotfm']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+class PlotFMNode(pipeline.SqliteNode):
+  """
+  A PlotFM node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PlotFMJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.__sim_tag = None
+
+  def set_sim_tag(self, sim_tag):
+    """
+    Sets the --sim-tag option.
+    """
+    self.add_var_opt('sim-tag', sim_tag)
+    self.__sim_tag = sim_tag
+
+  def get_sim_tag(self):
+    """
+    Gets sim-tag option.
+    """
+    return self.__sim_tag
+
+
+    
 #############################################################################
 class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """

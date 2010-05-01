@@ -627,6 +627,188 @@ LALReadConfigVariable (LALStatus *status,
 
 
 
+int
+XLALReadConfigVariable (void *varp,			  /**< [out] result gets written here! */
+			const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
+			const LALConfigVar *param,	      /**< [in]  var-name, fmt-string, strictness */
+			BOOLEAN *wasRead)			      /**< [out] did we succeed in reading? */
+{
+  CHAR *found    = NULL;
+  INT2 ret = 0;
+
+  UINT4 i;
+  INT4 linefound     = -1;
+  INT4 section_found = -1;
+
+  size_t len;
+  size_t searchlen = strlen (param->varName);
+  size_t sec_searchlen = 0;
+
+  if (param->secName == 0)
+    {
+      /* If we haven't been asked for a section then we want the
+         "default" section, which starts at the top of the file */
+      sec_searchlen = 0;
+      section_found = 1;
+    } else {
+      sec_searchlen = strlen(param->secName);
+    }
+
+  /* This traps coding errors in the calling routine. */
+  if (cfgdata == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (cfgdata->lines == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (cfgdata->wasRead == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (varp == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (param->varName == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (param->fmt == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  *wasRead = FALSE;
+
+  /* let's look for the variable-name in the token-list (has to at beginning of line!) */
+  for (i = 0; i < cfgdata->lines->nTokens; i++)
+    {
+      /* Is this the start of a new section? */
+      if (cfgdata->lines->tokens[i][0] == '[')
+        {
+          /* If we're looking for a particular section, is this it? */
+          if (sec_searchlen > 0 && strncmp(cfgdata->lines->tokens[i] + 1, param->secName, sec_searchlen) == 0)
+            {
+              section_found = i;
+            }
+          else
+            section_found = -1;  /* We might have moved out of the right section */
+         }
+      else if (section_found > -1) /* Not section start, are we in the one we want? */
+        {
+          len = strcspn (cfgdata->lines->tokens[i], WHITESPACE "=:");	/* get length of variable-name */
+          if (len == 0)
+	        {			/* malformed token-list */
+	          fprintf (stderr, CONFIGFILEH_MSGETOKENS);
+	          return CONFIGFILEH_ETOKENS;
+	        }
+
+          /* pre-select based on length of variable-name */
+          if (len != searchlen)
+	        continue;
+
+          /* same len, but are they identical ? */
+          if (strncmp (param->varName, cfgdata->lines->tokens[i], len) == 0)
+	        {
+	          found = cfgdata->lines->tokens[i] + len;
+	          found += strspn (found, WHITESPACE "=:");	/* skip all whitespace and define-chars */
+	          linefound = i;
+	          break;		/* ok, we've found it */
+	        }
+        }           /* if section found */
+    }				/* for lines */
+
+  if (!found)
+    {
+      switch (param->strictness)
+	{
+	case CONFIGFILE_IGNORE:
+	  return 0;
+	  break;
+	case CONFIGFILE_WARN:
+	  if (lalDebugLevel & LALWARNING)
+        {
+          if (sec_searchlen > 0)
+            LogPrintf (LOG_CRITICAL,
+		         "Warning: Config-file variable '%s' in section '%s' was not found!\n",
+		         param->varName, param->secName);
+          else
+	        LogPrintf (LOG_CRITICAL,
+		         "Warning: Config-file variable '%s' was not found!\n",
+		         param->varName);
+        }
+	  return 0;
+	  break;
+	case CONFIGFILE_ERROR:
+	default:
+        if (sec_searchlen > 0)
+	      LogPrintf (LOG_CRITICAL,
+		     "Error: Config-file variable '%s' in section '%s' was not found!\n",
+		     param->varName,
+             param->secName);
+        else
+	      LogPrintf (LOG_CRITICAL,
+		     "Error: Config-file variable '%s' was not found!\n",
+		     param->varName);
+	  fprintf (stderr, CONFIGFILEH_MSGEVAR);
+	  return CONFIGFILEH_EVAR;
+	  break;
+	}			/* switch (strictness) */
+
+    }				/* if not found */
+
+  /* now read the value into the variable */
+
+  /* reading a quoted string needs some special treatment: */
+  if (!strcmp (param->fmt, FMT_STRING))
+    {
+      /* NOTE: varp here is supposed to be a pointer to CHAR* !! */
+      CHAR **cstr = (CHAR **) varp;
+
+      if (*cstr != NULL)
+        {
+          fprintf (stderr, CONFIGFILEH_MSGENONULL);
+          return CONFIGFILEH_ENONULL;
+        }
+
+      (*cstr) = (CHAR *) LALMalloc (strlen (found) + 1);
+      strcpy ((*cstr), found);
+      ret = 1;
+    }
+  else				/* but the default case is just sscanf... */
+    ret = sscanf (found, param->fmt, varp);
+
+  if ((ret == 0) || (ret == EOF))
+    {
+      LogPrintf (LOG_CRITICAL,
+		 "ERROR: Config-file variable %s was not readable using the format %s\n\n",
+		 param->varName, param->fmt);
+      fprintf(stderr,CONFIGFILEH_MSGEFMT);
+      return CONFIGFILEH_EFMT;
+    }
+
+  /* ok, we have successfully read in the config-variable: let's make a note of it */
+  cfgdata->wasRead[linefound] = 1;
+
+  *wasRead = TRUE;
+
+  return 0;
+}
+
+
 /** Type-specialization of generic reading-function LALReadConfigVariable() to BOOLEAN variables.
  */
 void
@@ -679,6 +861,60 @@ LALReadConfigBOOLVariable (LALStatus *status,
 } /* LALReadConfigBOOLVariable() */
 
 
+int
+XLALReadConfigBOOLVariable (BOOLEAN *varp,		   /**< [out] variable to store result */
+			    const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
+			    const CHAR *secName,		       /**< [in] section-name to read */
+			    const CHAR *varName,		       /**< [in] variable-name to read */
+			    BOOLEAN *wasRead)			       /**< [out] did we succeed in reading? */
+{
+  CHAR *tmp = NULL;
+  INT2 ret = -1;		/* -1 means no legal value has been parsed */
+  INT2 ret2;
+  *wasRead = FALSE;
+
+  /* first read the value as a string */
+  ret2 = XLALReadConfigSTRINGVariable (&tmp, cfgdata, secName, varName, wasRead);
+
+  if (ret2)
+    return ret2;
+
+  if (*wasRead && tmp)		/* if we read anything at all... */
+    {
+      /* get rid of case ambiguities */
+      ret2 = XLALLowerCaseString (tmp);
+
+      if (ret2)
+        return ret2;
+
+      /* try to parse it as a bool */
+      if (!strcmp (tmp, "yes") || !strcmp (tmp, "true") || !strcmp (tmp, "1"))
+	    ret = 1;
+      else if (!strcmp (tmp, "no") || !strcmp (tmp, "false") || !strcmp (tmp, "0"))
+	    ret = 0;
+      else
+	    {
+	      LogPrintf (LOG_CRITICAL, "illegal bool-value `%s`\n", tmp);
+	      fprintf (stderr, CONFIGFILEH_MSGEBOOL);
+	      LALFree (tmp);
+	      return CONFIGFILEH_EBOOL;
+	    }
+
+      LALFree (tmp);
+
+      if (ret != -1)		/* only set value of something has been found */
+	    {
+	      *varp = (BOOLEAN) ret;
+	      *wasRead = TRUE;
+	    }
+    }				/* if wasRead && tmp */
+
+
+  return 0;
+}				/* XLALReadConfigBOOLVariable() */
+
+
+
 /** Type-specialization of generic reading-function LALReadConfigVariable() to INT4 variables.
  */
 void
@@ -688,7 +924,7 @@ LALReadConfigINT4Variable (LALStatus *status,
 			   const CHAR *varName,
 			   BOOLEAN *wasRead)
 {
-  LALConfigVar param = {0,0,0};
+  LALConfigVar param = {0,0,0,0};
 
   INITSTATUS( status, "LALReadConfigINT4Variable", CONFIGFILEC );
 
@@ -702,6 +938,27 @@ LALReadConfigINT4Variable (LALStatus *status,
 
 } /* LALReadConfigINT4Variable() */
 
+
+int
+XLALReadConfigINT4Variable (INT4 *varp,
+			    const LALParsedDataFile *cfgdata,
+                const CHAR *secName,
+			    const CHAR *varName, 
+                BOOLEAN *wasRead)
+{
+  LALConfigVar param = { 0, 0, 0, 0 };
+
+  param.varName    = varName;
+  param.fmt        = "%" LAL_INT4_FORMAT;
+  param.strictness = CONFIGFILE_IGNORE;
+  param.secName    = secName;
+
+  return XLALReadConfigVariable ((void *) varp, cfgdata, &param, wasRead);
+
+}	/* LALReadConfigINT4Variable() */
+
+
+
 /** Type-specialization of generic reading-function LALReadConfigVariable() to REAL8 variables.
  */
 void
@@ -711,7 +968,7 @@ LALReadConfigREAL8Variable (LALStatus *status,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead)
 {
-  LALConfigVar param = {0,0,0};
+  LALConfigVar param = {0,0,0,0};
 
   INITSTATUS( status, "LALReadConfigREAL8Variable", CONFIGFILEC );
 
@@ -723,6 +980,24 @@ LALReadConfigREAL8Variable (LALStatus *status,
 
   RETURN (status);
 
+} /* LALReadConfigREAL8Variable() */
+
+
+int
+XLALReadConfigREAL8Variable (REAL8 *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *secName,
+			    const CHAR *varName,
+			    BOOLEAN *wasRead)
+{
+  LALConfigVar param = {0,0,0,0};
+
+  param.secName = secName;
+  param.varName = varName;
+  param.fmt = "%" LAL_REAL8_FORMAT;
+  param.strictness = CONFIGFILE_IGNORE;
+
+  return XLALReadConfigVariable( (void*) varp, cfgdata, &param, wasRead);
 } /* LALReadConfigREAL8Variable() */
 
 
@@ -740,7 +1015,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 			     const CHAR *varName,	/**< [in] variable-name to be read */
 			     BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
 {
-  LALConfigVar param = {0,0,0};
+  LALConfigVar param = {0,0,0,0};
   CHAR *str = NULL;
   CHAR *ret = NULL;
 
@@ -797,6 +1072,77 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 } /* LALReadConfigSTRINGVariable() */
 
 
+int
+XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! */
+			      const LALParsedDataFile * cfgdata, /**< [in] pre-parsed config-data */
+			      const CHAR * secName,	/**< [in] section-name to be read */
+			      const CHAR * varName,	/**< [in] variable-name to be read */
+			      BOOLEAN * wasRead)	/**< [out] did we succeed in reading? */
+{
+  LALConfigVar param = { 0, 0, 0, 0 };
+  CHAR *str = NULL;
+  CHAR *ret = NULL;
+
+  if (*varp != NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENONULL);
+      return CONFIGFILEH_ENONULL;
+    }
+
+  param.secName = secName;
+  param.varName = varName;
+  param.fmt = FMT_STRING;
+  param.strictness = CONFIGFILE_IGNORE;
+
+  XLALReadConfigVariable ((void *) &str, cfgdata, &param, wasRead);
+
+  if (*wasRead && (str != NULL))
+    {
+      INT2 numQuotes = 0;
+      CHAR *ptr = str;
+      /* count number of quotation marks */
+      while ((ptr = strchr (ptr, '"')))
+	{
+	  numQuotes++;
+	  ptr++;
+	}			/* while quotes found */
+
+      /* check balanced quotes (don't allow escaping for now) */
+      if ((numQuotes != 0) && (numQuotes != 2))
+	{
+	  fprintf (stderr, CONFIGFILEH_MSGESTRING);
+	  return CONFIGFILEH_ESTRING;
+	}
+      if (numQuotes == 2)
+	{
+	  /* allowed only at end and beginning */
+	  if ((str[0] != '"') || (str[strlen (str) - 1] != '"'))
+	    {
+	      fprintf (stderr, CONFIGFILEH_MSGESTRING);
+	      return CONFIGFILEH_ESTRING;
+	    }
+	  /* quotes ok, now remove them */
+	  if ((ret = LALMalloc (strlen (str) - 2 + 1)) == NULL)
+	    {
+	      fprintf (stderr, CONFIGFILEH_MSGEMEM);
+	      return CONFIGFILEH_EMEM;
+	    }
+	  str[strlen (str) - 1] = 0;
+	  strcpy (ret, str + 1);
+	  LALFree (str);
+	}			/* if 2 quotation marks */
+      else
+	ret = str;		/* no quotes, just return string */
+
+      *varp = ret;
+
+    }				/* if wasRead */
+  else
+    *varp = NULL;
+
+  return 0;
+
+}				/* LALReadConfigSTRINGVariable() */
 
 
 /** Type-specialization of generic reading-function LALReadConfigVariable() to
@@ -851,6 +1197,51 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 } /* LALReadConfigSTRINGNVariable() */
 
 
+int
+XLALReadConfigSTRINGNVariable (CHARVector *varp, 	/**< [out] must be allocated! */
+			      const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
+			      const CHAR *secName,	/**< [in] section-name */
+			      const CHAR *varName,	/**< [in] variable-name */
+			      BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
+{
+  CHAR *tmp = NULL;
+  int tmp2  = 0;
+
+  /* This traps coding errors in the calling routine. */
+  if (varp == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  if (varp->data == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+  
+
+  tmp2 = XLALReadConfigSTRINGVariable (&tmp, cfgdata, secName, varName, wasRead);
+
+  if (tmp2 != 0)
+    return tmp2;
+
+  if (*wasRead && tmp)
+    {
+      strncpy (varp->data, tmp, varp->length - 1);
+      varp->data[varp->length-1] = '\0';
+      LALFree (tmp);
+      varp->length = strlen (varp->data);
+      *wasRead = TRUE;
+    }
+  else
+    *wasRead = FALSE;
+
+  return 0;
+
+} /* LALReadConfigSTRINGNVariable() */
+
+
 
 /** Check if all lines of config-file have been successfully read in
  * and issue a warning or error (depending on strictness) if not.
@@ -895,6 +1286,62 @@ LALCheckConfigReadComplete (LALStatus *status,
 
 } /* LALCheckConfigReadComplete() */
 
+int
+XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, /**< [in] config-file data */
+			    ConfigStrictness strict)  	/**< [in] what to do if unparsed lines */
+{
+  UINT4 i;
+
+  if (cfgdata == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+  if (cfgdata->lines == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+  if (cfgdata->wasRead == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  for (i=0; i < cfgdata->lines->nTokens; i++)
+    {
+      /* Don't require section headers to be marked read */
+      /* This has the effect of considering a file to have */
+      /* been read completely if every value in every section */
+      /* has been read. */
+      if (cfgdata->lines->tokens[i][0] == '[')
+        continue;
+
+      if (cfgdata->wasRead[i] == 0)
+	{
+	  switch (strict)
+	    {
+	    case CONFIGFILE_IGNORE:
+	      continue;
+	    case CONFIGFILE_WARN:
+	      LogPrintf ( LOG_CRITICAL, "Warning: Ignoring unknown config-file entry '%s'.\n",
+			     cfgdata->lines->tokens[i] );
+	      continue;
+	    case CONFIGFILE_ERROR:
+	    default:
+	      LogPrintf ( LOG_CRITICAL, "ERROR: config-file entry #%d has not been read!\n", i);
+	      LogPrintf ( LOG_CRITICAL, "Line was: '%s'\n", cfgdata->lines->tokens[i]);
+          fprintf(stderr, CONFIGFILEH_MSGEUNKNOWN);
+          return CONFIGFILEH_EUNKNOWN;
+	    } /* switch strict */
+	} /* if some line not read */
+
+    } /* for i < lines */
+
+  return 0;
+
+} /* LALCheckConfigReadComplete() */
+
 
 
 /* ----------------------------------------------------------------------
@@ -917,6 +1364,25 @@ LALLowerCaseString (LALStatus *status,
     string[i] = TOLOWER( string[i] );
 
   RETURN (status);
+
+} /* LALLowerCaseString() */
+
+
+int
+XLALLowerCaseString (CHAR *string)	/**< [in/out] string to convert */
+{
+  UINT4 i;
+
+  if (string == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return CONFIGFILEH_ENULL;
+    }
+
+  for (i=0; i < strlen (string); i++)
+    string[i] = TOLOWER( string[i] );
+
+  return 0;
 
 } /* LALLowerCaseString() */
 

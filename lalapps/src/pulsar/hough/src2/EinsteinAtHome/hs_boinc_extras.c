@@ -889,7 +889,7 @@ static void worker (void) {
   } /* for all command line arguments */
 
   /* sanity check */
-  if (!resultfile[0]) {
+  if (!resultfile[0] && !output_help) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
       res = HIERARCHICALSEARCH_EFILE;
   }

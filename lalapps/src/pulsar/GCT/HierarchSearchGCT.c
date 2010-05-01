@@ -126,7 +126,7 @@ void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, Use
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                               UsefulStageVariables *usefulparams );
-static inline UINT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
+static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv,
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -221,7 +221,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* GCT helper variables */
   UINT4 ic, ic2, ic3, ifine, ifreq_fg, if1dot_fg;
-  UINT4 fveclength, ifreq, U1idx;
+  UINT4 fveclength, ifreq;
+  INT4  U1idx;
   REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
@@ -414,7 +415,7 @@ int MAIN( int argc, char *argv[]) {
     return HIERARCHICALSEARCH_ESUB;
   }
 
-  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );
+  LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s\n", VCSInfoString );
 
   if ( uvar_version )
     {
@@ -621,13 +622,14 @@ int MAIN( int argc, char *argv[]) {
     gammaRefine = uvar_gammaRefine;
   }
   else {
-    sigmasq=0.0;
+    sigmasq = 0.0; /* second moment of segments' midpoints */
     for (k = 0; k < nStacks; k++) {
       midTstackGPS = midTstack->data[k];
       timeDiffSeg = XLALGPSDiff( &midTstackGPS, &tMidGPS );
       sigmasq = sigmasq + (timeDiffSeg * timeDiffSeg);
     }
     sigmasq = sigmasq / (nStacks * tStack * tStack);
+    /* Refinement factor (approximate) */
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
   }
 
@@ -889,8 +891,7 @@ int MAIN( int argc, char *argv[]) {
         }
         
         /* show progress */
-        fprintf(stderr, "sky:%d f1dot:%d\n",
-                skyGridCounter+1, ifdot+1 );
+        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d", skyGridCounter+1, ifdot+1 );
 
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
@@ -938,8 +939,8 @@ int MAIN( int argc, char *argv[]) {
 
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintf(LOG_DEBUG, "CG:%d, FG:%ld\n",coarsegrid.length,finegrid.length);
-
+        LogPrintfVerbatim(LOG_NORMAL, " CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
+        
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
 
@@ -1149,37 +1150,33 @@ int MAIN( int argc, char *argv[]) {
              
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
-            
+
+            if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+              return(HIERARCHICALSEARCH_ECG);
+            }
+
             for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
-                           
-              /* consider only relevant frequency values (do not step outside coarse grid) */
-              if ( U1idx < fveclength ) {  /*if ( (U1idx >= 0) && (U1idx < fveclength) ) { */
 
-                /* Add the 2F value to the 2F sum */
-                TwoF_tmp = coarsegrid.list[U1idx].TwoF;
-                sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
-                finegrid.list[ifine].sumTwoF = sumTwoF_tmp;
+              /* Add the 2F value to the 2F sum */
+              TwoF_tmp = coarsegrid.list[U1idx].TwoF;
+              sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
+              finegrid.list[ifine].sumTwoF = sumTwoF_tmp;
 
-                /* Increase the number count */
-                if (TwoF_tmp > TwoFthreshold) {
-                  finegrid.list[ifine].nc++;
-                }
+              /* Increase the number count */
+              if (TwoF_tmp > TwoFthreshold) {
+                finegrid.list[ifine].nc++;
+              }
                 
 #ifdef DIAGNOSISMODE
-                /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
-                if (finegrid.list[ifine].nc > nc_max) {
-                  nc_max = finegrid.list[ifine].nc;
-                }
-                if (sumTwoF_tmp > sumTwoFmax) {
-                  sumTwoFmax = sumTwoF_tmp;
-                }
-#endif
+              /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
+              if (finegrid.list[ifine].nc > nc_max) {
+                nc_max = finegrid.list[ifine].nc;
               }
-              else {
-                fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
-                return(HIERARCHICALSEARCH_ECG);
-              } /* if ( (U1idx >= 0) && (U1idx < fveclength) ) {  */
-
+              if (sumTwoF_tmp > sumTwoFmax) {
+                sumTwoFmax = sumTwoF_tmp;
+              }
+#endif
 
               /* -------------- Single-trial check ------------- */
               /*
@@ -1220,8 +1217,9 @@ int MAIN( int argc, char *argv[]) {
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
                       thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
-        
+#ifdef EAH_BOINC
         SET_CHECKPOINT;
+#endif
         
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
@@ -2052,14 +2050,14 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
 
 
 /** Calculate the U1 index for a given point in parameter space */
-static inline UINT4 ComputeU1idx( REAL8 freq_event,
+static inline INT4 ComputeU1idx( REAL8 freq_event,
 				  REAL8 f1dot_eventB1,
 				  REAL8 A1,
 				  REAL8 U1start,
 				  REAL8 U1winInv)
 {
 	/* compute the index of global-correlation coordinate U1, Eq. (1) */
-  return (UINT4) ((((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5);
+  return (((freq_event * A1 + f1dot_eventB1) - U1start) * U1winInv) + 0.5;
 
 } /* ComputeU1idx */
 
