@@ -35,18 +35,18 @@
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,tempi,tempj;
-	int nChain = 5;
-	REAL8 tempMax = 40.0;
+	int nChain = 5;		//number of parallel chains
+	REAL8 tempMax = 40.0;   //max temperature in the temperature ladder
 	REAL8 tempDelta;
-	int count = 0;
+	int count = 0;		//temporary counters to monitor the number of swaps between chains
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	REAL8 dummyR8,temperature = 1.0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
-	REAL8 *tempLadder = malloc(nChain * sizeof(REAL8));
-	REAL8 *TcurrentLikelihood = malloc(nChain * sizeof(REAL8));
-	LALVariables* TcurrentParams = malloc(nChain * sizeof(LALVariables));
+	REAL8 *tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
+	REAL8 *TcurrentLikelihood = malloc(nChain * sizeof(REAL8)); //the current likelihood for each chain
+	LALVariables* TcurrentParams = malloc(nChain * sizeof(LALVariables));	//the current parameters for each chains
 	LALVariables dummyLALVariable;
 
 	tempDelta = log(tempMax)/(REAL8)(nChain - 1);
@@ -54,8 +54,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	for(t=0; t<nChain; t++) {
 		TcurrentParams[t].head=NULL;
 		TcurrentParams[t].dimension=0;
-		copyVariables(runState->currentParams,&(TcurrentParams[t]));
-		tempLadder[t]=exp(t*tempDelta);
+		copyVariables(runState->currentParams,&(TcurrentParams[t]));  //initiallize all chains
+		tempLadder[t]=exp(t*tempDelta);  // set up temperature ladder
 		//printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 	}
 	dummyLALVariable.head=NULL;
@@ -70,26 +70,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printVariables(runState->currentParams);
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
-	for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; }
+	for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; } // initialize the liklelihood for all chains
 	
 	// iterate:
 	for(i=0; i<100; i++) {
 		printf(" MCMC iteration: %d\t", i+1);
-		for(t=0; t<nChain; t++) {
+		for(t=0; t<nChain; t++) { //loop over temperatures
 			copyVariables(&(TcurrentParams[t]),runState->currentParams);
-			setVariable(runState->proposalArgs, "temperature", &(tempLadder[t]));
+			setVariable(runState->proposalArgs, "temperature", &(tempLadder[t]));  //update temperature of the chain
 			//dummyR8 = runState->currentLikelihood;
-			runState->evolve(runState);
+			runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 			//	if (runState->currentLikelihood != dummyR8) {
 			//		printf(" accepted! new parameter values:\n");
 			//		printVariables(runState->currentParams);
 			//	}
 			copyVariables(runState->currentParams,&(TcurrentParams[t]));
-			TcurrentLikelihood[t] = runState->currentLikelihood;
+			TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 			printf("%f\t", runState->currentLikelihood - nullLikelihood);
 		} //for(t=0; t<nChain; t++)
 		
-		for(tempi=0;tempi<nChain-1;tempi++) {
+		for(tempi=0;tempi<nChain-1;tempi++) { //swap parameters and likelihood between chains
 			for(tempj=tempi+1;tempj<nChain;tempj++) {
 				
 				logChainSwap = (1.0/tempLadder[tempi]-1.0/tempLadder[tempj]) * (TcurrentLikelihood[tempj]-TcurrentLikelihood[tempi]);
