@@ -40,6 +40,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalstochastic])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
 lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])

@@ -39,6 +39,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalmetaio])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
 lalmetaio_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALMETAIO_VERSION],["$VERSION"],[LALMetaIO Version])
@@ -46,7 +49,6 @@ AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALMetaIO Configure Arguments])
 AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_DATE],["$lalmetaio_configure_date"],
                    [LALMetaIO Configure Date])
-
 
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS

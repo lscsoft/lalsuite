@@ -40,6 +40,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalxml])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
 lalxml_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALXML_VERSION],["$VERSION"],[LALXML Version])
