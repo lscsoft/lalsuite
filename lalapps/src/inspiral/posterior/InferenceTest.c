@@ -73,6 +73,7 @@ void TemplateStatPhaseTest(void);
 void SingleIFOLikelihoodTest(void);
 void BasicMCMCTest(void);
 void TemplateDumpTest(void);
+void PTMCMCTest(void);
 
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
@@ -109,6 +110,10 @@ int main(int argc, char *argv[]){
 
     /* Template alignment and dump test */
 	//TemplateDumpTest();
+	  
+	/* PTMCMC test */
+	PTMCMCTest();
+	  
 
   }
   printf(" ========== main(): finished. ==========\n");
@@ -745,7 +750,7 @@ void DataTest(void)
     addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
     fprintf(stdout, " trying 'templateLAL' likelihood...\n");
-    numberI4 = TaylorT1;
+    numberI4 = TaylorF2;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
     numberI4 = LAL_PNORDER_TWO;
     addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
@@ -1010,3 +1015,21 @@ void TemplateDumpTest(void)
     destroyVariables(&currentParams);
     fprintf(stdout," ----------\n");
 }
+
+void PTMCMCTest(void)
+{
+	fprintf(stdout, "PTMCMC test\n");
+	runstate->algorithm=PTMCMCAlgorithm;
+	runstate->evolve=PTMCMCOneStep;
+	runstate->prior=PTUniformLALPrior;
+	runstate->proposal=PTMCMCLALProposal;
+	runstate->proposalArgs = malloc(sizeof(LALVariables));
+	runstate->proposalArgs->head=NULL;
+	runstate->proposalArgs->dimension=0;
+	runstate->likelihood=FreqDomainLogLikelihood;
+	runstate->template=templateLAL;
+	runstate->currentParams=&currentParams;
+	PTMCMCAlgorithm(runstate);
+	fprintf(stdout, "End of PTMCMC test\n");
+}
+

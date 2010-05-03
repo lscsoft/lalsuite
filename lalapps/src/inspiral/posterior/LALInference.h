@@ -241,5 +241,11 @@ void templateDampedSinusoid(LALIFOData *IFOdata);
 void templateSinc(LALIFOData *IFOdata);
 void templateLALSTPN(LALIFOData *IFOdata);
 
+
+void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
+void PTMCMCOneStep(LALInferenceRunState *runState);
+REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
+void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+
 #endif
 
