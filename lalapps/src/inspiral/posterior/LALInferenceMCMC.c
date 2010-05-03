@@ -36,6 +36,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,tempi,tempj;
 	int nChain = 5;
+	REAL8 tempMax = 40.0;
+	REAL8 tempDelta;
 	int count = 0;
 	LALStatus status;
 	memset(&status,0,sizeof(status));
@@ -47,20 +49,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALVariables* TcurrentParams = malloc(nChain * sizeof(LALVariables));
 	LALVariables dummyLALVariable;
 
+	tempDelta = log(tempMax)/(REAL8)(nChain - 1);
+	
 	for(t=0; t<nChain; t++) {
 		TcurrentParams[t].head=NULL;
 		TcurrentParams[t].dimension=0;
 		copyVariables(runState->currentParams,&(TcurrentParams[t]));
+		tempLadder[t]=exp(t*tempDelta);
+		//printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 	}
 	dummyLALVariable.head=NULL;
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
-	
-	tempLadder[0]=1.0;
-	tempLadder[1]=2.0;
-	tempLadder[2]=5.0;
-	tempLadder[3]=10.0;
-	tempLadder[4]=20.0;
 	
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t);
 
