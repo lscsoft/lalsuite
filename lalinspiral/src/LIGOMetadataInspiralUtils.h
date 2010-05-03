@@ -692,19 +692,19 @@ XLALSortCoincInspiralByStat (
 int
 XLALCoincInspiralIfos (
     CoincInspiralTable  *coincInspiral,
-    char                *ifos
+    const char          *ifos
     );
 
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char                *ifos
     );
 
 int
 XLALCoincInspiralIfosDiscard(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     );
 
 UINT8
@@ -796,7 +796,7 @@ XLALMeanMassCut(
 SnglInspiralTable *
 XLALMassCut(
     SnglInspiralTable          *eventHead,
-    char                       *massCut,
+    const char                 *massCut,
     REAL4                       massRangeLow,
     REAL4                       massRangeHigh,
     REAL4                       mass2RangeLow,

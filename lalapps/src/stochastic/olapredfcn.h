@@ -55,18 +55,6 @@
 #define OLAPREDFCNH_MSGECHK "LAL Subroutine Returned Error"
 /***************************** </lalErrTable> */
 
-enum
-{
-  LALBarIndexAURIGA,
-  LALBarIndexNAUTILUS,
-  LALBarIndexEXPLORER,
-  LALBarIndexALLEGRO,
-  LALBarIndexNIOBE,
-  LALNumCachedBars
-};
-
-extern const LALFrDetector lalCachedBars[LALNumCachedBars];
-
 void
 olapredfcn_usage (
     const char *program, 

@@ -128,11 +128,12 @@ RCSID("$Id$");
   snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
   snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+extern int vrbflg;
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
 
-  extern int vrbflg;
   static INT4  writeUniqTrigs = 0;
   static INT4  usePlayground = 1;
   static INT4  allData = 0;
@@ -148,7 +149,7 @@ int main( int argc, char *argv[] )
   CHAR  fileName[FILENAME_MAX];
   CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
-  UINT4 outCompress = 0;
+  INT4  outCompress = 0;
 
   LIGOTimeGPS slideData = {0,0};
   INT8  slideDataNS = 0;
@@ -453,7 +454,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         startCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startCoincidence );
         break;
 
       case 'r':
@@ -478,7 +479,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         endCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endCoincidence );
         break;
 
       case 's':

@@ -97,6 +97,8 @@ int completeCoincs = 0;
 INT4 numExtTriggers = 0;
 ExtTriggerTable   *exttrigHead = NULL;
 
+extern int vrbflg;
+
 /*
  * 
  * USAGE
@@ -233,8 +235,6 @@ fprintf( a, "                                   specified in the source file\n")
 fprintf( a, "\n");\
 fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 
-
-
 /*
  * 
  * MAIN
@@ -244,8 +244,6 @@ fprintf( a, "[LIGOLW XML input files] list of the input trigger files.\n");\
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
-
-  extern int vrbflg;
 
   LALPlaygroundDataMask dataType = unspecified_data_type;
   INT4  startCoincidence = -1;
@@ -828,7 +826,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         startCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startCoincidence );
         break;
 
       case 't':
@@ -853,7 +851,7 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         endCoincidence = (INT4) gpstime;
-        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endCoincidence );
         break;
 
       case 'x':
@@ -1087,7 +1085,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld",  maximizationInterval );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT,  maximizationInterval );
         break;
   
       case '^':
@@ -1255,7 +1253,7 @@ int main( int argc, char *argv[] )
     {
       /* write ifo name in ifoName list */
       XLALReturnIFO(ifo,ifoNumber);
-      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifo );
+      snprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "%s", ifo );
       numIFO++;
 
       /* store the argument in the process_params table */
@@ -2013,7 +2011,7 @@ int main( int argc, char *argv[] )
         }
       }
       LAL_CALL( LALInspiralDistanceCutCleaning(&status,  &coincInspiralList,
-           &accuracyParams, snrCut, &summValueList, &vetoSegs[LAL_IFO_H1], 
+           &accuracyParams, snrCut, summValueList, &vetoSegs[LAL_IFO_H1],
            &vetoSegs[LAL_IFO_H2]), &status);
       if ( vrbflg ) fprintf( stdout, 
           "%d remaining coincident triggers after h1-h2-consisteny .\n", 
@@ -2255,7 +2253,7 @@ cleanexit:
   }
   /* write process table */
 
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   XLALGPSTimeNow(&(proctable.processTable->end_time));
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
@@ -2272,7 +2270,7 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
-  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifos );
 
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
         search_summary_table ), &status );

@@ -56,6 +56,7 @@ int inject_signal(
   COMPLEX8FrequencySeries *response   = NULL;
   SimInspiralTable        *injectList = NULL;
   SimInspiralTable        *thisInject;
+  SimRingdownTable        *ringInject = NULL;
   SimRingdownTable        *ringList = NULL;
   char                     injFile[FILENAME_LENGTH + 1];
   LIGOTimeGPS              epoch;
@@ -92,7 +93,7 @@ int inject_signal(
       ringList = 
       XLALSimRingdownTableFromLIGOLw( injFile, startSec, stopSec );
       numInject  = 0;
-      for ( thisInject = ringList; thisInject; thisInject = thisInject->next )
+      for (ringInject=ringList; ringInject; ringInject = ringInject->next )
             ++numInject;
     break;
     case imr_inject: case imr_ring_inject: case EOBNR_inject: case Phenom_inject:

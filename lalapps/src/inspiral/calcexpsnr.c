@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -82,6 +80,8 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/VectorOps.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 RCSID( "$Id$" );
@@ -819,7 +819,7 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  snprintf( fname, sizeof(fname), outputFile);
+  snprintf( fname, sizeof(fname), "%s", outputFile);
   LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
 
   /* write out the process and process params tables */
