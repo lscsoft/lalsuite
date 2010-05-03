@@ -54,6 +54,7 @@ now C99 these functions will soon be deprecated so please use the
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <lal/XLALError.h>
 #include <lal/LALRCSID.h>
 NRCSID (LALSTDC,"$Id$");
 
@@ -70,6 +71,7 @@ int LALSnprintf( char *str, size_t size, const char *fmt, ... )
 {
   int n;
   va_list ap;
+  XLALPrintDeprecationWarnings("LALSnprintf", "snprintf");
   va_start( ap, fmt );
   n = vsnprintf( str, size, fmt, ap );
   va_end( ap );
@@ -77,6 +79,7 @@ int LALSnprintf( char *str, size_t size, const char *fmt, ... )
 }
 int LALVsnprintf( char *str, size_t size, const char *fmt, va_list ap )
 {
+  XLALPrintDeprecationWarnings("LALVsnprintf", "vsnprintf");
   return vsnprintf( str, size, fmt, ap );
 }
 
