@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.1.0],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -105,9 +105,9 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

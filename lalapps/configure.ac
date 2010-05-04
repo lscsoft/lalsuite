@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.4.0],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -346,15 +346,15 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
-LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1..00],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
