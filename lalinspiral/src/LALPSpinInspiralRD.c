@@ -511,7 +511,7 @@ void LALPSpinInspiralRDForInjection (
   /* Call the engine function */
   /* Uncomment the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
-  //params->fCutoff     = ppnParams->fStop;
+  params->fCutoff     = ppnParams->fStop;
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
@@ -1139,8 +1139,8 @@ void LALPSpinInspiralRDEngine (
   /* The analytical formula for omega_match is in the do-while loop. However
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
-  //omegamatch = params->fCutoff * unitHz;
-  omegamatch = 0.0548;
+  omegamatch = params->fCutoff * unitHz;
+  //omegamatch = 0.0548;
   //fprintf(stdout,"** LALPSIRD: omegamatch=%12.6f\n",omegamatch);
 
   /* The number of Ring Down modes is hard-coded here, it cannot exceed 3*/
@@ -1298,7 +1298,7 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    //omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
+    omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
 
   }
 
