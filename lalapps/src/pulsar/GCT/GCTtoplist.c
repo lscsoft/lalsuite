@@ -225,7 +225,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 		      * f1dot:1e-5                                                                      
 		      * F:1e-6              
 		      */
-                     "%.13f %.7f %.7f %.7g %d %.6f\n",
+                     "%.14f %.13f %.13f %.7g %d %.6f\n",
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
