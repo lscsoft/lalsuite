@@ -46,6 +46,8 @@
 #include <lal/XLALError.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
+
 
 #include "LALInference.h"
 
@@ -296,6 +298,7 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	LALIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
+	REAL4TimeSeries *injectionBuffer=NULL;
 	
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
@@ -338,17 +341,29 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 		/* Originally created for injecting into DARM-ERR, so transfer function was needed.  
 		But since we are injecting into h(t), the transfer function from h(t) to h(t) is 1.*/
 
-		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOdata->detector->frDetector.prefix,
-																			  &IFOdata->timeData->epoch,
-																			  0.0,
-																			  IFOdata->timeData->deltaT,
-																			  &lalADCCountUnit,
-																			  IFOdata->timeData->data->length);
+		/* We need a long buffer to inject into so that FindChirpInjectSignals() works properly
+		 for low mass systems. Use 100 seconds here */
+		REAL8 bufferLength = 100.0;
+		UINT4 bufferN = (UINT4) (bufferLength/IFOdata->timeData->deltaT);
+		LIGOTimeGPS bufferStart;
+		memcpy(&bufferStart,&IFOdata->timeData->epoch,sizeof(LIGOTimeGPS));
+		XLALGPSAdd(&bufferStart,(REAL8) IFOdata->timeData->data->length * IFOdata->timeData->deltaT);
+		XLALGPSAdd(&bufferStart,-bufferLength);
+		injectionBuffer=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOdata->detector->frDetector.prefix,
+																	 &bufferStart, 0.0, IFOdata->timeData->deltaT,
+																	 &lalADCCountUnit, bufferN);
+		/* This marks the sample in which the real segment starts, within the buffer */
+		INT4 realStartSample=(INT4)((IFOdata->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/IFOdata->timeData->deltaT);
+		realStartSample+=(INT4)((IFOdata->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/IFOdata->timeData->deltaT);
+
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
-		LALFindChirpInjectSignals(&status,injWave,injTable,resp);
+		LALFindChirpInjectSignals(&status,injectionBuffer,injTable,resp);
 		if(status.statusCode) REPORTSTATUS(&status);
 
 		XLALDestroyCOMPLEX8FrequencySeries(resp);
+		
+		/* Now we cut the injection buffer down to match the time domain wave size */
+		injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,IFOdata->timeData->data->length);
 		
 		if(status.statusCode) REPORTSTATUS(&status);
 /*		for(j=0;j<injWave->data->length;j++) printf("%f\n",injWave->data->data[j]);*/
@@ -358,8 +373,8 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 																			  IFOdata->timeData->deltaT,
 																			  &lalDimensionlessUnit,
 																			  IFOdata->timeData->data->length);
-		for(i=0;i<injWave->data->length;i++) inj8Wave->data->data[i]=(REAL8)injWave->data->data[i];
-		XLALDestroyREAL4TimeSeries(injWave);
+		for(i=0;i<injectionBuffer->data->length;i++) inj8Wave->data->data[i]=(REAL8)injectionBuffer->data->data[i];
+		XLALDestroyREAL4TimeSeries(injectionBuffer);
 		injF=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("injF",
 																			&IFOdata->timeData->epoch,
 																			0.0,

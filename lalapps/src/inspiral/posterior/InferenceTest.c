@@ -31,6 +31,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/StringInput.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 
 
 LALVariables variables;
