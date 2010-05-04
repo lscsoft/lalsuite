@@ -335,6 +335,8 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 																		  IFOdata->freqData->data->length);
 		
 		for(i=0;i<resp->data->length;i++) {resp->data->data[i].re=(REAL4)1.0; resp->data->data[i].im=0.0;}
+		/* Originally created for injecting into DARM-ERR, so transfer function was needed.  
+		But since we are injecting into h(t), the transfer function from h(t) to h(t) is 1.*/
 
 		REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOdata->detector->frDetector.prefix,
 																			  &IFOdata->timeData->epoch,
