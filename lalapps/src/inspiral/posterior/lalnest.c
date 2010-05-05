@@ -34,7 +34,7 @@
 #define MAXSTR 128
 #define TIMESLIDE 10 /* Length of time to slide data to lose coherency */
 #define DEBUG 0
-#define USAGE "lalnest [-o outfile] -v (verbose) --GPSstart datastart --length duration --srate sample rate -i [FrameCache|NoiseModel] -I IFO\n \
+#define USAGE "lalapps_inspnest [-o outfile] -v (verbose) --GPSstart datastart --length duration --srate sample rate -i [FrameCache|NoiseModel] -I IFO\n \
 {NoiseModel can be LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO, LALEGO to generate design curve noise instead of real noise} \n \
 [... -i FC -I IFO for as many data sources as desired] --seed i [integer, default use date] --dataseed i [for fake data]\n \
 --pad padding (1s) --Nsegs number of segments --deta width of eta window --dt time window (0.01)\n\
