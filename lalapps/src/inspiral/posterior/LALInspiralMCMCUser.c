@@ -433,7 +433,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
 	PPNparams.mTot=mc2mt(mc,eta);
 	PPNparams.eta=eta;
-	PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
+	if (XLALMCMCCheckParameter(parameter,"logdist")) PPNparams.d=exp(XLALMCMCGetParameter(parameter,"logdist"))*MpcInMeters;
+	else PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
 	PPNparams.inc=XLALMCMCGetParameter(parameter,"iota");
 	PPNparams.phi=XLALMCMCGetParameter(parameter,"phi");
 	PPNparams.fStartIn=inputMCMC->fLow;
