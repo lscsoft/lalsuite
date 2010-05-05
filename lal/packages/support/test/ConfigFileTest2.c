@@ -70,6 +70,7 @@ NRCSID (CONFIGFILETESTC, "$Id$");
 #define CONFIGFILETESTC_EBOOL 		3
 #define CONFIGFILETESTC_ESTRING 	4
 #define CONFIGFILETESTC_ESUB	 	5
+#define CONFIGFILETESTC_EEXISTS     6
 
 #define CONFIGFILETESTC_MSGENORM 	"Normal exit"
 #define CONFIGFILETESTC_MSGEFLOAT 	"Read-in REAL8 variable is not what it should be..."
@@ -77,6 +78,8 @@ NRCSID (CONFIGFILETESTC, "$Id$");
 #define CONFIGFILETESTC_MSGEBOOL 	"Read-in BOOL variable is not what it should be..."
 #define CONFIGFILETESTC_MSGESTRING 	"Read-in STRING-variable is not what it should be..."
 #define CONFIGFILETESTC_MSGESUB	 	"Error occurred in sub-routine"
+#define CONFIGFILETESTC_MSGEXISTS   "Error occurrent in sectionExists"
+
 
 /******************************************** </lalErrTable> */
 
@@ -205,6 +208,17 @@ int main(int argc, char *argv[]){
   string3 = NULL;
 
   XLALParseDataFile (&cfgdata, "ConfigFileSample2.cfg");
+
+  /* Check for a section we have and one we don't */
+  if (XLALConfigSectionExists(cfgdata, "section1") == 0) {
+    ERROR (CONFIGFILETESTC_EEXISTS, CONFIGFILETESTC_MSGEXISTS, 0);
+    return (CONFIGFILETESTC_EEXISTS);
+  }
+
+  if (XLALConfigSectionExists(cfgdata, "section5") == 1) {
+    ERROR (CONFIGFILETESTC_EEXISTS, CONFIGFILETESTC_MSGEXISTS, 0);
+    return (CONFIGFILETESTC_EEXISTS);
+  }
 
   XLALReadConfigREAL8Variable  (&somefloat, cfgdata, "section1", "float1", &wasRead);
   XLALReadConfigSTRINGVariable (&string1,   cfgdata, "section1", "string1", &wasRead);
