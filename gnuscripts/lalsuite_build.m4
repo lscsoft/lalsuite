@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 3
+# serial 4
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -50,6 +50,21 @@ if test "$$2" = "true"; then
   fi
 fi
 LALSUITE_ENABLE_MODULE([$1],[$2])
+])
+
+AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
+[AC_ARG_ENABLE(
+  [nightly],
+  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
+  [ case "${enableval}" in
+      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+      no) NIGHTLY_VERSION="";;
+      *) NIGHTLY_VERSION="${enableval}"
+         VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+      esac ],
+  [ NIGHTLY_VERSION="" ] )
+  AC_SUBST(NIGHTLY_VERSION)
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
