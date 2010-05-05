@@ -1692,7 +1692,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   {
     for ( i = numPoints/4; i < 3*numPoints/4 ; ++i ) /* Main loop over time */
     {
-/*      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+      if (cohSNR->data->data[i-numPoints/4] > params->threshold)
       {
         check = 1;
         for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
@@ -1708,7 +1708,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           }
         }
         if (check)
-        {*/
+        {
           if (! singleDetector)
           {
             if (! Autoeigenvecs )
@@ -1717,6 +1717,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
               Autoeigenvals = gsl_vector_alloc(2);
               calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
                   a,b,PTFM,1,2,5);
+//              fprintf(stderr,"Eigenvecs %e %e %e %e\n",gsl_matrix_get(Autoeigenvecs,0,0),gsl_matrix_get(Autoeigenvecs,1,0),gsl_matrix_get(Autoeigenvecs,0,1),gsl_matrix_get(Autoeigenvecs,1,1));
+//              fprintf(stderr,"Eigenvals %e %e \n",gsl_vector_get(Autoeigenvals,0),gsl_vector_get(Autoeigenvals,1));
             }
 
             if (! autoCohOverlaps)
@@ -1733,8 +1735,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
             }
           }
           autoVeto->data->data[i-numPoints/4] = calculate_auto_veto_max_phase_coherent(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
-//        }
-//      }
+        }
+      }
 
     }
     if ( Autoeigenvecs )
@@ -1752,7 +1754,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
   }
 
-  /*outfile = fopen("cohSNR_timeseries.dat","w");
+/*  outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
@@ -1766,12 +1768,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-  outfile = fopen("auto_veto_timeseries.dat","w");
+/*  outfile = fopen("auto_veto_timeseries.dat","w");
   for ( i = 0; i < autoVeto->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,autoVeto->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
 
   /*
   outfile = fopen("nullSNR_timeseries.dat","w");
@@ -1906,7 +1908,7 @@ UINT8 cohPTFaddTriggers(
         if (params->doAutoVeto)
         {
           currEvent->cont_chisq = autoVeto->data->data[i];
-          fprintf(stderr, "Auto Veto %e \n",currEvent->cont_chisq);
+//          fprintf(stderr, "Auto Veto %e \n",currEvent->cont_chisq);
           currEvent->cont_chisq_dof = params->numAutoPoints;
         }
         if (pValues[0])

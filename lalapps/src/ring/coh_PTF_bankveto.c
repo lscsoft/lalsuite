@@ -588,7 +588,7 @@ gsl_vector *Autoeigenvals
 
     calculate_rotated_vectors(params,PTFqVec,TjwithS1,
         TjwithS2,a,b,timeOffsetPoints,Autoeigenvecs,
-        Autoeigenvals,numPoints,position-(ui * timeStepPoints),1,2);
+        Autoeigenvals,numPoints,position-((ui+1) * timeStepPoints),1,2);
     for (uj = 0; uj < 4; uj++)
     {
       normFac = 0;
@@ -596,28 +596,36 @@ gsl_vector *Autoeigenvals
         AutoVetoTemp[uj] = TjwithS1[uj];
       else
         AutoVetoTemp[uj] = TjwithS2[uj-2];
+//      fprintf(stderr,"Initial %e \n",AutoVetoTemp[uj]);
       for (uk = 0; uk < 4; uk++)
       {
         if (uj < 2 && uk < 2)
         {
           AutoVetoTemp[uj] -= gsl_matrix_get(rotReOverlaps,uk,uj)*SNRu1[uk];
           normFac += pow(gsl_matrix_get(rotReOverlaps,uk,uj),2);
+//          fprintf(stderr,"1 %e %e \n",gsl_matrix_get(rotReOverlaps,uk,uj),SNRu1[uk]);
         }
         if (uj < 2 && uk > 1 )
         {
-          AutoVetoTemp[uj] -= gsl_matrix_get(rotImOverlaps,uk-2,uj)*SNRu2[uk-2];
+          AutoVetoTemp[uj] += gsl_matrix_get(rotImOverlaps,uk-2,uj)*SNRu2[uk-2];
           normFac += pow(gsl_matrix_get(rotImOverlaps,uk-2,uj),2);
+//          fprintf(stderr,"2 %e %e \n",gsl_matrix_get(rotImOverlaps,uk-2,uj),SNRu2[uk-2]);
         }
         if (uj > 1 && uk < 2 )
         {
-          AutoVetoTemp[uj] += gsl_matrix_get(rotImOverlaps,uk,uj-2)*SNRu1[uk];
+          AutoVetoTemp[uj] -= gsl_matrix_get(rotImOverlaps,uk,uj-2)*SNRu1[uk];
           normFac += pow(gsl_matrix_get(rotImOverlaps,uk,uj-2),2);
+//          fprintf(stderr,"3 Plus %e %e \n",gsl_matrix_get(rotImOverlaps,uk,uj-2),SNRu1[uk]);
         }
         if (uj > 1 && uk > 1 )
         {
           AutoVetoTemp[uj]-=gsl_matrix_get(rotReOverlaps,uk-2,uj-2)*SNRu2[uk-2];
           normFac += pow(gsl_matrix_get(rotReOverlaps,uk-2,uj-2),2);
+//          fprintf(stderr,"4 %e %e \n",gsl_matrix_get(rotReOverlaps,uk-2,uj-2),SNRu2[uk-2]);
         }
+//        fprintf(stderr,"Auto veto comps: %e %e %e %e %e %e\n",SNRu1[0],SNRu2[0],SNRu1[1],SNRu2[1],AutoVetoTemp[uj],normFac);
+//        fprintf(stderr,"Overlap comps: %e %e %e %e\n\n",gsl_matrix_get(rotReOverlaps,0,0),gsl_matrix_get(rotReOverlaps,1,1),gsl_matrix_get(rotImOverlaps,0,0),gsl_matrix_get(rotImOverlaps,1,1));
+        
       }
       AutoVeto+=pow(AutoVetoTemp[uj],2)/(1-normFac);
     }
@@ -743,6 +751,8 @@ void calculate_coherent_bank_overlaps(
       gsl_matrix_set(rotImOverlaps,uj,uk,gsl_matrix_get(rotImOverlaps,uj,uk)/(sqrt(gsl_vector_get(eigenvals,uj))*sqrt(gsl_vector_get(Bankeigenvals,uk))));
     }
   }
+//  fprintf(stderr,"Initial overlaps: %e %e\n",reOverlapsA[0],imOverlapsA[0]);
+//  fprintf(stderr,"Rotated overlaps: %e %e %e %e\n",gsl_matrix_get(rotImOverlaps,0,0),gsl_matrix_get(rotImOverlaps,1,1),gsl_matrix_get(rotImOverlaps,1,0),gsl_matrix_get(rotImOverlaps,0,1));
 
   gsl_matrix_free(reOverlaps);
   gsl_matrix_free(imOverlaps);

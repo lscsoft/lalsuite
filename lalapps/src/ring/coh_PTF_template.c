@@ -753,8 +753,8 @@ void autoVetoOverlaps(
         x = PTFQtilde[j * (len ) + k].re;
         y = 0 - PTFQtilde[j * (len ) + k].im; /* cplx conj */
 
-        qtilde[k].re = 4. * (r*x - s*y)*deltaF/ invspec->data->data[k];
-        qtilde[k].im = 4. * (r*y + s*x)*deltaF/ invspec->data->data[k];
+        qtilde[k].re = 4. * (r*x - s*y)*deltaF * invspec->data->data[k];
+        qtilde[k].im = 4. * (r*y + s*x)*deltaF * invspec->data->data[k];
       }
 
       /* inverse fft to get q */
@@ -763,6 +763,7 @@ void autoVetoOverlaps(
       {
         autoTempOverlaps[k-1].timeStepDelay = - k * timeStepPoints;
         autoTempOverlaps[k-1].PTFM[ifoNumber]->data[i*vecLen + j] = qVec->data[numPoints - k * timeStepPoints];
+//        autoTempOverlaps[k-1].PTFM[ifoNumber]->data[i*vecLen + j] = qVec->data[k * timeStepPoints];
       }
 /*      for (k = 0 ; k < numPoints ; k++)
       {
