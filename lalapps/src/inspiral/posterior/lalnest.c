@@ -41,7 +41,8 @@
 --XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
 --event trigNum (0) --end_time GPStime --Mmin m --Mmax M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2|AmpCorPPN|IMRPhenomA)]\n \
 --timeslide --studentt (use student-t likelihood function)\n \
-[--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
+[--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n \
+--ampOrder INT (Amplitude order to use, requires --approximant AmpCorPPN)\n"
 
 extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
@@ -90,6 +91,7 @@ int HighMassFlag=0;
 int decohereflag=0;
 REAL8 offset=0.0;
 extern const LALUnit strainPerCount;
+INT4 ampOrder=0;
 
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
@@ -165,10 +167,15 @@ void initialise(int argc, char *argv[]){
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
+		{"ampOrder",required_argument,0,17},
 		{0,0,0,0}};
 	
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+		case 17:
+			ampOrder=atoi(optarg);
+			if(ampOrder>5) {fprintf(stderr,"ERROR: The maximum amplitude order is 5, please set --ampOrder 5 or less\n"); exit(1);}
+			break;
 		case 14:
 			SNRfac=atof(optarg);
 			break;
@@ -738,6 +745,10 @@ int main( int argc, char *argv[])
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}
 	
+	if(inputMCMC.approximant!=AmpCorPPN && ampOrder!=0){
+		fprintf(stderr,"Warning, setting amp order %i but not using AmpCorPPN. Amplitude corrected waveforms will NOT be generated!\n");
+	}
+	inputMCMC.ampOrder=ampOrder;
 	/* Set the initialisation and likelihood functions */
 	if(SkyPatch) {inputMCMC.funcInit = NestInitSkyPatch; goto doneinit;}
 	if(SkyLocFlag) {inputMCMC.funcInit = NestInitSkyLoc; goto doneinit;}
