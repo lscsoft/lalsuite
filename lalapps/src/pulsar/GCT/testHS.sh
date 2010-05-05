@@ -120,7 +120,6 @@ else
     haveNoise=false;
 fi
 
-IFO=LHO
 
 ##--------------------------------------------------
 ## test starts here
@@ -137,8 +136,8 @@ else
     rm -f $SFTdir/*;
 fi
 
-# construct MFD cmd:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=$IFO --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
+# construct MFD cmd for H1:
+mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=H1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
 
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
@@ -150,6 +149,21 @@ if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
+
+# construct MFD cmd for L1:                                                                                                     
+mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=1001"
+
+if [ "$haveNoise" = true ]; then
+    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
+fi
+
+cmdline="$mfd_code $mfd_CL";
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
 
 echo
 echo "----------------------------------------------------------------------"
@@ -166,7 +180,7 @@ for ((x=1; x <= $Nsegments; x++))
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
     #echo "Segment: "$x"  "$startGPS" "$endGPS
     # construct pfs cmd
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
 
     cmdline="$pfs_code $pfs_CL"
     echo "  "$cmdline
