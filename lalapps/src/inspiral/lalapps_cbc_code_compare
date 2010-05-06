@@ -7,18 +7,19 @@
 #   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
 #                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
 
-# where to find git
-export PATH=$PATH:/usr/local/bin
-# where to find condor
-#export CONDOR_CONFIG=/usr1/ldbd/ldg-4.8/condor/etc/condor_config
-#export PATH=$PATH:/usr1/ldbd/ldg-4.8/condor/sbin:/usr1/ldbd/ldg-4.8/condor/bin
+# Metronome
+PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
+export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
+
+# TODO: currently assumes condor and git are in the path -- should check and fail if not
+
 # /usr/bin needs to come first so we get the OS mysql used for the
 # Metronome install instead of the LDG version
-export PATH=/usr/bin:$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
-export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
+export PATH=/usr/bin:$PATH
+
 # this is not a good long-term solution, but for the time being it
-# works -- otherwise the nmi_* tools pick up some kind of LDG mysql
-# libs (instead of the OS-provided ones) and timeout
+# works -- otherwise the Metronome tools pick up some kind of LDG
+# mysql libs (instead of the OS-provided ones) and timeout
 unset LD_LIBRARY_PATH
 unset MYSQL_UNIX_PORT
 
@@ -27,7 +28,8 @@ unset MYSQL_UNIX_PORT
 REFERENCE_XML_DIR=/home/pfcouvar/nmi/reference-data
 
 # TODO: subtools need to be relocatable -- this is ugly but needed for now
-export LSCSOFT_SRCDIR=${LSCSOFT_SRCDIR:-/home/pfcouvar/src}
+#export LSCSOFT_SRCDIR=${LSCSOFT_SRCDIR:-/home/pfcouvar/src}
+export LSCSOFT_SRCDIR=/home/pfcouvar/src
 
 # where to store our temporary submit files
 TMPDIR=${TMPDIR:-/tmp}
