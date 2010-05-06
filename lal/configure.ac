@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.4.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.4.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
