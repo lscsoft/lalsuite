@@ -18,44 +18,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="ConfigFileTestCV">
-Author: Larne Pekowsky
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Program \texttt{ConfigFileTest.c}}
-\label{s:ConfigFileTest.c}
-
-Tests the XLAL routines in \verb@ConfigFile.h@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-ConfigFileTest2
-\end{verbatim}
-
-\subsubsection*{Description}
-
-This tests the XLAL versions of the standard config-file reading
-codes by attempting to parse the same config file that ConfigFileTest
-reads.
-
-This also tests the new section functionality which is in a second
-config file (named, unsurprisingly, ConfigFileTest2.cfg).
-
-\subsubsection*{Exit codes}
-
-\input{ConfigFileErrors}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ConfigFileTestCV}}
-
-</lalLaTeX> */
-
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 
@@ -63,7 +25,6 @@ NRCSID (CONFIGFILETESTC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="ConfigFileErrors"> */
 #define CONFIGFILETESTC_ENORM 		0
 #define CONFIGFILETESTC_EFLOAT 		1
 #define CONFIGFILETESTC_EINT 		2
@@ -79,9 +40,6 @@ NRCSID (CONFIGFILETESTC, "$Id$");
 #define CONFIGFILETESTC_MSGESTRING 	"Read-in STRING-variable is not what it should be..."
 #define CONFIGFILETESTC_MSGESUB	 	"Error occurred in sub-routine"
 #define CONFIGFILETESTC_MSGEXISTS   "Error occurrent in sectionExists"
-
-
-/******************************************** </lalErrTable> */
 
 
 /* Default parameters. */
