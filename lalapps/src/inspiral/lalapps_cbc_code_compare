@@ -19,6 +19,9 @@ REFERENCE_XML_DIR=/home/pfcouvar/nmi/reference-data
 #export LSCSOFT_SRCDIR=${LSCSOFT_SRCDIR:-/home/pfcouvar/src}
 export LSCSOFT_SRCDIR=/home/pfcouvar/src
 
+# this is necessary so we can store our Metronome run dirs on NFS without DAGMan complaining
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
 # where to store our temporary submit files
 TMPDIR=${TMPDIR:-/tmp}
 
