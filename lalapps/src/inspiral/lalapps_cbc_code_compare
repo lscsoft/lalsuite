@@ -11,18 +11,6 @@
 PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
 export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
 
-# TODO: currently assumes condor and git are in the path -- should check and fail if not
-
-# /usr/bin needs to come first so we get the OS mysql used for the
-# Metronome install instead of the LDG version
-export PATH=/usr/bin:$PATH
-
-# this is not a good long-term solution, but for the time being it
-# works -- otherwise the Metronome tools pick up some kind of LDG
-# mysql libs (instead of the OS-provided ones) and timeout
-unset LD_LIBRARY_PATH
-unset MYSQL_UNIX_PORT
-
 # where to find the "reference" XML data products for the unit tests
 # TODO: these should be moved out of my home dir (e.g., to /usr/local/...)
 REFERENCE_XML_DIR=/home/pfcouvar/nmi/reference-data
