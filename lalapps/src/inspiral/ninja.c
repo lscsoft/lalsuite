@@ -378,6 +378,7 @@ int main(INT4 argc, CHAR *argv[])
     LALFree(this_inj);
   }
 
+#if 0
   while (procparams.processParamsTable)
   {
     this_proc_param = procparams.processParamsTable;
@@ -386,6 +387,7 @@ int main(INT4 argc, CHAR *argv[])
   }
 
   LALFree(proctable.processTable);
+#endif
 
   /* close cache */
   /* LAL_CALL(LALFrClose(&status, &frStream), &status); */
@@ -421,7 +423,14 @@ static int get_nr_metadata_from_framehistory(NinjaMetaData *data,
   localhist = history;
   while (localhist)
   {
-    /* get history comment string and parse it */
+    /* get history comment string and parse it   */
+    /* The author-emails list can be > 128 chars */
+    if (strlen(localhist->comment) + 1 > stringlen)
+    {
+      stringlen = strlen(localhist->comment) + 1;
+      comment   = LALRealloc(comment, stringlen * sizeof(CHAR));
+    }
+
     strcpy(comment,localhist->comment);
     get_metadata_from_string(data, comment, metadata_format);
     localhist = localhist->next;
