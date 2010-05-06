@@ -365,7 +365,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "%s", multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '7';
@@ -406,7 +406,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "%s", multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '8';
@@ -447,7 +447,7 @@ main(int argc, char *argv[])
     CHAR comboname[MAX_FILENAME_LEN];
     COMPLEX16Vector *weights = NULL;
 
-    snprintf ( comboname, MAX_FILENAME_LEN, multiTs->data[0]->name );
+    snprintf ( comboname, MAX_FILENAME_LEN, "%s", multiTs->data[0]->name );
 
     comboname[0] = 'Z';
     comboname[1] = '9';

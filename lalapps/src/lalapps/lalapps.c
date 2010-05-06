@@ -306,7 +306,7 @@ XLALGetVersionString( int level )
       /* get lalapps info */
       tree_status = strdup(lalAppsVCSInfo.vcsStatus);
       snprintf(lalapps_info, sizeof(lalapps_info),
-          "%%%% LALApps: %s (%s %s)", lalAppsVCSInfo.version, \
+          "%%%% LALApps: %s (%s %s)\n", lalAppsVCSInfo.version, \
           strsep(&tree_status, delim), lalAppsVCSInfo.vcsId);
 
       break;
@@ -576,7 +576,7 @@ XLALOutputVersionString ( FILE *fp, int level )
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
-  if ( fprintf (fp, "%s\n", VCSInfoString ) < 0 ) {
+  if ( fprintf (fp, "%s", VCSInfoString ) < 0 ) {
     XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", fn);
     XLALFree ( VCSInfoString);
     XLAL_ERROR ( fn, XLAL_EIO );

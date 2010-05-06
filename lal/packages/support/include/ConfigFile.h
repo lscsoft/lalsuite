@@ -97,6 +97,7 @@ typedef enum {
 /** This structure defines a config-variable to be read in using the
  * general-purpose reading function LALReadConfigVariable(). */
 typedef struct {
+  const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */
   const CHAR *varName;		/**< Variable-name to be read in the config-file */
   const CHAR *fmt;		/**< Format string for reading (<tt>sscanf()</tt>-style) */
   ConfigStrictness strictness;	/**< what to do if variable not found: ignore, warn, error */
@@ -127,17 +128,30 @@ void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
 int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
 
+int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
+
 void
 LALReadConfigBOOLVariable (LALStatus *,
 			  BOOLEAN *varp,
 			  const LALParsedDataFile *cfgdata,
 			  const CHAR *varName,
 			  BOOLEAN *wasRead);
-
+int
+XLALReadConfigBOOLVariable (BOOLEAN *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *secName,
+			    const CHAR *varName,
+			    BOOLEAN *wasRead);
 void
 LALReadConfigINT4Variable (LALStatus *,
 			   INT4 *varp,
 			   const LALParsedDataFile *cfgdata,
+			   const CHAR *varName,
+			   BOOLEAN *wasRead);
+int
+XLALReadConfigINT4Variable (INT4 *varp,
+			   const LALParsedDataFile *cfgdata,
+			   const CHAR *secName,
 			   const CHAR *varName,
 			   BOOLEAN *wasRead);
 
@@ -147,11 +161,23 @@ LALReadConfigREAL8Variable (LALStatus *,
 			    const LALParsedDataFile *cfgdata,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead);
+int
+XLALReadConfigREAL8Variable (REAL8 *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *secName,
+			    const CHAR *varName,
+			    BOOLEAN *wasRead);
 
 void
 LALReadConfigSTRINGVariable (LALStatus *,
 			     CHAR **varp,
 			     const LALParsedDataFile *cfgdata,
+			     const CHAR *varName,
+			     BOOLEAN *wasRead);
+int
+XLALReadConfigSTRINGVariable (CHAR **varp,
+			     const LALParsedDataFile *cfgdata,
+			     const CHAR *secName,
 			     const CHAR *varName,
 			     BOOLEAN *wasRead);
 
@@ -161,6 +187,12 @@ LALReadConfigSTRINGNVariable (LALStatus *,
 			      const LALParsedDataFile *cfgdata,
 			      const CHAR *varName,
 			      BOOLEAN *wasRead);
+int
+XLALReadConfigSTRINGNVariable (CHARVector *varp,
+			      const LALParsedDataFile *cfgdata,
+			      const CHAR *secName,
+			      const CHAR *varName,
+			      BOOLEAN *wasRead);
 
 void
 LALReadConfigVariable (LALStatus *,
@@ -168,10 +200,19 @@ LALReadConfigVariable (LALStatus *,
 		       const LALParsedDataFile *cfgdata,
 		       const LALConfigVar *param,
 		       BOOLEAN *wasRead);
+int
+XLALReadConfigVariable (void *varp,
+		       const LALParsedDataFile *cfgdata,
+		       const LALConfigVar *param,
+		       BOOLEAN *wasRead);
 
 void LALCheckConfigReadComplete (LALStatus *, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
+int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
+
 void LALLowerCaseString (LALStatus *, CHAR *string);
+
+int XLALLowerCaseString (CHAR *string);
 
 /* C++ protection. */
 #ifdef  __cplusplus

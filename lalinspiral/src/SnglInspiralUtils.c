@@ -2162,7 +2162,7 @@ INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
 SnglInspiralTable *
 XLALMassCut(
     SnglInspiralTable         *eventHead,
-    char                      *massCut,
+    const char                *massCut,
     REAL4                      massRangeLow,
     REAL4                      massRangeHigh,
     REAL4                      mass2RangeLow,

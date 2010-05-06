@@ -34,8 +34,7 @@
 #include <lal/NRWaveInject.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-
-#include <FrameL.h>
+#include <lal/LALFrameL.h>
 
 #include <lalapps.h>
 #include <LALAppsVCSInfo.h>
@@ -78,36 +77,63 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR *nrDataDir = NULL;
   CHAR file_path[FILENAME_MAX];
 
+  /* metadata format */
+  CHAR *metadata_format = NULL;
+
   /* metadata parsing variables */
   LALParsedDataFile *meta_file = NULL;
   BOOLEAN wasRead = 0;
-  CHAR *simulation_details = NULL;
-  CHAR *nr_group = NULL;
-  CHAR *email = NULL;
-  CHAR *mass_ratio = NULL;
-  CHAR *spin1x = NULL;
-  CHAR *spin1y = NULL;
-  CHAR *spin1z = NULL;
-  CHAR *spin2x = NULL;
-  CHAR *spin2y = NULL;
-  CHAR *spin2z = NULL;
-  CHAR *freqStart22 = NULL;
+  CHAR field[HISTORY_COMMENT];
   CHAR *wf_name[MAX_L][(2*MAX_L) + 1];
 
-  /* metadata */
-  CHAR field[HISTORY_COMMENT];
-  CHAR sim[HISTORY_COMMENT];
-  CHAR group[HISTORY_COMMENT];
-  CHAR mail[HISTORY_COMMENT];
-  CHAR ratio[HISTORY_COMMENT];
-  CHAR s1x[HISTORY_COMMENT];
-  CHAR s1y[HISTORY_COMMENT];
-  CHAR s1z[HISTORY_COMMENT];
-  CHAR s2x[HISTORY_COMMENT];
-  CHAR s2y[HISTORY_COMMENT];
-  CHAR s2z[HISTORY_COMMENT];
-  CHAR freq[HISTORY_COMMENT];
-  CHAR creator[HISTORY_COMMENT];
+  /* common metadata */
+  CHAR *md_mass_ratio = NULL;
+  CHAR *md_spin1x = NULL;
+  CHAR *md_spin1y = NULL;
+  CHAR *md_spin1z = NULL;
+  CHAR *md_spin2x = NULL;
+  CHAR *md_spin2y = NULL;
+  CHAR *md_spin2z = NULL;
+  CHAR *md_freq_start_22 = NULL;
+
+  /* NINJA1 metadata */
+  CHAR *md_simulation_details = NULL;
+  CHAR *md_nr_group = NULL;
+  CHAR *md_email = NULL;
+
+  /* NINJA2 metadata */
+  CHAR *md_waveform_name = NULL;
+  CHAR *md_initial_separation = NULL;
+  CHAR *md_eccentricity = NULL;
+  CHAR *md_number_of_cycles_22 = NULL;
+  CHAR *md_code = NULL;
+  CHAR *md_submitter_email = NULL;
+  CHAR *md_authors_emails = NULL;
+
+  /* common metadata strings */
+  CHAR str_mass_ratio[HISTORY_COMMENT];
+  CHAR str_spin1x[HISTORY_COMMENT];
+  CHAR str_spin1y[HISTORY_COMMENT];
+  CHAR str_spin1z[HISTORY_COMMENT];
+  CHAR str_spin2x[HISTORY_COMMENT];
+  CHAR str_spin2y[HISTORY_COMMENT];
+  CHAR str_spin2z[HISTORY_COMMENT];
+  CHAR str_freq_start_22[HISTORY_COMMENT];
+  CHAR str_creator[HISTORY_COMMENT];
+
+  /* NINJA1 metadata strings */
+  CHAR str_simulation_details[HISTORY_COMMENT];
+  CHAR str_nr_group[HISTORY_COMMENT];
+  CHAR str_email[HISTORY_COMMENT];
+
+  /* NINJA2 metadata strings */
+  CHAR str_waveform_name[HISTORY_COMMENT];
+  CHAR str_initial_separation[HISTORY_COMMENT];
+  CHAR str_eccentricity[HISTORY_COMMENT];
+  CHAR str_number_of_cycles_22[HISTORY_COMMENT];
+  CHAR str_code[HISTORY_COMMENT];
+  CHAR str_submitter_email[HISTORY_COMMENT];
+  CHAR str_authors_emails[HISTORY_COMMENT];
 
   /* channel names */
   CHAR *plus_channel[MAX_L][(2*MAX_L) + 1];
@@ -132,6 +158,7 @@ INT4 main(INT4 argc, CHAR **argv)
     /* options that set a flag */
     {"verbose", no_argument, &vrbflg, 1},
     /* options that don't set a flag */
+    {"format", required_argument, 0, 'f'},
     {"nr-meta-file", required_argument, 0, 'm'},
     {"nr-data-dir", required_argument, 0, 'd'},
     {"output", required_argument, 0, 'o'},
@@ -152,7 +179,7 @@ INT4 main(INT4 argc, CHAR **argv)
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only(argc, argv, "m:d:o:D:hV", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "f:m:d:o:D:hV", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -182,6 +209,13 @@ INT4 main(INT4 argc, CHAR **argv)
         fprintf(stdout, "Numerical Relativity Frame Generation\n");
         XLALOutputVersionString(stderr, 0);
         exit(0);
+        break;
+
+      case 'f':
+        /* create storage for the metadata format */
+        optarg_len = strlen(optarg) + 1;
+        metadata_format = (CHAR *)calloc(optarg_len, sizeof(CHAR));
+        memcpy(metadata_format, optarg, optarg_len);
         break;
 
       case 'm':
@@ -236,6 +270,23 @@ INT4 main(INT4 argc, CHAR **argv)
    * check validity of arguments
    */
 
+  /* metadata format specified */
+  if (metadata_format == NULL)
+  {
+    fprintf(stderr, "warning: --format not specified, assuming NINJA1\n");
+    metadata_format = (CHAR *)calloc(7, sizeof(CHAR));
+    memcpy(metadata_format, "NINJA1", 7);
+  }
+
+  /* check for supported metadata format */
+  if (strcmp(metadata_format, "NINJA1") == 0);
+  else if (strcmp(metadata_format, "NINJA2") == 0);
+  else
+  {
+    fprintf(stderr, "Supported metadata formats are NINJA1 and NINJA2 (%s specified)\n", metadata_format);
+    exit(1);
+  }
+
   /* meta file specified */
   if (nrMetaFile == NULL)
   {
@@ -274,49 +325,132 @@ INT4 main(INT4 argc, CHAR **argv)
   /* open metadata file */
   LAL_CALL(LALParseDataFile(&status, &meta_file, nrMetaFile), &status);
 
-  /* metadata section */
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &simulation_details, meta_file, "simulation-details", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &nr_group, meta_file, "nr-group", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &email, meta_file, "email", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &mass_ratio, meta_file, "mass-ratio", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1x, meta_file, "spin1x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1y, meta_file, "spin1y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin1z, meta_file, "spin1z", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2x, meta_file, "spin2x", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2y, meta_file, "spin2y", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &spin2z, meta_file, "spin2z", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &freqStart22, meta_file, "freqStart22", &wasRead), &status);
+  /*
+   * get metadata
+   */
 
-  /* set waveform metadata */
-  snprintf(sim, HISTORY_COMMENT, "simulation-details:%s", simulation_details);
-  snprintf(group, HISTORY_COMMENT, "nr-group:%s", nr_group);
-  snprintf(mail, HISTORY_COMMENT, "email:%s", email);
-  snprintf(ratio, HISTORY_COMMENT, "mass-ratio:%s", mass_ratio);
-  snprintf(s1x, HISTORY_COMMENT, "spin1x:%s", spin1x);
-  snprintf(s1y, HISTORY_COMMENT, "spin1y:%s", spin1y);
-  snprintf(s1z, HISTORY_COMMENT, "spin1z:%s", spin1z);
-  snprintf(s2x, HISTORY_COMMENT, "spin2x:%s", spin2x);
-  snprintf(s2y, HISTORY_COMMENT, "spin2y:%s", spin2y);
-  snprintf(s2z, HISTORY_COMMENT, "spin2z:%s", spin2z);
-  snprintf(freq, HISTORY_COMMENT, "freqStart22:%s", freqStart22);
-  snprintf(creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, LALAPPS_VCS_ID);
+  /* common metadata */
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_mass_ratio, meta_file, "mass-ratio", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1x, meta_file, "spin1x", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1y, meta_file, "spin1y", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin1z, meta_file, "spin1z", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2x, meta_file, "spin2x", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2y, meta_file, "spin2y", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2z, meta_file, "spin2z", &wasRead), &status);
+  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freqStart22", &wasRead), &status);
+
+  /* format specific metadata */
+  if (strcmp(metadata_format, "NINJA1") == 0)
+  {
+    /* NINJA1 */
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_simulation_details, meta_file, "simulation-details", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_nr_group, meta_file, "nr-group", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_email, meta_file, "email", &wasRead), &status);
+  }
+  else if (strcmp(metadata_format, "NINJA2") == 0)
+  {
+    /* NINJA2 */
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_waveform_name, meta_file, "waveform-name", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_initial_separation, meta_file, "initial-separation", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_eccentricity, meta_file, "eccentricity", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_number_of_cycles_22, meta_file, "number-of-cycles-22", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_code, meta_file, "code", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_submitter_email, meta_file, "submitter-email", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_authors_emails, meta_file, "authors-emails", &wasRead), &status);
+  }
+  else
+  {
+    /* unknown metadata format - should not be executed */
+    fprintf(stderr, "error: unsupported metadata format: %s\n", metadata_format);
+    exit(1);
+  }
+
+  /*
+   * set metadata strings
+   */
+
+  /* common waveform */
+  snprintf(str_mass_ratio, HISTORY_COMMENT, "mass-ratio:%s", md_mass_ratio);
+  snprintf(str_spin1x, HISTORY_COMMENT, "spin1x:%s", md_spin1x);
+  snprintf(str_spin1y, HISTORY_COMMENT, "spin1y:%s", md_spin1y);
+  snprintf(str_spin1z, HISTORY_COMMENT, "spin1z:%s", md_spin1z);
+  snprintf(str_spin2x, HISTORY_COMMENT, "spin2x:%s", md_spin2x);
+  snprintf(str_spin2y, HISTORY_COMMENT, "spin2y:%s", md_spin2y);
+  snprintf(str_spin2z, HISTORY_COMMENT, "spin2z:%s", md_spin2z);
+  snprintf(str_creator, HISTORY_COMMENT, "creator:%s(git:%s)", PROGRAM_NAME, LALAPPS_VCS_ID);
+
+  /* format specific metadata */
+  if (strcmp(metadata_format, "NINJA1") == 0)
+  {
+    /* NINJA1 */
+    snprintf(str_freq_start_22, HISTORY_COMMENT, "freqStart22:%s", md_freq_start_22);
+    snprintf(str_simulation_details, HISTORY_COMMENT, "simulation-details:%s", md_simulation_details);
+    snprintf(str_nr_group, HISTORY_COMMENT, "nr-group:%s", md_nr_group);
+    snprintf(str_email, HISTORY_COMMENT, "email:%s", md_email);
+  }
+  else if (strcmp(metadata_format, "NINJA2") == 0)
+  {
+    /* NINJA2 */
+    snprintf(str_waveform_name, HISTORY_COMMENT, "waveform-name:%s", md_waveform_name);
+    snprintf(str_initial_separation, HISTORY_COMMENT, "inital-separation:%s", md_initial_separation);
+    snprintf(str_eccentricity, HISTORY_COMMENT, "eccentricity:%s", md_eccentricity);
+    snprintf(str_freq_start_22, HISTORY_COMMENT, "freq_start_22:%s", md_freq_start_22);
+    snprintf(str_number_of_cycles_22, HISTORY_COMMENT, "number-of-cycles-22:%s", md_number_of_cycles_22);
+    snprintf(str_code, HISTORY_COMMENT, "code:%s", md_code);
+    snprintf(str_submitter_email, HISTORY_COMMENT, "submitter-email:%s", md_submitter_email);
+    snprintf(str_authors_emails, HISTORY_COMMENT, "authors-emails:%s", md_authors_emails);
+  }
+  else
+  {
+    /* unknown metadata format - should not be executed */
+    fprintf(stderr, "error: unsupported metadata format: %s\n", metadata_format);
+    exit(1);
+  }
 
   /* define frame */
   frame = XLALFrameNew(&epoch, duration, "NR", 0, 1, detector_flags);
 
-  /* add metadata as FrHistory structures */
-  XLALFrHistoryAdd(frame, "simulation-details", sim);
-  XLALFrHistoryAdd(frame, "nr-group", group);
-  XLALFrHistoryAdd(frame, "email", mail);
-  XLALFrHistoryAdd(frame, "mass-ratio", ratio);
-  XLALFrHistoryAdd(frame, "spin1x", s1x);
-  XLALFrHistoryAdd(frame, "spin1y", s1y);
-  XLALFrHistoryAdd(frame, "spin1z", s1z);
-  XLALFrHistoryAdd(frame, "spin2x", s2x);
-  XLALFrHistoryAdd(frame, "spin2y", s2y);
-  XLALFrHistoryAdd(frame, "spin2z", s2z);
-  XLALFrHistoryAdd(frame, "freqStart22", freq);
-  XLALFrHistoryAdd(frame, "creator", creator);
+  /*
+   * add metadata as FrHistory structures
+   */
+
+  /* common metadata */
+  XLALFrHistoryAdd(frame, "creator", str_creator);
+  XLALFrHistoryAdd(frame, "mass-ratio", str_mass_ratio);
+  XLALFrHistoryAdd(frame, "spin1x", str_spin1x);
+  XLALFrHistoryAdd(frame, "spin1y", str_spin1y);
+  XLALFrHistoryAdd(frame, "spin1z", str_spin1z);
+  XLALFrHistoryAdd(frame, "spin2x", str_spin2x);
+  XLALFrHistoryAdd(frame, "spin2y", str_spin2y);
+  XLALFrHistoryAdd(frame, "spin2z", str_spin2z);
+
+  /* format specific metadata */
+  if (strcmp(metadata_format, "NINJA1") == 0)
+  {
+    /* NINJA1 */
+    XLALFrHistoryAdd(frame, "simulation-details", str_simulation_details);
+    XLALFrHistoryAdd(frame, "nr-group", str_nr_group);
+    XLALFrHistoryAdd(frame, "email", str_email);
+    XLALFrHistoryAdd(frame, "freqStart22", str_freq_start_22);
+  }
+  else if (strcmp(metadata_format, "NINJA2") == 0)
+  {
+    /* NINJA2 */
+    XLALFrHistoryAdd(frame, "waveform-name", str_waveform_name);
+    XLALFrHistoryAdd(frame, "initial-separation", str_initial_separation);
+    XLALFrHistoryAdd(frame, "eccentricity", str_eccentricity);
+    XLALFrHistoryAdd(frame, "freq_start_22", str_freq_start_22);
+    XLALFrHistoryAdd(frame, "number-of-cycles-22", str_number_of_cycles_22);
+    XLALFrHistoryAdd(frame, "code", str_code);
+    XLALFrHistoryAdd(frame, "submitter-email", str_code);
+    XLALFrHistoryAdd(frame, "authors-emails", str_authors_emails);
+  }
+  else
+  {
+    /* unknown metadata format - should not be executed */
+    fprintf(stderr, "error: unsupported metadata format: %s\n", metadata_format);
+    exit(1);
+  }
 
   /* loop over l & m values */
   for (l = MIN_L; l <= MAX_L; l++)
@@ -407,16 +541,31 @@ INT4 main(INT4 argc, CHAR **argv)
   free(nrMetaFile);
   free(nrDataDir);
   free(frame_name);
-  LALFree(simulation_details);
-  LALFree(nr_group);
-  LALFree(email);
-  LALFree(mass_ratio);
-  LALFree(spin1x);
-  LALFree(spin1y);
-  LALFree(spin1z);
-  LALFree(spin2x);
-  LALFree(spin2y);
-  LALFree(spin2z);
+  free(metadata_format);
+
+  /* common metadata */
+  LALFree(md_mass_ratio);
+  LALFree(md_spin1x);
+  LALFree(md_spin1y);
+  LALFree(md_spin1z);
+  LALFree(md_spin2x);
+  LALFree(md_spin2y);
+  LALFree(md_spin2z);
+  LALFree(md_freq_start_22);
+
+  /* NINJA1 metadata */
+  LALFree(md_simulation_details);
+  LALFree(md_nr_group);
+  LALFree(md_email);
+
+  /* NINJA2 metadata */
+  LALFree(md_waveform_name);
+  LALFree(md_initial_separation);
+  LALFree(md_eccentricity);
+  LALFree(md_number_of_cycles_22);
+  LALFree(md_code);
+  LALFree(md_submitter_email);
+  LALFree(md_authors_emails);
 
   /* config file */
   LALFree(meta_file->lines->list->data);
@@ -477,6 +626,7 @@ static void print_usage(FILE *ptr, CHAR *program)
       "[--version                 print version information and exit]\n"\
       "[--verbose                 display progress information]\n"\
       "[--debug-level    LEVEL    set the debug level]\n"\
+      "[--format         FORMAT   metadata format, defaults to NINJA1]\n"\
       " --nr-meta-file   FILE     file containing the details of the available\n"\
       "                           numerical relativity waveforms\n"\
       " --nr-data-dir    DIR      directory containing the numerical relativity\n"\

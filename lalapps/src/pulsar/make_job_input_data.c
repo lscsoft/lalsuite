@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (code!=EOF){
-    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[1], nstart-nseg);
+    fprintf(stderr,"File %s terminated unexpectedly at line %ld\n", argv[1], nstart-nseg);
     exit(1); 
   }
   fclose(fp);

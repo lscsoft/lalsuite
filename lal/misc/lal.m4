@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 2
+# serial 3
 
 AC_DEFUN([LAL_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -157,21 +157,6 @@ AC_DEFUN([LAL_ENABLE_MACROS],
       *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
     esac
   ], )
-])
-
-AC_DEFUN([LAL_ENABLE_NIGHTLY],
-[AC_ARG_ENABLE(
-  [nightly],
-  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
-  [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
-           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-      no) NIGHTLY_VERSION="";;
-      *) NIGHTLY_VERSION="${enableval}"
-         VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-      esac ],
-  [ NIGHTLY_VERSION="" ] )
-  AC_SUBST(NIGHTLY_VERSION)
 ])
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],

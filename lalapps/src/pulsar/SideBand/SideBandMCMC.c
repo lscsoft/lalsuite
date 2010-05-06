@@ -223,7 +223,7 @@ int main(int argc,char *argv[])
   RFDparams.maxf = maxfreq;
   RFDparams.Tobs = TParams->Tobs;
   RFDparams.nsft = TParams->nsft;
-  sprintf(RFDparams.file,uvar_fourierfile);
+  sprintf(RFDparams.file,"%s",uvar_fourierfile);
   fulldata = (SideBandDataSet *)LALMalloc(sizeof(SideBandDataSet));
   ReadSideBandData(&status,&RFDparams,&fulldata);
     

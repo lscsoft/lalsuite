@@ -850,27 +850,27 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
       switch (c) {
       case 'i':
 	temp=optarg;
-	sprintf(injectiondir,temp);
+	sprintf(injectiondir,"%s",temp);
 	break;
       case 'c':
 	temp=optarg;
-	sprintf(coresultsdir,temp);
+	sprintf(coresultsdir,"%s",temp);
 	break;
       case 'f':
 	temp=optarg;
-	sprintf(freqmeshfile,temp);
+	sprintf(freqmeshfile,"%s",temp);
 	break;
       case 'H':
 	temp=optarg;
-	sprintf(h0file,temp);
+	sprintf(h0file,"%s",temp);
 	break;
       case 'U':
 	temp=optarg;
-	sprintf(outfile,temp);
+	sprintf(outfile,"%s",temp);
 	break;
       case 'x':
 	temp=optarg;
-	sprintf(maxfile,temp);
+	sprintf(maxfile,"%s",temp);
 	break;
       case 'C':
 	conf=atof(optarg);

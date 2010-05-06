@@ -502,8 +502,8 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   if(verboseflag >= 3) {
     fprintf(stderr,"%% \n%% We are using the %s method.\n",mciparams->method);
     fprintf(stderr,"%% maximum vegas stages %d.\n",maxVegasStages);
-    fprintf(stderr,"%% number of warm-up calls %d.\n",warmupcalls);
-    fprintf(stderr,"%% number of main calls %d.\n",calls);
+    fprintf(stderr,"%% number of warm-up calls %zu.\n",warmupcalls);
+    fprintf(stderr,"%% number of main calls %zu.\n",calls);
   }
 
   xl = (REAL8 *) malloc(mciin->dimension*sizeof(REAL8)); 

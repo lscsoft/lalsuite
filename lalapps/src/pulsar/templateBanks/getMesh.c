@@ -637,12 +637,12 @@ getSearchRegion (LALStatus *status,
   if ( LALUserVarWasSet(&uvar->searchNeighbors) )
     {
       DopplerRegion cube = empty_DopplerRegion;
-      PulsarDopplerParams signal = empty_PulsarDopplerParams;
+      PulsarDopplerParams signal_params = empty_PulsarDopplerParams;
 
-      signal.Alpha = uvar->Alpha;
-      signal.Delta = uvar->Delta;
-      signal.fkdot[0]  = uvar->Freq;
-      signal.fkdot[1] = uvar->f1dot;
+      signal_params.Alpha = uvar->Alpha;
+      signal_params.Delta = uvar->Delta;
+      signal_params.fkdot[0]  = uvar->Freq;
+      signal_params.fkdot[1] = uvar->f1dot;
 
       /* set random-seed for MC grid-randomization */
       if ( LALUserVarWasSet(&uvar->randomSeed) )
@@ -652,7 +652,7 @@ getSearchRegion (LALStatus *status,
 
       /* construct MC doppler-cube around signal-location */
       TRY ( getMCDopplerCube(status->statusPtr,
-			     &cube, signal, uvar->searchNeighbors, params), status);
+			     &cube, signal_params, uvar->searchNeighbors, params), status);
 
       /* free previous skyRegionString */
       if ( ret.skyRegionString )
