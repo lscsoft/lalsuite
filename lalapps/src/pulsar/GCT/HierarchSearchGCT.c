@@ -768,7 +768,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;  
     
-    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
+    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints * nf1dot, fnameSemiCohCand, NULL);
         
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -804,7 +804,7 @@ int MAIN( int argc, char *argv[]) {
     SkyPosition skypos;
 
     SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-		  skyGridCounter * nf1dot,
+		  skyGridCounter * nf1dot + f1dotGridCounter,
 		  thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
     /*------------- calculate F-Statistic for each segment --------------*/
