@@ -13,11 +13,10 @@ export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
 
 # where to find the "reference" XML data products for the unit tests
 # TODO: these should be moved out of my home dir (e.g., to /usr/local/...)
-REFERENCE_XML_DIR=/home/pfcouvar/nmi/reference-data
+REFERENCE_XML_DIR=~cbc/nmi/share/reference-data/S6AVSR2
 
 # TODO: subtools need to be relocatable -- this is ugly but needed for now
-#export LSCSOFT_SRCDIR=${LSCSOFT_SRCDIR:-/home/pfcouvar/src}
-export LSCSOFT_SRCDIR=/home/pfcouvar/src
+export LSCSOFT_SRCDIR=~cbc/nmi/src
 
 # this is necessary so we can store our Metronome run dirs on NFS without DAGMan complaining
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
@@ -71,7 +70,7 @@ set -e
 
 # for each XML data product named in test_suite.txt, submit unit & diff tests
 # the unit tests will block until the build test is complete (or 24h timeout)
-for name in $(< $REFERENCE_XML_DIR/test_suite.txt); do
+for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
     cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/unit
     export _NMI_GIT_ID=$_NMI_GIT_ID_A
     export _NMI_GIT_BRANCH=$_NMI_GIT_BRANCH_A
