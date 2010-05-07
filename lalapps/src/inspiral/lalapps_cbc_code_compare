@@ -51,7 +51,7 @@ env | grep ^_NMI_
 
 ### build each given git tag
 
-cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/builds
+cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
 ./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
 ./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
 
