@@ -363,7 +363,7 @@ void shifter(float *data, int length, int shift){
   
   /* allocate memory */
   if (!(temp=(float *)LALMalloc(sizeof(float)*length))){
-    pout("Unable to allocate %d bytes of memory in shifter\n",
+    pout("Unable to allocate %lu bytes of memory in shifter\n",
 	 sizeof(float)*length);
     exit(1);
   }

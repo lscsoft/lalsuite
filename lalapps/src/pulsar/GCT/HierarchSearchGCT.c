@@ -768,7 +768,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;  
     
-    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints, fnameSemiCohCand, NULL);
+    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints * nf1dot, fnameSemiCohCand, NULL);
         
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -803,10 +803,9 @@ int MAIN( int argc, char *argv[]) {
 
     SkyPosition skypos;
 
-    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-		  skyGridCounter,thisScan.numSkyGridPoints,
-		  uvar_Freq, uvar_FreqBand);
-
+    SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+		  skyGridCounter * nf1dot + f1dotGridCounter,
+		  thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
     /*------------- calculate F-Statistic for each segment --------------*/
 
@@ -1103,7 +1102,7 @@ int MAIN( int argc, char *argv[]) {
             */
 
             /* Check U1 index value */
-            if ( ifreq != U1idx ) {
+            if ( (INT4)ifreq != U1idx ) {
               fprintf(stderr, "ERROR:  Incorrect Frequency-Index!\n ----> Seg: %03d  ifreq: %d   cg U1: %d \n",
                                 k, ifreq, U1idx);
               return(HIERARCHICALSEARCH_ECG);
@@ -1215,8 +1214,8 @@ int MAIN( int argc, char *argv[]) {
         ifdot++;  /* Increment ifdot counter BEFORE SET_CHECKPOINT */
         
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
-                      thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
+                      skyGridCounter * nf1dot + ifdot,
+                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 #ifdef EAH_BOINC
         SET_CHECKPOINT;
 #endif
@@ -1235,10 +1234,9 @@ int MAIN( int argc, char *argv[]) {
         skyGridCounter++;
 
         /* this is necessary here, because the checkpoint needs some information from here */
-        SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
-		      skyGridCounter,thisScan.numSkyGridPoints, \
-		      uvar_Freq, uvar_FreqBand);
-
+        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+                      skyGridCounter * nf1dot,
+                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }

@@ -280,7 +280,7 @@ int main(int argc, char *argv[]){
   fprintf( fpLog, "## Log file for MCInjectHoughS2\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
+  fprintf( fpLog, "%s", logstr);
   LALFree(logstr);
 
   /* copy contents of harmonics file into logfile */

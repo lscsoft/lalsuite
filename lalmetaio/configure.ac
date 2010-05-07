@@ -1,4 +1,4 @@
-AC_INIT([lalmetaio],[1.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalmetaio],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -39,6 +39,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalmetaio])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
 lalmetaio_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALMETAIO_VERSION],["$VERSION"],[LALMetaIO Version])
@@ -46,7 +49,6 @@ AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALMetaIO Configure Arguments])
 AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_DATE],["$lalmetaio_configure_date"],
                    [LALMetaIO Configure Date])
-
 
 # enable strict gcc flags
 LAL_ENABLE_GCC_FLAGS
@@ -102,10 +104,10 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

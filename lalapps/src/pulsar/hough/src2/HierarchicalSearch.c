@@ -595,11 +595,11 @@ int MAIN( int argc, char *argv[]) {
       fprintf( fpLog, "## Log file for HierarchicalSearch.c\n\n");
       fprintf( fpLog, "# User Input:\n");
       fprintf( fpLog, "#-------------------------------------------\n");
-      fprintf( fpLog, logstr);
+      fprintf( fpLog, "%s", logstr);
       LALFree(logstr);
 
       /* add code version ID */
-      fprintf ( fpLog, VCSInfoString );
+      fprintf ( fpLog, "%s", VCSInfoString );
 
       fclose (fpLog);
 

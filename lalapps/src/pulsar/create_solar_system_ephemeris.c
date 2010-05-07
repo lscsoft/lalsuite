@@ -213,7 +213,8 @@ int main(int argc, char **argv){
     sprintf(inputs.ephemfile, "%s/ephemeris/DE405.1950.2050", tempopath);
 
     /* set other inputs */
-    inputs.targName = "EARTH";
+    CHAR tmp[] = "EARTH";
+    inputs.targName = tmp;
     inputs.target = EARTH;
     inputs.year = 1998;
     inputs.nhre = 4;
@@ -286,7 +287,7 @@ inputs.noverlap);
     return 1;
   }
   
-  fprintf(stderr, "sizeof(coeffArray) = %d\n", sizeof(coeffArray));
+  fprintf(stderr, "sizeof(coeffArray) = %lu\n", sizeof(coeffArray));
   
   if(verbose){
     fprintf(stderr, "The array size for ephemeris file %s is %d.\n",

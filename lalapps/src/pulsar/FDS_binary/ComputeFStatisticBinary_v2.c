@@ -1496,7 +1496,7 @@ int ReadSFTData(void)
       errorcode=fread((void*)(SFTData[filenum]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
 	perror(GV.filelist[filenum]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
+	fprintf(stderr, "The SFT data was truncated.  Only read %zu not %d complex floats\n", errorcode, ndeltaf);
 	return 6;
       }
       SFTData[filenum]->fft->epoch=timestamps[filenum];
