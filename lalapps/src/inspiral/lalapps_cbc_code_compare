@@ -71,7 +71,7 @@ set -e
 # for each XML data product named in test_suite.txt, submit unit & diff tests
 # the unit tests will block until the build test is complete (or 24h timeout)
 for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
-    cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/unit
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/unit
     export _NMI_GIT_ID=$_NMI_GIT_ID_A
     export _NMI_GIT_BRANCH=$_NMI_GIT_BRANCH_A
     ./genunit.sh $REFERENCE_XML_DIR/$name $BUILD_A_GID \
@@ -92,7 +92,7 @@ for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
     export UNIT_B_GID=$(awk '/Global ID:/{print $3}' \
 	$SUBMIT_DIR/genunit.b.$name.out)
 
-    cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/diff
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/diff
 
     # workaround for nmi-support #6668
     sleep 30
