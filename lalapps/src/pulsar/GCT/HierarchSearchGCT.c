@@ -803,10 +803,9 @@ int MAIN( int argc, char *argv[]) {
 
     SkyPosition skypos;
 
-    SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta,
-		  skyGridCounter,thisScan.numSkyGridPoints,
-		  uvar_Freq, uvar_FreqBand);
-
+    SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+		  skyGridCounter * nf1dot,
+		  thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
     /*------------- calculate F-Statistic for each segment --------------*/
 
@@ -1215,8 +1214,8 @@ int MAIN( int argc, char *argv[]) {
         ifdot++;  /* Increment ifdot counter BEFORE SET_CHECKPOINT */
         
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter + (REAL4)ifdot / (REAL4)nf1dot,
-                      thisScan.numSkyGridPoints, uvar_Freq, uvar_FreqBand);
+                      skyGridCounter * nf1dot + ifdot,
+                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 #ifdef EAH_BOINC
         SET_CHECKPOINT;
 #endif
@@ -1235,10 +1234,9 @@ int MAIN( int argc, char *argv[]) {
         skyGridCounter++;
 
         /* this is necessary here, because the checkpoint needs some information from here */
-        SHOW_PROGRESS(dopplerpos.Alpha,dopplerpos.Delta, \
-		      skyGridCounter,thisScan.numSkyGridPoints, \
-		      uvar_Freq, uvar_FreqBand);
-
+        SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
+                      skyGridCounter * nf1dot,
+                      thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 
         XLALNextDopplerSkyPos( &dopplerpos, &thisScan );
       }
