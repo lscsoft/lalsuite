@@ -794,7 +794,7 @@ void LALPSpinInspiralRDEngine (
   /* set initial values of dynamical variables*/
   initPhi = params->startPhase;
 
-  fprintf(stderr,"initphi=%11.3e\n",initPhi);
+  //fprintf(stderr,"initphi=%11.3e\n",initPhi);
 
   initomega = params->fLower * unitHz;
   initv = pow( initomega, oneby3 );
@@ -1620,8 +1620,11 @@ void LALPSpinInspiralRDEngine (
    z1  = - MultSphHarm2P2.im - MultSphHarm2M2.im;
    z2  = - MultSphHarm2P2.re + MultSphHarm2M2.re;
    
-   /*fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
-     fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);*/
+   /*   fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
+	fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);*/
+
+   /*fprintf(stderr," ** PSIRD WARNING ** : y1=%11.3e  y2=%11.3e\n",y_1,y_2);
+     fprintf(stderr," ** PSIRD WARNING ** : z1=%11.3e  z2=%11.3e\n",z1,z2);*/
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
    for ( i = 0; i < length; i++)
@@ -1653,6 +1656,9 @@ void LALPSpinInspiralRDEngine (
    z1  = - MultSphHarm2P1.im - MultSphHarm2M1.im;
    z2  = - MultSphHarm2P1.re + MultSphHarm2M1.re;
 
+   /*fprintf(stderr," ** PSIRD WARNING ** : y1=%11.3e  y2=%11.3e\n",y_1,y_2);
+     fprintf(stderr," ** PSIRD WARNING ** : z1=%11.3e  z2=%11.3e\n",z1,z2);*/
+
    for ( i = 0; i < length; i++)
    {
      x1 = h21->data[2*i];
@@ -1677,7 +1683,7 @@ void LALPSpinInspiralRDEngine (
      x1 = h20->data[2*i];
      x2 = h20->data[2*i+1];
      sig1->data[i]+= x1 * y_1;
-     sig2->data[i]+= 0.*x1 * z1;
+     sig2->data[i]+= x2 * z1;
    }
 
    xlalStatus33 = XLALSphHarm( &MultSphHarm3P3, 3, 3, inc , phiangle );
@@ -1770,6 +1776,8 @@ void LALPSpinInspiralRDEngine (
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
+
+   /*pippo*/
 
   /*End*/
    

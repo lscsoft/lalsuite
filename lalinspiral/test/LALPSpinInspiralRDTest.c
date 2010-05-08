@@ -122,7 +122,7 @@ int main() {
 
     ppnParams.deltaT = 1.0 / 4096.0 /4.;
     ppnParams.fStop  = ff;
-    ppnParams.phi    = LAL_PI/3.;
+    ppnParams.phi    = 0.;
     injParams.coa_phase=ppnParams.phi;
 
     /* --- now we can call the injection function --- */
