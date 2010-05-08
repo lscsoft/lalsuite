@@ -840,7 +840,8 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	
 	deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
-	
+
+FILE* file=fopen("TempSignal.dat", "w");	
 	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -857,7 +858,9 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
 		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);		
+fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
 	}
+fclose(file);
 	destroyVariables(&intrinsicParams);
 }
 
@@ -880,6 +883,8 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
     upper = floor(dataPtr->fHigh / deltaF);
 	
 	//for(i=1; i<=1; i++){
+//fprintf(stdout, "freqData1->data[1].re %lg, freqData1->data[1].im %lg, noise[1] %lg\n", 
+//freqData1->data[1].re, freqData1->data[1].im, dataPtr->oneSidedNoisePowerSpectrum->data->data[1]);
     for (i=lower; i<=upper; ++i){  	  	  
       /* compute squared difference & 'chi-squared': */
       //diffRe       = data1re - data2re;         // Difference in real parts...
@@ -888,6 +893,7 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 	  overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
 		/ dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
 	}
+//fprintf(stdout, "Overlap %lg, lower %d upper %d\n", overlap, lower, upper);
 	return overlap;
 }
 

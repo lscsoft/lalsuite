@@ -396,11 +396,21 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 		
 		/* Actually inject the waveform */
 		for(j=0;j<inj8Wave->data->length;j++) IFOdata->timeData->data->data[j]+=inj8Wave->data->data[j];
+
+FILE* file=fopen("InjSignal.dat", "w");
+//FILE* file2=fopen("Noise.dat", "w");
 		for(j=0;j<injF->data->length;j++){
+//fprintf(file2, "%lg %lg \t %lg\n", IFOdata->freqData->deltaF*j, IFOdata->freqData->data->data[j].re, IFOdata->freqData->data->data[j].im);
+
 			IFOdata->freqData->data->data[j].re+=injF->data->data[j].re;
 			IFOdata->freqData->data->data[j].im+=injF->data->data[j].im;
+fprintf(file, "%lg %lg \t %lg\n", IFOdata->freqData->deltaF*j, injF->data->data[j].re, injF->data->data[j].im);
 		}
 		fprintf(stdout,"Injected SNR in detector %s = %g\n",IFOdata->detector->frDetector.name,sqrt(SNR));
+fclose(file);		
+//fclose(file2);
+		
+		
 		XLALDestroyREAL8TimeSeries(inj8Wave);
 		XLALDestroyCOMPLEX16FrequencySeries(injF);
 		IFOdata=IFOdata->next;

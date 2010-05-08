@@ -38,60 +38,48 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	IFOdata->modelDomain = timeDomain;
 	
-	
-	REAL4 m1=*(REAL4 *)getVariable(IFOdata->modelParams,"m1");			/* binary masses */	
-	REAL4 m2=*(REAL4 *)getVariable(IFOdata->modelParams,"m2");
-	
-	REAL4 dist=1.0;//*(REAL4 *)getVariable(IFOdata->modelParams,"dist");      /* binary distance SET AS FIDUCIAL  - 1 Mpc*/
-	REAL4 inc=*(REAL4 *)getVariable(IFOdata->modelParams,"inc");		/* inclination and coalescence phase */
-	REAL4 phii=*(REAL4 *)getVariable(IFOdata->modelParams,"phii");
-	
-	REAL8 desired_tc = *(REAL8 *)getVariable(IFOdata->modelParams,"time");  
-	
-	REAL4 f_min = IFOdata->fLow; 
-	REAL4 f_max = IFOdata->fHigh;			/* start and stop frequencies */
-	
-	
-	REAL8 deltaT = IFOdata->timeData->deltaT;				/* waveform-generation data-sampling interval */
-	INT4 order = 4;										/* PN order */
-	
-	/* Other variables. */
 	INT4 i;                      /* index */
 	PPNParamStruc params;         /* input parameters */
-	CoherentGW waveform;          /* output waveform */
+	CoherentGW waveform;          /* output waveform */	
+
+	//params.position.latitude = *(REAL8 *)getVariable(IFOdata->modelParams,"declination");
+	//params.position.longitude = *(REAL8 *)getVariable(IFOdata->modelParams,"rightascension");
+	//params.position.system = COORDINATESYSTEM_EQUATORIAL;
+	
+	//params.psi=*(REAL8 *)getVariable(IFOdata->modelParams,"polarisation");
+
+	params.eta = *(REAL8 *)getVariable(IFOdata->modelParams,"massratio");
+	params.mTot = (*(REAL8 *)getVariable(IFOdata->modelParams,"chirpmass")) / pow(params.eta, 3.0/5.0);
+	//params.inc = *(REAL8 *)getVariable(IFOdata->modelParams,"inclination");
+	params.phi = *(REAL8 *)getVariable(IFOdata->modelParams,"phase");
+			
+	
+	REAL4 dist=1.0;//*(REAL8 *)getVariable(IFOdata->modelParams,"distance");      /* binary distance SET AS FIDUCIAL  - 1 Mpc*/
+	params.d = dist*1.0e6*LAL_PC_SI;
+		
+	REAL8 desired_tc = *(REAL8 *)getVariable(IFOdata->modelParams,"time");  
+	params.epoch.gpsSeconds = IFOdata->timeData->epoch.gpsSeconds;
+	params.epoch.gpsNanoSeconds = IFOdata->timeData->epoch.gpsNanoSeconds;
+	
+	params.fStartIn = IFOdata->fLow; 
+	params.fStopIn = IFOdata->fHigh;			/* start and stop frequencies */
+	params.deltaT = IFOdata->timeData->deltaT;				/* waveform-generation data-sampling interval */
+	params.lengthIn = 0;
+	
+	INT4 order = 4;										/* PN order */
+	params.ppn = NULL;									/* PPN parameter*/
+
+
 
 	/* Make sure that values won't crash the system or anything. */
 //	CHECKVAL( order, -1, 5 );
 //	CHECKVAL( dt, LAL_REAL4_MIN, LAL_REAL4_MAX );
 //	CHECKVAL( deltat, 0.0, LAL_REAL4_MAX );
 	
-	
-	/*******************************************************************
-	 * INPUT SETUP                                                     *
-	 *******************************************************************/
-	
-	/* Fixed parameters. Set them when injecting....*/
-	params.position.latitude = 0.0;//*(REAL4 *)getVariable(ifo->modelParams,"latitude");
-	params.position.longitude = 0.0;//*(REAL4 *)getVariable(ifo->modelParams,"longitude");
-	params.position.system = COORDINATESYSTEM_EQUATORIAL;
-	params.psi = 0.0;
-	params.lengthIn = 0;
-	params.epoch.gpsSeconds = IFOdata->timeData->epoch.gpsSeconds;
-	params.epoch.gpsNanoSeconds = IFOdata->timeData->epoch.gpsNanoSeconds;
+
 
 	/* Variable parameters. */
 
-	params.deltaT = deltaT;
-	params.mTot = m1 + m2;
-	params.eta = m1*m2/( params.mTot*params.mTot );
-	params.inc = inc;
-	params.phi = phii;//0.0;
-	params.d = dist*LAL_PC_SI*1.0e3;
-	params.fStartIn = f_min;
-	params.fStopIn = f_max;
-
-	/* PPN parameter. */
-	params.ppn = NULL;
 	LALSCreateVector( &status, &(params.ppn), order + 1 );
 	params.ppn->data[0] = 1.0;
 	if ( order > 0 )
@@ -116,7 +104,8 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	/* This is the difference between the desired start time and the actual start time */
 	REAL8 timeShift = desired_tc - (chirplength + IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
 	
-	//printf("Timeshift %g\n", timeShift);
+	
+fprintf(stdout, "Timeshift %g\n", timeShift);
 	
 	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
 		fprintf(stderr, "ERROR: Desired tc is before start of segment\n");
@@ -142,8 +131,8 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	/* Shifting waveform to account for timeShift: */
 			
 	REAL8 p, ap, ac;
-	INT4 integerLeftShift = ceil(-timeShift/deltaT);
-	REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
+	INT4 integerLeftShift = ceil(-timeShift/IFOdata->timeData->deltaT);
+	REAL8 fractionalRightShift = (IFOdata->timeData->deltaT*integerLeftShift+timeShift)/IFOdata->timeData->deltaT;
 		
 	//printf("deltaT %g, iLS %d, fRS %g\n", deltaT, integerLeftShift, fractionalRightShift);
 	//printf("t %d, a %d, phi %d\n", IFOdata->timeData->data->length, waveform.a->data->length, waveform.phi->data->length);
@@ -152,12 +141,15 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 	REAL8 *phiData = waveform.phi->data->data;
 	REAL4 *aData = waveform.a->data->data;
 
+FILE* file=fopen("TempAPhi.dat", "w");	
 	//printf("iLS %d, fRS %g, length %d\n", integerLeftShift, fractionalRightShift, length);
 	
 	for(i=0; i<length; i++){
+fprintf(file, "%lg \t %lg\n", phiData[i], aData[i]);
+	
 		//printf("i %d integerLeftShift %d (waveform.phi->data->length) %d i+integerLeftShift %d\n", 
 			//i, integerLeftShift, (waveform.phi->data->length), i+integerLeftShift);
-		if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1)
+		if(IFOdata->timeData->deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1)
 			|| (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
 			IFOdata->timeModelhPlus->data->data[i] = 0;
 			IFOdata->timeModelhCross->data->data[i] = 0;		
@@ -170,6 +162,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 			IFOdata->timeModelhCross->data->data[i] = ap*sin(p);
 		}
 	}
+fclose(file);
 /*			
 			REAL8 dx = deltat/dt;
 			REAL8 xMax = waveform.a->data->length - 1;

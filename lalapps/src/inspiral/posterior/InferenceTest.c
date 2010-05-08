@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 	//TemplateDumpTest();
 	  
 	/* PTMCMC test */
-	PTMCMCTest();
+	//PTMCMCTest();
 	  
 
   }
@@ -741,6 +741,7 @@ void DataTest(void)
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
 	
+	
 	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
     addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
     addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
@@ -750,12 +751,13 @@ void DataTest(void)
     addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
     addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
-    fprintf(stdout, " trying 'templateLAL' likelihood...\n");
+   /* fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorF2;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
     numberI4 = LAL_PNORDER_TWO;
-    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
-    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);*/
+	 fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood..\n");
+    likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
     nulllikelihood = NullLogLikelihood(runstate->data);
 printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nulllikelihood, likelihood-nulllikelihood);
 
