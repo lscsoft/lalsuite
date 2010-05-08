@@ -511,7 +511,8 @@ void LALPSpinInspiralRDForInjection (
   /* Call the engine function */
   /* Uncomment the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
-  params->fCutoff     = ppnParams->fStop;
+  //params->fCutoff     = ppnParams->fStop;
+  params->startPhase  = ppnParams->phi;
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
@@ -791,7 +792,10 @@ void LALPSpinInspiralRDEngine (
   */
 
   /* set initial values of dynamical variables*/
-  initPhi = params->inclination;
+  initPhi = params->startPhase;
+
+  fprintf(stderr,"initphi=%11.3e\n",initPhi);
+
   initomega = params->fLower * unitHz;
   initv = pow( initomega, oneby3 );
 
@@ -802,9 +806,7 @@ void LALPSpinInspiralRDEngine (
      The modulus of the initial angular momentum is fixed by m1,m2 and 
      initial frequency.
      I (Riccardo) then perform two rotations to bring the initial 
-     total angular momentum J along the new z axis. 
-     Then orbitTheta0 and orbitPhi0 will be automatically fixed, no matter 
-     which values are passed by the param structure. */
+     total angular momentum J along the new z axis. */
   
   LNmag= params->eta * params->totalMass * params->totalMass / initv;
 
@@ -1139,8 +1141,8 @@ void LALPSpinInspiralRDEngine (
   /* The analytical formula for omega_match is in the do-while loop. However
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
-  omegamatch = params->fCutoff * unitHz;
-  //omegamatch = 0.0548;
+  //omegamatch = params->fCutoff * unitHz;
+  omegamatch = 0.0548;
   //fprintf(stdout,"** LALPSIRD: omegamatch=%12.6f\n",omegamatch);
 
   /* The number of Ring Down modes is hard-coded here, it cannot exceed 3*/
@@ -1585,8 +1587,8 @@ void LALPSpinInspiralRDEngine (
    * Compute the spherical harmonics required for constructing (h+,hx).
    -------------------------------------------------------------------*/
   /* The angles theta and phi for the spherical harmonics are set here*/
-  inc = params->orbitTheta0;
-  phiangle = params->orbitPhi0;
+  inc = params->inclination;
+  phiangle = 0.;
 
   /* -----------------------------------------------------------------
    * Attaching the (2,2), (2,1) and (2,0) Spherical Harmonic
@@ -1671,10 +1673,11 @@ void LALPSpinInspiralRDEngine (
 
    for ( i = 0; i < length; i++)
    {
+     //     if (i==0) fprintf(stderr,"Scrivo 20\n");
      x1 = h20->data[2*i];
      x2 = h20->data[2*i+1];
      sig1->data[i]+= x1 * y_1;
-     sig2->data[i]+= x1 * z1;
+     sig2->data[i]+= 0.*x1 * z1;
    }
 
    xlalStatus33 = XLALSphHarm( &MultSphHarm3P3, 3, 3, inc , phiangle );
