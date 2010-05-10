@@ -1324,7 +1324,7 @@ void PrintLogFile (LALStatus       *status,
   fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
+  fprintf( fpLog, "%s", logstr);
   LALFree(logstr);
 
   /* copy contents of skypatch file into logfile */

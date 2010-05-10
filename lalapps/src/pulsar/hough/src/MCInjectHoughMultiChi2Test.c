@@ -1730,7 +1730,7 @@ void PrintLogFile2 (LALStatus       *status,
   fprintf( fpLog, "## LOG FILE FOR MC Inject Hough\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, logstr);
+  fprintf( fpLog, "%s", logstr);
   LALFree(logstr);
 
   /* copy contents of linefile if necessary */

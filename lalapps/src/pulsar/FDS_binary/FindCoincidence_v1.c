@@ -1078,7 +1078,7 @@ INT4 OutputCoincidence(char *outdir,REAL8 min_f,REAL8 max_f,CoResults *co_result
 
   /* define output file name */
   sprintf(temp,"%s/coincidence_%f-%f.data",outdir,min_f,max_f);
-  sprintf(outfile,temp);
+  sprintf(outfile,"%s",temp);
 
   /* open output file */
   fp=fopen(outfile,"a");
@@ -1178,31 +1178,31 @@ int ReadCommandLine(int argc,char *argv[])
       break;  
     case 'd':
       temp=optarg;
-      sprintf(sdatasetparamsfile,temp);
+      sprintf(sdatasetparamsfile,"%s",temp);
       break;
     case 'r':
       temp=optarg;
-      sprintf(presultsdir,temp);
+      sprintf(presultsdir,"%s",temp);
       break;
     case 'R':
       temp=optarg;
-      sprintf(sresultsdir,temp);
+      sprintf(sresultsdir,"%s",temp);
       break;
     case 'o':
       temp=optarg;
-      sprintf(coresultsdir,temp);
+      sprintf(coresultsdir,"%s",temp);
       break;
     case 'q':
       temp=optarg;
-      sprintf(freqmeshfile,temp);
+      sprintf(freqmeshfile,"%s",temp);
       break;
     case 'E':
       temp=optarg;
-      sprintf(ephdir,temp);
+      sprintf(ephdir,"%s",temp);
       break;
     case 'y':
       temp=optarg;
-      sprintf(yr,temp);
+      sprintf(yr,"%s",temp);
       break;
     case 'h':
       /* print usage/help message */

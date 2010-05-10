@@ -1460,7 +1460,7 @@ WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
   }
 
   fprintf (fplog, "%%%% LOG-FILE for ComputeFStatistic run\n\n");
-  fprintf (fplog, log_string);
+  fprintf (fplog, "%s", log_string);
   fclose (fplog);
 
 

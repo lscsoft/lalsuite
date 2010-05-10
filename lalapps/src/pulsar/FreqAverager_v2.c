@@ -202,7 +202,7 @@ int main(int argc, char *argv[]){
     fprintf( fpLog, "## LOG FILE FOR SFT PSD COMPUTATION\n\n");
     fprintf( fpLog, "# User Input:\n");
     fprintf( fpLog, "#-------------------------------------------\n");
-    fprintf( fpLog, logstr);
+    fprintf( fpLog, "%s", logstr);
     LALFree(logstr);
     
     /* append an ident-string defining the exact CVS-version of the code used */

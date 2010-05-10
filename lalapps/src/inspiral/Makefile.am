@@ -114,7 +114,8 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
-dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass
+dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass \
+                   lalapps_cbc_code_compare
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
