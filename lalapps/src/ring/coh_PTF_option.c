@@ -72,6 +72,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "gps-start-time",          required_argument, 0, 'a' },
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
+    { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "h1-channel-name",            required_argument, 0, 'c' },
     { "h1-frame-cache",             required_argument, 0, 'D' },
     { "h2-channel-name",            required_argument, 0, 'x' },
@@ -106,14 +107,13 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "inverse-spec-length",     required_argument, 0, 'T' },
     { "trig-start-time",         required_argument, 0, 'u' },
     { "trig-end-time",           required_argument, 0, 'U' },
-    { "sub-bank-size",           required_argument, 0, 'v' },
     { "block-duration",          required_argument, 0, 'w' },
     { "pad-data",                required_argument, 0, 'W' },
     { "right-ascension",         required_argument, 0, 'f' },
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -258,9 +258,6 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'U': /* trig-end-time */
         localparams.trigEndTimeNS = (INT8) atol( optarg ) * LAL_INT8_C(1000000000);
-        break;
-      case 'v': /* bank veto sub bank size */
-        localparams.BVsubBankSize = atoi( optarg);
         break;
       case 'w': /* block-duration */
         localparams.duration = atof( optarg );
@@ -408,15 +405,15 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
     fprintf(stderr,"code and not --bank-file.\n");
     sanity_check(! params->bankFile );
   }
-  if ( params->doBankVeto && (! params->BVsubBankSize) )
+  if ( params->doBankVeto && (! params->bankVetoBankName) )
   {
     fprintf(stderr, "When using --do-bank-veto you must also supply ");
-    fprintf(stderr, "--sub-bank-size. \n" );
-    sanity_check(!( params->doBankVeto && (! params->BVsubBankSize)));
+    fprintf(stderr, "--bank-veto-templates. \n" );
+    sanity_check(!( params->doBankVeto && (! params->bankVetoBankName)));
   }
-  if ( params->BVsubBankSize && (! params->doBankVeto) )
+  if ( params->bankVetoBankName && (! params->doBankVeto) )
   {
-    fprintf(stderr, "Supplying --sub-bank-size will do nothing if ");
+    fprintf(stderr, "Supplying --bank-veto-templates will do nothing if ");
     fprintf(stderr, "--do-bank-veto is not given. \n" );
   }
   if ( params->doAutoVeto && (! (params->autoVetoTimeStep && params->numAutoPoints)))
@@ -452,8 +449,18 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--debug-level=dbglvl       set the LAL debug level\n" );
 
   fprintf( stderr, "\ndata reading options:\n" );
-  fprintf( stderr, "--frame-cache=cachefile    name of the frame cache file\n" );
-  fprintf( stderr, "--channel-name             data channel to analyze\n" );
+  fprintf( stderr, "--h1-data                  Analyze h1 data \n" );
+  fprintf( stderr, "--h2-data                  Analyze h2 data \n" );
+  fprintf( stderr, "--l1-data                  Analyze l1 data \n" );
+  fprintf( stderr, "--v1-data                  Analyze v1 data \n" );
+  fprintf( stderr, "--h1-frame-cache=cachefile    name of the frame cache file\n" );
+  fprintf( stderr, "--h2-frame-cache=cachefile    name of the frame cache file\n" );
+  fprintf( stderr, "--l1-frame-cache=cachefile    name of the frame cache file\n" );
+  fprintf( stderr, "--v1-frame-cache=cachefile    name of the frame cache file\n" );
+  fprintf( stderr, "--h1-channel-name             data channel to analyze\n" );
+  fprintf( stderr, "--h2-channel-name             data channel to analyze\n" );
+  fprintf( stderr, "--l1-channel-name             data channel to analyze\n" );
+  fprintf( stderr, "--v1-channel-name             data channel to analyze\n" );
   fprintf( stderr, "--gps-start-time=tstart    GPS start time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-start-time-ns=tstartns  nanosecond residual of start time\n" );
   fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
@@ -483,37 +490,38 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-file=name           Location of tmpltbank xml file\n" );
+  fprintf( stderr, "--spin-bank=name   Location of output spin bank for spin checker or input spin bank for cohPTF_inspiral \n");
+  fprintf( stderr, "--non-spin-bank=name   Location of output non spin bank for spin checker or input non spin bank for cohPTF_inspiral \n");
   fprintf( stderr, "\nfiltering options:\n" );
-  fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
   fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
   fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
+  fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
+  fprintf( stderr, "--non-spin-snr2-threshold=value SNR squared value over which a non spin trigger is considered found for spin checker program\n" );
+  fprintf( stderr, "--spin-snr2-threshold=value SNR squared value over which a spin trigger is considered found for spin checker program\n" );
   fprintf( stderr, "--trig-time-window=window Keep loudest trigger within window seconds\n" );
   fprintf( stderr, "--do-null-stream Calculate Null SNR for potential triggers\n");
   fprintf( stderr, "--do-trace-snr Calculate Trace SNR for potential triggers \n");
   fprintf( stderr, "--do-bank-veto Calculate Bank Veto for potential triggers \n");
-  fprintf( stderr, "--sub-bank-size Number of templates to use for bank veto \n");
   fprintf( stderr, "--bank-veto-templates File containing templates to use for bank veto \n");
   fprintf( stderr, "--do-auto-veto Calculate Auto Veto for potential triggers \n");
   fprintf( stderr, "--num-auto-chisq-points Number of points to use in calculating auto veto \n");
   fprintf( stderr, "--auto-veto-time-step Seperation between points for auto veto \n");
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
-  fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec\n" );
-  fprintf( stderr, "--trig-end-time=sec        output only triggers before GPS time sec\n" );
+  fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec. CURRENTLY NONFUNCTIONAL\n" );
+  fprintf( stderr, "--trig-end-time=sec        output only triggers before GPS time sec. CURRENTLY NONFUNCTIONAL\n" );
   fprintf( stderr, "--ifo-tag=string           set ifotag to string for file naming\n" );
   fprintf( stderr, "--user-tag=string          set the process_params usertag to string\n" );
 
   fprintf( stderr, "\nintermediate data output options:\n" );
   fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );
   fprintf( stderr, "--write-data               write data after injection and conditioning\n" );
-  fprintf( stderr, "--write-response           write response function used\n" );
-  fprintf( stderr, "--write-spectrum           write computed data power spectrum\n" );
   fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
   fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
   fprintf( stderr, "--write-filter-output      write filtered data segments\n" );

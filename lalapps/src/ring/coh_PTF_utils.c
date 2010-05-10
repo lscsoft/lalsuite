@@ -18,6 +18,9 @@ void calculate_bmatrix(
   UINT4 PTFMlen
   )
 {
+  // This function calculates the eigenvectors and eigenvalues of the
+  // coherent "B" matrix. This is the matrix that appears as B^{-1} in the
+  // original definition of SNR.
   UINT4 i,j,k;
   UINT4 vecLengthSquare = vecLength*vecLength;
   REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
@@ -92,6 +95,9 @@ void calculate_rotated_vectors(
     UINT4 vecLength,
     UINT4 vecLengthTwo)
 {
+  // This function calculates the coherent time series and rotates them into
+  // the basis where the B matrix is the identity.
+  
   UINT4 j,k;  
   REAL4 v1[vecLengthTwo],v2[vecLengthTwo];
 

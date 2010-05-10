@@ -88,8 +88,15 @@ cohPTFTemplate (
     )
 /* </lalVerbatim> */
 {
+
+  // This function generates Q_{1-5} as a function of time and then FFTs
+  // them before returning Q(f) in fcTmplt->PTFQtilde
+
+
+  // It would be nice to use the stuff in LAL to do most of this ....
 /*  LALStatus status;
   LAL_CALL (LALFindChirpPTFTemplate( &status,fcTmplt,InspTmplt,params), &status);*/
+
   UINT4 errcode;
   /* local variables */
   UINT4 i, N;
@@ -244,6 +251,11 @@ cohPTFNormalize(
 
 /* </lalVerbatim> */
 {
+  // This function calculates the various filters used to calculate SNR
+  // It calculates (Q_0 | Q_0), (Q | s) and if necessary it will calculate
+  // (Q_0 | Q_{\pi/2}) as well (for the spin checker code).
+
+
   UINT4         i, j, k, kmin, len, kmax,numPoints,vecLength;
   REAL8         f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
   COMPLEX8     *qtilde, *inputData;
@@ -446,6 +458,8 @@ cohPTFTemplateOverlaps(
     REAL8Array                 *PTFM
     )
 {
+  // This function calculates the real part of the overlap between two templates
+
   UINT4         i, j, k, kmin, kmax, len,vecLen;
   REAL8         f_min, deltaF, fFinal,test1,test2;
   COMPLEX8     *PTFQtilde1   = NULL;
@@ -519,6 +533,8 @@ cohPTFComplexTemplateOverlaps(
     COMPLEX8Array                 *PTFM
     )
 {
+
+  // This function calculates the complex overlap between two templates
   UINT4         i, j, k, kmin, kmax, len,vecLen;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde1   = NULL;
@@ -567,8 +583,6 @@ cohPTFComplexTemplateOverlaps(
       }
       PTFM->data[vecLen * i + j].re *= 4.0 * deltaF ;
       PTFM->data[vecLen * i + j].im *= 4.0 * deltaF ;
-      /* Use the symmetry of M */
-      /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
 //      fprintf(stderr, "PTFM: %e \n",PTFM->data[vecLen * i + j].re,PTFM->data[vecLen * i + j].im);
     }
   }
@@ -584,6 +598,9 @@ void cohPTFBankFilters(
     COMPLEX8VectorSequence     *PTFqVec,
     COMPLEX8VectorSequence     *PTFBankqVec)
 {
+  // This function calculates (Q|s) for the bank veto. It only returns the 
+  // middle half of the time series with some buffer to allow for time shifts
+
   UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
   REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
   COMPLEX8       *inputData,*qtilde;
@@ -673,6 +690,8 @@ REAL4 cohPTFDataNormalize(
     COMPLEX8FrequencySeries    *sgmnt,
     REAL4FrequencySeries       *invspec)
 {
+  // This function is not used and will be removed
+
   REAL4 overlap = 0;
   UINT4 k,kmin,kmax,len;
   REAL8 f_min, fFinal,deltaF;
@@ -708,6 +727,9 @@ void autoVetoOverlaps(
     UINT4                      timeStepPoints,
     UINT4                      ifoNumber )
 {
+  // This function calculate (Q | Q(delta_t) ) at various different points
+  // for the auto veto
+
   UINT4          i, j, k, kmin, len, kmax,vecLen,numPoints;
   REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y;
   COMPLEX8       *qtilde;
