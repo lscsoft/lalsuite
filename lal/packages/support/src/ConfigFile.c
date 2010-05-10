@@ -628,6 +628,54 @@ LALReadConfigVariable (LALStatus *status,
 
 
 int
+XLALConfigSectionExists(const LALParsedDataFile *cfgdata,  /**< [in] pre-parsed config-data */
+			            const CHAR *secName)		       /**< [in] section-name to read */
+{
+
+  UINT4 i;
+  size_t sec_searchlen = 0;
+
+  /* This traps coding errors in the calling routine. */
+  /* If there's no config file, or no section, then   */
+  /* the section isn;t in the config file, return 0   */
+  if (secName == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return 0;
+    }
+
+  sec_searchlen = strlen(secName);
+
+  if (cfgdata == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return 0;
+    }
+
+  if (cfgdata->lines == NULL)
+    {
+      fprintf (stderr, CONFIGFILEH_MSGENULL);
+      return 0;
+    }
+
+  for (i = 0; i < cfgdata->lines->nTokens; i++)
+    {
+      /* Is this the start of a new section? */
+      if (cfgdata->lines->tokens[i][0] == '[')
+        {
+          /* If we're looking for a particular section, is this it? */
+          if (strncmp(cfgdata->lines->tokens[i] + 1, secName, sec_searchlen) == 0)
+            {
+              return 1;
+            }
+         }
+    }
+
+  return 0;
+}
+
+
+int
 XLALReadConfigVariable (void *varp,			  /**< [out] result gets written here! */
 			const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
 			const LALConfigVar *param,	      /**< [in]  var-name, fmt-string, strictness */

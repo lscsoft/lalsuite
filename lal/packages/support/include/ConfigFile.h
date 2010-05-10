@@ -128,6 +128,8 @@ void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
 int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
 
+int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
+
 void
 LALReadConfigBOOLVariable (LALStatus *,
 			  BOOLEAN *varp,
