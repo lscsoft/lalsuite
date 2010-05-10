@@ -86,8 +86,8 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 4.;
-    injParams.mass2 = 4.;
+    injParams.mass1 = 10.;
+    injParams.mass2 = 10.;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
