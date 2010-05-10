@@ -101,12 +101,11 @@ int main() {
     //injParams.f_final  = ff;
     omi=injParams.f_lower*(injParams.mass1+injParams.mass2)*LAL_MTSUN_SI*LAL_PI;
 
-    /* Polar angles of the source arrival direction*/
-    //Inclination sets the initial phase
+    //Inclination sets the angle between the line of site and initial J
     injParams.inclination  = 0.;
-    // theta0 fixes the angle between the observation direction and J
+    /* Polar angles of the source arrival direction and the usual polarization 
+       angle entering the pattern functions*/ 
     injParams.theta0       = 0.;
-    // phi0 is the angle between the x axis in a tetrad set by J and the projection of the line of sight in the plane orthognal to J
     injParams.phi0         = 0.;
     injParams.polarization = 0.;
 
@@ -122,6 +121,7 @@ int main() {
 
     ppnParams.deltaT = 1.0 / 4096.0 /4.;
     ppnParams.fStop  = ff;
+    /* Initial shift in the phase*/
     ppnParams.phi    = 0.;
     injParams.coa_phase=ppnParams.phi;
 
