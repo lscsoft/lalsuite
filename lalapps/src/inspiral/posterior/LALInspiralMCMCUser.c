@@ -532,7 +532,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
-		/* No need to multiply by cos(iota) as GenerateAmpCorPPNInspiral() takes this into account */	
+		/* No need to multiply by cos(iota) as GenerateAmpCorPPNInspiral() takes this into account */
 		chisq=0.0;
 		/* Calculate the logL */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
