@@ -24,9 +24,6 @@
 #include <lal/XLALError.h>
 
 
-NRCSID( GPSTIMENOWC, "$Id$" );
-
-
 /**
  * Populate the LIGOTimeGPS argument with the current system time as
  * returned by time(2) converted to GPS seconds.  Returns the address of

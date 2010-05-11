@@ -29,9 +29,6 @@
 #include <math.h>
 #include <lal/Date.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (XLALSIDEREALTIMEC,"$Id$");
-
 
 /**
  * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a

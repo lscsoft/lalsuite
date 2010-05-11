@@ -27,10 +27,6 @@
 #include <lal/LALDatatypes.h>
 
 
-#include <lal/LALRCSID.h>
-NRCSID (STRTOGPSC,"$Id$");
-
-
 /*
  * Check for a base 10 or base 16 number.
  */

@@ -79,8 +79,6 @@ a GMST which gives us the orientation of the Earth.
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 
-NRCSID( TIMEDELAYC, "$Id$" );
-
 /* scalar product of two 3-vectors */
 static double dotprod(const double vec1[3], const double vec2[3])
 {

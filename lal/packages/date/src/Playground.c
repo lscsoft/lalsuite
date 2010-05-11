@@ -72,8 +72,6 @@ t - 729273613 \% 6370 < 600.
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-NRCSID( PLAYGROUNDC, "$Id$" );
-
 /* <lalVerbatim file="PlaygroundCP"> */
 int
 XLALINT8NanoSecIsPlayground (
