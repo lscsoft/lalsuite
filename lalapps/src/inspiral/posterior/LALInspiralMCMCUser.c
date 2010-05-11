@@ -442,7 +442,6 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	PPNparams.deltaT=inputMCMC->deltaT;
 	PPNparams.ampOrder = inputMCMC->ampOrder;
 
-	ci=cos(PPNparams.inc);
 	/* Call LALGeneratePPNAmpCorInspiral */
 	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
 	if(status.statusCode)
@@ -533,9 +532,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
-		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=-ci;
-		
+		/* No need to multiply by cos(iota) as GenerateAmpCorPPNInspiral() takes this into account */	
 		chisq=0.0;
 		/* Calculate the logL */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
