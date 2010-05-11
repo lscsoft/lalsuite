@@ -84,7 +84,7 @@ INT4 main(INT4 argc, CHAR **argv)
   LALParsedDataFile *meta_file = NULL;
   BOOLEAN wasRead = 0;
   CHAR field[HISTORY_COMMENT];
-  CHAR *wf_name[MAX_L][(2*MAX_L) + 1];
+  CHAR *wf_name[MAX_L+1][(2*MAX_L) + 1];
 
   /* common metadata */
   CHAR *md_mass_ratio = NULL;
@@ -136,14 +136,14 @@ INT4 main(INT4 argc, CHAR **argv)
   CHAR str_authors_emails[HISTORY_COMMENT];
 
   /* channel names */
-  CHAR *plus_channel[MAX_L][(2*MAX_L) + 1];
-  CHAR *cross_channel[MAX_L][(2*MAX_L) + 1];
+  CHAR *plus_channel[MAX_L+1][(2*MAX_L) + 1];
+  CHAR *cross_channel[MAX_L+1][(2*MAX_L) + 1];
 
   /* waveforms */
   UINT4 wf_length;
   REAL4TimeVectorSeries *waveforms[MAX_L][(2*MAX_L) + 1];
-  REAL4TimeSeries *hplus[MAX_L][(2*MAX_L) + 1];
-  REAL4TimeSeries *hcross[MAX_L][(2*MAX_L) + 1];
+  REAL4TimeSeries *hplus[MAX_L+1][(2*MAX_L) + 1];
+  REAL4TimeSeries *hcross[MAX_L+1][(2*MAX_L) + 1];
 
   /* frame variables */
   FrameH *frame;

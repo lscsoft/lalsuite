@@ -7,27 +7,19 @@
 #   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
 #                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
 
-# where to find git
-export PATH=$PATH:/usr/local/bin
-# where to find condor
-#export CONDOR_CONFIG=/usr1/ldbd/ldg-4.8/condor/etc/condor_config
-#export PATH=$PATH:/usr1/ldbd/ldg-4.8/condor/sbin:/usr1/ldbd/ldg-4.8/condor/bin
-# /usr/bin needs to come first so we get the OS mysql used for the
-# Metronome install instead of the LDG version
-export PATH=/usr/bin:$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
+# Metronome
+PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
 export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
-# this is not a good long-term solution, but for the time being it
-# works -- otherwise the nmi_* tools pick up some kind of LDG mysql
-# libs (instead of the OS-provided ones) and timeout
-unset LD_LIBRARY_PATH
-unset MYSQL_UNIX_PORT
 
 # where to find the "reference" XML data products for the unit tests
 # TODO: these should be moved out of my home dir (e.g., to /usr/local/...)
-REFERENCE_XML_DIR=/home/pfcouvar/nmi/reference-data
+REFERENCE_XML_DIR=~cbc/nmi/share/reference-data/S6AVSR2
 
 # TODO: subtools need to be relocatable -- this is ugly but needed for now
-export LSCSOFT_SRCDIR=${LSCSOFT_SRCDIR:-/home/pfcouvar/src}
+export LSCSOFT_SRCDIR=~cbc/nmi/src
+
+# this is necessary so we can store our Metronome run dirs on NFS without DAGMan complaining
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 
 # where to store our temporary submit files
 TMPDIR=${TMPDIR:-/tmp}
@@ -59,7 +51,7 @@ env | grep ^_NMI_
 
 ### build each given git tag
 
-cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/builds
+cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
 ./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
 ./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
 
@@ -78,8 +70,8 @@ set -e
 
 # for each XML data product named in test_suite.txt, submit unit & diff tests
 # the unit tests will block until the build test is complete (or 24h timeout)
-for name in $(< $REFERENCE_XML_DIR/test_suite.txt); do
-    cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/unit
+for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/unit
     export _NMI_GIT_ID=$_NMI_GIT_ID_A
     export _NMI_GIT_BRANCH=$_NMI_GIT_BRANCH_A
     ./genunit.sh $REFERENCE_XML_DIR/$name $BUILD_A_GID \
@@ -100,7 +92,7 @@ for name in $(< $REFERENCE_XML_DIR/test_suite.txt); do
     export UNIT_B_GID=$(awk '/Global ID:/{print $3}' \
 	$SUBMIT_DIR/genunit.b.$name.out)
 
-    cd $LSCSOFT_SRCDIR/lalsuite/glue/test/nmi/diff
+    cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/diff
 
     # workaround for nmi-support #6668
     sleep 30

@@ -1,6 +1,5 @@
-lalpulsar (1.0-1lscsoft1) unstable; urgency=low
+lalpulsar (1.0.0-1lscsoft1) unstable; urgency=low
 
-  * LALPulsar 1.0
+  * LALPulsar 1.0.0
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 9 Dec 2009 21:36:47 -0600
-
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500
