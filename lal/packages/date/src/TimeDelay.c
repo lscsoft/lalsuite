@@ -93,13 +93,12 @@ XLALArrivalTimeDiff(
 	const LIGOTimeGPS *gpstime
 )
 { /* </lalVerbatim> */
-	static const char func[] = "XLALArrivalTimeDiff";
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
 
 	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
 	/*
 	 * compute the unit vector pointing from the geocenter to the

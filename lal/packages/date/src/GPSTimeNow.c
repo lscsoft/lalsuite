@@ -41,7 +41,6 @@ XLALGPSTimeNow (
     LIGOTimeGPS *gpstime
     )
 {
-  static const char func[] = "XLALGPSTimeNow";
   time_t ticks = time(NULL);
 
   gpstime->gpsSeconds = XLALUTCToGPS(gmtime(&ticks));
@@ -53,7 +52,7 @@ XLALGPSTimeNow (
    */
 
   if(gpstime->gpsSeconds < 0)
-    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
   return gpstime;
 }

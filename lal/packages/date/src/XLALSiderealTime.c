@@ -59,7 +59,6 @@ REAL8 XLALGreenwichSiderealTime(
 	REAL8 equation_of_equinoxes
 )
 {
-	static const char func[] = "XLALGreenwichSiderealTime";
 	struct tm utc;
 	double julian_day;
 	double t_hi, t_lo;
@@ -74,7 +73,7 @@ REAL8 XLALGreenwichSiderealTime(
 	 */
 
 	if(!XLALGPSToUTC(&utc, gpstime->gpsSeconds))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
 	/*
 	 * And now to Julian day number.  Again, only accurate to integer
@@ -83,7 +82,7 @@ REAL8 XLALGreenwichSiderealTime(
 
 	julian_day = XLALJulianDay(&utc);
 	if(XLAL_IS_REAL8_FAIL_NAN(julian_day))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
 	/*
 	 * Convert Julian day number to the number of centuries since the
@@ -150,7 +149,6 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 	LIGOTimeGPS *gps
 )
 {
-	static const char func[] = "XLALGreenwichMeanSiderealTimeToGPS";
 	const double gps_seconds_per_sidereal_radian = 13713.44;  /* approx */
 	const double precision = 1e-14;
 	int iterations = 10;
@@ -164,7 +162,7 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 			return gps;
 		XLALGPSAdd(gps, error * gps_seconds_per_sidereal_radian);
 	} while(--iterations);
-	XLAL_ERROR_NULL(func, XLAL_EMAXITER);
+	XLAL_ERROR_NULL(__func__, XLAL_EMAXITER);
 }
 
 

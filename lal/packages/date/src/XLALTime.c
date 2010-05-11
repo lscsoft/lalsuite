@@ -58,16 +58,15 @@ LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
 /** Sets GPS time given GPS seconds as a REAL8. */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
-  static const char func[] = "XLALGPSSetREAL8";
   INT4 gpssec = floor(t);
   INT4 gpsnan = floor((t - gpssec) * XLAL_BILLION_REAL8 + 0.5);
   if(isnan(t)) {
-    XLALPrintError("%s(): NaN", func);
-    XLAL_ERROR_NULL(func, XLAL_EFPINVAL);
+    XLALPrintError("%s(): NaN", __func__);
+    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
   }
   if(fabs(t) > 0x7fffffff) {
-    XLALPrintError("%s(): overflow %g", func, t);
-    XLAL_ERROR_NULL(func, XLAL_EFPINVAL);
+    XLALPrintError("%s(): overflow %g", __func__, t);
+    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
   }
   /* use XLALGPSSet() to normalize the nanoseconds */
   return XLALGPSSet(epoch, gpssec, gpsnan);
@@ -96,10 +95,9 @@ LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 /** Adds a double to a GPS time. */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 {
-  static const char func[] = "XLALGPSAdd";
   LIGOTimeGPS dt_gps;
   if(!XLALGPSSetREAL8(&dt_gps, dt))
-    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
   return XLALGPSAddGPS(epoch, &dt_gps);
 }
 
@@ -157,7 +155,6 @@ static void split_double(double x, double *hi, double *lo)
 /** Multiply a GPS time by a number. */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
-  static const char func[] = "XLALGPSMultiply";
   int slo = gps->gpsSeconds % (1<<26);
   int shi = gps->gpsSeconds - slo;
   int nlo = gps->gpsNanoSeconds % (1<<15);
@@ -167,8 +164,8 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
   LIGOTimeGPS gps_addend;
 
   if(isnan(x) || isinf(x)) {
-    XLALPrintError("%s(): invalid multiplicand %g", func, x);
-    XLAL_ERROR_NULL(func, XLAL_EFPINVAL);
+    XLALPrintError("%s(): invalid multiplicand %g", __func__, x);
+    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
   }
 
   split_double(x, &xhi, &xlo);
@@ -212,18 +209,17 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 /** Divide a GPS time by a number. */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
-  static const char func[] = "XLALGPSDivide";
   LIGOTimeGPS quotient;
   int keep_going;
   double residual;
 
   if(isnan(x)) {
-    XLALPrintError("%s(): NaN", func);
-    XLAL_ERROR_NULL(func, XLAL_EFPINVAL);
+    XLALPrintError("%s(): NaN", __func__);
+    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
   }
   if(x == 0) {
-    XLALPrintError("%s(): divide by zero", func);
-    XLAL_ERROR_NULL(func, XLAL_EFPDIV0);
+    XLALPrintError("%s(): divide by zero", __func__);
+    XLAL_ERROR_NULL(__func__, XLAL_EFPDIV0);
   }
 
   /* initial guess */
