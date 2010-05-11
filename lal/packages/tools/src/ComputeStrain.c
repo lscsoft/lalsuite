@@ -74,8 +74,9 @@ RCSID("$Id$");
 /* Local helper functions, defined static so they cannot be used outside. */
 static void set_output_to_zero(StrainOut *output);
 static void check_nans_infs(LALStatus *status, StrainIn *input);
+#if 0
 static void remove_transients(StrainIn *input);
-
+#endif
 
 
 void LALComputeStrain(
@@ -869,7 +870,7 @@ static void set_output_to_zero(StrainOut *output)
 }
 
 
-
+#if 0
 /*
  * Put DARM_ERR and DARM_CTRL to 0 if the detector is not UP. That
  * way, we remove the huge transients with the new DC readout scheme.
@@ -958,3 +959,4 @@ static void remove_transients(StrainIn *input)
         }
     }
 }
+#endif
