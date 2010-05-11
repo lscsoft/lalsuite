@@ -96,7 +96,10 @@ REAL8IIRFilter ALPHASLPFIR;
 
  set_output_to_zero(output);
 
- remove_transients(input);
+ /* remove_transients(input); */
+ /* commented out for the moment, because looking directly in the
+  * gravitational wave channel for noise is dangerous and should be
+  * done with great great care. */
 
  check_nans_infs(status, input);
  if (! status->statusPtr) return;
