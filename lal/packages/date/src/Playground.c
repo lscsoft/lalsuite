@@ -23,15 +23,12 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
 #if 0
 <lalVerbatim file="PlaygroundCV">
 Author: Brown D. A.
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>

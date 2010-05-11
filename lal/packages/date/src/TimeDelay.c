@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Jolien Creighton, and David Chin, and Steven
  * Fairhurst, and Kipp Cannon, and Alexander Dietz, and Drew Keppel
  *
@@ -23,7 +21,6 @@
 /* <lalVerbatim file="TimeDelayCV">
 
 Author: Chin, David <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-$Id$
 
 </lalVerbatim> */
 

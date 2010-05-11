@@ -26,7 +26,6 @@
 /* <lalVerbatim file="DateHV">
 
 Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-$Id$
 
 </lalVerbatim> */
 

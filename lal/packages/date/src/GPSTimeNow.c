@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Brown, D. A., and Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
