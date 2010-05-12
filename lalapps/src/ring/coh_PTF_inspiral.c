@@ -441,7 +441,7 @@ int main( int argc, char **argv )
   }
 
   /* Create the templates needed for the bank veto, if necessary */
-  UINT4 subBankSize;
+  UINT4 subBankSize = 0;
   struct bankTemplateOverlaps *bankNormOverlaps = NULL;
   struct bankComplexTemplateOverlaps *bankOverlaps = NULL;
   struct bankDataOverlaps *dataOverlaps = NULL;
@@ -1287,7 +1287,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
 
-  FILE *outfile;
+//  FILE *outfile;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 *v1p,*v2p;
@@ -1666,12 +1666,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
             }
             // In this function all the filters are combined to produce the
             // value of the bank veto.
-            bankVeto->data->data[i-numPoints/4] = calculate_bank_veto_max_phase_coherent(numPoints,i,subBankSize,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankCohOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
+            bankVeto->data->data[i-numPoints/4] = calculate_bank_veto_max_phase_coherent(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
           }
 //          autoVeto->data->data[i-numPoints/4] =calculate_bank_veto(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
           // The single detector function is a little messy at the moment
           if (singleDetector)
-            bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
+            bankVeto->data->data[i-numPoints/4] =calculate_bank_veto_max_phase(numPoints,i,subBankSize,PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints);
         }   
 
         // Now we do the auto veto

@@ -34,6 +34,7 @@ UINT4                    subBankSize,
 UINT4                    numPoints,
 UINT4                    spinBank)
 {
+  spinBank = 0;
   UINT4 i;
   srand(params->randomSeed);
 
@@ -89,7 +90,7 @@ UINT4           singleDetector )
   UINT4 ui,uj,uk,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
   REAL4 overlapCount,PTFMcomp,pVals1,pVals2;
   REAL4 bankVeto,bankVetoTemp,TjwithS,TjwithS2;
-  COMPLEX8 Qoverlap,cSNR,alpha,PTFMComplexcomp;
+  COMPLEX8 Qoverlap,alpha,PTFMComplexcomp;
   REAL4 overlapQwithQ[subBankSize+1];
   REAL8Array *PTFMtest;
   COMPLEX8Array *PTFMCompTest;
@@ -264,41 +265,28 @@ REAL4 calculate_bank_veto_max_phase(
 UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
-UINT4           vecLength,
-REAL4           a[LAL_NUM_IFO],
-REAL4           b[LAL_NUM_IFO],
-REAL4           SNR,
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
 struct coh_PTF_params      *params,
 struct bankComplexTemplateOverlaps *bankOverlaps,
 struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
-REAL4TimeSeries         *pValues[10],
-REAL4TimeSeries         *gammaBeta[2],
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-INT4            timeOffsetPoints[LAL_NUM_IFO],
-UINT4           singleDetector )
+INT4            timeOffsetPoints[LAL_NUM_IFO]
+)
 {
 //  fprintf(stderr,"Entering bank veto calculator\n");
   UINT4 ui,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
-  REAL4 overlapCount,PTFMcomp,pVals1,pVals2;
+  REAL4 overlapCount,PTFMcomp;
   REAL4 bankVeto;
   COMPLEX8 Qoverlap,TjwithS,PTFMComplexcomp,alpha,bankVetoTemp,cSNR;
   REAL4 overlapQwithQ[subBankSize+1];
   REAL8Array *PTFMtest;
   COMPLEX8Array *PTFMComptest;
-  REAL4 gammaBetaMag,cosPhase,sinPhase;
 
   if ( params->spinBank )
     bankVecLength = 5;
   else
     bankVecLength = 2;
-
-  gammaBetaMag = pow(gammaBeta[0]->data->data[position - numPoints/4],2);
-  gammaBetaMag += pow(gammaBeta[1]->data->data[position - numPoints/4],2);
-  gammaBetaMag = pow(gammaBetaMag,0.5);
-  cosPhase = gammaBeta[0]->data->data[position - numPoints/4]/gammaBetaMag;
-  sinPhase = gammaBeta[1]->data->data[position - numPoints/4]/gammaBetaMag;
 
   /* We need to seperate SNR into a complex number */
 
@@ -432,14 +420,9 @@ UINT4           position,
 UINT4           subBankSize,
 REAL4           a[LAL_NUM_IFO],
 REAL4           b[LAL_NUM_IFO],
-REAL4           SNR,
-REAL8Array      *PTFM[LAL_NUM_IFO+1],
 struct coh_PTF_params      *params,
 struct bankCohTemplateOverlaps *cohBankOverlaps,
-struct bankTemplateOverlaps *bankNormOverlaps,
 struct bankDataOverlaps *dataOverlaps,
-REAL4TimeSeries         *pValues[10],
-REAL4TimeSeries         *gammaBeta[2],
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 gsl_matrix *Bankeigenvecs[subBankSize],

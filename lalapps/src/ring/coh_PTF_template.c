@@ -168,6 +168,14 @@ cohPTFTemplate (
                                       params->deltaT);
   sanity_check( errcode == XLAL_SUCCESS );
 
+  if (InspTmplt->tC > 60 )
+  {
+    fprintf(stderr,"Template generated is longer than 60s. Template must not ");
+    fprintf(stderr,"be longer than this as it causes wrapping issues in the ");
+    fprintf(stderr,"FFT. Template length is %lf \n",InspTmplt->tC);
+    exit(1);
+  }
+
   /* evaluate the Q^I factors from the dynamical variables */
   for( i = 0; i < N; ++i)
   {
@@ -228,7 +236,6 @@ cohPTFTemplate (
   /* XXX set this to be the correct values XXX */
   fcTmplt->tmplt.tC = InspTmplt->tC; /* length of template in seconds */
   fcTmplt->tmplt.fFinal = InspTmplt->fFinal; /* upper freq of template in Hz */
-
 }
 
 
@@ -373,7 +380,7 @@ cohPTFNormalize(
 
   /* A routine to print out the M^IJ information */
  
-  FILE *outfile;
+//  FILE *outfile;
   /*
   outfile = fopen("M_array.dat","w");
   for ( i = 0; i < 5; ++i )
