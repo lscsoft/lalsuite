@@ -343,7 +343,7 @@ static REAL4FrequencySeries *ring_get_invspec(
   if ( params->getSpectrum )
   {
     /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel, params->segmentDuration,
+    invspec = compute_average_spectrum( channel, params->spectrumType,params->segmentDuration,
         params->strideDuration, fwdplan, params->whiteSpectrum );
     if ( params->writeSpectrum ) /* write raw spectrum */
       write_REAL4FrequencySeries( invspec );
