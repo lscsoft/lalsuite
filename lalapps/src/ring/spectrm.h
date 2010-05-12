@@ -34,6 +34,7 @@
 /* routine to compute an average spectrum from time series data */
 REAL4FrequencySeries *compute_average_spectrum(
     REAL4TimeSeries         *series,
+    int                      spectrumAlgthm,
     REAL8                    segmentDuration,
     REAL8                    strideDuration,
     REAL4FFTPlan            *fwdplan,
