@@ -48,6 +48,13 @@ typedef enum
 }
 inject_type;
 
+typedef enum
+{
+  median,
+  median_mean
+}
+spectrum_type;
+
 typedef struct
 tagSnglRingdownAccuracy
 {
