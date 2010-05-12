@@ -201,7 +201,6 @@ int set_debug_level( const char *s )
 char *
 XLALGetVersionString( int level )
 {
-  const char *fn = __func__;
   char lal_info[1024];
 #ifdef HAVE_LIBLALFRAME
   char lalframe_info[1024];
@@ -233,9 +232,9 @@ XLALGetVersionString( int level )
   if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalLibraryVCSInfo) )
     {
       XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
-                     fn, lalHeaderVCSInfo.vcsId, lalLibraryVCSInfo.vcsId );
+                     __func__, lalHeaderVCSInfo.vcsId, lalLibraryVCSInfo.vcsId );
       XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
-      XLAL_ERROR_NULL (fn, XLAL_EERR );
+      XLAL_ERROR_NULL (__func__, XLAL_EERR );
     }
 
   switch(level)
@@ -523,8 +522,8 @@ XLALGetVersionString( int level )
   len += strlen(lalxml_info);
 #endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", __func__, len );
+    XLAL_ERROR_NULL ( __func__, XLAL_ENOMEM );
   }
 
   strcpy ( ret, lal_info );
@@ -563,23 +562,21 @@ XLALGetVersionString( int level )
 int
 XLALOutputVersionString ( FILE *fp, int level )
 {
-  const char *fn = __func__;
-
   char *VCSInfoString;
 
   if (!fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
+    XLAL_ERROR ( __func__, XLAL_EINVAL );
   }
   if ( (VCSInfoString = XLALGetVersionString(level)) == NULL ) {
-    XLALPrintError("%s: XLALGetVersionString() failed.\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError("%s: XLALGetVersionString() failed.\n", __func__);
+    XLAL_ERROR ( __func__, XLAL_EFUNC );
   }
 
   if ( fprintf (fp, "%s", VCSInfoString ) < 0 ) {
-    XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", fn);
+    XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", __func__);
     XLALFree ( VCSInfoString);
-    XLAL_ERROR ( fn, XLAL_EIO );
+    XLAL_ERROR ( __func__, XLAL_EIO );
   }
 
   XLALFree ( VCSInfoString);
