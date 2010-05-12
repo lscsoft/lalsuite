@@ -75,6 +75,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "bank-max-frequency",      required_argument, 0, 'F' },
     { "geo-highpass-frequency",  required_argument, 0, 'g' },
     { "geo-data-scale",          required_argument, 0, 'G' },
+    { "spectrum-type",           required_argument, 0, 'L' },
     { "injection-type",          required_argument, 0, 'J' },
     { "injection-file",          required_argument, 0, 'i' },
     { "inject-mdc-frame",        required_argument, 0, 'I' },
@@ -101,7 +102,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V:w:W";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:L:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V:w:W";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -171,6 +172,23 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         exit( 0 );
       case 'i': /* injection-file */
         localparams.injectFile = optarg;
+        break;
+      case 'L': /* spectrum type */
+        if( ! strcmp( "median", optarg ) )
+        {
+          localparams.spectrumType = 0;
+        }
+        else if( ! strcmp( "median_mean", optarg ) )
+        {
+          localparams.spectrumType = 1;
+        }
+        else
+        {
+          localparams.spectrumType = -1;
+          fprintf( stderr, "invalid --spectrum_type:\n"
+              "(must be median or median_mean)\n" );
+          exit( 1 );
+        }
         break;
       case 'J': /* injection type */
         if( ! strcmp( "RINGDOWN", optarg ) )
@@ -321,6 +339,7 @@ static int ring_default_params( struct ring_params *params )
   params->doFilter    = 1;
   
   params->injectType  = -1;
+  params->spectrumType = -1;
 
   return 0;
 }
@@ -383,6 +402,9 @@ int ring_params_sanity_check( struct ring_params *params )
     validChannelIFO = sscanf( params->channel, "%2[A-Z1-9]", params->ifoName );
     sanity_check( validChannelIFO );
 
+    /* check the spectrum type is specified */
+    sanity_check( params->spectrumType >= 0.0 );
+
     /* check that injection type is specified if an injection file is given */
 
     if ( params->injectFile ) /* geo data parameters */
@@ -426,7 +448,9 @@ int ring_params_sanity_check( struct ring_params *params )
     /* record length, segment length and stride need to be commensurate */
     sanity_check( !( (recordLength - segmentLength) % segmentStride ) );
     params->numOverlapSegments = 1 + (recordLength - segmentLength)/segmentStride;
-    sanity_check( ! (params->numOverlapSegments % 2) ); /* required to be even for median-mean method */
+
+    if ( params->spectrumType > 0 )
+      sanity_check( ! (params->numOverlapSegments % 2) ); /* required to be even for median-mean method */
 
     /* checks on data input information */
     sanity_check( params->channel );
@@ -577,6 +601,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
+  fprintf( stderr, "--spectrum-type            specify the algorithm used to calculate the spectrum\n" );
 
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );

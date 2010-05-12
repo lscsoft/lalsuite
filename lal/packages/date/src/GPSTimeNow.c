@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Brown, D. A., and Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -24,9 +22,6 @@
 #include <lal/XLALError.h>
 
 
-NRCSID( GPSTIMENOWC, "$Id$" );
-
-
 /**
  * Populate the LIGOTimeGPS argument with the current system time as
  * returned by time(2) converted to GPS seconds.  Returns the address of
@@ -46,7 +41,6 @@ XLALGPSTimeNow (
     LIGOTimeGPS *gpstime
     )
 {
-  static const char func[] = "XLALGPSTimeNow";
   time_t ticks = time(NULL);
 
   gpstime->gpsSeconds = XLALUTCToGPS(gmtime(&ticks));
@@ -58,7 +52,7 @@ XLALGPSTimeNow (
    */
 
   if(gpstime->gpsSeconds < 0)
-    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
   return gpstime;
 }

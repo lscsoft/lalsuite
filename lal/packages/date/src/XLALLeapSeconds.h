@@ -22,9 +22,6 @@
 
 #include <lal/LALAtomicDatatypes.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (XLALLEAPSECONDSH,"$Id$");
-
 /*
  * Leap seconds table
  *
