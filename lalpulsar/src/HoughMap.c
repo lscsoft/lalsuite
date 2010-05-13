@@ -202,6 +202,8 @@ void LALHOUGHInitializeHT (LALStatus      *status,
      ++pointer;
    }
 
+  (void)patch;
+
   /* normal exit */
   RETURN (status);
 }
