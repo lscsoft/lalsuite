@@ -91,6 +91,8 @@ struct ring_params {
   int          writeSpectrum;
   int          writeInvSpectrum;
   int          writeSegment;
+  int          writeTemplateTimeSeries;
+  int          writeTemplateFFT;
   int          writeFilterOutput;
   int          outCompress;
 };
