@@ -273,7 +273,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     }
     else
     {
-      channel = get_frame_data( params->dataCache, params->channel,
+      channel = ring_get_frame_data( params->dataCache, params->channel,
           &params->frameDataStartTime, params->frameDataDuration, 
           params->strainData );
       stripPad = 1;
@@ -283,7 +283,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
     
     /* inject ring signals */
     if ( params->injectFile ) 
-      inject_signal( channel, params->injectType, params->injectFile,
+      ring_inject_signal( channel, params->injectType, params->injectFile,
           params->calibCache, 1.0, params->channel ); 
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );  
