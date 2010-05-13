@@ -41,7 +41,7 @@ RCSID( "$Id$" );
 #define FILENAME_LENGTH 255
 
 /* routine to inject a signal with parameters read from a LIGOLw-format file */
-int inject_signal( 
+int ring_inject_signal( 
     REAL4TimeSeries   *series, 
     int                injectSignalType, 
     const char        *injectFile, 
