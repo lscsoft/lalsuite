@@ -57,7 +57,9 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "write-spectrum",     no_argument, &localparams.writeSpectrum, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
-    { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
+    { "write-template-time-series", no_argument, &localparams.writeTemplateTimeSeries, 1 },
+    { "write-template-fft", no_argument, &localparams.writeTemplateFFT, 1 },
+    { "write-filter-output", no_argument, &localparams.writeFilterOutput, 1 },
     { "write-compress",     no_argument, &localparams.outCompress, 1 },
     { "help",                    no_argument,       0, 'h' },
     { "version",                 no_argument,       0, 'V' },
@@ -633,6 +635,8 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--write-spectrum           write computed data power spectrum\n" );
   fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
   fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
+  fprintf( stderr, "--write-template-time-series   write template time series\n");
+  fprintf( stderr, "--write-template-fft       write template fft\n");
   fprintf( stderr, "--write-filter-output      write filtered data segments\n" );
   fprintf( stderr, "--write-compress           write a compressed xml file\n");
   return 0;
