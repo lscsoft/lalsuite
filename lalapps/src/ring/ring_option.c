@@ -595,8 +595,8 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
 
   fprintf( stderr, "\ndata segmentation options:\n" );
-  fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
-  fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec)\n" );
+  fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec) (Subdivisions of analysis block)\n" );
+  fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec) (Blocks are subdivided into segments)\n" );
   fprintf( stderr, "--pad-data=duration          input data padding (sec)\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
