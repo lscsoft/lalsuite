@@ -461,6 +461,8 @@ LALPrepareAssertFail( LALStatus *status, const INT4 code, const char *mesg,
   status->line              = line;
   status->statusCode        = code;
   status->statusDescription = mesg;
+  if ( lalDebugLevel & LALERROR )
+    (void)statement;
   (void) LALError( status, statement );
   (void) LALTrace( status, 1 );
   return 1;
@@ -478,6 +480,8 @@ LALCheckStatusPtr( LALStatus *status, const char *statement, const char *file,
     status->line              = line;
     status->statusCode        = -1;
     status->statusDescription = "Recursive error";
+    if ( lalDebugLevel & LALERROR )
+      (void)statement;
     (void) LALError( status, statement );
     (void) LALTrace( status, 1 );
     return 1;
