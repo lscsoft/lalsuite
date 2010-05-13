@@ -33,7 +33,7 @@
 
 #include "nest_calc.h"
 
-RCSID( "$Id$" );
+RCSID(LALAPPS_VCS_IDENT_ID);
 
 #define MAXSTR 128
 #define TIMESLIDE 10 /* Length of time to slide data to lose coherency */
@@ -67,7 +67,7 @@ Optional OPTIONS:\n \
 [--event INT (0)\t:\tUse event INT from Sim or Sngl InspiralTable]\n \
 [--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
-[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|AmpCorPPN|IMRPhenomA)]\n \
+[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|EOBNR|SpinTaylor)]\n \
 [--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use]\n \
@@ -209,17 +209,17 @@ void initialise(int argc, char *argv[]){
 		{"ampOrder",required_argument,0,17},
 		{"Dmin",required_argument,0,18},
 		{"Dmax",required_argument,0,19},
-		{"version",no_argument,0,20},
+		{"version",no_argument,0,'V'},
 		{"help",no_argument,0,'h'},
 		{0,0,0,0}};
 	
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
-	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
 		case 'h':
 			fprintf(stdout,USAGE);
 			exit(0);
 			break;
-		case 20:
+		case 'V':
 			fprintf(stdout,"LIGO/LSC Bayesian parameter estimation and evidence calculation code\nfor CBC signals, using nested sampling algorithm.\nJohn Veitch <john.veitch@ligo.org>\n");
 			XLALOutputVersionString(stderr,0);
 			exit(0);
@@ -798,13 +798,19 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 	
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomA"; CHAR AMPCOR[]="AmpCorPPN";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor";
+	CHAR PSTRD[]="PhenSpinTaylorRD";
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
 	else if(!strcmp(approx,TT2)) inputMCMC.approximant=TaylorT2;
 	else if(!strcmp(approx,TT3)) inputMCMC.approximant=TaylorT3;
-	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomA;
+    	else if(!strcmp(approx,TT4)) inputMCMC.approximant=TaylorT4;
+	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomFA;
+    	else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
+    	else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
+	else if(!strcmp(approx,ST)) inputMCMC.approximant=SpinTaylor;
+    	/*else if(!strcmp(approx,PSTRD)) inputMCMC.approximant=PhenSpinTaylorRD;*/
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}
 	
 	if(inputMCMC.approximant!=AmpCorPPN && ampOrder!=0){
