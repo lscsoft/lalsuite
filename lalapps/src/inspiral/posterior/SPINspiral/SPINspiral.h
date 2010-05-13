@@ -226,7 +226,7 @@ struct runPar{
   int parDBn;                     // Size of the hardcoded database (set to 200 in the beginning of main())
   char parName[200][99];          // Names of the parameters in the database
   char parAbrev[200][99];         // Abbreviations of the parameter names
-  char parAbrv[200][29];          // Really short abbreviations of the parameter names
+  char parAbrv[200][99];          // Really short abbreviations of the parameter names
   int parDef[200];                // Indicates whether a parameter is defined (1) or not (0)
   int mcmcParUse[200];            // Indicates whether a parameter is being used (1) or not (0) for MCMC
   int injParUse[200];             // Indicates whether a parameter is being used (1) or not (0) for the injection
