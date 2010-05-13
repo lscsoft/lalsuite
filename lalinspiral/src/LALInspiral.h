@@ -56,7 +56,8 @@ Header file for the template generation codes.
 # include <lal/SimulateCoherentGW.h>
 # include <lal/GeneratePPNInspiral.h>
 # include <lal/LIGOMetadataTables.h>
-
+# include <lal/LALDatatypes.h>
+# include <lal/LALComplex.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -1799,6 +1800,42 @@ int XLALBandPassInspiralTemplate(
         REAL4          fSampling
         );
 
+int XLALCreateInspiralIIRFilters(
+	REAL8Vector         *amp,
+	REAL8Vector         *phase,
+	double                  epsilon,
+	double                  alpha,
+	double                  beta,
+	COMPLEX16Vector     **a1,
+	COMPLEX16Vector     **b0,
+	INT4Vector          **delay
+	);
+
+int XLALCreateIIRResponseSeries(
+	UINT4               N,
+	COMPLEX16Vector     *a1,
+	COMPLEX16Vector     *b0,
+	INT4Vector          *delay,
+	COMPLEX16Vector     **response
+	);
+
+int XLALIIRFreqSeries(
+	UINT4                j,
+	UINT4                jmax,
+	COMPLEX16           a1,
+	COMPLEX16           b0,
+	INT4                delay,
+	COMPLEX16           *hfcos,
+	COMPLEX16           *hfsin
+	);
+
+int XLALIIRInnerProduct(
+	COMPLEX16Vector    *a1,
+	COMPLEX16Vector    *b0,
+	INT4Vector         *delay,
+	REAL8Vector        *psd,
+	REAL8              *ip
+	);
 
 #ifdef  __cplusplus
 }
