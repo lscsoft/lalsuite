@@ -603,7 +603,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
-  fprintf( stderr, "--spectrum-type            specify the algorithm used to calculate the spectrum\n" );
+  fprintf( stderr, "--spectrum-type            specify the algorithm used to calculate the spectrum; must be either median or median_mean\n" );
 
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );
