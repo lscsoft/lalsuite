@@ -784,8 +784,6 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		  const CmplxAMCoeffs *amcoe,
 		  const ComputeFParams *params)       /**< addition computational params */
 {
-  const char *fn = "XLALComputeFaFbCmplx()";
-
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -806,35 +804,35 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     LALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
+    XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     LALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
+    XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
   if ( params->upsampling > 1 ) {
     fprintf (stderr, "\n===== WARNING: XLALComputeFaFbCmplx() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( "XLALComputeFaFbCmplx", XLAL_EINVAL);
+    XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( params->returnAtoms )
     {
       XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 #endif
 
@@ -1046,7 +1044,6 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params)       /**< addition computational params */
 {
-  const char *fn = "XLALComputeFaFbXavie()";
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
@@ -1066,30 +1063,30 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
     LALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     LALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
       LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
-      XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
   if ( params->returnAtoms )
     {
       XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL);
+      XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 #endif
 
