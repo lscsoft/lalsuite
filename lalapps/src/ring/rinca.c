@@ -121,6 +121,9 @@ static void print_usage(char *program)
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
       "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"\
+      " [--h1-time-accuracy] h1_dt     specify the timing accuracy of H1 in ms\n"\
+      " [--h2-time-accuracy] h2_dt     specify the timing accuracy of H2 in ms\n"\
+      " [--l1-time-accuracy] l1_dt     specify the timing accuracy of L1 in ms\n"\
       "\n"\
       "  [--h1-freq-accuracy]  h1_df   specify the freq accuracy of H1\n"\
       "  [--h2-freq-accuracy]  h2_df   specify the freq accuracy of H2\n"\
@@ -258,6 +261,9 @@ int main( int argc, char *argv[] )
     {"h2-slide",            required_argument, 0,                    'd'},
     {"l1-slide",            required_argument, 0,                    'e'},
     {"num-slides",          required_argument, 0,                    'T'},
+    {"h1-time-accuracy",    required_argument, 0,                    'B'},
+    {"h2-time-accuracy",    required_argument, 0,                    'C'},
+    {"l1-time-accuracy",    required_argument, 0,                    'D'},
     {"h1-freq-accuracy",    required_argument, 0,                    'H'},
     {"h2-freq-accuracy",    required_argument, 0,                    'I'},
     {"l1-freq-accuracy",    required_argument, 0,                    'J'},
@@ -391,7 +397,25 @@ int main( int argc, char *argv[] )
             }
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-            
+        
+      case 'B':
+        /* time accuracy H1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(optarg) * LAL_INT8_C(1000000);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'C':
+        /* time accuracy H2, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(optarg) * LAL_INT8_C(1000000);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'D':
+        /* time accuracy L1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(optarg) * LAL_INT8_C(1000000);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+    
       case 'E':
         /* ds^2 accuracy H1*/
         accuracyParams.ifoAccuracy[LAL_IFO_H1].ds_sq = atof(optarg);
@@ -771,6 +795,15 @@ int main( int argc, char *argv[] )
           ifoArg[ifoNumber]);
       snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
       snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+
+      /* check that a non-zero timing accuracy was specified */
+      if ( (accuracyParams.test == f_and_Q || accuracyParams.test == ds_sq)
+           && ! accuracyParams.ifoAccuracy[ifoNumber].dt )
+      {
+        fprintf( stderr, "Error: --dt must be specified for %s\n",
+            ifoName[ifoNumber]);
+        exit(1);
+      }
     }
   }
 
