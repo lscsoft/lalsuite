@@ -242,7 +242,7 @@ static REAL4TimeSeries *injectWaveform(
   CoherentGW                 waveform, *wfm;
   ActuationParameters        actData = actuationParams[ifoNumber];
   UINT4 i,k;
-  int injectSignalType = LALRINGDOWN_IMR_INJECT; 
+  int injectSignalType = LALRINGDOWN_IMR_INJECT;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   FILE  *fp = NULL;
   char  fileName[FILENAME_MAX];
