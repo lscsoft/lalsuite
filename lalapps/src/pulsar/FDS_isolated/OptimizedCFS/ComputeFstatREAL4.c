@@ -445,8 +445,6 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
                   UINT4 Dterms				/**< [in] parameter: number of Dterms to use in Dirichlet kernel */
                   )
 {
-  static const char *fn = "XLALCoreFstatREAL4()";
-
   UINT4 numIFOs, X;
   REAL4 Fa_re, Fa_im, Fb_re, Fb_im;
   REAL4 Ad, Bd, Cd, Dd_inv;
@@ -454,14 +452,14 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 #ifndef LAL_NDEBUG
   /* check input consistency */
   if ( !Fstat || !fkdot4 || !multiSFTs || !multiSSB4 || !multiAMcoef ) {
-    XLALPrintError ("%s: illegal NULL input.\n", fn);
-    XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL input.\n", __func__);
+    XLAL_ERROR_VOID ( __func__, XLAL_EINVAL );
   }
   if ( multiSFTs->length == 0 || multiSSB4->length == 0 || multiAMcoef->length == 0 ||
        !multiSFTs->data || !multiSSB4->data || !multiAMcoef->data )
     {
       XLALPrintError ("%s: invalid empty input.\n", fn);
-      XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
+      XLAL_ERROR_VOID ( __func__, XLAL_EINVAL );
     }
 #endif
 
@@ -469,8 +467,8 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 
 #ifndef LAL_NDEBUG
   if ( multiSSB4->length != numIFOs || multiAMcoef->length != numIFOs ) {
-    XLALPrintError ("%s: inconsistent number of IFOs between multiSFTs, multiSSB4 and multiAMcoef.\n", fn);
-    XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: inconsistent number of IFOs between multiSFTs, multiSSB4 and multiAMcoef.\n", __func__);
+    XLAL_ERROR_VOID ( __func__, XLAL_EINVAL );
   }
 #endif
 
@@ -485,13 +483,13 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
 
 #ifndef LAL_NDEBUG
       if ( xlalErrno ) {
-        XLALPrintError ("%s: XALComputeFaFbREAL4() failed\n", fn );
-        XLAL_ERROR_VOID ( fn, XLAL_EFUNC );
+        XLALPrintError ("%s: XALComputeFaFbREAL4() failed\n", __func__ );
+        XLAL_ERROR_VOID ( __func__, XLAL_EFUNC );
       }
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
 	XLALPrintError("%s: XLALComputeFaFbREAL4() returned non-finite: Fa_X=(%f,%f), Fb_X=(%f,%f) for X=%d\n",
-                       fn, FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im, X );
-	XLAL_ERROR_VOID ( fn, XLAL_EFPINVAL );
+                       __func__, FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im, X );
+	XLAL_ERROR_VOID ( __func__, XLAL_EFPINVAL );
       }
 #endif
 
