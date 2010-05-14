@@ -291,7 +291,7 @@ LALFindChirpInjectSignals (
      {
        CoherentGW *wfm;
        SimRingdownTable *ringEvent;
-       int injectSignalType = imr_inject;
+       int injectSignalType = LALRINGDOWN_IMR_INJECT;
 
 
        ringEvent = (SimRingdownTable *)
