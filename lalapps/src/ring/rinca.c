@@ -371,15 +371,15 @@ int main( int argc, char *argv[] )
         /* set the parameter test */
         if ( ! strcmp( "f_and_Q", optarg ) )
           {
-            accuracyParams.test = f_and_Q;
+            accuracyParams.test = LALRINGDOWN_F_AND_Q;
           }
         else if ( ! strcmp( "ds_sq", optarg ) )
         {
-          accuracyParams.test = ds_sq;
+          accuracyParams.test = LALRINGDOWN_DS_SQ;
         }
         else if ( ! strcmp( "ds_sq_fQt", optarg ) )
         {
-          accuracyParams.test = ds_sq_fQt;
+          accuracyParams.test = LALRINGDOWN_DS_SQ_FQT;
         }
         else
           {
@@ -739,7 +739,7 @@ int main( int argc, char *argv[] )
   endCoinc.gpsSeconds = endCoincidence;
 
   /* Parameter Test */
-  if ( accuracyParams.test == unknown_test )
+  if ( accuracyParams.test == LALRINGDOWN_UNKNOWN_TEST )
     {
       fprintf( stderr, "Error: --parameter-test must be specified\n" );
       exit( 1 );
