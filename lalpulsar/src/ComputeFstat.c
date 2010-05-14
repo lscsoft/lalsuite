@@ -831,7 +831,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 
   if ( params->returnAtoms )
     {
-      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 #endif
@@ -1085,7 +1085,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
     }
   if ( params->returnAtoms )
     {
-      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", fn );
+      XLALPrintError ("%s: using the option 'returnAtoms' is not supported in this function!\n", __func__ );
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 #endif
