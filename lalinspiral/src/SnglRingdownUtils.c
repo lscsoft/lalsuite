@@ -383,15 +383,20 @@ LALCompareRingdowns (
     goto exit;
   }
 
-  /* Make sure triggers lie within a reasonable time window */
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
-      + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+  /* If f_and_Q or ds_sq test requested, */
+  /* make sure triggers lie within a reasonable time window */
+  if ( params->test == f_and_Q || params->test == ds_sq )
   {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
+     if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+         + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+     {
+       params->match = 1;
+     }
+     else
+     {
+       params->match = 0;
+       goto exit;
+     }
   }
 
   /* compare f and Q parameters */
