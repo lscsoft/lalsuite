@@ -74,7 +74,7 @@ int main() {
     REAL8       a1, a2, om;
     
     const REAL8 omf=0.058;
-    const REAL8 fi =80.;
+    const REAL8 fi =30.;
     REAL8 omi,ff;
 
     CHAR message[256];
@@ -86,13 +86,13 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 10.;
-    injParams.mass2 = 10.;
+    injParams.mass1 = 1.5;
+    injParams.mass2 = 9.5;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
     /* this is given in Mpc */
-    injParams.distance = 1.;
+    injParams.distance = 5.;
 
     /* this is given in Hz*/
     injParams.f_lower  = fi;
@@ -105,21 +105,21 @@ int main() {
     injParams.inclination  = 0.;
     /* Polar angles of the source arrival direction and the usual polarization 
        angle entering the pattern functions*/ 
-    injParams.theta0       = 0.;
-    injParams.phi0         = 0.;
+    injParams.theta0       = 1.08;
+    injParams.phi0         = 0.4;
     injParams.polarization = 0.;
 
-    injParams.spin1x = 0.;
-    injParams.spin1y = 0.;
-    injParams.spin1z = 0.6;
+    injParams.spin1x = 0.24;
+    injParams.spin1y = 0.31;
+    injParams.spin1z = 0.08;
 
-    injParams.spin2x = 0.6;
-    injParams.spin2y = 0.;
-    injParams.spin2z = 0.;
+    injParams.spin2x = 0.29;
+    injParams.spin2y = -0.01;
+    injParams.spin2z = 0.3;
 
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
-    ppnParams.deltaT = 1.0 / 4096.0 /4.;
+    ppnParams.deltaT = 4.0 / 4096.0;
     ppnParams.fStop  = ff;
     /* Initial shift in the phase*/
     ppnParams.phi    = 0.;

@@ -764,6 +764,8 @@ void LALPSpinInspiralRDEngine (
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   /*===================*/
   
+  //fprintf(stderr,"********** distance=%11.3e\n",params->distance);
+
   /* Compute some parameters*/
 
   if (paramsInit->nbins==0)
