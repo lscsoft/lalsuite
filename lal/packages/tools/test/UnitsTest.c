@@ -156,6 +156,8 @@ int main( int argc, char *argv[] )
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
   }
+#else
+  (void)dummy;
 #endif /* LAL_NDEBUG */
 
   LALUnitAsString( &status, string, &lalVoltUnit );
