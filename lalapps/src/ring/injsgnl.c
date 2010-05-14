@@ -89,14 +89,14 @@ int ring_inject_signal(
 /* call the approprate LAL injection routine */
   switch ( injectSignalType )
   {
-    case ring_inject:
+    case LALRINGDOWN_RING_INJECT:
       ringList = 
       XLALSimRingdownTableFromLIGOLw( injFile, startSec, stopSec );
       numInject  = 0;
       for (ringInject=ringList; ringInject; ringInject = ringInject->next )
             ++numInject;
     break;
-    case imr_inject: case imr_ring_inject: case EOBNR_inject: case Phenom_inject:
+    case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT: case LALRINGDOWN_EOBNR_INJECT: case LALRINGDOWN_PHENOM_INJECT:
       numInject = 
         SimInspiralTableFromLIGOLw( &injectList, injFile, startSec, stopSec );
       break;
@@ -133,16 +133,16 @@ int ring_inject_signal(
 
     switch ( injectSignalType )
     {
-      case ring_inject:
+      case LALRINGDOWN_RING_INJECT:
         LAL_CALL( LALRingInjectSignals(&status, series, ringList, response, calType),
             &status );
         break;
-      case imr_inject: case imr_ring_inject:
+      case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT:
         ringList = (SimRingdownTable *) XLALCalloc( 1, sizeof(SimRingdownTable) );
         LAL_CALL( LALFindChirpInjectIMR( &status, series, injectList, ringList, 
               response, injectSignalType ), &status );
         break;
-      case EOBNR_inject: case Phenom_inject:
+      case LALRINGDOWN_EOBNR_INJECT: case LALRINGDOWN_PHENOM_INJECT:
         LAL_CALL( LALFindChirpInjectSignals( &status, series, injectList, response ), &status );
         break;
       default:
@@ -158,7 +158,7 @@ int ring_inject_signal(
 
     switch ( injectSignalType )
     {
-      case imr_inject: case imr_ring_inject:
+      case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT:
         /* write output to LIGO_LW XML file    */
         ringinjections.simRingdownTable = NULL;
         ringinjections.simRingdownTable = ringList;
