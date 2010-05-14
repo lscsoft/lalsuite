@@ -527,7 +527,7 @@ XLALGenerateInspRing(
   ringInj->amplitude = sqrt( amp*amp);
 
   /* zero out inspiral and merger if we only want to inject a ringdown*/
-  if ( injectSignalType ==  imr_ring_inject ||
+  if ( injectSignalType ==  LALRINGDOWN_IMR_RING_INJECT ||
       strstr(inspiralInj->waveform, "KludgeRingOnly") )
   {
     for ( n = 0; n < 2.0*(inputLength + mergerLength + endMerger ); n++ )
