@@ -67,7 +67,6 @@ int XLALCreateInspiralIIRFilters(REAL8Vector *amp, REAL8Vector *phase, double ep
 int XLALCreateIIRResponseSeries(UINT4 N, COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector **response)
 {  
 	UINT4 f, j, nfilters;
-	REAL8 a1re, a1im, b0re, b0im;
 	COMPLEX16 a1f, b0f;
 	UINT4 delayf;
 
@@ -96,7 +95,6 @@ int XLALIIRFreqSeries(UINT4 j, UINT4 jmax, COMPLEX16 a1, COMPLEX16 b0, INT4 dela
 {
 	REAL8 loga1, arga1, pf;
 	COMPLEX16 scl, ft, ftconj;
-	COMPLEX16 hfcosa, hfsina;
 
 	/* FIXME: Check if a1, b0, delay exist */
 
@@ -130,13 +128,9 @@ int XLALIIRInnerProduct(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *de
 				{
 					XLALIIRFreqSeries(j, 2 * psd->length, a1->data[k], b0->data[k], delay->data[k], &hfcos, &hfsin);
 					hA = XLALCOMPLEX16Add(hA, hfcos);
-					if (j == (psd->length -1) )
-						fprintf(stderr, "ip(%d) =  %g + i%g, delay = %d\n", k + 1, hA.re, hA.im, delay->data[k]);
 				}
-			
 			*ip += XLALCOMPLEX16Abs2(hA) / (psd->data[j] * ((REAL8 ) psd->length)) * 1.0; 
 		}
 
-	fprintf(stderr, "Inner Product in C: %g\n", *ip);
 	return 0;
 }
