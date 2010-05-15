@@ -45,6 +45,8 @@
 #include <lal/Ring.h>
 #include <LALAppsVCSInfo.h>
 
+#include "inspiral.h"
+
 RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
@@ -84,6 +86,11 @@ void drawFromSource( REAL8 *rightAscension,
 void drawLocationFromExttrig( SimInspiralTable* table );
 void drawMassFromSource( SimInspiralTable* table );
 void drawMassSpinFromNR( SimInspiralTable* table );
+void drawMassSpinFromNRNinja2( SimInspiralTable* table );
+
+void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifos);
+REAL8 network_snr(const char *ifos, SimInspiralTable *inj);
+REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj);
 
 /* 
  *  *************************************
@@ -106,6 +113,13 @@ char *outputFileName = NULL;
 char *exttrigFileName = NULL;
 
 INT4 outCompress = 0;
+INT4 ninjaMass   = 0;
+
+
+INT4 logSNR      = 0;
+REAL4 minSNR     = -1;
+REAL4 maxSNR     = -1;
+char *ifos       = NULL;
 
 float mwLuminosity = -1;
 REAL4 dmin= -1;
@@ -190,6 +204,101 @@ SimInspiralTable **nrSimArray = NULL;
  *  Implementation of the code pieces  
  *  *********************************
  */
+
+
+
+REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj)
+{
+  REAL8 this_snr;
+  REAL4TimeVectorSeries *tempStrain=NULL;
+
+  AddNumRelStrainModes( &status, &tempStrain, inj);
+
+  this_snr = calculate_ligo_snr_from_strain( tempStrain, inj, ifo);
+
+  XLALDestroyREAL4VectorSequence (tempStrain->data);
+  tempStrain->data = NULL;
+  LALFree(tempStrain);
+  tempStrain = NULL;
+
+  return this_snr;
+}
+
+REAL8 network_snr(const char *ifo_list, SimInspiralTable *inj)
+{
+  char *tmp;
+  char *ifo;
+  REAL8 snr_total = 0.0;
+  REAL8 this_snr;
+
+  tmp = LALCalloc(1, strlen(ifos) + 1);
+  strcpy(tmp, ifo_list);
+
+  ifo = strtok (tmp,",");
+  while (ifo != NULL)
+  {
+    this_snr   = snr_in_ifo(ifo, inj);
+    snr_total += this_snr * this_snr;
+    ifo        = strtok (NULL, ",");
+  }
+
+  LALFree(tmp);
+
+  return sqrt(snr_total);
+}
+
+
+void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
+{
+  /* Vars for calculating SNRs */
+  REAL8 this_snr;
+  REAL8 low_snr,high_snr;
+  REAL8 low_dist,high_dist;
+
+  this_snr = network_snr(ifo_list, inj);
+
+  if (this_snr > target_snr)
+  {
+    high_snr  = this_snr;
+    high_dist = inj->distance;
+
+    while (this_snr > target_snr)
+    {
+      inj-> distance = inj->distance * 2.0;
+      this_snr       = network_snr(ifo_list, inj);
+    }
+    low_snr  = this_snr;
+    low_dist = inj->distance;
+  } else {
+    low_snr  = this_snr;
+    low_dist = inj->distance;
+
+    while (this_snr < target_snr)
+    {
+      inj->distance = (inj->distance) / 2.0;
+      this_snr      = network_snr(ifo_list, inj);
+    }
+    high_snr  = this_snr;
+    high_dist = inj->distance;
+  }
+
+  while ( abs(high_snr - low_snr) > 0.001 )
+  {
+    inj->distance = (high_dist + low_dist) / 2.0;
+    this_snr = network_snr(ifo_list, inj);
+
+    if (this_snr > target_snr)
+    {
+      high_snr  = this_snr;
+      high_dist = inj->distance;
+    } else {
+      low_snr  = this_snr;
+      low_dist = inj->distance;
+    }
+  }
+}
+
+
 
 /*
  *
@@ -280,7 +389,11 @@ static void print_usage(char *program)
       " [--exttrig-file] exttrig  XML file containing external trigger\n"\
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
-      "                           min/max distance required if d-distr not 'source'\n\n");
+      "                           min/max distance required if d-distr not 'source'\n"\
+      " [--min-snr] SMIN          Sets the minimum network snr\n"\
+      " [--max-snr] SMAX          Sets the maximum network snr\n"\
+      " [--log-snr]               If set distribute uniformly in log(snr) rather than snr\n"\
+      " [--ifos] ifos             Comma-separated list of ifos to include in network SNR\n\n");
   fprintf(stderr,
       "Mass distribution information:\n"\
       " --m-distr massDist        set the mass distribution of injections\n"\
@@ -295,6 +408,7 @@ static void print_usage(char *program)
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
       "                                  and uniform in total mass ratio\n"\
+      " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
       " [--min-mass1] m1min       set the minimum component mass to m1min\n"\
@@ -783,7 +897,6 @@ void drawMassFromSource( SimInspiralTable* table )
  * functions to draw masses from mass distribution
  *
  */
-
 void drawMassSpinFromNR( SimInspiralTable* table )
 { 
   int mass_index=0;
@@ -792,6 +905,77 @@ void drawMassSpinFromNR( SimInspiralTable* table )
   mass_index = (int)( num_nr * XLALUniformDeviate( randParams ) );
   XLALRandomNRInjectTotalMass( table, randParams, minMtotal, maxMtotal, 
       nrSimArray[mass_index]);
+}
+
+
+void drawMassSpinFromNRNinja2( SimInspiralTable* inj )
+{ 
+  /* For ninja2 we first select a mass, then find */
+  /* a waveform that can be injected at that mass */
+
+  int j,k;
+  REAL8 startFreq, startFreqHz, massTotal;
+  int indx,tmp,*indicies;
+
+  /* Permute the indicies in a random order      */
+  /* This lets us check each available waveform  */
+  /* once and lets us know when no option works  */
+  indicies = (int *) LALCalloc( num_nr, sizeof(int) );
+
+  for ( j = 0; j < num_nr; j++ )
+    indicies[j] = j;
+
+  for ( j = 0; j < num_nr; j++ )
+  {
+    indx           = (int) ( (num_nr-j) * XLALUniformDeviate( randParams ) ) + j;
+    tmp            = indicies[j];
+    indicies[j]    = indicies[indx];
+    indicies[indx] = tmp;
+  }
+
+  massTotal = (maxMtotal - minMtotal) * XLALUniformDeviate( randParams ) + minMtotal;
+
+  for ( j = 0; j < num_nr; j++ )
+  {
+    k           = indicies[j];
+    startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
+    startFreqHz = startFreq / (LAL_TWOPI * massTotal * LAL_MTSUN_SI);
+
+    /* if this startFreqHz makes us happy, inject it */
+    if (startFreqHz <= inj->f_lower)
+    {
+      /* This is a copy of XLALRandomNRInjectTotalMass without  */
+      /* the random mass selection.  TODO: refactor that method */
+      inj->eta    = nrSimArray[k]->eta;
+      inj->mchirp = massTotal * pow(inj->eta, 3.0/5.0);
+
+      /* set mass1 and mass2 */
+      inj->mass1 = (massTotal / 2.0) * (1 + pow( (1 - 4 * inj->eta), 0.5) );
+      inj->mass2 = (massTotal / 2.0) * (1 - pow( (1 - 4 * inj->eta), 0.5) );
+
+      /* copy over the spin parameters */
+      inj->spin1x = nrSimArray[k]->spin1x;
+      inj->spin1y = nrSimArray[k]->spin1y;
+      inj->spin1z = nrSimArray[k]->spin1z;
+      inj->spin2x = nrSimArray[k]->spin2x;
+      inj->spin2y = nrSimArray[k]->spin2y;
+      inj->spin2z = nrSimArray[k]->spin2z;
+
+      /* copy over the numrel information */
+      inj->numrel_mode_min = nrSimArray[k]->numrel_mode_min;
+      inj->numrel_mode_max = nrSimArray[k]->numrel_mode_max;
+      snprintf(inj->numrel_data, LIGOMETA_STRING_MAX, "%s",
+               nrSimArray[k]->numrel_data);
+
+      XLALFree(indicies);
+      return;
+    }
+  }
+
+  /* If we hit the end of the list, oops */
+  XLALFree(indicies);
+  /* should throw an error here... */
+  fprintf(stderr,"No waveform could be injected at MTotal=%f Msun\n", massTotal/LAL_MTSUN_SI);
 }
 
 /*
@@ -860,7 +1044,6 @@ void drawLocationFromExttrig( SimInspiralTable* table )
 }
 
 
-
 /* 
  *
  * generate all parameters (sky position and angles) for a random inspiral 
@@ -900,7 +1083,10 @@ int main( int argc, char *argv[] )
   REAL8 drawnDeclination = 0.0;
   CHAR  drawnSourceName[LIGOMETA_SOURCE_MAX];
 
-  int aligned = 0;
+  REAL8 targetSNR;
+
+  int aligned  = 0;
+
 
   status=blank_status;
 
@@ -933,12 +1119,17 @@ int main( int argc, char *argv[] )
     {"max-mtotal",              required_argument, 0,                'L'},
     {"mean-mass1",              required_argument, 0,                'n'},
     {"mean-mass2",              required_argument, 0,                'N'},
+    {"ninja2-mass",             no_argument,       &ninjaMass,         1},
     {"stdev-mass1",             required_argument, 0,                'o'},
     {"stdev-mass2",             required_argument, 0,                'O'},
     {"min-mratio",              required_argument, 0,                'x'},
     {"max-mratio",              required_argument, 0,                'y'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
+    {"min-snr",                 required_argument, 0,                '1'},
+    {"max-snr",                 required_argument, 0,                '2'},
+    {"log-snr",                 no_argument,       &logSNR,            1},
+    {"ifos",                    required_argument, 0,                '3'},
     {"d-distr",                 required_argument, 0,                'e'},
     {"l-distr",                 required_argument, 0,                'l'},
     {"longitude",               required_argument, 0,                'v'},
@@ -1698,6 +1889,46 @@ int main( int argc, char *argv[] )
                         "string", optarg );
         break;
 
+      case '1':
+        minSNR = atof( optarg );
+
+        if ( minSNR < 2 )
+        {
+          fprintf(stderr,"invalid argument to --%s:\n"
+                  "%s must be greater than 2\n",
+                  long_options[option_index].name, optarg );
+
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", minSNR );
+        
+        break;
+      case '2':
+        maxSNR = atof( optarg );
+        if ( maxSNR < 2 )
+        {
+          fprintf(stderr,"invalid argument to --%s:\n"
+                  "%s must be greater than 2\n",
+                  long_options[option_index].name, optarg );
+
+          exit( 1 );
+        }
+        
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", maxSNR );
+        break;
+      case '3':
+        optarg_len = strlen( optarg ) + 1;
+        ifos       = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( ifos, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
+        break;
+
       case 'h':
         print_usage(argv[0]);
         exit( 0 );
@@ -1790,6 +2021,30 @@ int main( int argc, char *argv[] )
    if (srcComplete == 1)
     {
     sourceComplete();
+    }
+  }
+
+
+  /* If we're distributing over snr make sure we have everything */
+  if ( minSNR > -1 || maxSNR > -1 || logSNR || ifos )
+  {
+    if ( minSNR == -1 || maxSNR == -1 || ifos == NULL )
+    {
+      fprintf( stderr,
+        "Must provide all of --min-snr, --max-snr and --ifos to distribute by SNR\n" );
+      exit( 1 );
+    }
+
+    if ( maxSNR <= minSNR )
+    {
+      fprintf( stderr, "max SNR must be greater than min SNR\n");
+      exit( 1 );
+    }
+
+    if ( logSNR )
+    {
+      minSNR = log(minSNR);
+      maxSNR = log(maxSNR);
     }
   }
 
@@ -2108,7 +2363,10 @@ int main( int argc, char *argv[] )
     }
     else if ( mDistr==massFromNRFile )
     {
-      drawMassSpinFromNR( simTable );
+      if (ninjaMass)
+        drawMassSpinFromNRNinja2( simTable );
+      else
+        drawMassSpinFromNR( simTable );
     }
     else if ( mDistr==gaussianMassDist )
     { 
@@ -2188,6 +2446,7 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
+
     /* populate polarization, inclination, and coa_phase */
     do
     {
@@ -2258,6 +2517,15 @@ int main( int argc, char *argv[] )
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
    
+    if ( ifos != NULL )
+    {
+        targetSNR = minSNR + (maxSNR - minSNR) * XLALUniformDeviate( randParams ); 
+        if ( logSNR )
+          targetSNR = exp(targetSNR);
+
+        adjust_snr(simTable, targetSNR, ifos);
+    }
+
     /* populate the sim_ringdown table */ 
    if ( writeSimRing )
    {

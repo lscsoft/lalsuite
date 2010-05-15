@@ -395,7 +395,7 @@ LALCompareRingdowns (
   }
 
   /* compare f and Q parameters */
-  if ( params->test == f_and_Q )
+  if ( params->test == LALRINGDOWN_F_AND_Q )
   {
     if( (fabs( aPtr->frequency - bPtr->frequency ) <= (aAcc.df + bAcc.df) )
       && (fabs( aPtr->quality - bPtr->quality ) <= (aAcc.dQ + bAcc.dQ) ) )
@@ -407,7 +407,7 @@ LALCompareRingdowns (
       params->match = 0;
     }
   }
-  else if ( params->test == ds_sq )
+  else if ( params->test == LALRINGDOWN_DS_SQ )
   {
     ds2 = XLAL2DRinca( aPtr, bPtr );
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
@@ -419,7 +419,7 @@ LALCompareRingdowns (
       params->match = 0;
     }
   }
-  else if ( params->test == ds_sq_fQt )
+  else if ( params->test == LALRINGDOWN_DS_SQ_FQT )
   {
     ds2 = XLAL3DRinca( aPtr, bPtr );
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )

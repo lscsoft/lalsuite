@@ -41,13 +41,13 @@ RCSID( "$Id$" );
 #define FILENAME_LENGTH 255
 
 /* routine to inject a signal with parameters read from a LIGOLw-format file */
-int inject_signal( 
-    REAL4TimeSeries   *series, 
-    int                injectSignalType, 
-    const char        *injectFile, 
-    const char        *calCacheFile, 
-    REAL4              responseScale, 
-    const char        *channel_name 
+int ring_inject_signal(
+    REAL4TimeSeries   *series,
+    int                injectSignalType,
+    const char        *injectFile,
+    const char        *calCacheFile,
+    REAL4              responseScale,
+    const char        *channel_name
     )
 {
   /* note: duration is only used for response, and can be relatively coarse */
@@ -73,7 +73,7 @@ int inject_signal(
   CHAR                  fname[FILENAME_MAX];
   MetadataTable         ringinjections;
   LIGOLwXMLStream       xmlfp;
-  
+ 
   /* copy injectFile to injFile (to get rid of const qual) */
   strncpy( injFile, injectFile, sizeof( injFile ) - 1 );
   snprintf( name, sizeof( name ), "%s_INJ", series->name );
@@ -89,14 +89,14 @@ int inject_signal(
 /* call the approprate LAL injection routine */
   switch ( injectSignalType )
   {
-    case ring_inject:
+    case LALRINGDOWN_RING_INJECT:
       ringList = 
       XLALSimRingdownTableFromLIGOLw( injFile, startSec, stopSec );
       numInject  = 0;
       for (ringInject=ringList; ringInject; ringInject = ringInject->next )
             ++numInject;
     break;
-    case imr_inject: case imr_ring_inject: case EOBNR_inject: case Phenom_inject:
+    case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT: case LALRINGDOWN_EOBNR_INJECT: case LALRINGDOWN_PHENOM_INJECT:
       numInject = 
         SimInspiralTableFromLIGOLw( &injectList, injFile, startSec, stopSec );
       break;
@@ -126,23 +126,23 @@ int inject_signal(
 
     /* units must be counts for inject; reset below if they were strain */
     series->sampleUnits = lalADCCountUnit;
-   
+ 
    /* inject the signals */
     verbose( "injecting %u signal%s into time series\n", numInject,
         numInject == 1 ? "" : "s" );
 
     switch ( injectSignalType )
     {
-      case ring_inject:
+      case LALRINGDOWN_RING_INJECT:
         LAL_CALL( LALRingInjectSignals(&status, series, ringList, response, calType),
             &status );
         break;
-      case imr_inject: case imr_ring_inject:
+      case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT:
         ringList = (SimRingdownTable *) XLALCalloc( 1, sizeof(SimRingdownTable) );
         LAL_CALL( LALFindChirpInjectIMR( &status, series, injectList, ringList, 
               response, injectSignalType ), &status );
-        break;        
-      case EOBNR_inject: case Phenom_inject:
+        break;
+      case LALRINGDOWN_EOBNR_INJECT: case LALRINGDOWN_PHENOM_INJECT:
         LAL_CALL( LALFindChirpInjectSignals( &status, series, injectList, response ), &status );
         break;
       default:
@@ -158,20 +158,20 @@ int inject_signal(
 
     switch ( injectSignalType )
     {
-      case imr_inject: case imr_ring_inject:
+      case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT:
         /* write output to LIGO_LW XML file    */
         ringinjections.simRingdownTable = NULL;
         ringinjections.simRingdownTable = ringList;
-                 
+
         /* create the output file name */
         snprintf( fname, sizeof(fname), "HL-INJECTIONS_0-%d-%d.xml", 
             startSec, stopSec - startSec );
         fprintf( stdout, "Writing the injection details to %s\n", fname);
-    
+ 
         /* open the xml file */
         memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
         LALOpenLIGOLwXMLFile( &status, &xmlfp, fname);
-    
+ 
         /* write the sim_ringdown table */
         if ( ringinjections.simRingdownTable )
         {
@@ -180,17 +180,17 @@ int inject_signal(
             sim_ringdown_table );
           LALEndLIGOLwXMLTable ( &status, &xmlfp );
         }
-    
+ 
         while ( ringinjections.simRingdownTable->next )
         {
           ringList=ringinjections.simRingdownTable;
           ringinjections.simRingdownTable = ringinjections.simRingdownTable->next;
           LALFree( ringList );
         }
-    
+ 
         /* close the injection file */
         LALCloseLIGOLwXMLFile ( &status, &xmlfp );
-    
+ 
         /* free memory */
 
         while ( injectList )
@@ -201,7 +201,7 @@ int inject_signal(
         }
         break;
     }
-    
+ 
     /* free memory */
     while ( ringList )
     {
@@ -209,10 +209,10 @@ int inject_signal(
       ringList = ringList->next;
       LALFree( ringinjections.simRingdownTable );
     }
-    
+ 
     XLALDestroyCOMPLEX8Vector( response->data );
     LALFree( response );
   }
-  
+ 
   return 0;
 }

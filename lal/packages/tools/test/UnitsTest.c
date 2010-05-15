@@ -99,8 +99,12 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 static void
 ClearStatus (LALStatus *status);
+#endif
 
 NRCSID( UNITSTESTC, "$Id$" );
 
@@ -152,6 +156,8 @@ int main( int argc, char *argv[] )
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
   }
+#else
+  (void)dummy;
 #endif /* LAL_NDEBUG */
 
   LALUnitAsString( &status, string, &lalVoltUnit );
@@ -933,7 +939,9 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   exit (exitcode);
 }
 
-
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 /*
  *
  * ClearStatus ()
@@ -942,7 +950,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
  * linked list of statuses.
  *
  */
-void
+static void
 ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
@@ -951,6 +959,7 @@ ClearStatus (LALStatus *status)
     DETATCHSTATUSPTR (status);
   }
 }
+#endif
 
 
 /*

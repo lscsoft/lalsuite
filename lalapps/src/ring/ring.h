@@ -43,6 +43,7 @@ struct ring_params {
   const char  *dataCache;
   const char  *injectFile;
   INT4         injectType;
+  INT4         spectrumType;
   REAL8        sampleRate;
   REAL8        padData;
   REAL8        segmentDuration;
@@ -90,6 +91,8 @@ struct ring_params {
   int          writeSpectrum;
   int          writeInvSpectrum;
   int          writeSegment;
+  int          writeTemplateTimeSeries;
+  int          writeTemplateFFT;
   int          writeFilterOutput;
   int          outCompress;
 };
