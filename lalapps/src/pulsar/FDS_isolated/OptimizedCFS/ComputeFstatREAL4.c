@@ -458,7 +458,7 @@ XLALCoreFstatREAL4 (REAL4 *Fstat,				/**< [out] multi-IFO F-statistic value 'F' 
   if ( multiSFTs->length == 0 || multiSSB4->length == 0 || multiAMcoef->length == 0 ||
        !multiSFTs->data || !multiSSB4->data || !multiAMcoef->data )
     {
-      XLALPrintError ("%s: invalid empty input.\n", fn);
+      XLALPrintError ("%s: invalid empty input.\n", __func__);
       XLAL_ERROR_VOID ( __func__, XLAL_EINVAL );
     }
 #endif
