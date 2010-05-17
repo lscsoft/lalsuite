@@ -351,7 +351,7 @@ LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/File
 LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0.0],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1..00],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1.0.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.1.0],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
