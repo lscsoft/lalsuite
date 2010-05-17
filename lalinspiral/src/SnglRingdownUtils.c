@@ -49,7 +49,7 @@ $Id$
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
 
