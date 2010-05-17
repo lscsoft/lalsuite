@@ -349,7 +349,8 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.lim = 10000;
    vars.c = Rpr;
    
-   prob = 1.0 - cdfwchisq(&vars, 0.0, 0.0001, &errcode); 
+   //cdfwchisq(algorithm variables, sigma, accuracy, error code)
+   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-14, &errcode); 
    
    //Cleanup
    XLALDestroyREAL8Vector(newweights);

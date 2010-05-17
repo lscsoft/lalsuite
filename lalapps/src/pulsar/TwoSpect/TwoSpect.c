@@ -314,6 +314,7 @@ int main(int argc, char *argv[])
       //Average noise floor of FF plane for each 1st FFT frequency bin
       REAL8Vector *aveNoise = ffPlaneNoise(inputParams, background_slided, antweights);
       
+      //Calculation of average TF noise per frequency bin ratio to total mean
       REAL8 aveTFinv = 1.0/avgTFdataBand(background_slided, numfbins, numffts, 0, numfbins);
       REAL8 rmsTFinv = 1.0/avgTFdataBand(background_slided, numfbins, numffts, 0, numfbins);
       REAL8Vector *aveTFnoisePerFbinRatio = XLALCreateREAL8Vector((UINT4)numfbins);
@@ -1152,7 +1153,7 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
    
    //Now put the power data into the TF plane, looping through each SFT
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
-   REAL8 scalingfact = 2.0e42;
+   REAL8 scalingfact = 2.0;
    INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
