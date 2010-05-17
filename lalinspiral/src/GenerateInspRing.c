@@ -44,7 +44,7 @@
 #include <lal/Units.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateRing.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspRing.h>
