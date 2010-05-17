@@ -1050,7 +1050,7 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel(make_time_label(start_time))
-    pylab.xticks(range(0,26,2))
+    pylab.xticks(range(0,24,2))
 
     pylab.ylabel('SNR')
     pylab.savefig('%s/%s_%d_%s_snr_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
@@ -1162,7 +1162,7 @@ def plot_rate_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.xlim(0, 24)
     min_y = cluster.find('TSSI') > -1 and 1e-2 or 1
     pylab.ylim(min_y, max(counts) * 1.1)
-    pylab.xticks(range(0,26,2))
+    pylab.xticks(range(0,24,2))
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel(make_time_label(start_time))
@@ -1430,7 +1430,7 @@ def plot_hexmass(config, ifo, veto_level, cluster, start_time, end_time):
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time, 'Trigger count'))
     pylab.xlabel(make_time_label(start_time))
-    pylab.xticks(range(0,26,2))
+    pylab.xticks(range(0,24,2))
     pylab.ylabel('Mass (M_sun)')
     pylab.savefig('%s/%s_%d_%s_hexmass.png' % (config['out_dir'], ifo, veto_level, cluster))
 
@@ -1527,7 +1527,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
         axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
         fig.add_axes(axes)
         pylab.xlim(0, 24)
-        pylab.xticks(range(0,26,2))
+        pylab.xticks(range(0,24,2))
         pylab.ylabel('Template length (sec)')
         pylab.title('No triggers')
         pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
@@ -1560,7 +1560,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     
     pylab.xlabel(make_time_label(start_time))
     pylab.xlim(0, 24)
-    pylab.xticks(range(0,26,2))
+    pylab.xticks(range(0,24,2))
     pylab.ylabel('Template length (sec)')
     pylab.title('Loudest: GPS=%d  SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[1]))
     pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
@@ -1601,7 +1601,7 @@ def plot_rate_vs_time_all(config, ifo, veto_level, cluster, start_time, end_time
 
     min_y = cluster.find('16SEC') > -1 and 1e-2 or 1
     pylab.ylim(min_y, maxcount * 1.1)
-    pylab.xticks(range(0,26,2))
+    pylab.xticks(range(0,24,2))
 
 
     pylab.grid()
