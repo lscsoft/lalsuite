@@ -385,7 +385,7 @@ LALCompareRingdowns (
 
   /* If f_and_Q or ds_sq test requested, */
   /* make sure triggers lie within a reasonable time window */
-  if ( params->test == f_and_Q || params->test == ds_sq )
+  if ( params->test == LALRINGDOWN_F_AND_Q || params->test == LALRINGDOWN_DS_SQ )
   {
      if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
          + 1.e-9 * XLALLightTravelTime(aDet,bDet) )

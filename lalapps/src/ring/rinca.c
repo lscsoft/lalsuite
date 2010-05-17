@@ -797,7 +797,7 @@ int main( int argc, char *argv[] )
       snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
 
       /* check that a non-zero timing accuracy was specified */
-      if ( (accuracyParams.test == f_and_Q || accuracyParams.test == ds_sq)
+      if ( (accuracyParams.test == LALRINGDOWN_F_AND_Q || accuracyParams.test == LALRINGDOWN_DS_SQ)
            && ! accuracyParams.ifoAccuracy[ifoNumber].dt )
       {
         fprintf( stderr, "Error: --dt must be specified for %s\n",
