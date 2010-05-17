@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALBURSTVCSINFO_H
 #define _LALBURSTVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALBurstConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALBURST_VCS_IDENT_COMMITTER "$" "LALBurstCommitter: @COMMITTER@ " "$"
 #define LALBURST_VCS_IDENT_STATUS "$" "LALBurstStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalBurstVCSInfo;
+static const struct tagLALVCSInfo lalBurstHeaderVCSInfo = { \
+  LALBURST_VERSION, \
+  LALBURST_VCS_ID, \
+  LALBURST_VCS_DATE, \
+  LALBURST_VCS_BRANCH, \
+  LALBURST_VCS_TAG, \
+  LALBURST_VCS_AUTHOR, \
+  LALBURST_VCS_COMMITTER, \
+  LALBURST_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

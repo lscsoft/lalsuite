@@ -33,7 +33,7 @@ extern int lalDebugLevel;
 
 struct TESTCASE {
 	const char *string;
-	int sec, ns;
+	long int sec, ns;
 	const char *remainder;
 	int xlal_errno;
 };
@@ -121,10 +121,8 @@ int main(int argc, char *argv[])
 		{"6.25E7", 62500000, 0, "", 0},
 		{"6.35E7dkjf", 63500000, 0, "dkjf", 0},
 		{"6.45Ex0", 6, 450000000, "Ex0", 0},
-#if 0
 		{"752345678.5433e258", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"762345678.5533e258r574", LONG_MAX, 0, "r574", XLAL_ERANGE},
-#endif
 		{"772345678.5633e.258", 772345678, 563300000, "e.258", 0},
 		{"782345678.5733.258", 782345678, 573300000, ".258", 0},
 		{"792345678.5833+258", 792345678, 583300000, "+258", 0},
@@ -155,14 +153,12 @@ int main(int argc, char *argv[])
 		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-#if 0
 	struct TESTCASE overflow_testcases[] = {
 		{"7323456785", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"7423456785234", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"-73234567800.5233", LONG_MIN, 0, "", XLAL_ERANGE},
 		{NULL, 0, 0, NULL, 0}
 	};
-#endif
 	struct TESTCASE hexfloat_testcases[] = {
 		{"0x0", 0, 0, "", 0},
 		{"0x00", 0, 0, "", 0},
@@ -186,7 +182,6 @@ int main(int argc, char *argv[])
 		failures += runtest(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
-#if 0
 	errno = 0;
 	strtol("7323456785", NULL, 0);
 	if(errno == ERANGE)
@@ -194,7 +189,6 @@ int main(int argc, char *argv[])
 			failures += runtest(testcase);
 	else
 		fprintf(stderr, "WARNING: your C library can parse ints that LIGOTimeGPS can't store!\n");
-#endif
 	errno = 0;
 
 	/* do more tests if C library is smart enough to handle hex floats */
