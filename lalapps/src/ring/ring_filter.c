@@ -28,7 +28,7 @@
 #include <lal/VectorOps.h>
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/Date.h>
 
 #include "lalapps.h"
