@@ -70,7 +70,7 @@ typedef struct tagLALVCSInfo
 } LALVCSInfo;
 
 /* header and library vcs information structures */
-extern struct tagLALVCSInfo lalLibraryVCSInfo;
+extern struct tagLALVCSInfo lalVCSInfo;
 static const struct tagLALVCSInfo lalHeaderVCSInfo = { \
   LAL_VERSION, \
   LAL_VCS_ID, \
