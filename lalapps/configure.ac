@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.4.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.4.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])

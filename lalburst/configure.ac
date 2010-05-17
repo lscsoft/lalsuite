@@ -1,4 +1,4 @@
-AC_INIT([lalburst],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalburst],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
