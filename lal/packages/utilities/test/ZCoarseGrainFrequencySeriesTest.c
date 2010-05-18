@@ -550,6 +550,8 @@ main( int argc, char *argv[] )
        = ZCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
+#else
+  zPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALZDestroyVector(&status, &(goodOutput.data));

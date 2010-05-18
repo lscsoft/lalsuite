@@ -77,12 +77,12 @@ REAL4FrequencySeries *compute_average_spectrum(
   {
     switch ( spectrumAlgthm )
     {
-      case median:
+      case LALRINGDOWN_SPECTRUM_MEDIAN:
         verbose( "estimating average spectrum using median method\n" );
         XLALREAL4AverageSpectrumMedian(spectrum, series, segmentLength,
           segmentStride, window, fwdPlan );
       break;
-      case median_mean:
+      case LALRINGDOWN_SPECTRUM_MEDIAN_MEAN:
         verbose( "estimating average spectrum using median-mean method\n" );
         XLALREAL4AverageSpectrumMedianMean( spectrum, series, segmentLength,
           segmentStride, window, fwdPlan );

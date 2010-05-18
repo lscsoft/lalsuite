@@ -55,7 +55,7 @@
 #include <lal/GenerateInspRing.h>
 #include <lal/FindChirp.h>
 #include <lal/GenerateRing.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
 #include <lal/FrequencySeries.h>
@@ -242,7 +242,7 @@ static REAL4TimeSeries *injectWaveform(
   CoherentGW                 waveform, *wfm;
   ActuationParameters        actData = actuationParams[ifoNumber];
   UINT4 i,k;
-  int injectSignalType = imr_inject; 
+  int injectSignalType = LALRINGDOWN_IMR_INJECT;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   FILE  *fp = NULL;
   char  fileName[FILENAME_MAX];

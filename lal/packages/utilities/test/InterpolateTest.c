@@ -97,7 +97,11 @@ static void ParseOptions (int argc, char *argv[]);
 
 static void TestStatus (LALStatus *status, const char *expectCodes, int exitCode);
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 static void ClearStatus (LALStatus *status);
+#endif
 
 int main (int argc, char *argv[])
 {
@@ -359,7 +363,9 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   exit (exitcode);
 }
 
-
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 /*
  *
  * ClearStatus ()
@@ -368,7 +374,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
  * linked list of statuses.
  *
  */
-  void
+static void
 ClearStatus (LALStatus *status)
 {
   if (status->statusPtr)
@@ -377,7 +383,7 @@ ClearStatus (LALStatus *status)
     DETATCHSTATUSPTR (status);
   }
 }
-
+#endif
 
 /*
  * Usage ()

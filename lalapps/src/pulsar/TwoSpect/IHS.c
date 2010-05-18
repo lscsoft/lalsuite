@@ -208,15 +208,9 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
    
    //Determine IHS values for the number of trials
    noise = XLALCreateREAL8Vector((UINT4)length);
-   //REAL8 temparray[aveNoise->length];
-   //for (ii=0; ii<(INT4)aveNoise->length; ii++) temparray[ii] = aveNoise->data[ii];
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise
       for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(aveNoise->data[jj], rng);
-      
-      //TEST: Shuffle array of simulated data
-      //gsl_ran_shuffle(rng, temparray, aveNoise->length, sizeof(REAL8));
-      //for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = temparray[jj];
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
@@ -308,8 +302,7 @@ void ihsSums(REAL8Vector *out, REAL8Vector *ihss, INT4 cols)
       //startPosition is the start number of the previous width to be summed with the individual IHS value
       startPosition = locInMaximaVector - (INT4)ihss->length + (ii-1); 
       for (jj=0; jj<(INT4)ihss->length-ii; jj++) {
-         //maxima->data[ii+jj] is the single column IHS values needed to be added to the total sum
-         //maxima->data[locInMaximaVector] = maxima->data[startPosition+jj] + maxima->data[ii+jj];
+         //out->data[ii+jj] is the single column IHS values needed to be added to the total sum
          out->data[locInMaximaVector] = out->data[startPosition+jj] + out->data[ii+jj];
          locInMaximaVector++;
       }
@@ -392,23 +385,14 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL8 fsig, per0, B;
    REAL8 ihsfomfar = 6.0;
    
-   /* FILE *IHSVALS;
-   IHSVALS = fopen("./realihsvals.dat","w");
-   
+   /* FILE *IHSVALS = fopen("./realihsvals.dat","w");
    for (ii=0; ii<(INT4)ffdata->f->length; ii++) fprintf(IHSVALS,"%g\n",ihsmaxima->maxima->data[ii]);
-   
    fclose(IHSVALS); */
    
    //Need to shift the start bin location by the number of removed bins in the maxima struct
    INT4 mincols = (INT4)floorf(2.0*inputParams->dfmin*inputParams->Tcoh)+1;
    INT4 removedbins = 0;
    for (ii=2; ii<=mincols-1; ii++) removedbins += ii-1;
-   
-   //INT4 numffts = (INT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1);
-   //INT4 numfbins = (INT4)ffdata->f->length;
-   
-   //REAL8 bandAvgNoise = avgTFdataBand(ffdata->backgrnd, numfbins, numffts, 0, (INT4)ffdata->f->length);
-   //REAL8 bandRmsNoise = rmsTFdataBand(ffdata->backgrnd, numfbins, numffts, 0, (INT4)ffdata->f->length);
    
    REAL8Vector *ihss, *avgsinrange, *rmssinrange, *ihsexpect, *ihsstddev;
    INT4Vector *locs;

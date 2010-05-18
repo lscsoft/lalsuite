@@ -20,7 +20,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 enum { write_frame, write_ascii };
 
@@ -91,6 +91,8 @@ struct ring_params {
   int          writeSpectrum;
   int          writeInvSpectrum;
   int          writeSegment;
+  int          writeTemplateTimeSeries;
+  int          writeTemplateFFT;
   int          writeFilterOutput;
   int          outCompress;
 };

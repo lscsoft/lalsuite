@@ -42,7 +42,7 @@
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
 #include <processtable.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"

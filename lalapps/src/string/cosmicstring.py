@@ -160,7 +160,7 @@ def clip_segment(seg, pad, short_segment_duration):
 
   # bounds must be integers
   if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
-    raise ValueError, "segment %s does not have integer boundaries" % str(seg)
+    raise ValueError, "segment %s does not have integer boundaries" % repr(seg)
   seg = segments.segment(int(seg[0]), int(seg[1]))
 
   # done
@@ -297,7 +297,7 @@ def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
 	return seglist
 
 
-def make_string_segment_fragment(dag, datafindnodes, instrument, segment, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
@@ -311,7 +311,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, segment, tag, m
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}
-	seglist = split_segment(segment, min_segment_length, pad, overlap, short_segment_duration)
+	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = set()

@@ -57,7 +57,7 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 #include <LALAppsVCSInfo.h>
 
