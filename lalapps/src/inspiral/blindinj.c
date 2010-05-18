@@ -55,7 +55,7 @@
 #include <lal/GenerateInspRing.h>
 #include <lal/FindChirp.h>
 #include <lal/GenerateRing.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
 #include <lal/FrequencySeries.h>
