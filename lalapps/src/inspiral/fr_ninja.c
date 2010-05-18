@@ -337,7 +337,6 @@ INT4 main(INT4 argc, CHAR **argv)
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2x, meta_file, "spin2x", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2y, meta_file, "spin2y", &wasRead), &status);
   LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_spin2z, meta_file, "spin2z", &wasRead), &status);
-  LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freqStart22", &wasRead), &status);
 
   /* format specific metadata */
   if (strcmp(metadata_format, "NINJA1") == 0)
@@ -346,6 +345,7 @@ INT4 main(INT4 argc, CHAR **argv)
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_simulation_details, meta_file, "simulation-details", &wasRead), &status);
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_nr_group, meta_file, "nr-group", &wasRead), &status);
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_email, meta_file, "email", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freqStart22", &wasRead), &status);
   }
   else if (strcmp(metadata_format, "NINJA2") == 0)
   {
@@ -357,6 +357,7 @@ INT4 main(INT4 argc, CHAR **argv)
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_code, meta_file, "code", &wasRead), &status);
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_submitter_email, meta_file, "submitter-email", &wasRead), &status);
     LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_authors_emails, meta_file, "authors-emails", &wasRead), &status);
+    LAL_CALL(LALReadConfigSTRINGVariable(&status, &md_freq_start_22, meta_file, "freq-start-22", &wasRead), &status);
   }
   else
   {

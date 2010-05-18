@@ -31,22 +31,29 @@ extern "C" {
  */
 typedef enum
 {
-  unknown_test,
-  f_and_Q,
-  ds_sq,
-  ds_sq_fQt
+  LALRINGDOWN_UNKNOWN_TEST,
+  LALRINGDOWN_F_AND_Q,
+  LALRINGDOWN_DS_SQ,
+  LALRINGDOWN_DS_SQ_FQT
 }
 SnglRingdownParameterTest;
 
 typedef enum
 {
-  ring_inject,
-  imr_inject,
-  imr_ring_inject,
-  EOBNR_inject,
-  Phenom_inject
+  LALRINGDOWN_RING_INJECT,
+  LALRINGDOWN_IMR_INJECT,
+  LALRINGDOWN_IMR_RING_INJECT,
+  LALRINGDOWN_EOBNR_INJECT,
+  LALRINGDOWN_PHENOM_INJECT
 }
-inject_type;
+lalringdown_inject_type;
+
+typedef enum
+{
+  LALRINGDOWN_SPECTRUM_MEDIAN,
+  LALRINGDOWN_SPECTRUM_MEDIAN_MEAN
+}
+lalringdown_spectrum_type;
 
 typedef struct
 tagSnglRingdownAccuracy

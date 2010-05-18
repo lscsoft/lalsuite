@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALXMLVCSINFO_H
 #define _LALXMLVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALXMLConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALXML_VCS_IDENT_COMMITTER "$" "LALXMLCommitter: @COMMITTER@ " "$"
 #define LALXML_VCS_IDENT_STATUS "$" "LALXMLStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalXMLVCSInfo;
+static const struct tagLALVCSInfo lalXMLHeaderVCSInfo = { \
+  LALXML_VERSION, \
+  LALXML_VCS_ID, \
+  LALXML_VCS_DATE, \
+  LALXML_VCS_BRANCH, \
+  LALXML_VCS_TAG, \
+  LALXML_VCS_AUTHOR, \
+  LALXML_VCS_COMMITTER, \
+  LALXML_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

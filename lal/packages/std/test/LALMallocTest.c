@@ -80,6 +80,9 @@ char caughtMessage[1024];
 jmp_buf jump;
 FILE *mystderr;
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 /* replacement for LALRaise */
 static int TestRaise( int sig, const char *fmt, ... )
 {
@@ -90,6 +93,7 @@ static int TestRaise( int sig, const char *fmt, ... )
   longjmp( jump, sig );
   return -1;
 }
+#endif
 
 #define STR( a ) #a
 #define XSTR( a ) STR( a )
@@ -141,6 +145,9 @@ size_t  *r;
 size_t  *s;
 size_t **v;
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG)
+/* debugging is turned off */
+#else
 /* do a bunch of allocations/deallocations that are OK */
 static int testOK( void )
 {
@@ -333,6 +340,7 @@ static int stressTestRealloc( void )
   lalDebugLevel = keep;
   return 0;
 }
+#endif
 
 
 int main( void )

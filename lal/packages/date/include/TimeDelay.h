@@ -29,8 +29,6 @@ extern "C"
 {
 #endif
 
-NRCSID( TIMEDELAYH, "$Id$" );
-
 /*
  * Function prototypes
  */

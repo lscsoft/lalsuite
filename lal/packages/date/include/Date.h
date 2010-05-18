@@ -26,7 +26,6 @@
 /* <lalVerbatim file="DateHV">
 
 Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-$Id$
 
 </lalVerbatim> */
 
@@ -75,8 +74,6 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 
 #include <time.h>
 
-#include <lal/LALRCSID.h>
-
 #include <lal/LALConstants.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
@@ -89,9 +86,6 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 extern "C"
 {
 #endif
-
-NRCSID (DATEH, "$Id$");
-
 
 /** The UNIX time of the GPS origin epoch.
  *

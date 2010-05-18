@@ -1,4 +1,4 @@
-AC_INIT([lalpulsar],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])

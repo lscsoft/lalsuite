@@ -88,8 +88,11 @@ static void FUNC ( void )
     DFUNC ( &status, &sequence );
     TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
   }
-
+#else
+  (void)sstore;
+  (void)dataBad;
 #endif
+
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of CFUNC and DFUNC \n" );

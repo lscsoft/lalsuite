@@ -111,6 +111,8 @@ LALApplyResampleRules( LALStatus       *stat,
     memset(output->data->data+nStop,0,
 	   (output->data->length-nStop)*sizeof(REAL4));
 
+  (void)rules;
+
   /* That's all for the current stub. */
   RETURN(stat);
 }
