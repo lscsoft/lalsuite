@@ -28,7 +28,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/FrameStream.h>
 
 #include "lalapps.h"

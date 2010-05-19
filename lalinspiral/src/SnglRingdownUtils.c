@@ -49,7 +49,7 @@ $Id$
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
 
@@ -383,15 +383,20 @@ LALCompareRingdowns (
     goto exit;
   }
 
-  /* Make sure triggers lie within a reasonable time window */
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
-      + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+  /* If f_and_Q or ds_sq test requested, */
+  /* make sure triggers lie within a reasonable time window */
+  if ( params->test == LALRINGDOWN_F_AND_Q || params->test == LALRINGDOWN_DS_SQ )
   {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
+     if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+         + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+     {
+       params->match = 1;
+     }
+     else
+     {
+       params->match = 0;
+       goto exit;
+     }
   }
 
   /* compare f and Q parameters */

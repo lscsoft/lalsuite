@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALSTOCHASTICVCSINFO_H
 #define _LALSTOCHASTICVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALStochasticConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALSTOCHASTIC_VCS_IDENT_COMMITTER "$" "LALStochasticCommitter: @COMMITTER@ " "$"
 #define LALSTOCHASTIC_VCS_IDENT_STATUS "$" "LALStochasticStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalStochasticVCSInfo;
+static const struct tagLALVCSInfo lalStochasticHeaderVCSInfo = { \
+  LALSTOCHASTIC_VERSION, \
+  LALSTOCHASTIC_VCS_ID, \
+  LALSTOCHASTIC_VCS_DATE, \
+  LALSTOCHASTIC_VCS_BRANCH, \
+  LALSTOCHASTIC_VCS_TAG, \
+  LALSTOCHASTIC_VCS_AUTHOR, \
+  LALSTOCHASTIC_VCS_COMMITTER, \
+  LALSTOCHASTIC_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

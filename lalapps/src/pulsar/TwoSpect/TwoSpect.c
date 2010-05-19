@@ -256,12 +256,6 @@ int main(int argc, char *argv[])
    //We can delete the originally loaded SFTs since we have the usableTFdata saved
    XLALDestroyREAL8Vector(tfdata);
    
-   //Find the FAR of IHS sum
-   /* fprintf(stderr,"Determining IHS FAR values\n");
-   ihsfarStruct *ihsfarstruct = new_ihsfarStruct(maxcols);
-   genIhsFar(ihsfarstruct, ffdata, maxcols, ihsfarthresh);
-   fprintf(LOG,"Maximum column width to be searched = %d\n",maxcols);
-   fprintf(stderr,"Maximum column width to be searched = %d\n",maxcols); */
    //IHS FOM (allows a relative offset of +/- 1 bin between maximum values
    REAL4 ihsfomfar = 6.0;
    fprintf(LOG,"IHS FOM FAR = %f\n",ihsfomfar);
@@ -320,6 +314,7 @@ int main(int argc, char *argv[])
       //Average noise floor of FF plane for each 1st FFT frequency bin
       REAL8Vector *aveNoise = ffPlaneNoise(inputParams, background_slided, antweights);
       
+      //Calculation of average TF noise per frequency bin ratio to total mean
       REAL8 aveTFinv = 1.0/avgTFdataBand(background_slided, numfbins, numffts, 0, numfbins);
       REAL8 rmsTFinv = 1.0/avgTFdataBand(background_slided, numfbins, numffts, 0, numfbins);
       REAL8Vector *aveTFnoisePerFbinRatio = XLALCreateREAL8Vector((UINT4)numfbins);
@@ -342,6 +337,7 @@ int main(int argc, char *argv[])
       //Do the second FFT
       makeSecondFFT(ffdata->ffdata, TFdata_weighted, inputParams, secondFFTplan);
       XLALDestroyREAL8Vector(TFdata_weighted);
+      fprintf(stderr,"2nd FFT ave = %g, expected ave = %g\n",calcMean(ffdata->ffdata),calcMean(aveNoise));
       
       
 ////////Start of the IHS step!
@@ -384,11 +380,13 @@ int main(int argc, char *argv[])
             
             //Estimate the FAR for these bin weights
             farval = new_farStruct();
+            //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
             numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
             
             //Caclulate R
             REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-            REAL8 prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio,R));
+            REAL8 prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R));
+            //fprintf(stderr,"Probability = %g\n",prob);
             
             //Destroy unneeded things
             free_templateStruct(template);
@@ -465,6 +463,7 @@ int main(int argc, char *argv[])
                      ihsCandidates[ii]->period /= jj;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                      prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R));
@@ -484,6 +483,7 @@ int main(int argc, char *argv[])
                      ihsCandidates[ii]->period *= jj;
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+                     //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                      prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R));
@@ -511,6 +511,7 @@ int main(int argc, char *argv[])
                template = new_templateStruct(inputParams->templatelength);
                makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
                farval = new_farStruct();
+               //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                free_templateStruct(template);
                template = NULL;
@@ -699,6 +700,7 @@ int main(int argc, char *argv[])
                templateStruct *template = new_templateStruct(inputParams->templatelength);
                makeTemplateGaussians(template, cand, inputParams);
                farval = new_farStruct();
+               //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                free_candidate(cand);
                cand = NULL;
@@ -801,6 +803,7 @@ int main(int argc, char *argv[])
          templateStruct *template = new_templateStruct(inputParams->templatelength);
          makeTemplate(template, gaussCandidates4[ii], inputParams, secondFFTplan);
          farval = new_farStruct();
+         //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
          numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
          REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
          REAL8 SNR = (R - farval->distMean)/farval->distSigma;
@@ -876,6 +879,7 @@ int main(int argc, char *argv[])
                templateStruct *template = new_templateStruct(inputParams->templatelength);
                makeTemplate(template, cand, inputParams, secondFFTplan);
                farval = new_farStruct();
+               //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                free_candidate(cand);
                cand = NULL;
@@ -1149,10 +1153,12 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
    
    //Now put the power data into the TF plane, looping through each SFT
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
+   REAL8 scalingfact = 2.0;
    INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
    REAL8Vector *tfdata = XLALCreateREAL8Vector((UINT4)(numffts*sftlength));
+   INT4 firstsftread = 0;
    for (ii=0; ii<numffts; ii++) {
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]); //catalog->data + (UINT4)(ii - nonexistantsft);
       SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
@@ -1160,7 +1166,19 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
       //if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*input->Tcoh+input->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            tfdata->data[ii*sftlength + jj] = 2.0*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(x+i*y)^2 to recover 1.
+            tfdata->data[ii*sftlength + jj] = scalingfact*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im); //TODO: check this for consistancy. Doing --noiseSqh=1/sqrt(1800) in MFD_v4, I need to do 2*abs(x+i*y)^2 to recover 1.
+         }
+         
+         //Rescale SFTs to get near 1.0 (only for the first sft)
+         if (firstsftread==0) {
+            firstsftread = 1;
+            REAL8 meansftval = 0.0;
+            for (jj=0; jj<sftlength; jj++) meansftval += tfdata->data[ii*sftlength + jj];
+            meansftval /= (REAL8)sftlength;
+            scalingfact /= meansftval;
+            tfdata->data[ii*sftlength + jj] /= meansftval;
+            fprintf(LOG,"Scaling factor for SFTs = %g\n",scalingfact);
+            fprintf(stderr,"Scaling factor for SFTs = %g\n",scalingfact);
          }
       } else {
          for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;

@@ -44,7 +44,7 @@ REAL8 sincxoverxsqminusone(REAL8 overage);
 void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios);
 REAL8 gsl_probR(REAL8 R, void *pars);
 REAL8 gsl_dprobRdR(REAL8 R, void *pars);
-void gsl_probRtimesDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
+void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
 
 #endif
 
