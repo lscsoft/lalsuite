@@ -127,12 +127,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Stochastic has now been successfully configured
+        LALStochastic has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Stochastic
-        and run 'make install' to install LAL Stochastic
+        Now run 'make' to build LALStochastic
+        and run 'make install' to install LALStochastic
 
 ================================================================="

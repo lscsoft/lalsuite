@@ -134,12 +134,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Frame has now been successfully configured
+        LALFrame has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Frame
-        and run 'make install' to install LAL Frame
+        Now run 'make' to build LALFrame
+        and run 'make install' to install LALFrame
 
 ================================================================="

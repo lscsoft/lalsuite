@@ -137,12 +137,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Burst has now been successfully configured
+        LALBurst has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Burst
-        and run 'make install' to install LAL Burst
+        Now run 'make' to build LALBurst
+        and run 'make install' to install LALBurst
 
 ================================================================="

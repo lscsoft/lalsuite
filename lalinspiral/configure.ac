@@ -141,12 +141,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Inspiral has now been successfully configured
+        LALInspiral has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Inspiral
-        and run 'make install' to install LAL Inspiral
+        Now run 'make' to build LALInspiral
+        and run 'make install' to install LALInspiral
 
 ================================================================="

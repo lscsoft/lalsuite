@@ -125,12 +125,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL MetaIO has now been successfully configured
+        LALMetaIO has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL MetaIO
-        and run 'make install' to install LAL MetaIO
+        Now run 'make' to build LALMetaIO
+        and run 'make install' to install LALMetaIO
 
 ================================================================="

@@ -152,12 +152,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Pulsar has now been successfully configured
+        LALPulsar has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Pulsar
-        and run 'make install' to install LAL Pulsar
+        Now run 'make' to build LALPulsar
+        and run 'make install' to install LALPulsar
 
 ================================================================="

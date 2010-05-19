@@ -137,12 +137,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL XML has now been successfully configured
+        LALXML has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL XML
-        and run 'make install' to install LAL XML
+        Now run 'make' to build LALXML
+        and run 'make install' to install LALXML
 
 ================================================================="
