@@ -51,7 +51,7 @@ AC_DEFINE_UNQUOTED([LALMETAIO_CONFIGURE_DATE],["$lalmetaio_configure_date"],
                    [LALMetaIO Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -103,11 +103,9 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
-
-# check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -127,12 +125,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL MetaIO has now been successfully configured
+        LALMetaIO has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL MetaIO
-        and run 'make install' to install LAL MetaIO
+        Now run 'make' to build LALMetaIO
+        and run 'make install' to install LALMetaIO
 
 ================================================================="
