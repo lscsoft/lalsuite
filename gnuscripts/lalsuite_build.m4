@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 5
+# serial 6
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -8,14 +8,14 @@ eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLE
 ])
 
 AC_DEFUN([LALSUITE_CHECK_LIB],[
-define([lowercase],translit($1, "A-Z", "a-z"))
-define([uppercase],translit($1, "a-z", "A-Z"))
+m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
 if test "$lowercase" = "true"; then
   CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
   LIBS="$LIBS $[]uppercase[]_LIBS"
   if test "$LALSUITE_BUILD" = "true"; then
-    AC_DEFINE([HAVE_LIB[]uppercase[]],[1],[Define to 1 if you have the $1 library])
+    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
     lowercase="true"
   else
     AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[AC_MSG_ERROR([could not find the $1 library])])
@@ -23,22 +23,24 @@ if test "$lowercase" = "true"; then
     if test "$1" != "LALSupport"; then
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
     fi
-    AC_DEFINE([HAVE_LIB[]uppercase[]],[1],[Define to 1 if you have the $1 library])
+    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   fi
 else
   AC_MSG_ERROR([could not find the $1 library])
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
-define([lowercase],translit($1, "A-Z", "a-z"))
-define([uppercase],translit($1, "a-z", "A-Z"))
+m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 if test "$lowercase" = "true"; then
   PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
   if test "$lowercase" = "true"; then
     if test "$LALSUITE_BUILD" = "true"; then
-      AC_DEFINE([HAVE_LIB[]uppercase[]],[1],[Define to 1 if you have the $1 library])
+      AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
       lowercase="true"
       CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
       LIBS="$LIBS $[]uppercase[]_LIBS"
@@ -54,7 +56,7 @@ if test "$lowercase" = "true"; then
             LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
           fi
           if test "$lowercase" = true; then
-            AC_DEFINE([HAVE_LIB[]uppercase[]],[1],[Define to 1 if you have the $1 library])
+            AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
           fi
         fi
       fi
@@ -62,6 +64,8 @@ if test "$lowercase" = "true"; then
   fi
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_popdef([lowercase])
+m4_popdef([uppercase])
 ])
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
