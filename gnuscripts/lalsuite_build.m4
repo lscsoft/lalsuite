@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 6
+# serial 7
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -29,8 +29,8 @@ else
   AC_MSG_ERROR([could not find the $1 library])
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
-m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
-m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
+m4_popdef([lowercase])
+m4_popdef([uppercase])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
