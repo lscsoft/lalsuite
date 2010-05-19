@@ -4,6 +4,7 @@ dag :
 
 likelihood :
 	for d in injections{0,1,2,3,4,5,6,7,8,9} noninjections ; do pushd $$d ; lalapps_string_meas_likelihood --verbose --tmp-space $(TMPDIR) --output likelihood.xml.gz *.sqlite & popd ; done
+	lalapps_string_plot_likelihood --verbose */likelihood.xml.gz
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{1,2,3,4,5,6,7,8,9}}/likelihood.xml.gz injections0/*.sqlite
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,2,3,4,5,6,7,8,9}}/likelihood.xml.gz injections1/*.sqlite
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,3,4,5,6,7,8,9}}/likelihood.xml.gz injections2/*.sqlite
@@ -15,7 +16,6 @@ likelihood :
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,9}}/likelihood.xml.gz injections8/*.sqlite
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,8}}/likelihood.xml.gz injections9/*.sqlite
 	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/likelihood.xml.gz noninjections/*.sqlite
-
 
 final :
 	lalapps_stringfinal --verbose --cal-uncertainty 0.08 noninjections/*.sqlite >lalapps_stringfinal.log
