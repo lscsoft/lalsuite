@@ -381,8 +381,6 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS -fno-strict-aliasing"
-
   # don't use gcc flags when cuda is enabled
   if test "${cuda}" != "true"; then
     CFLAGS="$CFLAGS $lal_gcc_flags"
