@@ -1376,7 +1376,7 @@ void LALPSpinInspiralRDEngine (
     energy=enold;
     rett=0;
   }
-  else if ( omega > omegamatch)  fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
+  //else if ( omega > omegamatch)  fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
 
   params->vFinal = pow(omega,oneby3);
   if (signalvec1 && !signalvec2) params->tC = t;
