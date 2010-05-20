@@ -28,9 +28,17 @@ endif
 endif
 endif
 
+if LALFRAME
+if CFITSIO
+LALFRAMECFITSIOPROGRAMS = lalapps_xtefitstoframe
+lalapps_xtefitstoframe_SOURCES = xtefitstoframe.c
+endif
+endif
+
 bin_PROGRAMS = \
 	$(LALFRAMEPROGRAMS) \
-	$(LALFRAMEMETAIOBURSTPROGRAMS)
+	$(LALFRAMEMETAIOBURSTPROGRAMS) \
+	$(LALFRAMECFITSIOPROGRAMS)
 
 EXTRA_DIST = \
 	stripAdc.c \
