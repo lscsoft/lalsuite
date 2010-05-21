@@ -628,6 +628,10 @@ int main(int argc, char **argv)
    * Find l: the required array size to store the waveforms and interpolate to fit l
    ********************************************************************************/
 
+  /* ensure n is initialised */
+  for (i = 0; i < 2048; i++)
+    n[i] = 0;
+
   for(i=0;i<nfiles;i++){
     n[i] = (t[i][N[i]-1]-t[i][0])/dt;
   }

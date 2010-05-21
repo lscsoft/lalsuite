@@ -136,131 +136,58 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
       sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
    }
    
+   INT4 errcode = 0;
    
-   //First, check to see if the weights and noise will cause problems for the solver. If they do, then we have to use simulations
-   /* INT4 trouble = 0;
-   for (ii=0; ii<numweights; ii++) {
-      REAL8 multfactor = 0.0;
-      if (ii==0 && trouble==0) {
-         for (jj=1; jj<numweights; jj++) {
-            multfactor += log10(fabs(1.0 - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])));
-            if (multfactor <= log10(LAL_REAL8_MIN)) trouble = 1;
-         }
-      } else if (ii==numweights-1 && trouble==0) {
-         for (jj=0; jj<numweights-1; jj++) {
-            multfactor += log10(fabs(1.0 - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])));
-            if (multfactor <= log10(LAL_REAL8_MIN)) trouble = 1;
-         }
-      } else if (trouble==0) {
-         for (jj=0; jj<ii-1; jj++) {
-            multfactor += log10(fabs(1.0 - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])));
-            if (multfactor <= log10(LAL_REAL8_MIN)) trouble = 1;
-         }
-         for (jj=ii+1; jj<numweights; jj++) {
-            multfactor += log10(fabs(1.0 - templatestruct->templatedata->data[jj]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ]/(templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])));
-            if (multfactor <= log10(LAL_REAL8_MIN)) trouble = 1;
-         }
-      }
-   } */
+   //Set up solver
+   const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_newton;
+   gsl_root_fdfsolver *s = gsl_root_fdfsolver_alloc(T);
+   gsl_function_fdf FDF;
    
-   /* if (trouble==1) {
-      fprintf(stderr,"Possible numerical problem with solver... Running simulation...\n");
-      farStruct *tempout = new_farStruct();
-      estimateFAR(tempout, templatestruct, (INT4)roundf(10000*.01/thresh), thresh, ffplanenoise, fbinaveratios);
-      out->far = tempout->far;
-      out->distMean = tempout->distMean;
-      out->distSigma = tempout->distSigma;
-      free_farStruct(tempout);
-   } else { */
-      //Set up solver
-      const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_newton;
-      gsl_root_fdfsolver *s = gsl_root_fdfsolver_alloc(T);
-      gsl_function_fdf FDF;
+   //Include the various parameters in the struct required by GSL
+   struct gsl_probR_pars params = {templatestruct, ffplanenoise, fbinaveratios, thresh, errcode};
+   
+   //REAL8 sumw = 0.0;
+   //for (ii=0; ii<numweights; ii++) sumw += templatestruct->templatedata->data[ii];
+   
+   //Assign GSL function the necessary parts
+   FDF.f = &gsl_probR;
+   FDF.df = &gsl_dprobRdR;
+   FDF.fdf = &gsl_probRandDprobRdR;
+   FDF.params = &params;
+   
+   //Start off with an initial guess
+   REAL8 rootguess = 10.0;
+   REAL8 initialroot = rootguess;
+   
+   //Set the number of tries of different initial guesses
+   //INT4 rootTries = 1;
+   //INT4 maxRootTries = 5;
+   
+   //Set the solver at the beginning
+   gsl_root_fdfsolver_set(s, &FDF, initialroot);
+   
+   //And now find the root
+   ii = 0;
+   INT4 max_iter = 100;
+   INT4 status = GSL_CONTINUE;
+   REAL8 root;
+   while (status==GSL_CONTINUE && ii<max_iter) {
+      ii++;
+      status = gsl_root_fdfsolver_iterate(s);
+      root = rootguess;
+      rootguess = gsl_root_fdfsolver_root(s);
+      //fprintf(stderr,"%g\n",rootguess);
+      status = gsl_root_test_delta(rootguess, root, 0.0, 0.001);
       
-      //Include the various parameters in the struct required by GSL
-      struct gsl_probR_pars params = {templatestruct, ffplanenoise, fbinaveratios, thresh};
-      
-      //REAL8 sumw = 0.0;
-      //for (ii=0; ii<numweights; ii++) sumw += templatestruct->templatedata->data[ii];
-      
-      //Assign GSL function the necessary parts
-      FDF.f = &gsl_probR;
-      FDF.df = &gsl_dprobRdR;
-      FDF.fdf = &gsl_probRandDprobRdR;
-      FDF.params = &params;
-      
-      //Start off with an initial guess
-      REAL8 rootguess = 10.0;
-      REAL8 initialroot = rootguess;
-      
-      //Set the number of tries of different initial guesses
-      //INT4 rootTries = 1;
-      //INT4 maxRootTries = 5;
-      
-      //Set the solver at the beginning
-      gsl_root_fdfsolver_set(s, &FDF, initialroot);
-      
-      //If there are problems with the initial guess, try to fix them now
-      /* while (gsl_dprobRdR(initialroot, &params)==0.0 && rootTries<=maxRootTries) {
-         initialroot *= 0.5;
-         gsl_root_fdfsolver_set(s, &FDF, initialroot);
-         rootTries++;
-      }
-      if (rootTries>maxRootTries) {
-         rootTries = 1;
-         initialroot *= 32.0;
-      }
-      while (gsl_dprobRdR(initialroot, &params)==0.0 && rootTries<=maxRootTries) {
-         initialroot *= 2.0;
-         gsl_root_fdfsolver_set(s, &FDF, initialroot);
-         rootTries++;
-      } */
-      
-      //And now find the root
-      ii = 0;
-      INT4 max_iter = 100;
-      INT4 status = GSL_CONTINUE;
-      REAL8 root;
-      while (status==GSL_CONTINUE && ii<max_iter) {
-         ii++;
-         status = gsl_root_fdfsolver_iterate(s);
-         root = rootguess;
-         rootguess = gsl_root_fdfsolver_root(s);
-         //fprintf(stderr,"%g\n",rootguess);
-         status = gsl_root_test_delta(rootguess, root, 0.0, 0.001);
-         
-         //If the new root is negative, we need to try again with a higher value for the initial guess or if the new root is going to give a slope of zero, we should try with a smaller value for the initial guess. Each new try will add to rootTries which if we try too many times will cause this loop to exit and start a simulation to assess the distribution and threshold value.
-         /* if (rootguess <= 0.0) {
-            initialroot *= 2.0;
-            gsl_root_fdfsolver_set(s, &FDF, initialroot);
-            rootTries++;
-            if (status!=GSL_CONTINUE) status = GSL_CONTINUE;
-         } else if (status==GSL_CONTINUE && gsl_dprobRdR(rootguess, &params)==0.0) {
-            initialroot *= 0.5;
-            gsl_root_fdfsolver_set(s, &FDF, initialroot);
-            rootTries++;
-         } */
-      }
-      
-      //Run simulations if we didn't find a solution numerically
-      /* if (status==GSL_CONTINUE || ii==max_iter || rootTries>maxRootTries) {
-         fprintf(stderr,"Numerical solver did not converge. Running simulation...\n");
-         farStruct *tempout = new_farStruct();
-         estimateFAR(tempout, templatestruct, (INT4)roundf(10000*.01/thresh), thresh, ffplanenoise, fbinaveratios);
-         out->far = tempout->far;
-         out->distMean = tempout->distMean;
-         out->distSigma = tempout->distSigma;
-         free_farStruct(tempout);
-      } else { */
-         //Output values
-         out->far = rootguess;
-         out->distMean = 0.0;
-         out->distSigma = 1.0; //TODO: Get the real value of sigma
-      //}
-      
-      //Cleanup
-      gsl_root_fdfsolver_free(s);
-   //}
+   }
+   
+   out->far = rootguess;
+   out->distMean = 0.0;
+   out->distSigma = 1.0; //TODO: Get the real value of sigma
+   out->farerrcode = errcode;
+   
+   //Cleanup
+   gsl_root_fdfsolver_free(s);
    
 }
 REAL8 gsl_probR(REAL8 R, void *param)
@@ -268,7 +195,7 @@ REAL8 gsl_probR(REAL8 R, void *param)
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
    
-   REAL8 prob = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R);
+   REAL8 prob = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, &pars->errcode);
    
    REAL8 returnval = prob - pars->threshold;
    
@@ -289,13 +216,13 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
       dR *= 2.0;
    } */
    
-   REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R);
-   REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R);
+   REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R, &pars->errcode);
+   REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R, &pars->errcode);
    slope = (prob1-prob2)/(2.0*dR*R);
    while (slope>-10.0*LAL_REAL4_MIN) {
       dR *= 2.0;
-      prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R);
-      prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R);
+      prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R, &pars->errcode);
+      prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R, &pars->errcode);
       slope = (prob1-prob2)/(2.0*dR*R);
    }
    
@@ -316,7 +243,7 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 
 //////////////////////////////////////////////////////////////
 // Analytically calculate the probability of a true signal
-REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R)
+REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R, INT4 *errcode)
 {
    
    INT4 ii;
@@ -340,7 +267,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
    }
    
-   INT4 errcode;
+   //INT4 errcode;
    qfvars vars;
    vars.weights = newweights;
    vars.noncentrality = noncentrality;
@@ -350,7 +277,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.c = Rpr;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
-   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-14, &errcode); 
+   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-14, errcode); 
    
    //Cleanup
    XLALDestroyREAL8Vector(newweights);
