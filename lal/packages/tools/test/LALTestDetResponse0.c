@@ -2667,7 +2667,7 @@ char *laldr_strlcpy(char *dst, const char *src, size_t len)
   char *retval = strncpy(dst, src, len);
   if (verbose_level & 8)
     {
-      printf("sizeof(dst) = %u\n", sizeof(dst));
+      printf("sizeof(dst) = %zu\n", sizeof(dst));
       printf("strlen(src) = %zu\n", strlen(src));
       printf("TESTDR_MIN(len, strlen(src)+1) = %zu\n",
              TESTDR_MIN(len, strlen(src)+1));
