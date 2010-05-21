@@ -1085,8 +1085,9 @@ int main( int argc, char *argv[] )
 	  }
         }
         /* Now that the time series are commensurate, do the filtering... */
-        XLALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, thisScan.skyGrid, chisq, chisq_dof, snrsqArray, eff_snr_denom_fac, nullStatRegul);         
- 
+        SkyGrid *grid = (SkyGrid*)thisScan.skyGrid;
+        XLALCoherentInspiralFilterSegment(&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, grid, chisq, chisq_dof, snrsqArray, eff_snr_denom_fac, nullStatRegul);
+
         /* Save event id in multi_inspiral table */
         thisEventTemp =thisEvent;
         while( thisEventTemp )

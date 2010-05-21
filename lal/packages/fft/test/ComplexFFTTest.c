@@ -95,13 +95,6 @@ ParseOptions( int argc, char *argv[] );
 static void
 TestStatus( LALStatus *status, const char *expectedCodes, int exitCode );
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-static void
-ClearStatus( LALStatus *status );
-#endif
-
 static void
 CheckErrorCodes( void );
 
@@ -359,28 +352,6 @@ TestStatus( LALStatus *status, const char *ignored, int exitcode )
   fprintf( stderr, "\nExiting to system with code %d\n", exitcode );
   exit( exitcode );
 }
-
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-/*
- *
- * ClearStatus()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-static void
-ClearStatus( LALStatus *status )
-{
-  if ( status->statusPtr )
-  {
-    ClearStatus( status->statusPtr );
-    DETATCHSTATUSPTR( status );
-  }
-}
-#endif
 
 /*
  *
