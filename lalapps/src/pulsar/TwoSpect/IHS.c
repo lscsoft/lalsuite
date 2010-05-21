@@ -453,7 +453,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
                REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
                candlist[(*numofcandidates)] = new_candidate();
-               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, ihs_sum, ihsSnr, 0.0);
+               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, ihs_sum, ihsSnr, 0.0, 0);
                (*numofcandidates)++;
             }
          }

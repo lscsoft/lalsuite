@@ -59,6 +59,7 @@ typedef struct
    REAL8 stat;
    REAL8 snr;
    REAL8 prob;
+   INT4 proberrcode;
 } candidate;
 
 typedef struct
@@ -87,6 +88,7 @@ typedef struct
    REAL8 distMean;
    REAL8 distSigma;
    REAL8Vector *topRvalues;
+   INT4 farerrcode;
 } farStruct;
 
 typedef struct
