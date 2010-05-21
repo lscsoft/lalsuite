@@ -6,22 +6,22 @@
 	  {
 	    REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
 	    
-	    float STn[4] __attribute__ ((aligned (16))); /* aligned for vector output */
+	    float STn[4] __attribute__ ((aligned (16)));       /* aligned for vector output */
 	    /* the vectors actually become registers in the AVUnit */
-	    vector unsigned char perm;      /* permutation pattern for unaligned memory access */
-	    vector float load0, load1, load2;    /* temp registers for unaligned memory access */
-	    vector float XaiV   /* xmm3 */;                     /* SFT data loaded from memory */
-	    vector float STnV   /* xmm1 */;                            /* sums up the dividend */
-	    vector float V0000             = {0,0,0,0};                /* zero vector constant */
-	    vector float V2222  /* xmm4 */ = {2,2,2,2};                     /* vector constant */
+	    vector unsigned char perm;   /* permutation pattern for unaligned memory access */
+	    vector float load0, load1, load2; /* temp registers for unaligned memory access */
+	    vector float XaiV   /* xmm3 */;                  /* SFT data loaded from memory */
+	    vector float STnV   /* xmm1 */;                         /* sums up the dividend */
+	    vector float V0000             = {0,0,0,0};             /* zero vector constant */
+	    vector float V2222  /* xmm4 */ = {2,2,2,2};                  /* vector constant */
 	    vector float pnV    /* xmm2 */ = {((float)(kappa_max)),
 					      ((float)(kappa_max)),
 					      ((float)(kappa_max - 1)),
 					      ((float)(kappa_max - 1)) };
-	    vector float qnV    /* xmm0 */ = pnV;  /* common divisor, initally = 1.0 * pnV */
+	    vector float qnV    /* xmm0 */ = pnV;   /* common divisor, initally = 1.0 * pnV */
 	    /*    this column above (^) lists the corresponding register in the SSE version */
 	    
-	    vector float tV;  /* temporary vector used for Newton-Rhapson iterarion */
+	    vector float tV;          /* temporary vector used for Newton-Rhapson iterarion */
 
 	    /* init the memory access (load0,load1) */
 	    load0   = vec_ld  (0,(Xalpha_kR4));
@@ -58,13 +58,14 @@
             qnV     = vec_madd(qnV,tV,V0000);\
 	    STnV    = vec_madd(XaiV, qnV, STnV);
 
-	    VEC_LOOP_RE(4,1,2);
-	    VEC_LOOP_RE(8,2,0);
-	    VEC_LOOP_RE_NR(12,0,1);
-	    VEC_LOOP_RE_NR(16,1,2);
-	    VEC_LOOP_RE_NR(20,2,0);
-	    VEC_LOOP_RE(24,0,1);
-	    VEC_LOOP_RE(28,1,0);
+	    /* actual "hot loop" (unrolled) */
+	    VEC_LOOP_RE     (4,1,2);
+	    VEC_LOOP_RE     (8,2,0);
+	    VEC_LOOP_RE_NR (12,0,1);
+	    VEC_LOOP_RE_NR (16,1,2);
+	    VEC_LOOP_RE_NR (20,2,0);
+	    VEC_LOOP_RE    (24,0,1);
+	    VEC_LOOP_RE    (28,1,0);
 
 	    /* output the vector */
 	    vec_st(STnV,0,STn);
