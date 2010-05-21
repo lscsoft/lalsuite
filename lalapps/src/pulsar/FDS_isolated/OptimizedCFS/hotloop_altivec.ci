@@ -35,7 +35,7 @@
 
 	    /* use a reciprocal estimate as a replacement for a division.
 	       in our case this is only valid for the "outer" elements of the kernel loop */
-#define VEC_LOOP_RE(n,a,b)\ /* one "loop iteration" with reciprocal estimate (RE) for division */
+#define VEC_LOOP_RE(n,a,b)\
 	    pnV     = vec_sub(pnV,V2222);\
 	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
             load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
@@ -47,7 +47,7 @@
 	       re1(x) = re0(x) * (2 - x * re0(x))
 	       (see http://en.wikipedia.org/wiki/Division_(digital)#Newton-Raphson_division)
 	       this should give as much precision as a normal float division */
-#define VEC_LOOP_RE_NR(n,a,b)\ /* one "loop iteration" with RE and Newton refinement */
+#define VEC_LOOP_RE_NR(n,a,b)\
 	    pnV     = vec_sub(pnV,V2222);\
 	    perm    = vec_lvsl(0,(Xalpha_kR4+(n)));\
             load##b = vec_ld(0,(Xalpha_kR4+(n)+4));\
