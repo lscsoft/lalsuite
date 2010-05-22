@@ -322,7 +322,7 @@ DestroyStorage (LALStatus *status,
     LALFree(*(store->gaussMask+i));
 #if 0
   /* set the storage structure to 0 */
-  /memset((void *)store,sizeof(*store),0);
+  memset((void *)store,sizeof(*store),0);
 #endif
   RETURN(status);
 }
