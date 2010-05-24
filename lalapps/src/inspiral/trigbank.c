@@ -234,13 +234,13 @@ int main( int argc, char *argv[] )
 
       case 'a':
         /* name of input ifo*/
-        strncpy( inputIFO, optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
+        strncpy( inputIFO, optarg, LIGOMETA_IFO_MAX );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'b':
         /* name of output ifo */
-        strncpy( outputIFO, optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
+        strncpy( outputIFO, optarg, LIGOMETA_IFO_MAX );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 

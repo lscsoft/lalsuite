@@ -1333,8 +1333,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-            optarg );
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );

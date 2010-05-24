@@ -530,7 +530,7 @@ int main(int argc, char *argv[])
 
     /* create the standard candle and database table */
     memset(&candle, 0, sizeof(FindChirpStandardCandle));
-    strncpy(candle.ifo, ifo, 2 * sizeof(CHAR));
+    strncpy(candle.ifo, ifo, 2);
     candle.tmplt.mass1 = CANDLE_MASS1;
     candle.tmplt.mass2 = CANDLE_MASS2;
     candle.rhosq = CANDLE_RHOSQ;
@@ -702,7 +702,7 @@ int main(int argc, char *argv[])
                                          frStream), &status);
 
         /* copy the data paramaters from the h(t) channel to input data channel */
-        snprintf(chan.name, LALNameLength * sizeof(CHAR), "%s",
+        snprintf(chan.name, LALNameLength, "%s",
                  strainChan.name);
         chan.epoch = strainChan.epoch;
         chan.deltaT = strainChan.deltaT;
@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
     /* store the input sample rate */
     this_search_summvar = searchsummvars.searchSummvarsTable =
         (SearchSummvarsTable *) LALCalloc(1, sizeof(SearchSummvarsTable));
-    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX,
              "raw data sample rate");
     this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -797,8 +797,7 @@ int main(int argc, char *argv[])
         }
 
         /* re-copy the data paramaters from the h(t) channel to input data channel */
-        snprintf(chan.name, LALNameLength * sizeof(CHAR), "%s",
-                 strainChan.name);
+        snprintf(chan.name, LALNameLength, "%s", strainChan.name);
         chan.epoch = strainChan.epoch;
         chan.deltaT = strainChan.deltaT;
         chan.f0 = strainChan.f0;
@@ -899,8 +898,7 @@ int main(int argc, char *argv[])
         /* create the lal calibration frame cache */
         if (globCalData) {
             calGlobPattern = (CHAR *) LALCalloc(calGlobLen, sizeof(CHAR));
-            snprintf(calGlobPattern, calGlobLen * sizeof(CHAR),
-                     "*CAL*%s*.gwf", ifo);
+            snprintf(calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo);
             if (vrbflg)
                 fprintf(stdout, "globbing for %s calibration frame files "
                         "in current directory\n", calGlobPattern);
@@ -925,10 +923,10 @@ int main(int argc, char *argv[])
                                                   sizeof
                                                   (SearchSummvarsTable));
             snprintf(this_search_summvar->name,
-                     LIGOMETA_NAME_MAX * sizeof(CHAR),
+                     LIGOMETA_NAME_MAX,
                      "calibration frame %d", i);
             snprintf(this_search_summvar->string,
-                     LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+                     LIGOMETA_STRING_MAX, "%s",
                      calCache->frameFiles[i].url);
         }
 
@@ -1020,7 +1018,7 @@ int main(int argc, char *argv[])
     /* store the filter data sample rate */
     this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc(1, sizeof(SearchSummvarsTable));
-    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX,
              "filter data sample rate");
     this_search_summvar->value = chan.deltaT;
 
@@ -1036,10 +1034,10 @@ int main(int argc, char *argv[])
 #ifdef LALAPPS_CONDOR
         condor_compress_ckpt = 1;
         if (ckptPath[0]) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
+            snprintf(fname, FILENAME_MAX, "%s/%s.ckpt",
                      ckptPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt",
+            snprintf(fname, FILENAME_MAX, "%s.ckpt",
                      fileName);
         }
         if (vrbflg)
@@ -1876,10 +1874,10 @@ int main(int argc, char *argv[])
     if (writeRawData || writeFilterData || writeResponse || writeSpectrum
         || writeRhosq || writeChisq || writeCData) {
         if (outputPath[0]) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+            snprintf(fname, FILENAME_MAX, "%s/%s.gwf",
                      outputPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf",
+            snprintf(fname, FILENAME_MAX, "%s.gwf",
                      fileName);
         }
         if (vrbflg)
@@ -1921,18 +1919,18 @@ int main(int argc, char *argv[])
     memset(&results, 0, sizeof(LIGOLwXMLStream));
     if (outputPath[0]) {
         if (outCompress) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+            snprintf(fname, FILENAME_MAX, "%s/%s.xml.gz",
                      outputPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+            snprintf(fname, FILENAME_MAX, "%s/%s.xml",
                      outputPath, fileName);
         }
     } else {
         if (outCompress) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz",
+            snprintf(fname, FILENAME_MAX, "%s.xml.gz",
                      fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.xml",
+            snprintf(fname, FILENAME_MAX, "%s.xml",
                      fileName);
         }
     }
@@ -3178,9 +3176,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'N':
-                if (snprintf
-                    (ckptPath, FILENAME_MAX * sizeof(CHAR), "%s",
-                     optarg) < 0) {
+                if (snprintf(ckptPath, FILENAME_MAX, "%s", optarg) < 0) {
                     fprintf(stderr,
                             "invalid argument to --%s\n"
                             "local path %s too long: string truncated\n",
@@ -3190,8 +3186,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 ADD_PROCESS_PARAM("string", "%s", optarg);
 
             case 'O':
-                if (snprintf(outputPath, FILENAME_MAX * sizeof(CHAR),
-                             "%s", optarg) < 0) {
+                if (snprintf(outputPath, FILENAME_MAX, "%s", optarg) < 0) {
                     fprintf(stderr, "invalid argument to --%s\n"
                             "output path %s too long: string truncated\n",
                             long_options[option_index].name, optarg);

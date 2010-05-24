@@ -622,8 +622,8 @@ int main( int argc, char *argv[] )
           this_inj, &galacticPar, randParams ), &status );
 
     /* set the source and waveform fields */
-    snprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "MW" );
-    snprintf( this_inj->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+    snprintf( this_inj->source, LIGOMETA_SOURCE_MAX, "MW" );
+    snprintf( this_inj->waveform, LIGOMETA_WAVEFORM_MAX, 
         "GeneratePPNtwoPN" );
 
     /* increment the injection time */
