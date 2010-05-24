@@ -2667,7 +2667,7 @@ int main( int argc, char *argv[] )
                     {
                       cDataForFrame = 1;
                       snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                   "%lld", tempTmplt->event_id->id );
+                                   "%" LAL_UINT8_FORMAT, tempTmplt->event_id->id );
                       snprintf( coherentInputData->name,
                                    LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
@@ -5182,7 +5182,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
-          gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
+          (INT8)(gpsStartTimeNS / 1000000000LL), (INT8)(gpsEndTimeNS / 1000000000LL) );
       fprintf( stderr, "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
           "computed input data length: %" LAL_INT8_FORMAT "ns\n",
           gpsChanIntervalNS, inputDataLengthNS );
