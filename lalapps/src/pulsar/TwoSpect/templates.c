@@ -156,12 +156,8 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
    FDF.params = &params;
    
    //Start off with an initial guess
-   REAL8 rootguess = 10.0;
+   REAL8 rootguess = log10(10.0);
    REAL8 initialroot = rootguess;
-   
-   //Set the number of tries of different initial guesses
-   //INT4 rootTries = 1;
-   //INT4 maxRootTries = 5;
    
    //Set the solver at the beginning
    gsl_root_fdfsolver_set(s, &FDF, initialroot);
@@ -197,7 +193,8 @@ REAL8 gsl_probR(REAL8 R, void *param)
    
    REAL8 prob = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, &pars->errcode);
    
-   REAL8 returnval = prob - pars->threshold;
+   //REAL8 returnval = prob - pars->threshold;
+   REAL8 returnval = prob - log10(pars->threshold);
    
    return returnval;
    
@@ -209,13 +206,8 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    
    REAL8 dR = 0.001;
    REAL8 slope = 0.0;
-   /* while (slope<LAL_REAL4_MIN) {
-      REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R);
-      REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R);
-      slope = (prob1-prob2)/(2.0*dR*R);
-      dR *= 2.0;
-   } */
    
+   //Explicit computation of slope
    REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R, &pars->errcode);
    REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R, &pars->errcode);
    slope = (prob1-prob2)/(2.0*dR*R);
@@ -242,7 +234,7 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 
 
 //////////////////////////////////////////////////////////////
-// Analytically calculate the probability of a true signal
+// Analytically calculate the probability of a true signal output is log10(prob)
 REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R, INT4 *errcode)
 {
    
@@ -279,13 +271,50 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-14, errcode); 
    
+   //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
+   //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
+   //Use slope to extend the computation and then compute the exponential of the found log10 probability.
+   REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
+   INT4 estimatedTheProb = 0;
+   if (prob<LAL_REAL8_EPS) {
+      estimatedTheProb = 1;
+      
+      c1 = 0.9*vars.c;
+      vars.c = c1;
+      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode);
+      while (tempprob<2.0*LAL_REAL8_EPS) {
+         c1 *= 0.9;
+         vars.c = c1;
+         tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode);
+      }
+      logprob1 = log10(tempprob);
+      
+      c2 = 0.9*c1;
+      vars.c = c2;
+      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode));
+      while ((logprob2-logprob1)<2.0*LAL_REAL8_EPS) {
+         c2 *= 0.9;
+         vars.c = c2;
+         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode));
+      }
+      
+      //Calculating slope
+      probslope = (logprob1-logprob2)/(c1-c2);
+      
+      //Find the log10(prob) of the original Rpr value
+      logprobest = logprob1 - probslope*(c1-Rpr);
+      
+   }
+   
    //Cleanup
    XLALDestroyREAL8Vector(newweights);
    XLALDestroyREAL8Vector(noncentrality);
    XLALDestroyINT4Vector(dofs);
    XLALDestroyINT4Vector(sorting);
    
-   return prob;
+   //return prob;
+   if (estimatedTheProb==1) return logprobest;
+   else return log10(prob);
    
 }
 

@@ -13,7 +13,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_monteint lalapps_zellepolka		\
 	lalapps_PredictFStat \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
-	lalapps_synthesizeBstatMC
+	lalapps_synthesizeBstatMC lalapps_ComputeFStatistic_v2
 
 check_PROGRAMS = testFstat_v3
 
@@ -21,11 +21,11 @@ EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
 		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
 
 # CFSv2 doesn't compile with Condor
-if CONDOR_ENABLED
-EXTRA_PROGRAMS += lalapps_ComputeFStatistic_v2
-else
-bin_PROGRAMS += lalapps_ComputeFStatistic_v2
-endif
+#if CONDOR_ENABLED
+#EXTRA_PROGRAMS += lalapps_ComputeFStatistic_v2
+#else
+#bin_PROGRAMS += lalapps_ComputeFStatistic_v2
+#endif
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c

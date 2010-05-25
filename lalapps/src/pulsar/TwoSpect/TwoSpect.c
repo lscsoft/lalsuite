@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
             
             //Caclulate R
             REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-            REAL8 prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+            REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
             //fprintf(stderr,"Probability = %g\n",prob);
             
             //Destroy unneeded things
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
                      //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
                      //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
                      //farval = new_farStruct();
                      //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
                      //farval = new_farStruct();
                      //estimateFAR(farval, template, (INT4)roundf(10000*.01/templatefarthresh), templatefarthresh, aveNoise);
                      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 snr = (R-farval->distMean)/farval->distSigma;
                      //if (R>farval->far && snr > bestsnr) {
                      if (R>farval->far && prob < bestProb) {
@@ -685,6 +685,8 @@ int main(int argc, char *argv[])
          nump = 9;
          trialp = XLALCreateREAL8Vector(nump);
          
+         //FILE *Rtemplatevals = fopen("./Rtemplatevals.dat","w");
+         
          //Now search over the parameter space. Frequency, then modulation depth, then period
          INT4 bestproberrcode = 0;
          REAL8 bestf, bestp, bestdf, bestR, bestSNR;
@@ -725,7 +727,8 @@ int main(int argc, char *argv[])
                      template = new_templateStruct(inputParams->templatelength);
                      makeTemplateGaussians(template, cand, inputParams);
                      REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     REAL8 prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     //fprintf(Rtemplatevals,"%.6g %.6g %.6g %.6g %.6g\n",trialf->data[jj], trialp->data[ll], trialb->data[kk], R, prob);
                      REAL8 snr = (R - farval->distMean)/farval->distSigma;
                      //if (ll==1) fprintf(stderr,"%f %g %g\n",trialf->data[jj],R,snr);
                      //if (R > farval->far && snr > bestSNR) {
@@ -749,6 +752,8 @@ int main(int argc, char *argv[])
                farval = NULL;
             }
          }
+         
+         //fclose(Rtemplatevals);
          
          if (bestf!=0.0) {
             gaussCandidates3[numofcandidates2] = new_candidate();
@@ -908,7 +913,7 @@ int main(int argc, char *argv[])
                      makeTemplate(template, cand, inputParams, secondFFTplan);
                      
                      REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-                     REAL8 prob = log10(probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
+                     REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                      REAL8 SNR = (R - farval->distMean)/farval->distSigma;
                      
                      //if (R > farval->far && SNR > bestSNR) {
@@ -1159,7 +1164,7 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
    
    //Now put the power data into the TF plane, looping through each SFT
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
-   REAL8 scalingfact = 2.0e42;
+   REAL8 scalingfact = 2.0;
    INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
@@ -1182,7 +1187,7 @@ REAL8Vector * readInSFTs(inputParamsStruct *input)
             for (jj=0; jj<sftlength; jj++) meansftval += tfdata->data[ii*sftlength + jj];
             meansftval /= (REAL8)sftlength;
             scalingfact /= meansftval;
-            tfdata->data[ii*sftlength + jj] /= meansftval;
+            tfdata->data[ii*sftlength + jj] *= scalingfact;
             fprintf(LOG,"Scaling factor for SFTs = %g\n",scalingfact);
             fprintf(stderr,"Scaling factor for SFTs = %g\n",scalingfact);
          }
@@ -1220,8 +1225,7 @@ void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata
 
 
 //////////////////////////////////////////////////////////////
-// Determine the TF running mean of each SFT  -- done
-//REAL8Vector * tfRngMeans(REAL8Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
+// Determine the TF running mean of each SFT  -- 
 void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
    
@@ -1256,6 +1260,8 @@ void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbi
          for (jj=0; jj<(INT4)mediansout->length; jj++) out->data[ii*numfbins + jj] = 0.0;
       }
    }
+   
+   fprintf(stderr,"Mean of running means = %g\n",calcMean(out));
    
    XLALDestroyREAL8Sequence(inpsd);
    XLALDestroyREAL8Sequence(mediansout);

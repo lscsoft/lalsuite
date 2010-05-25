@@ -226,7 +226,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   //estimateFAR(farval, template, 10000, 0.01, ffplanenoise, fbinaveratios);
                   numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
                   REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
-                  REAL8 prob = log10(probR(template, ffplanenoise, fbinaveratios, R, &proberrcode));
+                  REAL8 prob = (probR(template, ffplanenoise, fbinaveratios, R, &proberrcode));
                   REAL8 snr = (R - farval->distMean)/farval->distSigma;
                   //if (R > farval->far && snr > bestSNR) {
                   if (R > farval->far && prob < bestProb) {
