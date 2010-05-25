@@ -66,14 +66,16 @@
  * radiation expressed as a percent, and the distance to the typical source
  * (angle-averaged waveform) $r$ given in megaparsecs (Mpc).  The central
  * frequency and quality of the ringdown are approximated
- * as~\cite{EWLeaver,FEcheverria}:
+ * as~\cite{EWLeaver,EBerti}:
  * \begin{equation}
- *   f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
+ *   f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
  * \end{equation}
  * and
  * \begin{equation}
- *   Q \simeq 2(1-{\hat{a}})^{-9/20}.
+ *   Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
  * \end{equation}
+ * where the values of the constants (f_1,f_2,f_3) and (q_1,q_2,q_3) are
+ * given for each of (l,m,n) in~\cite{EBerti}.
  * The strain waveform produced is $h(t)=A_q q(t)$ where the amplitude factor
  * is~\cite{JDECreighton}
  * \begin{equation}
@@ -113,7 +115,16 @@ NRCSID( RINGC, "$Id$" );
 
 static REAL4 ring_spin_factor( REAL4 a )
 {
-  return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 fparam1 = 1.5251;
+  const REAL4 fparam2 = -1.1568;
+  const REAL4 fparam3 = 0.1292;
+
+  return fparam1 + fparam2 * pow( 1.0 - a, fparam3);
+
+  /* Echeverria's equation */
+  /* return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 ); */
 }
 
 static REAL4 ring_quality_fn( REAL4 Q )
@@ -132,7 +143,17 @@ static REAL4 ring_quality_fn( REAL4 Q )
 REAL4 XLALBlackHoleRingSpin( REAL4 Q )
 /* </lalVerbatim> */
 {
-  return 1.0 - pow( 2.0/Q, 20.0/9.0 );
+
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 qparam1 = 0.7000;
+  const REAL4 qparam2 = 1.4187;
+  const REAL4 qparam3 = -0.4990;
+
+  return 1.0 - pow( qparam2/(Q - qparam1), -1.0/qparam3 );
+
+  /* Echeverria's equation */
+  /* return 1.0 - pow( 2.0/Q, 20.0/9.0 ); */
 }
 
 /* <lalVerbatim file="RingUtilsCP"> */
@@ -149,7 +170,17 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
 REAL4 XLALBlackHoleRingQuality( REAL4 a )
 /* </lalVerbatim> */
 {
-  return 2.0 * pow( ( 1.0 - a ), -0.45 );
+
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 qparam1 = 0.7000;
+  const REAL4 qparam2 = 1.4187;
+  const REAL4 qparam3 = -0.4990;
+
+  return qparam1 + (qparam2 * pow( (1.0 - a), qparam3 ));
+
+  /* Echeverria's equation */
+  /*  return 2.0 * pow( ( 1.0 - a ), -0.45 ); */
 }
 
 /* <lalVerbatim file="RingUtilsCP"> */
