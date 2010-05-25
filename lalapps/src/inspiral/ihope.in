@@ -1120,7 +1120,8 @@ pegasus.selector.replica=Default
 pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
 
 pegasus.dir.submit.subwf.labelbased=true
-"""
+pegasus.dir.submit.logs=%s
+""" % (opts.log_path)
 pegprop_fh.close()
 
 ##############################################################################
