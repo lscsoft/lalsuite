@@ -573,7 +573,7 @@ INT2 ReadData(void)
   const INT4 Nheadlines=4;
 
   FILE *fpobsv,*fptest;
-
+  char *str;
 
   fpobsv = fopen(obsvdatafile,"r");
   fptest = fopen(testdatafile,"r");
@@ -586,8 +586,8 @@ INT2 ReadData(void)
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    fgets(buff,sizeof(buff),fpobsv);
-    fgets(buff,sizeof(buff),fptest);
+    str = fgets(buff,sizeof(buff),fpobsv);
+    str = fgets(buff,sizeof(buff),fptest);
   }
 
   /* data input begin */
