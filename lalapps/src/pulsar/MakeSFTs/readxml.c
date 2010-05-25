@@ -186,6 +186,8 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     FILE *binfile;
 
     int i,j;
+
+    size_t num;
         
     name = ezxml_attr(series,"Name");
     
@@ -261,7 +263,7 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     
     free(pathbinfile);
     
-    fread(buffer,sizeof(double),timeseries->Length * timeseries->Records,binfile);
+    num = fread(buffer,sizeof(double),timeseries->Length * timeseries->Records,binfile);
 
     /* Do the encoding switch if necessary */
 

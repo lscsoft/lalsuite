@@ -403,9 +403,10 @@ heterodyne.\n");  }
         INT4 memcount=1;
       
         do{
-          fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
-          fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
-          fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
+          size_t rc;
+          rc = fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
+          rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
+          rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
