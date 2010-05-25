@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 4
+# serial 5
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -198,18 +198,3 @@ fi
 ,
 AC_MSG_RESULT([no]),
 AC_MSG_RESULT([unknown]) ) ] )
-
-AC_DEFUN([LALAPPS_ENABLE_NIGHTLY],
-[AC_ARG_ENABLE(
-  [nightly],
-  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
-  [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
-           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-      no)  NIGHTLY_VERSION="";;
-      *)   NIGHTLY_VERSION="${enableval}"
-           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-    esac ],
-  [ NIGHTLY_VERSION="" ] )
-  AC_SUBST(NIGHTLY_VERSION)
-])

@@ -169,11 +169,19 @@ static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
   void const* const* pb = (void const* const*)b;
   return(gctFStat_smaller(*pb,*pa));
 }
+
+static int gctFStat_strongest_qsort(const void*a, const void*b) {
+  void const* const* pa = (void const* const*)a;
+  void const* const* pb = (void const* const*)b;
+  return(gctFStat_smaller(*pa,*pb));
+}
+
 static int gctFStat_final_qsort(const void*a, const void*b) {
   void const* const* pa = (void const* const*)a;
   void const* const* pb = (void const* const*)b;
   return(gctFStat_result_order(*pa,*pb));
 }
+
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
@@ -215,6 +223,12 @@ void sort_gctFStat_toplist(toplist_t*l) {
   qsort(l->heap,l->elems,sizeof(char*),gctFStat_final_qsort);
 }
 
+/* (q)sort the toplist in order of strongest candidates */
+void sort_gctFStat_toplist_strongest(toplist_t*l) {
+  qsort(l->heap,l->elems,sizeof(char*),gctFStat_strongest_qsort);
+}
+
+
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
@@ -225,7 +239,7 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 		      * f1dot:1e-5                                                                      
 		      * F:1e-6              
 		      */
-                     "%.13f %.7f %.7f %.7g %d %.6f\n",
+                     "%.14f %.13f %.13f %.7g %d %.6f\n",
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
@@ -637,7 +651,8 @@ static void dump_heap_order(const toplist_t*tl, const char*name) {
 static void sort_gctFStat_toplist_debug(toplist_t*l) {
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
-  sort_gctFStat_toplist(l);
+  sort_gctFStat_toplist(l); 
+  /*sort_gctFStat_toplist_strongest(l);*/
   if(debugfp) {
     fclose(debugfp);
     debugfp=NULL;

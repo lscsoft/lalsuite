@@ -149,6 +149,8 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 
   DETATCHSTATUSPTR (stat);
 
+  (void)param;
+
   /* normal exit */
   RETURN (stat);
 }

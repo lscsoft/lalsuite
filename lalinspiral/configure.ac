@@ -1,4 +1,4 @@
-AC_INIT([lalinspiral],[1.0],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalinspiral],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -40,6 +40,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalinspiral])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
 lalinspiral_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALINSPIRAL_VERSION],["$VERSION"],[LALInspiral Version])
@@ -49,7 +52,7 @@ AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_DATE],["$lalinspiral_configure_date"],
                    [LALInspiral Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
@@ -114,11 +117,11 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.0.2],[LALFrOpen],[lal/LALFrameL.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -138,12 +141,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Inspiral has now been successfully configured
+        LALInspiral has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Inspiral
-        and run 'make install' to install LAL Inspiral
+        Now run 'make' to build LALInspiral
+        and run 'make install' to install LALInspiral
 
 ================================================================="

@@ -1,6 +1,5 @@
-lalxml (1.0-1lscsoft1) unstable; urgency=low
+lalxml (1.0.0-1lscsoft1) unstable; urgency=low
 
-  * LALXML-1.0
+  * LALXML 1.0.0
 
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 09 Sep 2009 15:12:24 -0500
-
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500

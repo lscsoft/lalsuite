@@ -407,7 +407,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	/* Calculate the likelihood for an amplitude-corrected waveform */
 	/* This template is generated in the time domain */
 	REAL8 logL=0.0,chisq=0.0;
-	REAL8 mc,eta,end_time,resp_r,resp_i,real,imag,ci;
+	REAL8 mc,eta,end_time,resp_r,resp_i,real,imag;
 	UINT4 det_i=0,idx=0;
 	UINT4 i=0;
 	DetectorResponse det;
@@ -433,13 +433,15 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
 	PPNparams.mTot=mc2mt(mc,eta);
 	PPNparams.eta=eta;
-	PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
+	if (XLALMCMCCheckParameter(parameter,"logdist")) PPNparams.d=exp(XLALMCMCGetParameter(parameter,"logdist"))*MpcInMeters;
+	else PPNparams.d=XLALMCMCGetParameter(parameter,"distMpc")*MpcInMeters;
 	PPNparams.inc=XLALMCMCGetParameter(parameter,"iota");
 	PPNparams.phi=XLALMCMCGetParameter(parameter,"phi");
 	PPNparams.fStartIn=inputMCMC->fLow;
 	PPNparams.fStopIn=0.5/inputMCMC->deltaT;
 	PPNparams.deltaT=inputMCMC->deltaT;
-	ci=cos(PPNparams.inc);
+	PPNparams.ampOrder = inputMCMC->ampOrder;
+
 	/* Call LALGeneratePPNAmpCorInspiral */
 	LALGeneratePPNAmpCorInspiral(&status,&coherent_gw,&PPNparams);
 	if(status.statusCode)
@@ -448,7 +450,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		chisq=DBL_MAX;
 		goto noWaveform;
 	}
-		
+	
 	/* Set the epoch so that the t_c is correct */
 	end_time = XLALMCMCGetParameter(parameter,"time");
 
@@ -530,16 +532,15 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&(inputMCMC->epoch)); /* Compute det_resp */
-		det_resp.plus*=0.5*(1.0+ci*ci);
-		det_resp.cross*=-ci;
-		
-		
-		
+		/* No need to multiply by cos(iota) as GenerateAmpCorPPNInspiral() takes this into account */
 		chisq=0.0;
 		/* Calculate the logL */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
-		UINT4 highBin = (UINT4)(PPNparams.fStop *(3./2.) / inputMCMC->stilde[det_i]->deltaF); /* Factor 3/2 for AmpCor 3rd harmonic */
+		UINT4 highBin;
+		REAL8 fMultiplier = (inputMCMC->ampOrder + 2.0)/2.0; /* The frequency of the highest harmonic as determined by ampOrder */
+		highBin = (UINT4)(PPNparams.fStop * fMultiplier / inputMCMC->stilde[det_i]->deltaF);
+		
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)
 		   highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
 		for(idx=lowBin;idx<=highBin;idx++){
@@ -601,12 +602,11 @@ in the frequency domain */
 	UINT4 det_i;
 	REAL8 TimeFromGC; /* Time delay from geocentre */
 	static LALStatus status;
-	REAL4FFTPlan *likelihoodPlan=NULL;
 	REAL8 resp_r,resp_i,ci;
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
-	INT4 NtimeModel;
+	
 	LALDetAMResponse det_resp;
 	REAL8 chisq=0.0;
 	REAL8 real,imag;
@@ -643,35 +643,24 @@ in the frequency domain */
 	template.next = NULL;
 	template.fine = NULL;
 
-	/* Compute frequency-domain waveform in free space */
-	LALInspiralParameterCalc(&status,&template);
-	LALInspiralRestrictedAmplitude(&status,&template);
 	Nmodel = (inputMCMC->stilde[0]->data->length-1)*2; /* *2 for real/imag packing format */
 
 	if(model==NULL)	LALCreateVector(&status,&model,Nmodel); /* Allocate storage for the waveform */
 
-	/* Perform additional setup for time domain model */
-	if(template.approximant==TaylorT2 || template.approximant==TaylorT3){
-		NtimeModel = inputMCMC->segment[0]->data->length;
-		if(Tmodel==NULL) LALCreateVector(&status,&Tmodel,NtimeModel);
-		LALInspiralWave(&status,Tmodel,&template);
-		float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
-		float Norm = winNorm * inputMCMC->deltaT;
-		for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
-
-		if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
-		LALREAL4VectorFFT(&status,model,Tmodel,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
-
-
-		/*LALDestroyREAL4FFTPlan(&status,&plan);*/
+	switch(template.approximant)
+	{
+		case IMRPhenomFA : IMRPhenomFA_template(&status,&template,parameter,inputMCMC); break;
+		case IMRPhenomFB : IMRPhenomFB_template(&status,&template,parameter,inputMCMC); break;
+		case EOBNR : EOBNR_template(&status,&template,parameter,inputMCMC); break;
+		case TaylorF2 : TaylorF2_template(&status,&template,parameter,inputMCMC); break;
+		case TaylorT3 : 
+		case TaylorT2 :
+        case TaylorT4 : TaylorT_template(&status,&template,parameter,inputMCMC); break;
+		case SpinTaylor : SpinTaylor_template(&status,&template,parameter,inputMCMC); break;
+        //case PhenSpinTaylorRD : PhenSpinTaylorRD_template(&status,&template,parameter,inputMCMC); break;
+		default: {fprintf(stderr,"This template is not available. Exiting."); exit(1);}
 	}
-	else{
-		if(template.approximant==IMRPhenomA) {
-			template.distance*=LAL_PC_SI*1.0e6; /* PhenomA takes distance in metres */
-			LALBBHPhenWaveFreqDom(&status,model,&template);
-		}
-		else LALInspiralWave(&status,model,&template); /* Create the model waveform - StationaryPhaseApprox2 includes deltaF factor */
-	}
+
 	memset(&ak,0,sizeof(expnCoeffs));
 	memset(&TofVparams,0,sizeof(TofVparams));
 	/* Calculate the time of ISCO (v = 6^(-1/2) ) */
@@ -958,4 +947,350 @@ that LAL uses. Please check this whenever any change is made */
 	parameter->logLikelihood=logL;
 	return(logL);
 }
+
+//void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC){
+
+
+    ///* -- length in seconds from Newtonian formula; */
+    //double lengths = (5.0/256.0)/LAL_PI * pow(LAL_PI * template->chirpMass * LAL_MTSUN_SI * template->fLower,-5.0/3.0) / template->fLower;
+    
+    //UINT4 NtimeModel,Nmodel,idx;
+    //NtimeModel =  inputMCMC->numPoints;
+    //template->order=LAL_PNORDER_THREE_POINT_FIVE;
+    //if(Tmodel==NULL)LALCreateVector(status,&Tmodel,NtimeModel); /* Allocate storage for the waveform */
+    
+    //template->spin1[0]=XLALMCMCGetParameter(parameter,"spin1x");
+	//template->spin1[1]=XLALMCMCGetParameter(parameter,"spin1y");
+	//template->spin1[2]=XLALMCMCGetParameter(parameter,"spin1z");
+
+	//template->spin2[0]=XLALMCMCGetParameter(parameter,"spin2x");
+	//template->spin2[1]=XLALMCMCGetParameter(parameter,"spin2y");
+	//template->spin2[2]=XLALMCMCGetParameter(parameter,"spin2z");
+
+    //template->inclination=XLALMCMCGetParameter(parameter,"iota");
+
+    //LALInspiralParameterCalc(status,template);
+	//LALInspiralRestrictedAmplitude(status,template);
+
+    ////SpinTaylor takes distance in metres
+    //double distanceMPC = template->distance;
+	//double distanceSI = LAL_PC_SI*1e6*template->distance;
+	//template->distance=distanceSI;
+
+    //LALPSpinInspiralRD(status,Tmodel,template);
+    //REPORTSTATUS(status);
+    //float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+	//float Norm = winNorm * inputMCMC->deltaT;
+	//for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+
+	//if(likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
+	//LALREAL4VectorFFT(status,model,Tmodel,likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+    //template->distance=distanceMPC;
+
+    //return;
+//}
+
+void IMRPhenomFA_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+    (void)parameter;
+	/*All components of spin must be set to zero.*/
+	template->spin1[0]=0.;
+	template->spin1[1]=0.;
+	template->spin1[2]=0.;
+
+	template->spin2[0]=0.;
+	template->spin2[1]=0.;
+	template->spin2[2]=0.;
+
+	/* Fill out parameter structure*/
+	LALInspiralParameterCalc(status,template);
+	LALInspiralRestrictedAmplitude(status,template);
+	/* PhenomA takes distance in metres */
+	double distanceMPC = template->distance;
+
+	double distanceSI= LAL_PC_SI*1e6*distanceMPC;
+	template->distance = distanceSI/inputMCMC->deltaF;//IMR doesnt multiply by df
+	/*Generate IMR waveform in frequency domain*/
+	LALBBHPhenWaveFreqDom(status,model,template);
+
+	template->distance = distanceMPC;
+
+}
+
+
+
+void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+
+	/*'x' and 'y' components of spins must be set to zero.*/
+	template->spin1[0]=0.;
+	template->spin1[1]=0.;
+
+	template->spin2[0]=0.;
+	template->spin2[1]=0.;
+
+	/*Get aligned spins configuration/magnitude*/
+	
+    template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
+    template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+    /* Fill out parameter structure*/
+    LALInspiralParameterCalc(status,template);
+    LALInspiralRestrictedAmplitude(status,template);
+
+    /* IMRPhenomFB takes distance in metres */
+    double distanceMPC = template->distance;
+    double distanceSI= LAL_PC_SI*1e6*distanceMPC;
+    template->distance = distanceSI/inputMCMC->deltaF;//IMR doesnt normalise by multiplying by df
+
+    LALBBHPhenWaveFreqDom(status,model,template);
+    template->distance = distanceMPC;
+	
+}
+
+void TaylorF2_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+
+    (void)parameter;
+    (void)inputMCMC;
+	/* Compute frequency-domain waveform in free space */
+
+	LALInspiralParameterCalc(status,template);
+	LALInspiralRestrictedAmplitude(status,template);
+
+	LALInspiralWave(status,model,template);
+
+	/*
+	FILE* model_output;
+	model_output=fopen("output.dat","w");
+
+	fprintf(model_output,"Sampling frequency: %lf\n",template->tSampling);
+
+	fprintf(model_output,"Mass 1: %lf\n",template->mass1);
+	fprintf(model_output,"Mass 2: %lf\n",template->mass2);
+
+	for(i=0;i<model->length;i++) {
+		fprintf(model_output,"%g\n",model->data[i]);
+	}
+	fclose(model_output);
+
+	exit(0);
+	*/
+
+	return;
+
+}
+
+void SpinTaylor_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+
+	UINT4 Nmodel,idx,NtimeModel = inputMCMC->numPoints;
+    if(Tmodel==NULL)	LALCreateVector(status,&Tmodel,NtimeModel); /* Allocate storage for the waveform */
+		/*
+	double spin_long1=XLALMCMCGetParameter(parameter,"spin_long1");
+	double spin_lat1=XLALMCMCGetParameter(parameter,"spin_lat1");
+	double spin_mag1=XLALMCMCGetParameter(parameter,"spin_mag1");
+
+	double spin_long2=XLALMCMCGetParameter(parameter,"spin_long2");
+	double spin_lat2=XLALMCMCGetParameter(parameter,"spin_lat2");
+	double spin_mag2=XLALMCMCGetParameter(parameter,"spin_mag2");
+
+	template->spin1[0]=cos(spin_long1)*sin(spin_lat1)*spin_mag1;
+	template->spin1[1]=sin(spin_long1)*sin(spin_lat1)*spin_mag1;
+	template->spin1[2]=cos(spin_lat1)*spin_mag1;
+
+	template->spin2[0]=cos(spin_long2)*sin(spin_lat2)*spin_mag2;
+	template->spin2[1]=sin(spin_long2)*sin(spin_lat2)*spin_mag2;
+	template->spin2[2]=cos(spin_lat2)*spin_mag2;
+*/
+
+	template->spin1[0]=XLALMCMCGetParameter(parameter,"spin1x");
+	template->spin1[1]=XLALMCMCGetParameter(parameter,"spin1y");
+	template->spin1[2]=XLALMCMCGetParameter(parameter,"spin1z");
+
+ 	template->spin2[0]=XLALMCMCGetParameter(parameter,"spin2x");
+	template->spin2[1]=XLALMCMCGetParameter(parameter,"spin2y");
+	template->spin2[2]=XLALMCMCGetParameter(parameter,"spin2z");
+
+	template->inclination=XLALMCMCGetParameter(parameter,"iota");
+
+
+	Nmodel = (inputMCMC->stilde[0]->data->length-1)*2; /* *2 for real/imag packing format */
+	NtimeModel = 1024*1024;
+
+	if(model==NULL)	LALCreateVector(status,&model,Nmodel); /* Allocate storage for the waveform */
+
+	if(Tmodel==NULL) LALCreateVector(status,&Tmodel,NtimeModel);
+
+	LALInspiralParameterCalc(status,template);
+
+	//SpinTaylor takes distance in metres
+	double distance = LAL_PC_SI*1e6*template->distance;
+	template->distance=distance;
+
+	LALInspiralWave(status,Tmodel,template);
+
+	float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+	float Norm = winNorm * inputMCMC->deltaT;
+	for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+
+	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
+	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+	return;
+}
+
+void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+
+    (void)parameter;
+
+	UINT4 NtimeModel,idx;
+
+	NtimeModel = inputMCMC->segment[0]->data->length;
+	if(Tmodel==NULL) LALCreateVector(status,&Tmodel,NtimeModel);
+
+	LALInspiralParameterCalc(status,template);
+	LALInspiralRestrictedAmplitude(status,template);
+	LALInspiralWave(status,Tmodel,template);
+
+	float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+	float Norm = winNorm * inputMCMC->deltaT;
+	for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+
+	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
+	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+	return;
+
+}
+
+
+void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+
+    (void)parameter;
+
+	double qnm223freq;
+
+	
+	UINT4 i,NtimeModel, idx;
+
+	/*Containers for EOBNR data */
+	COMPLEX8Vector *modefreqs=NULL;
+
+	 /*Extra EOBNR parameters*/
+	template->OmegaS= 0.;
+	template->Zeta2=0.;
+	template->Theta=1.;
+
+	NtimeModel = (inputMCMC->stilde[0]->data->length);
+
+	if(Tmodel==NULL) {
+		LALCreateVector(status,&Tmodel,NtimeModel);
+		LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4)NtimeModel,FFTW_PATIENT);
+	}
+	/*EOBNR requires template.order to be set to
+	* pseudo-fourth order PN approx.*/
+	template->order = LAL_PNORDER_PSEUDO_FOUR;
+
+
+	/*EOBNR may require padding to prevent code from crashing due to
+	* longer waveform.?? */
+	template->nEndPad = 1.;
+
+	/* Calculate QNM 220 frequency to determine appropriate sampling frequency. Taken from test done in EOBNR code. */
+	modefreqs = XLALCreateCOMPLEX8Vector( 3 );
+	XLALGenerateQNMFreq( modefreqs, template, 2, 2, 3 );
+
+	qnm223freq = modefreqs->data[0].re / LAL_PI + 50.;
+
+	/*Determine if sampling frequency is suitable for EOBNR template. If qnm223 freq. is greater than nyquist use EOB*/
+
+	if( qnm223freq > template->tSampling ) {
+		template->approximant=EOB;
+
+	}
+
+	/*Set cut-off freq. using tSampling*/
+	template->fCutoff = template->tSampling/2. - 1.;
+
+	/*Fill out parameter structure*/
+	LALInspiralParameterCalc(status,template);
+
+	/* EOBNR function uses SI units for distance so convert (from Mpc) ...*/
+	double distance = LAL_PC_SI*1e6*template->distance;
+	template->distance = distance;
+
+	printf("qnm %lf samp %lf mass1 %lf mass2 %lf",qnm223freq,template->tSampling,template->mass1,template->mass2);
+
+	/*Generate EOBNR waveform*/
+	LALInspiralWave(status,Tmodel,template);
+
+
+	XLALDestroyCOMPLEX8Vector(modefreqs);
+
+	/*FFT time-domain model to get frequency domain template*/
+
+	float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+	float Norm = winNorm * inputMCMC->deltaT;
+	for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+
+	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+
+	FILE* model_output;
+	model_output=fopen("model_output.dat","w");
+
+	fprintf(model_output,"Sampling frequency: %lf\n",template->tSampling);
+
+	fprintf(model_output,"Mass 1: %lf\n",template->mass1);
+	fprintf(model_output,"Mass 2: %lf\n",template->mass2);
+
+	for(i=0;i<model->length;i++) {
+		fprintf(model_output,"%g\n",model->data[i]);
+	}
+	fclose(model_output);
+
+	exit(0);
+
+
+	return;
+
+}
+
+//void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC){
+
+//    UINT4 NtimeModel,idx;
+//    NtimeModel =  inputMCMC->numPoints;
+//    template->order=LAL_PNORDER_THREE_POINT_FIVE;
+//    if(Tmodel==NULL)LALCreateVector(status,&Tmodel,NtimeModel); /* Allocate storage for the waveform */
+    
+//    template->spin1[0]=XLALMCMCGetParameter(parameter,"spin1x");
+//	template->spin1[1]=XLALMCMCGetParameter(parameter,"spin1y");
+//	template->spin1[2]=XLALMCMCGetParameter(parameter,"spin1z");
+
+//	template->spin2[0]=XLALMCMCGetParameter(parameter,"spin2x");
+//	template->spin2[1]=XLALMCMCGetParameter(parameter,"spin2y");
+//	template->spin2[2]=XLALMCMCGetParameter(parameter,"spin2z");
+
+//    template->inclination=XLALMCMCGetParameter(parameter,"iota");
+
+//    LALInspiralParameterCalc(status,template);
+//	LALInspiralRestrictedAmplitude(status,template);
+
+    //SpinTaylor takes distance in metres
+//    double distanceMPC = template->distance;
+//	double distanceSI = LAL_PC_SI*1e6*template->distance;
+//	template->distance=distanceSI;
+
+//    LALPSpinInspiralRD(status,Tmodel,template);
+//    REPORTSTATUS(status);
+//    float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+//	float Norm = winNorm * inputMCMC->deltaT;
+//	for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+
+//	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
+//	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+
+//    template->distance=distanceMPC;
+
+//    return;
+//}
+
+
 

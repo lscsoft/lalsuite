@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Jolien Creighton, and David Chin, and Steven
  * Fairhurst, and Kipp Cannon, and Alexander Dietz, and Drew Keppel
  *
@@ -23,7 +21,6 @@
 /* <lalVerbatim file="TimeDelayCV">
 
 Author: Chin, David <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-$Id$
 
 </lalVerbatim> */
 
@@ -79,8 +76,6 @@ a GMST which gives us the orientation of the Earth.
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 
-NRCSID( TIMEDELAYC, "$Id$" );
-
 /* scalar product of two 3-vectors */
 static double dotprod(const double vec1[3], const double vec2[3])
 {
@@ -98,13 +93,12 @@ XLALArrivalTimeDiff(
 	const LIGOTimeGPS *gpstime
 )
 { /* </lalVerbatim> */
-	static const char func[] = "XLALArrivalTimeDiff";
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
 
 	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
 	/*
 	 * compute the unit vector pointing from the geocenter to the

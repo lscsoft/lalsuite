@@ -2,7 +2,7 @@
 
         {
 
-          COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
+          //COMPLEX8 XSums __attribute__ ((aligned (16))); /* sums of Xa.re and Xa.im for SSE */
 	  REAL4 kappa_s = kappa_star; /* single precision version of kappa_star */
 
 	  static REAL4 *scd = &(sincosLUTdiff[0]);

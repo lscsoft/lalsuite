@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALFRAMEVCSINFO_H
 #define _LALFRAMEVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALFrameConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALFRAME_VCS_IDENT_COMMITTER "$" "LALFrameCommitter: @COMMITTER@ " "$"
 #define LALFRAME_VCS_IDENT_STATUS "$" "LALFrameStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalFrameVCSInfo;
+static const struct tagLALVCSInfo lalFrameHeaderVCSInfo = { \
+  LALFRAME_VERSION, \
+  LALFRAME_VCS_ID, \
+  LALFRAME_VCS_DATE, \
+  LALFRAME_VCS_BRANCH, \
+  LALFRAME_VCS_TAG, \
+  LALFRAME_VCS_AUTHOR, \
+  LALFRAME_VCS_COMMITTER, \
+  LALFRAME_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

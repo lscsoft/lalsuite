@@ -28,20 +28,58 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/VectorOps.h>
+#include <LALAppsVCSInfo.h>
+#include <lalapps.h>
 
 #include "nest_calc.h"
+
+RCSID(LALAPPS_VCS_IDENT_ID);
 
 #define MAXSTR 128
 #define TIMESLIDE 10 /* Length of time to slide data to lose coherency */
 #define DEBUG 0
-#define USAGE "lalnest [-o outfile] -v (verbose) --GPSstart datastart --length duration --srate sample rate -i [FrameCache|NoiseModel] -I IFO\n \
-{NoiseModel can be LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO, LALEGO to generate design curve noise instead of real noise} \n \
-[... -i FC -I IFO for as many data sources as desired] --seed i [integer, default use date] --dataseed i [for fake data]\n \
---pad padding (1s) --Nsegs number of segments --deta width of eta window --dt time window (0.01)\n\
---XMLfile inputXML --Nruns N [1] --inj injectionXML -F (fake injection) \n \
---event trigNum (0) --end_time GPStime --Mmin m --Mmax M --NINJA for ninja data [--approximant (e.g. TaylorF2|TaylorT2|AmpCorPPN|IMRPhenomA)]\n \
---timeslide --studentt (use student-t likelihood function)\n \
-[--RA fixed right ascension degrees --dec fixed declination degrees] --GRB (use GRB prior) --skyloc (use trigger masses) [--decohere offset]\n"
+#define USAGE "lalapps_inspnest ARGUMENTS [OPTIONS]\n \
+Necessary ARGUMENTS:\n \
+-o outfile\t:\tOutput samples to outfile\n \
+--length duration\t:\tUse duration seconds of data to compute PSD\n \
+--Nsegs INT\t:\tNumber of data segments for PSd estimation\n \
+-I IFO\t:\tSpecify interferometer, one of H1, H1, L1, V1, or G1\n \
+-C STRING\t:\tSpecify reading data from frame channel STRING\n \
+-i cachefile\t:\tRead data from LIGO cache file cachefile.\n \
+\tif cachefile is LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO or LALEGO\n \
+\tfake noise will be generated using the approprate noise curve.\n \
+\tUse more [... -i FC -I IFO -C Channel] for as many data sources as desired\n \
+\n\n\tYou must specify one of the following trigger types\n \
+[--XMLfile PATH\t:\tRead SnglInspiralTable from PATH]\n \
+[--inj PATH\t:\tRead SimInspiralTable from PATH and perform injection (Use [-F] to fake injection)]\n \
+[--end_time GPSTIME\t:\tSpecify end time prior centred at GPSTIME]\n \
+ \n\n \
+Optional OPTIONS:\n \
+[--Nlive INT (1000)\t:\tNumber of live points in nested sampler]\n \
+[--Nmcmc INT (100)\t:\tNumber of MCMC points in chain for each sample]\n \
+[--Nruns INT (1)\t:\tRun INT parallel samplings of the shrinking distribution\n \
+[--seed INT\t:\tSpecify nested sampling random seed, default will use date]\n \
+[--dataseed INT\t:\t Seed for faking data]\n \
+[-v, --verbose\t:\tProduce statistics while running]\n \
+[--GPSstart datastart\t:\tStart PSD estimation from time datastart, will guess if not specified]\n \
+[--srate rate (4096)\t:\tDownsample data to rate Hz]\n \
+[--pad padding (1s)\t:\tPadding for PSD Tukey window\n \
+[--event INT (0)\t:\tUse event INT from Sim or Sngl InspiralTable]\n \
+[--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
+[--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
+[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|EOBNR|SpinTaylor)]\n \
+[--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
+[--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
+[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use]\n \
+[ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
+[--distMax FLOAT (100)\t:\tMaximum distance to use]\n \
+[--deta FLOAT\t:\twidth of eta window]\n \
+[--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
+[--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
+[--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
+[--version\t:\tPrint version information and exit]\n \
+[--help\t:\tPrint this message]\n"
+
 
 extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
@@ -73,6 +111,8 @@ REAL8 manual_mass_low=2.0;
 REAL8 manual_mass_high=35.0;
 REAL8 manual_RA=-4200.0;
 REAL8 manual_dec=-4200.0;
+REAL8 manual_dist_max=100.0;
+REAL8 manual_dist_min=1.0;
 int Nmcmc = 100;
 double injSNR=-1.0;
 extern INT4 seed;
@@ -90,6 +130,7 @@ int HighMassFlag=0;
 int decohereflag=0;
 REAL8 offset=0.0;
 extern const LALUnit strainPerCount;
+INT4 ampOrder=0;
 
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
@@ -165,10 +206,34 @@ void initialise(int argc, char *argv[]){
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
+		{"ampOrder",required_argument,0,17},
+		{"Dmin",required_argument,0,18},
+		{"Dmax",required_argument,0,19},
+		{"version",no_argument,0,'V'},
+		{"help",no_argument,0,'h'},
 		{0,0,0,0}};
 	
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
-	while((i=getopt_long(argc,argv,"i:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFvb",long_options,&i))!=-1){ switch(i) {
+	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
+		case 'h':
+			fprintf(stdout,USAGE);
+			exit(0);
+			break;
+		case 'V':
+			fprintf(stdout,"LIGO/LSC Bayesian parameter estimation and evidence calculation code\nfor CBC signals, using nested sampling algorithm.\nJohn Veitch <john.veitch@ligo.org>\n");
+			XLALOutputVersionString(stderr,0);
+			exit(0);
+			break;
+		case 18:
+			manual_dist_min=atof(optarg);
+			break;
+		case 19:
+			manual_dist_max=atof(optarg);
+			break;
+		case 17:
+			ampOrder=atoi(optarg);
+			if(ampOrder>5) {fprintf(stderr,"ERROR: The maximum amplitude order is 5, please set --ampOrder 5 or less\n"); exit(1);}
+			break;
 		case 14:
 			SNRfac=atof(optarg);
 			break;
@@ -386,31 +451,35 @@ int main( int argc, char *argv[])
 	char strainname[20]="LSC-STRAIN";
 	if(NINJA) sprintf(strainname,"STRAIN"); /* Different strain channel name for NINJA */
 	
+	/* Make a copy of the detectors list */
+	LALDetector *localCachedDetectors=calloc(LAL_NUM_DETECTORS,sizeof(LALDetector));
+	for(i=0;i<LAL_NUM_DETECTORS;i++) memcpy(&(localCachedDetectors[i]),&lalCachedDetectors[i],sizeof(LALDetector));
+
 	/* Set up Detector structures */
 	for(i=0;i<nIFO;i++){
 		if(!strcmp(IFOnames[i],"H1")) {
-			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexLHODIFF];
+			inputMCMC.detector[i]=&localCachedDetectors[LALDetectorIndexLHODIFF];
 			if(nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			else sprintf((ChannelNames[i]),"H1:%s",strainname);
 			continue;}
 		if(!strcmp(IFOnames[i],"H2")) {
-			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexLHODIFF];
+			inputMCMC.detector[i]=&localCachedDetectors[LALDetectorIndexLHODIFF];
 			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			else sprintf((ChannelNames[i]),"H2:%s",strainname);
 			continue;}
 		if(!strcmp(IFOnames[i],"LLO")||!strcmp(IFOnames[i],"L1")) {
-			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexLLODIFF];
+			inputMCMC.detector[i]=&localCachedDetectors[LALDetectorIndexLLODIFF];
 			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			else sprintf((ChannelNames[i]),"L1:%s",strainname);
 			continue;}
 		if(!strcmp(IFOnames[i],"V1")||!strcmp(IFOnames[i],"VIRGO")) {
-			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+			inputMCMC.detector[i]=&localCachedDetectors[LALDetectorIndexVIRGODIFF];
 			if(!NINJA) sprintf((ChannelNames[i]),"V1:h_16384Hz");
 			else sprintf((ChannelNames[i]),"V1:STRAIN");
 			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			continue;}
 		if(!strcmp(IFOnames[i],"GEO")||!strcmp(IFOnames[i],"G1")) {
-			inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+			inputMCMC.detector[i]=&localCachedDetectors[LALDetectorIndexGEO600DIFF];
 			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			else sprintf((ChannelNames[i]),"G1:DER_DATA_H");
 			continue;}
@@ -729,15 +798,25 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 	
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomA"; CHAR AMPCOR[]="AmpCorPPN";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor";
+	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
 	else if(!strcmp(approx,TT2)) inputMCMC.approximant=TaylorT2;
 	else if(!strcmp(approx,TT3)) inputMCMC.approximant=TaylorT3;
-	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomA;
+    	else if(!strcmp(approx,TT4)) inputMCMC.approximant=TaylorT4;
+	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomFA;
+    	else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
+    	else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
+	else if(!strcmp(approx,ST)) inputMCMC.approximant=SpinTaylor;
+    	/*else if(!strcmp(approx,PSTRD)) inputMCMC.approximant=PhenSpinTaylorRD;*/
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}
 	
+	if(inputMCMC.approximant!=AmpCorPPN && ampOrder!=0){
+		fprintf(stderr,"Warning, setting amp order %i but not using AmpCorPPN. Amplitude corrected waveforms will NOT be generated!\n",ampOrder);
+	}
+	inputMCMC.ampOrder=ampOrder;
 	/* Set the initialisation and likelihood functions */
 	if(SkyPatch) {inputMCMC.funcInit = NestInitSkyPatch; goto doneinit;}
 	if(SkyLocFlag) {inputMCMC.funcInit = NestInitSkyLoc; goto doneinit;}
@@ -997,7 +1076,7 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);*/
-	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"logdist",log(manual_dist_min)+gsl_rng_uniform(RNG)*(log(manual_dist_max)-log(manual_dist_min)),log(manual_dist_min),log(manual_dist_max),0);
 	
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);

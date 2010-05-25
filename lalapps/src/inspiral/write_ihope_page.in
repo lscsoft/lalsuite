@@ -1869,33 +1869,19 @@ def get_segments_tag(tag):
   # the name of the files (except for the ifo)
   this_tag  = '-' + tag + opts.txt_suffix
 
-  file = datadir +'/segments/' + ifos[1] + this_tag
-  scifile = datadir +'/segments/' + ifos[1] + '-SCIENCE_SEGMENTS' + opts.txt_suffix
-  if not os.path.isfile(file) or not os.path.isfile(scifile):
-    return thisdata
-
-  #reading the segments files and extract the duration
-  command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{print NF}\'' % (file,scifile)
-  try:
-    ncols, status = make_external_call(command, False, opts.debug, True)
-    ncols = ncols[len(ncols)-2]
-    # some files may be empty, so the first line (the comment 
-    # which has 5 cols) will be read, which explain the >= and not strict ==. 
-    if float(ncols)>=4 or float(ncols)==2:  
-      for ifo in ifos:
-        file = datadir +'/segments/' + ifo + this_tag
-        scifile = datadir +'/segments/' + ifo + '-SCIENCE_SEGMENTS' + opts.txt_suffix
-
-        command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{sum=sum+$4} END {print sum}\'' % (file,scifile)
-        output_seconds, status = \
-          make_external_call(command, False, opts.debug, True)
-        try:
-          thisdata[ifo] = [os.path.basename(file), str(float(output_seconds)/86400.0), output_seconds]
-        except:
-          thisdata[ifo] = [os.path.basename(file), "0", "0"]
-
-  except:
-    logText(logfile,  'Error while parsing the segment duration files', "error")
+  for ifo in ifos:
+    file = datadir +'/segments/' + ifo + this_tag
+    scifile = datadir+'/segments/'+ifo+'-SCIENCE_SEGMENTS'+opts.txt_suffix
+    if os.path.isfile(file) and os.path.isfile(scifile):
+      command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{sum=sum+$4} END {print sum}\'' % (file,scifile)
+      output_seconds, status = \
+        make_external_call(command, False, opts.debug, True)
+      if output_seconds.rstrip():
+        thisdata[ifo] = [os.path.basename(file), str(float(output_seconds)/86400.0), output_seconds]
+      else:
+        thisdata[ifo] = [os.path.basename(file), '0', '0']
+    else: 
+      logText(logfile , 'File ' + file + ' and/or ' + scifile + ' does not exist. Cannot read segments!',"error")
 
   return thisdata
 

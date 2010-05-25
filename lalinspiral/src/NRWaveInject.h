@@ -126,7 +126,7 @@ REAL4TimeSeries *
 XLALCalculateNRStrain(
     REAL4TimeVectorSeries *strain,
     SimInspiralTable      *thisInj,
-    CHAR                  *ifo,
+    const CHAR            *ifo,
     INT4                   sampleRate);
 
 REAL4TimeSeries *

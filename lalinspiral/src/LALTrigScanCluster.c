@@ -459,16 +459,13 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
 int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
 /* </lalVerbatim> */
 {
-
-  static const char func[] = "XLALTrigScanRemoveStragglers";
-
   TrigScanCluster *previous    = NULL; /* Keeping track of the previous element */
   TrigScanCluster *thisCluster = NULL;
 
 #ifndef LAL_NDEBUG
   if ( !clusters )
   {
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( __func__, XLAL_EFAULT );
   }
 #endif
 
@@ -507,21 +504,19 @@ int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
 /* <lalVerbatim file="LALTrigScanClusterCP"> */
 int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
 {
-  static const char func[] = "TrigScanKeepLoudestTrigger";
-
   TriggerErrorList *triggerToKeep;
   TriggerErrorList *thisTrigger;
 
 #ifndef LAL_NDEBUG
   if ( !cluster )
   {
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( __func__, XLAL_EFAULT );
   }
 
   if ( cluster->nelements < 1 )
   {
     XLALPrintError( "Invalid number of triggers in cluster: %d\n", cluster->nelements );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 #endif
 
@@ -593,17 +588,14 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
                               )
 /* </lalVerbatim> */
 {
-
-  static const char func[] = "XLALTrigScanDestroyCluster";
-
   TriggerErrorList *thisList;
 
 #ifndef LAL_NDEBUG
   if ( !cluster )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+    XLAL_ERROR_VOID( __func__, XLAL_EFAULT );
 
   if ( (UINT4) status >= (UINT4) TRIGSCAN_NUM_STATUS )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( __func__, XLAL_EINVAL );
 #endif
 
   /* If something has failed, we need to free the SnglInspirals */

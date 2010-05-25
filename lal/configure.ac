@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.4.1.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -110,7 +110,7 @@ AC_CANONICAL_HOST
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[0])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -124,12 +124,12 @@ LAL_WITH_EXTRA_LIBS
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
 LALSUITE_ENABLE_BOINC
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
-LAL_ENABLE_NIGHTLY
+LALSUITE_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
@@ -381,7 +381,12 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
+  # don't use gcc flags when cuda is enabled
+  if test "${cuda}" != "true"; then
+    CFLAGS="$CFLAGS $lal_gcc_flags"
+  else
+    AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
+  fi
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then

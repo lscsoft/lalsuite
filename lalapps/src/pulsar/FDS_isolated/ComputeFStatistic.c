@@ -2914,7 +2914,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fprintf (fplog, "# User-input:\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
 
-    fprintf (fplog, logstr);
+    fprintf (fplog, "%s", logstr);
     LALFree (logstr);
 
     /* append an ident-string defining the exact CVS-version of the code used */

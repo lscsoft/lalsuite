@@ -23,15 +23,12 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
 #if 0
 <lalVerbatim file="PlaygroundCV">
 Author: Brown D. A.
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -71,8 +68,6 @@ t - 729273613 \% 6370 < 600.
 
 #include <lal/Date.h>
 #include <lal/XLALError.h>
-
-NRCSID( PLAYGROUNDC, "$Id$" );
 
 /* <lalVerbatim file="PlaygroundCP"> */
 int

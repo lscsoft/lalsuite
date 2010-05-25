@@ -80,7 +80,7 @@ LALCheckMemoryLeaks()
 ********************************************</lalLaTeX> */
 
 
-
+#include <lal/LALStdio.h>
 #include <lal/Statistics.h>
 /*#include "./Statistics.h"*/
 
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]){
   }
 
   for (i=0; i < (INT4)hist.length; i++){
-    fprintf(fp,"%d  %llu\n", i, hist.data[i]);
+    fprintf(fp,"%d  %" LAL_UINT8_FORMAT "\n", i, hist.data[i]);
   }
 
 

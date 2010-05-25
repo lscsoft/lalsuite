@@ -127,6 +127,7 @@ struct CommandLineArgsTag {
   INT4 trigstarttime;         /* start-time of allowed triggers */
   REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
+  double chi2cut[3];          /* chi2 cut parameters */
   INT4 printspectrumflag;     /* flag set to 1 if user wants to print the spectrum */
   INT4 printfilterflag;       /* flag set to 1 if user wants to print the filter in the frequency domain */
   INT4 printfirflag;          /* flag set to 1 if user wants to print the filter in the time domain */
@@ -182,8 +183,6 @@ MetadataTable  searchsumm;
 CHAR outfilename[256];
 CHAR ifo[4];
 
-double chi2cut[4][3];         /* chi2 cut parameters (3 per ifo) */
-
 long double veto_start[100000];/* start of veto segments */
 long double veto_end[100000];  /* end of veto segments */
 int nseg;                     /* number of veto segments */
@@ -202,9 +201,6 @@ PassBandParamStruc highpassParams;
 
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
-
-/* Reads options in the option file */
-int ReadOptionFile(void);
 
 /* Reads Veto file */
 int ReadVetoFile(struct CommandLineArgsTag CLA);
@@ -269,10 +265,6 @@ int main(int argc,char *argv[])
     printf("ReadVetoFile()\n");
     if (ReadVetoFile(CommandLineArgs)) return 2;
   }
-
-  /****** ReadOptionFile ******/
-  printf("ReadOptionFile()\n");
-  if (ReadOptionFile()) return 3;
 
   /****** ReadData ******/
   printf("ReadData()\n");
@@ -510,7 +502,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int s, p, pp, ifoindex, veto;
+  int s, p, pp, veto;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
@@ -584,22 +576,12 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       }
 
  
-      /* get the ifo index */
-      if(CLA.ChannelName[0]=='L'&&CLA.ChannelName[1]=='1')     /* L1 case */
-	ifoindex=0; 
-      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='1')/* H1 case */
-	ifoindex=1; 
-      else if(CLA.ChannelName[0]=='H'&&CLA.ChannelName[1]=='2')/* H2 case */
-	ifoindex=2; 
-      else                                                     /* V1 case */
-	ifoindex=3; 
-      
       /* Apply the \chi^{2} cut */
-      if( chi2cut[ifoindex][0]    > -9999
-	  && chi2cut[ifoindex][1] > -9999
-	  && chi2cut[ifoindex][2] > -9999 )
-	if(log10(chi2/ndof)>chi2cut[ifoindex][0]
-	   && log10(chi2/ndof)> chi2cut[ifoindex][1]*log10(fabs(maximum))+chi2cut[ifoindex][2]) continue;
+      if( CLA.chi2cut[0]    > -9999
+	  && CLA.chi2cut[1] > -9999
+	  && CLA.chi2cut[2] > -9999 )
+	if(log10(chi2/ndof)>CLA.chi2cut[0]
+	   && log10(chi2/ndof)> CLA.chi2cut[1]*log10(fabs(maximum))+CLA.chi2cut[2]) continue;
       
 
       if ( *thisEvent ){ /* create a new event */
@@ -1176,61 +1158,6 @@ int ReadVetoFile(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int ReadOptionFile(void){
- 
-  FILE *OptionFile;
-  int i,p;
-  char line[80], ifoname[4];
-  float par0, par1, par2;
-
-  /* open option.txt file */
-  /* FIXME : the name of the file could be given in the command line */
-  OptionFile = fopen ("option.txt","r");
-
-  /* default parameters */
-  for(i=0; i<4; i++) for(p=0; p<3; p++) chi2cut[i][p]=-9999.1;
-  
-  /* if the file does not exist, no chi2 cuts */
-  if (OptionFile==NULL){
-    printf("\tNo option file --> no chi2 selection\n");
-    return 0;
-  }
-  
-  /* Read the file line by line */
-  while(fgets(line,sizeof(line),OptionFile)){
-    sscanf (line,"%s %f %f %f",ifoname,&par0,&par1,&par2);
-
-    /* Get the parameter for the specified ifo */
-    if(ifoname[0]=='L'&&ifoname[1]=='1'){     /* L1 case */
-      chi2cut[0][0]=par0; chi2cut[0][1]=par1; chi2cut[0][2]=par2; 
-    }
-    else if(ifoname[0]=='H'&&ifoname[1]=='1'){/* H1 case */
-      chi2cut[1][0]=par0; chi2cut[1][1]=par1; chi2cut[1][2]=par2; 
-    }
-    else if(ifoname[0]=='H'&&ifoname[1]=='2'){/* H2 case */
-      chi2cut[2][0]=par0; chi2cut[2][1]=par1; chi2cut[2][2]=par2; 
-    }
-    else if(ifoname[0]=='V'&&ifoname[1]=='1'){/* V1 case */
-      chi2cut[3][0]=par0; chi2cut[3][1]=par1; chi2cut[3][2]=par2; 
-    }
-    else par0=par1; /* nothing happens */
-    
-  }
-  printf("\tChi2 selection parameters\n");
-  printf("\t-9999.1 means no selection\n");
-  printf("\tL1: %f %f %f \n",chi2cut[0][0],chi2cut[0][1],chi2cut[0][2]);
-  printf("\tH1: %f %f %f \n",chi2cut[1][0],chi2cut[1][1],chi2cut[1][2]);
-  printf("\tH2: %f %f %f \n",chi2cut[2][0],chi2cut[2][1],chi2cut[2][2]);
-  printf("\tV1: %f %f %f \n",chi2cut[3][0],chi2cut[3][1],chi2cut[3][2]);
-  
-  fclose(OptionFile);
-  
-  return 0;
-}
-
-
-/*******************************************************************************/
-
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   static char default_comment[] = "";
   INT4 errflg = 0;
@@ -1253,6 +1180,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"sample-rate",               required_argument,	NULL,	's'},
     {"trig-start-time",           required_argument,	NULL,	'g'},
     {"pad",                       required_argument,	NULL,	'p'},
+    {"chi2par0",                  required_argument,	NULL,	'A'},
+    {"chi2par1",                  required_argument,	NULL,	'B'},
+    {"chi2par2",                  required_argument,	NULL,	'G'},
     {"cusp-search",               no_argument,	NULL,	'c'},
     {"kink-search",               no_argument,	NULL,	'k'},
     {"test-gaussian-data",        no_argument,	NULL,	'n'},
@@ -1268,7 +1198,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"help",                      no_argument,	NULL,	'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:";
+  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:";
 
   optarg = NULL;
   /* set up xml output stuff */
@@ -1317,7 +1247,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   memset(ifo, 0, sizeof(ifo));
 
   /* initialise chi2cut */
-  memset(chi2cut, 0, sizeof(chi2cut));
+  memset(CLA->chi2cut, 0, sizeof(CLA->chi2cut));
+  CLA->chi2cut[0]=CLA->chi2cut[1]=CLA->chi2cut[2]=-9999.1;
 
   /* initialise veto stuff */
   memset(veto_start, 0, sizeof(veto_start));
@@ -1422,6 +1353,21 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       CLA->pad=atoi(optarg);
       ADD_PROCESS_PARAM(procTable.processTable, "int");
       break;
+    case 'A':
+      /* chi2 cut parameter 0 */
+      CLA->chi2cut[0]=atof(optarg);
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      break;
+    case 'B':
+      /* chi2 cut parameter 1 */
+      CLA->chi2cut[1]=atof(optarg);
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      break;
+    case 'G':
+      /* chi2 cut parameter 2 */
+      CLA->chi2cut[2]=atof(optarg);
+      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
@@ -1501,7 +1447,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate filter.\n");
       fprintf(stdout,"\t--trig-start-time (-g)\t\tINTEGER\t GPS start time of triggers to consider.\n");
       fprintf(stdout,"\t--pad (-p)\t\tINTEGER\t Pad the data with these many seconds at beginning and end.\n");
-      fprintf(stdout,"\t--short-segment-duration (-d)\t\tINTEGER\t Duration of shor segments. They will overlap by 50%s. \n","%");
+      fprintf(stdout,"\t--chi2par0 (-A)\t\tFLOAT\t parameter[0] for the chi2 selection.\n");
+      fprintf(stdout,"\t--chi2par1 (-B)\t\tFLOAT\t parameter[1] for the chi2 selection.\n");
+      fprintf(stdout,"\t--chi2par2 (-G)\t\tFLOAT\t parameter[2] for the chi2 selection.\n");
+      fprintf(stdout,"\t--short-segment-duration (-d)\t\tINTEGER\t Duration of short segments. They will overlap by 50%s. \n","%");
       fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");

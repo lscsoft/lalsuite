@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 3
+# serial 7
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -8,48 +8,105 @@ eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLE
 ])
 
 AC_DEFUN([LALSUITE_CHECK_LIB],[
-PKG_CHECK_MODULES([$1],[$2 >= $3],[eval $2="true"],[eval $2="false"])
-if test "$$2" = "true"; then
-  CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
-  LIBS="$LIBS $$1_LIBS"
+m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
+PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+if test "$lowercase" = "true"; then
+  CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
+  LIBS="$LIBS $[]uppercase[]_LIBS"
   if test "$LALSUITE_BUILD" = "true"; then
-    AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
-    eval $2="true"
+    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
+    lowercase="true"
   else
-    AC_CHECK_LIB([$2],[$4],[eval $2="true"],[AC_MSG_ERROR([could not find the $1 library])])
-    AC_CHECK_HEADERS([$5],,[AC_MSG_ERROR([could not find the $5 header])])
-    AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
+    AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[AC_MSG_ERROR([could not find the $1 library])])
+    AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
+    if test "$1" != "LALSupport"; then
+      LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
+    fi
+    AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   fi
 else
   AC_MSG_ERROR([could not find the $1 library])
 fi
-LALSUITE_ENABLE_MODULE([$1],[$2])
+LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_popdef([lowercase])
+m4_popdef([uppercase])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
-if test "$$2" = "true"; then
-  PKG_CHECK_MODULES([$1],[$2 >= $3],[eval $2="true"],[eval $2="false"])
-  if test "$$2" = "true"; then
+m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
+m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
+if test "$lowercase" = "true"; then
+  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+  if test "$lowercase" = "true"; then
     if test "$LALSUITE_BUILD" = "true"; then
-      AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
-      eval $2="true"
-      CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
-      LIBS="$LIBS $$1_LIBS"
+      AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
+      lowercase="true"
+      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
+      LIBS="$LIBS $[]uppercase[]_LIBS"
     else
-      CPPFLAGS="$CPPFLAGS $$1_CFLAGS"
-      LIBS="$LIBS $$1_LIBS"
-      AC_CHECK_LIB([$2],[$4],[eval $2="true"],[eval $2=false
+      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
+      LIBS="$LIBS $[]uppercase[]_LIBS"
+      AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[lowercase=false
         AC_MSG_WARN([could not find the $1 library])])
-      if test "$$2" = true; then
-        AC_CHECK_HEADERS([$5],,[eval $2=false])
-        if test "$$2" = true; then
-          AC_DEFINE([HAVE_LIB$1],[1],[Define to 1 if you have the $1 library])
+      if test "$lowercase" = true; then
+        AC_CHECK_HEADERS([$4],,[lowercase=false])
+        if test "$lowercase" = true; then
+          if test "$1" != "LALSupport"; then
+            LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
+          fi
+          if test "$lowercase" = true; then
+            AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
+          fi
         fi
       fi
     fi
   fi
 fi
-LALSUITE_ENABLE_MODULE([$1],[$2])
+LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_popdef([lowercase])
+m4_popdef([uppercase])
+])
+
+AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
+AC_MSG_CHECKING([whether $1 headers match the library])
+lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
+header_structure=`echo $1 | sed 's/LAL/lal/'`HeaderVCSInfo
+AC_RUN_IFELSE(
+  [AC_LANG_SOURCE([[
+#include <string.h>
+#include <stdlib.h>
+#include <lal/$1VCSInfo.h>
+int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
+  ]])],
+  [
+    AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Your $1 headers do not match your
+library. Check config.log for details.
+])
+  ],
+  [
+    AC_MSG_WARN([cross compiling: not checking])
+  ]
+)
+])
+
+AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
+[AC_ARG_ENABLE(
+  [nightly],
+  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
+  [ case "${enableval}" in
+      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+      no) NIGHTLY_VERSION="";;
+      *) NIGHTLY_VERSION="${enableval}"
+         VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
+      esac ],
+  [ NIGHTLY_VERSION="" ] )
+  AC_SUBST(NIGHTLY_VERSION)
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALFRAME],

@@ -447,7 +447,8 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
     {
       size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
       CHAR cwd[MAXPATHLEN];
-      getcwd( cwd, MAXPATHLEN - 1 );
+      char *ptr;
+      ptr = getcwd( cwd, MAXPATHLEN - 1 );
       urlsz += strlen( cwd ) + 1;
       file->url = LALMalloc( urlsz );
       if ( ! file->url )

@@ -428,12 +428,12 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   while (thisHist) {
 
     /* get history comment string and parse it */
-    comment = LALCalloc(1, 128*sizeof(CHAR));
+    comment = LALCalloc(1, (strlen(thisHist->comment)+1)*sizeof(CHAR));
     strcpy(comment, thisHist->comment);
 
     token = strtok(comment,":");
 
-    if (strstr(token,"freqStart22")) {
+    if (strstr(token,"freqStart22") || strstr(token,"freq_start_22")) {
       token = strtok(NULL,":");
       ret = atof(token);
     }
@@ -451,7 +451,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
                                        SimInspiralTable      *thisInj, 
-                                       CHAR                  ifo[3])
+                                       const CHAR            ifo[3])
 {
 
   REAL8 ret = -1, snrSq, freq, psdValue;

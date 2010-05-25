@@ -1566,7 +1566,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
     fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
     fprintf (fplog, "# User-input: [formatted as config-file]\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, logstr);
+    fprintf (fplog, "%s", logstr);
     LALFree (logstr);
     logstr = NULL;
 
@@ -1574,7 +1574,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
     TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CMDLINE), status);
     fprintf (fplog, "\n\n# User-input: [formatted as commandline]\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, logstr);
+    fprintf (fplog, "%s", logstr);
     LALFree (logstr);
 
     /* append an VCS-version string of the code used */

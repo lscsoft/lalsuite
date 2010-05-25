@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -25,10 +23,6 @@
 #include <stdlib.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID (STRTOGPSC,"$Id$");
 
 
 /*
@@ -100,12 +94,11 @@ static int isbinaryexp(const char *s)
 
 int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 {
-	static const char func[] = "XLALStrToGPS";
 	union { char *s; const char *cs; } pconv; /* this is bad */
 	int olderrno;
 	int radix;
 	char *digits;
-	int len;
+	int len=0;
 	int sign;
 	int base;
 	int radixpos;
@@ -265,7 +258,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 	/* check for failures and restore errno if there weren't any */
 	if(errno == ERANGE)
-		XLAL_ERROR(func, XLAL_ERANGE);
+		XLAL_ERROR(__func__, XLAL_ERANGE);
 	errno = olderrno;
 
 	/* success */
@@ -285,7 +278,6 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 {
-	static const char func[] = "XLALGPSToStr";
 	const long billion = 1000000000;
 	/* so we can play with it */
 	LIGOTimeGPS copy = *t;
@@ -298,7 +290,7 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 		 * decimal point plus an optional sign + a null */
 		s = XLALMalloc(21 * sizeof(*s));
 		if(!s)
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 	}
 
 	/* normalize the fractional part */

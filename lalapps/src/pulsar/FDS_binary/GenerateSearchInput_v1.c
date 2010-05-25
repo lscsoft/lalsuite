@@ -104,7 +104,7 @@ int OutputBinTemplateFile(void)
   BMFheader.metric_XY=1.0;
   BMFheader.metric_YY=1.0;
   sprintf(BMFheader.version,"v1_single");
-  sprintf(BMFheader.det,ifo);
+  sprintf(BMFheader.det,"%s",ifo);
   BMFheader.RA=alpha;
   BMFheader.dec=delta;
 
@@ -205,7 +205,7 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'I':
       temp=optarg;
-      sprintf(ifo,temp);
+      sprintf(ifo,"%s",temp);
       break;
     case 'f':
       f_min=atof(optarg);
@@ -224,19 +224,19 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'E':
       temp=optarg;
-      sprintf(efiles,temp);
+      sprintf(efiles,"%s",temp);
       break;
     case 'y':
       temp=optarg;
-      sprintf(yr,temp);
+      sprintf(yr,"%s",temp);
       break;
     case 'D':
       temp=optarg;
-      sprintf(datadir,temp);
+      sprintf(datadir,"%s",temp);
       break;
     case 'B':
       temp=optarg;
-      sprintf(basename,temp);
+      sprintf(basename,"%s",temp);
       break;
     case 'm':
       estimflag=1;
@@ -249,7 +249,7 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 't':
       temp=optarg;
-      sprintf(bintempfile,temp);
+      sprintf(bintempfile,"%s",temp);
       break;
     case 'w':
       window=atoi(optarg);
@@ -286,11 +286,11 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'O':
       temp=optarg;
-      sprintf(fout,temp);
+      sprintf(fout,"%s",temp);
       break;
     case 'F':
       temp=optarg;
-      sprintf(outfile,temp);
+      sprintf(outfile,"%s",temp);
       break;
     case 'h':
       /* print usage/help message */

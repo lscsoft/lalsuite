@@ -316,6 +316,9 @@ int main( int argc, char *argv[] )
 	printf("       \"%s\"\n", RANDOMH_MSGEZERO);
 	outputVector->length = tempLength;
   }
+#else
+  code = 0;
+  tempLength = 0;
 #endif
 
 	for (iterator = 0; iterator < 1000; iterator++)

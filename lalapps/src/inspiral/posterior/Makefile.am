@@ -16,3 +16,8 @@ endif
 endif
 
 bin_PROGRAMS = $(metaio_progs) $(frame_progs)
+
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+BUILT_SOURCES =
+include $(top_srcdir)/misc/vcsID.common
+

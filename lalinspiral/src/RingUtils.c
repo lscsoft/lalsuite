@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RingCV">
+/**** <lalVerbatim file="RingUtilsCV">
  * Author: Jolien Creighton
  * $Id$
  **** </lalVerbatim> */
@@ -26,16 +26,16 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 /**** <lalLaTeX>
  *
- * \subsection{Module \texttt{Ring.c}}
+ * \subsection{Module \texttt{RingUtils.c}}
  *
  * Routines to generate ringdown waveforms and to make a ringdown template bank.
  *
  * \subsubsection*{Prototypes}
- * \input{RingCP}
+ * \input{RingUtilsCP}
  * \idx{XLALComputeRingTemplate()}
  * \idx{XLALComputeBlackHoleRing()}
  * \idx{XLALCreateRingTemplateBank()}
@@ -66,14 +66,16 @@
  * radiation expressed as a percent, and the distance to the typical source
  * (angle-averaged waveform) $r$ given in megaparsecs (Mpc).  The central
  * frequency and quality of the ringdown are approximated
- * as~\cite{EWLeaver,FEcheverria}:
+ * as~\cite{EWLeaver,EBerti}:
  * \begin{equation}
- *   f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
+ *   f \simeq 32\,\textrm{kHz}\times[f_1+f_2(1-{\hat{a}})^{f_3}](M_\odot/M)
  * \end{equation}
  * and
  * \begin{equation}
- *   Q \simeq 2(1-{\hat{a}})^{-9/20}.
+ *   Q \simeq q_1+q_2(1-{\hat{a}})^{q_3},
  * \end{equation}
+ * where the values of the constants (f_1,f_2,f_3) and (q_1,q_2,q_3) are
+ * given for each of (l,m,n) in~\cite{EBerti}.
  * The strain waveform produced is $h(t)=A_q q(t)$ where the amplitude factor
  * is~\cite{JDECreighton}
  * \begin{equation}
@@ -104,7 +106,7 @@
  *
  * %% Any relevant notes.
  *
- * \vfill{\footnotesize\input{RingCV}}
+ * \vfill{\footnotesize\input{RingUtilsCV}}
  *
  **** </lalLaTeX> */
 
@@ -113,7 +115,16 @@ NRCSID( RINGC, "$Id$" );
 
 static REAL4 ring_spin_factor( REAL4 a )
 {
-  return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 );
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 fparam1 = 1.5251;
+  const REAL4 fparam2 = -1.1568;
+  const REAL4 fparam3 = 0.1292;
+
+  return fparam1 + fparam2 * pow( 1.0 - a, fparam3);
+
+  /* Echeverria's equation */
+  /* return 1.0 - 0.63 * pow( 1.0 - a, 3.0/10.0 ); */
 }
 
 static REAL4 ring_quality_fn( REAL4 Q )
@@ -128,14 +139,24 @@ static REAL4 ring_quality_fn( REAL4 Q )
  */
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingSpin( REAL4 Q )
 /* </lalVerbatim> */
 {
-  return 1.0 - pow( 2.0/Q, 20.0/9.0 );
+
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 qparam1 = 0.7000;
+  const REAL4 qparam2 = 1.4187;
+  const REAL4 qparam3 = -0.4990;
+
+  return 1.0 - pow( qparam2/(Q - qparam1), -1.0/qparam3 );
+
+  /* Echeverria's equation */
+  /* return 1.0 - pow( 2.0/Q, 20.0/9.0 ); */
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
 /* </lalVerbatim> */
 {
@@ -145,14 +166,24 @@ REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q )
   return (c * c * c * g) / ( LAL_TWOPI * LAL_G_SI * LAL_MSUN_SI * f );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingQuality( REAL4 a )
 /* </lalVerbatim> */
 {
-  return 2.0 * pow( ( 1.0 - a ), -0.45 );
+
+  /* Cardoso's equation from Berti et al. (2008) */
+  /* Define 3 parameters for l=m=2, n=0 */
+  const REAL4 qparam1 = 0.7000;
+  const REAL4 qparam2 = 1.4187;
+  const REAL4 qparam3 = -0.4990;
+
+  return qparam1 + (qparam2 * pow( (1.0 - a), qparam3 ));
+
+  /* Echeverria's equation */
+  /*  return 2.0 * pow( ( 1.0 - a ), -0.45 ); */
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
 /* </lalVerbatim> */
 {
@@ -163,14 +194,14 @@ REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
 
 /* Formulas for final mass and spin of a non-spinning binary */
 /* Buonanno et al arxiv:0706.3732v3 */
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta )
 /* </lalVerbatim> */
 {
   return sqrt(12.0) * eta - 2.9 * eta *eta;
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
 /* </lalVerbatim> */
 {
@@ -178,7 +209,7 @@ REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
 }
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
 /* </lalVerbatim> */
 {
@@ -193,7 +224,7 @@ REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
     (1.0 / sqrt( Q * F * g) );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
   /* </lalVerbatim> */
 {
@@ -208,14 +239,14 @@ REAL4 XLALBlackHoleRingEpsilon( REAL4 f, REAL4 Q, REAL4 r, REAL4 amplitude )
     ( Q * F * g );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingHRSS( REAL4 f, REAL4 Q, REAL4 amplitude, REAL4 plus, REAL4 cross )
   /* </lalVerbatim> */
 {
   return amplitude * sqrt( Q * ( (0.5 + Q*Q ) * plus*plus + Q * plus*cross + Q*Q * cross*cross ) / ( 1.0 + 4.0 * Q*Q) / LAL_PI / f );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
 /* </lalVerbatim> */
 {
@@ -231,7 +262,7 @@ REAL8 XLAL2DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb )
   return ( 1.0/8.0 * ( gQQ * pow(Qb-Qa,2) + gQf * (Qb-Qa) * (fb-fa) + gff * pow(fb-fa,2) ) );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt )
 /* </lalVerbatim> */
 {
@@ -258,7 +289,7 @@ REAL8 XLAL3DRingMetricDistance( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb, REAL8 dt
 }
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 REAL8 XLAL3DRingTimeMinimum( REAL8 fa, REAL8 fb, REAL8 Qa, REAL8 Qb)
 /* </lalVerbatim> */
 {
@@ -294,7 +325,7 @@ REAL8 XLALRingdownTimeError( const SnglRingdownTable *table,  REAL8 lal_ring_ds_
   return ( sqrt( lal_ring_ds_sq / gtt ) );
 }
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 /* </lalVerbatim> */
 {
@@ -346,7 +377,7 @@ int XLALComputeRingTemplate( REAL4TimeSeries *output, SnglRingdownTable *input )
 }
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 int XLALComputeBlackHoleRing(
     REAL4TimeSeries     *output,
     SnglRingdownTable   *input,
@@ -404,7 +435,7 @@ static int MakeBank( SnglRingdownTable *tmplt, RingTemplateBankInput *input )
 }
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 /* </lalVerbatim> */
 {
@@ -434,7 +465,7 @@ RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input )
 }
 
 
-/* <lalVerbatim file="RingCP"> */
+/* <lalVerbatim file="RingUtilsCP"> */
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank )
 /* </lalVerbatim> */
 {

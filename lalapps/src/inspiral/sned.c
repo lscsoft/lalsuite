@@ -1135,9 +1135,9 @@ int main( int argc, char *argv[] )
           H1FoundSngl = L1FoundSngl->next = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
         }
         /* H1 entry */
-        snprintf( H1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "H1" );
-        snprintf( H1FoundSngl->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "LSC-STRAIN" );
-        snprintf( H1FoundSngl->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), "sned" );
+        snprintf( H1FoundSngl->ifo, LIGOMETA_IFO_MAX, "H1" );
+        snprintf( H1FoundSngl->channel, LIGOMETA_CHANNEL_MAX, "LSC-STRAIN" );
+        snprintf( H1FoundSngl->search, LIGOMETA_SEARCH_MAX, "sned" );
         H1FoundSngl->eff_distance = thisInjection->eff_dist_h; 
         H1FoundSngl->end_time = thisInjection->h_end_time;
         H1FoundSngl->mass1 = thisInjection->mass1;
@@ -1154,7 +1154,7 @@ int main( int argc, char *argv[] )
         L1FoundSngl = H1FoundSngl->next = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
         memcpy( L1FoundSngl, H1FoundSngl, sizeof(SnglInspiralTable) );
         L1FoundSngl->next = NULL;
-        snprintf( L1FoundSngl->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "L1" );
+        snprintf( L1FoundSngl->ifo, LIGOMETA_IFO_MAX, "L1" );
         L1FoundSngl->eff_distance = thisInjection->eff_dist_l; 
         L1FoundSngl->end_time = thisInjection->l_end_time;
       }

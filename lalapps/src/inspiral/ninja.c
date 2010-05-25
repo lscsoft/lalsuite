@@ -112,10 +112,10 @@ typedef struct
  * local helper function prototypes
  */
 
-static int get_nr_metadata_from_framehistory(NinjaMetaData *data, FrHistory *history);
+static int get_nr_metadata_from_framehistory(NinjaMetaData *data, FrHistory *history, CHAR *metadata_format);
 static int get_mode_index_from_channel_name(INT4  *mode_l, INT4  *mode_m, CHAR  *name);
 static int get_minmax_modes(INT4 *min, INT4 *max, FrameH *frame);
-static int get_metadata_from_string(NinjaMetaData *data, CHAR *comment);
+static int get_metadata_from_string(NinjaMetaData *data, CHAR *comment, CHAR *metadata_format);
 static int metadata_in_range(NinjaMetaData *data, NrParRange *range);
 static int parse_group_list ( NrParRange *range, CHAR *list);
 
@@ -136,8 +136,8 @@ int main(INT4 argc, CHAR *argv[])
   LIGOLwXMLStream xmlfp;
   MetadataTable injections;
   MetadataTable proctable;
-  MetadataTable procparams;
-  ProcessParamsTable *this_proc_param = NULL;
+  //MetadataTable procparams;
+  //ProcessParamsTable *this_proc_param = NULL;
 
   /* nrwave stuff */
   NinjaMetaData metaData;
@@ -152,6 +152,7 @@ int main(INT4 argc, CHAR *argv[])
   CHAR *uvar_pattern = NULL;
   CHAR *uvar_nrGroup = NULL;
   CHAR *uvar_outFile = NULL;
+  CHAR *uvar_format = NULL;
   REAL8 uvar_minMassRatio = 1, uvar_maxMassRatio = 0;
   REAL8 uvar_minSx1 = -1, uvar_minSx2 = -1, uvar_maxSx1 = 1, uvar_maxSx2 = 1;
   REAL8 uvar_minSy1 = -1, uvar_minSy2 = -1, uvar_maxSy1 = 1, uvar_maxSy2 = 1;
@@ -168,11 +169,16 @@ int main(INT4 argc, CHAR *argv[])
   uvar_outFile = (CHAR *)LALCalloc(1, FILENAME_MAX * sizeof(CHAR));
   strcpy(uvar_outFile, "ninja_out.xml");
 
+  /* set default metadata format */
+  uvar_format = (CHAR *)LALCalloc(1, 256 * sizeof(CHAR));
+  strcpy(uvar_format, "NINJA1");
+
   LAL_CALL(LALRegisterBOOLUserVar(&status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "datadir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "pattern", 0, UVAR_OPTIONAL, "Filename pattern", &uvar_pattern), &status);
 
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "outfile", 'o', UVAR_OPTIONAL, "Output xml filename", &uvar_outFile), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "format", 0, UVAR_OPTIONAL, "Metadata format", &uvar_format), &status);
 
   LAL_CALL(LALRegisterREALUserVar(&status, "min-mass-ratio", 0, UVAR_OPTIONAL, "Min. mass ratio", &uvar_minMassRatio), &status);
   LAL_CALL(LALRegisterREALUserVar(&status, "max-mass-ratio", 0, UVAR_OPTIONAL, "Max. mass ratio", &uvar_maxMassRatio), &status);
@@ -204,6 +210,15 @@ int main(INT4 argc, CHAR *argv[])
   /* exit if help was required */
   if (uvar_help)
     exit(0);
+
+  /* check for supported metadata format */
+  if (strcmp(uvar_format, "NINJA1") == 0);
+  else if (strcmp(uvar_format, "NINJA2") == 0);
+  else
+  {
+    fprintf(stderr, "Supported metadata formats are NINJA1 and NINJA2 (%s specified)\n", uvar_format);
+    exit(1);
+  }
 
   range.massRatioMin = uvar_minMassRatio;
   range.massRatioMax = uvar_maxMassRatio;
@@ -262,7 +277,7 @@ int main(INT4 argc, CHAR *argv[])
     frame = FrameRead(frFile);
 
     memset(&metaData, 0, sizeof(NinjaMetaData));
-    get_nr_metadata_from_framehistory(&metaData, frame->history);
+    get_nr_metadata_from_framehistory(&metaData, frame->history, uvar_format);
 
     /* if we find parameters in range then write to the siminspiral table */
     if (metadata_in_range(&metaData, &range))
@@ -363,6 +378,7 @@ int main(INT4 argc, CHAR *argv[])
     LALFree(this_inj);
   }
 
+#if 0
   while (procparams.processParamsTable)
   {
     this_proc_param = procparams.processParamsTable;
@@ -371,6 +387,7 @@ int main(INT4 argc, CHAR *argv[])
   }
 
   LALFree(proctable.processTable);
+#endif
 
   /* close cache */
   /* LAL_CALL(LALFrClose(&status, &frStream), &status); */
@@ -394,7 +411,8 @@ int main(INT4 argc, CHAR *argv[])
 /* metadata is stored in the history field comment
    -- this function parses the comment to fill the metadata struct */
 static int get_nr_metadata_from_framehistory(NinjaMetaData *data,
-                                      FrHistory *history)
+                                      FrHistory *history,
+                                      CHAR *metadata_format)
 {
   UINT4 stringlen = 128;
   CHAR *comment = NULL; /* the comments string */
@@ -405,9 +423,16 @@ static int get_nr_metadata_from_framehistory(NinjaMetaData *data,
   localhist = history;
   while (localhist)
   {
-    /* get history comment string and parse it */
+    /* get history comment string and parse it   */
+    /* The author-emails list can be > 128 chars */
+    if (strlen(localhist->comment) + 1 > stringlen)
+    {
+      stringlen = strlen(localhist->comment) + 1;
+      comment   = LALRealloc(comment, stringlen * sizeof(CHAR));
+    }
+
     strcpy(comment,localhist->comment);
-    get_metadata_from_string(data, comment);
+    get_metadata_from_string(data, comment, metadata_format);
     localhist = localhist->next;
   }
 
@@ -417,7 +442,8 @@ static int get_nr_metadata_from_framehistory(NinjaMetaData *data,
 
 
 static int get_metadata_from_string(NinjaMetaData *data,
-                             CHAR *comment)
+                             CHAR *comment,
+                             CHAR *metadata_format)
 {
   CHAR *token;
   CHAR *thiscomment = NULL;
@@ -483,12 +509,30 @@ static int get_metadata_from_string(NinjaMetaData *data,
     return 0;
   }
 
-  if (strstr(token, "freqStart22"))
+  if (strcmp(metadata_format, "NINJA1") == 0)
   {
-    token = strtok(NULL, ":");
-    data->freqStart22 = atof(token);
-    LALFree(thiscomment);
-    return 0;
+    if (strstr(token, "freqStart22"))
+    {
+      token = strtok(NULL, ":");
+      data->freqStart22 = atof(token);
+      LALFree(thiscomment);
+      return 0;
+    }
+  }
+  else if (strcmp(metadata_format, "NINJA2") == 0)
+  {
+    if (strstr(token, "freq_start_22"))
+    {
+      token = strtok(NULL, ":");
+      data->freqStart22 = atof(token);
+      LALFree(thiscomment);
+      return 0;
+    }
+  }
+  else
+  {
+    fprintf(stderr, "Supported metadata formats are NINJA1 and NINJA2 (%s specified)\n", metadata_format);
+    exit(1);
   }
 
   if (strstr(token, "nr-group"))
