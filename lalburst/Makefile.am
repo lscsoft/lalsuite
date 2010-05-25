@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalburst.pc.in \
 	lalburst.spec.in \
 	lalburst.spec \

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	doc \
 	lalstochastic.pc.in \
 	lalstochastic.spec.in \

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalframe.pc.in \
 	lalframe.spec.in \
 	lalframe.spec \

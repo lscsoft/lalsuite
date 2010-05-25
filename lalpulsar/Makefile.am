@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	doc \
 	lalpulsar.pc.in \
 	lalpulsar.spec.in \

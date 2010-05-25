@@ -8,6 +8,7 @@ SUBDIRS = \
 	man
 
 EXTRA_DIST = \
+	COPYING \
 	README \
 	README.bugs \
 	README.contrib \

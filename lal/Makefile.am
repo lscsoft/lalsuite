@@ -12,6 +12,7 @@ MAINTAINERCLEANFILES = lal.spec
 distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
 
 EXTRA_DIST = \
+	COPYING \
 	README.bugs \
 	README.contrib \
 	README.install \

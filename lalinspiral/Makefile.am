@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalinspiral.pc.in \
 	lalinspiral.spec.in \
 	lalinspiral.spec \

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalmetaio.pc.in \
 	lalmetaio.spec.in \
 	lalmetaio.spec \

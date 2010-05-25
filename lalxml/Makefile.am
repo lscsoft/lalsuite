@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalxml.pc.in \
 	lalxml.spec.in \
 	lalxml.spec \
