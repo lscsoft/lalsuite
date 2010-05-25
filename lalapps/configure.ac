@@ -117,9 +117,7 @@ m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # boinc requires a c++ compiler
-if test "${boinc}" = "true" ; then
-  AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
