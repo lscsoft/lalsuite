@@ -574,6 +574,7 @@ INT2 ReadData(void)
 
   FILE *fpobsv,*fptest;
   char *str;
+  int rc;
 
   fpobsv = fopen(obsvdatafile,"r");
   fptest = fopen(testdatafile,"r");
@@ -592,7 +593,7 @@ INT2 ReadData(void)
 
   /* data input begin */
   for(irec=0;irec<(ObsvHeader.nData);irec++) {
-    fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
+    rc = fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbObsv[irec].freq),
 	   &(FaFbObsv[irec].RFa),
 	   &(FaFbObsv[irec].IFa),
@@ -606,7 +607,7 @@ INT2 ReadData(void)
     return 1;
   }
   for(irec=0;irec<(TestHeader.nData);irec++) {
-    fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
+    rc = fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbTest[irec].freq),
 	   &(FaFbTest[irec].RFa),
 	   &(FaFbTest[irec].IFa),
