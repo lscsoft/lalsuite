@@ -1112,7 +1112,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut){
     }
 
   for (i=0; i < hist->length; i++){
-    fprintf(fp,"%d  %llu\n", i, hist->data[i]);
+    fprintf(fp,"%d  %" LAL_UINT8_FORMAT "\n", i, hist->data[i]);
   }
   
   fclose( fp );  

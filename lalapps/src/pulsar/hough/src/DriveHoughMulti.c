@@ -1242,7 +1242,7 @@ int PrintHistogram(UINT8Vector *hist, CHAR *fnameOut, REAL8 minSignificance, REA
     }
 
   for (i = 0; i < binsHisto; i++){
-    fprintf(fp,"%g  %llu\n", minSignificance + i*dSig, hist->data[i]);
+    fprintf(fp,"%g  %" LAL_UINT8_FORMAT "\n", minSignificance + i*dSig, hist->data[i]);
   }
   
   fclose( fp );  
