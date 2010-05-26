@@ -591,13 +591,15 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
 
   section = 'inspmissed'
   sections.append(section)
-  titles[section] = "Found and Missed plots (Second stage)"
-  tags[section] = '*plotinspmissed_SECOND*CAT_4*'
-  imagetags[section] = ['map-8','map-9']
-  captions[section] = 'Found and Missed injections. Effective distance versus total mass'
+  htmlAndPlot.append(section)
+  titles[section] = "Found and missed plots (second stage) & the 10 closest missed injections"
+  tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param_ALLINJ*CAT_4*'
+  htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
+  imagetags[section] = ['cbc_plotfm_fm_dist_v_param']
+  captions[section] = 'Found and missed injections. Injected decisive distance vs. chirp mass. The decisive distance is the second furthest effective distance. The table below shows the 10 most nearby missed injections.'
   comments[section] = None
   configs[section] = None
-  images_dirs[section] = IJdir
+  images_dirs[section] = PDdir
   
   for section in sections:
       page = heading(page, titles[section])
@@ -2055,10 +2057,12 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*SIMULATION*html')
       copy_files(dataDir,webDir,'*CLOSEST_MISSED_INJECTIONS*html')
       copy_files(dataDir,webDir,'*QUIETEST_FOUND_COMPARED*PLAYGROUND*html')
+      copy_files(dataDir,webDir,'*ALLINJ*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*FULL_DATA*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*CLOSED_BOX*cache')
       copy_files(dataDir,webDir,'*SIMULATION*cache')
+      copy_files(dataDir,webDir,'*ALLINJ*cache')
       mkdir(webDir + '/Images')
       copy_files(dataDir+'/Images',webDir+'/Images','*PLAYGROUND*PLAYGROUND*')
       copy_files(dataDir+'/Images',webDir+'/Images','*FULL_DATA*PLAYGROUND*')
@@ -2067,6 +2071,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir+'/Images',webDir+'/Images','*SIMULATION*')
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSEST_MISSED_INJECTIONS*')
       copy_files(dataDir+'/Images',webDir+'/Images','*QUIETEST_FOUND_COMPARED*PLAYGROUND*')
+      copy_files(dataDir+'/Images',webDir+'/Images','*ALLINJ*')
       print >> sys.stdout, '... Done'
 
 
@@ -2479,11 +2484,12 @@ try:
   opts.gps_start_time 	= configcp.get("main", "gps-start-time")
   opts.gps_end_time 	= configcp.get("main", "gps-end-time")
   opts.ihope_directory 	= configcp.get("main", "ihope-directory")
-  opts.title	 	= configcp.get("main", "title")
+  opts.title	 	= configcp.get("main", "title").replace( '"', '' )
   opts.output	 	= configcp.get("main", "output")
   opts.html_directory 	= configcp.get("main", "html-directory")
-  monthLead             = configcp.get("main", "month-lead")
-  monthSecond           = configcp.get("main", "month-second")
+  Lead                  = configcp.get("main", "lead").replace( '"', '' )
+  Second                = configcp.get("main", "second").replace( '"', '' )
+  Notes                 = configcp.get("main", "notes").replace( '"', '' )
 except:
   print >> sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
   print >> sys.stderr, """       Consider adding one of those fields if missing: ihope-ini-file, \
@@ -2630,8 +2636,9 @@ else:
 mainpage.div.close()
 mainpage.div(id_='header')
 mainpage.add('<h1>' + title  +' </h1>')
-leads = 'Week Lead: ' + monthLead + ',&nbsp&nbsp Second: '+ monthSecond
+leads = 'Lead: ' + Lead + '&nbsp;&nbsp&nbsp Second: '+ Second
 mainpage.add('<h3> ' + leads + ' </h3>')
+mainpage.add('<h3>' + Notes + ' </h3')
 mainpage.div.close()
 mainpage.div(id_='iframecontent')
 mainpage.add('<p id="placeholder">Please select a report section on the left.</p>')
