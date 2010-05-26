@@ -126,7 +126,7 @@ static LALStringVector *find_files (const CHAR *fpattern);
 
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
-static BOOLEAN is_pattern(char*c); /* filename string is a glob-style pattern */
+static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
 
 static BOOLEAN is_valid_detector (const char *channel);
 static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 );
@@ -3812,7 +3812,7 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
 } /* read_SFTversion_from_fp() */
 
  /* filename string is a glob-style pattern, i.e. it contains '*' or '?' or '[' */
-static BOOLEAN is_pattern(char*c) {
+static BOOLEAN is_pattern(const char*c) {
   while((*c != '\0') && (*c != '*') && (*c != '?') && (*c != '['))
     c++;
   return(*c != '\0');
