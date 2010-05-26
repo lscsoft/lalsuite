@@ -685,8 +685,7 @@ void LALParserInspiralInjection(LALStatus *status,
   params->mdistr                      = SPININJ_totalMass;
   params->ddistr                      = SPININJ_logDistance;
   params->userTag                     = NULL;
-  snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-               "EOBtwoPN");  
+  snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX, "EOBtwoPN");  
   snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
                params->randSeed, params->gpsStartTime.gpsSeconds, 
                params->gpsEndTime.gpsSeconds - params->gpsStartTime.gpsSeconds );
@@ -869,8 +868,7 @@ void LALParserInspiralInjection(LALStatus *status,
           next_process_param( "inclination-max", "float", "%le", params->inclination.max );
       } 
       else if ( strcmp(argv[i] , "--waveform") == 0 ){
-        snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-                     argv[++i]);
+        snprintf( params->waveform, LIGOMETA_WAVEFORM_MAX, "%s", argv[++i]);
         this_proc_param = this_proc_param->next =
           next_process_param( "waveform", "string",
                               "%s",argv[i] );        
