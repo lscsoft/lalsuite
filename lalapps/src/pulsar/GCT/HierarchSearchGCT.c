@@ -250,6 +250,7 @@ int MAIN( int argc, char *argv[]) {
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
   static PulsarDopplerParams thisPoint;
+  UINT4 oldcg=0, oldfg=0;
 
   /* temporary storage for spinrange vector */
   static PulsarSpinRange spinRange_Temp;
@@ -944,7 +945,19 @@ int MAIN( int argc, char *argv[]) {
 
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintfVerbatim(LOG_NORMAL, " CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
+
+	if(!oldcg) {
+	  oldcg = coarsegrid.length;
+	  LogPrintfVerbatim(LOG_NORMAL, " CG:%d",coarsegrid.length);
+	}
+	if(!oldfg) {
+	  oldfg = finegrid.length;
+	  LogPrintfVerbatim(LOG_NORMAL, " FG:%ld\n",finegrid.length);
+	}
+	if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
+	  LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree: CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
+	  return(HIERARCHICALSEARCH_EVAL);
+	}
         
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
