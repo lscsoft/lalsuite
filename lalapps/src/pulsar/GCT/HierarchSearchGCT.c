@@ -892,7 +892,11 @@ int MAIN( int argc, char *argv[]) {
         }
         
         /* show progress */
+#ifdef EAH_BOINC
+        LogPrintf( LOG_NORMAL, "%d/%d", skyGridCounter+1, ifdot+1 );
+#else
         LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d", skyGridCounter+1, ifdot+1 );
+#endif
 
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
