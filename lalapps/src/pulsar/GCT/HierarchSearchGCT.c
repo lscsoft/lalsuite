@@ -894,9 +894,9 @@ int MAIN( int argc, char *argv[]) {
         
         /* show progress */
 #ifdef EAH_BOINC
-        LogPrintf( LOG_NORMAL, "%d/%d", skyGridCounter+1, ifdot+1 );
+        LogPrintf( LOG_NORMAL, "%d/%d\n", skyGridCounter+1, ifdot+1 );
 #else
-        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d", skyGridCounter+1, ifdot+1 );
+        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d\n", skyGridCounter+1, ifdot+1 );
 #endif
 
         /* ------------- Set up coarse grid --------------------------------------*/
@@ -946,18 +946,19 @@ int MAIN( int argc, char *argv[]) {
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
 
-	if(!oldcg) {
-	  oldcg = coarsegrid.length;
-	  LogPrintfVerbatim(LOG_NORMAL, " CG:%d",coarsegrid.length);
-	}
-	if(!oldfg) {
-	  oldfg = finegrid.length;
-	  LogPrintfVerbatim(LOG_NORMAL, " FG:%ld\n",finegrid.length);
-	}
-	if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
-	  LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree: CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
-	  return(HIERARCHICALSEARCH_EVAL);
-	}
+        if(!oldcg) {
+          oldcg = coarsegrid.length;
+          LogPrintf(LOG_DEBUG, "CG:%d ",coarsegrid.length);
+        }
+        if(!oldfg) {
+          oldfg = finegrid.length;
+          LogPrintfVerbatim(LOG_DEBUG, "FG:%ld \n",finegrid.length);
+        }
+        if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
+          LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
+                            oldcg,oldfg,coarsegrid.length,finegrid.length);
+          return(HIERARCHICALSEARCH_EVAL);
+        }
         
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;

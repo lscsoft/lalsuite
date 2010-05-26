@@ -190,7 +190,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             REAL8 bestR = 0.0;
             REAL8 bestSNR = 0.0;
             REAL8 bestProb = 1.0;
-            INT4 bestproberrcode;
+            INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
                avefsig += in[locs2->data[kk]]->fsig*in[locs2->data[kk]]->snr;
                aveperiod += in[locs2->data[kk]]->period*in[locs2->data[kk]]->snr;
