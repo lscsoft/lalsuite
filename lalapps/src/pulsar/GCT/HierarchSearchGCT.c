@@ -584,8 +584,8 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  fprintf(stderr, "%% --- GPS reference time = %d ,  GPS data mid time = %d\n",
-          refTimeGPS.gpsSeconds, tMidGPS.gpsSeconds);
+  fprintf(stderr, "%% --- GPS reference time = %.4f ,  GPS data mid time = %.4f\n",
+          XLALGPSGetREAL8(&refTimeGPS), XLALGPSGetREAL8(&tMidGPS) );
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
@@ -1273,15 +1273,14 @@ int MAIN( int argc, char *argv[]) {
     Fcomponents FstatSeg;
     ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
     PulsarSpins fkdotTMP;
+    MultiSFTVector *SFTsSingleDet=NULL;
+    MultiNoiseWeights *NoiseSingleDet=NULL;
+    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
     
     INIT_MEM( fkdotTMP );
     numDetectors = stackMultiSFT.data[0]->length;
     
     REAL4 aveTwoFstat[numDetectors+1];
-    
-    MultiSFTVector *SFTsSingleDet=NULL;
-    MultiNoiseWeights *NoiseSingleDet=NULL;
-    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
     
     /* Initialize */
     for (X=0; X < (numDetectors+1); X++) 
@@ -1299,7 +1298,7 @@ int MAIN( int argc, char *argv[]) {
       fprintf(stderr,"DetStatesSingleDet Calloc failed\n");
       return(HIERARCHICALSEARCH_EMEM);
     }
-
+   
     fprintf(stderr, "%% --- Starting separate detector analysis of the top candidate, No. of IFOs: %d\n",numDetectors);
     
     /* Sort the toplist by average 2F to get the strongest candidates */
@@ -1312,7 +1311,8 @@ int MAIN( int argc, char *argv[]) {
     fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Freq;
     fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).F1dot;
     
-    fprintf(stderr, "  freq=%.13f alpha=%.7f delta=%.7f f1dot=%.7g NC=%d <2F>=%.6f\n",
+    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+            XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
             fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1],
             (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
             (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
@@ -1321,11 +1321,13 @@ int MAIN( int argc, char *argv[]) {
                                      thisPoint.fkdot, thisPoint.refTime,
                                      fkdotTMP, usefulParams.spinRange_refTime.refTime), &status );
     
-    fprintf(stderr, "  freq=%.13f alpha=%.7f delta=%.7f f1dot=%.7g NC=%d <2F>=%.6f\n",
+    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+            XLALGPSGetREAL8( &thisPoint.refTime ),
             thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
             (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
             (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
 
+    
     for (k = 0; k < nStacks; k++) {
 
       /* --- Compute multi-IFO F-statistic --- */
@@ -1345,9 +1347,11 @@ int MAIN( int argc, char *argv[]) {
         cfBuffer2 = empty_ComputeFBuffer;
         SFTsSingleDet->length = 1;
         SFTsSingleDet->data = &(stackMultiSFT.data[k]->data[X]);
-      
-        NoiseSingleDet = NULL;
-        if ( !uvar_SignalOnly ) {      
+        
+        if ( uvar_SignalOnly ) {      
+          NoiseSingleDet = NULL;
+        }
+        else {
           NoiseSingleDet->length = 1;
           NoiseSingleDet->data = &(stackMultiNoiseWeights.data[k]->data[X]);
           NoiseSingleDet->Sinv_Tsft = stackMultiNoiseWeights.data[k]->Sinv_Tsft;
@@ -1367,8 +1371,10 @@ int MAIN( int argc, char *argv[]) {
           FstatSeg.F += 2;		
         }
         aveTwoFstat[X+1] += 2.0 * FstatSeg.F / nStacks;
+        
       }
     }
+
     for (X=0; X < (numDetectors+1); X++) {
       if (X>0) {
         fprintf(stderr, "%% --- average2F[%d]= %.6f   Z= %.4f\n", X, aveTwoFstat[X],aveTwoFstat[0]/aveTwoFstat[X]);
@@ -1382,7 +1388,7 @@ int MAIN( int argc, char *argv[]) {
     LALFree(SFTsSingleDet);
     LALFree(NoiseSingleDet);
     LALFree(DetStatesSingleDet);
-      
+    
   }
   
   
