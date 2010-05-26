@@ -585,7 +585,7 @@ int MAIN( int argc, char *argv[]) {
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
   fprintf(stderr, "%% --- GPS reference time = %.4f ,  GPS data mid time = %.4f\n",
-          XLALGPSGetREAL8( &refTimeGPS ), XLALGPSGetREAL8( &tMidGPS ) );
+          XLALGPSGetREAL8(&refTimeGPS), XLALGPSGetREAL8(&tMidGPS) );
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
@@ -1273,15 +1273,14 @@ int MAIN( int argc, char *argv[]) {
     Fcomponents FstatSeg;
     ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
     PulsarSpins fkdotTMP;
+    MultiSFTVector *SFTsSingleDet=NULL;
+    MultiNoiseWeights *NoiseSingleDet=NULL;
+    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
     
     INIT_MEM( fkdotTMP );
     numDetectors = stackMultiSFT.data[0]->length;
     
     REAL4 aveTwoFstat[numDetectors+1];
-    
-    MultiSFTVector *SFTsSingleDet=NULL;
-    MultiNoiseWeights *NoiseSingleDet=NULL;
-    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
     
     /* Initialize */
     for (X=0; X < (numDetectors+1); X++) 
