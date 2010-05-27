@@ -1639,8 +1639,8 @@ void BankEfficiencyPrintResultsXml(
 
   if (trigger.ntrial == 1)
   {
-    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
 
@@ -1772,8 +1772,8 @@ BankEfficiencyPrintProtoXml(
   */
   strcat(fname, ".xml");
 
-  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
   memset( ifo, 0, sizeof(ifo) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
 
@@ -2423,8 +2423,8 @@ void BankEfficiencyBankPrintXML(
   ProcessParamsTable   *this_proc_param = NULL;
 
 
-  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
   memset( ifo, 0, sizeof(ifo) );
   memset( comment, 0, sizeof( comment ) );
   memset( &proctable, 0, sizeof( proctable ) );
