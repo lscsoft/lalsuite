@@ -271,9 +271,9 @@ main(int argc, char *argv[]){
   REAL8 dt;
   LIGOTimeGPS TstartGPS;
   MJDTime *TOA = NULL;
-  CHAR tempstr[15];
+  CHAR tempstr[18];
   CHAR *tempstr2;
-  CHAR TstartMJDstr[20],TfinishMJDstr[20],TOAstr[20];
+  CHAR TstartMJDstr[20],TfinishMJDstr[20],TOAstr[22];
   PulsarSignalParams pulsarparams;
   CHAR parfile[256];
   CHAR timfile[256];
