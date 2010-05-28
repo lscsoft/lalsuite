@@ -225,7 +225,7 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 																						 GSL_ODEIV_HADJ_NIL if it was unchanged */
     if (status == GSL_ODEIV_HADJ_DEC) {
       memcpy(y,      y0,      dim*sizeof(REAL8));	/* if so, undo the step, and try again */
-			memcpy(dydt_in,dydt_in0,dim*sizeof(REAL8));
+			memcpy(dydt_in,dydt_in0,dim*sizeof(REAL8));      
 			goto try_step;
     }
 
