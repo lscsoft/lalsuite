@@ -1766,6 +1766,8 @@ void LALPSpinInspiralRDEngine (
 
    /* Clean up */
    XLALDestroyREAL4Vector ( h22 );
+   XLALDestroyREAL4Vector ( h33 );
+   XLALDestroyREAL4Vector ( h32 );
    XLALDestroyREAL4Vector ( shift22 );
    XLALDestroyREAL4Vector ( fap );
    XLALDestroyREAL8Vector ( phap );
