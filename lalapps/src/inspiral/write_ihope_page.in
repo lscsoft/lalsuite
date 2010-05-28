@@ -596,7 +596,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param_ALLINJ*CAT_4*'
   htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
   imagetags[section] = ['cbc_plotfm_fm_dist_v_param']
-  captions[section] = 'Found and missed injections. Injected decisive distance vs. chirp mass. The decisive distance is the second furthest effective distance. The table below shows the 10 most nearby missed injections.'
+  captions[section] = 'Found and missed injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far (their color corresponds to their far). Red crosses are missed injections; vetoed injections are excluded. The decisive distance is the second furthest effective distance. The table below shows the 10 closest missed injections (i.e., the 10 closest red crosses). For a table of the non-zero FAR injections (the colored circles), please go to the "All Injections Combined" section and click on "Loudest injections that are not louder than the loudest slide."'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
