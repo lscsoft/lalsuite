@@ -104,10 +104,8 @@ int main() {
     //Inclination sets the angle between the line of site and initial J
     injParams.inclination  = 0.;
     /* Polar angles of the source arrival direction and the usual polarization 
-       angle entering the pattern functions*/ 
-    injParams.theta0       = 0.;
-    injParams.phi0         = 0.;
-    injParams.polarization = 0.;
+       angle enters the pattern functions, they do not matter for waveform 
+       construction, so they won't be st here.*/ 
 
     injParams.spin1x = 0.;
     injParams.spin1y = 0.;
@@ -120,6 +118,8 @@ int main() {
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
     ppnParams.deltaT = 1.0 / 4096.0 /4.;
+    /* fStop is set for debugging purposes. The working version of 
+       LALPSpinInspiralRD simply ignores its value */
     ppnParams.fStop  = ff;
     /* Initial shift in the phase*/
     ppnParams.phi    = 0.;
