@@ -715,7 +715,7 @@ in the frequency domain */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
-		det_resp.plus*=0.5*(1.0+ci*ci);
+		det_resp.plus*=-0.5*(1.0+ci*ci);
 		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
@@ -731,8 +731,8 @@ in the frequency domain */
 /* Version derived 19/08/08 */
 			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
 			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
-			resp_r = det_resp.plus * hc - det_resp.cross * hs;
-			resp_i = det_resp.cross * hc + det_resp.plus * hs;
+			resp_r = det_resp.plus * hc + det_resp.cross * hs;
+			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
@@ -898,7 +898,7 @@ in the frequency domain */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
-		det_resp.plus*=0.5*(1.0+ci*ci);
+		det_resp.plus*=-0.5*(1.0+ci*ci);
 		det_resp.cross*=-ci;
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
@@ -911,8 +911,8 @@ in the frequency domain */
 /* Version derived 19/08/08 */
 			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
 			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
-			resp_r = det_resp.plus * hc - det_resp.cross * hs;
-			resp_i = det_resp.cross * hc + det_resp.plus * hs;
+			resp_r = det_resp.plus * hc + det_resp.cross * hs;
+			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;

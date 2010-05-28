@@ -345,6 +345,7 @@ void readMainInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
+  char *str;
   
   if((fin = fopen(run->mainFilename,"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening main input file: %s, aborting.\n\n\n",run->mainFilename);
@@ -356,24 +357,24 @@ void readMainInputfile(struct runPar *run)
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=3;i++) fgets(tmpStr,500,fin);  //Read first 3 lines
+  for(i=1;i<=3;i++) str = fgets(tmpStr,500,fin);  //Read first 3 lines
   
   //Operation and output:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doSNR);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMCMC);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMatch);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->writeSignal);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->beVerbose);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doSNR);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMCMC);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMatch);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->writeSignal);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->beVerbose);
   
   
   //Secondary input files:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin); fgets(tmpStr,500,fin); //Read the empty and comment lines
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->mcmcFilename);
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->dataFilename);
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->injectionFilename);
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->parameterFilename);
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->systemFilename);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); //Read the empty and comment lines
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->mcmcFilename);
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->dataFilename);
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->injectionFilename);
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->parameterFilename);
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->systemFilename);
   
   fclose(fin);
 }  //End of readMainInputfile
@@ -401,6 +402,8 @@ void readMCMCinputfile(struct runPar *run)
   double tmpdbl;
   char tmpStr[500];
   FILE *fin;
+  char *str;
+  int rc;
   
   if((fin = fopen(run->mcmcFilename,"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening MCMC input file: %s, aborting.\n\n\n",run->mcmcFilename);
@@ -413,61 +416,61 @@ void readMCMCinputfile(struct runPar *run)
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
   for(i=1;i<=3;i++) { //Read first 3 lines
-    fgets(tmpStr,500,fin);
+    str = fgets(tmpStr,500,fin);
   }
   
   //Basic settings
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
   
-  fgets(tmpStr,500,fin);  
+  str = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[0] == 0) {
     sscanf(tmpStr,"%lg",&tmpdbl);
     run->nIter = (int)tmpdbl;
   }
   
-  fgets(tmpStr,500,fin);
+  str = fgets(tmpStr,500,fin);
   if(run->commandSettingsFlag[1] == 0) {        
     sscanf(tmpStr,"%d",&run->thinOutput);
   }
   
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->thinScreenOutput);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->MCMCseed);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->adaptiveMCMC);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->acceptRateTarget);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->minlogL);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->blockFrac);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->thinScreenOutput);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->MCMCseed);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->adaptiveMCMC);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->acceptRateTarget);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->minlogL);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->blockFrac);
   
   
   
   //Correlated update proposals:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->correlatedUpdates);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->corrFrac);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->correlatedUpdates);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->corrFrac);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->nCorr = (int)tmpdbl;
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->matAccFr);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prMatrixInfo);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->matAccFr);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prMatrixInfo);
   
   
   //Annealing:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->annealTemp0);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->annealTemp0);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->annealNburn = (int)tmpdbl;
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->annealNburn0 = (int)tmpdbl;
   
   //Parallel tempering:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->parallelTempering);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->nTemps);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->maxTemp);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->saveHotChains);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prParTempInfo);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->parallelTempering);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->nTemps);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->maxTemp);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->saveHotChains);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prParTempInfo);
   
   //Manual temperature ladder for parallel tempering:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin); //Read the empty and comment line
-  for(i=0;i<run->nTemps;i++) fscanf(fin,"%lf",&run->tempLadder[i]);  //Read the array directly, because sscanf cannot be in a loop...
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); //Read the empty and comment line
+  for(i=0;i<run->nTemps;i++) rc = fscanf(fin,"%lf",&run->tempLadder[i]);  //Read the array directly, because sscanf cannot be in a loop...
   
   fclose(fin);
 } //End of void readMCMCinputfile(struct runPar *run)
@@ -496,6 +499,8 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
   char tmpStr[500], subdir[500];
   FILE *fin;
   int dump = 0;
+  char *str;
+  int rc;
   
   if((fin = fopen(run->dataFilename,"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening data file: %s, aborting.\n\n\n",run->dataFilename);
@@ -507,92 +512,92 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(j=1;j<=3;j++) fgets(tmpStr,500,fin);  //Read first 3 lines
-  fgets(run->datasetName,80,fin);  fgets(tmpStr,500,fin);  //Read name of the data set used, and then the rest of the line
+  for(j=1;j<=3;j++) str = fgets(tmpStr,500,fin);  //Read first 3 lines
+  str = fgets(run->datasetName,80,fin); str = fgets(tmpStr,500,fin);  //Read name of the data set used, and then the rest of the line
   
   //Detector network:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
   
-  fgets(tmpStr,500,fin);
+  str = fgets(tmpStr,500,fin);
   if(run->commandSettingsFlag[2] == 0) sscanf(tmpStr,"%d",&run->networkSize);
   
   for(i=0;i<run->networkSize;i++) {
     if(run->commandSettingsFlag[3] == 0) {
-      fscanf(fin,"%d",&run->selectifos[i]);  //Read the array directly, because sscanf cannot be in a loop...
+      rc = fscanf(fin,"%d",&run->selectifos[i]);  //Read the array directly, because sscanf cannot be in a loop...
     } else {
-      fscanf(fin,"%d",&dump);
+      rc = fscanf(fin,"%d",&dump);
     }
   }
-  fgets(tmpStr,500,fin);  //Read the rest of the line
+  str = fgets(tmpStr,500,fin);  //Read the rest of the line
   
   
   //Data handling:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin); 
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[6] == 0) sscanf(tmpStr,"%d",&run->downsampleFactor);
-  fgets(tmpStr,500,fin); 
+  str = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[7] == 0) sscanf(tmpStr,"%lf",&run->dataBeforeTc);
-  fgets(tmpStr,500,fin); 
+  str = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[8] == 0) sscanf(tmpStr,"%lf",&run->dataAfterTc);
-  fgets(tmpStr,500,fin); 
+  str = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[9] == 0) sscanf(tmpStr,"%lf",&run->lowFrequencyCut);
-  fgets(tmpStr,500,fin); 
+  str = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[10] == 0) sscanf(tmpStr,"%lf",&run->highFrequencyCut);
-  fgets(tmpStr,500,fin); sscanf(tmpStr,"%lf",&run->tukeyWin);
+  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%lf",&run->tukeyWin);
   
   
   //Read input for PSD estimation:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment lines
-  fgets(tmpStr,500,fin);  
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
+  str = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[11] == 0) sscanf(tmpStr,"%d",&run->PSDsegmentNumber);
-  fgets(tmpStr,500,fin);  
+  str = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[12] == 0) sscanf(tmpStr,"%lf",&run->PSDsegmentLength);
   
   
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment lines
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
   for(i=0;i<run->networkSize;i++){
-    fgets(tmpStr,500,fin); fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment lines
+    str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
     
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].name);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&lati);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&longi);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&rightArm);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&leftArm);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].name);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&lati);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&longi);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&rightArm);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&leftArm);
     
     ifo[i].lati      = lati     /180.0*pi;
     ifo[i].longi     = longi    /180.0*pi;
     ifo[i].rightArm  = rightArm /180.0*pi;
     ifo[i].leftArm   = leftArm  /180.0*pi;
     
-    fgets(tmpStr,500,fin);  //Read the empty line
+    str = fgets(tmpStr,500,fin);  //Read the empty line
     
-    fgets(tmpStr,500,fin);
+    str = fgets(tmpStr,500,fin);
     if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].ch1name);}
     else{ strcpy(ifo[i].ch1name,run->channelname[i]);}
-    //fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].ch1filepath);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
+    //str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].ch1filepath);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1fileprefix);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1filesuffix);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1filesize);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1fileoffset);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1doubleprecision);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].add2channels);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1fileprefix);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1filesuffix);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1filesize);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1fileoffset);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1doubleprecision);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].add2channels);
     
-    fgets(tmpStr,500,fin);  //Read the empty line
+    str = fgets(tmpStr,500,fin);  //Read the empty line
     
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%ld",&ifo[i].noiseGPSstart);
-    fgets(tmpStr,500,fin);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%ld",&ifo[i].noiseGPSstart);
+    str = fgets(tmpStr,500,fin);
     if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].noisechannel);}
     else{ strcpy(ifo[i].noisechannel,run->channelname[i]);}  
     //fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].noisefilepath);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefileprefix);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefilesuffix);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefilesize);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefileoffset);
-    fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisedoubleprecision);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefileprefix);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefilesuffix);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefilesize);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefileoffset);
+    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisedoubleprecision);
     
   }
   fclose(fin);
@@ -616,6 +621,8 @@ void readInjectionInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
+  char *str;
+  int rc;
   
   // Open injection input file:
   if((fin = fopen(run->injectionFilename,"r")) == NULL) {
@@ -629,15 +636,15 @@ void readInjectionInputfile(struct runPar *run)
   // Read injection input file:
   // use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=2;i++) fgets(tmpStr,500,fin);  //Read first 2 lines
+  for(i=1;i<=2;i++) str = fgets(tmpStr,500,fin);  //Read first 2 lines
   
   // Read general injection data:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectSignal);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectionWaveform);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionPNorder);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionSNR);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injRanSeed);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectSignal);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectionWaveform);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionPNorder);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionSNR);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injRanSeed);
   
   //Get the number of injection parameters from the injectionWaveform
   if(run->injectSignal >= 1) {
@@ -667,11 +674,11 @@ void readInjectionInputfile(struct runPar *run)
   
   
   // Read injection parameters:
-  for(i=1;i<=5;i++) fgets(tmpStr,500,fin);  //Read empty and comment lines
+  for(i=1;i<=5;i++) str = fgets(tmpStr,500,fin);  //Read empty and comment lines
   
   for(i=0;i<run->nInjectPar;i++) {
-    fscanf(fin,"%d %d %lf %d %lf %d %lf %lf",&run->injNumber[i],&run->injID[i],&run->injParValOrig[i],&run->injRanPar[i],&run->injSigma[i],&run->injBoundType[i],&run->injBoundLow[i],&run->injBoundUp[i]);
-    fgets(tmpStr,500,fin);  //Read rest of the line
+    rc = fscanf(fin,"%d %d %lf %d %lf %d %lf %lf",&run->injNumber[i],&run->injID[i],&run->injParValOrig[i],&run->injRanPar[i],&run->injSigma[i],&run->injBoundType[i],&run->injBoundLow[i],&run->injBoundUp[i]);
+    str = fgets(tmpStr,500,fin);  //Read rest of the line
     
     //printf("%d %d %lf %d %lf %d %lf %lf\n",run->injNumber[i],run->injID[i],run->injParValOrig[i],run->injRanPar[i],run->injSigma[i],run->injBoundType[i],run->injBoundLow[i],run->injBoundUp[i]);
     
@@ -811,6 +818,8 @@ void readParameterInputfile(struct runPar *run)
   int i,iInj;
   char tmpStr[500];
   FILE *fin;
+  char *str;
+  int rc;
   
   if((fin = fopen(run->parameterFilename,"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening parameter input file: %s, aborting.\n\n\n",run->parameterFilename);
@@ -822,15 +831,15 @@ void readParameterInputfile(struct runPar *run)
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=2;i++) fgets(tmpStr,500,fin);  //Read first 2 lines
+  for(i=1;i<=2;i++) str = fgets(tmpStr,500,fin);  //Read first 2 lines
   
   //Priors:
-  fgets(tmpStr,500,fin); fgets(tmpStr,500,fin);  //Read the empty and comment line
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->mcmcWaveform);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->mcmcPNorder);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->priorSet);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->offsetMCMC);
-  fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->offsetX);
+  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->mcmcWaveform);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->mcmcPNorder);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->priorSet);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->offsetMCMC);
+  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->offsetX);
   
   if(run->mcmcWaveform==1) {
     if(run->beVerbose>=1) printf("    - using Apostolatos, 1.5-pN, 12-parameter waveform as the MCMC template.\n");  //Only 1.5-pN order is available
@@ -858,12 +867,12 @@ void readParameterInputfile(struct runPar *run)
   
   
   //Parameters:
-  for(i=1;i<=5;i++) fgets(tmpStr,500,fin);  //Read empty and comment lines
+  for(i=1;i<=5;i++) str = fgets(tmpStr,500,fin);  //Read empty and comment lines
   
   int warnings = 0;
   for(i=0;i<run->nMCMCpar;i++) {
-    fscanf(fin,"%d %d %lf %d %d %lf %d %lf %lf",&run->parNumber[i],&run->parID[i],&run->parBestVal[i],&run->parFix[i],&run->parStartMCMC[i],&run->parSigma[i],&run->priorType[i],&run->priorBoundLow[i],&run->priorBoundUp[i]);
-    fgets(tmpStr,500,fin);  //Read rest of the line
+    rc = fscanf(fin,"%d %d %lf %d %d %lf %d %lf %lf",&run->parNumber[i],&run->parID[i],&run->parBestVal[i],&run->parFix[i],&run->parStartMCMC[i],&run->parSigma[i],&run->priorType[i],&run->priorBoundLow[i],&run->priorBoundUp[i]);
+    str = fgets(tmpStr,500,fin);  //Read rest of the line
     
     //Check if trigger values from the command line should replace these values:
     if(run->parID[i] == 11 && fabs(run->triggerTc) > 1.e-10) run->parBestVal[i] = run->triggerTc;               // Tc
@@ -1065,6 +1074,8 @@ void readSystemInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
+  char *str;
+  int rc;
   
   if((fin = fopen(run->systemFilename,"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening system file: %s, aborting.\n\n\n",run->systemFilename);
@@ -1075,11 +1086,11 @@ void readSystemInputfile(struct runPar *run)
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   for(i=1;i<=3;i++) { //Read first 3 lines
-    fgets(tmpStr,500,fin);
+    str = fgets(tmpStr,500,fin);
   }  
   
   //Data directory:
-  fscanf(fin, "%s",run->dataDir);
+  rc = fscanf(fin, "%s",run->dataDir);
   
   fclose(fin);
 }  //End of readSystemInputfile
@@ -1221,6 +1232,7 @@ void readCachefile(struct runPar *run, int ifonr)
   int line=0;
   char tmpStr[2048];
   FILE *fin;
+  char *str;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening cache file: %s, aborting.\n\n\n",run->cacheFilename[ifonr]);
@@ -1231,7 +1243,7 @@ void readCachefile(struct runPar *run, int ifonr)
   
   while ( ! feof (fin) ) //just to get the number of line. TO CHECK : last line of .cache file always empty ?
     {
-      fgets (tmpStr , 2048 , fin);
+      str = fgets (tmpStr , 2048 , fin);
       line++;
     }
   fclose (fin); 
@@ -1250,7 +1262,7 @@ void readCachefile(struct runPar *run, int ifonr)
   fin = fopen(run->cacheFilename[ifonr],"r");
   for(i=0;i<(line-1);i++) {
     //Read line by line:
-    fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
+    str = fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
     //      printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
     
     //remove file://localhost at the beginning of the file name if present.

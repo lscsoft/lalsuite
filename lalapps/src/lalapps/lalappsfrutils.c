@@ -195,7 +195,7 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
   struct FrVect     *vect;
   struct FrProcData *proc;
   size_t i;
-  char *channel = fdata.name;
+  char *channel;
 
   snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
     fdata.name = chname;
@@ -208,6 +208,8 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
     fdata.step = (double) chan->deltaF;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
+
+  channel = fdata.name;
 
   if ( ! frame )
   {

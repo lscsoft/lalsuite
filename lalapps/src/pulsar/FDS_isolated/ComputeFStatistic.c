@@ -627,7 +627,7 @@ int main(int argc,char *argv[])
     {
       strncpy ( CFstatFilename, uvar_outputClusters, sizeof(CFstatFilename) );
       if ( uvar_outputLabel )
-	strncat ( CFstatFilename, uvar_outputLabel, sizeof(CFstatFilename) );
+	strncat ( CFstatFilename, uvar_outputLabel, sizeof(CFstatFilename) - strlen(CFstatFilename)  - 1 );
 
       if ( (fpClusters = fopen (CFstatFilename, "wb")) == NULL ) {
 	LogPrintf (LOG_CRITICAL, "Failed to open Clusters-file '%s' for writing!\n", CFstatFilename );
@@ -648,7 +648,7 @@ int main(int argc,char *argv[])
 
       strncpy ( FstatFilename, uvar_outputFstat, sizeof(FstatFilename) );
       if ( uvar_outputLabel )
-	strncat ( FstatFilename, uvar_outputLabel, sizeof(FstatFilename) );
+	strncat ( FstatFilename, uvar_outputLabel, sizeof(FstatFilename) - strlen(FstatFilename) - 1 );
     }
   else
     strncpy ( FstatFilename, "", sizeof(FstatFilename) );
@@ -2884,6 +2884,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     UINT4 len;
     CHAR *fname = NULL;
     FILE *fplog;
+    int rc;
 
     INITSTATUS (stat, "WriteFStatLog", rcsid);
     ATTATCHSTATUSPTR (stat);
@@ -2923,7 +2924,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fclose (fplog);
     
     sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
-    system (command);   /* we currently don't check this. If it fails, we assume that */
+    rc = system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */
 

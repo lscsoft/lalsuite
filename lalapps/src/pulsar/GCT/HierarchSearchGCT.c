@@ -242,7 +242,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 u2win, u2winInv;
   */
 
-  /* fstat candidate structure */
+  /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
 
   /* template and grid variables */
@@ -250,6 +250,7 @@ int MAIN( int argc, char *argv[]) {
   DopplerSkyScanState thisScan = empty_DopplerSkyScanState; /* current state of the Doppler-scan */
   static PulsarDopplerParams dopplerpos;	       /* current search-parameters */
   static PulsarDopplerParams thisPoint;
+  UINT4 oldcg=0, oldfg=0;
 
   /* temporary storage for spinrange vector */
   static PulsarSpinRange spinRange_Temp;
@@ -278,7 +279,8 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
-
+  BOOLEAN uvar_SepDetVeto = FALSE;     /* Do separate detector analysis for the top candidate */
+  
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
   REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
@@ -395,7 +397,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
-
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "SepDetVeto",   0, UVAR_OPTIONAL,  "Separate detector veto with top candidate", &uvar_SepDetVeto), &status);
+  
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
@@ -582,8 +585,8 @@ int MAIN( int argc, char *argv[]) {
   endTstack = usefulParams.endTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
   refTimeGPS = usefulParams.spinRange_refTime.refTime;
-  fprintf(stderr, "%% --- GPS reference time = %d ,  GPS data mid time = %d\n",
-          refTimeGPS.gpsSeconds, tMidGPS.gpsSeconds);
+  fprintf(stderr, "%% --- GPS reference time = %.4f ,  GPS data mid time = %.4f\n",
+          XLALGPSGetREAL8(&refTimeGPS), XLALGPSGetREAL8(&tMidGPS) );
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
@@ -890,7 +893,11 @@ int MAIN( int argc, char *argv[]) {
         }
         
         /* show progress */
-        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d", skyGridCounter+1, ifdot+1 );
+#ifdef EAH_BOINC
+        LogPrintf( LOG_NORMAL, "%d/%d\n", skyGridCounter+1, ifdot+1 );
+#else
+        LogPrintf( LOG_NORMAL, "sky:%d f1dot:%d\n", skyGridCounter+1, ifdot+1 );
+#endif
 
         /* ------------- Set up coarse grid --------------------------------------*/
         coarsegrid.length = (UINT4) (binsFstat1);
@@ -938,7 +945,20 @@ int MAIN( int argc, char *argv[]) {
 
         /* total number of fine-grid points */
         finegrid.length = nf1dots_fg * nfreqs_fg;
-        LogPrintfVerbatim(LOG_NORMAL, " CG:%d FG:%ld\n",coarsegrid.length,finegrid.length);
+
+        if(!oldcg) {
+          oldcg = coarsegrid.length;
+          LogPrintf(LOG_DEBUG, "CG:%d ",coarsegrid.length);
+        }
+        if(!oldfg) {
+          oldfg = finegrid.length;
+          LogPrintfVerbatim(LOG_DEBUG, "FG:%ld \n",finegrid.length);
+        }
+        if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
+          LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
+                            oldcg,oldfg,coarsegrid.length,finegrid.length);
+          return(HIERARCHICALSEARCH_EVAL);
+        }
         
         /* reference time for finegrid is midtime */
         finegrid.refTime = tMidGPS;
@@ -1258,12 +1278,141 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
   LogPrintf ( LOG_DEBUG, "Writing output ...");
-
+  
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
 
-  LogPrintfVerbatim ( LOG_DEBUG, " done.\n");
+  /* --- Further analysis with the top candidate if desired --- 
+         This veto computes the average F-statistic for each detector
+         data stream and compares it to the multi-IFO F-statistic */
+  if ( uvar_SepDetVeto ) {
 
+    UINT8 icand;
+    UINT4 numDetectors, X;
+    Fcomponents FstatSeg;
+    ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
+    PulsarSpins fkdotTMP;
+    MultiSFTVector *SFTsSingleDet=NULL;
+    MultiNoiseWeights *NoiseSingleDet=NULL;
+    MultiDetectorStateSeries *DetStatesSingleDet=NULL;
+    
+    INIT_MEM( fkdotTMP );
+    numDetectors = stackMultiSFT.data[0]->length;
+    
+    REAL4 aveTwoFstat[numDetectors+1];
+    
+    /* Initialize */
+    for (X=0; X < (numDetectors+1); X++) 
+      aveTwoFstat[X] = 0.0;
+    
+    if ( (SFTsSingleDet = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL ){
+      fprintf(stderr,"SFTsSingleDet Calloc failed\n");
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    if ( (NoiseSingleDet = (MultiNoiseWeights *)LALCalloc(1, sizeof(MultiNoiseWeights))) == NULL ){
+      fprintf(stderr,"NoiseSingleDet Calloc failed\n");
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+    if ( (DetStatesSingleDet = (MultiDetectorStateSeries *)LALCalloc(1, sizeof(MultiDetectorStateSeries))) == NULL ){
+      fprintf(stderr,"DetStatesSingleDet Calloc failed\n");
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+   
+    fprintf(stderr, "%% --- Starting separate detector analysis of the top candidate, No. of IFOs: %d\n",numDetectors);
+    
+    /* Sort the toplist by average 2F to get the strongest candidates */
+    sort_gctFStat_toplist_strongest(semiCohToplist);
+        
+    icand=0; /* At the moment, just the top candidate is analyzed */
+    
+    thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Alpha;
+    thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Delta;
+    fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Freq;
+    fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).F1dot;
+    
+    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+            XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
+            fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1],
+            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
+            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
+            
+    LAL_CALL ( LALExtrapolatePulsarSpins (&status,
+                                     thisPoint.fkdot, thisPoint.refTime,
+                                     fkdotTMP, usefulParams.spinRange_refTime.refTime), &status );
+    
+    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+            XLALGPSGetREAL8( &thisPoint.refTime ),
+            thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
+            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
+            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
 
+    
+    for (k = 0; k < nStacks; k++) {
+
+      /* --- Compute multi-IFO F-statistic --- */
+      LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, stackMultiSFT.data[k], 
+                              stackMultiNoiseWeights.data[k], stackMultiDetStates.data[k], 
+                              &CFparams, &cfBuffer2 ), &status);
+      
+      if ( uvar_SignalOnly ) {
+        FstatSeg.F *= 2.0 / Tsft;
+        FstatSeg.F += 2;		
+      }
+      aveTwoFstat[0] += 2.0 * FstatSeg.F / nStacks;
+      
+      /* --- Compute separate-IFO F-statistic for each data segment --- */
+      for (X=0; X < numDetectors; X++) {
+
+        cfBuffer2 = empty_ComputeFBuffer;
+        SFTsSingleDet->length = 1;
+        SFTsSingleDet->data = &(stackMultiSFT.data[k]->data[X]);
+        
+        if ( uvar_SignalOnly ) {      
+          NoiseSingleDet = NULL;
+        }
+        else {
+          NoiseSingleDet->length = 1;
+          NoiseSingleDet->data = &(stackMultiNoiseWeights.data[k]->data[X]);
+          NoiseSingleDet->Sinv_Tsft = stackMultiNoiseWeights.data[k]->Sinv_Tsft;
+        }
+      
+        DetStatesSingleDet->length = 1;
+        DetStatesSingleDet->data = &(stackMultiDetStates.data[k]->data[X]);
+        DetStatesSingleDet->startTime = stackMultiDetStates.data[k]->startTime;
+        DetStatesSingleDet->Tspan = stackMultiDetStates.data[k]->Tspan;
+        
+        LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, SFTsSingleDet, 
+                              NoiseSingleDet, DetStatesSingleDet, 
+                              &CFparams, &cfBuffer2 ), &status);
+      
+        if ( uvar_SignalOnly ) {
+          FstatSeg.F *= 2.0 / Tsft;
+          FstatSeg.F += 2;		
+        }
+        aveTwoFstat[X+1] += 2.0 * FstatSeg.F / nStacks;
+        
+      }
+    }
+
+    for (X=0; X < (numDetectors+1); X++) {
+      if (X>0) {
+        fprintf(stderr, "%% --- average2F[%d]= %.6f\t (%s)\t Z= %.4f \n", 
+                X, aveTwoFstat[X], 
+                &(stackMultiDetStates.data[0]->data[X-1]->detector.frDetector.name),
+                aveTwoFstat[0]/aveTwoFstat[X] );
+      }
+      else {
+        fprintf(stderr, "%% --- average2F[%d]= %.6f\n", X, aveTwoFstat[X]);
+      }
+    }
+    
+    XLALEmptyComputeFBuffer ( &cfBuffer2 );
+    LALFree(SFTsSingleDet);
+    LALFree(NoiseSingleDet);
+    LALFree(DetStatesSingleDet);
+    
+  }
+  
+  
   /*------------ free all remaining memory -----------*/
 
   if ( uvar_printCand1 ) {
@@ -2136,3 +2285,6 @@ int compareFineGridsumTwoF(const void *a,const void *b) {
   else
     return(0);
 }
+
+
+

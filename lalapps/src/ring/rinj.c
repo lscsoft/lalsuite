@@ -76,7 +76,7 @@ RCSID( "$Id$" );
 "  --verbose                turn verbose flag on\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
-"  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
+"  --time-step STEP         space injections by STEP seconds apart\n"\
 "  --time-interval TIME     distribute injections in interval TIME (250)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -135,9 +135,8 @@ int main( int argc, char *argv[] )
   /* command line options */
   LIGOTimeGPS   gpsStartTime;
   LIGOTimeGPS   gpsEndTime;
-  REAL8         meanTimeStep = 7000 / LAL_PI;
+  REAL8         meanTimeStep = -1;
   REAL8         timeInterval = 250;
-  REAL8         tstep = 2630;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
   REAL4         minMass = 13.8;
@@ -343,8 +342,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 't':
-        tstep = (REAL8) atof( optarg );
-        meanTimeStep = tstep / LAL_PI;
+        meanTimeStep = (REAL8) atof( optarg );
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -363,7 +361,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "time interval must be >= 0: (%le seconds specified)\n",
-              long_options[option_index].name, meanTimeStep );
+              long_options[option_index].name, timeInterval );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
@@ -569,16 +567,14 @@ int main( int argc, char *argv[] )
         break;
       
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
         break;
       
       case 'c':
-        snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
@@ -625,16 +621,21 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
     {
       /* use Ringdown as the default waveform */
-      snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-          "Ringdown");
+      snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "Ringdown");
       }
   
   if ( !*coordinates )
         {
           /* use equatorial as the default system */
-          snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
-                              "EQUATORIAL");
+          snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "EQUATORIAL");
                       }
+
+   if ( meanTimeStep<=0 )
+         {
+           fprintf( stderr,
+               "Time step value must be specified.\n" );
+           exit( 1 );
+         }
   
                 
   /*
@@ -699,14 +700,14 @@ int main( int argc, char *argv[] )
                 sizeof(CHAR));
     
     this_inj->epsilon = epsilon;
-    
+ 
     /* set the geocentric start time of the injection */
     this_inj->geocent_start_time = gpsStartTime;
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       XLALGPSAdd(&(this_inj->geocent_start_time), u * timeInterval);
-    }    
+    } 
 
  
     if ( injdistr == 0 )
@@ -843,10 +844,10 @@ int main( int argc, char *argv[] )
     /* compute the effective distance for LLO */
     this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
         + scross*scross*resp.cross*resp.cross );
-    
+
     /* compute hrss at LLO */
     this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
-        
+
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
   } /* end loop over injection times */

@@ -179,7 +179,7 @@ XLALOrientNRWaveREAL8(
   REAL4TimeSeries *
 XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series data*/
     SimInspiralTable      *inj,    /**< injection details      */
-    CHAR                  *ifo,    /**< interferometer */
+    const CHAR            *ifo,    /**< interferometer */
     INT4            sampleRate     /**< sample rate of time series */)
 {
   LALDetector            det;
