@@ -125,7 +125,7 @@ REAL4TimeSeries * get_zero_data(
 
 
 /* read frame data */
-REAL4TimeSeries * get_frame_data(
+REAL4TimeSeries * ring_get_frame_data(
     const char  *cacheName,
     const char  *channelName,
     LIGOTimeGPS *epoch,

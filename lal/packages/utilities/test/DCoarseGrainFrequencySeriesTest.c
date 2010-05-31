@@ -525,6 +525,8 @@ main( int argc, char *argv[] )
        = DCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
+#else
+   dPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALDDestroyVector(&status, &(goodOutput.data));

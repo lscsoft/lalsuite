@@ -427,6 +427,8 @@ LALFindChirpFilterSegment (
   }
   #endif
 
+  (void)eventList;
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );

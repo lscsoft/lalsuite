@@ -503,6 +503,9 @@ int main( int argc, char **argv )
   }
 
         } /* if ( ! lalNoDebug ) */
+#else
+    medians4 = NULL;
+    medians8 = NULL;
 #endif /* LAL_NDEBUG */
 
 

@@ -99,9 +99,6 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-static void
-ClearStatus (LALStatus *status);
-
 NRCSID( UNITSTESTC, "$Id$" );
 
 /***************************** <lalErrTable file="UnitsTestCE"> */
@@ -152,6 +149,8 @@ int main( int argc, char *argv[] )
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
   }
+#else
+  (void)dummy;
 #endif /* LAL_NDEBUG */
 
   LALUnitAsString( &status, string, &lalVoltUnit );
@@ -932,26 +931,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
 }
-
-
-/*
- *
- * ClearStatus ()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-void
-ClearStatus (LALStatus *status)
-{
-  if (status->statusPtr)
-  {
-    ClearStatus      (status->statusPtr);
-    DETATCHSTATUSPTR (status);
-  }
-}
-
 
 /*
  * Usage ()

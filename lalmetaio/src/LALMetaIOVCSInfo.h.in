@@ -16,13 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALMETAIOVCSINFO_H
 #define _LALMETAIOVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALMetaIOConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALMETAIO_VCS_IDENT_COMMITTER "$" "LALMetaIOCommitter: @COMMITTER@ " "$"
 #define LALMETAIO_VCS_IDENT_STATUS "$" "LALMetaIOStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalMetaIOVCSInfo;
+static const struct tagLALVCSInfo lalMetaIOHeaderVCSInfo = { \
+  LALMETAIO_VERSION, \
+  LALMETAIO_VCS_ID, \
+  LALMETAIO_VCS_DATE, \
+  LALMETAIO_VCS_BRANCH, \
+  LALMETAIO_VCS_TAG, \
+  LALMETAIO_VCS_AUTHOR, \
+  LALMETAIO_VCS_COMMITTER, \
+  LALMETAIO_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

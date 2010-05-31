@@ -98,7 +98,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	int olderrno;
 	int radix;
 	char *digits;
-	int len;
+	int len=0;
 	int sign;
 	int base;
 	int radixpos;

@@ -113,7 +113,7 @@ LALSBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL4 fac  = LAL_SQRT2;
-  const INT4  imax = 64;
+  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -147,6 +147,7 @@ LALSBracketRoot (
     }
 
     /* increment iteration count */
+    imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
     ++i;
 
@@ -233,7 +234,7 @@ LALDBracketRoot (
     )
 { /* </lalVerbatim> */
   const REAL8 fac  = LAL_SQRT2;
-  const INT4  imax = 64;
+  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -267,6 +268,7 @@ LALDBracketRoot (
     }
 
     /* increment iteration count */
+    imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
     ++i;
 
@@ -301,7 +303,7 @@ LALSBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  const INT4 imax = 40;
+  INT4 imax;
 
   INT4  i = 0;
   REAL4 y_1;
@@ -348,6 +350,7 @@ LALSBisectionFindRoot (
     REAL4 ymid;
 
     /* increment iteration count */
+    imax = 40;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
     ++i;
 
@@ -469,7 +472,7 @@ LALDBisectionFindRoot (
     void        *params
     )
 { /* </lalVerbatim> */
-  const INT4 imax = 80;
+  INT4 imax;
 
   INT4  i = 0;
   REAL8 y_1;
@@ -516,6 +519,7 @@ LALDBisectionFindRoot (
     REAL8 ymid;
 
     /* increment iteration count */
+    imax = 80;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
     ++i;
 

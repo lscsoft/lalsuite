@@ -23,6 +23,7 @@
 #define _LALINSPIRALVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALInspiralConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,8 +47,18 @@ extern "C" {
 #define LALINSPIRAL_VCS_IDENT_COMMITTER "$" "LALInspiralCommitter: @COMMITTER@ " "$"
 #define LALINSPIRAL_VCS_IDENT_STATUS "$" "LALInspiralStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalInspiralVCSInfo;
+static const struct tagLALVCSInfo lalInspiralHeaderVCSInfo = { \
+  LALINSPIRAL_VERSION, \
+  LALINSPIRAL_VCS_ID, \
+  LALINSPIRAL_VCS_DATE, \
+  LALINSPIRAL_VCS_BRANCH, \
+  LALINSPIRAL_VCS_TAG, \
+  LALINSPIRAL_VCS_AUTHOR, \
+  LALINSPIRAL_VCS_COMMITTER, \
+  LALINSPIRAL_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

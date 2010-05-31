@@ -28,7 +28,7 @@
 #include <lal/VectorOps.h>
 #include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/Date.h>
 
 #include "lalapps.h"
@@ -110,11 +110,19 @@ SnglRingdownTable * ring_filter(
 
     /* make template and fft it */
     XLALComputeRingTemplate( &signalvec, thisTmplt );
-    snprintf( signalvec.name, sizeof(signalvec.name), "TMPLT_%u", tmplt );
-/* write_REAL4TimeSeries( &signalvec ); */
+    /* write template time series if requested */
+    if ( params->writeTemplateTimeSeries )
+    {
+     snprintf( signalvec.name, sizeof(signalvec.name), "TMPLT_%u", tmplt );
+     write_REAL4TimeSeries( &signalvec );
+    }
     XLALREAL4TimeFreqFFT( &stilde, &signalvec, fwdPlan );
-    snprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
-/* write_COMPLEX8FrequencySeries( &stilde ); */
+    /* write template fft if requested */
+    if ( params->writeTemplateFFT )
+    {
+     snprintf( stilde.name, sizeof(stilde.name), "TMPLT_%u_FFT", tmplt );
+     write_COMPLEX8FrequencySeries( &stilde );
+    }
 
     /* compute sigma for this template */
     sigma = sqrt( compute_template_variance( &stilde, invSpectrum,

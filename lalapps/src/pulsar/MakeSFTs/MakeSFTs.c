@@ -257,6 +257,7 @@ void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
 void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits) {
      CHAR sftDescField[256];
      CHAR mkdirCommand[256];
+     int rc;
      strcat(sftPath,"/");
      strcat(sftPath,site);
      strcat(sftPath,"-");
@@ -265,7 +266,7 @@ void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
      strcat(sftPath,"-");
      strncat(sftPath,gpstime,numGPSdigits);
      sprintf(mkdirCommand,"mkdir -p %s",sftPath);
-     system(mkdirCommand);
+     rc = system(mkdirCommand);
 }
 
 /* 12/27/05 gam; make SFT file name according to LIGO T040164-01 specification */
@@ -285,8 +286,9 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
 /* 01/09/06 gam; move filename1 to filename2 */
 void mvFilenames(CHAR *filename1, CHAR *filename2) {
      CHAR mvFilenamesCommand[512];
+     int rc;
      sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
-     system(mvFilenamesCommand);
+     rc = system(mvFilenamesCommand);
 }
 
 #if TRACKMEMUSE
