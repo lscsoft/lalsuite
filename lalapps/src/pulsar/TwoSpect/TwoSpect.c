@@ -583,10 +583,10 @@ int main(int argc, char *argv[])
                   free_candidate(gaussCandidates1[numofcandidates2-1]);
                   gaussCandidates1[numofcandidates2-1] = NULL;
                   gaussCandidates1[numofcandidates2-1] = new_candidate();
-                  loadCandidateData(gaussCandidates1[numofcandidates2-1], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, gaussCandidates1[ii]->normalization);
+                  loadCandidateData(gaussCandidates1[numofcandidates2-1], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, ihsCandidates[ii]->normalization);
                } else if (Rfirst <= initialFAR && bestProb != 1.0) {
                   gaussCandidates1[numofcandidates2] = new_candidate();
-                  loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, gaussCandidates1[ii]->normalization);
+                  loadCandidateData(gaussCandidates1[numofcandidates2], ihsCandidates[ii]->fsig, ihsCandidates[ii]->period, ihsCandidates[ii]->moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, ihsCandidates[ii]->normalization);
                   numofcandidates2++;
                }
             }
@@ -976,8 +976,8 @@ int main(int argc, char *argv[])
       fprintf(stderr,"\n**Report of candidates:**\n");
       
       for (ii=0; ii<numofcandidatesadded; ii++) {
-         fprintf(LOG,"fsig = %g, period = %g, df = %g, RA = %g, DEC = %g, R = %g, h0 = %g, Prob = %g, Error code = %d\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->h0, exactCandidates2[ii]->prob, exactCandidates2[ii]->proberrcode);
-         fprintf(stderr,"fsig = %g, period = %g, df = %g, RA = %g, DEC = %g, R = %g, h0 = %g, Prob = %g, Error code = %d\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->h0, exactCandidates2[ii]->prob, exactCandidates2[ii]->proberrcode);
+         fprintf(LOG,"fsig = %g, period = %g, df = %g, RA = %g, DEC = %g, R = %g, h0 = %g, Prob = %g, Error code = %d, FF normalization = %g\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->h0, exactCandidates2[ii]->prob, exactCandidates2[ii]->proberrcode, exactCandidates2[ii]->normalization);
+         fprintf(stderr,"fsig = %g, period = %g, df = %g, RA = %g, DEC = %g, R = %g, h0 = %g, Prob = %g, Error code = %d, FF normalization = %g\n", exactCandidates2[ii]->fsig, exactCandidates2[ii]->period, exactCandidates2[ii]->moddepth, exactCandidates2[ii]->ra, exactCandidates2[ii]->dec, exactCandidates2[ii]->stat, exactCandidates2[ii]->h0, exactCandidates2[ii]->prob, exactCandidates2[ii]->proberrcode, exactCandidates2[ii]->normalization);
       }
    }
    
@@ -1160,7 +1160,6 @@ REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
    REAL8Vector *tfdata = XLALCreateREAL8Vector((UINT4)(numffts*sftlength));
-   INT4 firstsftread = 0;
    for (ii=0; ii<numffts; ii++) {
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
       SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
@@ -1170,17 +1169,6 @@ REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
             tfdata->data[ii*sftlength + jj] = *(normalization)*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im);  //power
          }
          
-         //Rescale SFTs to get near 1.0 (only for the first sft)
-         /* if (firstsftread==0) {
-            firstsftread = 1;
-            REAL8 meansftval = 0.0;
-            for (jj=0; jj<sftlength; jj++) meansftval += tfdata->data[ii*sftlength + jj];
-            meansftval /= (REAL8)sftlength;
-            *(normalization) /= meansftval;
-            tfdata->data[ii*sftlength + jj] *= *(normalization);
-            fprintf(LOG,"Scaling factor for SFTs = %g\n",*(normalization));
-            fprintf(stderr,"Scaling factor for SFTs = %g\n",*(normalization));
-         } */
       } else {
          for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;
          nonexistantsft++;
