@@ -79,6 +79,9 @@ struct gengetopt_args_info
   double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
+  double avesqrtSh_arg;	/**< @brief Expected average of square root of Sh (default='1.0').  */
+  char * avesqrtSh_orig;	/**< @brief Expected average of square root of Sh original value given at command line.  */
+  const char *avesqrtSh_help; /**< @brief Expected average of square root of Sh help description.  */
   int blksize_arg;	/**< @brief Blocksize for running median of 1st FFT band (default='1001').  */
   char * blksize_orig;	/**< @brief Blocksize for running median of 1st FFT band original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median of 1st FFT band help description.  */
@@ -115,6 +118,7 @@ struct gengetopt_args_info
   unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
+  unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
