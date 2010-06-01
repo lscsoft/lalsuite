@@ -2996,7 +2996,7 @@ class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
       return
     self.final = 1
     self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
-    self.add_file_arg("-a 4 -n 100 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
+    self.add_file_arg("-a 4 -n 500 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
     self.add_output_file(self.trainedforest)
 
 class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):

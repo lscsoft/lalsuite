@@ -2870,6 +2870,7 @@ int ReadBinaryTemplateBank(void)
   char filename[256];
   UINT4 i;
   REAL8 temp1,temp2;
+  int rc;
 
   
   strcpy(filename,uvar_binarytemplatefile);
@@ -2997,7 +2998,7 @@ int ReadBinaryTemplateBank(void)
   /* Now read in all templates into memory */
   i=0;
   while (i<BinaryBank->BMFheader.Nfilters) {
-    fscanf(BTBfp,"%le%le%d%d%le%le\n",
+    rc = fscanf(BTBfp,"%le%le%d%d%le%le\n",
 		 &(BinaryBank->BTB[i]).ProjSMaxis,
 		 &(BinaryBank->BTB[i]).Period,
 		 &(BinaryBank->BTB[i]).TperiSSB.gpsSeconds,
