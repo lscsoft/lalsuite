@@ -877,12 +877,12 @@ for result_db in result_dbs_cache:
             summ_file_type = 'html'
             columns = ','.join([
               'rank',
+              'injected_decisive_distance',
               'injected_end_time',
               'injected_end_time_utc__Px_click_for_daily_ihope_xP_',
               'elogs',
               'injected_mass1',
               'injected_mass2',
-              'injected_distance',
               'sim_tag',
               'recovered_combined_far',
               'recovered_snr'])

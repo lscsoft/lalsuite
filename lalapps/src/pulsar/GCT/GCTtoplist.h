@@ -62,6 +62,10 @@ extern int write_gctFStat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum)
 extern void sort_gctFStat_toplist(toplist_t*list);
 
 
+/** sorts the toplist with an internal sorting function,
+ used before doing the follow-up analysis */
+extern void sort_gctFStat_toplist_strongest(toplist_t*list);
+
 
 
 /** File IO */

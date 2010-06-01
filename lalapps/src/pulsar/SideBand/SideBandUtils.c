@@ -732,6 +732,7 @@ void ReadSideBandData (LALStatus * status,
   REAL8 fre,fim;
   REAL8 norm;
   REAL8 sum = 0.0;
+  int rc;
 
   INITSTATUS( status, "ReadSideBandData", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -763,9 +764,9 @@ void ReadSideBandData (LALStatus * status,
   
   /* return to end of header and read first 2 lines to assess frequency resolution */
   fsetpos(fp,&pos);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
 	     &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
 	     &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
   params->df = ftemp2 - ftemp1;
   
