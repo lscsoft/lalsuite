@@ -111,13 +111,13 @@ int main() {
     injParams.spin1y = 0.;
     injParams.spin1z = 0.6;
 
-    injParams.spin2x = 0.6;
+    injParams.spin2x = 0.;
     injParams.spin2y = 0.;
-    injParams.spin2z = 0.;
+    injParams.spin2z = 0.6;
 
     /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
 
-    ppnParams.deltaT = 1.0 / 4096.0 /4.;
+    ppnParams.deltaT = 1.0 / 4096.0 /2.;
     /* fStop is set for debugging purposes. The working version of 
        LALPSpinInspiralRD simply ignores its value */
     ppnParams.fStop  = ff;

@@ -512,7 +512,7 @@ void LALPSpinInspiralRDForInjection (
   /* Call the engine function */
   /* Uncomment the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
-  //params->fCutoff     = ppnParams->fStop;
+  params->fCutoff     = ppnParams->fStop;
   params->startPhase  = ppnParams->phi;
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
@@ -707,10 +707,13 @@ void LALPSpinInspiralRDEngine (
   REAL8 omegaddot;
   REAL8 alpha=0.;
   REAL8 iota=0.;
+  REAL8 alphaold,iotaold,diota,dalpha,domega;
   REAL8 alphadot=0.;
   REAL8 iotadot=0.;
   REAL8 iotadot0,iotadot1,alphadot0,alphadot1;
   REAL8 iotaddot,iotadotold,alphaddot,alphadotold;
+  REAL8 checkam=0.;
+  REAL8 checkamold;
 
   REAL4 mchi1,mchi2;
   REAL4 cosa1,cosa2,cosg;
@@ -725,7 +728,7 @@ void LALPSpinInspiralRDEngine (
 
   /* used in the phen-phase attach procedure*/
   REAL8           tAs,om1,om0;
-  REAL8           omrac,trac;
+  //REAL8           omrac,trac;
   REAL8           t0,Psi0,alpha0,iota0;
   
   /* used in the ring-down attach procedure*/
@@ -1132,7 +1135,7 @@ void LALPSpinInspiralRDEngine (
   LALPSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
 
   /*Initialization of support variables*/
-  omrac=0.;
+  //  omrac=0.;
 
   /* Injection: hh,ff; template: signalvec1,2*/
 
@@ -1142,12 +1145,14 @@ void LALPSpinInspiralRDEngine (
   /* The analytical formula for omega_match is in the do-while loop. However
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
-  //omegamatch = params->fCutoff * unitHz;
-  omegamatch = 0.0548;
+  omegamatch = params->fCutoff * unitHz;
+  //omegamatch = 0.0548;
   //fprintf(stdout,"** LALPSIRD: omegamatch=%12.6f\n",omegamatch);
 
   /* The number of Ring Down modes is hard-coded here, it cannot exceed 3*/
-  nmodes = 1;
+  nmodes = 3;
+
+  fprintf(stdout,"** LALPSIRD **: nmodes=%d\n",nmodes);
 
   /* For RD, check that the 220 QNM freq. is less than the Nyquist freq. */
   /* Get QNM frequencies */
@@ -1180,6 +1185,8 @@ void LALPSpinInspiralRDEngine (
   v=sqrt(v2);
 
   params->ampOrder=LAL_PNORDER_NEWTONIAN;
+
+  //  INT4 localmax=0;
 
   do {
 
@@ -1301,7 +1308,7 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
+    //omegamatch= 0.0548 - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
 
   }
 
@@ -1376,7 +1383,7 @@ void LALPSpinInspiralRDEngine (
     energy=enold;
     rett=0;
   }
-  //else if ( omega > omegamatch)  fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
+  else if ( omega > omegamatch)  fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega > omegamatch= %10.4e\n",omegamatch);
 
   params->vFinal = pow(omega,oneby3);
   if (signalvec1 && !signalvec2) params->tC = t;
@@ -1411,18 +1418,19 @@ void LALPSpinInspiralRDEngine (
 
     //fprintf(stdout,"** LALPSIRD: Start of the phen phase at t=%11.3e ****\n",t);
 
-    trac=tAs*(1.-1.5*om1/(omegaRD-om0));
-    omrac=4./27.*pow(omegaRD-om0,3.)/om1/om1;
-
     do {
-      
+
+      omegaold=omega;
       omega = om1/(1.-t/tAs)+om0;
       fap->data[count] =  omega;
       Psi = Psi0-tAs*om1*log(1.-t/tAs)/m+om0*(t-t0)/m;      
+      iotaold=iota;
       iota=iotadot0*(t-t0)/m-iotadot1*tAs/m*log(1.-t/tAs)+iota0;
+      alphaold=alpha;
       alpha=alpha0+alphadot0*(t-t0)/m-alphadot1*tAs/m*log(1.-t/tAs);
       v2old=v2;
       v2=pow(omega,2./3.);
+      v=sqrt(v2);
       amp22*=v2/v2old;
 
       ci=cos(iota);
@@ -1473,32 +1481,69 @@ void LALPSpinInspiralRDEngine (
       
       shift22->data[count] = alpha;
 
+      checkamold=checkam;
+      checkam=fabs(amp22*(1.+v*mparams->dm/3.+ v2/42.*(-107.+55.*mparams->eta)));
+
+      //      if ((localmax==1)&&(h22->data[2*count]<h22->data[2*count-2])) fprintf(stdout,"LM: h22=%11.3e  amp=%11.3e  coeffh22=%11.3e c4i2=%11.3e  s4i2=%11.3e\n",h22->data[2*count-2],amp22*v2old/v2,1.+v2/42.*(-107.+55.*mparams->eta),c4i2,s4i2);
+      //      if(h22->data[2*count]>h22->data[2*count-2]) localmax=1;
+      //else localmax=0;
+
+      if (count%10==0) fprintf(stdout,"I ciclo %d  %11.3e  %11.3e  w=%11.3e  %11.3e\n",count,checkam,checkamold,omega,fracRD*omegaRD);
+
       count++;
       t+=dt;    
   
-    } while ((omega < fracRD*omegaRD)&&( t < trac));
+    } while ((omega < fracRD*omegaRD)&&( checkam>checkamold));
+
+    //    trac=tAs*(1.-1.5*om1/(omegaRD-om0));
+    //omrac=4./27.*pow(omegaRD-om0,3.)/om1/om1;
      
     /* Smoothing the matching with the ring down*/
     count0=count;
-    
-    t0=t-dt;
-    Psi0=Psi-omegaRD*t0/m-tAs*omrac*pow((1.-t0/tAs),3.)/3./m;
 
-    //fprintf(stdout,"** LALPSIRD: start of the second phen phase at t=%11.3e ****\n",t);
+    diota=iota-iotaold;
+    dalpha=alpha-alphaold;
+    domega=omega-omegaold;
+
+    //    fprintf(stdout,"diota=%11.3e  dalpha=%11.3e\n",diota,dalpha);
 
     do {
       
       omegaold=omega;
-      omega=omegaRD - omrac * (1.-t/tAs)*(1.-t/tAs);
+      omega+=domega;
       
       fap->data[count] =  omega;
-      Psi = omegaRD*t/m + tAs*omrac*pow((1.-t/tAs),3.)/3./m + Psi0;
-      
-      v2old=v2;
-      v2=pow(omega,2./3.);
-      amp22*=sqrt(v2old/v2);
+      Psi+=omega*dt/m;
+      iota+=diota;
+      alpha+=dalpha;
+
+      ci=cos(iota);
+
+      c2i2=(1.+ci)/2.;
+      s2i2=1.-c2i2;
+
+      ci2=sqrt(c2i2);
+
+      si=sqrt(1.-ci*ci);
+
+      s2i=1.-ci*ci;
+
+      c4i2=c2i2*c2i2;
+      s4i2=s2i2*s2i2;
+
+      c5i2=c4i2*ci2;
+      s5i2=s4i2*si2;
+
+      c6i2=c4i2*c2i2;
+      s6i2=s4i2*s2i2;
+
+      //v2old=v2;
+      //v2=pow(omega,2./3.);
+      //v=sqrt(v2);
+      amp22*=pow(omega/omegaold,1./3.);
 
       h22->data[2*count] = (REAL4)(amp22 * ( ( cos(2.*(Psi+alpha))*c4i2 + cos(2.*(Psi-alpha))*s4i2 ) + v*mparams->dm/3.*( -sin(Psi-2.*alpha)*s2i2 - sin(Psi+2.*alpha)*c2i2 ) +	v2/42.*( (-107.+55.*mparams->eta)*( cos(2.*(Psi-alpha))*s4i2 + cos(2.*(Psi+alpha))*c4i2 )) ) );
+
       h22->data[2*count+1] = (REAL4)(amp22 *( (-sin(2.*(Psi+alpha))*c4i2 + sin(2.*(Psi-alpha))*s4i2 ) + v*mparams->dm/3.*( cos(Psi-2.*alpha)*s2i2 - cos(Psi+2.*alpha)*c2i2 ) +  v2/42.*( (-107.+55.*mparams->eta)*( sin(2.*(Psi-alpha))*s4i2 - sin(2.*(Psi+alpha))*c4i2 ) ) ) );
       
       h21->data[2*count] = (REAL4) (amp22 * (si * ( sin(2.*Psi-alpha)*s2i2 - sin(2.*Psi+alpha)*c2i2 ) + v*mparams->dm/6.*( sin(Psi+alpha)*(ci+2.*c2i-1)/2. + sin(Psi-alpha)*s2i2*(1.+2.*ci) ) + v2*si*(107.-55.*mparams->eta)/84.*(s2i2*cos(2.*Psi-alpha) +c2i2*cos(2.*Psi+alpha) ) ) );
@@ -1517,6 +1562,12 @@ void LALPSpinInspiralRDEngine (
       
       shift22->data[count] = alpha;
       
+      //if ((localmax==1)&&(h22->data[2*count]<h22->data[2*count-2])) fprintf(stdout,"LM: h22=%11.3e  amp=%11.3e  coeffh22=%11.3e c4i2=%11.3e  s4i2=%11.3e\n",h22->data[2*count-2],amp22*v2old/v2,1.+v2/42.*(-107.+55.*mparams->eta),c4i2,s4i2);
+      //if(h22->data[2*count]>h22->data[2*count-2]) localmax=1;
+      //else localmax=0;
+
+      if (count%10==0) fprintf(stdout,"II ciclo %d  %11.3e\n",count,amp22*(1.+v2/42.*(-107.+55.*mparams->eta)));
+
       count++;
       t+=dt;
 
@@ -1621,11 +1672,11 @@ void LALPSpinInspiralRDEngine (
    z1  = - MultSphHarm2P2.im - MultSphHarm2M2.im;
    z2  = - MultSphHarm2P2.re + MultSphHarm2M2.re;
    
-   /*   fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
-	fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);*/
-
-   /*fprintf(stderr," ** PSIRD WARNING ** : y1=%11.3e  y2=%11.3e\n",y_1,y_2);
-     fprintf(stderr," ** PSIRD WARNING ** : z1=%11.3e  z2=%11.3e\n",z1,z2);*/
+   fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Re2p2=%11.3e  2m2 %11.3e\n",(y_1-z2)/2.,(y_1+z2)/2.);
+   fprintf(stderr," ** PSIRD WARNING ** : Sph.Harm. Im2p2=%11.3e  2m2 %11.3e\n",-(y_2+z1)/2.,(y_2-z1)/2.);
+   
+   /*fprintf(stderr," ** PSIRD WARNING ** : y1=%11.3e  y2=%11.3e\n",y_1*1.586,y_2*1.586);
+     fprintf(stderr," ** PSIRD WARNING ** : z1=%11.3e  z2=%11.3e\n",z1*1.586,z2*1.586);*/
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
    for ( i = 0; i < length; i++)
