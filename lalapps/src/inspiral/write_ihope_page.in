@@ -1513,7 +1513,7 @@ def write_hw_injection(page, opts):
   @return: an update of HTML document
   """
   webdir = opts.webdir
-  copy_plot_directory(opts.datadir + "hardware_inj",\
+  copy_plot_directory(opts.datadir + "hardware_injection_summary",\
       opts.physdir + "hardware_inj")  
 
   page.add("This section summarizes the analysis of the hardware injections.<br/>")
@@ -1534,8 +1534,8 @@ def write_hw_injection(page, opts):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Hardware injection summary page at CAT 1"
-  tags[section] = '*hwinjections.'
-  htmltags[section] = '*hwinjections_table.'
+  tags[section] = '*HWINJ_SUMMARY*'
+  htmltags[section] = '*HWINJ_SUMMARY*'
   imagetags[section] = None
   captions[section] = ''
   comments[section] = None
@@ -1546,8 +1546,8 @@ def write_hw_injection(page, opts):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Hardware injection summary page at CAT 2"
-  tags[section] = '*hwinjections_CAT_2*'
-  htmltags[section] = '*hwinjections_CAT_2_table*'
+  tags[section] = '*HWINJ_SUMMARY_CAT_2*'
+  htmltags[section] = '*HWINJ_SUMMARY_CAT_2*'
   imagetags[section] = None
   captions[section] = ''
   comments[section] = None
