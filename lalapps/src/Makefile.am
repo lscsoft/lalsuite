@@ -13,6 +13,5 @@ SUBDIRS = \
 	power \
 	$(LALPULSARDIRS) \
 	inspiral \
-	zmsearch \
 	tracksearch \
 	online

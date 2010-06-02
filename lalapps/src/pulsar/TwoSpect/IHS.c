@@ -416,7 +416,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
          }
          
          REAL8 meanNoise = calcMean(avgsinrange);
-         REAL8 rmsNoise = calcRms(rmssinrange);
+         //REAL8 rmsNoise = calcRms(rmssinrange);
          
          //if (ii==1 || ii==2 || ii==9) fprintf(stderr,"%g %g %g\n",ihsfarstruct->ihsfar->data[ii],meanNoise,ihsmaxima->maxima->data[checkbin]);
          
@@ -450,10 +450,10 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                
                //fprintf(stderr,"IHS candidate %d: f0 = %g, P = %g, df = %g\n",(*numofcandidates),fsig,per0,B);
                
-               REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
-               REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
+               //REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
+               //REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
                candlist[(*numofcandidates)] = new_candidate();
-               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, ihs_sum, ihsSnr, 0.0, 0);
+               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, 0.0, 0.0, 0.0, 0, ffdata->ffnormalization);
                (*numofcandidates)++;
             }
          }

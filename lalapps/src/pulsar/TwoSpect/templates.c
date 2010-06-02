@@ -131,10 +131,7 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) if (templatestruct->templatedata->data[ii]!=0) numweights++;
    
    REAL8 sumwsq = 0.0;
-   for (ii=0; ii<numweights; ii++) {
-      //fprintf(stderr,"%.7f %.7f\n",templatestruct->templatedata->data[ii],ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]);
-      sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
-   }
+   for (ii=0; ii<numweights; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
    
    INT4 errcode = 0;
    
@@ -156,8 +153,9 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
    FDF.params = &params;
    
    //Start off with an initial guess
-   REAL8 rootguess = log10(10.0);
+   REAL8 rootguess = 10.0;
    REAL8 initialroot = rootguess;
+   //fprintf(stderr,"R = %g, Prob diff to target = %g, slope = %g\n",rootguess,gsl_probR(rootguess,&params),gsl_dprobRdR(rootguess,&params));
    
    //Set the solver at the beginning
    gsl_root_fdfsolver_set(s, &FDF, initialroot);
@@ -172,7 +170,7 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
       status = gsl_root_fdfsolver_iterate(s);
       root = rootguess;
       rootguess = gsl_root_fdfsolver_root(s);
-      //fprintf(stderr,"%g\n",rootguess);
+      //fprintf(stderr,"R = %g, Prob = %g, slope = %g\n",rootguess,gsl_probR(rootguess,&params),gsl_dprobRdR(rootguess,&params));
       status = gsl_root_test_delta(rootguess, root, 0.0, 0.001);
       
    }
@@ -269,33 +267,33 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.c = Rpr;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
-   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-14, errcode); 
+   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-13, errcode); 
    
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<LAL_REAL8_EPS) {
+   if (prob<=1.0e-10) {
       estimatedTheProb = 1;
       
       c1 = 0.9*vars.c;
       vars.c = c1;
-      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode);
-      while (tempprob<2.0*LAL_REAL8_EPS) {
+      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode);
+      while (tempprob<1.0e-10) {
          c1 *= 0.9;
          vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode);
+         tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode);
       }
       logprob1 = log10(tempprob);
       
       c2 = 0.9*c1;
       vars.c = c2;
-      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode));
-      while ((logprob2-logprob1)<2.0*LAL_REAL8_EPS) {
+      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode));
+      while ((logprob2-logprob1)<=2.0*1.0e-10) {
          c2 *= 0.9;
          vars.c = c2;
-         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-14, errcode));
+         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode));
       }
       
       //Calculating slope
@@ -446,7 +444,6 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
    
    //Create template
    REAL8 sum = 0.0;
-   //REAL8Vector *fulltemplate = XLALCreateREAL8Vector(sigmas->length*fpr->length);
    REAL8 dataval;
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       REAL8 s = sigmas->data[ii];
@@ -466,7 +463,6 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
          if (dataval <= 1e-12 || jj==0 || jj==1) dataval = 0.0;
          
          //Sum up the weights in total
-         //sum += fulltemplate->data[ii*fpr->length + jj];
          sum += dataval;
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot
@@ -504,7 +500,6 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
 
 //////////////////////////////////////////////////////////////
 // Make an template based on FFT of sinc squared functions  -- done
-//void makeTemplate(ffdataStruct *out, candidate *in, REAL4FFTPlan *plan)
 void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL8FFTPlan *plan)
 {
    
@@ -617,8 +612,9 @@ REAL8 sincxoverxsqminusone(REAL8 x)
    
    REAL8 val;
    
-   if (x==1.0 || x==-1.0) val = -0.5;
-   else val = gsl_sf_sinc(x)/(x*x-1);
+   //if (x==1.0 || x==-1.0) val = -0.5;
+   if (fabs(x*x-1.0)<1.0e-5) val = -0.5;
+   else val = gsl_sf_sinc(x)/(x*x-1.0);
    
    return val;
    
