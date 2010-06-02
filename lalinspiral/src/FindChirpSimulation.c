@@ -291,7 +291,7 @@ LALFindChirpInjectSignals (
      {
        CoherentGW *wfm;
        SimRingdownTable *ringEvent;
-       int injectSignalType = imr_inject;
+       int injectSignalType = LALRINGDOWN_IMR_INJECT;
 
 
        ringEvent = (SimRingdownTable *)
@@ -479,8 +479,6 @@ LALFindChirpInjectSignals (
       memcpy( &(waveform.f->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
       memcpy( &(waveform.phi->epoch), &(waveform.h->epoch),
-          sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.a->epoch), &(waveform.a->epoch),
           sizeof(LIGOTimeGPS) );
 
       wfmLength = waveform.h->data->length;
@@ -1486,17 +1484,16 @@ static int FindTimeSeriesStartAndEnd (
         UINT4 *end
         )
 {
-  static const char *func = "FindTimeSeriesStartAndEnd";
   UINT4 i; /* mid, n; indices */
   UINT4 flag, safe = 1;
   UINT4 length;
 
 #ifndef LAL_NDEBUG
   if ( !signalvec )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( __func__, XLAL_EFAULT );
 
   if ( !signalvec->data )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( __func__, XLAL_EFAULT );
 #endif
 
   length = signalvec->length;

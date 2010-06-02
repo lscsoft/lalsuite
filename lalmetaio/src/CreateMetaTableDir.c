@@ -399,6 +399,8 @@ LALCreateMetaTableDir(
       ABORT( status, LIGOLWXMLREADH_EUTAB, LIGOLWXMLREADH_MSGEUTAB );
   }
 
+  (void)tableDir;
+
   /* Normal exit */
   DETATCHSTATUSPTR (status);
   RETURN( status );

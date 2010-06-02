@@ -864,7 +864,10 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
   }
 
   if ( optind == argc && fp )
-      fgets( buf, buflen, fp );
+  {
+      char *c;
+      c = fgets( buf, buflen, fp );
+  }
   else
   {
     for ( ; optind < argc; ++optind )

@@ -26,6 +26,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 
 #include "lalapps.h"
 #include "spectrm.h"
@@ -35,9 +36,9 @@ RCSID( "$Id$" );
 
 
 /* routine to compute an average spectrum from time series data */
-/* FIXME: only uses median-mean method */
 REAL4FrequencySeries *compute_average_spectrum(
     REAL4TimeSeries         *series,
+    int                      spectrumAlgthm,
     REAL8                    segmentDuration,
     REAL8                    strideDuration,
     REAL4FFTPlan            *fwdPlan,
@@ -72,11 +73,23 @@ REAL4FrequencySeries *compute_average_spectrum(
     spectrum->epoch  = series->epoch;
     spectrum->deltaF = 1.0/segmentDuration;
   }
-  else /* compute average spectrum using median-mean method */
+  else /* compute average spectrum using either the median or the median-mean method */
   {
-    verbose( "estimating average spectrum using median-mean method\n" );
-    XLALREAL4AverageSpectrumMedianMean( spectrum, series, segmentLength,
-        segmentStride, window, fwdPlan );
+    switch ( spectrumAlgthm )
+    {
+      case LALRINGDOWN_SPECTRUM_MEDIAN:
+        verbose( "estimating average spectrum using median method\n" );
+        XLALREAL4AverageSpectrumMedian(spectrum, series, segmentLength,
+          segmentStride, window, fwdPlan );
+      break;
+      case LALRINGDOWN_SPECTRUM_MEDIAN_MEAN:
+        verbose( "estimating average spectrum using median-mean method\n" );
+        XLALREAL4AverageSpectrumMedianMean( spectrum, series, segmentLength,
+          segmentStride, window, fwdPlan );
+      break;
+      default:
+        error( "unrecognized injection signal type\n" );
+    }
   }
 
   snprintf( spectrum->name, sizeof( spectrum->name ),

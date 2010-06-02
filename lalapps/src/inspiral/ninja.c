@@ -136,8 +136,8 @@ int main(INT4 argc, CHAR *argv[])
   LIGOLwXMLStream xmlfp;
   MetadataTable injections;
   MetadataTable proctable;
-  MetadataTable procparams;
-  ProcessParamsTable *this_proc_param = NULL;
+  //MetadataTable procparams;
+  //ProcessParamsTable *this_proc_param = NULL;
 
   /* nrwave stuff */
   NinjaMetaData metaData;

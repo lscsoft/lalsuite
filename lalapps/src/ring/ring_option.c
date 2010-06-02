@@ -57,7 +57,9 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "write-spectrum",     no_argument, &localparams.writeSpectrum, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
-    { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
+    { "write-template-time-series", no_argument, &localparams.writeTemplateTimeSeries, 1 },
+    { "write-template-fft", no_argument, &localparams.writeTemplateFFT, 1 },
+    { "write-filter-output", no_argument, &localparams.writeFilterOutput, 1 },
     { "write-compress",     no_argument, &localparams.outCompress, 1 },
     { "help",                    no_argument,       0, 'h' },
     { "version",                 no_argument,       0, 'V' },
@@ -75,6 +77,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "bank-max-frequency",      required_argument, 0, 'F' },
     { "geo-highpass-frequency",  required_argument, 0, 'g' },
     { "geo-data-scale",          required_argument, 0, 'G' },
+    { "spectrum-type",           required_argument, 0, 'L' },
     { "injection-type",          required_argument, 0, 'J' },
     { "injection-file",          required_argument, 0, 'i' },
     { "inject-mdc-frame",        required_argument, 0, 'I' },
@@ -101,7 +104,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V:w:W";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:hi:I:J:L:m:o:O:p:q:Q:r:R:s:S:t:T:u:U:V:w:W";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -171,6 +174,23 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
         exit( 0 );
       case 'i': /* injection-file */
         localparams.injectFile = optarg;
+        break;
+      case 'L': /* spectrum type */
+        if( ! strcmp( "median", optarg ) )
+        {
+          localparams.spectrumType = 0;
+        }
+        else if( ! strcmp( "median_mean", optarg ) )
+        {
+          localparams.spectrumType = 1;
+        }
+        else
+        {
+          localparams.spectrumType = -1;
+          fprintf( stderr, "invalid --spectrum_type:\n"
+              "(must be median or median_mean)\n" );
+          exit( 1 );
+        }
         break;
       case 'J': /* injection type */
         if( ! strcmp( "RINGDOWN", optarg ) )
@@ -321,6 +341,7 @@ static int ring_default_params( struct ring_params *params )
   params->doFilter    = 1;
   
   params->injectType  = -1;
+  params->spectrumType = -1;
 
   return 0;
 }
@@ -383,6 +404,9 @@ int ring_params_sanity_check( struct ring_params *params )
     validChannelIFO = sscanf( params->channel, "%2[A-Z1-9]", params->ifoName );
     sanity_check( validChannelIFO );
 
+    /* check the spectrum type is specified */
+    sanity_check( params->spectrumType >= 0.0 );
+
     /* check that injection type is specified if an injection file is given */
 
     if ( params->injectFile ) /* geo data parameters */
@@ -426,7 +450,9 @@ int ring_params_sanity_check( struct ring_params *params )
     /* record length, segment length and stride need to be commensurate */
     sanity_check( !( (recordLength - segmentLength) % segmentStride ) );
     params->numOverlapSegments = 1 + (recordLength - segmentLength)/segmentStride;
-    sanity_check( ! (params->numOverlapSegments % 2) ); /* required to be even for median-mean method */
+
+    if ( params->spectrumType > 0 )
+      sanity_check( ! (params->numOverlapSegments % 2) ); /* required to be even for median-mean method */
 
     /* checks on data input information */
     sanity_check( params->channel );
@@ -569,14 +595,15 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
 
   fprintf( stderr, "\ndata segmentation options:\n" );
-  fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
-  fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec)\n" );
+  fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec) (Subdivisions of analysis block)\n" );
+  fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec) (Blocks are subdivided into segments)\n" );
   fprintf( stderr, "--pad-data=duration          input data padding (sec)\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
   fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
+  fprintf( stderr, "--spectrum-type            specify the algorithm used to calculate the spectrum; must be either median or median_mean\n" );
 
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );
@@ -608,6 +635,8 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--write-spectrum           write computed data power spectrum\n" );
   fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
   fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
+  fprintf( stderr, "--write-template-time-series   write template time series\n");
+  fprintf( stderr, "--write-template-fft       write template fft\n");
   fprintf( stderr, "--write-filter-output      write filtered data segments\n" );
   fprintf( stderr, "--write-compress           write a compressed xml file\n");
   return 0;

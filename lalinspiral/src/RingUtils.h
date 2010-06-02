@@ -24,14 +24,14 @@
 
 /**** <lalLaTeX>
  *
- * \section{Header \texttt{Ring.h}}
+ * \section{Header \texttt{RingUtils.h}}
  * \label{sec:Ring.h}
  *
  * Black hole ringdown waveform generation.
  *
  * \subsection*{Synopsis}
  * \begin{verbatim}
- * #include <lal/Ring.h>
+ * #include <lal/RingUtils.h>
  * \end{verbatim}
  *
  * Routines for generating waveforms for black hole ringdown.

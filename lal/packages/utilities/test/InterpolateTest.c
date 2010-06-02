@@ -97,8 +97,6 @@ static void ParseOptions (int argc, char *argv[]);
 
 static void TestStatus (LALStatus *status, const char *expectCodes, int exitCode);
 
-static void ClearStatus (LALStatus *status);
-
 int main (int argc, char *argv[])
 {
   enum {ArraySize = 10};
@@ -358,26 +356,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
 }
-
-
-/*
- *
- * ClearStatus ()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-  void
-ClearStatus (LALStatus *status)
-{
-  if (status->statusPtr)
-  {
-    ClearStatus      (status->statusPtr);
-    DETATCHSTATUSPTR (status);
-  }
-}
-
 
 /*
  * Usage ()

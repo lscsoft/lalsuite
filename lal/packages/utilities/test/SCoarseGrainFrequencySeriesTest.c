@@ -525,6 +525,8 @@ main( int argc, char *argv[] )
        = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
+#else
+   sPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALSDestroyVector(&status, &(goodOutput.data));

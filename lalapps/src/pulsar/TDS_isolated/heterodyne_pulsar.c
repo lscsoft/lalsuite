@@ -403,9 +403,10 @@ heterodyne.\n");  }
         INT4 memcount=1;
       
         do{
-          fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
-          fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
-          fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
+          size_t rc;
+          rc = fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
+          rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
+          rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
@@ -1602,6 +1603,7 @@ INT4 heterodyneflag){
   INT4 num, dur; /* variable to contain the segment number and duration */
   INT4 linecount=0; /* number of lines in the segment file */
   INT4 ch=0;
+  int rc;
 
   if((fp=fopen(seglistfile, "r"))==NULL){
     fprintf(stderr, "Error... can't open science segment list file.\n");
@@ -1632,13 +1634,13 @@ INT4 heterodyneflag){
                 nothing */
 
     if(strstr(jnkstr, "#")){
-      fscanf(fp, "%*[^\n]");   /* if == # then skip to the end of the line */
+      rc = fscanf(fp, "%*[^\n]");   /* if == # then skip to the end of the line */
       continue;
     }
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      fscanf(fp, "%d%d%d%d", &num, &starts->data[i], &stops->data[i], &dur);
+      rc = fscanf(fp, "%d%d%d%d", &num, &starts->data[i], &stops->data[i], &dur);
       /*format is segwizard type: num starts stops dur */
       
       /* if performing a fine heterodyne remove the first 60 secs at the start
@@ -1735,6 +1737,7 @@ void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes,
 
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
+  int rc;
   
   if(calfiles.calibcoefficientfile == NULL){
     fprintf(stderr, "No calibration coefficient file.\n\
@@ -1786,7 +1789,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n",
         break;
       }
       if(strstr(jnkstr, "%")){
-        fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
+        rc = fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
                                          line */
         continue;
       }
@@ -1900,8 +1903,8 @@ void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename,
   FILE *fp=NULL;
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
-
   REAL8 freq=0.;
+  int rc;
 
   /* open calibration file for reading */
   if(calibfilename == NULL){
@@ -1918,9 +1921,9 @@ calibfilename);
   do{
     offset = ftell(fp); /* get current position of file stream */
 
-    fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
+    rc = fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
     if(strstr(jnkstr, "%")){
-      fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
+      rc = fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
       continue;
     }
     else{

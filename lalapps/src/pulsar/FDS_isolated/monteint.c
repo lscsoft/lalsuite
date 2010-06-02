@@ -253,7 +253,7 @@ main (INT4 argc, CHAR *argv[])
   LALStatus *status = &global_status;
 
   BayesFstatParams  *bfparams = NULL;
-  findRootOut frout;
+  findRootOut frout = {0, 0, 0};
   findRootParams frparams;
   REAL8 pvalue;
 

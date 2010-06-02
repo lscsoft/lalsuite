@@ -1,4 +1,4 @@
-AC_INIT([lalxml],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -52,7 +52,7 @@ AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_DATE],["$lalxml_configure_date"],
                    [LALXML Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -114,14 +114,10 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
-
-# check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-
-# check for lalpulsar
-LALSUITE_CHECK_LIB([LALPULSAR],[lalpulsar],[1.0.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.0.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -141,12 +137,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL XML has now been successfully configured
+        LALXML has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL XML
-        and run 'make install' to install LAL XML
+        Now run 'make' to build LALXML
+        and run 'make install' to install LALXML
 
 ================================================================="

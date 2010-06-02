@@ -575,6 +575,8 @@ main( int argc, char *argv[] )
        = CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
+#else
+   cPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALCDestroyVector(&status, &(goodOutput.data));

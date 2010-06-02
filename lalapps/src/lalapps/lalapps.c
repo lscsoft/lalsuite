@@ -201,7 +201,6 @@ int set_debug_level( const char *s )
 char *
 XLALGetVersionString( int level )
 {
-  const char *fn = __func__;
   char lal_info[1024];
 #ifdef HAVE_LIBLALFRAME
   char lalframe_info[1024];
@@ -230,22 +229,22 @@ XLALGetVersionString( int level )
   char *tree_status;
 
   /* check version consistency between LAL headers <> library */
-  if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalLibraryVCSInfo) )
+  if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalVCSInfo) )
     {
       XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
-                     fn, lalHeaderVCSInfo.vcsId, lalLibraryVCSInfo.vcsId );
+                     __func__, lalHeaderVCSInfo.vcsId, lalVCSInfo.vcsId );
       XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
-      XLAL_ERROR_NULL (fn, XLAL_EERR );
+      XLAL_ERROR_NULL (__func__, XLAL_EERR );
     }
 
   switch(level)
   {
     case 0:
       /* get lal info */
-      tree_status = strdup(lalLibraryVCSInfo.vcsStatus);
+      tree_status = strdup(lalVCSInfo.vcsStatus);
       snprintf(lal_info, sizeof(lal_info),
-          "%%%% LAL: %s (%s %s)\n", lalLibraryVCSInfo.version, \
-          strsep(&tree_status, delim), lalLibraryVCSInfo.vcsId);
+          "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
+          strsep(&tree_status, delim), lalVCSInfo.vcsId);
 
 #ifdef HAVE_LIBLALFRAME
       /* get lalframe info */
@@ -322,12 +321,12 @@ XLALGetVersionString( int level )
           "%%%% LAL-Status: %s\n"
           "%%%% LAL-Configure Date: %s\n"
           "%%%% LAL-Configure Arguments: %s\n",
-          lalLibraryVCSInfo.version,
-          lalLibraryVCSInfo.vcsId,
-          lalLibraryVCSInfo.vcsDate,
-          lalLibraryVCSInfo.vcsBranch,
-          lalLibraryVCSInfo.vcsTag,
-          lalLibraryVCSInfo.vcsStatus,
+          lalVCSInfo.version,
+          lalVCSInfo.vcsId,
+          lalVCSInfo.vcsDate,
+          lalVCSInfo.vcsBranch,
+          lalVCSInfo.vcsTag,
+          lalVCSInfo.vcsStatus,
           LAL_CONFIGURE_DATE ,
           LAL_CONFIGURE_ARGS );
 
@@ -523,8 +522,8 @@ XLALGetVersionString( int level )
   len += strlen(lalxml_info);
 #endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
-    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", fn, len );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", __func__, len );
+    XLAL_ERROR_NULL ( __func__, XLAL_ENOMEM );
   }
 
   strcpy ( ret, lal_info );
@@ -563,23 +562,21 @@ XLALGetVersionString( int level )
 int
 XLALOutputVersionString ( FILE *fp, int level )
 {
-  const char *fn = __func__;
-
   char *VCSInfoString;
 
   if (!fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
+    XLAL_ERROR ( __func__, XLAL_EINVAL );
   }
   if ( (VCSInfoString = XLALGetVersionString(level)) == NULL ) {
-    XLALPrintError("%s: XLALGetVersionString() failed.\n", fn);
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLALPrintError("%s: XLALGetVersionString() failed.\n", __func__);
+    XLAL_ERROR ( __func__, XLAL_EFUNC );
   }
 
   if ( fprintf (fp, "%s", VCSInfoString ) < 0 ) {
-    XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", fn);
+    XLALPrintError("%s: fprintf failed for given file-pointer 'fp'\n", __func__);
     XLALFree ( VCSInfoString);
-    XLAL_ERROR ( fn, XLAL_EIO );
+    XLAL_ERROR ( __func__, XLAL_EIO );
   }
 
   XLALFree ( VCSInfoString);

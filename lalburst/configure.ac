@@ -1,4 +1,4 @@
-AC_INIT([lalburst],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalburst],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -52,7 +52,7 @@ AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
                    [LALBurst Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -114,10 +114,10 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -137,12 +137,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Burst has now been successfully configured
+        LALBurst has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Burst
-        and run 'make install' to install LAL Burst
+        Now run 'make' to build LALBurst
+        and run 'make install' to install LALBurst
 
 ================================================================="

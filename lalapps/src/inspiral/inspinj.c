@@ -42,7 +42,7 @@
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
 #include <processtable.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
@@ -264,7 +264,7 @@ void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
 
     while (this_snr > target_snr)
     {
-      inj-> distance = inj->distance * 2.0;
+      inj-> distance = inj->distance * 3.0;
       this_snr       = network_snr(ifo_list, inj);
     }
     low_snr  = this_snr;
@@ -275,14 +275,14 @@ void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
 
     while (this_snr < target_snr)
     {
-      inj->distance = (inj->distance) / 2.0;
+      inj->distance = (inj->distance) / 3.0;
       this_snr      = network_snr(ifo_list, inj);
     }
     high_snr  = this_snr;
     high_dist = inj->distance;
   }
 
-  while ( abs(high_snr - low_snr) > 0.001 )
+  while ( abs(target_snr - this_snr) > 1.0 )
   {
     inj->distance = (high_dist + low_dist) / 2.0;
     this_snr = network_snr(ifo_list, inj);
@@ -1333,8 +1333,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-            optarg );
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );

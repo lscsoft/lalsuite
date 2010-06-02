@@ -358,7 +358,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable = 
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
             "data sample rate" );
   this_search_summvar->value = (REAL8) sampleRate;
 
@@ -498,9 +498,9 @@ int main( int argc, char *argv[] )
                 kmax = k; /* final trigger's k value */
                 caseID[k] = 1;
                 memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
-                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", thisCoinc->snglInspiral[k]->channel );
+                snprintf( channelNameArray[k], LALNameLength, "%s", thisCoinc->snglInspiral[k]->channel );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
-                if( vrbflg ) fprintf(stdout,"eventID = %lld\n",eventID );
+                if( vrbflg ) fprintf(stdout,"eventID = %" LAL_UINT8_FORMAT "\n",eventID );
                 chisq[l] = thisCoinc->snglInspiral[k]->chisq;
                 chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
                 snrsqArray[l] = pow( (REAL8) thisCoinc->snglInspiral[k]->snr,2);
@@ -512,13 +512,13 @@ int main( int argc, char *argv[] )
                 slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 
                 if( vrbflg )
-                  fprintf( stdout, "eventID = %lld, slideNumber = %" LAL_UINT8_FORMAT \
-                      ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
+                  fprintf( stdout, "eventID = %" LAL_UINT8_FORMAT ", slideNumber = %" \
+                      LAL_UINT8_FORMAT ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
                       LAL_UINT8_FORMAT "\n", eventID, slideNumber, slideSign, triggerNumber);
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
-                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%lld", caseIDChars[k], eventID );
+                snprintf( nameArrayCData[k], LALNameLength, "%s:CBC-CData_%" LAL_UINT8_FORMAT, caseIDChars[k], eventID );
 
                 /* slideSign=0 is the same as a positive time slide */
                 if(slideSign != 0)
@@ -832,7 +832,7 @@ int main( int argc, char *argv[] )
             /* CHECK: timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);*/
             timeptDiff[l] = rint( (slideNS[0] - slideNS[l])*1e-9 * sampleRate);
             /*CHECK: if( vrbflg ) fprintf(stdout,"tempTime[0] = %9.3f, tempTime[2nd] = %9.3f, timeptDiff = %lld\n",tempTime[0], tempTime[j+1], timeptDiff[j]);*/
-            if( vrbflg ) fprintf(stdout,"slideNS[0] = %lld, slideNS[2nd] = %lld, timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
+            if( vrbflg ) fprintf(stdout,"slideNS[0] = %" LAL_INT8_FORMAT ", slideNS[2nd] = %" LAL_INT8_FORMAT ", timeptDiff = %d, sampleRate = %d\n",slideNS[0], slideNS[l], timeptDiff[l], sampleRate);
 
             l++;
           }
@@ -1085,8 +1085,9 @@ int main( int argc, char *argv[] )
 	  }
         }
         /* Now that the time series are commensurate, do the filtering... */
-        XLALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, thisScan.skyGrid, chisq, chisq_dof, snrsqArray, eff_snr_denom_fac, nullStatRegul);         
- 
+        SkyGrid *grid = (SkyGrid*)thisScan.skyGrid;
+        XLALCoherentInspiralFilterSegment(&status, &thisEvent, cohInspFilterInput, cohInspFilterParams, grid, chisq, chisq_dof, snrsqArray, eff_snr_denom_fac, nullStatRegul);
+
         /* Save event id in multi_inspiral table */
         thisEventTemp =thisEvent;
         while( thisEventTemp )
@@ -1100,14 +1101,12 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->cohSNROut )
           {
 	    if ( threeSiteCase ) {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%lld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "SNR_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
 	    }
 	    else {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%lld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "SNR_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
 	    }
@@ -1116,8 +1115,7 @@ int main( int argc, char *argv[] )
         /* save the coherent-snr of the H1-H2 pair */
         if ( cohInspFilterParams->cohH1H2SNROut )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2SNR_%lld", eventID );
+            snprintf( cohdataStr, LALNameLength, "H1H2SNR_%" LAL_UINT8_FORMAT, eventID );
             strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
             outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
           }
@@ -1125,8 +1123,7 @@ int main( int argc, char *argv[] )
         /* save H1-H2 null-stream statistic in frames */
         if ( cohInspFilterParams->nullStatH1H2Out )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2_NullStat_%lld", eventID );
+            snprintf( cohdataStr, LALNameLength, "H1H2_NullStat_%" LAL_UINT8_FORMAT, eventID );
             strcpy( cohInspFilterParams->nullStatH1H2Vec->name, "Coherent");
             outFrameNullStatH1H2 = fr_add_proc_REAL4TimeSeries( outFrameNullStatH1H2, cohInspFilterParams->nullStatH1H2Vec, "none", cohdataStr );
           }
@@ -1135,14 +1132,12 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->nullStatOut )
           {
 	    if ( threeSiteCase ) {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%lld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "NullStat_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
 	    }
 	    else {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%lld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "NullStat_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
 	    }
@@ -1252,11 +1247,11 @@ int main( int argc, char *argv[] )
         {
           if ( outputPath[0] )
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              snprintf( framename, FILENAME_MAX, "%s/%s.gwf", outputPath, fileName);
             }
           else 
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              snprintf( framename, FILENAME_MAX, "%s.gwf", fileName );
             }
           
           if ( vrbflg ) fprintf( stdout, "writing H1-H2 coherent-snr frame data to %s....", framename );
@@ -1280,11 +1275,11 @@ int main( int argc, char *argv[] )
         {
           if ( outputPath[0] )
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              snprintf( framename, FILENAME_MAX, "%s/%s.gwf", outputPath, fileName);
             }
           else 
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              snprintf( framename, FILENAME_MAX, "%s.gwf", fileName );
             }
           
           if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
@@ -1308,11 +1303,11 @@ int main( int argc, char *argv[] )
         {
           if ( outputPath[0] )
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              snprintf( framename, FILENAME_MAX, "%s/%s.gwf", outputPath, fileName);
             }
           else
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              snprintf( framename, FILENAME_MAX, "%s.gwf", fileName );
             }
           
           if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
@@ -1336,11 +1331,11 @@ int main( int argc, char *argv[] )
         {
           if ( outputPath[0] )
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              snprintf( framename, FILENAME_MAX, "%s/%s.gwf", outputPath, fileName);
             }
           else 
             {
-              snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              snprintf( framename, FILENAME_MAX, "%s.gwf", fileName );
             }
           
           if ( vrbflg ) fprintf( stdout, "writing coherent frame data to %s....", framename );
@@ -1365,22 +1360,22 @@ int main( int argc, char *argv[] )
             {
               if ( outCompress )
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
+                  snprintf( xmlname, FILENAME_MAX, "%s/%s.xml.gz", outputPath, fileNameTmp);
                 }
               else
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
+                  snprintf( xmlname, FILENAME_MAX, "%s/%s.xml", outputPath, fileNameTmp);
                 }
             }
           else 
             {
               if ( outCompress )
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );                
+                  snprintf( xmlname, FILENAME_MAX, "%s.xml.gz", fileNameTmp );                
                 }
               else 
                 {
-                  snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
+                  snprintf( xmlname, FILENAME_MAX, "%s.xml", fileNameTmp );
                 }            
             }
           if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
@@ -1775,7 +1770,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'P':
            memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-           snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
+           snprintf( outputPath, FILENAME_MAX, "%s", optarg );
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
            break;
            
