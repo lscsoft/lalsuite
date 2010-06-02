@@ -518,6 +518,8 @@ parser.add_option("-s", "--symmetric", action="store_true", default=False,
 parser.add_option("-o", "--overwrite-dir", action="store_true",default=False,\
   help="overwrite contents in already existing directories" )
 
+
+
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
@@ -807,6 +809,7 @@ for grb in ext_trigs:
                                verbose=opts.verbose, dont_run=["datafind"])
     onsource_node = onsource_analysis.finalize(uberdag=uberdag,
                                                parent=datafind_node)
+    onsource_analysis.set_numslides(0)
     hipe_caches.append(onsource_analysis.get_cache_name())
     if opts.do_dataquality:
       for cat, subdict in veto_filename_dict.iteritems():
