@@ -94,7 +94,7 @@ static void print_usage(char *program)
   fprintf(stderr,   "Usage:  %s [options] [LIGOLW XML input files]\n" ,  program                );
   fprintf(stderr,   "The following options are recognized.  Options not surrounded in [] are\n" );
   fprintf(stderr,   "required.\n"                                                               );
-  
+
   fprintf(stderr,     "  [--help]                      display this message\n"                                 );
   fprintf(stderr,     "  [--verbose]                   print progress information\n"                           );
   fprintf(stderr,     "  [--version]                   print version information and exit\n"                   );
@@ -154,7 +154,7 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--do-veto]         do_veto        veto cetain segments\n"                            );
   fprintf(stderr,     "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"                );
   fprintf(stderr,     "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"                );
-  fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"                ); 
+  fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"                );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [LIGOLW XML input files]           list of the input trigger files.\n"                );
   fprintf(stderr,     "\n"                                                                                     );
