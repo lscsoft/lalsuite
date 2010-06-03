@@ -119,12 +119,12 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--h2-triggers]               input triggers from H2\n"                               );
   fprintf(stderr,     "  [--l1-triggers]               input triggers from L1\n"                               );
   fprintf(stderr,     "\n"                                                                                     );
-  fprintf(stderr,     "  [--parameter-test]    test    set parameters with which to test coincidence:\n"       );
+  fprintf(stderr,     "   --parameter-test     test    set parameters with which to test coincidence:\n"       );
   fprintf(stderr,     "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"                          );
   fprintf(stderr,     "\n"                                                                                     );
-  fprintf(stderr,     " [--h1-time-accuracy]  h1_dt     specify the timing accuracy of H1 in ms\n"             );
-  fprintf(stderr,     " [--h2-time-accuracy]  h2_dt     specify the timing accuracy of H2 in ms\n"             );
-  fprintf(stderr,     " [--l1-time-accuracy]  l1_dt     specify the timing accuracy of L1 in ms\n"             );
+  fprintf(stderr,     "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"              );
+  fprintf(stderr,     "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"              );
+  fprintf(stderr,     "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"              );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-freq-accuracy]  h1_df   specify the freq accuracy of H1\n"                      );
   fprintf(stderr,     "  [--h2-freq-accuracy]  h2_df   specify the freq accuracy of H2\n"                      );
@@ -142,20 +142,21 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
   fprintf(stderr,     "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
   fprintf(stderr,     "\n"                                                                                     );
-  fprintf(stderr,     "  [--data-type]     data_type    specify the data type, must be one of\n"               );
+  fprintf(stderr,     "   --data-type      data_type    specify the data type, must be one of\n"               );
   fprintf(stderr,     "                                 (playground_only|exclude_play|all_data)\n"             );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"                     );
   fprintf(stderr,     "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"            );
   fprintf(stderr,     "                                   there are no h2 triggers present\n"                  );
   fprintf(stderr,     "                                   needed when --h1-h2-consistency is given\n"          );
-  fprintf(stderr,     "  [--complete-coincs]              write out triggers from all non-vetoed ifos\n"       );
-  fprintf(stderr,     "  [--do-veto]         do_veto         veto cetain segments\n"                           );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--complete-coincs]                write out triggers from all non-vetoed ifos\n"     );
+  fprintf(stderr,     "  [--do-veto]         do_veto        veto cetain segments\n"                            );
   fprintf(stderr,     "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"                );
   fprintf(stderr,     "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"                );
   fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"                ); 
   fprintf(stderr,     "\n"                                                                                     );
-  fprintf(stderr,     "  [LIGOLW XML input files] list of the input trigger files.\n"                          );
+  fprintf(stderr,     "  [LIGOLW XML input files]           list of the input trigger files.\n"                );
   fprintf(stderr,     "\n"                                                                                     );
 }
 
