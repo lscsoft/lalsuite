@@ -722,7 +722,7 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
 # function to sweep up data using sire
 def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo, 
   sire_start, sire_end, inj_file=None, ifotag=None, usertag=None, 
-  write_input_file=False,inspinjNode=None):
+  inspinjNode=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
   
@@ -737,7 +737,7 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
   inj_file  = name of injection file
   ifotag    = ifotag used in naming the file
   usertag   = the usertag to add to the output file name
-  write_input_file = write an input file (default to false: use glob)
+  inspinjNode = add an inspinj node as a parent (default false)
   """
   # only write the input file if we're doing the job
   sire = inspiral.SireNode(sire_job)
@@ -759,17 +759,10 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
   sire.set_start(sire_start)
   sire.set_end(sire_end)
 
-  if write_input_file:
-    input_file = sire.get_output().replace(".xml", ".input") 	 
-    f = open(input_file, 'w') 	
-    sire.add_input_file(input_file) 
-    if do_sire:
-      f = open(input_file, 'w') 	 
-
   if inspinjNode and opts.inspinj: sire.add_parent(inspinjNode)
 
   for seg in segments:
-    # set the glob file for sire
+    # set the input files for sire
     if do_input: sire.add_parent(seg.get_dag_node())
 
     if seg.get_dag_node().get_output():
@@ -777,19 +770,8 @@ def sire_segments(segments, sire_job, dag, do_sire, do_input, ifo,
     else: 
       output = seg.get_dag_node().get_output_a()
 
-    if write_input_file:
-      sire.add_input_file(output)
-      if do_sire: f.write('%s\n' % output)
-    else:
-      # set up glob
-      sire.set_glob(output)
+    sire.add_file_arg(output)
 
-  if write_input_file:
-    if do_sire: f.close() 	 
-  	 
-    # add the input file name to sire 	 
-    sire.set_input(input_file)
-    
   if do_sire: dag.add_node(sire) 
 
   return sire
@@ -816,7 +798,7 @@ def sire_segments_individually(segments, sire_job, dag, do_sire, do_input, ifo,
   for seg in segments:
     sire_node = sire_segments([seg], sire_job, dag, do_sire, do_input, ifo, \
         seg.get_chunk().start(), seg.get_chunk().end(), inj_file, ifotag, 
-        usertag,False,inspinjNode=inspinjNode)
+        usertag,inspinjNode=inspinjNode)
 
     sire_analyzed.append(AnalyzedIFOData(seg.get_chunk(),sire_node))
 
@@ -826,7 +808,7 @@ def sire_segments_individually(segments, sire_job, dag, do_sire, do_input, ifo,
 # function to sweep up data using coire  
 def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
   coire_start, coire_end, inj_file=None, num_slides=0, ifotag=None, 
-  usertag=None, write_input_file = False, inspinjNode=None):
+  usertag=None, inspinjNode=None):
   """
   Do a coire to sweep up all the triggers of a specific kind
   
@@ -840,7 +822,7 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
   cluster   = whether we should add the cluster arguments
   num_slides = the number of time slides
   usertag   = the usertag to add to the output file name
-  write_input_file = whether to write an input file (default to glob)
+  inspinjNode = add an inspinj node as a parent (default false)
   """
   # only write the input file if we're running the coires
   coire = inspiral.CoireNode(coire_job)
@@ -865,11 +847,6 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
 
   if inspinjNode and opts.inspinj: coire.add_parent(inspinjNode)
 
-  if write_input_file:
-    input_file = coire.get_output().replace(".xml", ".input") 	 
-    coire.add_input_file(input_file)
-    if do_coire: f = open(input_file, 'w') 	 
-
   for seg in segments:
     # set the glob file for coire 
     if do_input: coire.add_parent(seg.get_dag_node())
@@ -879,19 +856,8 @@ def coire_segments(segments, coire_job, dag, do_coire, do_input, ifos,
     else: 
       output = seg.get_dag_node().get_output_a()
 
-    if write_input_file:
-      coire.add_input_file(output)
-      if do_coire: f.write('%s\n' % output)
-    else:
-      # set up glob
-      coire.set_glob(output)
+    coire.add_file_arg(output)
 
-  if write_input_file:
-    if do_coire: f.close() 	 
-  	 
-    # add the input file name to coire 	 
-    coire.set_input(input_file)
-    
   coire.finalize()
   if do_coire: dag.add_node(coire)
 
@@ -2204,7 +2170,7 @@ for ifo in ifo_list:
     sire_segments(sire_nodes, sire_summary_job, dag, 
         opts.summary_inspiral_triggers, opts.sire_inspiral, ifo, 
         gps_start_time, gps_end_time, inj_file = inj_file, 
-        ifotag="SUMMARY_FIRST", usertag = usertag, write_input_file = True,
+        ifotag="SUMMARY_FIRST", usertag = usertag, 
         inspinjNode=inspinj)
 
   print "done" 
@@ -2390,8 +2356,7 @@ for ifos in ifo_coincs:
         coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
             opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
-            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
-            write_input_file = True,inspinjNode=inspinj)
+            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag)
 
       for ifo in ifo_list:
         if ifo in ifos: 
@@ -2405,8 +2370,7 @@ for ifos in ifo_coincs:
             sire_segments(sire_nodes, sire_summary_job, dag, 
                 opts.summary_single_ifo_triggers, opts.sire_second_coinc, ifo, 
                 gps_start_time, gps_end_time, inj_file = inj_file, 
-                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag, 
-                write_input_file = True)
+                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag)
 
 
   # Step 8slide: Time slides on the data
@@ -2442,7 +2406,7 @@ for ifos in ifo_coincs:
               opts.summary_coinc_triggers, opts.coire_second_coinc, ifos, 
               gps_start_time, gps_end_time, num_slides=num_slides, 
               ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag, 
-              write_input_file = True,inspinjNode=inspinj)
+              inspinjNode=inspinj)
 
         for ifo in ifo_list:
           if ifo in ifos:
@@ -2455,8 +2419,7 @@ for ifos in ifo_coincs:
               sire_segments(sire_nodes, sire_summary_job, dag, 
                   opts.summary_single_ifo_triggers, opts.sire_second_coinc, 
                   ifo, gps_start_time, gps_end_time, inj_file = inj_file, 
-                  ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag, 
-                  write_input_file = True)
+                  ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag)
 
 
   print "done"
@@ -2581,10 +2544,6 @@ if gps_start_time is not None and gps_end_time is not None:
   output_data_cache = lal.Cache()
 
   for node in dag.get_nodes():
-    if isinstance(node,pipeline.LSCDataFindNode):
-      # ignore datafind nodes, as their output is a cache file
-      continue
-
     # add the data generated by the job to the output data cache
     output_file = node.get_output()
 

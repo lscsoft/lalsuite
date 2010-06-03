@@ -39,6 +39,74 @@ __version__ = '$Revision$'[11:-2]
 #
 
 
+class MeasLikelihoodJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_string_meas_likelihood"))
+		self.set_sub_file("lalapps_string_meas_likelihood.sub")
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "lalapps_string_meas_likelihood")
+
+
+class MeasLikelihoodNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = []
+
+	def set_name(self, *args):
+		pipeline.CondorDAGNode.set_name(self, *args)
+		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+
+	def add_input_cache(self, cache):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+		self.add_output_file(filename)
+
+	def add_file_arg(self, filename):
+		raise NotImplementedError
+
+	def set_output(self, description):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		cache_entry = power.make_cache_entry(self.input_cache, description, "")
+		filename = "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
+		self.add_var_opt("output", filename)
+		cache_entry.url = "file://localhost" + os.path.abspath(filename)
+		del self.output_cache[:]
+		self.output_cache.append(cache_entry)
+		return filename
+
+	def get_input_cache(self):
+		return  self.input_cache
+
+	def get_output_cache(self):
+		if not self.output_cache:
+			raise AttributeError, "must call set_output(description) first"
+		return self.output_cache
+
+	def write_input_files(self, *args):
+		# oh.  my.  god.  this is fscked.
+		for arg in self.get_args():
+			if "--add-from-cache" in arg:
+				f = file(self.cache_name, "w")
+				for c in self.input_cache:
+					print >>f, str(c)
+				pipeline.CondorDAGNode.write_input_files(self, *args)
+				break
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
+
+
 class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_StringSearch job used by the string pipeline. The static options
@@ -231,17 +299,42 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 
 
 stringjob = None
+meas_likelihoodjob = None
 
 
-def init_job_types(config_parser, job_types = ("string",)):
+def init_job_types(config_parser, job_types = ("string","meas_likelihoodjob")):
   """
   Construct definitions of the submit files.
   """
-  global stringjob
+  global stringjob, meas_likelihoodjob
 
   # lalapps_StringSearch
   if "string" in job_types:
     stringjob = StringJob(config_parser)
+
+  # lalapps_string_meas_likelihood
+  if "meas_likelihood" in job_types:
+    meas_likelihoodjob = MeasLikelihoodJob(config_parser)
+    meas_likelihoodjob.cache_dir = power.get_cache_dir(config_parser)
+
+#
+# =============================================================================
+#
+#                          lalapps_string_meas_likelihood Jobs
+#
+# =============================================================================
+#
+
+
+def make_meas_likelihood_fragment(dag, parents, tag):
+    node = MeasLikelihoodNode(meas_likelihoodjob)
+    node.set_name("lalapps_string_meas_likelihood_%s" % tag)
+    for parent in parents:
+        node.add_parent(parent)
+        node.add_input_cache(parent.get_output_cache())
+    node.set_output(tag)
+    dag.add_node(node)
+    return set([node])
 
 
 #
