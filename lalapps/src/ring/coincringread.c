@@ -79,43 +79,42 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 static void print_usage(char *program)
 {
-  fprintf(stderr,
-      "Usage: %s [options] [LIGOLW XML input files]\n"\
-      "The following options are recognized.  Options not surrounded in []\n"\
-      "are required.\n", program );
-  fprintf(stderr,    
-      " [--help]                       display this message\n"\
-      " [--verbose]                    print progress information\n"\
-      " [--version]                    print version information and exit\n"\
-      " [--debug-level]       level    set the LAL debug level to LEVEL\n"\
-      " [--user-tag]          usertag  set the process_params usertag\n"\
-      " [--comment]           string   set the process table comment\n"\
-      "\n"\
-      " [--glob]              glob     use pattern glob to determine the input files\n"\
-      " [--input]             input    read list of input XML files from input\n"\
-      "\n"\
-      "  --output             output   write output data to file: output\n"\
-      "  --summary-file       summ     write trigger analysis summary to summ\n"\
-      "\n"\
-     "  --data-type          datatype specify the data type, must be one of\n"\
-      "                                (playground_only|exclude_play|all_data)\n"\
-      "\n"\
-      " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
-      " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
-      " [--extract-slide]     slide    only keep triggers from specified slide\n"\
-      "\n"\
-      " [--num-slides]        slides   number of time slides performed \n"\
-      "                                (used in clustering)\n"\
-      " [--sort-triggers]              time sort the coincident triggers\n"\
-      " [--cluster-time]      time     cluster triggers with time ms window\n"\
-      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
-      " [--injection-file]    inj_file read injection parameters from inj_file\n"\
-      " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
-      " [--missed-injections] missed   write missed injections to file missed\n"\
-      "\n"\
-      " [--h1-h2-distance-cut]         do a h1-h2 distance cut\n"\
-      " [--h1-kappa]             kappa  cut triggers which lie outside the given range\n"\
-      " [--h2-kappa]             kappa  cut triggers which lie outside the given range\n" );
+  fprintf(stderr,    "Usage: %s [options] [LIGOLW XML input files]\n",  program                 );
+  fprintf(stderr,    "The following options are recognized.  Options not surrounded in []\n"    );
+  fprintf(stderr,    "are required.\n"                                                          );
+
+  fprintf(stderr,     " [--help]                        display this message\n"                           );
+  fprintf(stderr,     " [--verbose]                     print progress information\n"                     );
+  fprintf(stderr,     " [--version]                     print version information and exit\n"             );
+  fprintf(stderr,     " [--debug-level]       level     set the LAL debug level to LEVEL\n"               );
+  fprintf(stderr,     " [--user-tag]          usertag   set the process_params usertag\n"                 );
+  fprintf(stderr,     " [--comment]           string    set the process table comment\n"                  );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--glob]              glob      use pattern glob to determine the input files\n"  );
+  fprintf(stderr,     " [--input]             input     read list of input XML files from input\n"        );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     "  --output             output    write output data to file: output\n"              );
+  fprintf(stderr,     "  --summary-file       summ      write trigger analysis summary to summ\n"         );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     "  --data-type          datatype  specify the data type, must be one of\n"          );
+  fprintf(stderr,     "                                 (playground_only|exclude_play|all_data)\n"        );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--discard-ifo]       ifo       discard all triggers from ifo\n"                  );
+  fprintf(stderr,     " [--coinc-cut]         ifos      only keep triggers from IFOS\n"                   );
+  fprintf(stderr,     " [--extract-slide]     slide     only keep triggers from specified slide\n"        );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--num-slides]        slides    number of time slides performed \n"               );
+  fprintf(stderr,     "                                 (used in clustering)\n"                           );
+  fprintf(stderr,     " [--sort-triggers]               time sort the coincident triggers\n"              );
+  fprintf(stderr,     " [--cluster-time]      time      cluster triggers with time ms window\n"           );
+  fprintf(stderr,     " [--coinc-stat]        stat      use coinc statistic for cluster/cut\n"            );
+  fprintf(stderr,     " [--injection-file]    inj_file  read injection parameters from inj_file\n"        );
+  fprintf(stderr,     " [--injection-window]  inj_win   trigger and injection coincidence window (ms)\n"  );
+  fprintf(stderr,     " [--missed-injections] missed    write missed injections to file missed\n"         );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--h1-h2-distance-cut]          do a h1-h2 distance cut\n"                        );
+  fprintf(stderr,     " [--h1-kappa]             kappa  cut triggers which lie outside the given range\n" );
+  fprintf(stderr,     " [--h2-kappa]             kappa  cut triggers which lie outside the given range\n" );
 }
 
 /* function to read the next line of data from the input file list */
