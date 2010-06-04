@@ -1197,17 +1197,17 @@ void LALPSpinInspiralRDEngine (
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
 
-    omegaold    = omega;
-    omegadotold = omegadot;
-    enold       = energy;
-
-    Psi = Phi - 2. * omega * log(omega);
-    
     amp22 = -2.0 * params->mu * v2 * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
 
     amp20 = amp22 * sqrt(3/2.);
 
     amp33 = -amp22/4.*sqrt(5./42.);
+
+    omegaold    = omega;
+    omegadotold = omegadot;
+    enold       = energy;
+
+    Psi = Phi - 2. * omega * log(omega);
 
     ci=(LNhz);
     c2i=ci*ci;
@@ -1786,8 +1786,8 @@ void LALPSpinInspiralRDEngine (
    
    for ( i = 0; i < length; i++)
    {
-     x1 = h33->data[2*i];
-     x2 = h33->data[2*i+1];
+     x1 = h32->data[2*i];
+     x2 = h32->data[2*i+1];
      sig1->data[i]+= (x1 * y_1) + (x2 * y_2);
      sig2->data[i]+= (x1 * z1)  + (x2 * z2);
    }
