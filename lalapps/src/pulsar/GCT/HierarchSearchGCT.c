@@ -284,7 +284,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
   REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
-  REAL8 uvar_f1dotBand = DFDOT; /* range of first spindown parameter */
+  REAL8 uvar_f1dotBand = 0.0; /* range of first spindown parameter */
   REAL8 uvar_Freq = FSTART;
   REAL8 uvar_FreqBand = FBAND;
 
@@ -948,11 +948,11 @@ int MAIN( int argc, char *argv[]) {
 
         if(!oldcg) {
           oldcg = coarsegrid.length;
-          LogPrintf(LOG_DEBUG, "CG:%d ",coarsegrid.length);
+          LogPrintfVerbatim(LOG_NORMAL, "%% --- CG:%d ",coarsegrid.length);
         }
         if(!oldfg) {
           oldfg = finegrid.length;
-          LogPrintfVerbatim(LOG_DEBUG, "FG:%ld \n",finegrid.length);
+          LogPrintfVerbatim(LOG_NORMAL, "FG:%ld \n",finegrid.length);
         }
         if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
           LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
