@@ -265,35 +265,36 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.sorting = sorting;
    vars.lim = 10000;
    vars.c = Rpr;
+   REAL8 accuracy = 1.0e-11;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
-   prob = 1.0 - cdfwchisq(&vars, 0.0, 1.0e-13, errcode); 
+   prob = 1.0 - cdfwchisq(&vars, 0.0, accuracy, errcode); 
    
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-10) {
+   if (prob<=1.0e-9) {
       estimatedTheProb = 1;
       
       c1 = 0.9*vars.c;
       vars.c = c1;
-      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode);
-      while (tempprob<1.0e-10) {
+      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
+      while (tempprob<1.0e-9) {
          c1 *= 0.9;
          vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode);
+         tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
       }
       logprob1 = log10(tempprob);
       
       c2 = 0.9*c1;
       vars.c = c2;
-      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode));
-      while ((logprob2-logprob1)<=2.0*1.0e-10) {
+      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
+      while ((logprob2-logprob1)<=2.0*1.0e-9) {
          c2 *= 0.9;
          vars.c = c2;
-         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, 1.0e-13, errcode));
+         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
       }
       
       //Calculating slope
