@@ -105,7 +105,7 @@ config_parser.read(options.config_file)
 #
 
 power.init_job_types(config_parser, job_types = ("datafind", "binj", "lladd", "binjfind", "burca", "sqlite"))
-cosmicstring.init_job_types(config_parser, job_types = ("string",))
+cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likelihood"))
 
 #
 # make directories to store the cache files, job logs, and trigger output
@@ -255,10 +255,18 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, tag, verbose = verbose)
 
 	#
+	# lalapps_string_meas_likelihood
+	#
+
+	if verbose:
+		print >>sys.stderr, "building lalapps_string_meas_likelihood jobs ..."
+	likelihood_nodes = cosmicstring.make_meas_likelihood_fragment(dag, coinc_nodes, tag)
+
+	#
 	# done
 	#
 
-	power.write_output_cache(coinc_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], tag))
+	power.write_output_cache(coinc_nodes | likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], tag))
 	return coinc_nodes
 
 

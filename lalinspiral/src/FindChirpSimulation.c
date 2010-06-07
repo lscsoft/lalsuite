@@ -480,8 +480,6 @@ LALFindChirpInjectSignals (
           sizeof(LIGOTimeGPS) );
       memcpy( &(waveform.phi->epoch), &(waveform.h->epoch),
           sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.a->epoch), &(waveform.a->epoch),
-          sizeof(LIGOTimeGPS) );
 
       wfmLength = waveform.h->data->length;
       dataLength = 2*wfmLength;
@@ -515,6 +513,7 @@ LALFindChirpInjectSignals (
                                  thisEvent ,
                                        ifo ,
                                   dynRange  );
+      CHECKSTATUSPTR( status );
 
     }
 

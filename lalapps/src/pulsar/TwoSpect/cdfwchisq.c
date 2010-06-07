@@ -28,6 +28,8 @@
 
 #include <lal/LALConstants.h>
 
+#include <gsl/gsl_sf_log.h>
+
 #include "cdfwchisq.h"
 
 
@@ -35,7 +37,8 @@
 //Exp function to avoid underflows
 REAL8 exp1(REAL8 x)
 {
-   if (x<-50.0) return 0.0;
+   //if (x<-50.0) return 0.0;
+   if (x<-700.0) return 0.0;
    else return exp(x);
 }
 
@@ -53,7 +56,7 @@ void counter(qfvars *vars)
 REAL8 log1(REAL8 x, INT4 first)
 {
    
-   if (fabs(x) > 0.1) {
+   /* if (fabs(x) > 0.1) {
       if (first) return log(1.0 + x);
       else return (log(1.0 + x) - x);
    } else {
@@ -70,7 +73,10 @@ REAL8 log1(REAL8 x, INT4 first)
          s = s1;
       }
       return s;
-   }
+   } */
+   
+   if (first) return gsl_sf_log_1plusx(x);
+   else return gsl_sf_log_1plusx_mx(x);
    
 }
 
@@ -185,8 +191,8 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    sum1 *= 0.5;
    prod2 += prod1;
    prod3 += prod1;
-   x = exp1(-sum1 - 0.25 * prod2)*LAL_1_PI;
-   y = exp1(-sum1 - 0.25 * prod3)*LAL_1_PI;
+   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;
+   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;
    
    if (s==0) err1 = 1.0;
    else err1 = 2.0*x/s;
@@ -285,7 +291,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
       t = vars->sorting->data[ii];
       if ( vars->weights->data[t] * sxl > 0.0 ) {
          lj = fabs(vars->weights->data[t]);
-         axl1 = axl - lj * (vars->dofs->data[t] + vars->noncentrality->data[t]);
+         axl1 = axl - lj*(vars->dofs->data[t] + vars->noncentrality->data[t]);
          axl2 = 8.0*lj/LAL_LN2;
          if ( axl1 > axl2 )  axl = axl1; 
          else {
@@ -295,7 +301,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
             
             if (sum1 > 100.0) { 
                vars->fail = 1; 
-               return 1.0; 
+               return 1.0;
             } else {
                return pow(2.0, 0.25*sum1)*LAL_1_PI/(axl*axl);
             }
@@ -488,9 +494,9 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          if (x<=fabs(vars->c)) goto l2;
          
          //calculate convergence factor
-         tausq = 0.33*acc1/(1.1*(coeff(vars, vars->c-x) + coeff(vars, vars->c+x)));
+         tausq = (1.0/3.0)*acc1/(1.1*(coeff(vars, vars->c-x) + coeff(vars, vars->c+x)));
          if (vars->fail) goto l2;
-         acc1 = 0.67*acc1;
+         acc1 = (2.0/3.0)*acc1;
          
          //auxillary integration
          integrate(vars, ntm, intv1, tausq, 0 );
@@ -522,7 +528,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 
       /* test whether round-off error could be significant allow for radix 8 or 16 machines */
       up = vars->ersm;
-      x = up + acc / 10.0;
+      x = up + 0.1*acc;
       for (ii=0; ii<4; ii++) {
          if (rats[ii] * x == rats[ii] * up) *ifault = 2;
       }

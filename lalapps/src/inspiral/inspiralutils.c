@@ -462,10 +462,8 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   UINT4 k;
 
   /* create the time series */
-  chan = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
-
-  deltaF = chan->deltaT * strain->data->vectorLength;
-
+  chan    = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+  deltaF  = chan->deltaT * strain->data->vectorLength;
   fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name,  &(chan->epoch), 
                                                0, deltaF, &lalDimensionlessUnit, 
                                                chan->data->length/2 + 1 );
@@ -474,23 +472,35 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
   XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
 
-  
   /* compute the SNR for initial LIGO at design */
   for ( snrSq = 0, k = 0; k < fftData->data->length; k++ )
     {
       freq = fftData->deltaF * k;
 
-      LALLIGOIPsd( NULL, &psdValue, freq );
+      if ( ifo[0] == 'V' )
+        {
+          if (freq < 50)
+            continue;
 
-      psdValue *= 9e-46;
+          LALVIRGOPsd( NULL, &psdValue, freq );
+          psdValue /= 9e-46;
+        }
+      else
+        {
+          if (freq < 40)
+            continue;
 
+          LALLIGOIPsd( NULL, &psdValue, freq );
+        }
+
+      fftData->data->data[k].re /= 3e-23;
+      fftData->data->data[k].im /= 3e-23;
+      
       snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
-
       snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
     }
   
   snrSq *= 4*fftData->deltaF;
-
 
   XLALDestroyREAL4FFTPlan( pfwd );
   XLALDestroyCOMPLEX8FrequencySeries( fftData );

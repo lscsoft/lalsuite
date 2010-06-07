@@ -621,6 +621,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
+  int c;
 
   if( output == (BinaryPulsarParams *)NULL ){
     XLAL_ERROR_VOID( fn, XLAL_EFAULT );
@@ -788,7 +789,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     /* make sure val[i] is clear first */
     sprintf(val[i], "%s", "");
 
-    fscanf(fp, "%s", val[i]);
+    c = fscanf(fp, "%s", val[i]);
     i++;
   }
 
