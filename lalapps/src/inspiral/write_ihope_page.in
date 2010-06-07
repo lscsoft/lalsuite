@@ -556,7 +556,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'ifar2'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "IFAR and loudest event tables at CAT_2 (these include the hardware injections)."
+  titles[section] = "IFAR and loudest event tables with CAT2 vetoes applied (these include the CBC hardware injections)."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1] + '*'
   htmltags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
@@ -568,7 +568,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'ifar3'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "IFAR and loudest event tables at CAT_3 (hardware injections removed)."
+  titles[section] = "IFAR and loudest event tables with CAT2 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1] + '*'
   htmltags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
@@ -580,7 +580,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'ifar4'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "IFAR and loudest event tables at CAT_4 (hardware injections removed)."
+  titles[section] = "IFAR and loudest event tables at with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1] + '*'
   htmltags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']
@@ -592,11 +592,11 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'inspmissed'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "Found and missed plots (second stage) & the 10 closest missed injections"
+  titles[section] = "Found and missed plots (second stage) & the 10 closest missed injections (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param_ALLINJ*CAT_4*'
   htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
   imagetags[section] = ['cbc_plotfm_fm_dist_v_param']
-  captions[section] = 'Found and missed injections. Injected decisive distance vs. chirp mass. The decisive distance is the second furthest effective distance. The table below shows the 10 most nearby missed injections.'
+  captions[section] = 'Found and missed injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far (their color corresponds to their far). Red crosses are missed injections; vetoed injections are excluded. The decisive distance is the second furthest effective distance. The table below shows the 10 closest missed injections (i.e., the 10 closest red crosses). For a table of the non-zero FAR injections (the colored circles), please go to the "All Injections Combined" section and click on "Loudest injections that are not louder than the loudest slide."'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -981,7 +981,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'inspiral2'
   sections.append(section)
-  titles[section] = 'Second inspiral stage (using INSPIRAL_SECOND files)'
+  titles[section] = 'Second inspiral stage using INSPIRAL_SECOND files (CAT2 and CAT3 vetoes applied and CBC hardware injections removed).'
   tags[section] = '*plotinspiral_SECOND_*CAT_4*'
   imagetags[section] = ['snr_vs_time','snr_vs_chisq_log','snr_histogram']
   captions[section] = "Trigger rate at second inspiral stage"
@@ -991,7 +991,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'ifar2'
   sections.append(section)
-  titles[section] = "IFAR at CAT_2 (including hardware injections)."
+  titles[section] = "IFAR with CAT2 vetoes applied (including CBC hardware injections)."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_2*'+ifartag[1]+'*'
   imagetags[section] = ['cumhist_uncombined_ifar','cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
@@ -1001,7 +1001,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'ifar3'
   sections.append(section)
-  titles[section] = "IFAR at CAT_3 (hardware injections removed)." 
+  titles[section] = "IFAR with CAT2 vetoes applied and CBC hardware injections removed." 
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_3*'+ifartag[1]+'*'
   imagetags[section] = ['cumhist_uncombined_ifar','cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
@@ -1011,7 +1011,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'ifar4'
   sections.append(section)
-  titles[section] = "IFAR at CAT_4 (hardware injections removed)." 
+  titles[section] = "IFAR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed." 
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1]+'*'
   imagetags[section] = ['cumhist_uncombined_ifar','cumhist_combined_ifar']
   captions[section] = "Combined and uncombined IFAR vs cumulative number of triggers"
@@ -1021,7 +1021,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotcumhist2'
   sections.append(section)
-  titles[section] = "Effective SNR at CAT_2 (including hardware injections)"
+  titles[section] = "Effective SNR with CAT2 vetoes applied (including CBC hardware injections)."
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_2*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
@@ -1031,7 +1031,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotcumhist3'
   sections.append(section)
-  titles[section] = "Effective SNR at CAT_3 (hardware injections removed)"
+  titles[section] = "Effective SNR with CAT2 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_3*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
@@ -1041,7 +1041,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotcumhist4'
   sections.append(section)
-  titles[section] = "Effective SNR at CAT_4 (hardware injections removed)"
+  titles[section] = "IFAR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_4*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
@@ -1051,7 +1051,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotslides'
   sections.append(section)
-  titles[section] = "Trigger rates at second coincidence stage"
+  titles[section] = "Trigger rates at second coincidence stage (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*plotslides*'+ifartag[0]+'*CAT_4*'+ifartag[2]+'*'
   imagetags[section] = ['rates','durations_per_slide']
   captions[section] = 'Trigger rate at second coincidence stage'
@@ -1062,7 +1062,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlc2zl'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest zero lag events after CAT_2 (including hardware injections)."
+  titles[section] = "Loudest zero lag events with CAT2 vetoes applied (including CBC hardware injections)."
   tags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest events after Category 2 vetoes (including hardware injections).'
   comments[section] = None
@@ -1072,7 +1072,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlc3zl'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest zero lag events after CAT_3 (hardware injections removed)."
+  titles[section] = "Loudest zero lag events with CAT2 vetoes applied and CBC hardware injections removed."
   tags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest events after Category 3 vetoes (including hardware injections).'
   comments[section] = None
@@ -1082,7 +1082,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlc4zl'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest zero lag events after CAT_4 (hardware injections removed)."
+  titles[section] = "Loudest zero lag events with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest events after Category 4 vetoes (hardware injections removed).'
   comments[section] = None
@@ -1092,7 +1092,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlcsl2'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest time slide events after CAT_2."
+  titles[section] = "Loudest time slide events with CAT2 vetoes applied (including CBC hardware injections)."
   tags[section] = '*'+ifartag[0]+'*CAT_2_VETO_LOUDEST_SLIDE_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest time slide events after Category 2 vetoes.'
   comments[section] = None
@@ -1102,7 +1102,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlcsl3'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest time slide events after CAT_3."
+  titles[section] = "Loudest time slide events with CAT2 vetoes applied and CBC hardware injections removed."
   tags[section] = '*'+ifartag[0]+'*CAT_3_VETO_LOUDEST_SLIDE_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest time slide events after Category 3 vetoes.'
   comments[section] = None
@@ -1113,7 +1113,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   section = 'printlcsl4'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest time slide events after CAT_4."
+  titles[section] = "Loudest time slide events with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST_SLIDE_EVENTS_BY_COMBINED_FAR*'
   captions[section] = 'Loudest time slide events after Category 4 vetoes.'
   comments[section] = None
@@ -1369,7 +1369,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'foundmissed2'
   sections.append(section)
-  titles[section] = "Closeby missed injections (Second coincidence stage and CAT3)"
+  titles[section] = "Closeby missed injections (Second coincidence stage CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."
   tags[section] = '*plotinspmissed_SECOND*CAT_4*'
   imagetags[section] = ['map-8','map-9']
   captions[section] = 'Found and Missed injections. Effective distance versus total mass'
@@ -1379,7 +1379,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'efficiency2'
   sections.append(section)
-  titles[section] = "Efficiencies (Second stage)"
+  titles[section] = "Efficiencies (Second stage, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*plotinspmissed_SECOND*CAT_4*'
   imagetags[section] = ['efficiency-eff_dist']
   captions[section] = 'Efficiencies (Second stage)'
@@ -1400,7 +1400,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'inspinj2'
   sections.append(section)
-  titles[section] = "Accuracies (Second stage)"
+  titles[section] = "Accuracies (Second stage, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*plotinspinj_SECOND*CAT_4*'
   imagetags[section] = ['mchirp_vs_snr_accuracy_scatter_mtotal']
   captions[section] = 'Accuracy of recovered chirp mass vs SNR (second stage)'
@@ -1424,7 +1424,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'coincmissed'
   sections.append(section)
-  titles[section] = "Coincident found injections at SIRE but missed by COIRE"
+  titles[section] = "Coincident found injections at SIRE but missed by COIRE (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*plotcoincmissed*CAT_4*'
   imagetags[section] = ['no image']
   captions[section] = 'Coincident found injections at SIRE but missed by COIRE'
@@ -1437,7 +1437,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'ethinca'
   sections.append(section)
-  titles[section] = "The Ethinca Parameter"
+  titles[section] = "The Ethinca Parameter (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*plotethinca_SECOND*CAT_4*'
   imagetags[section] = ['ethinca_vs_combined']
   captions[section] = "Ethinca versus combined SNR in the different ifo combinations"
@@ -1447,7 +1447,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
 
   section = 'chisq'
   sections.append(section)
-  titles[section] = "The chisq parameter" 
+  titles[section] = "The chisq parameter (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)" 
   tags[section] = '*plotsnrchi*CAT_4*'
   imagetags[section] = ['chisq_inj_const_lines','rsq']
   captions[section] = "chi-square versus SNR and rsq versus SNR"
@@ -1459,7 +1459,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   section = 'injsqf'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest injections that are not louder than the loudest slide"
+  titles[section] = "Loudest injections that are not louder than the loudest slide (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*'+injection.upper()+'_CAT_4_VETO_QUIETEST_FOUND_COMPARED_TO_PLAYGROUND*'
   captions[section] = 'This table shows a list of the loudest injections that are not louder than the loudest event in the playground time slides. Equivalently this is a list of the loudest injections that do not have a FAR of 0. These tables are shown after category 4 vetoes are applied.'
   comments[section] = None
@@ -1469,13 +1469,52 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   section = 'injscm'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Nearby missed injections"
+  titles[section] = "Nearby missed injections (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
   captions[section] = 'This table shows a list of the closest injections that were not marked as "found" by our pipeline. These tables are shown after category 4 vetoes are applied.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
+  section = 'pipedownacc1'
+  sections.append(section)
+  titles[section] = "Accuracies I (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_dt*'+injection.upper()+'_CAT_4_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_dt']
+  captions[section] = 'Injected decisive distance vs difference between recovered and injected end times of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. The decisive distance is the second furthest effective distance.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section = 'pipedownacc2'
+  sections.append(section)
+  titles[section] = "Accuracies II (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_lin*'+injection.upper()+'_CAT_4_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_lin']
+  captions[section] = 'Recovered parameter accuracies vs. difference between recovered and injected end times and injection tags. Stars are triggers with zero combined far, circles are triggers with non-zero far.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section = 'pipedownfm1'
+  sections.append(section)
+  titles[section] = "Found and missed plots I (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_end_time*'+injection.upper()+'_CAT_4_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_end_time']
+  captions[section] = 'Found and missed injections: injected decisive distance vs. injected end time by mass bin. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second furthest effective distance.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section = 'pipedownfm2'
+  sections.append(section)
+  titles[section] = "Found and missed plots II (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param*'+injection.upper()+'_CAT_4_VETO*'
+  imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_param']
+  captions[section] = 'Found and missed injections: injected decisive distance vs. injected mass. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections excluded). The decisive distance is the second furthest effective distance.'
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
 
   try:
     make_cache(images_dir, "plotinspfound")
@@ -1513,7 +1552,7 @@ def write_hw_injection(page, opts):
   @return: an update of HTML document
   """
   webdir = opts.webdir
-  copy_plot_directory(opts.datadir + "hardware_inj",\
+  copy_plot_directory(opts.datadir + "hardware_injection_summary",\
       opts.physdir + "hardware_inj")  
 
   page.add("This section summarizes the analysis of the hardware injections.<br/>")
@@ -1534,8 +1573,8 @@ def write_hw_injection(page, opts):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Hardware injection summary page at CAT 1"
-  tags[section] = '*hwinjections.'
-  htmltags[section] = '*hwinjections_table.'
+  tags[section] = '*HWINJ_SUMMARY*'
+  htmltags[section] = '*HWINJ_SUMMARY*'
   imagetags[section] = None
   captions[section] = ''
   comments[section] = None
@@ -1546,8 +1585,8 @@ def write_hw_injection(page, opts):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Hardware injection summary page at CAT 2"
-  tags[section] = '*hwinjections_CAT_2*'
-  htmltags[section] = '*hwinjections_CAT_2_table*'
+  tags[section] = '*HWINJ_SUMMARY_CAT_2*'
+  htmltags[section] = '*HWINJ_SUMMARY_CAT_2*'
   imagetags[section] = None
   captions[section] = ''
   comments[section] = None
@@ -2057,12 +2096,12 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*SIMULATION*html')
       copy_files(dataDir,webDir,'*CLOSEST_MISSED_INJECTIONS*html')
       copy_files(dataDir,webDir,'*QUIETEST_FOUND_COMPARED*PLAYGROUND*html')
-      copy_files(dataDir,webDir,'*ALLINJ*html')
+      copy_files(dataDir,webDir,'*INJ*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*FULL_DATA*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*CLOSED_BOX*cache')
       copy_files(dataDir,webDir,'*SIMULATION*cache')
-      copy_files(dataDir,webDir,'*ALLINJ*cache')
+      copy_files(dataDir,webDir,'*INJ*cache')
       mkdir(webDir + '/Images')
       copy_files(dataDir+'/Images',webDir+'/Images','*PLAYGROUND*PLAYGROUND*')
       copy_files(dataDir+'/Images',webDir+'/Images','*FULL_DATA*PLAYGROUND*')
@@ -2071,7 +2110,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir+'/Images',webDir+'/Images','*SIMULATION*')
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSEST_MISSED_INJECTIONS*')
       copy_files(dataDir+'/Images',webDir+'/Images','*QUIETEST_FOUND_COMPARED*PLAYGROUND*')
-      copy_files(dataDir+'/Images',webDir+'/Images','*ALLINJ*')
+      copy_files(dataDir+'/Images',webDir+'/Images','*INJ*')
       print >> sys.stdout, '... Done'
 
 
@@ -2161,7 +2200,7 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
       fileNameList.append(filename)
     
     fileNameList.sort()
-    
+ 
     for filename in fileNameList:
       # if the file is an image, we copy it in ./Images
       # if the file is an image, we copy the file. Then, if the pattern 

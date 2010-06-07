@@ -1395,7 +1395,10 @@ int MAIN( int argc, char *argv[]) {
 
     for (X=0; X < (numDetectors+1); X++) {
       if (X>0) {
-        fprintf(stderr, "%% --- average2F[%d]= %.6f   Z= %.4f\n", X, aveTwoFstat[X],aveTwoFstat[0]/aveTwoFstat[X]);
+        fprintf(stderr, "%% --- average2F[%d]= %.6f\t (%s)\t Z= %.4f \n", 
+                X, aveTwoFstat[X], 
+                &(stackMultiDetStates.data[0]->data[X-1]->detector.frDetector.name),
+                aveTwoFstat[0]/aveTwoFstat[X] );
       }
       else {
         fprintf(stderr, "%% --- average2F[%d]= %.6f\n", X, aveTwoFstat[X]);
