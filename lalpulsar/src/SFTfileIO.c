@@ -708,7 +708,7 @@ LALLoadSFTs ( LALStatus *status,
   sfts->length = 0;
   sfts->data = NULL;
 
-  /* sort catalog in order of increasing GPS-time */
+  /* sort catalog in order of 'locator' (file, position in file) */
   qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdescLocator );
 
 #ifdef SFTFILEIO_DEBUG
@@ -918,6 +918,10 @@ LALLoadSFTs ( LALStatus *status,
 
   /* assign output value */
   *outsfts = sfts;
+
+  /* sort catalog back in order of increasing GPS-time */
+  qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdescGPS );
+
   /* cleanup & return */
   DETATCHSTATUSPTR (status);
   RETURN(status);
