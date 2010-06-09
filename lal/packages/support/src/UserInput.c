@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -72,75 +73,50 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 
 /* ---------- internal prototypes ---------- */
-static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CHAR optchar,
-			     UserVarState flag, const CHAR *helpstr, void *cvar);
 
-static void UvarValue2String (LALStatus *, CHAR **outstr, LALUserVariable *uvar);
-void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar);
+/* ----- XLAL interface ----- */
+int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarState flag, const CHAR *helpstr, void *cvar);
+CHAR *XLALUvarValue2String (LALUserVariable *uvar);
+
+CHAR *XLALUvarType2String (LALUserVariable *uvar);
+
 CHAR *copy_string_unquoted ( const CHAR *in );
 void check_and_mark_as_set ( LALUserVariable *varp );
 
 
+/* ----- LAL interface [deprecated] ----- */
+static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CHAR optchar,
+			     UserVarState flag, const CHAR *helpstr, void *cvar);
+
 /*---------- Function definitions ---------- */
 
 /* these are type-specific wrappers to allow tighter type-checking! */
-void
-LALRegisterREALUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarState flag,
-			const CHAR *helpstr,
-			REAL8 *cvar)
+int
+XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar )
 {
-  RegisterUserVar (status, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
+  return XLALRegisterUserVar (name, UVAR_REAL8, optchar, flag, helpstr, cvar);
 }
 
-void
-LALRegisterINTUserVar (LALStatus *status,
-		       const CHAR *name,
-		       CHAR optchar,
-		       UserVarState flag,
-		       const CHAR *helpstr,
-		       INT4 *cvar)
+int
+XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar )
 {
-  RegisterUserVar (status, name, UVAR_INT4, optchar, flag, helpstr, cvar);
+  return XLALRegisterUserVar (name, UVAR_INT4, optchar, flag, helpstr, cvar);
 }
-
-void
-LALRegisterBOOLUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarState flag,
-			const CHAR *helpstr,
-			BOOLEAN *cvar)
+int
+XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar )
 {
-  RegisterUserVar (status, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
+  return XLALRegisterUserVar (name, UVAR_BOOL, optchar, flag, helpstr, cvar);
 }
-
-void
-LALRegisterSTRINGUserVar (LALStatus *status,
-			  const CHAR *name,
-			  CHAR optchar,
-			  UserVarState flag,
-			  const CHAR *helpstr,
-			  CHAR **cvar)
+int
+XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar )
 {
-  RegisterUserVar (status, name, UVAR_STRING, optchar, flag, helpstr, cvar);
+  return XLALRegisterUserVar (name, UVAR_STRING, optchar, flag, helpstr, cvar);
 }
-
-void
-LALRegisterLISTUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarState flag,
-			const CHAR *helpstr,
-			LALStringVector **cvar)
+int
+XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar)
 {
-  RegisterUserVar ( status, name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
+  return XLALRegisterUserVar ( name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
 }
-
-
-
 
 
 /** Register a user-variable with the module.
@@ -150,26 +126,26 @@ LALRegisterLISTUserVar (LALStatus *status,
  * if a previous option name collides.
  *
  *  \note don't use this directly, as it's not type-safe!!
- *      ==> use one of the 4 wrappers: LALRegisterREALUserVar(),
- *    LALRegisterINTUserVar(), LALRegisterBOOLUserVar(), LALRegisterSTRINGUserVar().
+ *      ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
+ *    XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
  *
  */
-static void
-RegisterUserVar (LALStatus *status,
-		 const CHAR *name,
-		 UserVarType type,
-		 CHAR optchar,
-		 UserVarState flag,
-		 const CHAR *helpstr,
-		 void *cvar)
+int XLALRegisterUserVar ( const CHAR *name,	/**< name of user-variable to register */
+                          UserVarType type,	/**< variable type (int,bool,string,real) */
+                          CHAR optchar,		/**< optional short-option character */
+                          UserVarState flag,	/**< sets state flag to this */
+                          const CHAR *helpstr,	/**< help-string explaining this input-variable */
+                          void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
+                          )
 {
   const char *fn = __func__;
-  LALUserVariable *ptr;
 
-  INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
+  if (cvar == NULL || name == NULL ) {
+    XLALPrintError ("%s: invalue NULL input 'cvar' or 'name'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
-  ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  LALUserVariable *ptr = NULL;
 
   /* find end of uvar-list && check that neither short- nor long-option are taken already */
   ptr = &UVAR_vars;
@@ -177,19 +153,20 @@ RegisterUserVar (LALStatus *status,
     {
       if ( name && ptr->name && !strcmp(name, ptr->name) ) {
         XLALPrintError ("%s: Long-option name '--%s' is already taken!\n", fn, name );
-        ABORT (status, USERINPUTH_ENAMECOLL,  USERINPUTH_MSGENAMECOLL);
+        XLAL_ERROR ( fn, XLAL_EINVAL );
       }
       if ( optchar && ptr->optchar && (optchar == ptr->optchar) ) {
         XLALPrintError ("%s: Short-option '-%c' is already taken (by '--%s')!\n", fn, ptr->optchar, ptr->name );
-        ABORT (status, USERINPUTH_ENAMECOLL,  USERINPUTH_MSGENAMECOLL);
+        XLAL_ERROR ( fn, XLAL_EINVAL );
       }
-    }
+    } /* while user-var list */
 
   /* create new entry */
-  ptr->next = LALCalloc (1, sizeof(LALUserVariable));
-  if (ptr->next == NULL) {
-    ABORT (status, USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+  if ( (ptr->next = XLALCalloc (1, sizeof(LALUserVariable))) == NULL ) {
+    XLALPrintError ("%s: Failed to XLALCalloc (1, sizeof(LALUserVariable)\n", fn );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
+
   /* set pointer to newly created entry (Note: the head remains empty!) */
   ptr = ptr->next;
 
@@ -201,21 +178,16 @@ RegisterUserVar (LALStatus *status,
   ptr->varp = cvar;
   ptr->state = flag;
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* LALRegisterUserVar() */
-
-
+} /* XLALRegisterUserVar() */
 
 /** Free all memory associated with user-variable linked list
  */
 void
-LALDestroyUserVars (LALStatus *status)
+XLALDestroyUserVars( void )
 {
-
   LALUserVariable *ptr, *lastptr;
-
-  INITSTATUS( status, "LALDestroyUserVars", USERINPUTC );
 
   /* step through user-variables: free list-entries and all allocated strings */
   ptr = &(UVAR_vars);
@@ -251,15 +223,18 @@ LALDestroyUserVars (LALStatus *status)
   /* clean head */
   memset (&UVAR_vars, 0, sizeof(UVAR_vars));
 
-  RETURN(status);
-} /* LALDestroyUserVars() */
+  return;
+
+} /* XLALDestroyUserVars() */
 
 
 /** Parse command-line into UserVariable array
  */
-void
-LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
+int
+XLALUserVarReadCmdline ( int argc, char *argv[] )
 {
+  const char *fn = __func__;
+
   INT4 c;
   UINT4 pos;
   UINT4 numvars;
@@ -270,11 +245,14 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
   CHAR *strp;
   LALStringVector *csv;
 
-  INITSTATUS( status, "LALUserVarReadCmdline", USERINPUTC );
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (argv, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+  if (!argv ) {
+    XLALPrintError ("%s: Input error, NULL argv[] pointer passed.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( !UVAR_vars.next ) {
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
   /* build optstring of short-options */
   ptr = &UVAR_vars;	/* set to empty head */
@@ -343,9 +321,9 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
-	LogPrintf ( LOG_CRITICAL, "ERROR: unkown command-line option encountered\n");
-	LogPrintf ( LOG_CRITICAL, "see '%s --help' for usage-help\n\n", argv[0]);
-	ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
+	XLALPrintError ( "%s: ERROR: unkown command-line option encountered\n", fn );
+	XLALPrintError ( "see '%s --help' for usage-help\n\n", argv[0]);
+	XLAL_ERROR ( fn, XLAL_EDOM );
       }
       if (c != 0) 	/* find short-option character */
 	{
@@ -364,8 +342,8 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	} /* if long-option */
 
       if (ptr == NULL) {	/* should not be possible: nothing found at all... */
-	LogPrintf ( LOG_CRITICAL, "ERROR: failed to find option.. this points to a coding-error!\n");
-	ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
+	XLALPrintError ( "%s: ERROR: failed to find option.. this points to a coding-error!\n", fn);
+	XLAL_ERROR (fn, XLAL_EDOM );
       }
 
       /* if we found the debug-switch, ignore it (has been handled already */
@@ -392,15 +370,17 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  else	/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
-	      TRY (LALLowerCaseString (status->statusPtr, optarg), status);
+	      if ( XLALLowerCaseString (optarg) != XLAL_SUCCESS ) {
+                XLAL_ERROR ( fn, XLAL_EFUNC );
+              }
 
 	      if      ( !strcmp(optarg, "yes") || !strcmp(optarg, "true") || !strcmp(optarg,"1") )
 		ans = 1;
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
 		ans = 0;
 	      else {	/* failed to parse BOOL properly */
-		LogPrintf ( LOG_CRITICAL, "Illegal bool-value `%s`\n\n", optarg);
-		ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
+		XLALPrintError ( "%s: Illegal bool-value `%s`\n\n", fn, optarg);
+		XLAL_ERROR (fn, XLAL_EDOM );
 	      }
 	    } /* parse bool-argument */
 
@@ -415,8 +395,8 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	case UVAR_INT4:
 	  if ( 1 != sscanf ( optarg, "%" LAL_INT4_FORMAT, (INT4*)(ptr->varp)) )
 	    {
-	      LogPrintf (LOG_CRITICAL, "Illegal INT4 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
-	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
+	      XLALPrintError ("%s: Illegal INT4 commandline argument to --%s: '%s'\n\n", fn, ptr->name, optarg);
+	      XLAL_ERROR ( fn, XLAL_EDOM );
 	    }
 
 	  check_and_mark_as_set ( ptr );
@@ -425,8 +405,8 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	case UVAR_REAL8:
 	  if ( 1 != sscanf ( optarg, "%" LAL_REAL8_FORMAT, (REAL8*)(ptr->varp)) )
 	    {
-	      LogPrintf (LOG_CRITICAL, "Illegal REAL8 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
-	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
+	      XLALPrintError ("%s: Illegal REAL8 commandline argument to --%s: '%s'\n\n", fn, ptr->name, optarg);
+	      XLAL_ERROR ( fn, XLAL_EDOM );
 	    }
 
 	  check_and_mark_as_set ( ptr );
@@ -434,13 +414,15 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 
 	case UVAR_STRING:
 	  if (!optarg) {	/* should not be possible, but let's be paranoid */
-	    ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+	    XLALPrintError ( "%s: optarg==NULL, something went badly wrong ...\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFAULT );
 	  }
 	  strp = *(CHAR**)(ptr->varp);
 	  if ( strp != NULL) 	 /* something allocated here before? */
-	    LALFree ( strp );
+	    XLALFree ( strp );
 	  if ( (strp = copy_string_unquoted ( optarg )) == NULL ) {
-	    ABORT (status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL);
+            XLALPrintError ("%s: copy_string_unquoted() failed.\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
 	  }
 	  /* return value */
 	  *(CHAR**)(ptr->varp) = strp;
@@ -449,11 +431,12 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 
 	case UVAR_CSVLIST:	/* list of comma-separated values */
 	  csv = *(LALStringVector**)(ptr->varp);
-	  if ( csv != NULL)  	/* something allocated here before? */
+	  if ( csv != NULL) { 	/* something allocated here before? */
 	    XLALDestroyStringVector ( csv );
-	  csv = XLALParseCSV2StringVector ( optarg );
-	  if ( !csv ) {
-	    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+          }
+	  if ( (csv = XLALParseCSV2StringVector ( optarg )) == NULL ) {
+            XLALPrintError ("%s: XLALParseCSV2StringVector() failed on '%s'\n", fn, optarg );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
 	  }
 	  /* return value */
 	  *(LALStringVector**)(ptr->varp) = csv;
@@ -461,43 +444,47 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 	  break;
 
 	default:
-	  LogPrintf ( LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered... points to a coding error!\n");
-	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+	  XLALPrintError ( "%s: ERROR: unkown UserVariable-type encountered... points to a coding error!\n", fn );
+	  XLAL_ERROR ( fn, XLAL_EINVAL );
 	  break;
 
 	} /* switch ptr->type */
 
     } /* while getopt_long() */
 
-  LALFree (long_options);
+  XLALFree (long_options);
   long_options=NULL;
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* LALUserVarReadCmdline() */
+} /* XLALUserVarReadCmdline() */
+
 
 /** Read config-variables from cfgfile and parse into input-structure.
  *
  * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
  */
-void
-LALUserVarReadCfgfile (LALStatus *status,
-		       const CHAR *cfgfile) 	   /* name of config-file */
+int
+XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file */
 {
+  const char *fn = __func__;
+
   LALParsedDataFile *cfg = NULL;
   CHAR *stringbuf, *strp;
   LALUserVariable *ptr;
   BOOLEAN wasRead;
   LALStringVector *csv;
 
-  INITSTATUS( status, "LALUserVarReadCfgfile", USERINPUTC );
-  ATTATCHSTATUSPTR (status);
+  if ( !UVAR_vars.next ) {
+    XLALPrintError ("%s: no memory allocated in UVAR_vars.next, did you register any user-variables?\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
-  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
-
-  TRY (LALParseDataFile (status->statusPtr, &cfg, cfgfile), status);
+  if ( XLALParseDataFile ( &cfg, cfgfile ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Call to XLALParseDataFile() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
   /* step through all user-variable: read those with names from config-file */
   ptr = &UVAR_vars;
@@ -511,28 +498,36 @@ LALUserVarReadCfgfile (LALStatus *status,
       switch (ptr->type)
 	{
 	case UVAR_BOOL:
-	  TRY(LALReadConfigBOOLVariable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
+          if ( XLALReadConfigBOOLVariable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_INT4:
-	  TRY(LALReadConfigINT4Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
+	  if ( XLALReadConfigINT4Variable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_REAL8:
-	  TRY(LALReadConfigREAL8Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
+	  if ( XLALReadConfigREAL8Variable(ptr->varp, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
 	  if (wasRead)
 	    check_and_mark_as_set ( ptr );
 	  break;
 	case UVAR_STRING:
 	  stringbuf = NULL;
-	  TRY(LALReadConfigSTRINGVariable(status->statusPtr,&stringbuf,cfg,ptr->name,&wasRead),status);
+	  if ( XLALReadConfigSTRINGVariable( &stringbuf, cfg, NULL, ptr->name, &wasRead) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
 	      strp = *(CHAR**)(ptr->varp);
 	      if ( strp != NULL) /* something allocated here before? */
-		LALFree ( strp );
+		XLALFree ( strp );
 	      /* return value */
 	      *(CHAR**)(ptr->varp) = stringbuf;
 	      check_and_mark_as_set ( ptr );
@@ -541,50 +536,55 @@ LALUserVarReadCfgfile (LALStatus *status,
 
 	case UVAR_CSVLIST:
 	  stringbuf = NULL;
-	  TRY(LALReadConfigSTRINGVariable(status->statusPtr,&stringbuf,cfg,ptr->name,&wasRead),status);
+	  if ( XLALReadConfigSTRINGVariable(&stringbuf, cfg, NULL, ptr->name,&wasRead) != XLAL_SUCCESS ) {
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
 	      csv = *(LALStringVector**)(ptr->varp);
-	      if ( csv != NULL)  	/* something allocated here before? */
+	      if ( csv != NULL) { 	/* something allocated here before? */
 		XLALDestroyStringVector ( csv );
-	      csv = XLALParseCSV2StringVector ( stringbuf );
-	      if ( !csv ) {
-		ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+              }
+	      if ( (csv = XLALParseCSV2StringVector ( stringbuf )) == NULL ) {
+                XLALPrintError ("%s: XLALParseCSV2StringVector() failed with code %d\n", fn, xlalErrno );
+                XLAL_ERROR ( fn, XLAL_EFUNC );
 	      }
-	      LALFree ( stringbuf );
+	      XLALFree ( stringbuf );
 	      *(LALStringVector**)(ptr->varp) = csv;
 	      check_and_mark_as_set ( ptr );
 	    } /* if stringbuf */
 	  break;
 	default:
-	  LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered...points to a coding error!\n");
-	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-	  break;
+	  XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered...points to a coding error!\n", fn);
+          XLAL_ERROR ( fn, XLAL_EFAILED );
+          break;
 
 	} /* switch ptr->type */
 
     } /* while ptr->next */
 
   /* ok, that should be it: check if there were more definitions we did not read */
-  TRY (LALCheckConfigReadComplete (status->statusPtr, cfg, CONFIGFILE_WARN), status);
+  if ( XLALCheckConfigReadComplete (cfg, CONFIGFILE_WARN) != XLAL_SUCCESS ) {
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
-  TRY( LALDestroyParsedDataFile (status->statusPtr, &cfg), status);
+  if ( XLALDestroyParsedDataFile (&cfg) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALDestroyParsedDataFile() failed, code = %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-
-} /* LALUserVarReadCfgfile() */
+  return XLAL_SUCCESS;
+} /* XLALUserVarReadCfgfile() */
 
 
 #define UVAR_MAXHELPLINE  512	/* max length of one help-line */
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
 /** Assemble all help-info from uvars into a help-string.
  */
-void
-LALUserVarHelpString (LALStatus *status,
-		      CHAR **helpstring, /* output: allocated here! */
-		      const CHAR *progname)
+CHAR *
+XLALUserVarHelpString ( const CHAR *progname )
 {
+  const char *fn = __func__;
 
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
@@ -597,18 +597,18 @@ LALUserVarHelpString (LALStatus *status,
   size_t newlen = 0;
   BOOLEAN haveDevOpt = 0;	/* have we got any 'developer'-options */
 
-  INITSTATUS (status, "LALUserVarHelpString", USERINPUTC);
-  ATTATCHSTATUSPTR (status);
 
-  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
-  ASSERT (helpstring != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT ( *helpstring == NULL, status, USERINPUTH_ENONULL, USERINPUTH_MSGENONULL);
+  if ( !UVAR_vars.next ) {
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
 
   /* prepare first lines of help-string: info about config-file reading */
   newlen = 0;
   sprintf (strbuf, "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
-  if ( (helpstr = LALCalloc (1, strlen(strbuf) + 1)) == NULL) {
-    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+  if ( (helpstr = XLALCalloc (1, strlen(strbuf) + 1)) == NULL) {
+    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, strlen(strbuf) + 1 );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
   strcpy (helpstr, strbuf);
   newlen += strlen (strbuf) + 1;
@@ -619,13 +619,11 @@ LALUserVarHelpString (LALStatus *status,
   /* special treatment of debug-option in the head (if present) */
   if ( ptr->help && ptr->optchar )
     {
-
-      sprintf (strbuf, "  -%c    %-15s %-6s   %s [%d] \n",
-	       ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
+      sprintf (strbuf, "  -%c    %-15s %-6s   %s [%d] \n", ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
       newlen += strlen (strbuf);
-      helpstr = LALRealloc (helpstr, newlen);
-      if ( helpstr == NULL) {
-	ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      if ( (helpstr = XLALRealloc (helpstr, newlen)) == NULL ) {
+        XLALPrintError ("%s: failed to XLALRealloc (helpstr, %d)\n", fn, newlen );
+        XLAL_ERROR_NULL (fn, XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -647,10 +645,12 @@ LALUserVarHelpString (LALStatus *status,
       else /* write the current default-value into a string */
 	{
 	  CHAR *valstr = NULL;
-	  TRY ( UvarValue2String(status->statusPtr, &valstr, ptr), status);
+	  if ( (valstr = XLALUvarValue2String(ptr)) == NULL ) {
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
-	  LALFree (valstr);
+	  XLALFree (valstr);
 	  valstr=NULL;
 	}
 
@@ -668,9 +668,9 @@ LALUserVarHelpString (LALStatus *status,
 
       /* now increase allocated memory by the right amount */
       newlen += strlen (strbuf);
-      helpstr = LALRealloc (helpstr, newlen);
-      if ( helpstr == NULL) {
-	ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
+        XLALPrintError ("%s: failed to LALRealloc (helpstr, %d)\n", fn, newlen );
+	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -690,9 +690,9 @@ LALUserVarHelpString (LALStatus *status,
 
       sprintf (strbuf, "\n ----- Hint: use help with lalDebugLevel > 0 %s to see all 'developer-options' ----- \n", buf);
       newlen += strlen (strbuf);
-      helpstr = LALRealloc (helpstr, newlen);
-      if ( helpstr == NULL) {
-	ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
+        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -703,9 +703,9 @@ LALUserVarHelpString (LALStatus *status,
 	     "\n   ---------- The following are 'Developer'-options not useful "
 	     "for most users:----------\n\n");
       newlen += strlen (strbuf);
-      helpstr = LALRealloc (helpstr, newlen);
-      if ( helpstr == NULL) {
-	ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
+        XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
@@ -720,10 +720,12 @@ LALUserVarHelpString (LALStatus *status,
 
 	  haveDevOpt = 1;
 
-	  TRY ( UvarValue2String(status->statusPtr, &valstr, ptr), status);
+	  if ( (valstr = XLALUvarValue2String(ptr)) == NULL ) {
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+          }
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
-	  LALFree (valstr);
+	  XLALFree (valstr);
 	  valstr = NULL;
 
 	  if (ptr->optchar != 0)
@@ -740,10 +742,10 @@ LALUserVarHelpString (LALStatus *status,
 
 	  /* now increase allocated memory by the right amount */
 	  newlen += strlen (strbuf);
-	  helpstr = LALRealloc (helpstr, newlen);
-	  if ( helpstr == NULL) {
-	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
-	  }
+          if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
+            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
+            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+          }
 
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
 
@@ -753,10 +755,10 @@ LALUserVarHelpString (LALStatus *status,
 	{
 	  strcpy(strbuf, "   -- NONE --\n\n");
 	  newlen += strlen (strbuf);
-	  helpstr = LALRealloc (helpstr, newlen);
-	  if ( helpstr == NULL) {
-	    ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
-	  }
+          if ( (helpstr = LALRealloc (helpstr, newlen)) == NULL ) {
+            XLALPrintError ( "%f: LALRealloc (helpstr, %d) failed.\n", fn, newlen );
+            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+          }
 
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
 	} /* if !haveDevOpt */
@@ -764,21 +766,19 @@ LALUserVarHelpString (LALStatus *status,
     } /* if lalDebugLevel: output developer-options */
 
   /* finished: return final helpstring */
-  *helpstring = helpstr;
+  return helpstr;
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-} /* LALUserVarHelpString() */
+} /* XLALUserVarHelpString() */
 
 
 /** Put all the pieces together, and basically does everything:
  * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
  */
-void
-LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
+int
+XLALUserVarReadAllInput ( int argc, char *argv[] )
 {
+  const char *fn = __func__;
 
   INT4 i;
   CHAR* fname = NULL;
@@ -786,10 +786,10 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
   LALUserVariable *ptr;
   BOOLEAN skipCheckRequired = FALSE;
 
-  INITSTATUS( status, "LALUserVarReadAllInput", USERINPUTC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+  if ( !UVAR_vars.next ) {
+    XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
   program_name = argv[0];	/* keep modul-local pointer to executable name */
 
@@ -800,12 +800,14 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
       if ( *tmp == '@' )
 	{
 	  if (fname != NULL) {
-	    ABORT (status, USERINPUTH_EONECONFIG, USERINPUTH_MSGEONECONFIG);
+            XLALPrintError ("%s: can handle only one config-file passed on commandline!\n", fn );
+            XLAL_ERROR ( fn, XLAL_EDOM );
 	  }
 
 	  tmp ++;
-	  if ( (fname = LALCalloc (1, strlen(tmp) + 5 )) == NULL) {
-	    ABORT (status, USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+	  if ( (fname = XLALCalloc (1, strlen(tmp) + 5 )) == NULL) {
+            XLALPrintError("%s: XLALCalloc (1, %s) failed.\n", fn, strlen(tmp) + 5 );
+            XLAL_ERROR ( fn, XLAL_ENOMEM );
 	  }
 	  /* NOTE: if the filename given is not a relative or absolute path,
 	   * we want to ensure it is interpreted relative to the CURRENT directory,
@@ -826,13 +828,19 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 
   /* if config-file specified, read from that first */
   if (fname) {
-    TRY (LALUserVarReadCfgfile (status->statusPtr, fname), status);
-    LALFree (fname);
+    if ( XLALUserVarReadCfgfile (fname) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: XLALUserVarReadCfgfile (%s) failed with code %d\n", fn, fname, xlalErrno );
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    }
+    XLALFree (fname);
     fname=NULL;
   }
 
   /* now do proper cmdline parsing: overloads config-file settings */
-  TRY (LALUserVarReadCmdline (status->statusPtr, argc, argv), status);
+  if ( XLALUserVarReadCmdline (argc, argv) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALUserVarReadCmdline() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
   /* now check if help-string was requested */
   ptr = &UVAR_vars;
@@ -841,12 +849,14 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
       if ( (ptr->state & UVAR_HELP) && (ptr->state & UVAR_WAS_SET) )
 	{
 	  CHAR *helpstring = NULL;
-	  TRY (LALUserVarHelpString (status->statusPtr, &helpstring, argv[0]), status);
-	  printf ("\n%s\n", helpstring);
-	  LALFree (helpstring);
+	  if ( ( helpstring = XLALUserVarHelpString(argv[0])) == NULL ) {
+            XLALPrintError ("%s: XLALUserVarHelpString() failed.\n");
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          printf ("\n%s\n", helpstring);
+	  XLALFree (helpstring);
 	  helpstring=NULL;
-	  DETATCHSTATUSPTR (status);
-	  RETURN (status);
+	  return XLAL_SUCCESS;
 	} /* if help requested */
 
       /* check 'special' flag, which suppresses the CheckRequired test */
@@ -855,26 +865,30 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
     }
   /* check that all required input-variables have been specified */
   if ( !skipCheckRequired ) {
-    TRY (LALUserVarCheckRequired (status->statusPtr), status);
-  }
+    if ( XLALUserVarCheckRequired() != XLAL_SUCCESS ) {
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    }
+  } /* !skipCheckRequired */
 
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* LALReadUserInput() */
+} /* XLALUserVarReadAllInput() */
+
 
 
 /** Has this user-variable been set by the user?
- * return -1 on error, TRUE/FALSE otherwise
+ * returns TRUE/FALSE
  */
-INT4
-LALUserVarWasSet (const void *cvar)
+int
+XLALUserVarWasSet (const void *cvar)
 {
+  const char *fn = __func__;
   LALUserVariable *ptr;
 
-  if (!cvar)
-    return (-1);
-
+  if (!cvar) {
+    XLALPrintError ("%s: invalid NULL input\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
   /* find this varname in the list of user-variables */
   ptr = &UVAR_vars;
@@ -883,37 +897,39 @@ LALUserVarWasSet (const void *cvar)
       break;
 
   if (ptr == NULL) {
-    LogPrintf (LOG_CRITICAL, "Variable passed to UVARwasSet is not a registered User-variable\n");
-    return (-1);
+    XLALPrintError ("%s: Variable passed to UVARwasSet is not a registered User-variable\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   /* we found it: has it been set by user? */
   return ( (ptr->state & UVAR_WAS_SET) != 0 );
 
-} /* LALUserVarWasSet() */
+} /* XLALUserVarWasSet() */
+
 
 /** Check that all required user-variables have been set successfully.
  * Print error if not
  */
-void
-LALUserVarCheckRequired (LALStatus *status)
+int
+XLALUserVarCheckRequired (void)
 {
-  LALUserVariable *ptr;
+  const char *fn = __func__;
 
-  INITSTATUS( status, "LALUserVarCheckRequired", USERINPUTC);
+  LALUserVariable *ptr;
 
   /* go through list of uvars */
   ptr = &UVAR_vars;
   while ( (ptr = ptr->next) != NULL)
     if ( (ptr->state & UVAR_REQUIRED) && !(ptr->state & UVAR_WAS_SET))
       {
-	LogPrintf (LOG_CRITICAL, "Required user-variable `%s` has not been specified!\n\n", ptr->name);
-	ABORT (status, USERINPUTH_ENOTSET, USERINPUTH_MSGENOTSET);
+	XLALPrintError ("%s: Required user-variable `%s` has not been specified!\n\n", fn, ptr->name);
+	XLAL_ERROR ( fn, XLAL_EDOM );
       }
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* LALUserVarCheckRequired() */
+} /* XLALUserVarCheckRequired() */
+
 
 /** Handle the delicate setting of lalDebuglevel.
  *
@@ -923,19 +939,25 @@ LALUserVarCheckRequired (LALStatus *status)
  * You should therefore call this function very early on in main(), before any
  * LALMallocs ...
  */
-void
-LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
+int
+XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
 {
+  const char *fn = __func__;
+
   static const char *help = "set lalDebugLevel";
   static INT4 defaultDebugLevel;
+
   INT4 i;
   CHAR *ptr;
 
-  INITSTATUS( status, "UVARgetDebugLevel", USERINPUTC);
-
-  ASSERT (argv, status,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
-  ASSERT (UVAR_vars.varp == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
+  if ( !argv ) {
+    XLALPrintError ("%s: NULL argv[] passed as input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( UVAR_vars.next != NULL || UVAR_vars.varp ) {
+    XLALPrintError ("%s: lalDebugLevel can only be read before ANY mallocs(), even hidden..\n", fn );
+    XLAL_ERROR ( fn, XLAL_EFAULT );
+  }
 
   /* "register" the debug-level variable in the head of the UVAR-list,
    * to avoid any mallocs. We need this to show up in the help-string */
@@ -960,18 +982,19 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 	  else
 	    ptr = argv[i+1];
 
-	  if ( (ptr==NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
-	    LogPrintf (LOG_CRITICAL, "setting debug-level `-%c` requires an argument\n", optchar);
-	    ABORT (status, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
+	  if ( (ptr == NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
+	    XLALPrintError ("%s: Setting debug-level `-%c` requires an argument\n", fn, optchar);
+	    XLAL_ERROR ( fn, XLAL_EDOM );
 	  }
 	  break;
 	} /* if debug-switch found */
 
     } /* for i < argc */
 
-  RETURN (status);
+  return XLAL_SUCCESS;
 
-} /* LALGetDebugLevel() */
+} /* XLALGetDebugLevel() */
+
 
 /** Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
@@ -979,9 +1002,11 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
  * \param[out] **outstr	the string containing the user-input record.
  * \param[in] format	return as config-file or command-line
  */
-void
-LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
+CHAR *
+XLALUserVarGetLog ( UserVarLogFormat format )
 {
+  const char *fn = __func__;
+
   LALUserVariable *ptr = NULL;
   CHAR *record = NULL;
   CHAR *valstr;		/* buffer to hold value-string */
@@ -989,26 +1014,20 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
   CHAR *typestr=NULL;
   UINT4 len, appendlen;
 
-  INITSTATUS( status, "LALUserVarGetLog", USERINPUTC);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT (logstr, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (*logstr == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
-
   /* initialize return-string */
-  record = LALMalloc (1);
+  record = XLALMalloc (1);
   record[0] = 0;
   len = 0;
 
   if ( format == UVAR_LOGFMT_CMDLINE )
     {
       len += strlen ( program_name );
-      if ( (record = LALRealloc (record, len+1)) == NULL ) {
-	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      if ( (record = XLALRealloc (record, len+1)) == NULL ) {
+        XLALPrintError ("%s: XLALRealloc (%d, %d) failed.\n", fn, record, len+1);
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
       strcat (record, program_name);
     }
-
 
   ptr = &UVAR_vars;
   while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry for now (FIXME?) */
@@ -1018,12 +1037,17 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 
       valstr = NULL;
       typestr = NULL;
-      TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
-      TRY(UvarType2String(status->statusPtr, &typestr, ptr), status);
+      if ( (valstr = XLALUvarValue2String ( ptr )) == NULL ) {
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      if ( (typestr = XLALUvarType2String ( ptr )) == NULL ) {
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
 
       appendlen = strlen(ptr->name) + strlen(valstr) + strlen(typestr) + 10;
-      if ( (append = LALMalloc(appendlen)) == NULL) {
-	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      if ( (append = XLALMalloc(appendlen)) == NULL) {
+        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, appendlen );
+	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
       switch (format)
@@ -1038,159 +1062,99 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 	  sprintf (append, "--%s = %s :%s;", ptr->name, valstr, typestr);
 	  break;
 	default:
-	  ABORT (status, USERINPUTH_ERECFORMAT, USERINPUTH_MSGERECFORMAT);
+          XLALPrintError ("%s: Unknown format for recording user-input: '%s'\n", fn, format );
+          XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
 	  break;
 	} /* switch (format) */
 
       len += strlen(append);
       if ( (record = LALRealloc (record, len+1)) == NULL ) {
-	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+        XLALPrintError("%s: LALRealloc (%d, %d) failed.\n", fn, record, len+1);
+	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
 
       strcat (record, append);
 
-      LALFree (valstr);
+      XLALFree (valstr);
       valstr=NULL;
-      LALFree(typestr);
+      XLALFree(typestr);
       typestr = NULL;
-      LALFree (append);
+      XLALFree (append);
       append=NULL;
     } /* while ptr->next */
 
-  *logstr = record;
+  return record;
 
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-
-} /* LALUserVarGetLog() */
-
-
-#if 0
-/** Return user log as a process-params table
- *
- * \param[out] **procPar the output ProcessParamsTable
- * \param[in] *progname  name of calling code
- */
-void
-LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname)
-{
-  LALUserVariable *ptr = NULL;
-  CHAR *valstr=NULL;
-  CHAR *typestr=NULL;
-  ProcessParamsTable *this_proc_param=NULL;
-
-  INITSTATUS( status, "LALUserVarGetProcParamsTable", USERINPUTC);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT (out, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (*out == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
-  ASSERT (progname, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-
-  ptr = &UVAR_vars;
-  while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry */
-    {
-      if ( (ptr->state & UVAR_WAS_SET) == FALSE )	/* skip unset variables */
-	continue;
-
-      /* get value and type of the uservar */
-      TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
-      TRY ( UvarType2String (status->statusPtr, &typestr, ptr), status);
-
-      /* *out is null in the first iteration of this loop in which case
-	 we allocate memory for the header of the linked list, otherwise
-	 allocate memory for the nodes */
-      if (*out == NULL)
-	this_proc_param = *out = (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
-      else
-	this_proc_param = this_proc_param->next =
-	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
-
-      /* copy the strings into the procparams table */
-      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", progname );
-      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
-      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", valstr );
-      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", typestr );
-
-      LALFree (valstr);
-      valstr=NULL;
-      LALFree(typestr);
-      typestr = NULL;
-
-    } /* while ptr->next */
-
-
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-
-} /* LALUserVarGetProcParamsTable() */
-#endif
+} /* XLALUserVarGetLog() */
 
 
 /* Return the type of the given UserVariable as a string.
  * For INTERNAL use only!
  */
-void UvarType2String (LALStatus *status, CHAR **out, LALUserVariable *uvar)
+CHAR *
+XLALUvarType2String ( LALUserVariable *uvar )
 {
+  const char *fn = __func__;
 
   CHAR *ret=NULL;
   CHAR buf[16];
 
-  INITSTATUS( status, "UvarType2String", USERINPUTC);
-
-  ASSERT (*out == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+  if ( !uvar ) {
+    XLALPrintError ("%s: invalid NULL input\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
 
   switch (uvar->type)
     {
     case UVAR_BOOL:
-      sprintf(buf,"boolean");
+      sprintf(buf, "boolean");
       break;
     case UVAR_INT4:
-      sprintf(buf,"int4");
+      sprintf(buf, "int4");
       break;
     case UVAR_REAL8:
-      sprintf(buf,"real8");
+      sprintf(buf, "real8");
       break;
     case UVAR_STRING:
-      sprintf(buf,"string");
+      sprintf(buf, "string");
       break;
     case UVAR_CSVLIST:
-      sprintf(buf,"list");
+      sprintf(buf, "list");
       break;
     default:
-      LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered\n");
-      ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
       break;
     } /* switch */
 
-  if ( (ret = LALMalloc (strlen(buf) + 1)) == NULL) {
-    ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+  if ( (ret = XLALMalloc (strlen(buf) + 1)) == NULL) {
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(buf)+1);
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
   strcpy (ret, buf);
 
-  *out = ret;
+  return ret;
 
-  RETURN(status);
-
-} /* UvarType2String() */
+} /* XLALUvarType2String() */
 
 
 
 /* Return the value of the given UserVariable as a string.
  * For INTERNAL use only!
  */
-void
-UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
+CHAR *
+XLALUvarValue2String ( LALUserVariable *uvar )
 {
+  const char *fn = __func__;
+
   CHAR *str = NULL;
   CHAR *ptr;
   CHAR buf[512];	/* buffer for producing non-string values */
 
-  INITSTATUS( status, "Value2String", USERINPUTC);
-
-  ASSERT (outstr, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (*outstr == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
-  ASSERT (uvar, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (uvar->varp, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  if ( !uvar || !uvar->varp ) {
+    XLALPrintError ("%s: illegal NULL in input uvar struct\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
 
   switch (uvar->type)	      /* info on default-value for this variable */
     {
@@ -1210,8 +1174,9 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       ptr = *(CHAR**)(uvar->varp);
       if ( ptr != NULL )
 	{
-	  if ( (str = LALMalloc ( strlen(ptr) + 3 )) == NULL) {
-	    ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+	  if ( (str = XLALMalloc ( strlen(ptr) + 3 )) == NULL) {
+            XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(ptr)+3);
+            XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
 	  }
 	  sprintf (str, "\"%s\"", ptr);
 	}
@@ -1231,7 +1196,7 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
 	    for ( i=0; i < listlen; i++)
 	      {
 		outlen += strlen (csv->data[i]) + 3;
-		str = LALRealloc(str, outlen);
+		str = XLALRealloc(str, outlen);
 		if ( i==0 )
 		  sprintf ( str, "\"" );
 		else
@@ -1245,25 +1210,25 @@ UvarValue2String (LALStatus *status, CHAR **outstr, LALUserVariable *uvar)
       }
       break;
     default:
-      LogPrintf (LOG_CRITICAL, "ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
-      ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+      XLALPrintError ("%s: ERROR: unkown UserVariable-type encountered... this points to a coding error!\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
       break;
 
     } /* switch uvar->type */
 
   if (str == NULL)
     {
-      if ( (str = LALMalloc (strlen(buf) + 1)) == NULL) {
-	ABORT (status,  USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
+      if ( (str = XLALMalloc (strlen(buf) + 1)) == NULL) {
+        XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, strlen(buf)+1);
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
       }
       strcpy (str, buf);
     }
 
-  *outstr = str;
+  return ( str );
 
-  RETURN (status);
+} /* XLALUvarValue2String() */
 
-} /* UvarValue2String() */
 
 /** Copy (and allocate) string 'in', possibly with quotes \" or \' removed.
  * If quotes are present at the beginning of 'in', they must have a matching
@@ -1331,3 +1296,324 @@ check_and_mark_as_set ( LALUserVariable *varp )
 
   return;
 } /* check_and_mark_as_set() */
+
+
+
+/* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
+ * These functions are just wrappers around the XLAL functions
+ */
+
+
+/** LAL Interface [deprecated] to XLALRegisterUserVar(), see its documentation for details.
+ */
+static void
+RegisterUserVar (LALStatus *status,
+		 const CHAR *name,
+		 UserVarType type,
+		 CHAR optchar,
+		 UserVarState flag,
+		 const CHAR *helpstr,
+		 void *cvar)
+{
+  const char *fn = __func__;
+
+  INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
+
+  ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+
+  if ( XLALRegisterUserVar ( name, type, optchar, flag, helpstr, cvar ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Call to XLALRegisterUserVar() failed: %d\n", fn, xlalErrno );
+    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
+  }
+
+  RETURN (status);
+
+} /* LALRegisterUserVar() */
+
+
+/** Free all memory associated with user-variable linked list
+ * [deprecated LAL interface, see XLALDestroyUserVars()]
+ */
+void
+LALDestroyUserVars (LALStatus *status)
+{
+
+  INITSTATUS( status, "LALDestroyUserVars", USERINPUTC );
+
+  XLALDestroyUserVars();
+
+  RETURN(status);
+
+} /* LALDestroyUserVars() */
+
+
+/** Parse command-line into UserVariable array [deprecated LAL interface, see XLALUserVarReadCmdline()]
+ */
+void
+LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
+{
+  const char *fn = __func__;
+  INITSTATUS( status, "LALUserVarReadCmdline", USERINPUTC );
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (argv, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+
+  if ( XLALUserVarReadCmdline(argc, argv) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Call to XLALUserVarReadCmdline() failed with code %d\n", fn, xlalErrno );
+    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALUserVarReadCmdline() */
+
+/** Deprecated LAL interface to XLALUserVarCheckRequired() */
+void
+LALUserVarCheckRequired (LALStatus *status)
+{
+  INITSTATUS( status, "LALUserVarCheckRequired", USERINPUTC);
+
+  if ( XLALUserVarCheckRequired() != XLAL_SUCCESS ) {
+    ABORT (status, USERINPUTH_ENOTSET, USERINPUTH_MSGENOTSET);
+  }
+
+  RETURN (status);
+
+} /* LALUserVarCheckRequired() */
+
+
+/** Deprecated LAL-interfaced to XLALUserVarReadAllInput()
+ */
+void
+LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
+{
+  const char *fn = __func__;
+  INITSTATUS( status, "LALUserVarReadAllInput", USERINPUTC);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+
+  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: XLALUserVarReadAllInput() failed with code %d\n", fn, xlalErrno );
+    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALReadUserInput() */
+
+/** Deprecated LAL-name interface to XLALUserVarWasSet() */
+INT4
+LALUserVarWasSet (const void *cvar)
+{
+  return (XLALUserVarWasSet(cvar));
+}
+
+/** Deprecated LAL interface to XLALGetDebugLevel() */
+void
+LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
+{
+  const char *fn = __func__;
+
+  INITSTATUS( status, "UVARgetDebugLevel", USERINPUTC);
+
+  ASSERT (argv, status,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
+  ASSERT (UVAR_vars.varp == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
+
+  if ( XLALGetDebugLevel (argc, argv, optchar) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: call to XLALGetDebugLevel() failed with code %d\n", fn, xlalErrno );
+    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+  }
+
+  RETURN (status);
+
+} /* LALGetDebugLevel() */
+
+
+/** deprecated LAL interface wrapper to XLALUserVarGetLog() */
+void
+LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
+{
+  const char *fn = __func__;
+
+  INITSTATUS( status, "LALUserVarGetLog", USERINPUTC);
+
+  ASSERT (logstr, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*logstr == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+
+  if ( ((*logstr) = XLALUserVarGetLog ( format )) == NULL ) {
+    XLALPrintError ("%s: UserVarLogFormat() failed.\n", fn );
+    ABORT (status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL);
+  }
+
+  RETURN (status);
+
+} /* LALUserVarGetLog() */
+
+
+#if 0
+/** Return user log as a process-params table
+ *
+ * \param[out] **procPar the output ProcessParamsTable
+ * \param[in] *progname  name of calling code
+ */
+void
+LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname)
+{
+  LALUserVariable *ptr = NULL;
+  CHAR *valstr=NULL;
+  CHAR *typestr=NULL;
+  ProcessParamsTable *this_proc_param=NULL;
+
+  INITSTATUS( status, "LALUserVarGetProcParamsTable", USERINPUTC);
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT (out, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*out == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+  ASSERT (progname, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+
+  ptr = &UVAR_vars;
+  while ( (ptr = ptr->next) )   /* we skip the possible lalDebugLevel-entry */
+    {
+      if ( (ptr->state & UVAR_WAS_SET) == FALSE )	/* skip unset variables */
+	continue;
+
+      /* get value and type of the uservar */
+      TRY ( UvarValue2String (status->statusPtr, &valstr, ptr), status);
+      TRY ( UvarType2String (status->statusPtr, &typestr, ptr), status);
+
+      /* *out is null in the first iteration of this loop in which case
+	 we allocate memory for the header of the linked list, otherwise
+	 allocate memory for the nodes */
+      if (*out == NULL)
+	this_proc_param = *out = (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
+      else
+	this_proc_param = this_proc_param->next =
+	  (ProcessParamsTable *)LALCalloc( 1, sizeof(ProcessParamsTable) );
+
+      /* copy the strings into the procparams table */
+      snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", progname );
+      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", ptr->name );
+      snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", valstr );
+      snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", typestr );
+
+      LALFree (valstr);
+      valstr=NULL;
+      LALFree(typestr);
+      typestr = NULL;
+
+    } /* while ptr->next */
+
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+
+} /* LALUserVarGetProcParamsTable() */
+#endif
+
+
+/** Deprecated LAL interface wrapper to XLALUserVarHelpString()
+ */
+void
+LALUserVarHelpString (LALStatus *status,
+		      CHAR **helpstring, /* output: allocated here! */
+		      const CHAR *progname)
+{
+  const char *fn = __func__;
+
+  INITSTATUS (status, fn, USERINPUTC);
+
+  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+  ASSERT (helpstring != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT ( *helpstring == NULL, status, USERINPUTH_ENONULL, USERINPUTH_MSGENONULL);
+
+  if ( ((*helpstring) = XLALUserVarHelpString ( progname )) == NULL ) {
+    XLALPrintError ("%s: XLALUserVarHelpString() failed with code %d\n", fn, xlalErrno );
+    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
+  }
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALUserVarHelpString() */
+
+void
+LALRegisterREALUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar,
+			UserVarState flag,
+			const CHAR *helpstr,
+			REAL8 *cvar)
+{
+  RegisterUserVar (status, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
+}
+
+void
+LALRegisterINTUserVar (LALStatus *status,
+		       const CHAR *name,
+		       CHAR optchar,
+		       UserVarState flag,
+		       const CHAR *helpstr,
+		       INT4 *cvar)
+{
+  RegisterUserVar (status, name, UVAR_INT4, optchar, flag, helpstr, cvar);
+}
+
+void
+LALRegisterBOOLUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar,
+			UserVarState flag,
+			const CHAR *helpstr,
+			BOOLEAN *cvar)
+{
+  RegisterUserVar (status, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
+}
+
+void
+LALRegisterSTRINGUserVar (LALStatus *status,
+			  const CHAR *name,
+			  CHAR optchar,
+			  UserVarState flag,
+			  const CHAR *helpstr,
+			  CHAR **cvar)
+{
+  RegisterUserVar (status, name, UVAR_STRING, optchar, flag, helpstr, cvar);
+}
+
+void
+LALRegisterLISTUserVar (LALStatus *status,
+			const CHAR *name,
+			CHAR optchar,
+			UserVarState flag,
+			const CHAR *helpstr,
+			LALStringVector **cvar)
+{
+  RegisterUserVar ( status, name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
+}
+
+/** Deprecated LAL-wrapper to XLALUserVarReadCfgfile()
+ */
+void
+LALUserVarReadCfgfile (LALStatus *status,
+		       const CHAR *cfgfile) 	   /* name of config-file */
+{
+  const char *fn = __func__;
+
+  INITSTATUS( status, fn, USERINPUTC );
+
+  ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
+
+  if ( XLALUserVarReadCfgfile ( cfgfile ) != XLAL_SUCCESS ) {
+    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
+  }
+
+  RETURN (status);
+
+} /* LALUserVarReadCfgfile() */
+
