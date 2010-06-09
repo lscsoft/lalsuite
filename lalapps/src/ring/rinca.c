@@ -91,70 +91,73 @@ extern int vrbflg;
  */
 static void print_usage(char *program)
 {
-  fprintf(stderr,
-      "Usage:  %s [options] [LIGOLW XML input files]\n" \
-      "The following options are recognized.  Options not surrounded in [] are\n" \
-      "required.\n" \
-      "  [--help]                      display this message\n"\
-      "  [--verbose]                   print progress information\n"\
-      "  [--version]                   print version information and exit\n"\
-      "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
-      "  [--user-tag]      usertag     set the process_params usertag\n"\
-      "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
-      "  [--comment]       string      set the process table comment to STRING\n"\
-      "  [--write-compress]            write a compressed xml file\n"\
-      "\n"\
-      "   --gps-start-time start_time  GPS second of data start time\n"\
-      "   --gps-end-time   end_time    GPS second of data end time\n"\
-      "  [--check-times]               Check that all times were analyzed\n"\
-      "  [--multi-ifo-coinc]           Look for triple/quadruple ifo coincidence\n"\
-      "  [--maximization-interval] max_dt set length of maximization interval in ms\n"\
-      "\n"\
-      "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
-      "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
-      "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
-      "  [--num-slides]    num_slides  The number of time slides to perform\n"\
-      "\n"\
-      "  [--h1-triggers]               input triggers from H1\n"\
-      "  [--h2-triggers]               input triggers from H2\n"\
-      "  [--l1-triggers]               input triggers from L1\n"\
-      "\n"\
-      "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"\
-      " [--h1-time-accuracy] h1_dt     specify the timing accuracy of H1 in ms\n"\
-      " [--h2-time-accuracy] h2_dt     specify the timing accuracy of H2 in ms\n"\
-      " [--l1-time-accuracy] l1_dt     specify the timing accuracy of L1 in ms\n"\
-      "\n"\
-      "  [--h1-freq-accuracy]  h1_df   specify the freq accuracy of H1\n"\
-      "  [--h2-freq-accuracy]  h2_df   specify the freq accuracy of H2\n"\
-      "  [--l1-freq-accuracy]  l1_df   specify the freq accuracy of L1\n"\
-      "\n"\
-      "  [--h1-quality-accuracy] h1_dq  specify the quality accuracy of H1\n"\
-      "  [--h2-quality-accuracy] h2_dq  specify the quality accuracy of H2\n"\
-      "  [--l1-quality-accuracy] l1_dq  specify the quality accuracy of L1\n"\
-      "\n"\
-      "  [--h1-distance-accuracy] h1_ddeff   specify the effective distance accuracy of H1\n"\
-      "  [--h2-distance-accuracy] h2_ddeff   specify the effective distance accuracy of H2\n"\
-      "  [--l1-distance-accuracy] l1_ddeff   specify the effective distance accuracy of L1\n"\
-      "\n"\
-      "  [--h1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
-      "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
-      "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"\
-      "\n"\
-      "   --data-type        data_type specify the data type, must be one of\n"\
-      "                                (playground_only|exclude_play|all_data)\n"\
-      "\n"\
-      "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"\
-      "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"\
-      "                                    there are no h2 triggers present\n"\
-      "                                   needed when --h1-h2-consistency is given\n"\
-      "   --complete-coincs               write out triggers from all non-vetoed ifos\n"
-      "  [--do-veto]         do_veto   veto cetain segments\n"\
-      "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"\
-      "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"\
-      "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"\
-      "[LIGOLW XML input files] list of the input trigger files.\n"\
-      "\n", program);
+  fprintf(stderr,   "Usage:  %s [options] [LIGOLW XML input files]\n" ,  program                );
+  fprintf(stderr,   "The following options are recognized.  Options not surrounded in [] are\n" );
+  fprintf(stderr,   "required.\n"                                                               );
+
+  fprintf(stderr,     "  [--help]                      display this message\n"                                 );
+  fprintf(stderr,     "  [--verbose]                   print progress information\n"                           );
+  fprintf(stderr,     "  [--version]                   print version information and exit\n"                   );
+  fprintf(stderr,     "  [--debug-level]   level       set the LAL debug level to LEVEL\n"                     );
+  fprintf(stderr,     "  [--user-tag]      usertag     set the process_params usertag\n"                       );
+  fprintf(stderr,     "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"                    );
+  fprintf(stderr,     "  [--comment]       string      set the process table comment to STRING\n"              );
+  fprintf(stderr,     "  [--write-compress]            write a compressed xml file\n"                          );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "   --gps-start-time    start_time    GPS second of data start time\n"                   );
+  fprintf(stderr,     "   --gps-end-time      end_time      GPS second of data end time\n"                     );
+  fprintf(stderr,     "  [--check-times]                    Check that all times were analyzed\n"              );
+  fprintf(stderr,     "  [--multi-ifo-coinc]                Look for triple/quadruple ifo coincidence\n"       );
+  fprintf(stderr,     "  [--maximization-interval]  max_dt  set length of maximization interval in ms\n"       );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"               );
+  fprintf(stderr,     "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"               );
+  fprintf(stderr,     "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"               );
+  fprintf(stderr,     "  [--num-slides]    num_slides  The number of time slides to perform\n"                 );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-triggers]               input triggers from H1\n"                               );
+  fprintf(stderr,     "  [--h2-triggers]               input triggers from H2\n"                               );
+  fprintf(stderr,     "  [--l1-triggers]               input triggers from L1\n"                               );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "   --parameter-test     test    set parameters with which to test coincidence:\n"       );
+  fprintf(stderr,     "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"                          );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"              );
+  fprintf(stderr,     "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"              );
+  fprintf(stderr,     "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"              );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-freq-accuracy]  h1_df   specify the freq accuracy of H1\n"                      );
+  fprintf(stderr,     "  [--h2-freq-accuracy]  h2_df   specify the freq accuracy of H2\n"                      );
+  fprintf(stderr,     "  [--l1-freq-accuracy]  l1_df   specify the freq accuracy of L1\n"                      );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-quality-accuracy]  h1_dq  specify the quality accuracy of H1\n"                 );
+  fprintf(stderr,     "  [--h2-quality-accuracy]  h2_dq  specify the quality accuracy of H2\n"                 );
+  fprintf(stderr,     "  [--l1-quality-accuracy]  l1_dq  specify the quality accuracy of L1\n"                 );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-distance-accuracy]  h1_ddeff   specify the effective distance accuracy of H1\n" );
+  fprintf(stderr,     "  [--h2-distance-accuracy]  h2_ddeff   specify the effective distance accuracy of H2\n" );
+  fprintf(stderr,     "  [--l1-distance-accuracy]  l1_ddeff   specify the effective distance accuracy of L1\n" );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
+  fprintf(stderr,     "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
+  fprintf(stderr,     "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "   --data-type      data_type    specify the data type, must be one of\n"               );
+  fprintf(stderr,     "                                 (playground_only|exclude_play|all_data)\n"             );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--h1-h2-consistency]            perform H1-H2 consistency cut\n"                     );
+  fprintf(stderr,     "  [--h1-snr-cut]         snr       reject h1 triggers below this snr when\n"            );
+  fprintf(stderr,     "                                   there are no h2 triggers present\n"                  );
+  fprintf(stderr,     "                                   needed when --h1-h2-consistency is given\n"          );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [--complete-coincs]                write out triggers from all non-vetoed ifos\n"     );
+  fprintf(stderr,     "  [--do-veto]         do_veto        veto cetain segments\n"                            );
+  fprintf(stderr,     "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"                );
+  fprintf(stderr,     "\n"                                                                                     );
+  fprintf(stderr,     "  [LIGOLW XML input files]           list of the input trigger files.\n"                );
+  fprintf(stderr,     "\n"                                                                                     );
 }
 
 

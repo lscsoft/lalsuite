@@ -1112,7 +1112,7 @@ XLALMCMCJump(
     /* downweight the off-axis elements */
     for (i=0; i<dim; ++i)
     {
-      for (j=0; j<dim; ++j)
+      for (j=0; j<i; ++j)
       {
         aij=gsl_matrix_get( work, i, j);
         aii=gsl_matrix_get( work, i, i);

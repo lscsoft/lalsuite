@@ -2483,6 +2483,15 @@ int main( int argc, char *argv[] )
           aligned);
     }
 
+    if ( ifos != NULL )
+    {
+        targetSNR = minSNR + (maxSNR - minSNR) * XLALUniformDeviate( randParams ); 
+        if ( logSNR )
+          targetSNR = exp(targetSNR);
+
+        adjust_snr(simTable, targetSNR, ifos);
+    }
+
     /* populate the site specific information */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
 
@@ -2516,14 +2525,6 @@ int main( int argc, char *argv[] )
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
    
-    if ( ifos != NULL )
-    {
-        targetSNR = minSNR + (maxSNR - minSNR) * XLALUniformDeviate( randParams ); 
-        if ( logSNR )
-          targetSNR = exp(targetSNR);
-
-        adjust_snr(simTable, targetSNR, ifos);
-    }
 
     /* populate the sim_ringdown table */ 
    if ( writeSimRing )

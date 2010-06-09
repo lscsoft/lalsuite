@@ -43,3 +43,15 @@ exchndl.o: $(EAHsrc)/exchndl.c
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
 
+## pretty dirty hack, particulary for compiling an E@H Mac OS 10.3 App on 10.4
+eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
+    eah_HierarchSearchGCT-GCTtoplist.o \
+    eah_HierarchSearchGCT-HeapToplist.o \
+    eah_HierarchSearchGCT-Fstat_v3.o \
+    eah_HierarchSearchGCT-ComputeFstat_RS.o \
+    eah_HierarchSearchGCT-hs_boinc_extras.o \
+    eah_HierarchSearchGCT-hs_boinc_options.o \
+    eah_HierarchSearchGCT-win_lib.o \
+    eah_HierarchSearchGCT-LocalComputeFstat.o \
+    libstdc++.a
+	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
