@@ -32,24 +32,6 @@
  * \brief Header file defining the API for ConfigFile.c.
  */
 
-/************************************ <lalVerbatim file="ConfigFileHV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
-/**************************************************** <lalLaTeX>
-\section{Header \texttt{ConfigFile.h}}
-\label{s:ConfigFile.h}
-
-Routines for general config-file reading.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/ConfigFile.h>
-\end{verbatim}
-
-***************************************************** </lalLaTeX> */
-
 #ifndef _CONFIGFILE_H  /* Double-include protection. */
 #define _CONFIGFILE_H
 
@@ -63,10 +45,6 @@ extern "C" {
 
 NRCSID( CONFIGFILEH, "$Id$");
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
 /** \name Error codes */
 /*@{*/
 #define CONFIGFILEH_ENULL 		1
@@ -91,7 +69,6 @@ NRCSID( CONFIGFILEH, "$Id$");
 #define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
 #define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
 /*@}*/
-/*************************************************** </lalErrTable> */
 
 /** Levels of strictness for config-file parsing. */
 typedef enum {
@@ -123,11 +100,6 @@ typedef struct {
   BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
 } LALParsedDataFile;
 
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{ConfigFileHV}}
-\newpage\input{ConfigFileC}
-\newpage\input{ConfigFileTestC}
-******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
 void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
