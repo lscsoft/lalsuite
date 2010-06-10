@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup NormalizeSFTRndMed.c
+ * \ingroup pulsarCommon
  * \author Badri Krishnan and Alicia Sintes
  * \date $Date$
  * \brief Normalizes SFTs based on their noise floor calculated using the running median

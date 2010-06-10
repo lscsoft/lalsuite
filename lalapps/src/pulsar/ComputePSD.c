@@ -83,17 +83,17 @@ RCSID( "$Id$");
 
 /** types of mathematical operations */
 enum tagMATH_OP_TYPE {
-  MATH_OP_ARITHMETIC_SUM = 0,   /** sum(x)     */
-  MATH_OP_ARITHMETIC_MEAN,      /** sum(x) / n */
-  MATH_OP_ARITHMETIC_MEDIAN,    /** x_1 <= ... x_{n/2} <= .. <= x_n */
-  MATH_OP_HARMONIC_SUM,         /** 1 / sum(1/x) */
-  MATH_OP_HARMONIC_MEAN,        /** n / sum(1/x) */
-  MATH_OP_POWERMINUS2_SUM,        /** 1 / sqrt( sum(1/x/x) )*/
-  MATH_OP_POWERMINUS2_MEAN,        /** 1 / sqrt( sum(1/x/x) /n )*/
-  MATH_OP_MINIMUM,              /** x_1 <= ... */
-  MATH_OP_MAXIMUM,              /** ... <= x_n */
+  MATH_OP_ARITHMETIC_SUM = 0,   /**< sum(x)     */
+  MATH_OP_ARITHMETIC_MEAN,      /**< sum(x) / n */
+  MATH_OP_ARITHMETIC_MEDIAN,    /**< x_1 <= ... x_{n/2} <= .. <= x_n */
+  MATH_OP_HARMONIC_SUM,         /**< 1 / sum(1/x) */
+  MATH_OP_HARMONIC_MEAN,        /**< n / sum(1/x) */
+  MATH_OP_POWERMINUS2_SUM,      /**< 1 / sqrt( sum(1/x/x) )*/
+  MATH_OP_POWERMINUS2_MEAN,     /**< 1 / sqrt( sum(1/x/x) /n )*/
+  MATH_OP_MINIMUM,              /**< x_1 <= ... */
+  MATH_OP_MAXIMUM,              /**< ... <= x_n */
   MATH_OP_LAST
-};    
+};
 
 /** user input variables */
 typedef struct 
@@ -595,7 +595,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 
 /** Write a multi-PSD into spectrograms for each IFO.
  * Using gnuplot 'binary' matrix format
- * The filename for each <IFO> is generated as 'bname-<IFO>'
+ * The filename for each IFO is generated as 'bname-IFO'
  */
 void
 LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVector *multiPSD )

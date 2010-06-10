@@ -1577,7 +1577,7 @@ getGridSpacings( LALStatus *status,
  *       the *whole* possible Doppler-range of frequencies, in which the
  *       signal can show up. This range is bounded by (from circle-equation)
  *       |FreqBand/Freq| < beta_orb Delta_n, where beta_orb = V_orb/c ~1e-4,
- *       and Delta_n = |\vec{n} - \vec{n}_sig| can be estimated from the
+ *       and \f$\Delta_n = |\vec{n} - \vec{n}_sig|\f$ can be estimated from the
  *       metric sky-ellipses: Delta_n ~ smajor of the sky-ellipse
  *
  *  The region will be randomized wrt the central point within one
