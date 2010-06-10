@@ -21,7 +21,7 @@
  *  \file Velocity.h
  *  \author Badri Krishnan
  *  \brief Header file for velocity and position routines.
- *  \ingroup moduleHoughPulsar
+ *  \ingroup pulsarHough
  *
  *  $Id$
  *

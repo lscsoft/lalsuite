@@ -265,7 +265,7 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * transform rather than an "inverse" transform).
  *
  * @param[in] size The number of points in the real data.
- * @param[in] fwdflag Set non-zero for a forward FFT plan;
+ * @param[in] fwdflg Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;
@@ -489,7 +489,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
  * transform rather than an "inverse" transform).
  *
  * @param[in] size The number of points in the real data.
- * @param[in] fwdflag Set non-zero for a forward FFT plan;
+ * @param[in] fwdflg Set non-zero for a forward FFT plan;
  *                    otherwise create a reverse plan
  * @param[in] measurelvl Measurement level for plan creation:
  *                      - 0: no measurement, just estimate the plan;

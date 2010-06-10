@@ -1,4 +1,4 @@
-/** \defgroup InspiralInjectionParams
+/** \defgroup InspiralInjectionParams Inspiral Injection package
  * \ingroup inject
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
@@ -8,7 +8,7 @@
  *
  */
 
-/** \file InspiralInjecionParams.h
+/** \file
  *  \ingroup InspiralInjectionParams
  * \date $Date$
  *

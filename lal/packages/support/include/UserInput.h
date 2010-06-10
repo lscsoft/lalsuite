@@ -17,19 +17,17 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup UserInput
+/** \defgroup UserInput User-input handling
  * \ingroup support
  * \author Reinhard Prix
  * \date $Date$
  * \brief Module for general parsing of user-input from config-file and/or command-line.
  *
- * More documentation on how to use this module will appear here soon!!
  */
 
 /** \file
  * \ingroup UserInput
  * \author Reinhard Prix
- * \date $Date$
  * \brief Header file defining the API for the UserInput modules.
  */
 
