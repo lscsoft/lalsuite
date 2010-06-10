@@ -1573,8 +1573,8 @@ def write_hw_injection(page, opts):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Hardware injection summary page at CAT 1"
-  tags[section] = '*HWINJ_SUMMARY*'
-  htmltags[section] = '*HWINJ_SUMMARY*'
+  tags[section] = '*HWINJ_SUMMARY-*'
+  htmltags[section] = '*HWINJ_SUMMARY-*'
   imagetags[section] = None
   captions[section] = ''
   comments[section] = None
