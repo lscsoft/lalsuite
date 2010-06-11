@@ -21,7 +21,7 @@
 /**
  *
  * \file
- * \ingroup moduleHoughPulsar
+ * \ingroup pulsarHough
  * \author Alicia M. Sintes and Badri Krishnan
  *
  * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.

@@ -1347,6 +1347,7 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   CHAR *logstr = NULL;
   CHAR command[512] = "";
   FILE *fplog;
+  int rc;
 
   INITSTATUS (status, "WriteFStatLog", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1376,7 +1377,7 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   fclose (fplog);
 
   sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], log_fname);
-  system (command);	/* we don't check this. If it fails, we assume that */
+  rc = system(command); /* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 

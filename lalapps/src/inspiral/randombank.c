@@ -154,7 +154,7 @@ int main ( int argc, char *argv[] )
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
   snprintf( this_search_summvar->name,
-      LIGOMETA_NAME_MAX * sizeof(CHAR), "template bank simulation seed" );
+      LIGOMETA_NAME_MAX, "template bank simulation seed" );
 
   if ( randSeedType == urandom )
   {
@@ -188,7 +188,7 @@ int main ( int argc, char *argv[] )
   }
 
   this_search_summvar->value = randomSeed;
-  snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX,
       "%d", randomSeed );
   if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
 
@@ -261,11 +261,9 @@ int main ( int argc, char *argv[] )
     thisTmplt->f_final = newTmplt.fFinal;
     thisTmplt->eta = newTmplt.eta;
     thisTmplt->beta = newTmplt.beta;
-    snprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "P1" );
-    snprintf( thisTmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "randombank" );
-    snprintf( thisTmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-        "SIM-BANK" );
+    snprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX, "P1" );
+    snprintf( thisTmplt->search, LIGOMETA_SEARCH_MAX, "randombank" );
+    snprintf( thisTmplt->channel, LIGOMETA_CHANNEL_MAX, "SIM-BANK" );
   }
 
 

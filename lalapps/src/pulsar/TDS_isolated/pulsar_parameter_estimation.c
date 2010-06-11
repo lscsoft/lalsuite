@@ -3043,6 +3043,8 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
   INT4 numDM=0;
   REAL8 corTemp=0., junk=0.;
 
+  int rc;
+
   ParamData paramData[]=
   {
     { "f0",  0., 0., 0 },{ "f1",  0., 0., 0 },{ "f2",  0., 0., 0 },
@@ -3174,23 +3176,23 @@ reading any correlation data!");
   k=0;
   for(i=0;i<numParams+numDM;i++){
     n=0;
-    fscanf(fp, "%s%s", tmpStr, tmpStr2);
+    rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
 
     /* if its a dispersion measure then just skip the line */
     if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
-      fscanf(fp, "%*[^\n]");
+      rc = fscanf(fp, "%*[^\n]");
       k--;
       continue;
     }
 
     for(j=0;j<i+1;j++){
       if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
-        fscanf(fp, "%lf", &junk);
+        rc = fscanf(fp, "%lf", &junk);
         n--;
         continue;
       }
 
-      fscanf(fp, "%lf", &corTemp);
+      rc = fscanf(fp, "%lf", &corTemp);
 
       /* if covariance equals 1 set as 0.9999999, because values of 1
            can cause problems of giving singular matrices */

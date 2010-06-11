@@ -758,10 +758,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   if vetoCat:
     hipeNode.set_cluster_jobs('horizontal')
 
-  # sweep up the .input files hipe generates
-  hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
-    'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
-
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
     local_exec_dir, '/'.join(os.getcwd().split('/')[-1:])))

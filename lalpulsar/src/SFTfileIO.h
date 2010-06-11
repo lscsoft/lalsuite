@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup SFTfileIO
+/** \defgroup SFTfileIO SFT-file IO
  * \ingroup support
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  * $Date$

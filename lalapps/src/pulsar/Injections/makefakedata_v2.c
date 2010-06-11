@@ -1515,6 +1515,7 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
+  int rc;
   
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1527,7 +1528,7 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    rc = system(command);
     return 1;
   }
       return 0;
@@ -1537,6 +1538,7 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
+  int rc;
   
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1549,7 +1551,7 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    rc = system(command);
     return 1;
   }
       return 0;
@@ -1558,6 +1560,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
+  int rc;
   
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1570,7 +1573,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    rc = system(command);
     return 1;
   }
       return 0;

@@ -20,7 +20,7 @@
 /**
  * \author Alicia Sintes, Badri Krishnan
  * \ingroup pulsarHough
- * \file NDParamPlut.c
+ * \file
  * \brief Routines for creating the parameters required to build the
     Hough Look-Up-Tables for non-demodulated (SFT) data
  */

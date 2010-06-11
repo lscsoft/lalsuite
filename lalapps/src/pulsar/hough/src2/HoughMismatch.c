@@ -117,6 +117,7 @@ int main( int argc, char *argv[]){
   CHAR *uvar_sftDir=NULL;
   CHAR *uvar_fnameout=NULL;
 
+  int rc;
 
   /*  set up the default parameters  */
   lalDebugLevel = 0;
@@ -207,7 +208,7 @@ int main( int argc, char *argv[]){
     fclose (fpLog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    system (command);	/* we don't check this. If it fails, we assume that */
+    rc = system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 

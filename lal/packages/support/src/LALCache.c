@@ -275,7 +275,8 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 		entry->url = XLALStringAppend( entry->url, path );
 	} else { /* relative path */
 		char cwd[FILENAME_MAX];
-		getcwd( cwd, sizeof(cwd) - 1 );
+		char *ptr;
+		ptr = getcwd( cwd, sizeof(cwd) - 1 );
 		XLALStringConcatenate( cwd, "/", sizeof(cwd) );
 		XLALStringConcatenate( cwd, path, sizeof(cwd) );
 		entry->url = XLALStringAppend( entry->url, cwd );

@@ -1589,7 +1589,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
 } /* WriteMFDLog() */
 
 /**
- * Reads an actuation-function in format (r,\phi) from file 'fname',
+ * Reads an actuation-function in format (r,phi) from file 'fname',
  * and returns the associated transfer-function as a COMPLEX8FrequencySeries (Re,Im)
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */
