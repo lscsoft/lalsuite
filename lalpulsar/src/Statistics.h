@@ -19,7 +19,7 @@
 
 /**
  *  \file Statistics.h
- *  \ingroup moduleHoughPulsar
+ *  \ingroup pulsarHough
  *  \brief Functions prototypes and structures for calculating statistical properties of Hough maps
  *  \author Krishnan, B.
  *

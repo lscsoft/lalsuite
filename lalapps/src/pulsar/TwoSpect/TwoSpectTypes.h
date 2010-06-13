@@ -98,8 +98,8 @@ typedef struct
 {
    REAL8Vector *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
-   INT4Vector *firstfftfrequenciesofpixels;  //pixel frequency values
-   INT4Vector *secondfftfrequencies;
+   INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
+   INT4Vector *secondfftfrequencies;   //pixel second frequency values
 } templateStruct;
 
 

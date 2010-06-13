@@ -91,7 +91,7 @@ char* HSBOINCEXTRASCRCSID = "$Id$";
 
 typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 
-/** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
+/** compare strings s1 and s2 up to the length of s1 (without the trailing 0!!)
     and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 

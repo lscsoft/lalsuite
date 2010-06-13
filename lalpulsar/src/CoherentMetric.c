@@ -24,16 +24,15 @@
  * \ingroup PulsarMetric
  * \brief Computes the parameter space metric for a coherent pulsar search.
  *
- * \verbatim $Id$ \endverbatim
  *
  This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
  discussed in the header StackMetric.h, under the assumption
  that the search consists of scanning the Fourier power spectrum
  constructed from a single time interval \f$\Delta t\f$.  The indecies
  \f$\alpha\f$ and \f$\beta\f$ are assumed to run from 0 to \f$n\f$, where \f$n\f$ is
- the total number of ``shape'' parameters.
+ the total number of 'shape' parameters.
 
- The argument \a *metric is normally a vector of length
+ The argument 'metric' is normally a vector of length
  \f$(n+1)(n+2)/2\f$ storing all non-redundant coefficients of
  \f$g_{\alpha\beta}\f$.  The indexing scheme is as follows: Let us assume
  that \f$\alpha\geq\beta\f$.  Then \f$g_{\alpha\beta} = g_{\beta\alpha} =

@@ -18,7 +18,7 @@
 */
 
 
-/** \defgroup GenerateInspRing
+/** \defgroup GenerateInspRing Inspiral plus Ringdown
  * \ingroup inject
  * \author S.Fairhurst
  *

@@ -245,7 +245,7 @@ typedef struct {
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
-  REAL8 timerCount;		/**< output progress-meter every <timerCount> templates */
+  REAL8 timerCount;		/**< output progress-meter every timerCount templates */
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 

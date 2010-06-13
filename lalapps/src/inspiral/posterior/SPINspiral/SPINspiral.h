@@ -27,7 +27,7 @@
 
 
 /**
- * \file include/SPINspiral.h
+ * \file
  * \brief Main header file
  */
 

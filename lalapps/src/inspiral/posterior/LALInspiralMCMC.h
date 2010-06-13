@@ -75,7 +75,7 @@ NRCSID( LALINSPIRALMCMCH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 tho
 #define LALINSPIRALH_MSGEORDER        "unknown order specified"
 #define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid model"
 #define MAXDET 5			/* Maximum number of data streams/detectors to accept */
-/** ---------------------------------------------------------------------  
+/* ---------------------------------------------------------------------  
 </lalErrTable> */
 
 

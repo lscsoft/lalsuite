@@ -723,7 +723,7 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
 
 
-/** Compute a pure phase-deriv covariance [phi_i, phi_j] = <phi_i phi_j> - <phi_i><phi_j>
+/** Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
  * which gives a component of the "phase metric"
  */
 double

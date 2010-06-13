@@ -21,7 +21,7 @@
 /**
  *
  * \file
-   \defgroup moduleHoughPulsar Hough Pulsar
+   \ingroup pulsarHough
    \author Alicia Sintes, Badri Krishnan
 
    \brief Routines for building and updating the space of partial
