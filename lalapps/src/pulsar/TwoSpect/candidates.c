@@ -230,7 +230,7 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
                   REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                   REAL8 prob = (probR(template, ffplanenoise, fbinaveratios, R, &proberrcode));
-                  REAL8 h0 = 2.0*pow(R/params->Tobs/ffdata->ffnormalization,0.25);
+                  REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
                   if (R > farval->far && prob < bestProb) {
                      besth0 = h0;
                      bestmoddepth = mindf + kk*0.5/params->Tcoh;

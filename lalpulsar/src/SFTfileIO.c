@@ -142,8 +142,7 @@ static void read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *bin
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
-static int compareSFTdescGPS(const void *ptr1, const void *ptr2);
-static int compareSFTdescLocator(const void *ptr1, const void *ptr2);
+static int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareDetName(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
@@ -473,7 +472,8 @@ LALSFTdataFind (LALStatus *status,
 
 
   /* sort catalog in order of increasing GPS-time */
-  qsort( (void*)ret->data, ret->length, sizeof( ret->data[0] ), compareSFTdescGPS );
+  qsort( (void*)ret->data, ret->length, sizeof( ret->data[0] ), compareSFTdesc );
+
 
   /* return result catalog (=sft-vect and locator-vect) */
   (*catalog) = ret;
@@ -666,7 +666,6 @@ _LALLoadSFTs ( LALStatus *status,
 
 } /* LALLoadSFTs() */
 
-
 /* This is meant to replace LALLoadSFT().
    It has the same interface and basically does the same, with the additional capability to read
    sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
@@ -675,7 +674,7 @@ _LALLoadSFTs ( LALStatus *status,
 void
 LALLoadSFTs ( LALStatus *status,
 	      SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
-	      const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
+	      const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
 	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
 	      REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
 	      )
@@ -707,9 +706,6 @@ LALLoadSFTs ( LALStatus *status,
   }
   sfts->length = 0;
   sfts->data = NULL;
-
-  /* sort catalog in order of increasing GPS-time */
-  qsort( (void*)catalog->data, catalog->length, sizeof( catalog->data[0] ), compareSFTdescLocator );
 
 #ifdef SFTFILEIO_DEBUG
   fprintf(stderr, ": catalog has %u files\n", catalog->length);
@@ -3710,7 +3706,7 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 
 /* compare two SFT-descriptors by their GPS-epoch, then starting frequency */
 static int
-compareSFTdescGPS(const void *ptr1, const void *ptr2)
+compareSFTdesc(const void *ptr1, const void *ptr2)
 {
   const SFTDescriptor *desc1 = ptr1;
   const SFTDescriptor *desc2 = ptr2;
@@ -3723,27 +3719,9 @@ compareSFTdescGPS(const void *ptr1, const void *ptr2)
     return -1;
   else if ( desc1->header.f0 > desc2->header.f0 )
     return 1;
-
-  return 0;
-} /* compareSFTdescGPS() */
-
-/* compare two SFT-descriptors by their locator (filename, then offset) */
-static int
-compareSFTdescLocator(const void *ptr1, const void *ptr2)
-{
-  const SFTDescriptor *desc1 = ptr1;
-  const SFTDescriptor *desc2 = ptr2;
-  int ret = 0;
-
-  if ((ret = strcmp(desc1->locator->fname, desc2->locator->fname)))
-    return ret;
-  else if (desc1->locator->offset > desc2->locator->offset)
-    return 1;
-  else if (desc1->locator->offset > desc2->locator->offset)
-    return -1;
-
-  return 0;
-} /* compareSFTdescLocator() */
+  else
+    return 0;
+} /* compareSFTdesc() */
 
 /* compare two SFT-vectors by detector name in alphabetic order */
 static int

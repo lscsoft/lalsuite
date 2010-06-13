@@ -10,7 +10,7 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
-EXTRA_PROGRAMS = eah_HierarchSearchGCT
+EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
@@ -20,6 +20,10 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
 			  ComputeFstat_RS.c ComputeFstat_RS.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
+
+lalapps_HierarchSearchGCT_cuda_SOURCES = $(HSGCTSources) $(OPTsrc)/ComputeFstatREAL4.c $(OPTsrc)/ComputeFstatREAL4CUDA.c $(OPTsrc)/FStatCUDA.cu
+lalapps_HierarchSearchGCT_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
+lalapps_HierarchSearchGCT_cuda_LDADD = $(LDADD) -lcudart
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
 eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
@@ -42,6 +46,11 @@ exchndl.o: $(EAHsrc)/exchndl.c
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
+
+# how to compile CUDA files (.cu)
+NVCC ?= nvcc
+.cu.o:
+	$(NVCC) $(CPPFLAGS) -c $< -o $@
 
 ## pretty dirty hack, particulary for compiling an E@H Mac OS 10.3 App on 10.4
 eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \

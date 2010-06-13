@@ -231,7 +231,7 @@ struct tm * XLALGPSToUTC(
 /** Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure.
  *
- * See \cite{esaa:1992} and \cite{green:1985} for details.  First, some
+ * See \ref esaa1992 and \ref green1985 for details.  First, some
  * definitions:
  *
  * Mean Julian Year = 365.25 days
@@ -249,13 +249,15 @@ struct tm * XLALGPSToUTC(
  * Julian Epoch = J2000.0 + (JD - 2451545) / 365.25, i.e., number of years
  * elapsed since J2000.0.
  *
- * One algorithm for computing the Julian Day is from \cite{vfp:1979} based
- * on a formula in \cite{esaa:1992} where the algorithm is due to
- * \cite{fvf:1968} and ``compactified'' by P. M. Muller and R. N. Wimberly.
+ * One algorithm for computing the Julian Day is from \ref vfp1979 based
+ * on a formula in \ref esaa1992 where the algorithm is due to
+ * \ref fvf1968 and ``compactified'' by P. M. Muller and R. N. Wimberly.
  * The formula is
  *
+ * \f[
  * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 - 3 \times ((y + (m -
  * 9)/7)/100 + 1)/4 + 275 \times m/9 + d + 1721029
+ * \f]
  *
  * where jd is the Julian day number, y is the year, m is the month (1-12),
  * and d is the day (1-31).  This formula is valid only for JD > 0, i.e.,
@@ -264,28 +266,14 @@ struct tm * XLALGPSToUTC(
  * A shorter formula from the same reference, but which only works for
  * dates since 1900 March is:
  *
+ * \f[
  * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 + 275 \times m/9 + d +
  * 1721014
+ * \f]
  *
  * We will use this shorter formula since there is unlikely to be any
  * analyzable data from before 1900 March.
  *
- *
- * References:
- *
- * \bibitem{esaa:1992} \textit{Explanatory Supplement to the Astronomical
- * Almanac}, P.~K. Seidelmann, \textit{ed.} (University Science Books, Mill
- * Valley, 1992)
- *
- * \bibitem{green:1985} R.~M. Green, \textit{Spherical Astronomy}
- * (Cambridge University Press, Cambridge, 1985)
- *
- * \bibitem{vfp:1979} T.~C. Van Flandern, and K.~F. Pulkkinen,
- * \textit{Astrophysical Journal Supplement Series}, \textbf{41}, 391-411,
- * 1979 Nov.
- *
- * \bibitem{fvf:1968} Fliegen, and Van~Flandern, \textit{Communications of
- * the ACM}, \textbf{11}, 657, 1968
  */
 
 
