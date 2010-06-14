@@ -265,8 +265,10 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     /* Michele-041208: but I think it was an experimental term introduced by Yi and Alessandra */
 
     /* dphi*/
-
-    alphadotcosi = -LNhz * (LNhy*dLNhx - LNhx*dLNhy) / (LNhx*LNhx + LNhy*LNhy);
+    REAL8 LNhxy = LNhx*LNhx + LNhy*LNhy;
+    if(LNHxy > 0.0) alphadotcosi = LNHz * (LNhx*dLNhy - LNhy*dLNhx) / LNhxy;
+    else	    alphadotcosi = 0.0;
+    
     ds = omega - alphadotcosi;
 
     /* copy back into dvalues structure*/
