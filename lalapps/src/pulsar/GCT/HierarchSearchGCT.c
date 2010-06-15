@@ -998,8 +998,8 @@ int MAIN( int argc, char *argv[]) {
         sumTwoFmax = 0.0;
 
 
-        /* ##########################################################*/
-        /* ------------- MAIN LOOP over Segments --------------------*/
+        /* #########################################################################*/
+        /* ------------- MAIN LOOP over Segments for F-statistic -------------------*/
 
         for (k = 0; k < nStacks; k++) {
 
@@ -1476,9 +1476,12 @@ int MAIN( int argc, char *argv[]) {
     XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates.data[k] );
   }
 
-  LALFree(stackMultiSFT.data);
-  LALFree(stackMultiNoiseWeights.data);
-  LALFree(stackMultiDetStates.data);
+  if (stackMultiSFT.data) 
+    LALFree(stackMultiSFT.data);
+  if (stackMultiNoiseWeights.data)
+    LALFree(stackMultiNoiseWeights.data);
+  if (stackMultiDetStates.data)
+    LALFree(stackMultiDetStates.data);
 
   XLALDestroyTimestampVector(startTstack);
   XLALDestroyTimestampVector(midTstack);
