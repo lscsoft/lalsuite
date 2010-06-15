@@ -28,6 +28,7 @@
 #include <lal/FrameStream.h>
 #include <lal/Calibration.h>
 #include <lal/Units.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 
 #include "lalapps.h"
 #include "getresp.h"
@@ -49,13 +50,13 @@ COMPLEX8FrequencySeries * get_response(
     REAL8        dataDuration,
     REAL8        dataSampleRate,
     REAL4        responseScale,
-    int          impulseResponse,
+    int          dataType,
     const char  *channel_name
     )
 {
   COMPLEX8FrequencySeries *response;
 
-  if ( impulseResponse )
+  if ( dataType == LALRINGDOWN_DATATYPE_HT_REAL4 || dataType == LALRINGDOWN_DATATYPE_HT_REAL8 )
     response = get_impulse_response( ifoName, epoch, dataDuration,
         dataSampleRate, responseScale );
   else
