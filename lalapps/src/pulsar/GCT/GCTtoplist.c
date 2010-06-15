@@ -233,13 +233,7 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   return(snprintf(buf, buflen,
-		     /* output precision: choose by following (generous!) significant-digit constraints:       
-		      * Freq:1e-13                                          
-		      * Alpha,Delta:1e-7                                                       
-		      * f1dot:1e-5                                                                      
-		      * F:1e-6              
-		      */
-                     "%.14f %.13f %.13f %.13g %d %.6f\n",
+                     "%.14g %.13g %.13g %.13g %d %.6f\n",
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
