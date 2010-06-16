@@ -12,7 +12,6 @@ LALMETAIOPROGRAMS = \
 	lalapps_ivana \
 	lalapps_chirplen \
 	lalapps_BankEfficiency
-# lalapps_inspmultiawg
 endif
 endif
 bin_PROGRAMS = $(LALINSPIRALPROGRAMS) $(LALMETAIOPROGRAMS)
@@ -27,7 +26,6 @@ lalapps_InspiralOverlap_SOURCES = InspiralOverlap.c
 if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_ivana_SOURCES = ivana.c
-#lalapps_inspmultiawg_SOURCES = inspmultiawg.c
 lalapps_chirplen_SOURCES = chirplen.c
 lalapps_BankEfficiency_SOURCES = BankEfficiency.c BankEfficiency.h
 endif
@@ -39,7 +37,6 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 EXTRA_DIST = \
 	exc_resp.c \
 	ivana.c \
-	inspmultiawg.c \
 	chirplen.c \
 	TestRandomBank.c \
 	BankEfficiency.c \
