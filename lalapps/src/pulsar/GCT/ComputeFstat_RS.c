@@ -111,14 +111,15 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			       const MultiNoiseWeights *multiWeights,	        /**< noise-weights of all SFTs */
-			       MultiDetectorStateSeries *multiDetStates,        /**< 'trajectories' of the different IFOs */
+			       MultiDetectorStateSeries *dummy,                 /**< 'trajectories' of the different IFOs (not used) */
 			       ComputeFParams *params		                /**< addition computational params */
 			       )
 {
 /*   static const CHAR *fn = "ComputeFStatFreqBand_RS()"; */
 
   UINT4 numDetectors; 
-  ComputeFBuffer_RS *cfBuffer = NULL;
+  ComputeFBuffer_RS *cfBuffer = params->buffer;
+  MultiDetectorStateSeries *multiDetStates = NULL;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCOMPLEX8TimeSeries *multiTimeseries = NULL;
@@ -143,11 +144,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 
   INITSTATUS( status, "ComputeFStatFreqBand_RS", COMPUTEFSTATRSC );
   ATTATCHSTATUSPTR (status);
-
+ 
   /* check that the input data and parameters structures don't point to NULL */
   ASSERT ( multiSFTs, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( doppler, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
-  ASSERT ( multiDetStates, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( params, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
 
   cfBuffer = params->buffer;                      /* set local pointer to the buffer location */
@@ -157,7 +157,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   f0_sft = firstSFT->f0;                          /* define the frequency of the first bin in the SFT */  
   
   /* check that the pre-allocated output vector doesn't point to NULL */ 
-  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
   ASSERT ( fstatVector, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( fstatVector->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
@@ -166,50 +165,54 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   df_out = fstatVector->deltaF;                   /* the user defined frequency resolution */
   f0_out = fstatVector->f0;                       /* the user defined first output frequency bin */    
 
-  /* check that the multidetector states have the same length as the multiSFTs */
-  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
+  /* check that the multidetector noise weights have the same length as the multiSFTs */
   if ( multiWeights ) {
     ASSERT ( multiWeights->length == numDetectors , status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
   }
 
+  /* first, if there is no buffer allocate space for one */
+  /* IMPORTANT - use Calloc here so that all pointers within the structure are NULL */
+  if ( cfBuffer == NULL ) {
+    if ( (cfBuffer = (ComputeFBuffer_RS*)XLALCalloc(1,sizeof(ComputeFBuffer_RS))) == NULL ) {
+      LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }
+  }
+  
+  /************************************************************************************************************/
+  /* Dealing with the input SFT -> timeseries conversion and whether it has already been done and is buffered */ 
+  
   /* generate bandpassed and downsampled timeseries for each detector                         */
   /* we only ever do this once for a given dataset so we read it from the buffer if it exists */
   /* in future implementations we will pass this directly to the function instead of SFTs     */
-  /* first, if there is no buffer allocate space for one */
-  if ( cfBuffer == NULL ) {
-    if ( (cfBuffer = XLALMalloc(sizeof(ComputeFBuffer_RS))) == NULL ) {
-      LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }	
-  }
   
-  /* check if there is an existing timeseries and the start time in the buffer matches the start time of the SFTs */
-  if ( cfBuffer->multiTimeseries && ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) == 0) ) {
-    multiTimeseries = cfBuffer->multiTimeseries;	/* use the buffered multiTimeSeries */
-  }  
-  else {    /* otherwise we need to recompute the timeseries from the SFTs */
+  /* check if there is an not existing timeseries and if the start time in the buffer does not match the start time of the SFTs */
+  if ( !cfBuffer->multiTimeseries || ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0) ) {
+    
+    fprintf(stdout,"*** New segment : recomputing timeseries and detstates\n");
+    if ( !cfBuffer->multiTimeseries) fprintf(stdout,"timeseries pointer was null\n");
+    if ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0) 
+      fprintf(stdout,"segstart changed from %d to %d\n",cfBuffer->segstart.gpsSeconds,multiSFTs->data[0]->data[0].epoch.gpsSeconds);
+
+    /* if there was no existing timeseries we need to recompute the timeseries from the SFTs */
     /* generate multiple coincident timeseries - one for each detector spanning start -> end */ 
     /* we need each timeseries to span the exact same amount of time and to start at the same time */
     /* because for the multi-detector Fstat we need frequency bins to be coincident */
     /* The memory allocated here is freed when the buffer is cleared in the calling program */
-    if ( (multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries(multiSFTs)) == NULL ) {
+
+    /* generate a new timeseries from the input SFTs */
+    if ( ( multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries(multiSFTs)) == NULL ) {
       LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
-  
-    
+   
     /* compute the fractional bin offset between the user requested initial frequency */
     /* and the closest output frequency bin */
     {
       REAL8 diff = multiTimeseries->data[0]->f0 - fstatVector->f0;         /* the difference between the new timeseries heterodyne frequency and the user requested frequency */
       UINT4 bins = (UINT4)floor(0.5 + diff/fstatVector->deltaF);           /* the rounded number of output frequency bins difference */ 
       REAL8 shift = diff - fstatVector->deltaF*bins;                       /* the fractional bin frequency offset */
-      /*
-      printf("Shift = %6.12f Hz\n",shift); 
-      printf("time series heterodyne freq = %6.12f\n",multiTimeseries->data[0]->f0); 
-      printf("requested first frequency = %6.12f\n",fstatVector->f0); 
-      */
-
+      
       /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */ 
       if (shift != 0.0) {
         if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
@@ -225,117 +228,119 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     /* MultiDetectorStates because their timestamps are used later on to compute SSB times which we */
     /* need to be accurate at the midpoints of the SFTs.  Understand ? */
     
-    XLALDestroyMultiDetectorStateSeries(multiDetStates); /* destroy the input multiDetStates */
-    multiDetStates = NULL;   /* and set to NULL */
-    
     /* recompute the multiDetStates for the new SFT start times */
     TRY ( LALGetMultiDetectorStates ( status->statusPtr, &multiDetStates, multiSFTs, params->edat ), status );           
     
-    /* point the buffer to the newly generated timeseries and set all other buffer pointers to NULL */
+    /* set all other segment dependent quantity pointers to NULL */
+    /* this will basically mean that we will have to compute all sky dependent quantities again */
+    XLALEmptyComputeFBuffer_RS( cfBuffer );
+     
+    /* buffer the multitimeseries, detstates and the current start time of the input data */ 
     cfBuffer->multiTimeseries = multiTimeseries;
-    cfBuffer->multiSSB = NULL;
-    cfBuffer->multiBinary = NULL;
-    cfBuffer->multiAMcoef = NULL;
-    cfBuffer->multiCmplxAMcoef = NULL; 
-    cfBuffer->multiFa_resampled = NULL;                
-    cfBuffer->multiFb_resampled = NULL;
-    
-    /* also buffer the current start time of the input data */ 
+    cfBuffer->multiDetStates = multiDetStates;
     cfBuffer->segstart.gpsSeconds = multiSFTs->data[0]->data[0].epoch.gpsSeconds;
     cfBuffer->segstart.gpsNanoSeconds = multiSFTs->data[0]->data[0].epoch.gpsNanoSeconds;
     
   }  /* if (cfBuffer->multiTimeseries) */
  
-  
+  /* End of the SFT -> timeseries buffering checks                                                            */
+  /************************************************************************************************************/
+
+  /************************************************************************************************************/
+  /* Dealing with sky position dependent quantities and buffering them                                        */
   
   /* if the sky position has changed or if any of the sky position dependent quantities are not buffered 
      i.e the multiDetstates, the multiAMcoefficients, the multiSSB times and the resampled multiTimeSeries Fa and Fb, 
      then we need to recompute these and buffer them */
-  if ( cfBuffer                                                     /* if we have a buffer */
-       && ( cfBuffer->Alpha == doppler->Alpha )                     /* and alpha hasn't changed */
-       && ( cfBuffer->Delta == doppler->Delta )                     /* and delta hasn't changed */
-       && ( cfBuffer->multiDetStates == multiDetStates )            /* and the buffered multiDetStates hasn't changed */
-       && ( cfBuffer->multiAMcoef )                                 /* and we have a buffered multiAMcoefficents */
-       && ( cfBuffer->multiSSB )                                    /* and we have buffered multiSSB times */ 
-       && ( cfBuffer->multiFa_resampled )                           /* and we have buffered multiFa_resampled  */
-       && ( cfBuffer->multiFb_resampled )                           /* and we have multiFb_resampled */
+  if ( (cfBuffer->Alpha != doppler->Alpha )                                 /* and alpha hasn't changed */
+       || ( cfBuffer->Delta != doppler->Delta )                             /* and delta hasn't changed */
+       || ( cfBuffer->multiAMcoef == NULL )                                 /* and we have a buffered multiAMcoefficents */
+       || ( cfBuffer->multiSSB == NULL )                                    /* and we have buffered multiSSB times */ 
+       || ( cfBuffer->multiFa_resampled == NULL )                           /* and we have buffered multiFa_resampled  */
+       || ( cfBuffer->multiFb_resampled == NULL )                           /* and we have multiFb_resampled */
        )
-    { /* if already buffered then we reuse all sky dependent buffered values */
-         
-      multiSSB = cfBuffer->multiSSB;                                /* re-use the multiSSB times for the SFT midpoints */
-      multiAMcoef = cfBuffer->multiAMcoef;                          /* re-use AM coefficients */
-      multiFa_resampled = cfBuffer->multiFa_resampled;              /* re-use resampled multidetector Fa timeseries */
-      multiFb_resampled = cfBuffer->multiFb_resampled;              /* re-use resampled multidetector Fb timeseries */
+    {
+
+      fprintf(stdout,"*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
+
+      /* temporary timeseries used to store the unbarycentred antenna weighted Fa and Fb timeseries */
+      MultiCOMPLEX8TimeSeries *multiFa = NULL;
+      MultiCOMPLEX8TimeSeries *multiFb = NULL;
       
-    } 
-  /* otherwise we need to (re)compute all of the sky position dependent quantities */
-  else {
-    
-    MultiCOMPLEX8TimeSeries *multiFa = NULL;
-    MultiCOMPLEX8TimeSeries *multiFb = NULL;
-    
-    /* compute the SSB times corresponding to the midpoints of each SFT for the current sky position for all detectors */
-    skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    skypos.longitude = doppler->Alpha;
-    skypos.latitude  = doppler->Delta;
-    TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
-     
-    /* compute the AM parameters for each detector */
-    LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos );
-    BEGINFAIL ( status ) {
-      XLALDestroyMultiSSBtimes ( multiSSB );
-    } ENDFAIL (status);
-    
-    /* noise-weight Antenna-patterns and compute A,B,C */
-    if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-        
-    /* Generate a(t) and b(t) weighted heterodyned downsampled timeseries */
-    if ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, multiTimeseries,
-                                                   multiAMcoef, multiSFTs) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-                
-    /* Perform barycentric resampling on the multi-detector timeseries */
-    if ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled, 
-                                                         multiFa, multiFb, multiSSB, multiSFTs, 
-                                                         df_out) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-    }
-    
-    /* now buffer all of this for the next call to this function in case it uses the same sky position */
-    /* first we destroy all of the previous buffered data */
-    if ( cfBuffer->multiSSB ) XLALDestroyMultiSSBtimes ( cfBuffer->multiSSB );
-    if ( cfBuffer->multiAMcoef ) XLALDestroyMultiAMCoeffs ( cfBuffer->multiAMcoef );
-    if ( cfBuffer->multiFa_resampled ) XLALDestroyMultiCOMPLEX8TimeSeries ( cfBuffer->multiFa_resampled );
-    if ( cfBuffer->multiFb_resampled ) XLALDestroyMultiCOMPLEX8TimeSeries ( cfBuffer->multiFb_resampled );
-    
-    /* then we buffer the new data */
-    cfBuffer->multiSSB = multiSSB;
-    cfBuffer->Alpha = doppler->Alpha;
-    cfBuffer->Delta = doppler->Delta;
-    cfBuffer->multiDetStates = multiDetStates;
-    cfBuffer->multiAMcoef = multiAMcoef;
-    cfBuffer->multiFa_resampled = multiFa_resampled;
-    cfBuffer->multiFb_resampled = multiFb_resampled;
-    
-    /* free multiFa and MultiFb - we won't need them again since we're storing the resampled versions */
-    XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa );
-    XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb );
+      fprintf(stderr,"freeing all of the sky dependent buffered quantities\n");
+      /* free all of the non-null quantities we're about to regenerate and point them to NULL */
+      /* if ( cfBuffer->multiAMcoef ) XLALDestroyMultiAMCoeffs( cfBuffer->multiAMcoef ); */
+/*       if ( cfBuffer->multiSSB ) XLALDestroyMultiSSBtimes( cfBuffer->multiSSB ); */
+/*       if ( cfBuffer->multiFa_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFa_resampled ); */
+/*       if ( cfBuffer->multiFb_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFb_resampled ); */
+/*       cfBuffer->multiAMcoef = NULL; */
+/*       cfBuffer->multiSSB = NULL;  */
+/*       cfBuffer->multiFa_resampled = NULL;  */
+/*       cfBuffer->multiFb_resampled = NULL;  */
+      
+      /* compute the SSB times corresponding to the midpoints of each SFT for the current sky position for all detectors */
+      skypos.system = COORDINATESYSTEM_EQUATORIAL;
+      skypos.longitude = doppler->Alpha;
+      skypos.latitude  = doppler->Delta;
+      TRY ( LALGetMultiSSBtimes ( status->statusPtr, &multiSSB, cfBuffer->multiDetStates, skypos, doppler->refTime, params->SSBprec ), status );
+      
+      /* compute the AM parameters for each detector */
+      LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, cfBuffer->multiDetStates, skypos );
+      BEGINFAIL ( status ) {
+	XLALDestroyMultiSSBtimes ( multiSSB );
+      } ENDFAIL (status);
+      
+      /* noise-weight Antenna-patterns and compute A,B,C */
+      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      }
+      
+      /* Generate a(t) and b(t) weighted heterodyned downsampled timeseries */
+      if ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, cfBuffer->multiTimeseries,
+						      multiAMcoef, multiSFTs) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      }
+      
+      /* Perform barycentric resampling on the multi-detector timeseries */
+      if ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled, 
+							    multiFa, multiFb, multiSSB, multiSFTs, 
+							    df_out) != XLAL_SUCCESS ) {
+	LALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+      }
+      
+      /* free multiFa and MultiFb - we won't need them again since we're storing the resampled versions */
+      XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa );
+      XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb );
+      
+      /* buffer all new sky position dependent values - after clearing them */
+      cfBuffer->Alpha = doppler->Alpha;
+      cfBuffer->Delta = doppler->Delta;
 
-  } /* could not reuse previously buffered quantities */
+      XLALDestroyMultiSSBtimes( cfBuffer->multiSSB );
+      cfBuffer->multiSSB = multiSSB;
 
+      XLALDestroyMultiAMCoeffs( cfBuffer->multiAMcoef );
+      cfBuffer->multiAMcoef = multiAMcoef;
+
+      XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFa_resampled );
+      XLALDestroyMultiCOMPLEX8TimeSeries( cfBuffer->multiFb_resampled ); 
+      cfBuffer->multiFa_resampled = multiFa_resampled;
+      cfBuffer->multiFb_resampled = multiFb_resampled;
+      
+    } /* could not reuse previously buffered quantities */
+
+  /* End of the sky position dependent quantity buffering                                                     */
+  /************************************************************************************************************/
   
   /* store AM coefficient integrals in local variables */
-  if ( multiAMcoef ) {
-    Ad = multiAMcoef->Mmunu.Ad;
-    Bd = multiAMcoef->Mmunu.Bd;
-    Cd = multiAMcoef->Mmunu.Cd;
-    Dd_inv = 1.0 / multiAMcoef->Mmunu.Dd;
+  if ( cfBuffer->multiAMcoef ) {
+    Ad = cfBuffer->multiAMcoef->Mmunu.Ad;
+    Bd = cfBuffer->multiAMcoef->Mmunu.Bd;
+    Cd = cfBuffer->multiAMcoef->Mmunu.Cd;
+    Dd_inv = 1.0 / cfBuffer->multiAMcoef->Mmunu.Dd;
   }
   else {
     LALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
@@ -344,19 +349,19 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     
   /* apply spin derivitive correction to resampled timeseries */
   /* this function only applies a correction if there are any non-zero spin derivitives */
-  if ( XLALSpinDownCorrectionMultiFaFb(&multiFa_resampled,&multiFb_resampled,doppler) != XLAL_SUCCESS ) {
+  if ( XLALSpinDownCorrectionMultiFaFb(&(cfBuffer->multiFa_resampled),&(cfBuffer->multiFb_resampled),doppler) != XLAL_SUCCESS ) {
     LALPrintError("\nXLALSpinDownCorrectionMultiFaFb() failed with error = %d\n\n", xlalErrno );
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   }
-
+  
   /**********************************************************************************/
   /* we now compute the FFTs of the resampled functions Fa and Fb for each detector */
   /* and combine them into the multi-detector F-statistic */
 
   /* we use the first detector Fa time series to obtain the number of time samples and the sampling time */
   /* these should be the same for all Fa and Fb timeseries */
-  numSamples = multiFa_resampled->data[0]->data->length;
-  dt = multiFa_resampled->data[0]->deltaT;
+  numSamples = cfBuffer->multiFa_resampled->data[0]->data->length;
+  dt = cfBuffer->multiFa_resampled->data[0]->deltaT;
   
   /* allocate memory for Fa(f) and Fb(f) and individual detector FFT outputs */
   if ( (Faf_resampled = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
@@ -379,25 +384,19 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   /* loop over detectors */
   for (i=0;i<numDetectors;i++) {
   
-    COMPLEX8Vector *ina = (COMPLEX8Vector*)multiFa_resampled->data[i]->data; /* we point the input to the current detector Fa timeseries */
-    COMPLEX8Vector *inb = (COMPLEX8Vector*)multiFb_resampled->data[i]->data; /* we point the input to the current detector Fb timeseries */
-
-    /* printf("start = %d %d reftime = %d %d\n",multiFa_resampled->data[0]->epoch.gpsSeconds,multiFa_resampled->data[0]->epoch.gpsNanoSeconds,doppler->refTime.gpsSeconds,doppler->refTime.gpsNanoSeconds); */
-/*     printf("fdot = %6.12e\n",doppler->fkdot[1]); */
-/*     printf("SSBstart = %d %d\n",multiFa_resampled->data[0]->epoch.gpsSeconds,multiFa_resampled->data[0]->epoch.gpsNanoSeconds); */
-/*     printf("SSBrefTime = %d %d\n",doppler->refTime.gpsSeconds,doppler->refTime.gpsNanoSeconds); */
-/*     printf("numTimeSamples = %d\n",numSamples); */
+    COMPLEX8Vector *ina = (COMPLEX8Vector*)cfBuffer->multiFa_resampled->data[i]->data; /* we point the input to the current detector Fa timeseries */
+    COMPLEX8Vector *inb = (COMPLEX8Vector*)cfBuffer->multiFb_resampled->data[i]->data; /* we point the input to the current detector Fb timeseries */
 
     /* initialise output vectors to zero for safety */
     memset(outa->data,0,numSamples*sizeof(COMPLEX8));
     memset(outb->data,0,numSamples*sizeof(COMPLEX8));
-   
+    
     /* Fourier transform the resampled Fa(t) and Fb(t) */
     if (XLALCOMPLEX8VectorFFT(outa,ina,pfwd)!= XLAL_SUCCESS)
       ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
     if (XLALCOMPLEX8VectorFFT(outb,inb,pfwd)!= XLAL_SUCCESS)
       ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
-  
+    
     /*  add to summed Faf and Fbf and normalise by dt */
     for (j=0;j<numSamples;j++) {
       Faf_resampled->data[j].re += outa->data[j].re*dt;
@@ -405,10 +404,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
       Fbf_resampled->data[j].re += outb->data[j].re*dt;
       Fbf_resampled->data[j].im += outb->data[j].im*dt;
     }
-  
+    
   } /* end loop over detectors */
-  
-  /* the complex FFT output is shifted such that the heterodyne frequency is at DC */
+
+/* the complex FFT output is shifted such that the heterodyne frequency is at DC */
   /* we need to shift the negative frequencies to before the positive ones */
   if ( XLALFFTShiftCOMPLEX8Vector(&Faf_resampled) != XLAL_SUCCESS )
     ABORT ( status, xlalErrno, "XLALCOMPLEX8VectorFFT() failed!\n");
@@ -418,7 +417,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   /* define new initial frequency of the frequency domain representations of Fa and Fb */
   /* before the shift the zero bin was the heterodyne frequency */
   /* now we've shifted it by N - NhalfPosDC(N) bins */
-  f0_shifted = multiFa_resampled->data[0]->f0 - NhalfNeg(numSamples) * df_out;
+  f0_shifted = cfBuffer->multiFa_resampled->data[0]->f0 - NhalfNeg(numSamples) * df_out;
   
   /* loop over requested output frequencies and construct F *NOT* 2F */
   {
@@ -449,7 +448,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   XLALDestroyCOMPLEX8Vector( outa );
   XLALDestroyCOMPLEX8Vector( outb ); 
   XLALDestroyCOMPLEX8FFTPlan ( pfwd );
-  
+
+  /* IMPORTANT - point the input buffer pointer to the buffered data */
+  params->buffer = cfBuffer;
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -507,7 +509,7 @@ MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
     }
 
   /* allocate memory for the output structure */
-  if ((out = XLALMalloc(sizeof(MultiCOMPLEX8TimeSeries))) == NULL) {
+  if ((out = (MultiCOMPLEX8TimeSeries*)XLALMalloc(sizeof(MultiCOMPLEX8TimeSeries))) == NULL) {
     XLALPrintError ("%s: Failed to allocate XLALMalloc(%d)\n", fn, sizeof(MultiCOMPLEX8TimeSeries));
     XLAL_ERROR_NULL (fn, XLAL_ENOMEM);
   }
@@ -1551,20 +1553,20 @@ XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
   UINT4 X;
   COMPLEX8TimeSeries *tmp;
 
-  if ( ! multiTimes )
+  if ( ! multiTimes ) {
     return;
-
-  if ( multiTimes->data )
-    {
-      for ( X=0; X < multiTimes->length; X ++ )
-      {
-        if ( (tmp = multiTimes->data[X]) != NULL )
-        {
-          XLALDestroyCOMPLEX8TimeSeries(tmp);
-        } /* if multiTimes->data[X] */
-      } /* for X < numDetectors */
-      LALFree ( multiTimes->data );
-    }
+  }
+  if ( multiTimes->data ) {
+    
+    for ( X=0; X < multiTimes->length; X ++ ) {
+      
+      if ( (tmp = multiTimes->data[X]) != NULL ) {
+	XLALDestroyCOMPLEX8TimeSeries(tmp);
+      } 
+      
+    } 
+    LALFree ( multiTimes->data );
+  }
   LALFree ( multiTimes );
   
   return;
@@ -1576,30 +1578,26 @@ XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
  * buffer-container is not freed (which is why it's passed
  * by value and not by reference...) */
 void
-XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *cfb)
+XLALEmptyComputeFBuffer_RS ( ComputeFBuffer_RS *buffer)
 {
-  XLALDestroyMultiSSBtimes( cfb->multiSSB );
-  cfb->multiSSB = NULL;
-  XLALDestroyMultiSSBtimes( cfb->multiBinary );
-  cfb->multiBinary = NULL;
-  XLALDestroyMultiAMCoeffs( cfb->multiAMcoef );
-  cfb->multiAMcoef = NULL;
-  XLALDestroyMultiCmplxAMCoeffs( cfb->multiCmplxAMcoef );
-  cfb->multiCmplxAMcoef = NULL;
 
-  /* deal with the resampled buffered data if non-null */ 
-  if (cfb->multiTimeseries) 
-    XLALDestroyMultiCOMPLEX8TimeSeries( cfb->multiTimeseries );
-  cfb->multiTimeseries = NULL;
-  if (cfb->multiFa_resampled) 
-    XLALDestroyMultiCOMPLEX8TimeSeries( cfb->multiFa_resampled );
-  cfb->multiFa_resampled = NULL;
-  if (cfb->multiFb_resampled) 
-    XLALDestroyMultiCOMPLEX8TimeSeries( cfb->multiFb_resampled );
-  cfb->multiFb_resampled = NULL;
-  if (cfb) 
-    XLALFree(cfb);
-  cfb = NULL;
+  if ( buffer->multiSSB ) XLALDestroyMultiSSBtimes( buffer->multiSSB );
+  buffer->multiSSB = NULL;
+  if ( buffer->multiBinary ) XLALDestroyMultiSSBtimes( buffer->multiBinary );
+  buffer->multiBinary = NULL;
+  if ( buffer->multiAMcoef) XLALDestroyMultiAMCoeffs( buffer->multiAMcoef );
+  buffer->multiAMcoef = NULL;
+  if ( buffer->multiCmplxAMcoef) XLALDestroyMultiCmplxAMCoeffs( buffer->multiCmplxAMcoef );
+  buffer->multiCmplxAMcoef = NULL;
+  if ( buffer->multiTimeseries) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiTimeseries );
+  buffer->multiTimeseries = NULL;
+  if ( buffer->multiFa_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiFa_resampled );
+  buffer->multiFa_resampled = NULL;
+  if ( buffer->multiFb_resampled) XLALDestroyMultiCOMPLEX8TimeSeries( buffer->multiFb_resampled ); 
+  buffer->multiFb_resampled = NULL;
+  if ( buffer->multiDetStates) XLALDestroyMultiDetectorStateSeries( buffer->multiDetStates);
+  buffer->multiDetStates = NULL;
+  /* if ( buffer ) XLALFree(buffer); */
 
   return; 
 
