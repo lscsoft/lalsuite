@@ -205,7 +205,8 @@ int MAIN( int argc, char *argv[]) {
   REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;
-
+  ComputeFBufferVector_RS resampbuffers;  /* used to store the buffered quantities used in repeated calls to ComputeFstatFreqBand_RS */
+  
   /* Semicoherent variables */
   static SemiCoherentParams semiCohPar;
 
@@ -704,7 +705,7 @@ int MAIN( int argc, char *argv[]) {
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
   CFparams.edat = edat;
-
+ 
   /*---------- set up stuff for semi-coherent part ---------*/
   /* set up some semiCoherent parameters */
   semiCohPar.tsMid = midTstack;
@@ -733,7 +734,15 @@ int MAIN( int argc, char *argv[]) {
     return(HIERARCHICALSEARCH_EMEM);
   }
 
-
+  /* allocate buffer memory for resampling */
+  if (uvar_useResamp) {
+    resampbuffers.length = nStacks;
+    if ( (resampbuffers.data = (ComputeFBuffer_RS **)XLALCalloc(nStacks,sizeof(ComputeFBuffer_RS *))) == NULL ) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+  }
+  
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
@@ -1069,11 +1078,18 @@ int MAIN( int argc, char *argv[]) {
           myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg;
 
           if (uvar_useResamp) {
-
+	   
+	    /* point the params buffer to the current segment buffer */
+	    CFparams.buffer = resampbuffers.data[k];
+	    printf("k = %d\n",k);
             /* Resampling method implementation to compute the F-statistic */
             LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint,
                                                stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
                                                stackMultiDetStates.data[k], &CFparams), &status);
+	    
+	    /* repoint the buffer vector element to the potentially modified buffer */
+	    resampbuffers.data[k] = CFparams.buffer;
+
           }
           else {
 
@@ -1496,13 +1512,14 @@ int MAIN( int argc, char *argv[]) {
     }
   LALFree(fstatVector.data);
 
-
   /* if resampling is used then free buffer */
-  /*
-  if ( uvar_useResamp ) {
-    XLALEmptyComputeFBuffer_RS( CFparams.buffer );
-  }
-  */
+   if ( uvar_useResamp ) {
+     for (k=0;k<resampbuffers.length;k++) {
+       XLALEmptyComputeFBuffer_RS( resampbuffers.data[k] ); 
+       XLALFree(resampbuffers.data[k]);
+     }
+     XLALFree(resampbuffers.data);
+   } 
 
   /* free Vel/Pos/Acc vectors and ephemeris */
   XLALDestroyREAL8VectorSequence( posStack );
