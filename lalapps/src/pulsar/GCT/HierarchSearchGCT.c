@@ -734,9 +734,10 @@ int MAIN( int argc, char *argv[]) {
     return(HIERARCHICALSEARCH_EMEM);
   }
 
-  /* allocate buffer memory for resampling */
+  /* allocate buffer memory for resampling - initialise first */
+  resampbuffers.length = nStacks;
+  resampbuffers.data = NULL;
   if (uvar_useResamp) {
-    resampbuffers.length = nStacks;
     if ( (resampbuffers.data = (ComputeFBuffer_RS **)XLALCalloc(nStacks,sizeof(ComputeFBuffer_RS *))) == NULL ) {
       fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
       return(HIERARCHICALSEARCH_EMEM);

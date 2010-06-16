@@ -118,7 +118,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 /*   static const CHAR *fn = "ComputeFStatFreqBand_RS()"; */
 
   UINT4 numDetectors; 
-  ComputeFBuffer_RS *cfBuffer = params->buffer;
+  ComputeFBuffer_RS *cfBuffer = NULL;
   MultiDetectorStateSeries *multiDetStates = NULL;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
@@ -155,7 +155,11 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
   Tsft = 1.0 / firstSFT->deltaF;                  /* define the length of an SFT (assuming 1/T resolution) */
   f0_sft = firstSFT->f0;                          /* define the frequency of the first bin in the SFT */  
-  
+
+  /* here we set the input MultiDetectorStateSeries to NULL since we don't ever use it */
+  /* this is ugly but preserves the same input variables as used for the non-resampling version */
+  dummy = NULL;
+
   /* check that the pre-allocated output vector doesn't point to NULL */ 
   ASSERT ( fstatVector, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   ASSERT ( fstatVector->data, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
