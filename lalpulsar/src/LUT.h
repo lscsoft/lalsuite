@@ -18,16 +18,12 @@
  */
 
 /** \file
- * \addtogroup moduleHoughPulsar
+ * \ingroup pulsarHough
  * \date $Date$
  * \brief Provides structures and function prototypes required for the construction of look up tables
    that are the core for building the Hough maps.
  *  \author Sintes, A.M, Papa, M.A. and Krishnan, B.
  * File Name: LUT.h
- *
- *
- *
- * $Id$
  *
  * History:   Created by Sintes May 11, 2001
  *            Modified by Badri Krishnan Feb 2003
@@ -36,11 +32,11 @@
 \par Description
 
  Our goal is the construction of Hough maps. In order to produce them
- efficiently, the present implemetation makes use of {\sc lut}s.
+ efficiently, the present implemetation makes use of <tt>lut</tt>s.
  Here we provide the necessary routines for their construction and use.\\
 
  In principle, the subroutines provided are valid for
-  {\sc any} Hough master equation of the form:
+  <i>any</i> Hough master equation of the form:
    \f$ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,\f$
  where \f$\nu\f$ is the measured frequency of the signal at time \f$t\f$,
   \f$F_0\f$ intrinsic frequency of the signal at that time, \f$\hat n\f$ location of the
@@ -95,9 +91,9 @@ intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\
    will be enhanced.\\
 
   In order to simplify  (reduce the computational cost of) this task we
-  construct look up tables ({\sc lut}) where the  borders of these annuli are
+  construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
   marked for any possible \f$\nu
-   -F_0\f$ value. Since we work on a discrete space these {\sc lut} are
+   -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
    valid for many \f$F_0\f$ values.\\
 
 \par Uses
@@ -131,7 +127,7 @@ $Id$
 \label{s:LUT.h}
 
 Provides structures and functions required for the construction of look up tables
-{\sc (lut)} that are the core for building the Hough maps.
+{<tt>(lut)</tt>} that are the core for building the Hough maps.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Synopsis}
@@ -143,11 +139,11 @@ Provides structures and functions required for the construction of look up table
 
 
  Our goal is the construction of Hough maps. In order to produce them
- efficiently, the present implemetation makes use of {\sc lut}s.
+ efficiently, the present implemetation makes use of <tt>lut</tt>s.
  Here we provide the necessary routines for their construction and use.\\
 
  In principle, the subroutines provided are valid for
-  {\sc any} Hough master equation of the form:
+  any Hough master equation of the form:
    $$ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,$$
  where $\nu$ is the measured frequency of the signal at time $t$,
   $F_0$ intrinsic frequency of the signal at that time, $\hat n$ location of the
@@ -202,9 +198,9 @@ intrinsic  frequency and spin-down parameters of the source at time $\hat t_0$.\
    will be enhanced.\\
 
   In order to simplify  (reduce the computational cost of) this task we
-  construct look up tables ({\sc lut}) where the  borders of these annuli are
+  construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
   marked for any possible $\nu
-   -F_0$ value. Since we work on a discrete space these {\sc lut} are
+   -F_0$ value. Since we work on a discrete space these <tt>lut</tt> are
    valid for many $F_0$ values.\\
 
 %\begin{figure}
@@ -258,7 +254,7 @@ represent/approximate a circle by  a line. \\
 \texttt{PIXERR     0.1}: Maximum \lq\lq error'', in terms of
 the width of the thinnest annulus,
  which allows one to consider two border equivalents.
-It is only relevant for determining the {\sc lut} frequency range validity.\\
+It is only relevant for determining the lut frequency range validity.\\
 
 
 \texttt{PIXELFACTORX  2}: Width of the thinnest annulus in terms of pixels

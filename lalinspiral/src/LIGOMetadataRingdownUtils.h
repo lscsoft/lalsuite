@@ -55,6 +55,16 @@ typedef enum
 }
 lalringdown_spectrum_type;
 
+typedef enum
+{
+  LALRINGDOWN_DATATYPE_SIM,
+  LALRINGDOWN_DATATYPE_ZERO,
+  LALRINGDOWN_DATATYPE_UNCAL,
+  LALRINGDOWN_DATATYPE_HT_REAL4,
+  LALRINGDOWN_DATATYPE_HT_REAL8
+}
+lalringdown_data_type;
+
 typedef struct
 tagSnglRingdownAccuracy
 {
