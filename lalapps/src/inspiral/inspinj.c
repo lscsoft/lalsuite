@@ -217,8 +217,8 @@ REAL8 probability_redshift(REAL8 rshift)
 {
   REAL8 pz;
 
-  pz = - 17.615*pow(rshift,5.) + 288.31*pow(rshift,4.) - 1288.5*pow(rshift,3.) 
-     + 3345.1*rshift*rshift + 4280.4*rshift + 0.047017;
+  p = 0.75673*pow(rshift,4.) - 4.348*pow(rshift,3.) + 6.2793*rshift*rshift 
+	- 0.33247*rshift + 0.0087611;
 
 	return pz;
 }
