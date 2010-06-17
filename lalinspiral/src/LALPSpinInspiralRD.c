@@ -386,6 +386,62 @@ void LALPSpinInspiralRD (
    RETURN(status);
 }
 
+void LALPSpinInspiralRDFreqDom (
+   LALStatus        *status,
+   REAL4Vector      *signalvec,
+   InspiralTemplate *params
+   )
+{
+
+  REAL4Vector *tsignalvec = NULL;
+  REAL4FFTPlan *forwPlan = NULL;
+  
+  UINT4 count,n;
+  InspiralInit paramsInit;
+  INITSTATUS(status, "LALPSpinInspiralRDFDomain", LALPSPININSPIRALRDFDomainC);
+  ATTATCHSTATUSPTR(status);
+  
+  ASSERT(signalvec,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec->data,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params->nStartPad >= 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->nEndPad >= 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->totalMass > 0., status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  
+  LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
+  CHECKSTATUSPTR(status);
+  
+  n=signalvec->length;
+  memset(tsignalvec->data, 0, n * sizeof( REAL4 ));
+  memset(signalvec->data, 0, n * sizeof( REAL4 ));
+   /* Call the engine function */
+   LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   CHECKSTATUSPTR( status );
+
+  /* Fourier transform */
+   forwPlan = XLALCreateForwardREAL4FFTPlan(n, 0);
+   if (forwPlan == NULL)
+     ABORTXLAL(status);
+  XLALREAL4VectorFFT(signalvec, tsignalvec, forwPlan);
+  XLALDestroyREAL4Vector(tsignalvec);
+  XLALDestroyREAL4FFTPlan(forwPlan);   
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 
 NRCSID (LALPSPININSPIRALRDTEMPLATESC,"$Id$");
 
@@ -401,6 +457,59 @@ void LALPSpinInspiralRDTemplates (
    )
 {
    UINT4 count;
+
+   InspiralInit paramsInit;
+
+   INITSTATUS(status, "LALPSpinInspiralRDTemplates", LALPSPININSPIRALRDTEMPLATESC);
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT(signalvec1,  status,
+	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec1->data,  status,
+   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2,  status,
+	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signalvec2->data,  status,
+   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(params,  status,
+   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(params->nStartPad >= 0, status,
+   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->nEndPad >= 0, status,
+   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->fLower > 0, status,
+   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->tSampling > 0, status,
+   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->totalMass > 0., status,
+   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
+   CHECKSTATUSPTR(status);
+   LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
+   CHECKSTATUSPTR(status);
+ 
+   LALInspiralInit(status->statusPtr, params, &paramsInit);
+
+   memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
+   memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
+
+   LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+
+   RETURN(status);
+}
+
+void LALPSpinInspiralRDTemplatesFreqDom (
+   LALStatus        *status,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
+   InspiralTemplate *params
+   )
+{
+  UINT4 count,n;
+
+   REAL4Vector *tsignalvec1=NULL;
+   REAL4Vector *tsignalvec1=NULL;
 
    InspiralInit paramsInit;
 
@@ -622,6 +731,11 @@ void LALPSpinInspiralRDForInjection (
   RETURN(status);
 
 } /* End LALPSpinInspiralRDForInjection */
+
+void LALPSpinInspiralRDFreqWaveform ( LALStatus        *status,
+				      REAL4Vector      *signalvec,
+				      InspiralTemplate *insp_template)
+{
 
 /*
  *
