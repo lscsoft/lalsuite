@@ -1590,7 +1590,7 @@ XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, RE
 } /* XLALAmplitudeParams2Vect() */
 
 
-/** Compute amplitude params {A^\tilde{mu} = {h0,cosi,psi,phi0} from amplitude-vector A^mu
+/** Compute amplitude params {A_MLE^{mu} = {h0,cosi,psi,phi0} from amplitude-vector A^mu
     Adapted from algorithm in LALEstimatePulsarAmplitudeParams().
 */
 int

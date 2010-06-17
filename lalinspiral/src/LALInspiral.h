@@ -127,7 +127,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGESWITCH       "Unknown case in switch"
 #define LALINSPIRALH_MSGEMASSCHOICE   "Improper choice for massChoice"
 
-/** ---------------------------------------------------------------------  </lalErrTable> */
+/* ---------------------------------------------------------------------  </lalErrTable> */
 
 
 

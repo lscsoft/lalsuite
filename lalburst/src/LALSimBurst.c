@@ -102,7 +102,7 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 /**
  * From two time series, s1 and s2, computes and returns
  *
- * \int s1(t) s2(t) \diff t.
+ * \f$\int s1(t) s2(t) \diff t\f$
  */
 
 
@@ -139,11 +139,11 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 /**
  * Returns what people call the "root-sum-square strain".  Infact, this is
  *
- * \sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},
+ * \f$\sqrt{\sum (h_{+}^{2} + h_{x}^{2}) \Delta t},\f$
  *
  * which is an approximation of
  *
- * \sqrt{\int (h_{+}^{2} + h_{x}^{2}) \diff t}.
+ * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) \diff t}.\f$
  */
 
 
@@ -160,7 +160,7 @@ REAL8 XLALMeasureHrss(
  * Given the Fourier transform of a real-valued function h(t), compute and
  * return the integral of the square of its derivative:
  *
- * \int \dot{h}^{2} \diff t.
+ * \f$\int \stackrel{.}{h}^{2} \diff t\f$.
  *
  * The normalization factors in this function assume that
  * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
@@ -212,9 +212,9 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
  * Given h+ and hx in the waveframe, compute and return E/r^2.  The return
  * value is in LAL's native units, computed by evaluating
  *
- * \int [ \dot{h}_{+}^{2} + \dot{h}_{\cross}^{2} ] \diff t
+ * \f$\int [ \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\cross}^{2} ] \diff t\f$
  *
- * and multiplying by LAL_C_SI^{3} / (4 LAL_G_SI).
+ * and multiplying by LAL_C_SI\f$^{3} / (4 LAL_G_SI).\f$
  */
 
 
@@ -346,16 +346,15 @@ int XLALGenerateImpulseBurst(
  * Parameters:
  *
  * duration
- * 	time domain Gaussian envelope is \propto \exp ( -\frac{1}{2} t^{2}
- * 	/ duration^{2} ) where t and duration are in seconds.
+ * 	time domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} t^{2} / duration^{2} )\f$
+ *      where t and duration are in seconds.
  * frequency
  * bandwidth
- * 	frequency domain Gaussian envelope is \propto \exp ( -\frac{1}{2}
- * 	(f - f_{0})^{2} / bandwidth^{2} ) where f and bandwidth are in
- * 	Hertz.
+ * 	frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
+ *      where f and bandwidth are in Hertz.
  * int_hdot_squared
- * 	waveform is normalized so that \int (\dot{h}_{+}^{2} +
- * 	\dot{h}_{\times}^{2}) \diff t equals this
+ * 	waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \diff t\f$
+ *       equals this
  * delta_t
  * 	the sample rate of the time series to construct
  * rng
@@ -509,7 +508,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	XLALDestroyREAL8Window(window);
 
 	/* normalize the waveform to achieve the desired \int
-	 * (\dot{h}_{+}^{2} + \dot{h}_{\times}^{2}) dt */
+	 * \f$(\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) dt\f$ */
 
 	norm_factor = sqrt(int_hdot_squared / (XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross)));
 	for(i = 0; i < tilde_hplus->data->length; i++) {
@@ -581,8 +580,8 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 /**
  * Input:
  *
- * Q:  the "Q" of the waveform.  The Gaussian envelope is exp(-1/2 t^{2} /
- * sigma_{t}^{2}) where sigma_{t} = Q / (2 \pi f).  High Q --> long
+ * Q:  the "Q" of the waveform.  The Gaussian envelope is \f$exp(-1/2 t^{2} /
+ * \sigma_{t}^{2})\f$ where \f$\sigma_{t} = Q / (2 \pi f)\f$.  High Q --> long
  * duration.
  *
  * centre_frequency:   the frequency of the sinusoidal oscillations that

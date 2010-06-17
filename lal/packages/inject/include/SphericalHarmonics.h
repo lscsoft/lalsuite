@@ -18,7 +18,7 @@
  */
 
 
-/** \defgroup SphericalHarmonics
+/** \defgroup SphericalHarmonics Spin-weighted Spherical Harmonics
  * \ingroup support
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *

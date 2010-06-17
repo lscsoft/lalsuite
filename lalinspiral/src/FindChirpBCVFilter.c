@@ -400,13 +400,12 @@ LALFindChirpBCVFilterSegment (
   }
 
   /* inverse fft to get q, and qBCV */
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
-      params->qtildeVec, params->invPlan );
-  CHECKSTATUSPTR( status );
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV,
-      params->qtildeVecBCV, params->invPlan );
-  CHECKSTATUSPTR( status );
-
+  XLALCOMPLEX8VectorFFT(params->qVec, params->qtildeVec, params->invPlan);
+  if (params->qVec == NULL)
+    ABORTXLAL(status);
+  XLALCOMPLEX8VectorFFT(params->qVecBCV, params->qtildeVecBCV, params->invPlan);
+  if (params->qVecBCV == NULL)
+    ABORTXLAL(status);
 
 
   /*

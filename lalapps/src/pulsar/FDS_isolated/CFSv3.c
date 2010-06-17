@@ -19,9 +19,8 @@
 
 /*********************************************************************************/
 /** \author R. Prix
- * \file CFSv3
- * \brief
- * Calculate the Fourier transform over the total timespan from a set of SFTs
+ * \file
+ * \brief Calculate the Fourier transform over the total timespan from a set of SFTs
  *
  *********************************************************************************/
 #include "config.h"
