@@ -168,17 +168,16 @@ LALFindChirpChisqVetoInit (
 
 
   /* create plan for chisq filter */
-  LALCreateReverseComplexFFTPlan( status->statusPtr,
-      &(params->plan), numPoints, 0 );
-  CHECKSTATUSPTR( status );
+  params->plan = XLALCreateReverseCOMPLEX8FFTPlan(numPoints, 0);
+  if (params->plan == NULL)
+    ABORTXLAL(status);
 
   /* create one vector for the fourier domain data */
   LALCCreateVector( status->statusPtr,
       &(params->qtildeBinVec), numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-          &(params->plan) ), status );
+    XLALDestroyCOMPLEX8FFTPlan(params->plan);
   }
   ENDFAIL( status );
 
@@ -190,8 +189,7 @@ LALFindChirpChisqVetoInit (
         &(params->qtildeBinVecBCV), numPoints );
     BEGINFAIL( status )
     {
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-            &(params->plan) ), status );
+      XLALDestroyCOMPLEX8FFTPlan(params->plan);
       TRY( LALCDestroyVector( status->statusPtr,
             &(params->qtildeBinVec) ), status );
     }
@@ -211,8 +209,7 @@ LALFindChirpChisqVetoInit (
       TRY( LALCDestroyVector( status->statusPtr,
             &(params->qtildeBinVecBCV) ), status );
     }
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-          &(params->plan) ), status );
+    XLALDestroyCOMPLEX8FFTPlan(params->plan);
     ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
   }
 
@@ -234,8 +231,7 @@ LALFindChirpChisqVetoInit (
         TRY( LALCDestroyVector( status->statusPtr,
               &(params->qtildeBinVecBCV) ), status );
       }
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-            &(params->plan) ), status );
+    XLALDestroyCOMPLEX8FFTPlan(params->plan);
     }
     ENDFAIL( status );
   }
@@ -255,8 +251,7 @@ LALFindChirpChisqVetoInit (
         TRY( LALCDestroyVector( status->statusPtr,
               &(params->qtildeBinVecBCV) ), status );
       }
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-            &(params->plan) ), status );
+      XLALDestroyCOMPLEX8FFTPlan(params->plan);
       ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
     }
 
@@ -284,8 +279,7 @@ LALFindChirpChisqVetoInit (
           TRY( LALCDestroyVector( status->statusPtr,
                 &(params->qtildeBinVecBCV) ), status );
         }
-        TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-              &(params->plan) ), status );
+      XLALDestroyCOMPLEX8FFTPlan(params->plan);
       }
       ENDFAIL( status );
     }
@@ -407,9 +401,7 @@ LALFindChirpChisqVetoFinalize (
   }
 
   /* destroy plan for chisq filter */
-  LALDestroyComplexFFTPlan( status->statusPtr, &(params->plan) );
-  CHECKSTATUSPTR( status );
-
+  XLALDestroyCOMPLEX8FFTPlan(params->plan);
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

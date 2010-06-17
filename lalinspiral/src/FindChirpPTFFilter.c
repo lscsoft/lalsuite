@@ -58,8 +58,6 @@ NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
 /* <lalVerbatim file="FindChirpPTFFilterCP"> */
 
-double rint(double x);
-
 void
 LALFindChirpPTFFilterSegment (
     LALStatus                  *status,
@@ -254,9 +252,9 @@ LALFindChirpPTFFilterSegment (
     qVec.data = params->PTFqVec->data + (i * numPoints);
 
     /* inverse fft to get q */
-    LALCOMPLEX8VectorFFT( status->statusPtr, &qVec, params->qtildeVec,
-        params->invPlan );
-    CHECKSTATUSPTR( status );
+    XLALCOMPLEX8VectorFFT(&qVec, params->qtildeVec, params->invPlan);
+    if (&qVec == NULL)
+      ABORTXLAL(status);
   }
 
   /* now we have PTFqVec which contains <s|Q^I_0> + i <s|Q^I_\pi/2> */
