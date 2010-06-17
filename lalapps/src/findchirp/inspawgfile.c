@@ -604,7 +604,7 @@ main(int argc, char **argv)
       /* assign temporary memory for the frequency data */
       fseries = (REAL4FrequencySeries *) 
           LALMalloc (sizeof(REAL4FrequencySeries));
-      strncpy( fseries->name, "anonymous", LALNameLength * sizeof(CHAR) );
+      strncpy( fseries->name, "anonymous", LALNameLength );
       fseries->data = NULL;
       SUB( LALCreateVector (&stat, &fseries->data, 
                   length/2 + 1), &stat ); 

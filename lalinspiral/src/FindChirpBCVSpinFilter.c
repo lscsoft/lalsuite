@@ -424,17 +424,19 @@ LALFindChirpBCVSpinFilterSegment (
    *
    */
 
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
-  	params->qtildeVec, params->invPlan );
-  CHECKSTATUSPTR( status );
+  XLALCOMPLEX8VectorFFT(params->qVec, params->qtildeVec, params->invPlan);
+  if (params->qVec == NULL)
+    ABORTXLAL(status);
 
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin1,
-	params->qtildeVecBCVSpin1, params->invPlan );
-  CHECKSTATUSPTR( status );
+  XLALCOMPLEX8VectorFFT(params->qVecBCVSpin1, params->qtildeVecBCVSpin1,
+      params->invPlan);
+  if (params->qVecBCVSpin1 == NULL)
+    ABORTXLAL(status);
 
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin2,
-	params->qtildeVecBCVSpin2, params->invPlan );
-  CHECKSTATUSPTR( status );
+  XLALCOMPLEX8VectorFFT(params->qVecBCVSpin2, params->qtildeVecBCVSpin2,
+      params->invPlan);
+  if (params->qVecBCVSpin2 == NULL)
+    ABORTXLAL(status);
 
   /*
    *

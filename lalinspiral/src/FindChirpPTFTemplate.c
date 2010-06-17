@@ -212,8 +212,9 @@ LALFindChirpPTFTemplate (
   /* Fourier transform the Q's into the Qtilde's */
   for ( i = 0; i < 5; ++i )
   {
-    LALForwardRealFFT( status->statusPtr, &Qtilde[i], &Q[i],
-        params->fwdPlan);
+    XLALREAL4ForwardFFT(&Qtilde[i], &Q[i], params->fwdPlan);
+    if (&Qtilde[i] == NULL)
+      ABORTXLAL(status);
   }
 
   /* XXX set this to be the correct values XXX */

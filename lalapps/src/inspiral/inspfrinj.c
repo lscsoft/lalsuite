@@ -414,8 +414,7 @@ int main( int argc, char *argv[] )
       inj.deltaT = 1.0/ sampleRate;
       inj.epoch = gpsStartTime;
       inj.sampleUnits = lalADCCountUnit;
-      snprintf( inj.name, LIGOMETA_CHANNEL_MAX, "%s:STRAIN", 
-          ifo );
+      snprintf( inj.name, LALNameLength, "%s:STRAIN", ifo );
       searchsumm.searchSummaryTable->in_start_time = gpsStartTime;
       searchsumm.searchSummaryTable->in_end_time = gpsEndTime;
       numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (inj.deltaT * 1.0e9) 
