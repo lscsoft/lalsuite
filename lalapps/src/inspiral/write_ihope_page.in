@@ -1041,7 +1041,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotcumhist4'
   sections.append(section)
-  titles[section] = "IFAR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
+  titles[section] = "Effective SNR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_4*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
