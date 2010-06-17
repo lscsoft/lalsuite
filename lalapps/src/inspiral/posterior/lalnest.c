@@ -1073,17 +1073,17 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	
 	
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
-	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
-	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);*/
-	XLALMCMCAddParam(parameter,"logdist",log(manual_dist_min)+gsl_rng_uniform(RNG)*(log(manual_dist_max)-log(manual_dist_min)),log(manual_dist_min),log(manual_dist_max),0);
+	XLALMCMCAddParam(parameter, "time",		trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,-1);
+	XLALMCMCAddParam(parameter, "phi",		injTable->phi0,0.0,LAL_TWOPI,-1);
+	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, -1);*/
+	XLALMCMCAddParam(parameter,"logdist",log(injTable->distance),log(manual_dist_min),log(manual_dist_max),-1);
 	
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"long",injTable->longitude,0,LAL_TWOPI,-1);
+	XLALMCMCAddParam(parameter,"lat",injTable->latitude,-LAL_PI/2.0,LAL_PI/2.0,-1);
 	
 	
-	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
-	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
+	XLALMCMCAddParam(parameter,"psi",injTable->polarization,0,LAL_PI*2.0,-1);
+	XLALMCMCAddParam(parameter,"iota",injTable->inclination,0,LAL_PI,-1);
 	
 	
 	return;
