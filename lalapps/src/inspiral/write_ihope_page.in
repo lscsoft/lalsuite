@@ -1459,9 +1459,9 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   section = 'injsqf'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Found injections that are not louder than the loudest slide (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
-  tags[section] = '*'+injection.upper()+'_CAT_4_VETO_QUIETEST_FOUND_COMPARED_TO_ALL_DATA*'
-  captions[section] = 'This table lists the found injections that are not louder than the loudest event in full data time slides. Equivalently, found injections that do not have a FAR of 0. Ordering is by injected decisive distance (second smallest injected effective distance). These tables are shown after category 4 vetoes are applied.'
+  titles[section] = "Loudest injections that are not louder than the loudest slide (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  tags[section] = '*'+injection.upper()+'_CAT_4_VETO_QUIETEST_FOUND_COMPARED_TO_PLAYGROUND*'
+  captions[section] = 'This table shows a list of the loudest injections that are not louder than the loudest event in the playground time slides. Equivalently this is a list of the loudest injections that do not have a FAR of 0. These tables are shown after category 4 vetoes are applied.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
