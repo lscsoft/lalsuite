@@ -29,6 +29,7 @@
 #include <lal/FrameStream.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 
 #include "lalapps.h"
 #include "getdata.h"
@@ -41,7 +42,7 @@ REAL4TimeSeries * get_simulated_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
+    int          dataType,
     REAL8        sampleRate,
     UINT4        simSeed,
     REAL4        simScale
@@ -71,7 +72,7 @@ REAL4TimeSeries * get_simulated_data(
   snprintf( series->name, sizeof( series->name ), "%s_SIM", channelName );
   series->epoch  = *epoch;
   series->deltaT = 1.0/sampleRate;
-  if ( strainData )
+  if ( dataType == LALRINGDOWN_DATATYPE_SIM )
     series->sampleUnits = lalStrainUnit;
   else
     series->sampleUnits = lalADCCountUnit;
@@ -88,7 +89,7 @@ REAL4TimeSeries * get_zero_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
+    int          dataType,
     REAL8        sampleRate
     )
 {
@@ -111,7 +112,7 @@ REAL4TimeSeries * get_zero_data(
   snprintf( series->name, sizeof( series->name ), "%s_ZERO", channelName );
   series->epoch  = *epoch;
   series->deltaT = 1.0/sampleRate;
-  if ( strainData )
+  if ( dataType == LALRINGDOWN_DATATYPE_ZERO )
     series->sampleUnits = lalStrainUnit;
   else
     series->sampleUnits = lalADCCountUnit;
@@ -130,7 +131,7 @@ REAL4TimeSeries * ring_get_frame_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData
+    int          dataType
     )
 {
   FrCache         *cache  = NULL;
@@ -155,7 +156,7 @@ REAL4TimeSeries * ring_get_frame_data(
   XLALFrClose( stream );
 
   /* if this is strain data, correct the units */
-  if ( strainData )
+  if ( dataType == LALRINGDOWN_DATATYPE_HT_REAL4 )
     series->sampleUnits = lalStrainUnit;
 
   return series;
@@ -168,7 +169,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
+    int          dataType,
     REAL8        dblHighPassFreq
     )
 {
@@ -214,9 +215,9 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
     series->data->data[j] = (REAL4)( 1.0 * dblser->data->data[j] );
 
   /* if this is strain data, correct the units */
-  if ( strainData )
+  if ( dataType == LALRINGDOWN_DATATYPE_HT_REAL8 )
     series->sampleUnits = lalStrainUnit;
-
+  
   /* destroy REAL8 time series */
   XLALDestroyREAL8Vector( dblser->data );
   LALFree(dblser);
@@ -363,7 +364,6 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
   LALStatus status = blank_status;
   char name[LALNameLength];
   PassBandParamStruc highpasspar;
-
   if ( frequency > 0.0 )
   {
     highpasspar.nMax = 8;
