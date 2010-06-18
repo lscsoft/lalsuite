@@ -29,9 +29,10 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Segments.h>
 #include <lal/SegmentsIO.h>
+#include <LALAppsVCSInfo.h>
 #include <lalapps.h>
 #include <processtable.h>
-#include <LALAppsVCSInfo.h>
+
 
 RCSID("$Id$");
 
@@ -90,6 +91,8 @@ static void print_usage(char *program)
       "Cuts and Vetos:\n"\
       " [--ifo-cut]       ifo         only keep triggers from specified ifo\n"\
       " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
+      " [--extract-slide]     slide    only keep triggers from specified slide\n"\
+      " [--num-slides]        slides   number of time slides performed \n"\
       " [--snr-threshold] snr_star    discard all triggers with snr less than snr_star\n"\
       " [--rsq-threshold] rsq_thresh  discard all triggers whose rsqveto_duration\n"\
       "                               exceeds rsq_thresh\n"\
@@ -128,7 +131,6 @@ static char *get_next_line( char *line, size_t size, FILE *fp )
 
 int sortTriggers = 0;
 LALPlaygroundDataMask dataType;
-extern int vrbflg;
 
 int main( int argc, char *argv[] )
 {
@@ -136,6 +138,7 @@ int main( int argc, char *argv[] )
   LALStatus status = blank_status;
 
   /*  program option variables */
+  extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
@@ -181,6 +184,8 @@ int main( int argc, char *argv[] )
   SearchSummaryTable   *thisSearchSumm = NULL;
   SummValueTable       *summValueList = NULL;
 
+  int                   extractSlide = 0;
+  int                   numSlides = 0;
   int                   numEvents = 0;
   int                   numEventsKept = 0;
   int                   numEventsInIFO = 0;
@@ -195,16 +200,18 @@ int main( int argc, char *argv[] )
   int                   numSimFound  = 0;
   int                   numMultiFound  = 0;
 
-  MultiInspiralTable    *missedHead = NULL;
-  MultiInspiralTable    *thisEvent = NULL;
-  MultiInspiralTable    *thisInspiralTrigger = NULL;
-  MultiInspiralTable    *inspiralEventList = NULL;
+  MultiInspiralTable   *missedHead = NULL;
+  MultiInspiralTable   *thisEvent = NULL;
+  MultiInspiralTable   *thisInspiralTrigger = NULL;
+  MultiInspiralTable   *inspiralEventList = NULL;
+  MultiInspiralTable   *slideEvent = NULL;
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
-
-  /*CHECK:*/
-  MetadataTable                 savedEvents;
+  MetadataTable         savedEvents;
+  MultiInspiralTable   *tempTable = NULL;
+  LIGOLwXMLStream       results;
+  CHAR                  xmlname[FILENAME_MAX];
 
   /*
    *
@@ -227,8 +234,6 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-
-  /* CHECK: */
   savedEvents.multiInspiralTable = NULL;
   
 
@@ -257,6 +262,8 @@ int main( int argc, char *argv[] )
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
+      {"extract-slide",           required_argument,      0,              'e'},
+      {"num-slides",              required_argument,      0,              'N'},
       {"snr-threshold",           required_argument,      0,              's'},
       {"rsq-threshold",           required_argument,      0,              'r'},
       {"rsq-max-snr",             required_argument,      0,              'R'},
@@ -343,8 +350,8 @@ int main( int argc, char *argv[] )
         break;
 
       case 'V':
-        fprintf( stdout, "Single Inspiral Reader and Injection Analysis\n"
-            "Patrick Brady, Duncan Brown and Steve Fairhurst\n");
+        fprintf( stdout, "Coherent Inspiral Reader and Injection Analysis\n"
+            "Sukanta Bose\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
         break;
@@ -371,6 +378,34 @@ int main( int argc, char *argv[] )
         outputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( outputFileName, optarg, optarg_len );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'e':
+        /* store the number of slides */
+        extractSlide = atoi( optarg );
+        if ( extractSlide == 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "extractSlide must be non-zero: "
+              "(%d specified)\n",
+              long_options[option_index].name, extractSlide );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", extractSlide );
+        break;
+        
+      case 'N':
+        /* store the number of slides */
+        numSlides = atoi( optarg );
+        if ( numSlides < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "numSlides >= 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, numSlides );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numSlides );
         break;
 
       case 'S':
@@ -525,7 +560,7 @@ int main( int argc, char *argv[] )
         if ( cluster_dt <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "custer window must be > 0: "
+              "cluster window must be > 0: "
               "(%lld specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
@@ -703,6 +738,13 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( numSlides && extractSlide )
+  {
+    fprintf( stderr, "--num-slides and --extract-slide both specified\n"
+        "this doesn't make sense\n" );
+    exit( 1 );
+  }
+
   /* save the sort triggers flag */
   if ( sortTriggers )
   {
@@ -852,7 +894,6 @@ int main( int argc, char *argv[] )
       inspiralFileList = XLALSNRCutMultiInspiral( inspiralFileList, 
           snrStar );
       /* count the triggers  */
-      /*CHECK: replaceable:      numFileTriggers = XLALCountMultiInspiralTable( inspiralFileList );*/
       numFileTriggers = XLALCountMultiInspiral( inspiralFileList );
 
       if ( vrbflg ) fprintf( stdout, "Have %d triggers after snr cut\n",
@@ -860,7 +901,7 @@ int main( int argc, char *argv[] )
       numEventsAboveSNRThresh += numFileTriggers;
     }
 
-    /* CHECK: need to add vetoing:
+    /* NOTE: Add vetoing:
     if ( vetoFileName )
     {
       inspiralFileList = XLALVetoMultiInspiral( inspiralFileList, &vetoSegs , ifoName);
@@ -1002,6 +1043,31 @@ int main( int argc, char *argv[] )
     }
   }
 
+
+  /*
+   *
+   * extract specified slide
+   *
+   */
+
+  if ( extractSlide )
+  {
+    MultiInspiralTable *slideTrig = NULL;
+    slideEvent = XLALMultiInspiralSlideCut( &inspiralEventList, extractSlide );
+    /* free events from other slides */
+    while ( inspiralEventList )
+    {
+      thisEvent = inspiralEventList;
+      inspiralEventList = inspiralEventList->next;
+      XLALFreeMultiInspiral( &thisEvent );
+    }
+
+    /* move events to inspiralEventList */
+    inspiralEventList = slideEvent;
+    slideEvent = NULL;
+  }
+
+
   /*
    *
    * cluster the remaining events
@@ -1012,14 +1078,66 @@ int main( int argc, char *argv[] )
   if ( inspiralEventList && clusterchoice )
   {
     if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
-    numClusteredEvents = XLALClusterMultiInspiralTable( &inspiralEventList, 
-        cluster_dt, clusterchoice );
-    if ( vrbflg ) fprintf( stdout, "done\n" );
 
+    if ( !numSlides ) {
+      numClusteredEvents = XLALClusterMultiInspiralTable( &inspiralEventList, 
+        cluster_dt, clusterchoice );
+    }
+    else
+    { 
+      int slide = 0;
+      int numClusteredSlide = 0;
+      MultiInspiralTable *slideEvent = NULL;
+      MultiInspiralTable *slideClust = NULL;
+      
+      if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
+
+      for( slide = -numSlides; slide < (numSlides + 1); slide++)
+      {
+        if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
+        /* extract the slide */
+        slideEvent = XLALMultiInspiralSlideCut( &inspiralEventList, slide );
+        /* run clustering */
+        numClusteredSlide = XLALClusterMultiInspiralTable( &slideEvent, 
+          cluster_dt, clusterchoice);
+        
+        if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
+          numClusteredSlide );
+        numClusteredEvents += numClusteredSlide;
+
+        /* add clustered triggers */
+        if( slideEvent )
+        {
+          if( slideClust )
+          {
+            thisEvent = thisEvent->next = slideEvent;
+          }
+          else
+          {
+            slideClust = thisEvent = slideEvent;
+          }
+          /* scroll to end of list */
+          for( ; thisEvent->next; thisEvent = thisEvent->next);
+        }
+      }
+
+      /* free inspiralEventList -- although we expect it to be empty */
+      while ( inspiralEventList )
+      {
+        thisEvent = inspiralEventList;
+        inspiralEventList = inspiralEventList->next;
+        XLALFreeMultiInspiral( &thisEvent );
+      }
+
+      /* move events to coincHead */
+      inspiralEventList = slideClust;
+      slideClust = NULL;
+    }
+
+    if ( vrbflg ) fprintf( stdout, "done\n" );
     if ( vrbflg ) fprintf( stdout, "%d clustered events \n", 
         numClusteredEvents );
   }
-
 
   /*
    *
@@ -1212,10 +1330,20 @@ int main( int argc, char *argv[] )
           (REAL4) numSimFound / (REAL4) numSimInData );
     }
 
+    if ( extractSlide )
+    {
+      fprintf( fp, "kept only triggers from slide %d\n", extractSlide );
+    }
+
     if ( clusterchoice )
     {
+      if ( numSlides )
+      {
+        fprintf( fp, "clustering triggers from %d slides separately\n",
+            numSlides );
+      }
       fprintf( fp, "number of event clusters with %lld msec window: %d\n",
-          cluster_dt/ 1000000LL, numClusteredEvents ); 
+          cluster_dt/ 1000000LL, numClusteredEvents );
     }
 
     fclose( fp ); 
