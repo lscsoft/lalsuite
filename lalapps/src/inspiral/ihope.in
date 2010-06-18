@@ -101,6 +101,14 @@ parser.add_option("-l", "--node-local-dir",action="store",type="string",\
     help='''directory to write the temporary sql databases. This must be a
 directory that is local to all nodes.''')
 
+parser.add_option("-o", "--node-access-path",action="store",type="string",\
+    metavar=" OUTPATH", \
+    help="node path for outputting the temporary coherent files to.")
+
+parser.add_option("-u", "--username",action="store",type="string",\
+    metavar=" USERNAME", help='''username on cluster for constructing the
+full path-name for outputting the temporary coherent files.''')
+
 parser.add_option("-s", "--gps-start-time",action="store",type="int",\
     metavar=" GPS_START", help="begin analysis at GPS_START")
 
@@ -195,6 +203,16 @@ if not opts.gps_end_time:
 if opts.gps_end_time < opts.gps_start_time:
   print >> sys.stderr, "The GPS end time must be after the GPS start time"
   sys.exit(1)
+
+if not opts.node_access_path:
+  print >> sys.stdout, "WARNING! No node-access-path specified:"
+  print >> sys.stdout, "  Use --node-access-path and --username to speed up"
+  print >> sys.stdout, "  the coherent-stage."
+
+if not opts.username:
+  print >> sys.stdout, "WARNING! No username specified:"
+  print >> sys.stdout, "  Use --node-access-path and --username to speed up"
+  print >> sys.stdout, "  the coherent-stage."
 
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
 
@@ -300,6 +318,8 @@ cp.read(opts.config_file)
 # set gps start and end times in the cp object.
 cp.set("input", "gps-start-time", str(opts.gps_start_time) )
 cp.set("input", "gps-end-time", str(opts.gps_end_time) )
+cp.set("input", "output-path", str(opts.node_access_path))
+cp.set("input", "username",str(opts.username))
 
 # Check for --disable-dag-categories
 
