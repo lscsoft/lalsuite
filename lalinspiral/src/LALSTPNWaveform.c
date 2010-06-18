@@ -268,7 +268,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     LNhxy = LNhx*LNhx + LNhy*LNhy;
     if(LNhxy > 0.0) alphadotcosi = LNhz * (LNhx*dLNhy - LNhy*dLNhx) / LNhxy;
     else	    alphadotcosi = 0.0;
-    
+
     ds = omega - alphadotcosi;
 
     /* copy back into dvalues structure*/
