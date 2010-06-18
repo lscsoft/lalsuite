@@ -485,8 +485,7 @@ int main ( int argc, char *argv[] )
         frStream ), &status );
 
     /* copy the data paramaters from the h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -502,7 +501,7 @@ int main ( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
       "raw data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
@@ -583,8 +582,7 @@ int main ( int argc, char *argv[] )
     }
 
     /* re-copy the data paramaters from h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -656,8 +654,7 @@ int main ( int argc, char *argv[] )
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
-      "filter data sample rate" );
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
   /*
@@ -827,8 +824,7 @@ int main ( int argc, char *argv[] )
     if ( globCalData )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-          "*CAL*%s*.gwf", ifo );
+      snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -849,11 +845,10 @@ int main ( int argc, char *argv[] )
     {
       this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
           "calibration frame %d", i );
       snprintf( this_search_summvar->string,
-          LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
-          calCache->frameFiles[i].url );
+          LIGOMETA_STRING_MAX, "%s", calCache->frameFiles[i].url );
     }
 
     /* generate the response function for the current time */
@@ -1069,17 +1064,15 @@ int main ( int argc, char *argv[] )
   if ( numCoarse )
   {
     templateBank.snglInspiralTable = tmplt;
-    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
-    snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "tmpltbank" );
-    snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "tmpltbank" );
+    snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX,
         "%s", channelName );
     while( (tmplt = tmplt->next) )
     {
-      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
-      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "tmpltbank" );
-      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "tmpltbank" );
+      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX,
           "%s", channelName );
     }
   }

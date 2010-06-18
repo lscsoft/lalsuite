@@ -383,13 +383,13 @@ int main( int argc, char *argv[] )
         /* Store CData frame name  */
 
         snprintf( cDataChanNames->chanNameH1,
-          LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",
+          LALNameLength, "%s:%s_CData_%Ld",
           &thisCoinc->snglInspiral[LAL_IFO_H1]->ifo, frInType, eventID );
         if (vrbflg) fprintf( stdout, "H1 channel: %s\n",
            cDataChanNames->chanNameH1 );
 
         snprintf( cDataChanNames->chanNameH2,      
-          LALNameLength * sizeof(CHAR), "%s:%s_CData_%Ld",             
+          LALNameLength, "%s:%s_CData_%Ld",             
           (*(thisCoinc->snglInspiral[LAL_IFO_H2])).ifo, frInType, eventID );
         if (vrbflg) fprintf( stdout, "H2 channel: %s\n",
            cDataChanNames->chanNameH2 );
@@ -586,7 +586,7 @@ int main( int argc, char *argv[] )
 
       if ( nullStatOut )
       {
-        snprintf( nullStatStr, LALNameLength*sizeof(CHAR), "NULL_STAT_%d", 
+        snprintf( nullStatStr, LALNameLength, "NULL_STAT_%d", 
                      numNullStatFr++ );
         strcpy( nullStatParams->nullStatVec->name, "NullStatistic");
         outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
@@ -657,12 +657,12 @@ int main( int argc, char *argv[] )
   {
     if ( outputPath[0] )
     {
-      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+      snprintf( framename, FILENAME_MAX, "%s/%s.gwf",
                    outputPath, fileName );
     }
     else
     {
-      snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName);
+      snprintf( framename, FILENAME_MAX, "%s.gwf", fileName);
     }
 
     if ( vrbflg ) fprintf( stdout, "Writing null statistic time series to %s.",
@@ -677,12 +677,12 @@ int main( int argc, char *argv[] )
     memset( &results, 0, sizeof(LIGOLwXMLStream) );
     if ( outputPath[0] )
     {
-      snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
+      snprintf( xmlname, FILENAME_MAX, "%s/%s.xml", 
                    outputPath, fileName );
     }
     else
     {
-      snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+      snprintf( xmlname, FILENAME_MAX, "%s.xml", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "Writing xml data to %s.", xmlname );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname ), &status );
@@ -883,7 +883,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
        case 'P':
          memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-         snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
+         snprintf( outputPath, FILENAME_MAX,"%s", optarg );
          ADD_PROCESS_PARAM( "string", "%s", outputPath );
          break;
 

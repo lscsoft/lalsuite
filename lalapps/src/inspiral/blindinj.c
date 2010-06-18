@@ -249,7 +249,7 @@ static REAL4TimeSeries *injectWaveform(
 
   /* set up the channel to which we add the injection */
   XLALReturnIFO( ifo, ifoNumber );
-  snprintf( name, LALNameLength * sizeof(CHAR), "%s:INJECT", ifo );
+  snprintf( name, LALNameLength, "%s:INJECT", ifo );
   chan = XLALCreateREAL4TimeSeries( name, &epoch, 0, 1./sampleRate, 
       &lalADCCountUnit, sampleRate * duration );
   if ( ! chan )
@@ -520,8 +520,7 @@ int main( int argc, char *argv[] )
 
   /* clear the waveform field */
   memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
-  snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-      "SpinTaylorthreePN");
+  snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "SpinTaylorthreePN");
 
   /*
    *
@@ -757,7 +756,7 @@ int main( int argc, char *argv[] )
     inj = XLALRandomInspiralOrientation( inj, randParams, iDist, 0);
 
     /* set the source and waveform fields */
-    snprintf( inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
+    snprintf( inj->source, LIGOMETA_SOURCE_MAX, "???" );
     memcpy( inj->waveform, waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
 
     /* populate the site specific information */

@@ -256,7 +256,7 @@ int main( int argc, char *argv[] )
 
       case 'i':
         /* set ifos */
-        strncpy( ifos, optarg, LIGOMETA_IFOS_MAX * sizeof(CHAR) );
+        strncpy( ifos, optarg, LIGOMETA_IFOS_MAX );
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 

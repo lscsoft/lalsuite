@@ -140,7 +140,7 @@ main (INT4 argc, CHAR **argv )
  /* zero out the checkpoint and output paths */
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-  snprintf( outputPath, FILENAME_MAX * sizeof(CHAR), "bankefficiency.ckpt");
+  snprintf( outputPath, FILENAME_MAX, "bankefficiency.ckpt");
         
 
   /* init a random structure using possibly the seed from user input*/
@@ -1853,11 +1853,9 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
       /* --- we sae one line --- */
       tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
 	LALCalloc( 1, sizeof(SnglInspiralTable) );
-      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-		   "BankEfficiency" );
-      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-		   channelName );
+      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, ifo );
+      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "BankEfficiency" );
+      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX, channelName );
       tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
       tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
       tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
@@ -1876,11 +1874,9 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 	{
 	  tmplt = tmplt->next = (SnglInspiralTable *)
 	    LALCalloc( 1, sizeof(SnglInspiralTable) );
-	  snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
-	  snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
-		       "BankEfficiency" );
-	  snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
-		       channelName );
+	  snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, ifo );
+	  snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "BankEfficiency" );
+	  snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX, channelName );
 	  tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
 	  tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
 	  tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
@@ -2206,8 +2202,8 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
   if (trigger.ntrial == 1){
-    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
     
@@ -2365,8 +2361,8 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
 
 
 
-    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
     
@@ -2938,7 +2934,7 @@ LALCreateRealPsd(LALStatus *status,
         status->statusPtr );
 
     /* copy the data paramaters from the GEO channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    snprintf( chan.name, LALNameLength, "%s", geoChan.name );
     chan.epoch          = geoChan.epoch;
     chan.deltaT         = geoChan.deltaT;
     chan.f0             = geoChan.f0;
@@ -3032,7 +3028,7 @@ LALCreateRealPsd(LALStatus *status,
     }
 
     /* re-copy the data paramaters from the GEO channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    snprintf( chan.name, LALNameLength, "%s", geoChan.name );
     chan.epoch          = geoChan.epoch;
     chan.deltaT         = geoChan.deltaT;
     chan.f0             = geoChan.f0;
@@ -3369,14 +3365,14 @@ LALCreateRealPsd(LALStatus *status,
        * This causes no detector site to be found in the injection code so
        * that the injection is done directly overhead (i.e. with a response 
        * function of F+ = 1; Fx = 0) */
-      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+      snprintf( tmpChName, LALNameLength, "%s", chan.name );
       
-      snprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+      snprintf( chan.name, LALNameLength, "ZENITH" );
 
 
       LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections, 
             injRespPtr ), status->statusPtr );
-      snprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      snprintf( chan.name,  LALNameLength, "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
           numInjections, injectionFile, chan.name );
@@ -4340,8 +4336,8 @@ void LALBankPrintXML(MetadataTable templateBank ,
   ProcessParamsTable   *this_proc_param = NULL;
 
 
-  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
   memset( ifo, 0, sizeof(ifo) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
 

@@ -359,7 +359,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable = 
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
             "data sample rate" );
   this_search_summvar->value = (REAL8) sampleRate;
 
@@ -484,9 +484,9 @@ int main( int argc, char *argv[] )
                 kmax = k; /* final trigger's k value */
                 caseID[k] = 1;
                 memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
-                snprintf( channelNameArray[k], LALNameLength*sizeof(CHAR), "%s", &thisCoinc->snglInspiral[k]->channel );
+                snprintf( channelNameArray[k], LALNameLength, "%s", thisCoinc->snglInspiral[k]->channel );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
-                if( vrbflg ) fprintf(stdout,"eventID = %Ld\n",eventID );
+                if( vrbflg ) fprintf(stdout,"eventID = %" LAL_UINT8_FORMAT "\n",eventID );
                 chisq[l] = thisCoinc->snglInspiral[k]->chisq;
                 chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
                 sigmasq[l] = thisCoinc->snglInspiral[k]->sigmasq;
@@ -498,11 +498,14 @@ int main( int argc, char *argv[] )
                    to get slideSign = 5000 for negative slides */
                 slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 
-                if( vrbflg ) fprintf( stdout, "eventID = %Ld, slideNumber = %d, slideSign = %d, triggerNumber = %d \n", eventID, slideNumber, slideSign, triggerNumber);
+                if( vrbflg )
+                  fprintf( stdout, "eventID = %" LAL_UINT8_FORMAT ", slideNumber = %" \
+                      LAL_UINT8_FORMAT ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
+                      LAL_UINT8_FORMAT "\n", eventID, slideNumber, slideSign, triggerNumber);
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
-                snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR), "%s:CBC-CData_%Ld", caseIDChars[k], eventID );
+                snprintf( nameArrayCData[k], LALNameLength, "%s:CBC-CData_%" LAL_UINT8_FORMAT, caseIDChars[k], eventID );
 
                 /* slideSign=0 is the same as a positive time slide */
                 ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
@@ -775,7 +778,7 @@ int main( int argc, char *argv[] )
         /* Before the data gets filtered, I need to make the c-data snippets commensurate */
         for(l=0 ; l< numDetectors-1 ; l++ ) {
           timeptDiff[l] = rint( (slideNSWrapped[0] - slideNSWrapped[l+1])*1e-9 * sampleRate);
-          if( vrbflg ) fprintf(stdout,"slideNS[0] = %Ld, slideNS[2nd] = %Ld, timeptDiff = %d, sampleRate = %d\n",slideNSWrapped[0], slideNSWrapped[l+1], timeptDiff[l], sampleRate);
+          if( vrbflg ) fprintf(stdout,"slideNS[0] = %" LAL_INT8_FORMAT ", slideNS[2nd] = %" LAL_INT8_FORMAT ", timeptDiff = %d, sampleRate = %d\n",slideNSWrapped[0], slideNSWrapped[l+1], timeptDiff[l], sampleRate);
         }
         /* Now allocate memory for a temporary storage vector */
         memset( &tempSnippet, 0, sizeof(COMPLEX8TimeSeries) );
@@ -1078,14 +1081,12 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->cohSNROut )
           {
 	    if ( threeSiteCase ) {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "SNR_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec3Sites->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec3Sites, "none", cohdataStr );
 	    }
 	    else {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"SNR_%Ld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "SNR_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
 	      outFrameCoh = fr_add_proc_REAL4TimeSeries( outFrameCoh, cohInspFilterParams->cohSNRVec, "none", cohdataStr );
 	    }
@@ -1094,8 +1095,7 @@ int main( int argc, char *argv[] )
         /* save the coherent-snr of the H1-H2 pair */
         if ( cohInspFilterParams->cohH1H2SNROut )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2SNR_%Ld", eventID );
+            snprintf( cohdataStr, LALNameLength, "H1H2SNR_%" LAL_UINT8_FORMAT, eventID );
             strcpy( cohInspFilterParams->cohH1H2SNRVec->name, "Coherent");
             outFrameCohH1H2SNR = fr_add_proc_REAL4TimeSeries( outFrameCohH1H2SNR, cohInspFilterParams->cohH1H2SNRVec, "none", cohdataStr );
           }
@@ -1103,8 +1103,7 @@ int main( int argc, char *argv[] )
         /* save H1-H2 null-stream statistic in frames */
         if ( cohInspFilterParams->nullStatH1H2Out )
           {
-            snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-                      "H1H2_NullStat_%Ld", eventID );
+            snprintf( cohdataStr, LALNameLength, "H1H2_NullStat_%" LAL_UINT8_FORMAT, eventID );
             strcpy( cohInspFilterParams->nullStatH1H2Vec->name, "Coherent");
             outFrameNullStatH1H2 = fr_add_proc_REAL4TimeSeries( outFrameNullStatH1H2, cohInspFilterParams->nullStatH1H2Vec, "none", cohdataStr );
           }
@@ -1113,14 +1112,12 @@ int main( int argc, char *argv[] )
         if ( cohInspFilterParams->nullStatOut )
           {
 	    if ( threeSiteCase ) {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "NullStat_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->nullStatVec3Sites->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec3Sites, "none", cohdataStr );
 	    }
 	    else {
-	      snprintf( cohdataStr, LALNameLength*sizeof(CHAR),
-			"NullStat_%Ld", eventID );
+	      snprintf( cohdataStr, LALNameLength, "NullStat_%" LAL_UINT8_FORMAT, eventID );
 	      strcpy( cohInspFilterParams->nullStatVec->name, "Coherent");
 	      outFrameNullStat = fr_add_proc_REAL4TimeSeries( outFrameNullStat, cohInspFilterParams->nullStatVec, "none", cohdataStr );
 	    }
@@ -1214,278 +1211,278 @@ int main( int argc, char *argv[] )
             timeptDiff[j] = 0;
           }
         tempTime[numDetectors-1] = 0.0;       
-	j=0;
-	while( !(caseID[j]) ) {
-	  ifo = caseIDChars[j];
-	  j++;
-	} 
-     } 
-	/* Write the summary information */
-	if ( userTag )        {
-	  snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%s-%d-%d",
-		    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	else          {
-	  snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR-%d-%d",
-		    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	
-	if( outFrameCohH1H2SNR )
-	  {
-	    if ( outputPath[0] )
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
-	      }
-	    else 
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
-	      }
-	    
-	    if ( vrbflg ) fprintf( stdout, "writing H1-H2 coherent-snr frame data to %s....", framename );
-	    frOutFile = FrFileONew( framename, 0);
-	    FrameWrite( outFrameCohH1H2SNR, frOutFile);
-	    FrFileOEnd( frOutFile );
-	    if ( vrbflg ) fprintf(stdout, "done\n");
-	    
-	  }
-	
-	if ( userTag )        {
-	  snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%s-%d-%d",
-		    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	else        {
-	  snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT-%d-%d",
-		    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	
-	if( outFrameNullStatH1H2 )
-	  {
-	    if ( outputPath[0] )
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
-	      }
-	    else 
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
-	      }
-	    
-	    if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
-	    frOutFile = FrFileONew( framename, 0);
-	    FrameWrite( outFrameNullStatH1H2, frOutFile);
-	    FrFileOEnd( frOutFile );
-	    if ( vrbflg ) fprintf(stdout, "done\n");
-	    
-	  }
-	
-	if ( userTag )    {
-	  snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%s-%d-%d", ifos,
-		    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	else      {
-	  snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT-%d-%d", ifos,
-		    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	
-	if( outFrameNullStat )
-	  {
-	    if ( outputPath[0] )
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
-	      }
-	    else
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
-	      }
-	    
-	    if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
-	    frOutFile = FrFileONew( framename, 0);
-	    FrameWrite( outFrameNullStat, frOutFile);
-	    FrFileOEnd( frOutFile );
-	    if ( vrbflg ) fprintf(stdout, "done\n");
-	    
-	  }
-	
-	if ( userTag )          {
-	  snprintf( fileName, FILENAME_MAX, "%s-CHIA_%s-%d-%d", ifos,
-		    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	else        {
-	  snprintf( fileName, FILENAME_MAX, "%s-CHIA-%d-%d", ifos,
-		    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-	}
-	
-	if( outFrameCoh )
-	  {
-	    if ( outputPath[0] )
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
-	      }
-	    else 
-	      {
-		snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
-	      }
-	    
-	    if ( vrbflg ) fprintf( stdout, "writing coherent frame data to %s....", framename );
-	    frOutFile = FrFileONew( framename, 0);
-	    FrameWrite( outFrameCoh, frOutFile);
-	    FrFileOEnd( frOutFile );
-	    if ( vrbflg ) fprintf(stdout, "done\n");
-	    
-	  }
-	
-	if ( followup && !exttrig ) {
-	  snprintf( fileNameTmp, FILENAME_MAX, "%s-ALLSKY", fileName);
-	}
-	else {
-	  snprintf( fileNameTmp, FILENAME_MAX, "%s", fileName);
-	}
-	
-	if (eventsOut )
-	  { 
-	    memset( &results, 0, sizeof(LIGOLwXMLStream) );
-	    if ( outputPath[0] )
-	      {
-		if ( outCompress )
-		  {
-		    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
-		  }
-		else
-		  {
-		    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
-		  }
-	      }
-	    else 
-	      {
-		if ( outCompress )
-		  {
-		    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );                
-		  }
-		else 
-		  {
-		    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
-		  }            
-	      }
-	    if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
-	    LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
-	    
-	    /* write the process table */
-	    if ( vrbflg ) fprintf( stdout, "  process table...\n" );
-	    /*      snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
-	    XLALGPSTimeNow(&(proctable.processTable->end_time));
-	    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
-	    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
-	    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-	    
-	    /* write the process params table */
-	    if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
-	    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
-	    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, process_params_table ), &status );
-	    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-	    
-	    /* write the search summary table */
-	    if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
-	    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-	      gpsStartTime.gpsSeconds + (numPointsSeg / (4 * sampleRate));
-	    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-	      gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
-	    
-	    /* the number of nodes for a standalone job is always 1 */
-	    searchsumm.searchSummaryTable->nnodes = 1; 
-	    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-					      search_summary_table ), &status );
-	    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
-					      search_summary_table ), &status );
-	    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-	    
-	    if ( numTriggers )
-	      {
-		if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
-		LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-						  search_summvars_table ), &status );
-		LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
-						  search_summvars_table ), &status );
-		LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-	      }
-	    
-	    /* store calibration information */
-	    if ( cohFileID == 1) {
-	      ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
-	      ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
-	      ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
-	      ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
-	    }
-	    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
-		      &status );
-	    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
-					      summ_value_table ), &status );
-	    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-	    
-	    /* write multi_inspiral table */
-	    if ( savedEvents.multiInspiralTable ) { 
-	      if( vrbflg ) fprintf(stdout,"  event params table\n ");
-	      
-	      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-	      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
-	      LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
-	    }
-	    
-	    while( savedEvents.multiInspiralTable )
-	      {  
-		MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
-		savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
-		LALFree( tempEvent2->event_id );
-		LALFree( tempEvent2 );
-	      }
-	    
-	    /* close the output xml file */
-	    LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-	    if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
-	    
+        j=0;
+        while( !(caseID[j]) ) {
+          ifo = caseIDChars[j];
+          j++;
+        }
+     }
+        /* Write the summary information */
+        if ( userTag )        {
+          snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR_%s-%d-%d",
+                    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+        else          {
+          snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_COHSNR-%d-%d",
+                    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+
+        if( outFrameCohH1H2SNR )
+          {
+            if ( outputPath[0] )
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              }
+            else
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              }
+
+            if ( vrbflg ) fprintf( stdout, "writing H1-H2 coherent-snr frame data to %s....", framename );
+            frOutFile = FrFileONew( framename, 0);
+            FrameWrite( outFrameCohH1H2SNR, frOutFile);
+            FrFileOEnd( frOutFile );
+            if ( vrbflg ) fprintf(stdout, "done\n");
+
+          }
+
+        if ( userTag )        {
+          snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT_%s-%d-%d",
+                    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+        else        {
+          snprintf( fileName, FILENAME_MAX, "H1H2-CHIA_NULL_STAT-%d-%d",
+                    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+
+        if( outFrameNullStatH1H2 )
+          {
+            if ( outputPath[0] )
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              }
+            else
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              }
+
+            if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
+            frOutFile = FrFileONew( framename, 0);
+            FrameWrite( outFrameNullStatH1H2, frOutFile);
+            FrFileOEnd( frOutFile );
+            if ( vrbflg ) fprintf(stdout, "done\n");
+
+          }
+
+        if ( userTag )    {
+          snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT_%s-%d-%d", ifos,
+                    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+        else      {
+          snprintf( fileName, FILENAME_MAX, "%s-CHIA_NULL_STAT-%d-%d", ifos,
+                    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+
+        if( outFrameNullStat )
+          {
+            if ( outputPath[0] )
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              }
+            else
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              }
+
+            if ( vrbflg ) fprintf( stdout, "writing null statistic frame data to %s....", framename );
+            frOutFile = FrFileONew( framename, 0);
+            FrameWrite( outFrameNullStat, frOutFile);
+            FrFileOEnd( frOutFile );
+            if ( vrbflg ) fprintf(stdout, "done\n");
+
+          }
+
+        if ( userTag )          {
+          snprintf( fileName, FILENAME_MAX, "%s-CHIA_%s-%d-%d", ifos,
+                    userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+        else        {
+          snprintf( fileName, FILENAME_MAX, "%s-CHIA-%d-%d", ifos,
+                    gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        }
+
+        if( outFrameCoh )
+          {
+            if ( outputPath[0] )
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
+              }
+            else
+              {
+                snprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+              }
+
+            if ( vrbflg ) fprintf( stdout, "writing coherent frame data to %s....", framename );
+            frOutFile = FrFileONew( framename, 0);
+            FrameWrite( outFrameCoh, frOutFile);
+            FrFileOEnd( frOutFile );
+            if ( vrbflg ) fprintf(stdout, "done\n");
+
+          }
+
+        if ( followup && !exttrig ) {
+          snprintf( fileNameTmp, FILENAME_MAX, "%s-ALLSKY", fileName);
+        }
+        else {
+          snprintf( fileNameTmp, FILENAME_MAX, "%s", fileName);
+        }
+
+        if (eventsOut )
+          {
+            memset( &results, 0, sizeof(LIGOLwXMLStream) );
+            if ( outputPath[0] )
+              {
+                if ( outCompress )
+                  {
+                    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
+                  }
+                else
+                  {
+                    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
+                  }
+              }
+            else
+              {
+                if ( outCompress )
+                  {
+                    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );
+                  }
+                else
+                  {
+                    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
+                  }
+              }
+            if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
+            LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
+
+            /* write the process table */
+            if ( vrbflg ) fprintf( stdout, "  process table...\n" );
+            /*      snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", caseID );*/
+            XLALGPSTimeNow(&(proctable.processTable->end_time));
+            LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), &status );
+            LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, process_table ), &status );
+            LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+            /* write the process params table */
+            if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
+            LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), &status );
+            LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, process_params_table ), &status );
+            LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+            /* write the search summary table */
+            if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
+            searchsumm.searchSummaryTable->out_start_time.gpsSeconds =
+              gpsStartTime.gpsSeconds + (numPointsSeg / (4 * sampleRate));
+            searchsumm.searchSummaryTable->out_end_time.gpsSeconds =
+              gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+
+            /* the number of nodes for a standalone job is always 1 */
+            searchsumm.searchSummaryTable->nnodes = 1;
+            LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
+                                              search_summary_table ), &status );
+            LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
+                                              search_summary_table ), &status );
+            LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+            if ( numTriggers )
+              {
+                if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
+                LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
+                                                  search_summvars_table ), &status );
+                LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars,
+                                                  search_summvars_table ), &status );
+                LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+              }
+
+            /* store calibration information */
+            if ( cohFileID == 1) {
+              ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
+              ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
+              ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
+              ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+            }
+            LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ),
+                      &status );
+            LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue,
+                                              summ_value_table ), &status );
+            LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+            /* write multi_inspiral table */
+            if ( savedEvents.multiInspiralTable ) {
+              if( vrbflg ) fprintf(stdout,"  event params table\n ");
+
+              LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+              LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
+              LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
+            }
+
+            while( savedEvents.multiInspiralTable )
+              {
+                MultiInspiralTable *tempEvent2 = savedEvents.multiInspiralTable;
+                savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+                LALFree( tempEvent2->event_id );
+                LALFree( tempEvent2 );
+              }
+
+            /* close the output xml file */
+            LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+            if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
+
     }/* close "for( cohFileID...)" */
-    
+
   }/* closes "if ( numTriggers < 0 )" */
-  
+
   if ( vrbflg ) fprintf( stdout, "number of coherent trigger files is: %d\n", numCohFiles );
   if ( (numCohFiles == 1) && eventsOut) {
     cohFileID = 1;
     if ( userTag )          {
       snprintf( fileName, FILENAME_MAX, "%s-CHIA_%s-%d-%d", ifos,
-		userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+                userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     }
     else        {
       snprintf( fileName, FILENAME_MAX, "%s-CHIA-%d-%d", ifos,
-		gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+                gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     }
-    
+
     if ( followup && !exttrig ) {
       snprintf( fileNameTmp, FILENAME_MAX, "%s-ALLSKY", fileName);
     }
     else {
       snprintf( fileNameTmp, FILENAME_MAX, "%s", fileName);
     }
-    
+
     memset( &results, 0, sizeof(LIGOLwXMLStream) );
     if ( outputPath[0] )
       {
-	if ( outCompress )
-	  {
-	    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
-	  }
-	else
-	  {
-	    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
-	  }
+        if ( outCompress )
+          {
+            snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz", outputPath, fileNameTmp);
+          }
+        else
+          {
+            snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileNameTmp);
+          }
       }
-    else 
+    else
       {
-	if ( outCompress )
-	  {
-	    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );                
-	  }
-	else 
-	  {
-	    snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
-	  }            
+        if ( outCompress )
+          {
+            snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileNameTmp );    
+          }
+        else
+          {
+            snprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileNameTmp );
+          }
       }
     if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
@@ -1874,7 +1871,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'P':
            memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-           snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
+           snprintf( outputPath, FILENAME_MAX, "%s", optarg );
            ADD_PROCESS_PARAM( "string", "%s", outputPath );
            break;
            

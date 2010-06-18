@@ -2011,7 +2011,7 @@ char *cache2string(char *cachefilename, double *startTime, double *endTime, char
     *endTime = startGPS + deltaGPS;
     /* check length of new filename: */
     i=0;
-    while ((i<256) && (filename[i] != '\0')) ++i;
+    while ((i<255) && (filename[i] != '\0')) ++i;
     if (filename[i] != '\0') printf(" : WARNING: encountered un-terminated file name string in 'cache2string()'.\n");
     /* (i gives number of 'non-zero' characters, or index of end-of-string character)       */
     /* issue error message if string is too short to even hold the "file://localhost" part, */

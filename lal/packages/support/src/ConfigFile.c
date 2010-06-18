@@ -18,20 +18,23 @@
  */
 
 /** \file
- * \ingroup UserInput
+ * \ingroup ConfigFile
  * \author Reinhard Prix
  *
  * \brief General-purpose routines for config-file reading.
- *
- *
-\par Description
+ */
+
+/**
+ * \addtogroup ConfigFile
+
+   \par Description
 
 This module provides routines for reading formatted
 config-files containing definitions of the form <tt>variable = value</tt>.
 The general syntax is somewhat similar to the one provided by the
 perl-module <tt>ConfigParser</tt> (cf.
 http://www.python.org/doc/current/lib/module-ConfigParser.html)
-but (currently) without the possibility of "chapters".
+
 Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>%</tt>.
 You can also use line-continuation  using a '<tt>\\</tt>' at the end of the line.
 Also note that comment-signs '<tt>\#;%</tt>' within double-quotes '<tt>"..."</tt>'
@@ -70,7 +73,7 @@ If one wishes a tight sytnax for the config-file, one can check
 that there are no illegal entries in the config-file. This is done
 by checking at the end that all config-file entries have been
 successfully parsed, using:
-LALCheckConfigReadComplete(), where \a strictness is either
+XLALCheckConfigReadComplete(), where \a strictness is either
 CONFIGFILE_WARN or CONFIGFILE_ERROR.
 In the first case only a warning is issued, while in the second it is
 treated as a LAL-error if some config-file entries have not been
@@ -78,14 +81,14 @@ read-in. (The use of this function is optional).
 
 
 The configfile-data should be freed at the end using
-LALDestroyParsedDataFile().
+XLALDestroyParsedDataFile().
 
 \par Uses
 \code
-LALCHARReadSequence()
-LALCreateTokenList()       LALDestroyTokenList()
-LALCalloc()                LALMalloc()             LALFree()
-LALPrintError()            LALOpenDataFile()                 fclose()
+XLALCHARReadSequence()
+XLALCreateTokenList()       XLALDestroyTokenList()
+XLALCalloc()                XLALMalloc()             XLALFree()
+XLALPrintError()            LALOpenDataFile()        fclose()
 \endcode
 
 \par Notes

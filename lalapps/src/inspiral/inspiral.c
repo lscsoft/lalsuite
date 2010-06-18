@@ -570,7 +570,7 @@ int main( int argc, char *argv[] )
 
   /* create the standard candle and database table */
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
-  strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
+  strncpy( candle.ifo, ifo, 2 );
   candle.tmplt.mass1 = CANDLE_MASS1;
   candle.tmplt.mass2 = CANDLE_MASS2;
   candle.rhosq       = CANDLE_RHOSQ;
@@ -723,8 +723,7 @@ int main( int argc, char *argv[] )
           frStream ), &status );
 
     /* copy the data paramaters from the h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-              strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -740,7 +739,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
       "raw data sample rate" );
   this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -820,8 +819,7 @@ int main( int argc, char *argv[] )
     }
 
     /* re-copy the data paramaters from the h(t) channel to input data channel*/
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-              strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -883,7 +881,7 @@ int main( int argc, char *argv[] )
     /* store the seed in the search summvars table */
     this_search_summvar = this_search_summvar->next =
       (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
         "template bank simulation seed" );
 
     if ( randSeedType == urandom )
@@ -1104,8 +1102,7 @@ int main( int argc, char *argv[] )
     if ( globCalData )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-                "*CAL*%s*.gwf", ifo );
+      snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -1126,10 +1123,9 @@ int main( int argc, char *argv[] )
     {
       this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
                 "calibration frame %d", i );
-      snprintf( this_search_summvar->string,
-                LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+      snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX, "%s",
                 calCache->frameFiles[i].url );
     }
 
@@ -1305,8 +1301,7 @@ int main( int argc, char *argv[] )
           if ( globCalData )
           {
             calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-            snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-                      "*CAL*%s*.gwf", ifo );
+            snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
             if ( vrbflg ) fprintf( stdout,
                 "globbing for %s calibration frame files "
                 "in current directory\n", calGlobPattern );
@@ -1329,12 +1324,10 @@ int main( int argc, char *argv[] )
             this_search_summvar = this_search_summvar->next =
               (SearchSummvarsTable *)
               LALCalloc( 1, sizeof(SearchSummvarsTable) );
-            snprintf( this_search_summvar->name,
-                      LIGOMETA_NAME_MAX * sizeof(CHAR),
+            snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
                       "injection calibration frame %d", i );
-            snprintf( this_search_summvar->string,
-                      LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
-                      calCache->frameFiles[i].url );
+            snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX,
+                      "%s", calCache->frameFiles[i].url );
           }
 
           /* extract the calibration from frames */
@@ -1379,7 +1372,7 @@ int main( int argc, char *argv[] )
       }
 
       /* inject the signals, preserving the channel name (Tev mangles it) */
-      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+      snprintf( tmpChName, LALNameLength, "%s", chan.name );
 
       /* if injectOverhead option, then set chan.name to "ZENITH".
        * This causes no detector site to be found in the injection code so
@@ -1387,7 +1380,7 @@ int main( int argc, char *argv[] )
        * function of F+ = 1; Fx = 0) */
       if ( injectOverhead )
       {
-        snprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+        snprintf( chan.name, LALNameLength, "ZENITH" );
       }
 
       /* read the event waveform approximant to see if we've been asked to
@@ -1420,7 +1413,7 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections,
                                              injRespPtr ), &status );
       }
-      snprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      snprintf( chan.name,  LALNameLength, "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
           numInjections, injectionFile, chan.name );
@@ -1468,7 +1461,7 @@ int main( int argc, char *argv[] )
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
       "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
@@ -1486,12 +1479,11 @@ int main( int argc, char *argv[] )
     condor_compress_ckpt = 1;
     if ( ckptPath[0] )
     {
-      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
-                ckptPath, fileName );
+      snprintf( fname, FILENAME_MAX, "%s/%s.ckpt", ckptPath, fileName );
     }
     else
     {
-      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
+      snprintf( fname, FILENAME_MAX, "%s.ckpt", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
@@ -2272,8 +2264,7 @@ int main( int argc, char *argv[] )
         REAL8 deltaF;
         INT4 kmax, num_points;
         UINT4 nb2;
-        snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
-                  "TEMPLATE");
+        snprintf( snrsqStr, LALNameLength, "TEMPLATE");
         memcpy(&templateTimeSeries, &chan, sizeof(REAL4TimeSeries));
         strcpy( templateTimeSeries.name, chan.name );
         /* Things are complicated if the template is in the Frequency domain */
@@ -2467,8 +2458,7 @@ int main( int argc, char *argv[] )
             if ( writeRhosq )
             {
               CHAR snrsqStr[LALNameLength];
-              snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
-                        "SNRSQ_%d", nRhosqFr++ );
+              snprintf( snrsqStr, LALNameLength, "SNRSQ_%d", nRhosqFr++ );
               strcpy( fcFilterParams->rhosqVec->name, chan.name );
               outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
                   fcFilterParams->rhosqVec, "none", snrsqStr );
@@ -2659,7 +2649,7 @@ int main( int argc, char *argv[] )
         } /* end of loop over templates in subbank */
 
         /* If doing bank veto compute CC Matrix */
-        if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
+        if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
 	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
@@ -2717,11 +2707,10 @@ int main( int argc, char *argv[] )
                 {
                   CHAR chisqStr[LALNameLength];
                   REAL4TimeSeries chisqts;
-                  snprintf( chisqStr, LALNameLength*sizeof(CHAR),
-                      "CHISQ_%d", nChisqFr++ );
+                  snprintf( chisqStr, LALNameLength, "CHISQ_%d", nChisqFr++ );
                   chisqts.epoch = fcFilterInput->segment->data->epoch;
                   memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
-                      LALNameLength * sizeof(CHAR) );
+                      LALNameLength);
                   chisqts.deltaT = fcFilterInput->segment->deltaT;
                   chisqts.data = fcFilterParams->chisqVec;
                   outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
@@ -3014,20 +3003,20 @@ int main( int argc, char *argv[] )
     if ( outputPath[0] )
     {
       if ( writeCData ) {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s/%s/%s.gwf",
+        snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s.gwf",
                   outputPath, hostname, username, fileName );
-        snprintf( runpath, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+        snprintf( runpath, FILENAME_MAX, "%s/%s.gwf",
                   runpathTmp, fileName );
         printf("%s\n", runpath);
       }
       else {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+        snprintf( fname, FILENAME_MAX, "%s/%s.gwf",
                   outputPath, fileName );
       }
     }
     else
     {
-      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
+      snprintf( fname, FILENAME_MAX, "%s.gwf", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
 
@@ -3173,24 +3162,24 @@ int main( int argc, char *argv[] )
     if ( writeCohTrigs || writeCData ) {
       if ( outCompress )
       {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s/%s/%s.xml.gz",
+        snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s.xml.gz",
                   outputPath, hostname, username, fileName );
       }
       else
       {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s/%s/%s.xml",
+        snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s.xml",
                   outputPath, hostname, username, fileName );
       }
     }
     else {
       if ( outCompress )
       {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+        snprintf( fname, FILENAME_MAX, "%s/%s.xml.gz",
                   outputPath, fileName );
       }
       else
         {
-          snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+          snprintf( fname, FILENAME_MAX, "%s/%s.xml",
                     outputPath, fileName );
         }
     }
@@ -3199,11 +3188,11 @@ int main( int argc, char *argv[] )
   {
     if ( outCompress )
     {
-      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
+      snprintf( fname, FILENAME_MAX, "%s.xml.gz", fileName );
     }
      else
     {
-      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
+      snprintf( fname, FILENAME_MAX, "%s.xml", fileName );
     }
   }
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
@@ -3211,12 +3200,12 @@ int main( int argc, char *argv[] )
   {
     if ( outCompress )
     {
-      snprintf( runpath, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+      snprintf( runpath, FILENAME_MAX, "%s/%s.xml.gz",
                 runpathTmp, fileName );
     }
     else
     {
-      snprintf( runpath, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+      snprintf( runpath, FILENAME_MAX, "%s/%s.xml",
                 runpathTmp, fileName );
     }
     printf("%s\n", runpath);
@@ -4656,8 +4645,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'N':
-        if ( snprintf( ckptPath, FILENAME_MAX * sizeof(CHAR),
-                       "%s", optarg ) < 0 )
+        if ( snprintf( ckptPath, FILENAME_MAX, "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "local path %s too long: string truncated\n",
@@ -4667,8 +4655,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
 
       case 'O':
-        if ( snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
-                       "%s", optarg ) < 0 )
+        if ( snprintf( outputPath, FILENAME_MAX, "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "output path %s too long: string truncated\n",
@@ -5294,7 +5281,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
       fprintf( stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
-          gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
+          (INT8)(gpsStartTimeNS / 1000000000LL), (INT8)(gpsEndTimeNS / 1000000000LL) );
       fprintf( stderr, "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
           "computed input data length: %" LAL_INT8_FORMAT "ns\n",
           gpsChanIntervalNS, inputDataLengthNS );

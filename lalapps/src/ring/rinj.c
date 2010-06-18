@@ -567,16 +567,14 @@ int main( int argc, char *argv[] )
         break;
       
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
         break;
       
       case 'c':
-        snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
@@ -623,15 +621,13 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
     {
       /* use Ringdown as the default waveform */
-      snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-          "Ringdown");
+      snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "Ringdown");
       }
   
   if ( !*coordinates )
         {
           /* use equatorial as the default system */
-          snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
-                              "EQUATORIAL");
+          snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "EQUATORIAL");
                       }
 
    if ( meanTimeStep<=0 )

@@ -297,7 +297,7 @@ int main( int argc, char *argv[] )
     /* store the input sample rate */
     this_search_summvar = searchsummvars.searchSummvarsTable = 
       (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
         "raw data sample rate" );
     this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -414,8 +414,7 @@ int main( int argc, char *argv[] )
       inj.deltaT = 1.0/ sampleRate;
       inj.epoch = gpsStartTime;
       inj.sampleUnits = lalADCCountUnit;
-      snprintf( inj.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", 
-          ifo );
+      snprintf( inj.name, LALNameLength, "%s:STRAIN", ifo );
       searchsumm.searchSummaryTable->in_start_time = gpsStartTime;
       searchsumm.searchSummaryTable->in_end_time = gpsEndTime;
       numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (inj.deltaT * 1.0e9) 
@@ -516,7 +515,7 @@ int main( int argc, char *argv[] )
 
 
       /* inject the signals, preserving the channel name (Tev mangles it) */
-      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", inj.name );
+      snprintf( tmpChName, LALNameLength, "%s", inj.name );
 
       /* if injectOverhead option, then set inj.name to "ZENITH".  
        * This causes no detector site to be found in the injection code so
@@ -524,12 +523,12 @@ int main( int argc, char *argv[] )
        * function of F+ = 1; Fx = 0) */
       if ( injectOverhead )
       {
-        snprintf( inj.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+        snprintf( inj.name, LALNameLength, "ZENITH" );
       }
 
       LAL_CALL( LALFindChirpInjectSignals( &status, &inj, injections, 
             &injResp ), &status );
-      snprintf( inj.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+      snprintf( inj.name,  LALNameLength, "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
           numInjections, injectionFile, inj.name );
@@ -658,21 +657,18 @@ int main( int argc, char *argv[] )
       if( !outfileName[0] )
       {
         /* output name not specified, set to IFO-INSPFRINJ-EPOCH-LENGTH.gwf */
-        snprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
-            "%s-INSPFRINJ", ifo );
+        snprintf( outfileName, FILENAME_MAX, "%s-INSPFRINJ", ifo );
       }
 
       if( userTag )
       {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-            "%s_%s-%d-%d.gwf", outfileName, userTag, output.epoch.gpsSeconds, 
-            frameLength );
+        snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.gwf", outfileName,
+            userTag, output.epoch.gpsSeconds, frameLength );
       }
       else
       {
-        snprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-            "%s-%d-%d.gwf", outfileName, output.epoch.gpsSeconds, 
-            frameLength );
+        snprintf( fname, FILENAME_MAX, "%s-%d-%d.gwf", outfileName,
+            output.epoch.gpsSeconds, frameLength );
       }
 
       if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
@@ -706,26 +702,26 @@ int main( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if( userTag && outCompress )
   {
-    snprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-        "%s_%s-%d-%d.xml.gz", outfileName, userTag, gpsStartTime.gpsSeconds, 
+    snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml.gz", outfileName,
+        userTag, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if( userTag && !outCompress )
   {
-    snprintf( fname, FILENAME_MAX * sizeof(CHAR),
-        "%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds,
+    snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml", outfileName,
+        userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else if( !userTag && outCompress )
   {
-    snprintf( fname, FILENAME_MAX * sizeof(CHAR),
-        "%s-%d-%d.xml.gz", outfileName, gpsStartTime.gpsSeconds,
+    snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml.gz", outfileName,
+        gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    snprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-        "%s-%d-%d.xml", outfileName, gpsStartTime.gpsSeconds, 
+    snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml", outfileName,
+        gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
   }
@@ -1137,8 +1133,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'f':
         /* set output file name */
-        if ( snprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
-              "%s", optarg ) < 0 )
+        if ( snprintf( outfileName, FILENAME_MAX, "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "outfile name %s too long: string truncated\n",

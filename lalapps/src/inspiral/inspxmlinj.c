@@ -315,7 +315,7 @@ int main ( int argc, char *argv[] )
 
       case 'l':
         snprintf( &(injParams.waveform), 
-                  LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s", optarg );
+                  LIGOMETA_WAVEFORM_MAX, "%s", optarg );
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, "string", 
               "%s", optarg );
@@ -357,8 +357,7 @@ int main ( int argc, char *argv[] )
   if ( ! *waveform )
   {
     /* default to Tev's GeneratePPNInspiral as used in */
-    snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
-              "GeneratePPNtwoPN" );
+    snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "GeneratePPNtwoPN" );
   }
 
 

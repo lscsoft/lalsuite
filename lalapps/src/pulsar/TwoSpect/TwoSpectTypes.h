@@ -29,6 +29,8 @@ typedef struct
    REAL8Vector *f;         //First PSD frequencies
    REAL8Vector *fpr;       //Second PSD frequencies
    REAL8Vector *ffdata;    //Doubly Fourier transformed data
+   REAL8 tfnormalization;
+   REAL8 ffnormalization;
 } ffdataStruct;
 
 typedef struct
@@ -57,9 +59,10 @@ typedef struct
    REAL4 ra;
    REAL4 dec;
    REAL8 stat;
-   REAL8 snr;
+   REAL8 h0;
    REAL8 prob;
    INT4 proberrcode;
+   REAL8 normalization;
 } candidate;
 
 typedef struct
@@ -95,8 +98,8 @@ typedef struct
 {
    REAL8Vector *templatedata;       //weights
    INT4Vector *pixellocations;      //pixel locations
-   INT4Vector *firstfftfrequenciesofpixels;  //pixel frequency values
-   INT4Vector *secondfftfrequencies;
+   INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
+   INT4Vector *secondfftfrequencies;   //pixel second frequency values
 } templateStruct;
 
 

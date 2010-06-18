@@ -42,7 +42,6 @@ from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from pylal import grbsummary
-from pylal import dqutils
 from lalapps import inspiralutils
 
 ##############################################################################
@@ -273,15 +272,6 @@ class hipe_run(object):
     self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
     self._cp.set("condor", "inspinj", "/bin/true")
 
-  def set_veto_files(self, veto_file_dict):
-    """
-    In the second thinca stage, ignore triggers inside the segments that are
-    present in a veto file.  veto_file_dict is keyed by IFO.
-    """
-    for ifo in self._ifos:
-      self._cp.set("thinca", ifo.lower() + "-veto-file", veto_file_dict[ifo])
-    self._cp.set("thinca", "do-veto", "")
-
   def write_dag(self):
     """
     Create directory and run lalapps_inspiral_hipe to create the DAG.
@@ -360,31 +350,6 @@ class hipe_run(object):
 
 ##############################################################################
 # convenience functions
-
-def make_dq_run(base_analysis, veto_file_dict, category):
-  """
-  Take a base analysis and return the DAG node corresponding to a rerun of the
-  thinca2 and coire2 steps with different veto files.  veto_file_dict
-  should be keyed by IFO and map to a filename.
-  """
-  analysis = copy.deepcopy(base_analysis)
-  analysis.determine_stages(only_run=["second-coinc", "coire-second-coinc"])
-  analysis.set_veto_files(veto_file_dict)
-  
-  old_usertag = analysis.get_usertag()
-  
-  # set new usertag
-  if old_usertag is None:
-    analysis.set_usertag("CATEGORY_" + str(category))
-  elif old_usertag[-len("CATEGORY_N"):-1] == "CATEGORY_":
-    analysis.set_usertag(old_usertag[:-1] + str(category))
-  else:
-    analysis.set_usertag(old_usertag + "_CATEGORY_" + str(category))
-
-  # set old usertag on inspiral jobs so that coire can find them
-  analysis._cp.set("inspiral", "user-tag", old_usertag)
-
-  return analysis
 
 def concatenate_files(input_names, output_name):
   """
@@ -518,6 +483,8 @@ parser.add_option("-s", "--symmetric", action="store_true", default=False,
 parser.add_option("-o", "--overwrite-dir", action="store_true",default=False,\
   help="overwrite contents in already existing directories" )
 
+
+
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
@@ -532,8 +499,6 @@ parser.add_option("-u","--user-tag",action="store",type="string",\
 parser.add_option("", "--skip-datafind", action="store_false", default=True,
   dest="do_datafind", help="skip a query for data file locations (place "\
   "the file caches in ./GRBxxxxxx/datafind/cache).")
-parser.add_option("", "--skip-dataquality", action="store_false", default=True,
-  dest="do_dataquality", help="skip a query for data quality")
 parser.add_option("", "--skip-onsource", action="store_false", default=True,
   dest="do_onsource", help="skip the onsource DAG")
 parser.add_option("", "--skip-offsource", action="store_false", default=True,
@@ -602,59 +567,6 @@ for ifo in ["G1", "H1", "H2", "L1", "V1"]:
     segdict[ifo] = segments.segmentlist([s for s in tmplist if abs(s) > minsciseg])
 ifolist = segdict.keys()
 ifolist.sort()
-
-##############################################################################
-# Derive data quality vetoes
-if opts.do_dataquality:
-  dq_segdict = segments.segmentlistdict()
-  
-  # parse DQ segments once for each IFO
-  for ifo in ifolist:
-    # parse DQ segments into segmentlistdict as "ifo:flag_v99" ==> segmentlist
-    if opts.verbose:
-      print "parsing", ifo, "DQ segments..."
-    dq_segfile = cp.get("segments", ifo.lower() + "-dq-segfile")
-    if not os.path.exists(dq_segfile):
-      raise ValueError, "%s-dq-segfile '%s' does not exist" \
-        % (ifo.lower(), dq_segfile)
-    new_dict = dqutils.fromDQsegments_fast(open(dq_segfile))
-    for flag, val in new_dict.iteritems():
-        val.sort()  # guarantee an important segmentlist invariant
-        dq_segdict["%s:%s" % (ifo, flag)] = val  # rename to keep track of IFO
-
-  # determine category 1 vetoes and remove from analyzable segments
-  print "Calculating category 1 vetoes..."
-  for ifo in ifolist:
-    window_file = cp.get("segments", ifo.lower() + "-cat-1-veto-file")
-    veto_windows = dqutils.from_veto_file(open(window_file))
-    vetoed_segs = dqutils.determine_vetoes(veto_windows, dq_segdict,
-                                           segdict[ifo])
-    
-    # apply veto
-    segdict[ifo] -= vetoed_segs
-    
-    # write a copy for accounting purposes
-    kept_filename = ifo + "_cat1_kept_segments.txt"
-    vetoed_filename = ifo + "_cat1_vetoed_segments.txt"
-    segmentsUtils.tosegwizard(open(kept_filename, "w"), segdict[ifo])
-    segmentsUtils.tosegwizard(open(vetoed_filename, "w"), vetoed_segs)
-
-  # determine category 2, 3, and 4 vetoes and save them for later
-  if opts.verbose:
-    print "Calculating category 2, 3, and 4 vetoes..."
-  cum_vetoed_segs = segments.segmentlistdict()
-  for ifo in ifolist:
-    vetoed_segs = segments.segmentlist()
-    for category in (2, 3, 4):
-      window_file = cp.get("segments", ifo.lower() + "-cat-" + str(category) + \
-                           "-veto-file")
-      veto_windows = dqutils.from_veto_file(open(window_file))
-      vetoed_segs = vetoed_segs | dqutils.determine_vetoes(veto_windows,
-        dq_segdict, segdict[ifo])
-      cum_vetoed_segs[(ifo, category)] = vetoed_segs
-    cum_category = "".join([str(c) for c in range(2, category+1)])
-    vetoed_filename = ifo.lower() + "-cat" + cum_category + "_veto_segments.txt"
-    segmentsUtils.tosegwizard(open(vetoed_filename, "w"), vetoed_segs)
 
 ############################################################################
 # set up the über dag for all intervals and all injections
@@ -726,27 +638,6 @@ for grb in ext_trigs:
     print "off-source segment: ", offSourceSegment
 
   ############################################################################
-  # write veto files for higher-category DQ vetoes, narrowed down to this
-  # GRB's off-source segment times and participating IFOs.
-
-  if opts.do_dataquality:
-    if opts.verbose:
-      print "applying category 2, 3, and 4 vetoes"
-    off_source_seglist = segments.segmentlist([offSourceSegment])
-    veto_filename_dict = {}
-    for category in (2, 3, 4):
-      cum_category = "".join([str(c) for c in range(2, category+1)])
-      veto_filename_dict[category] = {}
-      for ifo in grb_ifolist:
-        grb_cum_veto_segs = cum_vetoed_segs[(ifo, category)] & off_source_seglist
-        veto_filename = idirectory + "/" + ifo.lower() + "-cat" + cum_category \
-          + "_veto_segments.txt"
-        segmentsUtils.tosegwizard(open(veto_filename, "w"), grb_cum_veto_segs)
-        rel_veto_filename = "../" + ifo.lower() + "-cat" + cum_category \
-          + "_veto_segments.txt"
-        veto_filename_dict[category][ifo] = rel_veto_filename
-
-  ############################################################################
   # set up the analysis dag for this interval
   #
   # In doing this, we simply copy the configuration file into the
@@ -755,11 +646,7 @@ for grb in ext_trigs:
   #
   # 1. datafind
   # 2. off-source analysis
-  #    a. generate DAG
-  #    b. rerun thinca and coire for different DQ categories
   # 3. on-source analysis
-  #    a. generate DAG
-  #    b. rerun thinca and coire for different DQ categories
   # 4. injection runs
   #    a. generate injections
   #    b. split injections into files so they are safely separated
@@ -790,13 +677,7 @@ for grb in ext_trigs:
     offsource_node = offsource_analysis.finalize(uberdag=uberdag,
                                                  parent=datafind_node)
     hipe_caches.append(offsource_analysis.get_cache_name())
-    if opts.do_dataquality:
-      for cat, subdict in veto_filename_dict.iteritems():
-        dq_analysis = make_dq_run(offsource_analysis, subdict, cat)
-        dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
-                                                parent=offsource_node)
-        hipe_caches.append(dq_analysis.get_cache_name())
-  
+
   if opts.do_onsource:
     if opts.verbose: print "Creating DAG for onsource analysis"
     onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
@@ -807,13 +688,8 @@ for grb in ext_trigs:
                                verbose=opts.verbose, dont_run=["datafind"])
     onsource_node = onsource_analysis.finalize(uberdag=uberdag,
                                                parent=datafind_node)
+    onsource_analysis.set_numslides(0)
     hipe_caches.append(onsource_analysis.get_cache_name())
-    if opts.do_dataquality:
-      for cat, subdict in veto_filename_dict.iteritems():
-        dq_analysis = make_dq_run(onsource_analysis, subdict, cat)
-        dq_analysis_node = dq_analysis.finalize(uberdag=uberdag,
-                                              parent=onsource_node)
-        hipe_caches.append(dq_analysis.get_cache_name())
 
   ############################################################################
   # create the config parser object and read in the ini file
