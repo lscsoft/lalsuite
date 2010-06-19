@@ -859,7 +859,7 @@ for result_db in result_dbs_cache:
       # 
       # Printsims
       #
-      datatypes = ['all_data']
+      datatypes = ['playground']
       # TODO: if you're wondering why the list only has one entry... this originally cycled over
       # all_data and playground. As the rank column was dropped from minifollowups, and since
       # this would require wip to pick up two different files (playground for closed box, all_data for open)
