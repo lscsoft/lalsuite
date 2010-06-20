@@ -840,8 +840,7 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
       "plotinspfound", \
       "plotinspiralrange", "plotinspiralrange-meta", \
       "ploteffdistcut", "ploteffdistcut-meta", \
-      "plotinspfound", "plotcoincmissed", \
-      "plotcohsnr", "plotcohsnr-meta"]
+      "plotinspfound", "plotcoincmissed"]
 
   for seg in plotcp.sections():
     if not seg in plotSections: plotcp.remove_section(seg)
@@ -1058,7 +1057,6 @@ def zeroSlidePlots(dag, plotDir, config, logPath, zerolagSuffix, slideSuffix,
   plotcp.set("plot-arguments","plotnumtemplates","")
   plotcp.set("plot-arguments","plotinspiral","")
   plotcp.set("plot-arguments","plotthinca","")
-  plotcp.set("plot-arguments","plotcohsnr","")
   plotcp.set("plot-arguments","write-script","")
   # Add plotthinca scaling option for zero lag play full data slide plots
   if zerolagSuffix == "PLAYGROUND" and slideSuffix == "FULL_DATA":
