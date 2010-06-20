@@ -160,17 +160,17 @@ LALFindChirpTemplateInit (
           outputPtr->xfacVec->length * sizeof(REAL4) );
 
       /* create an fft plan for the time domain waveform */
-      outputPtr->fwdPlan = XLALCreateForwardREAL4FFTPlan(params->numPoints, 0);
-      if (outputPtr->fwdPlan == NULL)
+      LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan),
+          params->numPoints, 0 );
+      BEGINFAIL( status )
       {
         TRY( LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) ),
             status );
 
         LALFree( outputPtr );
         *output = NULL;
-
-        ABORTXLAL(status);
       }
+      ENDFAIL( status );
       break;
 
     case FindChirpSP:
@@ -308,7 +308,10 @@ LALFindChirpTemplateFinalize (
 
   /* destroy the fft plan if it exists */
   if ( outputPtr->fwdPlan )
-    XLALDestroyREAL4FFTPlan(outputPtr->fwdPlan);
+  {
+    LALDestroyRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan) );
+    CHECKSTATUSPTR( status );
+  }
 
   /* destroy the vector used to store part of the template if it exists */
   if ( outputPtr->xfacVec )

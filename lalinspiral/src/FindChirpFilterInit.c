@@ -450,8 +450,9 @@ LALFindChirpFilterInit (
 
 
   /* create plan for optimal filter */
-  outputPtr->invPlan = XLALCreateReverseCOMPLEX8FFTPlan(params->numPoints, 0);
-  if (outputPtr->invPlan == NULL)
+  LALCreateReverseComplexFFTPlan( status->statusPtr,
+      &(outputPtr->invPlan), params->numPoints, 0 );
+  BEGINFAIL( status )
   {
     LALFree( outputPtr->chisqInput );
     if ( outputPtr->chisqInputBCV )
@@ -461,9 +462,8 @@ LALFindChirpFilterInit (
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
-
-    ABORTXLAL(status);
   }
+  ENDFAIL( status );
 
   if ( params->approximant == FindChirpPTF )
   {
@@ -529,7 +529,8 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -550,7 +551,8 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
           status );
 
@@ -569,7 +571,8 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
           status );
 
@@ -588,7 +591,8 @@ LALFindChirpFilterInit (
         params->numPoints );
     BEGINFAIL( status )
     {
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ),
           status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
@@ -664,7 +668,8 @@ LALFindChirpFilterInit (
             status );
       }
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -692,7 +697,8 @@ LALFindChirpFilterInit (
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
           status );
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       LALFree( outputPtr->chisqInputBCV );
@@ -718,7 +724,8 @@ LALFindChirpFilterInit (
       TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qVecBCVSpin2)),
           status );
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -746,7 +753,8 @@ LALFindChirpFilterInit (
       TRY( LALCDestroyVector(status->statusPtr,&(outputPtr->qtildeVecBCVSpin1)),
           status );
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -804,7 +812,8 @@ LALFindChirpFilterInit (
             status );
       }
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -880,7 +889,8 @@ LALFindChirpFilterInit (
             status );
       }
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->chisqInputBCV )
@@ -958,7 +968,8 @@ LALFindChirpFilterInit (
             status );
       }
 
-      XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
       if ( outputPtr->rhosqVec )
@@ -1029,7 +1040,8 @@ LALFindChirpFilterFinalize (
    */
 
   /* destroy plan for optimal filter */
-  XLALDestroyCOMPLEX8FFTPlan(outputPtr->invPlan);
+  LALDestroyComplexFFTPlan( status->statusPtr, &(outputPtr->invPlan) );
+  CHECKSTATUSPTR( status );
 
   /* destroy workspace vector for optimal filter: freq domain */
   if ( outputPtr->qVec )
