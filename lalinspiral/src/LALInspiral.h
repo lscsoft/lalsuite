@@ -1684,6 +1684,13 @@ void LALRungeKutta4(
      rk4GSLIntegrator *,
      void *);
 
+int
+XLALRungeKutta4(
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
+   );
+
 void XLALRungeKutta4Free(
      rk4GSLIntegrator *integrator);
 

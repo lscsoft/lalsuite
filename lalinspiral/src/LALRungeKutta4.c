@@ -134,6 +134,30 @@ LALRungeKutta4(
    )
 {
 
+   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
+
+   XLALPrintDeprecationWarning( "LALRungeKutta4", "XLALRungeKutta4" );
+
+   if ( XLALRungeKutta4( yout, integrator, params ) == XLAL_FAILURE )
+     ABORTXLAL( status );
+
+   RETURN( status );
+}
+
+
+/*  <lalVerbatim file="LALRungeKutta4CP"> */
+int
+XLALRungeKutta4(
+   REAL8Vector      *yout,
+   rk4GSLIntegrator *integrator,
+   void             *params
+   )
+{ /* </lalVerbatim>  */
+
+   static const char func[] = "XLALRungeKutta4";
+
+   int gslStatus;
+
    INT4 i;
    REAL8 t = 0.0;
    struct RungeGSLParams gslParams;
@@ -141,14 +165,22 @@ LALRungeKutta4(
    REAL8 h;
    gsl_odeiv_system sys;
 
-   INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
-   ATTATCHSTATUSPTR(status);
+#ifndef LAL_NDEBUG
+   if ( !yout )
+     XLAL_ERROR( func, XLAL_EFAULT );
 
-   ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (yout->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (integrator, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (integrator->input, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   if ( !yout->data )
+     XLAL_ERROR( func, XLAL_EFAULT );
+
+   if ( !integrator )
+     XLAL_ERROR( func, XLAL_EFAULT );
+
+   if ( !integrator->input )
+     XLAL_ERROR( func, XLAL_EFAULT );
+   
+   if ( !params )
+     XLAL_ERROR( func, XLAL_EFAULT );
+#endif
 
   /* Initialise GSL integrator */
 
@@ -170,15 +202,16 @@ LALRungeKutta4(
   while (t < input->h)
   {
     REAL8 tOld = t;
-    CALLGSL( gsl_odeiv_evolve_apply(integrator->evolve, integrator->control,
-                 integrator->step, &sys,
-				&t, input->h, &h, integrator->y), status );
+    XLAL_CALLGSL( gslStatus = gsl_odeiv_evolve_apply(integrator->evolve, 
+                    integrator->control, integrator->step, &sys,
+				&t, input->h, &h, integrator->y) );
+    
     /*printf("h = %e, t = %e\n", h, t);*/
-    BEGINFAIL(status)
+    if ( gslStatus != GSL_SUCCESS )
     {
-        ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
+      XLALPrintError( "Failure in gsl_odeiv_evolve_apply\n" );
+      XLAL_ERROR( func, XLAL_EFUNC );
     }
-    ENDFAIL(status);
 
     /* In case integration becomes degenerate */
     if (t == tOld)
@@ -186,14 +219,14 @@ LALRungeKutta4(
          for (i=0; i<input->n; i++)
            yout->data[i] = 0.0;
 
-         ABORT(status, LALINSPIRALH_ESTOPPED, LALINSPIRALH_MSGESTOPPED);
+         XLALPrintError( "Time step grown too small!\n" );
+         XLAL_ERROR( func, XLAL_EFAILED );
     }
   }
 
   memcpy( yout->data, integrator->y, input->n * sizeof(REAL8));
 
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 }
 
 
