@@ -1029,10 +1029,6 @@ void LALEOBPPWaveformForInjection(
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
-/*  <lalLaTeX>
-\newpage\input{LALBCVWaveformC}
-</lalLaTeX>  */
-
 void LALBCVWaveform(
      LALStatus *status,
      REAL4Vector *signalvec,
@@ -1489,9 +1485,10 @@ void LALInspiralTofVIntegrand (
      REAL8,
      void *);
 
-
-
-
+REAL8 XLALInspiralTofVIntegrand (
+   REAL8      v,
+   void      *params
+   );
 
 void LALInspiralTiming2_0PN (
      LALStatus *,
