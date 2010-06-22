@@ -165,9 +165,8 @@ INT4 V1file = 0;
 /* input time-slide parameters */
 REAL8  slideStep[LAL_NUM_IFO]     = {0.0,0.0,0.0,0.0,0.0,0.0};
 int    bankDuration     = 0;
-CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 CHAR   chiaFileName[FILENAME_MAX]; /* name of chia trigbank for follow-up studies */
-/* CHAR  *cohbankFileName = NULL; name of input template bank  */
+CHAR  *cohbankFileName = NULL; /* name of input template bank */
 INT4  cohSNROut            = 0;    /* default is not to write frame */
 INT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
 INT4  nullStatOut       = 0;    /* default is not to write frame */
@@ -1555,7 +1554,10 @@ int main( int argc, char *argv[] )
   XLALFree(scanInit.skyRegionString);
   thisScan.state = STATE_FINISHED;
   LAL_CALL ( FreeDopplerSkyScan(&status, &thisScan), &status);
-  
+
+  if (cohbankFileName)
+    free(cohbankFileName);
+
   free( proctable.processTable ); 
   while( procparams.processParamsTable )
     {
@@ -1913,10 +1915,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
          case 'u':
            /* create storage for the bank filename */
-           /*optarg_len = strlen( optarg ) + 1;
-           bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-           memcpy( bankFileName, optarg, optarg_len );*/
-           strcpy(cohbankFileName, optarg);
+           optarg_len = strlen( optarg ) + 1;
+           cohbankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+           memcpy(cohbankFileName, optarg, optarg_len );
            char tempName[256];
            char *duration =NULL;
            strcpy(tempName, cohbankFileName);
