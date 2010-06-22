@@ -1083,7 +1083,7 @@ int main( int argc, char *argv[] )
     { 
       int slide = 0;
       int numClusteredSlide = 0;
-      MultiInspiralTable *slideEvent = NULL;
+      MultiInspiralTable *tmp_slideEvent = NULL;
       MultiInspiralTable *slideClust = NULL;
       
       if ( vrbflg ) fprintf( stdout, "splitting events by slide\n" );
@@ -1092,7 +1092,7 @@ int main( int argc, char *argv[] )
       {
         if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
         /* extract the slide */
-        slideEvent = XLALMultiInspiralSlideCut( &inspiralEventList, slide );
+        tmp_slideEvent = XLALMultiInspiralSlideCut( &inspiralEventList, slide );
         /* run clustering */
         numClusteredSlide = XLALClusterMultiInspiralTable( &slideEvent, 
           cluster_dt, clusterchoice);
@@ -1102,15 +1102,15 @@ int main( int argc, char *argv[] )
         numClusteredEvents += numClusteredSlide;
 
         /* add clustered triggers */
-        if( slideEvent )
+        if( tmp_slideEvent )
         {
           if( slideClust )
           {
-            thisEvent = thisEvent->next = slideEvent;
+            thisEvent = thisEvent->next = tmp_slideEvent;
           }
           else
           {
-            slideClust = thisEvent = slideEvent;
+            slideClust = thisEvent = tmp_slideEvent;
           }
           /* scroll to end of list */
           for( ; thisEvent->next; thisEvent = thisEvent->next);
