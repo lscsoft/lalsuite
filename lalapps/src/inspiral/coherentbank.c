@@ -283,7 +283,7 @@ int main( int argc, char *argv[] )
         }
         startTime = (INT4) gpstime;
         startTimeGPS.gpsSeconds = startTime;
-        ADD_PROCESS_PARAM( "int", "%ld", startTime );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startTime );
         break;
 
       case 't':
@@ -309,7 +309,7 @@ int main( int argc, char *argv[] )
         }
         endTime = (INT4) gpstime;
         endTimeGPS.gpsSeconds = endTime;
-        ADD_PROCESS_PARAM( "int", "%ld", endTime );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, endTime );
         break;
 
       case 'x':
@@ -435,11 +435,11 @@ int main( int argc, char *argv[] )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
               "custer window must be > 0: "
-              "(%ld specified)\n",
+              "(%" LAL_INT8_FORMAT " specified)\n",
               long_options[option_index].name, cluster_dt );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%ld", cluster_dt );
+        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT, cluster_dt );
         /* convert cluster time from ms to ns */
         cluster_dt *= 1000000LL;
         break;
@@ -1044,10 +1044,10 @@ int XLALCoincSegCutSnglInspiral(
   *inspiralList = NULL;
 
   while ( thisEvent ) {
-    fprintf(stdout, "This event's END TIME NS is %Ld\n",thisEvent->end_time.gpsNanoSeconds);
-    fprintf(stdout, "This event's id is %Ld\n",thisEvent->event_id->id);
+    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end_time.gpsNanoSeconds);
+    fprintf(stdout, "This event's id is %" LAL_UINT8_FORMAT "\n",thisEvent->event_id->id);
     timeCheck = floor(thisEvent->event_id->id/timeExtract);
-    fprintf(stdout, "This event's gps-start time is %Ld\n",
+    fprintf(stdout, "This event's gps-start time is %" LAL_INT4_FORMAT "\n",
             timeCheck);
 
     /* find events in the same coinc-segment */
@@ -1076,7 +1076,7 @@ int XLALCoincSegCutSnglInspiral(
     }
   }
  
-  fprintf(stdout, "This last time-check is %Ld\n", timeCheck); 
+  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck); 
   /* store the last event */
   //if ( ! (*inspiralList) )
    // {
@@ -1127,9 +1127,9 @@ int XLALClusterInEventID(
       REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
       REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
       
-      fprintf(stdout, "Next event's id is %Ld\n",nextEvent->event_id->id);
+      fprintf(stdout, "Next event's id is %" LAL_UINT8_FORMAT "\n",nextEvent->event_id->id);
       fprintf(stdout, "Next-statistic is %e\n",nextStat);
-      fprintf(stdout, "Next IFO is %e\n",nextEvent->ifo);
+      fprintf(stdout, "Next IFO is %s\n",nextEvent->ifo);
       
       
       if ( nextStat > thisStat ) {

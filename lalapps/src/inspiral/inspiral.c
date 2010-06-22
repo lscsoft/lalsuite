@@ -2484,7 +2484,7 @@ int main( int argc, char *argv[] )
                   REAL4 chisq=0.0;
 
                   if ( vrbflg ) fprintf(stdout,
-                                        "The bankCurrent event id is %Ld\n",
+                                        "The bankCurrent event id is %" LAL_UINT8_FORMAT "\n",
                                         bankCurrent->event_id->id);
 
                   if ( ! eventList ) {
@@ -2559,7 +2559,7 @@ int main( int argc, char *argv[] )
                     {
                       cDataForFrame = 1;
                       snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                "%Ld", tempTmplt->event_id->id );
+                                "%" LAL_UINT8_FORMAT, tempTmplt->event_id->id );
                       snprintf( coherentInputData->name,
                                 LALNameLength*sizeof(CHAR),
                                 "%s:CBC-CData", ifo );
@@ -2580,7 +2580,7 @@ int main( int argc, char *argv[] )
                          "GPS end time in s and ns are: %d and %d\n",
                          coherentInputData->epoch.gpsSeconds, coherentInputData->epoch.gpsNanoSeconds);
                       if ( vrbflg ) fprintf(stdout,
-                         "Event ID used for C Data is %Ld\n",
+                         "Event ID used for C Data is %" LAL_UINT8_FORMAT "\n",
                          tempTmplt->event_id->id);
                       if ( vrbflg ) fprintf(stdout,
                          "C Data string is %s\n",
