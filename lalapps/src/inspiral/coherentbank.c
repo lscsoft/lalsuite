@@ -667,7 +667,7 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, "GPS start time of this coinc-segment is %d\n",
                    startTime);
 
-      numCoincSegCutTrigs = XLALCoincSegCutSnglInspiral( startTime, inspiralEventList);
+      numCoincSegCutTrigs = XLALCoincSegCutSnglInspiral( startTime, &inspiralEventList);
 
       if ( vrbflg ) fprintf( stdout,
                              "Sorting triggers within requested interval\n" );
