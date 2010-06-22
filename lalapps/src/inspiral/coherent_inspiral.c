@@ -328,6 +328,9 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
   searchsummvars.searchSummvarsTable = NULL;
 
+  /* initialise summvalue */
+  summvalue.summValueTable = NULL;
+
   arg_parse_check( argc, argv, procparams );
   if (vrbflg)  fprintf(stdout, "called parse options..\n");
 
