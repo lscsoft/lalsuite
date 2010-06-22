@@ -82,11 +82,16 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
+    REAL4TimeSeries         *chiSquare,
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
     struct bankDataOverlaps *dataOverlaps,
-    struct bankComplexTemplateOverlaps *autoTempOverlaps
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    RingDataSegments        *segment[LAL_NUM_IFO+1],
+    COMPLEX8FFTPlan         *invPlan
 );
 int cohPTFspinChecker(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
@@ -111,7 +116,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto
+    REAL4TimeSeries         *autoVeto,
+    REAL4TimeSeries         *chiSquare
 );
 
 static void coh_PTF_cleanup(
@@ -177,10 +183,11 @@ int main( int argc, char **argv )
   REAL4TimeSeries         *cohSNR = NULL;
   REAL4TimeSeries         *pValues[10];
   REAL4TimeSeries         *gammaBeta[2];
-  REAL4TimeSeries         *nullSNR;
-  REAL4TimeSeries         *traceSNR;
-  REAL4TimeSeries         *bankVeto;
-  REAL4TimeSeries         *autoVeto;
+  REAL4TimeSeries         *nullSNR = NULL;
+  REAL4TimeSeries         *traceSNR = NULL;
+  REAL4TimeSeries         *bankVeto = NULL;
+  REAL4TimeSeries         *autoVeto = NULL;
+  REAL4TimeSeries         *chiSquare = NULL;
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
   MultiInspiralTable      *thisEvent = NULL;
@@ -229,10 +236,6 @@ int main( int argc, char **argv )
   }   
   gammaBeta[0] = NULL;
   gammaBeta[1] = NULL;
-  nullSNR = NULL;
-  traceSNR = NULL;
-  bankVeto = NULL;
-  autoVeto = NULL;
 
   /* Initialise some of the input file names */
   if ( params->spinBank )
@@ -369,6 +372,19 @@ int main( int argc, char **argv )
     PTFM[ifoNumber] = XLALCreateREAL8ArrayL( 2, 5, 5 );
     PTFN[ifoNumber] = XLALCreateREAL8ArrayL( 2, 5, 5 );
     PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+  }
+
+  /* At this point we can discard the calibrated data, only the segments
+     and spectrum is needed now */
+
+  for( ifoNumber = 0; ifoNumber < (LAL_NUM_IFO+1); ifoNumber++)
+  {
+    if ( channel[ifoNumber] )
+    {
+      XLALDestroyREAL4Vector( channel[ifoNumber]->data );
+      LALFree( channel[ifoNumber] );
+      channel[ifoNumber] = NULL;
+    }
   }
 
   /* Create the relevant structures that will be needed */
@@ -574,7 +590,7 @@ int main( int argc, char **argv )
             /* This function calculates the overlap */
             cohPTFBankFilters(&(bankFcTmplts[ui]),0,
                 &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
-                dataOverlaps[ui].PTFqVec[ifoNumber]);
+                dataOverlaps[ui].PTFqVec[ifoNumber],0,0);
           }
         }
       }
@@ -641,6 +657,14 @@ int main( int argc, char **argv )
             (1.0/params->sampleRate),&lalDimensionlessUnit,
             3*numPoints/4 - numPoints/4);
       }
+      if ( params->doChiSquare )
+      {
+        chiSquare = XLALCreateREAL4TimeSeries("chiSquare",
+            &segStartTime,PTFtemplate->fLower,
+            (1.0/params->sampleRate),&lalDimensionlessUnit,
+            3*numPoints/4 - numPoints/4);
+      }
+
       /* Loop over ifos */
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
@@ -703,14 +727,15 @@ int main( int argc, char **argv )
       // signal based vetoes as appropriate
       cohPTFmodBasesUnconstrainedStatistic(cohSNR,PTFM,PTFqVec,params,
           spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
-          gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,subBankSize,
-          bankOverlaps,bankNormOverlaps,dataOverlaps,autoTempOverlaps);
+          gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,subBankSize,
+          bankOverlaps,bankNormOverlaps,dataOverlaps,autoTempOverlaps,fcTmplt,
+          invspec,segments,invPlan);
      
       verbose("Made coherent statistic for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);      
 
       // This function adds any loud events to the list of triggers 
-      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto);
+      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       // Then we get a bunch of memory freeing statements
@@ -728,6 +753,7 @@ int main( int argc, char **argv )
       if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
       if (bankVeto) XLALDestroyREAL4TimeSeries(bankVeto);
       if (autoVeto) XLALDestroyREAL4TimeSeries(autoVeto);
+      if (chiSquare) XLALDestroyREAL4TimeSeries(chiSquare);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       XLALDestroyREAL4TimeSeries(cohSNR);
@@ -1231,11 +1257,16 @@ void cohPTFmodBasesUnconstrainedStatistic(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
+    REAL4TimeSeries         *chiSquare,
     UINT4                   subBankSize,
     struct bankComplexTemplateOverlaps *bankOverlaps,
     struct bankTemplateOverlaps *bankNormOverlaps,
     struct bankDataOverlaps *dataOverlaps,
-    struct bankComplexTemplateOverlaps *autoTempOverlaps
+    struct bankComplexTemplateOverlaps *autoTempOverlaps,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    RingDataSegments        *segments[LAL_NUM_IFO+1],
+    COMPLEX8FFTPlan         *invPlan
 )
 
 {
@@ -1287,7 +1318,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
 
-//  FILE *outfile;
+  FILE *outfile;
+  outfile = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 *v1p,*v2p;
@@ -1409,6 +1441,10 @@ void cohPTFmodBasesUnconstrainedStatistic(
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
+  struct bankDataOverlaps *chisqOverlaps = NULL;
+  COMPLEX8VectorSequence *tempqVec = NULL;
+  REAL4 *frequencyRanges = NULL;
+  REAL4 fLow,fHigh;
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
   // Only calculated if this will be a trigger
@@ -1707,6 +1743,61 @@ void cohPTFmodBasesUnconstrainedStatistic(
           // Auto veto is calculated
           autoVeto->data->data[i-numPoints/4] = calculate_auto_veto_max_phase_coherent(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
         }
+        if (params->doChiSquare )
+        {
+          if (! frequencyRanges)
+          {
+            frequencyRanges = (REAL4 *)
+              LALCalloc( params->numChiSquareBins-1, sizeof(REAL4) );
+            calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRanges);
+          }
+          if (! tempqVec)
+            tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
+          if (! chisqOverlaps)
+          {
+            chisqOverlaps = LALCalloc(params->numChiSquareBins,sizeof( *chisqOverlaps));
+            for( j = 0; j < params->numChiSquareBins; j++)
+            {
+              if (params->numChiSquareBins == 1)
+              {
+                fLow = 0;
+                fHigh = 0;
+              }
+              else if (j == 0)
+              {
+                fLow = 0;
+                fHigh = frequencyRanges[0];
+              }
+              else if (j == params->numChiSquareBins-1)
+              {
+                fLow = frequencyRanges[params->numChiSquareBins-2];
+                fHigh = 0;
+              }
+              else
+              {
+                fLow = frequencyRanges[j-1];
+                fHigh = frequencyRanges[j];
+              }                 
+              for( k = 0; k < LAL_NUM_IFO; k++)
+              {
+                if ( params->haveTrig[k] )
+                {
+                  chisqOverlaps[j].PTFqVec[k] =
+                      XLALCreateCOMPLEX8VectorSequence ( 1,
+                      3*numPoints/4 - numPoints/4 + 10000);
+                  cohPTFBankFilters(fcTmplt,0,
+                  &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
+                  chisqOverlaps[j].PTFqVec[k],fLow,fHigh);
+                }
+                else
+                  chisqOverlaps[j].PTFqVec[k] = NULL;
+              }
+            }
+          }
+          /* Calculate chi square here */
+          chiSquare->data->data[i-numPoints/4] = calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
+        
+        }
       }
     }
   }
@@ -1751,7 +1842,30 @@ void cohPTFmodBasesUnconstrainedStatistic(
     }
   }
 
-/*  outfile = fopen("cohSNR_timeseries.dat","w");
+  if (params->doChiSquare)
+  {
+    if (frequencyRanges)
+      LALFree(frequencyRanges);
+    if (tempqVec)
+      XLALDestroyCOMPLEX8VectorSequence( tempqVec );
+    if (chisqOverlaps)
+    {
+      for( j = 0; j < params->numChiSquareBins; j++)
+      {
+        for( k = 0; k < LAL_NUM_IFO; k++)
+        {
+          if (chisqOverlaps[j].PTFqVec[k])
+          {
+            XLALDestroyCOMPLEX8VectorSequence(chisqOverlaps[j].PTFqVec[k]);
+          }
+        }
+      }
+      LALFree(chisqOverlaps);      
+    }
+
+  }
+
+  /*outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
@@ -1769,6 +1883,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
   for ( i = 0; i < autoVeto->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,autoVeto->data->data[i]);
+  }
+  fclose(outfile);*/
+
+  /*outfile = fopen("chi_square_timeseries.dat","w");
+  for ( i = 0; i < chiSquare->data->length; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,chiSquare->data->data[i]);
   }
   fclose(outfile);*/
 
@@ -1836,7 +1957,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
-    REAL4TimeSeries         *autoVeto
+    REAL4TimeSeries         *autoVeto,
+    REAL4TimeSeries         *chiSquare
 )
 {
   // This function adds a trigger to the event list
@@ -1909,6 +2031,10 @@ UINT8 cohPTFaddTriggers(
           currEvent->cont_chisq = autoVeto->data->data[i];
 //          fprintf(stderr, "Auto Veto %e \n",currEvent->cont_chisq);
           currEvent->cont_chisq_dof = params->numAutoPoints;
+        }
+        if (params->doChiSquare)
+        {
+          currEvent->chisq = chiSquare->data->data[i];
         }
         if (pValues[0])
           currEvent->h1quad.re = pValues[0]->data->data[i];

@@ -743,6 +743,155 @@ void calculate_coherent_bank_overlaps(
 
 }
 
+void calculate_standard_chisq_freq_ranges(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4 a[LAL_NUM_IFO],
+    REAL4 b[LAL_NUM_IFO],
+    REAL4 *frequencyRanges
+)
+{
+  UINT4 i,k,kmin,kmax,len,freqBin,numFreqBins;
+  REAL4 v1,v2,overlapCont,SNRtemp;
+  REAL4 SNRmax = 0;
+  REAL8         f_min, deltaF, fFinal;
+  COMPLEX8     *PTFQtilde   = NULL;
 
-  
-            
+  PTFQtilde = fcTmplt->PTFQtilde->data;  
+  len = 0;
+  deltaF = 0;
+  for ( k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if ( params->haveTrig[k] )
+    {
+      len       = invspec[k]->data->length;
+      deltaF    = invspec[k]->deltaF;
+      break;
+    }
+  }
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  /* Note that these frequencies are not just hardcoded here, if you change*/
+  /* these values you will need to change them in other places as well */
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = 1000;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+
+  numFreqBins = params->numChiSquareBins;
+
+  v1 = 0;
+
+  for( k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if ( params->haveTrig[k] )
+    {
+      v1 += PTFM[k]->data[0];
+//      v2 += b[k]*PTFM[k]->data[0];
+//      SNRmax = v1*v1 + v2*v2;
+//      SNRmax = v1 + v2;
+    }
+  }
+  SNRmax = v1;
+
+  v1 = 0;
+
+  freqBin = 1;
+  SNRtemp = 0;
+  for ( i = kmin; i < kmax ; ++i )
+  {
+    for( k = 0; k < LAL_NUM_IFO; k++)
+    {
+      if ( params->haveTrig[k] )
+      {
+        overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
+               PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
+        v1 += overlapCont * 4 * deltaF;
+//        v2 += b[k] * overlapCont * 4 * deltaF;
+      }
+    }
+    /* Calculate SNR */
+//    SNRtemp = v1*v1 + v2*v2;
+    SNRtemp = v1;
+    /* Compare to max SNR */
+    if (SNRtemp > SNRmax * ((REAL4)freqBin/(REAL4)numFreqBins))
+    {
+      if (freqBin < numFreqBins)
+      {
+        /* Record the frequency */
+        frequencyRanges[freqBin-1] = i*deltaF;
+//        fprintf(stderr,"Frequency bin:%e \n",frequencyRanges[freqBin-1]);
+        freqBin+=1;
+      }
+    }
+  }
+//  fprintf(stderr,"%e %e \n", SNRtemp,SNRmax);
+}
+        
+
+REAL4 calculate_chi_square(
+struct coh_PTF_params   *params,
+UINT4           numPoints,
+UINT4           position,
+struct bankDataOverlaps *chisqOverlaps,    
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+gsl_matrix *eigenvecs,
+gsl_vector *eigenvals   
+)
+{
+  UINT4 i,halfNumPoints;
+  REAL4 *v1,*v2,*v1full,*v2full;
+  REAL4 chiSq,SNRtemp,SNRexp;
+  UINT4 numChiSquareBins = params->numChiSquareBins;
+
+  v1 = LALCalloc(2,sizeof(REAL4));
+  v2 = LALCalloc(2,sizeof(REAL4));
+  v1full = LALCalloc(2,sizeof(REAL4));
+  v2full = LALCalloc(2,sizeof(REAL4));
+
+  halfNumPoints = 3*numPoints/4 - numPoints/4 + 10000;
+
+  chiSq = 0;
+
+  calculate_rotated_vectors(params,PTFqVec,v1full,v2full,a,b,
+        timeOffsetPoints,eigenvecs,eigenvals,numPoints,
+        position,1,2);
+
+  SNRexp = v1full[0]*v1full[0] + v1full[1]*v1full[1];
+  SNRexp += v2full[0]*v2full[0] + v2full[1]*v2full[1];
+  SNRexp = pow(SNRexp,0.5);
+
+  for (i = 0; i < numChiSquareBins; i++ )
+  {
+    /* calculate SNR in this frequency bin */
+    calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1,v2,a,b,
+        timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
+        position-numPoints/4+5000,1,2);
+
+//    SNRtemp = v1[0]*v1[0]+v1[1]*v1[1]+v2[0]*v2[0]+v2[1]*v2[1];
+//    SNRtemp = pow(SNRtemp,0.5);
+
+    SNRtemp = pow((v1[0] - v1full[0]/((REAL4)numChiSquareBins)),2);
+//    fprintf(stderr,"Comp 1: %e %e \n",v1[0],v1full[0]);
+    SNRtemp += pow((v1[1] - v1full[1]/((REAL4)numChiSquareBins)),2);
+//    fprintf(stderr,"Comp 2: %e %e \n",v1[1],v1full[1]);
+    SNRtemp += pow((v2[0] - v2full[0]/((REAL4)numChiSquareBins)),2);
+//    fprintf(stderr,"Comp 3: %e %e \n",v2[0],v2full[0]);
+    SNRtemp += pow((v2[1] - v2full[1]/((REAL4)numChiSquareBins)),2);
+//    fprintf(stderr,"Comp 4: %e %e \n",v2[1],v2full[1]);
+
+    chiSq += SNRtemp;
+//    chiSq += pow(SNRtemp - SNRexp/((REAL4)numChiSquareBins),2);
+//    chiSq = SNRtemp * SNRexp;
+  }
+  chiSq *= numChiSquareBins;
+  LALFree(v1);
+  LALFree(v2);
+  LALFree(v1full);
+  LALFree(v2full);
+  return chiSq;
+}

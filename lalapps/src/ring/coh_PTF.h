@@ -98,6 +98,7 @@ struct coh_PTF_params {
   const char  *bankVetoBankName;
   UINT4        numAutoPoints;
   REAL4        autoVetoTimeStep;
+  UINT4        numChiSquareBins;
   char         outputFile[256];
   const char  *spinBank;
   const char  *noSpinBank;
@@ -118,6 +119,7 @@ struct coh_PTF_params {
   int          doTraceSNR;
   int          doBankVeto;
   int          doAutoVeto;
+  int          doChiSquare;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
@@ -233,7 +235,9 @@ void cohPTFBankFilters(
     COMPLEX8FrequencySeries    *sgmnt,
     COMPLEX8FFTPlan            *invBankPlan,
     COMPLEX8VectorSequence     *PTFqVec,
-    COMPLEX8VectorSequence     *PTFBankqVec);
+    COMPLEX8VectorSequence     *PTFBankqVec,
+    REAL8                      f_min,
+    REAL8                      fFinal);
 
 REAL4 cohPTFDataNormalize(
     COMPLEX8FrequencySeries    *sgmnt,
@@ -353,3 +357,27 @@ void calculate_rotated_vectors(
     UINT4 position,
     UINT4 vecLength,
     UINT4 vecLengthTwo);
+
+void calculate_standard_chisq_freq_ranges(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4 a[LAL_NUM_IFO],
+    REAL4 b[LAL_NUM_IFO],
+    REAL4 *frequencyRanges
+);
+
+REAL4 calculate_chi_square(
+struct coh_PTF_params   *params,
+UINT4           numPoints,
+UINT4           position,
+struct bankDataOverlaps *chisqOverlaps,
+COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
+REAL4           a[LAL_NUM_IFO],
+REAL4           b[LAL_NUM_IFO],
+INT4            timeOffsetPoints[LAL_NUM_IFO],
+gsl_matrix *eigenvecs,
+gsl_vector *eigenvals
+);
+

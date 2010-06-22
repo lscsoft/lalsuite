@@ -61,6 +61,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
     { "do-bank-veto"       ,no_argument, &localparams.doBankVeto,1},
     { "do-auto-veto"       ,no_argument, &localparams.doAutoVeto,1},
+    { "do-chi-square"      ,no_argument, &localparams.doChiSquare,1},
 /*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
     {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
     {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
@@ -99,6 +100,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "bank-file",               required_argument, 0, 'O' },
     { "num-auto-chisq-points",   required_argument, 0, 'p' },
     { "auto-veto-time-step",     required_argument, 0, 'P' },
+    { "num-chi-square-bins",     required_argument, 0, 'q' },
     { "random-seed",             required_argument, 0, 'r' },
     { "dynamic-range-factor",    required_argument, 0, 'R' },
     { "sample-rate",             required_argument, 0, 's' },
@@ -113,7 +115,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -234,6 +236,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'P': /* Auto veto time step */
         localparams.autoVetoTimeStep = atof( optarg );
+        break;
+      case 'q': /* num chi square bins */
+        localparams.numChiSquareBins = atoi( optarg );
         break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
@@ -421,6 +426,12 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
     fprintf(stderr, "When using --do-auto-veto you must also supply ");
     fprintf(stderr, "--num-auto-chisq-points and --auto-veto-time-step\n");
     sanity_check(params->doAutoVeto && params->autoVetoTimeStep && params->numAutoPoints);
+  }
+  if ( params->doChiSquare && (! params->numChiSquareBins))
+  {
+    fprintf(stderr, "When using --do-chi-square you must also supply ");
+    fprintf(stderr, "--num-chi-square-bins \n");
+    sanity_check(params->doChiSquare && params->numChiSquareBins);
   }
   sanity_check(params->spinBank || params->noSpinBank);
   return 0;

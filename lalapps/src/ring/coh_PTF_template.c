@@ -480,6 +480,8 @@ cohPTFTemplateOverlaps(
   deltaF    = invspec->deltaF;
   /* This is explicit as I want f_min of template lower than f_min of filter*/
   f_min     = (REAL4) fcTmplt1->tmplt.fLower;
+  /* Note that these frequencies are not just hardcoded here, if you change*/
+  /* these values you will need to change them in other places as well */
   f_min     = 40;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
@@ -603,17 +605,21 @@ void cohPTFBankFilters(
     COMPLEX8FrequencySeries    *sgmnt,
     COMPLEX8FFTPlan            *invBankPlan,
     COMPLEX8VectorSequence     *PTFqVec,
-    COMPLEX8VectorSequence     *PTFBankqVec)
+    COMPLEX8VectorSequence     *PTFBankqVec,
+    REAL8                      f_min,
+    REAL8                      fFinal)
 {
   // This function calculates (Q|s) for the bank veto. It only returns the 
   // middle half of the time series with some buffer to allow for time shifts
 
   UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
-  REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y, length;
+  REAL8          deltaF,deltaT,r, s, x, y, length;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
   COMPLEX8       *PTFQtilde   = NULL;  
 
+
+//  fprintf(stderr,"Frequency ranges %e %e\n",f_min,fFinal);
 
   numPoints   = PTFqVec->vectorLength;
   halfNumPoints = 3*numPoints/4 - numPoints/4;
@@ -622,11 +628,18 @@ void cohPTFBankFilters(
   deltaF    = sgmnt->deltaF;
   deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
   /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt->tmplt.fLower;
-  f_min     = 40;
+  if (! f_min)
+  {
+    f_min     = (REAL4) fcTmplt->tmplt.fLower;
+    f_min     = 40;
+  }
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-  fFinal    = 1000;
+  if (! fFinal)
+  {
+    fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
+    fFinal    = 1000;
+  }
+//  fprintf(stderr,"Frequency ranges %e %e\n",f_min,fFinal);
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
