@@ -1307,11 +1307,8 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_SepDetVeto ) {
 
     UINT8 icand, icandMax;
-    UINT4 numDetectors, X, nSky_fg;
-    UINT4 topNC, iAlphaR, iDeltaR;
-    REAL4 topTwoF=0.0, maxTopTwoF=0.0, maxTopTwoFSky=0.0;
-    REAL4 AlphaCenter, DeltaCenter; 
-    REAL8 dSkyRefine, dSkyEq;
+    UINT4 numDetectors, X, topNC;
+    REAL4 topTwoF=0.0, maxTopTwoF=0.0;
     Fcomponents FstatSeg;
     ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
     PulsarSpins fkdotTMP;
@@ -2077,7 +2074,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   Nsegments = usefulparams->nStacks;
 
   /* check if translation to reference time of fine-grid is necessary */
-  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) > 0 ) {
+  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) != 0 ) {
     translateSpins = TRUE;
     /*fprintf(stderr,"translateSpins = TRUE\n");*/
   }

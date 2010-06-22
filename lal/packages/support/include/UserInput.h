@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -34,16 +35,73 @@
 #ifndef _USERINPUT_H  /* Double-include protection. */
 #define _USERINPUT_H
 
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
 #include <lal/ConfigFile.h>
 #if 0
 #include <lal/LIGOMetadataTables.h>
 #endif
 
-#ifdef  __cplusplus   /* C++ protection. */
-extern "C" {
-#endif
 
-NRCSID( USERINPUTH, "$Id$");
+/*----- family of short-cut macros: register _struct-pointer_ "uvar->" struct User-Variables ----- */
+#define XLALregREALUserStruct(name,option,flag,help) \
+  XLALRegisterREALUserVar(#name, option, flag, help, &(uvar-> name))
+
+#define XLALregINTUserStruct(name,option,flag,help) \
+  XLALRegisterINTUserVar(#name, option,flag, help, &(uvar-> name))
+
+#define XLALregBOOLUserStruct(name,option,flag,help) \
+  XLALRegisterBOOLUserVar(#name, option, flag, help, &(uvar-> name))
+
+#define XLALregSTRINGUserStruct(name,option,flag,help) \
+  XLALRegisterSTRINGUserVar(#name, option, flag, help, &(uvar-> name))
+
+#define XLALregLISTUserStruct(name,option,flag,help)                    \
+  XLALRegisterLISTUserVar(#name, option, flag, help, &(uvar-> name))
+
+
+/** State-flags: variable is optional, required, help, developer or was_set */
+typedef enum {
+  UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
+  UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
+  UVAR_HELP		= 1<<1,	/**< special variable: trigger output of help-string */
+  UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and hidden in help-output at lalDebugLevel==0 */
+  UVAR_SPECIAL		= 1<<3,	/**< OPTIONAL and *turns off* checking of required variables (LALUserVarCheckRequired) */
+  UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
+} UserVarState;
+
+/** Format for logging User-input: configFile- or cmdLine-style.
+ * This determines the format of the string returned from LALLogUserInput().
+ */
+typedef enum {
+  UVAR_LOGFMT_CFGFILE,	/**< return UserVars as a config-file */
+  UVAR_LOGFMT_CMDLINE,	/**< return UserVars as a command-line */
+  UVAR_LOGFMT_PROCPARAMS, /**< return UserVars suitable for filling in process-params struct */
+  UVAR_LOGFMT_LAST
+} UserVarLogFormat;
+
+/* Function prototypes */
+void XLALDestroyUserVars( void );
+int XLALUserVarReadCmdline (int argc, char *argv[]);
+int XLALUserVarReadCfgfile ( const CHAR *cfgfile );
+CHAR *XLALUserVarHelpString ( const CHAR *progname );
+int XLALUserVarReadAllInput ( int argc, char *argv[] );
+int XLALUserVarCheckRequired( void );
+int XLALUserVarWasSet (const void *cvar);
+int XLALGetDebugLevel (int argc, char *argv[], CHAR optchar);
+CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
+
+/* type-specific wrappers to XLALRegisterUserVar() to allow type-checking! */
+int XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar );
+int XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar );
+int XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar );
+int XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar );
+int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar);
+
+
+/* ========== Deprecated LAL interface wrappers ========== */
 
 /** \name Error codes */
 /*@{*/
@@ -77,9 +135,8 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGENAMECOLL "Commandline option assigned more than once"
 
 /*@}*/
-/*************************************************** </lalErrTable> */
 
-  /*----- short-cut macros to register global "uvar_" User-Variables ----- */
+/*----- short-cut macros to register global "uvar_" User-Variables ----- */
 #define LALregREALUserVar(status,name,option,flag,help) \
 TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
 
@@ -112,65 +169,11 @@ TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(u
 TRY(LALRegisterLISTUserVar((status)->statusPtr, #name, option, flag, help, &(uvar-> name)),status)
 
 
-/** State-flags: variable is optional, required, help, developer or was_set */
-typedef enum {
-  UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
-  UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
-  UVAR_HELP		= 1<<1,	/**< special variable: trigger output of help-string */
-  UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and hidden in help-output at lalDebugLevel==0 */
-  UVAR_SPECIAL		= 1<<3,	/**< OPTIONAL and *turns off* checking of required variables (LALUserVarCheckRequired) */
-  UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
-} UserVarState;
-
-/** Format for logging User-input: configFile- or cmdLine-style.
- * This determines the format of the string returned from LALLogUserInput().
- */
-typedef enum {
-  UVAR_LOGFMT_CFGFILE,	/**< return UserVars as a config-file */
-  UVAR_LOGFMT_CMDLINE,	/**< return UserVars as a command-line */
-  UVAR_LOGFMT_PROCPARAMS, /**< return UserVars suitable for filling in process-params struct */
-  UVAR_LOGFMT_LAST
-} UserVarLogFormat;
-
-/* Function prototypes */
-void LALRegisterREALUserVar(LALStatus *,
-			    const CHAR *name,
-			    CHAR optchar,
-			    UserVarState flag,
-			    const CHAR *helpstr,
-			    REAL8 *cvar);
-
-void LALRegisterINTUserVar (LALStatus *,
-			    const CHAR *name,
-			    CHAR optchar,
-			    UserVarState flag,
-			    const CHAR *helpstr,
-			    INT4 *cvar);
-
-void
-LALRegisterBOOLUserVar (LALStatus *,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarState flag,
-			const CHAR *helpstr,
-			BOOLEAN *cvar);
-
-void
-LALRegisterSTRINGUserVar (LALStatus *,
-			  const CHAR *name,
-			  CHAR optchar,
-			  UserVarState flag,
-			  const CHAR *helpstr,
-			  CHAR **cvar);
-
-void
-LALRegisterLISTUserVar (LALStatus *,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarState flag,
-			const CHAR *helpstr,
-			LALStringVector **cvar);
-
+void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar);
+void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar);
+void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar);
+void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar);
+void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar);
 
 void LALDestroyUserVars (LALStatus *);
 

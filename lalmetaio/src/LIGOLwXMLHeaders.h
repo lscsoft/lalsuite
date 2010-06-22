@@ -211,6 +211,8 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:h_start_time\" Type=
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:h_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:l_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:l_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:v_start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:v_start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:start_time_gmst\" Type=\"real_8\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:longitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:latitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
@@ -226,14 +228,16 @@ fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:epsilon\" Type=\"rea
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:amplitude\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:eff_dist_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_h\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_l\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:hrss_v\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_ringdowngroup:sim_ringdown:simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"sim_ringdowngroup:sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_RINGDOWN_ROW \
-  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ringdown:simulation_id:%" LAL_UINT8_FORMAT "\""
+  "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ringdown:simulation_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \

@@ -84,7 +84,7 @@ typedef struct
 tagRingdownAccuracyList
 {
   INT4                      match;
-  SnglInspiralParameterTest test;
+  SnglRingdownParameterTest test;
   SnglRingdownAccuracy      ifoAccuracy[LAL_NUM_IFO];
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
   REAL8                     minimizerStep;
