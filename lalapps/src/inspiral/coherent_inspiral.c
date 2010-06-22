@@ -168,18 +168,18 @@ int    bankDuration     = 0;
 CHAR   cohbankFileName[FILENAME_MAX]; /* name of input template bank */
 CHAR   chiaFileName[FILENAME_MAX]; /* name of chia trigbank for follow-up studies */
 /* CHAR  *cohbankFileName = NULL; name of input template bank  */
-UINT4  cohSNROut            = 0;    /* default is not to write frame */
-UINT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
-UINT4  nullStatOut       = 0;    /* default is not to write frame */
-UINT4  nullStatH1H2Out       = 0;    /* default is not to write frame */
-UINT4  eventsOut            = 0;    /* default is not to write events */
+INT4  cohSNROut            = 0;    /* default is not to write frame */
+INT4  cohH1H2SNROut      = 0;    /* default is not to write frame */
+INT4  nullStatOut       = 0;    /* default is not to write frame */
+INT4  nullStatH1H2Out       = 0;    /* default is not to write frame */
+INT4  eventsOut            = 0;    /* default is not to write events */
 REAL4  cohSNRThresh         = -1;
 REAL4  cohSegLength     = 0.0625; /* This should match value (sec) used in inspiral.c */
 REAL4  nullStatRegul        = 0.1;
-UINT4  maximizeOverChirp    = 0;    /* default is no clustering */
+INT4  maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
-UINT4  outCompress = 0;
+INT4  outCompress = 0;
 INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
 INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
@@ -190,10 +190,10 @@ CoincInspiralStatistic coincStat = no_stat;
 double raStep = 1.0;
 double decStep = 1.0;
 REAL4  eff_snr_denom_fac = 50.0;
-UINT4  estimParams = 0;
-UINT4  followup = 0;
-UINT4  incohInj = 0;
-UINT4  exttrig = 0;
+INT4  estimParams = 0;
+INT4  followup = 0;
+INT4  incohInj = 0;
+INT4  exttrig = 0;
 int  gpsStartTimeTemp   = 0;         /* input data GPS start time ns */
 int  gpsEndTimeTemp   = 0;         /* input data GPS start time ns */
 INT8   outTimeNS        = 0;            /* search summ out time    */
@@ -1733,7 +1733,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"estimate-params",          no_argument,       &estimParams,       1 },
      {"followup",                 no_argument,       &followup,          1 },
      {"incoherent-inj",           no_argument,       &incohInj,          1 },
-     {"eff-snr-denom-fac",        no_argument,       &eff_snr_denom_fac,'E'},
+     {"eff-snr-denom-fac",        required_argument, 0,                 'E'},
      {"exttrig",                  no_argument,       &exttrig,           1 },
      {"output-path",              required_argument, 0,                 'P'},
      {"H1-framefile",             required_argument, 0,                 'A'},
