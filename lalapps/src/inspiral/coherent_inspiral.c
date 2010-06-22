@@ -249,7 +249,6 @@ int main( int argc, char *argv[] )
   UINT4  numSegments      = 1; 
   UINT4  numBeamPoints    = 0; /* number of sky position templates */
   UINT8  eventID          = 0;
-  REAL8  cohSeriesLength;
 
   REAL8  m1               = 0.0;
   REAL8  m2               = 0.0;
@@ -264,7 +263,7 @@ int main( int argc, char *argv[] )
   CoincInspiralStatParams    bittenLParams;
 
   /* counters and other variables */
-  UINT4   j,k,l, cohtrigs, cohtriglimit;
+  UINT4   j,k,l;
   UINT4   kmax = 0;
   UINT4  numDetectors     = 0;
   REAL8  tempTime[4]      = {0.0,0.0,0.0,0.0};
@@ -282,15 +281,6 @@ int main( int argc, char *argv[] )
   REAL8 deltaT= 0.0;
   REAL4 distNorm = 0.0;
   REAL4 templateNorm = 0.0;
-  REAL8 c0= 0.0;
-  REAL8 c2= 0.0;
-  REAL4 c3= 0.0;
-  REAL8 c4= 0.0;
-  REAL4 x1= 0.0;
-  REAL4 x2= 0.0;
-  REAL4 x3= 0.0;
-  REAL4 x4= 0.0;
-  REAL4 x8= 0.0;
   LIGOTimeGPS startCoinc = {0,0};
   LIGOTimeGPS endCoinc = {0,0};
   INT8 ringStartNS = 0;

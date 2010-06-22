@@ -209,9 +209,6 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
   MetadataTable         savedEvents;
-  MultiInspiralTable   *tempTable = NULL;
-  LIGOLwXMLStream       results;
-  CHAR                  xmlname[FILENAME_MAX];
 
   /*
    *
@@ -1052,7 +1049,6 @@ int main( int argc, char *argv[] )
 
   if ( extractSlide )
   {
-    MultiInspiralTable *slideTrig = NULL;
     slideEvent = XLALMultiInspiralSlideCut( &inspiralEventList, extractSlide );
     /* free events from other slides */
     while ( inspiralEventList )

@@ -156,7 +156,6 @@ int main( int argc, char *argv[] )
   char *injectFileName = NULL;
   char *vetoFileName = NULL;
   char *missedFileName = NULL;
-  char line[MAX_PATH];
   char *massCut = NULL;
   REAL4 massRangeLow = -1;
   REAL4 massRangeHigh = -1;

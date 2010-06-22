@@ -130,7 +130,6 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS endTimeGPS = {0,0};
   INT8        startTimeNS = 0;
   INT8        endTimeNS = 0;
-  INT8        tmpCoincEndTime = 0;
   CHAR  ifos[LIGOMETA_IFOS_MAX];
 
   CHAR  comment[LIGOMETA_COMMENT_MAX];
@@ -143,9 +142,6 @@ int main( int argc, char *argv[] )
   SnglInspiralTable    *newEventList = NULL;
 
   CoincInspiralTable   *coincHead = NULL;
-  CoincInspiralTable   *coincEventList = NULL;
-  CoincInspiralTable   *thisFullCoinc = NULL;
-  CoincInspiralTable   *prevFullCoinc = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
@@ -157,7 +153,6 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable         searchSummvarsTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -1094,13 +1089,11 @@ int XLALClusterInEventID(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    **thisTmpEvent=NULL;
   SnglInspiralTable     *thisEvent=NULL;
   SnglInspiralTable     *prevEvent=NULL;
   SnglInspiralTable     *nextEvent=NULL;
 
   int                    numSnglClust = 0;
-  UINT8                  eventId = 0;
 
   if ( !inspiralList )
   {

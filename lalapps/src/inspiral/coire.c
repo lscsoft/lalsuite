@@ -164,7 +164,6 @@ int main( int argc, char *argv[] )
   int j;
   FILE *fp = NULL;
   int numInFiles = 0;
-  char line[MAX_PATH];
 
   char *massCut = NULL;
   REAL4 massRangeLow = -1;
