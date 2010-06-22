@@ -156,7 +156,7 @@ int main( int argc, char *argv[] )
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
-  UINT4                 outCompress = 0;
+  INT4                  outCompress = 0;
 
 
   /* getopt arguments */
