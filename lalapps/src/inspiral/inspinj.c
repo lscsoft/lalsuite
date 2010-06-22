@@ -1128,7 +1128,7 @@ int main( int argc, char *argv[] )
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
-  REAL8 pzmax; /* maximal value of the probability distribution of the redshift */ 
+  REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
   size_t ninj;
   int rand_seed = 1;
 
