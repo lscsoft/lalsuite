@@ -43,6 +43,7 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
+#include <lal/FrameStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
 
@@ -124,6 +125,7 @@ typedef struct {
   long int ncols;                  /**< the total number of columns in the data table */
   long int nrows;                  /**< the number of rows ( = number of timestamps) */
   double deltat;                   /**< the deltat for this time series */
+  char *headerdump;                /**< the entire header dumped in ascii */
 } FITSHeader;
 
 /** A structure to store TDDES2 DDL data.  
@@ -138,7 +140,7 @@ typedef struct {
   INT4 maxenergy;                  /**< maximum energy channel (0-255) */
   REAL8 deltat;                    /**< the sampling time */  
   REAL8 offset;                    /**< the time offset */
-  INT4 nsamples;                    /**< the number of samples */
+  INT4 nsamples;                   /**< the number of samples */
 } XTETDDESParams;
 
 /** A structure containing all of the relavent information extracted from an (R)XTE FITS PCA file. 
@@ -151,7 +153,7 @@ typedef struct {
   INT4 nchannels;                  /**< the number of channels */
   INT8 channelsize;                /**< the length of a channel */
   REAL8 deltat;                    /**< the sampling time */
-  XTETDDESParams *tddes;           /**< the tddes parameters */
+  INT4 energy[2];                  /**< the energy channel range (0-255) */
 } XTEUINT4Vector;
 
 /** A structure containing all of the relavent information extracted from an (R)XTE FITS PCA file. 
@@ -165,7 +167,7 @@ typedef struct {
   INT4 nchannels;                  /**< the number of channels */
   INT8 channelsize;                /**< the length of a channel */
   REAL8 deltat;                    /**< the sampling time */
-  XTETDDESParams *tddes;           /**< the tddes parameters */
+  INT4 energy[2];                  /**< the energy channel range (0-255) */
 } XTECHARVector;
 
 /** A structure containing all of the relavent information extracted from an (R)XTE FITS PCA file 
@@ -193,6 +195,7 @@ typedef struct {
   REAL8 deltat;                    /**< the time step size in seconds */
   REAL8 tstart;                    /**< the GPS start time */
   REAL8 T;                         /**< the time span in seconds */
+  INT4 energy[2];                  /**< the energy channel range (0-255) */
 } XTEUINT4TimeSeries;
 
 /** A structure for storing an array of integer timeseries for XTE data.
@@ -206,11 +209,14 @@ typedef struct {
   CHAR apid[APIDLENGTH];           /**< the APID */
   CHAR mode[STRINGLENGTH];         /**< the operation mode as a string */
   INT4 bary;                       /**< barycentered flag */
+  INT4 lld;                        /**< lld flag */
   XTEUINT4TimeSeries **ts;         /**< pointer to single timeseries vectors */
   INT4 length;                     /**< number of timeseries */
+  CHAR *headerdump;                /**< an ascii dump of the original FITS header */
+  CHAR *comment;                   /**< a comment field (used to store original clargs) */ 
 } XTEUINT4TimeSeriesArray;
 
-/** A structure that sores user input variables 
+/** A structure that stores user input variables 
  */
 typedef struct { 
   BOOLEAN help;		            /**< trigger output of help string */
@@ -243,6 +249,8 @@ char string_TTYPE1[] = "TTYPE1";
 
 const char *APID[6] = {"FS37","FS3b","FS3f","FS4f","XENO","FS46"};    /* fill in the HEX APID names */
 
+const char xtechannelname[16] = "XTEcounts";
+
 /* a list of useless data modes (specifically for the Sco X-1 analysis) */
 const char *USELESSDATAMODE[5] = {"D_1US_0_249_1024_64S_F","D_1US_0_249_128_1S_F","D_1US_0_249_128_1S_2LLD_F","CB","GoodXenon"};
 
@@ -261,6 +269,7 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,fitsfile *fptr,int col);
 int XLALReadFITSEventData(XTECHARVector **event,fitsfile *fptr,int col);
 int XLALReadFITSTimeStamps(BarycentricData **fitsfilebary,fitsfile *fptr);
 int XLALConvertTDDES(XTETDDESParams **params,char *tddes);
+int removechar(CHAR *p,CHAR ch);
 
 /* FITS conversion functions */
 int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,XTEUINT4Vector *event,BarycentricData *stamps,REAL8 dt);
@@ -387,6 +396,13 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* OUTPUT THE DATA */
   /**********************************************************************************/
+
+  /* first add command line args to the comment field in the timeseries array */
+  if ((ts->comment = (CHAR *)XLALCalloc(LONGSTRINGLENGTH+1,sizeof(CHAR))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for comment field.\n",fn,xlalErrno);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  snprintf(ts->comment,LONGSTRINGLENGTH+1,"\n%s",clargs);
 
   /* output data */
   if (XLALXTEUINT4TimeSeriesArrayToFrames(ts,uvar.outputdir)) {
@@ -777,11 +793,18 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   }
 
   /* check object name and store in output structure */
-  if (fits_read_key(fptr,TSTRING,string_OBJECT,&(header->objectname),comment,&status)) {
-    fits_report_error(stderr,status);
-    LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,string_OBJECT);
-     XLAL_ERROR(fn,XLAL_EFAULT);
-  }
+  {
+    CHAR tempobject[STRINGLENGTH];
+    if (fits_read_key(fptr,TSTRING,string_OBJECT,&tempobject,comment,&status)) {
+      fits_report_error(stderr,status);
+      LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,string_OBJECT);
+      XLAL_ERROR(fn,XLAL_EFAULT);
+    }
+    /* need to get rid of all non-allowed characters e.g. "-" and "_" */
+    removechar(tempobject,'_');
+    removechar(tempobject,'-');
+    strncpy(header->objectname,tempobject,STRINGLENGTH);
+   }
   LogPrintf(LOG_DEBUG,"%s : checked object name is %s.\n",fn,header->objectname);
 
   /* read in sky position */
@@ -798,10 +821,17 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   LogPrintf(LOG_DEBUG,"%s : read ra = %6.12f dec = %6.12f.\n",fn,header->ra,header->dec);
 
   /* extract obsid */
-  if (fits_read_key(fptr,TSTRING,string_OBS_ID,&(header->obsid),comment,&status)) {
-    fits_report_error(stderr,status);
-    LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,string_OBS_ID);
-     XLAL_ERROR(fn,XLAL_EFAULT);
+  {
+    CHAR tempobsid[STRINGLENGTH];
+    if (fits_read_key(fptr,TSTRING,string_OBS_ID,&tempobsid,comment,&status)) {
+      fits_report_error(stderr,status);
+      LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,string_OBS_ID);
+      XLAL_ERROR(fn,XLAL_EFAULT);
+    }
+    /* need to get rid of all non-allowed characters e.g. "-" and "_" */
+    removechar(tempobsid,'_');
+    removechar(tempobsid,'-');
+    strncpy(header->obsid,tempobsid,STRINGLENGTH);
   }
   LogPrintf(LOG_DEBUG,"%s : read obsid as %s\n",fn,header->obsid);
 
@@ -909,14 +939,76 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   if (fits_read_key(fptr,TDOUBLE,string_TIMEDEL,&(header->deltat),comment,&status)) {
     fits_report_error(stderr,status);
     LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,string_TIMEDEL);
-     XLAL_ERROR(fn,XLAL_EFAULT);
+    XLAL_ERROR(fn,XLAL_EFAULT);
   }
   LogPrintf(LOG_DEBUG,"%s : read TIMEMDEL keyword as %6.12e\n",fn,header->deltat);
 
+  /* dump entire header into a long string */
+  /* we do extra stuff to add newline characters at the end of each 80 character long stretch */
+  /* it makes it look nicer when you do a frame dump */
+  {
+    INT4 nkeys;
+    CHAR *dummy = NULL;
+    if (fits_hdr2str(fptr,0,NULL,0,&dummy,&nkeys,&status)) {
+      fits_report_error(stderr,status);
+      LogPrintf(LOG_CRITICAL,"%s : fits_hdr2str() failed to read header.\n",fn);
+      XLAL_ERROR(fn,XLAL_EFAULT);
+    }
+    
+    /* allocate memory for new char vector */
+    if ((header->headerdump = (CHAR *)XLALCalloc(1+nkeys*81,sizeof(CHAR))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to re-allocate memory for column names.\n",fn,xlalErrno);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    
+    /* add newline characters after every 80 CHARS */
+    for (i=0;i<nkeys;i++) {
+      
+      INT4 idx = i*80;
+      CHAR tempstr[81];
+      CHAR kwpair[80];
+      snprintf(kwpair,80,"%s",dummy+idx);
+      snprintf(tempstr,81,"\n%s",kwpair);
+      strncat(header->headerdump,tempstr,81);
+     
+    }
+    free(dummy);
+  }
+  fprintf(stdout,"%s\n",header->headerdump);
+ 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 }
+/** Removes a character from a string 
+ *
+ */
+int removechar(CHAR *p,    /**< [in/out] string to edit */ 
+	       CHAR ch     /**< [in] character to remove */
+	       )
+{
+  const char *fn = __func__;        /* store function name for log output */
+  CHAR *temp = p;
+  
+  while (*temp) {
+    
+    if ((*temp) == (CHAR)ch) {
+      
+      while (*temp) {
+	(*temp) = *(temp+1);	
+	if (*temp) temp++;	
+      }	
+      temp = p;
+      
+    }    
+    temp++;
+   
+  }
+  
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  return XLAL_SUCCESS;
+
+} 
 
 /** Reads in FITS file first extension header timestamps information.
  *
@@ -1155,26 +1247,27 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,      /**< [out] the output dat
   /* A typical string of DDL (Data Description Language) is a concatenation of tokens */
   /* (denoted by single letters) with assigned values (enclosed in square brackets). */
   {
-    char *tddes;
+    char *tddes_string;
+    XTETDDESParams *tddes = NULL;
     CHAR keyword[STRINGLENGTH];
     snprintf(keyword,STRINGLENGTH,"TDDES%d",col);
-    if (fits_read_key_longstr(fptr,keyword,&tddes,comment,&status)) {
+    if (fits_read_key_longstr(fptr,keyword,&tddes_string,comment,&status)) {
       fits_report_error(stderr,status);
       LogPrintf(LOG_CRITICAL,"%s : fits_read_key_longstr() failed to read in long string keyword %s.\n",fn,keyword);
        XLAL_ERROR(fn,XLAL_EFAULT);
     }
-    LogPrintf(LOG_DEBUG,"%s : read TDDES as %s\n",fn,tddes);
+    LogPrintf(LOG_DEBUG,"%s : read TDDES as %s\n",fn,tddes_string);
   
     /* extract energy and sampling time info from the TDDES2 DDL string */
-    if (XLALConvertTDDES(&((*array)->tddes),tddes)) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALConvertTDDES() failed to convert TDDES string %s with error = %s.\n",fn,tddes,xlalErrno);
+    if (XLALConvertTDDES(&tddes,tddes_string)) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALConvertTDDES() failed to convert TDDES string %s with error = %s.\n",fn,tddes_string,xlalErrno);
        XLAL_ERROR(fn,XLAL_EFAULT);
     }
     
-    LogPrintf(LOG_DEBUG,"%s : energy range extracted as %d - %d\n",fn,(*array)->tddes->minenergy,(*array)->tddes->maxenergy);
-    if ((*array)->tddes->deltat) {
-      (*array)->deltat = (*array)->tddes->deltat;
-      LogPrintf(LOG_DEBUG,"%s : read time resolution as %6.12e\n",fn,(*array)->tddes->deltat);
+    LogPrintf(LOG_DEBUG,"%s : energy range extracted as %d - %d\n",fn,tddes->minenergy,tddes->maxenergy);
+    if (tddes->deltat) {
+      (*array)->deltat = tddes->deltat;
+      LogPrintf(LOG_DEBUG,"%s : read time resolution as %6.12e\n",fn,tddes->deltat);
     }
     else {
       LogPrintf(LOG_DEBUG,"%s : could not extract time resolution from TDDES2 DDL string\n",fn);
@@ -1190,8 +1283,8 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,      /**< [out] the output dat
     }
     
     /* extract row length from tddes string - if not available then use header information */
-    if ((*array)->tddes->nsamples) {
-      (*array)->rowlength = (*array)->tddes->nsamples;
+    if (tddes->nsamples) {
+      (*array)->rowlength = tddes->nsamples;
       LogPrintf(LOG_DEBUG,"%s : read rowlength from tddes as %d\n",fn,(*array)->rowlength);
     }
     else {
@@ -1199,9 +1292,14 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,      /**< [out] the output dat
       (*array)->rowlength = (*array)->channelsize*(*array)->nchannels;
     }
    
+    /* store energy information */
+    (*array)->energy[0] = tddes->minenergy;
+    (*array)->energy[1] = tddes->maxenergy;
+
     /* free string mem */
-    free(tddes);
-    
+    free(tddes_string);
+    XLALFree(tddes);
+
   }
   
   /* define number of elements to read in - this is the total number of expected data values */
@@ -1211,17 +1309,17 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,      /**< [out] the output dat
   /* check if requested column value is valid */
   if (col>ncols) {
     LogPrintf(LOG_CRITICAL,"%s : tried to read more columns than present in file.\n",fn);
-     XLAL_ERROR(fn,XLAL_EFAULT);
+    XLAL_ERROR(fn,XLAL_EFAULT);
   }
   
   /* allocate mem for data and data undefined flag */
   if (((*array)->data = (UINT4 *)LALCalloc((*array)->length,sizeof(UINT4))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for array data.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   if (((*array)->undefined = (CHAR *)LALCalloc((*array)->length,sizeof(CHAR))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for data quality flag.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   LogPrintf(LOG_DEBUG,"%s : allocated memory for data (approx %.1f MB)\n",fn,(*array)->length*2e-6);
   
@@ -1229,7 +1327,7 @@ int XLALReadFITSArrayData(XTEUINT4Vector **array,      /**< [out] the output dat
   if (fits_read_colnull(fptr,TINT,col,1,1,(*array)->length,(*array)->data,(*array)->undefined,&anynull,&status)) {
     fits_report_error(stderr,status);
     LogPrintf(LOG_CRITICAL,"%s : fits_read_colnull() failed to read col %d in science array data.\n",fn,col);
-     XLAL_ERROR(fn,XLAL_EFAULT);
+    XLAL_ERROR(fn,XLAL_EFAULT);
   }
 
   /* output debugging information */
@@ -1333,26 +1431,27 @@ int XLALReadFITSEventData(XTECHARVector **event,      /**< [out] The FITSdata st
   /* A typical string of DDL (Data Description Language) is a concatenation of tokens */
   /* (denoted by single letters) with assigned values (enclosed in square brackets). */
   {
-    char *tddes;
+    char *tddes_string;
+    XTETDDESParams *tddes = NULL;
     CHAR keyword[STRINGLENGTH];
     snprintf(keyword,STRINGLENGTH,"TDDES%d",col);
-    if (fits_read_key_longstr(fptr,keyword,&tddes,comment,&status)) {
+    if (fits_read_key_longstr(fptr,keyword,&tddes_string,comment,&status)) {
       fits_report_error(stderr,status);
       LogPrintf(LOG_CRITICAL,"%s : fits_read_key_longstr() failed to read in long string keyword %s.\n",fn,keyword);
        XLAL_ERROR(fn,XLAL_EFAULT);
     }
-    LogPrintf(LOG_DEBUG,"%s : read TDDES2 as %s\n",fn,tddes);
+    LogPrintf(LOG_DEBUG,"%s : read TDDES2 as %s\n",fn,tddes_string);
   
     /* extract energy and sampling time info from the TDDES2 DDL string */
-    if (XLALConvertTDDES(&((*event)->tddes),tddes)) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALConvertTDDES() failed to convert TDDES string %s with error = %s.\n",fn,tddes,xlalErrno);
+    if (XLALConvertTDDES(&tddes,tddes_string)) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALConvertTDDES() failed to convert TDDES string %s with error = %s.\n",fn,tddes_string,xlalErrno);
        XLAL_ERROR(fn,XLAL_EFAULT);
     }
     
-    LogPrintf(LOG_DEBUG,"%s : energy range extracted as %d - %d\n",fn,(*event)->tddes->minenergy,(*event)->tddes->maxenergy);
-    if ((*event)->tddes->deltat) {
-      (*event)->deltat = (*event)->tddes->deltat;
-      LogPrintf(LOG_DEBUG,"%s : read time resolution as %6.12e\n",fn,(*event)->tddes->deltat);
+    LogPrintf(LOG_DEBUG,"%s : energy range extracted as %d - %d\n",fn,tddes->minenergy,tddes->maxenergy);
+    if (tddes->deltat) {
+      (*event)->deltat = tddes->deltat;
+      LogPrintf(LOG_DEBUG,"%s : read time resolution as %6.12e\n",fn,tddes->deltat);
     }
     else {
       LogPrintf(LOG_DEBUG,"%s : could not extract time resolution from TDDES2 DDL string\n",fn);
@@ -1368,8 +1467,8 @@ int XLALReadFITSEventData(XTECHARVector **event,      /**< [out] The FITSdata st
     }
 
     /* extract row length from tddes string - if not available then use header information */
-    if ((*event)->tddes->nsamples) {
-      (*event)->rowlength = (*event)->tddes->nsamples;
+    if (tddes->nsamples) {
+      (*event)->rowlength = tddes->nsamples;
       LogPrintf(LOG_DEBUG,"%s : read rowlength from tddes as %d\n",fn,(*event)->rowlength);
     }
     else {
@@ -1377,8 +1476,13 @@ int XLALReadFITSEventData(XTECHARVector **event,      /**< [out] The FITSdata st
       (*event)->rowlength = (*event)->channelsize*(*event)->nchannels;
     }
     
+    /* store energy information */
+    (*event)->energy[0] = tddes->minenergy;
+    (*event)->energy[1] = tddes->maxenergy;
+
     /* free string mem */
-    free(tddes);
+    free(tddes_string);
+    XLALFree(tddes);
     
   }
   
@@ -1439,14 +1543,8 @@ int XLALConvertTDDES(XTETDDESParams **params,     /**< [out] a null TDDES parame
   char *tempstr1,*tempstr2,*tempstr3;
   int N1, N2, N3;
  
-  /* check input and output pointers */
-  if ((*params) != NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : input timeseries structure has non-null pointer.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
-  }
-
   /* allocate memory for the output params */
-  if (((*params) = (XTETDDESParams *)LALCalloc(1,sizeof(XTETDDESParams))) == NULL) {
+  if (((*params) = (XTETDDESParams *)XLALCalloc(1,sizeof(XTETDDESParams))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for an XTETDDESParams structure.\n",fn);
      XLAL_ERROR(fn,XLAL_ENOMEM);
   }
@@ -1508,7 +1606,7 @@ int XLALConvertTDDES(XTETDDESParams **params,     /**< [out] a null TDDES parame
   (*params)->nsamples = atoi(out5); 
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 }
 
@@ -1587,7 +1685,17 @@ int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   strncpy((*ts)->obsid,fits->header->obsid,STRINGLENGTH);
   strncpy((*ts)->apid,fits->header->apid,APIDLENGTH);
   (*ts)->bary = 0;
+  (*ts)->lld = fits->header->LLD;
   (*ts)->length = fits->header->nXeCntcol;
+
+  /* allocate mem for the header dump and copy the original fits header */
+  if (((*ts)->headerdump = (CHAR *)XLALCalloc(1,sizeof(fits->header->headerdump))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn,xlalErrno);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  memcpy((*ts)->headerdump,fits->header->headerdump,sizeof(fits->header->headerdump));
+ 
+  
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
    return XLAL_SUCCESS;
@@ -1639,12 +1747,15 @@ int XLALEventDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
     /* fill in the timeseries array params */
     (*ts)->tstart = tstart;
     (*ts)->T = dt*N;
-    (*ts)->deltat = dt;  
+    (*ts)->deltat = dt; 
+    (*ts)->energy[0] = event->energy[0];
+    (*ts)->energy[1] = event->energy[1];
     LogPrintf(LOG_DEBUG,"%s : new binned timeseries parameters :\n",fn);
     LogPrintf(LOG_DEBUG,"%s : tstart = %6.12f\n",fn,(*ts)->tstart);
     LogPrintf(LOG_DEBUG,"%s : T = %f\n",fn,(*ts)->T);
     LogPrintf(LOG_DEBUG,"%s : dt = %e\n",fn,(*ts)->deltat);
     LogPrintf(LOG_DEBUG,"%s : length = %ld\n",fn,(*ts)->length);
+    LogPrintf(LOG_DEBUG,"%s : energy = %d - %d\n",fn,(*ts)->energy[0],(*ts)->energy[1]);
 
   }
 
@@ -1746,8 +1857,16 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   strncpy((*ts)->obsid,fits->header->obsid,STRINGLENGTH);
   strncpy((*ts)->apid,fits->header->apid,APIDLENGTH);
   (*ts)->bary = 0;
+  (*ts)->lld = fits->header->LLD;
   (*ts)->length = fits->header->nXeCntcol;
-
+  
+  /* allocate mem for the header dump */
+  if (((*ts)->headerdump = (CHAR *)XLALCalloc(1+strlen(fits->header->headerdump),sizeof(CHAR))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn,xlalErrno);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  strncpy((*ts)->headerdump,fits->header->headerdump,strlen(fits->header->headerdump)*sizeof(CHAR));
+  
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
    return XLAL_SUCCESS;
   
@@ -1800,12 +1919,14 @@ int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
     (*ts)->tstart = tstart;
     (*ts)->T = dt*N;
     (*ts)->deltat = dt;
+    (*ts)->energy[0] = array->energy[0];
+    (*ts)->energy[1] = array->energy[1];
     LogPrintf(LOG_DEBUG,"%s : new binned timeseries parameters :\n",fn);
     LogPrintf(LOG_DEBUG,"%s : tstart = %6.12f\n",fn,(*ts)->tstart);
     LogPrintf(LOG_DEBUG,"%s : T = %f\n",fn,(*ts)->T);
     LogPrintf(LOG_DEBUG,"%s : dt = %e\n",fn,(*ts)->deltat);
     LogPrintf(LOG_DEBUG,"%s : length = %ld\n",fn,(*ts)->length);
-    
+    LogPrintf(LOG_DEBUG,"%s : energy = %d - %d\n",fn,(*ts)->energy[0],(*ts)->energy[1]);
   }
 
   /* allocate memory for a temporary data quality vector */
@@ -1916,7 +2037,6 @@ int XLALFreeFITSData(FITSData *x    /**< [in/out] a FITS data structure */
       if (x->event[i] != NULL) {
 	if (x->event[i]->data != NULL) XLALFree(x->event[i]->data);
 	if (x->event[i]->undefined != NULL) XLALFree(x->event[i]->undefined);
-	if (x->event[i]->tddes != NULL) XLALFree(x->event[i]->tddes);
 	XLALFree(x->event[i]);
       }
     }
@@ -1927,7 +2047,6 @@ int XLALFreeFITSData(FITSData *x    /**< [in/out] a FITS data structure */
       if (x->array[i] != NULL) {
 	if (x->array[i]->data != NULL) XLALFree(x->array[i]->data);
 	if (x->array[i]->undefined != NULL) XLALFree(x->array[i]->undefined);
-	if (x->array[i]->tddes != NULL) XLALFree(x->array[i]->tddes);
 	XLALFree(x->array[i]);
       }
     }
@@ -1937,6 +2056,7 @@ int XLALFreeFITSData(FITSData *x    /**< [in/out] a FITS data structure */
     XLALFree(x->header->XeCntcolidx);
     for (i=0;i<x->header->nXeCntcol;i++) XLALFree(x->header->colname[i]);
     XLALFree(x->header->colname);
+    XLALFree(x->header->headerdump);
     XLALFree(x->header);
   }
   if (x->gti != NULL) {
@@ -1988,6 +2108,8 @@ int XLALFreeXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray *ts   /**< [in/out] 
     }
     XLALFree(ts->ts);
   }
+  XLALFree(ts->headerdump);
+  XLALFree(ts->comment);
   XLALFree(ts);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
@@ -2545,9 +2667,14 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
       N = (INT8)floor(T/tempts->deltat);
       LogPrintf(LOG_DEBUG,"%s : outputting %ld samples to frame\n",fn,N);
       
-      /* construct file name - we use the format <XTE_PCA>-<SOURCE>-<OBSID_APID>-<START>-<DURATION>.gwf */
-      if (ts->bary) snprintf(outputfile,STRINGLENGTH,"%s/XTE_PCA_BARY-%s_%s_%s-%d-%d.gwf",outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
-      else snprintf(outputfile,STRINGLENGTH,"%s/XTE_PCA-%s_%s_%s-%d-%d.gwf",outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
+      /* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
+      /* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID>_<LLD>_<MINENERGY>_<MAXENERGY> */
+      if (ts->bary) snprintf(outputfile,STRINGLENGTH,"%s/X-PCA_SSB_%s_%s_%s_%d_%d_%d-%d-%d.gwf",
+			     outputdir,ts->objectname,ts->obsid,ts->apid,ts->lld,
+			     ts->ts[0]->energy[0],ts->ts[0]->energy[1],epoch.gpsSeconds,T);
+      else snprintf(outputfile,STRINGLENGTH,"%s/X-PCA_DET_%s_%s_%s_%d_%d_%d-%d-%d.gwf",
+			     outputdir,ts->objectname,ts->obsid,ts->apid,ts->lld,
+			     ts->ts[0]->energy[0],ts->ts[0]->energy[1],epoch.gpsSeconds,T);
       LogPrintf(LOG_DEBUG,"%s : output file = %s\n",fn,outputfile);
       
       /* generate a frame data structure - last threee inputs are [project, run, frnum, detectorFlags] */
@@ -2561,12 +2688,16 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
       for (i=0;i<ts->length;i++) {
 
 	INT4TimeSeries *output = NULL;           /* temporary output timeseries */
-	UINT4 j;                                  /* counter */
-	
+	UINT4 j;                                 /* counter */
+	CHAR channelname[STRINGLENGTH];          /* string used to name each channel in the frame */
+
+	/* define current channel name */
+	snprintf(channelname,STRINGLENGTH,"%s%d",xtechannelname,i);
+
 	/* create empty timeseries - this is INT4 not UINT4 because there is no frame writing function for UINT4 */
-	if ((output = XLALCreateINT4TimeSeries(ts->ts[i]->colname,&epoch,0,tempts->deltat,&lalDimensionlessUnit,N)) == NULL) {
-	  LogPrintf(LOG_CRITICAL, "%s : XLALCreateUINT2TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
-	   XLAL_ERROR(fn,XLAL_ENOMEM);  
+	if ((output = XLALCreateINT4TimeSeries(channelname,&epoch,0,tempts->deltat,&lalDimensionlessUnit,N)) == NULL) {
+	  LogPrintf(LOG_CRITICAL, "%s : XLALCreateINT4TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);  
 	}
 	LogPrintf(LOG_DEBUG,"%s : allocated memory for temporary timeseries\n",fn);
 	
@@ -2580,6 +2711,20 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	  XLAL_ERROR(fn,XLAL_EFAILED);
 	}
 	LogPrintf(LOG_DEBUG,"%s : added timeseries from col %s for epoch %d to frame structure\n",fn,ts->ts[i]->colname,epoch.gpsSeconds);
+
+	/* Here's where we add extra information into the frame */ 
+	{
+	  /* CHAR energycomment[STRINGLENGTH];   */      /* string used to store the energy channel range for output to the frame */
+	  CHAR channelcomment[STRINGLENGTH];       /* string used to store the channel/column name for output to the frame */
+	 
+	  FrHistoryAdd( outFrame,ts->headerdump);
+	  FrHistoryAdd( outFrame,ts->comment);
+	 /*  snprintf(energycomment,STRINGLENGTH,"\nMINENERGY = %d\nMAXENERGY = %d",ts->ts[i]->energy[0],ts->ts[i]->energy[1]);  */
+/* 	  FrHistoryAdd( outFrame,energycomment); */
+	  snprintf(channelcomment,STRINGLENGTH,"\n%s = %s",channelname,ts->ts[i]->colname); 
+	  FrHistoryAdd( outFrame,channelcomment);
+	 	 
+	}
 
 	/* free timeseries */
 	XLALDestroyINT4TimeSeries(output);
