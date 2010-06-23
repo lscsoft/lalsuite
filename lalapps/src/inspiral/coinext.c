@@ -339,19 +339,20 @@ int checkCGNtrigger( void )
   char input2[256];
   struct tm date;
   FILE* fileTrigger;
+  int rc;
 
   /* check if to get some trigger file or not */
   if (!flagTriggerFile) {
     
     /* copy test file if it is a test */
     if (flagTest) {
-      system( "cp Test/trigger.list ." );
+      rc = system( "cp Test/trigger.list ." );
       
       /* downloading file */
     } else {
       sprintf(command, "wget %s -O %s > download.log 2>&1",
               webPage, nameInputList);
-      system(command);
+      rc = system(command);
     }
   }
 
@@ -366,7 +367,7 @@ int checkCGNtrigger( void )
   fileTrigger=fopen(nameInputList, "r");
   
   /* reading GCN number */
-  fscanf(fileTrigger, "%s", input);
+  rc = fscanf(fileTrigger, "%s", input);
 
   do {
     
@@ -380,41 +381,41 @@ int checkCGNtrigger( void )
     thisExt->event_number_gcn=atoi(input);
 
     /* reading GRB number  */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     strncpy(thisExt->event_number_grb, input,8);
 
     /* reading UT time -- not stored */
-    fscanf(fileTrigger, "%s", input);    
+    rc = fscanf(fileTrigger, "%s", input);    
 
     /* reading  GPS time  */
-    fscanf(fileTrigger, "%s", inputGPS);
+    rc = fscanf(fileTrigger, "%s", inputGPS);
     strncpy(input1, inputGPS, 9);
     strncpy(input2, inputGPS+9, strlen(inputGPS)-10);
     thisExt->start_time=atol(input1);    
     thisExt->start_time_ns=(long)(atof(input2)*1.0e+9);
 
     /*  reading RA */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     thisExt->event_ra=atof(input);
 
     /* reading DEC */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     thisExt->event_dec=atof(input);
 
     /* reading fave LHO */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     thisExt->ligo_fave_lho=atof(input);
 
     /* reading  fave LLO */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     thisExt->ligo_fave_llo=atof(input);   
 
     /* reading    */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
     thisExt->ligo_delay=atof(input);
 
     /* reading GCN number */
-    fscanf(fileTrigger, "%s", input);
+    rc = fscanf(fileTrigger, "%s", input);
 
     /* check end of file */
     numEvents++;
@@ -505,6 +506,7 @@ int readCGN( void )
   long gpsNano;
   int status0, status1, status2;
   int dagStatus0, dagStatus1, dagStatus2;
+  int rc;
 
 
   /* open file for reading data */
@@ -523,7 +525,7 @@ int readCGN( void )
   do {
 
     /* read next line and store data */
-    fscanf(file, "%ld,%ld,%d,%d,%d, %d, %d, %d", &gps, &gpsNano, &status0, &status1, &status2,
+    rc = fscanf(file, "%ld,%ld,%d,%d,%d, %d, %d, %d", &gps, &gpsNano, &status0, &status1, &status2,
            &dagStatus0, &dagStatus1, &dagStatus2); 
     extList[c].gps      = gps;
     extList[c].gpsNano  = gpsNano;
@@ -587,6 +589,7 @@ void checkInspiralTrigger( void )
   char savename[256];
   FILE* file;
   FILE* out;
+  int rc;
 
   /* loop over IFO's to take into account */
   for ( i=startIFO;i<=endIFO;i++) {
@@ -604,14 +607,14 @@ void checkInspiralTrigger( void )
         /* use directory for online created triggers */
         sprintf( command,"ls -1 %s%s/*.xml > namesInspiral.cel", dirInspiral, instrName[i] );
       }
-      system( command );
+      rc = system( command );
     
       /* read list and extract time data */
       file=fopen( "namesInspiral.cel","r" );
       do {      
 
         /* read next filename and remove directory path from it */
-        fscanf(file, "%s", text); 
+        rc = fscanf(file, "%s", text); 
         filename = basename1( (char*)text );
 
         /* extracting relevant parts of the filename
@@ -1020,6 +1023,7 @@ void startAnalysisJob(ExternalList* eList, int nifo)
   double d=0, sumTime=0, maxSegment=0, minSegment=-1.0;
   char dummy[256];
   time_t rawtime;
+  int rc;
 
   /* discard any times before S4 */
   if (eList->gps<793130413) {
@@ -1065,15 +1069,15 @@ void startAnalysisJob(ExternalList* eList, int nifo)
     serverName, instrName[nifo], eList->gps-timeWindow, eList->gps+timeWindow );*/
 
   if (flagVerbose) printOut(7, command);
-  system (command);
+  rc = system (command);
 
   /* check file segment.txt */
   fileSegment=fopen("segment.txt", "r");
   do {    
-    fscanf(fileSegment, "%s",dummy);
-    fscanf(fileSegment, "%s",dummy);
-    fscanf(fileSegment, "%s",dummy);
-    fscanf(fileSegment, "%s",dummy);
+    rc = fscanf(fileSegment, "%s",dummy);
+    rc = fscanf(fileSegment, "%s",dummy);
+    rc = fscanf(fileSegment, "%s",dummy);
+    rc = fscanf(fileSegment, "%s",dummy);
     d=atof(dummy);
     
     /* get sum of times and maximum segment (has to be > 2048 seconds) */
@@ -1122,19 +1126,19 @@ void startAnalysisJob(ExternalList* eList, int nifo)
       /* create directory */
       sprintf(command,"mkdir -p %s",dirJob);
       if (flagVerbose) printOut(7, command);
-      system(command);
+      rc = system(command);
     
       /* copy the segment file to that directory */
       sprintf(command, "cp segment.txt %s",dirJob);
       if (flagVerbose) printOut(7, command);
-      system("cat segment.txt");
-      system(command);
-      /*system("rm -f segment.txt");*/
+      rc = system("cat segment.txt");
+      rc = system(command);
+      /*rc = system("rm -f segment.txt");*/
 
       /* symbolic links to all needed basic files */
       sprintf(command,"cd %s; ln -s ../../../ProgInspiral/Executables/* .",dirJob);
       if (flagVerbose) printOut(7, command);
-      system(command);           
+      rc = system(command);           
       
       /* create sed-file */
       fileSED=fopen("sed.file", "w");
@@ -1154,20 +1158,20 @@ void startAnalysisJob(ExternalList* eList, int nifo)
       sprintf(command,"sed -f sed.file ../OnlineAnalysis/ProgInspiral/online%s.ini > %s/online.ini", 
               dagName[dag], dirJob);
       if (flagVerbose) printOut(7, command);
-      system(command);    
+      rc = system(command);    
 
    
       /* create the DAG */ 
       sprintf(command,"cd %s; ./lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dietz",
               dirJob );
       if (flagVerbose) printOut(7, command);
-      system(command);
+      rc = system(command);
       
       sprintf(command,"Starting DAG for analysis in directory %s",dirJob);
       printOut(5, command);
       sprintf(command, "cd %s; condor_submit_dag --maxjobs %d online.dag",dirJob, condorMaxJobs);
       if (flagVerbose) printOut(7, command);
-      system (command);
+      rc = system (command);
 
       eList->dagStatus[nifo]+=pow(3, dag);
       sprintf(message, "startAnalysisJob: DAG status for ifo %d set to %d\n", nifo, eList->dagStatus[nifo]);
@@ -1276,9 +1280,10 @@ int checkProxy( void )
 {
   char command[256];
   struct stat file;
+  int rc;
 
   sprintf(command, "grid-proxy-info > .proxy 2>.err");
-  system(command);
+  rc = system(command);
     
   if(!stat(".proxy",&file)) {
     if (file.st_size==0) {
@@ -1387,6 +1392,7 @@ ce_shutdown:
 *******************************/
 int ce_shutdown( void )
 {
+  int rc;
 
   /* store CGN triggers for next time (status is important!!!) */
   writeCGN();
@@ -1403,7 +1409,7 @@ int ce_shutdown( void )
 
   /* deleting lock file */
   sprintf(message,"rm -f .coinext.lock");
-  system( message );
+  rc = system( message );
   
   /* ... and exit program (good style?) */
   exit(0);
@@ -1489,8 +1495,9 @@ ce_restart:
 void ce_restart(void)
 {
   char command[256];
+  int rc;
   sprintf( command, "rm -f *.cel");
-  system( command );
+  rc = system( command );
 }
 
 

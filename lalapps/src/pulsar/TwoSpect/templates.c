@@ -265,7 +265,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.sorting = sorting;
    vars.lim = 10000;
    vars.c = Rpr;
-   REAL8 accuracy = 1.0e-11;
+   REAL8 accuracy = 1.0e-5;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, 0.0, accuracy, errcode); 
@@ -275,13 +275,13 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-9) {
+   if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
       c1 = 0.9*vars.c;
       vars.c = c1;
       REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
-      while (tempprob<1.0e-9) {
+      while (tempprob<1.0e-4) {
          c1 *= 0.9;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
@@ -291,7 +291,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
       c2 = 0.9*c1;
       vars.c = c2;
       logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
-      while ((logprob2-logprob1)<=2.0*1.0e-9) {
+      while ((logprob2-logprob1)<=2.0*1.0e-4) {
          c2 *= 0.9;
          vars.c = c2;
          logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));

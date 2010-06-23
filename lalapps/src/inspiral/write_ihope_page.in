@@ -596,7 +596,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param_ALLINJ*CAT_4*'
   htmltags[section] = '*'+injection.upper()+'_CAT_4_VETO_CLOSEST_MISSED_INJECTIONS_SUMMARY*'
   imagetags[section] = ['cbc_plotfm_fm_dist_v_param']
-  captions[section] = 'Found and missed injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far (their color corresponds to their far). Red crosses are missed injections; vetoed injections are excluded. The decisive distance is the second furthest effective distance. The table below shows the 10 closest missed injections (i.e., the 10 closest red crosses). For a table of the non-zero FAR injections (the colored circles), please go to the "All Injections Combined" section and click on "Loudest injections that are not louder than the loudest slide."'
+  captions[section] = 'Found and missed injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far (their color corresponds to their far). Red crosses are missed injections; vetoed injections are excluded. The decisive distance is the second smallest effective distance. The table below shows the 10 closest missed injections (i.e., the 10 closest red crosses). For a table of the non-zero FAR injections (the colored circles), please go to the "All Injections Combined" section and click on "Loudest injections that are not louder than the loudest slide."'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -1041,7 +1041,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
 
   section = 'plotcumhist4'
   sections.append(section)
-  titles[section] = "IFAR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
+  titles[section] = "Effective SNR with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotcumhist*'+ifartag[0]+'*CAT_4*'+ifartag[2]+'*'
   imagetags[section] = ['cumhist']
   captions[section] = 'Effective SNR vs number of triggers'
@@ -1459,9 +1459,9 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   section = 'injsqf'
   sections.append(section)
   htmlOnly.append(section)
-  titles[section] = "Loudest injections that are not louder than the loudest slide (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
+  titles[section] = "Found injections that are not louder than the loudest slide (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*'+injection.upper()+'_CAT_4_VETO_QUIETEST_FOUND_COMPARED_TO_PLAYGROUND*'
-  captions[section] = 'This table shows a list of the loudest injections that are not louder than the loudest event in the playground time slides. Equivalently this is a list of the loudest injections that do not have a FAR of 0. These tables are shown after category 4 vetoes are applied.'
+  captions[section] = 'This table lists found injections that are not louder than the loudest event in the (full data) time slides. Equivalently, found injections that have a FAR greater than zero. These tables are shown after category 4 vetoes are applied.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -1481,7 +1481,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   titles[section] = "Accuracies I (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_dt*'+injection.upper()+'_CAT_4_VETO*'
   imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_dt']
-  captions[section] = 'Injected decisive distance vs difference between recovered and injected end times of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. The decisive distance is the second furthest effective distance.'
+  captions[section] = 'Injected decisive distance vs difference between recovered and injected end times of "found" injections. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -1501,7 +1501,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   titles[section] = "Found and missed plots I (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_end_time*'+injection.upper()+'_CAT_4_VETO*'
   imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_end_time']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected end time by mass bin. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second furthest effective distance.'
+  captions[section] = 'Found and missed injections: injected decisive distance vs. injected end time by mass bin. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections are excluded). The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -1511,7 +1511,7 @@ def write_injection(page, opts,injection,pipedown='pipedown'):
   titles[section] = "Found and missed plots II (Pipedown, CAT2 and CAT3 vetoes applied and CBC hardware injections removed)"
   tags[section] = '*ligolw_cbc_plotfm_fm_dist_v_param*'+injection.upper()+'_CAT_4_VETO*'
   imagetags[section] = ['ligolw_cbc_plotfm_fm_dist_v_param']
-  captions[section] = 'Found and missed injections: injected decisive distance vs. injected mass. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections excluded). The decisive distance is the second furthest effective distance.'
+  captions[section] = 'Found and missed injections: injected decisive distance vs. injected mass. Stars are injections found with zero combined far; circles are injections found with non-zero combined far. Red crosses are missed injections (vetoed injections excluded). The decisive distance is the second smallest effective distance.'
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
@@ -2095,7 +2095,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir,webDir,'*CLOSED_BOX*html')
       copy_files(dataDir,webDir,'*SIMULATION*html')
       copy_files(dataDir,webDir,'*CLOSEST_MISSED_INJECTIONS*html')
-      copy_files(dataDir,webDir,'*QUIETEST_FOUND_COMPARED*PLAYGROUND*html')
+      copy_files(dataDir,webDir,'*QUIETEST_FOUND_COMPARED*html')
       copy_files(dataDir,webDir,'*INJ*html')
       copy_files(dataDir,webDir,'*PLAYGROUND*PLAYGROUND*cache')
       copy_files(dataDir,webDir,'*FULL_DATA*PLAYGROUND*cache')
@@ -2109,7 +2109,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSED_BOX*')
       copy_files(dataDir+'/Images',webDir+'/Images','*SIMULATION*')
       copy_files(dataDir+'/Images',webDir+'/Images','*CLOSEST_MISSED_INJECTIONS*')
-      copy_files(dataDir+'/Images',webDir+'/Images','*QUIETEST_FOUND_COMPARED*PLAYGROUND*')
+      copy_files(dataDir+'/Images',webDir+'/Images','*QUIETEST_FOUND_COMPARED*')
       copy_files(dataDir+'/Images',webDir+'/Images','*INJ*')
       print >> sys.stdout, '... Done'
 

@@ -217,10 +217,10 @@ REAL8 probability_redshift(REAL8 rshift)
 {
   REAL8 pz;
 
-  p = 0.75673*pow(rshift,4.) - 4.348*pow(rshift,3.) + 6.2793*rshift*rshift 
+  pz = 0.75673*pow(rshift,4.) - 4.348*pow(rshift,3.) + 6.2793*rshift*rshift 
 	- 0.33247*rshift + 0.0087611;
 
-	return pz;
+  return pz;
 }
 
 REAL8 luminosity_distance(REAL8 rshift)
@@ -1128,7 +1128,7 @@ int main( int argc, char *argv[] )
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
-  REAL8 pzmax; /* maximal value of the probability distribution of the redshift */ 
+  REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
   size_t ninj;
   int rand_seed = 1;
 
@@ -2706,6 +2706,7 @@ int main( int argc, char *argv[] )
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;
        simRingTable->l_start_time = simTable->l_end_time;
+       simRingTable->v_start_time = simTable->v_end_time;
        simRingTable->start_time_gmst = simTable->end_time_gmst;
        simRingTable->longitude = simTable->longitude;
        simRingTable->latitude = simTable->latitude;
@@ -2721,10 +2722,12 @@ int main( int argc, char *argv[] )
        simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
        simRingTable->eff_dist_h = simTable->eff_dist_h; 
        simRingTable->eff_dist_l = simTable->eff_dist_l; 
+       simRingTable->eff_dist_v = simTable->eff_dist_v; 
        simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
        // need hplus & hcross in each detector to populate these
        simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
        simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_v = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
     }
 
     /* increment current time, avoiding roundoff error;

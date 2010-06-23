@@ -521,7 +521,7 @@ int XLALReadFrameDir(FrameFileList **framefiles,    /**< [out] a structure conta
 
 /** Filter function for reading in frame files
  */
-int XLALFrameFilter(const struct dirent *x)
+int XLALFrameFilter(struct dirent *x)
 {
   
   /* if not *.gwf then return 0 */

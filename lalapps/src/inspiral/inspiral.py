@@ -457,6 +457,23 @@ class CohBankJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class CohInspBankJob(InspiralAnalysisJob):
+  """
+  A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
+  options are read from the section [cohinspbank] in the ini file.  The stdout and
+  stderr from the job are directed to the logs directory.  The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'cohinspbank'
+    sections = ['cohinspbank']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+
 class ChiaJob(InspiralAnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
@@ -1578,7 +1595,7 @@ class CohBankNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__bank = None
     self.__ifos = None
-    
+
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
@@ -1587,21 +1604,45 @@ class CohBankNode(InspiralAnalysisNode):
   def get_bank(self):
     return self.__bank
 
+  def set_ifo(self, ifo):
+    """
+    Add the interferometer to the list of ifos
+    ifo = IFO code (e.g. G1,L1, H1 or H2).
+    """
+    if ifo == 'G1':
+      self.add_var_opt('g1-triggers','')
+      self.__ifo_g1 = 'G1'
+    elif ifo == 'H1':
+      self.add_var_opt('h1-triggers','')
+      self.__ifo_h1 = 'H1'
+    elif ifo == 'H2':
+      self.add_var_opt('h2-triggers','')
+      self.__ifo_h2 = 'H2'
+    elif ifo == 'L1':
+      self.add_var_opt('l1-triggers','')
+      self.__ifo_l1 = 'L1'
+    elif ifo == 'T1':
+      self.add_var_opt('t1-triggers','')
+      self.__ifo_t1 = 'T1'
+    elif ifo == 'V1':
+      self.add_var_opt('v1-triggers','')
+      self.__ifo_v1 = 'V1'
+
   def set_ifos(self,ifos):
     self.add_var_opt('ifos', ifos)
     self.__ifos = ifos
-   
+
   def get_ifos(self):
     return self.__ifos
-    
+
   def get_output(self):
     """
     Returns the file name of output from the coherent bank. 
     """
-    
+
     if not self.get_ifos():
       raise InspiralError, "Ifos have not been set"
-    
+
     basename = self.get_ifos() + '-COHBANK'
 
     if self.get_user_tag():
@@ -1615,7 +1656,62 @@ class CohBankNode(InspiralAnalysisNode):
 
     self.add_output_file(filename)
 
-    return filename    
+    return filename
+
+
+class CohInspBankNode(InspiralAnalysisNode):
+  """
+  A CohBankNode runs an instance of the coherent code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__bank = None
+    self.__ifos = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+    self.__bank = bank
+
+  def get_bank(self):
+    return self.__bank
+
+  def set_ifos(self,ifos):
+    self.add_var_opt('ifos', ifos)
+    self.__ifos = ifos
+
+  def get_ifos(self):
+    return self.__ifos
+
+  def get_output(self):
+    """
+    Returns the file name of output from the coherent bank. 
+    """
+
+    if not self.get_ifos():
+      raise InspiralError, "Ifos have not been set"
+
+    basename = self.get_ifos() + '-COHINSPBANK'
+
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.get_zip_output():
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+    # overwrite standard log file names
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
 
 
 class ChiaNode(InspiralAnalysisNode):
@@ -1929,6 +2025,36 @@ class PlotThincaNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotthinca.
     """
     InspiralPlottingNode.__init__(self,job)
+
+
+###########################################################################################
+
+class PlotCohsnrJob(InspiralPlottingJob):
+  """
+  A plotthinca job. The static options are read from the section
+  [plotthinca] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'plotcohsnr'
+    sections = ['plotcohsnr']
+    extension = 'html'
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+class PlotCohsnrNode(InspiralPlottingNode):
+  """
+  A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotthinca.
+    """
+    InspiralPlottingNode.__init__(self,job)
+
 
 #######################################################################################
 
