@@ -879,7 +879,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,     /**< [out] 
     
     /* allocate memory for the temporary filelist */
     tempfilelist.length = nfiles;
-    snprintf(tempfilelist.dir,STRINGLENGTH,framefiles->dir);
+    snprintf(tempfilelist.dir,STRINGLENGTH,"%s",framefiles->dir);
     if ((tempfilelist.file = (FrameFile *)LALCalloc(tempfilelist.length,sizeof(FrameFile))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FrameFile structures.\n",fn);
       XLAL_ERROR(fn,XLAL_ENOMEM);
@@ -996,7 +996,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,     /**< [out] 
 	memcpy(&(plans->data[pcount].end),&(epochlist->data[i+1]),sizeof(LIGOTimeGPS));
 	plans->data[pcount].duration = XLALGPSDiff(&(epochlist->data[i+1]),&(epochlist->data[i]));
 	plans->data[pcount].filelist.length = newcount;
-	snprintf(plans->data[pcount].filelist.dir,STRINGLENGTH,tempfilelist.dir);
+	snprintf(plans->data[pcount].filelist.dir,STRINGLENGTH,"%s",tempfilelist.dir);
 	pcount++;
       }
     
@@ -1192,7 +1192,7 @@ int XLALINT4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of o
     CHAR *c1,*c2;
     INT4 j;
     INT4 n;
-    snprintf(originalfile,STRINGLENGTH,plan->filelist.file[0].filename);
+    snprintf(originalfile,STRINGLENGTH,"%s",plan->filelist.file[0].filename);
     c1 = strstr(originalfile,"-");
     c2 = c1;
     for (j=0;j<4;j++) {
