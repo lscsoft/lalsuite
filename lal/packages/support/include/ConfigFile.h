@@ -17,30 +17,20 @@
  *  MA  02111-1307  USA
  */
 
+/** \defgroup ConfigFile  Config-File reading module
+ * \ingroup support
+ * \author Reinhard Prix
+ * \date $Date$
+ * \brief Module for general parsing of simple ASCII-based config-files.
+ *
+ */
+
 /** \file
- * \ingroup UserInput
+ * \ingroup ConfigFile
  * \author Reinhard Prix
  * \date $Date$
  * \brief Header file defining the API for ConfigFile.c.
  */
-
-/************************************ <lalVerbatim file="ConfigFileHV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
-/**************************************************** <lalLaTeX>
-\section{Header \texttt{ConfigFile.h}}
-\label{s:ConfigFile.h}
-
-Routines for general config-file reading.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/ConfigFile.h>
-\end{verbatim}
-
-***************************************************** </lalLaTeX> */
 
 #ifndef _CONFIGFILE_H  /* Double-include protection. */
 #define _CONFIGFILE_H
@@ -54,36 +44,6 @@ extern "C" {
 #endif
 
 NRCSID( CONFIGFILEH, "$Id$");
-
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
-/** \name Error codes */
-/*@{*/
-#define CONFIGFILEH_ENULL 		1
-#define CONFIGFILEH_EFILE		2
-#define CONFIGFILEH_EVAR		3
-#define CONFIGFILEH_EFMT		4
-#define CONFIGFILEH_ETOKENS		5
-#define CONFIGFILEH_ENONULL		6
-#define CONFIGFILEH_EUNKNOWN		8
-#define CONFIGFILEH_EMEM		9
-#define CONFIGFILEH_EBOOL		10
-#define CONFIGFILEH_ESTRING		11
-
-#define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
-#define CONFIGFILEH_MSGEFILE		"File error."
-#define CONFIGFILEH_MSGEVAR		"Config variable not found."
-#define CONFIGFILEH_MSGEFMT		"Config variable not readable using given format-string."
-#define CONFIGFILEH_MSGETOKENS		"The input ConfigData seems corrupted."
-#define CONFIGFILEH_MSGENONULL		"Output pointer is not NULL"
-#define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
-#define CONFIGFILEH_MSGEMEM		"Out of memory"
-#define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
-#define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
-/*@}*/
-/*************************************************** </lalErrTable> */
 
 /** Levels of strictness for config-file parsing. */
 typedef enum {
@@ -115,20 +75,91 @@ typedef struct {
   BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
 } LALParsedDataFile;
 
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{ConfigFileHV}}
-\newpage\input{ConfigFileC}
-\newpage\input{ConfigFileTestC}
-******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
-void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
-void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
-
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
 int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
 
 int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
+
+int
+XLALReadConfigBOOLVariable (BOOLEAN *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *secName,
+			    const CHAR *varName,
+			    BOOLEAN *wasRead);
+int
+XLALReadConfigINT4Variable (INT4 *varp,
+			   const LALParsedDataFile *cfgdata,
+			   const CHAR *secName,
+			   const CHAR *varName,
+			   BOOLEAN *wasRead);
+
+int
+XLALReadConfigREAL8Variable (REAL8 *varp,
+			    const LALParsedDataFile *cfgdata,
+			    const CHAR *secName,
+			    const CHAR *varName,
+			    BOOLEAN *wasRead);
+
+int
+XLALReadConfigSTRINGVariable (CHAR **varp,
+			     const LALParsedDataFile *cfgdata,
+			     const CHAR *secName,
+			     const CHAR *varName,
+			     BOOLEAN *wasRead);
+
+int
+XLALReadConfigSTRINGNVariable (CHARVector *varp,
+			      const LALParsedDataFile *cfgdata,
+			      const CHAR *secName,
+			      const CHAR *varName,
+			      BOOLEAN *wasRead);
+
+int
+XLALReadConfigVariable (void *varp,
+		       const LALParsedDataFile *cfgdata,
+		       const LALConfigVar *param,
+		       BOOLEAN *wasRead);
+
+int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
+int XLALLowerCaseString (CHAR *string);
+
+/* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
+ * These functions are just wrappers around the XLAL functions
+ */
+
+
+/** \name Error codes */
+/*@{*/
+#define CONFIGFILEH_ENULL 		1
+#define CONFIGFILEH_EFILE		2
+#define CONFIGFILEH_EVAR		3
+#define CONFIGFILEH_EFMT		4
+#define CONFIGFILEH_ETOKENS		5
+#define CONFIGFILEH_ENONULL		6
+#define CONFIGFILEH_EUNKNOWN		8
+#define CONFIGFILEH_EMEM		9
+#define CONFIGFILEH_EBOOL		10
+#define CONFIGFILEH_ESTRING		11
+#define CONFIGFILEH_EXLAL		12
+
+#define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
+#define CONFIGFILEH_MSGEFILE		"File error."
+#define CONFIGFILEH_MSGEVAR		"Config variable not found."
+#define CONFIGFILEH_MSGEFMT		"Config variable not readable using given format-string."
+#define CONFIGFILEH_MSGETOKENS		"The input ConfigData seems corrupted."
+#define CONFIGFILEH_MSGENONULL		"Output pointer is not NULL"
+#define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
+#define CONFIGFILEH_MSGEMEM		"Out of memory"
+#define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
+#define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
+#define CONFIGFILEH_MSGEXLAL		"Failure in XLAL function"
+/*@}*/
+
+/* Function prototypes */
+void LALParseDataFile (LALStatus *, LALParsedDataFile **cfgdata, const CHAR *fname);
+void LALDestroyParsedDataFile (LALStatus *, LALParsedDataFile **cfgdata);
 
 void
 LALReadConfigBOOLVariable (LALStatus *,
@@ -136,22 +167,11 @@ LALReadConfigBOOLVariable (LALStatus *,
 			  const LALParsedDataFile *cfgdata,
 			  const CHAR *varName,
 			  BOOLEAN *wasRead);
-int
-XLALReadConfigBOOLVariable (BOOLEAN *varp,
-			    const LALParsedDataFile *cfgdata,
-			    const CHAR *secName,
-			    const CHAR *varName,
-			    BOOLEAN *wasRead);
+
 void
 LALReadConfigINT4Variable (LALStatus *,
 			   INT4 *varp,
 			   const LALParsedDataFile *cfgdata,
-			   const CHAR *varName,
-			   BOOLEAN *wasRead);
-int
-XLALReadConfigINT4Variable (INT4 *varp,
-			   const LALParsedDataFile *cfgdata,
-			   const CHAR *secName,
 			   const CHAR *varName,
 			   BOOLEAN *wasRead);
 
@@ -161,23 +181,11 @@ LALReadConfigREAL8Variable (LALStatus *,
 			    const LALParsedDataFile *cfgdata,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead);
-int
-XLALReadConfigREAL8Variable (REAL8 *varp,
-			    const LALParsedDataFile *cfgdata,
-			    const CHAR *secName,
-			    const CHAR *varName,
-			    BOOLEAN *wasRead);
 
 void
 LALReadConfigSTRINGVariable (LALStatus *,
 			     CHAR **varp,
 			     const LALParsedDataFile *cfgdata,
-			     const CHAR *varName,
-			     BOOLEAN *wasRead);
-int
-XLALReadConfigSTRINGVariable (CHAR **varp,
-			     const LALParsedDataFile *cfgdata,
-			     const CHAR *secName,
 			     const CHAR *varName,
 			     BOOLEAN *wasRead);
 
@@ -187,12 +195,6 @@ LALReadConfigSTRINGNVariable (LALStatus *,
 			      const LALParsedDataFile *cfgdata,
 			      const CHAR *varName,
 			      BOOLEAN *wasRead);
-int
-XLALReadConfigSTRINGNVariable (CHARVector *varp,
-			      const LALParsedDataFile *cfgdata,
-			      const CHAR *secName,
-			      const CHAR *varName,
-			      BOOLEAN *wasRead);
 
 void
 LALReadConfigVariable (LALStatus *,
@@ -200,19 +202,9 @@ LALReadConfigVariable (LALStatus *,
 		       const LALParsedDataFile *cfgdata,
 		       const LALConfigVar *param,
 		       BOOLEAN *wasRead);
-int
-XLALReadConfigVariable (void *varp,
-		       const LALParsedDataFile *cfgdata,
-		       const LALConfigVar *param,
-		       BOOLEAN *wasRead);
 
 void LALCheckConfigReadComplete (LALStatus *, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
-int XLALCheckConfigReadComplete (const LALParsedDataFile *cfgdata, ConfigStrictness strict);
-
-void LALLowerCaseString (LALStatus *, CHAR *string);
-
-int XLALLowerCaseString (CHAR *string);
 
 /* C++ protection. */
 #ifdef  __cplusplus

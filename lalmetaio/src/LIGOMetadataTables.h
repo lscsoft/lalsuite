@@ -768,6 +768,7 @@ tagSimRingdownTable
   LIGOTimeGPS    geocent_start_time;
   LIGOTimeGPS    h_start_time;
   LIGOTimeGPS    l_start_time;
+  LIGOTimeGPS    v_start_time;
   REAL8          start_time_gmst;
   REAL4          longitude;
   REAL4          latitude;
@@ -783,9 +784,11 @@ tagSimRingdownTable
   REAL4          amplitude;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
+  REAL4          eff_dist_v;
   REAL4          hrss;
   REAL4          hrss_h;
   REAL4          hrss_l;
+  REAL4          hrss_v;
   EventIDColumn  *event_id;
 }
 SimRingdownTable;
@@ -804,6 +807,8 @@ injection.  The fields are:
     LIGO Hanford Observatory.
 \item[\texttt{l\_start\_time}] The GPS start time of the waveform at the
     LIGO Livingston Observatory.
+\item[\texttt{v\_start\_time}] The GPS start time of the waveform at the
+    Virgo Observatory.
 \item[\texttt{start\_time\_gmst}] The start time of the waveform at the
     in siderial time.
 \item[\texttt{longitude}] The longitude of the source defined in the
@@ -837,9 +842,12 @@ injection.  The fields are:
     LIGO Hanford Observatory in megaparsecs (Mpc).
 \item[\texttt{l\_eff\_dist}] The effective distance to the source from the
     LIGO Livingston Observatory in megaparsecs (Mpc).
+\item[\texttt{v\_eff\_dist}] The effective distance to the source from the
+    Virgo Observatory in megaparsecs (Mpc).
 \item[\texttt{hrss}] Define.
 \item[\texttt{hrss\_h}] Define.
 \item[\texttt{hrss\_l}] Define.
+\item[\texttt{hrss\_v}] Define.
 \end{description}
 
 \subsubsection*{Type \texttt{CoincRingdownTable}}

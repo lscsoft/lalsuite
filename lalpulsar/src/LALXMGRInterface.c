@@ -313,13 +313,13 @@ LALXMGRGPSTimeToTitle(
   CHECKSTATUSPTR( status );
 
   XLALGPSToUTC(&thisDate, startGPS->gpsSeconds);
-  strftime(startString->data, startString->length, "%F %T UTC %a", &thisDate);
+  strftime(startString->data, startString->length, "%Y-%m-%d %H:%M:%S UTC %a", &thisDate);
 
   XLALGPSToUTC(&thisDate, stopGPS->gpsSeconds);
-  strftime(stopString->data, stopString->length, "%F %T UTC %a", &thisDate);
+  strftime(stopString->data, stopString->length, "%Y-%m-%d %H:%M:%S UTC %a", &thisDate);
 
   snprintf( title->data, title->length * sizeof(CHAR),
-      "%s from %s to %s", comment, startString->data, stopString->data );
+	    "%s from %s to %s", comment, startString->data, stopString->data );
 
   LALCHARDestroyVector( status->statusPtr, &startString );
   CHECKSTATUSPTR( status );

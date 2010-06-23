@@ -17,13 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/** \file clusters.c 
- * Set of routines that have been used to calculate outliers and clusters of outliers in the data.*/
-/* Author: M. A. Papa - AEI August 2003 */
-/* Revision: Y. Itoh - AEI December 2003  */
+/** \file
+ * \brief Set of routines that have been used to calculate outliers and clusters of outliers in the data.
+ * \author  M. A. Papa - AEI August 2003
+ * Revision: Y. Itoh - AEI December 2003
+ */
 /*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
-
-/* $Id$ */
 
 /* #include <stdlib.h> */
 #include <lal/LALStdlib.h>

@@ -75,10 +75,10 @@ REAL8 XLALChisqCdf(
  * Cumulative Probability Distribution for Chi Squared distribution.
  * Alternative version which is more accurate for large rho.
  *
- * returns probability that x_1^2 + .. x_dof^2 >= chi2, where x_1, ..
+ * returns probability that \f$x_1^2 + .. x_dof^2 >= chi2\f$, where \f$x_1, ..\f$
  * x_dof are independent Gaussians of zero mean and unit variance.  The
- * integral expression is prob = int_{chi^2/2}^\infty dx  x^((n/2)-1)
- * e^(-x) / Gamma(n/2), where n = dof = number of degrees of freedom.  note
+ * integral expression is \f$prob = \int_{chi^2/2}^\infty dx  x^((n/2)-1)
+ * e^(-x) / Gamma(n/2)\f$, where n = dof = number of degrees of freedom.  note
  * chi2 = 2 * cal E, calE = variable used in paper.
  */
 
@@ -178,7 +178,7 @@ static REAL8 Factorial(INT4 n)
 /**
  * Cumulative distribution function for noncentral chi-squared distribution
  *
- * returns probability that (x_1+rho)^2 + x_2^2 + .. x_dof^2 \le chi2,
+ * returns probability that \f$(x_1+rho)^2 + x_2^2 + .. x_dof^2 \le chi2\f$
  * where x_1, ..  x_dof are independent Gaussians of zero mean and unit
  * variance, and where nonCentral = rho^2 and dof = number of degrees of
  * freedom
