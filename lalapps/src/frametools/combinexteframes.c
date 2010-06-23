@@ -168,7 +168,7 @@ RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
 int main(int argc,char *argv[]);
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar, CHAR *clargs);
 int XLALReadFrameDir(FrameFileList **framefiles, CHAR *inputdir);
-int XLALFrameFilter(const struct dirent *x);
+int XLALFrameFilter(struct dirent *x);
 int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,FrameFileList *framefiles);
 int XLALFindFramesInInterval(FrameFileList **subframefiles, FrameFileList *framefiles,LIGOTimeGPS intstart,LIGOTimeGPS intend);
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,FrameFileList *framefiles);
@@ -521,7 +521,7 @@ int XLALReadFrameDir(FrameFileList **framefiles,    /**< [out] a structure conta
 
 /** Filter function for reading in frame files
  */
-int XLALFrameFilter(const struct dirent *x)
+int XLALFrameFilter(struct dirent *x)
 {
   
   /* if not *.gwf then return 0 */
