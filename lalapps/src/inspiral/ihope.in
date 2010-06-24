@@ -166,7 +166,10 @@ parser.add_option("-W","--skip-hardware-injections",action="store_false",\
     default=True,dest="run_hardware_inj", help="Skip the hardware injection script")
 
 parser.add_option("-x", "--dax",action="store_true",\
-    default=False, help="Make a dax workflow")
+    default=False, help="Make a dax workflow for remote submission")
+
+parser.add_option("-g", "--grid-site",action="store",type="string",\
+     metavar="SITE", help="Specify remote site in conjunction with --dax option")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -213,6 +216,9 @@ if not opts.username:
   print >> sys.stdout, "WARNING! No username specified:"
   print >> sys.stdout, "  Use --node-access-path and --username to speed up"
   print >> sys.stdout, "  the coherent-stage."
+
+if opts.dax and not opts.grid_site:
+  print >> sys.stderr, "**** WARNING ***** Dax will execute locally. You should specify --grid-site if you would like to run on OSG"
 
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
 
@@ -980,6 +986,14 @@ except:
 # Write the files needed to invoke pegasus
 peg_fh = open("pegasus_submit_dax", "w")
 
+#set up site and dir options
+if opts.grid_site:
+  exec_site=opts.grid_site
+  dirs_entry='--relative-dir ' + os.path.basename(tmp_exec_dir) + ' --relative-submit-dir .'
+else:
+  exec_site='local'
+  dirs_entry='--relative-dir .' 
+
 print >> peg_fh, """#!/bin/bash
 
 TMP_EXEC_DIR=%s
@@ -1058,13 +1072,13 @@ else
                -Dpegasus.catalog.site.file=${IHOPE_RUN_DIR}/site-local.xml \\
                --dax %s \\
                --dir ${TMP_EXEC_DIR} \\
-               --relative-dir . -s local --nocleanup -f --submit
+               %s -s %s --nocleanup -f --submit
 
   ln -sf ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.dagman.out ${UEBER_CONCRETE_DAG}.dagman.out
 fi
 """ % ( tmp_exec_dir, os.getcwd(), 
         dag.get_dax_file().replace('.dax','') + '-0.dag', 
-        dag.get_dax_file() )
+        dag.get_dax_file(), dirs_entry, exec_site )
 peg_fh.close()
 os.chmod("pegasus_submit_dax",0755)
 
