@@ -70,7 +70,7 @@ Optional OPTIONS:\n \
 [--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|EOBNR|SpinTaylor)]\n \
 [--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
-[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use]\n \
+[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
 [--distMax FLOAT (100)\t:\tMaximum distance to use]\n \
 [--deta FLOAT\t:\twidth of eta window]\n \
