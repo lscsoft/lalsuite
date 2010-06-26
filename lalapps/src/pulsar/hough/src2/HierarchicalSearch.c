@@ -102,7 +102,7 @@
 
    - Get timings and optimize the pipeline parameters
 
-   - Checkpointing for running on Einstein@Home
+   - Checkpointing for running on Einstein\@Home
 
    - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
 
@@ -123,7 +123,7 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* Hooks for Einstein@Home / BOINC
+/* Hooks for Einstein\@Home / BOINC
    These are defined to do nothing special in the standalone case
    and will be set in boinc_extras.h if EAH_BOINC is set
  */
@@ -1574,7 +1574,7 @@ void SetUpSFTs( LALStatus *status,
 /** \brief Function for calculating Hough Maps and candidates 
     \param pgV is a HOUGHPeakGramVector obtained after thresholding Fstatistic vectors
     \param params is a pointer to HoughParams -- parameters for calculating Hough maps
-    \out houghCand Candidates from thresholding Hough number counts
+    \param out Candidates from thresholding Hough number counts
 
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function 
@@ -2116,7 +2116,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 /** \brief Function for selecting frequency bins from a set of Fstatistic vectors
     \param FstatVect : sequence of Fstatistic vectors
     \param thr is a REAL8 threshold for selecting frequency bins
-    \return pgV : a vector of peakgrams 
+    \param pgV a vector of peakgrams 
 
     Input is a vector of Fstatistic vectors.  It allocates memory 
     for the peakgrams based on the frequency span of the Fstatistic vectors

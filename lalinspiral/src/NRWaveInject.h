@@ -18,7 +18,7 @@
  */
 
 
-/** \defgroup NRWaveInject
+/** \defgroup NRWaveInject Numerical-relativity waveforms
  * \ingroup inject
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *

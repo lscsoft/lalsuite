@@ -54,35 +54,18 @@ INT4 lalDebugLevel=3;
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, CONFIGFILETESTC, statement ? statement :  \
-                   "", (msg) );                                      \
-} while (0)
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+                    "        %s %s\n", (code), *argv, __FILE__,       \
+                    __LINE__, CONFIGFILETESTC, statement ? statement :  \
+                    "", (msg) );                                        \
+ } while (0)
 
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              CONFIGFILETESTC, (statement) );                     \
-} while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( CONFIGFILETESTC_ESUB, CONFIGFILETESTC_MSGESUB,      \
-           "Function call \"" #func "\" failed:" );                  \
-    return CONFIGFILETESTC_ESUB;                                  \
-  }                                                                  \
-} while (0)
 /******************************************************************/
 
 #define TRUE (1==1)
 #define FALSE (1==0)
 
 int main(int argc, char *argv[]){
-  static LALStatus       status;
   static LALParsedDataFile *cfgdata;
 
   BOOLEAN testBool;
@@ -95,7 +78,7 @@ int main(int argc, char *argv[]){
   BOOLEAN wasRead = FALSE;
 
   if ( argc > 1 )
-    LALPrintError ("WARNING: commond-line arguments useless here \n");
+    XLALPrintError ("WARNING: commond-line arguments useless here \n");
 
 
   /* First, make sure the XLAL methods can still read config files without sections */
@@ -106,7 +89,7 @@ int main(int argc, char *argv[]){
 
   XLALReadConfigINT4Variable   (&someint,   cfgdata, 0, "int1", &wasRead);
 
-  SUB (LALCHARCreateVector (&status, &string2, 35), &status);
+  string2 = XLALCreateCHARVector (35);
   XLALReadConfigSTRINGNVariable(string2,   cfgdata, 0, "string2", &wasRead);
 
   XLALReadConfigSTRINGVariable(&string2b,   cfgdata, 0, "string2", &wasRead);
@@ -123,7 +106,7 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EFLOAT);
   }
   if ( strcmp (string1, "some text. You can also use line-continuation") ) {
-    LALPrintError ("read-in: '%s'\n", string1);
+    XLALPrintError ("read-in: '%s'\n", string1);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
@@ -132,17 +115,17 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EINT);
   }
   if ( strcmp(string2->data, "this is also possible, and # here ") ) {
-    LALPrintError ("read-in: '%s'\n", string2->data);
+    XLALPrintError ("read-in: '%s'\n", string2->data);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
-    LALPrintError ("read-in: '%s'\n", string2b);
+    XLALPrintError ("read-in: '%s'\n", string2b);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string3, "how about #quotes AND line-continuation?") ) {
-    LALPrintError ("read-in: '%s'\n", string3);
+    XLALPrintError ("read-in: '%s'\n", string3);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
@@ -153,10 +136,10 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EBOOL);
   }
 
-  LALFree (string1);
-  LALCHARDestroyVector (&status, &string2);
-  LALFree (string2b);
-  LALFree (string3);
+  XLALFree (string1);
+  XLALDestroyCHARVector (string2);
+  XLALFree (string2b);
+  XLALFree (string3);
 
 
   /* Now, try to read some values from different sections */
@@ -183,7 +166,8 @@ int main(int argc, char *argv[]){
 
   XLALReadConfigINT4Variable   (&someint,   cfgdata, "section1", "int1", &wasRead);
 
-  SUB (LALCHARCreateVector (&status, &string2, 35), &status);
+  string2 = XLALCreateCHARVector ( 35 );
+
   XLALReadConfigSTRINGNVariable(string2,   cfgdata, "section2", "string2", &wasRead);
 
   XLALReadConfigSTRINGVariable(&string2b,   cfgdata, "section2", "string2", &wasRead);
@@ -200,7 +184,7 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EFLOAT);
   }
   if ( strcmp (string1, "some text. You can also use line-continuation") ) {
-    LALPrintError ("read-in: '%s'\n", string1);
+    XLALPrintError ("read-in: '%s'\n", string1);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
@@ -209,17 +193,17 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EINT);
   }
   if ( strcmp(string2->data, "this is also possible, and # here ") ) {
-    LALPrintError ("read-in: '%s'\n", string2->data);
+    XLALPrintError ("read-in: '%s'\n", string2->data);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
-    LALPrintError ("read-in: '%s'\n", string2b);
+    XLALPrintError ("read-in: '%s'\n", string2b);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string3, "how about #quotes AND line-continuation?") ) {
-    LALPrintError ("read-in: '%s'\n", string3);
+    XLALPrintError ("read-in: '%s'\n", string3);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
@@ -230,10 +214,10 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EBOOL);
   }
 
-  LALFree (string1);
-  LALCHARDestroyVector (&status, &string2);
-  LALFree (string2b);
-  LALFree (string3);
+  XLALFree (string1);
+  XLALDestroyCHARVector (string2);
+  XLALFree (string2b);
+  XLALFree (string3);
   LALCheckMemoryLeaks();
 
   return CONFIGFILETESTC_ENORM;

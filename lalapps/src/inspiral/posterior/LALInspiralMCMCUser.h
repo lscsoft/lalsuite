@@ -74,7 +74,7 @@ NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17
 #define LALINSPIRALH_MSGECHOICE       "Invalid choice for an input parameter"
 #define LALINSPIRALH_MSGEORDER        "unknown order specified"
 #define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid model"
-/** ---------------------------------------------------------------------  
+/* ---------------------------------------------------------------------  
 </lalErrTable> */
 
 

@@ -265,7 +265,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.sorting = sorting;
    vars.lim = 10000;
    vars.c = Rpr;
-   REAL8 accuracy = 1.0e-11;
+   REAL8 accuracy = 1.0e-5;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, 0.0, accuracy, errcode); 
@@ -275,13 +275,13 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-9) {
+   if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
       c1 = 0.9*vars.c;
       vars.c = c1;
       REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
-      while (tempprob<1.0e-9) {
+      while (tempprob<1.0e-4) {
          c1 *= 0.9;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
@@ -291,7 +291,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
       c2 = 0.9*c1;
       vars.c = c2;
       logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
-      while ((logprob2-logprob1)<=2.0*1.0e-9) {
+      while ((logprob2-logprob1)<=2.0*1.0e-4) {
          c2 *= 0.9;
          vars.c = c2;
          logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
@@ -461,13 +461,13 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
          
          //Set any bin below 1e-12 to 0.0 and the DC bins (jj=0 and jj=1) to 0.0
          //if (fulltemplate->data[ii*fpr->length + jj] <= 1e-12 || jj==0 || jj==1) fulltemplate->data[ii*fpr->length + jj] = 0.0;
-         if (dataval <= 1e-12 || jj==0 || jj==1) dataval = 0.0;
+         if (dataval <= 1e-12) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot
-         if (dataval > out->templatedata->data[out->templatedata->length-1]) {
+         if (jj>1 && dataval > out->templatedata->data[out->templatedata->length-1]) {
             INT4 insertionpoint = (INT4)out->templatedata->length-1;
             while (insertionpoint > 0 && dataval > out->templatedata->data[insertionpoint-1]) insertionpoint--;
             
@@ -486,7 +486,7 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
    }
    
    //Normalize
-   for (ii=0; ii<(INT4)out->templatedata->length; ii++) out->templatedata->data[ii] /= sum;
+   for (ii=0; ii<(INT4)out->templatedata->length; ii++) if (out->templatedata->data[ii]!=0.0) out->templatedata->data[ii] /= sum;
    
    //Destroy variables
    XLALDestroyREAL8Vector(phi_actual);
@@ -564,14 +564,11 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
       //Order of vector is by second frequency then first frequency
       //Ignore the DC and 1st frequency bins
       if (doSecondFFT==1) {
-         for (jj=2; jj<(INT4)psd->length; jj++) {
-            
+         for (jj=0; jj<(INT4)psd->length; jj++) {
             REAL8 correctedValue = psd->data[jj]*winFactor/x->length*0.5*params->Tcoh;
-            
             sum += correctedValue;
             
-            //If value is largest than smallest logged bin, then launch a simple search to find the place to insert it
-            if (correctedValue > out->templatedata->data[out->templatedata->length-1]) {
+            if (jj>1 && correctedValue > out->templatedata->data[out->templatedata->length-1]) {
                INT4 insertionpoint = (INT4)out->templatedata->length-1;
                while (insertionpoint > 0 && correctedValue > out->templatedata->data[insertionpoint-1]) insertionpoint--;
                
@@ -592,7 +589,7 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
    }
    
    //Normalize
-   for (ii=0; ii<(INT4)out->templatedata->length; ii++) out->templatedata->data[ii] /= sum;
+   for (ii=0; ii<(INT4)out->templatedata->length; ii++) if (out->templatedata->data[ii]!=0.0) out->templatedata->data[ii] /= sum;
    
    //Destroy
    XLALDestroyREAL8Vector(psd1);

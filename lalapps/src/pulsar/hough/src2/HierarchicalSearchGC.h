@@ -21,13 +21,10 @@
 
 
 /**
- * \file DriveHoughFStat.h
- * \brief Header file for DriveHoughFStat.c 
- * \author Badri Krishnan, Alicia Sintes
- * \date $Date$
- * 
- ****/
-
+ * \file
+ * \brief Header file for GCT-based Hierarchical search code
+ *
+ **/
 
 #ifndef _DRIVEHOUGHCOLOR_H
 #define _DRIVEHOUGHCOLOR_H

@@ -15,6 +15,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 NVCC ?= nvcc
 .cu.o:
 	$(NVCC) $(CPPFLAGS) -c $< -o $@
+# allow to specify a different CUDA runtime library (e.g. for Windows when cross-compiling)
+CUDART ?= -lcudart
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 
@@ -74,11 +76,14 @@ lalapps_HierarchicalSearch_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 # CPPFLAGS and LDFLAGS respectively (until LAL/LALAapps have a proper CUDA detection in configure)
 lalapps_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
 lalapps_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
-lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) -lcudart
+lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) $(CUDART)
 
 # Einstein@home targets
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
 eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA -DEAH_BOINC -DHS_OPTIMIZATION
+eah_HierarchicalSearch_cuda_LDFLAGS = -L. $(AM_LDFLAGS)
+eah_HierarchicalSearch_cuda_DEPENDENCIES = $(RELEASE_DEPS)
+eah_HierarchicalSearch_cuda_LDADD = $(LDADD) $(CUDART) $(RELEASE_LDADD)
 
 eah_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources) $(EAHSources)
 eah_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION
@@ -102,4 +107,3 @@ exchndl.o: EinsteinAtHome/exchndl.c
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
-

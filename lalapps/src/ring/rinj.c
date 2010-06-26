@@ -158,8 +158,9 @@ int main( int argc, char *argv[] )
   REAL4  deltaM;
   SkyPosition           skyPos;
   LALSource             source;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector           lho   = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LALDetector           llo   = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector           virgo = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
   REAL8                 time_diff;
@@ -808,10 +809,10 @@ int main( int argc, char *argv[] )
     this_inj->hrss = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
 
     /* initialize end times with geocentric value */
-    this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
+    this_inj->h_start_time = this_inj->l_start_time = this_inj->v_start_time = this_inj->geocent_start_time;
     
     /* initialize distances with real distance and compute splus and scross*/
-    this_inj->eff_dist_h = this_inj->eff_dist_l = 2.0 * this_inj->distance;
+    this_inj->eff_dist_h = this_inj->eff_dist_l = this_inj->eff_dist_v = 2.0 * this_inj->distance;
     cosiota = cos( this_inj->inclination );
     splus = -( 1.0 + cosiota * cosiota );
     scross = -2.0 * cosiota; 
@@ -847,6 +848,25 @@ int main( int argc, char *argv[] )
 
     /* compute hrss at LLO */
     this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+
+    /* increment the injection time */
+    XLALGPSAdd(&gpsStartTime, meanTimeStep);
+    
+    /* virgo */
+    time_diff = XLALTimeDelayFromEarthCenter( virgo.location, skyPos.longitude, skyPos.latitude, &(this_inj->geocent_start_time) );
+    XLALGPSAdd(&(this_inj->l_start_time), time_diff);
+
+    /* compute the response of the VIROG detector */
+    detAndSource.pDetector = &virgo;
+    LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
+          &this_inj->geocent_start_time ), &status);
+    
+    /* compute the effective distance for VIRGO */
+    this_inj->eff_dist_v /= sqrt( splus*splus*resp.plus*resp.plus 
+        + scross*scross*resp.cross*resp.cross );
+
+    /* compute hrss at VIRGO */
+    this_inj->hrss_v = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
 
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);

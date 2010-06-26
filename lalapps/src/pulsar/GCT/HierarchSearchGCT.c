@@ -81,6 +81,10 @@ RCSID( "$Id$");
 
 #define BLOCKSIZE_REALLOC 50
 
+#define Vorb_GCT   = 2.9785e04; 
+#define Vspin_GCT  = 465.10; 
+#define REARTH_GCT = 6.378140e06;
+#define C_GCT      = 299792458;
 
 /* ---------- Macros -------------------- */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
@@ -201,7 +205,8 @@ int MAIN( int argc, char *argv[]) {
   REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
   UINT4 binsFstat1, binsFstatSearch;
   static ComputeFParams CFparams;
-
+  ComputeFBufferVector_RS resampbuffers;  /* used to store the buffered quantities used in repeated calls to ComputeFstatFreqBand_RS */
+  
   /* Semicoherent variables */
   static SemiCoherentParams semiCohPar;
 
@@ -284,7 +289,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
   REAL8 uvar_f1dot = FDOT; 	/* first spindown value */
-  REAL8 uvar_f1dotBand = DFDOT; /* range of first spindown parameter */
+  REAL8 uvar_f1dotBand = 0.0; /* range of first spindown parameter */
   REAL8 uvar_Freq = FSTART;
   REAL8 uvar_FreqBand = FBAND;
 
@@ -700,7 +705,7 @@ int MAIN( int argc, char *argv[]) {
   CFparams.SSBprec = uvar_SSBprecision;
   CFparams.upsampling = uvar_sftUpsampling;
   CFparams.edat = edat;
-
+ 
   /*---------- set up stuff for semi-coherent part ---------*/
   /* set up some semiCoherent parameters */
   semiCohPar.tsMid = midTstack;
@@ -729,7 +734,16 @@ int MAIN( int argc, char *argv[]) {
     return(HIERARCHICALSEARCH_EMEM);
   }
 
-
+  /* allocate buffer memory for resampling - initialise first */
+  resampbuffers.length = nStacks;
+  resampbuffers.data = NULL;
+  if (uvar_useResamp) {
+    if ( (resampbuffers.data = (ComputeFBuffer_RS **)XLALCalloc(nStacks,sizeof(ComputeFBuffer_RS *))) == NULL ) {
+      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
+      return(HIERARCHICALSEARCH_EMEM);
+    }
+  }
+  
   /*-----------Create template grid for first stage ---------------*/
   /* prepare initialization of DopplerSkyScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
@@ -948,11 +962,11 @@ int MAIN( int argc, char *argv[]) {
 
         if(!oldcg) {
           oldcg = coarsegrid.length;
-          LogPrintf(LOG_DEBUG, "CG:%d ",coarsegrid.length);
+          LogPrintfVerbatim(LOG_NORMAL, "%% --- CG:%d ",coarsegrid.length);
         }
         if(!oldfg) {
           oldfg = finegrid.length;
-          LogPrintfVerbatim(LOG_DEBUG, "FG:%ld \n",finegrid.length);
+          LogPrintfVerbatim(LOG_NORMAL, "FG:%ld  f1dotmin_fg:%.13g df1dot_fg:%.13g\n",finegrid.length,f1dotmin_fg,df1dot_fg);
         }
         if((coarsegrid.length != oldcg) || (finegrid.length != oldfg)) {
           LogPrintfVerbatim(LOG_CRITICAL, "ERROR: Grid-sizes disagree!\nPrevious CG:%d FG:%ld, currently CG:%d FG:%ld\n",
@@ -981,9 +995,9 @@ int MAIN( int argc, char *argv[]) {
         /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
         ic = 0;
         for( ic3 = 0; ic3 < nf1dots_fg; ic3++ ) {
-          f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;
+          /*f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;*/
           for( ic2 = 0; ic2 < nfreqs_fg; ic2++ ) {
-            freq_tmp = freqmin_fg + ic2 * dfreq_fg;
+            /*freq_tmp = freqmin_fg + ic2 * dfreq_fg;*/
             finegrid.list[ic] = thisFgPoint;
             ic++;
           }
@@ -994,8 +1008,8 @@ int MAIN( int argc, char *argv[]) {
         sumTwoFmax = 0.0;
 
 
-        /* ##########################################################*/
-        /* ------------- MAIN LOOP over Segments --------------------*/
+        /* #########################################################################*/
+        /* ------------- MAIN LOOP over Segments for F-statistic -------------------*/
 
         for (k = 0; k < nStacks; k++) {
 
@@ -1014,7 +1028,7 @@ int MAIN( int argc, char *argv[]) {
 
 
           /* Midpoint in time of current segment */
-          midTstackGPS   = midTstack->data[k];
+          midTstackGPS = midTstack->data[k];
 
           /* Difference in time between this segment's midpoint and Fstat reftime */
           timeDiffSeg = XLALGPSDiff( &midTstackGPS, &thisPoint.refTime );
@@ -1065,11 +1079,18 @@ int MAIN( int argc, char *argv[]) {
           myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg;
 
           if (uvar_useResamp) {
-
+	   
+	    /* point the params buffer to the current segment buffer */
+	    CFparams.buffer = resampbuffers.data[k];
+	    printf("k = %d\n",k);
             /* Resampling method implementation to compute the F-statistic */
             LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint,
                                                stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
                                                stackMultiDetStates.data[k], &CFparams), &status);
+	    
+	    /* repoint the buffer vector element to the potentially modified buffer */
+	    resampbuffers.data[k] = CFparams.buffer;
+
           }
           else {
 
@@ -1141,13 +1162,12 @@ int MAIN( int argc, char *argv[]) {
 
           } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
-#ifdef DIAGNOSISMODE
+          
           /* print fstat vector if required -- mostly for debugging */
           if ( uvar_printFstat1 )
           {
             LAL_CALL( PrintFstatVec ( &status, &fstatVector.data[k], fpFstat1, &thisPoint, refTimeGPS, k+1), &status);
           }
-#endif
 
           /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
           /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
@@ -1286,8 +1306,9 @@ int MAIN( int argc, char *argv[]) {
          data stream and compares it to the multi-IFO F-statistic */
   if ( uvar_SepDetVeto ) {
 
-    UINT8 icand;
-    UINT4 numDetectors, X;
+    UINT8 icand, icandMax;
+    UINT4 numDetectors, X, topNC;
+    REAL4 topTwoF=0.0, maxTopTwoF=0.0;
     Fcomponents FstatSeg;
     ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
     PulsarSpins fkdotTMP;
@@ -1299,10 +1320,6 @@ int MAIN( int argc, char *argv[]) {
     numDetectors = stackMultiSFT.data[0]->length;
     
     REAL4 aveTwoFstat[numDetectors+1];
-    
-    /* Initialize */
-    for (X=0; X < (numDetectors+1); X++) 
-      aveTwoFstat[X] = 0.0;
     
     if ( (SFTsSingleDet = (MultiSFTVector *)LALCalloc(1, sizeof(MultiSFTVector))) == NULL ){
       fprintf(stderr,"SFTsSingleDet Calloc failed\n");
@@ -1323,44 +1340,85 @@ int MAIN( int argc, char *argv[]) {
     sort_gctFStat_toplist_strongest(semiCohToplist);
         
     icand=0; /* At the moment, just the top candidate is analyzed */
+    icandMax = icand;
     
-    thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Alpha;
-    thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Delta;
-    fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Freq;
-    fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).F1dot;
+    /* find loudest candidate */
+    while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF 
+                > (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF) ) {
+
+      /* Initialize */
+      for (X=0; X < (numDetectors+1); X++) 
+        aveTwoFstat[X] = 0.0;
+      
+      thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Alpha;
+      thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Delta;
+      fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).Freq;
+      fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).F1dot;
+      topNC = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc;
+      topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF;
+      /* 
+      fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %d\n",
+              XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
+              fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icand );
+      */
+      LAL_CALL ( LALExtrapolatePulsarSpins (&status,
+                                            thisPoint.fkdot, thisPoint.refTime,
+                                            fkdotTMP, refTimeGPS), &status );
+      /*
+      fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f\n",
+              XLALGPSGetREAL8( &thisPoint.refTime ),
+              thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
+              topNC, topTwoF );
+      */
+      for (k = 0; k < nStacks; k++) {
+        
+        /* --- Compute multi-IFO F-statistic --- */
+        LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, stackMultiSFT.data[k], 
+                                stackMultiNoiseWeights.data[k], stackMultiDetStates.data[k], 
+                                &CFparams, &cfBuffer2 ), &status);
+        
+        if ( uvar_SignalOnly ) {
+          FstatSeg.F *= 2.0 / Tsft;
+          FstatSeg.F += 2;		
+        }
+        aveTwoFstat[0] += 2.0 * FstatSeg.F / nStacks;
+        
+      }
+      if (aveTwoFstat[0] > maxTopTwoF) {
+        maxTopTwoF = aveTwoFstat[0];
+        icandMax = icand;
+      }
+      fprintf(stderr,"  icand: %d  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
+      icand++;
+      
+    } /* end while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF ... */
+
     
-    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+    thisPoint.Alpha = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Alpha;
+    thisPoint.Delta = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Delta;
+    fkdotTMP[0] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).Freq;
+    fkdotTMP[1] = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).F1dot;
+    topNC = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).nc;
+    topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).sumTwoF;
+    aveTwoFstat[0] = topTwoF;
+    
+    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %d (%d)\n",
             XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
-            fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1],
-            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
-            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
+            fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icandMax, icand );
             
     LAL_CALL ( LALExtrapolatePulsarSpins (&status,
                                      thisPoint.fkdot, thisPoint.refTime,
-                                     fkdotTMP, usefulParams.spinRange_refTime.refTime), &status );
+                                     fkdotTMP, refTimeGPS), &status );
     
-    fprintf(stderr, "  At GPS time %.4f, %.13f %.7f %.7f %.7g %d %.6f\n",
+    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f\n",
             XLALGPSGetREAL8( &thisPoint.refTime ),
             thisPoint.fkdot[0], thisPoint.Alpha, thisPoint.Delta, thisPoint.fkdot[1],
-            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).nc,
-            (*(GCTtopOutputEntry*)semiCohToplist->heap[icand]).sumTwoF );
-
+            topNC, topTwoF );
     
+    /* --- Compute separate-IFO F-statistic for each data segment --- */
     for (k = 0; k < nStacks; k++) {
-
-      /* --- Compute multi-IFO F-statistic --- */
-      LAL_CALL( ComputeFStat ( &status, &FstatSeg, &thisPoint, stackMultiSFT.data[k], 
-                              stackMultiNoiseWeights.data[k], stackMultiDetStates.data[k], 
-                              &CFparams, &cfBuffer2 ), &status);
-      
-      if ( uvar_SignalOnly ) {
-        FstatSeg.F *= 2.0 / Tsft;
-        FstatSeg.F += 2;		
-      }
-      aveTwoFstat[0] += 2.0 * FstatSeg.F / nStacks;
-      
-      /* --- Compute separate-IFO F-statistic for each data segment --- */
-      for (X=0; X < numDetectors; X++) {
+            
+        for (X=0; X < numDetectors; X++) {
 
         cfBuffer2 = empty_ComputeFBuffer;
         SFTsSingleDet->length = 1;
@@ -1392,7 +1450,8 @@ int MAIN( int argc, char *argv[]) {
         
       }
     }
-
+    
+       
     for (X=0; X < (numDetectors+1); X++) {
       if (X>0) {
         fprintf(stderr, "%% --- average2F[%d]= %.6f\t (%s)\t Z= %.4f \n", 
@@ -1431,9 +1490,12 @@ int MAIN( int argc, char *argv[]) {
     XLALDestroyMultiDetectorStateSeries ( stackMultiDetStates.data[k] );
   }
 
-  LALFree(stackMultiSFT.data);
-  LALFree(stackMultiNoiseWeights.data);
-  LALFree(stackMultiDetStates.data);
+  if (stackMultiSFT.data) 
+    LALFree(stackMultiSFT.data);
+  if (stackMultiNoiseWeights.data)
+    LALFree(stackMultiNoiseWeights.data);
+  if (stackMultiDetStates.data)
+    LALFree(stackMultiDetStates.data);
 
   XLALDestroyTimestampVector(startTstack);
   XLALDestroyTimestampVector(midTstack);
@@ -1448,13 +1510,14 @@ int MAIN( int argc, char *argv[]) {
     }
   LALFree(fstatVector.data);
 
-
   /* if resampling is used then free buffer */
-  /*
-  if ( uvar_useResamp ) {
-    XLALEmptyComputeFBuffer_RS( CFparams.buffer );
-  }
-  */
+   if ( uvar_useResamp ) {
+     for (k=0;k<resampbuffers.length;k++) {
+       XLALEmptyComputeFBuffer_RS( resampbuffers.data[k] ); 
+       XLALFree(resampbuffers.data[k]);
+     }
+     XLALFree(resampbuffers.data);
+   } 
 
   /* free Vel/Pos/Acc vectors and ephemeris */
   XLALDestroyREAL8VectorSequence( posStack );
@@ -2011,8 +2074,9 @@ void UpdateSemiCohToplist(LALStatus *status,
   Nsegments = usefulparams->nStacks;
 
   /* check if translation to reference time of fine-grid is necessary */
-  if  ( in->refTime.gpsSeconds != usefulparams->spinRange_refTime.refTime.gpsSeconds ) {
+  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) != 0 ) {
     translateSpins = TRUE;
+    /*fprintf(stderr,"translateSpins = TRUE\n");*/
   }
 
   /* ---------- Walk through fine-grid and insert candidates into toplist--------------- */
@@ -2094,7 +2158,7 @@ void PrintFstatVec (LALStatus *status,
     /* propagate fkdot back to reference-time  */
     TRY ( LALExtrapolatePulsarSpins (status->statusPtr, fkdot, refTime, fkdot, thisPoint->refTime ), status );
 
-    fprintf(fp, "%d %.13g %.7g %.7g %.5g %.6g\n",
+    fprintf(fp, "%d %.13g %.12g %.12g %.13g %.6g\n",
             stackIndex, fkdot[0], alpha, delta, fkdot[1], 2*in->data->data[k]);
   }
 

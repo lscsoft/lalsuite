@@ -23,7 +23,7 @@
  * \date $Id$
  * \brief Provides the basic LAL datatypes.
  *
- * \noindent This header defines the standard data types and data
+ * This header defines the standard data types and data
  * structures that are used throughout LAL.  They fall into three general
  * categories: primitive datatypes, aggregates of primitive
  * datatypes, and structured datatypes.  The LAL status structure
@@ -605,7 +605,7 @@ tagCHARVectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  CHAR  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  CHAR  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 CHARVectorSequence;
 
@@ -615,7 +615,7 @@ tagINT2VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  INT2  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  INT2  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 INT2VectorSequence;
 
@@ -625,7 +625,7 @@ tagUINT2VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  UINT2 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  UINT2 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 UINT2VectorSequence;
 
@@ -635,7 +635,7 @@ tagINT4VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  INT4  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  INT4  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 INT4VectorSequence;
 
@@ -645,7 +645,7 @@ tagUINT4VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  UINT4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  UINT4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 UINT4VectorSequence;
 
@@ -655,7 +655,7 @@ tagINT8VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  INT8  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  INT8  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 INT8VectorSequence;
 
@@ -665,7 +665,7 @@ tagUINT8VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  UINT8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  UINT8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 UINT8VectorSequence;
 
@@ -675,7 +675,7 @@ tagREAL4VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  REAL4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  REAL4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 REAL4VectorSequence;
 
@@ -685,7 +685,7 @@ tagREAL8VectorSequence
 {
   UINT4  length; /**< The number \a l of vectors. */
   UINT4  vectorLength; /**< The length \a n of each vector. */
-  REAL8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  REAL8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 REAL8VectorSequence;
 
@@ -695,7 +695,7 @@ tagCOMPLEX8VectorSequence
 {
   UINT4     length; /**< The number \a l of vectors. */
   UINT4     vectorLength; /**< The length \a n of each vector. */
-  COMPLEX8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  COMPLEX8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 COMPLEX8VectorSequence;
 
@@ -705,7 +705,7 @@ tagCOMPLEX16VectorSequence
 {
   UINT4      length; /**< The number \a l of vectors. */
   UINT4      vectorLength; /**< The length \a n of each vector. */
-  COMPLEX16 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
+  COMPLEX16 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
 }
 COMPLEX16VectorSequence;
 
