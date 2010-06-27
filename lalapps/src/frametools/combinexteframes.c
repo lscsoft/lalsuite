@@ -156,7 +156,7 @@ extern int vrbflg;	 	/**< defined in lalapps.c */
 /* fill in the HEX APID names */
 const char *APID[6] = {"FS37","FS3b","FS3f","FS4f","XENO","FS46"};
 
-const char xtechannelname[16] = "XTEcounts";
+const char xtechannelname[16] = "X1:PHOTONCOUNTS";
 
 /* the PCU channel names for FS46 fits files */
 const char *PCUchannel[5] = {"XeCntPcu0","XeCntPcu1","XeCntPcu2","XeCntPcu3","XeCntPcu4"};
@@ -1053,7 +1053,7 @@ int XLALCombinationPlanToINT4TimeSeries(INT4TimeSeries **ts,           /**< [out
   LogPrintf(LOG_DEBUG,"%s : combined timeseries requires %ld samples.\n",fn,N);
   
   /* create the output timeseries */
-  if ( ((*ts) = XLALCreateINT4TimeSeries("combinedXTEcounts",&(plan->epoch),0,plan->dt,&lalDimensionlessUnit,N)) == NULL) {
+  if ( ((*ts) = XLALCreateINT4TimeSeries("X1:COMBINED_PHOTONCOUNTS",&(plan->epoch),0,plan->dt,&lalDimensionlessUnit,N)) == NULL) {
     LogPrintf(LOG_CRITICAL, "%s : XLALCreateINT4TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
     XLAL_ERROR(fn,XLAL_ENOMEM);  
   }
@@ -1071,7 +1071,7 @@ int XLALCombinationPlanToINT4TimeSeries(INT4TimeSeries **ts,           /**< [out
     INT4 lldfactor = 1;
  
     /* define channel name */
-    snprintf(channelname,STRINGLENGTH,"XTEcounts0");
+    snprintf(channelname,STRINGLENGTH,"%s0",xtechannelname);
     
     /* open the frame file */
     if ((fs = XLALFrOpen(plan->filelist.dir,plan->filelist.file[i].filename)) == NULL) {
@@ -1177,15 +1177,21 @@ int XLALINT4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of o
 
   /* Here's where we add extra information into the frame */
   /* we include the current command line args and the original FITS file headers from each contributing file */ 
-  FrHistoryAdd(outFrame,clargs);
-  for (i=0;i<(INT4)plan->filelist.length;i++) {
-    printf("outputting history #%d\n%s\n",i,plan->filelist.file[i].history);
-    FrHistoryAdd(outFrame,plan->filelist.file[i].history);
+  /* we also add the git version info */
+  {
+    CHAR *versionstring = NULL;              /* pointer to a string containing the git version information */ 
+    versionstring = XLALGetVersionString(1);
+    FrHistoryAdd(outFrame,versionstring);
+    FrHistoryAdd(outFrame,clargs);
+    for (i=0;i<(INT4)plan->filelist.length;i++) {
+      printf("outputting history #%d\n%s\n",i,plan->filelist.file[i].history);
+      FrHistoryAdd(outFrame,plan->filelist.file[i].history);
+    }
+    XLALFree(versionstring);
   }
   
   /* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
   /* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
-
   /* first we need to extract parts of the original filenames */
   {
     CHAR originalfile[STRINGLENGTH];
@@ -1204,7 +1210,7 @@ int XLALINT4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of o
   }
 
   /* generate output filename */
-  snprintf(outputfile,STRINGLENGTH,"%s/X-%s-%d-%d.gwf",outputdir,filecomment,ts->epoch.gpsSeconds,(INT4)T);
+  snprintf(outputfile,STRINGLENGTH,"%s/X1-%s-%d-%d.gwf",outputdir,filecomment,ts->epoch.gpsSeconds,(INT4)T);
   LogPrintf(LOG_DEBUG,"%s : output file = %s\n",fn,outputfile);
 
   /* write frame structure to file (opens, writes, and closes file) - last argument is compression level */
