@@ -124,7 +124,6 @@ rk4GSLIntegrator * XLALRungeKutta4Init( INT4 n,
 }
 
 
-
 void
 LALRungeKutta4(
    LALStatus        *status,
