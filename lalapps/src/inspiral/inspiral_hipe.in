@@ -1167,9 +1167,12 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
       inj = cohbank_done.get_inj()
       cohinsptag = ifousertag + "_" + str(cohbank_done.get_inj())
     else: cohinsptag = ifousertag
-    #cohinsp.set_user_tag(usertag + "_" + str(cohbank_done.get_inj()))
     cohinsp.set_user_tag(cohinsptag)
     cohinsp.add_var_opt('ifo-tag',ifos)
+
+    # add the coherent bank job as a parent
+    if opts.coherent_bank:
+      cohinsp.add_parent(cohbank_done.get_dag_node())
 
     # set up trigbank and inspiral
     for ifo in ifo_list:
@@ -1199,9 +1202,6 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
         if opts.coherent_inspiral and opts.coherent_bank:
            cohinsp.add_parent(frjoin)
 
-    #if opts.coherent_bank:
-    #  and opts.coherent_inspiral:
-    #  cohinsp.add_parent(cohbank_done.get_dag_node())
     if opts.coherent_inspiral: dag.add_node(cohinsp)
     cohinsp_analyzed.append(AnalyzedIFOData(cohbank_done.get_chunk(),cohinsp))
 
