@@ -24,7 +24,7 @@
 
 ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 columns);
 void free_ihsMaxima(ihsMaximaStruct *data);
-void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8Vector *tfnoiseratio, INT4 columns);
+void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8Vector *tfnoiseratio, REAL8 Tobs, INT4 columns);
 
 ihsVals * new_ihsVals(void);
 void free_ihsVals(ihsVals *ihsvals);
@@ -32,7 +32,7 @@ void incHarmSum(ihsVals *out, REAL8Vector *in);
 
 ihsfarStruct * new_ihsfarStruct(INT4 columns);
 void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
-void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise);
+void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise, REAL8 Tobs);
 
 void ihsSums(REAL8Vector *out, REAL8Vector *ihss, INT4 cols);
 

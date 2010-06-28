@@ -58,7 +58,7 @@ void free_ihsMaxima(ihsMaximaStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Run the IHS algorithm  -- done
-void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8Vector *tfnoiseratio, INT4 columns)
+void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8Vector *tfnoiseratio, REAL8 Tobs, INT4 columns)
 {
 
    INT4 ii, jj;
@@ -71,7 +71,13 @@ void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8V
    for (ii=0; ii<(INT4)in->f->length; ii++) {
    
       //For each column, populate it with the data for that frequency bin (TRY dividing the expected noise)
-      for (jj=0; jj<(INT4)column->length; jj++) column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+      for (jj=0; jj<(INT4)column->length; jj++) {
+         
+         if (fabs(Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(Tobs/(6.0*3600.0)-jj)<=1.0) column->data[jj] = 0.0;
+         else column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+         //column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+         
+      }
       
       //Run the IHS algorithm on the column
       incHarmSum(ihsvals, column);
@@ -177,7 +183,7 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
 
 //////////////////////////////////////////////////////////////
 // Compute the IHS FAR for a sum of a number of columns  --
-void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise)
+void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise, REAL8 Tobs)
 {
    
    INT4 ii, jj, kk, length;
@@ -198,13 +204,16 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
    
    ihsVals *ihsvals = new_ihsVals();
    
-   
    //Determine IHS values for the number of trials
    noise = XLALCreateREAL8Vector((UINT4)length);
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise (TRY dividing the expected noise)
       //for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(aveNoise->data[jj], rng);
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(1.0, rng);
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
+         if (fabs(Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(Tobs/(6.0*3600.0)-jj)<=1.0) noise->data[jj] = 0.0;
+         else noise->data[jj] = expRandNum(1.0, rng);
+      }
+      //for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(1.0, rng);
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
