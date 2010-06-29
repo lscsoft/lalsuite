@@ -716,6 +716,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
 	  tmp = Fa_alpha; tmp.re *= norm; tmp.im *= norm;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = tmp;
 	  tmp = Fb_alpha; tmp.re *= norm; tmp.im *= norm;
