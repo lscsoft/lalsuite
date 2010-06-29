@@ -57,6 +57,8 @@ typedef enum {
 
 
 /* ---------- exported API types ---------- */
+
+/** Struct defining one transient window instance */
 typedef struct
 {
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
@@ -64,6 +66,7 @@ typedef struct
   REAL8 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
 
+/** Struct defining a range of transient windows */
 typedef struct
 {
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
@@ -73,8 +76,18 @@ typedef struct
   REAL8 tau_max;		/**< longest transient timescale tau in seconds */
 } transientWindowRange_t;
 
+/** Struct holding a transient CW candidate */
+typedef struct {
+  PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
+  REAL8 fullFstat;			/**< 2F obtained in the full search over all SFTs */
+  REAL8 maxFstat;			/**< maximal 2F value obtained over transientWindowRange */
+  UINT4 maxt0;				/**< start-time of max{2F} over transientWindowRange (in GPS seconds)*/
+  UINT4 maxtau;				/**< duration of max{2F} over transientWindowRange (in seconds) */
+  REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
+} TransientCandidate_t;
 
-
+/* empty struct initializers */
+extern const TransientCandidate_t empty_TransientCandidate;
 
 /* ---------- exported API prototypes ---------- */
 int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
@@ -82,6 +95,8 @@ int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t Transi
 int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
+int
+write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
 /* ---------- Fstat-atoms related functions ----------*/
 int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
