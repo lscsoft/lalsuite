@@ -166,11 +166,11 @@ static
 void LALHCapDerivativesP4PN(     REAL8Vector     *values,
                                  REAL8Vector     *dvalues,
                                 void            *funcParams);
-
+#if 0
 static
 REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
                                 InspiralDerivativesIn *ak);
-
+#endif
 static
 void LALprInitP4PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
 
@@ -185,14 +185,14 @@ void LALrOfOmegaP4PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 
 static
 void LALvrP4PN(REAL8 *vr, void *params);
-
+#if 0
 static
 COMPLEX8 XLALGetFactorizedWaveform( REAL8Vector           *values,
                                     InspiralDerivativesIn *ak,
                                     const INT4            l,
                                     const INT4            m
                                   );
-
+#endif
 static void
 LALEOBPPWaveformEngine (
                 LALStatus        *status,
