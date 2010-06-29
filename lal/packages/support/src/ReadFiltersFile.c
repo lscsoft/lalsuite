@@ -27,6 +27,8 @@
 #include <lal/ReadFiltersFile.h>
 
 
+static int check_checksum(const char *filterfile, const char *claimed_chksum);
+
 /*
  * A common check in the code when reading the filters file.
  */
@@ -77,9 +79,33 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     }
 
     /**------------------------------------------------------------------**/
-    /* Read VC info (CVS information for the moment) */
+    /* Read checksum */
     i = 0;                                  /* start with first line */
     thisline = Filters->lines->tokens[i];   /* get line i */
+
+    if (strncmp(thisline, "SHA-1 checksum", 14) != 0) {
+        fprintf(stderr, "ERROR: file %s does not contain a checksum.\n",
+                filterfile);
+        XLALDestroyParsedDataFile(&Filters);
+        return -1;
+    }
+
+    {
+        char *claimed_chksum = (char *) &thisline[16];
+        claimed_chksum[40] = '\0';
+
+        strncpy(InputData->filter_chksum, claimed_chksum,
+                sizeof InputData->filter_chksum);
+        if (check_checksum(filterfile, claimed_chksum) != 0) {
+            fprintf(stderr, "ERROR: bad checksum for file %s\n", filterfile);
+            XLALDestroyParsedDataFile(&Filters);
+            return -1;
+        }
+    }
+
+    /**------------------------------------------------------------------**/
+    /* Read VC info (CVS information for the moment) */
+    thisline = Filters->lines->tokens[++i];   /* get next line */
     strncpy(InputData->filter_vc_info, thisline, sizeof(InputData->filter_vc_info));
 
     /**------------------------------------------------------------------**/
@@ -280,4 +306,27 @@ int XLALDestroyFiltersFile(StrainIn* InputData)
     }
 
     return 0;
+}
+
+
+/*
+ * Check the filters file checksum.
+ */
+static int check_checksum(const char *filterfile, const char *claimed_chksum)
+{
+    FILE *fpipe;
+    char command[1024];
+    char actual_chksum[1024];
+
+    /* Actual checksum */
+    snprintf(command, sizeof command, "tail -n +3 %s | sha1sum", filterfile);
+    if ( !(fpipe = (FILE*) popen(command, "r")) ) {
+        perror("Problem in popen when checking checksum.");
+        return -1;
+    }
+    fgets(actual_chksum, sizeof actual_chksum, fpipe);
+    pclose(fpipe);
+
+    /* Compare! */
+    return strncmp(claimed_chksum, actual_chksum, 40);
 }
