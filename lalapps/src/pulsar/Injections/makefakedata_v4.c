@@ -248,13 +248,9 @@ BOOLEAN uvar_version;		/**< output version information */
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
 CHAR *uvar_parfile;             /** option .par file path */
-CHAR *uvar_transient_Name;	/**< name of transient window ('heavi', 'exp',...) */
-REAL8 uvar_transient_t0;	/**< GPS start-time of transient window */
-REAL8 uvar_transient_tau;	/**< time-scale of transient window */
-
-CHAR *uvar_transient_Name;	/**< name of transient window ('rect', 'exp',...) */
-REAL8 uvar_transient_t0;	/**< GPS start-time of transient window */
-REAL8 uvar_transient_tau;	/**< time-scale of transient window */
+CHAR *uvar_transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+REAL8 uvar_transientStartTime;	/**< GPS start-time of transient window */
+REAL8 uvar_transientTauDays;	/**< time-scale in days of transient window */
 
 /*----------------------------------------------------------------------*/
 
@@ -1321,19 +1317,19 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   LALFree ( channelName );
 
   /* ----- handle transient-signal window if given ----- */
-  if ( !LALUserVarWasSet ( &uvar_transient_Name ) || !strcmp ( uvar_transient_Name, "none") )
+  if ( !LALUserVarWasSet ( &uvar_transientWindowType ) || !strcmp ( uvar_transientWindowType, "none") )
     cfg->transientWindow.type = TRANSIENT_NONE;		/* default: no transient signal window */
   else
     {
-      if ( !strcmp ( uvar_transient_Name, "rect" ) )
+      if ( !strcmp ( uvar_transientWindowType, "rect" ) )
 	{
 	  cfg->transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transient_Name);
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transientWindowType);
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
 
-      cfg->transientWindow.t0   = uvar_transient_t0;
-      cfg->transientWindow.tau  = uvar_transient_tau;
+      cfg->transientWindow.t0   = uvar_transientStartTime;
+      cfg->transientWindow.tau  = uvar_transientTauDays * LAL_DAYSID_SI;
 
     } /* if transient window != none */
 
@@ -1403,8 +1399,8 @@ InitUserVars (LALStatus *status)
 
   uvar_randSeed = 0;
 #define DEFAULT_TRANSIENT "none"
-  uvar_transient_Name = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar_transient_Name, DEFAULT_TRANSIENT );
+  uvar_transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar_transientWindowType, DEFAULT_TRANSIENT );
 
   /* ---------- register all our user-variable ---------- */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
@@ -1499,9 +1495,9 @@ InitUserVars (LALStatus *status)
   LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserVar(status, transient_Name,	  0, UVAR_DEVELOPER, "Name of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserVar(status,   transient_t0,  	  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserVar(status,   transient_tau,      0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in seconds.");
+  LALregSTRINGUserVar(status, transientWindowType, 0, UVAR_DEVELOPER, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserVar(status,   transientStartTime,  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserVar(status,   transientTauDays,    0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in days.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
