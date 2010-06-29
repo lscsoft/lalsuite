@@ -44,6 +44,9 @@
 /* ---------- internal prototypes ---------- */
 REAL4Vector *XLALGetTransientWindowVals ( const LIGOTimeGPSVector *tGPS, const transientWindow_t *TransientWindowParams );
 
+/* empty struct initializers */
+const TransientCandidate_t empty_TransientCandidate;
+
 
 /* ==================== function definitions ==================== */
 
@@ -448,3 +451,29 @@ XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] mu
   return logBAYES;
 
 } /* XLALComputeTransientBstat() */
+
+/** Write one line for given transient CW candidate into output file.
+ * If input candidate == NULL, write a header comment-line explaining fields
+ */
+int
+write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand )
+{
+  if ( !fp )
+    return -1;
+
+  if ( thisCand == NULL )	/* write header-line comment */
+    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_max    tau_max       2F_max     logBstat\n");
+  else
+    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %09d  %09d  %11.9g  %11.9g\n",
+             thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+             thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
+             thisCand->fullFstat,
+             thisCand->maxt0, thisCand->maxtau, thisCand->maxFstat,
+             thisCand->logBstat
+             );
+
+  return XLAL_SUCCESS;
+
+} /* write_TransCandidate_to_fp() */
+
+

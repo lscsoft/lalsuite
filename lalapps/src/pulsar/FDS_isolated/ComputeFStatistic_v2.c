@@ -1,9 +1,8 @@
 /*
  * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2007 Chris Messenger
- * Copyright (C) 2007 Reinhard Prix
+ * Copyright (C) 2004, 2007, 2010 Reinhard Prix
  * Copyright (C) 2005, 2006 Reinhard Prix, Iraj Gholami
- * Copyright (C) 2004 Reinhard Prix
  * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -120,9 +119,8 @@ RCSID( "$Id$");
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
-  CmplxAntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix Mmunu = Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
 } FstatCandidate;
-
 
 /** moving 'Scanline window' of candidates on the scan-line,
  * which is used to find local 1D maxima.
@@ -258,9 +256,8 @@ typedef struct {
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
-
-  BOOLEAN transientBstat;	/**< compute transient B-statistic marginalization or not */
-  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+  CHAR *outputTransientStats;	/**< output file for transient B-stat values */
+  CHAR *transientWindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   INT4  transientMinStartTime;	/**< earliest GPS start-time for transient window marginalization */
   INT4  transientMaxStartTime;	/**< latest GPS start-time for transient window marginalization */
   REAL8 transientMinTauDays;	/**< smallest transient window length for marginalization in days */
@@ -321,7 +318,7 @@ int main(int argc,char *argv[])
   static const char *fn = "main()";
   LALStatus status = blank_status;	/* initialize status */
 
-  FILE *fpFstat = NULL;
+  FILE *fpFstat = NULL, *fpTransientStats = NULL;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
@@ -403,6 +400,18 @@ int main(int argc,char *argv[])
       fprintf (fpFstat, "%s", GV.logstring );
     } /* if outputFstat */
 
+  if ( uvar.outputTransientStats )
+    {
+      if ( (fpTransientStats = fopen (uvar.outputTransientStats, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
+	  return (COMPUTEFSTATISTIC_ESYS);
+	}
+
+      fprintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
+      write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
+    }
+
   /* start Fstatistic histogram with a single empty bin */
   if (uvar.outputFstatHist) {
     if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
@@ -442,6 +451,7 @@ int main(int argc,char *argv[])
   if (uvar.countTemplates)
     printf("%%%% Number of templates: %0.0f\n", numTemplates);
 
+  TransientCandidate_t thisTransientCand = empty_TransientCandidate;
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -652,24 +662,37 @@ int main(int argc,char *argv[])
 
 	  XLALoutputMultiFstatAtoms ( fpFstatAtoms, Fstat.multiFstatAtoms );
 
-          if ( uvar.transientBstat )
-            {
-              REAL8 Btransient;
-              Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms, GV.transientWindowRange );
-              if ( xlalErrno != 0 )
-                {
-                  XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
-                  return -1;
-                }
-            }  /* if uvar.transientBstat */
-
-          XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
-	  Fstat.multiFstatAtoms = NULL;
-
 	  fclose (fpFstatAtoms);
 
 	} /* if outputFstatAtoms */
 
+
+      if ( GV.transientWindowRange.type != TRANSIENT_NONE )
+        {
+          REAL8 logB;
+          logB = XLALComputeTransientBstat ( Fstat.multiFstatAtoms, GV.transientWindowRange );
+          if ( xlalErrno != 0 ) {
+            XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
+            return COMPUTEFSTATISTIC_EXLAL;
+          }
+          /* combine info on current transient-CW candidate */
+          thisTransientCand.doppler = dopplerpos;
+          thisTransientCand.fullFstat =  2.0 * thisFCand.Fstat.F;
+          thisTransientCand.logBstat = logB;
+
+          if ( fpTransientStats ) {
+            if ( write_TransientCandidate_to_fp ( fpTransientStats, &thisTransientCand ) != XLAL_SUCCESS ) {
+              XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );
+              return COMPUTEFSTATISTIC_EXLAL;
+            }
+          } /* if fpTransientStats */
+
+        } /* if transientBstat */
+
+
+      /* free Fstat-atoms if we have any */
+      if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
+      Fstat.multiFstatAtoms = NULL;
 
     } /* while more Doppler positions to scan */
 
@@ -705,6 +728,7 @@ int main(int argc,char *argv[])
       fclose (fpFstat);
       fpFstat = NULL;
     }
+  if ( fpTransientStats ) fclose (fpTransientStats);
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
   if ( uvar.outputLoudest )
@@ -959,8 +983,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
 
-
-  LALregBOOLUserStruct(status, transientBstat,	 0,  UVAR_OPTIONAL, "Compute transient B-statistic marginalization or not");
+  LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
   LALregSTRINGUserStruct(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
   LALregINTUserStruct (status, transientMinStartTime,  0, UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization");
   LALregINTUserStruct (status, transientMaxStartTime,  0, UVAR_OPTIONAL, "Latest GPS start-time for transient window marginalization");
@@ -1339,7 +1362,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
-  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL );
 
   /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
   cfg->stepSizes.Alpha = uvar->dAlpha;
@@ -1427,6 +1449,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     XLALPrintError ("%s: tau_min (%f) must be before tau_max (%f).\n", cfg->transientWindowRange.tau_min, cfg->transientWindowRange.tau_max );
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
+
+  /* get atoms back from Fstat-computing, either if output requested, of if we compute transient B-stat */
+  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( cfg->transientWindowRange.type != TRANSIENT_NONE );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1933,7 +1958,7 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
 
   return 0;
 
-} /* write_candidate_to_fp() */
+} /* write_FstatCandidate_to_fp */
 
 /* --------------------------------------------------------------------------------
  * Scanline window functions
