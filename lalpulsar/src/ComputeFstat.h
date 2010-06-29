@@ -89,21 +89,26 @@ typedef struct {
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
-/** contains of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
+/** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
 typedef struct {
-  UINT4 length;			/**< number of SFTs, ie 'atoms' */
-  UINT4 *timestamps;		/**< SFT GPS timestamps t_i in seconds */
-  REAL8 *a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
-  REAL8 *b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
-  COMPLEX8 *Fa_alpha;		/**< Fa^X(t_i) */
-  COMPLEX8 *Fb_alpha;		/**< Fb^X(t_i) */
-} FstatAtoms;
+  UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
+  REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
+  REAL8 b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
+  COMPLEX8 Fa_alpha;		/**< Fa^X(t_i) */
+  COMPLEX8 Fb_alpha;		/**< Fb^X(t_i) */
+} FstatAtom;
+
+/** vector of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
+typedef struct {
+  UINT4 length;			/**< number of per-SFT 'atoms' */
+  FstatAtom *data;		/** FstatAtoms array of given length */
+} FstatAtomVector;
 
 /** multi-detector version of FstatAtoms type */
 typedef struct {
   UINT4 length;			/**< number of detectors */
-  FstatAtoms **data;		/**< array of FstatAtom (pointers), one for each detector X */
-} MultiFstatAtoms;
+  FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
+} MultiFstatAtomVector;
 
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
@@ -111,7 +116,7 @@ typedef struct {
   REAL8 F;				/**< F-statistic value */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
-  MultiFstatAtoms *multiFstatAtoms;	/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
+  MultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
 
 /** The precision in calculating the barycentric transformation */
@@ -239,7 +244,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  const CmplxAntennaPatternMatrix *Mmunu
 				  );
 
-FstatAtoms * XLALCreateFstatAtoms ( UINT4 num );
+FstatAtomVector * XLALCreateFstatAtomVector ( UINT4 num );
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
@@ -248,8 +253,8 @@ int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitude
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
-void XLALDestroyFstatAtoms ( FstatAtoms *atoms );
-void XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiAtoms );
+void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );
+void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms );
 
 /* helpers */
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);
