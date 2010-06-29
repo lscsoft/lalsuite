@@ -249,9 +249,9 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
 
 
 int
-XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms )
+XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms )
 {
-  const char *fn = "XLALoutputMultiFstatAtoms()";
+  const char *fn = __func__;
   UINT4 X, alpha;
 
   if ( !fp || !multiAtoms )
@@ -261,15 +261,16 @@ XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms )
 
   for ( X=0; X < multiAtoms->length; X++ )
     {
-      FstatAtoms *thisAtom = multiAtoms->data[X];
-      for ( alpha=0; alpha < multiAtoms->data[X]->length; alpha ++ )
+      FstatAtomVector *thisAtomVector = multiAtoms->data[X];
+      for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
 	{
+          FstatAtom *thisAtom = &thisAtomVector->data[alpha];
 	  fprintf ( fp, "%d   % f  % f     % f  % f     % f  % f\n",
-		    thisAtom->timestamps[alpha],
-		    thisAtom->a2_alpha[alpha],
-		    thisAtom->b2_alpha[alpha],
-		    thisAtom->Fa_alpha[alpha].re, thisAtom->Fa_alpha[alpha].im,
-		    thisAtom->Fb_alpha[alpha].re, thisAtom->Fb_alpha[alpha].im
+		    thisAtom->timestamp,
+		    thisAtom->a2_alpha,
+		    thisAtom->b2_alpha,
+		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
+		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
 		    );
 	} /* for alpha < numSFTs */
     } /* for X < numDet */
@@ -345,7 +346,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
  * of transient CW signal, using given type and parameters of transient window range.
  */
 REAL8
-XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
+XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
                             transientWindowRange_t windowRange )	/**< [in] type and parameters specifying transient window range to search */
 {
   const char *fn = __func__;
@@ -356,78 +357,32 @@ XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] mu
   REAL8 t0 = windowRange.t0_min;	// earliest GPS start-time
   REAL8 t1 = windowRange.t0_max;	// latest GPS start-time
 
-  // check input argument consistency
-  if ( t1 < t0 )
-    {
-      XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0, t1 );
-      XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
-    }
 
-  if ( tau1 < tau0 )
-    {
-      XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau0, tau1 );
-      XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
-    }
+  /* check input consistency */
+  if ( !multiFstatAtoms ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+  }
+
+  if ( t1 < t0 ) {
+    XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0, t1 );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+  }
+
+  if ( tau1 < tau0 ) {
+    XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau0, tau1 );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+  }
+
+  if ( windowRange.type != TRANSIENT_RECTANGULAR ) {
+    XLALPrintError ("%s: Sorry, only rectangular window implemented right now!\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+  }
 
 
   UINT4 t_i;        // t index (t-summation)
   REAL8 tau_i;      // tau index (tau-summation)
   REAL8 logBAYES = 0;  // return value of function
-
-  // Define and initiate F-Stat variables
-  REAL8 A = 0;
-  REAL8 B = 0;
-  REAL8 C = 0;
-  REAL8 D = 0;
-  REAL8 Ds = 0;
-  COMPLEX8 FA = {0,0};
-  COMPLEX8 FB = {0,0};
-  REAL8 F = 0;
-
-  for (tau_i=tau0; tau_i <= tau1; tau_i+=1800) // FIXME use SFT duration
-    {
-
-      for (t_i=t0; t_i<=t1; t_i+=1800)
-        {
-          A = 0;
-          B = 0;
-          C = 0;
-          D = 0;
-          FA.re = 0;
-          FA.im = 0;
-          FB.re = 0;
-          FB.im = 0;
-          for ( UINT4 X=0; X < multiFstatAtoms->length; X++ ) // Loop over detectors
-            {
-              // Per IFO data ("atoms")
-              FstatAtoms *atoms_X = multiFstatAtoms->data[X];
-              UINT4 Natoms = atoms_X->length;
-              REAL8 *a2 = atoms_X->a2_alpha;
-              REAL8 *b2 = atoms_X->b2_alpha;
-              COMPLEX8 *Fa = atoms_X->Fa_alpha;
-              COMPLEX8 *Fb = atoms_X->Fb_alpha;
-
-              UINT4 j = 0;
-
-            } // for X < numDet
-          //printf("j=%d\n",j);
-          D = A*B - SQ(C);
-          F += (1.0/D)*( B*(SQ(FA.re)+SQ(FA.im)) +
-                         A*(SQ(FB.re)+SQ(FB.im)) -
-                         2*C*(FA.re*FB.re+FA.im*FB.im) ); /* Compute summed F-Statistic */
-          Ds += D;
-        } // for t0 in t0Range
-    } // for tau in tauRange
-  logBAYES = F - log(Ds);
-  printf("t_i=%d tau_i=%f \n",t_i-1800,(tau_i-1800)/(3600*24));
-  printf("A=%f \n",A);
-  printf("B=%f \n",B);
-  printf("C=%f \n",C);
-  printf("D=%f \n",D);
-  printf("sum(D)=%f \n",Ds);
-  printf("sum(2F)=%f \n",2*F);
-  printf("log(Bayes)=%f \n",logBAYES);
-
   return logBAYES;
 
 } /* XLALComputeTransientBstat() */
@@ -456,4 +411,36 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand 
 
 } /* write_TransCandidate_to_fp() */
 
+/** Combine N Fstat-atoms vectors into a single one, with timestamps ordered by increasing GPS time,
+ * Atoms with identical timestamp are immediately merged into one, so the final timestamps list only
+ * contains unique (and ordered) entries.
+ */
+FstatAtomVector *
+XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
+{
+  const char *fn = __func__;
 
+  if ( !multiAtoms ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numDet = multiAtoms->length;
+  UINT4 X;
+  UINT4 maxNumAtoms = 0;	/* upper limit on total number of atoms: sum over all detectors (assumes no coincident timestamps) */
+  for ( X=0; X < numDet; X ++ )
+    maxNumAtoms += multiAtoms->data[X]->length;
+
+  /* first allocate an atoms-vector with maxNumAtoms length, then truncate at the end when we're done*/
+  FstatAtomVector *atoms;
+  if ( (atoms = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* simply combine all atoms-vector by concatentation first */
+  
+
+  return NULL;
+
+} /* XLALmergeMultiFstatAtoms() */

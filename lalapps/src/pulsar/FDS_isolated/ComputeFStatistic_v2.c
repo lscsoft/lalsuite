@@ -564,13 +564,13 @@ int main(int argc,char *argv[])
 	      UINT4 X, alpha;
 	      for ( X=0; X < Fstat.multiFstatAtoms->length; X++ )
 		{
-		  FstatAtoms *thisAtomList = Fstat.multiFstatAtoms->data[X];
+		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
 		  for ( alpha=0; alpha < thisAtomList->length; alpha ++ )
 		    {
-		      thisAtomList->Fa_alpha[alpha].re *= norm;
-		      thisAtomList->Fa_alpha[alpha].im *= norm;
-		      thisAtomList->Fb_alpha[alpha].re *= norm;
-		      thisAtomList->Fb_alpha[alpha].im *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.re *= norm;
+		      thisAtomList->data[alpha].Fa_alpha.im *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.re *= norm;
+		      thisAtomList->data[alpha].Fb_alpha.im *= norm;
 		    } /* for alpha < numSFTs */
 		} /* for X < numDet */
 	    } /* if outputFstatAtoms */
@@ -691,7 +691,7 @@ int main(int argc,char *argv[])
 
 
       /* free Fstat-atoms if we have any */
-      if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtoms ( Fstat.multiFstatAtoms );
+      if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
 
     } /* while more Doppler positions to scan */

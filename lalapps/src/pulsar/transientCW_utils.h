@@ -99,9 +99,11 @@ int
 write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
 /* ---------- Fstat-atoms related functions ----------*/
-int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
+int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, transientWindowRange_t windowRange );
+REAL8 XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
+FstatAtomVector *XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms );
+
 
 #ifdef  __cplusplus
 }

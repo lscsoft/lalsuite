@@ -529,11 +529,11 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
       }
       FaFb->multiFstatAtoms->length = 1;	/* in this function: single-detector only */
-      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms) )) == NULL ){
+      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms->data) )) == NULL ){
 	LALFree (FaFb->multiFstatAtoms);
 	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
       }
-      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtoms ( numSFTs )) == NULL ) {
+      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtomVector ( numSFTs )) == NULL ) {
 	LALFree ( FaFb->multiFstatAtoms->data );
 	LALFree ( FaFb->multiFstatAtoms );
 	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
@@ -713,13 +713,13 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       if ( params->returnAtoms )
 	{
 	  COMPLEX8 tmp;
-	  FaFb->multiFstatAtoms->data[0]->timestamps[alpha] = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
-	  FaFb->multiFstatAtoms->data[0]->a2_alpha[alpha]    = a_alpha * a_alpha;
-	  FaFb->multiFstatAtoms->data[0]->b2_alpha[alpha]    = b_alpha * b_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
 	  tmp = Fa_alpha; tmp.re *= norm; tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->Fa_alpha[alpha]   = tmp;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = tmp;
 	  tmp = Fb_alpha; tmp.re *= norm; tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->Fb_alpha[alpha]   = tmp;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = tmp;
 	}
 
       /* advance pointers over alpha */
@@ -1970,13 +1970,13 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
-/** Function to allocate a 'FstatAtoms' struct of num timestamps
+/** Function to allocate a 'FstatAtomVector' struct of num timestamps
  */
-FstatAtoms *
-XLALCreateFstatAtoms ( UINT4 num )
+FstatAtomVector *
+XLALCreateFstatAtomVector ( UINT4 num )
 {
   const CHAR *fn = __func__;
-  FstatAtoms *ret;
+  FstatAtomVector *ret;
 
   if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
     goto failed;
@@ -1986,55 +1986,44 @@ XLALCreateFstatAtoms ( UINT4 num )
   if ( num == 0 )	/* allow num=0: return just 'head' with NULL arrays */
     return ret;
 
-  if ( (ret->timestamps = LALMalloc ( num * sizeof( *ret->timestamps) ) ) == NULL )
-    goto failed;
-  if ( (ret->a2_alpha = LALMalloc ( num * sizeof( *ret->a2_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->b2_alpha = LALMalloc ( num * sizeof( *ret->b2_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->Fa_alpha = LALMalloc ( num * sizeof( *ret->Fa_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->Fb_alpha = LALMalloc ( num * sizeof( *ret->Fb_alpha) )) == NULL )
+  if ( (ret->data = LALCalloc ( num, sizeof( *ret->data) ) ) == NULL )
     goto failed;
 
   return ret;
 
  failed:
-  XLALDestroyFstatAtoms ( ret );
+  XLALDestroyFstatAtomVector ( ret );
   XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
 
-} /* XLALCreateFstatAtoms() */
+} /* XLALCreateFstatAtomVector() */
 
-/** Function to destroy an FstatAtoms struct
+/** Function to destroy an FstatAtomVector
  */
 void
-XLALDestroyFstatAtoms ( FstatAtoms *atoms )
+XLALDestroyFstatAtomVector ( FstatAtomVector *atoms )
 {
   if ( !atoms )
     return;
-  if ( atoms->Fb_alpha )   LALFree ( atoms->Fb_alpha );
-  if ( atoms->Fa_alpha )   LALFree ( atoms->Fa_alpha );
-  if ( atoms->a2_alpha )    LALFree ( atoms->a2_alpha );
-  if ( atoms->b2_alpha )    LALFree ( atoms->b2_alpha );
-  if ( atoms->timestamps ) LALFree ( atoms->timestamps );
+
+  if ( atoms->data )   LALFree ( atoms->data );
   LALFree ( atoms );
 
   return;
 
-} /* XLALDestroyFstatAtoms() */
+} /* XLALDestroyFstatAtomVector() */
 
 
-/** Function to destroy a multi-FstatAtoms struct
+/** Function to destroy a multi-FstatAtom struct
  */
 void
-XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiFstatAtoms )
+XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
 {
   UINT4 X;
   if ( !multiFstatAtoms)
     return;
 
   for ( X=0; X < multiFstatAtoms->length; X++ )
-    XLALDestroyFstatAtoms ( multiFstatAtoms->data[X] );
+    XLALDestroyFstatAtomVector ( multiFstatAtoms->data[X] );
 
   LALFree ( multiFstatAtoms->data );
   LALFree ( multiFstatAtoms );
