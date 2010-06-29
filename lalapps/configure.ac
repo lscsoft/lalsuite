@@ -185,6 +185,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
