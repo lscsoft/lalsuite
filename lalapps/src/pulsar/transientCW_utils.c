@@ -257,17 +257,17 @@ XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms )
   if ( !fp || !multiAtoms )
     XLAL_ERROR (fn, XLAL_EINVAL );
 
-  fprintf ( fp, "%% GPS                a(t_i)     b(t_i)            Fa(t_i)                 Fb(t_i)\n");
+  fprintf ( fp, "%% GPS[s]              a2(t_i)     b2(t_i)            Fa(t_i)                 Fb(t_i)\n");
 
   for ( X=0; X < multiAtoms->length; X++ )
     {
       FstatAtoms *thisAtom = multiAtoms->data[X];
       for ( alpha=0; alpha < multiAtoms->data[X]->length; alpha ++ )
 	{
-	  fprintf ( fp, "%f   % f  % f     % f  % f     % f  % f\n",
-		    XLALGPSGetREAL8( &thisAtom->timestamps[alpha] ),
-		    thisAtom->a_alpha[alpha],
-		    thisAtom->b_alpha[alpha],
+	  fprintf ( fp, "%d   % f  % f     % f  % f     % f  % f\n",
+		    thisAtom->timestamps[alpha],
+		    thisAtom->a2_alpha[alpha],
+		    thisAtom->b2_alpha[alpha],
 		    thisAtom->Fa_alpha[alpha].re, thisAtom->Fa_alpha[alpha].im,
 		    thisAtom->Fb_alpha[alpha].re, thisAtom->Fb_alpha[alpha].im
 		    );
@@ -402,32 +402,12 @@ XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] mu
               // Per IFO data ("atoms")
               FstatAtoms *atoms_X = multiFstatAtoms->data[X];
               UINT4 Natoms = atoms_X->length;
-              LIGOTimeGPS *t = atoms_X->timestamps;
-              REAL8 *a = atoms_X->a_alpha;
-              REAL8 *b = atoms_X->b_alpha;
+              REAL8 *a2 = atoms_X->a2_alpha;
+              REAL8 *b2 = atoms_X->b2_alpha;
               COMPLEX8 *Fa = atoms_X->Fa_alpha;
               COMPLEX8 *Fb = atoms_X->Fb_alpha;
 
               UINT4 j = 0;
-              while ( (j < Natoms) && (t[j].gpsSeconds < t_i) )
-                j ++;
-
-
-              //for (j=t_i; j<t_i+tau_i; j++) t0-tau summation
-              while ( (j < Natoms) && ( t[j].gpsSeconds <= t_i + tau_i) )
-                {
-                  A += SQ(a[j]);
-                  B += SQ(b[j]);
-                  C += (a[j]*b[j]);
-
-                  FA.re += Fa[j].re;
-                  FA.im += Fa[j].im;
-                  FB.re += Fb[j].re;
-                  FB.im += Fb[j].im;
-
-                  j++;
-                }
-
 
             } // for X < numDet
           //printf("j=%d\n",j);

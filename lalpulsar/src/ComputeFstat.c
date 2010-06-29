@@ -713,16 +713,12 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       if ( params->returnAtoms )
 	{
 	  COMPLEX8 tmp;
-	  FaFb->multiFstatAtoms->data[0]->timestamps[alpha] = SFT_al->epoch;
-	  FaFb->multiFstatAtoms->data[0]->a_alpha[alpha]    = a_alpha;
-	  FaFb->multiFstatAtoms->data[0]->b_alpha[alpha]    = b_alpha;
-	  tmp = Fa_alpha;
-	  tmp.re *= norm;
-	  tmp.im *= norm;
+	  FaFb->multiFstatAtoms->data[0]->timestamps[alpha] = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
+	  FaFb->multiFstatAtoms->data[0]->a2_alpha[alpha]    = a_alpha * a_alpha;
+	  FaFb->multiFstatAtoms->data[0]->b2_alpha[alpha]    = b_alpha * b_alpha;
+	  tmp = Fa_alpha; tmp.re *= norm; tmp.im *= norm;
 	  FaFb->multiFstatAtoms->data[0]->Fa_alpha[alpha]   = tmp;
-	  tmp = Fb_alpha;
-	  tmp.re *= norm;
-	  tmp.im *= norm;
+	  tmp = Fb_alpha; tmp.re *= norm; tmp.im *= norm;
 	  FaFb->multiFstatAtoms->data[0]->Fb_alpha[alpha]   = tmp;
 	}
 
@@ -1992,9 +1988,9 @@ XLALCreateFstatAtoms ( UINT4 num )
 
   if ( (ret->timestamps = LALMalloc ( num * sizeof( *ret->timestamps) ) ) == NULL )
     goto failed;
-  if ( (ret->a_alpha = LALMalloc ( num * sizeof( *ret->a_alpha) )) == NULL )
+  if ( (ret->a2_alpha = LALMalloc ( num * sizeof( *ret->a2_alpha) )) == NULL )
     goto failed;
-  if ( (ret->b_alpha = LALMalloc ( num * sizeof( *ret->b_alpha) )) == NULL )
+  if ( (ret->b2_alpha = LALMalloc ( num * sizeof( *ret->b2_alpha) )) == NULL )
     goto failed;
   if ( (ret->Fa_alpha = LALMalloc ( num * sizeof( *ret->Fa_alpha) )) == NULL )
     goto failed;
@@ -2018,8 +2014,8 @@ XLALDestroyFstatAtoms ( FstatAtoms *atoms )
     return;
   if ( atoms->Fb_alpha )   LALFree ( atoms->Fb_alpha );
   if ( atoms->Fa_alpha )   LALFree ( atoms->Fa_alpha );
-  if ( atoms->a_alpha )    LALFree ( atoms->a_alpha );
-  if ( atoms->b_alpha )    LALFree ( atoms->b_alpha );
+  if ( atoms->a2_alpha )    LALFree ( atoms->a2_alpha );
+  if ( atoms->b2_alpha )    LALFree ( atoms->b2_alpha );
   if ( atoms->timestamps ) LALFree ( atoms->timestamps );
   LALFree ( atoms );
 
