@@ -259,7 +259,7 @@ XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms )
   if ( !fp || !multiAtoms )
     XLAL_ERROR (fn, XLAL_EINVAL );
 
-  fprintf ( fp, "%% GPS[s]              a2(t_i)     b2(t_i)            Fa(t_i)                 Fb(t_i)\n");
+  fprintf ( fp, "%% GPS[s]              a^2(t_i)     b^2(t_i)   ab(t_i)         Fa(t_i)                 Fb(t_i)\n");
 
   for ( X=0; X < multiAtoms->length; X++ )
     {
@@ -267,10 +267,11 @@ XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms )
       for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
 	{
           FstatAtom *thisAtom = &thisAtomVector->data[alpha];
-	  fprintf ( fp, "%d   % f  % f     % f  % f     % f  % f\n",
+	  fprintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
 		    thisAtom->timestamp,
 		    thisAtom->a2_alpha,
 		    thisAtom->b2_alpha,
+		    thisAtom->ab_alpha,
 		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
 		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
 		    );
@@ -353,11 +354,11 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
 {
   const char *fn = __func__;
 
-  REAL8 tau0 = windowRange.tau_min; // smallest search duration-window in seconds
-  REAL8 tau1 = windowRange.tau_max; // longest search duration-window in seconds
+  REAL8 tau_min = windowRange.tau_min; // smallest search duration-window in seconds
+  REAL8 tau_max = windowRange.tau_max; // longest search duration-window in seconds
 
-  REAL8 t0 = windowRange.t0_min;	// earliest GPS start-time
-  REAL8 t1 = windowRange.t0_max;	// latest GPS start-time
+  REAL8 t0_min = windowRange.t0_min;	// earliest GPS start-time
+  REAL8 t0_max = windowRange.t0_max;	// latest GPS start-time
 
 
   /* check input consistency */
@@ -366,13 +367,13 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
     XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
   }
 
-  if ( t1 < t0 ) {
-    XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0, t1 );
+  if ( t0_max < t0_min ) {
+    XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0_min, t0_max );
     XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
   }
 
-  if ( tau1 < tau0 ) {
-    XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau0, tau1 );
+  if ( tau_max < tau_min ) {
+    XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau_min, tau_max );
     XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
   }
 
@@ -382,10 +383,76 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
   }
 
 
-  UINT4 t_i;        // t index (t-summation)
-  REAL8 tau_i;      // tau index (tau-summation)
-  REAL8 logBAYES = 0;  // return value of function
-  return logBAYES;
+  /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
+  FstatAtomVector *atoms;
+  if ( (atoms = XLALmergeMultiFstatAtomsSorted ( multiFstatAtoms )) == NULL ) {
+    XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
+  UINT4 numAtoms = atoms->length;
+
+  /* find indices corresponding to t0_min, t0_max */
+  UINT4 i_min=0;
+  while ( (i_min < numAtoms) && (atoms->data[i_min].timestamp < t0_min) )
+    i_min++;
+  if ( i_min == atoms->length ) {
+    XLALPrintError ( "%s: earliest start-time %d later than latest atoms timestamp %d\n", fn, t0_min, atoms->data[i_min-1].timestamp );
+    XLAL_ERROR_REAL8 (fn, XLAL_EDOM );
+  }
+  UINT4 i_max = i_min;
+  while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp < t0_max) )
+    i_max ++;
+  if ( i_max > 0 ) i_max --;	/* we want last timestamp that still satifies t_max <= t0_max */
+
+  /* ----- OUTER loop over start-times t0 ---------- */
+  UINT4 i;
+  for ( i = i_min; i <= i_max; i ++ )
+    {
+      UINT4 t0_i = atoms->data[i].timestamp;
+
+      /* ----- INNER loop over durations tau ---------- */
+      REAL8 Ad=0, Bd=0, Cd=0, Fa_re=0, Fa_im=0, Fb_re=0, Fb_im=0;
+
+      UINT4 j = i;
+      while ( j < numAtoms )
+        {
+          FstatAtom *thisAtom = &atoms->data[j];
+          UINT4 t0_j = thisAtom->timestamp;
+
+          if ( t0_j - t0_i > tau_max )
+            break;
+
+          Ad += thisAtom->a2_alpha;
+          Bd += thisAtom->b2_alpha;
+          Cd += thisAtom->ab_alpha;
+
+          Fa_re += thisAtom->Fa_alpha.re;
+          Fa_im += thisAtom->Fa_alpha.im;
+
+          Fb_re += thisAtom->Fb_alpha.re;
+          Fb_im += thisAtom->Fb_alpha.im;
+
+          if ( t0_j - t0_i > tau_min )
+            {
+              REAL8 Dd, twoF;
+              Dd = Ad * Bd - Cd * Cd;
+
+              twoF = (2.0 / Dd) * (
+                                       Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                                       - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                                       );
+            } 	/* if inside [tau_min, tau_max] => compute Fstat */
+
+          j ++ ;
+
+        } /* j < numAtoms */
+
+    } /* for i in [i_min, i_max] */
+
+  /* free mem */
+  XLALDestroyFstatAtomVector ( atoms );
+
+  return 0;
 
 } /* XLALComputeTransientBstat() */
 
@@ -474,6 +541,7 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
         {
           destAtom->a2_alpha += srcAtom->a2_alpha;
           destAtom->b2_alpha += srcAtom->b2_alpha;
+          destAtom->ab_alpha += srcAtom->ab_alpha;
           destAtom->Fa_alpha.re += srcAtom->Fa_alpha.re;
           destAtom->Fa_alpha.im += srcAtom->Fa_alpha.im;
           destAtom->Fb_alpha.re += srcAtom->Fb_alpha.re;
@@ -493,7 +561,7 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
 
   /* now resize output Vector to that actually needed */
   UINT4 newsize = counter * sizeof(*atomsOut->data);
-  atomsOut->length = newsize;
+  atomsOut->length = counter;
   if ( (atomsOut->data = XLALRealloc ( atomsOut->data, newsize )) == NULL ) {
     XLALPrintError ("%s: failed to XLALRealloc() atomsOut to new size %d\n", fn, newsize );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
