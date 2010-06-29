@@ -155,6 +155,7 @@ typedef struct {
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
+  transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
 } ConfigVariables;
 
 
@@ -259,8 +260,9 @@ typedef struct {
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN transientBstat;	/**< compute transient B-statistic marginalization or not */
-  INT4 transientMinStartTime;	/**< earliest GPS start-time for transient window marginalization */
-  INT4 transientMaxStartTime;	/**< latest GPS start-time for transient window marginalization */
+  CHAR *transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+  INT4  transientMinStartTime;	/**< earliest GPS start-time for transient window marginalization */
+  INT4  transientMaxStartTime;	/**< latest GPS start-time for transient window marginalization */
   REAL8 transientMinTauDays;	/**< smallest transient window length for marginalization in days */
   REAL8 transientMaxTauDays;	/**< largest transient window length for marginalization in days */
 
@@ -653,8 +655,7 @@ int main(int argc,char *argv[])
           if ( uvar.transientBstat )
             {
               REAL8 Btransient;
-              Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms, uvar.transientMinStartTime, uvar.transientMaxStartTime,
-                                                       uvar.transientMinTauDays, uvar.transientMaxTauDays );
+              Btransient = XLALComputeTransientBstat ( Fstat.multiFstatAtoms, GV.transientWindowRange );
               if ( xlalErrno != 0 )
                 {
                   XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
@@ -886,6 +887,10 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->GPUready = 0;
 
+#define DEFAULT_TRANSIENT "none"
+  uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
+
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
 
@@ -956,6 +961,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
 
   LALregBOOLUserStruct(status, transientBstat,	 0,  UVAR_OPTIONAL, "Compute transient B-statistic marginalization or not");
+  LALregSTRINGUserStruct(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
   LALregINTUserStruct (status, transientMinStartTime,  0, UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization");
   LALregINTUserStruct (status, transientMaxStartTime,  0, UVAR_OPTIONAL, "Latest GPS start-time for transient window marginalization");
   LALregREALUserStruct(status, transientMinTauDays,    0, UVAR_OPTIONAL, "Smallest transient window length for marginalization in days");
@@ -1055,6 +1061,8 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 void
 InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
+  const char *fn = __func__;
+
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
@@ -1066,7 +1074,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS startTime, endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
-  INITSTATUS (status, "InitFStat", rcsid);
+  INITSTATUS (status, fn, rcsid);
   ATTATCHSTATUSPTR (status);
 
   /* set the current working directory */
@@ -1391,6 +1399,35 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
     }
 
+
+  /* ----- transient-window related parameters ----- */
+  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
+    cfg->transientWindowRange.type = TRANSIENT_NONE;		/* default: no transient signal window */
+  else if ( !strcmp ( uvar->transientWindowType, "rect" ) )
+    cfg->transientWindowRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+  else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
+    cfg->transientWindowRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
+  else
+    {
+      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->transientWindowType);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+  cfg->transientWindowRange.t0_min   = uvar->transientMinStartTime;
+  cfg->transientWindowRange.t0_max   = uvar->transientMaxStartTime;
+  cfg->transientWindowRange.tau_min  = uvar->transientMinTauDays * LAL_DAYSID_SI;
+  cfg->transientWindowRange.tau_max  = uvar->transientMaxTauDays * LAL_DAYSID_SI;
+
+  if (   cfg->transientWindowRange.t0_min >  cfg->transientWindowRange.t0_max ) {
+    XLALPrintError ("%s: t0_min (%f) must be before t0_max (%f).\n", cfg->transientWindowRange.t0_min, cfg->transientWindowRange.t0_max );
+    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  }
+
+  if (   cfg->transientWindowRange.tau_min >  cfg->transientWindowRange.tau_max ) {
+    XLALPrintError ("%s: tau_min (%f) must be before tau_max (%f).\n", cfg->transientWindowRange.tau_min, cfg->transientWindowRange.tau_max );
+    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  }
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1555,8 +1592,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 void
 checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
+  const char *fn = __func__;
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);
+  INITSTATUS (status, fn, rcsid);
 
   if (uvar->ephemYear == NULL)
     {

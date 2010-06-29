@@ -339,22 +339,19 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 
 
 /** Function to compute marginalized B-statistic over start-time and duration
- * of transient CW signal.
- *
+ * of transient CW signal, using given type and parameters of transient window range.
  */
 REAL8
 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
-                            UINT4 t0,					/**< [in] earliest start time */
-                            UINT4 t1,					/**< [in] latest start-time */
-                            REAL8 tauMinDays,				/**< [in] smallest duration-window tau */
-                            REAL8 tauMaxDays				/**< [in] longest duration-window tau */
-                            )
+                            transientWindowRange_t windowRange )	/**< [in] type and parameters specifying transient window range to search */
 {
   const char *fn = __func__;
 
+  REAL8 tau0 = windowRange.tau_min; // smallest search duration-window in seconds
+  REAL8 tau1 = windowRange.tau_max; // longest search duration-window in seconds
 
-  REAL8 tau0 = tauMinDays * 3600 * 24; // smallest search duration-window in seconds
-  REAL8 tau1 = tauMaxDays * 3600 * 24; // largest search duration-window in seconds
+  REAL8 t0 = windowRange.t0_min;	// earliest GPS start-time
+  REAL8 t1 = windowRange.t0_max;	// latest GPS start-time
 
   // check input argument consistency
   if ( t1 < t0 )
@@ -450,8 +447,4 @@ XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms,	/**< [in] mu
 
   return logBAYES;
 
-  /*LIGOTimeGPS *gpstime = (LIGOTimeGPS*) bsearch(t0, t, sizeof(t0), sizeof(t), (*)(const void*, const void*)); */
-
 } /* XLALComputeTransientBstat() */
-
-/*****************************************************/
