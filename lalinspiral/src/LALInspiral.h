@@ -1691,6 +1691,29 @@ int XLALInspiralCalculateIIRSetInnerProduct(
 	double             *ip
 	);
 
+/*---------------------------------------------------------------- */
+/* Functions used in calculating the Newtonian multipolar waveform */
+/* Defined in Damour et al Phys.Rev.D79:064004,2009 */
+int
+XLALCalculateNewtonianMultipole(
+                            COMPLEX16 *multipole,
+                            REAL8 eta,
+                            REAL8 x,
+                            UINT4  l,
+                            INT4  m,
+                            InspiralTemplate *params
+                            );
+
+int
+XLALScalarSphericalHarmonic(
+                         COMPLEX16 *y,
+                         UINT4 l,
+                         INT4  m,
+                         REAL8 theta,
+                         REAL8 phi);
+
+/*---------------------------------------------------------------- */
+
 #ifdef  __cplusplus
 }
 #endif
