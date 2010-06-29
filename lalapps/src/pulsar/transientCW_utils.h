@@ -104,7 +104,6 @@ CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
 REAL8 XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
 FstatAtomVector *XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms );
 
-
 #ifdef  __cplusplus
 }
 #endif
