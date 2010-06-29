@@ -170,6 +170,9 @@ LALInspiralWave(
       case EOBNR:
            LALEOBWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
+      case EOBNR_PP:
+           LALEOBPPWaveform(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
 	   break;
       case IMRPhenomA:
       case IMRPhenomB:
@@ -306,6 +309,10 @@ LALInspiralWaveTemplates(
            LALEOBWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
+      case EOBNR_PP:
+           LALEOBPPWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
+           CHECKSTATUSPTR(status);
+           break;
       case IMRPhenomA:
       case IMRPhenomB:
            LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
@@ -396,6 +403,9 @@ LALInspiralWaveForInjection(
        LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
        CHECKSTATUSPTR(status);
 	   break;
+     case EOBNR_PP:
+       LALEOBPPWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+       CHECKSTATUSPTR(status);
      case IMRPhenomA:
      case IMRPhenomB:
        LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);

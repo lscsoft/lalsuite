@@ -76,7 +76,7 @@ LALInspiralTofVIntegrand (
    ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(v <= 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    ak = (TofVIntegrandIn *) params;
    *integrand = ak->dEnergy(v, ak->coeffs)/ak->flux(v, ak->coeffs);

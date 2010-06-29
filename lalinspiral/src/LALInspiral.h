@@ -224,6 +224,7 @@ typedef enum {
    NumRel,		/**< UNDOCUMENTED */
    Eccentricity,	/**< UNDOCUMENTED */
    EOBNR,		/**< UNDOCUMENTED */
+   EOBNR_PP,
    IMRPhenomA,		/**< UNDOCUMENTED */
    IMRPhenomB,		/**< UNDOCUMENTED */
    IMRPhenomFA,		/**< UNDOCUMENTED */
@@ -617,7 +618,9 @@ tagexpnCoeffs {
    /* last stable orbit and pole defined by various Taylor and P-approximants*/
    REAL8 vlsoT0, vlsoT2, vlsoT4, vlsoT6;
    REAL8 vlsoP0, vlsoP2, vlsoP4, vlsoP6;
+   REAL8 vlsoPP;
    REAL8 vpoleP4, vpoleP6;
+   REAL8 vpolePP;
 }  expnCoeffs;
 
 typedef REAL8 EnergyFunction(
@@ -998,9 +1001,26 @@ void LALEOBWaveformForInjection(
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
+void LALEOBPPWaveform(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
 
+void LALEOBPPWaveformTemplates(
+     LALStatus *status,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
+     InspiralTemplate *params);
 
+void LALEOBPPWaveformForInjection(
+     LALStatus *status,
+     CoherentGW *waveform,
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams);
 
+/*  <lalLaTeX>
+\newpage\input{LALBCVWaveformC}
+</lalLaTeX>  */
 
 void LALBCVWaveform(
      LALStatus *status,

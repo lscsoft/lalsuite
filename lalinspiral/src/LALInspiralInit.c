@@ -89,6 +89,7 @@ LALInspiralInit (LALStatus        *status,
   CHECKSTATUSPTR(status);
 
   LALInspiralChooseModel(status->statusPtr, &(paramsInit->func), &(paramsInit->ak), params);
+  CHECKSTATUSPTR(status);
 
   /* The parameters have been initialized now. However, we can have some problems
      with the LALInspiralChooseModel related to bad estimation of the length.
@@ -136,8 +137,6 @@ LALInspiralInit (LALStatus        *status,
 
 
     /*now we can free memory */
-    CHECKSTATUSPTR(status);
-
     sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d",
 	    paramsInit->ak.tn,
 	    paramsInit->nbins);
@@ -157,7 +156,6 @@ LALInspiralInit (LALStatus        *status,
     paramsInit->nbins = 0;
 
     /*now we can free memory */
-    CHECKSTATUSPTR(status);
 
     DETATCHSTATUSPTR(status);
     RETURN(status);

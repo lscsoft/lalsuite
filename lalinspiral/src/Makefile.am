@@ -105,6 +105,7 @@ liblalinspiral_la_SOURCES = \
 	LALDeterminant3.c \
 	LALDiscoverInspiralEvents.c \
 	LALEOBWaveform.c \
+	LALEOBPPWaveform.c \
 	LALEstimateEffectiveDistance.c \
 	LALEtaTau02.c \
 	LALEtaTau04.c \
