@@ -92,9 +92,9 @@ typedef struct {
 /** contains of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
 typedef struct {
   UINT4 length;			/**< number of SFTs, ie 'atoms' */
-  LIGOTimeGPS *timestamps;	/**< SFT timestamps t_i */
-  REAL8 *a_alpha;		/**< antenna-pattern factor a^X(t_i) */
-  REAL8 *b_alpha;		/**< antenna-pattern factor b^X(t_i) */
+  UINT4 *timestamps;		/**< SFT GPS timestamps t_i in seconds */
+  REAL8 *a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
+  REAL8 *b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
   COMPLEX8 *Fa_alpha;		/**< Fa^X(t_i) */
   COMPLEX8 *Fb_alpha;		/**< Fb^X(t_i) */
 } FstatAtoms;
