@@ -226,7 +226,6 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                   if (option==1) makeTemplate(template, cand, params, plan);
                   else makeTemplateGaussians(template, cand, params);
                   farStruct *farval = new_farStruct();
-                  //estimateFAR(farval, template, 10000, 0.01, ffplanenoise, fbinaveratios);
                   numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
                   REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                   REAL8 prob = (probR(template, ffplanenoise, fbinaveratios, R, &proberrcode));

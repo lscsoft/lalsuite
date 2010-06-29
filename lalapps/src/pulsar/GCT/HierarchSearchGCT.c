@@ -1388,7 +1388,7 @@ int MAIN( int argc, char *argv[]) {
         maxTopTwoF = aveTwoFstat[0];
         icandMax = icand;
       }
-      fprintf(stderr,"  icand: %d  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
+      fprintf(stderr,"  icand: %" LAL_UINT8_FORMAT "  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
       icand++;
       
     } /* end while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF ... */
@@ -1402,7 +1402,7 @@ int MAIN( int argc, char *argv[]) {
     topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).sumTwoF;
     aveTwoFstat[0] = topTwoF;
     
-    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %d (%d)\n",
+    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %" LAL_UINT8_FORMAT " (%" LAL_UINT8_FORMAT ")\n",
             XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
             fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icandMax, icand );
             

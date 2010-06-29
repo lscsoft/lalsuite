@@ -1167,9 +1167,12 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
       inj = cohbank_done.get_inj()
       cohinsptag = ifousertag + "_" + str(cohbank_done.get_inj())
     else: cohinsptag = ifousertag
-    #cohinsp.set_user_tag(usertag + "_" + str(cohbank_done.get_inj()))
     cohinsp.set_user_tag(cohinsptag)
     cohinsp.add_var_opt('ifo-tag',ifos)
+
+    # add the coherent bank job as a parent
+    if opts.coherent_bank:
+      cohinsp.add_parent(cohbank_done.get_dag_node())
 
     # set up trigbank and inspiral
     for ifo in ifo_list:
@@ -1194,14 +1197,11 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
             frjoin.add_file_arg( done.get_dag_node().get_froutput() )
             if opts.coherent_bank: frjoin.add_parent(done.get_dag_node())
 
-        cohinsp.add_var_opt( ifo + '-framefile', frjoin.get_output() )
+        cohinsp.add_file_opt( ifo.lower() + '-framefile', frjoin.get_output() )
         if opts.coherent_bank: dag.add_node(frjoin)
         if opts.coherent_inspiral and opts.coherent_bank:
            cohinsp.add_parent(frjoin)
 
-    #if opts.coherent_bank:
-    #  and opts.coherent_inspiral:
-    #  cohinsp.add_parent(cohbank_done.get_dag_node())
     if opts.coherent_inspiral: dag.add_node(cohinsp)
     cohinsp_analyzed.append(AnalyzedIFOData(cohbank_done.get_chunk(),cohinsp))
 
@@ -1212,7 +1212,7 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
 # function to sweep up data using cohire  
 def cohire_segments(segments, cohire_job, dag, do_cohire, do_input, ifos,
   cohire_start, cohire_end, inj_file=None, num_slides=0, ifotag=None, 
-  usertag=None, write_input_file = False, inspinjNode=None):
+  usertag=None, inspinjNode=None):
   """
   Do a cohire to sweep up all the triggers of a specific kind
   
@@ -1226,7 +1226,6 @@ def cohire_segments(segments, cohire_job, dag, do_cohire, do_input, ifos,
   cluster   = whether we should add the cluster arguments
   num_slides = the number of time slides
   usertag   = the usertag to add to the output file name
-  write_input_file = whether to write an input file (default to glob)
   """
   # only write the input file if we're running the cohires
   cohire = inspiral.CohireNode(cohire_job)
@@ -1249,11 +1248,6 @@ def cohire_segments(segments, cohire_job, dag, do_cohire, do_input, ifos,
 
   if inspinjNode and opts.inspinj: cohire.add_parent(inspinjNode)
 
-  if write_input_file:
-    input_file = cohire.get_output().replace(".xml", ".input") 	 
-    cohire.add_input_file(input_file)
-    if do_cohire: f = open(input_file, 'w') 	 
-
   for seg in segments:
     # set the glob file for cohire 
     if do_input: cohire.add_parent(seg.get_dag_node())
@@ -1263,18 +1257,8 @@ def cohire_segments(segments, cohire_job, dag, do_cohire, do_input, ifos,
     else: 
       output = seg.get_dag_node().get_output_a()
 
-    if write_input_file:
-      if do_cohire: f.write('%s\n' % output)
-    else:
-      # set up glob
-      cohire.set_glob(output)
+    cohire.add_file_arg(output)
 
-  if write_input_file:
-    if do_cohire: f.close() 	 
-  	 
-    # add the input file name to cohire 	 
-    cohire.set_input(input_file)
-    
   cohire.finalize()
   if do_cohire: dag.add_node(cohire)
 
@@ -2631,7 +2615,7 @@ for ifos in ifo_coincs:
              opts.summary_coherent_inspiral_triggers,
              opts.cohire, ifos, gps_start_time, gps_end_time,
              inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
-             usertag=usertag,write_input_file = True,inspinjNode=inspinj)
+             usertag=usertag,inspinjNode=inspinj)
 
   print "done"
 ##############################################################################
