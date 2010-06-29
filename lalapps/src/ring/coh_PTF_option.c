@@ -101,6 +101,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "num-auto-chisq-points",   required_argument, 0, 'p' },
     { "auto-veto-time-step",     required_argument, 0, 'P' },
     { "num-chi-square-bins",     required_argument, 0, 'q' },
+    { "chi-square-threshold",    required_argument, 0, 'Q' },
     { "random-seed",             required_argument, 0, 'r' },
     { "dynamic-range-factor",    required_argument, 0, 'R' },
     { "sample-rate",             required_argument, 0, 's' },
@@ -115,7 +116,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -239,6 +240,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'q': /* num chi square bins */
         localparams.numChiSquareBins = atoi( optarg );
+        break;
+      case 'Q': 
+        localparams.chiSquareCalcThreshold = atof( optarg );
         break;
       case 'r': /* random seed */
         localparams.randomSeed = atoi( optarg );
@@ -521,8 +525,11 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--do-bank-veto Calculate Bank Veto for potential triggers \n");
   fprintf( stderr, "--bank-veto-templates File containing templates to use for bank veto \n");
   fprintf( stderr, "--do-auto-veto Calculate Auto Veto for potential triggers \n");
+  fprintf( stderr, "--do-chi-square Calculate the chi squared value for potential triggers \n");
   fprintf( stderr, "--num-auto-chisq-points Number of points to use in calculating auto veto \n");
   fprintf( stderr, "--auto-veto-time-step Seperation between points for auto veto \n");
+  fprintf( stderr, "--num-chi-square-bins Number of bins to use to calculate chi square \n");
+  fprintf (stderr, "--chi-square-threshold Only calculate chi square if detection statistic is above this threshold \n");
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec. CURRENTLY NONFUNCTIONAL\n" );

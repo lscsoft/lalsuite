@@ -1438,6 +1438,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
 
   UINT4 check;
+  UINT4 chisqCheck = 0;
+  REAL4 bestNR;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
@@ -1743,8 +1745,115 @@ void cohPTFmodBasesUnconstrainedStatistic(
           // Auto veto is calculated
           autoVeto->data->data[i-numPoints/4] = calculate_auto_veto_max_phase_coherent(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
         }
-        if (params->doChiSquare )
+      }
+    }
+  }
+  /* To save memory we cut the loop here, clean the memory before calculating
+  chi square */
+  LALFree(v1p);
+  LALFree(v2p);
+
+  if (params->doBankVeto)
+  {
+    for ( j = 0 ; j < subBankSize+1 ; j++ )
+    {
+      if (Bankeigenvecs[j])
+        gsl_matrix_free(Bankeigenvecs[j]);
+      if (Bankeigenvals[j])
+        gsl_vector_free(Bankeigenvals[j]);
+    }
+    if (bankCohOverlaps)
+    {
+      for ( j = 0 ; j < subBankSize ; j++ )
+      {
+        gsl_matrix_free(bankCohOverlaps[j].rotReOverlaps);
+        gsl_matrix_free(bankCohOverlaps[j].rotImOverlaps);
+      }
+      LALFree(bankCohOverlaps);
+    }
+  }
+
+  if (params->doAutoVeto)
+  {
+    if ( Autoeigenvecs )
+      gsl_matrix_free( Autoeigenvecs );
+      Autoeigenvecs = NULL;
+    if ( Autoeigenvals )
+      gsl_vector_free( Autoeigenvals );
+      Autoeigenvals = NULL;
+    if (autoCohOverlaps)
+    {
+      for ( j = 0 ; j < params->numAutoPoints ; j++ )
+      {
+        gsl_matrix_free(autoCohOverlaps[j].rotReOverlaps);
+        gsl_matrix_free(autoCohOverlaps[j].rotImOverlaps);
+      }
+      LALFree(autoCohOverlaps);
+    }
+  }
+
+  /* And do the loop again to calculate chi square */
+
+  for ( i = numPoints/4; i < 3*numPoints/4; ++i ) /* loop over time */
+  {
+    if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+    {
+      check = 1;
+      for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
+      {
+        if (l < 0)
+          l = 0;
+        if (l > (INT4)(cohSNR->data->length-1))
+          break;
+        if (cohSNR->data->data[l] > cohSNR->data->data[i-numPoints/4])
         {
+          check = 0;
+          break;
+        }
+      }
+      if (check)
+      {
+        /* Test whether to do chi^2 */
+        if ( params->chiSquareCalcThreshold )
+        {
+          bestNR = cohSNR->data->data[i-numPoints/4];
+
+          if (params->doNullStream)
+          {
+            if (nullSNR->data->data[i-numPoints/4] > 5.5 && bestNR < 30)
+              bestNR = bestNR * 1./(nullSNR->data->data[i-numPoints/4] - 4.5);
+          }
+  
+          if (params->doBankVeto)
+          {
+            if (bankVeto->data->data[i-numPoints/4] > 40)
+              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4],6./5.)/2.),1./6.);
+          }
+
+          if (params->doAutoVeto)
+          {
+            if (autoVeto->data->data[i-numPoints/4] > 40)
+              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4],1.5)/2.),1./6.);
+          } 
+
+          if (bestNR > params->chiSquareCalcThreshold)
+            chisqCheck = 1;
+          else
+            chisqCheck = 0;
+        }
+        else
+          chisqCheck = 1;
+
+        if (params->doChiSquare && chisqCheck )
+        {
+          if (! Autoeigenvecs )
+          {
+            Autoeigenvecs = gsl_matrix_alloc(2,2);
+            Autoeigenvals = gsl_vector_alloc(2);
+            // Again the eigenvectors/values are calculated
+            calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
+                a,b,PTFM,1,2,5);
+          }
           if (! frequencyRanges)
           {
             frequencyRanges = (REAL4 *)
@@ -1798,52 +1907,18 @@ void cohPTFmodBasesUnconstrainedStatistic(
           chiSquare->data->data[i-numPoints/4] = calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
         
         }
+        else if (params->doChiSquare)
+          chiSquare->data->data[i-numPoints/4] = 0;
       }
-    }
-  }
-
-  LALFree(v1p);
-  LALFree(v2p);
-
-  if (params->doBankVeto)
-  {
-    for ( j = 0 ; j < subBankSize+1 ; j++ )
-    {
-      if (Bankeigenvecs[j])
-        gsl_matrix_free(Bankeigenvecs[j]);
-      if (Bankeigenvals[j])
-        gsl_vector_free(Bankeigenvals[j]);
-    }
-    if (bankCohOverlaps)
-    {
-      for ( j = 0 ; j < subBankSize ; j++ )
-      {
-        gsl_matrix_free(bankCohOverlaps[j].rotReOverlaps);
-        gsl_matrix_free(bankCohOverlaps[j].rotImOverlaps);
-      }
-      LALFree(bankCohOverlaps);
-    }
-  }
-
-  if (params->doAutoVeto)
-  {
-    if ( Autoeigenvecs )
-      gsl_matrix_free( Autoeigenvecs );
-    if ( Autoeigenvals )
-      gsl_vector_free( Autoeigenvals );
-    if (autoCohOverlaps)
-    {
-      for ( j = 0 ; j < params->numAutoPoints ; j++ )
-      {
-        gsl_matrix_free(autoCohOverlaps[j].rotReOverlaps);
-        gsl_matrix_free(autoCohOverlaps[j].rotImOverlaps);
-      }
-      LALFree(autoCohOverlaps);
     }
   }
 
   if (params->doChiSquare)
   {
+    if ( Autoeigenvecs )
+      gsl_matrix_free( Autoeigenvecs );
+    if ( Autoeigenvals )
+      gsl_vector_free( Autoeigenvals );
     if (frequencyRanges)
       LALFree(frequencyRanges);
     if (tempqVec)

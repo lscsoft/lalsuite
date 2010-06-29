@@ -99,6 +99,7 @@ struct coh_PTF_params {
   UINT4        numAutoPoints;
   REAL4        autoVetoTimeStep;
   UINT4        numChiSquareBins;
+  REAL4        chiSquareCalcThreshold;
   char         outputFile[256];
   const char  *spinBank;
   const char  *noSpinBank;
