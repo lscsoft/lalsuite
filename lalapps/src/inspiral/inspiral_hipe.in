@@ -955,7 +955,7 @@ def coherent_bank(ifos,cb_job,dag,coinc_nodes,exttrigInjections,coinc_slide_node
 ##############################################################################
 # function to set up trigbank jobs for coherent analysis with a network of ifos
 def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
-  insp_coh_jobs,dag,calibrated,exttrigInjections,usertag=None):
+  insp_coh_jobs,dag,calibrated,exttrigInjections,usertag=None,inspinjNode = None):
   """
   Perform the trigbank and third inspiral steps for the single ifo triggers
   appearing in the cohbank templates.  
@@ -969,6 +969,7 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
   dag           = the DAG to attach the nodes to
 
   usertag = the usertag to add to the job names
+  inspinjNode = the inspinj node to be added as a parent to inspirals
   """
 
   ifotag = 'COHERENT_' + ifos
@@ -1036,13 +1037,14 @@ def coherent_trig_inspiral(ifo_data,ifo_name,cohbank_data,ifos,trig_coh_jobs,
               insp.set_ifo_tag(ifotag)
               insp.add_var_opt('write-cdata','')
               insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-              if not opts.read_cache:
-                insp.set_cache(seg.get_df_node().get_output())
+              if not opts.read_cache: insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo_name+'-cache'))
               if not calibrated: insp.calibration()
               insp.set_bank(trigbank.get_output())
               # XXX: ensure output is added to list of output files
               output = insp.get_output()
+              if opts.datafind: insp.add_parent(seg.get_df_node())
+              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode)
               if opts.coherent_bank: insp.add_parent(trigbank)
               if opts.coherent_bank: dag.add_node(insp)
 
@@ -1128,7 +1130,7 @@ def coherent_inspiral_bank(ifos,cohinspbank_job,dag,coinc_segs,single_data_analy
 ##############################################################################
 # function to set up the cohinspiral jobs for a network of ifos
 def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
-  cohtrig_data,exttrigInjections,usertag=None):
+  cohtrig_data,exttrigInjections,usertag=None,inspinjNode = None):
   """
   Do a coherent analysis
 
@@ -1138,6 +1140,8 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
   dag                 = name of the dag
   cohbank_data        = the coicident science segments and cohbank jobs
   cohtrig_data        = dictionary of single ifo (inspiral3) data analyzed
+  usertag = the usertag to add to the job names
+  inspinjNode = the inspinj node to be added as a parent to inspirals
   """
 
   ifotag = 'COHERENT_' + ifos
@@ -1201,6 +1205,8 @@ def coherent_analysis(ifos,single_ifo_segments,cohinsp_job,dag,cohbank_data,
         if opts.coherent_bank: dag.add_node(frjoin)
         if opts.coherent_inspiral and opts.coherent_bank:
            cohinsp.add_parent(frjoin)
+
+    if inspinjNode and opts.inspinj: cohinsp.add_parent(inspinjNode)
 
     if opts.coherent_inspiral: dag.add_node(cohinsp)
     cohinsp_analyzed.append(AnalyzedIFOData(cohbank_done.get_chunk(),cohinsp))
@@ -2554,7 +2560,7 @@ for ifos in ifo_coincs:
 
       analyzed_trig_coh_data[ifos][ifo] = coherent_trig_inspiral(data[ifo],
           ifo,cohbank_nodes[ifos],ifos,trig_coh_jobs[ifo],insp_coh_jobs[ifo],
-          dag,calibrated,exttrigInjections,usertag)
+          dag,calibrated,exttrigInjections,usertag,inspinj)
 
       print "done"
 
@@ -2602,7 +2608,7 @@ for ifos in ifo_coincs:
 
   cohinsp_nodes[ifos] = coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,
       cohinspbank_nodes[ifos],analyzed_trig_coh_data[ifos],
-      exttrigInjections,usertag=usertag)
+      exttrigInjections,usertag=usertag,inspinjNode=inspinj)
 
   if not doExtTrig:
     cohire_nodes[ifos] = cohire_segments_individually(cohinsp_nodes[ifos],
