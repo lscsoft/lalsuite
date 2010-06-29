@@ -1,6 +1,21 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 7
+# serial 8
+
+AC_DEFUN([LALSUITE_USE_LIBTOOL],
+[## $0: Generate a libtool script for use in configure tests
+AC_PROVIDE_IFELSE([LT_INIT], ,
+                  [m4_fatal([$0: requires libtool])])[]dnl
+LT_OUTPUT
+m4_append([AC_LANG(C)],
+[ac_link="./libtool --mode=link --tag=CC $ac_link"
+])[]dnl
+AC_PROVIDE_IFELSE([AC_PROG_CXX],
+[m4_append([AC_LANG(C++)],
+[ac_link="./libtool --mode=link --tag=CXX $ac_link"
+])])[]dnl
+AC_LANG(_AC_LANG)[]dnl
+]) # LALSUITE_USE_LIBTOOL
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
