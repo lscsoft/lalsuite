@@ -64,6 +64,15 @@ typedef struct
   REAL8 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
 
+typedef struct
+{
+  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
+  REAL8 t0_min;			/**< earliest GPS start-time 't0' */
+  REAL8 t0_max;			/**< latest GPS start-time 't0' */
+  REAL8 tau_min;		/**< shortest transient timescale tau in seconds */
+  REAL8 tau_max;		/**< longest transient timescale tau in seconds */
+} transientWindowRange_t;
+
 
 
 
@@ -77,8 +86,7 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 /* ---------- Fstat-atoms related functions ----------*/
 int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, UINT4 t0, UINT4 t1, REAL8 tauMinDays, REAL8 tauMaxDays );
-
+REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, transientWindowRange_t windowRange );
 
 #ifdef  __cplusplus
 }
