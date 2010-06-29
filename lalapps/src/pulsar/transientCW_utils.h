@@ -43,6 +43,8 @@ extern "C" {
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 
+#include <lal/ComputeFstat.h>
+
 /* ---------- exported API defines ---------- */
 
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
@@ -71,6 +73,11 @@ int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t Transi
 int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
+
+/* ---------- Fstat-atoms related functions ----------*/
+int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtoms *multiAtoms );
+CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
+REAL8 XLALComputeTransientBstat ( const MultiFstatAtoms *multiFstatAtoms, UINT4 t0, UINT4 t1, REAL8 tauMinDays, REAL8 tauMaxDays );
 
 
 #ifdef  __cplusplus
