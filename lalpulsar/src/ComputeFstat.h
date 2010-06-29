@@ -94,6 +94,7 @@ typedef struct {
   UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
   REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
   REAL8 b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
+  REAL8 ab_alpha;		/**< antenna-pattern factor a*b(X,t_i) */
   COMPLEX8 Fa_alpha;		/**< Fa^X(t_i) */
   COMPLEX8 Fb_alpha;		/**< Fb^X(t_i) */
 } FstatAtom;
