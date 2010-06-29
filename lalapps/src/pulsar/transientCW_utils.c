@@ -43,6 +43,8 @@
 
 /* ---------- internal prototypes ---------- */
 REAL4Vector *XLALGetTransientWindowVals ( const LIGOTimeGPSVector *tGPS, const transientWindow_t *TransientWindowParams );
+int compareAtoms(const void *in1, const void *in2);
+
 
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
@@ -431,16 +433,88 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
   for ( X=0; X < numDet; X ++ )
     maxNumAtoms += multiAtoms->data[X]->length;
 
-  /* first allocate an atoms-vector with maxNumAtoms length, then truncate at the end when we're done*/
-  FstatAtomVector *atoms;
-  if ( (atoms = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
+  /* first allocate an atoms-vector with maxNumAtoms length, then truncate as needed at the end */
+  FstatAtomVector *atomsIn;
+  if ( (atomsIn = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
     XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
   /* simply combine all atoms-vector by concatentation first */
-  
+  UINT4 offset = 0;
+  for ( X=0; X < numDet; X ++ )
+    {
+      FstatAtomVector *thisVect = multiAtoms->data[X];
+      memcpy ( atomsIn->data + offset, thisVect->data, thisVect->length * sizeof(*thisVect->data) );
+      offset += thisVect->length;
+    } /* for X < numDet */
 
-  return NULL;
+  /* now sort by increasing GPS time */
+  qsort( atomsIn->data, maxNumAtoms, sizeof(*atomsIn->data), compareAtoms );
+
+  /* finally: step through and 'merge' equal-timestamp atoms */
+  FstatAtomVector *atomsOut;
+  if ( (atomsOut = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  FstatAtom *destAtom = &atomsOut->data[0];
+  /* handle first atom by hand */
+  (*destAtom) = atomsIn->data[0];
+  UINT4 counter=1;
+  /* and step through the rest of them */
+  UINT4 i;
+  for ( i=1; i < maxNumAtoms; i ++ )
+    {
+      FstatAtom *srcAtom = &atomsIn->data[i];
+
+      /* still same timestamp? merge entries */
+      if ( srcAtom->timestamp == destAtom->timestamp )
+        {
+          destAtom->a2_alpha += srcAtom->a2_alpha;
+          destAtom->b2_alpha += srcAtom->b2_alpha;
+          destAtom->Fa_alpha.re += srcAtom->Fa_alpha.re;
+          destAtom->Fa_alpha.im += srcAtom->Fa_alpha.im;
+          destAtom->Fb_alpha.re += srcAtom->Fb_alpha.re;
+          destAtom->Fb_alpha.im += srcAtom->Fb_alpha.im;
+        } /* if same timestamp */
+      else
+        {
+          counter ++;
+          destAtom ++;
+          (*destAtom) = (*srcAtom);
+        } /* add new timestamp atom */
+
+    } /* for i < maxNumAtoms */
+
+  /* free concat vector */
+  XLALDestroyFstatAtomVector ( atomsIn );
+
+  /* now resize output Vector to that actually needed */
+  UINT4 newsize = counter * sizeof(*atomsOut->data);
+  atomsOut->length = newsize;
+  if ( (atomsOut->data = XLALRealloc ( atomsOut->data, newsize )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALRealloc() atomsOut to new size %d\n", fn, newsize );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return atomsOut;
 
 } /* XLALmergeMultiFstatAtoms() */
+
+/* comparison function for atoms: sort by GPS time */
+int
+compareAtoms(const void *in1, const void *in2)
+{
+  const FstatAtom *atom1 = (const FstatAtom*)in1;
+  const FstatAtom *atom2 = (const FstatAtom*)in2;
+
+  if ( atom1->timestamp < atom2->timestamp )
+    return -1;
+  else if ( atom1->timestamp == atom2->timestamp )
+    return 0;
+  else
+    return 1;
+
+} /* compareAtoms() */
