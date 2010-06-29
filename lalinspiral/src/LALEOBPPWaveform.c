@@ -164,7 +164,7 @@ void LALHCapDerivatives3PN(     REAL8Vector     *values,
 
 static
 void LALHCapDerivativesP4PN(     REAL8Vector     *values,
-                                RELAL8Vector     *dvalues,
+                                 REAL8Vector     *dvalues,
                                 void            *funcParams);
 
 static
