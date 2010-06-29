@@ -78,6 +78,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
+    REAL4TimeSeries         *snrComps[6],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -113,6 +114,7 @@ UINT8 cohPTFaddTriggers(
     UINT4                   singleDetector,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
+    REAL4TimeSeries         *snrComps[6],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -182,6 +184,7 @@ int main( int argc, char **argv )
   REAL8                   detLoc[3];
   REAL4TimeSeries         *cohSNR = NULL;
   REAL4TimeSeries         *pValues[10];
+  REAL4TimeSeries         *snrComps[6];
   REAL4TimeSeries         *gammaBeta[2];
   REAL4TimeSeries         *nullSNR = NULL;
   REAL4TimeSeries         *traceSNR = NULL;
@@ -234,6 +237,10 @@ int main( int argc, char **argv )
   {
     pValues[i] = NULL;
   }   
+  for ( i = 0 ; i < 6 ; i++ )
+  {
+    snrComps[i] = NULL;
+  }
   gammaBeta[0] = NULL;
   gammaBeta[1] = NULL;
 
@@ -633,6 +640,15 @@ int main( int argc, char **argv )
           &segStartTime,PTFtemplate->fLower,
           (1.0/params->sampleRate),&lalDimensionlessUnit,
           3*numPoints/4 - numPoints/4);
+      if (params->doTraceSNR)
+      {
+        for (ui = 0;ui < (numDetectors*(numDetectors+1))/2; ui++)
+        {
+          snrComps[ui] = XLALCreateREAL4TimeSeries("snrComps",
+                &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+                &lalDimensionlessUnit,cohSNR->data->length);
+        }
+      }
       if (params->doNullStream)
         nullSNR = XLALCreateREAL4TimeSeries("nullSNR",
             &segStartTime,PTFtemplate->fLower,
@@ -727,15 +743,15 @@ int main( int argc, char **argv )
       // signal based vetoes as appropriate
       cohPTFmodBasesUnconstrainedStatistic(cohSNR,PTFM,PTFqVec,params,
           spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
-          gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,subBankSize,
-          bankOverlaps,bankNormOverlaps,dataOverlaps,autoTempOverlaps,fcTmplt,
-          invspec,segments,invPlan);
+          gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
+          subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
+          autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
      
       verbose("Made coherent statistic for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);      
 
       // This function adds any loud events to the list of triggers 
-      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare);
+      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
       // Then we get a bunch of memory freeing statements
@@ -745,6 +761,14 @@ int main( int argc, char **argv )
         {
             XLALDestroyREAL4TimeSeries(pValues[k]);
             pValues[k] = NULL;
+        }
+      }
+      for ( k = 0; k < 6; k++ )
+      {
+        if (snrComps[k])
+        {
+          XLALDestroyREAL4TimeSeries(snrComps[k]);
+          snrComps[k] = NULL;
         }
       }
       if (gammaBeta[0]) XLALDestroyREAL4TimeSeries(gammaBeta[0]);
@@ -1253,6 +1277,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
+    REAL4TimeSeries         *snrComps[6],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -1273,7 +1298,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 // This function generates the SNR for every point in time and, where
 // appropriate calculates the desired signal based vetoes.
 
-  UINT4 i,j,k,m,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
+  UINT4 i,j,k,m,n,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
   INT4 l;
   INT4 timeOffsetPoints[LAL_NUM_IFO];
   REAL4 deltaT = cohSNR->deltaT;
@@ -1322,6 +1347,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   outfile = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
+  REAL4 u21[vecLengthTwo],u22[vecLengthTwo],v21[vecLengthTwo],v22[vecLengthTwo];
   REAL4 *v1p,*v2p;
   REAL4 u1N[vecLength],u2N[vecLength],v1N[vecLength],v2N[vecLength];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
@@ -1439,6 +1465,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   UINT4 check;
   UINT4 chisqCheck = 0;
+  UINT4 snrCompsIter = 0;
   REAL4 bestNR;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
@@ -1606,14 +1633,19 @@ void cohPTFmodBasesUnconstrainedStatistic(
           nullSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
         }
 
-        // Next up is Trace SNR
+        // Next up is Trace SNR and the SNR components
         if (params->doTraceSNR)
         {
           // traceSNR is calculated as normal SNR but cross terms are not added
           traceSNRsq = 0;
+          snrCompsIter = 0;
           for( k = 0; k < LAL_NUM_IFO; k++)
           {
-            if ( params->haveTrig[k] )
+          if ( params->haveTrig[k] )
+          {
+          for( n = k; n < LAL_NUM_IFO; n++)
+          {
+            if ( params->haveTrig[n] )
             {
               for ( j = 0; j < vecLengthTwo ; j++ )
               {
@@ -1621,32 +1653,42 @@ void cohPTFmodBasesUnconstrainedStatistic(
                 {
                   v1[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
                   v2[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+                  v21[j] = a[n] * PTFqVec[n]->data[j*numPoints+i+timeOffsetPoints[n]].re;
+                  v22[j] = a[n] * PTFqVec[n]->data[j*numPoints+i+timeOffsetPoints[n]].im;
                 }
                 else
                 {
                   v1[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
                   v2[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+                  v21[j] = b[n] * PTFqVec[n]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[n]].re;
+                  v22[j] = b[n] * PTFqVec[n]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[n]].im;
                 }
               }
               for ( j = 0 ; j < vecLengthTwo ; j++ )
               {
                 u1[j] = 0.;
                 u2[j] = 0.;
+                u21[j] = 0.;
+                u22[j] = 0.;
                 for ( m = 0 ; m < vecLengthTwo ; m++ )
                 {
                   u1[j] += gsl_matrix_get(eigenvecs,m,j)*v1[m];
                   u2[j] += gsl_matrix_get(eigenvecs,m,j)*v2[m];
+                  u21[j] += gsl_matrix_get(eigenvecs,m,j)*v21[m];
+                  u22[j] += gsl_matrix_get(eigenvecs,m,j)*v22[m];
                 }
                 u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
                 u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+                u21[j] = u21[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
+                u22[j] = u22[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
               }
               /* Compute the dot products */
               v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
               for (j = 0; j < vecLengthTwo; j++)
               {
-                v1_dot_u1 += u1[j] * u1[j];
-                v1_dot_u2 += u1[j] * u2[j];
-                v2_dot_u2 += u2[j] * u2[j];
+                v1_dot_u1 += u1[j] * u21[j];
+                v1_dot_u2 += u1[j] * u22[j];
+                v2_dot_u2 += u2[j] * u22[j];
               }
               if (spinTemplate == 0)
               {
@@ -1657,8 +1699,18 @@ void cohPTFmodBasesUnconstrainedStatistic(
                 max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
               }
-              traceSNRsq += max_eigen;
+              if (k == n)
+                traceSNRsq += max_eigen;
+              if (snrCompsIter < 6)
+              {
+                snrComps[snrCompsIter]->data->data[i-numPoints/4]=max_eigen;
+                fprintf(stderr,"%e %e \n",max_eigen,snrComps[snrCompsIter]->data->data[i-numPoints/4]);
+                snrCompsIter += 1;
+              }
+              fprintf(stderr,"%e %e %d %d \n",max_eigen,snrComps[snrCompsIter-1]->data->data[i-numPoints/4],k,n);
             }
+          }
+          }
           }
           traceSNR->data->data[i-numPoints/4] = sqrt(traceSNRsq);
         }
@@ -2029,6 +2081,7 @@ UINT8 cohPTFaddTriggers(
     UINT4                   singleDetector,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
+    REAL4TimeSeries         *snrComps[6],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -2133,6 +2186,19 @@ UINT8 cohPTFaddTriggers(
           currEvent->t1quad.im = pValues[9]->data->data[i];
         currEvent->g1quad.re = gammaBeta[0]->data->data[i];
         currEvent->g1quad.im = gammaBeta[1]->data->data[i];
+        if (snrComps[0])
+          currEvent->chisq_h1 = snrComps[0]->data->data[i];
+        if (snrComps[1])
+          currEvent->chisq_h2 = snrComps[1]->data->data[i];
+        if (snrComps[2])
+          currEvent->chisq_g = snrComps[2]->data->data[i];
+        if (snrComps[3])
+          currEvent->chisq_l = snrComps[3]->data->data[i];
+        if (snrComps[4])
+          currEvent->chisq_t = snrComps[4]->data->data[i];
+        if (snrComps[5])
+          currEvent->chisq_v = snrComps[5]->data->data[i];
+
         if (spinTrigger == 1)
         {
           if (singleDetector == 1)
