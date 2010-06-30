@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Reinhard Prix, Stefanos Giampanis
  * Copyright (C) 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,7 +19,7 @@
  */
 
 /*********************************************************************************/
-/** \author R. Prix
+/** \author R. Prix, S. Giampanis
  * \file
  * \brief
  * Some helper functions useful for "transient CWs", mostly applying transient window
@@ -347,6 +348,9 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 
 /** Function to compute marginalized B-statistic over start-time and duration
  * of transient CW signal, using given type and parameters of transient window range.
+ *
+ * Note: this function is a C-implemention, partially based-on/inspired-by Stefanos Giampanis'
+ * original matlab implementation of this search function.
  */
 int
 XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
@@ -355,11 +359,11 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 {
   const char *fn = __func__;
 
-  REAL8 tau_min = windowRange.tau_min; // smallest search duration-window in seconds
-  REAL8 tau_max = windowRange.tau_max; // longest search duration-window in seconds
+  UINT4 tau_min = windowRange.tau_min; // smallest search duration-window in seconds
+  UINT4 tau_max = windowRange.tau_max; // longest search duration-window in seconds
 
-  REAL8 t0_min = windowRange.t0_min;	// earliest GPS start-time
-  REAL8 t0_max = windowRange.t0_max;	// latest GPS start-time
+  UINT4 t0_min = windowRange.t0_min;	// earliest GPS start-time
+  UINT4 t0_max = windowRange.t0_max;	// latest GPS start-time
 
   /* initialize empty return, in case sth goes wrong */
   TransientCandidate_t ret = empty_TransientCandidate;
@@ -403,10 +407,31 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     XLALPrintError ( "%s: earliest start-time %d later than latest atoms timestamp %d\n", fn, t0_min, atoms->data[i_min-1].timestamp );
     XLAL_ERROR (fn, XLAL_EDOM );
   }
+
   UINT4 i_max = i_min;
   while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp < t0_max) )
     i_max ++;
   if ( i_max > 0 ) i_max --;	/* we want last timestamp that still satifies t_max <= t0_max */
+
+  /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
+   * instead we first determine max{F_ij}, then compute the logB = log ( e^Fmax * sum_{ij} 1/Dij * e^{Fij - Fmax} )
+   * which is logB = Fmax + log( sum_{ij} e^Freg_ij ), where Freg_ij = -log(Dij) + Fij - Fmax.
+   * This avoids numerical problems.
+   *
+   * As we don't know Fmax before having computed the full ij matrix F_ij, we keep a list of
+   * 'regularized' F-stats Freg_ij over field of {t0, tau} values.
+   * As we don't know exactly the size of that matrix (because of possible gaps in the data),
+   *  we use the maximal (conservative) estimate of that size t0Range* tauRange elements
+   */
+  UINT4 t0Range = ( t0_max - t0_min ) / deltaT + 1;
+  UINT4 tauRange = (tau_max - tau_min) / deltaT + 1;
+  UINT4 maxNumSummands = t0Range * tauRange;
+  REAL8 *regFList;	/* will be initialized to zeros ! */
+  if ( ( regFList = XLALCalloc ( maxNumSummands, sizeof(REAL8) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, sizeof(REAL8)\n", fn, maxNumSummands );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  UINT4 counter = 0;
 
   /* ----- OUTER loop over start-times t0 ---------- */
   ret.maxFstat = 0;	// keep track of loudest 2F-value over {t0, tau} space
@@ -456,6 +481,15 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                   ret.tau_maxF = tau_j;
                 }
 
+              /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
+              regFList[counter] = - log( Dd ) + twoF;
+              counter ++;
+
+              if ( counter > maxNumSummands ) {
+                XLALPrintError ("%s: something went badly wrong, or repr can't count! ... numSummands=%d > maxNumSummand=%d\n", fn, counter, maxNumSummands );
+                XLAL_ERROR ( fn, XLAL_EBADLEN );
+              }
+
             } 	/* if inside [tau_min, tau_max] => compute Fstat */
 
           j ++ ;
@@ -464,9 +498,20 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
     } /* for i in [i_min, i_max] */
 
+  UINT4 numSummands = counter;
+  /* now step through list of Freg_ij, subtract maxFstat and sum e^{Freg - Fmax}*/
+  REAL8 sum_eB = 0;
+  for ( i=0; i < numSummands; i ++ )
+    sum_eB += exp ( regFList[i] - ret.maxFstat );
+
+  /* combine this to final log(Bstat) result: */
+  ret.logBstat = ret.maxFstat + 2.0 * log ( deltaT ) + log ( sum_eB );
+
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
+  XLALFree ( regFList );
 
+  /* return */
   (*cand) = ret;
   return XLAL_SUCCESS;
 

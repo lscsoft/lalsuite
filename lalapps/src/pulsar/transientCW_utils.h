@@ -70,10 +70,10 @@ typedef struct
 typedef struct
 {
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  REAL8 t0_min;			/**< earliest GPS start-time 't0' */
-  REAL8 t0_max;			/**< latest GPS start-time 't0' */
-  REAL8 tau_min;		/**< shortest transient timescale tau in seconds */
-  REAL8 tau_max;		/**< longest transient timescale tau in seconds */
+  UINT4 t0_min;			/**< earliest GPS start-time 't0' in seconds */
+  UINT4 t0_max;			/**< latest GPS start-time 't0'  in seconds */
+  UINT4 tau_min;		/**< shortest transient timescale tau in seconds */
+  UINT4 tau_max;		/**< longest transient timescale tau in seconds */
 } transientWindowRange_t;
 
 /** Struct holding a transient CW candidate */
