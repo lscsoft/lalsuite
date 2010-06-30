@@ -103,6 +103,7 @@ typedef struct {
 typedef struct {
   UINT4 length;			/**< number of per-SFT 'atoms' */
   FstatAtom *data;		/** FstatAtoms array of given length */
+  UINT4 deltaT;			/**< time-step length of atoms in seconds */
 } FstatAtomVector;
 
 /** multi-detector version of FstatAtoms type */

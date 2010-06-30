@@ -434,6 +434,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 		       + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
 		       - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
 		       );
+
   if ( Ed != 0 ) /* extra term in RAA case */
     retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
 
@@ -538,8 +539,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	LALFree ( FaFb->multiFstatAtoms );
 	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
       }
-    } /* if returnAtoms */
 
+      FaFb->multiFstatAtoms->data[0]->deltaT = Tsft;	/* time-step length of returned atoms is Tsft */
+
+    } /* if returnAtoms */
 
   /* ----- find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -712,15 +715,12 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       /* store per-SFT F-stat 'atoms' for transient-CW search */
       if ( params->returnAtoms )
 	{
-	  COMPLEX8 tmp;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
-	  tmp = Fa_alpha; tmp.re *= norm; tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = tmp;
-	  tmp = Fb_alpha; tmp.re *= norm; tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = tmp;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = Fa_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = Fb_alpha;
 	}
 
       /* advance pointers over alpha */
