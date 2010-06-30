@@ -348,8 +348,9 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 /** Function to compute marginalized B-statistic over start-time and duration
  * of transient CW signal, using given type and parameters of transient window range.
  */
-REAL8
-XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [in] multi-IFO F-statistic atoms */
+int
+XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
+                            const MultiFstatAtomVector *multiFstatAtoms,/**< [in] multi-IFO F-statistic atoms */
                             transientWindowRange_t windowRange )	/**< [in] type and parameters specifying transient window range to search */
 {
   const char *fn = __func__;
@@ -360,36 +361,39 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
   REAL8 t0_min = windowRange.t0_min;	// earliest GPS start-time
   REAL8 t0_max = windowRange.t0_max;	// latest GPS start-time
 
+  /* initialize empty return, in case sth goes wrong */
+  TransientCandidate_t ret = empty_TransientCandidate;
+  (*cand) = ret;
 
   /* check input consistency */
   if ( !multiFstatAtoms ) {
     XLALPrintError ("%s: invalid NULL input.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   if ( t0_max < t0_min ) {
     XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0_min, t0_max );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+    XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
   if ( tau_max < tau_min ) {
     XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau_min, tau_max );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+    XLAL_ERROR ( fn, XLAL_EDOM );
   }
 
   if ( windowRange.type != TRANSIENT_RECTANGULAR ) {
     XLALPrintError ("%s: Sorry, only rectangular window implemented right now!\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+    XLAL_ERROR ( fn, XLAL_EDOM );
   }
-
 
   /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
   FstatAtomVector *atoms;
   if ( (atoms = XLALmergeMultiFstatAtomsSorted ( multiFstatAtoms )) == NULL ) {
     XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
   }
   UINT4 numAtoms = atoms->length;
+  UINT4 deltaT = atoms->deltaT;
 
   /* find indices corresponding to t0_min, t0_max */
   UINT4 i_min=0;
@@ -397,7 +401,7 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
     i_min++;
   if ( i_min == atoms->length ) {
     XLALPrintError ( "%s: earliest start-time %d later than latest atoms timestamp %d\n", fn, t0_min, atoms->data[i_min-1].timestamp );
-    XLAL_ERROR_REAL8 (fn, XLAL_EDOM );
+    XLAL_ERROR (fn, XLAL_EDOM );
   }
   UINT4 i_max = i_min;
   while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp < t0_max) )
@@ -405,7 +409,10 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
   if ( i_max > 0 ) i_max --;	/* we want last timestamp that still satifies t_max <= t0_max */
 
   /* ----- OUTER loop over start-times t0 ---------- */
+  ret.maxFstat = 0;	// keep track of loudest 2F-value over {t0, tau} space
   UINT4 i;
+  REAL8 norm = 1.0 / SQ(LAL_TWOPI);
+
   for ( i = i_min; i <= i_max; i ++ )
     {
       UINT4 t0_i = atoms->data[i].timestamp;
@@ -417,9 +424,10 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
       while ( j < numAtoms )
         {
           FstatAtom *thisAtom = &atoms->data[j];
-          UINT4 t0_j = thisAtom->timestamp;
+          UINT4 t_j = thisAtom->timestamp;
+          UINT4 tau_j = t_j - t0_i + deltaT;
 
-          if ( t0_j - t0_i > tau_max )
+          if ( tau_j > tau_max )
             break;
 
           Ad += thisAtom->a2_alpha;
@@ -432,15 +440,22 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
           Fb_re += thisAtom->Fb_alpha.re;
           Fb_im += thisAtom->Fb_alpha.im;
 
-          if ( t0_j - t0_i > tau_min )
+          if ( tau_j >= tau_min )
             {
               REAL8 Dd, twoF;
               Dd = Ad * Bd - Cd * Cd;
 
-              twoF = (2.0 / Dd) * (
-                                       Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                                       - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
-                                       );
+              twoF = norm * (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                                           - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                                           );
+
+              if ( twoF > ret.maxFstat )
+                {
+                  ret.maxFstat = twoF;
+                  ret.t0_maxF  = t0_i;
+                  ret.tau_maxF = tau_j;
+                }
+
             } 	/* if inside [tau_min, tau_max] => compute Fstat */
 
           j ++ ;
@@ -452,7 +467,8 @@ XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms,	/**< [i
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
 
-  return 0;
+  (*cand) = ret;
+  return XLAL_SUCCESS;
 
 } /* XLALComputeTransientBstat() */
 
@@ -466,19 +482,21 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand 
     return -1;
 
   if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_max    tau_max       2F_max     logBstat\n");
+    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_Fmax   tau_Fmax      2F_max     logBstat\n");
   else
-    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %09d  %09d  %11.9g  %11.9g\n",
+    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %9d  %9d  %11.9g  %11.9g\n",
              thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
              thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
              thisCand->fullFstat,
-             thisCand->maxt0, thisCand->maxtau, thisCand->maxFstat,
+             thisCand->t0_maxF, thisCand->tau_maxF, thisCand->maxFstat,
              thisCand->logBstat
              );
 
   return XLAL_SUCCESS;
 
 } /* write_TransCandidate_to_fp() */
+
+
 
 /** Combine N Fstat-atoms vectors into a single one, with timestamps ordered by increasing GPS time,
  * Atoms with identical timestamp are immediately merged into one, so the final timestamps list only
@@ -489,7 +507,7 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
 {
   const char *fn = __func__;
 
-  if ( !multiAtoms ) {
+  if ( !multiAtoms || !multiAtoms->length || !multiAtoms->data[0] ) {
     XLALPrintError ("%s: invalid NULL input.\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
@@ -497,6 +515,17 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
   UINT4 numDet = multiAtoms->length;
   UINT4 X;
   UINT4 maxNumAtoms = 0;	/* upper limit on total number of atoms: sum over all detectors (assumes no coincident timestamps) */
+  UINT4 deltaT = multiAtoms->data[0]->deltaT;
+
+  /* check consistency of time-step lengths between different IFOs */
+  for ( X=0; X < numDet; X ++ ) {
+    if ( multiAtoms->data[X]->deltaT != deltaT ) {
+      XLALPrintError ("%s: Invalid input, timestep-length deltaT=%d must be identical for all multiFstatAtomVectors (IFO=%d: deltaT=%d)\n",
+                      fn, deltaT, X, multiAtoms->data[X]->deltaT );
+      XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    }
+  } /* for X < numDet */
+
   for ( X=0; X < numDet; X ++ )
     maxNumAtoms += multiAtoms->data[X]->length;
 
@@ -525,6 +554,8 @@ XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
     XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
+
+  atomsOut->deltaT = deltaT;
 
   FstatAtom *destAtom = &atomsOut->data[0];
   /* handle first atom by hand */

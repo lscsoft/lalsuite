@@ -80,6 +80,7 @@ RCSID( "$Id$");
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 #define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
+#define DAY24 (24 * 3600)	/* standard 24h day = 86400 seconds */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -315,7 +316,7 @@ static const FstatCandidate empty_FstatCandidate;
  */
 int main(int argc,char *argv[])
 {
-  static const char *fn = "main()";
+  static const char *fn = __func__;
   LALStatus status = blank_status;	/* initialize status */
 
   FILE *fpFstat = NULL, *fpTransientStats = NULL;
@@ -451,7 +452,6 @@ int main(int argc,char *argv[])
   if (uvar.countTemplates)
     printf("%%%% Number of templates: %0.0f\n", numTemplates);
 
-  TransientCandidate_t thisTransientCand = empty_TransientCandidate;
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -669,26 +669,26 @@ int main(int argc,char *argv[])
 
       if ( GV.transientWindowRange.type != TRANSIENT_NONE )
         {
-          REAL8 logB;
-          logB = XLALComputeTransientBstat ( Fstat.multiFstatAtoms, GV.transientWindowRange );
-          if ( xlalErrno != 0 ) {
-            XLALPrintError ("XLALComputeTransientBstat() failed with xlalErrno = %d\n", xlalErrno);
+          TransientCandidate_t transientCand;
+
+          if ( XLALComputeTransientBstat ( &transientCand, Fstat.multiFstatAtoms, GV.transientWindowRange ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno);
             return COMPUTEFSTATISTIC_EXLAL;
           }
           /* combine info on current transient-CW candidate */
-          thisTransientCand.doppler = dopplerpos;
-          thisTransientCand.fullFstat =  2.0 * thisFCand.Fstat.F;
-          thisTransientCand.logBstat = logB;
+          transientCand.doppler = dopplerpos;
+          transientCand.fullFstat =  2.0 * thisFCand.Fstat.F;
+          if ( uvar.SignalOnly )
+            transientCand.maxFstat += 4;
 
           if ( fpTransientStats ) {
-            if ( write_TransientCandidate_to_fp ( fpTransientStats, &thisTransientCand ) != XLAL_SUCCESS ) {
+            if ( write_TransientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
               XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );
               return COMPUTEFSTATISTIC_EXLAL;
             }
           } /* if fpTransientStats */
 
         } /* if transientBstat */
-
 
       /* free Fstat-atoms if we have any */
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
@@ -1437,8 +1437,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   cfg->transientWindowRange.t0_min   = uvar->transientMinStartTime;
   cfg->transientWindowRange.t0_max   = uvar->transientMaxStartTime;
-  cfg->transientWindowRange.tau_min  = uvar->transientMinTauDays * LAL_DAYSID_SI;
-  cfg->transientWindowRange.tau_max  = uvar->transientMaxTauDays * LAL_DAYSID_SI;
+  cfg->transientWindowRange.tau_min  = uvar->transientMinTauDays * DAY24;
+  cfg->transientWindowRange.tau_max  = uvar->transientMaxTauDays * DAY24;
 
   if (   cfg->transientWindowRange.t0_min >  cfg->transientWindowRange.t0_max ) {
     XLALPrintError ("%s: t0_min (%f) must be before t0_max (%f).\n", cfg->transientWindowRange.t0_min, cfg->transientWindowRange.t0_max );

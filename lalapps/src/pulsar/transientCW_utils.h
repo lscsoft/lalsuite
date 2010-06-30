@@ -81,8 +81,8 @@ typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   REAL8 fullFstat;			/**< 2F obtained in the full search over all SFTs */
   REAL8 maxFstat;			/**< maximal 2F value obtained over transientWindowRange */
-  UINT4 maxt0;				/**< start-time of max{2F} over transientWindowRange (in GPS seconds)*/
-  UINT4 maxtau;				/**< duration of max{2F} over transientWindowRange (in seconds) */
+  UINT4 t0_maxF;			/**< start-time of max{2F} over transientWindowRange (in GPS seconds)*/
+  UINT4 tau_maxF;			/**< duration of max{2F} over transientWindowRange (in seconds) */
   REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
 } TransientCandidate_t;
 
@@ -101,7 +101,7 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTrans
 /* ---------- Fstat-atoms related functions ----------*/
 int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-REAL8 XLALComputeTransientBstat ( const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
+int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
 FstatAtomVector *XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms );
 
 #ifdef  __cplusplus
