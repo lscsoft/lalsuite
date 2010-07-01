@@ -1525,7 +1525,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
         for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
-          pValues[j]->data->data[i - numPoints/4] = 0;
+          pValues[j]->data->data[i - numPoints/4] = pValsTemp[j];
         } 
         // This loop verifies that the SNR obtained is as before
         recSNR = 0;
@@ -1550,13 +1550,14 @@ void cohPTFmodBasesUnconstrainedStatistic(
         gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
   
         // The p Values need to be rotated back into the original frame.
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
+        // Currently we are recording values in rotated frame
+/*        for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           for ( k = 0 ; k < vecLengthTwo ; k++ )
           {
             pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
           }
-        }
+        }*/
  
         // And we check that this still gives the expected SNR in the
         // unrotated basis.
@@ -1704,10 +1705,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
               if (snrCompsIter < 6)
               {
                 snrComps[snrCompsIter]->data->data[i-numPoints/4]=max_eigen;
-                fprintf(stderr,"%e %e \n",max_eigen,snrComps[snrCompsIter]->data->data[i-numPoints/4]);
                 snrCompsIter += 1;
               }
-              fprintf(stderr,"%e %e %d %d \n",max_eigen,snrComps[snrCompsIter-1]->data->data[i-numPoints/4],k,n);
             }
           }
           }
@@ -1879,13 +1878,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
           if (params->doBankVeto)
           {
             if (bankVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4],6./5.)/2.),1./6.);
+              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),6./5.))/2.,1./6.);
           }
 
           if (params->doAutoVeto)
           {
             if (autoVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4],1.5)/2.),1./6.);
+              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),1.5))/2.,1./6.);
           } 
 
           if (bestNR > params->chiSquareCalcThreshold)
