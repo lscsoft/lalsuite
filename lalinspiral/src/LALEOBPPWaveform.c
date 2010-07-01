@@ -115,6 +115,9 @@ at the last stable orbit. It is recommended that a rather generous
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
+#include <lal/LALComplex.h>
+
+#include <gsl/gsl_sf_gamma.h>
 
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
@@ -166,11 +169,15 @@ static
 void LALHCapDerivativesP4PN(     REAL8Vector     *values,
                                  REAL8Vector     *dvalues,
                                 void            *funcParams);
-#if 0
+static
+REAL8 XLALCalculateEOBA( REAL8Vector		*values,
+                         InspiralDerivativesIn	*ak);
+static
+REAL8 XLALCalculateEOBD( REAL8Vector		*values,
+                         InspiralDerivativesIn	*ak);
 static
 REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
                                 InspiralDerivativesIn *ak);
-#endif
 static
 void LALprInitP4PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
 
@@ -185,14 +192,15 @@ void LALrOfOmegaP4PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
 
 static
 void LALvrP4PN(REAL8 *vr, void *params);
-#if 0
+
 static
-COMPLEX8 XLALGetFactorizedWaveform( REAL8Vector           *values,
-                                    InspiralDerivativesIn *ak,
+INT4 XLALGetFactorizedWaveform( COMPLEX16	*hlm,
+				REAL8Vector           *values,
+                                    REAL8Vector           *dvalues,
+				    InspiralDerivativesIn *ak,
                                     const INT4            l,
                                     const INT4            m
                                   );
-#endif
 static void
 LALEOBPPWaveformEngine (
                 LALStatus        *status,
@@ -211,11 +219,462 @@ NRCSID (LALEOBPPWAVEFORMC,
 "$Id$");
 
 
+static
+INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
+				REAL8Vector           *values,
+				REAL8Vector		  *dvalues,
+                                InspiralDerivativesIn *ak,
+                                const INT4            l,
+                                const INT4            m
+                                )
+{
+	static const char func[] = "XLALGetFactorizedWaveform";
+	
+	REAL8 eta, eta2, eta3, dM, chiS, chiA, a, a2, a3;
+	REAL8 pp, Omega, v, v2, vh, vh3, k, hathatk, eulerlogxabs;
+	REAL8 Hreal, Heff, Slm, deltalm, rholm;
+	COMPLEX16 Tlm;
+	int   gslStatus;
+	gsl_sf_result lnr1, arg1, lnr2, arg2;
+
+	if ( abs(m) > (INT4) l )
+	{
+	  XLAL_ERROR( func, XLAL_EINVAL );
+	}
+	
+	eta	= ak->coeffs->eta;
+	eta2	= eta * eta;
+	eta3	= eta * eta2;
+	dM	= sqrt(1 - 4*eta);
+	
+	chiS	= 0.0;
+	chiA	= 0.0;
+	a	= 0.0;
+	a2	= a * a;
+	a3	= a * a2;
+
+	pp	= values -> data[3];
+
+	Heff	= XLALEffectiveHamiltonian( values, ak ); 
+	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
+	Omega	= dvalues -> data[1];
+	v	= pow( Omega, 1./3.);
+	v2	= v * v;
+	vh	= pow( Hreal * Omega, 1./3.);
+	vh3	= vh * vh * vh;
+	eulerlogxabs = LAL_GAMMA + log( 2*m ) + log( v );
+	
+	if ( ( (l+m)%2 ) == 0)
+	{ 
+	  Slm = Heff;
+	}
+	else
+	{
+	  Slm = v * pp;
+	}
+	
+	k	= m * Omega;
+	hathatk = Hreal * k;
+	XLAL_CALLGSL( gslStatus = gsl_sf_lngamma_complex_e( l+1.0, -2.0*hathatk, &lnr1, &arg1 ) );
+	if (gslStatus != GSL_SUCCESS)
+	{
+	  XLALPrintError("Error in GSL function\n" );
+	  XLAL_ERROR( func, XLAL_EFUNC );
+	}
+	XLAL_CALLGSL( gslStatus = gsl_sf_lngamma_complex_e( l+1.0, -2.0*hathatk, &lnr2, &arg2 ) );
+	if (gslStatus != GSL_SUCCESS)
+	{
+	  XLALPrintError("Error in GSL function\n" );
+	  XLAL_ERROR( func, XLAL_EFUNC );
+	}
+	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val - lnr2.val + LAL_PI * hathatk, 
+				arg1.val - arg2.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
+
+	switch( l )
+	{
+	  case 2:
+	    switch( m )
+	    {
+	      case 2:
+	        deltalm = vh3*(7./3. + vh3*((-4*a)/3. + (428*LAL_PI)/105. 
+			+ vh*vh*((20*a)/63. + (-2203./81. + (1712*LAL_PI*LAL_PI)/315.)*vh))) 
+			- 24*eta*v*v2*v2;
+		rholm	= 1 + v2*(-43./42. + (55*eta)/84. + v*((-2*(chiS + chiA*dM 
+			- chiS*eta))/3. + v*(-20555./10584. + (chiS*chiS + 2*chiA*chiS*dM 
+			+ chiA*chiA*(1 - 4*eta))/2. - (33025*eta)/21168. + (19583*eta2)/42336. 
+			+ v*((-34*a)/21. + v*(1556919113./122245200. + (89*a2)/252. 
+			- (48993925*eta)/9779616. - (6292061*eta2)/3259872. 
+			+ (10620745*eta3)/39118464. - (428*eulerlogxabs)/105. 
+			+ (41*eta*LAL_PI*LAL_PI)/192. + v*((18733*a)/15876. + a*a2/3. 
+			+ v*(-387216563023./160190110080. + (18353*a2)/21168. - a2*a2/8. 
+			+ (9202*eulerlogxabs)/2205. + (-16094530514677./533967033600. 
+			+ (439877*eulerlogxabs)/55566.)*v2)))))));
+	        break;
+	      case 1:
+	        deltalm = vh3*(2./3. + vh3*((-17*a)/35. + (107*LAL_PI)/105. 
+			+ vh*((3*a2)/140. + (-272./81. + (214*LAL_PI*LAL_PI)/315.)*vh*vh))) 
+			- (493*eta*v*v2*v2)/42.;
+		rholm	= 1 + v*((-3*(chiA + chiS*dM))/(4.*dM) 
+			+ v*(-59./56 - (9*pow(chiA + chiS*dM,2))/(32.*(1 - 4*eta)) 
+			+ (23*eta)/84. + v*((-567*chiA*chiA*chiA - 1701*chiA*chiA*chiS*dM 
+			+ chiA*(-4708 + 1701*chiS*chiS - 2648*eta)*(-1 + 4*eta) 
+			+ chiS*pow(1 - 4*eta,1.5)*(4708 - 567*chiS*chiS 
+			+ 1816*eta))/(2688.*pow(1 - 4*eta,1.5)) + v*(-47009./56448. 
+			- (865*a2)/1792. - (405*a2*a2)/2048. - (10993*eta)/14112. 
+			+ (617*eta2)/4704. + v*((-98635*a)/75264. + (2031*a*a2)/7168. 
+			- (1701*a2*a3)/8192. + v*(7613184941./2607897600. 
+			+ (9032393*a2)/1806336. + (3897*a2*a2)/16384. 
+			- (15309*a3*a3)/65536. - (107*eulerlogxabs)/105. 
+			+ v*((-3859374457*a)/1159065600. - (55169*a3)/16384. 
+			+ (18603*a2*a3)/65536. - (72171*a2*a2*a3)/262144. 
+			+ (107*a*eulerlogxabs)/140. + v*(-1168617463883./911303737344. 
+			+ (6313*eulerlogxabs)/5880. + (-63735873771463./16569158860800. 
+			+ (5029963*eulerlogxabs)/5927040.)*v2))))))));
+	        break;
+	      /* default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 3:
+	    switch (m)
+	    {
+	      case 3:
+	        deltalm = vh3*(13./10. + vh3*((-81*a)/20. + (39*LAL_PI)/7. + (-227827./3000. 
+			+ (78*LAL_PI*LAL_PI)/7.)*vh3)) - (80897*eta*v*v2*v2)/2430.;
+		rholm	= 1 + v2*(-7./6. + (2*eta)/3. + v*((chiS*dM*(-4 + 5*eta) 
+			+ chiA*(-4 + 19*eta))/(6.*dM) + v*(-6719./3960. + a2/2. 
+			- (1861*eta)/990. + (149*eta2)/330. + v*((-4*a)/3. 
+			+ v*(3203101567./227026800. + (5*a2)/36. - (26*eulerlogxabs)/7. 
+			+ v*((5297*a)/2970. + a*a2/3. + (-57566572157./8562153600. 
+			+ (13*eulerlogxabs)/3.)*v))))));
+	        break;
+	      case 2:
+		deltalm = vh3*((10 + 33*eta)/(15.*(1 - 3*eta)) + vh*(4*a + vh*vh*((-136.*a)/45. 
+			+ (52.*LAL_PI)/21. + (-9112./405. + (208.*LAL_PI*LAL_PI)/63.)*vh3)));
+		rholm	= 1 + v*((4*chiS*eta)/(3.*(1 - 3*eta)) 
+			+ v*((-4*a2*eta2)/(9.*(1.-3.*eta)*(1.-3.*eta)) + (328. - 1115.*eta 
+			+ 320.*eta2)/(270.*(-1 + 3*eta)) + v*((2*(45*a*pow(-1 + 3*eta,3) 
+			- a*eta*(328 - 2099*eta + 5*(733 + 20*a2)*eta2 
+			- 960*eta3)))/(405.*pow(-1 + 3*eta,3)) + v*(a2/3. + (-1444528. 
+			+ 8050045.*eta - 4725605.*eta2 - 20338960.*eta3 
+			+ 3085640.*eta2*eta2)/(1603800.*(1.-3.*eta)*(1.-3.*eta)) + v*((-2788*a)/1215. 
+			+ v*(5849948554./940355325. + (488*a2)/405. - (104*eulerlogxabs)/63. 
+			+ (-10607269449358./3072140846775. + (17056.*eulerlogxabs)/8505.)*v2))))));
+		break;
+	      case 1:
+		deltalm = vh3*(13./30. + vh3*((61*a)/20. + (13*LAL_PI)/21. 
+			+ vh*((-24*a2)/5. + (-227827./81000. + (26*LAL_PI*LAL_PI)/63.)*vh*vh))) 
+			- (17*eta*v*v2*v2)/10.;
+		rholm	= 1 + v2*(-13./18. - (2*eta)/9. + v*((chiA*(-4 + 11*eta) 
+			+ chiS*dM*(-4 + 13*eta))/(6.*dM) + v*(101./7128. 
+			- (5*a2)/6. - (1685*eta)/1782. - (829*eta2)/1782. + v*((4*a)/9. 
+			+ v*(11706720301./6129723600. - (49*a2)/108. - (26*eulerlogxabs)/63. 
+			+ v*((-2579*a)/5346. + a*a2/9. + (2606097992581./4854741091200. 
+			+ (169*eulerlogxabs)/567.)*v))))));
+		break;
+	      /* default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 4:
+	    switch (m)
+	    {
+	      case 4:
+	        deltalm = vh3*((112 + 219*eta)/(120.*(1 - 3*eta)) + ((-464*a)/75. 
+			+ (25136*LAL_PI)/3465.)*vh3);
+		rholm	= 1 + v2*((1614 - 5870*eta + 2625*eta2)/(1320.*(-1 + 3*eta)) 
+			+ v*((chiA*(10 - 39*eta)*dM + chiS*(10 - 41*eta 
+			+ 42*eta2))/(-15 + 45*eta) + v*(a2/2. + (-511573572 
+			+ 2338945704*eta - 313857376*eta2 - 6733146000*eta3 
+			+ 1252563795*eta2*eta2)/(317116800.*(1.-3.*eta)*(1.-3.*eta)) 
+			+ v*((-69*a)/55. + (16600939332793./1098809712000. + (217*a2)/3960. 
+			- (12568*eulerlogxabs)/3465.)*v))));
+	        break;
+	      case 3:
+	        deltalm = vh3*((486 + 4961*eta)/(810.*(1 - 2*eta)) + vh*((11*a)/4. 
+			+ (1571*LAL_PI*vh*vh)/385.));
+		rholm	= 1 + v*((5*(chiA - chiS*dM)*eta)/(8.*dM*(-1 + 2*eta)) 
+			+ v*((222 - 547*eta + 160*eta2)/(176.*(-1 + 2*eta)) 
+			+ v2*(-6894273./7047040. + (3*a2)/8. + v*((-12113*a)/6160. 
+			+ (1664224207351./195343948800. - (1571*eulerlogxabs)/770.)*v))));
+	        break;
+	      case 2:
+		deltalm = vh3*((7*(1 + 6*eta))/(15.*(1 - 3*eta)) + ((212*a)/75. 
+			+ (6284*LAL_PI)/3465.)*vh3);
+		rholm	= 1 + v2*((1146 - 3530*eta + 285*eta2)/(1320.*(-1 + 3*eta)) 
+			+ v*((chiA*(10 - 21*eta)*dM + chiS*(10 - 59*eta 
+			+ 78*eta2))/(-15 + 45*eta) + v*(a2/2. + (-114859044 
+			+ 295834536*eta + 1204388696*eta2 - 3047981160*eta3 
+			- 379526805*eta2*eta2)/(317116800.*(1.-3.*eta)*(1.-3.*eta)) + v*((-7*a)/110. 
+			+ (848238724511./219761942400. + (2323*a2)/3960. 
+			- (3142*eulerlogxabs)/3465.)*v))));
+		break;
+	      case 1:
+		deltalm = vh3*((2 + 507*eta)/(10.*(1 - 2*eta)) + vh*((11*a)/12. 
+			+ (1571*LAL_PI*vh*vh)/3465.));
+		rholm	= 1 + v*((5*(chiA - chiS*dM)*eta)/(8.*dM*(-1 + 2*eta)) 
+			+ v*((602 - 1385*eta + 288*eta2)/(528.*(-1 + 2*eta)) 
+			+ v2*(-7775491./21141120. + (3*a2)/8. + v*((-20033*a)/55440. 
+			- (5*a*a2)/6. + (1227423222031./1758095539200. 
+			- (1571*eulerlogxabs)/6930.)*v))));
+		break;
+	      /* default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 5:
+	    switch (m)
+	    {
+	      case 5:
+	        deltalm = ((96875. + 857528.*eta)*vh3)/(131250.*(1 - 2*eta));
+		rholm	= 1 + v2*((487 - 1298*eta + 512*eta2)/(390.*(-1 + 2*eta)) 
+			+ v*((-2*a)/3. + v*(-3353747./2129400. + a2/2. - (241*a*v)/195.)));
+	        break;
+	      case 4:
+		deltalm = vh3*(8./15. + (12*a*vh)/5.);
+		rholm	= 1 + v2*((-17448 + 96019*eta - 127610*eta2 
+			+ 33320*eta3)/(13650.*(1 - 5*eta + 5*eta2)) + v*((-2*a)/15. 
+			+ (-16213384./15526875. + (2*a2)/5.)*v));
+		break;
+	      case 3:
+	        deltalm = (31*vh3)/70.;
+		rholm	= 1 + v2*((375 - 850*eta + 176*eta2)/(390.*(-1 + 2*eta)) 
+			+ v*((-2*a)/3. + v*(-410833./709800. + a2/2. - (103*a*v)/325.)));
+	        break;
+	      case 2:
+		deltalm = vh3*(4./15. + (6*a*vh)/5.);
+		rholm	= 1 + v2*((-15828 + 84679*eta - 104930*eta2 
+			+ 21980*eta3)/(13650.*(1 - 5*eta + 5*eta2)) + v*((-2*a)/15. 
+			+ (-7187914./15526875. + (2*a2)/5.)*v));
+		break;
+	      case 1:
+		deltalm = (31*vh3)/210.;
+		rholm	= 1 + v2*((319 - 626*eta + 8*eta2)/(390.*(-1 + 2*eta)) 
+			+ v*((-2*a)/3. + v*(-31877./304200. + a2/2. + (139*a*v)/975.)));
+		break;
+	      /* default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 6:
+	    switch (m)
+	    {
+	      case 6:
+	        deltalm = (43*vh3)/70.;
+		rholm	= 1 + v2*((-106 + 602*eta - 861*eta2 
+			+ 273*eta3)/(84.*(1 - 5*eta + 5*eta2)) + v*((-2*a)/3. 
+			+ (-1025435./659736. + a2/2.)*v));
+	        break;
+	      case 5:
+		deltalm = (10*vh3)/21.;
+		rholm	= 1 + v2*((-185 + 838*eta - 910*eta2 
+			+ 220*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+		break;
+	      case 4:
+		deltalm = (43*vh3)/105.;
+		rholm	= 1 + v2*((-86 + 462*eta - 581*eta2 
+			+ 133*eta3)/(84.*(1 - 5*eta + 5*eta2)) + v*((-2*a)/3. 
+			+ (-476887./659736. + a2/2.)*v));
+		break;
+	      case 3:
+	        deltalm = (2*vh3)/7.;
+		rholm	= 1 + v2*((-169 + 742*eta - 750*eta2 
+			+ 156*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+	        break;
+	      case 2:
+		deltalm = (43*vh3)/210.;
+		rholm	= 1 + v2*((-74 + 378*eta - 413*eta2 
+			+ 49*eta3)/(84.*(1 - 5*eta + 5*eta2)) + v*((-2*a)/3. 
+			+ (-817991./3298680. + a2/2.)*v));
+		break;
+	      case 1:
+		deltalm = (2*vh3)/21.;
+		rholm	= 1 + v2*((-161 + 694*eta - 670*eta2 
+			+ 124*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+		break;
+	      /* default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 7:
+	    switch (m)
+	    {
+	      case 7:
+	        deltalm = (19*vh3)/36.;
+		rholm	= 1 + v2*((-906 + 4246*eta - 4963*eta2 
+			+ 1380*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+	        break;
+	      case 6:
+	        deltalm = 0.0;
+		rholm	= 1 + ((2144 - 16185*eta + 37828*eta2 - 29351*eta3 
+			+ 6104*eta2*eta2)*v2)/(1666.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+	        break;
+	      case 5:
+		deltalm = (95*vh3)/252.;
+		rholm	= 1 + v2*((-762 + 3382*eta - 3523*eta2 
+			+ 804*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+		break;
+	      case 4:
+		deltalm = 0.0;
+		rholm	= 1 + ((17756 - 131805*eta + 298872*eta2 - 217959*eta3 
+			+ 41076*eta2*eta2)*v2)/(14994.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+		break;
+	      case 3:
+	        deltalm = (19*vh3)/84.;
+		rholm	= 1 + v2*((-666 + 2806*eta - 2563*eta2 
+			+ 420*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+	        break;
+	      case 2:
+		deltalm = 0.0;
+		rholm	= 1 + ((16832 - 123489*eta + 273924*eta2 - 190239*eta3 
+			+ 32760*eta2*eta2)*v2)/(14994.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+		break;
+	      case 1:
+		deltalm = (19*vh3)/252.;
+		rholm	= 1 + v2*((-618 + 2518*eta - 2083*eta2 
+			+ 228*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+		break;
+	      /*default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  case 8:
+	    switch (m)
+	    {
+	      case 8:
+	        deltalm = 0.0;
+		rholm	= 1 + ((3482 - 26778*eta + 64659*eta2 - 53445*eta3 
+			+ 12243*eta2*eta2)*v2)/(2736.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+	        break;
+	      case 7:
+		deltalm = 0.0;
+		rholm	= 1 + ((23478 - 154099*eta + 309498*eta2 - 207550*eta3 
+			+ 38920*eta2*eta2)*v2)/(18240.*(-1 + 6*eta - 10*eta2 
+			+ 4*eta3));
+		break;
+	      case 6:
+	        deltalm = 0.0;
+		rholm	= 1 + ((1002 - 7498*eta + 17269*eta2 - 13055*eta3 
+			+ 2653*eta2*eta2)*v2)/(912.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+	        break;
+	      case 5:
+		deltalm = 0.0;
+		rholm	= 1 + ((4350 - 28055*eta + 54642*eta2 - 34598*eta3 
+			+ 6056*eta2*eta2)*v2)/(3648.*(-1 + 6*eta - 10*eta2 
+			+ 4*eta3));
+		break;
+	      case 4:
+		deltalm = 0.0;
+		rholm	= 1 + ((2666 - 19434*eta + 42627*eta2 - 28965*eta3 
+			+ 4899*eta2*eta2)*v2)/(2736.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+		break;
+	      case 3:
+	        deltalm = 0.0;
+		rholm	= 1 + ((20598 - 131059*eta + 249018*eta2 - 149950*eta3 
+			+ 24520*eta2*eta2)*v2)/(18240.*(-1 + 6*eta - 10*eta2 
+			+ 4*eta3));
+	        break;
+	      case 2:
+		deltalm = 0.0;
+		rholm	= 1 + ((2462 - 17598*eta + 37119*eta2 - 22845*eta3 
+			+ 3063*eta2*eta2)*v2)/(2736.*(-1 + 7*eta - 14*eta2 
+			+ 7*eta3));
+		break;
+	      case 1:
+		deltalm = 0.0;
+		rholm	= 1 + ((20022 - 126451*eta + 236922*eta2 - 138430*eta3 
+			+ 21640*eta2*eta2)*v2)/(18240.*(-1 + 6*eta - 10*eta2 
+			+ 4*eta3));
+		break;
+	      /*default:
+		 error message ( m<1 or m>l ) */
+	    }
+	    break;
+	  /*default:
+	     error message ( l>8 ) */
+	}
+
+	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
+				     Slm*pow(rholm,l) );
+	return XLAL_SUCCESS;
+}
+
+static
 REAL8 XLALCalculateA5( REAL8 eta )
 {
   return -12.9499 + 204.779 * eta - 206.319 *eta*eta;
 }
 
+static
+REAL8 XLALCalculateEOBA( REAL8Vector		*values,
+                         InspiralDerivativesIn	*ak)
+{
+	REAL8 eta, eta2, r, u, u2, u3, u4, a4, a5, NA, DA;
+
+   	eta = ak->coeffs->eta;
+   	r   = values->data[0];
+
+	eta2 = eta*eta;
+	u = 1./r;
+	u2 = u*u;
+	u3 = u2*u;
+	u4 = u2*u2;
+	a4 = ninty4by3etc * eta;
+	a5 = XLALCalculateA5( eta );
+	NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+	DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+	   - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+	   + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
+	
+	return NA/DA;	
+}
+
+static
+REAL8 XLALCalculateEOBD( REAL8Vector		*values,
+                         InspiralDerivativesIn	*ak)
+{
+	REAL8 eta, r, u, u2, u3;
+
+   	eta = ak->coeffs->eta;
+   	r   = values->data[0];
+
+	u = 1./r;
+	u2 = u*u;
+	u3 = u2*u;
+	
+	return 1./(1.+6.*eta*u2+2.*eta*(26.-3.*eta)*u3);	
+}
+
+static
+REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
+                                InspiralDerivativesIn *ak)
+{
+	REAL8 eta, r, phi, pr, pp, r2, pr2, pp2, z3, eoba, eobd;
+
+   	eta = ak->coeffs->eta;
+
+   	r   = values->data[0];
+   	phi = values->data[1];
+   	pr  = values->data[2];
+   	pp  = values->data[3];
+
+	r2   = r * r;
+	pr2  = pr * pr;
+	pp2  = pp * pp;
+	
+	eoba = XLALCalculateEOBA( values, ak );
+	eobd = XLALCalculateEOBD( values, ak );
+	z3   = 2. * ( 4. - 3. * eta ) * eta;
+	return sqrt( eoba * ( 1. + eoba/eobd*pr2 + pp2/r2 + z3*pr2*pr2/r2 ) );	
+}
+
+static
   void
 LALpphiInit3PN(
 	    REAL8 *phase,
