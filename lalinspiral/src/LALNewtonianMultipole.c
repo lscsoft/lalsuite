@@ -17,9 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/* Author: Craig Robinson */
 
 /**
+ * \author Craig Robinson
+ *
  * Functions to construct the Newtonian multipolar waveform as given
  * by Damour et al, Phys.Rev.D79:064004,2009.
  *
