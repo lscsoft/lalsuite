@@ -249,39 +249,6 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
 } /* XLALApplyTransientWindow2NoiseWeights() */
 
 
-
-
-int
-XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms )
-{
-  const char *fn = __func__;
-  UINT4 X, alpha;
-
-  if ( !fp || !multiAtoms )
-    XLAL_ERROR (fn, XLAL_EINVAL );
-
-  fprintf ( fp, "%% GPS[s]              a^2(t_i)     b^2(t_i)   ab(t_i)         Fa(t_i)                 Fb(t_i)\n");
-
-  for ( X=0; X < multiAtoms->length; X++ )
-    {
-      FstatAtomVector *thisAtomVector = multiAtoms->data[X];
-      for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
-	{
-          FstatAtom *thisAtom = &thisAtomVector->data[alpha];
-	  fprintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
-		    thisAtom->timestamp,
-		    thisAtom->a2_alpha,
-		    thisAtom->b2_alpha,
-		    thisAtom->ab_alpha,
-		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
-		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
-		    );
-	} /* for alpha < numSFTs */
-    } /* for X < numDet */
-
-  return XLAL_SUCCESS;
-} /* XLALoutputMultiFstatAtoms() */
-
 /** Turn pulsar doppler-params into a single string that can be used for filenames
  * The format is
  * tRefNNNNNN_RAXXXXX_DECXXXXXX_FreqXXXXX[_f1dotXXXXX][_f2dotXXXXx][_f3dotXXXXX]
@@ -517,31 +484,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
 } /* XLALComputeTransientBstat() */
 
-/** Write one line for given transient CW candidate into output file.
- * If input candidate == NULL, write a header comment-line explaining fields
- */
-int
-write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand )
-{
-  if ( !fp )
-    return -1;
-
-  if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_Fmax   tau_Fmax      2F_max     logBstat\n");
-  else
-    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %9d  %9d  %11.9g  %11.9g\n",
-             thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
-             thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-             thisCand->fullFstat,
-             thisCand->t0_maxF, thisCand->tau_maxF, thisCand->maxFstat,
-             thisCand->logBstat
-             );
-
-  return XLAL_SUCCESS;
-
-} /* write_TransCandidate_to_fp() */
-
-
 
 /** Combine N Fstat-atoms vectors into a single one, with timestamps ordered by increasing GPS time,
  * Atoms with identical timestamp are immediately merged into one, so the final timestamps list only
@@ -662,3 +604,68 @@ compareAtoms(const void *in1, const void *in2)
     return 1;
 
 } /* compareAtoms() */
+
+/** Write one line for given transient CW candidate into output file.
+ * Note: if input candidate == NULL, write a header comment-line explaining fields
+ */
+int
+write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand )
+{
+  const char *fn = __func__;
+
+  if ( !fp ) {
+    XLALPrintError ( "%s: invalid NULL filepointer input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  if ( thisCand == NULL )	/* write header-line comment */
+    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_Fmax   tau_Fmax      2F_max     logBstat\n");
+  else
+    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %9d  %9d  %11.9g  %11.9g\n",
+             thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+             thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
+             thisCand->fullFstat,
+             thisCand->t0_maxF, thisCand->tau_maxF, thisCand->maxFstat,
+             thisCand->logBstat
+             );
+
+  return XLAL_SUCCESS;
+
+} /* write_TransCandidate_to_fp() */
+
+/** Write multi-IFO F-stat atoms 'multiAtoms' into output stream 'fstat'.
+ */
+int
+write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
+{
+  const char *fn = __func__;
+  UINT4 X, alpha;
+
+  if ( !fp || !multiAtoms ) {
+    XLALPrintError ( "%s: invalid NULL input.\n", fn );
+    XLAL_ERROR (fn, XLAL_EINVAL );
+  }
+
+  fprintf ( fp, "%%%% GPS[s]     a^2(t_i)   b^2(t_i)  ab(t_i)            Fa(t_i)                  Fb(t_i)\n");
+
+  for ( X=0; X < multiAtoms->length; X++ )
+    {
+      FstatAtomVector *thisAtomVector = multiAtoms->data[X];
+      for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
+	{
+          FstatAtom *thisAtom = &thisAtomVector->data[alpha];
+	  fprintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
+		    thisAtom->timestamp,
+		    thisAtom->a2_alpha,
+		    thisAtom->b2_alpha,
+		    thisAtom->ab_alpha,
+		    thisAtom->Fa_alpha.re, thisAtom->Fa_alpha.im,
+		    thisAtom->Fb_alpha.re, thisAtom->Fb_alpha.im
+		    );
+	} /* for alpha < numSFTs */
+    } /* for X < numDet */
+
+  return XLAL_SUCCESS;
+
+} /* write_MultiFstatAtoms_to_fp() */
+
