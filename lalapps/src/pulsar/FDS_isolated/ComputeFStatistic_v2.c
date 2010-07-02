@@ -987,8 +987,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
   LALregINTUserStruct (status, transientMinStartTime,  0, UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization");
   LALregINTUserStruct (status, transientMaxStartTime,  0, UVAR_OPTIONAL, "Latest GPS start-time for transient window marginalization");
-  LALregREALUserStruct(status, transientMinTauDays,    0, UVAR_OPTIONAL, "Smallest transient window length for marginalization in days");
-  LALregREALUserStruct(status, transientMaxTauDays,    0, UVAR_OPTIONAL, "Largest transient window length for marginalization in days");
+  LALregREALUserStruct(status, transientMinTauDays,    0, UVAR_OPTIONAL, "Shortest transient-window timescale for marginalization in days");
+  LALregREALUserStruct(status, transientMaxTauDays,    0, UVAR_OPTIONAL, "Longest transient-window timescale for marginalization in days");
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
@@ -1441,12 +1441,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->transientWindowRange.tau_max  = uvar->transientMaxTauDays * DAY24;
 
   if (   cfg->transientWindowRange.t0_min >  cfg->transientWindowRange.t0_max ) {
-    XLALPrintError ("%s: t0_min (%f) must be before t0_max (%f).\n", cfg->transientWindowRange.t0_min, cfg->transientWindowRange.t0_max );
+    XLALPrintError ("%s: t0_min (%d) must be before t0_max (%d).\n", fn, cfg->transientWindowRange.t0_min, cfg->transientWindowRange.t0_max );
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
 
   if (   cfg->transientWindowRange.tau_min >  cfg->transientWindowRange.tau_max ) {
-    XLALPrintError ("%s: tau_min (%f) must be before tau_max (%f).\n", cfg->transientWindowRange.tau_min, cfg->transientWindowRange.tau_max );
+    XLALPrintError ("%s: tau_min (%f d) must not be larger than tau_max (%f d).\n", fn, uvar->transientMinTauDays, uvar->transientMaxTauDays );
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
 
