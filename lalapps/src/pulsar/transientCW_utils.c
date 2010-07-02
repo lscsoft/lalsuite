@@ -376,7 +376,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   }
 
   UINT4 i_max = i_min;
-  while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp < t0_max) )
+  while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp <= t0_max) )
     i_max ++;
   if ( i_max > 0 ) i_max --;	/* we want last timestamp that still satifies t_max <= t0_max */
 
@@ -405,6 +405,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 i;
   REAL8 norm = 1.0 / SQ(LAL_TWOPI);
 
+  printf ("Freg = [ ");
   for ( i = i_min; i <= i_max; i ++ )
     {
       UINT4 t0_i = atoms->data[i].timestamp;
@@ -450,6 +451,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
               /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
               regFList[counter] = - log( Dd ) + 0.5 * twoF;
+              printf ("%s%.16g", counter>0 ? ", ":" ", regFList[counter] );
               counter ++;
 
               if ( counter > maxNumSummands ) {
@@ -464,6 +466,8 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
         } /* j < numAtoms */
 
     } /* for i in [i_min, i_max] */
+
+  printf (" ];\n size=%d", counter );
 
   UINT4 numSummands = counter;
   /* now step through list of FReg_ij, subtract maxFstat and sum e^{FReg - Fmax}*/
