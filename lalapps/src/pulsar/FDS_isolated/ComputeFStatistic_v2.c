@@ -652,15 +652,18 @@ int main(int argc,char *argv[])
 
 	  if ( (fpFstatAtoms = fopen (fnameAtoms, "wb")) == NULL)
 	    {
-	      XLALPrintError ("\nError opening file '%s' for writing..\n\n", fnameAtoms );
-	      return (COMPUTEFSTATISTIC_ESYS);
+	      XLALPrintError ("\n%s: Error opening file '%s' for writing..\n\n", fn, fnameAtoms );
+	      return COMPUTEFSTATISTIC_ESYS;
 	    }
 	  LALFree ( fnameAtoms );
 	  LALFree ( dopplerName );
 
 	  fprintf (fpFstatAtoms, "%s", GV.logstring );
 
-	  XLALoutputMultiFstatAtoms ( fpFstatAtoms, Fstat.multiFstatAtoms );
+	  if ( write_MultiFstatAtoms_to_fp ( fpFstatAtoms, Fstat.multiFstatAtoms ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: failed to write atoms to output file. xlalErrno = %d\n", fn, xlalErrno );
+            return COMPUTEFSTATISTIC_ESYS;
+          }
 
 	  fclose (fpFstatAtoms);
 
@@ -797,12 +800,12 @@ int main(int argc,char *argv[])
 
   /* free memory allocated for binary parameters */
   if (orbitalParams) LALFree(orbitalParams);
-  
+
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
     gsl_vector_int_free(Fstat_histogram);
-  
+
   /* close log-file */
   if (fpLogPrintf) {
     fclose(fpLogPrintf);

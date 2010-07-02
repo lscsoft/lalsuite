@@ -95,13 +95,14 @@ int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t Transi
 int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
-int
-write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
+
+int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
+
+int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
 
 /* ---------- Fstat-atoms related functions ----------*/
-int XLALoutputMultiFstatAtoms ( FILE *fp, MultiFstatAtomVector *multiAtoms );
+int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
 FstatAtomVector *XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms );
 
 #ifdef  __cplusplus
