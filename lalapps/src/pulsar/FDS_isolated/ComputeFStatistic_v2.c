@@ -669,8 +669,8 @@ int main(int argc,char *argv[])
 
 	} /* if outputFstatAtoms */
 
-
-      if ( GV.transientWindowRange.type != TRANSIENT_NONE )
+      /* ----- compute transient-CW statistics if their output was requested  ----- */
+      if ( fpTransientStats )
         {
           TransientCandidate_t transientCand;
 
@@ -684,14 +684,12 @@ int main(int argc,char *argv[])
           if ( uvar.SignalOnly )
             transientCand.maxFstat += 4;
 
-          if ( fpTransientStats ) {
-            if ( write_TransientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
-              XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );
-              return COMPUTEFSTATISTIC_EXLAL;
-            }
-          } /* if fpTransientStats */
+          if ( write_TransientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );
+            return COMPUTEFSTATISTIC_EXLAL;
+          }
 
-        } /* if transientBstat */
+        } /* if fpTransientStats */
 
       /* free Fstat-atoms if we have any */
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
@@ -1453,8 +1451,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
 
-  /* get atoms back from Fstat-computing, either if output requested, of if we compute transient B-stat */
-  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( cfg->transientWindowRange.type != TRANSIENT_NONE );
+  /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
+  cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
