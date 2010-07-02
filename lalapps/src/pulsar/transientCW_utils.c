@@ -382,11 +382,11 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
    * instead we first determine max{F_ij}, then compute the logB = log ( e^Fmax * sum_{ij} 1/Dij * e^{Fij - Fmax} )
-   * which is logB = Fmax + log( sum_{ij} e^Freg_ij ), where Freg_ij = -log(Dij) + Fij - Fmax.
+   * which is logB = Fmax + log( sum_{ij} e^FReg_ij ), where FReg_ij = -log(Dij) + Fij - Fmax.
    * This avoids numerical problems.
    *
-   * As we don't know Fmax before having computed the full ij matrix F_ij, we keep a list of
-   * 'regularized' F-stats Freg_ij over field of {t0, tau} values.
+   * As we don't know Fmax before having computed the full matrix F_ij, we keep a list of
+   * 'regularized' F-stats FReg_ij over the field of {t0, tau} values.
    * As we don't know exactly the size of that matrix (because of possible gaps in the data),
    *  we use the maximal (conservative) estimate of that size t0Range* tauRange elements
    */
@@ -449,7 +449,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                 }
 
               /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
-              regFList[counter] = - log( Dd ) + twoF;
+              regFList[counter] = - log( Dd ) + 0.5 * twoF;
               counter ++;
 
               if ( counter > maxNumSummands ) {
@@ -466,13 +466,13 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     } /* for i in [i_min, i_max] */
 
   UINT4 numSummands = counter;
-  /* now step through list of Freg_ij, subtract maxFstat and sum e^{Freg - Fmax}*/
+  /* now step through list of FReg_ij, subtract maxFstat and sum e^{FReg - Fmax}*/
   REAL8 sum_eB = 0;
   for ( i=0; i < numSummands; i ++ )
-    sum_eB += exp ( regFList[i] - ret.maxFstat );
+    sum_eB += exp ( regFList[i] - 0.5 * ret.maxFstat );
 
   /* combine this to final log(Bstat) result: */
-  ret.logBstat = ret.maxFstat + 2.0 * log ( deltaT ) + log ( sum_eB );
+  ret.logBstat = 0.5 * ret.maxFstat + 2.0 * log ( deltaT ) + log ( sum_eB );
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
