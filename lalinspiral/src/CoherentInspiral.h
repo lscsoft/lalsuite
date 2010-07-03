@@ -452,7 +452,6 @@ XLALCoherentInspiralFilterSegment (
     const SkyGrid                         *skyGridPtr,
     REAL4                                 chisq[4],
     REAL4                                 chisq_dof[4],
-    REAL8                                 snrsqthinca[4],
     REAL4                                 eff_snr_denom_fac,
     REAL4                                 nullStatRegul
     );

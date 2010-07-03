@@ -99,7 +99,8 @@ MOSTLYCLEANFILES = \
 	.dvi-dep \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \
-	SegmentsOutput1.data
+	SegmentsOutput1.data \
+	ConfigFile.cfg
 
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

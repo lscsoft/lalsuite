@@ -1341,7 +1341,7 @@ LALWriteSFT2file (LALStatus *status,
   ASSERT ( sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-
+ 
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
@@ -3315,6 +3315,8 @@ is_valid_detector (const char *channel)
       "Z7",	  /* LISA pseudo TDI A */
       "Z8",	  /* LISA pseudo TDI E */
       "Z9",	  /* LISA pseudo TDI T */
+      "X1",       /* RXTE PCA */
+      "X2",       /* RXTE ASM */
       NULL
     };
 

@@ -322,7 +322,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 
     i=0;
     while (i<cellEvolution.nTemplate){
-      if (cells[i].status == Edge){
+      if (cells[i].position == Edge){
 	edge1 = i;
 	cells[i].status = In;
 	i=cellEvolution.nTemplate;
@@ -331,7 +331,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     }
     i=0;
     while (i<cellEvolution.nTemplate){
-      if (cells[i].status == Edge){
+      if (cells[i].position == Edge){
 	edge2=i;
 	cells[i].status = In;
 	i=cellEvolution.nTemplate;

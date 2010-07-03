@@ -1,4 +1,5 @@
 /*
+* Copyright (C) 2010 Reinhard Prix
 *  Copyright (C) 2007 Jolien Creighton, Reinhard Prix
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -17,102 +18,183 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="UserInputTestCV">
-Author: Reinhard Prix
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Program \texttt{UserInputTest.c}}
-\label{s:UserInputTest.c}
-
-Tests the routines in \verb@UserInput.h@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-UserInputTest
-\end{verbatim}
-
-\subsubsection*{Description}
-
-Do some standard-tests for the config-file reading routines. No
-extensive error-condition checking is done here, we only check if the
-basic functionality works.
-
-\subsubsection*{Exit codes}
-
-\input{UserInputErrors}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{UserInputTestCV}}
-
-</lalLaTeX> */
-
 #include <lal/UserInput.h>
-
-NRCSID (USERINPUTTESTC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="UserInputErrors"> */
 #define USERINPUTTESTC_ENORM 		0
-
 #define USERINPUTTESTC_MSGENORM 	"Normal exit"
-
-/******************************************** </lalErrTable> */
 
 
 /* Default parameters. */
-
 INT4 lalDebugLevel=3;
 
-
-/*********************************************************************/
-/* Macros for printing errors & testing subroutines (from Creighton) */
-/*********************************************************************/
-
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, USERINPUTTESTC, statement ? statement :  \
-                   "", (msg) );                                      \
-} while (0)
-
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              USERINPUTTESTC, (statement) );                     \
-} while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( USERINPUTTESTC_ESUB, USERINPUTTESTC_MSGESUB,      \
-           "Function call \"" #func "\" failed:" );                  \
-    return USERINPUTTESTC_ESUB;                                  \
-  }                                                                  \
-} while (0)
-/******************************************************************/
-
-int main(int argc, char *argv[])
+typedef struct
 {
+  REAL8 argNum;
+  CHAR * argStr;
+  BOOLEAN argBool;
+  INT4 argInt;
+  BOOLEAN argB2;
+  CHAR *string2;	// will be read from config-file
+  INT4 dummy;
+} UserInput_t;
 
-  /* EMPTY STUB */
-/*
-  printf ("User said: %d arguments, which are %s %s %s ...\n", argc, argv[0], argv[1], argv[2]);
-*/
-  argc = 0; argv = NULL;
+UserInput_t empty_UserInput_t;
+#define TESTSTRING "this is also possible, and # here does nothing "
+
+const char *cfgfile_content = \
+"## Some 'tough' tests for config-file reading routines\n"
+"# comment line\n"
+"float1 = 1.0    ; you can also comment using semi-colons\n"
+"\n"
+"string1 = some text.\\\n"
+"	You can also use\\\n"
+"	line-continuation\n"
+"\n"
+"   int1 = 4      # whatever that means\n"
+"\n"
+"# Comment before section\n"
+"# Comment after section\n"
+"string2 = \"" TESTSTRING "\"	# but this is a comment\n"
+"\n"
+"string3 = \"how about #quotes\\\n"
+"	AND line-continuation?\"		# yet another comment\n"
+"testBool = False	# use yes/no/0/1/true/false, case INsensitive\n"
+"# etc etc.\n"
+;
 
 
-  /* sorry, something still should be written here */
+
+/** some basic consistency checks of the (XLAL) UserInput module, far from exhaustive,
+ * but should be enough to catch big obvious malfunctions
+ */
+int
+main(int argc, char *argv[])
+{
+  const char *fn = __func__;
+
+  int i, my_argc = 8;
+  #define CFG_FNAME "ConfigFile.cfg"
+  char **my_argv;
+  const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "1", "-b", "@" CFG_FNAME };
+  UserInput_t my_uvars = empty_UserInput_t;
+
+  if ( argc > 1 ) {
+    XLALPrintError ("%s: no input arguments allowed.\n");
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  my_argv = XLALCalloc ( my_argc, sizeof(char*) );
+  for (i=0; i < my_argc; i ++ )
+    {
+      my_argv[i] = XLALCalloc ( 1, strlen(argv_in[i])+1);
+      strcpy ( my_argv[i], argv_in[i] );
+    }
+
+  /* laldebug level always needs to be read first (before any lal-mallocs!) */
+  if ( XLALGetDebugLevel (my_argc, my_argv, 'v') != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALGetDebugLevel() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- dump config-file content into config-file ----- */
+  FILE *fid;
+  if ( (fid = fopen ( CFG_FNAME, "wb" )) == NULL ) {
+    XLALPrintError ("%s: Failed to open configfile '%s' for writing.\n", fn, CFG_FNAME );
+    XLAL_ERROR ( fn, XLAL_ESYS );
+  }
+  fprintf ( fid, "%s\n", cfgfile_content );
+  fclose(fid);
+
+  /* ---------- Register all test user-variables ---------- */
+  UserInput_t *uvar = &my_uvars;
+  if ( XLALregREALUserStruct( argNum, 0, UVAR_REQUIRED, "Testing float argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregREALUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  if ( XLALregSTRINGUserStruct( argStr, 0, UVAR_REQUIRED, "Testing string argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  if ( XLALregBOOLUserStruct( argBool, 0, UVAR_REQUIRED, "Testing bool argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  if ( XLALregINTUserStruct( argInt, 'a', UVAR_REQUIRED, "Testing INT argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  if ( XLALregINTUserStruct( dummy,  'c', UVAR_OPTIONAL, "Testing INT argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregINTUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  if ( XLALregBOOLUserStruct( argB2, 'b', UVAR_REQUIRED, "Testing short-option bool argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregBOOLUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  if ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALregSTRINGUserStruct() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* ---------- now read all input from commandline and config-file ---------- */
+  if ( XLALUserVarReadAllInput ( my_argc, my_argv ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALUserVarReadAllInput() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* ---------- test help-string generation */
+  CHAR *helpstr;
+  if ( (helpstr = XLALUserVarHelpString ( argv[0])) == NULL ) {
+    XLALPrintError ("%s: XLALUserVarHelpString() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  XLALFree ( helpstr );
+
+  /* ---------- test log-generation */
+  CHAR *logstr;
+  if ( ( logstr = XLALUserVarGetLog (   UVAR_LOGFMT_CFGFILE )) == NULL ) {
+    XLALPrintError ("%s: XLALUserVarGetLog() failed with code %d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  XLALFree ( logstr );
+
+
+  /* ---------- test values were read in correctly ---------- */
+  if ( uvar->argNum != 1 ) {
+    XLALPrintError ("%s: Failed to read in argNum\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( strcmp ( uvar->argStr, "xyz" ) ) {
+    XLALPrintError ("%s: Failed to read in argStr\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( !uvar->argBool ) {
+    XLALPrintError ("%s: Failed to read in argBool\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( uvar->argInt != 1 ) {
+    XLALPrintError ("%s: Failed to read in argInt\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( !uvar->argB2 ) {
+    XLALPrintError ("%s: Failed to read in argB2\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( strcmp ( uvar->string2, TESTSTRING ) ) {
+    XLALPrintError ("%s: Failed to read in string2\n", fn);
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+
+  /* ----- cleanup ---------- */
+  XLALDestroyUserVars();
+  for (i=0; i < my_argc; i ++ )
+    XLALFree ( my_argv[i] );
+  XLALFree ( my_argv );
+
+
   LALCheckMemoryLeaks();
 
   return (USERINPUTTESTC_ENORM);

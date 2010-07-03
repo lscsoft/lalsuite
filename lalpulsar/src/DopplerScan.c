@@ -1341,7 +1341,9 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     {
       strncpy (buf, input, 99);
       buf[99] = 0;
-      TRY ( LALLowerCaseString (status->statusPtr, buf), status);
+      if ( XLALLowerCaseString (buf) != XLAL_SUCCESS ) {
+        ABORT ( status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL );
+      }
       /* check if "allsky" was given: replace input by allsky-skyRegion */
       if ( !strcmp( buf, "allsky" ) )	/* All-sky search */
 	skyRegion = SKYREGION_ALLSKY;
