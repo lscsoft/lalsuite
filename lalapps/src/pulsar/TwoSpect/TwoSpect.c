@@ -277,6 +277,7 @@ int main(int argc, char *argv[])
    ihsfarStruct *ihsfarstruct = new_ihsfarStruct(maxcols);
    REAL8Vector *detectorVelocities = XLALCreateREAL8Vector((UINT4)numffts);
    INT4Vector *binshifts = XLALCreateINT4Vector((UINT4)numffts);
+   REAL8Vector *aveNoise = XLALCreateREAL8Vector((INT4)ffdata->fpr->length);
    
    //Initialize to zero for far just at the start
    ihsfarstruct->ihsfar->data[0] = 0.0;
@@ -307,13 +308,6 @@ int main(int argc, char *argv[])
       for (jj=0; jj<(INT4)antweights->length; jj++) fprintf(ANTDATA,"%g\n",antweights->data[jj]);
       fclose(ANTDATA); */
       
-      //Check the RMS of the antenna weights
-      if (antweightsrms == 0.0) antweightsrms = currentAntWeightsRMS;
-      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.03 ) {
-         ihsfarstruct->ihsfar->data[0] = 0.0;
-         antweightsrms = currentAntWeightsRMS;
-      }
-      
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL8Vector *TFdata_slided = XLALCreateREAL8Vector((UINT4)(numffts*numfbins));
       REAL8Vector *background_slided = XLALCreateREAL8Vector(TFdata_slided->length);
@@ -321,9 +315,21 @@ int main(int argc, char *argv[])
       slideTFdata(background_slided, inputParams, background, binshifts);
       fprintf(stderr,"Mean of TFdata_slided %g, background_slided %g\n",calcMean(TFdata_slided),calcMean(background_slided));
       
+      //Check the RMS of the antenna weights, if bigger than standard deviation then reset the IHS FAR and the average noise background of the 2nd FFT
+      if (antweightsrms == 0.0) {
+         antweightsrms = currentAntWeightsRMS;
+         ffdata->ffnormalization = 1.0;
+         ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
+      }
+      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
+         ihsfarstruct->ihsfar->data[0] = 0.0;
+         antweightsrms = currentAntWeightsRMS;
+         ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
+      }
+      
       //Average noise floor of FF plane for each 1st FFT frequency bin
-      ffdata->ffnormalization = 1.0;
-      REAL8Vector *aveNoise = ffPlaneNoise(inputParams, background_slided, antweights, &(ffdata->ffnormalization));
+      //ffdata->ffnormalization = 1.0;
+      //ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
       /* FILE *NOISEDATA = fopen("./noisedata.dat","w");
       for (jj=0; jj<(INT4)aveNoise->length; jj++) fprintf(NOISEDATA,"%g\n",aveNoise->data[jj]);
       fclose(NOISEDATA); */
@@ -367,7 +373,6 @@ int main(int argc, char *argv[])
       fclose(NORMFFDATA); */
       
 ////////Start of the IHS step!
-      //ihsMaximaStruct *ihsmaxima = new_ihsMaxima(ffdata, maxcols);
       //Find the FAR of IHS sum
       if (ihsfarstruct->ihsfar->data[0]==0.0) {
          fprintf(stderr,"Determining IHS FAR values...\n");
@@ -376,7 +381,7 @@ int main(int argc, char *argv[])
       }
       
       //Run the IHS algorithm on the data
-      runIHS(ihsmaxima, ffdata, aveNoise, aveTFnoisePerFbinRatio, inputParams->Tobs, maxcols);
+      runIHS(ihsmaxima, ffdata, inputParams->Tobs, maxcols);
       
       //Find any IHS candidates
       findIHScandidates(ihsCandidates, &numofcandidates, ihsfarstruct, inputParams, ffdata, ihsmaxima, aveTFnoisePerFbinRatio, rmsTFnoisePerFbinRatio);
@@ -1016,7 +1021,7 @@ int main(int argc, char *argv[])
       numofcandidatesadded += numofcandidates2;
       
       //Destroy stuff
-      XLALDestroyREAL8Vector(aveNoise);
+      //XLALDestroyREAL8Vector(aveNoise);
       XLALDestroyREAL8Vector(aveTFnoisePerFbinRatio);
       XLALDestroyREAL8Vector(rmsTFnoisePerFbinRatio);
       
@@ -1039,6 +1044,7 @@ int main(int argc, char *argv[])
    XLALDestroyREAL8Vector(background);
    XLALDestroyREAL8Vector(usableTFdata);
    XLALDestroyREAL8Vector(detectorVelocities);
+   XLALDestroyREAL8Vector(aveNoise);
    XLALDestroyINT4Vector(binshifts);
    free_ffdata(ffdata);
    free_ihsfarStruct(ihsfarstruct);
@@ -1271,7 +1277,8 @@ void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbi
    LALRunningMedianPar block = {blksize};
    
    //Running median bias calculation
-   LALRngMedBias(&status, &bias, blksize);
+   if (blksize<1000) LALRngMedBias(&status, &bias, blksize);
+   else bias = LAL_LN2;
    REAL8 invbias = 1.0/bias;
    
    REAL8Sequence *inpsd = XLALCreateREAL8Sequence((UINT4)(numfbins+blksize-1));
@@ -1316,19 +1323,15 @@ void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rn
       
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs
       REAL8 sumofweights = 0.0;
-      //REAL8 sumofweights2 = 0.0; //TEST: REMOVE
       for (jj=0; jj<numffts; jj++) {
          if (rngMeans->data[jj*numfbins + ii] != 0.0) sumofweights += (antPatternWeights->data[jj]*antPatternWeights->data[jj])/(rngMeans->data[jj*numfbins+ii]*rngMeans->data[jj*numfbins+ii]);
-         //if (rngMeans->data[jj*numfbins + ii] != 0.0) sumofweights2 += (1.0)/(antPatternWeights->data[jj]*antPatternWeights->data[jj]); //TEST: REMOVE
       }
       REAL8 invsumofweights = 1.0/sumofweights;
-      //REAL8 invsumofweights = 1.0/(sumofweights*sumofweights2);  //TEST: remove sumofweights2
       
       //Now do mean subtraction, noise weighting, antenna pattern weighting
       for (jj=0; jj<numffts; jj++) {
          if (rngMeans->data[jj*numfbins+ii] != 0.0) {
             out->data[jj*numfbins+ii] = invsumofweights*antPatternWeights->data[jj]*(tfdata->data[jj*numfbins+ii]/rngMeans->data[jj*numfbins+ii] - 1.0)/rngMeans->data[jj*numfbins+ii];
-            //out->data[jj*numfbins+ii] /= (antPatternWeights->data[jj]*antPatternWeights->data[jj]);  //TEST: REMOVE THIS!
          } else {
             out->data[jj*numfbins+ii] = 0.0;
          }
@@ -1440,13 +1443,13 @@ REAL8 rmsTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 //////////////////////////////////////////////////////////////
 // Measure of the average noise power in each 2st FFT frequency bin  --
-REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
+//REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
+void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
 {
 
    INT4 ii, jj, numfbins, numffts, numfprbins;
    REAL8 invsumofweights = 0.0;
    REAL8 sumofweights = 0.0;
-   //REAL8 sumofweights2 = 0.0;
    
    numfbins = (INT4)(roundf(param->fspan*param->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(2*(param->Tobs/param->Tcoh)-1);     //Number of FFTs
@@ -1459,7 +1462,7 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL
    gsl_rng_set(rng, randseed);
    
    //Set up for making the PSD
-   REAL8Vector *aveNoise = XLALCreateREAL8Vector((UINT4)numfprbins);
+   //REAL8Vector *aveNoise = XLALCreateREAL8Vector((UINT4)numfprbins);
    for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] = 0.0;
    REAL8Window *win = XLALCreateHannREAL8Window((UINT4)numffts);
    REAL8 winFactor = 8.0/3.0;
@@ -1476,14 +1479,12 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL
          aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
          
          sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
-         //sumofweights2 += (1.0)/(antweights->data[ii]*antweights->data[ii]);  //TEST: remove
       } else {
          aveNoiseInTime->data[ii] = 0.0;
       }
       
    }
    invsumofweights = 1.0/sumofweights;
-   //invsumofweights = 1.0/(sumofweights*sumofweights2); //TEST: remove
    
    //FILE *BACKGRND = fopen("./background.dat","w");
    
@@ -1498,11 +1499,10 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL
    for (ii=0; ii<(INT4)x->length; ii++) {
       if (aveNoiseInTime->data[ii] != 0.0) {
          multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/aveNoiseInTime->data[ii]*invsumofweights;
-         //multiplicativeFactor->data[ii] /= (antweights->data[ii]*antweights->data[ii]);  //TEST: REMOVE THIS!
       }
    }
    
-   for (ii=0; ii<100; ii++) {
+   for (ii=0; ii<10000; ii++) {
       for (jj=0; jj<(INT4)x->length; jj++) {
          if (aveNoiseInTime->data[jj] != 0.0) x->data[jj] = multiplicativeFactor->data[jj]*(expRandNum(aveNoiseInTime->data[jj], rng)/aveNoiseInTime->data[jj]-1.0);
          else x->data[jj] = 0.0;
@@ -1520,7 +1520,7 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL
    }
    
    //Average
-   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] /= 100.0;
+   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= 1.0e-4;
    
    //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
    if (GSL_IS_EVEN(x->length)==1) {
@@ -1548,7 +1548,7 @@ REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL
    XLALDestroyREAL8Vector(multiplicativeFactor);
    gsl_rng_free(rng);
    
-   return aveNoise;
+   //return aveNoise;
 
 }
 
