@@ -42,7 +42,7 @@ XLALCalculateNewtonianMultipole(
                             REAL8 phi,
                             UINT4  l,
                             INT4  m,
-                            InspiralTemplate *params
+                            InspiralDerivativesIn *ak
                             )
 {
    static const char func[] = "XLALCalculateNewtonianMultipole";
@@ -55,6 +55,8 @@ XLALCalculateNewtonianMultipole(
 
    REAL8 x1, x2; /* Scaled versions of component masses */
 
+   REAL8 mult1, mult2;
+
    INT4 epsilon;
    INT4 sign; /* To give the sign of some additive terms */
 
@@ -63,8 +65,8 @@ XLALCalculateNewtonianMultipole(
 
    epsilon = ( l + m )  % 2;
 
-   x1 = params->mass1 / params->totalMass;
-   x2 = params->mass2 / params->totalMass;
+   x1 = ak->coeffs->m1 / ak->coeffs->totalmass;
+   x2 = ak->coeffs->m2 / ak->coeffs->totalmass;
 
    if  ( abs( m % 2 ) == 0 )
    {
@@ -80,8 +82,6 @@ XLALCalculateNewtonianMultipole(
    /* Dependent on the value of epsilon, we get different n */
    if ( epsilon == 0 )
    {
-     REAL8 mult1;
-     REAL8 mult2;
      
      n.im = m;
      n = XLALCOMPLEX16PowReal( n, (REAL8)l );
@@ -95,8 +95,6 @@ XLALCalculateNewtonianMultipole(
   }
   else if ( epsilon == 1 )
   {
-     REAL8 mult1;
-     REAL8 mult2;
      
      n.im = - m;
      n = XLALCOMPLEX16PowReal( n, (REAL8)l );
@@ -144,12 +142,16 @@ XLALScalarSphericalHarmonic(
   int   gslStatus;
   gsl_sf_result pLm;
 
-  if ( abs(m) > (INT4) l )
+  INT4 absM = abs( m );
+
+  if ( absM > (INT4) l )
   {
     XLAL_ERROR( func, XLAL_EINVAL );
   }
 
-  XLAL_CALLGSL( gslStatus = gsl_sf_legendre_sphPlm_e((INT4)l, m, cos(theta), &pLm ) );
+  /* For some reason GSL will not take negative m */
+  /* We will have to use the relation between sph harmonics of +ve and -ve m */
+  XLAL_CALLGSL( gslStatus = gsl_sf_legendre_sphPlm_e((INT4)l, absM, cos(theta), &pLm ) );
   if (gslStatus != GSL_SUCCESS)
   {
     XLALPrintError("Error in GSL function\n" );
@@ -159,6 +161,13 @@ XLALScalarSphericalHarmonic(
   /* Compute the values for the spherical harmonic */
   y->re = pLm.val * cos(m * phi);
   y->im = pLm.val * sin(m * phi);
+
+  /* If m is negative, perform some jiggery-pokery */
+  if ( m < 0 && absM % 2  == 1 )
+  {
+    y->re = - y->re;
+    y->im = - y->im;
+  }
 
   return XLAL_SUCCESS;
 }
