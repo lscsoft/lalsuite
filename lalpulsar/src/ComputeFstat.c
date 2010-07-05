@@ -1971,7 +1971,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
-/** Function to allocate a 'FstatAtomVector' struct of num timestamps
+/** Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!
  */
 FstatAtomVector *
 XLALCreateFstatAtomVector ( UINT4 num )
