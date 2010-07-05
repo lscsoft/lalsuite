@@ -489,109 +489,96 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 } /* XLALComputeTransientBstat() */
 
 
-/** Combine N Fstat-atoms vectors into a single one, with timestamps ordered by increasing GPS time,
- * Atoms with identical timestamp are immediately merged into one, so the final timestamps list only
- * contains unique (and ordered) entries.
+/** Combine N Fstat-atoms vectors into a single 'canonical' gridded and ordered atoms-vector.
+ * The function pre-sums all atoms on a regular 'grid' of timesteps deltaT covering the full data-span.
+ * Atoms with timestamps falling into the bin i : [t_i, t_{i+1} ) are pre-summed and returned as atoms[i],
+ * where t_i = t_0 + i * deltaT.
+ *
+ * Note: this pre-binning is equivalent to using a rectangular transient window on the deltaT timescale,
+ * which is OK even with a different transient window, provided deltaT << transient-window timescale!
+ *
+ * Bins containing no atoms are returned with all values set to zero.
  */
 FstatAtomVector *
-XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms )
+XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT )
 {
   const char *fn = __func__;
 
-  if ( !multiAtoms || !multiAtoms->length || !multiAtoms->data[0] ) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
+  if ( !multiAtoms || !multiAtoms->length || !multiAtoms->data[0] || (deltaT==0) ) {
+    XLALPrintError ("%s: invalid NULL input or deltaT=0.\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
   UINT4 numDet = multiAtoms->length;
   UINT4 X;
-  UINT4 maxNumAtoms = 0;	/* upper limit on total number of atoms: sum over all detectors (assumes no coincident timestamps) */
-  UINT4 deltaT = multiAtoms->data[0]->deltaT;
+  UINT4 TAtom = multiAtoms->data[0]->TAtom;
 
   /* check consistency of time-step lengths between different IFOs */
   for ( X=0; X < numDet; X ++ ) {
-    if ( multiAtoms->data[X]->deltaT != deltaT ) {
-      XLALPrintError ("%s: Invalid input, timestep-length deltaT=%d must be identical for all multiFstatAtomVectors (IFO=%d: deltaT=%d)\n",
-                      fn, deltaT, X, multiAtoms->data[X]->deltaT );
+    if ( multiAtoms->data[X]->TAtom != TAtom ) {
+      XLALPrintError ("%s: Invalid input, atoms baseline TAtom=%d must be identical for all multiFstatAtomVectors (IFO=%d: TAtom=%d)\n",
+                      fn, TAtom, X, multiAtoms->data[X]->TAtom );
       XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
     }
   } /* for X < numDet */
 
-  for ( X=0; X < numDet; X ++ )
-    maxNumAtoms += multiAtoms->data[X]->length;
-
-  /* first allocate an atoms-vector with maxNumAtoms length, then truncate as needed at the end */
-  FstatAtomVector *atomsIn;
-  if ( (atomsIn = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  /* simply combine all atoms-vector by concatentation first */
-  UINT4 offset = 0;
+  /* get earliest and latest atoms timestamps across all input detectors */
+  UINT4 tMin = LAL_INT4_MAX - 1;
+  UINT4 tMax = 0;
   for ( X=0; X < numDet; X ++ )
     {
-      FstatAtomVector *thisVect = multiAtoms->data[X];
-      memcpy ( atomsIn->data + offset, thisVect->data, thisVect->length * sizeof(*thisVect->data) );
-      offset += thisVect->length;
+      UINT4 numAtomsX = multiAtoms->data[X]->length;
+
+      if ( multiAtoms->data[X]->data[0].timestamp < tMin )
+        tMin = multiAtoms->data[X]->data[0].timestamp;
+
+      if ( multiAtoms->data[X]->data[numAtomsX-1].timestamp > tMax )
+        tMax = multiAtoms->data[X]->data[numAtomsX-1].timestamp;
+
     } /* for X < numDet */
 
-  /* now sort by increasing GPS time */
-  qsort( atomsIn->data, maxNumAtoms, sizeof(*atomsIn->data), compareAtoms );
 
-  /* finally: step through and 'merge' equal-timestamp atoms */
+  /* prepare 'canonical' gridded atoms output vector */
+  UINT4 NGriddedAtoms = (UINT4)floor( 1.0 * (tMax - tMin) / deltaT ) + 1;	/* round up this way to make sure tMax is always included in the last grid-bin */
+
   FstatAtomVector *atomsOut;
-  if ( (atomsOut = XLALCreateFstatAtomVector ( maxNumAtoms )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, maxNumAtoms );
+  if ( (atomsOut = XLALCreateFstatAtomVector ( NGriddedAtoms )) == NULL ) {	/* NOTE: these atoms are pre-initialized to zero already! */
+    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, NGriddedAtoms );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
-  atomsOut->deltaT = deltaT;
+  atomsOut->TAtom = deltaT;	/* output atoms-vector has new atoms baseline 'deltaT' */
 
-  FstatAtom *destAtom = &atomsOut->data[0];
-  /* handle first atom by hand */
-  (*destAtom) = atomsIn->data[0];
-  UINT4 counter=1;
-  /* and step through the rest of them */
-  UINT4 i;
-  for ( i=1; i < maxNumAtoms; i ++ )
+  /* Step through all input atoms, and sum them together into output bins */
+  for ( X=0; X < numDet; X ++ )
     {
-      FstatAtom *srcAtom = &atomsIn->data[i];
-
-      /* still same timestamp? merge entries */
-      if ( srcAtom->timestamp == destAtom->timestamp )
+      UINT4 i;
+      UINT4 numAtomsX = multiAtoms->data[X]->length;
+      for ( i=0; i < numAtomsX; i ++ )
         {
-          destAtom->a2_alpha += srcAtom->a2_alpha;
-          destAtom->b2_alpha += srcAtom->b2_alpha;
-          destAtom->ab_alpha += srcAtom->ab_alpha;
-          destAtom->Fa_alpha.re += srcAtom->Fa_alpha.re;
-          destAtom->Fa_alpha.im += srcAtom->Fa_alpha.im;
-          destAtom->Fb_alpha.re += srcAtom->Fb_alpha.re;
-          destAtom->Fb_alpha.im += srcAtom->Fb_alpha.im;
-        } /* if same timestamp */
-      else
-        {
-          counter ++;
-          destAtom ++;
-          (*destAtom) = (*srcAtom);
-        } /* add new timestamp atom */
+          FstatAtom *atom_X_i = &multiAtoms->data[X]->data[i];
+          UINT4 t_X_i = atom_X_i -> timestamp;
 
-    } /* for i < maxNumAtoms */
+          /* determine target bin-index j such that t_i in [ t_j, t_{j+1} )  */
+          UINT4 j = (UINT4) floor ( 1.0 * ( t_X_i - tMin ) / deltaT );
 
-  /* free concat vector */
-  XLALDestroyFstatAtomVector ( atomsIn );
+          /* add atoms i to target atoms j */
+          FstatAtom *destAtom = &atomsOut->data[j];
 
-  /* now resize output Vector to that actually needed */
-  UINT4 newsize = counter * sizeof(*atomsOut->data);
-  atomsOut->length = counter;
-  if ( (atomsOut->data = XLALRealloc ( atomsOut->data, newsize )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALRealloc() atomsOut to new size %d\n", fn, newsize );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
+          destAtom->a2_alpha += atom_X_i->a2_alpha;
+          destAtom->b2_alpha += atom_X_i->b2_alpha;
+          destAtom->ab_alpha += atom_X_i->ab_alpha;
+          destAtom->Fa_alpha.re += atom_X_i->Fa_alpha.re;
+          destAtom->Fa_alpha.im += atom_X_i->Fa_alpha.im;
+          destAtom->Fb_alpha.re += atom_X_i->Fb_alpha.re;
+          destAtom->Fb_alpha.im += atom_X_i->Fb_alpha.im;
+
+        } /* for i < numAtomsX */
+    } /* for X < numDet */
 
   return atomsOut;
 
-} /* XLALmergeMultiFstatAtoms() */
+} /* XLALmergeMultiFstatAtomsOnGrid() */
 
 /* comparison function for atoms: sort by GPS time */
 int

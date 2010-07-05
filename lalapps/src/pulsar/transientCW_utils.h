@@ -103,7 +103,8 @@ int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const Multi
 /* ---------- Fstat-atoms related functions ----------*/
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
-FstatAtomVector *XLALmergeMultiFstatAtomsSorted ( const MultiFstatAtomVector *multiAtoms );
+
+FstatAtomVector *XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
 
 #ifdef  __cplusplus
 }
