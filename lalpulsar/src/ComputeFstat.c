@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
- * Copyright (C) 2005, 2006, 2007 Reinhard Prix
+ * Copyright (C) 2005, 2006, 2007, 2010 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -540,7 +540,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
       }
 
-      FaFb->multiFstatAtoms->data[0]->deltaT = Tsft;	/* time-step length of returned atoms is Tsft */
+      FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;	/* time-baseline of returned atoms is Tsft */
 
     } /* if returnAtoms */
 
