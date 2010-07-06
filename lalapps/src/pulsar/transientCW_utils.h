@@ -49,12 +49,22 @@ extern "C" {
 
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
 typedef enum {
-  TRANSIENT_NONE = 0,
-  TRANSIENT_RECTANGULAR = 1,
-  TRANSIENT_EXPONENTIAL,
+  TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
+                                 * i.e. a simple rectangular window covering all the data => this should always reproduce the
+                                 * standard F-statistic computation.
+                                 */
+
+  TRANSIENT_RECTANGULAR = 1,	/**< standard rectangular window covering [t0, t0+tau] */
+
+  TRANSIENT_EXPONENTIAL,	/**< exponentially decaying window e^{-t0/tau} starting at t0.
+                                 * Note: we'll truncate this at some small (eg 3x) e-folding TRANSIENT_EXP_EFOLDING
+                                 */
   TRANSIENT_LAST
 } transientWindowType_t;
 
+#define TRANSIENT_EXP_EFOLDING	3.0      /**< e-folding parameter for exponential window, after which we truncate
+                                          * the window for efficiency. 3 e-foldings means we lose only
+                                          * about e^(-2x3) ~1e-8 of signal power! */
 
 /* ---------- exported API types ---------- */
 
@@ -70,10 +80,12 @@ typedef struct
 typedef struct
 {
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  UINT4 t0_min;			/**< earliest GPS start-time 't0' in seconds */
-  UINT4 t0_max;			/**< latest GPS start-time 't0'  in seconds */
-  UINT4 tau_min;		/**< shortest transient timescale tau in seconds */
-  UINT4 tau_max;		/**< longest transient timescale tau in seconds */
+  UINT4 t0;			/**< earliest GPS start-time 't0' in seconds */
+  UINT4 t0Band;			/**< range of start-times 't0' to search, in seconds */
+  UINT4 dt0;			/**< stepsize to search t0-range with */
+  UINT4 tau;			/**< shortest transient timescale tau in seconds */
+  UINT4 tauBand;		/**< range of transient timescales tau to search, in seconds */
+  UINT4 dtau;			/**< stepsize to search tau-range with */
 } transientWindowRange_t;
 
 /** Struct holding a transient CW candidate */
@@ -104,7 +116,7 @@ int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const Multi
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
 
-FstatAtomVector *XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
+FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
 
 #ifdef  __cplusplus
 }

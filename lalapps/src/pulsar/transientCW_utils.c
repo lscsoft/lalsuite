@@ -41,6 +41,10 @@
 
 /* ----- MACRO definitions ---------- */
 #define SQ(x) ((x)*(x))
+#define LAL_INT4_MAX 2147483647
+
+/* macro to map indices {m,n} over {t0, tau} space into 1-dimensional array index, with tau-index n faster varying */
+#define IND_MN(m,n) ( (m) * N_tauRange + (n) )
 
 /* ---------- internal prototypes ---------- */
 REAL4Vector *XLALGetTransientWindowVals ( const LIGOTimeGPSVector *tGPS, const transientWindow_t *TransientWindowParams );
@@ -326,161 +330,216 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 {
   const char *fn = __func__;
 
-  UINT4 tau_min = windowRange.tau_min; // smallest search duration-window in seconds
-  UINT4 tau_max = windowRange.tau_max; // longest search duration-window in seconds
-
-  UINT4 t0_min = windowRange.t0_min;	// earliest GPS start-time
-  UINT4 t0_max = windowRange.t0_max;	// latest GPS start-time
-
   /* initialize empty return, in case sth goes wrong */
   TransientCandidate_t ret = empty_TransientCandidate;
   (*cand) = ret;
 
   /* check input consistency */
-  if ( !multiFstatAtoms ) {
+  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]) {
     XLALPrintError ("%s: invalid NULL input.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  if ( t0_max < t0_min ) {
-    XLALPrintError ("%s: invalid input arguments t0 (=%d), t1 (=%d): must t1>t0 \n", fn, t0_min, t0_max );
-    XLAL_ERROR ( fn, XLAL_EDOM );
+  if ( windowRange.type >= TRANSIENT_LAST ) {
+    XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  if ( tau_max < tau_min ) {
-    XLALPrintError ("%s: invalid input arguments tau0 (=%d), tau1 (=%d): must tau1>tau0 \n", fn, tau_min, tau_max );
-    XLAL_ERROR ( fn, XLAL_EDOM );
-  }
-
-  if ( windowRange.type != TRANSIENT_RECTANGULAR ) {
-    XLALPrintError ("%s: Sorry, only rectangular window implemented right now!\n", fn );
-    XLAL_ERROR ( fn, XLAL_EDOM );
-  }
 
   /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
   FstatAtomVector *atoms;
-  if ( (atoms = XLALmergeMultiFstatAtomsSorted ( multiFstatAtoms )) == NULL ) {
+  UINT4 TAtom = multiFstatAtoms->data[0]->TAtom;
+  if ( (atoms = XLALmergeMultiFstatAtomsBinned ( multiFstatAtoms, TAtom )) == NULL ) {
     XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", fn, xlalErrno );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
   UINT4 numAtoms = atoms->length;
-  UINT4 deltaT = atoms->deltaT;
+  /* actual data spans [t0_data, t1_data] in steps of TAtom */
+  UINT4 t0_data = atoms->data[0].timestamp;
+  UINT4 t1_data = atoms->data[numAtoms-1].timestamp;
 
-  /* find indices corresponding to t0_min, t0_max */
-  UINT4 i_min=0;
-  while ( (i_min < numAtoms) && (atoms->data[i_min].timestamp < t0_min) )
-    i_min++;
-  if ( i_min == atoms->length ) {
-    XLALPrintError ( "%s: earliest start-time %d later than latest atoms timestamp %d\n", fn, t0_min, atoms->data[i_min-1].timestamp );
-    XLAL_ERROR (fn, XLAL_EDOM );
-  }
+  /* special treatment of 'none' window: treat as rectangular window covering all data ==> reproduce standard F-stat */
+  if ( windowRange.type == TRANSIENT_NONE )
+    {
+      windowRange.type = TRANSIENT_RECTANGULAR;
+      windowRange.t0 = t0_data;		/* start at beginning of data */
+      windowRange.t0Band = 0;
+      windowRange.dt0 = 1;		/* just make sure it's nonzero */
+      windowRange.tau = t1_data - t0_data + TAtom; /* integrate over all the data */
+      windowRange.tauBand = 0;
+      windowRange.dtau = 1;		/* make sure it's nonzero */
+    }
 
-  UINT4 i_max = i_min;
-  while ( (i_max < numAtoms) && (atoms->data[i_max].timestamp <= t0_max) )
-    i_max ++;
-  if ( i_max > 0 ) i_max --;	/* we want last timestamp that still satifies t_max <= t0_max */
+  REAL8 tau2TcohFactor;		/* for given tau, what Tcoh do we want to integrate over?
+                                 * for rectangular window this is simply Tcoh = tau,
+                                 * while for the exponential window we want Tcoh = tau * e_folding
+                                 */
+  if ( windowRange.type == TRANSIENT_EXPONENTIAL )
+    tau2TcohFactor = TRANSIENT_EXP_EFOLDING;
+  else
+    tau2TcohFactor = 1.0;
+
 
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
-   * instead we first determine max{F_ij}, then compute the logB = log ( e^Fmax * sum_{ij} 1/Dij * e^{Fij - Fmax} )
-   * which is logB = Fmax + log( sum_{ij} e^FReg_ij ), where FReg_ij = -log(Dij) + Fij - Fmax.
+   * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} 1/D_mn * e^{Fmn - Fmax} )
+   * which is logB = Fmax + log( sum_{mn} e^FReg_mn ), where FReg_mn = -log(D_mn) + Fmn - Fmax.
    * This avoids numerical problems.
    *
-   * As we don't know Fmax before having computed the full matrix F_ij, we keep a list of
-   * 'regularized' F-stats FReg_ij over the field of {t0, tau} values.
-   * As we don't know exactly the size of that matrix (because of possible gaps in the data),
-   *  we use the maximal (conservative) estimate of that size t0Range* tauRange elements
+   * As we don't know Fmax before having computed the full matrix F_mn, we keep the full array of
+   * 'regularized' F-stats FReg_mn over the field of {t0, tau} values in steps of dt0 x dtau.
+   *
+   * NOTE2: indices {i,j} enumerate *actual* atoms and their timestamps t_i, while the
+   * indices {m,n} enumerate the full grid of values in [t0_min, t0_max]x[Tcoh_min, Tcoh_max] in
+   * steps of deltaT. This allows us to deal with gaps in the data in a transparent way.
+   *
+   * NOTE3: we operate on the 'binned' atoms returned from XLALmergeMultiFstatAtomsBinned(),
+   * which means we can safely assume all atoms to be lined up perfectly on a 'deltaT' binned grid.
+   *
+   * The mapping used will therefore be {i,j} -> {m,n}:
+   *   m = offs_i  / deltaT		= start-time offset from t0_min measured in deltaT
+   *   n = Tcoh_ij / deltaT		= duration Tcoh_ij measured in deltaT,
+   *
+   * where
+   *   offs_i  = t_i - t0_min
+   *   Tcoh_ij = t_j - t_i + deltaT
+   *
    */
-  UINT4 t0Range = ( t0_max - t0_min ) / deltaT + 1;
-  UINT4 tauRange = (tau_max - tau_min) / deltaT + 1;
-  UINT4 maxNumSummands = t0Range * tauRange;
-  REAL8 *regFList;	/* will be initialized to zeros ! */
-  if ( ( regFList = XLALCalloc ( maxNumSummands, sizeof(REAL8) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, sizeof(REAL8)\n", fn, maxNumSummands );
+
+  /* We allocate a matrix  {m x n} = t0Range * TcohRange elements
+   * covering the full timerange the transient window-range [t0,t0+t0Band]x[tau,tau+tauBand]
+   */
+  UINT4 N_t0Range  = (UINT4) floor ( windowRange.t0Band / windowRange.dt0 ) + 1;
+  UINT4 N_tauRange = (UINT4) floor ( windowRange.tauBand / windowRange.dtau ) + 1;
+
+  REAL8 *FReg_mn;	/* 2D matrix {m x n} of FReg values, will be initialized to zeros ! */
+  UINT4 N_grid2D   = N_t0Range * N_tauRange;
+  if ( ( FReg_mn = XLALCalloc ( N_grid2D, sizeof(REAL8) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, sizeof(REAL8)\n", fn, N_grid2D );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
-  UINT4 counter = 0;
 
-  /* ----- OUTER loop over start-times t0 ---------- */
-  ret.maxFstat = 0;	// keep track of loudest 2F-value over {t0, tau} space
-  UINT4 i;
+  ret.maxFstat = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
+  UINT4 m, n;
   REAL8 norm = 1.0 / SQ(LAL_TWOPI);
-
-  printf ("Freg = [ ");
-  for ( i = i_min; i <= i_max; i ++ )
+  /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
+  for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
     {
-      UINT4 t0_i = atoms->data[i].timestamp;
+      /* compute Fstat-atom index i_t0 in [0, numAtoms) */
+      UINT4 t0_m = windowRange.t0 + m * windowRange.dt0;
+      INT4 i_tmp = (INT4)round ( 1.0 * ( t0_m - t0_data ) / TAtom );
+      if ( i_tmp < 0 ) i_tmp = 0;
+      UINT4 i_t0 = (UINT4)i_tmp;
+      if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
 
-      /* ----- INNER loop over durations tau ---------- */
+      /* ----- INNER loop over timescale-parameter tau ---------- */
       REAL8 Ad=0, Bd=0, Cd=0, Fa_re=0, Fa_im=0, Fb_re=0, Fb_im=0;
+      UINT4 i_t1_last = i_t0;
 
-      UINT4 j = i;
-      while ( j < numAtoms )
+      for ( n = 0; n < N_tauRange; n ++ )
         {
-          FstatAtom *thisAtom = &atoms->data[j];
-          UINT4 t_j = thisAtom->timestamp;
-          UINT4 tau_j = t_j - t0_i + deltaT;
+          /* translate n into an atoms end-index for this search interval [t0, t0+Tcoh],
+           * giving the index range of atoms to sum over
+           */
+          UINT4 tau_n = windowRange.tau + n * windowRange.dtau;
+          UINT4 Tcoh_n = (UINT4) round ( tau2TcohFactor * tau_n );	/* round to integer seconds */
+          UINT4 t1_mn = t0_m + Tcoh_n;			/* end-time of this transient-window search */
+          /* compute Fstat-atom index i_t1 in [0, numAtoms) */
+          i_tmp = (INT4) round ( 1.0 * ( t1_mn - t0_data ) / TAtom ) - 1;
+          if ( i_tmp < 0 ) i_tmp = 0;
+          UINT4 i_t1 = (UINT4)i_tmp;
+          if ( i_t1 >= numAtoms ) i_t1 = numAtoms - 1;
 
-          if ( tau_j > tau_max )
-            break;
+          REAL8 Dd, twoF;
 
-          Ad += thisAtom->a2_alpha;
-          Bd += thisAtom->b2_alpha;
-          Cd += thisAtom->ab_alpha;
-
-          Fa_re += thisAtom->Fa_alpha.re;
-          Fa_im += thisAtom->Fa_alpha.im;
-
-          Fb_re += thisAtom->Fb_alpha.re;
-          Fb_im += thisAtom->Fb_alpha.im;
-
-          if ( tau_j >= tau_min )
+          /* now we have two valid atoms-indices [i_t0, i_t1] spanning our Fstat-window to sum over,
+           * using weights according to the window-type
+           */
+          switch ( windowRange.type )
             {
-              REAL8 Dd, twoF;
+            case TRANSIENT_RECTANGULAR:
+              /* special optimiziation in the rectangular-window case: just add on to previous tau values
+               * ie re-use the sum over [i_t0, i_t1_last] from the pevious tau-loop iteration
+               */
+              for ( UINT4 i = i_t1_last; i <= i_t1; i ++ )
+                {
+                  FstatAtom *thisAtom_i = &atoms->data[i];
+                  UINT4 t_i = thisAtom_i->timestamp;
+
+                  /* now add on top of previous values, summed from [i_t0, i_t1_last] */
+                  Ad += thisAtom_i->a2_alpha;
+                  Bd += thisAtom_i->b2_alpha;
+                  Cd += thisAtom_i->ab_alpha;
+
+                  Fa_re += thisAtom_i->Fa_alpha.re;
+                  Fa_im += thisAtom_i->Fa_alpha.im;
+
+                  Fb_re += thisAtom_i->Fb_alpha.re;
+                  Fb_im += thisAtom_i->Fb_alpha.im;
+
+                } /* for i = i_t1_last : i_t1 */
+
+
               Dd = Ad * Bd - Cd * Cd;
 
               twoF = norm * (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
                                            - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
                                            );
 
-              if ( twoF > ret.maxFstat )
-                {
-                  ret.maxFstat = twoF;
-                  ret.t0_maxF  = t0_i;
-                  ret.tau_maxF = tau_j;
-                }
+              i_t1_last = i_t1 + 1;		/* keep track of up to where we summed for the next iteration */
 
-              /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
-              regFList[counter] = - log( Dd ) + 0.5 * twoF;
-              printf ("%s%.16g", counter>0 ? ", ":" ", regFList[counter] );
-              counter ++;
+              break;
 
-              if ( counter > maxNumSummands ) {
-                XLALPrintError ("%s: something went badly wrong, or repr can't count! ... numSummands=%d > maxNumSummand=%d\n", fn, counter, maxNumSummands );
-                XLAL_ERROR ( fn, XLAL_EBADLEN );
-              }
+            case TRANSIENT_EXPONENTIAL:
+              XLALPrintError ("%s: sorry, exponential window not implemented yet!\n", fn );
+              XLAL_ERROR ( fn, XLAL_EINVAL );
+              break;
 
-            } 	/* if inside [tau_min, tau_max] => compute Fstat */
+            default:
+              XLALPrintError ("%s: invalid transient window type %d not in [%d, %d].\n",
+                              fn, windowRange.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
+              XLAL_ERROR ( fn, XLAL_EINVAL );
+              break;
 
-          j ++ ;
+            } /* switch window.type */
 
-        } /* j < numAtoms */
+          /* keep track of loudest F-stat value encountered over the m x n matrix */
+          if ( twoF > ret.maxFstat )
+            {
+              ret.maxFstat = twoF;
+              ret.t0_maxF  = t0_m;
+              ret.tau_maxF = tau_n;
+            }
 
-    } /* for i in [i_min, i_max] */
+          /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
+          REAL8 FReg = - log( Dd ) + 0.5 * twoF;
+          /* and store this in Fstat-matrix as element {m,n} */
+          FReg_mn[IND_MN(m,n)] = FReg;
 
-  printf (" ];\n size=%d", counter );
+        } /* for n in n[tau] : n[tau+tauBand] */
 
-  UINT4 numSummands = counter;
-  /* now step through list of FReg_ij, subtract maxFstat and sum e^{FReg - Fmax}*/
+    } /* for m in m[t0] : m[t0+t0Band] */
+
+  /* now step through FReg_mn array subtract maxFstat and sum e^{FReg - Fmax}*/
   REAL8 sum_eB = 0;
-  for ( i=0; i < numSummands; i ++ )
-    sum_eB += exp ( regFList[i] - 0.5 * ret.maxFstat );
+
+  for ( m=0; m < N_t0Range; m ++ )
+    {
+      for ( n=0; n < N_tauRange; n ++ )
+        {
+          REAL8 FReg = FReg_mn [ IND_MN(m,n) ];
+
+          sum_eB += exp ( FReg - 0.5 * ret.maxFstat );
+
+        } /* for n < N_tauRange */
+
+    } /* for m < N_t0Range */
 
   /* combine this to final log(Bstat) result: */
-  ret.logBstat = 0.5 * ret.maxFstat + 2.0 * log ( deltaT ) + log ( sum_eB );
+  ret.logBstat = 0.5 * ret.maxFstat + log ( windowRange.dt0 * windowRange.dtau ) + log ( sum_eB );
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
-  XLALFree ( regFList );
+  XLALFree ( FReg_mn );
 
   /* return */
   (*cand) = ret;
@@ -489,8 +548,8 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 } /* XLALComputeTransientBstat() */
 
 
-/** Combine N Fstat-atoms vectors into a single 'canonical' gridded and ordered atoms-vector.
- * The function pre-sums all atoms on a regular 'grid' of timesteps deltaT covering the full data-span.
+/** Combine N Fstat-atoms vectors into a single 'canonical' binned and ordered atoms-vector.
+ * The function pre-sums all atoms on a regular 'grid' of timestep bins deltaT covering the full data-span.
  * Atoms with timestamps falling into the bin i : [t_i, t_{i+1} ) are pre-summed and returned as atoms[i],
  * where t_i = t_0 + i * deltaT.
  *
@@ -500,7 +559,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
  * Bins containing no atoms are returned with all values set to zero.
  */
 FstatAtomVector *
-XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT )
+XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT )
 {
   const char *fn = __func__;
 
@@ -538,12 +597,12 @@ XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 d
     } /* for X < numDet */
 
 
-  /* prepare 'canonical' gridded atoms output vector */
-  UINT4 NGriddedAtoms = (UINT4)floor( 1.0 * (tMax - tMin) / deltaT ) + 1;	/* round up this way to make sure tMax is always included in the last grid-bin */
+  /* prepare 'canonical' binned atoms output vector */
+  UINT4 NBinnedAtoms = (UINT4)floor( 1.0 * (tMax - tMin) / deltaT ) + 1; /* round up this way to make sure tMax is always included in the last bin */
 
   FstatAtomVector *atomsOut;
-  if ( (atomsOut = XLALCreateFstatAtomVector ( NGriddedAtoms )) == NULL ) {	/* NOTE: these atoms are pre-initialized to zero already! */
-    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, NGriddedAtoms );
+  if ( (atomsOut = XLALCreateFstatAtomVector ( NBinnedAtoms )) == NULL ) {	/* NOTE: these atoms are pre-initialized to zero already! */
+    XLALPrintError ("%s: failed to XLALCreateFstatAtomVector ( %d )\n", fn, NBinnedAtoms );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
@@ -564,6 +623,7 @@ XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 d
 
           /* add atoms i to target atoms j */
           FstatAtom *destAtom = &atomsOut->data[j];
+          destAtom->timestamp = tMin + i * deltaT;	/* set binned output atoms timestamp */
 
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;
@@ -578,7 +638,7 @@ XLALmergeMultiFstatAtomsOnGrid ( const MultiFstatAtomVector *multiAtoms, UINT4 d
 
   return atomsOut;
 
-} /* XLALmergeMultiFstatAtomsOnGrid() */
+} /* XLALmergeMultiFstatAtomsBinned() */
 
 /* comparison function for atoms: sort by GPS time */
 int
