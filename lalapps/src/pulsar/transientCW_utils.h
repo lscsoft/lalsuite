@@ -47,6 +47,8 @@ extern "C" {
 
 /* ---------- exported API defines ---------- */
 
+#define DAY24 (24 * 3600)	/* standard 24h day = 86400 seconds ==> this is what's used in the definition of 'tauDays' */
+
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
 typedef enum {
   TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
@@ -91,10 +93,10 @@ typedef struct
 /** Struct holding a transient CW candidate */
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
-  REAL8 fullFstat;			/**< 2F obtained in the full search over all SFTs */
+  REAL8 twoFtotal;			/**< 2F obtained in the full search over all SFTs */
   REAL8 maxFstat;			/**< maximal 2F value obtained over transientWindowRange */
-  UINT4 t0_maxF;			/**< start-time of max{2F} over transientWindowRange (in GPS seconds)*/
-  UINT4 tau_maxF;			/**< duration of max{2F} over transientWindowRange (in seconds) */
+  UINT4 t0offs_maxF;			/**< start-time offset from transient_t0 of max{2F} over transientWindowRange (in GPS seconds)*/
+  UINT4 tau_maxF;			/**< duration Tcoh where max{2F} occurred over the transientWindowRange (in seconds) */
   REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
 } TransientCandidate_t;
 
