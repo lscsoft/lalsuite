@@ -80,7 +80,6 @@ RCSID( "$Id$");
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 #define EPHEM_YEARS  "00-04"	/**< default range: override with --ephemYear */
-#define DAY24 (24 * 3600)	/* standard 24h day = 86400 seconds */
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -682,7 +681,7 @@ int main(int argc,char *argv[])
           }
           /* combine info on current transient-CW candidate */
           transientCand.doppler = dopplerpos;
-          transientCand.fullFstat =  2.0 * thisFCand.Fstat.F;
+          transientCand.twoFtotal =  2.0 * thisFCand.Fstat.F;
           if ( uvar.SignalOnly )
             transientCand.maxFstat += 4;
 

@@ -506,7 +506,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           if ( twoF > ret.maxFstat )
             {
               ret.maxFstat = twoF;
-              ret.t0_maxF  = t0_m;
+              ret.t0offs_maxF  = t0_m - windowRange.t0;	/* offset from transient-t0 */
               ret.tau_maxF = tau_n;
             }
 
@@ -670,13 +670,13 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand 
   }
 
   if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "\n\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]     2F_full     t0_Fmax   tau_Fmax      2F_max     logBstat\n");
+    fprintf (fp, "\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxFstat       logBstat\n");
   else
-    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g  %9d  %9d  %11.9g  %11.9g\n",
+    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g        %7.5f      %7.5f   %11.9g    %11.9g\n",
              thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
              thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-             thisCand->fullFstat,
-             thisCand->t0_maxF, thisCand->tau_maxF, thisCand->maxFstat,
+             thisCand->twoFtotal,
+             1.0 * thisCand->t0offs_maxF / DAY24, 1.0 * thisCand->tau_maxF / DAY24, thisCand->maxFstat,
              thisCand->logBstat
              );
 
