@@ -2597,12 +2597,12 @@ for ifos in ifo_coincs:
   print "setting up coherent-analysis jobs on " + ifos + " data...",
   sys.stdout.flush()
 
-  if cp.has_section('data'):
+  if cp.has_section('data') and not opts.ringdown:
     cohinsp_jobs[ifos].add_opt('segment-length',cp.get('data','segment-length'))
     cohinsp_jobs[ifos].add_opt('sample-rate',cp.get('data','sample-rate'))
   # FIXME: this exponent can be different for virgo; 
   # discontinue use of this variable
-  if cp.has_section('ligo-data'):
+  if cp.has_section('ligo-data') and not opts.ringdown:
     cohinsp_jobs[ifos].add_opt('dynamic-range-exponent', \
                                   cp.get('ligo-data','dynamic-range-exponent'))
 
