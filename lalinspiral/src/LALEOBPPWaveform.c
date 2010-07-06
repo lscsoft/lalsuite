@@ -1374,7 +1374,6 @@ LALEOBPPWaveformEngine (
 
    REAL8                   v2, eta, m, rn, r, rOld, s, p, q, dt, t, v, omega, f, ampl0;
    REAL8                   omegaOld;
-   REAL8                   omegamatch = -1.0;
 
    void                    *funcParams1, *funcParams2, *funcParams3;
 
@@ -1446,8 +1445,9 @@ LALEOBPPWaveformEngine (
    /* peakIdx is the index where omega is a maximum */
    /* finalIdx is the index of the last point before the */
    /* integration breaks */
-   INT4Vector              *rdMatchPoint;
-   INT4                    peakIdx, finalIdx;
+   UINT4Vector             *rdMatchPoint;
+   UINT4                   peakIdx  = 0;
+   UINT4                   finalIdx = 0;
 
    INITSTATUS(status, "LALEOBPPWaveformEngine", LALEOBPPWAVEFORMC);
    ATTATCHSTATUSPTR(status);
@@ -1817,7 +1817,7 @@ LALEOBPPWaveformEngine (
 
       rOld = r;
 
-      if ( omega <= omegaOld )
+      if ( omega <= omegaOld && !peakIdx )
       {
         printf("Triggered omegaOld condition\n" );
         peakIdx = count - 1;
@@ -2023,19 +2023,25 @@ LALEOBPPWaveformEngine (
    REAL8 tmpSamplingRate = params->tSampling;
    params->tSampling *= resampFac;
 
-   rdMatchPoint = XLALCreateINT4Vector( 3 );
-   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack / ( 2.0 * params->tSampling ));
-   rdMatchPoint->data[1] = peakIdx;
-   rdMatchPoint->data[2] = lastIdx;
+   rdMatchPoint = XLALCreateUINT4Vector( 3 );
 
    /* Check the first matching point is sensible */
-   if ( rdMatchPoint->data[0] < 0 )
+   if ( ceil( tStepBack / ( 2.0 * params->tSampling )) > peakIdx )
    {
      XLALPrintError( "Invalid index for first ringdown matching point.\n" );
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
    }
 
-   xlalStatus = XLALInspiralAttachRingdownWave( freq, omegamatch, sig1, sig2, params );
+   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 );
+   rdMatchPoint->data[1] = peakIdx;
+   rdMatchPoint->data[2] = finalIdx;
+
+   printf(" In EOB: indices %u %u %u\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2] );
+   printf(" sig1: %e %e %e\n", sig1Hi->data[rdMatchPoint->data[0]], sig1Hi->data[rdMatchPoint->data[1]], sig1Hi->data[rdMatchPoint->data[2]] );
+   printf(" sig1: %e %e %e\n", sig2Hi->data[rdMatchPoint->data[0]], sig2Hi->data[rdMatchPoint->data[1]], sig2Hi->data[rdMatchPoint->data[2]] );
+
+   xlalStatus = XLALInspiralHybridAttachRingdownWave(sig1Hi, sig2Hi,
+                   rdMatchPoint, params);
    if (xlalStatus != XLAL_SUCCESS )
    {
      XLALDestroyREAL4Vector( sig1 );
