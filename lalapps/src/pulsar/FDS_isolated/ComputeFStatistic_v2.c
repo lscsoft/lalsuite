@@ -259,10 +259,12 @@ typedef struct {
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transientWindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
-  INT4  transientMinStartTime;	/**< earliest GPS start-time for transient window marginalization */
-  INT4  transientMaxStartTime;	/**< latest GPS start-time for transient window marginalization */
-  REAL8 transientMinTauDays;	/**< smallest transient window length for marginalization in days */
-  REAL8 transientMaxTauDays;	/**< largest transient window length for marginalization in days */
+  INT4  transient_t0;		/**< earliest GPS start-time for transient window marginalization */
+  INT4  transient_t0Band;	/**< Range of GPS start-times to search in transient search, in seconds */
+  INT4  transient_dt0;		/**< Step-size for search/marginalization over transient-window start-time, in seconds */
+  REAL8 transient_tauDays;	/**< smallest transient window length for marginalization, in days */
+  REAL8 transient_tauDaysBand;	/**< Range of transient-window timescales to search, in days */
+  INT4 transient_dtau;		/**< Step-size for search/marginalization over transient-window timescale, in seconds */
 
 } UserInput_t;
 
@@ -986,10 +988,13 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
   LALregSTRINGUserStruct(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregINTUserStruct (status, transientMinStartTime,  0, UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization");
-  LALregINTUserStruct (status, transientMaxStartTime,  0, UVAR_OPTIONAL, "Latest GPS start-time for transient window marginalization");
-  LALregREALUserStruct(status, transientMinTauDays,    0, UVAR_OPTIONAL, "Shortest transient-window timescale for marginalization in days");
-  LALregREALUserStruct(status, transientMaxTauDays,    0, UVAR_OPTIONAL, "Longest transient-window timescale for marginalization in days");
+  LALregINTUserStruct (status, transient_t0,     0,  UVAR_OPTIONAL, "Earliest GPS start-time for transient window marginalization, in seconds");
+  LALregINTUserStruct (status, transient_t0Band, 0,  UVAR_OPTIONAL, "Range of GPS start-times to search in transient search, in seconds");
+  LALregINTUserStruct (status, transient_dt0,    0,  UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:Tsft]");
+
+  LALregREALUserStruct(status, transient_tauDays,0,  UVAR_OPTIONAL, "Shortest transient-window timescale, in days");
+  LALregREALUserStruct(status, transient_tauDaysBand,0,  UVAR_OPTIONAL, "Range of transient-window timescales to search, in days");
+  LALregINTUserStruct (status, transient_dtau,   0,  UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:Tsft]");
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
@@ -1436,20 +1441,36 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
-  cfg->transientWindowRange.t0_min   = uvar->transientMinStartTime;
-  cfg->transientWindowRange.t0_max   = uvar->transientMaxStartTime;
-  cfg->transientWindowRange.tau_min  = uvar->transientMinTauDays * DAY24;
-  cfg->transientWindowRange.tau_max  = uvar->transientMaxTauDays * DAY24;
+  /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
+  if ( cfg->transientWindowRange.type == TRANSIENT_NONE )
+    if ( XLALUserVarWasSet ( &uvar->transient_t0 ) || XLALUserVarWasSet ( &uvar->transient_t0Band ) || XLALUserVarWasSet ( &uvar->transient_dt0 ) ||
+         XLALUserVarWasSet ( &uvar->transient_tauDays ) || XLALUserVarWasSet ( &uvar->transient_tauDaysBand ) || XLALUserVarWasSet ( &uvar->transient_dtau ) ) {
+      XLALPrintError ("%s: ERROR: transientWindow->type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
 
-  if (   cfg->transientWindowRange.t0_min >  cfg->transientWindowRange.t0_max ) {
-    XLALPrintError ("%s: t0_min (%d) must be before t0_max (%d).\n", fn, cfg->transientWindowRange.t0_min, cfg->transientWindowRange.t0_max );
+  if (   uvar->transient_t0Band < 0 || uvar->transient_tauDaysBand < 0 ) {
+    XLALPrintError ("%s: only positive t0/tau bands allowed (%d, %f)\n", fn, uvar->transient_t0Band, uvar->transient_tauDaysBand );
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
 
-  if (   cfg->transientWindowRange.tau_min >  cfg->transientWindowRange.tau_max ) {
-    XLALPrintError ("%s: tau_min (%f d) must not be larger than tau_max (%f d).\n", fn, uvar->transientMinTauDays, uvar->transientMaxTauDays );
-    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  }
+  cfg->transientWindowRange.t0      = uvar->transient_t0;
+  cfg->transientWindowRange.t0Band  = uvar->transient_t0Band;
+
+
+  if ( XLALUserVarWasSet ( &uvar->transient_dt0 ) )
+    cfg->transientWindowRange.dt0 = uvar->transient_dt0;
+  else
+    cfg->transientWindowRange.dt0 = cfg->Tsft;
+
+  cfg->transientWindowRange.tau     = (UINT4) ( uvar->transient_tauDays * DAY24 );
+  cfg->transientWindowRange.tauBand = (UINT4) ( uvar->transient_tauDaysBand * DAY24 );
+
+  if ( XLALUserVarWasSet ( &uvar->transient_dtau ) )
+    cfg->transientWindowRange.dtau = uvar->transient_dtau;
+  else
+    cfg->transientWindowRange.dtau = cfg->Tsft;
+
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
