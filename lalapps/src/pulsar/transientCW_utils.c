@@ -478,20 +478,33 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
                 } /* for i = i_t1_last : i_t1 */
 
-
-              Dd = Ad * Bd - Cd * Cd;
-
-              twoF = norm * (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                                           - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
-                                           );
-
               i_t1_last = i_t1 + 1;		/* keep track of up to where we summed for the next iteration */
 
               break;
 
             case TRANSIENT_EXPONENTIAL:
-              XLALPrintError ("%s: sorry, exponential window not implemented yet!\n", fn );
-              XLAL_ERROR ( fn, XLAL_EINVAL );
+              /* reset all values */
+              Ad=0; Bd=0; Cd=0; Fa_re=0; Fa_im=0; Fb_re=0; Fb_im=0;
+
+              for ( UINT4 i = i_t0; i <= i_t1; i ++ )
+                {
+                  FstatAtom *thisAtom_i = &atoms->data[i];
+                  UINT4 t_i = thisAtom_i->timestamp;
+
+                  REAL8 win_i = exp ( - 1.0 * ( t_i - t0_m ) / tau_n );	/* exponential window */
+                  REAL8 win2_i = win_i * win_i;
+
+                  Ad += thisAtom_i->a2_alpha * win2_i;
+                  Bd += thisAtom_i->b2_alpha * win2_i;
+                  Cd += thisAtom_i->ab_alpha * win2_i;
+
+                  Fa_re += thisAtom_i->Fa_alpha.re * win_i;
+                  Fa_im += thisAtom_i->Fa_alpha.im * win_i;
+
+                  Fb_re += thisAtom_i->Fb_alpha.re * win_i;
+                  Fb_im += thisAtom_i->Fb_alpha.im * win_i;
+
+                } /* for i in [i_t0, i_t1] */
               break;
 
             default:
@@ -501,6 +514,14 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
               break;
 
             } /* switch window.type */
+
+
+          /* generic F-stat calculation from A,B,C, Fa, Fb */
+          Dd = Ad * Bd - Cd * Cd;
+
+          twoF = norm * (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                                       - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                                       );
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( twoF > ret.maxFstat )
