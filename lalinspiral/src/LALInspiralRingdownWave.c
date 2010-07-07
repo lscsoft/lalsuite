@@ -135,12 +135,16 @@ INT4 XLALInspiralHybridRingdownWave (
   REAL8 tj;
 
   dt = 1.0 / params -> tSampling;
-
-  t3 = (matchrange->data[0] - matchrange->data[1]) * dt;
+  printf("dt: %f\n",dt);
+  printf("tSampling: %f\n",params -> tSampling);
+  printf("matchrange: %d   %d   %d\n",matchrange->data[0],matchrange->data[1],matchrange->data[2]);
+  printf("range diff: %d \n",matchrange->data[0] - matchrange->data[1]);
+  t3 = ((int)matchrange->data[0] - (int)matchrange->data[1]) * dt;
   rt = -t3 / 3.;
   t2 = t3 + rt;
   t1 = t2 + rt;
   
+  printf("time list: %f   %f   %f \n",t1,t2,t3);
   if ( inspwave1->length != 3 || inspwave2->length != 3 ||
 		modefreqs->length != nmodes )
   {
@@ -165,6 +169,7 @@ INT4 XLALInspiralHybridRingdownWave (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
+  printf("time list: %f   %f   %f \n",t1,t2,t3);
   /* Define the linear system Ax=y */
   /* Matrix A (2*n by 2*n) has block symmetry. Define half of A here as "coef" */
   /* Define y here as "hderivs" */
@@ -206,16 +211,14 @@ INT4 XLALInspiralHybridRingdownWave (
   {
 	gsl_vector_set(hderivs, i, inspwave1->data[(i + 1) * inspwave1->vectorLength - 1]);
 	gsl_vector_set(hderivs, i + nmodes, inspwave2->data[(i + 1) * inspwave2->vectorLength - 1]);
+	gsl_vector_set(hderivs, i + 5, inspwave1->data[i * inspwave1->vectorLength]);
+	gsl_vector_set(hderivs, i + 5 + nmodes, inspwave2->data[i * inspwave2->vectorLength]);
   }
-  gsl_vector_set(hderivs, 3, inspwave1->data[1]);
-  gsl_vector_set(hderivs, 3 + nmodes, inspwave2->data[1]);
-  gsl_vector_set(hderivs, 4, inspwave1->data[2]);
-  gsl_vector_set(hderivs, 4 + nmodes, inspwave2->data[2]);
-  for (i = 5; i < 8; ++i)
-  {
-	gsl_vector_set(hderivs, i, inspwave1->data[i * inspwave1->vectorLength]);
-	gsl_vector_set(hderivs, i + nmodes, inspwave2->data[i * inspwave2->vectorLength]);
-  }
+  gsl_vector_set(hderivs, 3, inspwave1->data[2]);
+  gsl_vector_set(hderivs, 3 + nmodes, inspwave2->data[2]);
+  gsl_vector_set(hderivs, 4, inspwave1->data[1]);
+  gsl_vector_set(hderivs, 4 + nmodes, inspwave2->data[1]);
+  
   /* Complete the definition for the rest half of A */
   for (i = 0; i < nmodes; ++i)
   {
@@ -226,13 +229,36 @@ INT4 XLALInspiralHybridRingdownWave (
 	}
   }
 
+  printf("matching matrix:\n");
+  for (i = 0; i < 16; ++i)
+  {
+    for (j = 0; j < 16; ++j)
+    {
+      printf("%8.2f ",gsl_matrix_get(coef,i,j));
+    }
+    printf("\n");
+  }
+   
+  printf("RHS:  ");
+  for (i = 0; i < 16; ++i)
+  {
+    printf("%e   ",gsl_vector_get(hderivs,i));
+  }
+  printf("\n");
+ 
   /* Call gsl LU decomposition to solve the linear system */
   gslStatus = gsl_linalg_LU_decomp(coef, p, &s);
   if ( gslStatus == GSL_SUCCESS )
   {
     gslStatus = gsl_linalg_LU_solve(coef, p, hderivs, x);
   }
-
+  printf("coefs:  ");
+  for (i = 0; i < 16; ++i)
+  {
+    printf("%8.2e   ",gsl_vector_get(x,i));
+  }
+  printf("\n");
+  printf("Eqn1: %e \n", gsl_vector_get(x,0) + gsl_vector_get(x,1) + gsl_vector_get(x,2) + gsl_vector_get(x,3) + gsl_vector_get(x,4) + gsl_vector_get(x,5) + gsl_vector_get(x,6) + gsl_vector_get(x,7) );
   if ( gslStatus != GSL_SUCCESS )
   {
     gsl_matrix_free(coef);
@@ -470,7 +496,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
   tlist[1] = tlist[0] + rt;
   tlist[2] = tlist[1] + rt;
   tlist[3] = matchrange->data[1];
-
+  printf("tlist in deriv: %d, %d, %d, %d \n",tlist[0], tlist[1], tlist[2], tlist[3]);
 
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initiate arrays and supporting variables for gsl */
@@ -518,11 +544,11 @@ INT4 XLALGenerateHybridWaveDerivatives (
   /* Getting first and second order time derivatives from gsl interpolations */
   for (j = 0; j < 4; ++j)
   {
-    gslStatus = gsl_spline_eval_e( spline, (double)tlist[j], acc, &ry );
+    gslStatus = gsl_spline_eval_e( spline, tlist[j], acc, &ry );
     if ( gslStatus == GSL_SUCCESS )
     {
-      gslStatus = gsl_spline_eval_deriv_e(spline, (double)tlist[j], acc, &dy );
-      gslStatus = gsl_spline_eval_deriv2_e(spline, (double)tlist[j], acc, &dy2 );
+      gslStatus = gsl_spline_eval_deriv_e(spline, tlist[j], acc, &dy );
+      gslStatus = gsl_spline_eval_deriv2_e(spline, tlist[j], acc, &dy2 );
     }
     if (gslStatus != GSL_SUCCESS )
     {
@@ -537,7 +563,10 @@ INT4 XLALGenerateHybridWaveDerivatives (
     ddwave->data[j] = (REAL4)(dy2 / dt / dt);
 
   }
-
+  printf("In Deriv: \n");
+  printf("rwave: %e, %e, %e, %e \n", rwave->data[0],rwave->data[1],rwave->data[2], rwave->data[3]);
+  printf("dwave: %e, %e, %e, %e \n", dwave->data[0],dwave->data[1],dwave->data[2], dwave->data[3]);
+  printf("ddwave: %e, %e, %e, %e \n", ddwave->data[0], ddwave->data[1], ddwave->data[2], ddwave->data[3]); 
   /* Free gsl variables */
   gsl_spline_free(spline);
   gsl_interp_accel_free(acc);
@@ -743,6 +772,12 @@ INT4 XLALInspiralHybridAttachRingdownWave (
    /* Attaching position set by omega_match */
    /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
    /* -0.01 because the current EOBNR 4PN setting can't reach omega_match */
+
+      printf("length of signals: %d %d \n", signal1->length, signal2->length);
+      for ( j = 0; j < 160; ++j)
+      {
+        printf("%e      %e \n",signal1->data[j],signal2->data[j]);
+      }
 
       dt = 1./params->tSampling;
       tmatch = matchrange->data[1];
