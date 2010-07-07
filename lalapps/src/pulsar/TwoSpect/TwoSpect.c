@@ -1325,7 +1325,7 @@ void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rn
    INT4 numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);     //Number of frequency bins
    
    REAL8Vector *antweightssq = XLALCreateREAL8Vector(numffts);
-   for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[jj]*antPatternWeights->data[jj];
+   for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
    
    for (ii=0; ii<numfbins; ii++) {
       
