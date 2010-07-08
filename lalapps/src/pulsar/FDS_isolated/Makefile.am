@@ -11,14 +11,15 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_zellepolka		\
-	lalapps_PredictFStat \
+	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
-	lalapps_synthesizeBstatMC lalapps_ComputeFStatistic_v2
+	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats
 
 check_PROGRAMS = testFstat_v3
 
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
 		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
+
 
 # CFSv2 doesn't compile with Condor
 #if CONDOR_ENABLED
@@ -83,6 +84,7 @@ eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.c
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
+lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 
