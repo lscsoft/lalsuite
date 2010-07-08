@@ -147,6 +147,8 @@ REAL4   maxMass         = -1;           /* maximum component mass       */
 REAL4   minTotalMass    = -1;           /* minimum total mass           */
 REAL4   maxTotalMass    = -1;           /* maximum total mass           */
 REAL4   chirpMassCutoff = -1;           /* maximum chirp mass to keep   */
+REAL4   etaMinCutoff    = -1;           /* minimum eta to keep          */
+REAL4   etaMaxCutoff    = -1;           /* maximum eta to keep          */
 REAL4   psi0Min         = 0;            /* minimum value of psi0        */
 REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
@@ -1055,6 +1057,14 @@ int main ( int argc, char *argv[] )
     numCoarse = XLALCountSnglInspiral( tmplt );
   }
 
+  /* Do eta cut */
+  if ( etaMinCutoff >= 0 || etaMaxCutoff > 0 )
+  {
+    tmplt = XLALMassCut( tmplt, "eta", etaMinCutoff, etaMaxCutoff, -1, -1 );
+    /* count the remaining tmplts */
+    numCoarse = XLALCountSnglInspiral( tmplt );
+  }
+
   if ( vrbflg )
   {
     fprintf( stdout, "done. Got %d templates\n", numCoarse );
@@ -1446,6 +1456,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"max-total-mass",          required_argument, 0,                'y'},
     {"min-total-mass",          required_argument, 0,                'W'},
     {"chirp-mass-cutoff",       required_argument, 0,                'q'},
+    {"max-eta",                 required_argument, 0,                '0'},
+    {"min-eta",                 required_argument, 0,                'X'},
     {"disable-polygon-fit",     no_argument,            &polygonFit,       0 },
     {"disable-compute-moments", no_argument,            &computeMoments,   0 },
     /* standard candle parameters */
@@ -1489,7 +1501,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv,
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
         long_options, &option_index );
 
@@ -2228,6 +2240,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", chirpMassCutoff );
+        break;
+
+      case 'X':
+        etaMinCutoff = (REAL4) atof( optarg );
+        if ( etaMinCutoff < 0 || etaMinCutoff >= 0.25 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimum eta must be >= 0 and < 0.25: "
+              "(%f specified)\n",
+              long_options[option_index].name, etaMinCutoff);
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", etaMinCutoff);
+        break;
+
+      case '0':
+        etaMaxCutoff = (REAL4) atof( optarg );
+        if ( etaMaxCutoff <= 0 || etaMaxCutoff > 0.25 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "maximum eta must be > 0 and <= 0.25: "
+              "(%f specified)\n",
+              long_options[option_index].name, etaMaxCutoff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", etaMaxCutoff );
         break;
 
       case 'k':
@@ -3016,6 +3054,30 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr,
           "Error: argument to --minimum-kappa1 must be less than --maximum-kappa1 .\n" );
       exit( 1 );
+    }
+  }
+
+  if( etaMaxCutoff > 0 || etaMinCutoff >= 0 )
+  {
+    if( etaMaxCutoff <= 0 )
+    {
+      fprintf( stderr,
+          "Error: argument --max-eta must be given if --min-eta is given\n");
+      exit(1);
+    }
+
+    if( etaMinCutoff < 0 )
+    {
+      fprintf( stderr,
+          "Error: argument --min-eta must be given if --max-eta is given\n");
+      exit(1);
+    }
+    
+    if( etaMaxCutoff < etaMinCutoff )
+    {
+      fprintf( stderr,
+            "Error: value for --max-eta must be greater than or equal to value for --min-eta\n");
+      exit(1);
     }
   }
 
