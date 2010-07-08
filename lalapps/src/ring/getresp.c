@@ -50,13 +50,13 @@ COMPLEX8FrequencySeries * get_response(
     REAL8        dataDuration,
     REAL8        dataSampleRate,
     REAL4        responseScale,
-    int          dataType,
+    int          strainData,
     const char  *channel_name
     )
 {
   COMPLEX8FrequencySeries *response;
 
-  if ( dataType == LALRINGDOWN_DATATYPE_HT_REAL4 || dataType == LALRINGDOWN_DATATYPE_HT_REAL8 )
+  if ( strainData )
     response = get_impulse_response( ifoName, epoch, dataDuration,
         dataSampleRate, responseScale );
   else

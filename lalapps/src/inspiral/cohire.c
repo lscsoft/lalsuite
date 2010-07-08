@@ -19,7 +19,6 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
-#include <glob.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
@@ -76,10 +75,6 @@ static void print_usage(char *program)
       " [--comment]       string      set the process table comment to string\n"\
       " [--version]                   print the CVS version string\n"\
       "\n"\
-      "Input data source (one of these is required):\n"\
-      " [--glob]          glob        use pattern glob to determine the input files\n"\
-      " [--input]         input_file  read list of input XML files from input_file\n"\
-      "\n"\
       "Output data destination:\n"\
       "  --output         output_file write output data to output_file\n"\
       " [--summary-file]  summ_file   write trigger analysis summary to summ_file\n"\
@@ -117,16 +112,8 @@ static void print_usage(char *program)
       " [--injection-file]   inj_file read injection parameters from inj_file\n"\
       " [--injection-window] inj_win  trigger and injection coincidence window (ms)\n"\
       " [--missed-injections] missed  write sim_inspiral for missed injections to FILE\n");
-}
-
-/* function to read the next line of data from the input file list */
-static char *get_next_line( char *line, size_t size, FILE *fp )
-{
-  char *s;
-  do
-    s = fgets( line, size, fp );
-  while ( ( line[0] == '#' || line[0] == '%' ) && s );
-  return s;
+  fprintf( stderr, "\n");
+  fprintf( stderr, "[LIGOLW XML input files] list of the input trigger files.\n");
 }
 
 int sortTriggers = 0;
@@ -143,14 +130,11 @@ int main( int argc, char *argv[] )
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
   char *ifoName = NULL;
-  char *inputGlob = NULL;
-  char *inputFileName = NULL;
   char *outputFileName = NULL;
   char *summFileName = NULL;
   char *injectFileName = NULL;
   char *vetoFileName = NULL;
   char *missedFileName = NULL;
-  char **inFileNameList;
   char line[MAX_PATH];
   REAL4 snrStar = -1;
   REAL4 rsqVetoThresh = -1;
@@ -163,7 +147,6 @@ int main( int argc, char *argv[] )
   INT8 injectWindowNS = -1;
   int j;
   FILE *fp = NULL;
-  glob_t globbedFiles;
   int numInFiles = 0;
 
   UINT8 triggerInputTimeNS = 0;
@@ -209,6 +192,7 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
   MetadataTable         savedEvents;
+  MetadataTable         searchSummvarsTable;
 
   /*
    *
@@ -255,8 +239,6 @@ int main( int argc, char *argv[] )
       {"comment",                 required_argument,      0,              'c'},
       {"version",                 no_argument,            0,              'V'},
       {"data-type",               required_argument,      0,              'k'},
-      {"glob",                    required_argument,      0,              'g'},
-      {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
       {"extract-slide",           required_argument,      0,              'e'},
@@ -283,7 +265,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only ( argc, argv, 
-        "c:d:D:g:hi:j:k:m:o:r:s:t:v:zC:DH:I:R:ST:VZ:", 
+        "c:d:D:hj:k:m:o:r:s:t:v:zC:DH:I:R:ST:VZ:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -351,22 +333,6 @@ int main( int argc, char *argv[] )
             "Sukanta Bose\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'g':
-        /* create storage for the input file glob */
-        optarg_len = strlen( optarg ) + 1;
-        inputGlob = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputGlob, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "'%s'", optarg );
-        break;
-
-      case 'i':
-        /* create storage for the input file name */
-        optarg_len = strlen( optarg ) + 1;
-        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'o':
@@ -632,16 +598,6 @@ int main( int argc, char *argv[] )
     }   
   }
 
-  if ( optind < argc )
-  {
-    fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
-    {
-      fprintf ( stderr, "%s\n", argv[optind++] );
-    }
-    exit( 1 );
-  }
-
 
   /*
    *
@@ -664,12 +620,7 @@ int main( int argc, char *argv[] )
         "%s", comment );
   }
 
-  /* check that the input and output file names have been specified */
-  if ( (! inputGlob && ! inputFileName) || (inputGlob && inputFileName) )
-  {
-    fprintf( stderr, "exactly one of --glob or --input must be specified\n" );
-    exit( 1 );
-  }
+  /* check that the output file name has been specified */
   if ( ! outputFileName )
   {
     fprintf( stderr, "--output must be specified\n" );
@@ -765,6 +716,7 @@ int main( int argc, char *argv[] )
     XLALSegListCoalesce( &vetoSegs );
   }
 
+
   /*
    *
    * read in the input triggers from the xml files
@@ -772,96 +724,50 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( inputGlob )
+  /* if we have run out of arguments on the command line, throw an error */
+  if ( ! (optind < argc) )
   {
-    /* use glob() to get a list of the input file names */
-    if ( glob( inputGlob, GLOB_ERR, NULL, &globbedFiles ) )
-    {
-      perror( "error:" );
-      fprintf( stderr, "error globbing files from %s\n", inputGlob );
-      exit( 1 );
-    }
-
-    numInFiles = globbedFiles.gl_pathc;
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      inFileNameList[j] = globbedFiles.gl_pathv[j];
-    }
+    fprintf( stderr, "Error: No input trigger files specified.\n" );
+    exit( 1 );
   }
-  else if ( inputFileName )
-  {
-    /* read the list of input filenames from a file */
-    fp = fopen( inputFileName, "r" );
-    if ( ! fp )
-    {
-      perror( "error:" );
-      fprintf( stderr, "could not open file containing list of xml files\n" );
-      exit( 1 );
-    }
 
-    /* count the number of lines in the file */
-    while ( get_next_line( line, sizeof(line), fp ) )
-    {
-      ++numInFiles;
-    }
-    rewind( fp );
-
-    /* allocate memory to store the input file names */
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    /* read in the input file names */
-    for ( j = 0; j < numInFiles; ++j )
-      {
-        inFileNameList[j] = (char *) LALCalloc( MAX_PATH, sizeof(char) );
-        get_next_line( line, sizeof(line), fp );
-        strncpy( inFileNameList[j], line, strlen(line) - 1);
-      }
-    
-    fclose( fp );
-  }
-  else
-    {
-      fprintf( stderr, "no input file mechanism specified\n" );
-      exit( 1 );
-    }
-  
   /* read in the triggers */
-  for( j = 0; j < numInFiles; ++j )
-    {
-      INT4 numFileTriggers = 0;
-      MultiInspiralTable   *inspiralFileList = NULL;
-      MultiInspiralTable   *thisFileTrigger  = NULL;
-      
-      numFileTriggers = XLALReadMultiInspiralTriggerFile( &inspiralFileList,
-          &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
-      numEvents += numFileTriggers;
-      
+  for( j = optind; j < argc; ++j )
+  {
+    INT4 numFileTriggers = 0;
+    MultiInspiralTable   *inspiralFileList = NULL;
+    MultiInspiralTable   *thisFileTrigger  = NULL;
+
+    numInFiles++;
+
+    numFileTriggers = XLALReadMultiInspiralTriggerFile( &inspiralFileList,
+        &thisFileTrigger, &searchSummList, &inputFiles, argv[j] );
+    numEvents += numFileTriggers;
+
     if (numFileTriggers < 0)
-      {
-        fprintf(stderr, "Error reading triggers from file %s\n",
-                inFileNameList[j]);
-        exit( 1 );
-      }
+    {
+      fprintf(stderr, "Error reading triggers from file %s\n",
+          argv[j]);
+      exit( 1 );
+    }
     else
+    {
+      if ( vrbflg )
       {
-        if ( vrbflg )
-          {
-            fprintf(stdout, "Read %d reading triggers from file %s\n",
-                    numFileTriggers, inFileNameList[j]);
-          }
+        fprintf(stdout, "Read %d reading triggers from file %s\n",
+            numFileTriggers, argv[j]);
       }
-    
+    }
+
     /* read the summ value table as well. */
-    XLALReadSummValueFile(&summValueList, inFileNameList[j]);
-    
+    XLALReadSummValueFile(&summValueList, argv[j]);
+
     /*
      *
      *  keep only relevant triggers
      *
      */
-   
+
     if( ifos )
     {
       numFileTriggers = XLALMultiInspiralIfosCut( &inspiralFileList, ifos );
@@ -869,7 +775,7 @@ int main( int argc, char *argv[] )
           "Kept %d coincs from %s instruments\n", numFileTriggers, ifos );
       numEventsInIfos += numFileTriggers;
     }
- 
+
     /* Do playground_only or exclude_play cut */
     if ( dataType != all_data )
     {
@@ -899,17 +805,17 @@ int main( int argc, char *argv[] )
     }
 
     /* NOTE: Add vetoing:
-    if ( vetoFileName )
-    {
-      inspiralFileList = XLALVetoMultiInspiral( inspiralFileList, &vetoSegs , ifoName);
-      count the triggers 
-      numFileTriggers = XLALCountMultiInspiral( inspiralFileList );
-      if ( vrbflg ) fprintf( stdout, "Have %d triggers after applying veto\n",
-      numFileTriggers );
-      numEventsSurvivingVeto += numFileTriggers;
-      
-     }
-    */
+       if ( vetoFileName )
+       {
+       inspiralFileList = XLALVetoMultiInspiral( inspiralFileList, &vetoSegs , ifoName);
+       count the triggers 
+       numFileTriggers = XLALCountMultiInspiral( inspiralFileList );
+       if ( vrbflg ) fprintf( stdout, "Have %d triggers after applying veto\n",
+       numFileTriggers );
+       numEventsSurvivingVeto += numFileTriggers;
+
+       }
+     */
 
     /* If there are any remaining triggers ... */
     if ( inspiralFileList )
@@ -1135,6 +1041,7 @@ int main( int argc, char *argv[] )
         numClusteredEvents );
   }
 
+
   /*
    *
    * write output data
@@ -1180,6 +1087,15 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+  /* write the search_summvars table */
+  if ( vrbflg ) fprintf( stdout, "search_summvars... " );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream,
+        search_summvars_table), &status );
+  searchSummvarsTable.searchSummvarsTable = inputFiles;
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
+        search_summvars_table), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
   /* write summ_value table */
   if ( summValueList )
@@ -1383,29 +1299,6 @@ int main( int argc, char *argv[] )
     tmpSimEvent = missedSimHead;
     missedSimHead = missedSimHead->next;
     LALFree( tmpSimEvent );
-  }
-
-  /* free the input file name data */
-  if ( inputGlob )
-  {
-    LALFree( inFileNameList ); 
-    globfree( &globbedFiles );
-  }
-  else
-  {
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      LALFree( inFileNameList[j] );
-    }
-    LALFree( inFileNameList );
-  }
-
-    /* free input files list */
-  while ( inputFiles )
-  {
-    thisInputFile = inputFiles;
-    inputFiles = thisInputFile->next;
-    LALFree( thisInputFile );
   }
 
   /* free search summaries read in */

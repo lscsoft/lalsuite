@@ -1691,12 +1691,12 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-cohh1h2snr           write H1-H2 coherent-snr when data from both ifos are present\n"\
 "  --output-path                write files here\n"\
 "  --write-compress             write compressed xml files\n"\
-"  --H1-framefile               frame data for H1\n"\
-"  --H2-framefile               frame data for H2\n"\
-"  --L1-framefile                frame data for L\n"\
-"  --V1-framefile                frame data for V\n"\
-"  --G1-framefile                frame data for G\n"\
-"  --T1-framefile                frame data for T\n"\
+"  --h1-framefile               frame data for H1\n"\
+"  --h2-framefile               frame data for H2\n"\
+"  --l1-framefile                frame data for L\n"\
+"  --v1-framefile                frame data for V\n"\
+"  --g1-framefile                frame data for G\n"\
+"  --t1-framefile                frame data for T\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -1742,12 +1742,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"eff-snr-denom-fac",        required_argument, 0,                 'E'},
      {"exttrig",                  no_argument,       &exttrig,           1 },
      {"output-path",              required_argument, 0,                 'P'},
-     {"H1-framefile",             required_argument, 0,                 'A'},
-     {"H2-framefile",             required_argument, 0,                 'Z'},
-     {"L1-framefile",             required_argument, 0,                 'L'},
-     {"V1-framefile",             required_argument, 0,                 'V'},
-     {"G1-framefile",             required_argument, 0,                 'G'},
-     {"T1-framefile",             required_argument, 0,                 'T'},
+     {"h1-framefile",             required_argument, 0,                 'A'},
+     {"h2-framefile",             required_argument, 0,                 'Z'},
+     {"l1-framefile",             required_argument, 0,                 'L'},
+     {"v1-framefile",             required_argument, 0,                 'V'},
+     {"g1-framefile",             required_argument, 0,                 'G'},
+     {"t1-framefile",             required_argument, 0,                 'T'},
      {0, 0, 0, 0}
    };
 

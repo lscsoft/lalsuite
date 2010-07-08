@@ -615,6 +615,8 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     gwffile = self.get_output_base()
     gwffile += '.gwf'
 
+    self.add_output_file(gwffile)
+
     return gwffile 
 
   def finalize(self):
@@ -1575,6 +1577,7 @@ class FrJoinNode(InspiralAnalysisNode):
     @param outputName: name of the injection file created
     """
     self.add_var_opt('output',outputName)
+    self.add_file_opt('output',outputName,file_is_output_file=True)
     self.__outputName = outputName
     
   def get_output(self):
@@ -1855,18 +1858,6 @@ class CohireNode(InspiralAnalysisNode):
     Returns the IFO tag string
     """
     return self.__ifo_tag
-
-  def set_glob(self, file_glob):
-    """
-    Sets the glob name
-    """
-    self.add_var_opt('glob',file_glob)
-
-  def set_input(self, input_file):
-    """
-    Sets the input file name
-    """
-    self.add_var_opt('input',input_file)
 
   def set_output_tag(self):
     fname = self.job().get_exec_name().upper()

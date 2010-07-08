@@ -210,7 +210,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 
   REAL8 probability = 0.0;  /* Confidence level = Chi-Square cumulative probability from 0 to data */
   BOOLEAN rejection = 0;    /* Reject the  hypothesis if 1. */
-  FSTUserInput cla;         /* user input: command line arguments */
+  FSTUserInput cla = {0, NULL, 0, NULL, NULL};         /* user input: command line arguments */
 
   FSTClustInfoPair clustInfoPair;
   FSTFstatPair *FaFbPair;

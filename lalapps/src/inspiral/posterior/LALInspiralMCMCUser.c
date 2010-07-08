@@ -352,6 +352,10 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   m1 = mc2mass1(mc,eta);
   m2 = mc2mass2(mc,eta);
 	parameter->logPrior+=-(5.0/6.0)*log(mc);
+  if(XLALMCMCCheckParameter(parameter,"logdist"))
+     parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
+  else
+     parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
 
   parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
@@ -617,6 +621,11 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
+	
+	if(inputMCMC->numberDataStreams==0){
+		parameter->logLikelihood=0.0;
+		return 0.0;
+	}
 	if(XLALMCMCCheckParameter(parameter,"logM")) mchirp=exp(XLALMCMCGetParameter(parameter,"logM"));
         else mchirp=XLALMCMCGetParameter(parameter,"mchirp");
 

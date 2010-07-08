@@ -113,11 +113,13 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"               );
   fprintf(stderr,     "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"               );
   fprintf(stderr,     "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"               );
+  fprintf(stderr,     "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"               );
   fprintf(stderr,     "  [--num-slides]    num_slides  The number of time slides to perform\n"                 );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-triggers]               input triggers from H1\n"                               );
   fprintf(stderr,     "  [--h2-triggers]               input triggers from H2\n"                               );
   fprintf(stderr,     "  [--l1-triggers]               input triggers from L1\n"                               );
+  fprintf(stderr,     "  [--v1-triggers]               input triggers from L1\n"                               );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "   --parameter-test     test    set parameters with which to test coincidence:\n"       );
   fprintf(stderr,     "                                (f_and_Q, ds_sq, ds_sq_fQt)\n"                          );
@@ -125,22 +127,27 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"              );
   fprintf(stderr,     "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"              );
   fprintf(stderr,     "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"              );
+  fprintf(stderr,     "  [--v1-time-accuracy]  v1_dt   specify the timing accuracy of V1 in ms\n"              );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-freq-accuracy]  h1_df   specify the freq accuracy of H1\n"                      );
   fprintf(stderr,     "  [--h2-freq-accuracy]  h2_df   specify the freq accuracy of H2\n"                      );
   fprintf(stderr,     "  [--l1-freq-accuracy]  l1_df   specify the freq accuracy of L1\n"                      );
+  fprintf(stderr,     "  [--v1-freq-accuracy]  v1_df   specify the freq accuracy of V1\n"                      );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-quality-accuracy]  h1_dq  specify the quality accuracy of H1\n"                 );
   fprintf(stderr,     "  [--h2-quality-accuracy]  h2_dq  specify the quality accuracy of H2\n"                 );
   fprintf(stderr,     "  [--l1-quality-accuracy]  l1_dq  specify the quality accuracy of L1\n"                 );
+  fprintf(stderr,     "  [--v1-quality-accuracy]  v1_dq  specify the quality accuracy of V1\n"                 );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-distance-accuracy]  h1_ddeff   specify the effective distance accuracy of H1\n" );
   fprintf(stderr,     "  [--h2-distance-accuracy]  h2_ddeff   specify the effective distance accuracy of H2\n" );
   fprintf(stderr,     "  [--l1-distance-accuracy]  l1_ddeff   specify the effective distance accuracy of L1\n" );
+  fprintf(stderr,     "  [--v1-distance-accuracy]  v1_ddeff   specify the effective distance accuracy of V1\n" );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
   fprintf(stderr,     "  [--h2-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
   fprintf(stderr,     "  [--l1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
+  fprintf(stderr,     "  [--v1-ds_sq-accuracy]  ds_sq     specify the ds squared accuracy\n"                   );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "   --data-type      data_type    specify the data type, must be one of\n"               );
   fprintf(stderr,     "                                 (playground_only|exclude_play|all_data)\n"             );
@@ -152,9 +159,10 @@ static void print_usage(char *program)
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--complete-coincs]                write out triggers from all non-vetoed ifos\n"     );
   fprintf(stderr,     "  [--do-veto]         do_veto        veto cetain segments\n"                            );
-  fprintf(stderr,     "  [--h1-veto-file]    h1_veto_file   specify h1 triggers to be vetoed\n"                );
-  fprintf(stderr,     "  [--h2-veto-file]    h2_veto_file   specify h2 triggers to be vetoed\n"                );
-  fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify l1 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--h1-veto-file]    h1_veto_file   specify H1 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--h2-veto-file]    h2_veto_file   specify H2 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--l1-veto-file]    l1_veto_file   specify L1 triggers to be vetoed\n"                );
+  fprintf(stderr,     "  [--v1-veto-file]    v1_veto_file   specify V1 triggers to be vetoed\n"                );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [LIGOLW XML input files]           list of the input trigger files.\n"                );
   fprintf(stderr,     "\n"                                                                                     );
@@ -253,6 +261,7 @@ int main( int argc, char *argv[] )
     {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },
     {"h2-triggers",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },
     {"l1-triggers",         no_argument,   &(haveTrig[LAL_IFO_L1]),   1 },
+    {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
     {"check-times",         no_argument,   &checkTimes,               1 },
     {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"h1-h2-distance-cut",  no_argument,   &distCut,                  1 },
@@ -263,22 +272,28 @@ int main( int argc, char *argv[] )
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
     {"l1-slide",            required_argument, 0,                    'e'},
+    {"v1-slide",            required_argument, 0,                    'f'},
     {"num-slides",          required_argument, 0,                    'T'},
     {"h1-time-accuracy",    required_argument, 0,                    'B'},
     {"h2-time-accuracy",    required_argument, 0,                    'C'},
     {"l1-time-accuracy",    required_argument, 0,                    'D'},
+    {"v1-time-accuracy",    required_argument, 0,                    'A'},
     {"h1-freq-accuracy",    required_argument, 0,                    'H'},
     {"h2-freq-accuracy",    required_argument, 0,                    'I'},
     {"l1-freq-accuracy",    required_argument, 0,                    'J'},
+    {"v1-freq-accuracy",    required_argument, 0,                    'K'},
     {"h1-quality-accuracy", required_argument, 0,                    'N'},
     {"h2-quality-accuracy", required_argument, 0,                    'O'},
     {"l1-quality-accuracy", required_argument, 0,                    'P'},
+    {"v1-quality-accuracy", required_argument, 0,                    'Q'},
     {"h1-dist-accuracy",    required_argument, 0,                    'n'},
     {"h2-dist-accuracy",    required_argument, 0,                    'o'},
     {"l1-dist-accuracy",    required_argument, 0,                    'p'},
+    {"v1-dist-accuracy",    required_argument, 0,                    'q'},
     {"h1-ds_sq-accuracy",   required_argument, 0,                    'E'},
     {"h2-ds_sq-accuracy",   required_argument, 0,                    'F'},
     {"l1-ds_sq-accuracy",   required_argument, 0,                    'G'},
+    {"v1-ds_sq-accuracy",   required_argument, 0,                    'L'},
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
@@ -296,6 +311,7 @@ int main( int argc, char *argv[] )
     {"h1-veto-file",        required_argument, 0,                    '('},
     {"h2-veto-file",        required_argument, 0,                    ')'},
     {"l1-veto-file",        required_argument, 0,                    '}'},
+    {"v1-veto-file",        required_argument, 0,                    '{'},
     {0, 0, 0, 0}
   };
   int c;
@@ -419,6 +435,12 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
     
+      case 'A':
+        /* time accuracy V1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dt = atof(optarg) * LAL_INT8_C(1000000);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+    
       case 'E':
         /* ds^2 accuracy H1*/
         accuracyParams.ifoAccuracy[LAL_IFO_H1].ds_sq = atof(optarg);
@@ -434,6 +456,12 @@ int main( int argc, char *argv[] )
      case 'G':
         /* ds^2 accuracy L1*/
         accuracyParams.ifoAccuracy[LAL_IFO_L1].ds_sq = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+     case 'L':
+        /* ds^2 accuracy V1*/
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].ds_sq = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -455,6 +483,12 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'K':
+        /* frequency accuracy V1, argument is in Hz */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].df = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       case 'N':
         /* quality factor accuracy H1 */
         accuracyParams.ifoAccuracy[LAL_IFO_H1].dQ = atof(optarg);
@@ -470,6 +504,12 @@ int main( int argc, char *argv[] )
       case 'P':
         /* quality factor accuracy L1 */
         accuracyParams.ifoAccuracy[LAL_IFO_L1].dQ = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'Q':
+        /* quality factor accuracy V1 */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dQ = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -515,6 +555,20 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "double", "%lf", slideStep[LAL_IFO_L1] );
         break;
         
+      case 'f':
+        /* slide time for V1 */
+        slideStep[LAL_IFO_V1] = atof( optarg );
+        if ( slideStep[LAL_IFO_V1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%f specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_V1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "double", "%lf", slideStep[LAL_IFO_V1] );
+        break;
+        
       case 'T':
         /* num slides*/
         numSlides = atoi( optarg );
@@ -544,6 +598,12 @@ int main( int argc, char *argv[] )
       case 'p':
         /* effective distance L1, argument is in Mpc  */
         accuracyParams.ifoAccuracy[LAL_IFO_L1].ddeff = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+                                
+      case 'q':
+        /* effective distance V1, argument is in Mpc  */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].ddeff = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
                                 
@@ -732,6 +792,14 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
   
+      case '{':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         print_usage(argv[0]);

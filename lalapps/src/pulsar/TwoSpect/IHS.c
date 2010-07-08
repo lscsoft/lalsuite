@@ -58,7 +58,7 @@ void free_ihsMaxima(ihsMaximaStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Run the IHS algorithm  -- done
-void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8Vector *tfnoiseratio, INT4 columns)
+void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8 Tobs, INT4 columns)
 {
 
    INT4 ii, jj;
@@ -71,7 +71,14 @@ void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8V
    for (ii=0; ii<(INT4)in->f->length; ii++) {
    
       //For each column, populate it with the data for that frequency bin (TRY dividing the expected noise)
-      for (jj=0; jj<(INT4)column->length; jj++) column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+      for (jj=0; jj<(INT4)column->length; jj++) {
+         
+         if (fabs(Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(Tobs/(6.0*3600.0)-jj)<=1.0) column->data[jj] = 0.0;
+         else column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj];
+         //else column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+         //column->data[jj] = in->ffdata->data[ii*in->fpr->length + jj]/(tfnoiseratio->data[ii]*ffnoise->data[jj]);
+         
+      }
       
       //Run the IHS algorithm on the column
       incHarmSum(ihsvals, column);
@@ -86,6 +93,9 @@ void runIHS(ihsMaximaStruct *out, ffdataStruct *in, REAL8Vector *ffnoise, REAL8V
    //Save the maxima for all the column sums
    //out->maxima = ihsSums(ihss, columns);
    ihsSums(out->maxima, ihss, columns);
+   /* FILE *IHSDATA = fopen("./ihsdata.dat","w");
+   for (ii=0; ii<(INT4)out->maxima->length; ii++) fprintf(IHSDATA,"%g %d\n",out->maxima->data[ii],out->locations->data[ii]);
+   fclose(IHSDATA); */
    
    //Save the column widths
    out->columns = columns;
@@ -177,7 +187,7 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
 
 //////////////////////////////////////////////////////////////
 // Compute the IHS FAR for a sum of a number of columns  --
-void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise)
+void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *aveNoise, REAL8 Tobs)
 {
    
    INT4 ii, jj, kk, length;
@@ -198,13 +208,15 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
    
    ihsVals *ihsvals = new_ihsVals();
    
-   
    //Determine IHS values for the number of trials
    noise = XLALCreateREAL8Vector((UINT4)length);
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise (TRY dividing the expected noise)
       //for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(aveNoise->data[jj], rng);
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) noise->data[jj] = expRandNum(1.0, rng);
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
+         if (fabs(Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(Tobs/(6.0*3600.0)-jj)<=1.0) noise->data[jj] = 0.0;
+         else noise->data[jj] = expRandNum(aveNoise->data[jj], rng);
+      }
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
@@ -213,10 +225,6 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
       
    }
    XLALDestroyREAL8Vector(noise);
-   
-   /* FILE *IHSFAR = fopen("./ihsdist1col.dat","w");
-   for (ii=0; ii<(INT4)ihss->length; ii++) fprintf(IHSFAR,"%g\n",ihss->data[ii]);
-   fclose(IHSFAR); */
    
    //Calculate the IHS sum values for the IHS trials
    ihsMaximaStruct *ihsmaxima = new_ihsMaxima(trials, columns);
@@ -266,6 +274,10 @@ void genIhsFar(ihsfarStruct *out, INT4 columns, REAL8 threshold, REAL8Vector *av
       tempihsvals = NULL;
    }
    
+   /* FILE *IHSFAR = fopen("./ihsfar.dat","w");
+   for (ii=0; ii<(INT4)out->ihsfar->length; ii++) fprintf(IHSFAR,"%g\n",out->ihsfar->data[ii]);
+   fclose(IHSFAR); */
+   
    //Destroy variables
    XLALDestroyREAL8Vector(ihss);
    free_ihsVals(ihsvals);
@@ -306,7 +318,6 @@ void ihsSums(REAL8Vector *out, REAL8Vector *ihss, INT4 cols)
 
 //////////////////////////////////////////////////////////////
 // Calculate the IHS FOM for a number of columns  -- 
-//REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma)
 REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *sigma)
 {
 
@@ -315,7 +326,6 @@ REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *sigma)
    
    //Create normalized SNR of IHS values
    REAL8Vector *snrs = XLALCreateREAL8Vector(ihss->length);
-   //for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = (ihss->data[ii]-expect->data[ii])/sigma->data[ii];
    for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii];
    
    //Find which pair has the best combined SNR (RMS) and the location
@@ -341,7 +351,6 @@ REAL8 ihsFOM(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *sigma)
 
 //////////////////////////////////////////////////////////////
 // Calculate a guess for the location of the brightest pixels
-//REAL8 ihsLoc(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *expect, REAL8Vector *sigma)
 REAL8 ihsLoc(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *sigma)
 {
 
@@ -350,7 +359,6 @@ REAL8 ihsLoc(REAL8Vector *ihss, INT4Vector *locs, REAL8Vector *sigma)
    
    //Create normalized SNR of IHS values
    REAL8Vector *snrs = XLALCreateREAL8Vector(ihss->length);
-   //for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = (ihss->data[ii]-expect->data[ii])/sigma->data[ii];
    for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii];
    
    //Find which pair has the best combined SNR (RMS) and the location
@@ -406,20 +414,20 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
       
          //Noise in the range of the columns, mean and rms values for IHS
          for (kk=0; kk<=ii; kk++) {
-            //ihsexpect->data[kk] = ihsfarstruct->ihsdistMean->data[0]*fbinavgratios->data[jj+kk];
-            //ihsstddev->data[kk] = ihsfarstruct->ihsdistSigma->data[0]*fbinrmsratios->data[jj+kk];
+            ihsexpect->data[kk] = ihsfarstruct->ihsdistMean->data[0]*fbinavgratios->data[jj+kk];
+            ihsstddev->data[kk] = ihsfarstruct->ihsdistSigma->data[0]*fbinrmsratios->data[jj+kk];
             ihsexpect->data[kk] = ihsfarstruct->ihsdistMean->data[0];
             ihsstddev->data[kk] = ihsfarstruct->ihsdistSigma->data[0];
             avgsinrange->data[kk] = fbinavgratios->data[jj+kk];
             rmssinrange->data[kk] = fbinrmsratios->data[jj+kk];
          }
          
-         //REAL8 meanNoise = calcMean(avgsinrange);
+         REAL8 meanNoise = calcMean(avgsinrange);
          //REAL8 rmsNoise = calcRms(rmssinrange);
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
-         //if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {
-         if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]) {
+         if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {
+         //if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]) {
          
             //Load temporary vectors for determining the FOM
             for (kk=0; kk<=ii; kk++) {
@@ -428,11 +436,9 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
             }
             
             //Compute the IHS FOM
-            //REAL8 fom = ihsFOM(ihss, locs, ihsexpect, ihsstddev);
             REAL8 fom = ihsFOM(ihss, locs, ihsstddev);
             
             //Compute the best location
-            //REAL8 loc = ihsLoc(ihss, locs, ihsexpect, ihsstddev);
             REAL8 loc = ihsLoc(ihss, locs, ihsstddev);
          
             //Check the IHS FOM against the FAR, if smaller, and the location is non-zero,
@@ -453,7 +459,7 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
                //REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
                //REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
                candlist[(*numofcandidates)] = new_candidate();
-               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, 0.0, 0.0, 0.0, 0, ffdata->ffnormalization);
+               loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, 0.0, 0.0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*inputParams->Tcoh));
                (*numofcandidates)++;
             }
          }
