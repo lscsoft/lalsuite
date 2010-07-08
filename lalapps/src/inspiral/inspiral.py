@@ -239,7 +239,7 @@ class PTFInspiralJob(InspiralAnalysisJob):
     sections = ['coh_PTF_inspiral']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('Requirements','Memory >= 1500')
+    self.add_condor_cmd('Requirements','Memory >= 1390')
 
 class PTFSpinCheckerJob(InspiralAnalysisJob):
   """
@@ -253,7 +253,7 @@ class PTFSpinCheckerJob(InspiralAnalysisJob):
     sections = ['coh_PTF_spin_checker']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('Requirements','Memory >= 1500')
+    self.add_condor_cmd('Requirements','Memory >= 1390')
 
 class TrigbankJob(InspiralAnalysisJob):
   """
