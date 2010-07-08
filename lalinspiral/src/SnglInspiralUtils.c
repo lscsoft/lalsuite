@@ -2195,6 +2195,10 @@ XLALMassCut(
     {
       massParam = tmpEvent->mchirp;
     }
+    else if ( ! strcmp(massCut,"eta") )
+    {
+      massParam = tmpEvent->eta;
+    }
     else if ( ! strcmp(massCut,"mtotal") )
     {
       massParam = tmpEvent->mass1 + tmpEvent->mass2;
