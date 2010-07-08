@@ -1867,30 +1867,43 @@ void cohPTFmodBasesUnconstrainedStatistic(
         /* Test whether to do chi^2 */
         if ( params->chiSquareCalcThreshold )
         {
+          chisqCheck = 1;
+          
           bestNR = cohSNR->data->data[i-numPoints/4];
 
           if (params->doNullStream)
           {
-            if (nullSNR->data->data[i-numPoints/4] > 5.5 && bestNR < 30)
-              bestNR = bestNR * 1./(nullSNR->data->data[i-numPoints/4] - 4.5);
+            if (nullSNR->data->data[i-numPoints/4] > params->nullStatThreshold \
+                && bestNR < params->nullStatGradOn)
+            {
+              chisqCheck = 0;
+            }
+            else if (bestNR > params->nullStatGradOn)
+            {
+              if (nullSNR->data->data[i-numPoints/4] > (params->nullStatThreshold + (bestNR - params->nullStatGradOn)*params->nullStatGradient))
+              {
+                chisqCheck = 0;
+              }
+            }
           }
   
           if (params->doBankVeto)
           {
             if (bankVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),6./5.))/2.,1./6.);
+              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),params->bankVetoq/params->bankVeton))/2.,1./params->bankVetoq);
+            if (bestNR < params->chiSquareCalcThreshold)
+              chisqCheck = 0;
           }
+
+          bestNR = cohSNR->data->data[i-numPoints/4];
 
           if (params->doAutoVeto)
           {
             if (autoVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),1.5))/2.,1./6.);
+              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),params->autoVetoq/params->autoVeton))/2.,1./params->autoVetoq);
+            if (bestNR < params->chiSquareCalcThreshold)
+              chisqCheck = 0;
           } 
-
-          if (bestNR > params->chiSquareCalcThreshold)
-            chisqCheck = 1;
-          else
-            chisqCheck = 0;
         }
         else
           chisqCheck = 1;

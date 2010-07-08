@@ -98,6 +98,13 @@ struct coh_PTF_params {
   const char  *bankVetoBankName;
   UINT4        numAutoPoints;
   REAL4        autoVetoTimeStep;
+  REAL4        bankVeton;
+  REAL4        bankVetoq;
+  REAL4        autoVeton;
+  REAL4        autoVetoq;
+  REAL4        nullStatThreshold;
+  REAL4        nullStatGradOn;
+  REAL4        nullStatGradient;
   UINT4        numChiSquareBins;
   REAL4        chiSquareCalcThreshold;
   char         outputFile[256];

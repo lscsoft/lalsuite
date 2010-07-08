@@ -323,6 +323,15 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   params->getSpectrum = 1;
   params->doFilter    = 1;
 
+  /* Some thresholding stuff, this should be command line options */
+  params->bankVeton = 3.;
+  params->bankVetoq = 4.;
+  params->autoVeton = 3.;
+  params->autoVetoq = 4.;
+  params->nullStatThreshold = 5.25;
+  params->nullStatGradOn = 30.;
+  params->nullStatGradient = 50./700.;
+
   return 0;
 }
 
