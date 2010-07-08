@@ -129,7 +129,7 @@ typedef struct tagPr3In {
 } pr3In;
 
 
-static REAL8
+static inline REAL8
 XLALCalculateA5( REAL8 eta );
 
 static void
@@ -140,15 +140,21 @@ omegaofrP4PN (
 
 
 static
-void LALHCapDerivativesP4PN(     REAL8Vector     *values,
-                                 REAL8Vector     *dvalues,
-                                void            *funcParams);
+void LALHCapDerivativesP4PN(   REAL8Vector *values,
+                               REAL8Vector *dvalues,
+                               void        *funcParams);
+
 static
-REAL8 XLALCalculateEOBA( REAL8Vector		*values,
-                         InspiralDerivativesIn	*ak);
+void LALHCapDerivativesP4PNFF(   REAL8Vector *values,
+                                 REAL8Vector *dvalues,
+                                 void        *funcParams);
+
 static
-REAL8 XLALCalculateEOBD( REAL8Vector		*values,
-                         InspiralDerivativesIn	*ak);
+REAL8 XLALCalculateEOBA( REAL8    r,
+                         REAL8  eta);
+static
+REAL8 XLALCalculateEOBD( REAL8    r,
+                         REAL8	eta);
 static
 REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
                                 InspiralDerivativesIn *ak);
@@ -167,14 +173,6 @@ REAL8 XLALrOfOmegaP4PN (REAL8 r, void *params);
 static
 void LALvrP4PN(REAL8 *vr, void *params);
 
-static
-INT4 XLALGetFactorizedWaveform( COMPLEX16	*hlm,
-				REAL8Vector           *values,
-                                    REAL8Vector           *dvalues,
-				    InspiralDerivativesIn *ak,
-                                    const INT4            l,
-                                    const INT4            m
-                                  );
 static void
 LALEOBPPWaveformEngine (
                 LALStatus        *status,
@@ -193,7 +191,6 @@ NRCSID (LALEOBPPWAVEFORMC,
 "$Id$");
 
 
-static
 INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 				REAL8Vector           *values,
 				REAL8Vector		  *dvalues,
@@ -617,20 +614,17 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	return XLAL_SUCCESS;
 }
 
-static
+static inline
 REAL8 XLALCalculateA5( REAL8 eta )
 {
   return -12.9499 + 204.779 * eta - 206.319 *eta*eta;
 }
 
 static
-REAL8 XLALCalculateEOBA( REAL8Vector		*values,
-                         InspiralDerivativesIn	*ak)
+REAL8 XLALCalculateEOBA( REAL8   r,
+                         REAL8 eta)
 {
-	REAL8 eta, eta2, r, u, u2, u3, u4, a4, a5, NA, DA;
-
-   	eta = ak->coeffs->eta;
-   	r   = values->data[0];
+	REAL8 eta2, u, u2, u3, u4, a4, a5, NA, DA;
 
 	eta2 = eta*eta;
 	u = 1./r;
@@ -648,13 +642,10 @@ REAL8 XLALCalculateEOBA( REAL8Vector		*values,
 }
 
 static
-REAL8 XLALCalculateEOBD( REAL8Vector		*values,
-                         InspiralDerivativesIn	*ak)
+REAL8 XLALCalculateEOBD( REAL8   r,
+                         REAL8 eta)
 {
-	REAL8 eta, r, u, u2, u3;
-
-   	eta = ak->coeffs->eta;
-   	r   = values->data[0];
+	REAL8  u, u2, u3;
 
 	u = 1./r;
 	u2 = u*u;
@@ -680,8 +671,8 @@ REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
 	pr2  = pr * pr;
 	pp2  = pp * pp;
 	
-	eoba = XLALCalculateEOBA( values, ak );
-	eobd = XLALCalculateEOBD( values, ak );
+	eoba = XLALCalculateEOBA( r, eta );
+	eobd = XLALCalculateEOBD( r, eta );
 	z3   = 2. * ( 4. - 3. * eta ) * eta;
 	return sqrt( eoba * ( 1. + eoba/eobd*pr2 + pp2/r2 + z3*pr2*pr2/r2 ) );	
 }
@@ -872,18 +863,20 @@ LALlightRingRadiusP4PN(
 LALHCapDerivativesP4PN(
                   REAL8Vector *values,
                   REAL8Vector *dvalues,
-                  void *funcParams
+                  void        *funcParams
                   )
 {
+
+   InspiralDerivativesIn *ak;
+
    REAL8 r, s, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
    REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
    REAL8 a5, c1;
    double dr, ds, dp, dq;
 
-   InspiralDerivativesIn *ak;
-
    ak = (InspiralDerivativesIn *) funcParams;
+
    eta = ak->coeffs->eta;
    zeta2 = ak->coeffs->zeta2;
 
@@ -940,6 +933,89 @@ LALHCapDerivativesP4PN(
    /*
    fprintf(stdout, "%e %e %e %e %e %e %e %e %e %e %e\n", r, s, p, q, Heff, v, Apot, dr, ds, dp, dq);
    */
+}
+
+/* Version which uses the factorized flux */
+void
+LALHCapDerivativesP4PNFF(
+					   REAL8Vector *values,
+					   REAL8Vector *dvalues,
+					   void        *funcParams
+					   )
+{
+
+  InspiralDerivativesIn *ak;
+
+  /* Max l to sum up to in the factorized flux */
+  const INT4 lMax = 8;
+
+  REAL8 r, s, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
+  REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
+  REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
+  REAL8 a5, c1;
+  double dr, ds, dp, dq;
+
+  ak = (InspiralDerivativesIn *) funcParams;
+
+  eta = ak->coeffs->eta;
+  zeta2 = ak->coeffs->zeta2;
+
+  r = values->data[0];
+  s = values->data[1];
+  p = values->data[2];
+  q = values->data[3];
+
+  p2 = p*p;
+  p3 = p2*p;
+  p4 = p2*p2;
+  q2 = q*q;
+  u = 1./r;
+  u2 = u*u;
+  u3 = u2 * u;
+  u4 = u2 * u2;
+  u5 = u*u4;
+  z30 = 2.L * (4.L - 3.L * eta) * eta;
+  z2 = 0.75L * z30 * zeta2,
+  z3 = z30 * (1.L - zeta2);
+  eta2 = eta*eta;
+
+  a4 = ninty4by3etc * eta;
+  a5 = XLALCalculateA5( eta );
+
+  NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
+  DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
+       - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
+       + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
+  Apot = NA/DA; /* This A(u) assume zeta2=0 (the default value) */
+
+  onebyD = 1. + 6.*eta*u2 + (2.*eta * ( 26. - 3.*eta ) - z2)* u3 + 36.*eta2*u4;
+  AbyD = Apot * onebyD;
+  Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
+  HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+  dA = -u2 * ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
+       ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
+        - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
+        + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u3))/(DA*DA);
+	
+  DonebyD = -12.*eta*u3 - (6.*eta*(26. - 3.*eta) - z2)*u4 - 144.*eta2*u5;
+  etahH = eta*Heff*HReal;
+
+  dr = dvalues->data[0] = Apot*(AbyD*p +  z30 * u2 *(2.* p3
+       + zeta2*(-0.5*p3 + 0.75*p*q2*u2)))/etahH;
+  ds = dvalues->data[1] = omega = Apot * q * u2 * (1. + 0.75*z30*zeta2*p2*u2)/ etahH;
+  v = pow(omega,oneby3);
+
+  dp = dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3
+       + (dA * onebyD + Apot * DonebyD) * p2
+       + z30 * u3 *(-2.* p4+zeta2*(0.5*p4 - 3.0*p2*q2*u2))) / etahH;
+  c1 = 1.+(u2 - 2.*u3*Apot/dA) * q2;/*below:dpphi/dt = F_RR*/
+
+  dq = XLALInspiralFactorizedFlux( values, dvalues, ak, lMax );
+  /* This function can fail */
+  /* TODO: Implement proper error checking */
+  dq = dvalues->data[3] = - dq /(eta * omega);
+  
+   fprintf(stdout, "Hcapd: %e %e %e %e %e %e %e %e %e %e %e\n", r, s, p, q, Heff, v, Apot, dr, ds, dp, dq);
 }
 
 
@@ -1537,7 +1613,7 @@ LALEOBPPWaveformEngine (
    /* Calculate the time we will need to step back for ringdown */
    tStepBack = 6.0 * params->totalMass * LAL_MTSUN_SI;
    nStepBack = ceil( tStepBack * params->tSampling );
-   printf( " We step back %d points\n", nStepBack );
+   XLALPrintInfo( " We step back %d points\n", nStepBack );
 
 
    /* Allocate vectors to keep track of previous values */
@@ -1669,7 +1745,14 @@ LALEOBPPWaveformEngine (
        /* then we compute the initial value of p */
        LALDBisectionFindRoot(status->statusPtr, &p, &rootIn3, funcParams2);
        CHECKSTATUSPTR(status);
-       in4.function = LALHCapDerivativesP4PN;
+       if ( params->approximant == EOBNR_PF )
+       {
+         in4.function = LALHCapDerivativesP4PNFF;
+       }
+       else
+       {
+         in4.function = LALHCapDerivativesP4PN;
+       }
        break;
      default:
        snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
@@ -1819,7 +1902,6 @@ LALEOBPPWaveformEngine (
 
       if ( omega <= omegaOld && !peakIdx )
       {
-        printf("Triggered omegaOld condition\n" );
         peakIdx = count - 1;
       }
         
@@ -1881,7 +1963,6 @@ LALEOBPPWaveformEngine (
         }
         else
         {
-          printf( "triggered the NaN condition\n" );
           finalIdx = --count;
         }
       }
@@ -2036,9 +2117,9 @@ LALEOBPPWaveformEngine (
    rdMatchPoint->data[1] = peakIdx;
    rdMatchPoint->data[2] = finalIdx;
 
-   printf(" In EOB: indices %u %u %u\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2] );
-   printf(" sig1: %e %e %e\n", sig1Hi->data[rdMatchPoint->data[0]], sig1Hi->data[rdMatchPoint->data[1]], sig1Hi->data[rdMatchPoint->data[2]] );
-   printf(" sig1: %e %e %e\n", sig2Hi->data[rdMatchPoint->data[0]], sig2Hi->data[rdMatchPoint->data[1]], sig2Hi->data[rdMatchPoint->data[2]] );
+   XLALPrintInfo( "Ringdown matching points: %e, %e\n", 
+           (REAL8)rdMatchPoint->data[0]/resampFac + (REAL8)hiSRndx, 
+           (REAL8)rdMatchPoint->data[1]/resampFac + (REAL8)hiSRndx );
 
    xlalStatus = XLALInspiralHybridAttachRingdownWave(sig1Hi, sig2Hi,
                    rdMatchPoint, params);

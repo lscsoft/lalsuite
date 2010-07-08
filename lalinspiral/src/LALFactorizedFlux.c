@@ -25,11 +25,12 @@
  * model. Flux function given by Phys.Rev.D79:064004,2009.
  */
 
+#include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
 
 REAL8 XLALInspiralFactorizedFlux(
-                      REAL8Vector * restrict values,
-                      REAL8Vector * restrict dvalues,
+                      REAL8Vector           *values,
+                      REAL8Vector           *dvalues,
                       InspiralDerivativesIn *ak,
                       const INT4             lMax
                      )
@@ -56,14 +57,20 @@ REAL8 XLALInspiralFactorizedFlux(
   }
 
   /* Omegs is the derivative of phi */
-  omegaSq = dvalues[1] * dvalues[1];
+  omegaSq = dvalues->data[1];
+  omegaSq *= omegaSq;
 
   for ( l = 2; l <= lMax; l++ )
   {
     for ( m = 1; m <= l; m++ )
     {
 
-      hLM = XLALGetFactorizedWaveform( values, dvalues, ak, l, m );
+      if ( XLALGetFactorizedWaveform( &hLM, values, dvalues, ak, l, m )
+             == XLAL_FAILURE )
+      {
+        XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      }
+      printf( "l = %d, m = %d, hLM.re = %e, hLM.im = %e\n", l, m, hLM.re, hLM.im );
 
       flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
     }

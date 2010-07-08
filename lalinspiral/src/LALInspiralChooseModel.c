@@ -536,6 +536,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
@@ -584,6 +585,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
@@ -632,6 +634,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case TaylorEt:
          case TaylorT4:
          case TaylorN:
@@ -675,6 +678,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -727,6 +731,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -780,6 +785,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -829,6 +835,7 @@ LALInspiralChooseModel(
          case EOB:
          case EOBNR:
          case EOBNR_PP:
+         case EOBNR_PF:
          case IMRPhenomA:
          case IMRPhenomB:
          case IMRPhenomFA:
@@ -854,6 +861,7 @@ LALInspiralChooseModel(
             ABORT(status, LALINSPIRALH_EORDERMISSING, LALINSPIRALH_MSGEORDERMISSING);
             break;
          case EOBNR_PP:
+         case EOBNR_PF:
             ak->vn = ak->vlso = vlso = ak->vlsoPP;
             f->dEnergy = dEp6;
             f->flux = Fp8PP;
@@ -904,6 +912,7 @@ LALInspiralChooseModel(
    case EOB:
    case EOBNR:
    case EOBNR_PP:
+   case EOBNR_PF:
    case PadeT1:
    case PadeF1:
    case TaylorF2:
