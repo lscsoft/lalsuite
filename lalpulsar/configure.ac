@@ -44,8 +44,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalpulsar])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
+lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalpulsar_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalpulsar_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalpulsar_version_micro" && lalpulsar_version_micro=0
+test -z "$lalpulsar_version_devel" && lalpulsar_version_devel=0
 lalpulsar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALPULSAR_VERSION],["$VERSION"],[LALPulsar Version])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MAJOR],[$lalpulsar_version_major],
+                   [LALPulsar Version Major Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MINOR],[$lalpulsar_version_minor],
+                   [LALPulsar Version Minor Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MICRO],[$lalpulsar_version_micro],
+                   [LALPulsar Version Micro Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_DEVEL],[$lalpulsar_version_devel],
+                   [LALPulsar Version Devel Number])
 AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALPulsar Configure Arguments])
 AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
