@@ -1326,7 +1326,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, column number must be > 0 and < number of columns in file (%d).\n",fn,header->ncols);
     XLAL_ERROR(fn,XLAL_EINVAL);
   }  
-  LogPrintf(LOG_DEBUG,"%s : checked input\n",fn,col);
+  LogPrintf(LOG_DEBUG,"%s : checked input\n",fn);
 
   /* define temporary pointer to current tddes structure for clarity */
   tddes = header->tddes[colidx];
@@ -1797,6 +1797,7 @@ int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   strncpy((*ts)->objectname,fits->header->objectname,STRINGLENGTH);
   strncpy((*ts)->obsid,fits->header->obsid,STRINGLENGTH);
   strncpy((*ts)->apid,fits->header->apid,APIDLENGTH);
+  strncpy((*ts)->mode,fits->header->mode,STRINGLENGTH);
   (*ts)->bary = 0;
   (*ts)->lld = fits->header->LLD;
   (*ts)->length = nts;
@@ -1981,6 +1982,7 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
   /* update header info */
   strncpy((*ts)->objectname,fits->header->objectname,STRINGLENGTH);
   strncpy((*ts)->obsid,fits->header->obsid,STRINGLENGTH);
+  strncpy((*ts)->mode,fits->header->mode,STRINGLENGTH);
   strncpy((*ts)->apid,fits->header->apid,APIDLENGTH);
   (*ts)->bary = 0;
   (*ts)->lld = fits->header->LLD;
@@ -2841,9 +2843,9 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	CHAR channelname[STRINGLENGTH];          /* string used to name each channel in the frame */
 
 	/* define current channel name */
-	/* the format is X1:<COLNAME>_[LLD]_<MINENERGY>-<MAXENERGY> */
-	if (ts->lld == 0) snprintf(channelname,STRINGLENGTH,"%s:%s_%d-%d",xtechannelname,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
-	else snprintf(channelname,STRINGLENGTH,"%s:%s_LLD_%d-%d",xtechannelname,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
+	/* the format is X1:<MODE>_<COLNAME>_[LLD]_<MINENERGY>-<MAXENERGY> */
+	if (ts->lld == 0) snprintf(channelname,STRINGLENGTH,"%s:%s_%s_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
+	else snprintf(channelname,STRINGLENGTH,"%s:%s_%s_LLD_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
 
 	/* create empty timeseries - this is INT4 not UINT4 because there is no frame writing function for UINT4 */
 	if ((output = XLALCreateINT4TimeSeries(channelname,&epoch,0,tempts->deltat,&lalDimensionlessUnit,N)) == NULL) {
