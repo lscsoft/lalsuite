@@ -205,8 +205,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
         INT4 status;
 	
 	REAL8 eta, eta2, eta3, dM, chiS, chiA, a, a2, a3;
-	REAL8 pp, Omega, v, v2, vh, vh3, k, hathatk, eulerlogxabs;
-	REAL8 Hreal, Heff, Slm, deltalm, rholm;
+	REAL8 r, pr, pp, Omega, v, v2, vh, vh3, k, hathatk, eulerlogxabs;
+	REAL8 NQC, Hreal, Heff, Slm, deltalm, rholm;
+        REAL8 aNQC1, aNQC2, aNQC3;
 	COMPLEX16 Tlm;
         COMPLEX16 hNewton;
 	gsl_sf_result lnr1, arg1, lnr2, arg2;
@@ -233,6 +234,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	a2	= a * a;
 	a3	= a * a2;
 
+	r	= values -> data[0];
+        pr	= values -> data[2];
 	pp	= values -> data[3];
 
 	Heff	= XLALEffectiveHamiltonian( values, ak ); 
@@ -255,7 +258,13 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 
         vPhi  = pow( vPhi, - twoby3 );
         vPhi *= Omega;
-    
+
+        /* Calculate the NQC term. aNQC values will be given after calibration. */
+	aNQC1 = 0.0;
+	aNQC2 = 0.0;
+	aNQC3 = 0.0;
+        NQC = 1.0 + pr*pr/r/r/Omega/Omega*( aNQC1 + aNQC2 / sqrt(r) + aNQC3 / r );
+        
         /* Calculate the newtonian multipole */
         status = XLALCalculateNewtonianMultipole( &hNewton, vPhi * vPhi,
                          values->data[1], (UINT4)l, m, ak );
@@ -264,6 +273,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
           XLAL_ERROR( func, XLAL_EFUNC );
         }
 
+        /* Calculate the source term */
 	if ( ( (l+m)%2 ) == 0)
 	{ 
 	  Slm = Heff;
@@ -272,7 +282,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	{
 	  Slm = v * pp;
 	}
-	
+
+        /* Calculate the Tail term */	
 	k	= m * Omega;
 	hathatk = Hreal * k;
 	XLAL_CALLGSL( status = gsl_sf_lngamma_complex_e( l+1.0, -2.0*hathatk, &lnr1, &arg1 ) );
@@ -290,6 +301,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val - lnr2.val + LAL_PI * hathatk, 
 				arg1.val - arg2.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
 
+        /* Calculate the residue phase and amplitude terms */
 	switch( l )
 	{
 	  case 2:
@@ -2113,9 +2125,9 @@ LALEOBPPWaveformEngine (
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
    }
 
-   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 );
-   rdMatchPoint->data[1] = peakIdx;
-   rdMatchPoint->data[2] = finalIdx;
+   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 ) - 50;
+   rdMatchPoint->data[1] = peakIdx - 50;
+   rdMatchPoint->data[2] = finalIdx - 50;
 
    XLALPrintInfo( "Ringdown matching points: %e, %e\n", 
            (REAL8)rdMatchPoint->data[0]/resampFac + (REAL8)hiSRndx, 
