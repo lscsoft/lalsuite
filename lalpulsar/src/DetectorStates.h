@@ -171,6 +171,7 @@ REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
 /* creators */
 MultiLALDetector *XLALCreateMultiLALDetector ( UINT4 numDetectors );
 MultiLALDetector *XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs );
+DetectorStateSeries *XLALCreateDetectorStateSeries ( UINT4 length );
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );

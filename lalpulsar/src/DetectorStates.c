@@ -519,16 +519,9 @@ LALCreateDetectorStateSeries (LALStatus *status,
   ASSERT ( vect, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( *vect == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
 
-  if ( (ret = LALCalloc(1, sizeof(DetectorStateSeries) )) == NULL ) {
-    ABORT (status, DETECTORSTATES_EMEM, DETECTORSTATES_MSGEMEM);
+  if ( (ret = XLALCreateDetectorStateSeries ( length )) == NULL ) {
+    ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
-
-  if ( (ret->data = LALCalloc (length, sizeof(DetectorState) )) == NULL ) {
-    LALFree (ret);
-    ABORT (status, DETECTORSTATES_EMEM, DETECTORSTATES_MSGEMEM);
-  }
-
-  ret->length = length;
 
   /* return result */
   (*vect) = ret;
@@ -754,4 +747,29 @@ XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
 
 } /* XLALExtractMultiLALDetectorFromSFTs() */
 
+
+/** Create a DetectorStateSeries with length entries */
+DetectorStateSeries*
+XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
+{
+  const char *fn = __func__;
+
+  DetectorStateSeries *ret = NULL;
+
+  if ( (ret = LALCalloc(1, sizeof(DetectorStateSeries) )) == NULL ) {
+    XLALPrintError ("%s: failed to LALCalloc(1, %d)\n", fn, sizeof(DetectorStateSeries) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( (ret->data = LALCalloc (length, sizeof(DetectorState) )) == NULL ) {
+    XLALFree (ret);
+    XLALPrintError ("%s: failed to LALCalloc(%d, %d)\n", fn, length, sizeof(DetectorState) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = length;
+
+  return ret;
+
+} /* XLALCreateDetectorStateSeries() */
 
