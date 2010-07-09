@@ -87,6 +87,8 @@ lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
 lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalapps_version_micro" && lalapps_version_micro=0
+test -z "$lalapps_version_devel" && lalapps_version_devel=0
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
