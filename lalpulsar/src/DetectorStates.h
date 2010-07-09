@@ -161,6 +161,12 @@ LALGetMultiDetectorStates( LALStatus *,
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
+DetectorStateSeries*
+XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps, const LALDetector *detector, const EphemerisData *edat, REAL8 tOffset );
+MultiDetectorStateSeries*
+XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
+
+
 int XLALAddSymmTensor3s ( SymmTensor3 *sum, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALScaleSymmTensor3   ( SymmTensor3 *mult, const SymmTensor3 *aT, REAL4 factor );
