@@ -16,6 +16,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalmetaio.pc
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALMetaIOVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans everything not in

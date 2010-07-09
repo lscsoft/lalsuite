@@ -17,6 +17,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalinspiral.pc
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALInspiralVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans everything not in
