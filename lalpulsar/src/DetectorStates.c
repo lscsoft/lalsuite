@@ -667,3 +667,91 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
   /* normal exit */
   RETURN (status);
 }
+/** Simple creator function for MultiLALDetector with numDetectors entries
+ */
+MultiLALDetector *
+XLALCreateMultiLALDetector ( UINT4 numDetectors )
+{
+  const char *fn = __func__;
+  MultiLALDetector *ret;
+
+  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = numDetectors;
+  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", fn, numDetectors, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateMultiLALDetector() */
+
+/** Corresponding destructor function for MultiLALDetector.
+ * As usual this allows NULL input.
+ */
+void
+XLALDestroyMultiLALDetector ( MultiLALDetector *multiIFO )
+{
+  if ( !multiIFO )
+    return;
+
+  if ( multiIFO->data )
+    XLALFree ( multiIFO->data );
+
+  XLALFree ( multiIFO );
+
+  return;
+
+} /* XLALDestroyMultiLALDetector() */
+
+
+/** Given a multi-SFT vector, return a MultiLALDetector vector holding the multi-IFO detector infos
+ */
+MultiLALDetector *
+XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !multiSFTs ) {
+    XLALPrintError ("%s: invalid NULL input 'multiSFTs'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numDetectors = multiSFTs->length;
+
+  /* create output vector */
+  MultiLALDetector *multiIFO;
+  if ( ( multiIFO = XLALCreateMultiLALDetector ( numDetectors ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(%d) failed.\n", fn, numDetectors );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* step through multi-IFO vector and extract detector-info */
+  UINT4 X;
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      LALDetector *det = NULL;
+
+      /* get LALDetector struct for this detector */
+      if ( (det = XLALGetSiteInfo ( multiSFTs->data[X]->data[0].name )) == NULL ) {
+        XLALPrintError ("%s: call to XLALGetSiteInfo(%s) has failed with code %s.\n", fn, multiSFTs->data[X]->data[0].name, xlalErrno );
+        XLALDestroyMultiLALDetector ( multiIFO );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      multiIFO->data[X] = (*det);
+      XLALFree ( det );
+
+    } /* for X < numDetectors */
+
+  /* return result */
+  return multiIFO;
+
+} /* XLALExtractMultiLALDetectorFromSFTs() */
+
+

@@ -98,6 +98,14 @@ typedef struct
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
 
+/** simple multi-IFO array of detector-information, standard LAL-vector
+ */
+typedef struct
+{
+  UINT4 length;		/**< number of IFOs */
+  LALDetector *data;	/**< array of LALDetector structs */
+} MultiLALDetector;
+
 /* ----- Output types for LALGetDetectorStates() */
 /** State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
@@ -160,11 +168,15 @@ int XLALTensorSquareVector3 ( SymmTensor3 *vxv, REAL4 v[3] );
 int XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] );
 REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
 
+/* creators */
+MultiLALDetector *XLALCreateMultiLALDetector ( UINT4 numDetectors );
+MultiLALDetector *XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs );
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
+void XLALDestroyMultiLALDetector ( MultiLALDetector *multiIFO );
 
 
 /* helpers */
