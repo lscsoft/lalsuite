@@ -71,9 +71,10 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, RE
    
    //RandomParams *param = XLALCreateRandomParams(0);
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   //srand(time(NULL));
+   //UINT8 randseed = rand();
+   //gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, 0);
    
    for (ii=0; ii<trials; ii++) {
       //Create noise value and R value
