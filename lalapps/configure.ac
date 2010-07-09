@@ -82,7 +82,7 @@ LALSUITE_ENABLE_LALXML
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
-# put version/configure info in config.h header
+# put version/configure info in config header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
@@ -104,7 +104,7 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
-# remove -all-static from ldflags, breaks test
+# remove -all-static from ldflags, breaks tests
 allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
 if test "x$allstatic" = "x" ; then
   allstatic="false"
