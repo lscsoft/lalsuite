@@ -228,14 +228,17 @@ XLALGetVersionString( int level )
   const char delim[] = ":";
   char *tree_status;
 
-  /* check version consistency between LAL headers <> library */
-  if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalVCSInfo) )
+  if (LAL_VERSION_DEVEL != 0)
+  {
+    /* check version consistency between LAL headers <> library */
+    if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalVCSInfo) )
     {
       XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
-                     __func__, lalHeaderVCSInfo.vcsId, lalVCSInfo.vcsId );
+          __func__, lalHeaderVCSInfo.vcsId, lalVCSInfo.vcsId );
       XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
       XLAL_ERROR_NULL (__func__, XLAL_EERR );
     }
+  }
 
   switch(level)
   {
