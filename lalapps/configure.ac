@@ -104,7 +104,6 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
-
 # remove -all-static from ldflags, breaks test
 allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
 if test "x$allstatic" = "x" ; then
