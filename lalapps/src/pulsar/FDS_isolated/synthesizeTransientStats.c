@@ -65,6 +65,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/ComputeFstat.h>
 
 #include <lalapps.h>
 
@@ -140,7 +141,11 @@ int main(int argc,char *argv[]);
 
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
-int XLALdrawCorrelatedNoise ( gsl_vector *n_mu, const gsl_matrix *L, gsl_rng * rng );
+
+/* exportable API */
+int XLALDrawCorrelatedNoise ( gsl_vector *n_mu, const gsl_matrix *L, gsl_rng * rng );
+FstatAtomVector* XLALSynthesizeFstatAtomVector4Noise ( const AMCoeffs *amcoeffs, gsl_rng * rng );
+
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -332,7 +337,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
  * from a higher-level function to translate the antenna-pattern functions into pre-factorized Lcor
  */
 int
-XLALdrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector of noise-components {n_mu}, with correlation L * L^T */
+XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector of noise-components {n_mu}, with correlation L * L^T */
                           const gsl_matrix *L,		/**< [in] correlator matrix to get n_mu = L_mu_nu * norm_nu from 4 uncorr. unit variates norm_nu */
                           gsl_rng * rng			/**< gsl random-number generator */
                           )
@@ -387,4 +392,105 @@ XLALdrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector o
 
   return XLAL_SUCCESS;
 
-} /* XLALdrawCorrelatedNoise() */
+} /* XLALDrawCorrelatedNoise() */
+
+/** Generate an FstatAtomVector of pure noise for given antenna-pattern functions
+ */
+FstatAtomVector*
+XLALSynthesizeFstatAtomVector4Noise ( const AMCoeffs *amcoeffs,	/**< input antenna-pattern functions {a_i, b_i} */
+                                      gsl_rng * rng		/**< random-number generator */
+                                      )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !amcoeffs || !amcoeffs->a || !amcoeffs->b ) {
+    XLALPrintError ("%s: invalid NULL input in amcoeffs=%p or amcoeffs->a=%p, amcoeffs->b=%p\n", fn, amcoeffs, amcoeffs->a, amcoeffs->b );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( !rng ) {
+    XLALPrintError ("%s: invalid NULL input for random-number generator 'rng'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numSFTs = amcoeffs->a->length;
+  if ( numSFTs != amcoeffs->b->length ) {
+    XLALPrintError ("%s: inconsistent lengths amcoeffs->a = %d, amecoeffs->b = %d\n", fn, amcoeffs->a->length, amcoeffs->b->length );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* prepare output vector */
+  FstatAtomVector *atoms;
+  if ( ( atoms = XLALCreateFstatAtomVector ( numSFTs ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCreateFstatAtomVector(%d) failed.\n", fn, numSFTs );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* prepare gsl-matrix for correlator L = 1/4 * [ a, a ; b , b ] */
+  gsl_matrix *Lcor;
+  if ( (Lcor = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
+    XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
+    XLALDestroyFstatAtomVector ( atoms );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  /* prepare placeholder for 4 n_mu draws */
+  gsl_vector *n_mu;
+  if ( (n_mu = gsl_vector_calloc ( 4 ) ) == NULL ) {
+    XLALPrintError ("%s: gsl_vector_calloc ( 4 ) failed.\n", fn );
+    gsl_matrix_free ( Lcor );
+    XLALDestroyFstatAtomVector ( atoms );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* ----- step through atoms and synthesize them ----- */
+  UINT4 alpha;
+  for ( alpha=0; alpha < numSFTs; alpha ++ )
+    {
+      REAL8 a = amcoeffs->a->data[alpha];
+      REAL8 b = amcoeffs->b->data[alpha];
+
+      REAL8 a4 = 0.25 * a;
+      REAL8 b4 = 0.25 * b;
+      /* upper-left block */
+      gsl_matrix_set ( Lcor, 0, 0, a4 );
+      gsl_matrix_set ( Lcor, 0, 1, a4 );
+      gsl_matrix_set ( Lcor, 1, 0, b4 );
+      gsl_matrix_set ( Lcor, 1, 1, b4 );
+      /* lower-right block: +2 on all components */
+      gsl_matrix_set ( Lcor, 2, 2, a4 );
+      gsl_matrix_set ( Lcor, 2, 3, a4 );
+      gsl_matrix_set ( Lcor, 3, 2, b4 );
+      gsl_matrix_set ( Lcor, 3, 3, b4 );
+
+      if ( XLALDrawCorrelatedNoise ( n_mu, Lcor, rng ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: failed to XLALDrawCorrelatedNoise().\n", fn );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      REAL8 x1,x2,x3,x4;
+      x1 = gsl_vector_get ( n_mu, 0 );
+      x2 = gsl_vector_get ( n_mu, 1 );
+      x3 = gsl_vector_get ( n_mu, 2 );
+      x4 = gsl_vector_get ( n_mu, 3 );
+
+      /* store this in Fstat-atom */
+      atoms->data[alpha].a2_alpha = a * a;
+      atoms->data[alpha].b2_alpha = b * b;
+      atoms->data[alpha].ab_alpha = a * b;
+
+      /* relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
+      atoms->data[alpha].Fa_alpha.re =   x1;
+      atoms->data[alpha].Fa_alpha.im = - x3;
+
+      atoms->data[alpha].Fb_alpha.re =   x2;
+      atoms->data[alpha].Fb_alpha.im = - x4;
+
+    } /* for i < numSFTs */
+
+  /* free internal memory */
+  gsl_vector_free ( n_mu );
+  gsl_matrix_free ( Lcor );
+
+  /* return result */
+  return atoms;
+
+} /* XLALSynthesizeFstatAtomVector4Noise() */
