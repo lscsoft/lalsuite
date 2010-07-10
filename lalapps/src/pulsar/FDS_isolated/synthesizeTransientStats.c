@@ -145,7 +145,7 @@ int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 /* exportable API */
 int XLALDrawCorrelatedNoise ( gsl_vector *n_mu, const gsl_matrix *L, gsl_rng * rng );
 FstatAtomVector* XLALSynthesizeFstatAtomVector4Noise ( const AMCoeffs *amcoeffs, gsl_rng * rng );
-
+MultiFstatAtomVector* XLALSynthesizeMultiFstatAtomVector4Noise ( const MultiAMCoeffs *multiAM, REAL8 TAtom, gsl_rng * rng);
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -494,3 +494,54 @@ XLALSynthesizeFstatAtomVector4Noise ( const AMCoeffs *amcoeffs,	/**< input anten
   return atoms;
 
 } /* XLALSynthesizeFstatAtomVector4Noise() */
+
+
+/** Generate an FstatAtomVector of pure noise for given antenna-pattern functions
+ */
+MultiFstatAtomVector*
+XLALSynthesizeMultiFstatAtomVector4Noise ( const MultiAMCoeffs *multiAM,/**< input antenna-pattern functions {a_i, b_i} */
+                                           REAL8 TAtom,			/**< atom time-base (typically Tsft) */
+                                           gsl_rng * rng		/**< random-number generator */
+                                           )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !multiAM || !multiAM->data || !multiAM->data[0] ) {
+    XLALPrintError ("%s: invalid NULL input in 'mutiAM'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( !rng ) {
+    XLALPrintError ("%s: invalid NULL input for random-number generator 'rng'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numDetectors = multiAM->length;
+
+  /* create output vector */
+  MultiFstatAtomVector *multiAtoms;
+  if ( (multiAtoms = XLALCalloc ( 1, sizeof(*multiAtoms) ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", fn, sizeof(*multiAtoms) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  if ( (multiAtoms->data = XLALCalloc ( numDetectors, sizeof(*multiAtoms->data) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc ( %, %d) failed.\n", fn, numDetectors, sizeof(*multiAtoms->data) );
+    XLALFree ( multiAtoms );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 X;
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      if ( ( multiAtoms->data[X] = XLALSynthesizeFstatAtomVector4Noise ( multiAM->data[X], rng )) == NULL ) {
+        XLALPrintError ("%s: XLALSynthesizeFstatAtomVector4Noise() failed.\n", fn );
+        XLALDestroyMultiFstatAtomVector ( multiAtoms );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      multiAtoms->data[X]->TAtom = TAtom;
+    } /* for X < numDetectors */
+
+  /* return result */
+  return multiAtoms;
+
+} /* XLALSynthesizeMultiFstatAtomVector4Noise() */
