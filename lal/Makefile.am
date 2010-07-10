@@ -9,9 +9,11 @@ SUBDIRS = \
 	lib
 
 MAINTAINERCLEANFILES = lal.spec
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALVCSInfo.h" -print
 
 EXTRA_DIST = \
+	COPYING \
 	README.bugs \
 	README.contrib \
 	README.install \

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	doc \
 	lalstochastic.pc.in \
 	lalstochastic.spec.in \
@@ -17,6 +18,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalstochastic.pc
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALStochasticVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans everything not in

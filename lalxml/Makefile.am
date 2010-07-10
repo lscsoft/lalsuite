@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	lalxml.pc.in \
 	lalxml.spec.in \
 	lalxml.spec \
@@ -16,6 +17,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalxml.pc
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALXMLVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans everything not in

@@ -8,12 +8,14 @@ SUBDIRS = \
 	man
 
 EXTRA_DIST = \
+	COPYING \
 	README \
 	README.bugs \
 	README.contrib \
 	lalapps.spec.in \
 	lalapps.spec
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALAppsVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans
