@@ -92,6 +92,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for header files
 AC_HEADER_STDC
 

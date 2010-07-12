@@ -1660,43 +1660,6 @@ XLALCreateFmetricAtoms ( UINT4 dim )
 } /* XLALCreateFmetricAtoms() */
 
 
-/** Convert amplitude-params from 'physical' coordinates {h0, cosi, psi, phi0} into
- * 'canonical' coordinates A^mu = {A1, A2, A3, A4}. The equations are found in
- * \ref JKS98 or \ref Prix07 Eq.(2).
- */
-int
-XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, 		/**< [out] canonical amplitude coordinates A^mu = {A1, A2, A3, A4} */
-			   const PulsarAmplitudeParams *Amp	/**< [in] 'physical' amplitude params {h0, cosi, psi, phi0} */
-			   )
-{
-  const CHAR *fn = "XLALAmplitudeParams2Vect()";
-
-  REAL8 Aplus, Across;
-  REAL8 cosphi, sinphi, cos2psi, sin2psi;
-
-  if ( !Amu || !Amp ) {
-    XLALPrintError ("%s: illegal NULL pointer passed.\n\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-
-  Aplus  = 0.5 * Amp->h0 * ( 1.0 + SQUARE(Amp->cosi) );
-  Across = Amp->h0 * Amp->cosi;
-
-  cosphi  = cos ( Amp->phi0 );
-  sinphi  = sin ( Amp->phi0 );
-  cos2psi = cos ( 2.0 * Amp->psi );
-  sin2psi = sin ( 2.0 * Amp->psi );
-
-  Amu->A1 =  Aplus * cosphi * cos2psi - Across * sinphi * sin2psi;
-  Amu->A2 =  Aplus * cosphi * sin2psi + Across * sinphi * cos2psi;
-  Amu->A3 = -Aplus * sinphi * cos2psi - Across * cosphi * sin2psi;
-  Amu->A4 = -Aplus * sinphi * sin2psi + Across * cosphi * cos2psi;
-
-  return XLAL_SUCCESS;
-
-} /* XLALAmplitudeParams2Vect() */
-
-
 /** Compute the 'F-metric' gF_ij (and also gFav_ij, m1_ij, m2_ij, m3_ij)
  * from the given FmetricAtoms and the signal amplitude parameters.
  *
@@ -1851,7 +1814,6 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
   gsl_matrix *fisher = NULL;	/* output matrix */
 
   UINT4 dimDoppler, dimFull, i, j;
-  PulsarAmplitudeVect Amu;
   REAL8 al1, al2, al3;
 
   /* check input consistency */
@@ -1865,9 +1827,23 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
     XLAL_ERROR_NULL (fn, XLAL_EINVAL );
   }
 
-  if ( XLALAmplitudeParams2Vect ( &Amu, Amp ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  REAL8 A1,A2,A3,A4;
+  {
+    gsl_vector *Amu;
+    if ( ( Amu = gsl_vector_calloc ( 4 )) == NULL ) {
+      XLALPrintError ("%s: failed to Amu = gsl_vector_calloc(4)\n", fn );
+      XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    }
+    if ( XLALAmplitudeParams2Vect ( Amu, Amp ) != XLAL_SUCCESS ) {
+      XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
+
+    A1 = gsl_vector_get ( Amu, 0 );
+    A2 = gsl_vector_get ( Amu, 1 );
+    A3 = gsl_vector_get ( Amu, 2 );
+    A4 = gsl_vector_get ( Amu, 3 );
+    gsl_vector_free ( Amu );
   }
 
   dimDoppler = atoms->a_a_i->size;
@@ -1899,9 +1875,9 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
 
 
   /* ----- set Doppler block (4+i,4+j) ---------- */
-  al1 = SQUARE(Amu.A1) + SQUARE(Amu.A3);
-  al2 = Amu.A1 * Amu.A2 + Amu.A3 * Amu.A4;
-  al3 = SQUARE(Amu.A2) + SQUARE(Amu.A4);
+  al1 = SQUARE(A1) + SQUARE(A3);
+  al2 = A1 * A2 + A3 * A4;
+  al3 = SQUARE(A2) + SQUARE(A4);
 
   for ( i=0; i < dimDoppler; i ++ )
     {
@@ -1933,10 +1909,10 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
       a_b_i = gsl_vector_get ( atoms->a_b_i, i );
       b_b_i = gsl_vector_get ( atoms->b_b_i, i );
 
-      AR[0] =  Amu.A3 * a_a_i + Amu.A4 * a_b_i;
-      AR[1] =  Amu.A3 * a_b_i + Amu.A4 * b_b_i;
-      AR[2] = -Amu.A1 * a_a_i - Amu.A2 * a_b_i;
-      AR[3] = -Amu.A1 * a_b_i - Amu.A2 * b_b_i;
+      AR[0] =  A3 * a_a_i + A4 * a_b_i;
+      AR[1] =  A3 * a_b_i + A4 * b_b_i;
+      AR[2] = -A1 * a_a_i - A2 * a_b_i;
+      AR[3] = -A1 * a_b_i - A2 * b_b_i;
 
       for ( mu = 0; mu < 4; mu ++ )
 	{

@@ -188,9 +188,6 @@ double BstatIntegrandOuter ( double cosi, void *p );
 double BstatIntegrandInner ( double psi, void *p );
 double BstatIntegrand ( double A[], size_t dim, void *p );
 
-int XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 );
-int XLALAmplitudeVect2Params ( REAL8 *h0, REAL8 *cosi, REAL8 *psi, REAL8 *phi0, const gsl_vector *A_Mu );
-
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
 UserInput_t empty_UserInput;
@@ -645,15 +642,14 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
   for ( row = 0; row < numDraws; row ++ )
     {
-      REAL8 h0Nat, cosi, psi, phi0;
+      PulsarAmplitudeParams Amp;
 
-      h0Nat = gsl_ran_flat( rng, h0NatMin, h0NatMax );
-      cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
-      psi  = gsl_ran_flat ( rng, psiMin, psiMax );
-      phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
+      Amp.h0   = gsl_ran_flat ( rng, h0NatMin, h0NatMax );
+      Amp.cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
+      Amp.psi  = gsl_ran_flat ( rng, psiMin, psiMax );
+      Amp.phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
-      XLALAmplitudeParams2Vect ( A_Mu, h0Nat, cosi, psi, phi0 );
-
+      XLALAmplitudeParams2Vect ( A_Mu, &Amp );
 
       /* testing inversion property
       {
@@ -688,7 +684,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       /* if specified SNR: rescale signal to this SNR */
       if ( SNR > 0 ) {
 	REAL8 rescale_h0 = SNR / sqrt ( res_rho2 );
-	h0Nat *= rescale_h0;
+	Amp.h0 *= rescale_h0;
 	res_rho2 = SQ(SNR);
 	gsl_vector_scale ( A_Mu, rescale_h0);
 	gsl_vector_scale ( s_mu, rescale_h0);
@@ -696,10 +692,10 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
       gsl_vector_set ( *rho2_i, row, res_rho2 );
 
-      gsl_matrix_set ( *Amp_i,  row, 0, h0Nat   );
-      gsl_matrix_set ( *Amp_i,  row, 1, cosi );
-      gsl_matrix_set ( *Amp_i,  row, 2, psi  );
-      gsl_matrix_set ( *Amp_i,  row, 3, phi0 );
+      gsl_matrix_set ( *Amp_i,  row, 0, Amp.h0   );
+      gsl_matrix_set ( *Amp_i,  row, 1, Amp.cosi );
+      gsl_matrix_set ( *Amp_i,  row, 2, Amp.psi  );
+      gsl_matrix_set ( *Amp_i,  row, 3, Amp.phi0 );
 
       gsl_matrix_set_row ( *A_Mu_i, row, A_Mu );
       gsl_matrix_set_row ( *s_mu_i, row, s_mu );
@@ -1555,124 +1551,3 @@ XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vecto
   return XLAL_SUCCESS;
 
 } /* XLALcomputeBhatStatistic() */
-
-
-
-/** Convert amplitude params {h0, cosi, psi, phi0} into amplitude vector A^mu.
- *
- * NOTE: We rely on Amu[] being allocated 4-dim vector!
- */
-int
-XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, REAL8 h0, REAL8 cosi, REAL8 psi, REAL8 phi0 )
-{
-  const char *fn = "XLALAmplitudeParams2Vect()";
-
-  REAL8 aPlus = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-  REAL8 aCross = h0 * cosi;
-  REAL8 cos2psi = cos ( 2.0 * psi );
-  REAL8 sin2psi = sin ( 2.0 * psi );
-  REAL8 cosphi0 = cos ( phi0 );
-  REAL8 sinphi0 = sin ( phi0 );
-
-  if ( !A_Mu || (A_Mu->size != 4) )
-    {
-      LogPrintf (LOG_CRITICAL, "%s: Invalid output vector A_Mu: must be allocated 4D\n", fn );
-      return XLAL_EINVAL;
-    }
-
-  gsl_vector_set ( A_Mu, 0,  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0 );
-  gsl_vector_set ( A_Mu, 1,  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0 );
-  gsl_vector_set ( A_Mu, 2, -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0 );
-  gsl_vector_set ( A_Mu, 3, -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0 );
-
-  return XLAL_SUCCESS;
-
-} /* XLALAmplitudeParams2Vect() */
-
-
-/** Compute amplitude params {A_MLE^{mu} = {h0,cosi,psi,phi0} from amplitude-vector A^mu
-    Adapted from algorithm in LALEstimatePulsarAmplitudeParams().
-*/
-int
-XLALAmplitudeVect2Params ( REAL8 *h0, REAL8 *cosi, REAL8 *psi, REAL8 *phi0, const gsl_vector *A_Mu )
-{
-  const char *fn = "XLALAmplitudeVect2Params()";
-
-  REAL8 h0Ret, cosiRet, psiRet, phi0Ret;
-
-  REAL8 A1, A2, A3, A4, Asq, Da, disc;
-  REAL8 Ap2, Ac2, aPlus, aCross;
-  REAL8 beta, b1, b2, b3;
-
-  if ( !A_Mu || (A_Mu->size != 4) )
-    {
-      LogPrintf (LOG_CRITICAL, "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
-      return XLAL_EINVAL;
-    }
-
-  A1 = gsl_vector_get ( A_Mu, 0 );
-  A2 = gsl_vector_get ( A_Mu, 1 );
-  A3 = gsl_vector_get ( A_Mu, 2 );
-  A4 = gsl_vector_get ( A_Mu, 3 );
-
-  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
-  Da = A1 * A4 - A2 * A3;
-
-  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
-
-  Ap2  = 0.5 * ( Asq + disc );
-  aPlus = sqrt(Ap2);
-
-  Ac2 = 0.5 * ( Asq - disc );
-  aCross = SIGN(Da) * sqrt( Ac2 );
-
-  beta = aCross / aPlus;
-
-  b1 =   A4 - beta * A1;
-  b2 =   A3 + beta * A2;
-  b3 = - A1 + beta * A4 ;
-
-  /* amplitude params in LIGO conventions */
-  psiRet  = 0.5 * atan2 ( b1,  b2 );  /* [-pi/2,pi/2] */
-  phi0Ret =       atan2 ( b2,  b3 );  /* [-pi, pi] */
-
-  /* Fix remaining sign-ambiguity by checking sign of reconstructed A1 */
-  {
-    REAL8 A1check = aPlus * cos(phi0Ret) * cos(2.0*psiRet) - aCross * sin(phi0Ret) * sin(2*psiRet);
-    if ( A1check * A1 < 0 )
-      phi0Ret += LAL_PI;
-  }
-
-  h0Ret = aPlus + sqrt ( disc );
-  cosiRet = aCross / h0Ret;
-
-  /* make unique by fixing the gauge to be psi in [-pi/4, pi/4], phi0 in [0, 2*pi] */
-  while ( psiRet > LAL_PI_4 )
-    {
-      psiRet  -= LAL_PI_2;
-      phi0Ret -= LAL_PI;
-    }
-  while ( psiRet < - LAL_PI_4 )
-    {
-      psiRet  += LAL_PI_2;
-      phi0Ret += LAL_PI;
-    }
-  while ( phi0Ret < 0 )
-    {
-      phi0Ret += LAL_TWOPI;
-    }
-
-  while ( phi0Ret > LAL_TWOPI )
-    {
-      phi0Ret -= LAL_TWOPI;
-    }
-
-  /* Return final answer */
-  (*h0)   = h0Ret;
-  (*cosi) = cosiRet;
-  (*psi)  = psiRet;
-  (*phi0) = phi0Ret;
-
-  return XLAL_SUCCESS;
-
-} /* XLALAmplitudeVect2Params() */

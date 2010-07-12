@@ -369,10 +369,6 @@ XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
 vect3Dlist_t *
 XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
 
-int
-XLALAmplitudeParams2Vect ( PulsarAmplitudeVect *Amu, const PulsarAmplitudeParams *Amp );
-
-
 FmetricAtoms_t* XLALCreateFmetricAtoms ( UINT4 dim );
 void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 
