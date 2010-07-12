@@ -299,7 +299,7 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,FITSData
 int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,GTIData *gti);
 int XLALApplyGTIToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,GTIData *gti);
 int XLALReduceBarycentricData(BarycentricData **stamps);
-int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,BarycentricData *stamps);
+int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,BarycentricData *stamps,GTIData *gti);
 int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,BarycentricData *stamps);
 int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,CHAR *outputdir);
 int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts);
@@ -2361,7 +2361,7 @@ int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] t
   /* compute first BTI from the timeseries start to the first GTI */
   bti->start[0] = (*ts)->tstart;
   bti->end[0] = gti->start[0];
-  if (bti->end[0]<bti->start[0]) bti->start[0] = bti->end[0];  /* from rebinning the new start can be after the first gti start point */
+  if (bti->end[0]<bti->start[0]) bti->start[0] = bti->end[0]; /* from rebinning the new start can be after the first gti start point */
   
   /* compute BTI (bad time interval) - inbetween gti times */
   for (i=1;i<gti->length;i++) {
@@ -2374,8 +2374,8 @@ int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] t
   bti->end[gti->length] = (*ts)->tstart + (*ts)->T;
   if (bti->start[bti->length-1]>bti->end[bti->length-1]) bti->start[bti->length-1] = bti->end[bti->length-1];    /* from rebinning the new end can be before the last gti end point */
   for (i=0;i<bti->length;i++) LogPrintf(LOG_DEBUG,"%s : computed BTI : %f -> %f\n",fn,bti->start[i],bti->end[i]);
-  
-  /* loop over each BTI */
+
+  /* loop over each GTI gap */
   for (i=0;i<bti->length;i++) {
 
     /* define start and end indices for this BTI - make sure that indices are within valid bounds */
@@ -2393,11 +2393,11 @@ int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] t
   }
   LogPrintf(LOG_DEBUG,"%s : zeroed and undefined non-GTI data in timeseries.\n",fn);
   
-  /* cut out start and end BTI data */
+  /* cut out start and end data */
   newstartindex = (bti->end[0]-(*ts)->tstart)/(*ts)->deltat;
-  newendindex = (bti->start[gti->length]-(*ts)->tstart)/(*ts)->deltat;
+  newendindex = (bti->start[bti->length-1]-(*ts)->tstart)/(*ts)->deltat;
   newN = newendindex - newstartindex;
-
+  
   /* if the new start index is moved then slide all of the data */
   if (newstartindex>0) {
     long int count = 0;
@@ -2547,7 +2547,7 @@ int XLALCreateGTIData(GTIData **gti,      /**< [out] a null timeseries */
   
   /* check input */
   if (N<1) {
-    LogPrintf(LOG_CRITICAL,"%s : tried to allocate an barycenteredtimestamps with non-positive size.\n",fn);
+    LogPrintf(LOG_CRITICAL,"%s : tried to allocate GTI data with non-positive size.\n",fn);
      XLAL_ERROR(fn,XLAL_EINVAL);
   }
   if ((*gti) != NULL) {
@@ -2711,34 +2711,42 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts)
   }
   LogPrintf(LOG_DEBUG,"%s : final GTI table has %d entries.\n",fn,ngti);
 
-  /* allocate memory for a GTI table */
-  if (XLALCreateGTIData(gti,ngti)) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI with error = %d.\n",fn,xlalErrno);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+  /* if there were actual good time intervals */
+  if (ngti > 0) {
+
+    /* allocate memory for a GTI table */
+    if (XLALCreateGTIData(gti,ngti)) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI with error = %d.\n",fn,xlalErrno);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    
+    /* go back through the data quality and fill in the GTI table */
+    {
+      BOOLEAN flag = FALSE;
+      i = 0;
+      for (j=0;j<tempts->length;j++) {
+	if ((!flag) && (tempts->undefined[j] == 0)) {
+	  flag = TRUE;
+	  (*gti)->start[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
+	}
+	if (flag && tempts->undefined[j]) {
+	  flag = FALSE;
+	  (*gti)->end[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
+	  i++;
+	}
+      }
+      if (flag) (*gti)->end[i] = tempts->tstart + tempts->T; 
+    }
+  
+    /* debugging */
+    LogPrintf(LOG_DEBUG,"%s : master GTI times :\n",fn);
+    for (i=0;i<(*gti)->length;i++)  LogPrintf(LOG_DEBUG,"%s : %6.12f -> %6.12f\n",fn,(*gti)->start[i],(*gti)->end[i]);
+  
+  }
+  else {
+    LogPrintf(LOG_NORMAL,"%s : no GTIs found for the current timeseries array.\n",fn);
   }
 
-  /* go back through the data quality and fill in the GTI table */
-  {
-    BOOLEAN flag = FALSE;
-    i = 0;
-    for (j=0;j<tempts->length;j++) {
-      if ((!flag) && (tempts->undefined[j] == 0)) {
-	flag = TRUE;
-	(*gti)->start[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
-      }
-      if (flag && tempts->undefined[j]) {
-	flag = FALSE;
-	(*gti)->end[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
-	i++;
-      }
-    }
-    if (flag) (*gti)->end[i] = tempts->tstart + tempts->T; 
-  }
-  
-  /* debugging */
-  LogPrintf(LOG_DEBUG,"%s : master GTI times :\n",fn);
-  for (i=0;i<(*gti)->length;i++)  LogPrintf(LOG_DEBUG,"%s : %6.12f -> %6.12f\n",fn,(*gti)->start[i],(*gti)->end[i]);
-  
   /* free memory */
   XLALFree(temp_undefined);
 
@@ -2792,115 +2800,123 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
   }
   LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
 
-  /* loop over each GTI entry such that we output a single frame for each one */
-  for (k=0;k<gti->length;k++) {
-
-    char outputfile[STRINGLENGTH];           /* stores name of output frame file */
-    struct FrameH *outFrame   = NULL;        /* frame data structure */
-    LIGOTimeGPS epoch;                       /* stores the timeseries epoch */
-    INT8 sidx;                               /* the integer GPS second starting index of the data */
-    INT8 N;                                  /* the new number of data samples */
-
-    /* enforce integer seconds duration */
-    INT4 start = (INT4)ceil(gti->start[k]);  /* the new end time of the data */
-    INT4 end = (INT4)floor(gti->end[k]);     /* the new end time of the data */
-    INT4 T = end - start;                    /* the new observation time */
-    LogPrintf(LOG_DEBUG,"%s : segment %d -> %d (%d sec)\n",fn,start,end,T);
+  /* if there is any GTI data */
+  if (gti != NULL) {
     
-    /* if the segment is long enough to warrant making a frame */
-    if (T>=MINFRAMELENGTH) {
-
-      /* convert start epoch to a GPS structure - we enforce integer GPS start times for simplicity */
-      epoch.gpsSeconds = start;
-      epoch.gpsNanoSeconds = 0;
-      LogPrintf(LOG_DEBUG,"%s : modifying start time to integer epoch %d\n",fn,epoch.gpsSeconds);
+    /* loop over each GTI entry such that we output a single frame for each one */
+    for (k=0;k<gti->length;k++) {
       
-      /* compute new number of samples and starting index */
-      sidx = (INT8)floor(0.5 + (epoch.gpsSeconds - tempts->tstart)/tempts->deltat);
-      N = (INT8)floor(T/tempts->deltat);
-      LogPrintf(LOG_DEBUG,"%s : outputting %ld samples to frame\n",fn,N);
+      char outputfile[STRINGLENGTH];           /* stores name of output frame file */
+      struct FrameH *outFrame   = NULL;        /* frame data structure */
+      LIGOTimeGPS epoch;                       /* stores the timeseries epoch */
+      INT8 sidx;                               /* the integer GPS second starting index of the data */
+      INT8 N;                                  /* the new number of data samples */
       
-      /* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
-      /* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
-      if (ts->bary) snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_SSB_%s_%s_%s-%d-%d.gwf",
-			     outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
-      else snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_DET_%s_%s_%s-%d-%d.gwf",
-		    outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
-      LogPrintf(LOG_DEBUG,"%s : output file = %s\n",fn,outputfile);
+      /* enforce integer seconds duration */
+      INT4 start = (INT4)ceil(gti->start[k]);  /* the new end time of the data */
+      INT4 end = (INT4)floor(gti->end[k]);     /* the new end time of the data */
+      INT4 T = end - start;                    /* the new observation time */
+      LogPrintf(LOG_DEBUG,"%s : segment %d -> %d (%d sec)\n",fn,start,end,T);
       
-      /* generate a frame data structure - last threee inputs are [project, run, frnum, detectorFlags] */
-      if ((outFrame = XLALFrameNew(&epoch,(REAL8)T,"XTE_PCA",1,0,0)) == NULL) {
-	LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() failed with error = %d.\n",fn,xlalErrno);
-	XLAL_ERROR(fn,XLAL_EFAILED);
-      }
-      LogPrintf(LOG_DEBUG,"%s : set-up frame structure\n",fn);
-
-      /* loop over each timeseries (one for each channel from each column) */
-      for (i=0;i<ts->length;i++) {
-
-	INT4TimeSeries *output = NULL;           /* temporary output timeseries */
-	UINT4 j;                                 /* counter */
-	CHAR channelname[STRINGLENGTH];          /* string used to name each channel in the frame */
-
-	/* define current channel name */
-	/* the format is X1:<MODE>_<COLNAME>_[LLD]_<MINENERGY>-<MAXENERGY> */
-	if (ts->lld == 0) snprintf(channelname,STRINGLENGTH,"%s:%s_%s_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
-	else snprintf(channelname,STRINGLENGTH,"%s:%s_%s_LLD_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
-
-	/* create empty timeseries - this is INT4 not UINT4 because there is no frame writing function for UINT4 */
-	if ((output = XLALCreateINT4TimeSeries(channelname,&epoch,0,tempts->deltat,&lalDimensionlessUnit,N)) == NULL) {
-	  LogPrintf(LOG_CRITICAL, "%s : XLALCreateINT4TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);  
-	}
-	LogPrintf(LOG_DEBUG,"%s : allocated memory for temporary timeseries\n",fn);
+      /* if the segment is long enough to warrant making a frame */
+      if (T>=MINFRAMELENGTH) {
 	
-	/* fill in timeseries starting from first integer second */
-	for (j=0;j<output->data->length;j++) output->data->data[j] = (INT4)ts->ts[i]->data[j+sidx];
-	LogPrintf(LOG_DEBUG,"%s : populated temporary timeseries\n",fn);
-	  
-	/* add timeseries to frame structure */
-	if (XLALFrameAddINT4TimeSeriesProcData(outFrame,output)) {
-	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
+	/* convert start epoch to a GPS structure - we enforce integer GPS start times for simplicity */
+	epoch.gpsSeconds = start;
+	epoch.gpsNanoSeconds = 0;
+	LogPrintf(LOG_DEBUG,"%s : modifying start time to integer epoch %d\n",fn,epoch.gpsSeconds);
+	
+	/* compute new number of samples and starting index */
+	sidx = (INT8)floor(0.5 + (epoch.gpsSeconds - tempts->tstart)/tempts->deltat);
+	N = (INT8)floor(T/tempts->deltat);
+	LogPrintf(LOG_DEBUG,"%s : outputting %ld samples to frame\n",fn,N);
+	
+	/* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
+	/* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
+	if (ts->bary) snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_SSB_%s_%s_%s-%d-%d.gwf",
+			       outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
+	else snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_DET_%s_%s_%s-%d-%d.gwf",
+		      outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
+	LogPrintf(LOG_DEBUG,"%s : output file = %s\n",fn,outputfile);
+	
+	/* generate a frame data structure - last threee inputs are [project, run, frnum, detectorFlags] */
+	if ((outFrame = XLALFrameNew(&epoch,(REAL8)T,"XTE_PCA",1,0,0)) == NULL) {
+	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() failed with error = %d.\n",fn,xlalErrno);
 	  XLAL_ERROR(fn,XLAL_EFAILED);
 	}
-	LogPrintf(LOG_DEBUG,"%s : added timeseries from col %s for epoch %d to frame structure\n",fn,ts->ts[i]->colname,epoch.gpsSeconds);
-
-	/* free timeseries */
-	XLALDestroyINT4TimeSeries(output);
+	LogPrintf(LOG_DEBUG,"%s : set-up frame structure\n",fn);
+	
+	/* loop over each timeseries (one for each channel from each column) */
+	for (i=0;i<ts->length;i++) {
+	  
+	  INT4TimeSeries *output = NULL;           /* temporary output timeseries */
+	  UINT4 j;                                 /* counter */
+	  CHAR channelname[STRINGLENGTH];          /* string used to name each channel in the frame */
+	  
+	  /* define current channel name */
+	  /* the format is X1:<MODE>_<COLNAME>_[LLD]_<MINENERGY>-<MAXENERGY> */
+	  if (ts->lld == 0) snprintf(channelname,STRINGLENGTH,"%s:%s_%s_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
+	  else snprintf(channelname,STRINGLENGTH,"%s:%s_%s_LLD_%d-%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
+	  
+	  /* create empty timeseries - this is INT4 not UINT4 because there is no frame writing function for UINT4 */
+	  if ((output = XLALCreateINT4TimeSeries(channelname,&epoch,0,tempts->deltat,&lalDimensionlessUnit,N)) == NULL) {
+	    LogPrintf(LOG_CRITICAL, "%s : XLALCreateINT4TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
+	    XLAL_ERROR(fn,XLAL_ENOMEM);  
+	  }
+	  LogPrintf(LOG_DEBUG,"%s : allocated memory for temporary timeseries\n",fn);
+	  
+	  /* fill in timeseries starting from first integer second */
+	  for (j=0;j<output->data->length;j++) output->data->data[j] = (INT4)ts->ts[i]->data[j+sidx];
+	  LogPrintf(LOG_DEBUG,"%s : populated temporary timeseries\n",fn);
+	  
+	  /* add timeseries to frame structure */
+	  if (XLALFrameAddINT4TimeSeriesProcData(outFrame,output)) {
+	    LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
+	    XLAL_ERROR(fn,XLAL_EFAILED);
+	  }
+	  LogPrintf(LOG_DEBUG,"%s : added timeseries from col %s for epoch %d to frame structure\n",fn,ts->ts[i]->colname,epoch.gpsSeconds);
+	  
+	  /* free timeseries */
+	  XLALDestroyINT4TimeSeries(output);
+	  
+	}
+	
+	/* Here's where we add extra information into the frame */ 
+	{
+	  CHAR *versionstring = NULL;              /* pointer to a string containing the git version information */ 
+	  
+	  versionstring = XLALGetVersionString(1);
+	  FrHistoryAdd(outFrame,ts->headerdump);
+	  FrHistoryAdd(outFrame,ts->comment);
+	  FrHistoryAdd(outFrame,versionstring);	
+	  XLALFree(versionstring);
+	}
+	
+	/* write frame structure to file (opens, writes, and closes file) - last argument is compression level */
+	if (XLALFrameWrite(outFrame,outputfile,1)) {
+	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n",fn,xlalErrno);
+	  XLAL_ERROR(fn,XLAL_EFAILED);
+	}
 	
       }
-
-      /* Here's where we add extra information into the frame */ 
-      {
-	CHAR *versionstring = NULL;              /* pointer to a string containing the git version information */ 
-	
-	versionstring = XLALGetVersionString(1);
-	FrHistoryAdd(outFrame,ts->headerdump);
-	FrHistoryAdd(outFrame,ts->comment);
-	FrHistoryAdd(outFrame,versionstring);	
-	XLALFree(versionstring);
+      else {
+	LogPrintf(LOG_DEBUG, "%s : segment %f -> %f not long enough so no frame generated.\n",fn,gti->start[k],gti->end[k]);
       }
       
-      /* write frame structure to file (opens, writes, and closes file) - last argument is compression level */
-      if (XLALFrameWrite(outFrame,outputfile,1)) {
-	LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n",fn,xlalErrno);
-	XLAL_ERROR(fn,XLAL_EFAILED);
-      }
+    }
 
+    if (XLALFreeGTIData(gti)) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALFreeGTIData() failed with error = %d\n",fn,xlalErrno);
+      return 1;
     }
-    else {
-      LogPrintf(LOG_DEBUG, "%s : segment %f -> %f not long enough so no frame generated.\n",fn,gti->start[k],gti->end[k]);
-    }
+
+  }
+  else {
+    LogPrintf(LOG_NORMAL,"%s : no GTIs found for this segment so no frames produced.\n",fn);
+  }
   
-  }
-
-  if (XLALFreeGTIData(gti)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALFreeGTIData() failed with error = %d\n",fn,xlalErrno);
-    return 1;
-  }
-
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
  
 }
 
@@ -2916,7 +2932,8 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
   
   static const char *fn = __func__;           /* store function name for log output */
   INT8 i;                            /* counter */
-  
+  GTIData *gti = NULL;                          /* final GTI information */
+
   /* check input and output pointers */
   if ((*ts) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : input timeseries structure has null pointer.\n",fn);
@@ -2927,10 +2944,17 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
      XLAL_ERROR(fn,XLAL_EINVAL);
   }
 
+  /* make a new GTI table based on data quality from all timeseries */
+  if (XLALXTEUINT4TimeSeriesArrayToGTI(&gti,(*ts))) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALXTEUINT4TimeSeriesToTGI() failed with error = %d\n",fn,xlalErrno);
+    return 1;
+  }
+  LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
+  
   /* loop over each relevant column and energy channel */
   for (i=0;i<(*ts)->length;i++) {
     
-    if (XLALBarycenterXTEUINT4TimeSeries(&((*ts)->ts[i]),stamps)) {
+    if (XLALBarycenterXTEUINT4TimeSeries(&((*ts)->ts[i]),stamps,gti)) {
       LogPrintf(LOG_CRITICAL,"%s : XLALBarycenterXTEUINT4TimeSeries() failed with error = %d\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_EFAULT);
     }
@@ -2940,6 +2964,12 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
 
   (*ts)->bary = 1;
 
+  /* free gti data */
+  if (XLALFreeGTIData(gti)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALFreeGTIData() failed with error = %d\n",fn,xlalErrno);
+    return 1;
+  }
+  
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
 
@@ -2951,18 +2981,20 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
  *
  */
 int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out] timeseries */
-				     BarycentricData *stamps       /**< [in] vector of pairs of detector/barycentered timestamps */
+				     BarycentricData *stamps,       /**< [in] vector of pairs of detector/barycentered timestamps */
+				     GTIData *gti                   /**< [in] GTI data */
 				     )
 {
   
   static const char *fn = __func__;           /* store function name for log output */
-  long int i;                                 /* counter */
+  INT8 i;                                 /* counter */
+  INT4 k;
   XTEUINT4TimeSeries *tempts = NULL;       /* temporary storage for barycentered timeseries */
   double start_det,end_det;                   /* start and end times of detector frame timeseries */
   double start_bary,end_bary;                 /* start and end times of barycentric frame timeseries */
-  gsl_interp_accel *acc = NULL;               /* structure for accelerating gsl interpolation */
-  gsl_spline *spline = NULL;                  /* structure for gsl spline interpolation */
-  
+  gsl_interp_accel *detbary_acc = NULL;               /* structure for accelerating gsl interpolation */ 
+  gsl_interp *detbary_interp = NULL;               /* structure for gsl interpolation */
+
   /* check input and output pointers */
   if ((*ts) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : input timeseries structure has null pointer.\n",fn);
@@ -2973,24 +3005,6 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
     XLAL_ERROR(fn,XLAL_EINVAL);
   }
 
-  /* check timestamp gaps - they can't be too far apart */
-  for (i=0;i<stamps->length-1;i++) {
-    if (stamps->dettime[i+1]-stamps->dettime[i]>MAXTIMESTAMPDELTAT) {
-      LogPrintf(LOG_CRITICAL, "%s : timestamp spacing is too large for accurate barycentering.\n",fn);
-      XLAL_ERROR(fn,XLAL_EINVAL);
-    }
-  }
-
-  /* gsl memory allocation for interpolation of the timestamps */
-  if ((acc = gsl_interp_accel_alloc()) == NULL) {
-    LogPrintf(LOG_CRITICAL, "%s : gsl_interp_accel_alloc() failed to allocate memory for acceleration.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
-  }
-  if ((spline = gsl_spline_alloc(gsl_interp_cspline,stamps->length)) == NULL) {
-    LogPrintf(LOG_CRITICAL, "%s : gsl_spline_alloc() failed to allocate memory for acceleration.\n",fn);
-    XLAL_ERROR(fn,XLAL_ENOMEM);
-  }
-  
   /* select latest start time and earliest end time that are within the timestamps AND data limits */
   start_det = (*ts)->tstart > stamps->dettime[0] ? (*ts)->tstart : stamps->dettime[0];
   end_det = ((*ts)->tstart + (*ts)->T) < stamps->dettime[stamps->length-1] ? ((*ts)->tstart + (*ts)->T) : stamps->dettime[stamps->length-1];
@@ -3000,48 +3014,190 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
     LogPrintf(LOG_CRITICAL, "%s : GPS start (%f) > GPS end time (%f), unable to generate a barycentric time series.\n",fn,start_det,end_det);
     XLAL_ERROR(fn,XLAL_EINVAL);
   }
-   
+  
+  /* gsl memory allocation for interpolation of the timestamps */
+  if ((detbary_acc = gsl_interp_accel_alloc()) == NULL) {
+    LogPrintf(LOG_CRITICAL, "%s : gsl_interp_accel_alloc() failed to allocate memory for acceleration.\n",fn);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  
+  /* only perform gsl spline interpolation if we have more than 2 timestamps - otherwise use linear */
+  if (stamps->length > 2) {
+    if ((detbary_interp = gsl_interp_alloc(gsl_interp_cspline,stamps->length)) == NULL) {
+      LogPrintf(LOG_CRITICAL, "%s : gsl_spline_alloc() failed to allocate memory for acceleration.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    LogPrintf(LOG_DEBUG,"%s : performing nearest neighbour spline interpolation for barycentering\n",fn);
+  }
+  else if (stamps->length == 2) {
+    if ((detbary_interp = gsl_interp_alloc(gsl_interp_linear,stamps->length)) == NULL) {
+      LogPrintf(LOG_CRITICAL, "%s : gsl_spline_alloc() failed to allocate memory for acceleration.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    LogPrintf(LOG_DEBUG,"%s : performing nearest neighbour linear interpolation for barycentering\n",fn);
+  }
+  else {
+    LogPrintf(LOG_CRITICAL, "%s : only one timestamp so unable to perform barycentering, exiting.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  
   /* set up gsl interpolation for det -> bary to get start and end times of barycentric timeseries */
-  if (gsl_spline_init(spline,stamps->dettime,stamps->barytime,stamps->length)) {
+  if (gsl_interp_init(detbary_interp,stamps->dettime,stamps->barytime,stamps->length)) {
     LogPrintf(LOG_CRITICAL, "%s : gsl_spline_init() failed for det -> bary interpolation.\n",fn);
     XLAL_ERROR(fn,XLAL_EFAULT);
   }
-
+  
   /* compute barycentric time of first and last sample */
-  start_bary = gsl_spline_eval(spline,start_det,acc);
-  end_bary = gsl_spline_eval(spline,end_det,acc);
+  start_bary = gsl_interp_eval(detbary_interp,stamps->dettime,stamps->barytime,start_det,detbary_acc);
+  end_bary = gsl_interp_eval(detbary_interp,stamps->dettime,stamps->barytime,end_det,detbary_acc);
   LogPrintf(LOG_DEBUG,"%s : barycentric GPS start %f\n",fn,start_bary);
   LogPrintf(LOG_DEBUG,"%s : barycentric GPS end = %f\n",fn,end_bary);
   LogPrintf(LOG_DEBUG,"%s : barycentric duration = %f\n",fn,end_bary-start_bary);
 
   {
     /* define number of barycentric timesamples */
-    long int N = (long int)((end_bary-start_bary)/(*ts)->deltat);
-    
+    INT8 N = (INT8)floor(0.5 + (end_bary-start_bary)/(*ts)->deltat);
+   
     /* allocate temp memory first */
     XLALCreateXTEUINT4TimeSeries(&tempts,N);
     LogPrintf(LOG_DEBUG,"%s : created a temporary short int timeseries with %ld points\n",fn,N);
   }
-
-  /* set up gsl interpolation for bary -> det for actual resampling */
-  if (gsl_spline_init(spline,stamps->barytime,stamps->dettime,stamps->length)) {
-    LogPrintf(LOG_CRITICAL, "%s : gsl_spline_init() failed for bary -> det interpolation.\n",fn);
-    XLAL_ERROR(fn,XLAL_EFAULT);
-  }
-  LogPrintf(LOG_DEBUG,"%s : initialised the spline interpolation\n",fn);
-
-  /* loop over each evenly spaced time sample in barycentric frame and interpolate to generate barycentric timeseries */
+  
+  /* initialise the data - since the vector will only be filled in for GTI data segments we need to */
+  /* make sure that all remaining data is initialised and undefined */
   for (i=0;i<tempts->length;i++) {
+    tempts->data[i] = 0;
+    tempts->undefined[i] = 1;
+  }
+
+  /* we perform the barycentering seperately for each GTI interval since in bad data we may not have */
+  /* timestamps.  The interpolation could do unpredictable things with very large gaps. */
+  
+  /* loop over each GTI entry */
+  for (k=0;k<gti->length;k++) {
+
+    INT4 sidx = stamps->length - 1;       /* timestamps indices */   
+    INT4 eidx = 0;                        /* timestamps indices */   
+    INT4 nstamps = 0;                     /* the number of temporary timestamps */
+    BarycentricData *tempstamps = NULL;   /* temporary timestamps vector */
+    gsl_interp *barydet_interp = NULL;    /* structure for gsl interpolation */
+    gsl_interp_accel *barydet_acc = NULL;               /* structure for accelerating gsl interpolation */ 
+    REAL8  tempstart_det,tempend_det;                   /* start and end times of detector frame timeseries */
+
+    /* find the min and max timestamps associated with this GTI entry */
+    while ( ( stamps->dettime[sidx] > gti->start[k] ) && ( sidx >= 0 ) )  sidx--;
+    while ( ( stamps->dettime[eidx] < gti->end[k] ) && ( eidx < stamps->length - 1 ) ) eidx++;
+    printf("sidx = %d eidx = %d stamps->length = %ld\n",sidx,eidx,stamps->length);
+    /* test timestamp gaps at the start and end points */
+    if ( sidx < stamps->length - 1 ) {
+      if ( ( stamps->dettime[sidx+1] - stamps->dettime[sidx] ) > MAXTIMESTAMPDELTAT ) sidx += 1;
+    }
+    if ( eidx > 0 ) {
+      if ( ( stamps->dettime[eidx] - stamps->dettime[eidx-1] ) > MAXTIMESTAMPDELTAT ) eidx -= 1;
+    }
+    printf("sidx = %d eidx = %d stamps->length = %ld\n",sidx,eidx,stamps->length);
+    nstamps = eidx - sidx + 1;
+    if ( (sidx > stamps->length-1) || (eidx < 0) ) {
+      LogPrintf(LOG_CRITICAL, "%s : timestamps indices for GTI range %f -> %f are out of range, exiting.\n",fn);
+      XLAL_ERROR(fn,XLAL_EINVAL);
+    }
+    LogPrintf(LOG_DEBUG,"%s : temporary timestamps have indices %d -> %d\n",fn,sidx,eidx);
     
-    REAL8 bt = start_bary + (REAL8)i*(*ts)->deltat;
-    REAL8 delta_dettime = gsl_spline_eval(spline,bt,acc) - (*ts)->tstart;
-    INT8 idx = floor(0.5 + delta_dettime/(*ts)->deltat);
-    tempts->data[i] = (*ts)->data[idx];
-    tempts->undefined[i] = (*ts)->undefined[idx];
+    /* allocate memory for temporary stamps */
+    if (XLALCreateBarycentricData(&tempstamps,nstamps)) {
+      LogPrintf(LOG_CRITICAL, "%s : XLALCreateBarycentricData() failed to allocate memory for temporary timestamps.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    
+    /* copy stamps to tempstamps */
+    for (i=0;i<tempstamps->length;i++) {
+      tempstamps->dettime[i] = stamps->dettime[sidx+i];
+      tempstamps->barytime[i] = stamps->barytime[sidx+i];
+    }
+    
+    /* check timestamp gaps - they can't be too far apart */
+    for (i=0;i<tempstamps->length-1;i++) {
+      /* LogPrintf(LOG_DEBUG, "%s : detector subset stamps %f -> %f (%f)\n",fn,tempstamps->dettime[i],tempstamps->dettime[i+1],tempstamps->dettime[i+1]-tempstamps->dettime[i]); */
+      if (tempstamps->dettime[i+1]-tempstamps->dettime[i]>MAXTIMESTAMPDELTAT) {
+	LogPrintf(LOG_CRITICAL, "%s : timestamp spacing is too large for accurate barycentering.\n",fn);
+	XLAL_ERROR(fn,XLAL_EINVAL);
+      }
+    }
+    
+    /* select latest start time and earliest end time that are within the timestamps AND data limits */
+    tempstart_det = (*ts)->tstart > tempstamps->dettime[0] ? (*ts)->tstart : tempstamps->dettime[0];
+    tempend_det = ((*ts)->tstart + (*ts)->T) < tempstamps->dettime[tempstamps->length-1] ? ((*ts)->tstart + (*ts)->T) : tempstamps->dettime[tempstamps->length-1];
+    
+    /* compute barycentric time of first and last sample in this GTI entry */
+    REAL8 tempstart_bary = gsl_interp_eval(detbary_interp,stamps->dettime,stamps->barytime,tempstart_det,detbary_acc);
+    REAL8 tempend_bary = gsl_interp_eval(detbary_interp,stamps->dettime,stamps->barytime,tempend_det,detbary_acc);
+   /*  INT8 tempN = (INT8)((tempend_bary-tempstart_bary)/(*ts)->deltat); */
+    LogPrintf(LOG_DEBUG,"%s : GTI[%d] barycentric GPS start %f (delta = %f)\n",fn,k,tempstart_bary,tempstart_bary-start_bary);
+    LogPrintf(LOG_DEBUG,"%s : GTI[%d] barycentric GPS end = %f (delta = %f)\n",fn,k,tempend_bary,tempend_bary-start_bary);
+    LogPrintf(LOG_DEBUG,"%s : GTI[%d] barycentric duration = %f\n",fn,k,tempend_bary-tempstart_bary);
+
+    /* gsl memory allocation for interpolation of the timestamps */
+    if ((barydet_acc = gsl_interp_accel_alloc()) == NULL) {
+      LogPrintf(LOG_CRITICAL, "%s : gsl_interp_accel_alloc() failed to allocate memory for acceleration.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    
+    /* only perform gsl spline interpolation if we have more than 2 timestamps - otherwise use linear */
+    if (tempstamps->length > 2) {
+      if ((barydet_interp = gsl_interp_alloc(gsl_interp_cspline,tempstamps->length)) == NULL) {
+	LogPrintf(LOG_CRITICAL, "%s : gsl_spline_alloc() failed to allocate memory for acceleration.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      LogPrintf(LOG_DEBUG,"%s : performing nearest neighbour spline interpolation for barycentering\n",fn);
+    }
+    else if (tempstamps->length == 2) {
+      if ((barydet_interp = gsl_interp_alloc(gsl_interp_linear,tempstamps->length)) == NULL) {
+	LogPrintf(LOG_CRITICAL, "%s : gsl_spline_alloc() failed to allocate memory for acceleration.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      LogPrintf(LOG_DEBUG,"%s : performing nearest neighbour linear interpolation for barycentering\n",fn);
+    }
+    
+    /* if we have enough timestamps then perform barycentering */
+    if (tempstamps->length >= 2) {
+
+      /* set up gsl interpolation for bary -> det for actual resampling */
+      if (gsl_interp_init(barydet_interp,tempstamps->barytime,tempstamps->dettime,tempstamps->length)) {
+	LogPrintf(LOG_CRITICAL, "%s : gsl_spline_init() failed for bary -> det interpolation.\n",fn);
+	XLAL_ERROR(fn,XLAL_EFAULT);
+      }
+      LogPrintf(LOG_DEBUG,"%s : initialised the spline interpolation\n",fn);
+      
+      /* loop over each evenly spaced time sample in barycentric frame and interpolate to generate barycentric timeseries */
+      {
+	INT8 s = floor(0.5 + (tempstart_bary-start_bary)/(*ts)->deltat);
+	INT8 e = floor(0.5 + (tempend_bary-start_bary)/(*ts)->deltat);
+	for (i=s;i<e;i++) {
+	  
+	  REAL8 bt = start_bary + (REAL8)i*(*ts)->deltat;
+	  REAL8 delta_dettime = gsl_interp_eval(barydet_interp,tempstamps->barytime,tempstamps->dettime,bt,barydet_acc) - (*ts)->tstart;
+	  INT8 idx = floor(0.5 + delta_dettime/(*ts)->deltat);
+	  tempts->data[i] = (*ts)->data[idx];
+	  tempts->undefined[i] = (*ts)->undefined[idx];
+	  
+	}
+      }
+      LogPrintf(LOG_DEBUG,"%s : performed barycentering using nearest bin interpolation\n",fn);
+      
+      /* free mem */
+      gsl_interp_free(barydet_interp);
+      gsl_interp_accel_free(barydet_acc);
+      
+    }
+    else {
+      LogPrintf(LOG_NORMAL, "%s : only one timestamp so unable to perform barycentering on this GTI segment.\n",fn);
+    }
+
+    /* free mem */
+    XLALFreeBarycentricData(tempstamps);
 
   }
-  LogPrintf(LOG_DEBUG,"%s : performed barycentering using nearest bin interpolation\n",fn);
-
+  
   /* reallocate input time series and fill it with barycentric timeseries and params */
   if (XLALReallocXTEUINT4TimeSeries(ts,tempts->length)) {
     LogPrintf(LOG_CRITICAL, "%s : XLALReallocXTEUINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
@@ -3066,10 +3222,10 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
   LogPrintf(LOG_DEBUG,"%s : freed temporary memory\n",fn);
 
   /* free interpolation structures */
-  gsl_spline_free(spline);
-  gsl_interp_accel_free(acc);
+  gsl_interp_free(detbary_interp);
+  gsl_interp_accel_free(detbary_acc);
   LogPrintf(LOG_DEBUG,"%s : freed interpolation structures\n",fn);
-  
+
   /* debugging */
   {
     int M = (*ts)->length > 10 ? 10 : (*ts)->length;
