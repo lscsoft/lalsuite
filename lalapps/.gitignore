@@ -9,6 +9,7 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 config.log
+config.lt
 config.status
 configure
 doc/AUTHORS.tex
