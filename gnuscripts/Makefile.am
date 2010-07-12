@@ -3,4 +3,5 @@ EXTRA_DIST = \
 	lalsuite_build.m4 \
 	lalsuite_c99.m4 \
 	lalsuite_gccflags.m4 \
-	missing
+	missing \
+	pkg.m4

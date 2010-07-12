@@ -876,7 +876,6 @@ for result_db in result_dbs_cache:
           if sim_tag == 'ALLINJ':
             summ_file_type = 'html'
             columns = ','.join([
-              'rank',
               'injected_decisive_distance',
               'injected_end_time',
               'injected_end_time_utc__Px_click_for_daily_ihope_xP_',

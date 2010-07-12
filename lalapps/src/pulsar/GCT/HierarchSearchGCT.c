@@ -1307,11 +1307,8 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_SepDetVeto ) {
 
     UINT8 icand, icandMax;
-    UINT4 numDetectors, X, nSky_fg;
-    UINT4 topNC, iAlphaR, iDeltaR;
-    REAL4 topTwoF=0.0, maxTopTwoF=0.0, maxTopTwoFSky=0.0;
-    REAL4 AlphaCenter, DeltaCenter; 
-    REAL8 dSkyRefine, dSkyEq;
+    UINT4 numDetectors, X, topNC;
+    REAL4 topTwoF=0.0, maxTopTwoF=0.0;
     Fcomponents FstatSeg;
     ComputeFBuffer cfBuffer2 = empty_ComputeFBuffer;
     PulsarSpins fkdotTMP;
@@ -1391,7 +1388,7 @@ int MAIN( int argc, char *argv[]) {
         maxTopTwoF = aveTwoFstat[0];
         icandMax = icand;
       }
-      fprintf(stderr,"  icand: %d  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
+      fprintf(stderr,"  icand: %" LAL_UINT8_FORMAT "  aveTwoFstat: %f \n",icand,aveTwoFstat[0]);
       icand++;
       
     } /* end while ( !((*(GCTtopOutputEntry*)semiCohToplist->heap[0]).sumTwoF ... */
@@ -1405,7 +1402,7 @@ int MAIN( int argc, char *argv[]) {
     topTwoF = (*(GCTtopOutputEntry*)semiCohToplist->heap[icandMax]).sumTwoF;
     aveTwoFstat[0] = topTwoF;
     
-    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %d (%d)\n",
+    fprintf(stderr, "  At GPS time %.4f, %.14g %.13g %.13g %.14g %d %.6f  %" LAL_UINT8_FORMAT " (%" LAL_UINT8_FORMAT ")\n",
             XLALGPSGetREAL8( &usefulParams.spinRange_refTime.refTime ),
             fkdotTMP[0], thisPoint.Alpha, thisPoint.Delta, fkdotTMP[1], topNC, topTwoF, icandMax, icand );
             
@@ -1457,13 +1454,13 @@ int MAIN( int argc, char *argv[]) {
        
     for (X=0; X < (numDetectors+1); X++) {
       if (X>0) {
-        fprintf(stderr, "%% --- average2F[%d]= %.6f\t (%s)\t Z= %.4f \n", 
+        fprintf(stderr, "%% --- average2F[%o]= %.6f\t (%s)\t Z= %.4f \n", 
                 X, aveTwoFstat[X], 
-                &(stackMultiDetStates.data[0]->data[X-1]->detector.frDetector.name),
-                aveTwoFstat[0]/aveTwoFstat[X] );
+		(CHAR*) &(stackMultiDetStates.data[0]->data[X-1]->detector.frDetector.name),
+		aveTwoFstat[0]/aveTwoFstat[X] );
       }
       else {
-        fprintf(stderr, "%% --- average2F[%d]= %.6f\n", X, aveTwoFstat[X]);
+        fprintf(stderr, "%% --- average2F[%o]= %.6f\n", X, aveTwoFstat[X]);
       }
     }
     
@@ -2077,7 +2074,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   Nsegments = usefulparams->nStacks;
 
   /* check if translation to reference time of fine-grid is necessary */
-  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) > 0 ) {
+  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) != 0 ) {
     translateSpins = TRUE;
     /*fprintf(stderr,"translateSpins = TRUE\n");*/
   }

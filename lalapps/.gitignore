@@ -9,6 +9,7 @@ Makefile.in
 aclocal.m4
 autom4te.cache/
 config.log
+config.lt
 config.status
 configure
 doc/AUTHORS.tex
@@ -45,6 +46,7 @@ src/findchirp/lalapps_ivana
 src/findchirp/lalapps_random_bank
 src/frametools/lalapps_animate
 src/frametools/lalapps_calfacs
+src/frametools/lalapps_combinexteframes
 src/frametools/lalapps_computespec
 src/frametools/lalapps_frextr
 src/frametools/lalapps_frinfo

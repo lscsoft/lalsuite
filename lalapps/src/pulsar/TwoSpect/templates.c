@@ -71,9 +71,10 @@ void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, RE
    
    //RandomParams *param = XLALCreateRandomParams(0);
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   //srand(time(NULL));
+   //UINT8 randseed = rand();
+   //gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, 0);
    
    for (ii=0; ii<trials; ii++) {
       //Create noise value and R value
@@ -143,9 +144,6 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
    //Include the various parameters in the struct required by GSL
    struct gsl_probR_pars params = {templatestruct, ffplanenoise, fbinaveratios, thresh, errcode};
    
-   //REAL8 sumw = 0.0;
-   //for (ii=0; ii<numweights; ii++) sumw += templatestruct->templatedata->data[ii];
-   
    //Assign GSL function the necessary parts
    FDF.f = &gsl_probR;
    FDF.df = &gsl_dprobRdR;
@@ -177,7 +175,7 @@ void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, RE
    
    out->far = rootguess;
    out->distMean = 0.0;
-   out->distSigma = 1.0; //TODO: Get the real value of sigma
+   out->distSigma = 1.0; //Fake the value of sigma
    out->farerrcode = errcode;
    
    //Cleanup

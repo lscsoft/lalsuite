@@ -874,6 +874,8 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->h_start_time.gpsNanoSeconds,
                 tablePtr.simRingdownTable->l_start_time.gpsSeconds,
                 tablePtr.simRingdownTable->l_start_time.gpsNanoSeconds,
+                tablePtr.simRingdownTable->v_start_time.gpsSeconds,
+                tablePtr.simRingdownTable->v_start_time.gpsNanoSeconds,
                 tablePtr.simRingdownTable->start_time_gmst,
                 tablePtr.simRingdownTable->longitude,
                 tablePtr.simRingdownTable->latitude,
@@ -889,9 +891,11 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->amplitude,
                 tablePtr.simRingdownTable->eff_dist_h,
                 tablePtr.simRingdownTable->eff_dist_l,
+                tablePtr.simRingdownTable->eff_dist_v,
                 tablePtr.simRingdownTable->hrss,
                 tablePtr.simRingdownTable->hrss_h,
                 tablePtr.simRingdownTable->hrss_l,
+                tablePtr.simRingdownTable->hrss_v,
                 xml->rowCount
                   );
           tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;

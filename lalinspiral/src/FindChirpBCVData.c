@@ -272,12 +272,12 @@ LALFindChirpBCVData (
      */
 
 
-    XLALREAL4ForwardFFT(fcSeg->data->data, dataVec, params->fwdPlan);
-    if (fcSeg->data->data == NULL)
-      ABORTXLAL(status);
-    XLALREAL4ForwardFFT(fcSeg->dataBCV->data, dataVec, params->fwdPlan);
-    if (fcSeg->dataBCV->data == NULL)
-      ABORTXLAL(status);
+    LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
+        dataVec, params->fwdPlan );
+    CHECKSTATUSPTR( status );
+    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data,
+        dataVec, params->fwdPlan );
+    CHECKSTATUSPTR( status );
 
     /* compute strain */
     for ( k = 0; k < fcSeg->data->data->length; ++k )
@@ -343,18 +343,18 @@ LALFindChirpBCVData (
       wtilde[0].re                             = 0.0;
 
       /* transform to time domain */
-      XLALREAL4ReverseFFT(params->wVec, params->wtildeVec, params->invPlan);
-      if (params->wVec == NULL)
-        ABORTXLAL(status);
+      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec,
+          params->invPlan );
+      CHECKSTATUSPTR (status);
 
       /* truncate in time domain */
       memset( w + params->invSpecTrunc/2, 0,
           (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
 
       /* transform to frequency domain */
-      XLALREAL4ForwardFFT(params->wtildeVec, params->wVec, params->fwdPlan);
-      if (params->wtildeVec == NULL)
-        ABORTXLAL(status);
+      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec,
+          params->fwdPlan );
+      CHECKSTATUSPTR (status);
 
       /* normalise fourier transform and square */
       {

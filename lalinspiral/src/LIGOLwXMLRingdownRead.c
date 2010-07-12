@@ -409,75 +409,91 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 8 )
         {
-          thisEvent->start_time_gmst = r8colData;
+          thisEvent->v_start_time.gpsSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 9 )
         {
-          thisEvent->longitude = r4colData;
+          thisEvent->v_start_time.gpsNanoSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 10 )
         {
-          thisEvent->latitude = r4colData;
+          thisEvent->start_time_gmst = r8colData;
         }
         else if ( tableDir[j].idx == 11 )
         {
-          thisEvent->distance = r4colData;
+          thisEvent->longitude = r4colData;
         }
         else if ( tableDir[j].idx == 12 )
         {
-          thisEvent->inclination = r4colData;
+          thisEvent->latitude = r4colData;
         }
         else if ( tableDir[j].idx == 13 )
         {
-          thisEvent->polarization = r4colData;
+          thisEvent->distance = r4colData;
         }
         else if ( tableDir[j].idx == 14 )
         {
-          thisEvent->frequency = r4colData;
+          thisEvent->inclination = r4colData;
         }
         else if ( tableDir[j].idx == 15 )
         {
-          thisEvent->quality = r4colData;
+          thisEvent->polarization = r4colData;
         }
         else if ( tableDir[j].idx == 16 )
         {
-          thisEvent->phase = r4colData;
+          thisEvent->frequency = r4colData;
         }
         else if ( tableDir[j].idx == 17 )
         {
-          thisEvent->mass = r4colData;
+          thisEvent->quality = r4colData;
         }
         else if ( tableDir[j].idx == 18 )
         {
-          thisEvent->spin = r4colData;
+          thisEvent->phase = r4colData;
         }
         else if ( tableDir[j].idx == 19 )
         {
-          thisEvent->epsilon= r4colData;
+          thisEvent->mass = r4colData;
         }
         else if ( tableDir[j].idx == 20 )
         {
-          thisEvent->amplitude = r4colData;
+          thisEvent->spin = r4colData;
         }
         else if ( tableDir[j].idx == 21 )
         {
-          thisEvent->eff_dist_h = r4colData;
+          thisEvent->epsilon= r4colData;
         }
         else if ( tableDir[j].idx == 22 )
         {
-          thisEvent->eff_dist_l = r4colData;
+          thisEvent->amplitude = r4colData;
         }
         else if ( tableDir[j].idx == 23 )
         {
-          thisEvent->hrss = r4colData;
+          thisEvent->eff_dist_h = r4colData;
         }
         else if ( tableDir[j].idx == 24 )
         {
-          thisEvent->hrss_h = r4colData;
+          thisEvent->eff_dist_l = r4colData;
         }
         else if ( tableDir[j].idx == 25 )
         {
+          thisEvent->eff_dist_v = r4colData;
+        }
+        else if ( tableDir[j].idx == 26 )
+        {
+          thisEvent->hrss = r4colData;
+        }
+        else if ( tableDir[j].idx == 27 )
+        {
+          thisEvent->hrss_h = r4colData;
+        }
+        else if ( tableDir[j].idx == 28 )
+        {
           thisEvent->hrss_l = r4colData;
+        }
+        else if ( tableDir[j].idx == 29 )
+        {
+          thisEvent->hrss_v = r4colData;
         }
         else
         {

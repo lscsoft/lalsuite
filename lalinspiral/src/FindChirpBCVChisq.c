@@ -235,14 +235,12 @@ LALFindChirpBCVChisqVeto (
     memcpy( qtildeBinBCV + chisqBinBCV[l], qtildeBCV + chisqBinBCV[l],
         (chisqBinBCV[l+1] - chisqBinBCV[l]) * sizeof(COMPLEX8) );
 
-    XLALCOMPLEX8VectorFFT(params->qBinVecPtr[l],
-        params->qtildeBinVec, params->plan);
-    if (params->qBinVecPtr[l] == NULL)
-      ABORTXLAL(status);
-    XLALCOMPLEX8VectorFFT(params->qBinVecPtrBCV[l],
-        params->qtildeBinVecBCV, params->plan);
-    if (params->qBinVecPtrBCV[l] == NULL)
-      ABORTXLAL(status);
+    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
+        params->qtildeBinVec, params->plan );
+    CHECKSTATUSPTR( status );
+    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtrBCV[l],
+        params->qtildeBinVecBCV, params->plan );
+    CHECKSTATUSPTR( status );
   }
 
 
