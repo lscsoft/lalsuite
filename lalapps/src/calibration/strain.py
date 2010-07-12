@@ -904,21 +904,21 @@ class qscanNode(pipeline.CondorDAGNode):
     self.add_var_arg('@default')
     self.add_var_arg(dir)
 
-class MkdirJob(CondorDAGJob):
+class MkdirJob(pipeline.CondorDAGJob):
   """
   Runs an instance of mkdir in a DAG/DAX. Useful for grid submission.
   """
   def __init__(self,log_dir, cp, dax=False):
     self.__executable = cp.get('condor','mkdir')
     self.__universe = 'local'
-    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
 #    AnalysisJob.__init__(self,cp,dax)
     self.add_condor_cmd('getenv','True')
     self.set_stdout_file(os.path.join( log_dir, 'mkdir-$(cluster)-$(process).out') )
     self.set_stderr_file(os.path.join( log_dir, 'mkdir-$(cluster)-$(process).err') )
     self.set_sub_file('mkdir.sub')
 
-class MkdirNode(CondorDAGNode):
+class MkdirNode(pipeline.CondorDAGNode):
   """
   Runs an instance of mkdir in a DAG/DAX. Useful for grid submission.
   """
@@ -926,7 +926,7 @@ class MkdirNode(CondorDAGNode):
     """
     @param job: A CondorDAGJob that can run an instance of ligolw_add
     """
-    CondorDAGNode.__init__(self,job)
+    pipeline.CondorDAGNode.__init__(self,job)
     self.set_name('mkdir_'+dir.replace(' ',''))
     self.add_var_arg(dir)
 

@@ -32,7 +32,6 @@ NRCSID (LALTESTGPSTOUTCC, "$Id$");
 
 int main(int argc, char *argv[])
 {
-  static LALStatus    status;
   LIGOTimeGPS         gpsTime = {0, 0};
   LIGOTimeGPS         tmpGps  = {0, 0};
   struct tm           utcDate;
@@ -43,9 +42,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
       lalDebugLevel = atoi(argv[1]);
 
-  LALCHARCreateVector(&status, &timestamp, (UINT4)128);
-  if (status.statusCode && lalDebugLevel > 0)
-    REPORTSTATUS(&status);
+  timestamp = XLALCreateCHARVector(128);
 
   /*
    * GPS 0 == 1980-01-06 00:00:00 UTC Sun
@@ -69,20 +66,10 @@ int main(int argc, char *argv[])
 
   if (strcmp(refstamp, timestamp->data) != 0)
     {
-      LALInfo(&status, "GPStoUTC conversion failed: wrong UTC result");
+      fprintf(stderr, "XLALGPStoUTC conversion failed: wrong UTC result\n");
       fprintf(stderr, "TestGPStoUTC: date strings do not match, line %i, %s\n",
               __LINE__, LALTESTGPSTOUTCC);
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
+      XLALDestroyCHARVector(timestamp);
       return 1;
     }
 
@@ -111,18 +98,8 @@ int main(int argc, char *argv[])
 
   if (strcmp(refstamp, timestamp->data) != 0)
     {
-      LALInfo(&status, "GPStoUTC conversion failed: wrong UTC result");
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
+      fprintf(stderr, "GPStoUTC conversion failed: wrong UTC result\n");
+      XLALDestroyCHARVector(timestamp);
       return 1;
     }
 
@@ -151,18 +128,8 @@ int main(int argc, char *argv[])
 
   if (strcmp(refstamp, timestamp->data) != 0)
     {
-      LALInfo(&status, "GPStoUTC conversion failed: wrong UTC result");
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
+      fprintf(stderr, "GPStoUTC conversion failed: wrong UTC result\n");
+      XLALDestroyCHARVector(timestamp);
       return 1;
     }
 
@@ -196,18 +163,8 @@ int main(int argc, char *argv[])
 
   if (strcmp(refstamp, timestamp->data) != 0)
     {
-      LALInfo(&status, "GPStoUTC conversion failed: wrong UTC result");
-      LALCHARDestroyVector(&status, &timestamp);
-      if (status.statusCode && lalDebugLevel > 0)
-        {
-          fprintf(stderr,
-                  "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
-          REPORTSTATUS(&status);
-          return status.statusCode;
-        }
-      REPORTSTATUS(&status);
-      LALCheckMemoryLeaks();
+      fprintf(stderr, "GPStoUTC conversion failed: wrong UTC result\n");
+      XLALDestroyCHARVector(timestamp);
       return 1;
     }
 
@@ -272,7 +229,6 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr,
               "TestGPStoUTC: conversion from GPS to UTC and back to GPS failed, line %i, %s\n", __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
       return 1;
     }
 
@@ -281,17 +237,7 @@ int main(int argc, char *argv[])
   /*
    * Cleanup and exit
    */
-  LALCHARDestroyVector(&status, &timestamp);
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      fprintf(stderr,
-              "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  if (lalDebugLevel > 0)
-    REPORTSTATUS(&status);
+  XLALDestroyCHARVector(timestamp);
   LALCheckMemoryLeaks();
   return 0;
 }

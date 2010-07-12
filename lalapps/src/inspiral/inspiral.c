@@ -2984,15 +2984,31 @@ int main( int argc, char *argv[] )
    *
    */
 
-  if ( writeCohTrigs || writeCData ) {
+
+  if ( writeCohTrigs || writeCData ) 
+  {
+    char *cdata_cwd = NULL;
+    int cdata_rc = 0;
     hostnameTmp[1023] = '\0';
     hostname[1023] = '\0';
-    gethostname(hostnameTmp, 1023);
-    getcwd(runpathTmp, MAXPATHLEN);
-    strcpy(hostname,hostnameTmp);
-    if (vrbflg) {
-      printf("hostname now is %s\n",hostname);
-      printf("username now is %s\n",username);
+    
+    if ( (cdata_rc = gethostname(hostnameTmp, 1023)) )
+    {
+      perror( "Error getting hostname for cdata" );
+      exit( 1 );
+    }
+
+    cdata_cwd = getcwd(runpathTmp, MAXPATHLEN);
+    if ( cdata_cwd == NULL )
+    {
+      perror( "Error getting current directory for cdata frames" );
+      exit( 1 );
+    }
+    strcpy( hostname, hostnameTmp );
+    if ( vrbflg ) 
+    {
+      fprintf( stdout, "hostname now is %s\n", hostname );
+      fprintf( stdout, "username now is %s\n", username );
     }
   }
 
@@ -3007,7 +3023,7 @@ int main( int argc, char *argv[] )
                   outputPath, hostname, username, fileName );
         snprintf( runpath, FILENAME_MAX, "%s/%s.gwf",
                   runpathTmp, fileName );
-        printf("%s\n", runpath);
+        if ( vrbflg ) fprintf( stdout, "Creating frame as %s\n", runpath );
       }
       else {
         snprintf( fname, FILENAME_MAX, "%s/%s.gwf",
@@ -3018,6 +3034,7 @@ int main( int argc, char *argv[] )
     {
       snprintf( fname, FILENAME_MAX, "%s.gwf", fileName );
     }
+
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
 
     frOutFile = FrFileONew( fname, 0 );
@@ -3036,12 +3053,39 @@ int main( int argc, char *argv[] )
     }
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
-    if ( writeCData ) {
-      printf("%s\n", runpath);
-      remove(runpath);
-      unlink(runpath);
-      if ( outputPath[0] ) {
-        symlink(fname,runpath);
+
+    if ( writeCData ) 
+    {
+      int cdata_rc = 0;
+      if ( vrbflg ) fprintf( stdout, "Creating symlink for %s...", runpath );
+
+      /* remove any old symbolic link that may exist from a previous run */
+      if ( (cdata_rc = unlink(runpath)) )
+      {
+        if ( errno == ENOENT )
+        {
+          if ( vrbflg ) fprintf( stdout, "no existing symlink to unlink... " );
+        }
+        else
+        {
+          perror( "Error unlinking old symbolic link" );
+          fprintf( stderr, "runpath = %s\n", runpath );
+          exit( 1 );
+        }
+      }
+      else
+      {
+        if ( vrbflg ) fprintf( stdout, "removed old symlink... " );
+      }
+
+      /* create a new symbolic link */
+      if ( outputPath[0] ) 
+      {
+        if ( (cdata_rc = symlink( fname, runpath )) )
+        {
+          perror( "Error creating symlink for output cdata frame" );
+          exit( 1 );
+        }
       }
     }
   }
