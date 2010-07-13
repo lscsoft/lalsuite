@@ -104,9 +104,7 @@ typedef struct {
 extern const TransientCandidate_t empty_TransientCandidate;
 
 /* ---------- exported API prototypes ---------- */
-int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
-
-REAL8 XLALGetTransientWindowValue ( UINT4 timestamp, transientWindow_t transientWindow );
+int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, const transientWindow_t *transientWindow );
 
 int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
 
@@ -118,11 +116,93 @@ int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisT
 
 int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
 
+
 /* ---------- Fstat-atoms related functions ----------*/
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
 CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
 
 FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
+
+
+/* ---------- INLINE function definitions ---------- */
+
+/** Function to compute the value of a rectangular transient-window at a given timestamp.
+ *
+ * This is the central function defining the rectangular window properties.
+ */
+static inline REAL8
+XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
+                                         UINT4 t0, 		/**< start-time of rectangular window */
+                                         UINT4 t1		/**< end-time of rectangular window */
+                                         )
+{
+  if ( timestamp < t0 || timestamp > t1 )
+    return 0.0;
+  else
+    return 1.0;
+
+} /* XLALGetRectangularTransientWindowValue() */
+
+/** Function to compute the value of an exponential transient-window at a given timestamp.
+ *
+ * This is the central function defining the exponential window properties.
+ */
+static inline REAL8
+XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
+                                         UINT4 t0, 		/**< start-time of exponential window */
+                                         UINT4 t1, 		/**< end-time of exponential window */
+                                         UINT4 tau		/**< characteristic time of the exponential window */
+                                         )
+{
+  if ( timestamp < t0 || timestamp > t1 )
+    return 0.0;
+  else
+    return exp ( - 1.0 * ( timestamp - t0 ) / tau );
+
+} /* XLALGetExponentialTransientWindowValue() */
+
+/** Function to compute the value of a given transient-window function at a given timestamp.
+ *
+ * This is a simple wrapper to the actual window-defining functions
+ */
+static inline REAL8
+XLALGetTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
+                              UINT4 t0, 	/**< start-time of window */
+                              UINT4 t1, 	/**< end-time of window */
+                              UINT4 tau,	/**< characteristic time of window */
+                              transientWindowType_t type	/**< window type */
+                              )
+{
+  REAL8 val;
+
+  switch ( type )
+    {
+    case TRANSIENT_NONE:
+      val = 1.0;
+      break;
+
+    case TRANSIENT_RECTANGULAR:
+      val = XLALGetRectangularTransientWindowValue ( timestamp, t0, t1 );
+      break;
+
+    case TRANSIENT_EXPONENTIAL:
+      val = XLALGetExponentialTransientWindowValue ( timestamp, t0, t1, tau );
+      break;
+
+    default:
+      XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
+                      type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
+      return -1;	/* cop out because we're in an inline function */
+
+    } /* switch window-type */
+
+  /* return result */
+  return val;
+
+} /* XLALGetTransientWindowValue() */
+
+
+
 
 #ifdef  __cplusplus
 }
