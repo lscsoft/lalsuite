@@ -1344,6 +1344,8 @@ fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to
 fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
 fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
 fprintf(a, "  --chirp-mass-cutoff MASS     set chirp mass cutoff to MASS\n");\
+fprintf(a, "  --max-eta ETA                set maximum symmetric mass ratio of the bank to ETA\n");\
+fprintf(a, "  --min-eta ETA                set minimum symmetric mass ratio of the bank to ETA\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n");\
 fprintf(a, "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n");\
