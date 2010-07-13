@@ -74,8 +74,8 @@ typedef enum {
 typedef struct
 {
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  REAL8 t0;			/**< GPS start-time 't0' */
-  REAL8 tau;			/**< transient timescale tau in seconds */
+  UINT4 t0;			/**< GPS start-time 't0' */
+  UINT4 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
 
 /** Struct defining a range of transient windows */
@@ -84,10 +84,10 @@ typedef struct
   transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
   UINT4 t0;			/**< earliest GPS start-time 't0' in seconds */
   UINT4 t0Band;			/**< range of start-times 't0' to search, in seconds */
-  UINT4 dt0;			/**< stepsize to search t0-range with */
+  UINT4 dt0;			/**< stepsize to search t0-range with, in seconds */
   UINT4 tau;			/**< shortest transient timescale tau in seconds */
   UINT4 tauBand;		/**< range of transient timescales tau to search, in seconds */
-  UINT4 dtau;			/**< stepsize to search tau-range with */
+  UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
 } transientWindowRange_t;
 
 /** Struct holding a transient CW candidate */
