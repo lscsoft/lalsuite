@@ -49,50 +49,11 @@
 /* ---------- internal prototypes ---------- */
 int compareAtoms(const void *in1, const void *in2);
 
-static inline REAL8 XLALGetRectangularTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 t1 );
-static inline REAL8 XLALGetExponentialTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 t1, UINT4 tau );
-
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
 
 
 /* ==================== function definitions ==================== */
-
-/** Function to compute the value of a rectangular transient-window at a given timestamp.
- *
- * This is the central function defining the rectangular window properties.
- */
-static inline REAL8
-XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
-                                         UINT4 t0, 		/**< start-time of rectangular window */
-                                         UINT4 t1		/**< end-time of rectangular window */
-                                         )
-{
-  if ( timestamp < t0 || timestamp > t1 )
-    return 0.0;
-  else
-    return 1.0;
-
-} /* XLALGetRectangularTransientWindowValue() */
-
-/** Function to compute the value of an exponential transient-window at a given timestamp.
- *
- * This is the central function defining the exponential window properties.
- */
-static inline REAL8
-XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
-                                         UINT4 t0, 		/**< start-time of exponential window */
-                                         UINT4 t1, 		/**< end-time of exponential window */
-                                         UINT4 tau		/**< characteristic time of the exponential window */
-                                         )
-{
-  if ( timestamp < t0 || timestamp > t1 )
-    return 0.0;
-  else
-    return exp ( - 1.0 * ( timestamp - t0 ) / tau );
-
-} /* XLALGetExponentialTransientWindowValue() */
-
 
 /** Helper-function to determine the total timespan of
  * a transient CW window, ie. the earliest and latest timestamps
@@ -101,21 +62,21 @@ XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
 int
 XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
                                  UINT4 *t1,				/**< [out] window end-time */
-                                 transientWindow_t transientWindow	/**< [in] window-parameters */
+                                 const transientWindow_t *transientWindow/**< [in] window-parameters */
                                  )
 {
   const char *fn = __func__;
 
   /* check input consistency */
-  if ( !t0 || !t1 ) {
-    XLALPrintError ("%s: invalid NULL input 't0=%p' or 't1=%p'\n", fn, t0, t1 );
+  if ( !t0 || !t1 || !transientWindow ) {
+    XLALPrintError ("%s: invalid NULL input 't0=%p', 't1=%p', transientWindow=%p\n", fn, t0, t1, transientWindow );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  UINT4 win_t0 = transientWindow.t0;
-  UINT4 win_tau = transientWindow.tau;
+  UINT4 win_t0 = transientWindow->t0;
+  UINT4 win_tau = transientWindow->tau;
 
-  switch ( transientWindow.type )
+  switch ( transientWindow->type )
     {
     case TRANSIENT_NONE:
       (*t0) = 0;
@@ -136,7 +97,7 @@ XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
       break;
     default:
       XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
-                      transientWindow.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
+                      transientWindow->type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
       XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
 
     } /* switch window-type */
@@ -144,51 +105,6 @@ XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
   return XLAL_SUCCESS;
 
 } /* XLALGetTransientWindowTimespan() */
-
-/** Function to compute the value of a given transient-window function at a given timestamp.
- *
- * This is a simple wrapper to the actual window-defining functions
- */
-REAL8
-XLALGetTransientWindowValue ( UINT4 timestamp,				/**< timestamp for which to compute window-value */
-                              transientWindow_t transientWindow		/**< specifies the transient-CW window */
-                              )
-{
-  const char *fn = __func__;
-  REAL8 val;
-
-  /* window 'none' is treated as a rectangular window covering all the observation time */
-  if ( transientWindow.type == TRANSIENT_NONE )
-    return 1.0;
-
-  UINT4 t0, t1;
-  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
-  }
-
-  switch ( transientWindow.type )
-    {
-    case TRANSIENT_RECTANGULAR:
-      val = XLALGetRectangularTransientWindowValue ( timestamp, t0, t1 );
-      break;
-
-    case TRANSIENT_EXPONENTIAL:
-      val = XLALGetExponentialTransientWindowValue ( timestamp, t0, t1, transientWindow.tau );
-      break;
-
-    default:
-      XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
-                      transientWindow.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
-      XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
-
-    } /* switch window-type */
-
-  /* return result */
-  return val;
-
-} /* XLALGetTransientWindowValue() */
-
 
 
 /** apply a "transient CW window" described by TransientWindowParams to the given
@@ -217,7 +133,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
   UINT4 ts_length = series->data->length;
 
   UINT4 t0, t1;
-  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, &transientWindow ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
     XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
   }
@@ -292,7 +208,7 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
 
   /* deal with non-trivial windows */
   UINT4 t0, t1;
-  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, &transientWindow ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
     XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
   }
@@ -514,7 +430,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
           /* get end-time t1 of this transient-window search */
           UINT4 t0, t1;
-          if ( XLALGetTransientWindowTimespan ( &t0, &t1, window ) != XLAL_SUCCESS ) {
+          if ( XLALGetTransientWindowTimespan ( &t0, &t1, &window ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
