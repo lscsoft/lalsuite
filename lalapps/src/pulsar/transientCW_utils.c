@@ -48,9 +48,9 @@
 
 /* ---------- internal prototypes ---------- */
 int compareAtoms(const void *in1, const void *in2);
-static inline REAL8 XLALGetTransientWindowValue ( UINT4 timestamp, transientWindow_t transientWindow );
-static inline REAL8 XLALGetRectangularTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 tau );
-static inline REAL8 XLALGetExponentialTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 tau );
+
+static inline REAL8 XLALGetRectangularTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 t1 );
+static inline REAL8 XLALGetExponentialTransientWindowValue ( UINT4 timestamp, UINT4 t0, UINT4 t1, UINT4 tau );
 
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
@@ -65,11 +65,9 @@ const TransientCandidate_t empty_TransientCandidate;
 static inline REAL8
 XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
                                          UINT4 t0, 		/**< start-time of rectangular window */
-                                         UINT4 tau		/**< duration of rectangular window */
+                                         UINT4 t1		/**< end-time of rectangular window */
                                          )
 {
-  UINT4 t1 = t0 + tau;
-
   if ( timestamp < t0 || timestamp > t1 )
     return 0.0;
   else
@@ -84,17 +82,10 @@ XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
 static inline REAL8
 XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
                                          UINT4 t0, 		/**< start-time of exponential window */
+                                         UINT4 t1, 		/**< end-time of exponential window */
                                          UINT4 tau		/**< characteristic time of the exponential window */
                                          )
 {
-  /* for given tau, what Tcoh does the window cover?
-   * for the exponential window we want Tcoh = tau * TRANSIENT_EXP_EFOLDING
-   * with the e-folding factor chosen such that the window-value
-   * is practically negligible after that, where it will be set to 0
-   */
-
-  UINT4 t1 = (UINT4)( t0 + TRANSIENT_EXP_EFOLDING * tau + 0.5 );
-
   if ( timestamp < t0 || timestamp > t1 )
     return 0.0;
   else
@@ -102,36 +93,94 @@ XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
 
 } /* XLALGetExponentialTransientWindowValue() */
 
+
+/** Helper-function to determine the total timespan of
+ * a transient CW window, ie. the earliest and latest timestamps
+ * of non-zero window function.
+ */
+int
+XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
+                                 UINT4 *t1,				/**< [out] window end-time */
+                                 transientWindow_t transientWindow	/**< [in] window-parameters */
+                                 )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !t0 || !t1 ) {
+    XLALPrintError ("%s: invalid NULL input 't0=%p' or 't1=%p'\n", fn, t0, t1 );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 win_t0 = transientWindow.t0;
+  UINT4 win_tau = transientWindow.tau;
+
+  switch ( transientWindow.type )
+    {
+    case TRANSIENT_NONE:
+      (*t0) = 0;
+      (*t1) = LAL_INT4_MAX;
+      break;
+    case TRANSIENT_EXPONENTIAL:
+      (*t0) = win_t0;
+      /* for given tau, what Tcoh does should the exponential window cover?
+       * for speed reasons we want to truncate Tcoh = tau * TRANSIENT_EXP_EFOLDING
+       * with the e-folding factor chosen such that the window-value
+       * is practically negligible after that, where it will be set to 0
+       */
+      (*t1) = (UINT4)( win_t0 + TRANSIENT_EXP_EFOLDING * win_tau + 0.5 );
+      break;
+    case TRANSIENT_RECTANGULAR:
+      (*t0) = win_t0;
+      (*t1) = win_t0 + win_tau;
+      break;
+    default:
+      XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
+                      transientWindow.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
+      XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+
+    } /* switch window-type */
+
+  return XLAL_SUCCESS;
+
+} /* XLALGetTransientWindowTimespan() */
+
 /** Function to compute the value of a given transient-window function at a given timestamp.
  *
  * This is a simple wrapper to the actual window-defining functions
  */
-static inline REAL8
+REAL8
 XLALGetTransientWindowValue ( UINT4 timestamp,				/**< timestamp for which to compute window-value */
                               transientWindow_t transientWindow		/**< specifies the transient-CW window */
                               )
 {
+  const char *fn = __func__;
   REAL8 val;
 
   /* window 'none' is treated as a rectangular window covering all the observation time */
   if ( transientWindow.type == TRANSIENT_NONE )
     return 1.0;
 
-  UINT4 t0 = transientWindow.t0;
-  UINT4 tau = transientWindow.tau;
+  UINT4 t0, t1;
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
 
   switch ( transientWindow.type )
     {
-    case TRANSIENT_EXPONENTIAL:
-      val = XLALGetExponentialTransientWindowValue ( timestamp, t0, tau );
-      break;
     case TRANSIENT_RECTANGULAR:
-      val = XLALGetRectangularTransientWindowValue ( timestamp, t0, tau );
+      val = XLALGetRectangularTransientWindowValue ( timestamp, t0, t1 );
       break;
+
+    case TRANSIENT_EXPONENTIAL:
+      val = XLALGetExponentialTransientWindowValue ( timestamp, t0, t1, transientWindow.tau );
+      break;
+
     default:
       XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
                       transientWindow.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
-      return -1;	/* special cop-out because we're inside an inline function */
+      XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
 
     } /* switch window-type */
 
@@ -167,6 +216,12 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
   REAL8 ts_dt = series->deltaT;
   UINT4 ts_length = series->data->length;
 
+  UINT4 t0, t1;
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
+
   UINT4 i;
   switch ( transientWindow.type )
     {
@@ -174,7 +229,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
       for ( i = 0; i < ts_length; i ++ )
         {
           UINT4 ti = (UINT4) round ( ts_t0 + i * ts_dt );
-          REAL8 win = XLALGetRectangularTransientWindowValue ( ti, transientWindow.t0, transientWindow.tau );
+          REAL8 win = XLALGetRectangularTransientWindowValue ( ti, t0, t1 );
           series->data->data[i] *= win;
         } /* for i < length */
       break;
@@ -183,7 +238,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
       for ( i = 0; i < ts_length; i ++ )
         {
           UINT4 ti = (UINT4) round ( ts_t0 + i * ts_dt );
-          REAL8 win = XLALGetExponentialTransientWindowValue ( ti, transientWindow.t0, transientWindow.tau );
+          REAL8 win = XLALGetExponentialTransientWindowValue ( ti, t0, t1, transientWindow.tau );
           series->data->data[i] *= win;
         } /* for i < length */
       break;
@@ -236,6 +291,13 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
     return XLAL_SUCCESS;
 
   /* deal with non-trivial windows */
+  UINT4 t0, t1;
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
+
+  /* loop over all detectors X */
   for ( X = 0; X < numIFOs; X ++ )
     {
       numTS = multiNoiseWeights->data[X]->length;
@@ -251,7 +313,7 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
           for ( i=0; i < numTS; i ++ )
             {
               UINT4 ti = multiTS->data[X]->data[i].gpsSeconds;
-              REAL8 win = XLALGetRectangularTransientWindowValue ( ti, transientWindow.t0, transientWindow.tau );
+              REAL8 win = XLALGetRectangularTransientWindowValue ( ti, t0, t1 );
               multiNoiseWeights->data[X]->data[i] *= win;
             } /* for i < length */
           break;
@@ -260,7 +322,7 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
           for ( i=0; i < numTS; i ++ )
             {
               UINT4 ti = multiTS->data[X]->data[i].gpsSeconds;
-              REAL8 win = XLALGetExponentialTransientWindowValue ( ti, transientWindow.t0, transientWindow.tau );
+              REAL8 win = XLALGetExponentialTransientWindowValue ( ti, t0, t1, transientWindow.tau );
               multiNoiseWeights->data[X]->data[i] *= win;
             } /* for i < length */
           break;
@@ -383,30 +445,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 numAtoms = atoms->length;
   /* actual data spans [t0_data, t1_data] in steps of TAtom */
   UINT4 t0_data = atoms->data[0].timestamp;
-  UINT4 t1_data = atoms->data[numAtoms-1].timestamp;
-
-  /* special treatment of 'none' window: treat as rectangular window covering all data ==> reproduce standard F-stat */
-  if ( windowRange.type == TRANSIENT_NONE )
-    {
-      windowRange.type = TRANSIENT_RECTANGULAR;
-      windowRange.t0 = t0_data;		/* start at beginning of data */
-      windowRange.t0Band = 0;
-      windowRange.dt0 = 1;		/* just make sure it's nonzero */
-      windowRange.tau = t1_data - t0_data + TAtom; /* integrate over all the data */
-      windowRange.tauBand = 0;
-      windowRange.dtau = 1;		/* make sure it's nonzero */
-    }
-
-  REAL8 tau2TcohFactor;		/* for given tau, what Tcoh do we want to integrate over?
-                                 * for rectangular window this is simply Tcoh = tau,
-                                 * while for the exponential window we want Tcoh = tau * e_folding
-                                 */
-  if ( windowRange.type == TRANSIENT_EXPONENTIAL )
-    tau2TcohFactor = TRANSIENT_EXP_EFOLDING;
-  else
-    tau2TcohFactor = 1.0;
-
-
+  
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
    * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} 1/D_mn * e^{Fmn - Fmax} )
    * which is logB = Fmax + log( sum_{mn} e^FReg_mn ), where FReg_mn = -log(D_mn) + Fmn - Fmax.
@@ -448,12 +487,16 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   ret.maxFstat = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
   UINT4 m, n;
   REAL8 norm = 1.0 / SQ(LAL_TWOPI);
+
+  transientWindow_t window;
+  window.type = windowRange.type;
+
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
     {
       /* compute Fstat-atom index i_t0 in [0, numAtoms) */
-      UINT4 t0_m = windowRange.t0 + m * windowRange.dt0;
-      INT4 i_tmp = (INT4)round ( 1.0 * ( t0_m - t0_data ) / TAtom );
+      window.t0 = windowRange.t0 + m * windowRange.dt0;
+      INT4 i_tmp = (INT4)round ( 1.0 * ( window.t0 - t0_data ) / TAtom );
       if ( i_tmp < 0 ) i_tmp = 0;
       UINT4 i_t0 = (UINT4)i_tmp;
       if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
@@ -467,11 +510,17 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           /* translate n into an atoms end-index for this search interval [t0, t0+Tcoh],
            * giving the index range of atoms to sum over
            */
-          UINT4 tau_n = windowRange.tau + n * windowRange.dtau;
-          UINT4 Tcoh_n = (UINT4) round ( tau2TcohFactor * tau_n );	/* round to integer seconds */
-          UINT4 t1_mn = t0_m + Tcoh_n;			/* end-time of this transient-window search */
-          /* compute Fstat-atom index i_t1 in [0, numAtoms) */
-          i_tmp = (INT4) round ( 1.0 * ( t1_mn - t0_data ) / TAtom ) - 1;
+          window.tau = windowRange.tau + n * windowRange.dtau;
+
+          /* get end-time t1 of this transient-window search */
+          UINT4 t0, t1;
+          if ( XLALGetTransientWindowTimespan ( &t0, &t1, window ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms) */
+          i_tmp = (INT4) round ( 1.0 * ( t1 - t0_data ) / TAtom ) - 1;
           if ( i_tmp < 0 ) i_tmp = 0;
           UINT4 i_t1 = (UINT4)i_tmp;
           if ( i_t1 >= numAtoms ) i_t1 = numAtoms - 1;
@@ -517,7 +566,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                   FstatAtom *thisAtom_i = &atoms->data[i];
                   UINT4 t_i = thisAtom_i->timestamp;
 
-                  REAL8 win_i = exp ( - 1.0 * ( t_i - t0_m ) / tau_n );	/* exponential window */
+                  REAL8 win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
                   REAL8 win2_i = win_i * win_i;
 
                   Ad += thisAtom_i->a2_alpha * win2_i;
@@ -553,8 +602,8 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           if ( twoF > ret.maxFstat )
             {
               ret.maxFstat = twoF;
-              ret.t0offs_maxF  = t0_m - windowRange.t0;	/* offset from transient-t0 */
-              ret.tau_maxF = tau_n;
+              ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
+              ret.tau_maxF = window.tau;
             }
 
           /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
