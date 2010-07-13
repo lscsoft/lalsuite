@@ -84,7 +84,7 @@ eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.c
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
-lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
+lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c ../transientCW_utils.c ../transientCW_utils.h
 
 lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 
