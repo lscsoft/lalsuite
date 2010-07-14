@@ -45,6 +45,7 @@ const char *lalBurstVCSIdentStatus = LALBURST_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalBurstVCSInfo = { \
+  LALBURST_VCS_NAME, \
   LALBURST_VERSION, \
   LALBURST_VCS_ID, \
   LALBURST_VCS_DATE, \
