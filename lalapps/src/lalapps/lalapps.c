@@ -230,12 +230,12 @@ XLALGetVersionString( int level )
 
   if (LAL_VERSION_DEVEL != 0)
   {
-    /* check version consistency between LAL headers <> library */
+    /* check lal version consistency */
     if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalVCSInfo) )
     {
-      XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
+      XLALPrintError("%s: FATAL: version mismatch between compile-time (%s) and run-time (%s) LAL library\n",
           __func__, lalHeaderVCSInfo.vcsId, lalVCSInfo.vcsId );
-      XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
+      XLALPrintError("This indicates a potential compilation problem: ensure your setup is consistent and recompile.\n");
       XLAL_ERROR_NULL (__func__, XLAL_EERR );
     }
   }
