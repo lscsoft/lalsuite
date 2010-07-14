@@ -871,8 +871,9 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   }
   LogPrintf(LOG_DEBUG,"%s : read ra = %6.12f dec = %6.12f.\n",fn,header->ra,header->dec);
 
-  /* extract obsid */
-  {
+  /* extract obsid - goodxenon data will not have an obsid field*/
+  if (strstr(header->filename,"XENON") == NULL) {
+    
     CHAR tempobsid[STRINGLENGTH];
     if (fits_read_key(fptr,TSTRING,string_OBS_ID,&tempobsid,comment,&status)) {
       fits_report_error(stderr,status);
@@ -883,6 +884,10 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
     removechar(tempobsid,'_');
     removechar(tempobsid,'-');
     strncpy(header->obsid,tempobsid,STRINGLENGTH);
+  }
+  else {
+    /* if XENON data then we just write XENON in the odsid because there is no true OBSID info avaialable */
+    snprintf(header->obsid,STRINGLENGTH,"XENON");
   }
   LogPrintf(LOG_DEBUG,"%s : read obsid as %s\n",fn,header->obsid);
 
@@ -911,7 +916,7 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
      XLAL_ERROR(fn,XLAL_EFAULT);
   }
   if (strcmp(type,"ARRAY")==0) header->type = 0;
-  else if (strcmp(type,"EVENTS")==0) header->type = 1;
+  else if ( (strcmp(type,"EVENTS") == 0 ) || (strcmp(type,"EVENT") == 0 ) ) header->type = 1;
   else {
     LogPrintf(LOG_NORMAL,"%s : data type \"%s\" not recognised.  Exiting. \n",fn,type);
     exit(0);
@@ -1236,8 +1241,8 @@ int XLALReadFITSTimeStamps(BarycentricData **stamps,     /**< [out] the detector
 	LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,keyword);
 	 XLAL_ERROR(fn,XLAL_EFAULT);
       }
-      if (strncmp(timestring,"Time",STRINGLENGTH)==0) detidx = i+1;
-      if (strncmp(timestring,"BARYTIME",8)==0) baryidx = i+1;
+      if (strncasecmp(timestring,"time",STRINGLENGTH)==0) detidx = i+1;
+      if (strncasecmp(timestring,"barytime",8)==0) baryidx = i+1;
     }
     
   }
