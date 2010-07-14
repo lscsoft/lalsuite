@@ -44,8 +44,7 @@ static char uniform_string[] = "uniform";
 const OutputParams empty_OutputParams;
 
 /* Usage format string */
-#define USAGE1 \
-"Usage: %s [options]\n\n"\
+static char USAGE1[] = \
 " --help              display this message\n"\
 " --verbose           display all error messages\n"\
 " --detectors         all IFOs with data to be analysed e.g. H1,H2\n\
@@ -93,9 +92,9 @@ const OutputParams empty_OutputParams;
 " --iotaprior         type of prior on iota - uniform or gaussian\n"\
 " --iotamean          (REAL8) mean of a gaussian prior on iota\n"\
 " --iotasig           (REAL8) std. dev. of a gaussian prior on iota\n"\
-"\n"
+"\n";
 
-#define USAGE2 \
+static char USAGE2[] = \
 " MCMC parameters:-\n"\
 " --mcmc              set to perform an MCMC\n"\
 " --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
@@ -122,7 +121,7 @@ const OutputParams empty_OutputParams;
 " --only-joint        set this to only produce the joint MCMC when given \n\
                      muliple detectors (MCMC only)\n"\
 " --output-burn-in    set this to also output the burn in stage to the chain\n"\
-"\n"
+"\n";
 
 
 
@@ -584,10 +583,6 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
 y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   CHAR *program = argv[0];
 
-  static char USAGE[strlen(USAGE1)+strlen(USAGE2)+1];
-  strcpy ( USAGE, USAGE1 );
-  strcat ( USAGE, USAGE2 );
-
   /* set defaults */
   inputParams->mcmc.doMCMC = 0;/* by default don't perform an MCMC */
   inputParams->verbose = 0;    /* by default don't do verbose */
@@ -665,7 +660,7 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, optarg);
       case 'h': /* help message */
-        fprintf(stderr, USAGE, program);
+        printf("Usage: %s [options]\n\n%s%s\n", program, USAGE1, USAGE2);
         exit(0);
       case 'R': /* verbose */
         inputParams->verbose = 1;

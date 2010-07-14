@@ -106,20 +106,8 @@ typedef struct {
   INT4 lld;                         /**< the lld flag */
   INT4 type;                        /**< event or array data */
   INT4 energy[2];                   /**< the energy channel range (0-255) */
+  INT4 detconfig[5];                /**< contains detector config flags */
 } FrameChannel;
-
-/** A structure that contains information regarding a specific frame file  
- */
-/* typedef struct {  */
-/*   CHAR filename[STRINGLENGTH];      /\**< the name of the file *\/ */
-/*   INT4 length;                      /\**< the number of channels *\/ */
-/*   FrameChannel *channel;            /\**< vector of frame channels *\/ */
-/*   LIGOTimeGPS epoch;                /\**< file start time *\/ */
-/*   LIGOTimeGPS end;                  /\**< file end time *\/ */
-/*   REAL8 duration;                   /\**< file duration *\/ */
-/*   INT4 lld;                         /\**< the lld flag *\/ */
-/*   CHAR *history;                    /\**< contains the history field of the frame file *\/ */
-/* } FrameFile; */
 
 /** A structure that stores information about a collection of Frame files
  */
@@ -187,7 +175,6 @@ RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
 int main(int argc,char *argv[]);
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar, CHAR *clargs);
 int XLALReadFrameDir(FrameChannelList **framechannels, CHAR *inputdir, CHAR *pattern);
-/* int XLALFrameFilter(struct dirent *x); */
 int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,FrameChannelList *framechannels);
 int XLALFindFramesInInterval(FrameChannelList **subframechannels, FrameChannelList *framechannels,LIGOTimeGPS intstart,LIGOTimeGPS intend);
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,FrameChannelList *framechannels);
@@ -559,45 +546,67 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 	(*framechannels)->channel[count].dt = ts.deltaT;
 	LogPrintf(LOG_DEBUG,"%s : read deltaT as %6.12f\n",fn,(*framechannels)->channel[count].dt);
 	
-	/* extract energy, LLD and data type information from the channelname */
-	/* if LLD data it will contain the string LLD - the energies are the last two fields seperated by a "-" */
+	/* extract detconfig, energy, LLD and data type information from the channelname */
+	/* the format is X1:<MODE>-<COLNAME>-<LLD>-<DETCONFIG>-<MINENERGY>_<MAXENERGY> */
 	/* the data type is indicated by either "Event" or "Cnt" being present in the channel name */
-	{
-	  CHAR *c1,*c2,*newtemp;
 	  
-	  /* check for type */
-	  if (strstr(ts.name,"Cnt") != NULL) (*framechannels)->channel[count].type = ARRAY;
-	  else if (strstr(ts.name,"Event") != NULL) (*framechannels)->channel[count].type = EVENT;
-	  else {
-	    LogPrintf(LOG_CRITICAL,"%s : unable to read data type from channel %s in file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
-	    XLAL_ERROR(fn,XLAL_EINVAL);
-	  }
-
-	  if (strstr(ts.name,"LLD") != NULL) (*framechannels)->channel[count].lld = 1;
-	  else (*framechannels)->channel[count].lld = 0;
-	  
-	  /* find the last instance of a "_" - the number between that and the next "-" is the min energy */
-	  c2 = ts.name;
-	  while ( (c1 = strstr(c2,"_")) != NULL) {
-	    c2 = c1 + 1;
-	  }
-	  c1 = strstr(c2,"-");
-	  length = strlen(c2) - strlen(c1) + 1;
-	  newtemp = XLALCalloc(length,sizeof(CHAR));
-	  snprintf(newtemp,length,"%s",c2);
-	  (*framechannels)->channel[count].energy[0] = atoi(newtemp);
-	  XLALFree(newtemp);
-	  
-	  /* find the last instance of a "-" - ythe number after this is the max energy */
-	  c2 = ts.name;
-	  while ( (c1 = strstr(c2,"-")) != NULL) {
-	    c2 = c1 + 1;
-	  }
-	  (*framechannels)->channel[count].energy[1] = atoi(c2);
-	  LogPrintf(LOG_DEBUG,"%s : extracted energy range as %d %d\n",fn,(*framechannels)->channel[count].energy[0],(*framechannels)->channel[count].energy[1]);
-	  
+	/* check for type */
+	if (strstr(ts.name,"Cnt") != NULL) (*framechannels)->channel[count].type = ARRAY;
+	else if (strstr(ts.name,"Event") != NULL) (*framechannels)->channel[count].type = EVENT;
+	else {
+	  LogPrintf(LOG_CRITICAL,"%s : unable to read data type from channel %s in file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
+	  XLAL_ERROR(fn,XLAL_EINVAL);
 	}
 	
+	/* move through each instance of "-" */
+	{
+	  CHAR *c1 = ts.name;             /* points to start of string */
+	  CHAR *c2 = strstr(c1,"-");      /* points to first instance of "-" after mode */
+	  CHAR *c3 = strstr(c2+1,"-");    /* points to first instance of "-" after colname */
+	  CHAR *c4 = strstr(c3+1,"-");    /* points to first instance of "-" after LLD */
+	  CHAR *c5 = strstr(c4+1,"-");    /* points to first instance of "-" after detconfig */
+	  CHAR *subs,*e1,*e2;
+	  INT4 sublen,elen;
+
+	  /* extract LLD info */
+	  sublen = 2;
+	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	  snprintf(subs,sublen,"%s",c3+1);	 
+	  (*framechannels)->channel[count].lld = atoi(subs);
+	  XLALFree(subs);
+
+	  /* extract detconfig info */
+	  sublen = strlen(c4) - strlen(c5);   
+	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	  snprintf(subs,sublen,"%s",c4+1);
+
+	  /* check if there is are instances of 0,1,2,3,4,5 in the string */
+	  if (strstr(subs,"0") != NULL) (*framechannels)->channel[count].detconfig[0]= 1;
+	  if (strstr(subs,"1") != NULL) (*framechannels)->channel[count].detconfig[1]= 1;
+	  if (strstr(subs,"2") != NULL) (*framechannels)->channel[count].detconfig[2]= 1;
+	  if (strstr(subs,"3") != NULL) (*framechannels)->channel[count].detconfig[3]= 1;
+	  if (strstr(subs,"4") != NULL) (*framechannels)->channel[count].detconfig[4]= 1;      
+	  XLALFree(subs);
+	  
+	  /* extract energy info */
+	  sublen = strlen(c5);
+	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	  snprintf(subs,sublen,"%s",c5+1);
+	  c1 = strstr(subs,"_");
+	  elen = strlen(subs) - strlen(c1) + 1;
+	  e1 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
+	  snprintf(e1,elen,"%s",subs);
+	  (*framechannels)->channel[count].energy[0] = atoi(e1);
+	  elen = strlen(c1);	
+	  e2 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
+	  snprintf(e2,elen,"%s",c1+1);	
+	  (*framechannels)->channel[count].energy[1] = atoi(e2);
+	  XLALFree(subs);
+	  XLALFree(e1);
+	  XLALFree(e2);
+	  
+	}
+	 
 	/* copy filename and history to output structure */
 	snprintf((*framechannels)->channel[count].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
 	if (((*framechannels)->channel[count].history = (CHAR *)XLALCalloc(strlen(history)+1,sizeof(CHAR))) == NULL ) {
@@ -615,8 +624,11 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
 	LogPrintf(LOG_DEBUG,"%s : frame data type = %d.\n",fn,(*framechannels)->channel[count].type);
 	LogPrintf(LOG_DEBUG,"%s : frame min energy = %d.\n",fn,(*framechannels)->channel[count].energy[0]);
 	LogPrintf(LOG_DEBUG,"%s : frame max energy = %d.\n",fn,(*framechannels)->channel[count].energy[1]);
+	LogPrintf(LOG_DEBUG,"%s : frame detconfig = %d %d %d %d %d.\n",fn,(*framechannels)->channel[count].detconfig[0],
+		  (*framechannels)->channel[count].detconfig[1],(*framechannels)->channel[count].detconfig[2],
+		  (*framechannels)->channel[count].detconfig[3],(*framechannels)->channel[count].detconfig[4]);
 	LogPrintf(LOG_DEBUG,"%s : frame dt = %6.12f.\n",fn,(*framechannels)->channel[count].dt);
-	  
+
 	/* free mem */
 	XLALFree(channelname);
 	c = temp + 1;
@@ -928,6 +940,7 @@ int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a
 	(*subframechannels)->channel[count].type = framechannels->channel[i].type;
 	(*subframechannels)->channel[count].energy[0] = framechannels->channel[i].energy[0];
 	(*subframechannels)->channel[count].energy[1] = framechannels->channel[i].energy[1];
+	memcpy(&((*subframechannels)->channel[count].detconfig),&(framechannels->channel[i].detconfig),NPCU*sizeof(INT4));
 	(*subframechannels)->channel[count].dt = framechannels->channel[i].dt;
 	LogPrintf(LOG_DEBUG,"%s : Int [%d->%d] : overlapping frame [%d->%d] = %.0f overlap.\n",fn,intstart.gpsSeconds,intend.gpsSeconds,framestart->gpsSeconds,frameend->gpsSeconds,overlap);
 	
@@ -1018,8 +1031,10 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,            /**<
       for (j=0;j<sidx;j++) fprintf(stdout," ");
       fprintf(stdout,"|");
       for (j=sidx+1;j<eidx-1;j++) fprintf(stdout,"-");
-      fprintf(stdout,"| dt = %6.6f energy = %d-%d lld = %d type = %d\n",
-	      framechannels->channel[i].dt,framechannels->channel[i].energy[0],framechannels->channel[i].energy[1],framechannels->channel[i].lld,framechannels->channel[i].type);
+      fprintf(stdout,"| dt = %6.6f detconfig = %d%d%d%d%d energy = %d-%d lld = %d type = %d\n",
+	      framechannels->channel[i].dt,framechannels->channel[i].detconfig[0],framechannels->channel[i].detconfig[1],
+	      framechannels->channel[i].detconfig[2],framechannels->channel[i].detconfig[3],framechannels->channel[i].detconfig[4],
+	      framechannels->channel[i].energy[0],framechannels->channel[i].energy[1],framechannels->channel[i].lld,framechannels->channel[i].type);
       
     }
     
@@ -1098,6 +1113,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,            /**<
 	  tempchannellist.channel[count].duration = framechannels->channel[k].duration;
 	  tempchannellist.channel[count].energy[0] = framechannels->channel[k].energy[0];
 	  tempchannellist.channel[count].energy[1] = framechannels->channel[k].energy[1];
+	  memcpy(&(tempchannellist.channel[count].detconfig),&(framechannels->channel[k].detconfig),NPCU*sizeof(INT4));
 	  tempchannellist.channel[count].lld = framechannels->channel[k].lld;
 	  tempchannellist.channel[count].type = framechannels->channel[k].type;
 
@@ -1132,36 +1148,43 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,            /**<
 	    /* check for energy overlap if not ldd */
 	    if ( ( tempchannellist.channel[k].lld == 0 ) && ( tempchannellist.channel[s].lld == 0 ) ) {
 
-	      /* check if we're comparing event data with array data - apparently we can combine in this case */
-	      if ( tempchannellist.channel[k].type == tempchannellist.channel[s].type ) {
+	      /* and if not independent PCUs - we do dot product of pcu flags which should be 0 if independent pcus */
+	      INT4 prod = 1;
+	      INT4 t;
+	      for (t=0;t<NPCU;t++) prod *= tempchannellist.channel[s].detconfig[t];
+	      if (prod == 0) {
 
-		if ( ( ( tempchannellist.channel[k].energy[0] < tempchannellist.channel[s].energy[0] )
-		       && ( tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[0] ) )
-		     || ( ( tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] )
-			  && ( tempchannellist.channel[k].energy[0] < tempchannellist.channel[s].energy[1] ) ) ) {
+		/* check if we're comparing event data with array data - apparently we can combine in this case */
+		if ( tempchannellist.channel[k].type == tempchannellist.channel[s].type ) {
 		  
-		  /* determine which file to keep based on largest energy range */
-		  INT4 range1 = tempchannellist.channel[k].energy[1] - tempchannellist.channel[k].energy[0];
-		  INT4 range2 = tempchannellist.channel[s].energy[1] - tempchannellist.channel[s].energy[0];
-		  INT4 highenergyidx = tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] ? k : s;
-		  
-		  if ( range1 > range2 ) {
-		    badidx->data[s] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,s,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
-		  }
-		  else if ( range2 > range1 ) {
-		    badidx->data[k] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,k,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
-		  }
-		  else {
-		    badidx->data[highenergyidx] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,highenergyidx,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		  if ( ( ( tempchannellist.channel[k].energy[0] < tempchannellist.channel[s].energy[0] )
+			 && ( tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[0] ) )
+		       || ( ( tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] )
+			    && ( tempchannellist.channel[k].energy[0] < tempchannellist.channel[s].energy[1] ) ) ) {
+		    
+		    /* determine which file to keep based on largest energy range */
+		    INT4 range1 = tempchannellist.channel[k].energy[1] - tempchannellist.channel[k].energy[0];
+		    INT4 range2 = tempchannellist.channel[s].energy[1] - tempchannellist.channel[s].energy[0];
+		    INT4 highenergyidx = tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] ? k : s;
+		    
+		    if ( range1 > range2 ) {
+		      badidx->data[s] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,s,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
+		    else if ( range2 > range1 ) {
+		      badidx->data[k] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,k,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
+		    else {
+		      badidx->data[highenergyidx] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,highenergyidx,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
 		  }
 		}
 	      }

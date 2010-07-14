@@ -81,7 +81,7 @@ html_template = """
   <p>Cluster level:
   <form id="whichCluster">
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="UNCLUSTERED" onclick="switchViewIframe()" checked>Raw triggers<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="100MILLISEC_CLUSTERED" onclick="switchViewIframe()">100 msec window<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="30MILLISEC_CLUSTERED" onclick="switchViewIframe()">30 msec window<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="16SEC_CLUSTERED" onclick="switchViewIframe()">16 sec window<br>
   </form>
 
@@ -91,7 +91,7 @@ html_template = """
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;usage<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Glitch" onclick="switchViewIframe()">Loudest Triggers<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="Hwinj" onclick="switchViewIframe()">HW Injections<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_hist" onclick="switchViewIframe()">SNR Histogram<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="snr_hist" onclick="switchViewIframe()">SNR Histograms<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="glitchgram" onclick="switchViewIframe()">Glitchgram<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="rate_vs_time" onclick="switchViewIframe()">Rate vs. Time,<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Snr vs. Time,<br>
@@ -230,7 +230,7 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 2, 'UNCLUSTERED', start_time, end_time, local = True)
         veto_job = veto_job.add_sub_job('make_veto_files', config, ifo, 4, 'UNCLUSTERED', start_time, end_time, local = True)
 
-        for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
+        for cluster in ['UNCLUSTERED','30MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
             root     = veto_job.add_sub_job('make_caches',   config, ifo, category, cluster, start_time, end_time)
             csv_jobs = [root.add_sub_job('make_csv',         config, ifo, 0, cluster, start_time, end_time)]
             csv_jobs += [csv_jobs[0].add_sub_job('make_csv', config, ifo, i, cluster, start_time, end_time) for i in [1,2,4]]
@@ -374,7 +374,7 @@ def m1_m2_to_mtotal_eta(m1, m2):
 def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
     veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1,2 & 3", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '30MILLISEC_CLUSTERED':'30 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
 
 
@@ -387,7 +387,7 @@ def make_timeless_title(ifo, veto_level, cluster, start_time, desc = None):
 def make_title(ifo, veto_level, cluster, start_time, desc = None):
     veto_level_labels = ['Science', 'Cat 1', "Cat 1 & 2", "Cat 1, 2 & 3", "Cat 1,2 & 4"]
     cluster_labels    = {'UNCLUSTERED':'Unclustered',
-                         '100MILLISEC_CLUSTERED':'100 msec window',
+                         '30MILLISEC_CLUSTERED':'30 msec window',
                          '16SEC_CLUSTERED':'16 sec window'}
 
 
@@ -397,6 +397,16 @@ def make_title(ifo, veto_level, cluster, start_time, desc = None):
         return '%s (%s: %s, %s, %s)' % (desc, tstring, ifo, veto_level_labels[veto_level], cluster_labels[cluster])
     else:
         return '%s: %s, %s, %s' % (tstring, ifo, veto_level_labels[veto_level], cluster_labels[cluster])
+
+
+def new_snr(snr, chisq, chisq_dof, index=6.0):
+    rchisq = chisq/(2 * chisq_dof - 2)
+    nhigh  = 2.
+
+    if rchisq > 1.:
+        return snr / ((1. + rchisq**(index/nhigh))/2)**(1./index)
+    else:
+        return snr
 
 
 def make_time_label(start_time):
@@ -836,6 +846,7 @@ def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_t
         tmpfile = '%s/%s-%d_glitchout.html' % (config['tmp_dir'], ifo, veto_level)
     
         cmd  = '%s ' % config['ligolw_cbc_glitch_page']
+        cmd += '--statistic newsnr --min-glitch-snr 7.0 '
         cmd += '--trigger-db %s-%d-INSPIRAL_16SEC_CLUSTERED.sqlite '  % (ifo, veto_level)
         cmd += '--segments %s '     % os.environ['S6_SEGMENT_SERVER']
         cmd += '--html-file %s ' % tmpfile
@@ -920,7 +931,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     for ifo in ['H1','L1','V1']:
         for cat in [0,1,2,4]:
-            for cluster in ['UNCLUSTERED','100MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
+            for cluster in ['UNCLUSTERED','30MILLISEC_CLUSTERED','16SEC_CLUSTERED']:
                 # Make the summary section
 
                 out = open('%s/%s_CAT%d_%s_Summary.html' % (config['out_dir'], ifo, cat, cluster), 'w')
@@ -954,6 +965,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                 #imgs = sorted(glob.glob('%s/%s_%d_%s_bank_veto_dof_*.png' % (config['out_dir'], ifo, cat, cluster)))
                 #for i in imgs:
                 #    print >>out, '<img src="%s"><p>' % i.split('/')[-1]
+                print >>out, '<img src="%s_%d_%s_chisq.png"><p>' % (ifo, cat, cluster)
                 print >>out, '<img src="%s_%d_%s_bank_veto.png"><p>' % (ifo, cat, cluster)
                 print >>out, '<img src="%s_%d_%s_cont_veto.png"><p>' % (ifo, cat, cluster)
 
@@ -971,12 +983,17 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                     print >>out, '</head>'
                     print >>out, '<body>'
 
+                    if name == 'glitchgram':
+                        print >>out, '<p><img src="%s_%d_%s_new_glitchgram.png"><p>' % (ifo, cat, cluster)
+
                     if name == 'snr_hist':
+                        print >>out, '<p><img src="%s_%d_%s_new_snr_hist.png"><p>' % (ifo, cat, cluster)
                         print >>out, '<p><img src="%s_%d_%s_%s_all.png">' % (ifo, cat, cluster, name)
 
                     print >>out, '<img src="%s_%d_%s_%s.png">' % (ifo, cat, cluster, name)
 
                     if name == 'rate_vs_time':
+                        print >>out, '<img src="%s_%d_%s_newsnr_vs_time.png"><p>' % (ifo, cat, cluster)
                         print >>out, '<img src="%s_%d_%s_snr_vs_time.png">' % (ifo, cat, cluster)
 
                         in_f = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, cat, cluster))
@@ -1023,8 +1040,9 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     SECS_PER_HOUR = 60.0 * 60.0
     start_time2   = float(start_time)
  
-    snrs  = []
-    times = []
+    snrs    = []
+    newsnrs = []
+    times   = []
 
     f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     for line in f:
@@ -1033,6 +1051,7 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
         if tmp[3] == 'inf':
             tmp[3] = 5000
         snrs.append(float(tmp[3]))
+        newsnrs.append(new_snr(float(tmp[3]), float(tmp[11]), float(tmp[12])))
 
     fig = pylab.figure(0, figsize=(8.1,4.0))
     axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
@@ -1055,7 +1074,24 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.ylabel('SNR')
     pylab.savefig('%s/%s_%d_%s_snr_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
 
-      
+    fig  = pylab.figure(1, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    if len(snrs) > 0:
+        pylab.plot(times, newsnrs, ifo_colored_circle[ifo], markersize = 2)
+        pylab.grid()
+        pylab.xlim(0, 24)
+
+        pylab.ylim(min(newsnrs)*0.9, max(newsnrs) * 1.1)
+
+    pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
+    pylab.xlabel(make_time_label(start_time))
+    pylab.xticks(range(0,24,2))
+
+    pylab.ylabel('New SNR')
+    pylab.savefig('%s/%s_%d_%s_newsnr_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
+
 
 def wait_for(filename):
     # wait for it to exist
@@ -1180,10 +1216,13 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
     snrs   = []
     bank_chisqs = []
     cont_chisqs = []
+    chisqs      = []
 
     for l in f:
         data  = l.split(',')
         rho   = float(data[3])
+
+        chisqs.append(float(data[11]))
 
         bank_chisq = float(data[13])
         bank_dof   = int(data[14])
@@ -1191,6 +1230,12 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
         # Now using continuous chisq
         cont_chisq = float(data[15])
         cont_dof   = int(data[16])
+
+        if cont_dof == 0:
+            cont_dof = 1
+
+        if bank_dof == 0:
+            bank_dof = 1
 
         snrs.append(rho)
         bank_chisqs.append(bank_chisq / (2 * bank_dof - 2))
@@ -1217,7 +1262,9 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
 
     pylab.figure(1)
     pylab.plot(snrs,cont_chisqs,'rx')
-    pylab.yscale('log')
+
+    if cont_chisqs and max(cont_chisqs) > 0:
+        pylab.yscale('log')
 
     if snrs:
         if max(snrs) > 11:
@@ -1232,6 +1279,26 @@ def plot_bank_veto(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
 
     pylab.savefig('%s/%s_%d_%s_cont_veto.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+
+    pylab.figure(2)
+    pylab.plot(snrs,chisqs,'rx')
+    pylab.yscale('log')
+
+    if snrs:
+        if max(snrs) > 11:
+            pylab.xscale('log')
+
+        pylab.xlim(5.0,max(snrs) * 1.1)
+        pylab.ylim(min(chisqs) * 0.9, max(chisqs) * 1.1)
+
+    pylab.grid()
+    pylab.xlabel('snr')
+    pylab.ylabel('chisq')
+    pylab.title(make_title(ifo, veto_level, cluster, start_time))
+
+    pylab.savefig('%s/%s_%d_%s_chisq.png' % (config['out_dir'], ifo, veto_level, cluster))
+
 
 
 def plot_bank_veto_old(config, ifo, veto_level, cluster, start_time, end_time):
@@ -1277,13 +1344,14 @@ def plot_bank_veto_old(config, ifo, veto_level, cluster, start_time, end_time):
 
 def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
     """Histogram of SNRs"""
-
     f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
-    bins = [1e-40 for i in range(0,31)]  # Start off non-empty to avoid problems with no triggers
+
     remaining = 0
     huge_snrs = 0
     upper_lim = 1e7
     total_count = 0
+    bins        = [1e-40 for i in range(int(upper_lim))]  # Start off non-empty to avoid problems with no triggers
+    biggest     = 0
 
     for line in f:
         tmp    = line.strip().split(',')
@@ -1298,25 +1366,24 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
         if snrsq > upper_lim:
             huge_snrs += 1
         else:               
-            while len(bins) <= snrsq:
-                try:
-                    bins.append(1e-40)
-                except:
-                    print "Unable to allocate %d" % snrsq
-
+            if snrsq > biggest:
+                biggest = snrsq
             bins[snrsq] += 1
 
+    if total_count == 0:
+        return
 
     total_count = float(total_count)
+
     gaussian = None
 
     if len(bins) > 31 and cluster != '16SEC_CLUSTERED':
         slope    = -0.5  # 1.0 - pylab.sqrt(2)
         offset   = float(bins[30]) / pylab.exp(slope * 30.0)
-        gaussian = [offset * pylab.exp(slope * x) for x in range(len(bins))] 
+        gaussian = [offset * pylab.exp(slope * x) for x in range(biggest)]
         gtotal   = 0
 
-        for i in range(31,len(bins)):
+        for i in range(31,biggest):
             gtotal += bins[i] - gaussian[i]
 
         non_gaussianity = gtotal / total_count
@@ -1325,51 +1392,96 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
         print >>f_out, non_gaussianity
         f_out.close()
 
+        # Plot up to 200, with a cumulative dot showing the remaining
+        fig = pylab.figure(0, figsize=(8.1,4.0))
+        axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+        fig.add_axes(axes)
 
-    # Plot up to 200, with a cumulative dot showing the remaining
-    fig = pylab.figure(0, figsize=(8.1,4.0))
+        high_end = min(biggest, 200)
+
+        pylab.semilogy(range(30,high_end), bins[30:high_end], color = ifo_colors[ifo], label='_nolegend_')
+        pylab.plot([199.5], [remaining], 'ko', label='Count > 200')
+
+        if gaussian:
+            pylab.semilogy(range(30,high_end), gaussian[30:high_end], 'k--', label='_nolegend_')
+
+        pylab.grid()
+        pylab.legend()
+        pylab.ylim(0.5,max(max(bins[30:high_end]), remaining) * 1.1)
+        pylab.xlim(30, high_end)
+        pylab.title(make_title(ifo, veto_level, cluster, start_time))
+        pylab.xlabel('SNR^2')
+        pylab.ylabel('Count')
+        pylab.savefig('%s/%s_%d_%s_snr_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+        # Plot everything!
+        fig = pylab.figure(1, figsize=(8.1,4.3))
+        axes = pylab.Axes(fig,[0.07, 0.12, 1.0 - 0.07 - 0.03, 0.8])
+        fig.add_axes(axes)
+
+        pylab.loglog(range(30,biggest), bins[30:biggest], color = ifo_colors[ifo])
+
+        if gaussian:
+            pylab.loglog(range(30,biggest), gaussian[30:biggest], 'k--', label='_nolegend_')
+
+        pylab.grid()
+
+        if huge_snrs > 0:
+            pylab.loglog([upper_lim - 100], [huge_snrs], 'ko', label='Count > %.0e' % upper_lim)
+            pylab.legend()
+        
+        pylab.ylim(0.5,max(max(bins), huge_snrs) * 1.1)
+        pylab.xlim(30, len(bins))
+        pylab.title(make_title(ifo, veto_level, cluster, start_time))
+        pylab.xlabel('SNR^2')
+        pylab.ylabel('Count')
+        pylab.savefig('%s/%s_%d_%s_snr_hist_all.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+    #
+    # Now plot the new snr histograms
+    #
+    f = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
+    bins = [1e-40 for i in range(0,5)]  # Start off non-empty to avoid problems with no triggers
+    remaining = 0
+    huge_snrs = 0
+    upper_lim = 100
+    total_count = 0
+
+    for line in f:
+        tmp    = line.strip().split(',')
+        snr    = float(tmp[3])
+        chisq  = float(tmp[11])
+        dof    = float(tmp[12])
+        newsnr = int(10 * new_snr(snr, chisq, dof))
+
+        total_count += 1
+
+        while len(bins) <= newsnr:
+            try:
+                bins.append(1e-40)
+            except:
+                print "Unable to allocate %f" % newsnr
+
+        bins[newsnr] += 1
+
+    total_count = float(total_count)
+
+    fig  = pylab.figure(2, figsize=(8.1,4.0))
     axes = pylab.Axes(fig,[0.07, 0.1, 1.0 - 0.07 - 0.03, 0.8])
     fig.add_axes(axes)
 
-    high_end = min(len(bins), 200)
-
-    pylab.semilogy(range(30,high_end), bins[30:high_end], color = ifo_colors[ifo], label='_nolegend_')
-    pylab.plot([199.5], [remaining], 'ko', label='Count > 200')
-
-    if gaussian:
-        pylab.semilogy(range(30,high_end), gaussian[30:high_end], 'k--', label='_nolegend_')
-
-    pylab.grid()
-    pylab.legend()
-    pylab.ylim(0.5,max(max(bins[30:high_end]), remaining) * 1.1)
-    pylab.xlim(30, high_end)
-    pylab.title(make_title(ifo, veto_level, cluster, start_time))
-    pylab.xlabel('SNR^2')
-    pylab.ylabel('Count')
-    pylab.savefig('%s/%s_%d_%s_snr_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
-
-    # Plot everything!
-    fig = pylab.figure(1, figsize=(8.1,4.3))
-    axes = pylab.Axes(fig,[0.07, 0.12, 1.0 - 0.07 - 0.03, 0.8])
-    fig.add_axes(axes)
-
-    pylab.loglog(range(30,len(bins)), bins[30:], color = ifo_colors[ifo])
-
-    if gaussian:
-        pylab.loglog(range(30,len(bins)), gaussian[30:], 'k--', label='_nolegend_')
+    xs = [x / 10.0 for x in range(50, len(bins))]
+    pylab.semilogy(xs, bins[50:], color = ifo_colors[ifo])
 
     pylab.grid()
 
-    if huge_snrs > 0:
-        pylab.loglog([upper_lim - 100], [huge_snrs], 'ko', label='Count > %.0e' % upper_lim)
-        pylab.legend()
-    
-    pylab.ylim(0.5,max(max(bins), huge_snrs) * 1.1)
-    pylab.xlim(30, len(bins))
+    if len(bins) > 5:
+        pylab.ylim(0.5,max(bins[5:]) * 1.1)
+        pylab.xlim(5,max(xs) * 1.1)
     pylab.title(make_title(ifo, veto_level, cluster, start_time))
-    pylab.xlabel('SNR^2')
+    pylab.xlabel('New SNR')
     pylab.ylabel('Count')
-    pylab.savefig('%s/%s_%d_%s_snr_hist_all.png' % (config['out_dir'], ifo, veto_level, cluster))
+    pylab.savefig('%s/%s_%d_%s_new_snr_hist.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 
@@ -1515,11 +1627,14 @@ def plot_mass_hist(config, ifo, veto_level, cluster, start_time, end_time):
 def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     f      = open('%s/%s-%d-INSPIRAL_%s.csv' % (config['tmp_dir'], ifo, veto_level, cluster))
     data   = [l.split(',') for l in f]
-    data   = [ (float(d[0]), float(d[3]), chirplen(40.0,float(d[6]), float(d[7]))) for d in data ]
+    data   = [ (float(d[0]), 
+                float(d[3]), 
+                chirplen(40.0,float(d[6]), float(d[7])),
+                new_snr(float(d[3]), float(d[11]), float(d[12]))) for d in data ]
     data   = sorted(data, cmp = lambda x,y: cmp(y[1],x[1]))
 
     min_in_day = 60.0 * 60.0
-    data       = [ ((d[0] - start_time) / min_in_day, d[1], d[2]) for d in data]
+    data       = [ ((d[0] - start_time) / min_in_day, d[1], d[2], d[3]) for d in data]
 
     if len(data) == 0:
         # If there's no data generate an empty plot
@@ -1531,6 +1646,16 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
         pylab.ylabel('Template length (sec)')
         pylab.title('No triggers')
         pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+        fig  = pylab.figure(2, figsize=(8.1,4.0))
+        axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+        fig.add_axes(axes)
+        pylab.xlim(0, 24)
+        pylab.xticks(range(0,24,2))
+        pylab.ylabel('Template length (sec)')
+        pylab.title('No triggers')
+        pylab.savefig('%s/%s_%d_%s_new_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+       
         return
 
     loudest = data[0]
@@ -1547,12 +1672,10 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     for r in ranges:
         subset = [d for d in data if d[1] >= r[0] and d[1] < r[1]]
 
-
         if subset:
             pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
 
     pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=100)
-
 
     tau0s = [d[2] for d in data]
     pylab.yscale('log')
@@ -1564,6 +1687,43 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.ylabel('Template length (sec)')
     pylab.title('Loudest: GPS=%d  SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[1]))
     pylab.savefig('%s/%s_%d_%s_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
+
+    # Make the new SNR glitchgram
+    # put the loudest (in SNR) trigger back on the list
+    data.append(loudest)
+
+    # resort by new SNR
+    data = sorted(data, cmp = lambda x,y: cmp(y[3],x[3]))
+
+    loudest = data[0]
+    data    = data[1:]
+
+    ranges = [[ 6, 7,'b', 3],
+              [ 7, 8,'g',15],
+              [ 8,float('inf'),'r',15]]
+
+    fig  = pylab.figure(2, figsize=(8.1,4.0))
+    axes = pylab.Axes(fig,[0.08, 0.1, 1.0 - 0.07 - 0.03, 0.8])
+    fig.add_axes(axes)
+
+    for r in ranges:
+        subset = [d for d in data if d[3] >= r[0] and d[3] < r[1]]
+
+        if subset:
+            pylab.scatter([d[0] for d in subset], [d[2] for d in subset], edgecolor='none', c=r[2], s=r[3])
+
+    pylab.scatter([loudest[0]],[loudest[2]],marker=(5,1,0),c='y',s=100)
+
+    tau0s = [d[2] for d in data]
+    pylab.yscale('log')
+    pylab.ylim(min(tau0s) * 0.9, max(tau0s) * 1.1)
+    
+    pylab.xlabel(make_time_label(start_time))
+    pylab.xlim(0, 24)
+    pylab.xticks(range(0,24,2))
+    pylab.ylabel('Template length (sec)')
+    pylab.title('Loudest: GPS=%d  New SNR=%.1f' % (loudest[0] * min_in_day + start_time, loudest[3]))
+    pylab.savefig('%s/%s_%d_%s_new_glitchgram.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 
 
@@ -1605,7 +1765,7 @@ def plot_rate_vs_time_all(config, ifo, veto_level, cluster, start_time, end_time
 
 
     pylab.grid()
-    pylab.title('Rate vs. Time, 100 msec cluster, Cat 1')
+    pylab.title('Rate vs. Time, 30 msec cluster, Cat 1')
     pylab.xlabel(make_time_label(start_time))
     pylab.ylabel('Rate (Hz)')
     pylab.savefig('%s_%d_%s_rate_vs_time_all.png' % (ifo, veto_level, cluster))

@@ -143,17 +143,9 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
-
-  # enable condor compile
-  CC="$CONDOR_COMPILE $CC"
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
-  AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
-  AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
-
 
 # further program checks
 LT_INIT
@@ -384,6 +376,15 @@ if test "$GCC" = yes; then
   if test "x$MACOSX_VERSION" != "x"; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
+fi
+
+# enable condor compile
+if test "x${condor}" = "xtrue" ; then
+  CC="$CONDOR_COMPILE $CC"
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
+  AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
 # add -all-static to AM_LDFLAGS for --enable-static-binaries
