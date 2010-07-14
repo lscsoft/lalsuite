@@ -871,8 +871,9 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   }
   LogPrintf(LOG_DEBUG,"%s : read ra = %6.12f dec = %6.12f.\n",fn,header->ra,header->dec);
 
-  /* extract obsid */
-  {
+  /* extract obsid - goodxenon data will not have an obsid field*/
+  if (strstr(header->filename,"XENON") == NULL) {
+    
     CHAR tempobsid[STRINGLENGTH];
     if (fits_read_key(fptr,TSTRING,string_OBS_ID,&tempobsid,comment,&status)) {
       fits_report_error(stderr,status);
@@ -883,6 +884,10 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
     removechar(tempobsid,'_');
     removechar(tempobsid,'-');
     strncpy(header->obsid,tempobsid,STRINGLENGTH);
+  }
+  else {
+    /* if XENON data then we just write XENON in the odsid because there is no true OBSID info avaialable */
+    snprintf(header->obsid,STRINGLENGTH,"XENON");
   }
   LogPrintf(LOG_DEBUG,"%s : read obsid as %s\n",fn,header->obsid);
 
@@ -911,7 +916,7 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
      XLAL_ERROR(fn,XLAL_EFAULT);
   }
   if (strcmp(type,"ARRAY")==0) header->type = 0;
-  else if (strcmp(type,"EVENTS")==0) header->type = 1;
+  else if ( (strcmp(type,"EVENTS") == 0 ) || (strcmp(type,"EVENT") == 0 ) ) header->type = 1;
   else {
     LogPrintf(LOG_NORMAL,"%s : data type \"%s\" not recognised.  Exiting. \n",fn,type);
     exit(0);
@@ -1236,8 +1241,8 @@ int XLALReadFITSTimeStamps(BarycentricData **stamps,     /**< [out] the detector
 	LogPrintf(LOG_CRITICAL,"%s : fits_read_key() failed to read in keyword %s.\n",fn,keyword);
 	 XLAL_ERROR(fn,XLAL_EFAULT);
       }
-      if (strncmp(timestring,"Time",STRINGLENGTH)==0) detidx = i+1;
-      if (strncmp(timestring,"BARYTIME",8)==0) baryidx = i+1;
+      if (strncasecmp(timestring,"time",STRINGLENGTH)==0) detidx = i+1;
+      if (strncasecmp(timestring,"barytime",8)==0) baryidx = i+1;
     }
     
   }
@@ -3160,10 +3165,10 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
   start_det = (*ts)->tstart > stamps->dettime[0] ? (*ts)->tstart : stamps->dettime[0];
   end_det = ((*ts)->tstart + (*ts)->T) < stamps->dettime[stamps->length-1] ? ((*ts)->tstart + (*ts)->T) : stamps->dettime[stamps->length-1];
   
-  /* check that times are still valid */
+  /* check that times are still valid - we exit cleanly here without an error */
   if (start_det>=end_det) {
-    LogPrintf(LOG_CRITICAL, "%s : GPS start (%f) > GPS end time (%f), unable to generate a barycentric time series.\n",fn,start_det,end_det);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_NORMAL, "%s : GPS start (%f) > GPS end time (%f), unable to generate a barycentric time series.  Exiting.\n",fn,start_det,end_det);
+    exit(0);
   }
   
   /* gsl memory allocation for interpolation of the timestamps */
@@ -3234,6 +3239,7 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
     gsl_interp *barydet_interp = NULL;    /* structure for gsl interpolation */
     gsl_interp_accel *barydet_acc = NULL;               /* structure for accelerating gsl interpolation */ 
     REAL8  tempstart_det,tempend_det;                   /* start and end times of detector frame timeseries */
+    INT4 gap = 0;                          /* timestamp gap flag */
 
     /* find the min and max timestamps associated with this GTI entry */
     while ( ( stamps->dettime[sidx] > gti->start[k] ) && ( sidx >= 0 ) )  sidx--;
@@ -3254,8 +3260,17 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
     }
     LogPrintf(LOG_DEBUG,"%s : temporary timestamps have indices %d -> %d\n",fn,sidx,eidx);
 
+    /* check timestamp gaps - they can't be too far apart */
+    for (i=sidx;i<eidx;i++) {
+      LogPrintf(LOG_DEBUG, "%s : detector subset stamps %f -> %f (%f)\n",fn,stamps->dettime[i],stamps->dettime[i+1],stamps->dettime[i+1]-stamps->dettime[i]); 
+      if (stamps->dettime[i+1]-stamps->dettime[i]>MAXTIMESTAMPDELTAT) {
+	LogPrintf(LOG_NORMAL, "%s : timestamp spacing is too large for accurate barycentering.\n",fn);
+	gap = 1;
+      }
+    }
+    
     /* only proceed if we have at least 2 timestamps */
-    if (sidx<eidx) {
+    if ((sidx<eidx) && (!gap)) {
 
       /* allocate memory for temporary stamps */
       if (XLALCreateBarycentricData(&tempstamps,nstamps)) {
@@ -3268,16 +3283,7 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
 	tempstamps->dettime[i] = stamps->dettime[sidx+i];
 	tempstamps->barytime[i] = stamps->barytime[sidx+i];
       }
-      
-      /* check timestamp gaps - they can't be too far apart */
-      for (i=0;i<tempstamps->length-1;i++) {
-	/* LogPrintf(LOG_DEBUG, "%s : detector subset stamps %f -> %f (%f)\n",fn,tempstamps->dettime[i],tempstamps->dettime[i+1],tempstamps->dettime[i+1]-tempstamps->dettime[i]); */
-	if (tempstamps->dettime[i+1]-tempstamps->dettime[i]>MAXTIMESTAMPDELTAT) {
-	  LogPrintf(LOG_CRITICAL, "%s : timestamp spacing is too large for accurate barycentering.\n",fn);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
-	}
-      }
-      
+       
       /* select latest start time and earliest end time that are within the timestamps AND data limits */
       tempstart_det = (*ts)->tstart > tempstamps->dettime[0] ? (*ts)->tstart : tempstamps->dettime[0];
       tempend_det = ((*ts)->tstart + (*ts)->T) < tempstamps->dettime[tempstamps->length-1] ? ((*ts)->tstart + (*ts)->T) : tempstamps->dettime[tempstamps->length-1];
