@@ -3165,10 +3165,10 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
   start_det = (*ts)->tstart > stamps->dettime[0] ? (*ts)->tstart : stamps->dettime[0];
   end_det = ((*ts)->tstart + (*ts)->T) < stamps->dettime[stamps->length-1] ? ((*ts)->tstart + (*ts)->T) : stamps->dettime[stamps->length-1];
   
-  /* check that times are still valid */
+  /* check that times are still valid - we exit cleanly here without an error */
   if (start_det>=end_det) {
-    LogPrintf(LOG_CRITICAL, "%s : GPS start (%f) > GPS end time (%f), unable to generate a barycentric time series.\n",fn,start_det,end_det);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    LogPrintf(LOG_NORMAL, "%s : GPS start (%f) > GPS end time (%f), unable to generate a barycentric time series.  Exiting.\n",fn,start_det,end_det);
+    exit(0);
   }
   
   /* gsl memory allocation for interpolation of the timestamps */
