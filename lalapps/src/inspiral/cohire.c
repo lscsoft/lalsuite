@@ -135,7 +135,6 @@ int main( int argc, char *argv[] )
   char *injectFileName = NULL;
   char *vetoFileName = NULL;
   char *missedFileName = NULL;
-  char line[MAX_PATH];
   REAL4 snrStar = -1;
   REAL4 rsqVetoThresh = -1;
   REAL4 rsqMaxSnr     = -1;
@@ -161,7 +160,6 @@ int main( int argc, char *argv[] )
   SimInspiralTable     *tmpSimEvent = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
-  SearchSummvarsTable  *thisInputFile = NULL;
 
   SearchSummaryTable   *searchSummList = NULL;
   SearchSummaryTable   *thisSearchSumm = NULL;
