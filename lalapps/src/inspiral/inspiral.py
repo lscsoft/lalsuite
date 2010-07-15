@@ -3239,7 +3239,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
     if output_tag:
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
-      self.add_opt("use-expected-loudest-event",'')
+      self.add_var_opt("use-expected-loudest-event",'')
 
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
