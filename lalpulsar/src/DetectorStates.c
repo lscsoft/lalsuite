@@ -805,7 +805,7 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   REAL8 t0=LAL_REAL4_MAX;
   REAL8 t1=0;
   REAL8 deltaT = multiTS->data[0]->deltaT;
-  LIGOTimeGPS startTime;
+  LIGOTimeGPS startTime = {0, 0};
   /* loop over detectors */
   UINT4 X;
   for ( X=0; X < numDetectors; X ++ )
