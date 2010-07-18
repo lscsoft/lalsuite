@@ -64,6 +64,7 @@
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 #define NQUANTILE 10                       /* the number of quantiles to compute */
+#define STRINGLENGTH 1024
 
 /***********************************************************************************************/
 /* define internal structures */
@@ -71,7 +72,7 @@
 /** A structure that stores statistical information gathered from a timeseries
  */
 typedef struct { 
-  CHAR filename[LALNameLength];      /**< the frame filename */
+  CHAR filename[1024];              /**< the frame filename */
   INT4 epoch;                       /**< the GPS start time */
   REAL8 duration;                   /**< the duration */
   REAL8 dt;                         /**< the sampling time */
@@ -80,7 +81,7 @@ typedef struct {
   REAL8 median;                     /**< the median of the samples in the timeseries */
   REAL8 mean;                       /**< the mean of the samples in the timeseries */
   REAL8 var;                        /**< the variance of the samples in the timeseries */
-  REAL8 quant[NQUANTILE+1];           /**< the quantiles of the samples in the timeseries */
+  REAL8 quant[NQUANTILE+1];         /**< the quantiles of the samples in the timeseries */
 } Stats;
 
 /** A structure that stores statistical information gathered from a timeseries
@@ -111,7 +112,7 @@ int main(int argc,char *argv[]);
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar);
 int XLALReadFrameDir(glob_t *filelist, CHAR *inputfile);
 int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,CHAR *filename,CHAR *channel);
-int XLALComputeINT4TimeSeriesStats(Stats *stats,INT4TimeSeries *ts);
+int XLALComputeINT4TimeSeriesStats(Stats *stats,INT4TimeSeries *ts,CHAR *filename);
 static int compareINT4(const void *p1, const void *p2);
 int XLALOutputStats(StatsVector *stats, CHAR *outputfile);
 
@@ -174,18 +175,18 @@ int main( int argc, char *argv[] )  {
 
     INT4TimeSeries *ts = NULL;              /* a timeseries */
    
-    /* find any frames coincident with this data stretch */
+    /* read frame into a timeseries structure */
     if (XLALReadFrameINT4TimeSeries(&ts,filelist.gl_pathv[i],uvar.channel)) {
       LogPrintf(LOG_CRITICAL,"%s : XLALReadFrameINT4TimeSeries() failed with error = %d\n",fn,xlalErrno);
       return 1;
     }
     
-    /* of these frames find out which ones to use and how to combine them */
-    if (XLALComputeINT4TimeSeriesStats(&(stats.data[i]),ts)) {
+    /* compute timeseries statistics */   
+    if (XLALComputeINT4TimeSeriesStats(&(stats.data[i]),ts,filelist.gl_pathv[i])) {
       LogPrintf(LOG_CRITICAL,"%s : XLALComputeINT4TimeSeriesStats() failed with error = %d\n",fn,xlalErrno);
       return 1;
     }
-
+      
     /* free the timeseries */
     XLALDestroyINT4TimeSeries(ts);
 
@@ -333,35 +334,61 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   }  
   LogPrintf(LOG_DEBUG,"%s : checked input\n",fn);
   
-  /* open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to open frame file %s.\n",fn,filename);
-    XLAL_ERROR(fn,XLAL_EINVAL);
-  }
-  LogPrintf(LOG_DEBUG,"%s: opened frame file %s.\n",fn,filename);
+  /* if we can open the frame file */
+  if ((fs = XLALFrOpen(NULL,filename)) != NULL) {
+   
+    LogPrintf(LOG_DEBUG,"%s: opened frame file %s.\n",fn,filename);
     
-  /* define start and duration */
-  XLALGPSSetREAL8(&epoch,(REAL8)fs->flist->t0);
-  duration = fs->flist->dt;
+    /* define start and duration */
+    XLALGPSSetREAL8(&epoch,(REAL8)fs->flist->t0);
+    duration = fs->flist->dt;
+    
+    /* seek to the start of the frame */
+    if (XLALFrSeek(fs,&epoch)) {
+      LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",fn,filename);
+      XLAL_ERROR(fn,XLAL_EINVAL);
+    }
+    
+    /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
+    if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",fn,filename);
+      XLAL_ERROR(fn,XLAL_EINVAL);
+    }
+    LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",fn,channel);
+  
+    /* close the frame file */
+    XLALFrClose(fs);
+    
+  }
+  /* otherwise allocate space for an empty timeseries and extract frame params from the filename */
+  else {
+    LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",fn,filename);
+    xlalErrno = 0;
+    INT4 i;
 
-  /* seek to the start of the frame */
-  if (XLALFrSeek(fs,&epoch)) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",fn,filename);
-    XLAL_ERROR(fn,XLAL_EINVAL);
+    /* extract epoch and duration from filename */
+    {
+      REAL8 newepoch;
+      CHAR *c1 = strrchr(filename,'-');
+      INT4 length = strlen(c1) - 5;
+      CHAR *tempdur = (CHAR *)XLALCalloc(length+1,sizeof(CHAR));
+      CHAR *tempepoch = (CHAR *)XLALCalloc(10,sizeof(CHAR));
+      strncpy(tempdur,c1+1,length);
+      strncpy(tempepoch,c1-9,9);
+      newepoch = atof(tempepoch);
+      XLALGPSSetREAL8(&epoch,newepoch);
+      duration = atof(tempdur);
+      XLALFree(tempepoch);
+      XLALFree(tempdur);
+    }
+
+    if (((*ts) = XLALCreateINT4TimeSeries("BAD_FILE",&epoch,0,1,&lalDimensionlessUnit,NQUANTILE)) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s: unable to allocate empty timeseries\n.",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    for (i=0;i<(INT4)(*ts)->data->length;i++) (*ts)->data->data[i] = 0;
+
   }
-  
-  /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-  if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",fn,filename);
-    XLAL_ERROR(fn,XLAL_EINVAL);
-  }
-  LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",fn,channel);
-  
-  /* close the frame file */
-  XLALFrClose(fs);
-  
-  /* add filename */
-  snprintf((*ts)->name,LALNameLength,"%s",filename);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
@@ -371,7 +398,8 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
 /** this function computes a series of statistics based on the input timeseries
  */
 int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the timeseries statistics */
-				   INT4TimeSeries *ts        /**< [in] the input timeseries */ 
+				   INT4TimeSeries *ts,       /**< [in] the input timeseries */ 
+				   CHAR *filename            /**< [in] the input filename */
 				   )
 {  
 
@@ -399,7 +427,7 @@ int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the time
   }
 
   /* record the epoch and duration */
-  snprintf(stats->filename,LALNameLength,"%s",ts->name);
+  snprintf(stats->filename,STRINGLENGTH,"%s",filename);
   stats->epoch = GPS2REAL8(ts->epoch);
   stats->duration = (REAL8)(ts->deltaT*ts->data->length);
   stats->dt = ts->deltaT;
