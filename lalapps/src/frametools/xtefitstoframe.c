@@ -790,7 +790,17 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   char type[256];                   /* stores the type (array or event) */
   int status = 0;                   /* fitsio status flag initialised */
   int i;                            /* counter */ 
-
+ 
+  /* check input arguments */
+  if (header != NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output FITSHeader structure != NULL.\n",fn);
+     XLAL_ERROR(fn,XLAL_EINVAL);
+  }  
+  if (fptr == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input FITS file pointer = NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  } 
+  
   /* first we extract the filename from the full file path */
   {
     char *c;
@@ -1069,7 +1079,7 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
     LogPrintf(LOG_DEBUG,"%s : read dim as %d nchannels as %ld and channelsize as %d for col %d\n",fn,naxis,naxes[1],naxes[0],col);
     LogPrintf(LOG_DEBUG,"%s : total row length = %d\n",fn,naxes[1]*header->rowlength[i]);
 
-    /* check that this is consistent with the number of energy channels we found */
+    /* check that this is consistent with the number of channels we found */
     if (naxes[1] != header->tddes[i]->nchannels) {
       LogPrintf(LOG_CRITICAL,"%s : The number of energy channels read from TDDES %d != %d the number given by the TDIM keyword for col %d.\n",fn,header->tddes[i]->nchannels,naxes[1],col);
       XLAL_ERROR(fn,XLAL_EFAULT);
@@ -1402,7 +1412,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
       }
     }
     
-    /* record the sampling time and rowlength for this column */
+    /* record the sampling time and rowlength for this channel */
     (*array)->channeldata[i].deltat = tddes->deltat;
     (*array)->channeldata[i].rowlength = header->rowlength[colidx];
 
