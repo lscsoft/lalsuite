@@ -332,7 +332,7 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
-# use c++ mode for build build
+# use c++ mode for boinc build
 if test "${boinc}" = "true" ; then
    AC_LANG_PUSH([C++])
 fi
