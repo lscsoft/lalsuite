@@ -70,7 +70,6 @@ REAL8 XLALInspiralFactorizedFlux(
       {
         XLAL_ERROR_REAL8( func, XLAL_EFUNC );
       }
-      printf( "l = %d, m = %d, hLM.re = %e, hLM.im = %e\n", l, m, hLM.re, hLM.im );
 
       flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
     }
