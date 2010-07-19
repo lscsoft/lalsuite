@@ -324,7 +324,10 @@ static int check_checksum(const char *filterfile, const char *claimed_chksum)
         perror("Problem in popen when checking checksum.");
         return -1;
     }
-    fgets(actual_chksum, sizeof actual_chksum, fpipe);
+    if ( !(fgets(actual_chksum, sizeof actual_chksum, fpipe)) ) {
+        perror("Problem in fgets when checking checksum.");
+        return -1;
+    }
     pclose(fpipe);
 
     /* Compare! */
