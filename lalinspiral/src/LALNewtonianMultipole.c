@@ -57,6 +57,9 @@ XLALCalculateNewtonianMultipole(
 
    REAL8 mult1, mult2;
 
+   REAL8 totalMass;
+   REAL8 eta;
+
    INT4 epsilon;
    INT4 sign; /* To give the sign of some additive terms */
 
@@ -65,8 +68,11 @@ XLALCalculateNewtonianMultipole(
 
    epsilon = ( l + m )  % 2;
 
-   x1 = ak->coeffs->m1 / ak->coeffs->totalmass;
-   x2 = ak->coeffs->m2 / ak->coeffs->totalmass;
+   totalMass = ak->coeffs->m1 + ak->coeffs->m2; 
+   eta       = ak->coeffs->eta;
+
+   x1 = ak->coeffs->m1 / totalMass;
+   x2 = ak->coeffs->m2 / totalMass;
 
    if  ( abs( m % 2 ) == 0 )
    {
@@ -101,8 +107,8 @@ XLALCalculateNewtonianMultipole(
 
      mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
 
-     mult2  = (REAL8)( (2*l + 1) * (l+2) * (l*l + m*m) );
-     mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l+1) );
+     mult2  = (REAL8)( (2*l + 1) * (l+2) * (l*l - m*m) );
+     mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l-1) );
      mult2  = sqrt(mult2);
 
      n = XLALCOMPLEX16MulImag( n, mult1 );
@@ -122,7 +128,7 @@ XLALCalculateNewtonianMultipole(
   }
 
   /* Now we can construct the final answer */
-  *multipole = XLALCOMPLEX16MulReal( n, c*pow( x, (REAL8)(l+epsilon)/2.0) );
+  *multipole = XLALCOMPLEX16MulReal( n, eta * c*pow( x, (REAL8)(l+epsilon)/2.0) );
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
   return XLAL_SUCCESS;
