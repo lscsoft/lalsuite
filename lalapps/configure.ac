@@ -62,7 +62,7 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
-LALAPPS_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALSUITE_ENABLE_BOINC
@@ -370,7 +370,7 @@ AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lalapps_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags"
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then
