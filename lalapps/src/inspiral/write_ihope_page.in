@@ -668,6 +668,17 @@ def write_datainfo(page,opts):
       cumVetSegs = vetSegs
     msg = "Category " +str(i) + " veto segments (flags and time)"
     page = heading(page, msg) 
+
+    readTest = False
+    for ifo in get_ifos():
+      if (not vetSegs.has_key(ifo)) or (not cumVetSegs.has_key(ifo)):
+        readTest = True
+
+    if readTest:
+      page.add("Problem reading files at category " + cat)
+      page.div.close()
+      continue
+
     msg = "Single detector live times:"
     page.add(msg)
     key = 0
