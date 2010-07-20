@@ -44,7 +44,8 @@ HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 for i; do
     case "$i" in
 	--cuda)
-	    cuda=true ;;
+	    cuda=true
+	    acc="_cuda" ;;
 	--win32)
 	    build_win32=true ;;
 	--static)
@@ -130,6 +131,12 @@ for i; do
     esac
 done
 
+EAH="$PWD/EinsteinAtHome"
+LOGFILE="$EAH/build.log"
+SOURCE="$EAH/source"
+BUILD="$EAH/build$acc"
+INSTALL="$EAH/install$acc"
+
 if [ ."$build_win32" = ."true" ] ; then
     export CC=i586-mingw32msvc-gcc
     export CXX=i586-mingw32msvc-g++
@@ -146,7 +153,6 @@ if [ ."$build_win32" = ."true" ] ; then
 	CPPFLAGS="-I$WINEPREFIX/drive_c/CUDA/include $CPPFLAGS"
 	export CUDART="$WINEPREFIX/drive_c/CUDA/lib/cudart.lib"
 	export NVCC="$PWD/nvcc-wine-wrapper.sh"
-	acc="_cuda"
     elif [ ".$release" = ".true" ] ; then
 	CPPFLAGS="-DHAVE_EXCHNDL -I$INSTALL/include/bfd $CPPFLAGS"
 	CFLAGS="-gstabs3 $CFLAGS"
@@ -169,12 +175,6 @@ fi
 test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" -a ."$acc" = ."" &&
 CFLAGS="-mcpu=G3 $CFLAGS" &&
 CXXFLAGS="-mcpu=G3 $CXXFLAGS"
-
-EAH="$PWD/EinsteinAtHome"
-LOGFILE="$EAH/build.log"
-SOURCE="$EAH/source"
-BUILD="$EAH/build$acc"
-INSTALL="$EAH/install$acc"
 
 if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
     export CFLAGS="-g0 $CFLAGS"
