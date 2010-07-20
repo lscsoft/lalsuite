@@ -272,6 +272,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALBURST
+  if (LALBURST_VERSION_DEVEL != 0)
+  {
+    /* check lalburst version consistency */
+    if (version_compare(__func__, &lalBurstHeaderVCSInfo, &lalBurstVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
