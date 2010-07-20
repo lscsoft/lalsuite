@@ -254,6 +254,15 @@ XLALGetVersionString( int level )
       exit(1);
   }
 
+#ifdef HAVE_LIBLALFRAME
+  if (LALFRAME_VERSION_DEVEL != 0)
+  {
+    /* check lalframe version consistency */
+    if (version_compare(__func__, &lalFrameHeaderVCSInfo, &lalFrameVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
