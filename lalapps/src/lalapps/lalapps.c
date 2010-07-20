@@ -290,6 +290,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALPULSAR
+  if (LALPULSAR_VERSION_DEVEL != 0)
+  {
+    /* check lalpulsar version consistency */
+    if (version_compare(__func__, &lalPulsarHeaderVCSInfo, &lalPulsarVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
