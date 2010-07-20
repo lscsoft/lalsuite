@@ -308,6 +308,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALXML
+  if (LALXML_VERSION_DEVEL != 0)
+  {
+    /* check lalxml version consistency */
+    if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
