@@ -263,6 +263,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALMETAIO
+  if (LALMETAIO_VERSION_DEVEL != 0)
+  {
+    /* check lalmetaio version consistency */
+    if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
