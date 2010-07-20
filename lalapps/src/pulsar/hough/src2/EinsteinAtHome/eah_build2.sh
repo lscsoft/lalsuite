@@ -167,7 +167,12 @@ else
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
 	    LDFLAGS="-lpthread $LDFLAGS"
-	    test x"$release" = x"true" && export RELEASE_DEPS="libstdc++.a libz.a" ;;
+	    if [ x"$release" = x"true" ]; then
+		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
+		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
+		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty"
+		build_binutils=true
+	    fi ;;
     esac
 fi
 
@@ -304,7 +309,7 @@ if test -n "$build_binutils"; then
     # some post-build installation due to targets missing in the library
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
-    log_and_do cp -r include/* bfd/*.h "$INSTALL/include/bfd"
+    log_and_do cp -r include/* bfd/*.h "$BUILD/$binutils/binutils/config.h" "$INSTALL/include/bfd"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/$binutils"
 	log_and_do cp "intl/libintl.a" "$INSTALL/lib"
