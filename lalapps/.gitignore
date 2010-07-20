@@ -49,6 +49,7 @@ src/frametools/lalapps_animate
 src/frametools/lalapps_calfacs
 src/frametools/lalapps_combinexteframes
 src/frametools/lalapps_computespec
+src/frametools/lalapps_framestats
 src/frametools/lalapps_frextr
 src/frametools/lalapps_frinfo
 src/frametools/lalapps_frjoin
