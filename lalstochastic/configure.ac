@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.1.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.1.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
