@@ -299,6 +299,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALSTOCHASTIC
+  if (LALSTOCHASTIC_VERSION_DEVEL != 0)
+  {
+    /* check lalstochastic version consistency */
+    if (version_compare(__func__, &lalStochasticHeaderVCSInfo, &lalStochasticVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
