@@ -281,6 +281,15 @@ XLALGetVersionString( int level )
   }
 #endif
 
+#ifdef HAVE_LIBLALINSPIRAL
+  if (LALINSPIRAL_VERSION_DEVEL != 0)
+  {
+    /* check lalinspiral version consistency */
+    if (version_compare(__func__, &lalInspiralHeaderVCSInfo, &lalInspiralVCSInfo))
+      exit(1);
+  }
+#endif
+
   switch(level)
   {
     case 0:
