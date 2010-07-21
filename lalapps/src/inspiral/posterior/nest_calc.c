@@ -228,7 +228,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	/*while(((REAL8)i)<=((REAL8)Nlive) || logLmax+logw > logZ-5)*/  /* This termination condition: when remaining prior can't
 	 account for more than exp(-5) of the evidence, even
 	 if entire support is at Lmax */
-	while(((REAL8)i)<=((REAL8)Nlive) || logadd(logZ,logLmax+logw+log((REAL8)Nlive))-logZ > TOLERANCE )
+        while(((REAL8)i)<=((REAL8)Nlive) || logadd(logZ,logLmax-((double)i/(double)Nlive))-logZ > TOLERANCE )
 	{
 		minpos=0;
 		/* Find minimum likelihood sample to replace */
