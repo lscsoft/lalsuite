@@ -247,7 +247,7 @@ XLALGetVersionString( int level )
   const char delim[] = ":";
   char *tree_status;
 
-  if (LAL_VERSION_DEVEL != 0)
+  if ((LAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lal version consistency */
     if (version_compare(__func__, &lalHeaderVCSInfo, &lalVCSInfo))
@@ -255,7 +255,7 @@ XLALGetVersionString( int level )
   }
 
 #ifdef HAVE_LIBLALFRAME
-  if (LALFRAME_VERSION_DEVEL != 0)
+  if ((LALFRAME_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalframe version consistency */
     if (version_compare(__func__, &lalFrameHeaderVCSInfo, &lalFrameVCSInfo))
@@ -264,7 +264,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALMETAIO
-  if (LALMETAIO_VERSION_DEVEL != 0)
+  if ((LALMETAIO_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalmetaio version consistency */
     if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
@@ -273,7 +273,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALBURST
-  if (LALBURST_VERSION_DEVEL != 0)
+  if ((LALBURST_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalburst version consistency */
     if (version_compare(__func__, &lalBurstHeaderVCSInfo, &lalBurstVCSInfo))
@@ -282,7 +282,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALINSPIRAL
-  if (LALINSPIRAL_VERSION_DEVEL != 0)
+  if ((LALINSPIRAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalinspiral version consistency */
     if (version_compare(__func__, &lalInspiralHeaderVCSInfo, &lalInspiralVCSInfo))
@@ -291,7 +291,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALPULSAR
-  if (LALPULSAR_VERSION_DEVEL != 0)
+  if ((LALPULSAR_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalpulsar version consistency */
     if (version_compare(__func__, &lalPulsarHeaderVCSInfo, &lalPulsarVCSInfo))
@@ -300,7 +300,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALSTOCHASTIC
-  if (LALSTOCHASTIC_VERSION_DEVEL != 0)
+  if ((LALSTOCHASTIC_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalstochastic version consistency */
     if (version_compare(__func__, &lalStochasticHeaderVCSInfo, &lalStochasticVCSInfo))
@@ -309,7 +309,7 @@ XLALGetVersionString( int level )
 #endif
 
 #ifdef HAVE_LIBLALXML
-  if (LALXML_VERSION_DEVEL != 0)
+  if ((LALXML_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
   {
     /* check lalxml version consistency */
     if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
