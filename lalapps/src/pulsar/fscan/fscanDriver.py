@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 
 fscanDriver.py - Driver script for calling other code to generates SFTs and turns these into plots showing spectra.
@@ -23,6 +24,8 @@ __version__ = '$Revision: 1.25 $'[11:-2]
 # 10/07/2009 gam; Add -I, --intersect-data option to run ligo_data_find with the --show-times option to find times data exist, and use LIGOtools segexpr to intersect this with the segments.
 # 10/07/2009 gam; Add -t, --segment-type option to give segment type to use with ligolw_segment_query if segment file is not given (default is IFO:DMT-SCIENCE:1)
 # 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
+#25/02/2010 cg; Added extra options to pass the path of ephemerides for source frequency calculations done in spec_avg.c
+#26/04/2010 cg; replaced link to pdf with link to .png files.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -61,7 +64,7 @@ Usage: [options]
   -k, --filter-knee-freq     (optional) high pass filter knee frequency used on time domain data before generating SFTs (default = 40 Hz)
   -T, --time-baseline        time baseline of SFTs  (e.g., 60 or 1800 seconds)
   -p, --sft-path             path to SFTs (either already existing or where to output them)
-  -c, --freq-res	     the frequency resolution of the spectragrams produced.
+  -c, --freq-res	     the frequency resolution of the spectragrams produced, ***N.B.*** this must be a multiple of 1/T.
   -v, --sft-version          (optional) SFT version number (1 or 2; default is 1)
   -C  --create-sfts          (optional) create the SFTs !!! (/tmp will be appended to the sft-path and SFTs will be generated there!)
   -g, --segment-file         (optional) used only if creating sfts; gives alternative file with segments to use, otherwise ligolw_segment_query is used to find Science segments; if -g ALL is given then [start_time, start_time + duration) is used.
@@ -83,7 +86,7 @@ Usage: [options]
   -y  --coincidence-deltaf   (optional) if a reference and threshold on snr is given, then use this as the coincidence window on frequency.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
-  -J  --psrInput             (optional) Input the name and path of tempo file used to overplot a source's freq onto specgrams
+  -J  --psrInput             (optional) Input the name and path of tempo .par file used to overplot a source's freq onto specgrams
   -j  --psrEphemeris         (optional) Input the name and path of ephemeris file used to overplot a source's freq onto specgrams
   -E  --earthFile            (optional) Input the name and path of the .dat file for the earh.  Only used if source details are given.
   -z  --sunFile              (optional) Input the name and path of the .dat file for the Sun.  Only used if source details are given.
@@ -704,7 +707,7 @@ if (htmlFilename != None):
     htmlFID.write('</div>\n')
     htmlFID.write('<br>\n')
   htmlFID.write('<div style="text-align: center;">\n')
-  htmlFID.write('<h3>Click on a plot to get a larger pdf version. Click on a link below a plot to get the corresponding timestamp or frequency vs power data file.</h3>\n')
+  htmlFID.write('<h3>Click on a plot to see the .png source file. Click on a link below a plot to get the SFT timestamps, the spectrogram data file, frequency vs power  and SNR data file.</h3>\n')
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')  
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
@@ -732,6 +735,17 @@ while (thisEndFreq <= endFreq):
   #print >> sys.stdout,"endfreq: ",endFreq,"\n"
   #print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
   #print >> sys.stdout,"thisEndfreq: ",thisEndFreq,"\n"
+  
+  #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution. Also need to check that freqres is an integer multiple of the raw sft freqres, if not replace it with one that is.
+  
+  NumBinsAvg = math.floor(freqRes*timeBaseline);
+  freqRes=(1/float(timeBaseline))*NumBinsAvg#sets the freqRes so its an multiple of the raw sft freqres.
+  if (freqRes < (1/float(timeBaseline))):#makes sure that this is not less than raw sft freqres, it mght be zero.
+      freqRes = (1/float(timeBaseline))#if it is zero, just make it so that its the same res as the raw sft res
+      print >> sys.stderr, 'freqRes changed to: %f \n' % freqRes#let user know its been changed,
+  effTBaseFull = timeBaseline
+  effTBase = 1/freqRes
+  #end of freqres checking
 
   fRange = thisEndFreq - thisStartFreq
 
@@ -762,14 +776,7 @@ while (thisEndFreq <= endFreq):
     dagFID.write('JOB %s runMatlabPlotScript.sub\n' % runMatlabPlotScriptJobName)
     dagFID.write('RETRY %s 0\n' % runMatlabPlotScriptJobName)
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-    # Matlab will append .pdf and .png to outputFileName to save plots:
     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
-    
-    #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution.
-    if (freqRes < 1/timeBaseline):
-	freqRes = (1/timeBaseline)
-    effTBase = 1/freqRes
-    effTBaseFull = timeBaseline
 
     #work out the best frequency interval to place ticks at.
     
@@ -807,17 +814,16 @@ while (thisEndFreq <= endFreq):
   #-----------------------------------------------------------------
   if (htmlFilename != None):
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-    # Matlab will append .pdf and .png to outputFileName to save plots.
     htmlFID.write('  <tr>\n')#tr adds a new table row.
     htmlFID.write('  <td style="vertical-align: top;">\n')
-    htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    <a href="%s.png"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    <a href="%s_2.png"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('  </td>\n')#ends the current data cell.
     if (htmlReferenceDir != None):
         referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
         htmlFID.write('  <td style="vertical-align: top;">\n')
-        htmlFID.write('    <a href="%s.pdf"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    <a href="%s_2.pdf"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    <a href="%s.png"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    <a href="%s_2.png"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')     
     htmlFID.write('  </tr>\n')
     # Topten lines code
@@ -830,8 +836,10 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('  <tr>\n')#open new row in table for lines files.
     htmlFID.write('  <td style="vertical-align: top;">\n')
     htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power, SNR: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Freq. vs Power, SNR (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
+    htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
     if (htmlReferenceDir != None) and (thresholdSNR > 0):
         #--------------------------
 	#coincident lines
@@ -856,8 +864,9 @@ while (thisEndFreq <= endFreq):
     if (htmlReferenceDir != None):
         htmlFID.write('  <td style="vertical-align: top;">\n')
         htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
+	htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power, SNR: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
+        htmlFID.write('    Freq. vs Power, SNR (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
         htmlFID.write('  </td>\n')
     htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand
