@@ -39,13 +39,17 @@
 #include <lal/InspiralInjectionParams.h>
 #include <lal/VectorOps.h>
 #include <lal/FrameStream.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALFrameIO.h>
 
 #define PROGRAM_NAME "coinj"
 
 #define USAGE \
-"lalpps_coinj [options]\n \
---help                       display this message \n \
+"lalpps_coinj [options]\n\
+--help                       display this message \n\
 --input <injection.xml>      Specify input SimInspiralTable xml file\n\
+--output-path OUTPUTPATH directory path where frames are going to be written to\n\
+--skip-ascii-output           skip generation of  ASCII txt output file\n\
 --response-type TYPE         TYPE of injection, [ strain | etmx | etmy ]\n\
 --frames                     Create h(t) frame files\n\n\
 [--maxSNR snrhigh --minSNR snrlow                     Adjust injections to have combined SNR between snrlow and snrhigh in the H1H2L1V1 network]\n\
@@ -103,9 +107,11 @@ int main(int argc, char *argv[])
 {
   LALStatus        status=blank_status;
   CHAR                inputfile[FILENAME_MAX];
+  CHAR                outputpath[1000];
   CHAR            adjustedfile[FILENAME_MAX+10];
   CHAR                injtype[30];
   CHAR                det_name[10];
+  INT4                detectorFlags;
   LIGOTimeGPS inj_epoch;
   REAL8                deltaT= 1.0/16384.0;
   REAL8                injLength=100.0; /* Ten seconds at end */
@@ -119,6 +125,7 @@ int main(int argc, char *argv[])
   FILE *                outfile;
   LIGOLwXMLStream                *xmlfp=NULL;
   CHAR                outfilename[FILENAME_MAX];
+  CHAR                fname[FILENAME_MAX];
 
   const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   const LALUnit countPerStrain={0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
@@ -146,6 +153,7 @@ int main(int argc, char *argv[])
   REAL8                NetworkSNR=0.0;
   INT4  makeFrames=0;
   INT4 outputRaw=0;
+  INT4 skipASCIIoutput=0;
   COMPLEX8FrequencySeries *fftData;
   REAL8 mySNRsq,mySNR;
   REAL4FFTPlan *fwd_plan;
@@ -155,7 +163,7 @@ int main(int argc, char *argv[])
   INT4 GPSstart=0,GPSend=2147483647;
   int SNROK=1;
   int rewriteXML=0;
-
+  FrameH *frame;
   /*vrbflg=6;
     lalDebugLevel=6; */
 
@@ -163,6 +171,8 @@ int main(int argc, char *argv[])
     {
       {"help", no_argument, 0, 'h'},
       {"input",required_argument,0, 'i'},
+      {"output-path",required_argument,0,'o'},
+      {"skip-ascii-output",no_argument,&skipASCIIoutput,'A'},
       {"response-type",required_argument,0,'r'},
       {"frames",no_argument,&makeFrames,'F'},
       {"rawstrain",no_argument,&outputRaw,'s'},
@@ -224,6 +234,9 @@ int main(int argc, char *argv[])
         case 'i':
           strncpy(inputfile,optarg,FILENAME_MAX-1);
           break;
+        case 'o':
+          strncpy(outputpath,optarg,999);
+          break;          
         case 'r':
           if(!strcmp("strain",optarg))          injectionResponse = unityResponse;
           else if(!strcmp("etmx",optarg))   injectionResponse = actuationX;
@@ -293,12 +306,13 @@ int main(int argc, char *argv[])
   
       switch(det_idx)
         {
-        case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
-        case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
-        case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; break;
-        case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; PSDscale=1.0; break;
-        case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd; PSDscale=1E-46;  break;
-        case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd; PSDscale=75E-46; break;
+        case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LHO_4K_DETECTOR_BIT; break;
+        case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LHO_2K_DETECTOR_BIT; break;
+        case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LLO_4K_DETECTOR_BIT; break; 
+        case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; PSDscale=1.0; detectorFlags = LAL_VIRGO_DETECTOR_BIT;  break;
+        case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd; PSDscale=1E-46; detectorFlags = LAL_GEO_600_DETECTOR_BIT;  break;
+        case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd; PSDscale=75E-46; detectorFlags = LAL_TAMA_300_DETECTOR_BIT; break;
+        default: fprintf(stderr,"Unknown IFO\n"); exit(1); break;
         }
 
       TimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
@@ -340,6 +354,7 @@ int main(int argc, char *argv[])
       }
 
 
+
       if(injectionResponse!=unityResponse) {
         actuationTimeSeries=XLALCreateREAL4TimeSeries(det_name,&inj_epoch,0.0,deltaT,&lalADCCountUnit,(size_t)Nsamples);
         unity = XLALCreateCOMPLEX8Vector(actuationResp->data->length);
@@ -362,12 +377,14 @@ int main(int argc, char *argv[])
       if(this_injection.mass1<2.0 && this_injection.mass2<2.0) sprintf(massBin,"BNS");
       else if(this_injection.mass1<2.0 || this_injection.mass2<2.0) sprintf(massBin,"NSBH");
       else sprintf(massBin,"BBH");
-
-      sprintf(outfilename,"%i_CBC_%s_%i_%s_%s.txt",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
-      outfile=fopen(outfilename,"w");
-      fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
-      for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
-      fclose(outfile);
+      
+      if (!(skipASCIIoutput)){
+        sprintf(outfilename,"%s%s%i_CBC_%s_%i_%s_%s.txt",outputpath,"/",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
+        outfile=fopen(outfilename,"w");
+        fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
+        for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
+        fclose(outfile);
+      };
 
     calcSNRandwriteFrames:
 
@@ -410,7 +427,24 @@ int main(int argc, char *argv[])
         VirgoOutPars.frame=0;
         VirgoOutPars.run=2;
         fprintf(stdout,"Generating frame file for %s-%s-%i\n",VirgoParsSource,VirgoParsInfo,TimeSeries->epoch.gpsSeconds);
-        LALFrWriteREAL4TimeSeries(&status,TimeSeries,&VirgoOutPars);
+       /* LALFrWriteREAL4TimeSeries(&status,TimeSeries,&VirgoOutPars); */
+        /* define frame */
+        frame = XLALFrameNew( &TimeSeries->epoch, injLength, "HWINJ-STRAIN", 0, 1, detectorFlags );
+        /* add time series as a channel to the frame */
+        XLALFrameAddREAL4TimeSeriesSimData( frame, TimeSeries );
+        /* write frame */
+        sprintf(fname,"%s%s%s-INSP%i_HWINJ_STRAIN-%i-%i.gwf",outputpath,"/",det_name, inj_num, inj_epoch.gpsSeconds, (UINT4)injLength);
+        /*sprintf(fname, "%s%s%s",outputpath, "/", fname);*/
+        if (XLALFrameWrite( frame, fname, 8) != 0)
+        {
+          fprintf( stderr, "ERROR: Cannot save frame file: '%s'\n", fname );
+          exit( 1 );
+        }
+
+        /* clear frame */
+        FrameFree( frame );
+
+        
       }
         
       if(TimeSeries==actuationTimeSeries) XLALDestroyREAL4TimeSeries(TimeSeries);

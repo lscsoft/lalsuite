@@ -77,7 +77,6 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 #include <lal/LALConstants.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 
 #include <lal/DetectorSite.h>

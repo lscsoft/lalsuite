@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009,2010 Adam Mercer
  */
 
 #include <string.h>
@@ -44,6 +44,7 @@ const char *lalVCSIdentStatus = LAL_VCS_IDENT_STATUS;
 
 /* library vcs information structure */
 struct tagLALVCSInfo lalVCSInfo = { \
+  LAL_NAME, \
   LAL_VERSION, \
   LAL_VCS_ID, \
   LAL_VCS_DATE, \
@@ -58,7 +59,8 @@ struct tagLALVCSInfo lalVCSInfo = { \
 int XLALVCSInfoCompare(const LALVCSInfo *header, const LALVCSInfo *library)
 {
   /* check for header/library mismatch */
-  if (strcmp(header->version, library->version) || \
+  if (strcmp(header->name, library->name) || \
+      strcmp(header->version, library->version) || \
       strcmp(header->vcsId, library->vcsId) || \
       strcmp(header->vcsDate, library->vcsDate) || \
       strcmp(header->vcsBranch, library->vcsBranch) || \
