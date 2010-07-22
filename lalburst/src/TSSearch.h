@@ -165,12 +165,10 @@ extern "C" {
 				   */
     UINT4             whiten;/*Flags typ of whitening to do*/
     AvgSpecMethod     avgSpecMethod;/*Type of PSD averaging to do*/
-    WindowType        avgSpecWindow;/*Type of PSD averaging window*/
     UINT4             multiResolution;/*FlagMultiResolutionRun*/
     UINT4             FreqBins; /*Number of bins to use*/
     UINT4             TimeBins; /*Number of bins to use*/
     INT4              windowsize; /*Number of points in window*/
-    WindowType        window; /*Window to use in TF map creation*/
     UINT4             numEvents; /*Does map have features*/
     CHAR             *channelName; /*Data Channel Name */
     CHAR             *dataDirPath; /*Path to data frames */
@@ -230,7 +228,6 @@ extern "C" {
     UINT4                         peakPixelT;/*Peak pixel coord T*/
     UINT4                         whiten;  /* 0 No 1 yes 2 Overwhiten */
     UINT4                         windowsize;/* FFT window length */
-    WindowType                    window;/* Type of window to make map*/
     struct tagTrackSearchEvent   *nextEvent; /* Pointer for linked listing */
   } TrackSearchEvent;
 

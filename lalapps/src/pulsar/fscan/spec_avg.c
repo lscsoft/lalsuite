@@ -24,39 +24,18 @@
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/BinaryPulsarTiming.h>*/
-
-
 /*end of temporary rubbish bin*/
 
-
-
+/*LAL header files*/
 #include <lalapps.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
-
-/*LAL malloc header file*/
 #include <lal/LALMalloc.h>
 
-/* Not sure if I need these
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/SkyCoordinates.h> 
-#include <lal/DetectorSite.h>
-#include <lal/SFTutils.h>
-#include <lal/LALString.h>
-#include <lal/Units.h>
-#include <lal/TimeSeries.h>
-#include <lal/XLALError.h>
-#include <lal/LALRCSID.h>
-#include <lal/LALAtomicDatatypes.h>
-#include <lal/FrameCache.h>
-#include <lal/FrameStream.h>*/
-
 /*normal c header files*/
-/*test if these two headers are problem*/
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -66,7 +45,8 @@
 
 #include <lal/Date.h>/*cg; needed to use lal routine GPStoUTC, which is used to convert GPS seconds into UTC date*/
 
-#define NUM 1000 /* used for defining structures such as crabOutput*/
+#define NUM 1000 
+/*used for defining structures such as crabOutput*/
 
 RCSID("$Id");
 
@@ -76,7 +56,6 @@ int main(int argc, char **argv)
     FILE *fp2 = NULL;
     FILE *fp3 = NULL;
     FILE *fp4 = NULL;
-    FILE *fp6 = NULL;
     LALStatus status = blank_status;
     
     SFTCatalog *catalog = NULL;
@@ -87,11 +66,11 @@ int main(int argc, char **argv)
     LIGOTimeGPS startTime, endTime; 
     REAL8 avg =0;
     REAL4 *timeavg =NULL;
+    REAL4 PWR,SNR;
     REAL8 f =0;
     CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256], outfile6[256];
     REAL8 NumBinsAvg =0;
     REAL8 timebaseline =0;
-    /*CHAR *missing_sft;*/
     
     BOOLEAN help = 0;
     CHAR *SFTpatt = NULL;
@@ -108,7 +87,7 @@ int main(int argc, char **argv)
     /* these varibales are for converting GPS seconds into UTC time and date*/
     LALUnixDate       date;
     CHARVector        *timestamp = NULL;
-    CHARVector	     *year_date = NULL; /*cg; creates a char vector*/
+    CHARVector	     *year_date = NULL;
     REAL8Vector     *timestamps=NULL;
     
     CHAR *psrInput = NULL;
@@ -116,8 +95,6 @@ int main(int argc, char **argv)
     CHAR *earthFile = NULL;
     CHAR *sunFile = NULL;
   /*========================================================================================================================*/
-    
-    
     
     lalDebugLevel = 0;
     LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
@@ -144,7 +121,7 @@ int main(int argc, char **argv)
     
     startTime.gpsSeconds = startGPS;/*cg; startTime is a structure, and gpsSeconds is a member of that structure*/
     startTime.gpsNanoSeconds = 0;/*cg; gps NanoSeconds is also a member of the startTime structure */
-    constraints.startTime = &startTime; /*cg; apersand operator gets the address of a variable, &a is a pointer to a.  This line puts the startTime structure into the structure constraints*/
+    constraints.startTime = &startTime; /*cg; & operator gets the address of variable, &a is a pointer to a.  This line puts the startTime structure into the structure constraints*/
     
     endTime.gpsSeconds = endGPS;
     endTime.gpsNanoSeconds = 0;
@@ -154,226 +131,145 @@ int main(int argc, char **argv)
 
     if (catalog == NULL)/*need to check for a NULL pointer, and print info about circumstances if it is null*/
     {
-    fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with LALSFTdataFind\n");
-    fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
-    exit(0);
+        fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with LALSFTdataFind\n");
+        fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
+        exit(0);
     }
     if (catalog->length == 0)
     {
-    fprintf(stderr, "No SFTs found, please exmanine start time, end time, frequency range etc\n");
-    exit(0);
+        fprintf(stderr, "No SFTs found, please exmanine start time, end time, frequency range etc\n");
+        exit(0);
     }
 
     LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
 
     if (sft_vect == NULL)
     {
-    fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with LALLoadSFTs\n");
-    fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
-    exit(0);
+        fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with LALLoadSFTs\n");
+        fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
+        exit(0);
     }
 
-    LALDestroySFTCatalog( &status, &catalog);/*cg; desctroys the SFT catalogue*/    
+    LALDestroySFTCatalog( &status, &catalog);/*cg; desctroys the SFT catalogue*/
     numBins = sft_vect->data->data->length;/*the number of bins in the freq_range*/
     nSFT = sft_vect->length;/* the number of sfts.*/
     
-    fprintf(stderr, "nSFT = %d\tnumBins = %d\tf0 = %f\n", nSFT, numBins,sft_vect->data->f0);/*cg; prints out these items into the file called spectrumAverage_testcg_0.err which is written to the logs folder.*/
+    fprintf(stderr, "nSFT = %d\tnumBins = %d\tf0 = %f\n", nSFT, numBins,sft_vect->data->f0);/*print->logs/spectrumAverage_testcg_0.err */
     if (LALUserVarWasSet(&outputBname))
     strcpy(outbase, outputBname);
     else
     sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
     sprintf(outfile,  "%s", outbase);/*cg; name of first file to be output*/
     sprintf(outfile2, "%s_timestamps", outbase);/*cg: name of second file to be output*/
-    sprintf(outfile3, "%s_timeaverage", outbase);/*cg; name of third file to be output*/
-    
+    sprintf(outfile3, "%s.txt", outbase);/*cg; name of third file to be output*/
+    sprintf(outfile4, "%s_date", outbase);/*cg;file for outputting the date, which is used in matlab plotting.*/
+
     fp = fopen(outfile, "w");/*cg;  open all three files for writing, if they don't exist create them, if they do exist overwrite them*/
     fp2 = fopen(outfile2, "w");
     fp3 = fopen(outfile3, "w");
-    
-    
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*cg;  Create the first file, called    blah_blah_blah*/
-    /*cg;  This file outputs very small numbers, one set of 100 numbers for each 1800 second SFT.  The numbers are the strain values used in the spectrogram plots.  The number of numbers here depends on the frequency range, freq range for this example is from 50Hz to 60Hz, so each Hz is split into 5, giving a freq resolution of 0.2Hz.*/
-    
-    
-    /*cg;  Create the second file, called    blah_b;ah_blah_timestamps*/
-    /*cg;  This will simply contain the time in GPS seconds of each SFT.  The time is the name of the SFT, which I am unsure if this refers to the start time, end time, or middle, but I think it is the start time.  So this file will conatin a list of the items, starting with the last SFT first labeled 0.  SFTno up to 2. SFTno for three SFTs, or more for more obvisouly.*/
+    fp4 = fopen(outfile4, "w");
 
-  NumBinsAvg = freqres*numBins/(f_max-f_min);/*this calcs the number of bins over which to average the sft data, this is worked out so it produces the same frequency resoltuion as specified in the arguments passed to the python script. numBins is the total number of bins in the raw sft data*/
-  
-  /*startgps+(timebaseline*nSFT) will work out the time of that nSFT would start at IF there were no gaps in the data, where this is the case, replace the sft data with zeros.*/
+/*----------------------------------------------------------------------------------------------------------------*/
+/*cg; Create the first file called spec_blah_blah.  This file outputs the power in each spectrogram bin.  The number of bins depends on the frequency range, freq resolution, and number of SFTs.*/
 
-  l=0;
+/*cg;  Create the second file, called    blah_b;ah_blah_timestamps.  This will simply contain the time in GPS seconds of each SFT.*/
+
+    NumBinsAvg = freqres*numBins/(f_max-f_min);/*this calcs the number of bins over which to average the sft data, this is worked out so it produces the same freq resolution as specified in the arguments passed to fscanDriver.py. numBins is the total number of bins in the raw sft data*/
+
+    l=0;/*l is used as a counter to count how many SFTs and fake zero SFTs (used for gaps) are output for specgram.*/
+    timestamps = XLALCreateREAL8Vector(l);/*test for getting rid of second loop*/
+    LALCHARCreateVector(&status, &year_date, (UINT4)128); 
+
   /*create output files and check for missing sfts*/
-  for (j=0;j<nSFT;j++)/*cg;nSFT is the numnber of SFT files used for the time specified. So process is repeated for each SFT*/
-  { 
-    /*now I need to check if timebaseline+(n-1)sft_epoch = this sft_epoch, if not I need to create a element in the matrix of sft data that starts at timebaseline+(n-1)sft_epoch*/
-    cur_epoch = sft_vect->data[j].epoch.gpsSeconds;/*finds the gps time of the current sft in the sequence with indicie j*/
-    fprintf(fp2, "%d.\t%d\n", l, cur_epoch);/*cg; this bit writes the second file, i.e. the timestamps*/
-  
-    for ( i=0; i < (numBins-2); i+=NumBinsAvg)/*cg; this loop works out the powers and writes the first file. += makes i increment by NumBinsAvg.*/
-    {/*cg; each SFT is split up into a number of bins, the number of bins is read in from the SFT file*/
-        avg = 0.0;/*cg; the vairable avg is reset each time.*/
-        if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}/*cg; error is detected, to prevent referencing data past the end of sft_vect.*/
-        for (k=0;k<NumBinsAvg;k++)/*cg; for each bin, k goes trhough each entry from 0 to 180.*/
-            avg += sqrt(sft_vect->data[j].data->data[i+k].re*sft_vect->data[j].data->data[i+k].re + 
-            sft_vect->data[j].data->data[i+k].im*sft_vect->data[j].data->data[i+k].im);/*cg; re amd im are real and imaginary parts of SFT, duh!*/
-        fprintf(fp,"%e\t",avg/NumBinsAvg);
-    }
-    fprintf(fp,"\n");
-    /*------------------------------*/
-    /*Bit to check if there is a gap in the sfts*/
-    if ( j < (nSFT-1) )/*in all cases except when we are examining the last sft, check that there is no gap to the next sft*/
+    for (j=0;j<nSFT;j++)/*cg;nSFT is the numnber of SFT files used for the time specified. So process is repeated for each SFT*/
     {
-      next_epoch = sft_vect->data[j+1].epoch.gpsSeconds;
-      
-      if (cur_epoch+timebaseline != next_epoch )/*if this returns true then the finishing time of current sft does not match starttime of the next sft.*/
-      {
-	  l=l+1;
-          cur_epoch = cur_epoch+timebaseline;
-	  fprintf(fp2, "%d.\t%d\n", l, cur_epoch );
-	  
-	  /*fill in blanks into the specgram matrix passed to matlab for the gap between the non con-current sfts*/
-	  for ( i=0; i < (numBins-2); i+=NumBinsAvg)
-	  {
-	      avg = 0.0;
-	      if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}
-	      fprintf(fp,"%e\t",avg);
-	  }
-	  fprintf(fp,"\n");
-
-          /*test to see if SFT gap is longer than 3/2*timebaseline, if so create another entry in the matrix*/
-          while ( (cur_epoch + (0.5*timebaseline)) < next_epoch ) 
-          {
-            for ( i=0; i < (numBins-2); i+=NumBinsAvg)
+        cur_epoch = sft_vect->data[j].epoch.gpsSeconds;/*finds the gps time of the current sft in the sequence with index j*/
+        fprintf(fp2, "%d.\t%d\n", l, cur_epoch);/*cg; this bit writes the second file, i.e. the timestamps*/
+    
+        XLALResizeREAL8Vector(timestamps, l+1);/*resizes the vector timestamps, so cur_epoch can be added*/
+        timestamps->data[l]= cur_epoch;/*number of gaps is not know in advance, hence need for te resizing*/
+        XLALGPSToUTC(&date, cur_epoch);/*cg; gets the UTC date in struct tm format from the GPS seconds.*/
+        fprintf(fp4, "%d\t %i\t %i\t %i\t %i\t %i\t %i\n", l, (date.tm_year+1900), date.tm_mon+1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
+    
+        for ( i=0; i < (numBins-2); i+=NumBinsAvg)/*cg; this loop works out the powers and writes the first file.*/
+        {/*cg; each SFT is split up into a number of bins, the number of bins is read in from the SFT file*/
+            avg = 0.0;/*cg; the vairable avg is reset each time.*/
+            if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}/*cg; error is detected, to prevent referencing data past the end of sft_vect.*/
+            for (k=0;k<NumBinsAvg;k++)/*cg; for each bin, k goes trhough each entry from 0 to 180.*/
+                avg += sqrt(2*(sft_vect->data[j].data->data[i+k].re*sft_vect->data[j].data->data[i+k].re + 
+                sft_vect->data[j].data->data[i+k].im*sft_vect->data[j].data->data[i+k].im)/timebaseline);/*cg; re amd im are real and imaginary parts of SFT, duh!*/
+            fprintf(fp,"%e\t",avg/NumBinsAvg);
+        }
+        fprintf(fp,"\n");
+        /*------------------------------*/
+        /*Bit to check if there is a gap in the sfts*/
+        if ( j < (nSFT-1) )/*in all cases except when we are examining the last sft, check that there is no gap to the next sft*/
+        {
+            next_epoch = sft_vect->data[j+1].epoch.gpsSeconds;
+            /*test to see if SFT gap is longer than 3/2*timebaseline, if so create another entry in the matrix*/
+            while ((cur_epoch+((3/2)*timebaseline)) < next_epoch)
             {
-                avg = 0.0;
-                if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}
-                fprintf(fp,"%e\t",avg);
-            }
-            fprintf(fp,"\n");
-            l=l+1;
-            cur_epoch=cur_epoch+timebaseline;
-            fprintf(fp2, "%d.\t%d\n", l, cur_epoch );
-          }
-      }
-      
-    }
-    /*----------------------------*/
-  l=l+1;
-  }
-fprintf(stderr,"finished checking for missing sfts, l=%d\n", l);
-/*----------------------------------------------------------------------------------------------------------------*/
- /* Find time average of normalized SFTs */
-LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
-LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
-timeavg = XLALMalloc(numBins*sizeof(REAL4));
-if (timeavg == NULL) fprintf(stderr,"Timeavg memory not allocated\n");
-
-  for (j=0;j<nSFT;j++)
-  { 
-      for ( i=0; i < numBins; i++)
-      {
-	  if (j == 0) 
-	  {
-	    timeavg[i] = sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
-			sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
-	  } 
-	  else 
-	  {
-	    timeavg[i] += sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
-			sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
-	  }
-      }
-  }
-/*----------------------------------------------------------------------------------------------------------------*/
-/*cg;  Create the third and final file, called   blah_blah_blah_timeaverage.  This file will contain the data used in the matlab plot script to plot the normalised average power vs the frequency.*/
-
-/* Question to the group, the timeaverages are so far output for every freq bin in the raw data, independant of freq res chosen for the spectrogram, do we want this???*/
-/*timeavg records the power of each bin*/
-
-
-for ( i=0; i < numBins; i++)
-    {
-    f = sft_vect->data->f0 + ((REAL4)i)*sft_vect->data->deltaF;
-    fprintf(fp3,"%16.8f %g\n",f,timeavg[i]/((REAL4)nSFT));
-    } 
-
-/*------------------------------------------------------------------------------------------------------------------------*/
-/* CG; create a file containing the UTC times for each SFT GPS time.*/
-sprintf(outfile4, "%s_date", outbase);/*cg; sprintf prints into the char array outfile4, it prints a string followed by _date, the string is outbase.*/
-fp4 = fopen(outfile4, "w");
-
-sprintf(outfile6, "%s_numbins", outbase);
-fp6 = fopen(outfile6, "w");
-fprintf(fp6,"%f\n",NumBinsAvg);
-fclose(fp6);
-
-LALCHARCreateVector(&status, &timestamp, (UINT4)256); /*128 is the number of elements in the vector, no need for it to be this big.*/
-LALCHARCreateVector(&status, &year_date, (UINT4)128); 
-timestamps = XLALCreateREAL8Vector(l+1);
-/*times = XLALCreateREAL8Vector( MAXLENGTH );*/
-
-l=0;
-
-/*output the UTC time and date for use by matlab plotting script.*/
-for (j=0;j<nSFT;j++)
-{
-    /*fprintf(stderr,"here 2a, j=%d\n",j);*/
-    cur_epoch = sft_vect->data[j].epoch.gpsSeconds;
-    /*gps.gpsSeconds = cur_epoch;*//*cg;stores GPS time in seconds into the structure gps, in the field gpsSeconds, for use in LALGPStoUTC function*/
-    /*gps.gpsNanoSeconds=0;*//*cg; this sets the gps nanoseconds to 0*/
-
-    /*timestamps->data[l]= gps.gpsSeconds;*/
-    timestamps->data[l]= cur_epoch;
-
-    XLALGPSToUTC(&date, cur_epoch);/*cg; gets the UTC date in struct tm format from the GPS seconds.*/
-    fprintf(fp4, "%d\t %i\t %i\t %i\t %i\t %i\t %i\n", l, (date.tm_year+1900), date.tm_mon+1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
-    /*------------------------------*/
-    /*Bit to check if there is a gap in the sfts*/
-    if ( j< (nSFT-1) )/*in all cases except when we are examining the last sft, check that there is no gap to the next sft*/
-    {
-	next_epoch = sft_vect->data[j+1].epoch.gpsSeconds;/*p->x, if p is a pointer then this expression gets the member of that structure. The datat subscript starts at zero and runs to nSFT-1, there is no data[nSFT]!!!  */
-	/*cur_epoch = sft_vect->data[j].epoch.gpsSeconds;*/
-	if (cur_epoch+timebaseline != next_epoch )/*if this returns true then the finishing time of current sft does not match starttime of the next sft.*/
-	{
-	    l=l+1;
-	    cur_epoch = cur_epoch+timebaseline;/*calcs the timestamp to be used for the gap, this is the end of the last sft before the gap*/
-
-	    timestamps->data[l]= cur_epoch;
-
-	    XLALGPSToUTC(&date, cur_epoch);
-	    fprintf(fp4, "%d\t %d\t %d\t %d\t %d\t %d\t %d\n", l, (date.tm_year+1900), date.tm_mon+1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
-
-            while ( (cur_epoch + (0.5*timebaseline)) < next_epoch ) 
-            {
+                for ( i=0; i < (numBins-2); i+=NumBinsAvg)
+                {
+                    avg = 0.0;
+                    if (i+NumBinsAvg>numBins) {printf("Error\n");return(2);}
+                    fprintf(fp,"%e\t",avg);
+                }
+                fprintf(fp,"\n");
                 l=l+1;
-              
-                XLALGPSToUTC(&date, cur_epoch);
-                fprintf(fp4, "%d\t %d\t %d\t %d\t %d\t %d\t %d\n", l, (date.tm_year+1900), date.tm_mon+1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
-        
+                cur_epoch=cur_epoch+timebaseline;
+                fprintf(fp2, "%d.\t%d\n", l, cur_epoch );
+                    
+                XLALResizeREAL8Vector(timestamps, l+1);
                 timestamps->data[l]= cur_epoch;
-                cur_epoch=cur_epoch+timebaseline;/*increment cur_epoch to test if there is still a long gap that needs spliiting*/
+                XLALGPSToUTC(&date, cur_epoch);/*cg; gets the UTC date in struct tm format from the GPS seconds.*/
+                fprintf(fp4, "%d\t %i\t %i\t %i\t %i\t %i\t %i\n", l, (date.tm_year+1900), date.tm_mon+1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
             }
-	}
+            
+        }
+        l=l+1;
     }
-	    /*----------------------------*/
-  l=l+1;
-  /*fprintf(stderr,"here 2c, j=%d\n",j);*/
-  }
-  fprintf(stderr,"number of timestamps: %d\n",l);
-  /*fprintf(fp4, "%u\n", year_date->length);*/ /*just used this as a test line*/
-  /*fprintf(fp4, "%u\n", year_date->length);*/ /*just used this as a test line*/
-    
-    /*================================================================================================================*/
-    /*================================================================================================================*/
-    
-    
+    fprintf(stderr,"finished checking for missing sfts, l=%d\n", l);
+/*----------------------------------------------------------------------------------------------------------------*/
+/*cg;  Create the third and final file, called   blah_blah_blah.txt.  This file will contain the data used in the matlab plot script to plot the normalised average power vs the frequency.*/
+
+    /* Find time average of normalized SFTs */
+    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
+    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
+    timeavg = XLALMalloc(numBins*sizeof(REAL4));
+    if (timeavg == NULL) fprintf(stderr,"Timeavg memory not allocated\n");
+
+    for (j=0;j<nSFT;j++)
+    { 
+        for ( i=0; i < numBins; i++)
+        {
+            if (j == 0) 
+            {
+                timeavg[i] = sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
+                            sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
+            } 
+            else 
+            {
+                timeavg[i] += sft_vect->data[j].data->data[i].re*sft_vect->data[j].data->data[i].re + 
+                            sft_vect->data[j].data->data[i].im*sft_vect->data[j].data->data[i].im;
+            }
+        }
+    }
+    /*timeavg records the power of each bin*/
+    for ( i=0; i < numBins; i++)
+    {
+        f = sft_vect->data->f0 + ((REAL4)i)*sft_vect->data->deltaF;
+	PWR=timeavg[i]/((REAL4)nSFT);
+	SNR=(PWR-1)*(sqrt(((REAL4)nSFT)));
+        fprintf(fp3,"%16.8f %g %g\n",f, PWR, SNR);
+    } 
+/*------------------------------------------------------------------------------------------------------------------------*/ 
+/*End of normal spec_avg code, the remaining code is for crab freq calc.*/
+/*================================================================================================================*/
+/*================================================================================================================*/
     /*This next block of code is for the crab specific changes to fscan*/
-    
     #define CRAB 0
     /*change this to CRAB 0 to prevent this section of code from compiling, change to 1 to compile it.*/
-    
     #if CRAB
     /*--------------------------------------------------------------------------------------------------------------*/
     /*some header files for the crab*/
@@ -434,17 +330,14 @@ for (j=0;j<nSFT;j++)
     LALDetector det;
     CHAR detName[256];
     REAL8 ecliptic_lat, e_tilt=0.409092627;/*the ecliptic latitude of the source, and hte earth's tilt in radians (23.439281 degrees)*/
-    
-    /*----------------------------------------------------------------------------------------------------------------*/
-    /*for debuging */
+
     char outfile5[256];
     FILE *fp5 = NULL;
     sprintf(outfile5, "%s_crab", outbase);
     fp5 = fopen(outfile5, "w");
-    
-    /*cg; calculating the crab freq, done in three steps*/
-    /*this needs to be done for each sft, so need some sort of iteration*/
-    
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+    /*cg; calculating the crab freq, done in three steps. This is done for each sft*/
     /*----------------------------------------------------------------------------------------------------------------*/
     /*    ---1---   */
     /*Find rough guess of crabs freq from ephemeris*/
@@ -455,8 +348,6 @@ for (j=0;j<nSFT;j++)
 
     /* read in tempo par file for pulsar, This is one of the optional command line arguments*/
     /*fprintf(stderr,"%s\n",psrInput);*/
-    
-    /*psrInput="../B0531+21";*//*../B0531+21" psrInput is now read in from the command line arguments and passed to this code*/
     fprintf(stderr,"%s\n",psrInput);
     XLALReadTEMPOParFile(&pulsarParams, psrInput);
 
@@ -469,21 +360,21 @@ for (j=0;j<nSFT;j++)
 
     /*input.filename=psrEphemeris;*/ /*/archive/home/colingill/lalsuite/lalapps/src/pulsar/fscan/ /archive/home/colingill/public_html/crab_ephemeris.txt*/
     input.filename = XLALMalloc(sizeof(CHAR)*256);
-   if(input.filename == NULL) fprintf(stderr,"input.filename pointer memory not allocated\t");
+    if(input.filename == NULL) fprintf(stderr,"input.filename pointer memory not allocated\t");
 
     strcpy(input.filename,psrEphemeris);
     /*fprintf(stderr,"psrEphemeris:%s\n", input.filename);*/
 
-    /*The first stage is to read in f and fdot from the ephemeris, the ephemeris file is part of lalapps and is maintained by matt*/
+    /*The first stage is to read in f and fdot from the ephemeris, the crab_ephemeris.txt file is part of lalapps and is maintained by matt*/
     LALGetCrabEphemeris( &status, &crabEphemerisData, &input );
-    /*check on the oputputs, crabEphemerisData is a struct of type CrabSpindownParamsInput, and has members tArr, f0, f1*/
+    /*check on the outputs, crabEphemerisData is a struct of type CrabSpindownParamsInput, and has members tArr, f0, f1*/
     fprintf(stderr,"input crab ephemeris present, number of entries: %i\n", crabEphemerisData.numOfData);
     fprintf(stderr,"crabEphemerisData: \ttarr= %f\tf0= %f\tf_dot= %e\n", crabEphemerisData.tArr->data[0], crabEphemerisData.f0->data[0], crabEphemerisData.f1->data[0]);
     
     /*Now I have f and fdot, use function below to compute the higher order derrivatives of the crabs frequency*/
     LALComputeFreqDerivatives( &status, &crabOutput, &crabEphemerisData );
     /*check on this function, crabOutput is datatype CrabSpindownParamsOutput*/
-    fprintf(stderr,"crabOutput:\tf0= %f\tf1= %f\tf2= %f\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);
+    fprintf(stderr,"crabOutput:\tf0= %f\tf1= %e\tf2= %e\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);/*need to change the type of printf for F1 and f2 to exponentials.*/
     fprintf(stderr,"--------------------\n");
 
     /*Allocate memory for edat, no need to do in the loop*/
@@ -493,7 +384,7 @@ for (j=0;j<nSFT;j++)
 
     /*work out the eclitptic lattitude of the source, used in max freq calc.*/
     ecliptic_lat=asin(cos(e_tilt)*sin(pulsarParams.dec)-sin(pulsarParams.ra)*cos(pulsarParams.dec)*sin(e_tilt));
-    fprintf(stderr,"eqcliptic_lat: %f\t", ecliptic_lat);
+    fprintf(stderr,"eqcliptic_lat: %e\t", ecliptic_lat);
 
     for (i=0;i<l;i++)
     {

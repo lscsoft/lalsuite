@@ -39,7 +39,6 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALFrameIO.h>
-#include <lal/SFTutils.h>
 #include <lal/FrameStream.h>
 #include <lalappsfrutils.h>
 #include <lalapps.h>
@@ -334,62 +333,33 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   }  
   LogPrintf(LOG_DEBUG,"%s : checked input\n",fn);
   
-  /* if we can open the frame file */
-  if ((fs = XLALFrOpen(NULL,filename)) != NULL) {
-   
-    LogPrintf(LOG_DEBUG,"%s: opened frame file %s.\n",fn,filename);
-    
-    /* define start and duration */
-    XLALGPSSetREAL8(&epoch,(REAL8)fs->flist->t0);
-    duration = fs->flist->dt;
-    
-    /* seek to the start of the frame */
-    if (XLALFrSeek(fs,&epoch)) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",fn,filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
-    }
-    
-    /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
-    if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",fn,filename);
-      XLAL_ERROR(fn,XLAL_EINVAL);
-    }
-    LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",fn,channel);
-  
-    /* close the frame file */
-    XLALFrClose(fs);
-    
-  }
-  /* otherwise allocate space for an empty timeseries and extract frame params from the filename */
-  else {
+  /* open the frame file */
+  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
     LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",fn,filename);
-    xlalErrno = 0;
-    INT4 i;
-
-    /* extract epoch and duration from filename */
-    {
-      REAL8 newepoch;
-      CHAR *c1 = strrchr(filename,'-');
-      INT4 length = strlen(c1) - 5;
-      CHAR *tempdur = (CHAR *)XLALCalloc(length+1,sizeof(CHAR));
-      CHAR *tempepoch = (CHAR *)XLALCalloc(10,sizeof(CHAR));
-      strncpy(tempdur,c1+1,length);
-      strncpy(tempepoch,c1-9,9);
-      newepoch = atof(tempepoch);
-      XLALGPSSetREAL8(&epoch,newepoch);
-      duration = atof(tempdur);
-      XLALFree(tempepoch);
-      XLALFree(tempdur);
-    }
-
-    if (((*ts) = XLALCreateINT4TimeSeries("BAD_FILE",&epoch,0,1,&lalDimensionlessUnit,NQUANTILE)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s: unable to allocate empty timeseries\n.",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
-    for (i=0;i<(INT4)(*ts)->data->length;i++) (*ts)->data->data[i] = 0;
-
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }  
+  LogPrintf(LOG_DEBUG,"%s: opened frame file %s.\n",fn,filename);
+  
+  /* define start and duration */
+  XLALGPSSetREAL8(&epoch,(REAL8)fs->flist->t0);
+  duration = fs->flist->dt;
+  
+  /* seek to the start of the frame */
+  if (XLALFrSeek(fs,&epoch)) {
+    LogPrintf(LOG_CRITICAL,"%s: unable to seek to start of frame file %s.\n",fn,filename);
+    XLAL_ERROR(fn,XLAL_EINVAL);
   }
-
+  
+  /* read in timeseries from this file - final arg is limit on length of timeseries (0 = no limit) */
+  if (((*ts) = XLALFrReadINT4TimeSeries(fs,channel,&epoch,duration,0)) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: unable to read channel %s from frame file %s.\n",fn,channel,filename);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  LogPrintf(LOG_DEBUG,"%s: reading channel %s\n",fn,channel);
+  
+  /* close the frame file */
+  XLALFrClose(fs);
+  
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
   
