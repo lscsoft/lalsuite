@@ -19,8 +19,7 @@ likelihood:
 	wait 
 
 final :
-	lalapps_stringfinal --verbose --cal-uncertainty 0.08 noninjections/*.sqlite >lalapps_stringfinal.log
-	lalapps_stringfinal --verbose --injections --injections-bin-size 8 --loudest-survivor 154785.162 --cal-uncertainty 0.08 injections*/*.sqlite >lalapps_stringfinal_injections.log
+	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 injections*/*.sqlite noninjections/*.sqlite >lalapps_stringfinal.log
 	cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 50 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 50 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
 
 clean :

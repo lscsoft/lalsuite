@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALINSPIRAL_VCS_NAME "LALInspiral"
 #define LALINSPIRAL_VCS_ID "@ID@"
 #define LALINSPIRAL_VCS_DATE "@DATE@"
 #define LALINSPIRAL_VCS_BRANCH "@BRANCH@"
@@ -50,6 +51,7 @@ extern "C" {
 /* vcs information structures */
 extern struct tagLALVCSInfo lalInspiralVCSInfo;
 static const struct tagLALVCSInfo lalInspiralHeaderVCSInfo = { \
+  LALINSPIRAL_VCS_NAME, \
   LALINSPIRAL_VERSION, \
   LALINSPIRAL_VCS_ID, \
   LALINSPIRAL_VCS_DATE, \

@@ -193,6 +193,25 @@ int set_debug_level( const char *s )
 }
 
 
+/*
+ * function that compares the compile time and run-time version info
+ * structures, returns non-zero if there are differences */
+static int version_compare(
+    const char *function,
+    const LALVCSInfo *compile_time,
+    const LALVCSInfo *run_time)
+{
+  /* check version consistency */
+  if (XLALVCSInfoCompare(compile_time, run_time))
+  {
+    XLALPrintError("%s: FATAL: version mismatch between compile-time (%s) and run-time (%s) %s library\n",
+        function, compile_time->vcsId, run_time->vcsId, run_time->name);
+    XLALPrintError("This indicates a potential compilation problem: ensure your setup is consistent and recompile.\n");
+    XLAL_ERROR(function, XLAL_EERR);
+  }
+  return 0;
+}
+
 /** Function that assembles a default VCS info/version string from LAL and LALapps
  *  Also checks LAL header<>library version consistency and returns NULL on error.
  *
@@ -228,14 +247,75 @@ XLALGetVersionString( int level )
   const char delim[] = ":";
   char *tree_status;
 
-  /* check version consistency between LAL headers <> library */
-  if ( XLALVCSInfoCompare(&lalHeaderVCSInfo, &lalVCSInfo) )
-    {
-      XLALPrintError("%s: FATAL: version mismatch between LAL headers (%s) and LAL library (%s)\n",
-                     __func__, lalHeaderVCSInfo.vcsId, lalVCSInfo.vcsId );
-      XLALPrintError("This indicates a compilation problem: make sure you setup is consistent and recompile this code.\n");
-      XLAL_ERROR_NULL (__func__, XLAL_EERR );
-    }
+  if ((LAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lal version consistency */
+    if (version_compare(__func__, &lalHeaderVCSInfo, &lalVCSInfo))
+      exit(1);
+  }
+
+#ifdef HAVE_LIBLALFRAME
+  if ((LALFRAME_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalframe version consistency */
+    if (version_compare(__func__, &lalFrameHeaderVCSInfo, &lalFrameVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALMETAIO
+  if ((LALMETAIO_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalmetaio version consistency */
+    if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALBURST
+  if ((LALBURST_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalburst version consistency */
+    if (version_compare(__func__, &lalBurstHeaderVCSInfo, &lalBurstVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALINSPIRAL
+  if ((LALINSPIRAL_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalinspiral version consistency */
+    if (version_compare(__func__, &lalInspiralHeaderVCSInfo, &lalInspiralVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALPULSAR
+  if ((LALPULSAR_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalpulsar version consistency */
+    if (version_compare(__func__, &lalPulsarHeaderVCSInfo, &lalPulsarVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALSTOCHASTIC
+  if ((LALSTOCHASTIC_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalstochastic version consistency */
+    if (version_compare(__func__, &lalStochasticHeaderVCSInfo, &lalStochasticVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALXML
+  if ((LALXML_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalxml version consistency */
+    if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
+      exit(1);
+  }
+#endif
 
   switch(level)
   {

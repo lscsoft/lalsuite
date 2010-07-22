@@ -174,8 +174,8 @@ for epoch in epochs.epoch_segs():
   # only do data find jobs if requested
   # find all the h(t) data
   df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(str( int(epoch[1])-df_pad ) )
-  df1.set_end(str( int(epoch[2]) +df_pad ) )
+  df1.set_start(int(epoch[1])-df_pad)
+  df1.set_end(int(epoch[2]) +df_pad)
   df1.set_observatory(ifo[0])
   df1.set_type(datatype_hoft)
   df1.set_name("df1_"+ifo+"_"+str(epoch_cnt))
@@ -195,8 +195,8 @@ for epoch in epochs.epoch_segs():
 
   # find all the DARM_ERR data
   df2 = pipeline.LSCDataFindNode(df_job)
-  df2.set_start(str( int(epoch[1])-df_pad ) )
-  df2.set_end(str( int(epoch[2])+df_pad )  )
+  df2.set_start(int(epoch[1])-df_pad)
+  df2.set_end(int(epoch[2])+df_pad)
   df2.set_observatory(ifo[0])
   df2.set_type(datatype_derr)
   df2.set_name("df2_"+ifo+"_"+str(epoch_cnt))

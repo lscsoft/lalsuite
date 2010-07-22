@@ -769,7 +769,14 @@ int main( int argc, char *argv[] )
         l = 0;
         /* Before the data gets filtered, I need to make the c-data snippets commensurate */
         for(l=0 ; l< numDetectors-1 ; l++ ) {
-          timeptDiff[l] = rint( (slideNSWrapped[0] - slideNSWrapped[l+1])*1e-9 * sampleRate);
+          INT8 slideNSDiff=0;
+          slideNSDiff = slideNSWrapped[0] - slideNSWrapped[l+1];
+          if ( slideNSDiff>0 ) {
+            timeptDiff[l] = floor( slideNSDiff*1e-9 * sampleRate - 1);
+          }
+          else {
+            timeptDiff[l] = ceil( slideNSDiff*1e-9 * sampleRate + 1);
+          }
           if( vrbflg ) fprintf(stdout,"slideNS[0] = %" LAL_INT8_FORMAT ", slideNS[2nd] = %" LAL_INT8_FORMAT ", timeptDiff = %d, sampleRate = %d\n",slideNSWrapped[0], slideNSWrapped[l+1], timeptDiff[l], sampleRate);
         }
         /* Now allocate memory for a temporary storage vector */
@@ -1372,10 +1379,8 @@ int main( int argc, char *argv[] )
 
             /* write the search summary table */
             if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
-            searchsumm.searchSummaryTable->out_start_time.gpsSeconds =
-              gpsStartTime.gpsSeconds + (numPointsSeg / (4 * sampleRate));
-            searchsumm.searchSummaryTable->out_end_time.gpsSeconds =
-              gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+            searchsumm.searchSummaryTable->out_start_time = startCoinc;
+            searchsumm.searchSummaryTable->out_end_time = endCoinc;
 
             /* the number of nodes for a standalone job is always 1 */
             searchsumm.searchSummaryTable->nnodes = 1;
@@ -1409,13 +1414,11 @@ int main( int argc, char *argv[] )
             LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
             /* write multi_inspiral table */
-            if ( savedEvents.multiInspiralTable ) {
-              if( vrbflg ) fprintf(stdout,"  event params table\n ");
+            if( vrbflg ) fprintf(stdout,"  event params table\n ");
 
-              LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-              LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
-              LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
-            }
+            LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+            LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
+            LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
 
             while( savedEvents.multiInspiralTable )
               {
@@ -1494,10 +1497,8 @@ int main( int argc, char *argv[] )
     
     /* write the search summary table */
     if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
-    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-      gpsStartTime.gpsSeconds + (numPointsSeg / (4 * sampleRate));
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-      gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+    searchsumm.searchSummaryTable->out_start_time = startCoinc; 
+    searchsumm.searchSummaryTable->out_end_time = endCoinc; 
     
     /* the number of nodes for a standalone job is always 1 */
     searchsumm.searchSummaryTable->nnodes = 1; 
@@ -1531,13 +1532,11 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
     
     /* write multi_inspiral table */
-    if ( savedEvents.multiInspiralTable ) { 
-      if( vrbflg ) fprintf(stdout,"  event params table\n ");
+    if( vrbflg ) fprintf(stdout,"  event params table\n ");
       
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
-    }
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
     
     while( savedEvents.multiInspiralTable )
       {  

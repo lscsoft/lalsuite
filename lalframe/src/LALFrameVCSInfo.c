@@ -45,6 +45,7 @@ const char *lalFrameVCSIdentStatus = LALFRAME_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalFrameVCSInfo = { \
+  LALFRAME_VCS_NAME, \
   LALFRAME_VERSION, \
   LALFRAME_VCS_ID, \
   LALFRAME_VCS_DATE, \

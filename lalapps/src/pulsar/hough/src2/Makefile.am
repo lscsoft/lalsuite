@@ -103,6 +103,8 @@ libz.a:
 exchndl.o: EinsteinAtHome/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

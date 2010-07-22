@@ -318,18 +318,20 @@ cp.read(opts.config_file)
 # set gps start and end times in the cp object.
 cp.set("input", "gps-start-time", str(opts.gps_start_time) )
 cp.set("input", "gps-end-time", str(opts.gps_end_time) )
-cp.set("input", "output-path", str(opts.node_access_path))
-cp.set("input", "username",str(opts.username))
+cp.set("input", "output-path", str(opts.node_access_path) )
+cp.set("input", "username", str(opts.username) )
 
 # Check for --disable-dag-categories
 
 opts.do_dag_categories = not cp.has_option(
               "hipe-arguments","disable-dag-categories")
 
-# Add local dir to pipeline
+# Tell matplotlib to put its cache files in the the local dir
+cp.set("pipeline", "matplotlibdir", opts.node_local_dir )
 
+# Add local dir to pipeline
 if opts.run_pipedown:
-  cp.set("pipeline","node-tmp-dir",opts.node_local_dir)
+  cp.set("pipeline", "node-tmp-dir", opts.node_local_dir)
 
 ##############################################################################
 # create a directory called executables and copy them over

@@ -45,6 +45,7 @@ const char *lalStochasticVCSIdentStatus = LALSTOCHASTIC_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalStochasticVCSInfo = { \
+  LALSTOCHASTIC_VCS_NAME, \
   LALSTOCHASTIC_VERSION, \
   LALSTOCHASTIC_VCS_ID, \
   LALSTOCHASTIC_VCS_DATE, \
