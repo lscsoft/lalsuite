@@ -42,7 +42,8 @@ params = {'axes.labelsize'  : 12,
           'text.fontsize'   : 12,
           'legend.fontsize' : 12,
           'xtick.labelsize' : 12,
-          'ytick.labelsize' : 12}
+          'ytick.labelsize' : 12,
+          'text.usetex'     : True}
 
 pylab.rcParams.update(params)
 
@@ -450,10 +451,14 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
         return (row.ifo, row.name, row.version, veto_interval[0][0], veto_interval[0][1], row.start_pad, row.end_pad)
 
 
-    overall = segmentlist([segment(start_time, end_time)])
-    xmldoc  = utils.load_url(config['veto_definer_file'])
-    
-    veto_definers = table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
+    overall       = segmentlist([segment(start_time, end_time)])
+    veto_definers = []
+
+    for f in config['veto_definer_file'].split(','):
+        xmldoc  = utils.load_url(f)
+        
+        veto_definers += table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
+
     cats = [make_segdef(row, overall) for row in veto_definers if row.category == category and row.ifo == ifo]
 
     vetoed_segments = segmentdb_utils.query_segments(engine, 'segment', cats)
@@ -1090,6 +1095,13 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
     pylab.xticks(range(0,24,2))
 
     pylab.ylabel('New SNR')
+    pylab.ylim(6,9)
+
+    big_ones = [x for x in zip(times, newsnrs) if x[1] > 9]
+
+    for tme, snr in big_ones:
+        pylab.text(tme,8.7,'$\\Uparrow\\newline\\textrm{%.1f}$' % snr)
+
     pylab.savefig('%s/%s_%d_%s_newsnr_vs_time.png' % (config['out_dir'], ifo, veto_level, cluster))
 
 

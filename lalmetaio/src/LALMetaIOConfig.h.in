@@ -3,8 +3,20 @@
 #ifndef _LALMETAIOCONFIG_H
 #define _LALMETAIOCONFIG_H
 
-/* LALMETAIO Version */
+/* LALMetaIO Version */
 #undef LALMETAIO_VERSION
+
+/* LALMetaIO Version Major Number  */
+#undef LALMETAIO_VERSION_MAJOR
+
+/* LALMetaIO Version Minor Number  */
+#undef LALMETAIO_VERSION_MINOR
+
+/* LALMetaIO Version Micro Number  */
+#undef LALMETAIO_VERSION_MICRO
+
+/* LALMetaIO Version Devel Number  */
+#undef LALMETAIO_VERSION_DEVEL
 
 /* LALMetaIO Configure Arguments */
 #undef LALMETAIO_CONFIGURE_ARGS

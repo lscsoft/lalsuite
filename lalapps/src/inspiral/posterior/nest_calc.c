@@ -16,7 +16,7 @@
 #include "nest_calc.h"
 #include <float.h>
 
-#define infosafe 1.5
+#define TOLERANCE 0.1
 
 gsl_matrix *cov_mat;
 
@@ -225,9 +225,10 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	/*	while(((REAL8)i)<=((REAL8)Nlive)*infosafe*H || i<3*Nlive) */
 	deltaZ=1.0;
 	/*	while((REAL8)i<=((REAL8)Nlive)*infosafe*H ? 1 : Nlive*fabs(deltaZ/logZ)>1e-6)*/
-	while(((REAL8)i)<=((REAL8)Nlive) || logLmax+logw > logZ-5) /* This termination condition: when remaining prior can't
+	/*while(((REAL8)i)<=((REAL8)Nlive) || logLmax+logw > logZ-5)*/  /* This termination condition: when remaining prior can't
 	 account for more than exp(-5) of the evidence, even
 	 if entire support is at Lmax */
+        while(((REAL8)i)<=((REAL8)Nlive) || logadd(logZ,logLmax-((double)i/(double)Nlive))-logZ > TOLERANCE )
 	{
 		minpos=0;
 		/* Find minimum likelihood sample to replace */
@@ -265,8 +266,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		if(Live[minpos]->logLikelihood > logLmax) logLmax = Live[minpos]->logLikelihood;
 		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive);
 		logw=mean(logwarray,Nruns);
-		if(MCMCinput->verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
-									   i,100.0*((REAL8)i)/(((REAL8) Nlive)*H*infosafe),accept/MCMCfail,H,H/log(2.0),logLmin,Live[minpos]->logLikelihood,logZ,10.0*log10(exp(1.0))*(logZ-logZnoise));
+		if(MCMCinput->verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf dZ: %lf logZ: %lf Zratio: %lf db\n",
+									   i,100.0*((REAL8)i)/(((REAL8) Nlive)*H),accept/MCMCfail,H,H/log(2.0),logLmin,Live[minpos]->logLikelihood,logadd(logZ,logLmax+logw+log((REAL8)Nlive))-logZ,logZ,10.0*log10(exp(1.0))*(logZ-logZnoise));
 		if(fpout && !(i%50)) fflush(fpout);
 		i++;
 	}

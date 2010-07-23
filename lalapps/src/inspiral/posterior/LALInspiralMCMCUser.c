@@ -1033,14 +1033,21 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	/*'x' and 'y' components of spins must be set to zero.*/
 	template->spin1[0]=0.;
 	template->spin1[1]=0.;
+    template->spin1[2]=0.;
 
 	template->spin2[0]=0.;
 	template->spin2[1]=0.;
+    template->spin2[2]=0.;
+    
+	/*Get aligned spins configuration/magnitude if these are set*/
+	if(XLALMCMCCheckParameter(parameter,"spin1z")) {
+        template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
+    }
 
-	/*Get aligned spins configuration/magnitude*/
-	
-    template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
-    template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+    if(XLALMCMCCheckParameter(parameter,"spin2z")) {
+        template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+    }
+    
     /* Fill out parameter structure*/
     LALInspiralParameterCalc(status,template);
     LALInspiralRestrictedAmplitude(status,template);

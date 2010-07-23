@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALXML_VCS_NAME "LALXML"
 #define LALXML_VCS_ID "@ID@"
 #define LALXML_VCS_DATE "@DATE@"
 #define LALXML_VCS_BRANCH "@BRANCH@"
@@ -50,6 +51,7 @@ extern "C" {
 /* vcs information structures */
 extern struct tagLALVCSInfo lalXMLVCSInfo;
 static const struct tagLALVCSInfo lalXMLHeaderVCSInfo = { \
+  LALXML_VCS_NAME, \
   LALXML_VERSION, \
   LALXML_VCS_ID, \
   LALXML_VCS_DATE, \

@@ -6,6 +6,18 @@
 /* LALBurst Version */
 #undef LALBURST_VERSION
 
+/* LALBurst Version Major Number  */
+#undef LALBURST_VERSION_MAJOR
+
+/* LALBurst Version Minor Number  */
+#undef LALBURST_VERSION_MINOR
+
+/* LALBurst Version Micro Number  */
+#undef LALBURST_VERSION_MICRO
+
+/* LALBurst Version Devel Number  */
+#undef LALBURST_VERSION_DEVEL
+
 /* LALBurst Configure Arguments */
 #undef LALBURST_CONFIGURE_ARGS
 

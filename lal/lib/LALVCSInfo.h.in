@@ -16,7 +16,7 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009,2010 Adam Mercer
  */
 
 #ifndef _LALVCSINFO_H
@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LAL_NAME "LAL"
 #define LAL_VCS_ID "@ID@"
 #define LAL_VCS_DATE "@DATE@"
 #define LAL_VCS_BRANCH "@BRANCH@"
@@ -59,6 +60,7 @@ extern const char *lalVCSStatus;
 /* define vcs information structure */
 typedef struct tagLALVCSInfo
 {
+  const char *name;
   const char *version;
   const char *vcsId;
   const char *vcsDate;
@@ -72,6 +74,7 @@ typedef struct tagLALVCSInfo
 /* header and library vcs information structures */
 extern struct tagLALVCSInfo lalVCSInfo;
 static const struct tagLALVCSInfo lalHeaderVCSInfo = { \
+  LAL_NAME, \
   LAL_VERSION, \
   LAL_VCS_ID, \
   LAL_VCS_DATE, \
