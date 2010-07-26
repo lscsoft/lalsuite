@@ -122,6 +122,7 @@ typedef struct {
 typedef struct { 
   UINT4 length;	                    /**< the number of channels */
   CHAR dir[STRINGLENGTH];           /**< the directory containing the files */
+  INT4 npcus;                       /**< the number of operational PCUs */ 
   FrameChannel *channel;            /**< a pointer to FrameChannel structures */
 } FrameChannelList;
 
@@ -159,6 +160,7 @@ typedef struct {
   CHAR *pattern;                    /**< the input frame file name pattern */
   CHAR *outputdir;                  /**< name of output directory */
   REAL8 deltat;                     /**< the desired sampling time */
+  INT4 goodxenon;                   /**< flag for using goodxenon data */
   BOOLEAN version;	            /**< output version-info */
 } UserInput_t;
 
@@ -182,9 +184,9 @@ RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
 /* define functions */
 int main(int argc,char *argv[]);
 void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar, CHAR *clargs);
-int XLALReadFrameDir(FrameChannelList **framechannels, CHAR *inputdir, CHAR *pattern);
+int XLALReadFrameDir(FrameChannelList **framechannels, CHAR *inputdir, CHAR *pattern,INT4 goodxenon);
 int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,FrameChannelList *framechannels);
-int XLALFindFramesInInterval(FrameChannelList **subframechannels, FrameChannelList *framechannels,LIGOTimeGPS intstart,LIGOTimeGPS intend);
+int XLALFindFramesInInterval(FrameChannelList **subframechannels, FrameChannelList *framechannels,LIGOTimeGPS intstart,LIGOTimeGPS intend,INT4 npcus);
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,FrameChannelList *framechannels,LIGOTimeGPS *intstart,LIGOTimeGPS *intend);
 static int compareGPS(const void *p1, const void *p2);
 int XLALCombinationPlanToINT4TimeSeries(INT4TimeSeries **ts,HeaderVector *history,FrameCombinationPlan *plan);
@@ -230,7 +232,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* get a list of frame file names */
-  if (XLALReadFrameDir(&framechannels,uvar.inputdir,uvar.pattern)) {
+  if (XLALReadFrameDir(&framechannels,uvar.inputdir,uvar.pattern,uvar.goodxenon)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadFrameDir() failed with error = %d\n",fn,xlalErrno);
     return 1;
   }
@@ -244,7 +246,10 @@ int main( int argc, char *argv[] )  {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadGoodPCUInterval() failed with error = %d\n",fn,xlalErrno);
     return 1;
   }
-  for (i=0;i<(INT4)pcu->length;i++) LogPrintf(LOG_DEBUG,"%s : pcu intervals -> %d %d %d\n",fn,pcu->start[i].gpsSeconds,pcu->end[i].gpsSeconds,pcu->pcucount[i]);
+  for (i=0;i<(INT4)pcu->length;i++) LogPrintf(LOG_DEBUG,"%s : pcu intervals -> %d %d (%d) #PCU = %d\n",fn,
+					      pcu->start[i].gpsSeconds,pcu->end[i].gpsSeconds,
+					      pcu->end[i].gpsSeconds-pcu->start[i].gpsSeconds,
+					      pcu->pcucount[i]);
  
   /**********************************************************************************/
   /* FOR EACH INTERVAL FIND DATA AND COMBINE APPROPRIATELY */
@@ -258,7 +263,7 @@ int main( int argc, char *argv[] )  {
     INT4 j;                                               /* counter */
 
     /* find any frames coincident with this data stretch */
-    if (XLALFindFramesInInterval(&subframechannels,framechannels,pcu->start[i],pcu->end[i])) {
+    if (XLALFindFramesInInterval(&subframechannels,framechannels,pcu->start[i],pcu->end[i],pcu->pcucount[i])) {
       LogPrintf(LOG_CRITICAL,"%s : XLALFindFramesInInterval() failed with error = %d\n",fn,xlalErrno);
       return 1;
     }
@@ -298,6 +303,8 @@ int main( int argc, char *argv[] )  {
 	  return 1;
 	}
 	
+	/* store the output frame stats */
+
 	/* free the timeseries */
  	XLALDestroyINT4TimeSeries(ts);
 	for (k=0;k<header.length;k++) {
@@ -365,6 +372,7 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   uvar->outputdir = NULL; 
   uvar->pattern = NULL;
   uvar->deltat = MIN_DT;
+  uvar->goodxenon = 0;
 
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
@@ -372,6 +380,7 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   LALregSTRINGUserStruct(status,pattern, 	'p', UVAR_OPTIONAL, "The frame file name pattern"); 
   LALregSTRINGUserStruct(status,outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory"); 
   LALregREALUserStruct(status,  deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
+  LALregINTUserStruct(status,  goodxenon,       'x', UVAR_OPTIONAL, "Set this flag to include good xenon data");
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
@@ -407,7 +416,8 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
  */
 int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure containing a list of all input frame channels */
 		     CHAR *inputdir,                      /**< [in] the input frame directory */
-		     CHAR *pattern                        /**< [in] the input frame file name pattern */
+		     CHAR *pattern,                       /**< [in] the input frame file name pattern */
+		     INT4 goodxenon                       /**< [in] flag for including goodxenon data */  
 		     )
 {
   
@@ -464,30 +474,35 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   /* open each file and count how many channels we have in total */
   for (i=0;i<nfiles;i++) {
 
+    /* check we do not allow goodxenon and the file has XENO in the filename then we ignore the file */
+    if ( ! ( (!goodxenon) && (strstr(pglob.gl_pathv[i],"XENO") != NULL) ) ) {
+
       /* open the frame file */
-    if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",fn,pglob.gl_pathv[i]);
-      XLAL_ERROR(fn,XLAL_EINVAL);
-    }
-    LogPrintf(LOG_DEBUG,"%s : opened frame file %s.\n",fn,pglob.gl_pathv[i]);
-    
-    /* count the number of channels in the frame file */
-    /* this returns a string containing the channel names */
-    channelinfo = FrFileIGetChannelList(fs->file,(INT4)fs->flist->t0);
-
-    /* find all instances of the keyword PROC */
-    c = channelinfo;
-    while ((temp = strstr(c,"PROC")) != NULL) {
-      totalchannels++;
-      c = temp + 1;
-    }
-    free(channelinfo);
-    
-    /* close the frame file */
-    XLALFrClose(fs);
+      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",fn,pglob.gl_pathv[i]);
+	XLAL_ERROR(fn,XLAL_EINVAL);
+      }
+      LogPrintf(LOG_DEBUG,"%s : opened frame file %s.\n",fn,pglob.gl_pathv[i]);
+      
+      /* count the number of channels in the frame file */
+      /* this returns a string containing the channel names */
+      channelinfo = FrFileIGetChannelList(fs->file,(INT4)fs->flist->t0);
+      
+      /* find all instances of the keyword PROC */
+      c = channelinfo;
+      while ((temp = strstr(c,"PROC")) != NULL) {
+	totalchannels++;
+	c = temp + 1;
+      }
+      free(channelinfo);
+      
+      /* close the frame file */
+      XLALFrClose(fs);
   
-  }
+    }
 
+  }
+  
   if (totalchannels == 0) {
     LogPrintf(LOG_CRITICAL,"%s : could not find any PROC channels in dir %s.\n",fn,inputdir);
     XLAL_ERROR(fn,XLAL_EINVAL);
@@ -503,145 +518,150 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   /* open each file (again) and extract info */
   for (i=0;i<nfiles;i++) {
    
-    /* open the frame file */
-    if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",fn,pglob.gl_pathv[i]);
-      XLAL_ERROR(fn,XLAL_EINVAL);
-    }
-    LogPrintf(LOG_DEBUG,"%s : opened frame file %s (file %d/%d).\n",fn,pglob.gl_pathv[i],i+1,nfiles);
-    
-    /* count the number of channels in the frame file */
-    /* this returns a string containing the channel names */
-    channelinfo = FrFileIGetChannelList(fs->file,(INT4)fs->flist->t0);
-
-    /* get proc channel name(s) from channel info string */
-    {
-      char *channelname;
-      char *start,*end;
-      int length;
-      INT4TimeSeries ts;
-     
-      /* find all instances of the keyword PROC */
-      c = channelinfo;
-      while ((temp = strstr(c,"PROC")) != NULL) {
+    /* check we do not allow goodxenon and the file has XENO in the filename then we ignore the file */
+    if ( ! ( (!goodxenon) && (strstr(pglob.gl_pathv[i],"XENO") != NULL) ) ) {
       
-	/* extract the first channel name from the string */
-	start = temp + 5;  
-	end = strstr(start,"\t");
-	length = strlen(start) - strlen(end) + 1;
-	channelname = (CHAR *)XLALCalloc(length+1,sizeof(CHAR));
-	snprintf(channelname,length,"%s",start);
-	snprintf(ts.name,LALNameLength,"%s",channelname);
+      /* open the frame file */
+      if ((fs = XLALFrOpen(inputdir,pglob.gl_pathv[i])) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : unable to open FS46 frame file %s.\n",fn,pglob.gl_pathv[i]);
+	XLAL_ERROR(fn,XLAL_EINVAL);
+      }
+      LogPrintf(LOG_DEBUG,"%s : opened frame file %s (file %d/%d).\n",fn,pglob.gl_pathv[i],i+1,nfiles);
+      
+      /* count the number of channels in the frame file */
+      /* this returns a string containing the channel names */
+      channelinfo = FrFileIGetChannelList(fs->file,(INT4)fs->flist->t0);
+      
+      /* get proc channel name(s) from channel info string */
+      {
+	char *channelname;
+	char *start,*end;
+	int length;
+	INT4TimeSeries ts;
 	
-	LogPrintf(LOG_DEBUG,"%s : read channel name as %s\n",fn,channelname);
-
-	/* read in timeseries metadata from this channel - specifically to get deltaT */
-	if (XLALFrGetINT4TimeSeriesMetadata(&ts,fs)) {
-	  LogPrintf(LOG_CRITICAL,"%s : unable to read channel %s from frame file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
-	  XLAL_ERROR(fn,XLAL_EINVAL);
-	}
-	LogPrintf(LOG_DEBUG,"%s : read deltaT as %6.12f\n",fn,ts.deltaT);
-
-	snprintf((*framechannels)->channel[count].channelname,length,"%s",ts.name);	
-	(*framechannels)->channel[count].dt = ts.deltaT;
-	LogPrintf(LOG_DEBUG,"%s : read channel name as %s (channel %d/%d)\n",fn,(*framechannels)->channel[count].channelname,count+1,totalchannels);
-	
-	/* fill in the channel name and extract start and duration of frame from stream */
-	XLALGPSSetREAL8(&((*framechannels)->channel[count].epoch),(REAL8)fs->flist->t0);
-	XLALGPSSetREAL8(&((*framechannels)->channel[count].end),(REAL8)(fs->flist->t0 + fs->flist->dt));
-	(*framechannels)->channel[count].duration = (REAL8)fs->flist->dt;
-	
-	/* extract detconfig, energy, LLD and data type information from the channelname */
-	/* the format is X1:<MODE>-<COLNAME>-<LLD>-<DETCONFIG>-<MINENERGY>_<MAXENERGY> */
-	/* the data type is indicated by either "Event" or "Cnt" being present in the channel name */
-	{
-	  CHAR *c1 = ts.name;             /* points to start of string */
-	  CHAR *c2 = strstr(c1,"-");      /* points to first instance of "-" after mode */
-	  CHAR *c3 = strstr(c2+1,"-");    /* points to first instance of "-" after colname */
-	  CHAR *c4 = strstr(c3+1,"-");    /* points to first instance of "-" after LLD */
-	  CHAR *c5 = strstr(c4+1,"-");    /* points to first instance of "-" after detconfig */
-	  CHAR *subs,*e1,*e2;
-	  INT4 sublen,elen;
+	/* find all instances of the keyword PROC */
+	c = channelinfo;
+	while ((temp = strstr(c,"PROC")) != NULL) {
 	  
-	  /* check for type */
-	  if (strstr(ts.name,"Cnt") != NULL) (*framechannels)->channel[count].type = ARRAY;
-	  else if (strstr(ts.name,"Event") != NULL) (*framechannels)->channel[count].type = EVENT;
-	  else {
-	    LogPrintf(LOG_CRITICAL,"%s : unable to read data type from channel %s in file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
+	  /* extract the first channel name from the string */
+	  start = temp + 5;  
+	  end = strstr(start,"\t");
+	  length = strlen(start) - strlen(end) + 1;
+	  channelname = (CHAR *)XLALCalloc(length+1,sizeof(CHAR));
+	  snprintf(channelname,length,"%s",start);
+	  snprintf(ts.name,LALNameLength,"%s",channelname);
+	  
+	  LogPrintf(LOG_DEBUG,"%s : read channel name as %s\n",fn,channelname);
+	  
+	  /* read in timeseries metadata from this channel - specifically to get deltaT */
+	  if (XLALFrGetINT4TimeSeriesMetadata(&ts,fs)) {
+	    LogPrintf(LOG_CRITICAL,"%s : unable to read channel %s from frame file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
 	    XLAL_ERROR(fn,XLAL_EINVAL);
 	  }
+	  LogPrintf(LOG_DEBUG,"%s : read deltaT as %6.12f\n",fn,ts.deltaT);
 	  
-	  /* extract LLD info */
-	  sublen = 2;
-	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
-	  snprintf(subs,sublen,"%s",c3+1);	 
-	  (*framechannels)->channel[count].lld = atoi(subs);
-	  XLALFree(subs);
+	  snprintf((*framechannels)->channel[count].channelname,length,"%s",ts.name);	
+	  (*framechannels)->channel[count].dt = ts.deltaT;
+	  LogPrintf(LOG_DEBUG,"%s : read channel name as %s (channel %d/%d)\n",fn,(*framechannels)->channel[count].channelname,count+1,totalchannels);
 	  
-	  /* extract detconfig info */
-	  sublen = strlen(c4) - strlen(c5);   
-	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
-	  snprintf(subs,sublen,"%s",c4+1);
+	  /* fill in the channel name and extract start and duration of frame from stream */
+	  XLALGPSSetREAL8(&((*framechannels)->channel[count].epoch),(REAL8)fs->flist->t0);
+	  XLALGPSSetREAL8(&((*framechannels)->channel[count].end),(REAL8)(fs->flist->t0 + fs->flist->dt));
+	  (*framechannels)->channel[count].duration = (REAL8)fs->flist->dt;
 	  
-	  /* check if there is are instances of 0,1,2,3,4,5 in the string */
-	  if (strstr(subs,"0") != NULL) (*framechannels)->channel[count].detconfig[0]= 1;
-	  if (strstr(subs,"1") != NULL) (*framechannels)->channel[count].detconfig[1]= 1;
-	  if (strstr(subs,"2") != NULL) (*framechannels)->channel[count].detconfig[2]= 1;
-	  if (strstr(subs,"3") != NULL) (*framechannels)->channel[count].detconfig[3]= 1;
-	  if (strstr(subs,"4") != NULL) (*framechannels)->channel[count].detconfig[4]= 1;      
-	  XLALFree(subs);
+	  /* extract detconfig, energy, LLD and data type information from the channelname */
+	  /* the format is X1:<MODE>-<COLNAME>-<LLD>-<DETCONFIG>-<MINENERGY>_<MAXENERGY> */
+	  /* the data type is indicated by either "Event" or "Cnt" being present in the channel name */
+	  {
+	    CHAR *c1 = ts.name;             /* points to start of string */
+	    CHAR *c2 = strstr(c1,"-");      /* points to first instance of "-" after mode */
+	    CHAR *c3 = strstr(c2+1,"-");    /* points to first instance of "-" after colname */
+	    CHAR *c4 = strstr(c3+1,"-");    /* points to first instance of "-" after LLD */
+	    CHAR *c5 = strstr(c4+1,"-");    /* points to first instance of "-" after detconfig */
+	    CHAR *subs,*e1,*e2;
+	    INT4 sublen,elen;
+	    
+	    /* check for type */
+	    if (strstr(ts.name,"Cnt") != NULL) (*framechannels)->channel[count].type = ARRAY;
+	    else if (strstr(ts.name,"Event") != NULL) (*framechannels)->channel[count].type = EVENT;
+	    else {
+	      LogPrintf(LOG_CRITICAL,"%s : unable to read data type from channel %s in file %s.\n",fn,ts.name,(*framechannels)->channel[i].filename);
+	      XLAL_ERROR(fn,XLAL_EINVAL);
+	    }
+	    
+	    /* extract LLD info */
+	    sublen = 2;
+	    subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	    snprintf(subs,sublen,"%s",c3+1);	 
+	    (*framechannels)->channel[count].lld = atoi(subs);
+	    XLALFree(subs);
+	    
+	    /* extract detconfig info */
+	    sublen = strlen(c4) - strlen(c5);   
+	    subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	    snprintf(subs,sublen,"%s",c4+1);
+	    
+	    /* check if there is are instances of 0,1,2,3,4,5 in the string */
+	    if (strstr(subs,"0") != NULL) (*framechannels)->channel[count].detconfig[0]= 1;
+	    if (strstr(subs,"1") != NULL) (*framechannels)->channel[count].detconfig[1]= 1;
+	    if (strstr(subs,"2") != NULL) (*framechannels)->channel[count].detconfig[2]= 1;
+	    if (strstr(subs,"3") != NULL) (*framechannels)->channel[count].detconfig[3]= 1;
+	    if (strstr(subs,"4") != NULL) (*framechannels)->channel[count].detconfig[4]= 1;      
+	    XLALFree(subs);
+	    
+	    /* extract energy info */
+	    sublen = strlen(c5);
+	    subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
+	    snprintf(subs,sublen,"%s",c5+1);
+	    c1 = strstr(subs,"_");
+	    elen = strlen(subs) - strlen(c1) + 1;
+	    e1 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
+	    snprintf(e1,elen,"%s",subs);
+	    (*framechannels)->channel[count].energy[0] = atoi(e1);
+	    elen = strlen(c1);	
+	    e2 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
+	    snprintf(e2,elen,"%s",c1+1);	
+	    (*framechannels)->channel[count].energy[1] = atoi(e2);
+	    XLALFree(subs);
+	    XLALFree(e1);
+	    XLALFree(e2);
+	    
+	  } /* end of channel name info extraction */
 	  
-	  /* extract energy info */
-	  sublen = strlen(c5);
-	  subs = (CHAR *)XLALCalloc(sublen,sizeof(CHAR));
-	  snprintf(subs,sublen,"%s",c5+1);
-	  c1 = strstr(subs,"_");
-	  elen = strlen(subs) - strlen(c1) + 1;
-	  e1 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
-	  snprintf(e1,elen,"%s",subs);
-	  (*framechannels)->channel[count].energy[0] = atoi(e1);
-	  elen = strlen(c1);	
-	  e2 = (CHAR *)XLALCalloc(elen,sizeof(CHAR));
-	  snprintf(e2,elen,"%s",c1+1);	
-	  (*framechannels)->channel[count].energy[1] = atoi(e2);
-	  XLALFree(subs);
-	  XLALFree(e1);
-	  XLALFree(e2);
-	  
-	} /* end of channel name info extraction */
-	
 	  /* copy filename and history to output structure */
-	snprintf((*framechannels)->channel[count].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
-	
-	LogPrintf(LOG_DEBUG,"%s : channel number %d.\n",fn,count);
-	LogPrintf(LOG_DEBUG,"%s : frame filename = %s.\n",fn,(*framechannels)->channel[count].filename);
-	LogPrintf(LOG_DEBUG,"%s : frame channelname = %s.\n",fn,(*framechannels)->channel[count].channelname);
-	LogPrintf(LOG_DEBUG,"%s : frame start time = %d.\n",fn,(*framechannels)->channel[count].epoch.gpsSeconds);
-	LogPrintf(LOG_DEBUG,"%s : frame end time = %d.\n",fn,(*framechannels)->channel[count].end.gpsSeconds);
-	LogPrintf(LOG_DEBUG,"%s : frame duration = %f.\n",fn,(*framechannels)->channel[count].duration);
-	LogPrintf(LOG_DEBUG,"%s : frame lld flag = %d.\n",fn,(*framechannels)->channel[count].lld);
-	LogPrintf(LOG_DEBUG,"%s : frame data type = %d.\n",fn,(*framechannels)->channel[count].type);
-	LogPrintf(LOG_DEBUG,"%s : frame min energy = %d.\n",fn,(*framechannels)->channel[count].energy[0]);
-	LogPrintf(LOG_DEBUG,"%s : frame max energy = %d.\n",fn,(*framechannels)->channel[count].energy[1]);
-	LogPrintf(LOG_DEBUG,"%s : frame detconfig = %d %d %d %d %d.\n",fn,(*framechannels)->channel[count].detconfig[0],
-		  (*framechannels)->channel[count].detconfig[1],(*framechannels)->channel[count].detconfig[2],
-		  (*framechannels)->channel[count].detconfig[3],(*framechannels)->channel[count].detconfig[4]);
-	LogPrintf(LOG_DEBUG,"%s : frame dt = %6.12f.\n",fn,(*framechannels)->channel[count].dt);
-	count++;
+	  snprintf((*framechannels)->channel[count].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
+	  
+	  LogPrintf(LOG_DEBUG,"%s : channel number %d.\n",fn,count);
+	  LogPrintf(LOG_DEBUG,"%s : frame filename = %s.\n",fn,(*framechannels)->channel[count].filename);
+	  LogPrintf(LOG_DEBUG,"%s : frame channelname = %s.\n",fn,(*framechannels)->channel[count].channelname);
+	  LogPrintf(LOG_DEBUG,"%s : frame start time = %d.\n",fn,(*framechannels)->channel[count].epoch.gpsSeconds);
+	  LogPrintf(LOG_DEBUG,"%s : frame end time = %d.\n",fn,(*framechannels)->channel[count].end.gpsSeconds);
+	  LogPrintf(LOG_DEBUG,"%s : frame duration = %f.\n",fn,(*framechannels)->channel[count].duration);
+	  LogPrintf(LOG_DEBUG,"%s : frame lld flag = %d.\n",fn,(*framechannels)->channel[count].lld);
+	  LogPrintf(LOG_DEBUG,"%s : frame data type = %d.\n",fn,(*framechannels)->channel[count].type);
+	  LogPrintf(LOG_DEBUG,"%s : frame min energy = %d.\n",fn,(*framechannels)->channel[count].energy[0]);
+	  LogPrintf(LOG_DEBUG,"%s : frame max energy = %d.\n",fn,(*framechannels)->channel[count].energy[1]);
+	  LogPrintf(LOG_DEBUG,"%s : frame detconfig = %d %d %d %d %d.\n",fn,(*framechannels)->channel[count].detconfig[0],
+		    (*framechannels)->channel[count].detconfig[1],(*framechannels)->channel[count].detconfig[2],
+		    (*framechannels)->channel[count].detconfig[3],(*framechannels)->channel[count].detconfig[4]);
+	  LogPrintf(LOG_DEBUG,"%s : frame dt = %6.12f.\n",fn,(*framechannels)->channel[count].dt);
+	  count++;
+	  
+	  /* free mem */
+	  XLALFree(channelname);
+	  c = temp + 1;
+	  
+	}
 	
 	/* free mem */
-	XLALFree(channelname);
-	c = temp + 1;
-
+	free(channelinfo);
+	
       }
       
-      /* free mem */
-      free(channelinfo);
+      /* close the frame file and free history */
+      XLALFrClose(fs);
       
     }
-    
-    /* close the frame file and free history */
-    XLALFrClose(fs);
 
   }
  
@@ -856,8 +876,9 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,              /**< [out] the 
 int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a list of channel names containing data within the interval */
 			     FrameChannelList *framechannels,       /**< [in] the frame channel list */
 			     LIGOTimeGPS intstart,                  /**< [in] the interval start time */
-			     LIGOTimeGPS intend                     /**< [in] the interval end time */
-			    )
+			     LIGOTimeGPS intend,                    /**< [in] the interval end time */
+			     INT4 npcus                             /**< [in] the number of operational PCUs */ 
+			     )
 {
   
   const CHAR *fn = __func__;      /* store function name for log output */
@@ -930,8 +951,16 @@ int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a
 	  count++;
 	  
 	}
-
+	else {
+	  LogPrintf(LOG_DEBUG,"%s : channel %s failed timing consitency check (dt = %f).\n",fn,framechannels->channel[i].channelname,framechannels->channel[i].dt);
+	}
+	
       }
+      /* else { */
+/* 	LogPrintf(LOG_DEBUG,"%s : frame range %d -> %d doesn't overlap with interval %d -> %d.\n",fn, */
+/* 		  framechannels->channel[i].epoch.gpsSeconds,framechannels->channel[i].end.gpsSeconds, */
+/* 		  intstart.gpsSeconds,intend.gpsSeconds); */
+/*       } */
 
     }
   
@@ -939,6 +968,7 @@ int XLALFindFramesInInterval(FrameChannelList **subframechannels,   /**< [out] a
   
   /* fill in additional information */
   (*subframechannels)->length = count;
+  (*subframechannels)->npcus = npcus;
   strncpy((*subframechannels)->dir,framechannels->dir,STRINGLENGTH);
   LogPrintf(LOG_DEBUG,"%s : found %d overlapping channels.\n",fn,(*subframechannels)->length);
 
@@ -971,7 +1001,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
   const CHAR *fn = __func__;      /* store function name for log output */
   LIGOTimeGPS *earlieststart = &(framechannels->channel[0].epoch);
   LIGOTimeGPS *latestend = &(framechannels->channel[0].end);
-  INT4 i,j,k,s;                         /* counters */
+  INT4 i,j,k,s,r;                         /* counters */
   LIGOTimeGPSVector *epochlist;
   INT4 q = 0;
   REAL8 maxspan = 0.0;
@@ -1063,9 +1093,9 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
 
     LogPrintf(LOG_DEBUG,"%s : working on span #%d : %d -> %d (%d)\n",fn,i,epochlist->data[i].gpsSeconds,epochlist->data[i+1].gpsSeconds,epochlist->data[i+1].gpsSeconds-epochlist->data[i].gpsSeconds);
     
-    /* if there is any data spanned gretaer than the minimum frame length */
+    /* if there is any data spanned greater than the minimum frame length */
     span = XLALGPSDiff(&(epochlist->data[i+1]),&(epochlist->data[i]));
-    if (span > MINFRAMELENGTH) {
+    if (span >= MINFRAMELENGTH) {
     
       /* count number of coincident channels */
       for (k=0;k<(INT4)framechannels->length;k++) {
@@ -1078,6 +1108,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
       
       /* allocate memory for the temporary filelist */
       tempchannellist.length = nchannels;
+      tempchannellist.npcus = framechannels->npcus;
       snprintf(tempchannellist.dir,STRINGLENGTH,"%s",framechannels->dir);
       if ((tempchannellist.channel = (FrameChannel *)XLALCalloc(tempchannellist.length,sizeof(FrameChannel))) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temp FrameChannel structures.\n",fn);
@@ -1133,6 +1164,8 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
 	for (k=0;k<(INT4)tempchannellist.length;k++) {
 	  for (s=0;s<(INT4)k;s++) {
 	  
+	    INT4 pcusum = 0;
+	    
 	    /* check for energy overlap if not ldd */
 	    if ( ( tempchannellist.channel[k].lld == 0 ) && ( tempchannellist.channel[s].lld == 0 ) ) {
 	     
@@ -1143,28 +1176,36 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
 		if ( ! ( ( tempchannellist.channel[k].energy[0] > tempchannellist.channel[s].energy[1] ) || 
 			 ( tempchannellist.channel[k].energy[1] < tempchannellist.channel[s].energy[0] ) ) ) {
 		
-		  /* determine which file to keep based on largest energy range */
-		  INT4 range1 = tempchannellist.channel[k].energy[1] - tempchannellist.channel[k].energy[0];
-		  INT4 range2 = tempchannellist.channel[s].energy[1] - tempchannellist.channel[s].energy[0];
-		  INT4 highenergyidx = tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] ? k : s;
-		  
-		  if ( range1 > range2 ) {
-		    badidx->data[s] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,s,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
-		  }
-		  else if ( range2 > range1 ) {
-		    badidx->data[k] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,k,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
-		  }
-		  else {
-		    badidx->data[highenergyidx] = 1;
-		    LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
-			      fn,highenergyidx,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
-			      tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		  /* check for PCU overlap - we may have complimentary PCUs operational i.e 01010 & 10101 */
+		  for (r=0;r<NPCU;r++) pcusum += tempchannellist.channel[k].detconfig[r]*tempchannellist.channel[s].detconfig[r];
+		  LogPrintf(LOG_DEBUG,"%s : PCU overlap product = %d\n",fn,pcusum);
+
+		  /* if the PCUs overlap then we have to choose which channel to use based on the energy range */
+		  if (pcusum) {
+
+		    /* determine which file to keep based on largest energy range */
+		    INT4 range1 = tempchannellist.channel[k].energy[1] - tempchannellist.channel[k].energy[0];
+		    INT4 range2 = tempchannellist.channel[s].energy[1] - tempchannellist.channel[s].energy[0];
+		    INT4 highenergyidx = tempchannellist.channel[k].energy[1] > tempchannellist.channel[s].energy[1] ? k : s;
+		    
+		    if ( range1 > range2 ) {
+		      badidx->data[s] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,s,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
+		    else if ( range2 > range1 ) {
+		      badidx->data[k] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,k,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
+		    else {
+		      badidx->data[highenergyidx] = 1;
+		      LogPrintf(LOG_DEBUG,"%s : selected %d as badidx -> energy overlap [%d - %d],[%d - %d]\n",
+				fn,highenergyidx,tempchannellist.channel[k].energy[0],tempchannellist.channel[k].energy[1],
+				tempchannellist.channel[s].energy[0],tempchannellist.channel[s].energy[1]);
+		    }
 		  }
 		}
 	      }
@@ -1209,6 +1250,7 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
 	      plans->data[pcount].channellist.channel[newcount].energy[1] = tempchannellist.channel[k].energy[1];
 	      plans->data[pcount].channellist.channel[newcount].lld = tempchannellist.channel[k].lld;
 	      plans->data[pcount].channellist.channel[newcount].type = tempchannellist.channel[k].type;
+	      memcpy(&(plans->data[pcount].channellist.channel[newcount].detconfig),&(tempchannellist.channel[k].detconfig),NPCU*sizeof(INT4));
 	      
 	      LogPrintf(LOG_DEBUG,"%s : plan[%d] -> filename = %s\n",fn,pcount,plans->data[pcount].channellist.channel[newcount].filename);
 	      LogPrintf(LOG_DEBUG,"%s : plan[%d] -> channelname = %s\n",fn,pcount,plans->data[pcount].channellist.channel[newcount].channelname);
@@ -1231,11 +1273,13 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
 	  memcpy(&(plans->data[pcount].end),&(epochlist->data[i+1]),sizeof(LIGOTimeGPS));
 	  plans->data[pcount].duration = XLALGPSDiff(&(epochlist->data[i+1]),&(epochlist->data[i]));
 	  plans->data[pcount].channellist.length = newcount;
+	  plans->data[pcount].channellist.npcus = tempchannellist.npcus;
 	  snprintf(plans->data[pcount].channellist.dir,STRINGLENGTH,"%s",tempchannellist.dir);
 	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> common dt = %f.\n",fn,pcount,plans->data[pcount].dt);
 	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> common epoch = %d\n",fn,pcount,plans->data[pcount].epoch.gpsSeconds);
 	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> common end = %d\n",fn,pcount,plans->data[pcount].end.gpsSeconds);
 	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> common duration = %f\n",fn,pcount,plans->data[pcount].duration);
+	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> common npcus = %d\n",fn,pcount,plans->data[pcount].channellist.npcus);
 	  LogPrintf(LOG_DEBUG,"%s : plan[%d] -> number of channels = %d\n",fn,pcount,plans->data[pcount].channellist.length);
 	  pcount++;
 	}
@@ -1249,10 +1293,10 @@ int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,             /**
       
     }
     else if ( (span < MINFRAMELENGTH) && (span >= 0) ){
-      LogPrintf(LOG_DEBUG,"%s : epoch boundaries span no data > MINFRAMELENGTH (%d).\n",fn,MINFRAMELENGTH);
+      LogPrintf(LOG_DEBUG,"%s : epoch boundaries span (%f) no data > MINFRAMELENGTH (%d).\n",fn,span,MINFRAMELENGTH);
     }
     else {
-      LogPrintf(LOG_CRITICAL,"%s : epoch boundaries span negative duration (%d - %d).\n",fn,epochlist->data[i].gpsSeconds,epochlist->data[i+1].gpsSeconds);
+      LogPrintf(LOG_CRITICAL,"%s : epoch boundaries span negative duration (%d - %d) (%f).\n",fn,epochlist->data[i].gpsSeconds,epochlist->data[i+1].gpsSeconds,span);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
     
@@ -1442,7 +1486,7 @@ int XLALINT4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of o
 			      INT4TimeSeries *ts,            /**< [in] timeseries to output */
 			      FrameCombinationPlan *plan,    /**< [in] the plan used to generate the timeseries */
 			      CHAR *clargs,                  /**< [in] the command line args */
-			      HeaderVector *header                  /**< [in] the combined history information */
+			      HeaderVector *header           /**< [in] the combined history information */
 			      )
 {
   
@@ -1491,16 +1535,52 @@ int XLALINT4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of o
     /* Here's where we add extra information into the frame */
     /* we include the current command line args and the original FITS file headers from each contributing file */
     /* we also add the git version info */
+    /* we also add the keyord pairs for NPCUS, MINENERGY, MAXENERGY etc.. */
     {
       CHAR *versionstring = NULL;               /* pointer to a string containing the git version information */
+      CHAR npcus_string[STRINGLENGTH];
+      CHAR nchannels_string[STRINGLENGTH];
       versionstring = XLALGetVersionString(1); 
       FrHistoryAdd(outFrame,versionstring); 
       FrHistoryAdd(outFrame,clargs); 
       for (i=0;i<header->length;i++) FrHistoryAdd(outFrame,header->data[i].header_string);
       XLALFree(versionstring);
+      snprintf(npcus_string,STRINGLENGTH,"NPCUS = %d\n",plan->channellist.npcus);
+      snprintf(nchannels_string,STRINGLENGTH,"NCHANNELS = %d\n",plan->channellist.length);
+
+      /* loop over each channel and add some metadata to the history field */
+      for (i=(INT4)plan->channellist.length-1;i>=0;i--) {
+	CHAR minenergy_string[STRINGLENGTH];
+	CHAR maxenergy_string[STRINGLENGTH];
+	CHAR dt_string[STRINGLENGTH];
+	CHAR filename_string[STRINGLENGTH];
+	CHAR channelname_string[STRINGLENGTH];
+	CHAR lld_string[STRINGLENGTH];
+	CHAR type_string[STRINGLENGTH];
+	CHAR detconfig_string[STRINGLENGTH];
+	snprintf(detconfig_string,STRINGLENGTH,"DETCONFIG_%d = %d%d%d%d%d\n",i,plan->channellist.channel[i].detconfig[0],
+		 plan->channellist.channel[i].detconfig[1],plan->channellist.channel[i].detconfig[2],
+		 plan->channellist.channel[i].detconfig[3],plan->channellist.channel[i].detconfig[4]);
+	snprintf(type_string,STRINGLENGTH,"TYPE_%d = %d\n",i,plan->channellist.channel[i].type);
+	snprintf(lld_string,STRINGLENGTH,"LLD_%d = %d\n",i,plan->channellist.channel[i].lld);
+	snprintf(minenergy_string,STRINGLENGTH,"MAXENERGY_%d = %d\n",i,plan->channellist.channel[i].energy[1]);
+	snprintf(maxenergy_string,STRINGLENGTH,"MINENERGY_%d = %d\n",i,plan->channellist.channel[i].energy[0]);
+	snprintf(dt_string,STRINGLENGTH,"DT_%d = %6.12f\n",i,plan->channellist.channel[i].dt);
+	snprintf(channelname_string,STRINGLENGTH,"CHANNELNAME_%d = %s\n",i,plan->channellist.channel[i].channelname);
+	snprintf(filename_string,STRINGLENGTH,"FILENAME_%d = %s\n",i,plan->channellist.channel[i].filename);
+	FrHistoryAdd(outFrame,detconfig_string);
+	FrHistoryAdd(outFrame,type_string);
+	FrHistoryAdd(outFrame,lld_string);
+	FrHistoryAdd(outFrame,maxenergy_string);
+	FrHistoryAdd(outFrame,minenergy_string);
+	FrHistoryAdd(outFrame,dt_string);
+	FrHistoryAdd(outFrame,channelname_string);
+	FrHistoryAdd(outFrame,filename_string);
+      }
+      FrHistoryAdd(outFrame,nchannels_string); 
+      FrHistoryAdd(outFrame,npcus_string); 
     }
-    
-    
+      
     /* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
     /* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
     /* first we need to extract parts of the original filenames */
