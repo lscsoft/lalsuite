@@ -78,7 +78,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *snrComps[6],
+    REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -114,7 +114,7 @@ UINT8 cohPTFaddTriggers(
     UINT4                   singleDetector,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *snrComps[6],
+    REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -190,7 +190,7 @@ int main( int argc, char **argv )
   REAL8                   detLoc[3];
   REAL4TimeSeries         *cohSNR = NULL;
   REAL4TimeSeries         *pValues[10];
-  REAL4TimeSeries         *snrComps[6];
+  REAL4TimeSeries         *snrComps[LAL_NUM_IFO];
   REAL4TimeSeries         *gammaBeta[2];
   REAL4TimeSeries         *nullSNR = NULL;
   REAL4TimeSeries         *traceSNR = NULL;
@@ -243,7 +243,7 @@ int main( int argc, char **argv )
   {
     pValues[i] = NULL;
   }   
-  for ( i = 0 ; i < 6 ; i++ )
+  for ( i = 0 ; i < LAL_NUM_IFO ; i++ )
   {
     snrComps[i] = NULL;
   }
@@ -648,11 +648,14 @@ int main( int argc, char **argv )
           3*numPoints/4 - numPoints/4);
       if (params->doTraceSNR)
       {
-        for (ui = 0;ui < (numDetectors*(numDetectors+1))/2; ui++)
+        for (ifoNumber = 0;ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
-          snrComps[ui] = XLALCreateREAL4TimeSeries("snrComps",
+          if ( params->haveTrig[ifoNumber] )
+          {
+            snrComps[ifoNumber] = XLALCreateREAL4TimeSeries("snrComps",
                 &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
                 &lalDimensionlessUnit,cohSNR->data->length);
+          }
         }
       }
       if (params->doNullStream)
@@ -772,7 +775,7 @@ int main( int argc, char **argv )
             pValues[k] = NULL;
         }
       }
-      for ( k = 0; k < 6; k++ )
+      for ( k = 0; k < LAL_NUM_IFO; k++ )
       {
         if (snrComps[k])
         {
@@ -1284,7 +1287,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *snrComps[6],
+    REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -1354,7 +1357,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
   outfile = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
-  REAL4 u21[vecLengthTwo],u22[vecLengthTwo],v21[vecLengthTwo],v22[vecLengthTwo];
   REAL4 *v1p,*v2p;
   REAL4 u1N[vecLength],u2N[vecLength],v1N[vecLength],v2N[vecLength];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
@@ -1472,8 +1474,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   UINT4 check;
   UINT4 chisqCheck = 0;
-  UINT4 snrCompsIter = 0;
-  REAL4 bestNR;
+  REAL4 bestNR,snglSNRsq;
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
@@ -1502,6 +1503,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           break;
         }
       }
+      check = 1;
       if (check)
       {
         // The following block extracts the values of extrinsic parameters.
@@ -1646,14 +1648,9 @@ void cohPTFmodBasesUnconstrainedStatistic(
         {
           // traceSNR is calculated as normal SNR but cross terms are not added
           traceSNRsq = 0;
-          snrCompsIter = 0;
           for( k = 0; k < LAL_NUM_IFO; k++)
           {
-          if ( params->haveTrig[k] )
-          {
-          for( n = k; n < LAL_NUM_IFO; n++)
-          {
-            if ( params->haveTrig[n] )
+            if ( params->haveTrig[k] )
             {
               for ( j = 0; j < vecLengthTwo ; j++ )
               {
@@ -1661,42 +1658,32 @@ void cohPTFmodBasesUnconstrainedStatistic(
                 {
                   v1[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
                   v2[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
-                  v21[j] = a[n] * PTFqVec[n]->data[j*numPoints+i+timeOffsetPoints[n]].re;
-                  v22[j] = a[n] * PTFqVec[n]->data[j*numPoints+i+timeOffsetPoints[n]].im;
                 }
                 else
                 {
                   v1[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
                   v2[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
-                  v21[j] = b[n] * PTFqVec[n]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[n]].re;
-                  v22[j] = b[n] * PTFqVec[n]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[n]].im;
                 }
               }
               for ( j = 0 ; j < vecLengthTwo ; j++ )
               {
                 u1[j] = 0.;
                 u2[j] = 0.;
-                u21[j] = 0.;
-                u22[j] = 0.;
                 for ( m = 0 ; m < vecLengthTwo ; m++ )
                 {
                   u1[j] += gsl_matrix_get(eigenvecs,m,j)*v1[m];
                   u2[j] += gsl_matrix_get(eigenvecs,m,j)*v2[m];
-                  u21[j] += gsl_matrix_get(eigenvecs,m,j)*v21[m];
-                  u22[j] += gsl_matrix_get(eigenvecs,m,j)*v22[m];
                 }
                 u1[j] = u1[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
                 u2[j] = u2[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
-                u21[j] = u21[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
-                u22[j] = u22[j] / (pow(gsl_vector_get(eigenvals,j),0.5));
               }
               /* Compute the dot products */
               v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
               for (j = 0; j < vecLengthTwo; j++)
               {
-                v1_dot_u1 += u1[j] * u21[j];
-                v1_dot_u2 += u1[j] * u22[j];
-                v2_dot_u2 += u2[j] * u22[j];
+                v1_dot_u1 += u1[j] * u1[j];
+                v1_dot_u2 += u1[j] * u2[j];
+                v2_dot_u2 += u2[j] * u2[j];
               }
               if (spinTemplate == 0)
               {
@@ -1707,16 +1694,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
                 max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
               }
-              if (k == n)
-                traceSNRsq += max_eigen;
-              if (snrCompsIter < 6)
-              {
-                snrComps[snrCompsIter]->data->data[i-numPoints/4]=max_eigen;
-                snrCompsIter += 1;
-              }
+              // This needs to be converted for spinning case!
+              snglSNRsq = v1[0]*v1[0] + v1[1]*v1[1];
+              snglSNRsq = snglSNRsq/(a[k]*a[k]*PTFM[k]->data[0]);
+              traceSNRsq += max_eigen;
+              snrComps[k]->data->data[i-numPoints/4]=sqrt(snglSNRsq);
             }
-          }
-          }
           }
           traceSNR->data->data[i-numPoints/4] = sqrt(traceSNRsq);
         }
@@ -2011,12 +1994,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   }
 
-  /*outfile = fopen("cohSNR_timeseries.dat","w");
+  outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
-  fclose(outfile);*/
+  fclose(outfile);
+
 
 /*  outfile = fopen("bank_veto_timeseries.dat","w");
   for ( i = 0; i < bankVeto->data->length; ++i)
@@ -2039,23 +2023,45 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-  /*
+  
   outfile = fopen("nullSNR_timeseries.dat","w");
   for ( i = 0; i < nullSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,nullSNR->data->data[i]);
   }
   fclose(outfile);
-  */
+  
 
-  /*
+  
   outfile = fopen("traceSNR_timeseries.dat","w");
   for ( i = 0; i < traceSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,traceSNR->data->data[i]);
   }
   fclose(outfile);
-  */
+  
+  outfile = fopen("h1SNR_timeseries.dat","w");
+  for ( i = 0; i < snrComps[1]->data->length; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[1]->data->data[i]);
+  }
+  fclose(outfile);
+
+  outfile = fopen("l1SNR_timeseries.dat","w");
+  for ( i = 0; i < snrComps[3]->data->length; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[3]->data->data[i]);
+  }
+  fclose(outfile);
+
+  outfile = fopen("v1SNR_timeseries.dat","w");
+  for ( i = 0; i < snrComps[5]->data->length; ++i)
+  {
+    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[5]->data->data[i]);
+  }
+  fclose(outfile);
+
+
 
   /*
   outfile = fopen("rebased_timeseries.dat","w");
@@ -2100,7 +2106,7 @@ UINT8 cohPTFaddTriggers(
     UINT4                   singleDetector,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
-    REAL4TimeSeries         *snrComps[6],
+    REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
@@ -2205,18 +2211,18 @@ UINT8 cohPTFaddTriggers(
           currEvent->t1quad.im = pValues[9]->data->data[i];
         currEvent->g1quad.re = gammaBeta[0]->data->data[i];
         currEvent->g1quad.im = gammaBeta[1]->data->data[i];
-        if (snrComps[0])
-          currEvent->chisq_h1 = snrComps[0]->data->data[i];
-        if (snrComps[1])
-          currEvent->chisq_h2 = snrComps[1]->data->data[i];
-        if (snrComps[2])
-          currEvent->chisq_g = snrComps[2]->data->data[i];
-        if (snrComps[3])
-          currEvent->chisq_l = snrComps[3]->data->data[i];
-        if (snrComps[4])
-          currEvent->chisq_t = snrComps[4]->data->data[i];
-        if (snrComps[5])
-          currEvent->chisq_v = snrComps[5]->data->data[i];
+        if (snrComps[LAL_IFO_G1])
+          currEvent->chisq_g = snrComps[LAL_IFO_G1]->data->data[i];
+        if (snrComps[LAL_IFO_H1])
+          currEvent->chisq_h1 = snrComps[LAL_IFO_H1]->data->data[i];
+        if (snrComps[LAL_IFO_H2])
+          currEvent->chisq_h2 = snrComps[LAL_IFO_H2]->data->data[i];
+        if (snrComps[LAL_IFO_L1])
+          currEvent->chisq_l = snrComps[LAL_IFO_L1]->data->data[i];
+        if (snrComps[LAL_IFO_T1])
+          currEvent->chisq_t = snrComps[LAL_IFO_T1]->data->data[i];
+        if (snrComps[LAL_IFO_V1])
+          currEvent->chisq_v = snrComps[LAL_IFO_V1]->data->data[i];
 
         if (spinTrigger == 1)
         {
