@@ -72,6 +72,7 @@
  */
 typedef struct { 
   CHAR filename[1024];              /**< the frame filename */
+  INT4 npcus;                       /**< the number of operational PCUs */
   INT4 epoch;                       /**< the GPS start time */
   REAL8 duration;                   /**< the duration */
   REAL8 dt;                         /**< the sampling time */
@@ -105,6 +106,8 @@ typedef struct {
 extern int vrbflg;	 	/**< defined in lalapps.c */
 RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
 
+const char NPCUS_STRING[6] = "NPCUS";
+
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);
@@ -114,6 +117,8 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,CHAR *filename,CHAR *channel
 int XLALComputeINT4TimeSeriesStats(Stats *stats,INT4TimeSeries *ts,CHAR *filename);
 static int compareINT4(const void *p1, const void *p2);
 int XLALOutputStats(StatsVector *stats, CHAR *outputfile);
+int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
+int XLALReadXTEFrameINT4Keyword(INT4 *value, CHAR *filename, const CHAR *keyword);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -173,13 +178,19 @@ int main( int argc, char *argv[] )  {
   for (i=0;i<(INT4)filelist.gl_pathc;i++) {
 
     INT4TimeSeries *ts = NULL;              /* a timeseries */
-   
+
     /* read frame into a timeseries structure */
     if (XLALReadFrameINT4TimeSeries(&ts,filelist.gl_pathv[i],uvar.channel)) {
       LogPrintf(LOG_CRITICAL,"%s : XLALReadFrameINT4TimeSeries() failed with error = %d\n",fn,xlalErrno);
       return 1;
     }
     
+    /* read frame info from the history field */
+    if (XLALReadXTEFrameINT4Keyword(&(stats.data[i].npcus),filelist.gl_pathv[i],NPCUS_STRING)) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALReadXTEFrameKeyword() failed with error = %d\n",fn,xlalErrno);
+      return 1;
+    }
+
     /* compute timeseries statistics */   
     if (XLALComputeINT4TimeSeriesStats(&(stats.data[i]),ts,filelist.gl_pathv[i])) {
       LogPrintf(LOG_CRITICAL,"%s : XLALComputeINT4TimeSeriesStats() failed with error = %d\n",fn,xlalErrno);
@@ -365,6 +376,73 @@ int XLALReadFrameINT4TimeSeries(INT4TimeSeries **ts,           /**< [out] the ti
   
 }
 
+/** this function extracts a keyword value from the history field in a frame
+ */
+int XLALReadXTEFrameINT4Keyword(INT4 *value,          /**< [out] the keyword value */
+				CHAR *filename,       /**< [in] the input frame file name */
+				const CHAR *keyword         /**< [in] the keyword to be read */
+				)
+{
+
+  const CHAR *fn = __func__;      /* store function name for log output */
+  FrStream *fs = NULL;
+  CHAR *c = NULL;
+  CHAR *history_string = NULL;
+
+  /* check input arguments */
+  if (filename == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input filename string == NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EFAULT);
+  } 
+  if (keyword == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input keyword string == NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }  
+  LogPrintf(LOG_DEBUG,"%s : checked input\n",fn);
+  
+  /* open the frame file */
+  if ((fs = XLALFrOpen(NULL,filename)) == NULL) {
+    LogPrintf(LOG_DEBUG,"%s: unable to open frame file %s.\n",fn,filename);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }  
+  LogPrintf(LOG_DEBUG,"%s: opened frame file %s.\n",fn,filename);
+  
+  /* get history information fom this file */
+  if (XLALReadFrameHistory(&history_string,fs->file)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALReadFrameHistory() unable to read history from frame file %s.\n",fn,filename);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  LogPrintf(LOG_DEBUG,"%s : read history field from file %s.\n",fn,filename);
+  
+  /* find keyword in history string */
+  if ( (c = strstr(history_string,keyword)) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : unable to find keyword %s in frame file %s.\n",fn,keyword,filename);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  
+  /* find string after first instance of "=" and before newline after keyword */
+  {
+    CHAR *d = strstr(c,"=");                   /* the location of the = */
+    CHAR *e = strstr(d,"\n");                  /* the location of the end of line */
+    INT4 stringlen = strlen(d) - strlen(e) - 2;
+    CHAR *temp = (CHAR *)XLALCalloc(stringlen+1,sizeof(CHAR));
+    snprintf(temp,stringlen+1,"%s",d+2);
+    *value = atoi(temp);
+    XLALFree(temp);
+  }
+  LogPrintf(LOG_DEBUG,"%s : extracted keyword %s as %d.\n",fn,keyword,*value);
+
+  /* free history string */
+  XLALFree(history_string);
+  
+  /* close the frame file */
+  XLALFrClose(fs);
+  
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  return XLAL_SUCCESS;
+  
+}
+
 /** this function computes a series of statistics based on the input timeseries
  */
 int XLALComputeINT4TimeSeriesStats(Stats *stats,             /**< [out] the timeseries statistics */
@@ -478,8 +556,8 @@ int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results 
   fprintf(fp,"## filename start duration dt mean median min max var quantile1 quantile2 ... quantileN\n");
   for (i=0;i<stats->length;i++) {
 
-    fprintf(fp,"%s %d %f %f %f %f %f %f %f ",stats->data[i].filename,stats->data[i].epoch,stats->data[i].duration,stats->data[i].dt,
-	    stats->data[i].mean,stats->data[i].median,stats->data[i].min,stats->data[i].max,stats->data[i].var);
+    fprintf(fp,"%s %d %f %d %f %f %f %f %f %f ",stats->data[i].filename,stats->data[i].epoch,stats->data[i].duration,stats->data[i].npcus,
+	    stats->data[i].dt,stats->data[i].mean,stats->data[i].median,stats->data[i].min,stats->data[i].max,stats->data[i].var);
     for (j=0;j<NQUANTILE;j++) fprintf(fp,"%f ",stats->data[i].quant[j]);
     fprintf(fp,"\n");
 
@@ -491,4 +569,70 @@ int XLALOutputStats(StatsVector *stats,      /**< [in] the output stats results 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
   
+}
+
+/** this function reads in the frame history as a string
+ */
+int XLALReadFrameHistory(CHAR **history_string,     /**< [out] the history field read in as a string */ 
+			 FrFile *file               /**< [in] frame file pointer */
+			 )
+{
+
+  const CHAR *fn = __func__;      /* store function name for log output */ 
+  FrameH *frame = NULL;
+  INT4 stringlen = 1;
+  FrHistory *localhist;
+
+  /* check input */
+  if ((*history_string) != NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : input history string is not null.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  if (file == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : input frame file pointer is null.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+
+  /* read the frame */
+  frame = FrameRead(file);
+
+  /* initialise the string to start with */
+  (*history_string) = (CHAR *)XLALCalloc(stringlen,sizeof(CHAR));
+
+  localhist = frame->history;
+
+  while (localhist) {
+
+    /* get length of history string */
+    INT4 n = strlen(localhist->comment);
+    stringlen += n + 1;
+
+    /* extend the length of the output to include the current string */
+    if ( ( (*history_string) = (CHAR *)XLALRealloc((*history_string),stringlen*sizeof(CHAR))) == NULL ) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to re-allocate memory for history string.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+
+    /* append the current history string to the output */
+    strncat((*history_string),localhist->comment,n);
+
+    /* point to the next history record */
+    localhist = localhist->next;
+  }
+
+  /* extend the length of the output to include a new line character */
+  if ( ( (*history_string) = (CHAR *)XLALRealloc((*history_string),(stringlen+1)*sizeof(CHAR))) == NULL ) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to re-allocate memory for history string.\n",fn);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  strncat((*history_string),"\n",1);
+
+  LogPrintf(LOG_DEBUG,"%s : length of history string = %d characters .\n",fn,stringlen);
+
+  /* free the frame */
+  FrameFree(frame);
+
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  return XLAL_SUCCESS;
+
 }
