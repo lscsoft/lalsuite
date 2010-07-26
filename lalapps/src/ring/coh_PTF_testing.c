@@ -122,6 +122,12 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *chiSquare
 );
 
+void cohPTFclusterTriggers(
+  struct coh_PTF_params   *params,
+  MultiInspiralTable      **eventList,
+  MultiInspiralTable      **thisEvent
+);
+
 static void coh_PTF_cleanup(
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
@@ -754,6 +760,9 @@ int main( int argc, char **argv )
       eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
+//      cohPTFclusterTriggers(params,&eventList,&thisEvent);
+//      verbose("Clustered triggers for segment %d, template %d at %ld \n",
+ //         j,i,time(NULL)-startTime);
       // Then we get a bunch of memory freeing statements
       for ( k = 0 ; k < 10 ; k++ )
       {
@@ -778,8 +787,6 @@ int main( int argc, char **argv )
       if (bankVeto) XLALDestroyREAL4TimeSeries(bankVeto);
       if (autoVeto) XLALDestroyREAL4TimeSeries(autoVeto);
       if (chiSquare) XLALDestroyREAL4TimeSeries(chiSquare);
-      verbose("Generated triggers for segment %d, template %d at %ld \n",
-          j,i,time(NULL)-startTime);
       XLALDestroyREAL4TimeSeries(cohSNR);
     }
     if ( params->doBankVeto )
@@ -1867,30 +1874,43 @@ void cohPTFmodBasesUnconstrainedStatistic(
         /* Test whether to do chi^2 */
         if ( params->chiSquareCalcThreshold )
         {
+          chisqCheck = 1;
+          
           bestNR = cohSNR->data->data[i-numPoints/4];
 
           if (params->doNullStream)
           {
-            if (nullSNR->data->data[i-numPoints/4] > 5.5 && bestNR < 30)
-              bestNR = bestNR * 1./(nullSNR->data->data[i-numPoints/4] - 4.5);
+            if (nullSNR->data->data[i-numPoints/4] > params->nullStatThreshold \
+                && bestNR < params->nullStatGradOn)
+            {
+              chisqCheck = 0;
+            }
+            else if (bestNR > params->nullStatGradOn)
+            {
+              if (nullSNR->data->data[i-numPoints/4] > (params->nullStatThreshold + (bestNR - params->nullStatGradOn)*params->nullStatGradient))
+              {
+                chisqCheck = 0;
+              }
+            }
           }
   
           if (params->doBankVeto)
           {
             if (bankVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),6./5.))/2.,1./6.);
+              bestNR = bestNR/pow(( 1 + pow(bankVeto->data->data[i-numPoints/4]/((REAL4)subBankSize*4.),params->bankVetoq/params->bankVeton))/2.,1./params->bankVetoq);
+            if (bestNR < params->chiSquareCalcThreshold)
+              chisqCheck = 0;
           }
+
+          bestNR = cohSNR->data->data[i-numPoints/4];
 
           if (params->doAutoVeto)
           {
             if (autoVeto->data->data[i-numPoints/4] > 40)
-              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),1.5))/2.,1./6.);
+              bestNR = bestNR/pow(( 1 + pow(autoVeto->data->data[i-numPoints/4]/((REAL4)params->numAutoPoints*4.),params->autoVetoq/params->autoVeton))/2.,1./params->autoVetoq);
+            if (bestNR < params->chiSquareCalcThreshold)
+              chisqCheck = 0;
           } 
-
-          if (bestNR > params->chiSquareCalcThreshold)
-            chisqCheck = 1;
-          else
-            chisqCheck = 0;
         }
         else
           chisqCheck = 1;
@@ -2218,6 +2238,103 @@ UINT8 cohPTFaddTriggers(
   *thisEvent = currEvent;
   return eventId;
 }
+
+void cohPTFclusterTriggers(
+  struct coh_PTF_params   *params,
+  MultiInspiralTable      **eventList,
+  MultiInspiralTable      **thisEvent
+)
+{
+  MultiInspiralTable *currEvent = *eventList;
+  MultiInspiralTable *currEvent2 = NULL;
+  MultiInspiralTable *newEvent = NULL;
+  MultiInspiralTable *newEventHead = NULL;
+  LIGOTimeGPS time1,time2;
+  UINT4 rejectTrigger;
+  UINT4 triggerNum = 0;
+  UINT4 lenTriggers = 0;
+  UINT4 numRemovedTriggers = 0;
+
+  while (currEvent)
+  {
+    lenTriggers+=1;
+    currEvent = currEvent->next;
+  }
+
+  currEvent = *eventList;
+  UINT4 rejectTriggers[lenTriggers];
+
+  while (currEvent)
+  {
+    rejectTrigger = 0;
+    time1.gpsSeconds=currEvent->end_time.gpsSeconds;
+    time1.gpsNanoSeconds = currEvent->end_time.gpsNanoSeconds;
+    currEvent2 = *eventList;
+    while (currEvent2)
+    {
+      time2.gpsSeconds=currEvent2->end_time.gpsSeconds;
+      time2.gpsNanoSeconds=currEvent2->end_time.gpsNanoSeconds;
+      if (fabs(XLALGPSDiff(&time1,&time2)) < 0.1)
+      {
+        if (currEvent->snr < currEvent2->snr && (currEvent->event_id->id != currEvent2->event_id->id))
+        {
+          rejectTrigger = 1;
+          numRemovedTriggers +=1;
+          break;
+        }
+        else
+        {
+          currEvent2 = currEvent2->next;
+        }
+      }
+      else
+      {
+        currEvent2 = currEvent2->next;
+      }
+    }
+    rejectTriggers[triggerNum] = rejectTrigger;
+    triggerNum += 1;
+    currEvent = currEvent->next;
+  }
+
+  currEvent = *eventList;
+  triggerNum = 0;
+
+  while (currEvent)
+  {
+    if (! rejectTriggers[triggerNum])
+    {
+      if (! newEventHead)
+      {
+        newEventHead = currEvent;
+        newEvent = currEvent;
+      }
+      else
+      {
+        newEvent->next = currEvent;
+        newEvent = currEvent;
+      }
+      currEvent = currEvent->next;
+    }
+    else
+    {
+      if ( currEvent->event_id )
+      {
+        LALFree( currEvent->event_id );
+      }
+      currEvent2 = currEvent->next;
+      LALFree( currEvent );  
+      currEvent = currEvent2;
+    }
+    triggerNum+=1;
+  }
+  if (newEvent)
+  {
+    newEvent->next = NULL;
+    *eventList = newEventHead;
+    *thisEvent = newEvent;
+  }
+} 
         
 static void coh_PTF_cleanup(
     ProcessParamsTable      *procpar,
