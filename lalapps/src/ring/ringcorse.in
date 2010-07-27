@@ -192,7 +192,7 @@ def extrapolate_reputation(rank_by, coeffs, reputation, t):
 class Summaries(object):
 	def __init__(self, category_algorithm, rank_by, frequency_bins = None):
 		if category_algorithm == "frequency-ifos-oninstruments":
-                        self.category_func = lambda self, on_instruments, participating_instruments, frequency: (on_instruments, participating_instruments, self.frequency_bins[frequency])
+			self.category_func = lambda self, on_instruments, participating_instruments, frequency: (on_instruments, participating_instruments, self.frequency_bins[frequency])
 		elif category_algorithm == "oninstruments":
 			self.category_func = lambda self, on_instruments, participating_instruments, frequency: on_instruments
 		else:
@@ -224,7 +224,7 @@ class Summaries(object):
 		veto_segments = farutils.get_veto_segments(connection, live_time_program, veto_segments_name=veto_segments_name)
 		if verbose:
 			print >>sys.stderr, "\tcomputing livetimes:",
-		
+
 		xmldoc = dbtables.get_xml(connection)
 		segs = farutils.get_segments(connection, xmldoc, "lalapps_ring")
 		bglivetime=farutils.add_background_livetime(connection, live_time_program, segs, veto_segments, verbose=verbose)
@@ -235,7 +235,7 @@ class Summaries(object):
 				self.cached_livetime[key] += bglivetime[key]
 			except KeyError:
 				self.cached_livetime[key] = bglivetime[key]
-			
+
 	def add_coinc(self, on_instruments, participating_instruments, frequency, snr, uncombined_ifar, likelihood):
 		self.reputations.setdefault(self.category_func(on_instruments, participating_instruments, frequency), []).append(self.reputation_func(snr, uncombined_ifar, likelihood))
 		if self.category_func(on_instruments, participating_instruments, frequency) not in self.categories:
@@ -287,7 +287,7 @@ class Summaries(object):
 		#
 		try:
 			return n / t
-			
+
 		except ZeroDivisionError, e:
 			print >>sys.stderr, "found an event in category %s that has a livetime of 0 s" % repr(self.category_func(on_instruments, participating_instruments, frequency))
 			raise e
