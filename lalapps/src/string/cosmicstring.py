@@ -48,6 +48,8 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "lalapps_string_meas_likelihood")
 
+		self.cache_dir = power.get_cache_dir(config_parser)
+
 
 class MeasLikelihoodNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
@@ -315,7 +317,6 @@ def init_job_types(config_parser, job_types = ("string","meas_likelihoodjob")):
   # lalapps_string_meas_likelihood
   if "meas_likelihood" in job_types:
     meas_likelihoodjob = MeasLikelihoodJob(config_parser)
-    meas_likelihoodjob.cache_dir = power.get_cache_dir(config_parser)
 
 #
 # =============================================================================
