@@ -88,6 +88,10 @@ def get_cache_dir(config_parser):
 	return config_parser.get("pipeline", "cache_dir")
 
 
+def get_triggers_dir(config_parser):
+	return config_parser.get("pipeline", "triggers_dir")
+
+
 def make_dag_directories(config_parser):
 	try:
 		os.mkdir(get_cache_dir(config_parser))
