@@ -129,6 +129,8 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file("lalapps_StringSearch.sub")
     self.add_condor_cmd("Requirements", "Memory > 1100")
 
+    self.triggers_dir = power.get_triggers_dir(config_parser)
+
 
 class StringNode(pipeline.AnalysisNode):
   """
@@ -185,7 +187,7 @@ class StringNode(pipeline.AnalysisNode):
       if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
         raise ValueError, "start time, end time, ifo, or user tag has not been set"
       seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-      self.set_output("triggers/%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+      self.set_output("%s/%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.job().triggers_dir, self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
 
     return self._AnalysisNode__output
 
