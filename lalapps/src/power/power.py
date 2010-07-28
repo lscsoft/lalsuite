@@ -485,6 +485,10 @@ class BucutJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_bucut")
 
+		self.files_per_bucut = get_files_per_bucut(config_parser)
+		if self.files_per_bucut < 1:
+			raise ValueError, "files_per_bucut < 1"
+
 
 class BucutNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
@@ -524,6 +528,11 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
+
+		self.cache_dir = get_cache_dir(config_parser)
+		self.files_per_bucluster = get_files_per_bucluster(config_parser)
+		if self.files_per_bucluster < 1:
+			raise ValueError, "files_per_bucluster < 1"
 
 
 class BuclusterNode(pipeline.CondorDAGNode):
@@ -571,6 +580,10 @@ class BinjfindJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_binjfind")
 
+		self.files_per_binjfind = get_files_per_binjfind(config_parser)
+		if self.files_per_binjfind < 1:
+			raise ValueError, "files_per_binjfind < 1"
+
 
 class BinjfindNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
@@ -611,6 +624,10 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("Requirements", "Memory >= $(macrominram)")
 		self.add_ini_opts(config_parser, "ligolw_burca")
 
+		self.files_per_burca = get_files_per_burca(config_parser)
+		if self.files_per_burca < 1:
+			raise ValueError, "files_per_burca < 1"
+
 
 class Burca2Job(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
@@ -620,6 +637,8 @@ class Burca2Job(pipeline.CondorDAGJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_burca2")
+
+		self.cache_dir = get_cache_dir(config_parser)
 
 
 class BurcaNode(pipeline.CondorDAGNode):
@@ -717,6 +736,8 @@ class BurcaTailorJob(pipeline.CondorDAGJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca_tailor-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_burca_tailor")
+
+		self.cache_dir = get_cache_dir(config_parser)
 
 
 class BurcaTailorNode(pipeline.CondorDAGNode):
@@ -834,36 +855,22 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	# ligolw_binjfind
 	if "binjfind" in job_types:
 		binjfindjob = BinjfindJob(config_parser)
-		binjfindjob.files_per_binjfind = get_files_per_binjfind(config_parser)
-		if binjfindjob.files_per_binjfind < 1:
-			raise ValueError, "files_per_binjfind < 1"
 
 	# ligolw_bucut
 	if "bucut" in job_types:
 		bucutjob = BucutJob(config_parser)
-		bucutjob.files_per_bucut = get_files_per_bucut(config_parser)
-		if bucutjob.files_per_bucut < 1:
-			raise ValueError, "files_per_bucut < 1"
 
 	# ligolw_bucluster
 	if "bucluster" in job_types:
 		buclusterjob = BuclusterJob(config_parser)
-		buclusterjob.files_per_bucluster = get_files_per_bucluster(config_parser)
-		if buclusterjob.files_per_bucluster < 1:
-			raise ValueError, "files_per_bucluster < 1"
-		buclusterjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_burca
 	if "burca" in job_types:
 		burcajob = BurcaJob(config_parser)
-		burcajob.files_per_burca = get_files_per_burca(config_parser)
-		if burcajob.files_per_burca < 1:
-			raise ValueError, "files_per_burca < 1"
 
 	# ligolw_burca
 	if "burca2" in job_types:
 		burca2job = Burca2Job(config_parser)
-		burca2job.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_sqlite
 	if "sqlite" in job_types:
@@ -872,7 +879,6 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	# ligolw_burca_tailor
 	if "burcatailor" in job_types:
 		burcatailorjob = BurcaTailorJob(config_parser)
-		burcatailorjob.cache_dir = get_cache_dir(config_parser)
 
 
 #
