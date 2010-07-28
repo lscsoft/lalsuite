@@ -92,19 +92,18 @@ def get_triggers_dir(config_parser):
 	return config_parser.get("pipeline", "triggers_dir")
 
 
+def make_dir_if_not_exists(dir):
+	try:
+		os.mkdir(dir)
+	except OSError, e:
+		if e.errno != errno.EEXIST:
+			# OK if directory exists, otherwise report error
+			raise e
+
+
 def make_dag_directories(config_parser):
-	try:
-		os.mkdir(get_cache_dir(config_parser))
-	except OSError, e:
-		if e.errno != errno.EEXIST:
-			# OK if directory exists, otherwise report error
-			raise e
-	try:
-		os.mkdir(get_out_dir(config_parser))
-	except OSError, e:
-		if e.errno != errno.EEXIST:
-			# OK if directory exists, otherwise report error
-			raise e
+	make_dir_if_not_exists(get_cache_dir(config_parser))
+	make_dir_if_not_exists(get_out_dir(config_parser))
 
 
 def get_files_per_bucluster(config_parser):
@@ -433,7 +432,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		pipeline.LigolwAddNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
-		self.cache_dir = self.job().cache_dir
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def __update_output_cache(self, observatory = None, segment = None):
 		del self.output_cache[:]
@@ -545,7 +544,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
-		self.cache_dir = self.job().cache_dir
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -751,7 +750,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
-		self.cache_dir = self.job().cache_dir
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -840,7 +839,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 
 	# ligo_data_find
 	if "datafind" in job_types:
-		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
+		datafindjob = pipeline.LSCDataFindJob(os.path.join(os.getcwd(), get_cache_dir(config_parser)), os.path.join(os.getcwd(), get_out_dir(config_parser)), config_parser)
 
 	# rm
 	if "rm" in job_types:
