@@ -424,14 +424,14 @@ void readMCMCinputfile(struct runPar *run)
     fprintf(stderr, "   No MCMC input file: %s, using default values.\n",run->mcmcFilename);
     
 	  if(run->commandSettingsFlag[0] == 0) {
-		  run->nIter = 10;
+		  run->nIter = 2000000;
 	  }
 
 	  if(run->commandSettingsFlag[1] == 0) {        
-		  run->thinOutput = 1;
+		  run->thinOutput = 100;
 	  }
 	  
-	  run->thinScreenOutput = 1;
+	  run->thinScreenOutput = 10000;
 	  run->MCMCseed = 0;
 	  run->adaptiveMCMC = 1;
 	  run->acceptRateTarget = 0.25;
