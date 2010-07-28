@@ -1061,9 +1061,9 @@ def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
 	node.set_start(start)
 	node.set_end(seg[1])
 	if flow is not None:
-		node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+		node.set_name("lalapps_binj_%s_%d_%d" % (tag, int(start), int(flow)))
 	else:
-		node.set_name("lalapps_binj_%d" % int(start))
+		node.set_name("lalapps_binj_%s_%d" % (tag, int(start)))
 	node.set_user_tag(tag)
 	if flow is not None:
 		node.add_macro("macroflow", flow)
