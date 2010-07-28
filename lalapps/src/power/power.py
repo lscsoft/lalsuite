@@ -433,6 +433,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		pipeline.LigolwAddNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self.cache_dir = self.job().cache_dir
 
 	def __update_output_cache(self, observatory = None, segment = None):
 		del self.output_cache[:]
@@ -445,7 +446,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
-		self.cache_name = os.path.join(self.job().cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
@@ -544,10 +545,11 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self.cache_dir = self.job().cache_dir
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
-		self.cache_name = os.path.join(self.job().cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
@@ -749,10 +751,11 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self.cache_dir = self.job().cache_dir
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
-		self.cache_name = os.path.join(self.job().cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
