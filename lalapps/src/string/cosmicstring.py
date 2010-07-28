@@ -144,6 +144,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
+    self.triggers_dir = self.job().triggers_dir
 
   def set_ifo(self, instrument):
     """
@@ -187,7 +188,7 @@ class StringNode(pipeline.AnalysisNode):
       if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
         raise ValueError, "start time, end time, ifo, or user tag has not been set"
       seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-      self.set_output("%s/%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.job().triggers_dir, self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+      self.set_output(os.path.join(self.triggers_dir, "%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 
     return self._AnalysisNode__output
 
