@@ -730,7 +730,7 @@ int main(int argc,char *argv[])
     fprintf(fpFstatHist, "%s", GV.logstring);
 
     for (i = 0; i < Fstat_histogram->size; ++i)
-      fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+      fprintf(fpFstatHist, "%0.3f %0.3f %i\n",
 	      uvar.FstatHistBin * i,
 	      uvar.FstatHistBin * (i + 1),
 	      gsl_vector_int_get(Fstat_histogram, i));
