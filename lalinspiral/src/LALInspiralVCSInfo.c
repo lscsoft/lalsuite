@@ -45,6 +45,7 @@ const char *lalInspiralVCSIdentStatus = LALINSPIRAL_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalInspiralVCSInfo = { \
+  LALINSPIRAL_VCS_NAME, \
   LALINSPIRAL_VERSION, \
   LALINSPIRAL_VCS_ID, \
   LALINSPIRAL_VCS_DATE, \

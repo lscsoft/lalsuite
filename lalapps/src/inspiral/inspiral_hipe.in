@@ -1785,23 +1785,26 @@ for ifos in ifo_coincs:
 
 # coherent bank:
 cb_job = inspiral.CohBankJob(cp)
-cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
+if not opts.ringdown:
+  cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
 
 # trigbank coherent:
 trig_coh_jobs = {}
 
-for ifo in ifo_list:
-  trig_coh_jobs[ifo] = inspiral.TrigbankJob(cp)
-  trig_coh_jobs[ifo].set_sub_file( basename + '.trigbank_coherent_' + ifo + 
-      subsuffix )
+if not opts.ringdown:
+  for ifo in ifo_list:
+    trig_coh_jobs[ifo] = inspiral.TrigbankJob(cp)
+    trig_coh_jobs[ifo].set_sub_file( basename + '.trigbank_coherent_' + ifo + 
+        subsuffix )
 
 # inspiral (coherent):
 insp_coh_jobs = {}
 
-for ifo in ifo_list:
-  insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
-  insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
-    subsuffix )
+if not opts.ringdown:
+  for ifo in ifo_list:
+    insp_coh_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
+    insp_coh_jobs[ifo].set_sub_file( basename + '.insp_coh_' + ifo +
+      subsuffix )
 
 # fr join:
 frjoin_job = inspiral.FrJoinJob(cp)
@@ -1809,14 +1812,17 @@ frjoin_job.set_sub_file( basename + '.frjoin' + subsuffix )
 
 # network trigger bank:
 cohinspbank_job = inspiral.CohInspBankJob(cp)
-cohinspbank_job.set_sub_file( basename + '.cohinspbank' + subsuffix )
+if not opts.ringdown:
+  cohinspbank_job.set_sub_file( basename + '.cohinspbank' + subsuffix )
 
 # coherent_inspiral:
 cohinsp_jobs = {}
-for ifos in ifo_coincs:
-  cohinsp_jobs[ifos] = inspiral.ChiaJob(cp)
-  cohinsp_jobs[ifos].set_sub_file(basename + '.chia_' + ifos +
-      subsuffix )
+
+if not opts.ringdown:
+  for ifos in ifo_coincs:
+    cohinsp_jobs[ifos] = inspiral.ChiaJob(cp)
+    cohinsp_jobs[ifos].set_sub_file(basename + '.chia_' + ifos +
+        subsuffix )
 
 # sire:
 sire_job = inspiral.SireJob(cp)
@@ -1825,15 +1831,30 @@ sire_summary_job = inspiral.SireJob(cp)
 sire_summary_job.set_sub_file( basename + '.sire_summary' + subsuffix )
 
 # coire:
-coire_job = inspiral.CoireJob(cp)
-coire_job.set_sub_file( basename + '.coire' + subsuffix )
-coire_slide_job = inspiral.CoireJob(cp)
-coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
-coire_summary_job = inspiral.CoireJob(cp)
-coire_summary_job.set_sub_file( basename + '.coire_summary' + subsuffix )
-coire_slide_summary_job = inspiral.CoireJob(cp)
-coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
+if opts.ringdown:
+  coire_job = inspiral.CoireJob(cp)
+  coire_job.set_exec_name('coincringread')
+  coire_job.set_sub_file( basename + '.coincringread' + subsuffix )
+  coire_slide_job = inspiral.CoireJob(cp)
+  coire_slide_job.set_exec_name('coincringread')
+  coire_slide_job.set_sub_file( basename + '.coincringread_slide' + subsuffix )
+  coire_summary_job = inspiral.CoireJob(cp)
+  coire_summary_job.set_exec_name('coincringread')
+  coire_summary_job.set_sub_file( basename + '.coincringread_summary' + subsuffix )
+  coire_slide_summary_job = inspiral.CoireJob(cp)
+  coire_slide_summary_job.set_exec_name('coincringread')
+  coire_slide_summary_job.set_sub_file( basename + '.coincringread_slide_summary' + \
     subsuffix )
+else:
+  coire_job = inspiral.CoireJob(cp)
+  coire_job.set_sub_file( basename + '.coire' + subsuffix )
+  coire_slide_job = inspiral.CoireJob(cp)
+  coire_slide_job.set_sub_file( basename + '.coire_slide' + subsuffix )
+  coire_summary_job = inspiral.CoireJob(cp)
+  coire_summary_job.set_sub_file( basename + '.coire_summary' + subsuffix )
+  coire_slide_summary_job = inspiral.CoireJob(cp)
+  coire_slide_summary_job.set_sub_file( basename + '.coire_slide_summary' + \
+      subsuffix )
 
 # coire2:
 coire2_job = inspiral.CoireJob(cp)
@@ -2491,139 +2512,143 @@ for ifos in ifo_coincs:
 ##############################################################################
 # Step 9: Create coherent (template) banks:
 
-cohbank_nodes = {}
+if not opts.ringdown:
+  cohbank_nodes = {}
 
-for ifos in ifo_coincs:
-  print "setting up coherent-bank jobs on " + ifos + " data...",
-  sys.stdout.flush()
+  for ifos in ifo_coincs:
+    print "setting up coherent-bank jobs on " + ifos + " data...",
+    sys.stdout.flush()
 
-  if num_slides:
-    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
-        exttrigInjections,coinc2_slide_nodes[ifos],usertag=usertag)
-  else:
-    cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
-        exttrigInjections,0,usertag=usertag)
+    if num_slides:
+      cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
+          exttrigInjections,coinc2_slide_nodes[ifos],usertag=usertag)
+    else:
+      cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
+          exttrigInjections,0,usertag=usertag)
 
-  print "done"
+    print "done"
 
 ##############################################################################
 # Step 10: Construct single-ifo CData frame files for the coherent analyses:
 
-analyzed_trig_coh_data = {}
-data_opts = {}
+if not opts.ringdown:
+  analyzed_trig_coh_data = {}
+  data_opts = {}
 
-for ifos in ifo_coincs:
-  analyzed_trig_coh_data[ifos] = {}
+  for ifos in ifo_coincs:
+    analyzed_trig_coh_data[ifos] = {}
 
-  for ifo in ifo_list:
-    if ifo in ifos:
-      data_opts[ifo] = {}
+    for ifo in ifo_list:
+      if ifo in ifos:
+        data_opts[ifo] = {}
 
-      print "setting up jobs to filter " + ifo + \
-        " data with cohbank templates from " + ifos + " times ...",
-      sys.stdout.flush()
+        print "setting up jobs to filter " + ifo + \
+          " data with cohbank templates from " + ifos + " times ...",
+        sys.stdout.flush()
 
-      # add ifo specific options
-      if ifo == 'G1':
-        data_opts[ifo] = 'geo-data'
-        channel = cp.get('input','geo-channel')
-      elif ifo == 'V1':
-        data_opts[ifo] = 'virgo-data'
-        channel = cp.get('input','virgo-channel')
-      else:
-        data_opts[ifo] = 'ligo-data'
-        channel = cp.get('input','ligo-channel')
+        # add ifo specific options
+        if ifo == 'G1':
+          data_opts[ifo] = 'geo-data'
+          channel = cp.get('input','geo-channel')
+        elif ifo == 'V1':
+          data_opts[ifo] = 'virgo-data'
+          channel = cp.get('input','virgo-channel')
+        else:
+          data_opts[ifo] = 'ligo-data'
+          channel = cp.get('input','ligo-channel')
 
-      # set up the trigbanks
-      if cp.has_section('trigbank-coherent'):
-        trig_coh_jobs[ifo].add_ini_opts(cp,'trigbank-coherent')
-      # set up inspirals:
-      if cp.has_option("input","output-path"):
-        insp_coh_jobs[ifo].add_opt('output-path',cp.get("input","output-path"))
-      if cp.has_option("input","username"):
-        insp_coh_jobs[ifo].add_opt('username',cp.get("input","username"))
-      if cp.has_section('inspiral-coherent'):
-        insp_coh_jobs[ifo].add_ini_opts(cp,'inspiral-coherent')
-      if cp.has_section('veto-inspiral'):
-        insp_coh_jobs[ifo].add_opt('chisq-bins', \
-                             cp.get('veto-inspiral', 'chisq-bins'))
-      if cp.has_section(ifo.lower() + '-inspiral'):
-        insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
-      if cp.has_section(data_opts[ifo]):
-        insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
-      insp_coh_jobs[ifo].set_channel(channel)
-      # see if we are using calibrated data
-      if cp.has_section(data_opts[ifo]) and \
-          cp.has_option(data_opts[ifo],'calibrated-data'):
-        calibrated = True
-      else: calibrated = False
+        # set up the trigbanks
+        if cp.has_section('trigbank-coherent'):
+          trig_coh_jobs[ifo].add_ini_opts(cp,'trigbank-coherent')
+        # set up inspirals:
+        if cp.has_option("input","output-path"):
+          insp_coh_jobs[ifo].add_opt('output-path',cp.get("input","output-path"))
+        if cp.has_option("input","username"):
+          insp_coh_jobs[ifo].add_opt('username',cp.get("input","username"))
+        if cp.has_section('inspiral-coherent'):
+          insp_coh_jobs[ifo].add_ini_opts(cp,'inspiral-coherent')
+        if cp.has_section('veto-inspiral'):
+          insp_coh_jobs[ifo].add_opt('chisq-bins', \
+                               cp.get('veto-inspiral', 'chisq-bins'))
+        if cp.has_section(ifo.lower() + '-inspiral'):
+          insp_coh_jobs[ifo].add_ini_opts(cp,ifo.lower() + '-inspiral')
+        if cp.has_section(data_opts[ifo]):
+          insp_coh_jobs[ifo].add_ini_opts(cp,data_opts[ifo])
+        insp_coh_jobs[ifo].set_channel(channel)
+        # see if we are using calibrated data
+        if cp.has_section(data_opts[ifo]) and \
+            cp.has_option(data_opts[ifo],'calibrated-data'):
+          calibrated = True
+        else: calibrated = False
 
-      analyzed_trig_coh_data[ifos][ifo] = coherent_trig_inspiral(data[ifo],
-          ifo,cohbank_nodes[ifos],ifos,trig_coh_jobs[ifo],insp_coh_jobs[ifo],
-          dag,calibrated,exttrigInjections,usertag,inspinj)
+        analyzed_trig_coh_data[ifos][ifo] = coherent_trig_inspiral(data[ifo],
+            ifo,cohbank_nodes[ifos],ifos,trig_coh_jobs[ifo],insp_coh_jobs[ifo],
+            dag,calibrated,exttrigInjections,usertag,inspinj)
 
-      print "done"
+        print "done"
 
 ##############################################################################
 # Step 11: Create network trigger banks with inspiral-coherent triggers:
 
-cohinspbank_nodes = {}
+if not opts.ringdown:
+  cohinspbank_nodes = {}
 
-if cp.has_section('cohinspbank'):
-  cohinspbank_job.add_ini_opts(cp, 'cohinspbank')
+  if cp.has_section('cohinspbank'):
+    cohinspbank_job.add_ini_opts(cp, 'cohinspbank')
 
-for ifos in ifo_coincs:
-  print "setting up network-trigger-bank jobs on " + ifos + " data...",
-  sys.stdout.flush()
+  for ifos in ifo_coincs:
+    print "setting up network-trigger-bank jobs on " + ifos + " data...",
+    sys.stdout.flush()
 
-  cohinspbank_nodes[ifos] = coherent_inspiral_bank(ifos,cohinspbank_job,dag,
-      analyzed_data[ifos],analyzed_trig_coh_data[ifos],exttrigInjections,
-      usertag=usertag)
+    cohinspbank_nodes[ifos] = coherent_inspiral_bank(ifos,cohinspbank_job,dag,
+        analyzed_data[ifos],analyzed_trig_coh_data[ifos],exttrigInjections,
+        usertag=usertag)
 
-  print "done"
+    print "done"
 
 ##############################################################################
 # Step 12: Do the coherent analyses:
 
-cohinsp_nodes = {}
-cohire_nodes = {}
-#CHECK: cohire_slide_nodes = {}
+if not opts.ringdown:
+  cohinsp_nodes = {}
+  cohire_nodes = {}
+  #CHECK: cohire_slide_nodes = {}
 
-if cp.has_section('cohire'):
-    cohire_job.add_ini_opts(cp, 'cohire')
-    cohire_summary_job.add_ini_opts(cp, 'cohire')
+  if cp.has_section('cohire'):
+      cohire_job.add_ini_opts(cp, 'cohire')
+      cohire_summary_job.add_ini_opts(cp, 'cohire')
 
-for ifos in ifo_coincs:
-  print "setting up coherent-analysis jobs on " + ifos + " data...",
-  sys.stdout.flush()
+  for ifos in ifo_coincs:
+    print "setting up coherent-analysis jobs on " + ifos + " data...",
+    sys.stdout.flush()
 
-  if cp.has_section('data') and not opts.ringdown:
-    cohinsp_jobs[ifos].add_opt('segment-length',cp.get('data','segment-length'))
-    cohinsp_jobs[ifos].add_opt('sample-rate',cp.get('data','sample-rate'))
-  # FIXME: this exponent can be different for virgo; 
-  # discontinue use of this variable
-  if cp.has_section('ligo-data') and not opts.ringdown:
-    cohinsp_jobs[ifos].add_opt('dynamic-range-exponent', \
-                                  cp.get('ligo-data','dynamic-range-exponent'))
+    if cp.has_section('data') and not opts.ringdown:
+      cohinsp_jobs[ifos].add_opt('segment-length',cp.get('data','segment-length'))
+      cohinsp_jobs[ifos].add_opt('sample-rate',cp.get('data','sample-rate'))
+    # FIXME: this exponent can be different for virgo; 
+    # discontinue use of this variable
+    if cp.has_section('ligo-data') and not opts.ringdown:
+      cohinsp_jobs[ifos].add_opt('dynamic-range-exponent', \
+                                    cp.get('ligo-data','dynamic-range-exponent'))
 
-  cohinsp_nodes[ifos] = coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,
-      cohinspbank_nodes[ifos],analyzed_trig_coh_data[ifos],
-      exttrigInjections,usertag=usertag,inspinjNode=inspinj)
+    cohinsp_nodes[ifos] = coherent_analysis(ifos,data,cohinsp_jobs[ifos],dag,
+        cohinspbank_nodes[ifos],analyzed_trig_coh_data[ifos],
+        exttrigInjections,usertag=usertag,inspinjNode=inspinj)
 
-  if not doExtTrig:
-    cohire_nodes[ifos] = cohire_segments_individually(cohinsp_nodes[ifos],
-          cohinsp_jobs, dag, opts.cohire, opts.coherent_inspiral,
-          ifos, inj_file=inj_file, ifotag="COHERENT_" + ifos,
-          usertag=usertag,inspinjNode=inspinj)
+    if not doExtTrig:
+      cohire_nodes[ifos] = cohire_segments_individually(cohinsp_nodes[ifos],
+            cohinsp_jobs, dag, opts.cohire, opts.coherent_inspiral,
+            ifos, inj_file=inj_file, ifotag="COHERENT_" + ifos,
+            usertag=usertag,inspinjNode=inspinj)
 
-    if len(cohire_nodes[ifos]):
-      cohire_segments(cohire_nodes[ifos], cohire_summary_job, dag,
-             opts.summary_coherent_inspiral_triggers,
-             opts.cohire, ifos, gps_start_time, gps_end_time,
-             inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
-             usertag=usertag,inspinjNode=inspinj)
+      if len(cohire_nodes[ifos]):
+        cohire_segments(cohire_nodes[ifos], cohire_summary_job, dag,
+               opts.summary_coherent_inspiral_triggers,
+               opts.cohire, ifos, gps_start_time, gps_end_time,
+               inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
+               usertag=usertag,inspinjNode=inspinj)
 
-  print "done"
+    print "done"
 ##############################################################################
 # Step 13: Write out the LAL cache files for the various output data
 

@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.4.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.4.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -62,7 +62,7 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
-LALAPPS_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALSUITE_ENABLE_BOINC
@@ -82,11 +82,13 @@ LALSUITE_ENABLE_LALXML
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
-# put version/configure info in config.h header
+# put version/configure info in config header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
 lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalapps_version_micro" && lalapps_version_micro=0
+test -z "$lalapps_version_devel" && lalapps_version_devel=0
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
@@ -102,8 +104,7 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
-
-# remove -all-static from ldflags, breaks test
+# remove -all-static from ldflags, breaks tests
 allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
 if test "x$allstatic" = "x" ; then
   allstatic="false"
@@ -332,7 +333,7 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
-# use c++ mode for build build
+# use c++ mode for boinc build
 if test "${boinc}" = "true" ; then
    AC_LANG_PUSH([C++])
 fi
@@ -370,7 +371,7 @@ AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lalapps_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags"
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then

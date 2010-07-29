@@ -46,6 +46,7 @@ const char *lalAppsVCSIdentStatus = LALAPPS_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalAppsVCSInfo = { \
+  LALAPPS_VCS_NAME, \
   LALAPPS_VERSION, \
   LALAPPS_VCS_ID, \
   LALAPPS_VCS_DATE, \

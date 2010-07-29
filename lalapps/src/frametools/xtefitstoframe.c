@@ -539,7 +539,7 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
   fitsfile *fptr;              /* pointer to the FITS file, defined in fitsio.h */
   INT4 status = 0;             /* fitsio status flag initialised */
   INT4 i;                      /* counter */
-  FITSHeader *header;          /* temporary pointer */
+  FITSHeader *header = NULL;          /* temporary pointer */
 
   /* check input arguments */
   if ((*fitsfiledata) != NULL) {
@@ -790,7 +790,17 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   char type[256];                   /* stores the type (array or event) */
   int status = 0;                   /* fitsio status flag initialised */
   int i;                            /* counter */ 
-
+ 
+  /* check input arguments */
+  if (header == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output FITSHeader structure == NULL.\n",fn);
+     XLAL_ERROR(fn,XLAL_EINVAL);
+  }  
+  if (fptr == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, input FITS file pointer = NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  } 
+  
   /* first we extract the filename from the full file path */
   {
     char *c;
@@ -1069,7 +1079,7 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
     LogPrintf(LOG_DEBUG,"%s : read dim as %d nchannels as %ld and channelsize as %d for col %d\n",fn,naxis,naxes[1],naxes[0],col);
     LogPrintf(LOG_DEBUG,"%s : total row length = %d\n",fn,naxes[1]*header->rowlength[i]);
 
-    /* check that this is consistent with the number of energy channels we found */
+    /* check that this is consistent with the number of channels we found */
     if (naxes[1] != header->tddes[i]->nchannels) {
       LogPrintf(LOG_CRITICAL,"%s : The number of energy channels read from TDDES %d != %d the number given by the TDIM keyword for col %d.\n",fn,header->tddes[i]->nchannels,naxes[1],col);
       XLAL_ERROR(fn,XLAL_EFAULT);
@@ -1402,7 +1412,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
       }
     }
     
-    /* record the sampling time and rowlength for this column */
+    /* record the sampling time and rowlength for this channel */
     (*array)->channeldata[i].deltat = tddes->deltat;
     (*array)->channeldata[i].rowlength = header->rowlength[colidx];
 
@@ -2974,7 +2984,7 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
       LIGOTimeGPS epoch;                       /* stores the timeseries epoch */
       INT8 sidx;                               /* the integer GPS second starting index of the data */
       INT8 N;                                  /* the new number of data samples */
-      
+
       /* enforce integer seconds duration */
       INT4 start = (INT4)ceil(gti->start[k]);  /* the new end time of the data */
       INT4 end = (INT4)floor(gti->end[k]);     /* the new end time of the data */
@@ -3015,7 +3025,7 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	  INT4TimeSeries *output = NULL;           /* temporary output timeseries */
 	  UINT4 j;                                 /* counter */
 	  CHAR channelname[STRINGLENGTH];          /* string used to name each channel in the frame */
-	  
+
 	  /* define current channel name */
 	  /* the format is X1:<MODE>-<COLNAME>-<LLD>-<DETCONFIG>-<MINENERGY>_<MAXENERGY> */
 	  snprintf(channelname,STRINGLENGTH,"%s:%s-%s-%d-%s-%d_%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->lld,ts->ts[i]->detconfig,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
@@ -3029,9 +3039,11 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	  LogPrintf(LOG_DEBUG,"%s : allocated memory for temporary timeseries\n",fn);
 	  
 	  /* fill in timeseries starting from first integer second */
-	  for (j=0;j<output->data->length;j++) output->data->data[j] = (INT4)ts->ts[i]->data[j+sidx];
+	  for (j=0;j<output->data->length;j++) {
+	    output->data->data[j] = (INT4)ts->ts[i]->data[j+sidx];
+	  }
 	  LogPrintf(LOG_DEBUG,"%s : populated temporary timeseries\n",fn);
-	  
+
 	  /* add timeseries to frame structure */
 	  if (XLALFrameAddINT4TimeSeriesProcData(outFrame,output)) {
 	    LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
@@ -3269,7 +3281,7 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
 
     /* check timestamp gaps - they can't be too far apart */
     for (i=sidx;i<eidx;i++) {
-      LogPrintf(LOG_DEBUG, "%s : detector subset stamps %f -> %f (%f)\n",fn,stamps->dettime[i],stamps->dettime[i+1],stamps->dettime[i+1]-stamps->dettime[i]); 
+      /* LogPrintf(LOG_DEBUG, "%s : detector subset stamps %f -> %f (%f)\n",fn,stamps->dettime[i],stamps->dettime[i+1],stamps->dettime[i+1]-stamps->dettime[i]);  */
       if (stamps->dettime[i+1]-stamps->dettime[i]>MAXTIMESTAMPDELTAT) {
 	LogPrintf(LOG_NORMAL, "%s : timestamp spacing is too large for accurate barycentering.\n",fn);
 	gap = 1;
