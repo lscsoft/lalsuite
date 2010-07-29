@@ -49,6 +49,7 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "lalapps_string_meas_likelihood")
 
 		self.cache_dir = power.get_cache_dir(config_parser)
+		self.output_dir = "."
 
 
 class MeasLikelihoodNode(pipeline.CondorDAGNode):
@@ -56,6 +57,9 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -77,7 +81,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		cache_entry = power.make_cache_entry(self.input_cache, description, "")
-		filename = "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
+		filename = os.path.join(self.output_dir, "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
 		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
 		del self.output_cache[:]
@@ -129,7 +133,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file("lalapps_StringSearch.sub")
     self.add_condor_cmd("Requirements", "Memory > 1100")
 
-    self.triggers_dir = power.get_triggers_dir(config_parser)
+    self.output_dir = power.get_triggers_dir(config_parser)
 
 
 class StringNode(pipeline.AnalysisNode):
@@ -144,7 +148,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
-    self.triggers_dir = self.job().triggers_dir
+    self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
   def set_ifo(self, instrument):
     """
@@ -188,7 +192,7 @@ class StringNode(pipeline.AnalysisNode):
       if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
         raise ValueError, "start time, end time, ifo, or user tag has not been set"
       seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-      self.set_output(os.path.join(self.triggers_dir, "%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
+      self.set_output(os.path.join(self.output_dir, "%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 
     return self._AnalysisNode__output
 
