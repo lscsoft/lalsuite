@@ -1994,12 +1994,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   }
 
-  outfile = fopen("cohSNR_timeseries.dat","w");
+/*  outfile = fopen("cohSNR_timeseries.dat","w");
   for ( i = 0; i < cohSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
 
 
 /*  outfile = fopen("bank_veto_timeseries.dat","w");
@@ -2024,44 +2024,42 @@ void cohPTFmodBasesUnconstrainedStatistic(
   fclose(outfile);*/
 
   
-  outfile = fopen("nullSNR_timeseries.dat","w");
+/*  outfile = fopen("nullSNR_timeseries.dat","w");
   for ( i = 0; i < nullSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,nullSNR->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
   
 
   
-  outfile = fopen("traceSNR_timeseries.dat","w");
+/*  outfile = fopen("traceSNR_timeseries.dat","w");
   for ( i = 0; i < traceSNR->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,traceSNR->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
   
-  outfile = fopen("h1SNR_timeseries.dat","w");
+/*  outfile = fopen("h1SNR_timeseries.dat","w");
   for ( i = 0; i < snrComps[1]->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,snrComps[1]->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
 
-  outfile = fopen("l1SNR_timeseries.dat","w");
+/*  outfile = fopen("l1SNR_timeseries.dat","w");
   for ( i = 0; i < snrComps[3]->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,snrComps[3]->data->data[i]);
   }
-  fclose(outfile);
+  fclose(outfile);*/
 
-  outfile = fopen("v1SNR_timeseries.dat","w");
+/*  outfile = fopen("v1SNR_timeseries.dat","w");
   for ( i = 0; i < snrComps[5]->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,snrComps[5]->data->data[i]);
   }
-  fclose(outfile);
-
-
+  fclose(outfile);*/
 
   /*
   outfile = fopen("rebased_timeseries.dat","w");
