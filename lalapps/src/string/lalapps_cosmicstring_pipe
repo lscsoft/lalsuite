@@ -54,19 +54,20 @@ def parse_command_line():
 		usage = "%prog [options] ...",
 		description = "FIXME"
 	)
-	parser.add_option("-i", "--injections", action = "store_true", help = "Add simulated bursts.")
 	parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file (required).")
 	parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory (required).")
-	parser.add_option("-p", "--playground", action = "store_true", help = "Run on playground data only.")
-	parser.add_option("-t", "--time-slides", metavar = "filename", help = "Load time-slide vectors from this XML file (required).")
+	parser.add_option("--background-time-slides", metavar = "filename", action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (required).  This option can be given multiple times to parallelize the background analysis across time slides.  You will want to make sure the time slide files have distinct vectors to not repeat the same analysis multiple times, and in particular you'll want to make sure only one of them has a zero-lag vector in it.") 
+	parser.add_option("--injection-time-slides", metavar = "filename", help = "Set file from which to obtain the time slide table for use in the injection branch of the pipeline (required).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 
 	options, filenames = parser.parse_args()
 
-	required_options = ["log_path", "config_file", "time_slides"]
+	required_options = ["log_path", "config_file", "background_time_slides", "injection_time_slides"]
 	missing_options = [option for option in required_options if getattr(options, option) is None]
 	if missing_options:
 		raise ValueError, "missing required options %s" % (sorted("--%s" % option.replace("_", "-") for option in missing_options))
+
+	options.injection_time_slides = [options.injection_time_slides]
 
 	return options, filenames
 
@@ -111,11 +112,24 @@ cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likeliho
 # make directories to store the cache files, job logs, and trigger output
 #
 
+def make_dag_directories(top_level_directory, config_parser):
+	cwd = os.getcwd()
+	power.make_dir_if_not_exists(top_level_directory)
+	os.chdir(top_level_directory)
+	power.make_dag_directories(config_parser)
+	# FIXME:  move this into make_dag_directories().  requires update
+	# of excess power and gstlal dags
+	power.make_dir_if_not_exists(power.get_triggers_dir(config_parser))
+	os.chdir(cwd)
+
 power.make_dag_directories(config_parser)
-try:
-	os.mkdir('triggers')
-except:
-	pass
+injection_folders = []
+for i in range(config_parser.getint('pipeline', 'injection-runs')):
+	injection_folders.append(os.path.abspath("injections%d" % i))
+	make_dag_directories(injection_folders[-1], config_parser)
+noninjection_folders = []
+noninjection_folders.append(os.path.abspath("noninjections"))
+make_dag_directories(noninjection_folders[-1], config_parser)
 
 #
 # create a log file that the Condor jobs will write to
@@ -144,6 +158,8 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 # get the instruments and raw segments
 #
 
+# FIXME:  use ligolw_segments to convert segwizard files to XML format and
+# use that as input for this script
 seglists = segments.segmentlistdict((instrument, segmentsUtils.fromsegwizard(file(config_parser.get('input','segments_%s' % instrument))).coalesce()) for instrument in set(s.strip() for s in config_parser.get('pipeline','ifos').split(',')))
 
 #
@@ -156,10 +172,17 @@ if options.verbose:
 
 background_time_slides = {}
 background_seglists = segments.segmentlistdict()
-for filename in [options.time_slides]:
+for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
+
+injection_time_slides = {}
+injection_seglists = segments.segmentlistdict()
+for filename in options.injection_time_slides:
+	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #
@@ -175,7 +198,7 @@ for filename in [options.time_slides]:
 # datafinds
 #
 
-datafinds = power.make_datafind_stage(dag, background_seglists, verbose = options.verbose)
+datafinds = power.make_datafind_stage(dag, injection_seglists | background_seglists, verbose = options.verbose)
 
 #
 # main analysis
@@ -222,10 +245,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		tisi_cache = set([time_slides_cache_entry])
 		nodes = set()
 		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
-			preserve_cache = binj_cache | tisi_cache
-			if not do_injections:
-				preserve_cache |= cache
-			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = preserve_cache)
+			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
 
 		#
 		# ligolw_burca
@@ -263,14 +283,30 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	likelihood_nodes = cosmicstring.make_meas_likelihood_fragment(dag, coinc_nodes, tag)
 
 	#
+	# write output cache
+	#
+
+	if verbose:
+		print >>sys.stderr, "writing output cache ..."
+	power.write_output_cache(coinc_nodes | likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], tag))
+
+	#
 	# done
 	#
 
-	power.write_output_cache(coinc_nodes | likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], tag))
-	return coinc_nodes
+	return coinc_nodes, likelihood_nodes
 
+for i, folder in enumerate(injection_folders):
+	cwd = os.getcwd()
+	os.chdir(folder)
+	coinc_nodes, likelihood_nodes = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = True, verbose = options.verbose)
+	os.chdir(cwd)
 
-coinc_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, config_parser.get('pipeline', 'user_tag'), do_injections = options.injections, verbose = options.verbose)
+for i, folder in enumerate(noninjection_folders):
+	cwd = os.getcwd()
+	os.chdir(folder)
+	coinc_nodes, likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = False, verbose = options.verbose)
+	os.chdir(cwd)
 
 
 #
@@ -285,6 +321,8 @@ coinc_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_
 # write DAG
 #
 
+if options.verbose:
+	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
 
@@ -302,8 +340,6 @@ Do not forget to initialize your grid proxy certificate on the condor
 submit machine by running the commands
 
 $ unset X509_USER_PROXY
-$ grid-proxy-init -hours 177
-$ export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+$ grid-proxy-init -hours $((24*7)):00
 
-Contact the administrator of your cluster to find the hostname and port of
-the LSCdataFind server.""" % dag.get_dag_file()
+""" % dag.get_dag_file()
