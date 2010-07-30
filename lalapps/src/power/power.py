@@ -428,11 +428,14 @@ class PowerNode(pipeline.AnalysisNode):
 
 
 class LigolwAddNode(pipeline.LigolwAddNode):
-	def __init__(self, *args):
-		pipeline.LigolwAddNode.__init__(self, *args)
+	def __init__(self, job, remove_input, *args):
+		pipeline.LigolwAddNode.__init__(self, job, *args)
 		self.input_cache = []
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.remove_input = bool(remove_input)
+		if self.remove_input:
+			self.add_var_arg("--remove-input")
 
 	def __update_output_cache(self, observatory = None, segment = None):
 		del self.output_cache[:]
@@ -457,8 +460,9 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.__update_output_cache(observatory = observatory, segment = segment)
 
 	def add_preserve_cache(self, cache):
-		for c in cache:
-			self.add_var_arg("--remove-input-except %s" % c.path())
+		if self.remove_input:
+			for c in cache:
+				self.add_var_arg("--remove-input-except %s" % c.path())
 
 	def get_input_cache(self):
 		return self.input_cache
@@ -996,8 +1000,8 @@ def make_datafind_fragment(dag, instrument, seg):
 	return set([node])
 
 
-def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, preserve_cache = None, extra_input_cache = None):
-	node = LigolwAddNode(lladdjob)
+def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, remove_input = False, preserve_cache = None, extra_input_cache = None):
+	node = LigolwAddNode(lladdjob, remove_input = remove_input)
 
 	# link to parents
 	for parent in parents:
@@ -1285,7 +1289,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
 	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
-	return make_lladd_fragment(dag, nodes, tag)
+	return make_lladd_fragment(dag, nodes, tag, remove_input = True)
 
 
 #
