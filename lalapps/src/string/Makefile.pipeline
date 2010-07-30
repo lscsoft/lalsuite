@@ -1,7 +1,7 @@
 dag :
 	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=0:0:0 --instrument V1=0:0:0 injection_time_slides.xml.gz
-	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-70.898154036220632:+70.898154036220632:3.5449077018110318 --instrument V1=-70.898154036220632:+70.898154036220632:3.5449077018110318 background_time_slides_0.xml.gz background_time_slides_1.xml.gz
-	mkdir dag ; pushd dag ; lalapps_cosmicstring_pipe --verbose --config-file ../JW1_StringDag.ini --log-path $(TMPDIR) --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz --background-time-slides ../background_time_slides_1.xml.gz ; popd
+	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-70.898154036220632:+70.898154036220632:3.5449077018110318 --instrument V1=-70.898154036220632:+70.898154036220632:3.5449077018110318 background_time_slides_0.xml.gz
+	mkdir dag ; pushd dag ; lalapps_cosmicstring_pipe --verbose --config-file ../JW1_StringDag.ini --log-path $(TMPDIR) --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz ; popd
 
 likelihood :
 	lalapps_string_plot_likelihood --verbose {noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/*LIKELIHOOD*.xml.gz

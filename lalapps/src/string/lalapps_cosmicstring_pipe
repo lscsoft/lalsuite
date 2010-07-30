@@ -198,11 +198,15 @@ for filename in options.injection_time_slides:
 # datafinds
 #
 
+
 datafinds = power.make_datafind_stage(dag, injection_seglists | background_seglists, verbose = options.verbose)
 
+
 #
-# main analysis
+# trigger production, coincidence, injection identification, likelihood
+# ratio probability density data collection
 #
+
 
 def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length, pad, overlap, short_segment_duration, tag, do_injections = False, verbose = False):
 	#
@@ -211,16 +215,18 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if do_injections:
 		binjnodes = power.make_binj_fragment(dag, seglists.extent_all(), tag, 0.0)
+
+		# artificial parent-child relationship to force binj jobs
+		# to run before all datafinds.  makes dag run faster
+		# because it allows string search jobs to start moving onto
+		# the cluster without waiting for all the datafinds
+		# complete
+
+		for binjnode in binjnodes:
+			for datafindnode in datafinds:
+				datafindnode.add_parent(binjnode)
 	else:
 		binjnodes = set()
-
-	# artificial parent-child relationship to force binj jobs to run before all
-	# datafinds.  makes dag run faster because it allows string search jobs to
-	# move onto the cluster before all the datafinds complete
-
-	for binjnode in binjnodes:
-		for datafindnode in datafinds:
-			datafindnode.add_parent(binjnode)
 
 	#
 	# trigger generator jobs
@@ -232,7 +238,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	# coincidence analysis
 	#
 
-	coinc_nodes = set()
+	coinc_nodes = []
 	binj_cache = set(cache_entry for node in binjnodes for cache_entry in node.get_output_cache())
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
@@ -253,7 +259,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		if verbose:
 			print >>sys.stderr, "building burca jobs ..."
-		coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (tag, n), verbose = verbose)
+		coinc_nodes.append(power.make_burca_fragment(dag, nodes, "%s_%d" % (tag, n), verbose = verbose))
 		if verbose:
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
@@ -264,7 +270,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	if do_injections:
 		if verbose:
 			print >>sys.stderr, "building binjfind jobs ..."
-		coinc_nodes = power.make_binjfind_fragment(dag, coinc_nodes, tag, verbose = verbose)
+		coinc_nodes = [power.make_binjfind_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# ligolw_sqlite
@@ -272,7 +278,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if verbose:
 		print >>sys.stderr, "building sqlite jobs ..."
-	coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, tag, verbose = verbose)
+	coinc_nodes = [power.make_sqlite_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# lalapps_string_meas_likelihood
@@ -280,7 +286,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if verbose:
 		print >>sys.stderr, "building lalapps_string_meas_likelihood jobs ..."
-	likelihood_nodes = cosmicstring.make_meas_likelihood_fragment(dag, coinc_nodes, tag)
+	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n)) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# write output cache
@@ -288,7 +294,8 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if verbose:
 		print >>sys.stderr, "writing output cache ..."
-	power.write_output_cache(coinc_nodes | likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], tag))
+	for n, (these_coinc_nodes, these_likelihood_nodes) in enumerate(zip(coinc_nodes, likelihood_nodes)):
+		power.write_output_cache(these_coinc_nodes | these_likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], "%s_%d" % (tag, n)))
 
 	#
 	# done
@@ -296,17 +303,32 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	return coinc_nodes, likelihood_nodes
 
+
+injection_coinc_nodes = []
+injection_likelihood_nodes = []
 for i, folder in enumerate(injection_folders):
 	cwd = os.getcwd()
 	os.chdir(folder)
-	coinc_nodes, likelihood_nodes = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = True, verbose = options.verbose)
+	# note:  unpacking enforces rule that each injection run uses a
+	# single time-slides file
+	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = True, verbose = options.verbose)
 	os.chdir(cwd)
+	injection_coinc_nodes.append(these_coinc_nodes)
+	injection_likelihood_nodes.append(these_likelihood_nodes)
+
 
 for i, folder in enumerate(noninjection_folders):
+	assert i == 0	# loop only works for one iteration
 	cwd = os.getcwd()
 	os.chdir(folder)
-	coinc_nodes, likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = False, verbose = options.verbose)
+	background_coinc_nodes, background_likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = False, verbose = options.verbose)
 	os.chdir(cwd)
+
+
+#
+# round-robin parameter distribution density data for likelihood ratio
+# computation
+#
 
 
 #

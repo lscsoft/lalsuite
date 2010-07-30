@@ -63,16 +63,13 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
-		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
+		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.input_cache.extend(cache)
-		for c in cache:
-			filename = c.path()
-			pipeline.CondorDAGNode.add_file_arg(self, filename)
-		self.add_output_file(filename)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
@@ -82,8 +79,8 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 			raise AttributeError, "cannot change attributes after computing output cache"
 		cache_entry = power.make_cache_entry(self.input_cache, description, "")
 		filename = os.path.join(self.output_dir, "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
-		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
+		self.add_var_opt("output", filename)
 		del self.output_cache[:]
 		self.output_cache.append(cache_entry)
 		return filename
@@ -97,14 +94,10 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		return self.output_cache
 
 	def write_input_files(self, *args):
-		# oh.  my.  god.  this is fscked.
-		for arg in self.get_args():
-			if "--add-from-cache" in arg:
-				f = file(self.cache_name, "w")
-				for c in self.input_cache:
-					print >>f, str(c)
-				pipeline.CondorDAGNode.write_input_files(self, *args)
-				break
+		f = file(self.cache_name, "w")
+		for c in self.input_cache:
+			print >>f, str(c)
+		pipeline.CondorDAGNode.write_input_files(self, *args)
 
 	def get_output_files(self):
 		raise NotImplementedError
