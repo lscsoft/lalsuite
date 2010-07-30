@@ -26,6 +26,7 @@ import ConfigParser
 from optparse import OptionParser
 
 
+from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
@@ -106,7 +107,7 @@ config_parser.read(options.config_file)
 #
 
 power.init_job_types(config_parser, job_types = ("datafind", "binj", "lladd", "binjfind", "burca", "sqlite"))
-cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likelihood"))
+cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likelihood", "calc_likelihood"))
 
 #
 # make directories to store the cache files, job logs, and trigger output
@@ -304,6 +305,9 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	return coinc_nodes, likelihood_nodes
 
 
+user_tag = config_parser.get('pipeline', 'user_tag')
+
+
 injection_coinc_nodes = []
 injection_likelihood_nodes = []
 for i, folder in enumerate(injection_folders):
@@ -311,7 +315,7 @@ for i, folder in enumerate(injection_folders):
 	os.chdir(folder)
 	# note:  unpacking enforces rule that each injection run uses a
 	# single time-slides file
-	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = True, verbose = options.verbose)
+	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (user_tag, i), do_injections = True, verbose = options.verbose)
 	os.chdir(cwd)
 	injection_coinc_nodes.append(these_coinc_nodes)
 	injection_likelihood_nodes.append(these_likelihood_nodes)
@@ -321,14 +325,43 @@ for i, folder in enumerate(noninjection_folders):
 	assert i == 0	# loop only works for one iteration
 	cwd = os.getcwd()
 	os.chdir(folder)
-	background_coinc_nodes, background_likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (config_parser.get('pipeline', 'user_tag'), i), do_injections = False, verbose = options.verbose)
+	background_coinc_nodes, background_likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (user_tag, i), do_injections = False, verbose = options.verbose)
 	os.chdir(cwd)
+
+
+def flatten_node_groups(node_groups):
+	return reduce(lambda a, b: a | b, node_groups, set())
+
+
+all_background_likelihood_nodes = flatten_node_groups(background_likelihood_nodes)
+all_injection_likelihood_nodes = flatten_node_groups(injection_likelihood_nodes)
 
 
 #
 # round-robin parameter distribution density data for likelihood ratio
-# computation
+# computation.
 #
+
+
+if options.verbose:
+	print >>sys.stderr, "building lalapps_string_calc_likelihood jobs ..."
+
+def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
+	# see the documentation for glue.iterutils.choices() for an
+	# explanation of the procedure used here to round-robing the node
+	# lists
+	A = list(iterutils.choices(injection_coinc_node_groups, 1))
+	B = list(iterutils.choices(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
+	B.reverse()
+	A = [flatten_node_groups(node_groups) for node_groups in A]
+	B = [flatten_node_groups(node_groups) for node_groups in B]
+	return zip(A, B)
+
+coinc_nodes = set()
+for n, (these_coinc_nodes, these_likelihood_nodes) in enumerate(round_robin_and_flatten(injection_coinc_nodes, injection_likelihood_nodes)):
+	coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, these_coinc_nodes, these_likelihood_nodes | all_background_likelihood_nodes, "%s_INJ_%d" % (user_tag, n), files_per_calc_likelihood = cosmicstring.calc_likelihoodjob.files_per_calc_likelihood, verbose = options.verbose)
+coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, flatten_node_groups(background_coinc_nodes), all_injection_likelihood_nodes | all_background_likelihood_nodes, user_tag, files_per_calc_likelihood = 1, verbose = options.verbose)
+
 
 
 #

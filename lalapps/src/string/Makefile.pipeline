@@ -3,24 +3,9 @@ dag :
 	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument H2=0:0:0 --instrument L1=-70.898154036220632:+70.898154036220632:3.5449077018110318 --instrument V1=-70.898154036220632:+70.898154036220632:3.5449077018110318 background_time_slides_0.xml.gz
 	mkdir dag ; pushd dag ; lalapps_cosmicstring_pipe --verbose --config-file ../JW1_StringDag.ini --log-path $(TMPDIR) --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz ; popd
 
-likelihood :
-	lalapps_string_plot_likelihood --verbose {noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/*LIKELIHOOD*.xml.gz
-	for d in injections* noninjections; do pushd $$d ; ln -sf *LIKELIHOOD*.xml.gz likelihood.xml.gz ; popd ; done
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{1,2,3,4,5,6,7,8,9}}/likelihood.xml.gz injections0/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,2,3,4,5,6,7,8,9}}/likelihood.xml.gz injections1/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,3,4,5,6,7,8,9}}/likelihood.xml.gz injections2/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,4,5,6,7,8,9}}/likelihood.xml.gz injections3/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,5,6,7,8,9}}/likelihood.xml.gz injections4/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,6,7,8,9}}/likelihood.xml.gz injections5/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,7,8,9}}/likelihood.xml.gz injections6/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,8,9}}/likelihood.xml.gz injections7/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,9}}/likelihood.xml.gz injections8/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,8}}/likelihood.xml.gz injections9/*.sqlite & \
-	lalapps_string_calc_likelihood --verbose --tmp-space $(TMPDIR) --likelihood-file={noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/likelihood.xml.gz noninjections/*.sqlite & \
-	wait
-
 final :
-	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 injections*/*.sqlite noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
+	lalapps_string_plot_likelihood --verbose dag/{noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/*LIKELIHOOD*.xml.gz
+	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
 	cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 50 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 50 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
 
 clean :
