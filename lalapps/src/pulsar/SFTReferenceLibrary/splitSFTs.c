@@ -32,9 +32,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.44 2010/08/11 10:29:40 bema Exp $"
+#define RCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */

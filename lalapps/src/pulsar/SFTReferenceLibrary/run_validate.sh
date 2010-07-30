@@ -1,7 +1,7 @@
 #!/bin/sh
-prog=./SFTvalidate
+prog=./lalapps_SFTvalidate
 
-./SFTwrite >& /dev/null
+./lalapps_SFTwrite >/dev/null
 
 goodSFTs="SFT-good SFT-test*"
 badSFTs="SFT-bad*"
