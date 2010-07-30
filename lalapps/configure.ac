@@ -29,6 +29,7 @@ AC_CONFIG_FILES([\
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
   src/pulsar/SideBand/Makefile \
+  src/pulsar/CombSearch/Makefile \
   src/pulsar/templateBanks/Makefile \
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
