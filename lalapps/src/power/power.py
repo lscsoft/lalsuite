@@ -284,6 +284,8 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
+		self.output_dir = "."
+
 
 class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -291,6 +293,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -325,7 +328,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		"""
 		if not self.output_cache:
 			# FIXME:  instruments hardcoded to "everything"
-			self.output_cache = [CacheEntry(u"H1+H2+G1+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+			self.output_cache = [CacheEntry(u"G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -336,7 +339,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 			if None in (self.get_start(), self.get_end(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
 			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			self.set_output("H1+H2+G1+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start())))
+			self.set_output(os.path.join(self.output_dir, "G1+H1+H2+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))))
 		return self._AnalysisNode__output
 
 
@@ -360,6 +363,8 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
 
+		self.output_dir = "."
+
 
 class PowerNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -367,6 +372,7 @@ class PowerNode(pipeline.AnalysisNode):
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_ifo(self, instrument):
 		"""
@@ -406,7 +412,7 @@ class PowerNode(pipeline.AnalysisNode):
 			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
 			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			self.set_output("%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+			self.set_output(os.path.join(self.output_dir, "%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 		return self._AnalysisNode__output
 
 	def set_mdccache(self, file):
@@ -433,6 +439,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.input_cache = []
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), ".")	# "." == self.job().output_dir except the job class doesn't yet have this info
 		self.remove_input = bool(remove_input)
 		if self.remove_input:
 			self.add_var_arg("--remove-input")
@@ -538,6 +545,7 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
 
 		self.cache_dir = get_cache_dir(config_parser)
+
 		self.files_per_bucluster = get_files_per_bucluster(config_parser)
 		if self.files_per_bucluster < 1:
 			raise ValueError, "files_per_bucluster < 1"
@@ -747,6 +755,7 @@ class BurcaTailorJob(pipeline.CondorDAGJob):
 		self.add_ini_opts(config_parser, "ligolw_burca_tailor")
 
 		self.cache_dir = get_cache_dir(config_parser)
+		self.output_dir = "."
 
 
 class BurcaTailorNode(pipeline.CondorDAGNode):
@@ -755,6 +764,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -776,7 +786,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		cache_entry = make_cache_entry(self.input_cache, description, "")
-		filename = "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
+		filename = os.path.join(self.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
 		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
 		del self.output_cache[:]
@@ -1027,7 +1037,7 @@ def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, r
 	if segment is None:
 		segment = cache_entry.segment
 	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(segment[0]), int(abs(segment))))
-	node.set_output("%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment))), segment = segment)
+	node.set_output(os.path.join(node.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment)))), segment = segment)
 
 	node.set_retry(3)
 	dag.add_node(node)
