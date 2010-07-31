@@ -696,6 +696,9 @@ class BurcaNode(pipeline.CondorDAGNode):
 	def get_output(self):
 		raise NotImplementedError
 
+	def set_coincidence_segment(self, seg):
+		self.add_var_opt("coincidence-segment", ",".join(segmentsUtils.to_range_strings([seg])))
+
 
 class SQLiteJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
