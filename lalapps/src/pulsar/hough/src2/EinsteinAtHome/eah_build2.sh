@@ -43,9 +43,6 @@ HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 for i; do
     case "$i" in
-	--cuda)
-	    cuda=true
-	    acc="_cuda" ;;
 	--win32)
 	    build_win32=true ;;
 	--static)
@@ -87,6 +84,9 @@ for i; do
 	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
 	    acc="_altivec";;
+	--cuda)
+	    cuda=true
+	    acc="_cuda" ;;
 	--panther)
 	    export MACOSX_DEPLOYMENT_TARGET=10.3
 	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
@@ -115,16 +115,22 @@ for i; do
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
-	    echo "  --rebuild         build FFTW, gsl and LAL from source even if they are found on the system"
+	    echo "  --rebuild         build FFTW, gsl, BOINC and LAL from source even if they are found by pkg-config"
 	    echo "  --rebuild-lal     rebuild lalsuite"
 	    echo "  --rebuild-boinc   rebuild BOINC"
 	    echo "  --static          try to link statically"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --panther         build to run on Mac OS 10.3.9"
-	    echo "  --release         use some dark magic to make the resulting apps most compatible. Implies --static"
+	    echo "  --cuda            build an App that uses CUDA"
+	    echo "  --sse             build an App that uses SSE"
+	    echo "  --sse2            build an App that uses SSE2"
+	    echo "  --altivec         build an App that uses AltiVec"
+	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
+	    echo "  --release         use some dark magic to make the App most compatible and adds remote debugging. Implies --static and --rebuild"
+	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
 	*) echo "unknown option '$i', try $0 --help"; exit ;;
