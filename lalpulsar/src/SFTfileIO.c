@@ -1265,7 +1265,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
 } /* LALReadTimestampsFile() */
 
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
  *  Add the comment to SFT if comment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
@@ -1276,13 +1276,12 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  *
  */
 int
-XLALWriteSFT2file(
-		  const SFTtype *sft,		/**< SFT to write to disk */
-		  const CHAR *fname,		/**< filename */
-		  const CHAR *comment)		/**< optional comment (for v2 only) */
+XLALWriteSFT(
+	     const SFTtype *sft,	/**< SFT to write to disk */
+	     FILE *fp,			/**< pointer to open file */
+	     const CHAR *comment)	/**< optional comment (for v2 only) */
 {
-  const CHAR *fn = "XLALWriteSFT2file";
-  FILE  *fp = NULL;
+  const CHAR *fn = "XLALWriteSFT";
   UINT4 comment_len = 0;
   CHAR *SFTcomment;
   UINT4 pad_len = 0;
@@ -1305,20 +1304,10 @@ XLALWriteSFT2file(
   if (!( sft->data->length > 0 ))
     XLAL_ERROR ( fn, XLAL_EINVAL );
 
-  if (!( fname ))
-    XLAL_ERROR ( fn, XLAL_EINVAL );
- 
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-
-  /* open SFT-file for writing */
-  if ( (fp = fopen ( fname, "wb" )) == NULL )
-    {
-      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
-      XLAL_ERROR ( fn, XLAL_EIO );
-    }
 
   /* concat sft->name + comment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
@@ -1378,6 +1367,54 @@ XLALWriteSFT2file(
 
   /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
   if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
+    XLAL_ERROR ( fn, XLAL_EIO );
+  }
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFT() */
+
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
+ *
+ * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
+ * the user-specified 'comment'
+ *
+ */
+int
+XLALWriteSFT2file(
+		  const SFTtype *sft,		/**< SFT to write to disk */
+		  const CHAR *fname,		/**< filename */
+		  const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  const CHAR *fn = "XLALWriteSFT2file";
+  FILE  *fp = NULL;
+
+  /*   Make sure the arguments are not NULL */
+  if (!( sft ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->data ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( fname ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+ 
+  if ( !is_valid_detector(sft->name) ) {
+    XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* open SFT-file for writing */
+  if ( (fp = fopen ( fname, "wb" )) == NULL )
+    {
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
+      XLAL_ERROR ( fn, XLAL_EIO );
+    }
+
+  /* write SFT to file */
+  if ( XLALWriteSFT(sft, fp, comment) != XLAL_SUCCESS ) {
     XLAL_ERROR ( fn, XLAL_EIO );
   }
 
