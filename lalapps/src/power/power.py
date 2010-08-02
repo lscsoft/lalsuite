@@ -1375,7 +1375,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params
 #
 
 
-def group_coinc_parents(parents, offset_vectors, verbose = False):
+def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = False):
 	if not offset_vectors:
 		# no-op
 		return []
@@ -1385,7 +1385,7 @@ def group_coinc_parents(parents, offset_vectors, verbose = False):
 
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, verbose = verbose)[1]
+	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)[1]
 	caches = [set(bin.objects) for bin in bins]
 	segs = [bin.extent for bin in bins]
 
