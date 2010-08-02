@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",       'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",      'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",      'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",         'b', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",         'r', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",      'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trials_init), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",      'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trials_incr), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset",     'Z', UVAR_OPTIONAL, "Reset if no convergence after this "

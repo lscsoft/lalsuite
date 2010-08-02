@@ -43,7 +43,7 @@ end
 xIn = load(filename);%cg; loads the contents of the file into Xin, this should be a matlab binary file according to matlab help, but hte file is ascii!?!?!?!?  Does not seam to matter.  This line loads my test1 data for 3 SFTs into Xin no probs.  Typing in on the command line you need to put the filename in 'filename'.  Xin is then a 3 by 100 array of doubles.
 xlen=length(xIn(:,1));
 ylen=length(xIn(1,:));
-y = flipud(transpose((xIn)));%cg; flipud flipes the array/matrix upside down, i.e. reverses the row direction of the array.  Transpose obvisouly transposes the array.  So the array gets put up on its side and then turned upside down.  This is so the values appear in the correct way when displaying the array as an image, which is what imagesc does.
+y = flipud(transpose((xIn)));%cg; flipud flips the array/matrix upside down, i.e. reverses the row direction of the array.  Transpose obvisouly transposes the array.  So the array gets put up on its side and then turned upside down.  This is so the values appear in the correct way when displaying the array as an image, which is what imagesc does.
 
 
 %cg;these lines get the relvant info out of the file name
@@ -72,25 +72,25 @@ for ii=1:length(y_temp1(:,1));
   y_temp2 = [y_temp2,y_temp1(ii,:)];
 end
 
-%get NumBinsAvg from file.
-filename_numbins=sprintf('%s_numbins',filename);
-NumBinsAvg = load(filename_numbins);
+%calculate NumBinsAvg.
+fRange=fEnd-fStart;
+freqres=1/effTBase;
+%  filename_numbins=sprintf('%s_numbins',filename);
+%  NumBinsAvg = load(filename_numbins)
+NumBinsAvg = freqres*effTBaseFull;
 
 mediany = median(y_temp2);
 
-cutoffval = median(y_temp2) + (5*(median(y_temp2)/sqrt(NumBinsAvg)) );%cg; this cut off value is used in the loop below to get rid of any outliers.  Not sure about the formula used for this calc.  But be aware, will need to change the value being sqrt'ed.Old value is 180, changed to NumBinsAvg, which is the number of bins over which the power values have been averaged in the c code.
-%maximum = max(max(y));
-%minimum = min(min(y));
+cutoffval = median(y_temp2) + (5*(median(y_temp2)/sqrt(NumBinsAvg)) );%cg; this cut off value is used in the loop below to get rid of any outliers.  Not sure about the formula used for this calc.  No longer cut off the data, just use the cutoffval for teh limits of the color axis.
      
 % replace every value more than three stddeviations away from mean-value
-
-for ii=1:length(y(:,1));
-       for jj=1:length(y(1,:));
-           if y(ii,jj)>= cutoffval;
-               y(ii,jj)= cutoffval;
-           end
-       end
-end
+%  for ii=1:length(y(:,1));
+%         for jj=1:length(y(1,:));
+%             if y(ii,jj)>= cutoffval;
+%                 y(ii,jj)= cutoffval;
+%             end
+%         end
+%  end
 
 %-------------------------
 %get dates etc.
@@ -129,9 +129,10 @@ figure(1);%cg; creates a figure graphics object,
 %---------------------------
 %colormapping
 
-ymax=(max(max(y)))%find max and min values (min must not be zero).
-ymin=(min(min(y_temp1)))
-yrange=ymax-ymin;
+ymax=(max(max(y)));%find max and min values (min must not be zero).
+ymin=(min(min(y_temp1)));
+%yrange=ymax-ymin;
+yrange=cutoffval-ymin;
 
 
 log=0;%decide to plot log colour axis or not.
@@ -142,7 +143,8 @@ if (log == 1)
 else
     imagesc(y);
     cymin=ymin-(yrange/254);%works out the size of a cbar slot assuming 254 slots (not 256) for yrange of data
-    caxis([cymin ymax]);%ensures that all data bar the zeros are scaled to slots 2 and above, and only one slot is used ymin and below (i.e. zeros)
+    caxis([cymin cutoffval]);
+    %caxis([cymin ymax]);%ensures that all data bar the zeros are scaled to slots 2 and above, and only one slot is used ymin and below (i.e. zeros)
 end
 
 cmap1=colormap(jet(256));%three by 256 matrix.
@@ -157,52 +159,29 @@ colorbar('eastoutside');
 
 ylabel('frequency [Hz]','FontSize',13);
 
-%calc y axis ticks and labels
-% Show ticks every deltaFTicks Hz:
-deltaFTicks;
-fRange=fEnd-fStart;
 numbins=effTBase*fRange; % this is the total number of bins in the matrix passed from spec_avg.c
+ylen;
 allf=(fStart:deltaFTicks:fEnd); %creates a 1D array with every freq between start and end in it, in ascending order.
 vecFLabels = allf( (mod(allf,deltaFTicks)==0)|(allf == fEnd)|(allf==fStart) ); %keeps fStart and fEnd, plus any values that are integer multiples of deltaFTicks.
-
 %work out the bin numbers associated with these freq values.  effTBase=bins per hz.
 vecTicks=((vecFLabels-fStart)*effTBase)+1;
 numTicks=length(vecTicks);
 vecTicks(numTicks)=vecTicks(numTicks)-1;
-%---------------------------------------------
-%deal with the x axis
-xlabel('Time in days since start date','FontSize',13);
-%calc x axis ticks and labels.  Show a label every tenth of the width, and the first and last sft.
-deltaxticks=round(xlen/10); %rounds to nearest whole number to zero.
-if (deltaxticks < 1 )%if in the inlikely circumstance there are less than 3 sfts, this will catch the error.
-    deltaxticks= 1;
-end
-xticks = (1:deltaxticks:xlen);%creates an array from 1 to xlen with deltaxticks intervals.
-xnumticks= length(xticks);
-%xticks(xnumticks)=xlen;  %makes sure the last x tick is at the end of the specgram.
 
-list_days=(timesin-timesin(1))/86400 %converts the gps seconds into days, does not take into account leap seconds, but good enough for this plot.
 
-for kk=1:xnumticks;
-    subsc=(xticks(kk));
-    %xlabs(kk)= strcat(utcdate(subsc) ,utctime(subsc));
-    days = num2str( (double(list_days(subsc))),'%4.2f\n');
-    xlabs{kk}= days;
-end
-
-%  tStart
-%  timesin{2}(46)
-%  timesin{2}(46) - tStart
-%  xlabs = num2str(xlabs,'%2.1f\n')
-%  cellxlabs=cellstr(xlabs)
-
-%--------------------------------------------
-%set the ticks and labels for the X Y axis
 set(gca, 'YTick', vecTicks);%cg; gca is current axis handle.
 set(gca, 'YTickLabel', fliplr(vecFLabels));
 
-set(gca, 'XTick', xticks);
-set(gca, 'XTickLabel', xlabs);
+%---------------------------------------------
+%deal with the x axis
+xlabel('Time in days since start date','FontSize',13);
+
+list_days=(timesin-timesin(1))/86400; %converts the gps seconds into days, does not take into account leap seconds, but good enough for this plot.  timesin is a vector of the timestamps in gps seconds, this includes the datagaps!
+
+vecXticks=(get(gca, 'XTick').');%gets the number along the x-axis that the ticks placed.
+set(gca, 'XTick', vecXticks);%makes sure that the ticks are placed at these points.
+vecXlabels=num2str(list_days(vecXticks),'%4.2f\n');%ensures that only 2 dps are used, and gets the number in days that corresponds to the ticks
+set(gca, 'XTickLabel', vecXlabels);%applies the labels to the ticks.
 %-------------------------------------------
 %do the titles
 
@@ -229,7 +208,7 @@ if (pulsar ~= 0) %only run if pulsar is not 0
     newcrabF=numbins+1-((crabF-fStart)*effTBase);
     nmin_crabF=numbins+1-((min_crabF-fStart)*effTBase);
     nmax_crabF=numbins+1-((max_crabF-fStart)*effTBase);
-    plot(sftno,newcrabF, 'Color', [0,0,0], 'linestyle', '-');
+    plot(sftno,newcrabF, 'Color', [0,0,0], 'linestyle', '-', 'linewidth', 1);
     plot(sftno,nmin_crabF, 'Color', [0,0,0], 'linestyle', '--');
     plot(sftno,nmax_crabF, 'Color', [0,0,0], 'linestyle', '--');
     
@@ -237,10 +216,9 @@ if (pulsar ~= 0) %only run if pulsar is not 0
     %------------------------------------------------------
     %effTBase is the frequency resolution., need to work out the number of bins either side of the crab bin to grab, this should be 1/60hz wide in total.Work out number of bins equalt to 1/120Hz
     %this needs to come before the chunk of code that plots the crab freq over the specgram as the zeros are needed.
-    freqres=1/effTBase
-    winbins=round( (1/60)/freqres );%works out how many bins are equivlent to 1/60 hz
-%      if (winbins < 1 ), winbins=1, end;%just needed for testing, but will need a check that freqres is suffient for the window size.
-    %spec_crab needs as many rows as bins are needed to cover the 1/60hz window.
+    freqres
+    winbins=round( (1/60)/freqres )%works out how many bins are equivlent to 1/60 hz
+    if (winbins < 3 ), winbins=3, end;%If less than 3, the code will breakdown, as winwidth must be an integer, as its used to calculate indicies.
     spec_crab=zeros(1,xlen);%creates a matrix with winbins number of rows and no of cols equal to the no of sfts.  This will be matrix used for specgram plot centred on the crab freq.
     %spec_crab_plot=zeros(winbins,xlen);
     winwidth=(winbins-1)/2%the number of bins each side of the bin the crab freq is in to use in order to get a 1/60hz window width.
@@ -251,13 +229,13 @@ if (pulsar ~= 0) %only run if pulsar is not 0
     
     for ii=1:xlen;%do for all sfts
         count=1;
-        ii
+        ii;
         for jj=-winwidth:winwidth;%for each sft use number of bins needed for 1/60 hz window.
-        newcrabF(ii)
+        newcrabF(ii);
         bin_num=(fix(newcrabF(ii)) )+jj;%finds the bin number to look at.
         if (bin_num<0), bin_mum=0, end;
         if (bin_num>ylen), bin_num=ylen, end;
-        count
+        count;
         bin_freq=(( (numbins+1-bin_num)*freqres )+fStart) + freqres/2;
         deltaF=abs(bin_freq-crabF(ii));
         w=sinc(deltaF);
@@ -282,110 +260,114 @@ print('-dpng',[outputFileName '.png']);
 set(gcf, 'PaperUnits', 'centimeters');
 set(gcf, 'PaperOrientation', 'landscape');
 %set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-set (gcf, 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-print('-dpdf', '-painters', '-r300','-loose', [outputFileName '.pdf'])
+%  set (gcf, 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
+%  print('-dpdf', '-painters', '-r300','-loose', [outputFileName '.pdf'])
 
-filename_fig=sprintf('%s.fig',filename);
-saveas(1,filename_fig);
-filename_mat=sprintf('%s.mat',filename);
-save (filename_mat,'y');
+%  filename_fig=sprintf('%s.fig',filename);
+%  saveas(1,filename_fig);
+%  filename_mat=sprintf('%s.mat',filename);
+%  save (filename_mat,'y');
 
 delete(1);%closes the figures.
 %-------------------------------------------
 %create extra specgram zoomed in and centred on the crab freq.
 if (pulsar ~= 0)%if we set the option to run the crab stuff.
-    
+
     figure(3);
-    
+
     %do rest of image stuff
     %-------------------------
     %crab_means=mean(spec_crab_plot, 1);%computes the mean of each row and sticks it into the 1d array cab_means.
     plot(sftno, spec_crab);%makes a plot with y axis in log scale.
     
-    set(gca, 'XTick', xticks);
-    set(gca, 'XTickLabel', xlabs);
-    xlabel('Time in days since start date','FontSize',13);
-    
-%      yticks = (1:winbins);
-%      ylabs=(winwidth:-1:-winwidth).*freqres
-%      set(gca, 'YTick', yticks);
-%      set(gca, 'YTickLabel', ylabs);
-      ylabel('Spectral power density','FontSize',13);
+    xlim([1 xlen]);
 
-    
-    titleString2 = sprintf('Noise in 1/60 Hz band at Crab frequency, %s to %s UTC.' ,startDateTime,endDateTime);
+    vecXticks=(get(gca, 'XTick').')
+    set(gca, 'XTick', vecXticks);
+    vecXlabels=num2str(list_days(vecXticks),'%4.2f\n');%ensures that only 2 dps are used.
+    set(gca, 'XTickLabel', vecXlabels);
+
+    ylabel('Spectral power density','FontSize',13);
+
+    titleString2 = sprintf('Noise in Crab band (width 1/60 Hz), %s to %s UTC.' ,startDateTime,endDateTime);
     title(titleString2,'Interpreter','none');
-    
-%      colormap(cmap2);
-%      colorbar('eastoutside');
-    
-    
+
     print('-dpng',[outputFileName3 '.png']);
     set(gcf, 'PaperUnits', 'centimeters');
     set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-    print('-dpdf','-loose',[outputFileName3 '.pdf'])
-    
-    filename_fig=sprintf('%s_crab.fig',filename);
-    saveas(3,filename_fig);
-    filename_mat=sprintf('%s_crab.mat',filename);
-    save (filename_mat,'spec_crab');
-    
+
     delete(3);
 end
 %-------------------------------------------
 
-%Now work on the normalised average power plot.
+    %Now work on the normalised average power plot.
 
-if (taveFlag > 0) %cg; the code below only executes if taveFlag > 0, this bit plots the normalised average power
-  %subplot(2,1,2)cg; if printing the specgram and graph seperately, dont need this line.
-  figure(2);
-%cg; this bit creates the other two text files, these both have the suffix .txt on the end.
-% Produce StackSlide style time average output without sliding:
-  timeaverageFileName = sprintf('%s_timeaverage',filename);
-  [fk, xout] = textread(timeaverageFileName,'%f %f');
-  outputTextFile = sprintf('%s.txt',filename);
-  outputSortedTextFile = sprintf('%s_sorted.txt',outputFileName);
-  [xoutSorted,iSorted] = sort(xout,'descend');
-  fSorted = fk(iSorted);
-  fid = fopen(outputTextFile,'w');
-  fid2 = fopen(outputSortedTextFile,'w');
-  kMax = length(xout);
-  for k = 1:kMax
-      fprintf(fid,'%f %f\n',fk(k),xout(k));
-      fprintf(fid2,'%f %f\n',fSorted(k),xoutSorted(k));
-  end
-  stdev_xout = std(xout);
-  meanval_xout = mean(xout);
-  % Read in timestamps file to find the number of SFTs used:
-  timestampFileName = sprintf('%s_timestamps',filename);
-  [ntmp, ttmp] = textread(timestampFileName,'%f %f');
-  % Computed expected 5 sigma cutoff for gaussian noise:
-  cutoffmax = 1.0 + 5.0/sqrt(length(ntmp));
-  % avoid too small of a maximum cutoff:
-  if cutoffmax < 4;
-     cutoffmax = 4;
-  end
-  % compute cutoff from data, but do not exceed cutoffmax:
-  cutoff = meanval_xout+(5*stdev_xout);
-  if cutoff > cutoffmax;
-    cutoff = cutoffmax;
-  end
-  for jj=1:length(xout);
-      if xout(jj)>=cutoff;%cg; xout is one of the properties plotted.
-          xout(jj)=cutoff;
-      end
-  end
-%cg; Plot the normalised average power vs freq
-%-------------------------------------------------
-%cg; this uses the blah_blah_blah_timeaverage file output fropm spec_avg.c
-  plot(fk,xout)
-  titleString = sprintf('Spectrum for %s; averaged over %s  to  %s UTC.' ,chanName,startDateTime,endDateTime);;
-  title(titleString,'Interpreter','none');
-  ylabel('Normalized Average Power');
-  xlabel('Frequency (Hz)');
-  
-  fclose(fid);
-  fclose(fid2);
+    if (taveFlag > 0) %cg; the code below only executes if taveFlag > 0, this bit plots the normalised average power
+    %subplot(2,1,2)cg; if printing the specgram and graph seperately, dont need this line.
+    figure(2);
+    %cg; this bit creates the other two text files, these both have the suffix .txt on the end.
+    % Produce StackSlide style time average output without sliding:
+    timeaverageFileName = sprintf('%s.txt',filename);
+    [fk, xout, xout2] = textread(timeaverageFileName,'%f %f %f');
+    
+    %outputTextFile = sprintf('%s.txt',filename);
+    outputSortedTextFile = sprintf('%s_sorted.txt',outputFileName);
+    [xoutSorted,iSorted] = sort(xout,'descend');
+    fSorted = fk(iSorted);
+    xout2Sorted=xout2(iSorted);
+    %fid = fopen(outputTextFile,'w');
+    fid2 = fopen(outputSortedTextFile,'w');
+    kMax = length(xout2);
+    for k = 1:kMax
+	%fprintf(fid,'%f %f\n',fk(k),xout(k));
+	fprintf(fid2,'%f %f %f\n',fSorted(k),xoutSorted(k),xout2Sorted(k));
+    end
+    stdev_xout2 = std(xout2);
+    meanval_xout2 = mean(xout2);
+    % Read in timestamps file to find the number of SFTs used:
+    timestampFileName = sprintf('%s_timestamps',filename);
+    [ntmp, ttmp] = textread(timestampFileName,'%f %f');
+    % Computed expected 5 sigma cutoff for gaussian noise:
+    cutoffmax = 1.0 + 5.0/sqrt(length(ntmp));
+    if cutoffmax < 10;  % avoid too small of a maximum cutoff:
+	cutoffmax = 10;
+    end
+    cutoff = meanval_xout2+(5*stdev_xout2);% compute cutoff from data, but do not exceed cutoffmax:
+    if cutoff > cutoffmax;cutoff = cutoffmax;end;
+    
+    %scan every ten hz bin and recorded the kurtosis test result in a file.  Test needs to be done on data that has not had cut0ff applied, hence use of xout (power), adn not xout2 (SNR).
+    outputKurtosisFile = sprintf('%s_kurtosis',filename);
+    fid = fopen(outputKurtosisFile,'w');
+    
+    numbins2=effTBaseFull*fRange;%this is the total number of bins frequency bins in the spectrogram
+    kurt_test_band=0.25;%this sets the band over which to run the kurtosis testing.
+    
+    if (numbins2 >= (effTBaseFull*kurt_test_band));%checks if the freq band is as big as the band I am about to test
+	n_ten_hz = 1:effTBaseFull*kurt_test_band:length(xout)-1; %an array containing all the starting indicies for the 2 hz bins, not the end indicies.
+	for jj=1:length(n_ten_hz);%examines every 2 Hz band in the data.
+	    nstart=n_ten_hz(jj);%gets the start indicie.
+	    nend = nstart+effTBaseFull*kurt_test_band;%calcs the end indicie for the 10 hz bin.
+	    if (nstart == length(xout));nend =length(xout),end;%nend needs to calced specially for end bin to avoid indexing errors.
+	    kurt=(kurtosis(xout(nstart:nend)))-3;%finds the kurtosis of xout2, normal distribution has kurtosis of 3.
+	    fprintf(fid,'%f %f %f\n',fk(nstart),fk(nend), kurt);
+	end
+    else
+	kurt=kurtosis(xout);
+	fprintf(fid,'%f %f %f\n',fk(1),fk(end), kurt);
+    end
+    
+    %cg; Plot the normalised average power vs freq
+    %-------------------------------------------------
+    %cg; this uses the blah_blah_blah_timeaverage file output fropm spec_avg.c
+    plot(fk,xout2);
+    ylim ([xout2Sorted(kMax)  cutoff]);
+    titleString = sprintf('Spectrum of %s; %s to %s UTC,' ,chanName,startDateTime,endDateTime);
+    title(titleString,'Interpreter','none');
+    ylabel('SNR','FontSize',13);
+    xlabel('Frequency (Hz)','FontSize',13);
+    
+    fclose(fid);
+    fclose(fid2);
 
     if (thresholdSNR > 0)%only look for lines if threshold SNR has been set.
     % input the reference file and look for coincidence lines above thresholdSNR
@@ -473,7 +455,7 @@ if (taveFlag > 0) %cg; the code below only executes if taveFlag > 0, this bit pl
   print('-dpng',[outputFileName2 '.png'])
   set(gcf, 'PaperUnits', 'centimeters');
   set (gcf, 'PaperOrientation', 'landscape', 'PaperType', 'A4', 'PaperPosition', [0 0 30 20] );
-  print('-dpdf','-loose',[outputFileName2 '.pdf'])
+%    print('-dpdf','-loose',[outputFileName2 '.pdf'])
   delete(2);
 end
 

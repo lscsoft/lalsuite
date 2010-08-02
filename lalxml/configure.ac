@@ -1,4 +1,4 @@
-AC_INIT([lalxml],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,8 +44,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalxml])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalxml_version_major=`echo "$VERSION" | cut -d. -f1`
+lalxml_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalxml_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalxml_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalxml_version_micro" && lalxml_version_micro=0
+test -z "$lalxml_version_devel" && lalxml_version_devel=0
 lalxml_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALXML_VERSION],["$VERSION"],[LALXML Version])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MAJOR],[$lalxml_version_major],
+                   [LALXML Version Major Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MINOR],[$lalxml_version_minor],
+                   [LALXML Version Minor Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MICRO],[$lalxml_version_micro],
+                   [LALXML Version Micro Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_DEVEL],[$lalxml_version_devel],
+                   [LALXML Version Devel Number])
 AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALXML Configure Arguments])
 AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_DATE],["$lalxml_configure_date"],

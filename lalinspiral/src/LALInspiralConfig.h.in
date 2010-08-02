@@ -6,6 +6,18 @@
 /* LALInspiral Version */
 #undef LALINSPIRAL_VERSION
 
+/* LALInspiral Version Major Number  */
+#undef LALINSPIRAL_VERSION_MAJOR
+
+/* LALInspiral Version Minor Number  */
+#undef LALINSPIRAL_VERSION_MINOR
+
+/* LALInspiral Version Micro Number  */
+#undef LALINSPIRAL_VERSION_MICRO
+
+/* LALInspiral Version Devel Number  */
+#undef LALINSPIRAL_VERSION_DEVEL
+
 /* LALInspiral Configure Arguments */
 #undef LALINSPIRAL_CONFIGURE_ARGS
 

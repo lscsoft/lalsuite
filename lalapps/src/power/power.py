@@ -88,19 +88,22 @@ def get_cache_dir(config_parser):
 	return config_parser.get("pipeline", "cache_dir")
 
 
+def get_triggers_dir(config_parser):
+	return config_parser.get("pipeline", "triggers_dir")
+
+
+def make_dir_if_not_exists(dir):
+	try:
+		os.mkdir(dir)
+	except OSError, e:
+		if e.errno != errno.EEXIST:
+			# OK if directory exists, otherwise report error
+			raise e
+
+
 def make_dag_directories(config_parser):
-	try:
-		os.mkdir(get_cache_dir(config_parser))
-	except OSError, e:
-		if e.errno != errno.EEXIST:
-			# OK if directory exists, otherwise report error
-			raise e
-	try:
-		os.mkdir(get_out_dir(config_parser))
-	except OSError, e:
-		if e.errno != errno.EEXIST:
-			# OK if directory exists, otherwise report error
-			raise e
+	make_dir_if_not_exists(get_cache_dir(config_parser))
+	make_dir_if_not_exists(get_out_dir(config_parser))
 
 
 def get_files_per_bucluster(config_parser):
@@ -281,6 +284,8 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
+		self.output_dir = "."
+
 
 class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -288,6 +293,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -322,7 +328,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		"""
 		if not self.output_cache:
 			# FIXME:  instruments hardcoded to "everything"
-			self.output_cache = [CacheEntry(u"H1+H2+G1+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+			self.output_cache = [CacheEntry(u"G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -333,7 +339,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 			if None in (self.get_start(), self.get_end(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
 			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			self.set_output("H1+H2+G1+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start())))
+			self.set_output(os.path.join(self.output_dir, "G1+H1+H2+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))))
 		return self._AnalysisNode__output
 
 
@@ -357,6 +363,8 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_power.sub")
 
+		self.output_dir = "."
+
 
 class PowerNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -364,6 +372,7 @@ class PowerNode(pipeline.AnalysisNode):
 		pipeline.AnalysisNode.__init__(self)
 		self.__usertag = None
 		self.output_cache = []
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_ifo(self, instrument):
 		"""
@@ -403,7 +412,7 @@ class PowerNode(pipeline.AnalysisNode):
 			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
 			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-			self.set_output("%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+			self.set_output(os.path.join(self.output_dir, "%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 		return self._AnalysisNode__output
 
 	def set_mdccache(self, file):
@@ -425,10 +434,15 @@ class PowerNode(pipeline.AnalysisNode):
 
 
 class LigolwAddNode(pipeline.LigolwAddNode):
-	def __init__(self, *args):
-		pipeline.LigolwAddNode.__init__(self, *args)
+	def __init__(self, job, remove_input, *args):
+		pipeline.LigolwAddNode.__init__(self, job, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), ".")	# "." == self.job().output_dir except the job class doesn't yet have this info
+		self.remove_input = bool(remove_input)
+		if self.remove_input:
+			self.add_var_arg("--remove-input")
 
 	def __update_output_cache(self, observatory = None, segment = None):
 		del self.output_cache[:]
@@ -441,7 +455,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 	def set_name(self, *args):
 		pipeline.LigolwAddNode.set_name(self, *args)
-		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
@@ -453,8 +467,9 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.__update_output_cache(observatory = observatory, segment = segment)
 
 	def add_preserve_cache(self, cache):
-		for c in cache:
-			self.add_var_arg("--remove-input-except %s" % c.path())
+		if self.remove_input:
+			for c in cache:
+				self.add_var_arg("--remove-input-except %s" % c.path())
 
 	def get_input_cache(self):
 		return self.input_cache
@@ -484,6 +499,10 @@ class BucutJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_bucut")
+
+		self.files_per_bucut = get_files_per_bucut(config_parser)
+		if self.files_per_bucut < 1:
+			raise ValueError, "files_per_bucut < 1"
 
 
 class BucutNode(pipeline.CondorDAGNode):
@@ -525,16 +544,23 @@ class BuclusterJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("Requirements", "Memory > 1100")
 		self.add_ini_opts(config_parser, "ligolw_bucluster")
 
+		self.cache_dir = get_cache_dir(config_parser)
+
+		self.files_per_bucluster = get_files_per_bucluster(config_parser)
+		if self.files_per_bucluster < 1:
+			raise ValueError, "files_per_bucluster < 1"
+
 
 class BuclusterNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
-		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
 
 	def add_input_cache(self, cache):
@@ -570,6 +596,10 @@ class BinjfindJob(pipeline.CondorDAGJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_binjfind-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_binjfind")
+
+		self.files_per_binjfind = get_files_per_binjfind(config_parser)
+		if self.files_per_binjfind < 1:
+			raise ValueError, "files_per_binjfind < 1"
 
 
 class BinjfindNode(pipeline.CondorDAGNode):
@@ -611,6 +641,10 @@ class BurcaJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("Requirements", "Memory >= $(macrominram)")
 		self.add_ini_opts(config_parser, "ligolw_burca")
 
+		self.files_per_burca = get_files_per_burca(config_parser)
+		if self.files_per_burca < 1:
+			raise ValueError, "files_per_burca < 1"
+
 
 class Burca2Job(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
@@ -620,6 +654,8 @@ class Burca2Job(pipeline.CondorDAGJob):
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_burca2")
+
+		self.cache_dir = get_cache_dir(config_parser)
 
 
 class BurcaNode(pipeline.CondorDAGNode):
@@ -659,6 +695,9 @@ class BurcaNode(pipeline.CondorDAGNode):
 
 	def get_output(self):
 		raise NotImplementedError
+
+	def set_coincidence_segments(self, seglist):
+		self.add_var_opt("coincidence-segments", ",".join(segmentsUtils.to_range_strings(seglist)))
 
 
 class SQLiteJob(pipeline.CondorDAGJob):
@@ -718,16 +757,21 @@ class BurcaTailorJob(pipeline.CondorDAGJob):
 		self.add_condor_cmd("getenv", "True")
 		self.add_ini_opts(config_parser, "ligolw_burca_tailor")
 
+		self.cache_dir = get_cache_dir(config_parser)
+		self.output_dir = "."
+
 
 class BurcaTailorNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
-		self.cache_name = os.path.join(self._CondorDAGNode__job.cache_dir, "%s.cache" % self.get_name())
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
@@ -745,7 +789,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		cache_entry = make_cache_entry(self.input_cache, description, "")
-		filename = "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment)))
+		filename = os.path.join(self.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
 		self.add_var_opt("output", filename)
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
 		del self.output_cache[:]
@@ -812,7 +856,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 
 	# ligo_data_find
 	if "datafind" in job_types:
-		datafindjob = pipeline.LSCDataFindJob(get_cache_dir(config_parser), get_out_dir(config_parser), config_parser)
+		datafindjob = pipeline.LSCDataFindJob(os.path.join(os.getcwd(), get_cache_dir(config_parser)), os.path.join(os.getcwd(), get_out_dir(config_parser)), config_parser)
 
 	# rm
 	if "rm" in job_types:
@@ -834,36 +878,22 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	# ligolw_binjfind
 	if "binjfind" in job_types:
 		binjfindjob = BinjfindJob(config_parser)
-		binjfindjob.files_per_binjfind = get_files_per_binjfind(config_parser)
-		if binjfindjob.files_per_binjfind < 1:
-			raise ValueError, "files_per_binjfind < 1"
 
 	# ligolw_bucut
 	if "bucut" in job_types:
 		bucutjob = BucutJob(config_parser)
-		bucutjob.files_per_bucut = get_files_per_bucut(config_parser)
-		if bucutjob.files_per_bucut < 1:
-			raise ValueError, "files_per_bucut < 1"
 
 	# ligolw_bucluster
 	if "bucluster" in job_types:
 		buclusterjob = BuclusterJob(config_parser)
-		buclusterjob.files_per_bucluster = get_files_per_bucluster(config_parser)
-		if buclusterjob.files_per_bucluster < 1:
-			raise ValueError, "files_per_bucluster < 1"
-		buclusterjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_burca
 	if "burca" in job_types:
 		burcajob = BurcaJob(config_parser)
-		burcajob.files_per_burca = get_files_per_burca(config_parser)
-		if burcajob.files_per_burca < 1:
-			raise ValueError, "files_per_burca < 1"
 
 	# ligolw_burca
 	if "burca2" in job_types:
 		burca2job = Burca2Job(config_parser)
-		burca2job.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_sqlite
 	if "sqlite" in job_types:
@@ -872,7 +902,6 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	# ligolw_burca_tailor
 	if "burcatailor" in job_types:
 		burcatailorjob = BurcaTailorJob(config_parser)
-		burcatailorjob.cache_dir = get_cache_dir(config_parser)
 
 
 #
@@ -984,8 +1013,8 @@ def make_datafind_fragment(dag, instrument, seg):
 	return set([node])
 
 
-def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, preserve_cache = None, extra_input_cache = None):
-	node = LigolwAddNode(lladdjob)
+def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, remove_input = False, preserve_cache = None, extra_input_cache = None):
+	node = LigolwAddNode(lladdjob, remove_input = remove_input)
 
 	# link to parents
 	for parent in parents:
@@ -1011,7 +1040,7 @@ def make_lladd_fragment(dag, parents, tag, segment = None, input_cache = None, p
 	if segment is None:
 		segment = cache_entry.segment
 	node.set_name("lladd_%s_%s_%d_%d" % (tag, cache_entry.observatory, int(segment[0]), int(abs(segment))))
-	node.set_output("%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment))), segment = segment)
+	node.set_output(os.path.join(node.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, tag, int(segment[0]), int(abs(segment)))), segment = segment)
 
 	node.set_retry(3)
 	dag.add_node(node)
@@ -1049,9 +1078,9 @@ def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
 	node.set_start(start)
 	node.set_end(seg[1])
 	if flow is not None:
-		node.set_name("lalapps_binj_%d_%d" % (int(start), int(flow)))
+		node.set_name("lalapps_binj_%s_%d_%d" % (tag, int(start), int(flow)))
 	else:
-		node.set_name("lalapps_binj_%d" % int(start))
+		node.set_name("lalapps_binj_%s_%d" % (tag, int(start)))
 	node.set_user_tag(tag)
 	if flow is not None:
 		node.add_macro("macroflow", flow)
@@ -1273,7 +1302,7 @@ def make_multibinj_fragment(dag, seg, tag):
 	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
 
 	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
-	return make_lladd_fragment(dag, nodes, tag)
+	return make_lladd_fragment(dag, nodes, tag, remove_input = True)
 
 
 #
@@ -1346,7 +1375,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params
 #
 
 
-def group_coinc_parents(parents, offset_vectors, verbose = False):
+def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = False):
 	if not offset_vectors:
 		# no-op
 		return []
@@ -1356,7 +1385,7 @@ def group_coinc_parents(parents, offset_vectors, verbose = False):
 
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, verbose = verbose)[1]
+	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)[1]
 	caches = [set(bin.objects) for bin in bins]
 	segs = [bin.extent for bin in bins]
 

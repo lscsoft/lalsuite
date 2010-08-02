@@ -1,6 +1,6 @@
 /* Nested Sampler Using LAL bayesian framework
  (C) John Veitch 2009
- 
+
  */
 
 #include <stdlib.h>
@@ -67,10 +67,10 @@ Optional OPTIONS:\n \
 [--event INT (0)\t:\tUse event INT from Sim or Sngl InspiralTable]\n \
 [--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
-[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|EOBNR|SpinTaylor)]\n \
+[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor)]\n \
 [--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
-[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use]\n \
+[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
 [--distMax FLOAT (100)\t:\tMaximum distance to use]\n \
 [--deta FLOAT\t:\twidth of eta window]\n \
@@ -137,6 +137,8 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 
 
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
+void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT);
+void NestInitManualIMRBChi(LALMCMCParameter *parameter, void *iT);
 void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT);
 void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT);
 void NestInitGRB(LALMCMCParameter *parameter, void *iT);
@@ -150,7 +152,7 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	FrCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
-	
+
 	cache  = XLALFrImportCache( cachefile );
 	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file %s\n",cachefile); exit(-1);}
 	stream = XLALFrCacheOpen( cache );
@@ -212,7 +214,7 @@ void initialise(int argc, char *argv[]){
 		{"version",no_argument,0,'V'},
 		{"help",no_argument,0,'h'},
 		{0,0,0,0}};
-	
+
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
 		case 'h':
@@ -367,7 +369,7 @@ void initialise(int argc, char *argv[]){
 			break;
 	}
 	}
-	
+
 	if(inputXMLFile==NULL && injXMLFile==NULL && manual_end_time==0){fprintf(stderr,"Error, you must specify --inj or --XMLfile for trigger list\nOr --end_time, --dt, --Mmin and --Mmax for manual search"); exit(-1);}
 	/* Check that the channel/cache combo adds up */
 	if(nifo!=nCache || nCache==0) {fprintf(stderr,"Error: You must have equal numbers of IFOs and frame caches, and they must be paired in the correct order!\n");
@@ -408,7 +410,7 @@ int main( int argc, char *argv[])
 	REAL4 TSoffset;
 	LIGOTimeGPS realstart,segmentStart;
 	REAL8 networkSNR=0.0;
-	
+
 	seed=0;
 	etawindow=1.0;
 	timewindow=0.05;
@@ -425,32 +427,32 @@ int main( int argc, char *argv[])
 		while(i<event) {i++; inputCurrent = inputCurrent->next;}
 	}
 	REAL8 segDur = duration/(REAL8)nSegs;
-	
+
 	/* Number of sample in a segment */
 	seglen=(UINT4)(segDur*SampleRate);
 	/*	seglen=(INT4)pow(2.0,ceil(log2((REAL8)seglen)));*/  /* Make it a power of two for the FFT */
 	segDur = seglen/SampleRate;
 	nSegs =(INT4)floor(duration/segDur);
-	
+
 	fprintf(stderr,"Choosing %i segments length %i, (%f s)\n",nSegs,seglen,segDur);
-	
+
 	stride = seglen; /* Overlap the padding */
 	strideDur = stride / SampleRate;
-	
-	
+
+
 	if(segDur<=2.0*padding){fprintf(stderr,"ERROR: Seg length %lf s too small for padding %lf s\n",segDur,padding);exit(-1);}
 	if(segDur-2.0*padding<6.0){fprintf(stderr,"WARNING: using <6s segments (excl. padding) unadvisable, your current unpadded seglen is %lf s\n",segDur-2.0*padding);}
-	
+
 	int check=0;
 	fwdplan = XLALCreateForwardREAL8FFTPlan( seglen, 0 );
 	revplan = XLALCreateReverseREAL8FFTPlan( seglen, 0 );
 	memset(&inputMCMC,0,sizeof(inputMCMC)); /* CLEAR THE INPUT STRUCTURE! */
-	
+
 	inputMCMC.deltaT=(REAL8 )(1.0/SampleRate);
 	inputMCMC.verbose=verbose;
 	char strainname[20]="LSC-STRAIN";
 	if(NINJA) sprintf(strainname,"STRAIN"); /* Different strain channel name for NINJA */
-	
+
 	/* Make a copy of the detectors list */
 	LALDetector *localCachedDetectors=calloc(LAL_NUM_DETECTORS,sizeof(LALDetector));
 	for(i=0;i<LAL_NUM_DETECTORS;i++) memcpy(&(localCachedDetectors[i]),&lalCachedDetectors[i],sizeof(LALDetector));
@@ -486,9 +488,9 @@ int main( int argc, char *argv[])
 		/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]; continue;}*/
 		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
 	}
-	
+
 	inputMCMC.fLow = fLow;
-	
+
 	/* Prepare for injections */
 	UINT4 Ninj=0;
 	PPNParamStruc InjParams;
@@ -516,7 +518,7 @@ int main( int argc, char *argv[])
 		/****************************************************************************************************/
 		/********** THIS IS ONLY NECESSARY WHILE THE LALGenerateInspiral and LALInspiralParameterCalc *******/
 		/********** GIVE DIFFERENT CHIRP TIMES !                                                      *******/
-		
+
 //		insptemplate.totalMass=InjParams.mTot;
 //		insptemplate.eta = InjParams.eta;
 //		insptemplate.approximant = TaylorF2;
@@ -527,7 +529,7 @@ int main( int argc, char *argv[])
 		/*InjParams.tc = insptemplate.tC;*/
 //		fprintf(stderr,"GenerateInspiral chirp time=%lf, ParameterCalc chirp time = %lf\n",InjParams.tc,insptemplate.tC);
 		/*****************************************************************************************************/
-		
+
 //		injstart = injTable->geocent_end_time;
 //		XLALGPSAdd(&injstart, -InjParams.tc); /* makes injstart the time at fLow */
 		/*		fprintf(stderr,"start time = %lf\n",injstart.gpsSeconds + injstart.gpsNanoSeconds*1.e-9); */
@@ -538,7 +540,7 @@ int main( int argc, char *argv[])
 //		if(InjectGW.phi) memcpy(&(InjectGW.phi->epoch),&injstart,sizeof(LIGOTimeGPS));
 //		if(InjectGW.shift) memcpy(&(InjectGW.shift->epoch),&injstart,sizeof(LIGOTimeGPS));
 	}
-	
+
 	/* Get the end time of the trigger or injection */
 	int ETgpsSeconds,ETgpsNanoseconds;
 	if(NULL!=injXMLFile) {
@@ -551,30 +553,30 @@ int main( int argc, char *argv[])
 		ETgpsNanoseconds = (INT4)1.e9*fmod(manual_end_time,1.0);
 		ETgpsSeconds = (INT4) floor(manual_end_time);
 	}
-	
+
 	/* If the trigger is not in the data read in, adjust the time of the data to centre the trigger in it */
 	if(ETgpsSeconds-duration>datastart.gpsSeconds){
 		fprintf(stderr,"ERROR: Trigger lies outside specified block\nAdjusting GPSstart to %i for trigger %i\n",ETgpsSeconds-(INT4)duration/2,event);
 		datastart.gpsSeconds=ETgpsSeconds-(INT4)duration/2;
 		datastart.gpsNanoSeconds=0;
 	}
-	
+
 	if(ETgpsSeconds>datastart.gpsSeconds+duration) {fprintf(stderr,"Error, trigger lies outwith data range %i - %i\n",datastart.gpsSeconds,datastart.gpsSeconds+(INT4)duration); exit(-1);}
-	
+
 	datarandparam=XLALCreateRandomParams(dataseed);
-	
+
 	/* Read in the data for each IFO */
 	for(i=0,j=0;i<nIFO;i++){
 		INT4 TrigSegStart,TrigSample;
 		inputMCMC.ifoID[i] = IFOnames[i];
 		inputMCMC.deltaF = (REAL8)SampleRate/seglen;
-		
+
 		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
 		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
 		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
 		TrigSegStart=TrigSample+ (SampleRate) - seglen; /* Put trigger 1 s before end of segment */
 		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
-		
+
 		segmentStart = datastart;
 		XLALGPSAdd(&segmentStart, (REAL8)TrigSegStart/(REAL8)SampleRate);
 		memcpy(&(inputMCMC.epoch),&segmentStart,sizeof(LIGOTimeGPS));
@@ -607,7 +609,7 @@ int main( int argc, char *argv[])
 			}
 		}
 		else FakeFlag=0;
-		
+
 		if(timeslides&&!FakeFlag){ /* Set up time slides by randomly offsetting the data */
 			LALCreateRandomParams(&status,&randparam,seed);
 			memcpy(&realstart,&datastart,sizeof(LIGOTimeGPS));
@@ -638,33 +640,33 @@ int main( int argc, char *argv[])
 			if(estimatenoise){ /* Spectrum not used with student-t likelihood */
 				/* Set up inverse spectrum structure */
 				inputMCMC.invspec[i] = (REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&RawData->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-				
+
 				/* Compute power spectrum */
 				if(DEBUG) fprintf(stderr,"Computing power spectrum, seglen %i\n",seglen);
 				check=XLALREAL8AverageSpectrumMedian( inputMCMC.invspec[i] ,RawData,(UINT4)seglen,(UINT4)stride,windowplan,fwdplan);
 				check|=XLALREAL8SpectrumInvertTruncate( inputMCMC.invspec[i], inputMCMC.fLow, seglen, (seglen-stride)/4, fwdplan, revplan );
-				
+
 				if(check) {fprintf(stderr,"Cannot create spectrum, check=%x\n",check); exit(-1);}
 				/* POWER SPECTRUM SHOULD HAVE UNITS OF TIME! */
 			}
-			
+
 			if(DEBUG) fprintf(stderr,"populating inputMCMC\n");
-			
+
 			segnum=(ETgpsSeconds - RawData->epoch.gpsSeconds)/strideDur;
-			
+
 			if(InjParams.tc>segDur-padding) fprintf(stderr,"Warning, flat-top is shorter than injected waveform!\n");
 			/* Store the appropriate data in the input structure */
-			
+
 			if(DEBUG) fprintf(stderr,"Trigger lies at sample %d, creating segment around it\n",TrigSample);
 			/* Chop out the data segment and store it in the input structure */
 			inputMCMC.segment[i]=(REAL8TimeSeries *)XLALCutREAL8TimeSeries(RawData,TrigSegStart,seglen);
-			
+
 			memcpy(&(inputMCMC.invspec[i]->epoch),&(inputMCMC.segment[i]->epoch),sizeof(LIGOTimeGPS));
-	
+
 			if(DEBUG) fprintf(stderr,"Data segment %d in %s from %f to %f, including padding\n",i,IFOnames[i],((float)TrigSegStart)/((float)SampleRate),((float)(TrigSegStart+seglen))/((float)SampleRate) );
-			
+
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&(inputMCMC.segment[i]->epoch),0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
-			
+
 			XLALDestroyREAL8TimeSeries(RawData);
 
 			/* Window and FFT the data */
@@ -675,7 +677,7 @@ int main( int argc, char *argv[])
 				inputMCMC.stilde[i]->data->data[j].im/=sqrt(windowplan->sumofsquares / windowplan->data->length);
 			}
 		} /* End if(!FakeFlag) */
-		
+
 		/* Perform injection in time domain */
 		if(NULL!=injXMLFile && fakeinj==0) {
 			DetectorResponse det;
@@ -696,9 +698,9 @@ int main( int argc, char *argv[])
 			memcpy(&bufferstart,&segmentStart,sizeof(LIGOTimeGPS));
 			XLALGPSAdd(&bufferstart,((REAL8)seglen*inputMCMC.deltaT));
 			XLALGPSAdd(&bufferstart,-((REAL8)bufferlength*inputMCMC.deltaT));
-			
+
 			REAL4TimeSeries *injWave=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(IFOnames[i],&(bufferstart),0.0,inputMCMC.deltaT,&lalADCCountUnit,(size_t)bufferlength);
-			
+
 			for (j=0;j<injWave->data->length;j++) injWave->data->data[j]=0.0;
 //			LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);
 			COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&bufferstart,0.0,inputMCMC.deltaF,(const LALUnit *)&strainPerCount,seglen);
@@ -710,10 +712,10 @@ int main( int argc, char *argv[])
 			XLALDestroyCOMPLEX8FrequencySeries(resp);
 			printf("Finished InjectSignals\n");
 			fprintf(stderr,"Cutting injection buffer from %d to %d\n",bufferlength,seglen);
-			
+
                 	TrigSegStart=(INT4)((segmentStart.gpsSeconds-injWave->epoch.gpsSeconds)*SampleRate);
 			TrigSegStart+=(INT4)((segmentStart.gpsNanoSeconds - injWave->epoch.gpsNanoSeconds)*1e-9*SampleRate);
-			
+
 			injWave=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injWave,TrigSegStart,seglen);
 			fprintf(stderr,"Cut buffer start time=%lf, segment start time=%lf\n",injWave->epoch.gpsSeconds+1e-9*injWave->epoch.gpsNanoSeconds,inputMCMC.stilde[i]->epoch.gpsSeconds + 1.0e-9*inputMCMC.stilde[i]->epoch.gpsNanoSeconds);
 			REPORTSTATUS(&status);
@@ -730,7 +732,7 @@ int main( int argc, char *argv[])
 			REAL4 WinNorm = sqrt(windowplan->sumofsquares/windowplan->data->length);
 			for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=SNRfac*windowplan->data->data[j]/WinNorm;
 			XLALREAL8TimeFreqFFT(injF,inj8Wave,fwdplan); /* This calls XLALREAL8TimeFreqFFT which normalises by deltaT */
-			
+
 			REPORTSTATUS(&status);
 			if(estimatenoise){
 				for(j=(UINT4) (inputMCMC.fLow/inputMCMC.invspec[i]->deltaF),SNR=0.0;j<seglen/2;j++){
@@ -739,10 +741,10 @@ int main( int argc, char *argv[])
 				SNR*=4.0*inputMCMC.invspec[i]->deltaF; /* Get units correct - factor of 4 for 1-sided */
 			}
 			LALDestroyREAL4FFTPlan(&status,&inj_plan);
-			
+
 			networkSNR+=SNR;
 			SNR=sqrt(SNR);
-			
+
 			/* Actually inject the waveform */
 			if(!FakeFlag) for(j=0;j<inj8Wave->data->length;j++) inputMCMC.segment[i]->data->data[j]+=(REAL8)inj8Wave->data->data[j];
 			for(j=0;j<injF->data->length;j++) {
@@ -758,18 +760,18 @@ int main( int argc, char *argv[])
 			fclose(waveout);
 #endif
 			XLALDestroyCOMPLEX16FrequencySeries(injF);
-			
+
 			XLALDestroyREAL4TimeSeries(injWave);
 			XLALDestroyREAL8TimeSeries(inj8Wave);
-			
+
 			if(status.statusCode==0) {fprintf(stderr,"Injected signal into %s. SNR=%lf\n",IFOnames[i],SNR);}
 			else {fprintf(stderr,"injection failed!!!\n"); REPORTSTATUS(&status); exit(-1);}
 		}
-		
+
 	} /* End loop over IFOs */
 	/* Data is now all in place in the inputMCMC structure for all IFOs and for one trigger */
 	XLALDestroyRandomParams(datarandparam);
-	
+
 	if(estimatenoise && DEBUG){
 		for(j=0;j<nIFO;j++){
 			char filename[100];
@@ -783,7 +785,7 @@ int main( int argc, char *argv[])
 			fclose(outinit);
 		}
 	}
-	
+
 	/* Set up the structure */
 	inputMCMC.injectionTable = injTable;
 	inputMCMC.numberDataStreams = nIFO;
@@ -796,27 +798,30 @@ int main( int argc, char *argv[])
 	inputMCMC.annealingTemp = 0.1;
 	/* randparams need to be handled differently from the MCMC code*/
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
-	
+
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
 	else if(!strcmp(approx,TT2)) inputMCMC.approximant=TaylorT2;
 	else if(!strcmp(approx,TT3)) inputMCMC.approximant=TaylorT3;
-    	else if(!strcmp(approx,TT4)) inputMCMC.approximant=TaylorT4;
+    else if(!strcmp(approx,TT4)) inputMCMC.approximant=TaylorT4;
 	else if(!strcmp(approx,BBH)) inputMCMC.approximant=IMRPhenomFA;
-    	else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
-    	else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
+    else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,BBHSpin2)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,BBHSpin3)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
 	else if(!strcmp(approx,ST)) inputMCMC.approximant=SpinTaylor;
-    	/*else if(!strcmp(approx,PSTRD)) inputMCMC.approximant=PhenSpinTaylorRD;*/
+    /*else if(!strcmp(approx,PSTRD)) inputMCMC.approximant=PhenSpinTaylorRD;*/
 	else {fprintf(stderr,"Unknown approximant: %s\n",approx); exit(-1);}
-	
+
 	if(inputMCMC.approximant!=AmpCorPPN && ampOrder!=0){
 		fprintf(stderr,"Warning, setting amp order %i but not using AmpCorPPN. Amplitude corrected waveforms will NOT be generated!\n",ampOrder);
 	}
 	inputMCMC.ampOrder=ampOrder;
+
 	/* Set the initialisation and likelihood functions */
 	if(SkyPatch) {inputMCMC.funcInit = NestInitSkyPatch; goto doneinit;}
 	if(SkyLocFlag) {inputMCMC.funcInit = NestInitSkyLoc; goto doneinit;}
@@ -829,23 +834,41 @@ doneinit:
 	if(studentt) inputMCMC.funcLikelihood = MCMCSTLikelihoodMultiCoherentF;
 	else inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
 	if(inputMCMC.approximant==AmpCorPPN) inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor;
-	
+
 	inputMCMC.funcPrior = NestPrior;
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
 	}
 	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
-	
+
+    if(!strcmp(approx,BBHSpin1)) {
+        inputMCMC.funcPrior = NestPriorHighMass;
+        inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
+        inputMCMC.funcInit = NestInitManual;
+    }
+
+    if(!strcmp(approx,BBHSpin2)) {
+        inputMCMC.funcPrior = NestPriorHighMass;
+        inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
+        inputMCMC.funcInit = NestInitManualIMRB;
+    }
+
+    if(!strcmp(approx,BBHSpin3)) {
+        inputMCMC.funcPrior = NestPriorHighMass;
+        inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
+        inputMCMC.funcInit = NestInitManualIMRBChi;
+    }
+
 	/* Live is an array of LALMCMCParameter * types */
 	Live = (LALMCMCParameter **)LALMalloc(Nlive*sizeof(LALMCMCParameter *));
 	for (i=0;i<Nlive;i++) Live[i]=(LALMCMCParameter *)LALMalloc(sizeof(LALMCMCParameter));
-	
+
 	if(networkSNR!=0.0) fprintf(stdout,"Injected signal network SNR= %lf\n",sqrt(networkSNR));
-	
+
 	double ReducedChiSq=0;
 	/* variance of dimensionful real part d(f_k) (= variance of imaginary part) is zeta^2 */
 	/* zeta^2 = N/(4deltaT) * S(f_k)  (S(f_k) dimensionful one-sided) */
-	
+
 	if(estimatenoise){
 		for (i=(int)fLow/inputMCMC.invspec[0]->deltaF;i<inputMCMC.stilde[0]->data->length;i++) ReducedChiSq+=(pow(inputMCMC.stilde[0]->data->data[i].re,2.0)+pow(inputMCMC.stilde[0]->data->data[i].im,2.0))*inputMCMC.invspec[0]->data->data[i];
 		ReducedChiSq *= 2.0*inputMCMC.invspec[0]->deltaF/(inputMCMC.stilde[0]->data->length-(fLow/inputMCMC.invspec[0]->deltaF)); /* should be N */
@@ -854,7 +877,7 @@ doneinit:
 	fprintf(stdout,"Number of points in F-domain above fLow = %i\n",(int)inputMCMC.stilde[0]->data->length-(int)(fLow/(double)inputMCMC.stilde[0]->deltaF));
 	evidence = nestZ(Nruns,Nlive,Live,&inputMCMC);
 	fprintf(stdout,"logZ = %lf\n",evidence);
-	
+
 	/* Clean up */
 	XLALDestroyREAL8Window(windowplan);
 	for(i=0;i<nIFO;i++){
@@ -873,10 +896,10 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	REAL8 deltaLong=0.01;
 	REAL8 deltaLat=0.01;
 	REAL8 trueLong=0.0,trueLat=0.0;
-	
+
 	parameter->param = NULL;
 	parameter->dimension = 0;
-	
+
 	if(iT!=NULL){
 		grb_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
 		trueLong = (REAL8)injTable->longitude;
@@ -891,35 +914,35 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	/*etamin = etamin<0.01?0.01:etamin;*/
 	etamin=0.01;
 	double etamax = 0.25;
-	
+
 	/* GRB priors are below */
 	m1min=1.0;
 	m1max=3.0;
 	m2min=1.0;
 	m2max=35.0;
-	
+
 	mcmin = m2mc(m1min,m2min);
 	mcmax = m2mc(m1max,m2max);
 	etamin = 0.027;
-	
+
 	localetawin=etamax-etamin;
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
-	
+
 	/*  XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
 	XLALMCMCAddParam(parameter, "time",             (gsl_rng_uniform(RNG)-0.5)*timewindow + grb_time ,grb_time-0.5*timewindow,grb_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",              LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	
+
 	XLALMCMCAddParam(parameter,"long",trueLong,trueLong-0.5*deltaLong,trueLong+0.5*deltaLong,-1);
 	XLALMCMCAddParam(parameter,"lat",trueLat,trueLat-0.5*deltaLat,trueLat+0.5*deltaLat,-1);
-	
+
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
-	
-	
+
+
 	return;
 }
 
@@ -941,7 +964,7 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	double lmmin=log(inMc-deltaM);
 	double lmmax=log(inMc+deltaM);
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
-	
+
 	/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
 	XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
@@ -966,11 +989,11 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	fprintf(stderr,"Using longitude = %f, latitude = %f\n",manual_RA,manual_dec);
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
-	
+
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
-	
+
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
 	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
@@ -995,6 +1018,7 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
+
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
@@ -1007,7 +1031,79 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
+
 	return;
+}
+
+void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT)
+{
+	double etamin=0.03;
+	double mcmin,mcmax;
+	iT=NULL;
+	parameter->param=NULL;
+	parameter->dimension = 0;
+	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
+	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+
+    double lmmin=log(mcmin);
+	double lmmax=log(mcmax);
+
+    double spin1zmin=-1.;
+    double spin1zmax=1.;
+
+    double spin2zmin=-1.;
+    double spin2zmax=1.;
+
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
+	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
+	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
+	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
+	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
+/*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
+	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
+
+    XLALMCMCAddParam(parameter,"spin1z",(spin1zmax-spin1zmin)*gsl_rng_uniform(RNG)+spin1zmin,spin1zmin,spin1zmax,0);
+    XLALMCMCAddParam(parameter,"spin2z",(spin2zmax-spin2zmin)*gsl_rng_uniform(RNG)+spin2zmin,spin2zmin,spin2zmax,0);
+	return;
+}
+
+void NestInitManualIMRBChi(LALMCMCParameter *parameter, void *iT)
+{
+	double etamin=0.03;
+	double mcmin,mcmax;
+	iT=NULL;
+	parameter->param=NULL;
+	parameter->dimension = 0;
+	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
+	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+
+    double lmmin=log(mcmin);
+	double lmmax=log(mcmax);
+
+    double chiSpinmin=-1.;
+    double chiSpinmax=1.;
+
+	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
+	/*	XLALMCMCAddParam(parameter,"mtotal",manual_mass_low+mwin*gsl_rng_uniform(RNG),manual_mass_low,manual_mass_high,0);*/
+	XLALMCMCAddParam(parameter,"eta",etamin+gsl_rng_uniform(RNG)*(0.25-etamin),etamin,0.25,0);
+	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
+	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
+/*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
+	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
+
+    XLALMCMCAddParam(parameter,"chiSpin",(chiSpinmax-chiSpinmin)*gsl_rng_uniform(RNG)+chiSpinmin,chiSpinmin,chiSpinmax,0);
+
+    return;
 }
 
 void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
@@ -1017,7 +1113,7 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 	parameter->param = NULL;
 	parameter->dimension = 0;
 	trg_time = manual_end_time;
-	
+
 	/*double etamin = eta-0.5*etawindow;
 	 etamin = etamin<0.01?0.01:etamin;*/
 	double etamin=0.01;
@@ -1039,8 +1135,8 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
-	
-	
+
+
 	return;
 }
 
@@ -1061,31 +1157,29 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	
+
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
-	
+
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);
 	localetawin=etamax-etamin;
-	
+
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
-	
-	
+
 	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
 	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, -1);*/
 	XLALMCMCAddParam(parameter,"logdist",(log(manual_dist_max)-log(manual_dist_min))*gsl_rng_uniform(RNG)+log(manual_dist_min) ,log(manual_dist_min),log(manual_dist_max),0);
-	
+
 	XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*LAL_TWOPI,0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat", acos(2.0*gsl_rng_uniform(RNG)-1.0)-LAL_PI/2.0,-LAL_PI/2.0,LAL_PI/2.0,0);
-	
-	
+
 	XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI/2.0,0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"iota", acos(2.0*gsl_rng_uniform(RNG)-1.0) ,0,LAL_PI,0);
-	
-	
+
+
 	return;
 
 }

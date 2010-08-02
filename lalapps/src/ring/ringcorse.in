@@ -39,6 +39,7 @@ except ImportError:
 	from pysqlite2 import dbapi2 as sqlite3
 import sys
 
+sqlite3.enable_callback_tracebacks(True)
 
 from glue import segments
 from glue.ligolw import lsctables
@@ -50,6 +51,7 @@ from pylal import git_version
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from glue.ligolw import table
 from pylal import llwapp
+from pylal import farutils
 
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
@@ -73,13 +75,11 @@ def parse_command_line():
 		usage = "%prog [options] [file ...]",
 		description = "%prog does blah blah blah."
 	)
-	parser.add_option("-p", "--live-time-program", metavar = "name", help = "Set the name of the program whose entries in the search_summary table will set the search live time.  Required.")
+	parser.add_option("-p", "--live-time-program", metavar = "name", default="lalapps_ring", help = "Set the name of the program whose entries in the search_summary table will set the search live time.  Required.")
 	parser.add_option("--veto-segments-name", help = "Set the name of the segments to extract from the segment tables and use as the veto list.")
-#	parser.add_option("--categories", metavar = "{\"mchirp-ifos-oninstruments\",\"mtotal-ifos-oninstruments\",\"oninstruments\"}", help = "Select the event categorization algorithm.  Required.")
-#	parser.add_option("-b", "--mass-bins", metavar = "mass,mass[,mass,...]", help = "Set the boundaries of the mass bins in solar masses.  The lowest and highest bounds must be explicitly listed.  Example \"0,5,inf\".  Required if mass-based categorization algorithm has been selected.")
-	parser.add_option("--categories", metavar = "{\"frequency-ifos-oninstruments\",\"oninstruments\"}", help = "Select the event categorization algorithm.  Required.")
+	parser.add_option("--categories", metavar = "{\"frequency-ifos-oninstruments\",\"oninstruments\"}", default="oninstruments", help = "Select the event categorization algorithm.  Default oninstruments")
 	parser.add_option("-b", "--frequency-bins", metavar = "frequency,frequency[,frequency,...]", help = "Set the boundaries of the frequency bins in Hz.  The lowest and highest bounds must be explicitly listed.  Example \"0,5,inf\".  Required if frequency-based categorization algorithm has been selected.")
-	parser.add_option("--rank-by", metavar = "{\"snr\",\"uncombined-ifar\",\"likelihood\"}", help = "Select the event ranking method.  Required.")
+	parser.add_option("--rank-by", metavar = "{\"snr\",\"uncombined-ifar\",\"likelihood\"}", default="snr", help = "Select the event ranking method.  Default is snr")
 	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
 	parser.add_option("-n","--extrapolation-num",action="store",type="int",default=0, metavar="num",help="number of time-slide points to use in FAR extrapolation" )
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
@@ -89,49 +89,25 @@ def parse_command_line():
 	# categories and ranking
 	#
 
-#	if options.categories not in ("mchirp-ifos-oninstruments", "mtotal-ifos-oninstruments", "oninstruments"):
-#		raise ValueError, "missing or unrecognized --categories option"
-        if options.categories not in ("frequency-ifos-oninstruments", "oninstruments"):
-                raise ValueError, "missing or unrecognized --categories option"
-        if options.rank_by not in ("snr", "uncombined-ifar", "likelihood"):
-                raise ValueError, "missing or unrecognized --rank-by option"
+	if options.categories not in ("frequency-ifos-oninstruments", "oninstruments"):
+		raise ValueError, "missing or unrecognized --categories option"
+	if options.rank_by not in ("snr", "uncombined-ifar", "likelihood"):
+		raise ValueError, "missing or unrecognized --rank-by option"
 
-#	if options.categories in ("mchirp-ifos-oninstruments", "mtotal-ifos-oninstruments"):
-#		if options.rank_by != "snr":
-#			raise ValueError, "--rank-by must be \"snr\" if --categories is \"%s\"" % options.categories
-#		options.populate_column = "false_alarm_rate"
-#	else:
-#		if options.rank_by == "snr":
-#			raise ValueError, "--rank-by must be \"uncombined-ifar\" or \"likelihood\" if --categories is \"%s\"" % options.categories
-#		options.populate_column = "combined_far"
 
-        if options.categories in ("frequency-ifos-oninstruments"):
-                if options.rank_by != "snr":
-                        raise ValueError, "--rank-by must be \"snr\" if --categories is \"%s\"" % options.categories
-                options.populate_column = "false_alarm_rate"
-        else:
-                if options.rank_by == "snr":
-                        raise ValueError, "--rank-by must be \"uncombined-ifar\" or \"likelihood\" if --categories is \"%s\"" % options.categories
-                options.populate_column = "combined_far"
+	options.populate_column = "false_alarm_rate"
 
 	#
-	# parse mass bins
+	# parse frequency bins
 	#
 
-#	if options.categories in ("mchirp-ifos-oninstruments", "mtotal-ifos-oninstruments"):
-#		if options.mass_bins is None:
-#			raise ValueError, "--mass-bins required with category algorithm \"%s\"" % options.categories
-#		options.mass_bins = sorted(map(float, options.mass_bins.split(",")))
-#		if len(options.mass_bins) < 2:
-#			raise ValueError, "must set at least two mass bin boundaries (i.e., define at least one mass bin)"
-#		options.mass_bins = rate.IrregularBins(options.mass_bins)
-        if options.categories in ("frequency-ifos-oninstruments"):
-                if options.frequency_bins is None:
-                        raise ValueError, "--frequency-bins required with category algorithm \"%s\"" % options.categories
-                options.frequency_bins = sorted(map(float, options.frequency_bins.split(",")))
-                if len(options.frequency_bins) < 2:
-                        raise ValueError, "must set at least two frequency bin boundaries (i.e., define at least one frequency bin)"
-                options.frequency_bins = rate.IrregularBins(options.frequency_bins)
+	if options.categories in ("frequency-ifos-oninstruments",):
+		if options.frequency_bins is None:
+			raise ValueError, "--frequency-bins required with category algorithm \"%s\"" % options.categories
+		options.frequency_bins = sorted(map(float, options.frequency_bins.split(",")))
+		if len(options.frequency_bins) < 2:
+			raise ValueError, "must set at least two frequency bin boundaries (i.e., define at least one frequency bin)"
+		options.frequency_bins = rate.IrregularBins(options.frequency_bins)
 
 	#
 	# other
@@ -214,19 +190,9 @@ def extrapolate_reputation(rank_by, coeffs, reputation, t):
 
 
 class Summaries(object):
-#	def __init__(self, category_algorithm, rank_by, mass_bins = None):
-#		if category_algorithm == "mchirp-ifos-oninstruments":
-#			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: (on_instruments, participating_instruments, self.mass_bins[mchirp])
-#		elif category_algorithm == "mtotal-ifos-oninstruments":
-#			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: (on_instruments, participating_instruments, self.mass_bins[mtotal])
-#		elif category_algorithm == "oninstruments":
-#			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: on_instruments
-#		else:
-#			raise ValueError, category_algorithm
-#		self.category_func = instancemethod(self.category_func, self, self.__class__)
 	def __init__(self, category_algorithm, rank_by, frequency_bins = None):
 		if category_algorithm == "frequency-ifos-oninstruments":
-                        self.category_func = lambda self, on_instruments, participating_instruments, frequency: (on_instruments, participating_instruments, self.frequency_bins[frequency])
+			self.category_func = lambda self, on_instruments, participating_instruments, frequency: (on_instruments, participating_instruments, self.frequency_bins[frequency])
 		elif category_algorithm == "oninstruments":
 			self.category_func = lambda self, on_instruments, participating_instruments, frequency: on_instruments
 		else:
@@ -246,7 +212,6 @@ class Summaries(object):
 		self.rank_by = rank_by
 		self.reputation_func = instancemethod(self.reputation_func, self, self.__class__)
 
-#		self.mass_bins = mass_bins
 		self.frequency_bins = frequency_bins
 		self.reputations = {}
 		self.cached_livetime = {}
@@ -255,46 +220,22 @@ class Summaries(object):
 		self.categories = []
 
 	def add_livetime(self, connection, live_time_program, veto_segments_name = None, verbose = False):
-		if veto_segments_name is not None:
-			if verbose:
-				print >>sys.stderr, "\tretrieving veto segments \"%s\" ..." % veto_segments_name
-			veto_segments = db_thinca_rings.get_veto_segments(connection, veto_segments_name)
-		else:
-			veto_segments = segments.segmentlistdict()
+		# FIXME farutils doesn't know about ringdown vetoes, not that anything else does...
+		veto_segments = farutils.get_veto_segments(connection, live_time_program, veto_segments_name=veto_segments_name)
 		if verbose:
 			print >>sys.stderr, "\tcomputing livetimes:",
-# does db_thinca_rings exist for rinca, or is it unnecessary as rinca does not have rings?
-		bglivetime = 0
-		xmldoc = dbtables.get_xml(connection)
-		segs = llwapp.segmentlistdict_fromsearchsummary(xmldoc,program="lalapps_ring")
-		segs = table.get_table(xmldoc, "search_summary").get_out_segmentlistdict()
-		fglivetime = float(abs(segs.intersection(segs.keys())))
-		for val in table.get_table(xmldoc, "time_slide").as_dict().values():
-			#print k, val
-			#for offset_vector in table.get_table(xmldoc, "time_slide").get_offset_dict(k):
-			segs.offsets.update(val)
-			bglivetime += float(abs(segs.intersection(val.keys())))
-		if verbose: print >>sys.stderr, "\n\tforeground livetime %f, background livetime %f\n" % (fglivetime, bglivetime)
-		bglivetime -= fglivetime
-		on_instruments = lsctables.ifos_from_instrument_set(segs.keys())
-		try:
-			self.cached_livetime[on_instruments] += bglivetime
-		except KeyError:
-			self.cached_livetime[on_instruments] = bglivetime
-			
-		#for on_instruments, livetimes in db_thinca_rings.get_thinca_livetimes(db_thinca_rings.get_thinca_rings_by_available_instruments(connection, program_name = live_time_program), veto_segments, db_thinca_rings.get_background_offset_vectors(connection), verbose = verbose).items():
-		#	on_instruments = lsctables.ifos_from_instrument_set(on_instruments)
-		#	try:
-		#		self.cached_livetime[on_instruments] += sum(livetimes)
-		#	except KeyError:
-		#		self.cached_livetime[on_instruments] = sum(livetimes)
-		#if verbose:
-		#	print >>sys.stderr
 
-#	def add_coinc(self, on_instruments, participating_instruments, mchirp, mtotal, snr, uncombined_ifar, likelihood):
-#		self.reputations.setdefault(self.category_func(on_instruments, participating_instruments, mchirp, mtotal), []).append(self.reputation_func(snr, uncombined_ifar, likelihood))
-#		if self.category_func(on_instruments, participating_instruments, mchirp, mtotal) not in self.categories:
-#			self.categories.append(self.category_func(on_instruments, participating_instruments, mchirp, mtotal))
+		xmldoc = dbtables.get_xml(connection)
+		segs = farutils.get_segments(connection, xmldoc, "lalapps_ring")
+		bglivetime=farutils.add_background_livetime(connection, live_time_program, segs, veto_segments, verbose=verbose)
+
+		if verbose: print >>sys.stderr, "\n\tbackground livetime %s\n" % (str(bglivetime))
+		for key in bglivetime.keys():
+			try:
+				self.cached_livetime[key] += bglivetime[key]
+			except KeyError:
+				self.cached_livetime[key] = bglivetime[key]
+
 	def add_coinc(self, on_instruments, participating_instruments, frequency, snr, uncombined_ifar, likelihood):
 		self.reputations.setdefault(self.category_func(on_instruments, participating_instruments, frequency), []).append(self.reputation_func(snr, uncombined_ifar, likelihood))
 		if self.category_func(on_instruments, participating_instruments, frequency) not in self.categories:
@@ -321,7 +262,7 @@ class Summaries(object):
 		# one if there are no reputations for this category)
 		#
 
-		category = self.category_func(on_instruments, participating_instruments, frequency)
+		category = self.category_func(frozenset(lsctables.instrument_set_from_ifos(on_instruments)), frozenset(lsctables.instrument_set_from_ifos(participating_instruments)), frequency)
 		reputations = self.reputations.setdefault(category, [])
 
 
@@ -336,7 +277,7 @@ class Summaries(object):
 		# retrieve the livetime
 		#
 
-		t = self.cached_livetime.setdefault(on_instruments, 0.0)
+		t = self.cached_livetime.setdefault(frozenset(lsctables.instrument_set_from_ifos(on_instruments)), 0.0)
 		if self.extrapolate:
 			if n < self.extrapolation_coeffs[category][0]:
 				n = extrapolate_reputation(self.rank_by, self.extrapolation_coeffs[category][1], self.reputation_func(snr, uncombined_ifar, likelihood), t)
@@ -346,7 +287,7 @@ class Summaries(object):
 		#
 		try:
 			return n / t
-			
+
 		except ZeroDivisionError, e:
 			print >>sys.stderr, "found an event in category %s that has a livetime of 0 s" % repr(self.category_func(on_instruments, participating_instruments, frequency))
 			raise e
@@ -374,7 +315,6 @@ options, filenames = parse_command_line()
 #
 
 
-#background = Summaries(options.categories, options.rank_by, mass_bins = options.mass_bins)
 background = Summaries(options.categories, options.rank_by, frequency_bins = options.frequency_bins)
 
 
@@ -404,9 +344,6 @@ for n, filename in enumerate(filenames):
 	# skipped altogether in this first pass.
 	#
 
-#	if "sim_inspiral" in dbtables.get_table_names(connection):
-#		if options.verbose:
-#			print >>sys.stderr, "\tdatabase contains sim_inspiral table, skipping ..."
 	if "sim_ringdown" in dbtables.get_table_names(connection):
 		if options.verbose:
 			print >>sys.stderr, "\tdatabase contains sim_ringdown table, skipping ..."
@@ -428,36 +365,6 @@ for n, filename in enumerate(filenames):
 	#
 	# count background coincs
 	#
-
-#	if options.verbose:
-#		print >>sys.stderr, "\tcollecting background statistics ..."
-#	for on_instruments, participating_instruments, mchirp, mtotal, snr, uncombined_ifar, likelihood in connection.cursor().execute("""
-#SELECT
-#	coinc_event.instruments,
-#	coinc_inspiral.ifos,
-#	coinc_inspiral.mchirp,
-#	coinc_inspiral.mass,
-#	coinc_inspiral.snr,
-#	CASE coinc_inspiral.false_alarm_rate WHEN 0 THEN "inf" ELSE 1.0 / coinc_inspiral.false_alarm_rate END,
-#	coinc_event.likelihood
-#FROM
-#	coinc_event
-#	JOIN coinc_inspiral ON (
-#		coinc_inspiral.coinc_event_id == coinc_event.coinc_event_id
-#	)
-#WHERE
-#	-- require coinc to be background (= at least one of its time slide offsets is non-zero)
-#	EXISTS (
-#		SELECT
-#			*
-#		FROM
-#			time_slide
-#		WHERE
-#			time_slide.time_slide_id == coinc_event.time_slide_id
-#			AND time_slide.offset != 0
-#	)
-#	"""):
-#		background.add_coinc(on_instruments, participating_instruments, mchirp, mtotal, snr, uncombined_ifar, likelihood)
 
 	if options.verbose:
 		print >>sys.stderr, "\tcollecting background statistics ..."
@@ -486,6 +393,8 @@ WHERE
 		AND time_slide.offset != 0
 	)
 	"""):
+		on_instruments = frozenset(lsctables.instrument_set_from_ifos(on_instruments))
+		participating_instruments = frozenset(lsctables.instrument_set_from_ifos(participating_instruments))
 		background.add_coinc(on_instruments, participating_instruments, frequency, snr, uncombined_ifar, likelihood)
 
 	#
@@ -526,31 +435,6 @@ for n, filename in enumerate(filenames):
 	#
 	# count background coincs by type and mass bin
 	#
-
-#	if options.verbose:
-#		print >>sys.stderr, "\tcalculating and recording false alarm rates ..."
-#	connection.cursor().execute("""
-#UPDATE
-#	coinc_inspiral
-#SET
-#	%s = (
-#		SELECT
-#			background_rate(
-#				coinc_event.instruments,
-#				coinc_inspiral.ifos,
-#				coinc_inspiral.mchirp,
-#				coinc_inspiral.mass,
-#				coinc_inspiral.snr,
-#				CASE coinc_inspiral.false_alarm_rate WHEN 0 THEN "inf" ELSE 1.0 / coinc_inspiral.false_alarm_rate END,
-#				coinc_event.likelihood
-#			)
-#		FROM
-#			coinc_event
-#		WHERE
-#			coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
-#	)
-#	""" % options.populate_column)
-#	connection.commit()
 
 	if options.verbose:
 		print >>sys.stderr, "\tcalculating and recording false alarm rates ..."

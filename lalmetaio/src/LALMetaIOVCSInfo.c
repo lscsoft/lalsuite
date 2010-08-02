@@ -45,6 +45,7 @@ const char *lalMetaIOVCSIdentStatus = LALMETAIO_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalMetaIOVCSInfo = { \
+  LALMETAIO_VCS_NAME, \
   LALMETAIO_VERSION, \
   LALMETAIO_VCS_ID, \
   LALMETAIO_VCS_DATE, \

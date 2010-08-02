@@ -17,56 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/**************************** <lalVerbatim file="LALInitBarycenterCV">
-Author: Cutler, C.
-$Id$
-*********************************** </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Module \texttt{LALInitBarycenter.c}}
-\label{ss:LALInitBarycenter.c}
-
-Reads Earth and Sun position information from data files.
-
-\subsubsection*{Prototypes}
-\input{LALInitBarycenterCP}
-\idx{LALInitBarycenter()}
-
-\subsubsection*{Description}
-
-\verb@LALInitBarycenter()@ fills the contents of \verb@edat@ from data
-read from data files.  See \verb@LALBarycenter.h@ in the \verb@pulsar@
-package for the definition of the \verb@EphemerisData@ structure.
-
-The function reads in two data files (specified in the
-\verb@edat->ephiles@ structure) that contain the position, velocity,
-and acceleration of the Earth and Sun, respectively, at regular
-intervals througout the specified year. E.g., for 1998, the two files
-are \verb@earth98.dat@ and \verb@sun98.dat@.  These files are derived
-from the JPL DE405 ephemeris and are provided by Cutler.  The first
-line of these files specifies the start time, sampling interval, and
-number of datapoints stored in each file, which are used to allocate
-data arrays \verb@edat->ephemE@ and \verb@edat->ephemS@ of appropriate
-length.  \verb@LALInitBarycenter()@ should be called once near the
-beginning of the larger analysis package, and the fields
-\verb@edat->ephemE@ and \verb@edat->ephemS@ should be freed with
-\verb@LALFree()@ near the end.  See the \verb@LALBarycenterTest@
-program in the \verb@pulsar@ package for an illustration of how this
-routine is used.
-
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALOpenDataFile()
-LALMalloc()
-LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{LALInitBarycenterCV}}
-
-</lalLaTeX> */
+/**
+ * \author Curt Cutler
+ * \date 2001
+ * \file
+ * \ingroup moduleBarycenter
+ * \brief Provides a routine for reading Earth and Sun position information from
+ * data files.
+ *
+ * Defines LALInitBarycenter().
+ */
 
 #include <lal/FileIO.h>
 #include <lal/LALBarycenter.h>
@@ -77,11 +37,30 @@ NRCSID(LALINITBARYCENTERC,"$Id$");
 #define ERRMSGLEN 512
 CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
 
-
-/* <lalVerbatim file="LALInitBarycenterCP"> */
+/** Reads Earth and Sun ephemeris files.
+ * This function fills the contents of \a edat from data
+ * read from data files, see \a EphemerisData for the definition of this data-type.
+ *
+ * The function reads in two data files (specified in the
+ * edat->ephiles structure) that contain the position, velocity,
+ * and acceleration of the Earth and Sun, respectively, at regular
+ * intervals througout the specified year. E.g., for 1998, the two files
+ * are <tt>earth98.dat</tt> and <tt>sun98.dat</tt>.  These files are derived
+ * from the JPL DE405 ephemeris and are provided by Cutler.  The first
+ * line of these files specifies the start time, sampling interval, and
+ * number of datapoints stored in each file, which are used to allocate
+ * data arrays edat->ephemE and edat->ephemS of appropriate
+ * length.  LALInitBarycenter() should be called once near the
+ * beginning of the larger analysis package, and the fields
+ * edat->ephemE and edat->ephemS should be freed with
+ * LALFree() near the end.  See the LALBarycenterTest program for an illustration
+ * of how this routine is used.
+ */
 void
-LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
-{ /* </lalVerbatim> */
+LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
+                    EphemerisData *edat	/**< [in/out] initialized ephemeris-data */
+                    )
+{
 
     FILE *fp1, *fp2; /* fp1 is table of Earth location; fp2 is for Sun*/
     CHAR dummy;
@@ -345,4 +324,5 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     /* successful return */
     DETATCHSTATUSPTR(stat);
     RETURN(stat);
-}
+
+} /* LALInitBarycenter() */
