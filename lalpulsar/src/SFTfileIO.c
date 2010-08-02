@@ -1450,13 +1450,14 @@ LALWriteSFT2file (LALStatus *status,
  *
  * Output SFTs have naming convention following LIGO-T040164-01
  */
-void
-LALWriteSFTVector2Dir (LALStatus *status,
+int
+XLALWriteSFTVector2Dir(
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
 		       const CHAR *comment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
+  const CHAR *fn = "XLALWriteSFTVector2Dir";
   UINT4 length, k;
   CHAR *filename = NULL;
   CHAR filenumber[16];
@@ -1465,13 +1466,10 @@ LALWriteSFTVector2Dir (LALStatus *status,
   UINT4 filenamelen;
   LIGOTimeGPS time0;
 
-  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (sftVect, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sftVect->data, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sftVect->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (dirname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  if (! (sftVect) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->data) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->length > 0) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (dirname) ) XLAL_ERROR ( fn, XLAL_EINVAL );
 
   length = sftVect->length;
 
@@ -1479,8 +1477,8 @@ LALWriteSFTVector2Dir (LALStatus *status,
   if ( description )
     filenamelen += strlen ( description );
 
-  if ( (filename = (CHAR *)LALCalloc(1, filenamelen )) == NULL) {
-    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  if ( (filename = (CHAR *)XLALCalloc(1, filenamelen )) == NULL) {
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
   /* will not be same as actual sft timebase if it is not
@@ -1491,11 +1489,11 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
     sft = sftVect->data + k;
     if ( sft == NULL ) {
-      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+      XLAL_ERROR ( fn, XLAL_EFAULT );
     }
 
     if ( sft->name == NULL ) {
-      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+      XLAL_ERROR ( fn, XLAL_EFAULT );
     }
 
 
@@ -1532,17 +1530,33 @@ LALWriteSFTVector2Dir (LALStatus *status,
     strcat( filename, ".sft");
 
     /* write the k^th sft */
-    TRY ( LALWriteSFT2file ( status->statusPtr, sft, filename, comment), status);
+    if ( XLALWriteSFT2file( sft, filename, comment ) != XLAL_SUCCESS ) {
+      XLAL_ERROR ( fn, xlalErrno );
+    }
   }
 
-  LALFree(filename);
+  XLALFree(filename);
 
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFTVector2Dir() */
+
+void
+LALWriteSFTVector2Dir (LALStatus *status,
+		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
+		       const CHAR *dirname,		/**< base filename (including directory path)*/
+		       const CHAR *comment,		/**< optional comment (for v2 only) */
+		       const CHAR *description)         /**< optional sft description to go in the filename */
+{
+  XLALPrintDeprecationWarning("LALWriteSFTVector2Dir", "XLALWriteSFTVector2Dir");
+  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);
+  if ( XLALWriteSFTVector2Dir( sftVect, dirname, comment, description ) != XLAL_SUCCESS ) {
+    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+  }
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
-} /* WriteSFTVector2Dir() */
-
-
+}
 
 
 
