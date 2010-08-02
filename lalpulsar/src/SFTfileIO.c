@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
  * crc64() taken from SFTReferenceLibrary.c Copyright (C) 2004 Bruce Allen
@@ -1274,12 +1275,13 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  * the user-specified 'comment'
  *
  */
-void
-LALWriteSFT2file (LALStatus *status,
+int
+XLALWriteSFT2file(
 		  const SFTtype *sft,		/**< SFT to write to disk */
 		  const CHAR *fname,		/**< filename */
 		  const CHAR *comment)		/**< optional comment (for v2 only) */
 {
+  const CHAR *fn = "XLALWriteSFT2file";
   FILE  *fp = NULL;
   UINT4 comment_len = 0;
   CHAR *SFTcomment;
@@ -1287,30 +1289,35 @@ LALWriteSFT2file (LALStatus *status,
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
   _SFT_header_v2_t rawheader;
 
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);
-
   /*   Make sure the arguments are not NULL and perform basic checks*/
-  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  if (!( sft ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->data ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->deltaF > 0 ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->f0 >= 0 ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0) ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->epoch.gpsNanoSeconds < 1000000000 ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->data->length > 0 ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
 
-  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  if (!( fname ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
  
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
-    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   /* open SFT-file for writing */
-  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
+  if ( (fp = fopen ( fname, "wb" )) == NULL )
     {
       XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
-      ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+      XLAL_ERROR ( fn, XLAL_EIO );
     }
 
   /* concat sft->name + comment for SFT-file comment-field */
@@ -1318,8 +1325,8 @@ LALWriteSFT2file (LALStatus *status,
   if ( comment )
     comment_len += strlen(comment) + 2;	/* separate by "; " */
 
-  if ( (SFTcomment = LALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
-    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  if ( (SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
+    XLAL_ERROR( fn, XLAL_ENOMEM );
   }
   strcpy ( SFTcomment, sft->name );
   if ( comment ) {
@@ -1356,29 +1363,44 @@ LALWriteSFT2file (LALStatus *status,
 
   /* ----- write the header to file */
   if (1 != fwrite( &rawheader, sizeof(rawheader), 1, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
   /* ----- write the comment to file */
   if ( comment_len != fwrite( SFTcomment, 1, comment_len, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
   if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
-  LALFree ( SFTcomment );
+  XLALFree ( SFTcomment );
 
   /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
   if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
   fclose(fp);
 
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFT2file() */
+
+void
+LALWriteSFT2file (LALStatus *status,
+		  const SFTtype *sft,		/**< SFT to write to disk */
+		  const CHAR *fname,		/**< filename */
+		  const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  XLALPrintDeprecationWarning("LALWriteSFT2file", "XLALWriteSFT2file");
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);
+  if ( XLALWriteSFT2file( sft, fname, comment ) != XLAL_SUCCESS ) {
+    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+  }
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 } /* WriteSFTtoFile() */
 
 

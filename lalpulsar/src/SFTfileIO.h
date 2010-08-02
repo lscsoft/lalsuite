@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -278,6 +279,7 @@ void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
+int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *comment );
 void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment );
 void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
 

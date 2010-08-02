@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -96,6 +97,7 @@ do {                                                                 \
 
 #define SHOULD_FAIL( func, statusptr )							\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, ! (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' should have failed for this SFT but didn't!\n");	\
@@ -105,6 +107,7 @@ do { 											\
 
 #define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode != code) {						\
     XLALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
 		   (statusptr)->statusCode );						\
@@ -115,6 +118,7 @@ do { 											\
 
 #define SHOULD_WORK( func, statusptr )							\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' failed but should have worked for this SFT!");	\
