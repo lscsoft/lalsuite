@@ -282,6 +282,8 @@ void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatal
 int  XLALWriteSFT (const SFTtype *sft, FILE *fp, const CHAR *comment );
 int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *comment );
 int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
+int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *comment);
+
 void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment );
 void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
 

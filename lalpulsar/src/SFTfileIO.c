@@ -1560,6 +1560,62 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
 
 
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWriteSFTfile()
+ */
+int
+XLALWriteSFTVector2File(
+		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
+		       const CHAR *filename,		/**< filename of concatenated SFT */
+		       const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  const CHAR *fn = "XLALWriteSFTVector2File";
+  UINT4 length, k;
+  FILE *fp = NULL;
+  SFTtype *sft;
+
+  if (! (sftVect) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->data) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->length > 0) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (filename) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+
+  length = sftVect->length;
+
+  /* open SFT-file for writing */
+  if ( (fp = fopen ( filename, "wb" )) == NULL )
+    {
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", filename, strerror(errno));
+      XLAL_ERROR ( fn, XLAL_EIO );
+    }
+
+  for ( k = 0; k < length; k++) {
+
+    sft = sftVect->data + k;
+    if ( sft == NULL ) {
+      XLAL_ERROR ( fn, XLAL_EFAULT );
+    }
+
+    if ( sft->name == NULL ) {
+      XLAL_ERROR ( fn, XLAL_EFAULT );
+    }
+
+    /* write the k^th sft */
+    if ( XLALWriteSFT( sft, fp, comment ) != XLAL_SUCCESS ) {
+      XLAL_ERROR ( fn, xlalErrno );
+    }
+  }
+
+  fclose(fp);
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFTVector2File() */
+
+
+
 /** For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
  * to a v1-SFT file.
  *
