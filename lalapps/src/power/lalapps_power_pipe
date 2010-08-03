@@ -354,10 +354,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 		tisi_cache = set([time_slides_cache_entry])
 		nodes = set()
 		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
-			preserve_cache = binj_cache | tisi_cache
-			if not do_injections:
-				preserve_cache |= cache
-			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, preserve_cache = preserve_cache)
+			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
 		if enable_clustering:
 			if verbose:
 				print >>sys.stderr, "building post-lladd bucluster jobs ..."
@@ -393,8 +390,8 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 	return coinc_nodes
 
 
-coinc_nodes = make_coinc_branch(dag, datafinds, background_seglistdict, background_time_slides, options.timing_params, options.psds_per_power, options.enable_clustering, options.tag, verbose = options.verbose)
-inj_coinc_nodes = make_coinc_branch(dag, datafinds, injection_seglistdict, injection_time_slides, options.timing_params, options.psds_per_injection, options.enable_clustering, "INJECTIONS_RUN_0_%s" % options.tag, verbose = options.verbose)
+coinc_nodes = make_coinc_branch(dag, datafinds, background_seglistdict, background_time_slides, options.timing_params, options.psds_per_power, options.enable_clustering, options.tag, do_injections = False, verbose = options.verbose)
+inj_coinc_nodes = make_coinc_branch(dag, datafinds, injection_seglistdict, injection_time_slides, options.timing_params, options.psds_per_injection, options.enable_clustering, "INJECTIONS_RUN_0_%s" % options.tag, do_injections = True, verbose = options.verbose)
 
 
 #

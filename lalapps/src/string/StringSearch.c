@@ -180,7 +180,6 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
-CHAR outfilename[256];
 CHAR ifo[4];
 
 long double veto_start[100000];/* start of veto segments */
@@ -456,18 +455,16 @@ int OutputEvents(struct CommandLineArgsTag CLA){
   LIGOLwXMLStream *xml;
   
   if (!CLA.outputFileName){
+    CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
 	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
 	     searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
 	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
     outfilename[sizeof(outfilename)-1] = '\0';
+    xml = XLALOpenLIGOLwXMLFile(outfilename);
   }
-  else{
-    snprintf(outfilename, sizeof(outfilename)-1, "%s", CLA.outputFileName);
-    outfilename[sizeof(outfilename)-1] = '\0';
-  }
-
-  xml = XLALOpenLIGOLwXMLFile(outfilename);
+  else
+    xml = XLALOpenLIGOLwXMLFile(CLA.outputFileName);
 
   /* process table */
   snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
@@ -683,7 +680,6 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
   REAL4Vector    *vector; /* time-domain vector workspace */
   REAL4 re, im;
   REAL4TimeSeries series;
-  CHAR filterfilename[256];
 
   vector = XLALCreateREAL4Vector( GV.seg_length);
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
@@ -729,13 +725,15 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
         
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
+      CHAR filterfilename[256];
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
-      filterfilename[sizeof(outfilename)-1] = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALSPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
     /* print out the time domain FIR filter */
     if (CLA.printfirflag){
+      CHAR filterfilename[256];
       series.deltaT=GV.ht_proc->deltaT;
       series.f0 = 0.0;
       strncpy(series.name, "fir filter", LALNameLength);
@@ -757,7 +755,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
       series.data = vector;
       
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
-      filterfilename[sizeof(outfilename)-1] = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALSPrintTimeSeries( &series, filterfilename );
     }
   }
