@@ -458,7 +458,6 @@ void LALappsTrackSearchInitialize(
       {"number_of_maps",      required_argument,  0,    'j'},
       {"number_of_time_bins", required_argument,  0,    'k'},
       {"overlap",             required_argument,  0,    'l'},
-      {"window_type",         required_argument,  0,    'm'},
       {"number_of_freq_bins", required_argument,  0,    'n'},
       {"whiten_level",        required_argument,  0,    'o'},
       {"transform_type",      required_argument,  0,    'p'},
@@ -511,10 +510,8 @@ void LALappsTrackSearchInitialize(
   params->overlapFlag = 0; /* Change this to an INT4 for overlapping */
   params->TimeLengthPoints = 0;
   params->discardTLP = 0;
-  params->window = Hann; /*Welch*/
   params->whiten = 0;
   params->avgSpecMethod = -1; /*Will trigger error*/
-  params->avgSpecWindow = Rectangular; /* Default no window */
   params->smoothAvgPSD = 0;/*0 means no smoothing*/
   params->highPass=-1;/*High pass filter freq*/
   params->lowPass=-1;/*Low pass filter freq*/
@@ -716,35 +713,6 @@ void LALappsTrackSearchInitialize(
 	case 'l':
 	  {
 	    params->overlapFlag = ((UINT4) atoi(optarg));
-	  }
-	  break;
-	  
-	case 'm':
-	  /* Setup the designated windowing function for FFTing */
-	  {
-	    if (!strcmp(optarg,"Rectangular"))
-	      params->window=Rectangular;
-	    else if (!strcmp(optarg,"Hann"))
-	      params->window=Hann;
-	    else if (!strcmp(optarg,"Welch"))
-	      params->window=Welch;
-	    else if (!strcmp(optarg,"Bartlett"))
-	      params->window=Bartlett;
-	    else if (!strcmp(optarg,"Parzen"))
-	      params->window=Parzen;
-	    else if (!strcmp(optarg,"Papoulis"))
-	      params->window=Papoulis;
-	    else if (!strcmp(optarg,"Hamming"))
-	      params->window=Hamming;
-	    else if (!strcmp(optarg,"Kaiser"))
-	      params->window=Kaiser;
-	    else if (!strcmp(optarg,"Creighton"))
-	      params->window=Creighton;
-	    else
-	      {
-		fprintf(stderr,"Invalid window option: using Rectangular window");
-		params->window=Rectangular;
-	      };
 	  }
 	  break;
 	  
@@ -2041,7 +2009,6 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 {
   CreateTimeFreqIn       tfInputs;/*Input params for map making*/
   INT4                   j;
-  LALWindowParams        windowParams;/*Needed to generate windowing funcs*/
   REAL4Window           *tempWindow = NULL;
   TimeFreqParam         *autoparams = NULL;/*SelfGenerated values for TFmap*/
   TimeFreqRep           *tfmap = NULL;/*TF map of dataset*/
@@ -2131,60 +2098,8 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 				      ((j*(tmpSegDataPoints/tmpMapTimeBins)))
 				      );
 	}
-      windowParams.length = params.windowsize;
-      windowParams.type = params.window;
       /*Create selected type of window*/
-      switch (params.window) {
-	case Rectangular:
-		tempWindow = XLALCreateRectangularREAL4Window(params.windowsize);
-		break;
-
-	case Hann:
-		tempWindow = XLALCreateHannREAL4Window(params.windowsize);
-		break;
-
-	case Welch:
-		tempWindow = XLALCreateWelchREAL4Window(params.windowsize);
-		break;
-
-	case Bartlett:
-		tempWindow = XLALCreateBartlettREAL4Window(params.windowsize);
-		break;
-
-	case Parzen:
-		tempWindow = XLALCreateParzenREAL4Window(params.windowsize);
-		break;
-
-	case Papoulis:
-		tempWindow = XLALCreatePapoulisREAL4Window(params.windowsize);
-		break;
-
-	case Hamming:
-		tempWindow = XLALCreateHammingREAL4Window(params.windowsize);
-		break;
-
-	case Kaiser:
-		tempWindow = XLALCreateKaiserREAL4Window(params.windowsize, 1000);
-		fprintf(stderr,"For Kaiser beta hard wired to 1,000\n");
-		fflush(stderr);
-		break;
-
-	case Creighton:
-		tempWindow = XLALCreateCreightonREAL4Window(params.windowsize, 1000);
-		fprintf(stderr,"For Creighton beta hard wired to 1,000\n");
-		fflush(stderr);
-		break;
-
-	case Tukey:
-		tempWindow = XLALCreateTukeyREAL4Window(params.windowsize, 1000);
-		fprintf(stderr,"For Tukey beta hard wired to 1,000\n");
-		break;
-
-	default:
-	  fprintf(stderr,"Window specified not allowed.\n");
-	  fflush(stderr);
-	  exit(TRACKSEARCHC_EVAL);
-	}
+      tempWindow = XLALCreateHannREAL4Window(params.windowsize);
 
       /* 
        * Case statment that look to do the various TF Reps 
@@ -2213,7 +2128,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    /* Required from deprication of LALWindow function */
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (params.windowsize * sizeof(REAL4)));
 	    errCode=LAL_CALL( LALTfrSp(status,signalSeries->data,tfmap,autoparams),
 			      status);
 	    if ( errCode != 0 )
@@ -2238,10 +2153,10 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    /* Required from deprication of LALWindow function */
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (params.windowsize * sizeof(REAL4)));
 	    memcpy(autoparams->windowF->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (params.windowsize * sizeof(REAL4)));
 	    LAL_CALL( LALTfrPswv(status,signalSeries->data,tfmap,autoparams),
 		      status);
 	  }
@@ -2251,7 +2166,7 @@ LALappsDoTSeriesSearch(LALStatus         *status,
 	    /* Required from deprication of LALWindow function */
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (params.windowsize * sizeof(REAL4)));
 	    LAL_CALL( LALTfrRsp(status,signalSeries->data,tfmap,autoparams),
 		      status);
 	  }
@@ -2812,8 +2727,6 @@ LALappsWriteSearchConfig(
   fprintf(configFile,"whiten\t: %i\n",myParams.whiten);
   fprintf(configFile,"avgSpecMethod\t: %i\n",
 	  (myParams.avgSpecMethod));
-  fprintf(configFile,"avgSpecWindow\t: %i\n",
-	  (myParams.avgSpecWindow));
   fprintf(configFile,"multiResolution\t: %i\n",
 	  myParams.multiResolution);
   FB=myParams.FreqBins;
@@ -2821,7 +2734,6 @@ LALappsWriteSearchConfig(
   fprintf(configFile,"FreqBins\t: %i\n",FB);
   fprintf(configFile,"TimeBins\t: %i\n",TB);
   fprintf(configFile,"windowsize\t: %i\n",myParams.windowsize);
-  fprintf(configFile,"window\t: %i\n",myParams.window);
   fprintf(configFile,"numEvents\t: %i\n",myParams.numEvents);
   if (myParams.channelName == NULL)
     fprintf(configFile,"channelName\t: NULL\n");
@@ -3825,55 +3737,7 @@ void LALappsTrackSearchWhitenSegments( LALStatus        *status,
    * The given units above need to be correct to truly reflect the
    * units stored in the frame file
    */
-  switch (params.avgSpecWindow) 
-    {
-    case Rectangular:
-      windowPSD = XLALCreateRectangularREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Hann:
-      windowPSD = XLALCreateHannREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Welch:
-      windowPSD = XLALCreateWelchREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Bartlett:
-      windowPSD = XLALCreateBartlettREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Parzen:
-      windowPSD = XLALCreateParzenREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Papoulis:
-      windowPSD = XLALCreatePapoulisREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Hamming:
-      windowPSD = XLALCreateHammingREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
-      break;
-
-    case Kaiser:
-      windowPSD = XLALCreateKaiserREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stderr,"For Kaiser beta hard wired to 1,000\n");
-      break;
-
-    case Creighton:
-      windowPSD = XLALCreateCreightonREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stderr,"For Creighton beta hard wired to 1,000\n");
-      break;
-
-    case Tukey:
-      windowPSD = XLALCreateTukeyREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)), 1000);
-      fprintf(stderr,"For Tukey beta hard wired to 1,000\n");
-      break;
-
-    default:
-      fprintf(stderr,"Window specified not allowed.\n");
-      exit(TRACKSEARCHC_EVAL);
-    }
+  windowPSD = XLALCreateRectangularREAL4Window((params.SegLengthPoints+(2*params.SegBufferPoints)));
 
   /* If we only do one map we need to something special here*/
   if (params.NumSeg < 2)
@@ -4326,7 +4190,6 @@ void Dump_Search_Data(
   fprintf(fp,"Freq Bins for Maps:            %d\n",params.FreqBins);
   fprintf(fp,"Time Bins for Maps:            %d\n",params.TimeBins);
   fprintf(fp,"Window size for ffts:          %d\n",params.windowsize);
-  fprintf(fp,"Window Type Used:              %i\n",params.window);
   fprintf(fp,"Channel:                       %s\n",params.channelName);
   fprintf(fp,"\n\n\n");
 
@@ -4456,18 +4319,6 @@ void fakeDataGeneration(LALStatus              *status,
 /* Scratch stuff */
 
 
-/* WINDOW ENUM TYPES
-   Rectangular,
-   Hann,
-   Welch,
-   Bartlett,
-   Parzen,
-   Papoulis,
-   Hamming,
-   Kaiser,
-   Creighton,
-   The code will not know of any new window enum types!!!!!
-*/
 /* 
  * To Generate the fake incoming frame files under
  * ligotools dir is a utility called ascii2frame 

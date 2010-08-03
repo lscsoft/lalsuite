@@ -3203,3 +3203,67 @@ def overlap_test(interval1, interval2, slide_sec=0):
          (end1 >= left and end1 <= right) or \
          (start1 <= left and end1 >= right)
 
+
+class SearchVolumeJob(pipeline.SqliteJob):
+  """
+  A search volume job. Computes the observed physical volume
+  above a specified FAR (if FAR is not specified, computes the
+  volume above the loudest event).
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'search_volume'
+    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+class SearchVolumeNode(pipeline.SqliteNode):
+  """
+  A search volume node.
+  """
+  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False):
+    """
+    @database: the pipedown database containing the injection triggers
+    @ouptut_cache: name prefix for cache file to be written out by program
+    @output_tag: a string label for the output files
+    @use_expected_loudest_event: disables the use of loudest event FAR, use 1./livetime instead
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.add_var_arg(database)
+
+    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
+    self.add_var_opt("veto-segments-name",veto_segments_name)
+    if output_cache:
+      self.add_var_opt("output-cache",output_cache)
+    if output_tag:
+      self.add_var_opt("output-name-tag",output_tag)
+    if use_expected_loudest_event:
+      self.add_var_opt("use-expected-loudest-event",'')
+
+
+class SearchUpperLimitJob(pipeline.SqliteJob):
+  """
+  A search upper limit job. Compute the search upper limit from the search
+  volume output. Generates upper limit plots.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    @sections: list of sections for cp to read from
+    """
+    exec_name = 'search_upper_limit'
+    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+class SearchUpperLimitNode(pipeline.SqliteNode):
+  """
+  A search upper limit node.
+  """
+  def __init__(self, job, input_cache):
+    """
+    @job: a SearchUpperLimitJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.add_var_opt("input-cache", input_cache)
+

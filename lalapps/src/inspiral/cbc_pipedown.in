@@ -258,6 +258,8 @@ ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
 ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
 printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
 plotifar_job = inspiral.PlotIfarJob(cp)
+search_volume_job = inspiral.SearchVolumeJob(cp)
+search_upper_limit_job = inspiral.SearchUpperLimitJob(cp)
 
 # MVSC jobs
 mvsc_get_doubles_job = inspiral.MvscGetDoublesJob(cp)
@@ -294,6 +296,8 @@ minifup_cm_job.set_sub_file( '.'.join([ basename, 'closest_missed', 'minifollowu
 plotifar_job.set_sub_file( '.'.join([ basename, 'plotifar', 'sub' ]) )
 plotslides_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotslides', 'sub' ]) )
 plotcumhist_play_job.set_sub_file( '.'.join([ basename, 'playground_only', 'plotcumhist', 'sub' ]) )
+search_volume_job.set_sub_file( '.'.join([ basename, 'search_volume', 'sub' ]) )
+search_upper_limit_job.set_sub_file( '.'.join([ basename, 'search_upper_limit', 'sub' ]) )
 for fmtag, fmjob in plotfm_jobs:
   fmjob.set_sub_file( '.'.join([ basename, fmtag, 'plotfm', 'sub' ]) )
 if options.generate_all_data_plots:
@@ -783,6 +787,32 @@ for result_db in result_dbs_cache:
   ccfar_node.add_parent( ucfar_node )
   
   dag.add_node( ccfar_node )
+
+  ############################################################################
+  # UPPERLIMIT CALCULATIONS
+  ############################################################################
+
+  # set node options
+  if 'FULL_DATA' in tag:
+    # upper limits for full data (using FAR of observed loudest event)
+    output_cache_name = ''.join(sorted(instruments)) + "-SEARCH_VOLUME_" + tag + ".cache"
+    search_volume_node = inspiral.SearchVolumeNode( search_volume_job, result_db.path(), output_tag = tag, output_cache = output_cache_name )
+    search_volume_node.add_parent( ccfar_node )
+    search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job, output_cache_name )
+    search_upper_limit_node.add_parent( search_volume_node )
+    dag.add_node( search_volume_node )
+    dag.add_node( search_upper_limit_node )
+
+    # upper limits for playground (using FAR of expected loudest event)
+    output_cache_name = output_cache_name.replace("FULL_DATA","PLAYGROUND")
+    search_volume_node = inspiral.SearchVolumeNode( search_volume_job, result_db.path(), output_tag = tag.replace("FULL_DATA","PLAYGROUND"), output_cache = output_cache_name, use_expected_loudest_event = True )
+    search_volume_node.add_parent( ccfar_node )
+    search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job, output_cache_name )
+    search_upper_limit_node.add_parent( search_volume_node )
+    dag.add_node( search_volume_node )
+    dag.add_node( search_upper_limit_node )
+
+
 
   ############################################################################
   # Summary: Setup PrintLC and MiniFollowup Nodes to generate a summary of 

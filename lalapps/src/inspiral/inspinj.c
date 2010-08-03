@@ -458,6 +458,8 @@ static void print_usage(char *program)
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
       "                           min/max distance required if d-distr not 'source'\n"\
+      " [--use-chirp-distance]    Use this option to scale injections using \n"
+      "                           chirp distance (relative to a 1.4,1.4)\n"\
       " [--min-snr] SMIN          Sets the minimum network snr\n"\
       " [--max-snr] SMAX          Sets the maximum network snr\n"\
       " [--log-snr]               If set distribute uniformly in log(snr) rather than snr\n"\
@@ -1128,6 +1130,7 @@ int main( int argc, char *argv[] )
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
+  UINT4 useChirpDist = 0;
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
   REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
   size_t ninj;
@@ -1196,6 +1199,7 @@ int main( int argc, char *argv[] )
     {"max-mratio",              required_argument, 0,                'y'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
+    {"use-chirp-distance",      no_argument,       0,                ','},
     {"min-snr",                 required_argument, 0,                '1'},
     {"max-snr",                 required_argument, 0,                '2'},
     {"log-snr",                 no_argument,       &logSNR,            1},
@@ -1659,6 +1663,14 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", dmax );
+        break;
+
+      case ',':
+        /* Distribute injections in chirp distance not distance*/
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        useChirpDist = 1;
         break;
 
       case 'e':
@@ -2585,6 +2597,13 @@ int main( int argc, char *argv[] )
     {
       simTable=XLALRandomInspiralDistance(simTable, randParams, 
           dDistr, dmin/1000.0, dmax/1000.0);
+    }
+    /* Scale by chirp mass if desired, relative to a 1.4,1.4 object */
+    if (useChirpDist)
+    {
+      REAL4 scaleFac;
+      scaleFac = simTable->mchirp/(2.8*pow(0.25,0.6));
+      simTable->distance = simTable->distance*pow(scaleFac,5./6.);
     }
 
     /* populate location */
