@@ -80,35 +80,6 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
 COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window);
 
-/*
- * LEGACY CODE:  DO NOT USE!!!
- *
- * FIXME: remove as soon as possible
- */
-
-
-typedef enum {
-	Rectangular,
-	Hann,
-	Welch,
-	Bartlett,
-	Parzen,
-	Papoulis,
-	Hamming,
-	Kaiser,
-	Creighton,
-	Tukey
-} WindowType;
-
-typedef struct tagLALWindowParams {
-	INT4        length;
-	WindowType  type;
-	REAL4       beta;
-} LALWindowParams;
-
-void LALWindow(LALStatus *, REAL4Vector *, LALWindowParams *);
-void LALCreateREAL4Window(LALStatus *, REAL4Window **, LALWindowParams *);
-
 
 #ifdef  __cplusplus
 }
