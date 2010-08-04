@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer
+*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ $Id$
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
 waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor) or the
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, SpinQuadTaylor) or the
 \texttt{inject} package	(GeneratePPN).	It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
 
@@ -188,6 +188,12 @@ LALGenerateInspiral(
   {
     inspiralParams.approximant = approximant;
     inspiralParams.order       = order;
+	if (approximant == SpinQuadTaylor) {
+		xlalErrno = 0;
+		if (XLALGetSpinInteractionFromString(&inspiralParams.spinInteraction, thisEvent->waveform) == XLAL_FAILURE) {
+			ABORTXLAL(status);
+		}
+	}
 
     /* We fill ppnParams */
     LALGenerateInspiralPopulatePPN(status->statusPtr, ppnParams, thisEvent);
@@ -332,6 +338,33 @@ LALGetOrderFromString(
   RETURN( status );
 }
 
+int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
+	static const char *func = "XLALGetSpinInteractionFromString";
+
+	if (strstr(thisEvent, "ALL")) {
+		*inter = LAL_AllInter;
+	} else if (strstr(thisEvent, "NO")) {
+		*inter = LAL_NOInter;
+	} else {
+		*inter = LAL_SOInter;
+		if (strstr(thisEvent, "SO")) {
+			*inter |= LAL_SOInter;
+		}
+		if (strstr(thisEvent, "QM")) {
+			*inter |= LAL_QMInter;
+		}
+		if (strstr(thisEvent, "SELF")) {
+			*inter |= LAL_SSselfInter;
+		}
+		if (strstr(thisEvent, "SS")) {
+			*inter |= LAL_SSInter;
+		}
+		if (*inter == LAL_NOInter) {
+			XLAL_ERROR(func, XLAL_EDOM);
+		}
+	}
+	return XLAL_SUCCESS;
+}
 
 /* <lalVerbatim file="LALGetApproxFromStringCP"> */
 void
@@ -375,6 +408,10 @@ LALGetApproximantFromString(
   else if ( strstr(thisEvent, "SpinTaylor" ) )
   {
     *approximant = SpinTaylor;
+  }
+  else if ( strstr(thisEvent, "SpinQuadTaylor" ) )
+  {
+	*approximant = SpinQuadTaylor;
   }
   else if ( strstr(thisEvent, "PadeT1" ) )
   {
@@ -537,6 +574,8 @@ LALGenerateInspiralPopulateInspiral(
 
   inspiralParams->orbitTheta0 = thisEvent->theta0;
   inspiralParams->orbitPhi0   = thisEvent->phi0;
+  inspiralParams->qmParameter[0] = thisEvent->qmParameter[0];
+  inspiralParams->qmParameter[1] = thisEvent->qmParameter[1];
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

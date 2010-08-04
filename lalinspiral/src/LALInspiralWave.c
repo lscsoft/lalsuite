@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer
+*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ Depending on the user inputs one of the following functions is called:\\
 
 \begin{itemize}
     \item A time-domain waveform is returned when the {\tt approximant} is one of
-        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3}
+        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3, SpinQuadTaylor}
     \item A frequency-domain waveform is returned when the {\tt approximant} is one of
         {\tt TaylorF1, TaylorF2, BCV}.
          In these cases the code returns the real and imagninary parts of the
@@ -128,6 +128,7 @@ Depending on the user inputs one of the following functions is called:\\
 #include <lal/LALNoiseModels.h>
 #include <lal/LALStdlib.h>
 #include <lal/GeneratePPNInspiral.h>
+#include <lal/LALSQTPNWaveformInterface.h>
 
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
@@ -216,6 +217,9 @@ LALInspiralWave(
            LALSTPNWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
+	  case SpinQuadTaylor:
+	   		TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
+			break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
@@ -314,6 +318,9 @@ LALInspiralWaveTemplates(
            LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
+      case SpinQuadTaylor:
+           TRY(LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params), status);
+           break;
       case AmpCorPPN:
       	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signalvec1, signalvec2, params);
 	   CHECKSTATUSPTR(status);
@@ -389,6 +396,9 @@ LALInspiralWaveForInjection(
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
            break;
+	  case SpinQuadTaylor:
+		   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
+		   break;
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);
