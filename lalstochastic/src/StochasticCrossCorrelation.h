@@ -482,13 +482,13 @@ The length of the data after zero-padding
 
 typedef struct tagSZeroPadAndFFTParameters {
   RealFFTPlan           *fftPlan;
-  REAL4Vector           *window;
+  REAL4Window           *window;
   UINT4                  length;
 } SZeroPadAndFFTParameters;
 
 typedef struct tagCZeroPadAndFFTParameters {
   ComplexFFTPlan        *fftPlan;
-  REAL4Vector           *window;
+  REAL4Window           *window;
   UINT4                  length;
 } CZeroPadAndFFTParameters;
 
