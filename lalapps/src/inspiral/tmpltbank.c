@@ -229,7 +229,6 @@ int main ( int argc, char *argv[] )
 
   /* structures for preconditioning */
   ResampleTSParams              resampleParams;
-  LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
   /* templates */
@@ -742,14 +741,11 @@ int main ( int argc, char *argv[] )
       exit( 1 );
   }
 
-  wpars.type = Hann;
-  wpars.length = numPoints;
   avgSpecParams.overlap = numPoints / 2;
   if ( vrbflg )
     fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
 
-  LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
-        &wpars ), &status );
+  avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
   XLALDestroyREAL4Window( avgSpecParams.window );
