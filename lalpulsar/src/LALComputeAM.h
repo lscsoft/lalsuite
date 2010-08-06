@@ -157,7 +157,12 @@ int XLALComputeAntennaPatternCoeffs ( REAL8 *ai, REAL8 *bi, const SkyPosition *s
 void LALGetMultiAMCoeffs (LALStatus *, MultiAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, SkyPosition pos );
 int XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
-/* destructors */
+AMCoeffs *XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
+MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );
+
+/* creators and destructors for AM-vectors */
+AMCoeffs *XLALCreateAMCoeffs ( UINT4 numSteps );
+
 void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
 void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
 
