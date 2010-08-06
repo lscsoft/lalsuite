@@ -72,6 +72,7 @@
 #include <lalapps.h>
 
 /*---------- DEFINES ----------*/
+#define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
 
 
 /** Signal (amplitude) parameter ranges
@@ -101,10 +102,10 @@ typedef struct {
  */
 typedef struct {
   AmpParamsRange_t AmpRange;	/**< signal parameter ranges: lower bounds + bands */
-  gsl_rng * rng;		/**< gsl random-number generator */
+  gsl_rng *rng;			/**< gsl random-number generator */
   LALDetector *site;		/**< detector site */
   EphemerisData *edat;		/**< ephemeris data */
-  CHAR *version_string;		/**< code VCS version info */
+  CHAR *VCSInfoString;		/**< code VCS version info */
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
@@ -122,16 +123,23 @@ typedef struct {
   REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
   REAL8 phi0;		/**< initial GW phase phi_0. If not set: randomize within [0, 2pi] */
 
+  /* Doppler parameters */
   REAL8 Alpha;		/**< skyposition Alpha (RA) in radians */
   REAL8 Delta;		/**< skyposition Delta (Dec) in radians */
 
+  /* other parameters */
   CHAR *IFO;		/**< IFO name */
+  INT4 dataStartGPS;	/**< data start-time in GPS seconds */
+  INT4 dataDuration;	/**< data-span to generate */
+  INT4 TAtom;		/**< Fstat atoms time baseline */
 
-  REAL8 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
+  INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
 
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
+
+  CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   BOOLEAN version;	/**< output version-info */
 
@@ -143,6 +151,7 @@ int main(int argc,char *argv[]);
 
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
+EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 
 /* exportable API */
 int XLALDrawCorrelatedNoise ( gsl_vector *n_mu, const gsl_matrix *L, gsl_rng * rng );
@@ -203,13 +212,13 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     return 0;
 
-  if ( (cfg.version_string = XLALGetVersionString(lalDebugLevel)) == NULL ) {
+  if ( (cfg.VCSInfoString = XLALGetVersionString(lalDebugLevel)) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", fn, lalDebugLevel, xlalErrno );
     return 1;
   }
 
   if ( uvar.version ) {
-    printf ( "%s\n", cfg.version_string );
+    printf ( "%s\n", cfg.VCSInfoString );
     return 0;
   }
 
@@ -218,6 +227,23 @@ int main(int argc,char *argv[])
     LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", fn, xlalErrno );
     return 1;
   }
+
+
+
+
+
+
+  /* ----- free memory ---------- */
+  XLALFree(cfg.edat->ephemE);
+  XLALFree(cfg.edat->ephemS);
+  XLALFree ( cfg.edat );
+
+  XLALFree ( cfg.site );
+
+  if ( cfg.VCSInfoString ) XLALFree ( cfg.VCSInfoString );
+  gsl_rng_free ( cfg.rng );
+
+  XLALDestroyUserVars();
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -242,6 +268,15 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->phi0 = 0;
   uvar->psi = 0;
 
+  uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
+  uvar->dataDuration = LAL_YRSID_SI;	/* 1 year of data */
+
+  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar->ephemYear, EPHEM_YEARS);
+
+  uvar->numDraws = 1;
+  uvar->TAtom = 1800;
+
   /* register all our user-variables */
   XLALregBOOLUserStruct ( help, 		'h',     UVAR_HELP, "Print this message");
   /* signal amplitude parameters */
@@ -253,14 +288,24 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
   XLALregREALUserStruct ( phi0,		 	 0,  UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
+  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_REQUIRED, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
+  XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
-  XLALregREALUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for statistics");
+
+  XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
 
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
 
+  XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+
   XLALregBOOLUserStruct ( version,        	'V', UVAR_SPECIAL,  "Output code version");
+
+  /* 'hidden' stuff */
+  XLALregINTUserStruct ( TAtom,		  	  0, UVAR_DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );
+
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: something failed in initializing user variabels .. errno = %d.\n", fn, xlalErrno );
@@ -332,6 +377,18 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   LogPrintf ( LOG_DEBUG, "random-number generator type: %s\n", gsl_rng_name (cfg->rng));
   LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
+
+  /* init ephemeris-data */
+  if ( (cfg->edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", fn, uvar->ephemYear );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  /* init detector info */
+  if ( (cfg->site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
+    XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFO );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
@@ -461,7 +518,7 @@ XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS,	/**< input timestamps
  * Simply creates MultiFstatAtomVector and initializes with antenna-pattern function.
  */
 MultiFstatAtomVector*
-XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPSVector *multiTS,	/**< input multi-timestamps vector t_i */
+XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< input multi-timestamps vector t_i */
                                    const MultiAMCoeffs *multiAM			/**< input antenna-pattern functions {a_i, b_i} */
                                    )
 {
@@ -794,3 +851,36 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   return XLAL_SUCCESS;
 
 } /* XLALAddSignalToMultiFstatAtomVector() */
+
+/** Load Ephemeris from ephemeris data-files  */
+EphemerisData *
+XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
+{
+  const char *fn = __func__;
+
+#define FNAME_LENGTH 1024
+  CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
+  CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
+
+  /* check input consistency */
+  if ( !ephemYear ) {
+    XLALPrintError ("%s: invalid NULL input for 'ephemYear'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  snprintf(EphemEarth, FNAME_LENGTH, "earth%s.dat", ephemYear);
+  snprintf(EphemSun, FNAME_LENGTH, "sun%s.dat",  ephemYear);
+
+  EphemEarth[FNAME_LENGTH-1]=0;
+  EphemSun[FNAME_LENGTH-1]=0;
+
+  EphemerisData *edat;
+  if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
+    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* return ephemeris */
+  return edat;
+
+} /* XLALInitEphemeris() */
