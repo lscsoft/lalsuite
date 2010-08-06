@@ -150,7 +150,6 @@ lines = dagFile.readlines()
 for line in lines:
   if "SUBDAG" in line:
     strs = line.split()
-    fname = ''
     if "DIR" in strs:
       fname = strs[-1]
     else:
