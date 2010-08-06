@@ -610,57 +610,8 @@ void LALComputeAM (LALStatus          *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-}
 
-/** Destroy a MultiAMCoeffs structure.
- * Note, this is "NULL-robust" in the sense that it will not crash
- * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs
- */
-void
-XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
-{
-  UINT4 X;
-
-  if ( ! multiAMcoef )
-    return;
-
-  if ( multiAMcoef->data )
-    {
-      for ( X=0; X < multiAMcoef->length; X ++ )
-	{
-	  XLALDestroyAMCoeffs ( multiAMcoef->data[X] );
-	} /* for X < numDetectors */
-      LALFree ( multiAMcoef->data );
-    }
-  LALFree ( multiAMcoef );
-
-  return;
-
-} /* XLALDestroyMultiAMCoeffs() */
-
-/** Destroy a AMCoeffs structure.
- * Note, this is "NULL-robust" in the sense that it will not crash
- * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs
- */
-void
-XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
-{
-  if ( ! amcoef )
-    return;
-
-  if ( amcoef->a )
-    XLALDestroyREAL4Vector ( amcoef->a );
-  if ( amcoef->b )
-    XLALDestroyREAL4Vector ( amcoef->b );
-
-  LALFree ( amcoef );
-
-  return;
-
-} /* XLALDestroyAMCoeffs() */
-
+} /* LALComputeAM() */
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
@@ -752,4 +703,244 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 
 } /* XLALWeighMultiAMCoefs() */
 
+
+/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
+ * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
+ * timestamps.
+ *
+ * The input consists of the DetectorState-timeseries, which contains
+ * the detector-info and the LMST's corresponding to the different times.
+ *
+ * \note This is an equivalent implementation to LALNewGetAMCoeffs(),
+ * only using the XLAL interface instead.
+ * This implementation is based on the geometrical definition of
+ * \f$a\sin\zeta\f$ and \f$b\sin\zeta\f$ as detector response
+ * coefficients in a preferred polarization basis.  (It is thereby
+ * more general than the JKS expressions and could be used e.g., with
+ * the response tensor of a bar detector with no further modification
+ * needed.)
+ *
+ * \note The fields 'A', 'B', 'C' in AMCoeffs are obsolete and are not
+ * computed by this function at all. Use AntennaPatternMatrix instead.
+ */
+AMCoeffs *
+XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
+                      SkyPosition skypos				/**< {alpha,delta} of the source */
+                      )
+{
+  const char *fn = __func__;
+
+  /* ---------- check input consistency ---------- */
+  if ( !DetectorStates ) {
+    XLALPrintError ("%s: invalid NULL input 'DetectorStates'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* currently requires sky-pos to be in equatorial coordinates (FIXME) */
+  if ( skypos.system != COORDINATESYSTEM_EQUATORIAL ) {
+    XLALPrintError ("%s: only equatorial coordinates currently supported in 'skypos'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
+  REAL4 alpha = skypos.longitude;
+  REAL4 delta = skypos.latitude;
+
+  REAL4 sin1delta, cos1delta;
+  REAL4 sin1alpha, cos1alpha;
+  sin_cos_LUT (&sin1delta, &cos1delta, delta );
+  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
+
+  REAL4 xi1 = - sin1alpha;
+  REAL4 xi2 =  cos1alpha;
+  REAL4 eta1 = sin1delta * cos1alpha;
+  REAL4 eta2 = sin1delta * sin1alpha;
+  REAL4 eta3 = - cos1delta;
+
+  /* prepare output vector */
+  UINT4 numSteps = DetectorStates->length;
+  AMCoeffs *coeffs;
+  if ( ( coeffs = XLALCreateAMCoeffs ( numSteps ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCreateAMCoeffs(%d) failed\n", fn, numSteps );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /*---------- Compute the a(t_i) and b(t_i) ---------- */
+  UINT4 i;
+  for ( i=0; i < numSteps; i++ )
+    {
+      REAL4 ai, bi;
+
+      SymmTensor3 *d = &(DetectorStates->data[i].detT);
+
+      ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
+	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
+	- 2 * d->d13 *             eta1 * eta3
+	+     d->d22 * ( xi2*xi2 - eta2*eta2 )
+	- 2 * d->d23 *             eta2 * eta3
+	-     d->d33 *             eta3*eta3;
+
+      bi =    d->d11 * 2 * xi1 * eta1
+	+ 2 * d->d12 *   ( xi1 * eta2 + xi2 * eta1 )
+	+ 2 * d->d13 *     xi1 * eta3
+	+     d->d22 * 2 * xi2 * eta2
+	+ 2 * d->d23 *     xi2 * eta3;
+
+      coeffs->a->data[i] = ai;
+      coeffs->b->data[i] = bi;
+
+    } /* for i < numSteps */
+
+  /* return the result */
+  return coeffs;
+
+} /* XLALComputeAMCoeffs() */
+
+/** Multi-IFO version of XLALComputeAMCoeffs().
+ * Computes noise-weighted combined multi-IFO antenna pattern functions.
+
+ *
+ * \note contrary to LALGetMultiAMCoeffs(), this function already applies
+ * the noise-weights and computes  the corresponding antenna-pattern matrix {A, B, C},
+ * so DONT use XLALWeighMultiAMCoeffs() on the result!
+ *
+ * \note a NULL input to noise weights corresponds to unit-weights
+ */
+MultiAMCoeffs *
+XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
+                           const MultiNoiseWeights *multiWeights,		/**< [in] noise-weigths at timestamps t_i (can be NULL) */
+                           SkyPosition skypos					/**< source sky-position [in equatorial coords!] */
+                           )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !multiDetStates ) {
+    XLALPrintError ("%s: invalid NULL input argument 'multiDetStates'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numDetectors = multiDetStates->length;
+
+  /* prepare output vector */
+  MultiAMCoeffs *ret;
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc( 1, %d)\n", fn, sizeof( *ret ) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  ret->length = numDetectors;
+  if ( ( ret->data = XLALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(%d, %d)\n", fn, numDetectors, sizeof ( *ret->data ) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* loop over detectors and generate AMCoeffs for each one */
+  UINT4 X;
+  for ( X=0; X < numDetectors; X ++ )
+    {
+      if ( (ret->data[X] = XLALComputeAMCoeffs ( multiDetStates->data[X], skypos )) == NULL ) {
+        XLALPrintError ("%s: call to XLALComputeAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
+        XLALDestroyMultiAMCoeffs ( ret );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+
+    } /* for X < numDetectors */
+
+  /* apply noise-weights and compute antenna-pattern matrix {A,B,C} */
+  if ( XLALWeighMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: call to XLALWeighMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLALDestroyMultiAMCoeffs ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* return result */
+  return ret;
+
+} /* XLALComputeMultiAMCoeffs() */
+
+
+/* ---------- creators/destructors for AM-coeffs -------------------- */
+/** Create an AMCeoffs vector for given number of timesteps
+ */
+AMCoeffs *
+XLALCreateAMCoeffs ( UINT4 numSteps )
+{
+  const char *fn = __func__;
+
+  AMCoeffs *ret;
+
+  if ( ( ret = XLALCalloc ( 1, sizeof (*ret) ) ) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, sizeof (*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( ( ret->a = XLALCreateREAL4Vector ( numSteps )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numSteps );
+    XLALDestroyAMCoeffs ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  if ( ( ret->b = XLALCreateREAL4Vector ( numSteps )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numSteps );
+    XLALDestroyAMCoeffs ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  return ret;
+
+} /* XLALCreateAMCoeffs() */
+
+
+/** Destroy a MultiAMCoeffs structure.
+ *
+ * Note, this is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
+{
+  UINT4 X;
+
+  if ( ! multiAMcoef )
+    return;
+
+  if ( multiAMcoef->data )
+    {
+      for ( X=0; X < multiAMcoef->length; X ++ )
+	{
+	  XLALDestroyAMCoeffs ( multiAMcoef->data[X] );
+	} /* for X < numDetectors */
+      LALFree ( multiAMcoef->data );
+    }
+  LALFree ( multiAMcoef );
+
+  return;
+
+} /* XLALDestroyMultiAMCoeffs() */
+
+/** Destroy a AMCoeffs structure.
+ *
+ * \note This function is "NULL-robust" in the sense that it will not crash
+ * on NULL-entries anywhere in this struct, so it can be used
+ * for failure-cleanup even on incomplete structs
+ */
+void
+XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
+{
+  if ( ! amcoef )
+    return;
+
+  if ( amcoef->a )
+    XLALDestroyREAL4Vector ( amcoef->a );
+  if ( amcoef->b )
+    XLALDestroyREAL4Vector ( amcoef->b );
+
+  LALFree ( amcoef );
+
+  return;
+
+} /* XLALDestroyAMCoeffs() */
 
