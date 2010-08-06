@@ -463,26 +463,26 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
   {
     if ( params->simData )
       channel = get_simulated_data( ifoChannel, &params->startTime,
-          params->duration, params->strainData, params->sampleRate,
+          params->duration, LALRINGDOWN_DATATYPE_SIM, params->sampleRate,
           params->randomSeed, 1E-20 );
     else if ( params->zeroData )
     {
       channel = get_zero_data( ifoChannel, &params->startTime,
-          params->duration, params->strainData, params->sampleRate );
+          params->duration, LALRINGDOWN_DATATYPE_ZERO, params->sampleRate );
     }
     else if ( params->doubleData )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
-          params->strainData,
+          LALRINGDOWN_DATATYPE_HT_REAL8,
           params->highpassFrequency);
       stripPad = 1;
     }
     else
     {
-      channel = get_frame_data( dataCache, ifoChannel,
+      channel = ring_get_frame_data( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,
-          params->strainData );
+          LALRINGDOWN_DATATYPE_HT_REAL4 );
       stripPad = 1;
     }
     if ( params->writeRawData ) /* write raw data */
@@ -493,7 +493,7 @@ static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
 
     /* inject signals */
     if ( params->injectFile )
-      inject_signal( channel, EOBNR_inject, params->injectFile,
+      ring_inject_signal( channel, LALRINGDOWN_EOBNR_INJECT, params->injectFile,
           NULL, 1.0, NULL );
     if ( params->writeRawData )
        write_REAL4TimeSeries( channel );
@@ -561,7 +561,8 @@ static REAL4FrequencySeries *coh_PTF_get_invspec(
   if ( params->getSpectrum )
   {
     /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel, params->segmentDuration,
+    invspec = compute_average_spectrum( channel,
+        LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->segmentDuration,
         params->strideDuration, fwdplan, params->whiteSpectrum );
 
     if ( params->writeInvSpectrum ) /* Write spectrum before inversion */

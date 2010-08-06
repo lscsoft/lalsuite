@@ -44,7 +44,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/FindChirpPTF.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
 
 #include <gsl/gsl_matrix.h>
