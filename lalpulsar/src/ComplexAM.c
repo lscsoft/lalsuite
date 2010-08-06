@@ -29,8 +29,6 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include <lal/ExtrapolatePulsarSpins.h>
-
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -39,10 +37,12 @@
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
 
-
+/* LAL includes */
+#include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/AVFactories.h>
-#include <lal/LISAspecifics.h>
 #include <lal/ComplexAM.h>
+#include <lal/LISAspecifics.h>
+#include <lal/ComputeFstat.h>
 
 NRCSID( COMPLEXAMC, "$Id$");
 
