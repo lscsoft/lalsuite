@@ -103,8 +103,7 @@ typedef struct {
 typedef struct {
   AmpParamsRange_t AmpRange;	/**< signal parameter ranges: lower bounds + bands */
   gsl_rng *rng;			/**< gsl random-number generator */
-  LALDetector *site;		/**< detector site */
-  EphemerisData *edat;		/**< ephemeris data */
+  MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
   CHAR *VCSInfoString;		/**< code VCS version info */
 } ConfigVariables;
 
@@ -234,11 +233,7 @@ int main(int argc,char *argv[])
 
 
   /* ----- free memory ---------- */
-  XLALFree(cfg.edat->ephemE);
-  XLALFree(cfg.edat->ephemS);
-  XLALFree ( cfg.edat );
-
-  XLALFree ( cfg.site );
+  XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
 
   if ( cfg.VCSInfoString ) XLALFree ( cfg.VCSInfoString );
   gsl_rng_free ( cfg.rng );
@@ -379,16 +374,57 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   LogPrintf ( LOG_DEBUG, "seed = %lu\n", gsl_rng_default_seed );
 
   /* init ephemeris-data */
-  if ( (cfg->edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
+  EphemerisData *edat;
+  if ( (edat = XLALInitEphemeris ( uvar->ephemYear )) == NULL ) {
     LogPrintf ( LOG_CRITICAL, "%s: Failed to init ephemeris data for year-span '%s'\n", fn, uvar->ephemYear );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
   /* init detector info */
-  if ( (cfg->site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
+  LALDetector *site;
+  if ( (site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
     XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, uvar->IFO );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
+  MultiLALDetector *multiDet;
+  if ( (multiDet = XLALCreateMultiLALDetector ( 1 )) == NULL ) {   /* currently only implemented for single-IFO case */
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(1) failed with errno=%d\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  multiDet->data[0] = (*site); 	/* copy! */
+  XLALFree ( site );
+
+  /* init timestamps vector covering observation time */
+  UINT4 numSteps = (UINT4) ceil ( uvar->dataDuration / uvar->TAtom );
+  MultiLIGOTimeGPSVector * multiTS;
+  if ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) == NULL ) {
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  if ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) == NULL ) {
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  if ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) == NULL ) {
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSteps );
+  }
+  UINT4 i;
+  for ( i=0; i < numSteps; i ++ )
+    {
+      UINT4 ti = uvar->dataStartGPS + i * uvar->dataDuration;
+      multiTS->data[0]->data[i].gpsSeconds = ti;
+      multiTS->data[0]->data[i].gpsNanoSeconds = 0;
+    }
+
+  if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
+    XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  XLALDestroyMultiTimestamps ( multiTS );
+  XLALDestroyMultiLALDetector ( multiDet );
+
+  XLALFree(edat->ephemE);
+  XLALFree(edat->ephemS);
+  XLALFree ( edat );
 
   return XLAL_SUCCESS;
 
