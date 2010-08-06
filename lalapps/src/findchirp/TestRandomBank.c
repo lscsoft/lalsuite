@@ -3726,7 +3726,6 @@ void LALComputeWindowSpectrum(LALStatus *status,
 			      REAL4TimeSeries *chan)
 {
   
-  LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
   INT4 k;
   
@@ -3760,14 +3759,11 @@ void LALComputeWindowSpectrum(LALStatus *status,
     }
   
   
-  wpars.type = Hann;
-  wpars.length = param->numPoints;
   avgSpecParams.overlap = param->numPoints / 2;
   if ( vrbflg ) 
     fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
-  
-  LAL_CALL( LALCreateREAL4Window( status->statusPtr, &(avgSpecParams.window),
-				  &wpars ), status->statusPtr );
+
+  avgSpecParams.window = XLALXLALCreateHannREAL4Window(param->numPoints);
   LAL_CALL( LALREAL4AverageSpectrum( status->statusPtr, spec, chan, &avgSpecParams ),
 	    status->statusPtr );
   XLALDestroyREAL4Window( avgSpecParams.window );

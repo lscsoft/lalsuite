@@ -687,6 +687,7 @@ int unknownDetector (const char *detector) {
     "T1",       /* TAMA_300 */
     "V1",       /* Virgo_CITF */
     "V2",       /* Virgo (3km) */
+    "X1",       /* RXTE */
     NULL
   };
 

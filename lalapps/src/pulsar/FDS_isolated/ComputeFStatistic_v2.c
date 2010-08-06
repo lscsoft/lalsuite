@@ -748,15 +748,13 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
   XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
+  /* free memory allocated for binary parameters */
+  if (orbitalParams) LALFree(orbitalParams);
+  
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
     gsl_vector_int_free(Fstat_histogram);
-
-  /* free memory allocated for binary parameters */
-  if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) ) {
-    LALFree(orbitalParams);
-  }
   
   /* close log-file */
   if (fpLogPrintf) {

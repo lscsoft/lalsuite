@@ -45,7 +45,7 @@ except ImportError:
 #
 
 # version info class
-class git_info:
+class git_info(object):
   def __init__(self):
     id = None
     date = None
