@@ -41,7 +41,6 @@ extern "C" {
 NRCSID( DETECTORSTATESH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
-#include <lal/LALComputeAM.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/SeqFactories.h>
 
