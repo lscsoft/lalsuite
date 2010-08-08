@@ -269,7 +269,7 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    REAL8 accuracy = 1.0e-5;
    
    sigma = 0.0;
-   fprintf(stderr,"Sigma is %g\n",sigma);
+   //fprintf(stderr,"Sigma is %g\n",sigma);
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode); 
