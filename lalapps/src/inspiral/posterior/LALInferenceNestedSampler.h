@@ -7,10 +7,9 @@
 
 #include "LALInference.h"
 
+/* logadd(a,b) = log(exp(a) + exp(b)) using Stirling's approximation */
+double logadd(double a,double b);
+
 /* NestedSamplingAlgorithm implements the nested sampling algorithm,
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
 void NestedSamplingAlgorithm(LALInferenceRunState *runState);
-
-/* NestedSamplingOneIteration advances the state of the algorithm
- by one iteration of the nested sampling algorithm */
-void NestedSamplingOneIteration(LALInferenceRunState *runState);
