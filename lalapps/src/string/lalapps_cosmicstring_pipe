@@ -32,6 +32,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
 from pylal import ligolw_tisi
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lalapps import cosmicstring
 from lalapps import power
 
@@ -176,6 +177,8 @@ background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	for i in range(len(background_time_slides[cache_entry])):
+		background_time_slides[cache_entry][i] = dict((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
 	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
@@ -183,6 +186,8 @@ injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	for i in range(len(injection_time_slides[cache_entry])):
+		injection_time_slides[cache_entry][i] = dict((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
 	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
@@ -251,8 +256,8 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		tisi_cache = set([time_slides_cache_entry])
 		nodes = set()
-		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
-			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
+		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 80000000.0 / len(these_time_slides), verbose = verbose):
+			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache)
 
 		#
 		# ligolw_burca

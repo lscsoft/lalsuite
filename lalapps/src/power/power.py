@@ -1383,13 +1383,47 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	if verbose:
 		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
 
+	#
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)[1]
+	#
+
+	seglists, bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)
+
+	#
+	# retrieve the file caches and segments.  note that ligolw_cafe
+	# returns the bins sorted by segment, so we do too
+	#
+
 	caches = [set(bin.objects) for bin in bins]
 	segs = [bin.extent for bin in bins]
 
+	#
+	# determine the clipping boundaries to use for each coincidence job
+	# if an extentlimit has been imposed
+	#
+
+	clipsegs = [None] * len(segs)
+	if extentlimit is not None:
+		for i, seg in enumerate(segs):
+			# FIXME:  when we can rely on Python >= 2.5,
+			#lo = segments.NegInfinity if i == 0 or segs[i - 1].disjoint(seg) else seg[0]
+			# etc.
+			if i == 0 or segs[i - 1].disjoint(seg):
+				lo = segments.NegInfinity
+			else:
+				lo = seg[0]
+			if i >= len(segs) - 2 or segs[i + 1].disjoint(seg):
+				hi = segments.PosInfinity
+			else:
+				hi = seg[1]
+			if lo is not segments.NegInfinity or hi is not segments.PosInfinity:
+				clipsegs[i] = segments.segment(lo, hi)
+
+	#
 	# match parents to caches
+	#
+
 	if verbose:
 		print >>sys.stderr, "Matching jobs to caches ..."
 	parent_groups, unused = match_nodes_to_caches(parents, caches)
@@ -1399,5 +1433,8 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 		# needed
 		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
 
+	#
 	# done
-	return zip(segs, parent_groups, caches)
+	#
+
+	return zip(segs, parent_groups, caches, clipsegs)
