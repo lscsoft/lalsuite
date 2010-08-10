@@ -104,7 +104,7 @@ typedef struct {
 extern const TransientCandidate_t empty_TransientCandidate;
 
 /* ---------- exported API prototypes ---------- */
-int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, const transientWindow_t *transientWindow );
+int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
 
 int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
 

@@ -161,8 +161,8 @@ MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPS
 int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
 
-int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, const gsl_vector *A_Mu, const transientWindow_t *transientWindow );
-int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, const gsl_vector *A_Mu, const transientWindow_t *transientWindow );
+int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
+int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 
 
 /*---------- empty initializers ---------- */
@@ -739,7 +739,7 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
 int
 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                  const gsl_vector *A_Mu,	 /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
-                                 const transientWindow_t *transientWindow /**< transient signal window */
+                                 transientWindow_t transientWindow /**< transient signal window */
                                  )
 {
   const char *fn = __func__;
@@ -752,10 +752,6 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   }
   if ( !A_Mu || (A_Mu->size != 4) ) {
     XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( !transientWindow ) {
-    XLALPrintError ( "%s: Invalid NULL input 'transientWindow'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
@@ -786,7 +782,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   for ( alpha=0; alpha < numAtoms; alpha ++ )
     {
       UINT4 ti = atoms->data[alpha].timestamp;
-      REAL8 win = XLALGetTransientWindowValue ( ti, t0, t1, transientWindow->tau, transientWindow->type );
+      REAL8 win = XLALGetTransientWindowValue ( ti, t0, t1, transientWindow.tau, transientWindow.type );
 
       if ( win == 0 )
         continue;
@@ -852,7 +848,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 int
 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [in/out] multi atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                       const gsl_vector *A_Mu,	 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
-                                      const transientWindow_t *transientWindow /**< transient signal window */
+                                      transientWindow_t transientWindow /**< transient signal window */
                                       )
 {
   const char *fn = __func__;
@@ -864,10 +860,6 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   }
   if ( !A_Mu || (A_Mu->size != 4) ) {
     XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( !transientWindow ) {
-    XLALPrintError ( "%s: Invalid NULL input 'transientWindow'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
