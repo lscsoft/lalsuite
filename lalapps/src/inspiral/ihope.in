@@ -165,6 +165,9 @@ parser.add_option("-H", "--skip-pipedown",action="store_false",\
 parser.add_option("-W","--skip-hardware-injections",action="store_false",\
     default=True,dest="run_hardware_inj", help="Skip the hardware injection script")
 
+parser.add_option("-w","--skip-omega-scans",action="store_false",\
+    default=True,dest="do_omega_scans", help="Skip the omega scan setup.")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
@@ -456,6 +459,13 @@ hw_inj_dir = "hardware_injection_summary"
 if opts.run_hardware_inj:
   inspiralutils.mkdir(hw_inj_dir)
   inspiralutils.get_hwinj_segments(cp,ifos,hw_inj_dir)
+
+if opts.do_omega_scans:
+  if not os.path.isdir('omega_setup'):
+    os.mkdir('omega_setup')
+  os.chdir('omega_setup')
+  inspiralutils.omega_scan_setup(cp,ifos)
+  os.chdir('..')
 
 # create the list of files that will be concatenated into the ihope cache
 cachelist = []

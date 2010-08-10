@@ -32,6 +32,7 @@ from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
 from pylal import ligolw_tisi
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lalapps import cosmicstring
 from lalapps import power
 
@@ -176,6 +177,8 @@ background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	for i in range(len(background_time_slides[cache_entry])):
+		background_time_slides[cache_entry][i] = dict((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
 	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
@@ -183,6 +186,8 @@ injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
 	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	for i in range(len(injection_time_slides[cache_entry])):
+		injection_time_slides[cache_entry][i] = dict((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
 	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
@@ -244,23 +249,45 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
 			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
+		coinc_nodes.append(set())
 
 		#
 		# ligolw_cafe & ligolw_add
 		#
 
 		tisi_cache = set([time_slides_cache_entry])
-		nodes = set()
-		for seg, parents, cache in power.group_coinc_parents(trigger_nodes, these_time_slides, verbose = verbose):
-			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
+		lladd_nodes = set()
+		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 80000000.0 / len(these_time_slides), verbose = verbose):
+			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache)
+			if clipseg is not None:
+				#
+				# this is a fragment of a too-large burca
+				# job, construct it specially and add the
+				# command-line option needed to clip the
+				# output
+				#
+
+				assert len(these_lladd_nodes) == 1
+				coinc_nodes[-1] |= power.make_burca_fragment(dag, these_lladd_nodes, "%s_%d" % (tag, n), coincidence_segments = segments.segmentlist([clipseg]), verbose = verbose)
+
+			else:
+				#
+				# this is not a fragment of a too-large
+				# burca job, add it to the pool of files to
+				# be processed by the burcas that don't
+				# require special clipping command line
+				# options
+				#
+
+				lladd_nodes |= these_lladd_nodes
 
 		#
-		# ligolw_burca
+		# ligolw_burca pool
 		#
 
 		if verbose:
 			print >>sys.stderr, "building burca jobs ..."
-		coinc_nodes.append(power.make_burca_fragment(dag, nodes, "%s_%d" % (tag, n), verbose = verbose))
+		coinc_nodes[-1] |= power.make_burca_fragment(dag, lladd_nodes, "%s_%d" % (tag, n), verbose = verbose)
 		if verbose:
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
@@ -348,7 +375,7 @@ if options.verbose:
 
 def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
 	# see the documentation for glue.iterutils.choices() for an
-	# explanation of the procedure used here to round-robing the node
+	# explanation of the procedure used here to round-robin the node
 	# lists
 	A = list(iterutils.choices(injection_coinc_node_groups, 1))
 	B = list(iterutils.choices(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))

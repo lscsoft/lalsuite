@@ -176,7 +176,7 @@ static REAL4TimeSeries derr;
 static REAL8TimeSeries hoft;
 static FrChanIn chanin_derr;
 static FrChanIn chanin_hoft;
-REAL4Vector *derrwin=NULL,*hoftwin=NULL;
+REAL4Window *derrwin=NULL;
 
 FILE *fpout=NULL;
 FILE *fpoutbin=NULL;
@@ -280,8 +280,6 @@ int main(int argc,char *argv[])
 
 int Initialise(struct CommandLineArgsTag CLA)
 {
-  LALWindowParams winparams;
-
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&derrframecache,CommandLineArgs.derrFrCacheFile);
   TESTSTATUS( &status );
@@ -335,21 +333,8 @@ int Initialise(struct CommandLineArgsTag CLA)
        printmemuse();
      #endif
 
-    /* Create Window vectors */
-    LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
-    TESTSTATUS( &status );
-
-    winparams.type=Hann;
-
-     #ifdef DEBUG
-      fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
-       printmemuse();
-     #endif
-
     /* make window  */
-    winparams.length=(INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5);
-    LALWindow(&status,derrwin,&winparams);
-    TESTSTATUS( &status );
+    derrwin = XLALCreateHannREAL4Window((INT4)(CLA.t/(derr.deltaT*DECIMATE) +0.5));
     }
   else
     {
@@ -358,28 +343,13 @@ int Initialise(struct CommandLineArgsTag CLA)
        printmemuse();
      #endif
 
-
-    /* Create Window vectors */
-    LALCreateVector(&status,&derrwin,(UINT4)(CLA.t/(derr.deltaT) +0.5));
-    TESTSTATUS( &status );
-
-     #ifdef DEBUG
-      fprintf(stdout,"Made it to -1a\n");
-       printmemuse();
-     #endif
-
-
-    winparams.type=Hann;
-
     /* make window  */
     #ifdef DEBUG
       fprintf(stdout,"(INT4) CLA.t/(derr.deltaT) + 0.5 is %i\n",(INT4)(CLA.t/(derr.deltaT) +0.5));
        printmemuse();
      #endif
 
-    winparams.length=(INT4)(CLA.t/(derr.deltaT) +0.5);
-    LALWindow(&status,derrwin,&winparams);
-    TESTSTATUS( &status );
+    derrwin = XLALCreateHannREAL4Window((INT4)(CLA.t/(derr.deltaT) +0.5));
 
      #ifdef DEBUG
       fprintf(stdout,"Made it to -1b\n");
@@ -489,9 +459,7 @@ static FrChanIn chanin_exc;
 CalFactors factors;
 UpdateFactorsParams params;
 
-LALWindowParams winparams;
-
-REAL4Vector *excwin=NULL,*darmwin=NULL;  /* window */
+REAL4Window *excwin=NULL,*darmwin=NULL;  /* window */
 
 INT4 k,m;
 LIGOTimeGPS localgpsepoch=gpsepoch; /* Local variable epoch used to calculate the calibration factors */
@@ -533,27 +501,12 @@ FrStream *framestream=NULL;
   LALCreateVector(&status,&exc.data,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
 
-  /* Create Window vectors */
-
-  LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
-  TESTSTATUS( &status );
-
-  LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
-  TESTSTATUS( &status );
-
-
-  winparams.type=Hann;
-
   /* windows for time domain channels */
   /* darm */
-  winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
-  LALWindow(&status,darmwin,&winparams);
-  TESTSTATUS( &status );
+  darmwin = XLALCreateHannREAL4Window((INT4)(CLA.t/darm.deltaT +0.5));
 
   /* exc */
-  winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
-  LALWindow(&status,excwin,&winparams);
-  TESTSTATUS( &status );
+  excwin = XLALCreateHannREAL4Window((INT4)(CLA.t/exc.deltaT +0.5));
 
   for(m=0;m < (INT4)(duration/CLA.t);m++)
     {
@@ -576,11 +529,11 @@ FrStream *framestream=NULL;
       /* Window the data */
       for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
 	{
-	  darm.data->data[k] *= 2.0*darmwin->data[k];
+	  darm.data->data[k] *= 2.0*darmwin->data->data[k];
 	}
       for(k=0;k<(INT4)(CLA.t/exc.deltaT +0.5);k++)
 	{
-	  exc.data->data[k] *= 2.0*excwin->data[k];
+	  exc.data->data[k] *= 2.0*excwin->data->data[k];
 	}
 
       /* set params to call LALComputeCalibrationFactors */
@@ -625,10 +578,8 @@ FrStream *framestream=NULL;
   LALDestroyVector(&status,&exc.data);
   TESTSTATUS( &status );
 
-  LALDestroyVector(&status,&darmwin);
-  TESTSTATUS( &status );
-  LALDestroyVector(&status,&excwin);
-  TESTSTATUS( &status );
+  XLALDestroyREAL4Window(darmwin);
+  XLALDestroyREAL4Window(excwin);
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
@@ -703,11 +654,11 @@ int ComputeNoise(struct CommandLineArgsTag CLA, int n)
   /* Window the data */
   for(k=0;k<(INT4)(CLA.t/derr.deltaT +0.5);k++)
     {
-      derr.data->data[k] *= 2.0*derrwin->data[k];
+      derr.data->data[k] *= 2.0*derrwin->data->data[k];
     }
   for(k=0;k<(INT4)(CLA.t/hoft.deltaT +0.5);k++)
     {
-      hoft.data->data[k] *= 2.0*derrwin->data[k];
+      hoft.data->data[k] *= 2.0*derrwin->data->data[k];
     }
 
   #ifdef DEBUG
@@ -1016,8 +967,7 @@ int Finalise(void)
    printmemuse();
    #endif
 
-  LALDestroyVector(&status,&derrwin);
-  TESTSTATUS( &status );
+  XLALDestroyREAL4Window(derrwin);
 
 
    #ifdef DEBUG
