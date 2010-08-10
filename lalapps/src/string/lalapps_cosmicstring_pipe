@@ -214,13 +214,16 @@ datafinds = power.make_datafind_stage(dag, injection_seglists | background_segli
 #
 
 
-def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length, pad, overlap, short_segment_duration, tag, do_injections = False, verbose = False):
+def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length, pad, overlap, short_segment_duration, tag, do_injections = False, injections_offset = 0.0, verbose = False):
 	#
 	# injection job
 	#
 
 	if do_injections:
-		binjnodes = power.make_binj_fragment(dag, seglists.extent_all(), tag, 0.0)
+		# injections_offset is a number between 0 and 1 in units of
+		# the period between injections
+
+		binjnodes = power.make_binj_fragment(dag, seglists.extent_all(), tag, offset = injections_offset)
 
 		# artificial parent-child relationship to force binj jobs
 		# to run before all datafinds.  makes dag run faster
@@ -342,7 +345,7 @@ for i, folder in enumerate(injection_folders):
 	os.chdir(folder)
 	# note:  unpacking enforces rule that each injection run uses a
 	# single time-slides file
-	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (user_tag, i), do_injections = True, verbose = options.verbose)
+	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (user_tag, i), do_injections = True, injections_offset = float(i) / len(injection_folders), verbose = options.verbose)
 	os.chdir(cwd)
 	injection_coinc_nodes.append(these_coinc_nodes)
 	injection_likelihood_nodes.append(these_likelihood_nodes)
