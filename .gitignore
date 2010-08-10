@@ -11,3 +11,8 @@ configure
 lalsuite-*.tar.gz
 lalsuite.spec
 libtool
+config.lt
+
+# Built applications that are not ignored
+lalapps_combinexteframes
+lalapps_framestats

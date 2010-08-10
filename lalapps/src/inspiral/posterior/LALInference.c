@@ -233,8 +233,6 @@ void copyVariables(LALVariables *origin, LALVariables *target)
   return;
 }
 
-
-
 void printVariables(LALVariables *var)
 /* output contents of a 'LALVariables' structure       */
 /* (by now only prints names and types, but no values) */
@@ -310,6 +308,42 @@ void printVariables(LALVariables *var)
   return;
 }
 
+void fprintSample(FILE *fp,LALVariables *sample){
+	if(sample==NULL) return;
+	LALVariableItem *p=sample->head;
+	if(fp==NULL) return;
+	while(p!=NULL) {
+		switch (p->type) {
+			case INT4_t:
+				fprintf(fp, "%d", *(INT4 *) ptr->value);
+				break;
+			case INT8_t:
+				fprintf(fp, "%lld", *(INT8 *) ptr->value);
+				break;
+			case REAL4_t:
+				fprintf(fp, "%e", *(REAL4 *) ptr->value);
+				break;
+			case REAL8_t:
+				fprintf(fp, "%e", *(REAL8 *) ptr->value);
+				break;
+			case COMPLEX8_t:
+				fprintf(fp, "%e + i*%e",
+						(REAL4) ((COMPLEX8 *) ptr->value)->re, (REAL4) ((COMPLEX8 *) ptr->value)->im);
+				break;
+			case COMPLEX16_t:
+				fprintf(fp, "%e + i*%e",
+						(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
+				break;
+			case gslMatrix_t:
+				fprintf(stdout, "<can't print matrix>");
+				break;
+			default:
+				fprintf(stdout, "<can't print>");
+		}
+		fprintf(fp,"\t");
+		p=p->next;
+		return;
+}
 
 
 int compareVariables(LALVariables *var1, LALVariables *var2)

@@ -166,9 +166,12 @@ tagLALInferenceRunState
   LALProposalFunction       *proposal;
   LALTemplateFunction       *template;
   struct tagLALIFOData      *data;
-  LALVariables              *currentParams, 
-                            *priorArgs, 
-                            *proposalArgs;
+  LALVariables              *currentParams,
+                            *priorArgs,
+                            *proposalArgs,
+							*algorithmParams; /* Parameters which control the running of the algorithm */
+  LALVariables				**livePoints; /* Array of live points for Nested Sampling */
+  
   REAL8						currentLikelihood;
   gsl_rng                   *GSLrandom;
 } LALInferenceRunState;
