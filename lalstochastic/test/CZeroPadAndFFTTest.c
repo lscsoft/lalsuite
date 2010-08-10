@@ -245,7 +245,6 @@ main( int argc, char *argv[] )
    CHARVector             *unitString;
 
    CZeroPadAndFFTParameters   goodParams, badParams;
-   LALWindowParams    windowParams;
 
    lalDebugLevel = LALNDEBUG;
 
@@ -253,25 +252,8 @@ main( int argc, char *argv[] )
    goodParams.fftPlan = NULL;
    goodParams.length = CZEROPADANDFFTTESTC_FULLLENGTH;
 
-   windowParams.length = CZEROPADANDFFTTESTC_LENGTH;
-   windowParams.type = Rectangular;
-
    /* build window */
-   LALSCreateVector(&status, &(goodParams.window), CZEROPADANDFFTTESTC_LENGTH);
-   if ( ( code = CheckStatus( &status, 0 , "",
-			      CZEROPADANDFFTTESTC_EFLS,
-			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
-   {
-     return code;
-   }
-
-   LALWindow(&status, goodParams.window, &windowParams);
-   if ( ( code = CheckStatus( &status, 0 , "",
-			      CZEROPADANDFFTTESTC_EFLS,
-			      CZEROPADANDFFTTESTC_MSGEFLS ) ) )
-   {
-     return code;
-   }
+   goodParams.window = XLALCreateRectangularREAL4Window(CZEROPADANDFFTTESTC_LENGTH);
 
    badParams = goodParams;
 
@@ -707,13 +689,7 @@ main( int argc, char *argv[] )
    {
      return code;
    }
-   LALSDestroyVector(&status, &(goodParams.window));
-     if ( ( code = CheckStatus(&status, 0 , "",
-			       CZEROPADANDFFTTESTC_EFLS,
-			       CZEROPADANDFFTTESTC_MSGEFLS) ) )
-   {
-     return code;
-   }
+   XLALDestroyREAL4Window(goodParams.window);
 
    LALCheckMemoryLeaks();
 

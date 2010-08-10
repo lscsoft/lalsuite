@@ -17,61 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="LALComputeAMCV">
-Author:  Berukoff, S.J.  $Id$
-********************************** </lalVerbatim> */
-
-/* <lalLaTeX>
-\subsection{Module \texttt{LALComputeAM.c}}\label{ss:LALComputeAM.c}
-Computes quantities for amplitude demodulation.
-
-\subsection*{Prototypes}
-\vspace{0.1in}
-\input{LALComputeAMD}
-\index{\texttt{LALComputeAM()}}
-
-\subsubsection*{Description}
-
-This routine computes the quantities $a(t)$ and $b(t)$ as defined in
-Jaranowski, Krolak, and Schutz (gr-qc/9804014), hereafter JKS.  These
-functions quantify the dependence of the detector output on the
-beam-pattern functions $F_{+}$ and $F_{\times}$; in fact, $a(t)$ and
-$b(t)$ {\it{are}} the beam-pattern functions, without the dependence
-on polarization angle and detector arm angle.  Since the
-\verb@LALDemod()@ suite is an attempt to compute an optimal statistic,
-it is necessary to include these quantiti es in the computation.
-Otherwise, the motion of the Earth as it revolves about its axis will
-smear the signal into several neighboring bins centered about the
-search frequency, consequently losing valuable SNR.
-
-\subsubsection*{Algorithm}
-
-The routine is really simple.  From JKS,
-\begin{eqnarray}
-F_{+} = \sin
-\zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\
-F_{\times} = \sin
-\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ]
-\end{eqnarray}
-We use the routine \verb@LALComputeDetAMResponse()@ to calculate
-$F_{+}$ and $F_{\times}$ for a given polarization angle, and then
-extract $a(t)$ and $b(t)$, once for each timestamp $t$.  Additionally,
-computation of the optimal statistic requires that we compute inner
-products of these two quantities for later use.  See \ref{Deft algo}
-for more on the optimal statistic.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALBarycenter()
-LALBarycenterEarth()
-LALComputeDetAMResponse()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALComputeAMCV}}
-
-</lalLaTeX> */
+/**
+ * \author Berukoff, S.J.
+ * \date 2005
+ * \ingroup pulsarAntenna
+ * \file
+ * \brief Computes quantities for amplitude demodulation.
+ *
+ * This routine computes the quantities \f$a(t)\f$ and \f$b(t)\f$ as defined in
+ * Jaranowski, Krolak, and Schutz \ref JKS98, hereafter JKS.  These
+ * functions quantify the dependence of the detector output on the
+ * beam-pattern functions \f$F_{+}\f$ and \f$F_{\times}\f$; in fact, \f$a(t)\f$ and
+ * \f$b(t)\f$ <i>are</i> the beam-pattern functions, without the dependence
+ * on polarization angle and detector arm angle.  Since the
+ * LALDemod() suite is an attempt to compute an optimal statistic,
+ * it is necessary to include these quantities in the computation.
+ * Otherwise, the motion of the Earth as it revolves about its axis will
+ * smear the signal into several neighboring bins centered about the
+ * search frequency, consequently losing valuable SNR.
+ *
+ * \par Algorithm
+ *
+ * The routine is really simple.  From JKS,
+ * \f{eqnarray*}
+ * F_{+} &=& \sin\zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\
+ * F_{\times} &=& \sin\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ]
+ * \f}
+ * We use the routine LALComputeDetAMResponse() to calculate
+ * \f$F_{+}\f$ and \f$F_{\times}\f$ for a given polarization angle, and then
+ * extract \f$a(t)\f$ and \f$b(t)\f$, once for each timestamp \f$t\f$.  Additionally,
+ * computation of the optimal statistic requires that we compute inner
+ * products of these two quantities for later use.
+ *
+ */
 
 /* loop protection */
 #ifndef LALCOMPUTEAM_C
@@ -84,12 +62,11 @@ LALComputeDetAMResponse()
 
 NRCSID (LALCOMPUTEAMC, "$Id LALComputeAM.c $");
 
-/* <lalVerbatim file="LALComputeAMD"> */
 void LALComputeAM (LALStatus          *status,
 		   AMCoeffs           *coe,
 		   LIGOTimeGPS        *ts,
 		   AMCoeffsParams     *params)
-{  /* </lalVerbatim> */
+{
 
   REAL4 zeta;                  /* sine of angle between detector arms        */
   INT4 i;                      /* temporary loop index                       */
