@@ -211,8 +211,6 @@ tagLALIFOData
   LALDetector               *detector;
   BarycenterInput           *bary;
   EphemerisData             *ephem;
-  gsl_matrix                *lookupTablePlus;
-  gsl_matrix                *lookupTableCross;
   struct tagLALIFOData      *next;
 } LALIFOData;
 

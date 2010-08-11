@@ -209,9 +209,7 @@ defined!\n");
 
 void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *runState)
 /* Populates the structures for the algorithm control in runState, given the
- commandLine arguments. Includes setting up a random number generator and creating
- lookup tables for the pulsar model function.
- Requires that the data fields have already been filled in */
+ commandLine arguments. Includes setting up a random number generator.*/
 {
 	UINT4 verbose=0;
 	ProcessParamsTable *ppt=NULL;
@@ -270,9 +268,16 @@ void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *run
 	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t);
 	
 	if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax = %i\n",chunkMin,chunkMax);
+
+	return;
+}
 	
+void setupLookupTables(LALInferenceRunState runState, LALSource *source){	
 	/* Set up lookup tables */
 	/* Using psi bins, time bins */
+	LALProcessParamsTable *ppt;
+	LALProcessParamsTable *commandLine=runState->commandLine;
+	
 	ppt=getProcParamVal(commandLine,"--psi-bins");
 	INT4 psiBins;
 	if(ppt) psiBins=atoi(ppt-value)
@@ -287,16 +292,26 @@ void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *run
 
 	if(verbose) fprintf(stdout,"psi-bins = %i, time-bins = %i\n",psiBins,timeBins);
 
+	LALIFOData *data=runState->data;
+
 	gsl_matrix *LUfplus=NULL;
 	gsl_matrix *LUfcross=NULL;
 	
 	REAL8 t0;
+	LALDetAndSource detAndSource;
 	
-	response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
+	while(data){
+		t0=XLALGPSGetREAL8(data->dataTimes->data[0]);
+		detAndSource.pDetector=data->detector;
+		detAndSource.pSource=source;
+		
+		response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 						  timeBins, psiBins, LUfplus, LUfcross);
 	
-	addVariable(runState->algorithmParams,"LU_Fplus",LUfplus,gslMatrix_t);
-	addVariable(runState->algotithmParams,"LU_Fcross",LUfcross,gslMatrix_t);
+		addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t);
+		addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t);
+		data=data->next;
+	}
 	
 	return;
 }
@@ -308,7 +323,6 @@ void initialisePrior(ProcParamsTable *commandLine, LALInferenceRunState *runStat
 	return;
 }
 
-void initialise
 
 INT4 main(INT4 argc, CHAR *argv[]){
   static LALStatus status;
