@@ -359,6 +359,42 @@ void initialisePrior(ProcParamsTable *commandLine, LALInferenceRunState *runStat
 	return;
 }
 
+void setupFromParFile(LALInferenceRunState *runState)
+/* Read the PAR file of pulsar parameters and setup the code using them */
+/* Generates lookup tables also */
+{
+	
+	LALSource psr;
+	BinaryPulsarParams pulsar;
+	REAL8Vector *phase_vector;
+	LALIFOData *data=runState->data;
+	LALProcessParamsTable *ppt=NULL;
+	
+	ppt=getProcParamVal(commandLine,"--par-file");
+	if(ppt==NULL) {fprintf(stderr,"Must specify --par-file!\n"); exit(1);}
+	char *parFile=ppt->value;
+	
+	/* get the pulsar parameters */
+	XLALReadTEMPOParFile(&pulsar, parFile);
+	psr.equatorialCoords.longitude = pulsar.ra;
+	psr.equatorialCoords.latitude = pulsar.dec;
+	psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+
+	/* Setup lookup tables for amplitudes */
+	setupLookupTables(runState, &psr)
+	
+	/* Setup initial phase */
+	while(data){
+		phase_vector=get_phase_model(pulsar, data );
+		data->timeData=calloc(1,sizeof(REAL8TimeSeries));
+		data->timeData->data=phase_vector;
+		data->timeData->epoch=data->timeData->data->data[0];
+		data->sampleUnits=lalSecondUnit;
+		data=data->next;
+	}
+	
+	return;
+}
 
 INT4 main(INT4 argc, CHAR *argv[]){
   static LALStatus status;
@@ -409,8 +445,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	
 	/* Initialise the algorithm structures from the command line arguments */
 	/* Include setting up random number generator etc */
-	/* Including generate lookup tables etc */
-	
+		
 	
 	/* Initialise the prior distribution given the command line arguments */
 	
@@ -418,7 +453,10 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	
 	/* Initialise the proposal distribution given the command line arguments */
 	
-	
+	/* Generate the lookup tables and read parameters from par file */
+	setupFromParFile(&runState);
+
+	setupLookupTables(&runState, LALSource *source);
 	
 	/* Call the nested sampling algorithm */
 	runState.algorithm(&runState);
@@ -435,13 +473,6 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* if we want to output in verbose mode set global variable */
   if(inputs.verbose) verbose = 1;
 
-  
-  source.equatorialCoords.longitude = pulsar.ra;
-  source.equatorialCoords.latitude = pulsar.dec;
-  source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-
-  
-  /*==========================================================================*/
 
   /*====================== SET OUTPUT PARAMETERS =============================*/
   output.outputDir = inputs.outputDir;
