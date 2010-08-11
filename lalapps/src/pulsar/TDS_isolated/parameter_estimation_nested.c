@@ -366,13 +366,38 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	return;
 }
 
-void initialiseProposal(ProcParamTable *commandLine, LALInferenceRunState
-*runState)
+/* Function to add the min and max values for the prior onto the priorArgs */
+void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
+	char minName[VARNAME_MAX];
+	char maxName[VARNAME_MAX];
+	
+	sprintf(minName,"%s_min",name);
+	sprintf(maxName,"%s_max",name);
+	addVariable(priorArgs,minName,min,type,PARAM_FIXED);
+	addVariable(priorArgs,maxName,max,type,PARAM_FIXED);
+	return;
+}
+
+/* Get the min and max values of the prior from the priorArgs list, given a name */
+void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
+{
+	char minName[VARNAME_MAX];
+	char maxName[VARNAME_MAX];
+	
+	sprintf(minName,"%s_min",name);
+	sprintf(maxName,"%s_max",name);
+	min=getVariable(priorArgs,minName);
+	max=getVariable(priorArgs,maxName);
+	return;
+	
+}
+
+void initialiseProposal(LALInferenceRunState *runState)
 /* sets up the parameters to be varied, and the extent of the proposal
    distributions from a proposal distribution file */
 {
   CHAR *propfile;
- 
+  ProcParamTable *commandLine=runState->commandLine;
   FILE *fp=NULL;
   
   CHAR *tempPar;
@@ -381,7 +406,7 @@ void initialiseProposal(ProcParamTable *commandLine, LALInferenceRunState
   BinaryPulsarParams pulsar;
   REAL8Vector *phase_vector;
   
-  propfile = (CHAR *)getProcParamVal(commandLine,"--psi-bins")->value;
+  propfile = (CHAR *)getProcParamVal(commandLine,"--prop-file")->value;
   
   /* open file */
   fp = fopen(propfile, "r");
@@ -403,14 +428,10 @@ void initialiseProposal(ProcParamTable *commandLine, LALInferenceRunState
     }
     else{
       addVariable(runState->currentParams, tempPar, tempVar, type, PARAM_LINEAR)
-    }  
+    }
+	  /* Add the prior variables */
+	  addMinMaxPrior(runState->priorArgs, tempPar, &low, &high, type);
   }
-}
-
-void initialisePrior(ProcParamsTable *commandLine, LALInferenceRunState *runState)
-/* Populates the priorArgs list in the runState using the command line arguments */
-{
-	
 	return;
 }
 
@@ -452,6 +473,53 @@ void setupFromParFile(LALInferenceRunState *runState)
 	add_initial_variables( runState->currentParams, pulsar );
 	
 	return;
+}
+
+
+setupLivePointsArray(LALInferenceRunState &runState){
+/* Set up initial basket of live points, drawn from prior,
+ by copying runState->currentParams to all entries in the array*/
+	
+	UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+	UINT4 i;
+	LALVariables *current;
+	
+	/* Allocate the array */
+	runState->livePoints=calloc(Nlive,sizeof(LALVariables *));
+	
+	for(i=0;i<Nlive;i++)
+	{
+		/* Copy the param structure */
+		copyVariables(runState->currentParams,runState->livePoints[i]);
+		/* Sprinkle the varying points among prior */
+		for(current=runState->livePoints[i],current!=NULL,current=current->next){
+			if(current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR)
+			{
+				switch (current->type){
+					case REAL4_t:
+					case REAL8_t:
+						{
+							REAL8 tmp;
+							REAL8 min,max;
+							getMinMaxPrior(runState->priorArgs,current->name,(void *)&min,(void *)&max);
+							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+						}
+						break;
+					case INT4_t:
+					case INT8_t:
+						{
+							INT4 tmp;
+							INT4 min,max;
+							getMinMaxPrior(runState->priorArgs,current->name,(void *)&min,(void *)&max);
+							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+						}
+						break;
+					default:
+						fprintf(stderr,"Trying to randomise a non-numeric parameter!");
+				}
+			}
+		}
+	}
 }
 
 INT4 main(INT4 argc, CHAR *argv[]){
@@ -507,15 +575,14 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	
 	/* Initialise the prior distribution given the command line arguments */
 	
-	/* Initialise the proposal distribution given the command line arguments */
-	
 	/* Generate the lookup tables and read parameters from par file */
 	setupFromParFile(&runState);
 
-	setupLookupTables(&runState, LALSource *source);
+	/* Initialise the proposal distribution given the command line arguments */
+	initialiseProposal(LALInferenceRunState *runState)
 	
 	/* Create live points array and fill initial parameters */
-	add_initial_variables(&runState);
+	setupLivePointsArray(&runState);
 	
 	/* Call the nested sampling algorithm */
 	runState.algorithm(&runState);

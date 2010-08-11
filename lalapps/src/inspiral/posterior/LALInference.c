@@ -87,6 +87,12 @@ LALVariableItem *getItemNr(LALVariables *vars, int index)
 }
 
 
+ParamVaryType getVariableVaryType(LALVariable *vars, const char *name)
+{
+	return (getItem(vars,name)->vary);
+}
+
+
 void *getVariable(LALVariables * vars,const char * name)
 /* Return the value of variable name from the vars structure by walking the list */
 {
