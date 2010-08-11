@@ -27,7 +27,7 @@ INT4 verbose=0;
                      (delimited by commas)\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
-" --input-dir         directory containing the input data files\n"\
+" --input-dir         directory containing the input data directories\n"\
 " --output-dir        directory for output data files\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
@@ -47,7 +47,6 @@ LALIFOData *readPulsarData(int argc, char **argv)
 {
   CHAR *detectors;
   CHAR *pulsar;
-  CHAR *parfile;
   CHAR *inputdir;
   CHAR *fname;
   CHAR *outputdir;
@@ -58,8 +57,11 @@ LALIFOData *readPulsarData(int argc, char **argv)
   
   CHAR dets[5][3]; /* we'll have a max of five detectors */
   INT4 numDets=0;
-  
+ 
   BinaryPulsarParams pars;
+ 
+  LALIFOData *ifodata, *head;
+  LALIFOData *prev=NULL;
   
   struct option long_options[] =
   {
@@ -67,9 +69,7 @@ LALIFOData *readPulsarData(int argc, char **argv)
     { "verbose",        no_argument,    NULL, 'R' },
     { "detectors",      required_argument, 0, 'D' },
     { "pulsar",         required_argument, 0, 'p' },
-    { "par-file",       required_argument, 0, 'P' },
     { "input-dir",      required_argument, 0, 'i' },
-    { "input-format",   required_argument, 0, 'I' },
     { "output-dir",     required_argument, 0, 'o' },
     { "prop-file",      required_argument, 0, 'F' },
     { "ephem-earth",    required_argument, 0, 'J' },
@@ -77,7 +77,7 @@ LALIFOData *readPulsarData(int argc, char **argv)
     { 0, 0, 0, 0 }
   };
 
-  CHAR args[] = "hD:p:P:i:o:F:n:";
+  CHAR args[] = "hD:p:i:o:F:n:";
   CHAR *program = argv[0];
 
   /* parse input arguments */
@@ -108,9 +108,6 @@ LALIFOData *readPulsarData(int argc, char **argv)
       case 'p': /* pulsar name */
         pulsar = optarg;
         break;
-      case 'P': /* pulsar parameter file */
-        parfile = optarg;
-        break;
       case 'i': /* input data file directory */
         inputdir = optarg;
         break;
@@ -129,9 +126,6 @@ LALIFOData *readPulsarData(int argc, char **argv)
         break;
     }
   }
-
-  /* get pulsar information from .par file */
-	XLALReadTEMPOParFile(&pars, parfile);
   
   /* count the number of detectors from command line argument */
   /* find the number of detectors being used */
@@ -156,17 +150,36 @@ LALIFOData *readPulsarData(int argc, char **argv)
     numDets++;
   }
   
+  /* check ephemeris files exist and if not output an error message */
+  if( access(sfile, F_OK) != 0 || 
+      access(efile, F_OK) != 0 ){
+    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
+defined!\n");
+    exit(3);
+  }
+  
   /* read in data */
-  for( i = 0 ; i < numDets ; i++ ){
+  for( i = 0,prev=NULL ; i < numDets ; i++,prev=ifodata){
     CHAR datafile[256];
     REAL8 times=0;
     REAL8Vector *temptimes=NULL;
+    INT4 k=0;
+    
+    ifodata=calloc(1,sizeof(LALIFOData))
+    ifodata->next=NULL;
+    if(i==0) head=ifodata;
+    if(i>0) prev->next=ifodata;
+       
+    /* set detector */
+    ifodata->detector = *XLALGetSiteInfo( dets[numDets] );
     
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
-    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
-      inputs.pulsar, dets[i]);
+    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputDir, dets[i],
+      pulsar, dets[i]);
 
+    
+      
     /* open data file */
     if((fp = fopen(dataFile, "r"))==NULL){
       fprintf(stderr, "Error... can't open data file %s!\n", dataFile);
@@ -176,60 +189,57 @@ LALIFOData *readPulsarData(int argc, char **argv)
     j=0;
 
     /* read in data */
-    data->compTimeData = NULL;
-    data->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &times, 0., 1.,
-      &lalSecondUnit, MAXLENGTH );
-    
-    data->dataTimes = NULL;
-    data->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
+    ifodata->dataTimes = NULL;
+    ifodata->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
 
     stdh0 = 0.;
     /* read in data */
     while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
       /* check that size of data file is not to large */
+      if (j == 0){
+        ifodata->compTimeData = NULL;
+        ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "",
+          XLALGPSSetREAL8(times),  0., 1., &lalSecondUnit, MAXLENGTH );
+      }
+      
       if( j == MAXLENGTH ){
         fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
-        exit(0);
+        exit(3);
       }
 
       /* exclude values smaller than 1e-28 as most are spurious points caused
          during a the heterodyne stage (e.g. when frame files were missing in
          the original S5 analysis) */
         temptimes->data[j] times);
-        data->compTimeData->data->data[j] = dataVals;
+        ifodata->compTimeData->data->data[j] = dataVals;
 
         j++;
     }
     
     /* resize the data */
-    data->compTimeData = XLALResizeCOMPLEX16TimeSeries(data->compTimeData,0,j);
+    ifodata->compTimeData =
+      XLALResizeCOMPLEX16TimeSeries(data->compTimeData,0,j);
     
     /* fill in time stamps as LIGO Time GPS Vector */
-    data->dataTimes = NULL;
-    data->dataTimes = XLALCreateTimestampVector( j );
+    ifodata->dataTimes = NULL;
+    ifodata->dataTimes = XLALCreateTimestampVector( j );
     
     for ( k=0; k<j; k++ )
-      XLALGPSSetREAL8(data->timeData->data[j], temptime);
+      XLALGPSSetREAL8(ifodata->timeData->data[k], temptimes->data[k]);
     
     XLALDestroyREAL8Vector(temptimes);
-  }
   
-  /* set ephemeris data */
-  data->edat = XLALMalloc(sizeof(*edat));
+    /* set ephemeris data */
+    ifodata->edat = XLALMalloc(sizeof(*edat));
 
-  data->(*edat).ephiles.earthEphemeris = efile;
-  data->(*edat).ephiles.sunEphemeris = sfile;
-
-  /* check files exist and if not output an error message */
-  if( access(inputs.earthfile, F_OK) != 0 || 
-      access(inputs.earthfile, F_OK) != 0 ){
-    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
-defined!\n");
-    exit(3);
+    ifodata->(*edat).ephiles.earthEphemeris = efile;
+    ifodata->(*edat).ephiles.sunEphemeris = sfile;
+  
+    /* set up ephemeris information */
+    LAL_CALL( LALInitBarycenter(&status, ifodata->edat), &status );
   }
 
-  /* set up ephemeris information */
-  LAL_CALL( LALInitBarycenter(&status, data->edat), &status );
+  return head;
 }
 
 
@@ -388,6 +398,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	ProcParamsTable *param_table;
 	LALInferenceRunState runState;
 	
+  LALSource source;
 	
 	/* Get ProcParamsTable from input arguments */
 	param_table=parseCommandLine(argc,argv);
@@ -424,45 +435,12 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* if we want to output in verbose mode set global variable */
   if(inputs.verbose) verbose = 1;
 
-  /* get the pulsar parameters */
-  XLALReadTEMPOParFile(&pulsar, inputs.parFile);
-  inputs.psr.equatorialCoords.longitude = pulsar.ra;
-  inputs.psr.equatorialCoords.latitude = pulsar.dec;
-  inputs.psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+  
+  source.equatorialCoords.longitude = pulsar.ra;
+  source.equatorialCoords.latitude = pulsar.dec;
+  source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 
-  /* find the number of detectors being used */
-  if( strstr(inputs.detectors, "H1") != NULL ){
-    sprintf(dets[numDets], "H1");
-    detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
-    numDets++;
-  }
-  if( strstr(inputs.detectors, "H2") != NULL ){
-     sprintf(dets[numDets], "H2");
-     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
-     numDets++;
-  }
-  if( strstr(inputs.detectors, "L1") != NULL ){
-     sprintf(dets[numDets], "L1");
-     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
-     numDets++;
-  }
-  if( strstr(inputs.detectors, "G1") != NULL ){
-     sprintf(dets[numDets], "G1");
-     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
-     numDets++;
-  }
-  if( strstr(inputs.detectors, "V1") != NULL ){
-     sprintf(dets[numDets], "V1");
-     detPos[numDets] = *XLALGetSiteInfo( dets[numDets] );
-     numDets++;
-  }
-
-  if( verbose ){
-    fprintf(stderr, "Analysing data from %d detector(s):\n  ", numDets);
-    for( i = 0 ; i < numDets ; i++ )
-      fprintf(stderr, "%s ", dets[i]);
-    fprintf(stderr, "\n");
-  }
+  
   /*==========================================================================*/
 
   /*====================== SET OUTPUT PARAMETERS =============================*/
