@@ -243,12 +243,13 @@ defined!\n");
 }
 
 
-void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *runState)
+void initialiseAlgorithm(LALInferenceRunState *runState)
 /* Populates the structures for the algorithm control in runState, given the
  commandLine arguments. Includes setting up a random number generator.*/
 {
 	UINT4 verbose=0;
 	ProcessParamsTable *ppt=NULL;
+	ProcessParamsTable *commandLine=runState->commandLine;
 	
 	ppt=getProcParamVal(commandLine,"--verbose");
 	if(ppt) {
@@ -445,7 +446,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	
 	/* Initialise the algorithm structures from the command line arguments */
 	/* Include setting up random number generator etc */
-		
+	initialiseAlgorithm(&runState);
+
 	
 	/* Initialise the prior distribution given the command line arguments */
 	
