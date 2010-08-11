@@ -28,7 +28,14 @@ INT4 verbose=0;
                      (delimited by commas)\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
-" --input-dir         directory containing the input data directories\n"\
+" --input-dir         directory containing the input data directories:\n\
+                       within this the files should be in a directory\n\
+                       strcuture with the format dataDETNAME, and have files\n\
+                       with names finehet_PSRNAME_DETNAME. If not in this\n\
+                       format use --force-file\n"\
+" --force-file        full paths and file names for the data for each\n\
+                     detector in the list (must be in the same order)\n\
+                     delimited by commas\n"\
 " --output-dir        directory for output data files\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
@@ -52,6 +59,7 @@ LALIFOData *readPulsarData(int argc, char **argv)
   CHAR *fname;
   CHAR *outputdir;
   CHAR *propfile;
+  CHAR *forcefile;
   
   CHAR *efile;
   CHAR *sfile;
@@ -72,12 +80,13 @@ LALIFOData *readPulsarData(int argc, char **argv)
     { "pulsar",         required_argument, 0, 'p' },
     { "input-dir",      required_argument, 0, 'i' },
     { "output-dir",     required_argument, 0, 'o' },
-    { "prop-file",      required_argument, 0, 'F' },
+    { "force-file",     required_argument, 0, 'F' },
     { "ephem-earth",    required_argument, 0, 'J' },
     { "ephem-sun",      required_argument, 0, 'M' },
     { 0, 0, 0, 0 }
   };
 
+  
   CHAR args[] = "hD:p:i:o:F:n:";
   CHAR *program = argv[0];
 
@@ -114,6 +123,9 @@ LALIFOData *readPulsarData(int argc, char **argv)
         break;
       case 'o': /* output directory */
         outputdir = optarg;
+        break;
+      case 'o': /* force file names to be specifed values */
+        forcefile = optarg;
         break;
       case 'J':
         efile = optarg;
@@ -352,6 +364,47 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	}
 	
 	return;
+}
+
+void initialiseProposal(ProcParamTable *commandLine, LALInferenceRunState
+*runState)
+/* sets up the parameters to be varied, and the extent of the proposal
+   distributions from a proposal distribution file */
+{
+  CHAR *propfile;
+ 
+  FILE *fp=NULL;
+  
+  CHAR *tempPar;
+  REAL8 low, high;
+  
+  BinaryPulsarParams pulsar;
+  REAL8Vector *phase_vector;
+  
+  propfile = (CHAR *)getProcParamVal(commandLine,"--psi-bins")->value;
+  
+  /* open file */
+  fp = fopen(propfile, "r");
+  
+  while(fscanf(fp, "%s %lf %lf", &tempPar, &low, &high) != EOF){
+    REAL8 tempVar;
+    VariableType type;
+    
+    tempVar = *(REAL8*)getVariable(runState->currentParams, tempPar);
+    type = getVariableType(tempPar);
+    
+    /* remove variable value */
+    removeVariable(runState->currentParams, tempPar);
+    
+    /* re-add variable */
+    if(strstr(tempPar, "ra") || strstr(tempPar, "phi0")){
+      addVariable(runState->currentParams, tempPar, tempVar, type,
+        PARAM_CIRCULAR);
+    }
+    else{
+      addVariable(runState->currentParams, tempPar, tempVar, type, PARAM_LINEAR)
+    }  
+  }
 }
 
 void initialisePrior(ProcParamsTable *commandLine, LALInferenceRunState *runState)
