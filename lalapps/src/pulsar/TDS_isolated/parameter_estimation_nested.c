@@ -49,11 +49,15 @@ LALIFOData *readPulsarData(int argc, char **argv)
   CHAR *pulsar;
   CHAR *parfile;
   CHAR *inputdir;
+  CHAR *fname;
   CHAR *outputdir;
   CHAR *propfile;
   
   CHAR *efile;
   CHAR *sfile;
+  
+  CHAR dets[5][3]; /* we'll have a max of five detectors */
+  INT4 numDets=0;
   
   BinaryPulsarParams pars;
   
@@ -65,6 +69,7 @@ LALIFOData *readPulsarData(int argc, char **argv)
     { "pulsar",         required_argument, 0, 'p' },
     { "par-file",       required_argument, 0, 'P' },
     { "input-dir",      required_argument, 0, 'i' },
+    { "input-format",   required_argument, 0, 'I' },
     { "output-dir",     required_argument, 0, 'o' },
     { "prop-file",      required_argument, 0, 'F' },
     { "ephem-earth",    required_argument, 0, 'J' },
@@ -129,6 +134,27 @@ LALIFOData *readPulsarData(int argc, char **argv)
 	XLALReadTEMPOParFile(&pars, parfile);
   
   /* count the number of detectors from command line argument */
+  /* find the number of detectors being used */
+  if( strstr(detectors, "H1") != NULL ){
+    sprintf(dets[numDets], "H1");
+    numDets++;
+  }
+  if( strstr(detectors, "H2") != NULL ){
+    sprintf(dets[numDets], "H2");
+    numDets++;
+  }
+  if( strstr(detectors, "L1") != NULL ){
+    sprintf(dets[numDets], "L1");
+    numDets++;
+  }
+  if( strstr(detectors, "V1") != NULL ){
+    sprintf(dets[numDets], "V1");
+    numDets++;
+  }
+  if( strstr(detectors, "G1") != NULL ){
+    sprintf(dets[numDets], "G1");
+    numDets++;
+  }
   
   /* read in data */
   for( i = 0 ; i < numDets ; i++ ){
