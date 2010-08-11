@@ -2,6 +2,8 @@
 LALInference tools */
 
 #include "pulsar_parameter_estimation.h"
+#include "LALInference.h"
+
 
 #define NUM_FACT 7
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
@@ -98,6 +100,12 @@ RCSID("$Id$");
 "\n"
 
 
+LALIFOData *readPulsarData(ProcParamsTable *commandLine)
+{
+	
+	
+}
+
 
 
 INT4 main(INT4 argc, CHAR *argv[]){
@@ -135,6 +143,40 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
   EphemerisData *edat=NULL;
 
+	ProcParamsTable *param_table;
+	LALInferenceRunState runState;
+	
+	
+	/* Get ProcParamsTable from input arguments */
+	param_table=parseCommandLine(argc,argv);
+	runState.commandLine=param_table;
+	
+	/* Initialise data structures from the command line arguments */
+	/* Including generate lookup tables etc */
+
+	
+	
+	/* Initialise the algorithm structures from the command line arguments */
+	
+	
+	
+	/* Initialise the prior distribution given the command line arguments */
+	
+	
+	
+	/* Initialise the proposal distribution given the command line arguments */
+	
+	
+	
+	/* Call the nested sampling algorithm */
+	runState.algorithm(&runState);
+	
+	/* Do any post-processing and output */
+	
+	
+	/* End */
+	
+	
   /*===================== GET AND SET THE INPUT PARAMETER ====================*/
   get_input_args(&inputs, argc, argv);
 
