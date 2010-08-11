@@ -254,22 +254,22 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 	ppt=getProcParamVal(commandLine,"--verbose");
 	if(ppt) {
 		verbose=1;
-		addVariable(runState->algorithmParams,"verbose",1,INT4_t);
+		addVariable(runState->algorithmParams,"verbose",1,INT4_t,PARAM_FIXED);
 	}
 		
 	/* Number of live points */
 	addVariable(runState->algorithmParams,"Nlive",atoi(getProcParamVal(commandLine,"--Nlive")->value),
-				INT4_t);
+				INT4_t,PARAM_FIXED);
 	/* Number of points in MCMC chain */
 	addVariable(runState->algorithmParams,"Nmcmc",atoi(getProcParamVal(commandLine,"--Nmcmc")->value),
-				INT4_t);
+				INT4_t,PARAM_FIXED);
 	/* Optionally specify number of parallel runs */
 	ppt=getProcParamVal(commandLine,"--Nruns");
-	if(ppt) addVariable(runState->algorithmParams,"Nruns",atoi(ppt->value),INT4_t);
+	if(ppt) addVariable(runState->algorithmParams,"Nruns",atoi(ppt->value),INT4_t,PARAM_FIXED);
 
 	/* Tolerance of the Nested sampling integrator */
 	ppt=getProcParamVal(commandLine,"--tolerance");
-	if(ppt) addVariable(runState->algorithmParams,"tolerance",atof(ppt->value),REAL4_t);
+	if(ppt) addVariable(runState->algorithmParams,"tolerance",atof(ppt->value),REAL4_t,PARAM_FIXED);
 	
 	/* Set up the random number generator */
 	gsl_rng_env_setup();
@@ -296,13 +296,13 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 	INT4 chunkMin;
 	if(ppt) chunkMin=atoi(ppt-value)
 		else chunkMin=5;
-	addVariable(runState->algorithmParams,"chunk-min",chunkMin,INT4_t);
+	addVariable(runState->algorithmParams,"chunk-min",chunkMin,INT4_t,PARAM_FIXED);
 	
 	ppt=getProcParamVal(commandLine,"--chunk-max");
 	INT4 chunkMax;
 	if(ppt) chunkMax=atoi(ppt-value)
 		else chunkMax=30;
-	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t);
+	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t,PARAM_FIXED);
 	
 	if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax = %i\n",chunkMin,chunkMax);
 
@@ -319,13 +319,13 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	INT4 psiBins;
 	if(ppt) psiBins=atoi(ppt-value)
 		else psiBins=50;
-	addVariable(runState->algorithmParams,"psi-bins",psiBins,INT4_t);
+	addVariable(runState->algorithmParams,"psi-bins",psiBins,INT4_t,PARAM_FIXED);
 	
 	ppt=getProcParamVal(commandLine,"--time-bins");
 	INT4 timeBins;
 	if(ppt) timeBins=atoi(ppt-value)
 		else timeBins=1440;
-	addVariable(runState->algorithmParams,"time-bins",timeBins,INT4_t);
+	addVariable(runState->algorithmParams,"time-bins",timeBins,INT4_t,PARAM_FIXED);
 
 	if(verbose) fprintf(stdout,"psi-bins = %i, time-bins = %i\n",psiBins,timeBins);
 
@@ -345,8 +345,8 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 		response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 						  timeBins, psiBins, LUfplus, LUfcross);
 	
-		addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t);
-		addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t);
+		addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t,PARAM_FIXED);
+		addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t,PARAM_FIXED);
 		data=data->next;
 	}
 	
@@ -447,11 +447,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	/* Initialise the algorithm structures from the command line arguments */
 	/* Include setting up random number generator etc */
 	initialiseAlgorithm(&runState);
-
 	
 	/* Initialise the prior distribution given the command line arguments */
-	
-	
 	
 	/* Initialise the proposal distribution given the command line arguments */
 	
@@ -459,6 +456,9 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	setupFromParFile(&runState);
 
 	setupLookupTables(&runState, LALSource *source);
+	
+	/* Create live points array and fill initial parameters */
+	add_initial_variables( LALVariables *ini, BinaryPulsarParams pars )
 	
 	/* Call the nested sampling algorithm */
 	runState.algorithm(&runState);
@@ -1216,69 +1216,69 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
 
 void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars ){
   /* amplitude model parameters */
-  addVariable(&ini, "h0", &pars.h0, REAL8_t);
-  addVariable(&ini, "phi0", pars.phi0, REAL8_t);
-  addVariable(&ini, "cosiota", pars.cosiota, REAL8_t);
-  addVariable(&ini, "psi", pars.psi, REAL8_t);
+  addVariable(&ini, "h0", &pars.h0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "phi0", pars.phi0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "cosiota", pars.cosiota, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "psi", pars.psi, REAL8_t,PARAM_FIXED);
   
   /* phase model parameters */
   
   /* frequency */
-  addVariable(&ini, "f0", &pars.f0, REAL8_t);
-  addVariable(&ini, "f1", &pars.f1, REAL8_t);
-  addVariable(&ini, "f2", &pars.f2, REAL8_t);
-  addVariable(&ini, "f3", &pars.f3, REAL8_t);
-  addVariable(&ini, "f4", &pars.f4, REAL8_t);
-  addVariable(&ini, "f5", &pars.f5, REAL8_t);
-  addVariable(&ini, "pepoch", &pars.pepoch, REAL8_t);
+  addVariable(&ini, "f0", &pars.f0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "f1", &pars.f1, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "f2", &pars.f2, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "f3", &pars.f3, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "f4", &pars.f4, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "f5", &pars.f5, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "pepoch", &pars.pepoch, REAL8_t,PARAM_FIXED);
   
   /* sky position */
-  addVariable(&ini, "ra", &pars.ra, REAL8_t);
-  addVariable(&ini, "pmra", &pars.pmra, REAL8_t);
-  addVariable(&ini, "dec", &pars.dec, REAL8_t);
-  addVariable(&ini, "pmdec", &pars.pmdec, REAL8_t);
-  addVariable(&ini, "posepoch", &pars.posepoch, REAL8_t);
+  addVariable(&ini, "ra", &pars.ra, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "pmra", &pars.pmra, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "dec", &pars.dec, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "pmdec", &pars.pmdec, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "posepoch", &pars.posepoch, REAL8_t,PARAM_FIXED);
   
   /* binary system parameters */
-  addVariable(&ini, "model", &pars.model, string);
+  addVariable(&ini, "model", &pars.model, string,PARAM_FIXED);
   
-  addVariable(&ini, "Pb", &pars.Pb, REAL8_t);
-  addVariable(&ini, "e", &pars.e, REAL8_t);
-  addVariable(&ini, "eps1", &pars.eps1, REAL8_t);
-  addVariable(&ini, "eps2", &pars.eps2, REAL8_t);
-  addVariable(&ini, "T0", &pars.T0, REAL8_t);
-  addVariable(&ini, "Tasc", &pars.Tasc, REAL8_t);
-  addVariable(&ini, "x", &pars.x, REAL8_t);
-  addVariable(&ini, "w0", &pars.w0, REAL8_t);
+  addVariable(&ini, "Pb", &pars.Pb, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "e", &pars.e, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "eps1", &pars.eps1, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "eps2", &pars.eps2, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "T0", &pars.T0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "Tasc", &pars.Tasc, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "x", &pars.x, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "w0", &pars.w0, REAL8_t,PARAM_FIXED);
 
-  addVariable(&ini, "Pb2", &pars.Pb2, REAL8_t);
-  addVariable(&ini, "e2", &pars.e2, REAL8_t);
-  addVariable(&ini, "T02", &pars.T02, REAL8_t);
-  addVariable(&ini, "x2", &pars.x2, REAL8_t);
-  addVariable(&ini, "w02", &pars.w02, REAL8_t);
+  addVariable(&ini, "Pb2", &pars.Pb2, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "e2", &pars.e2, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "T02", &pars.T02, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "x2", &pars.x2, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "w02", &pars.w02, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "Pb3", &pars.Pb3, REAL8_t);
-  addVariable(&ini, "e3", &pars.e3, REAL8_t);
-  addVariable(&ini, "T03", &pars.T03, REAL8_t);
-  addVariable(&ini, "x3", &pars.x3, REAL8_t);
-  addVariable(&ini, "w03", &pars.w03, REAL8_t);
+  addVariable(&ini, "Pb3", &pars.Pb3, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "e3", &pars.e3, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "T03", &pars.T03, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "x3", &pars.x3, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "w03", &pars.w03, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "xpbdot", &pars.xpbdot, REAL8_t);
-  addVariable(&ini, "eps1dot", &pars.eps1dot, REAL8_t);
-  addVariable(&ini, "eps2dot", &pars.eps2dot, REAL8_t);
-  addVariable(&ini, "wdot", &pars.wdot, REAL8_t);
-  addVariable(&ini, "gamma", &pars.gamma, REAL8_t);
-  addVariable(&ini, "Pbdot", &pars.Pbdot, REAL8_t);
-  addVariable(&ini, "xdot", &pars.xdot, REAL8_t);
-  addVariable(&ini, "edot", &pars.edot, REAL8_t);
+  addVariable(&ini, "xpbdot", &pars.xpbdot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "eps1dot", &pars.eps1dot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "eps2dot", &pars.eps2dot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "wdot", &pars.wdot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "gamma", &pars.gamma, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "Pbdot", &pars.Pbdot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "xdot", &pars.xdot, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "edot", &pars.edot, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "s", &pars.s, REAL8_t);
-  addVariable(&ini, "dr", &pars.dr, REAL8_t);
-  addVariable(&ini, "dth", &pars.dth, REAL8_t);
-  addVariable(&ini, "a0", &pars.a0, REAL8_t);
-  addVariable(&ini, "b0", &pars.b0, REAL8_t);
-  addVariable(&ini, "M", &pars.M, REAL8_t);
-  addVariable(&ini, "m2", &pars.m2, REAL8_t);
+  addVariable(&ini, "s", &pars.s, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "dr", &pars.dr, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "dth", &pars.dth, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "a0", &pars.a0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "b0", &pars.b0, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "M", &pars.M, REAL8_t,PARAM_FIXED);
+  addVariable(&ini, "m2", &pars.m2, REAL8_t,PARAM_FIXED);
 }
 
 /* things I need to pass to the likelihood function via the LALInferenceRunState

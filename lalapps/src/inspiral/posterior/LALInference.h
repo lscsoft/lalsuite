@@ -96,6 +96,13 @@ typedef enum {
   frequencyDomain
 } LALDomain;
 
+typedef enum {
+	PARAM_LINEAR,
+	PARAM_CIRCULAR,
+	PARAM_FIXED,    /* Never changes */
+	PARAM_OUTPUT    /* Changed by the inner code and passed out */
+} ParamVaryType;
+
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
@@ -107,6 +114,7 @@ tagVariableItem
   char                    name[VARNAME_MAX];
   void                    *value;
   VariableType            type;
+  ParamVaryType			  vary;
   struct tagVariableItem  *next;
 } LALVariableItem;
 
@@ -123,7 +131,7 @@ VariableType getVariableType(LALVariables *vars, int index);
 char *getVariableName(LALVariables *vars, int index);
 void setVariable(LALVariables * vars, const char * name, void * value);
 void addVariable(LALVariables * vars, const char * name, void * value, 
-	VariableType type);
+	VariableType type, ParamVaryType vary);
 void removeVariable(LALVariables *vars,const char *name);
 int  checkVariable(LALVariables *vars,const char *name);
 void destroyVariables(LALVariables *vars);

@@ -145,13 +145,14 @@ void setVariable(LALVariables * vars, const char * name, void *value)
     fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
     exit(1);
   }
+  if (item->vary==PARAM_FIXED) return;
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
 
 
 
-void addVariable(LALVariables * vars, const char * name, void *value, VariableType type)
+void addVariable(LALVariables * vars, const char * name, void *value, VariableType type, ParamVaryType vary)
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
@@ -164,6 +165,7 @@ void addVariable(LALVariables * vars, const char * name, void *value, VariableTy
   if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
+  new->vary = vary;
   memcpy(new->value,value,typeSize[type]);
   new->next = vars->head;
   vars->head = new;
@@ -230,7 +232,7 @@ void copyVariables(LALVariables *origin, LALVariables *target)
   /* then copy over elements of "origin": */
   ptr = origin->head;
   while (ptr != NULL) {
-    addVariable(target, ptr->name, ptr->value, ptr->type);
+    addVariable(target, ptr->name, ptr->value, ptr->type,ptr->vary);
     ptr = ptr->next;
   }
   return;
@@ -629,7 +631,7 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
 
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == timeDomain)
         executeFT(dataPtr);
@@ -637,7 +639,7 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
       /* (during "template()" computation)                                      */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -836,7 +838,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == timeDomain)
         executeFT(dataPtr);
@@ -844,7 +846,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
       /* (during "template()" computation)                                      */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -965,13 +967,13 @@ REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
   dummyParams.head      = NULL;
   dummyParams.dimension = 0;
   dummyValue = 0.5;
-  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t,PARAM_CIRCULAR);
+  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t,PARAM_LINEAR);
+  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t,PARAM_LINEAR);
+  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t,PARAM_LINEAR);
   dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
                + (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
-  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t);
+  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t,PARAM_LINEAR);
   loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
   destroyVariables(&dummyParams);
   return(loglikeli);

@@ -58,10 +58,10 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 	/* Check that necessary parameters are created */
 	if(!checkVariable(runState->algorithmParams,"logLmin"))
-		addVariable(runState->algorithmParams,"logLmin",-DBL_MAX,REAL8_t);
+		addVariable(runState->algorithmParams,"logLmin",-DBL_MAX,REAL8_t,PARAM_OUTPUT);
 
 	if(!checkVariable(runState->algorithmParams,"accept_rate"))
-		addVariable(runState->algorithmParams,"accept_rate",0.0,REAL8_t);
+		addVariable(runState->algorithmParams,"accept_rate",0.0,REAL8_t,PARAM_OUTPUT);
 
 	
 	/* FIXME: Open output file */
