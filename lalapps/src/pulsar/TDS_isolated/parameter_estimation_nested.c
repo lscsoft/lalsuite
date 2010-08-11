@@ -15,7 +15,7 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
 RCSID("$Id$");
 
 /* global variable */
-
+INT4 verbose=0;
 
 
 /* Usage format string */
@@ -29,81 +29,181 @@ RCSID("$Id$");
 " --par-file          pulsar parameter (.par) file (full path) \n"\
 " --input-dir         directory containing the input data files\n"\
 " --output-dir        directory for output data files\n"\
-" --dob-ul            (REAL8) percentage degree-of-belief for upper limit\n\
-                     - if 0 (default no upper limit is produced)\n"\
-" --output-post       output the full log(posterior)\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
 " --chunk-max         (INT4) maximum stationary length of data to be used in\n\
                      the likelihood e.g. 30 mins\n"\
-"\n"\
-" Parameter space grid values:-\n"\
-" --minh0             (REAL8) minimum of the h0 grid\n"\
-" --maxh0             (REAL8) maximum of the h0 grid, if maxh0=0 then\n\
-                     calculate range from the data\n"\
-" --h0steps           (INT4) number of steps in the h0 grid\n"\
-" --minphi0           (REAL8) minimum of the phi0 grid\n"\
-" --maxphi0           (REAL8) maximum of the phi0 grid\n"\
-" --phi0steps         (INT4) number of steps in the phi0 grid\n"\
-" --minpsi            (REAL8) minimum of the psi grid\n"\
-" --maxpsi            (REAL8) maximum of the psi grid\n"\
-" --psisteps          (INT4) number of steps in the psi grid\n"\
-" --minci             (REAL8) minimum of the cos(iota) grid\n"\
-" --maxci             (REAL8) maximum of the cos(iota) grid\n"\
-" --cisteps           (INT4) number of steps in the cos(iota) grid\n"\
 " --psi-bins          (INT4) no. of psi bins in the time-psi lookup table\n"\
 " --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
-"\n"\
-" Prior values:-\n"\
-" --use-priors        set to use priors in the posterior calculation\n"\
-" --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
-" --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
-" --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
-" --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
-" --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
-" --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
-" --psiprior          type of prior on psi - uniform or gaussian\n"\
-" --psimean           (REAL8) mean of a gaussian prior on psi\n"\
-" --psisig            (REAL8) std. dev. of a gaussian prior on psi\n"\
-" --iotaprior         type of prior on iota - uniform or gaussian\n"\
-" --iotamean          (REAL8) mean of a gaussian prior on iota\n"\
-" --iotasig           (REAL8) std. dev. of a gaussian prior on iota\n"\
-"\n"
-
-#define USAGE2 \
-" MCMC parameters:-\n"\
-" --mcmc              set to perform an MCMC\n"\
-" --iterations        (INT4) the number of iteraction in the MCMC chain\n"\
-" --burn-in           (INT4) the number of burn in iterations\n"\
-" --temperature       (REAL8) the temperatue to start of the simulated\n\
-                     annealing in the burn in stage\n"\
-" --h0-width          (REAL8) width of the h0 proposal distribution (if set\n\
-                     to 0 this will be worked out in the code)\n"\
-" --h0-scale          (REAL8) scale factor for h0 proposal width\n"\
-" --psi-width         (REAL8) width of the psi proposal distribution\n"\
-" --phi0-width        (REAL8) width of the phi proposal distribution\n"\
-" --ci-width          (REAL8) width of the cos(iota) proposal distribution\n"\
-" --output-rate       (INT4) rate at which to output chain e.g. 10 means\n\
-                     output every tenth sample\n"\
-" --nglitch           (INT4) number of glitches\n"\
-" --glitch-times      (CHAR) a string of pulsar glitch times given in MJD\n\
-                     e.g. 45623.872,52839.243,53992.091 - at each\n\
-                     glitch an additional MCMC phase parameter will be used\n"\
-" --glitch-cut        (REAL8) the number of seconds of data to ignore\n\
-                     before and after a glitch\n"\
-" --earth-ephem       Earth ephemeris file\n"\
-" --sun-ephem         Sun ephemeris file\n"\
-" --covariance        pulsar parameter covariance matrix file (.mat)\n"\
-" --only-joint        set this to only produce the joint MCMC when given \n\
-                     muliple detectors (MCMC only)\n"\
-" --output-burn-in    set this to also output the burn in stage to the chain\n"\
+" --prop-file         file containing the parameters to search over and their\n\
+                     upper and lower ranges\n"\
+" --nlive             (INT4) no. of live points for nested sampling\n"\
+" --ephem-earth       Earth ephemeris file\n"\
+" --ephem-sun         Sun ephemeris file\n"\
 "\n"
 
 
-LALIFOData *readPulsarData(ProcParamsTable *commandLine)
+LALIFOData *readPulsarData(int argc, char **argv)
 {
-	
-	
+  CHAR *detectors;
+  CHAR *pulsar;
+  CHAR *parfile;
+  CHAR *inputdir;
+  CHAR *outputdir;
+  CHAR *propfile;
+  
+  CHAR *efile;
+  CHAR *sfile;
+  
+  BinaryPulsarParams pars;
+  
+  struct option long_options[] =
+  {
+    { "help",           no_argument,       0, 'h' },
+    { "verbose",        no_argument,    NULL, 'R' },
+    { "detectors",      required_argument, 0, 'D' },
+    { "pulsar",         required_argument, 0, 'p' },
+    { "par-file",       required_argument, 0, 'P' },
+    { "input-dir",      required_argument, 0, 'i' },
+    { "output-dir",     required_argument, 0, 'o' },
+    { "prop-file",      required_argument, 0, 'F' },
+    { "ephem-earth",    required_argument, 0, 'J' },
+    { "ephem-sun",      required_argument, 0, 'M' },
+    { 0, 0, 0, 0 }
+  };
+
+  CHAR args[] = "hD:p:P:i:o:F:n:";
+  CHAR *program = argv[0];
+
+  /* parse input arguments */
+  while( 1 ){
+    INT4 option_index = 0;
+    INT4 c;
+
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    if( c == -1 ) /* end of options */
+      break;
+
+    switch( c ){
+      case 0:
+        if( long_options[option_index].flag )
+          break;
+        else
+          fprintf(stderr, "Error passing option %s with argument %s\n",
+            long_options[option_index].name, optarg);
+      case 'h': /* help message */
+        fprintf(stderr, USAGE, program);
+        exit(0);
+      case 'R': /* verbose */
+        verbose = 1;
+        break;
+      case 'D': /* detectors */
+        detectors = optarg;
+        break;
+      case 'p': /* pulsar name */
+        pulsar = optarg;
+        break;
+      case 'P': /* pulsar parameter file */
+        parfile = optarg;
+        break;
+      case 'i': /* input data file directory */
+        inputdir = optarg;
+        break;
+      case 'o': /* output directory */
+        outputdir = optarg;
+        break;
+      case 'J':
+        efile = optarg;
+        break;
+      case 'M':
+        sfile = optarg;
+        break;
+      case '?':
+        fprintf(stderr, "Unknown error while parsing options\n");
+      default:
+        break;
+    }
+  }
+
+  /* get pulsar information from .par file */
+	XLALReadTEMPOParFile(&pars, parfile);
+  
+  /* count the number of detectors from command line argument */
+  
+  /* read in data */
+  for( i = 0 ; i < numDets ; i++ ){
+    CHAR datafile[256];
+    REAL8 times=0;
+    REAL8Vector *temptimes=NULL;
+    
+    /*============================ GET DATA ==================================*/
+    /* get detector B_ks data file in form finehet_JPSR_DET */
+    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputs.inputDir, dets[i],
+      inputs.pulsar, dets[i]);
+
+    /* open data file */
+    if((fp = fopen(dataFile, "r"))==NULL){
+      fprintf(stderr, "Error... can't open data file %s!\n", dataFile);
+      exit(0);
+    }
+
+    j=0;
+
+    /* read in data */
+    data->compTimeData = NULL;
+    data->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &times, 0., 1.,
+      &lalSecondUnit, MAXLENGTH );
+    
+    data->dataTimes = NULL;
+    data->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
+
+    stdh0 = 0.;
+    /* read in data */
+    while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+      /* check that size of data file is not to large */
+      if( j == MAXLENGTH ){
+        fprintf(stderr, "Error... size of MAXLENGTH not large enough.\n");
+        exit(0);
+      }
+
+      /* exclude values smaller than 1e-28 as most are spurious points caused
+         during a the heterodyne stage (e.g. when frame files were missing in
+         the original S5 analysis) */
+        temptimes->data[j] times);
+        data->compTimeData->data->data[j] = dataVals;
+
+        j++;
+    }
+    
+    /* resize the data */
+    data->compTimeData = XLALResizeCOMPLEX16TimeSeries(data->compTimeData,0,j);
+    
+    /* fill in time stamps as LIGO Time GPS Vector */
+    data->dataTimes = NULL;
+    data->dataTimes = XLALCreateTimestampVector( j );
+    
+    for ( k=0; k<j; k++ )
+      XLALGPSSetREAL8(data->timeData->data[j], temptime);
+    
+    XLALDestroyREAL8Vector(temptimes);
+  }
+  
+  /* set ephemeris data */
+  data->edat = XLALMalloc(sizeof(*edat));
+
+  data->(*edat).ephiles.earthEphemeris = efile;
+  data->(*edat).ephiles.sunEphemeris = sfile;
+
+  /* check files exist and if not output an error message */
+  if( access(inputs.earthfile, F_OK) != 0 || 
+      access(inputs.earthfile, F_OK) != 0 ){
+    fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
+defined!\n");
+    exit(3);
+  }
+
+  /* set up ephemeris information */
+  LAL_CALL( LALInitBarycenter(&status, data->edat), &status );
 }
 
 
@@ -527,407 +627,6 @@ defined!\n");
   /*=========================================================================*/ 
 
   return 0;
-}
-
-
-
-/* function to get the input arguments from the command line */
-void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
-  {
-    { "help",           no_argument,       0, 'h' },
-    { "verbose",        no_argument,    NULL, 'R' },
-    { "detectors",      required_argument, 0, 'D' },
-    { "pulsar",         required_argument, 0, 'p' },
-    { "par-file",       required_argument, 0, 'P' },
-    { "input-dir",      required_argument, 0, 'i' },
-    { "output-dir",     required_argument, 0, 'o' },
-    { "minh0",          required_argument, 0, 'a' },
-    { "maxh0",          required_argument, 0, 'A' },
-    { "h0steps",        required_argument, 0, 'j' },
-    { "minphi0",        required_argument, 0, 'b' },
-    { "maxphi0",        required_argument, 0, 'B' },
-    { "phi0steps",      required_argument, 0, 'k' },
-    { "minpsi",         required_argument, 0, 's' },
-    { "maxpsi",         required_argument, 0, 'S' },
-    { "psisteps",       required_argument, 0, 'm' },
-    { "minci",          required_argument, 0, 'c' },
-    { "maxci",          required_argument, 0, 'C' },
-    { "cisteps",        required_argument, 0, 'n' },
-    { "psi-bins",       required_argument, 0, 'l' },
-    { "time-bins",      required_argument, 0, 'L' },
-    { "h0prior",        required_argument, 0, 'q' },
-    { "phi0prior",      required_argument, 0, 'Q' },
-    { "psiprior",       required_argument, 0, 'U' },
-    { "iotaprior",      required_argument, 0, 'u' },
-    { "h0mean",         required_argument, 0, 'Y' },
-    { "h0sig",          required_argument, 0, 'T' },
-    { "phi0mean",       required_argument, 0, 'v' },
-    { "phi0sig",        required_argument, 0, 'V' },
-    { "psimean",        required_argument, 0, 'z' },
-    { "psisig",         required_argument, 0, 'Z' },
-    { "iotamean",       required_argument, 0, 'e' },
-    { "iotasig",        required_argument, 0, 'E' },
-    { "output-post",    no_argument,    NULL, 'f' },
-    { "dob-ul",         required_argument, 0, 'd' },
-    { "mcmc",           no_argument,    NULL, 'F' },
-    { "iterations",     required_argument, 0, 'I' },
-    { "burn-in",        required_argument, 0, 'x' },
-    { "temperature",    required_argument, 0, 't' },
-    { "h0-width",       required_argument, 0, 'H' },
-    { "psi-width",      required_argument, 0, 'w' },
-    { "phi0-width",     required_argument, 0, 'W' },
-    { "ci-width",       required_argument, 0, 'y' },
-    { "glitch-times",   required_argument, 0, 'g' },
-    { "glitch-cut",     required_argument, 0, 'G' },
-    { "chunk-min",      required_argument, 0, 'K' },
-    { "chunk-max",      required_argument, 0, 'N' },
-    { "output-rate",    required_argument, 0, 'X' },
-    { "nglitch",        required_argument, 0, 'O' },
-    { "earth-ephem",    required_argument, 0, 'J' },
-    { "sun-ephem",      required_argument, 0, 'M' },
-    { "covariance",     required_argument, 0, 'r' },
-    { "use-priors",     no_argument,    NULL, '>' },
-    { "only-joint",     no_argument,    NULL, '<' },
-    { "output-burn-in", no_argument,    NULL, ')' },
-    { "h0-scale",       required_argument, 0, '[' },
-    { 0, 0, 0, 0 }
-  };
-
-  CHAR args[] =
-"hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
-  CHAR *program = argv[0];
-
-  static char USAGE[strlen(USAGE1)+strlen(USAGE2)+1];
-  strcpy ( USAGE, USAGE1 );
-  strcat ( USAGE, USAGE2 );
-
-  /* set defaults */
-  inputParams->mcmc.doMCMC = 0;/* by default don't perform an MCMC */
-  inputParams->verbose = 0;    /* by default don't do verbose */
-  inputParams->outputPost = 0; /* by default don't output the full posterior */
-  inputParams->dob = 0.;       /* by default don't calculate an upper limit */
-
-  inputParams->chunkMin = 5;   /* default to 5 minute minimum chunk length */
-  inputParams->chunkMax = 30;  /* default to 30 minute maximum chunk length */
-
-  /* default grid 50x50x50x50 = 6250000 points ~ 50 Mbytes */
-  inputParams->mesh.minVals.h0 = 0.;     /* 0 <= h0 <= estimate */
-  inputParams->mesh.maxVals.h0 = 0.;     /* estimate h0 from data by default */
-  inputParams->mesh.h0Steps = 50;
-
-  inputParams->mesh.minVals.phi0 = 0.;        /* 0 <= phi0 <= 2pi */
-  inputParams->mesh.maxVals.phi0 = LAL_TWOPI;
-  inputParams->mesh.phiSteps = 50;
-
-  inputParams->mesh.minVals.psi = -LAL_PI/4.; /* -pi/4 <= psi < pi/4 */
-  inputParams->mesh.maxVals.psi = LAL_PI/4.;
-  inputParams->mesh.psiSteps = 50;
-
-  inputParams->mesh.minVals.ci = -1.;         /* -1 <= cos(iota) < 1 */
-  inputParams->mesh.maxVals.ci = 1.;
-  inputParams->mesh.ciotaSteps = 50;
-
-  /* default psi-time lookup table grid size 50x1440 (one per minute) */
-  inputParams->mesh.psiRangeSteps = 50;
-  inputParams->mesh.timeRangeSteps = 1440;
-
-  inputParams->usepriors = 0;   /* by default don't use priors on h0, phi,
-                                   iota, psi */
-
-  /* default priors are uniform */
-  inputParams->priors.h0Prior = uniform_string;
-  inputParams->priors.phiPrior = uniform_string;
-  inputParams->priors.psiPrior = uniform_string;
-  inputParams->priors.iotaPrior = uniform_string;
-
-  /* default MCMC parameters */
-  inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
-  inputParams->mcmc.sigmas.phi0 = LAL_PI_2/2.;   /* eighth of phi range */
-  inputParams->mcmc.sigmas.psi = LAL_PI/16.;   /* eighth of psi range */
-  inputParams->mcmc.sigmas.ci = 0.25;          /* eighth of cosi range */
-  
-  inputParams->mcmc.h0scale = 0.5;            /* half of default value */
-
-  inputParams->mcmc.outputRate = 1;           /* output every sample */
-
-  inputParams->mcmc.iterations = 10000;       /* default 10000 points */
-  inputParams->mcmc.temperature = 1.;         /* default annealing */
-  inputParams->mcmc.burnIn = 1000;            /* default burn in time */
-  inputParams->mcmc.outputBI = 0;             /* output the burn in chain -
-default to no */
-
-  inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
-
-  inputParams->matrixFile = NULL;             /* no covriance file */
-
-  inputParams->onlyjoint = 0;       /* by default output all posteriors */
-
-  /* parse input arguments */
-  while( 1 ){
-    INT4 option_index = 0;
-    INT4 c;
-
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
-    if( c == -1 ) /* end of options */
-      break;
-
-    switch( c ){
-      case 0:
-        if( long_options[option_index].flag )
-          break;
-        else
-          fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
-      case 'h': /* help message */
-        fprintf(stderr, USAGE, program);
-        exit(0);
-      case 'R': /* verbose */
-        inputParams->verbose = 1;
-        break;
-      case 'f': /* output posterior distribution */
-        inputParams->outputPost = 1;
-        break;
-      case 'F': /* perform MCMC */
-        inputParams->mcmc.doMCMC = 1;
-        break;
-      case 'D': /* detectors */
-        sprintf(inputParams->detectors, "%s", optarg);
-        break;
-      case 'p': /* pulsar name */
-        sprintf(inputParams->pulsar, "%s", optarg);
-        break;
-      case 'P': /* pulsar parameter file */
-        sprintf(inputParams->parFile, "%s", optarg);
-        break;
-      case 'i': /* input data file directory */
-        sprintf(inputParams->inputDir, "%s", optarg);
-        break;
-      case 'o': /* output directory */
-        sprintf(inputParams->outputDir, "%s", optarg);
-        break;
-      case 'a': /* minimum of h0 range */
-        inputParams->mesh.minVals.h0 = atof(optarg);
-        break;
-      case 'A': /* maxmimum of h0 range */
-        inputParams->mesh.maxVals.h0 = atof(optarg);
-        break;
-      case 'j': /* number of grid steps in h0 space */
-        inputParams->mesh.h0Steps = atoi(optarg);
-        break;
-      case 'b': /* minimum of phi0 range */
-        inputParams->mesh.minVals.phi0 = atof(optarg);
-        break;
-      case 'B': /* maxmimum of phi0 range */
-        inputParams->mesh.maxVals.phi0 = atof(optarg);
-        break;
-      case 'k': /* number of grid steps in phi0 space */
-        inputParams->mesh.phiSteps = atoi(optarg);
-        break;
-      case 's': /* minimum of psi range */
-        inputParams->mesh.minVals.psi = atof(optarg);
-        break;
-      case 'S': /* maximum of psi range */
-        inputParams->mesh.maxVals.psi = atof(optarg);
-        break;
-      case 'm': /* number of grid steps in psi space */
-        inputParams->mesh.psiSteps = atoi(optarg);
-        break;
-      case 'c': /* minimum of cos(iota) range */
-        inputParams->mesh.minVals.ci = atof(optarg);
-        break;
-      case 'C': /* maximum of cos(iota) range */
-        inputParams->mesh.maxVals.ci = atof(optarg);
-        break;
-      case 'n': /* number of grid steps in cos(iota) space */
-        inputParams->mesh.ciotaSteps = atoi(optarg);
-        break;
-      case 'l': /* number of bins in psi for the lookup table */
-        inputParams->mesh.psiRangeSteps = atoi(optarg);
-        break;
-      case 'L': /* number of bins in time for the lookup table */
-        inputParams->mesh.timeRangeSteps = atoi(optarg);
-        break;
-      case 'q': /* prior on h0 */
-        inputParams->priors.h0Prior = optarg;
-        break;
-      case 'Q': /* prior on phi0 */
-        inputParams->priors.phiPrior = optarg;
-        break;
-      case 'U': /* prior on psi */
-        inputParams->priors.psiPrior = optarg;
-        break;
-      case 'u': /* prior on iota */
-        inputParams->priors.iotaPrior = optarg;
-        break;
-      case 'Y': /* mean of h0 Gaussian prior */
-        inputParams->priors.meanh0 = atof(optarg);
-        break;
-      case 'T': /* standard deviation of Gaussian h0 prior */
-        inputParams->priors.stdh0 = atof(optarg);
-        break;
-      case 'v': /* mean of phi0 Gaussian prior */
-        inputParams->priors.meanphi = atof(optarg);
-        break;
-      case 'V': /* standard deviation of Gaussian phi0 prior */
-        inputParams->priors.stdphi = atof(optarg);
-        break;
-      case 'z': /* mean of psi Gaussian prior */
-        inputParams->priors.meanpsi = atof(optarg);
-        break;
-      case 'Z': /* standard deviation of Gaussian psi prior */
-        inputParams->priors.stdpsi = atof(optarg);
-        break;
-      case 'e': /* mean of iota Gaussian prior */
-        inputParams->priors.meaniota = atof(optarg);
-        break;
-      case 'E': /* standard deviation of Gaussian iota prior */
-        inputParams->priors.stdiota = atof(optarg);
-        break;
-      case 'd': /* percentage degree-of-belief at which to get UL */
-        inputParams->dob = atof(optarg);
-        break;
-      case 'I': /* number of iterations in the MCMC chain */
-        inputParams->mcmc.iterations = atoi(optarg);
-        break;
-      case 'x': /* number of point in the burn in stage */
-        inputParams->mcmc.burnIn = atoi(optarg);
-        break;
-      case 't': /* temperature of the simulated annealing during burn in */
-        inputParams->mcmc.temperature = atof(optarg);
-        break;
-      case 'H': /* standard deviation of h0 proposal distribution */
-        inputParams->mcmc.sigmas.h0 = atof(optarg);
-        break;
-      case 'w': /* standard deviation of psi proposal distribution */
-        inputParams->mcmc.sigmas.psi = atof(optarg);
-        break;
-      case 'W': /* standard deviation of phi0 proposal distribution */
-        inputParams->mcmc.sigmas.phi0 = atof(optarg);
-        break;
-      case 'y': /* standard deviation of cos(iota) proposal distribution */
-        inputParams->mcmc.sigmas.ci = atof(optarg);
-        break;
-      case 'g':
-        sprintf(inputParams->mcmc.glitchTimes, "%s", optarg);
-        break;
-      case 'G':
-        inputParams->mcmc.glitchCut = atof(optarg);
-        break;
-      case 'K':
-        inputParams->chunkMin = atoi(optarg);
-        break;
-      case 'N':
-        inputParams->chunkMax = atoi(optarg);
-        break;
-      case 'X':
-        inputParams->mcmc.outputRate = atoi(optarg);
-        break;
-      case 'O':
-        inputParams->mcmc.nGlitches = atoi(optarg);
-        break;
-      case 'J':
-        sprintf(inputParams->earthfile, "%s", optarg);
-        break;
-      case 'M':
-        sprintf(inputParams->sunfile, "%s", optarg);
-        break;
-      case 'r':
-        inputParams->matrixFile = optarg;
-        break;
-      case '>': /* use priors on parameters */
-        inputParams->usepriors = 1;
-        break;
-      case '<': /* only calculate/output the joint posterior for MCMC */
-        inputParams->onlyjoint = 1;
-        break;
-      case ')': /* output the burn in chain as well as the full chain */
-        inputParams->mcmc.outputBI = 1;
-        break;
-      case '[': /* scale factor for stdev of h0 proposal distribution */
-        inputParams->mcmc.h0scale = atof(optarg);
-        break;
-      case '?':
-        fprintf(stderr, "Unknown error while parsing options\n");
-      default:
-        fprintf(stderr, "Unknown error while parsing options\n");
-    }
-  }
-
-  /* check parameters for wierd values */
-  if( inputParams->mesh.minVals.h0 < 0. || inputParams->mesh.maxVals.h0 < 0. ||
-      inputParams->mesh.maxVals.h0 < inputParams->mesh.minVals.h0 ){
-    fprintf(stderr, "Error... h0 grid range is wrong!\n");
-    exit(0);
-  }
-
-  if( inputParams->mesh.minVals.phi0 < 0. || inputParams->mesh.maxVals.phi0 >
-      LAL_TWOPI || inputParams->mesh.maxVals.phi0 <
-      inputParams->mesh.minVals.phi0 ){
-    fprintf(stderr, "Error... phi0 grid range is wrong!\n");
-    exit(0);
-  }
-
-  if( inputParams->mesh.minVals.psi < -LAL_PI/4. ||
-      inputParams->mesh.maxVals.psi >  LAL_PI/4. ||
-      inputParams->mesh.maxVals.psi < inputParams->mesh.minVals.psi ){
-    fprintf(stderr, "Error... psi grid range is wrong!\n");
-    exit(0);
-  }
-
-  if( inputParams->mesh.minVals.ci < -1. || inputParams->mesh.maxVals.ci > 1. ||
-      inputParams->mesh.maxVals.ci < inputParams->mesh.minVals.ci ){
-    fprintf(stderr, "Error... cos(iota) grid range is wrong!\n");
-    exit(0);
-  }
-
-  if( inputParams->dob != 0. && inputParams->mcmc.doMCMC == 1 ){
-    fprintf(stderr, "Error... can't output an upper limit in MCMC mode!\n");
-    fprintf(stderr, "\tNon-fatal error so continue anyway...\n");
-    inputParams->dob = 0.;
-  }
-
-  if( inputParams->outputPost == 1 && inputParams->mcmc.doMCMC == 1 ){
-    fprintf(stderr, "Error... can't output full posterior in MCMC mode!\n");
-    fprintf(stderr, "\tNon-fatal error so continue anyway...\n");
-    inputParams->outputPost = 0;
-  }
-
-  /* set mesh step sizes */
-  if( inputParams->mesh.h0Steps > 1 ){
-    inputParams->mesh.delta.h0 = (inputParams->mesh.maxVals.h0 -
-      inputParams->mesh.minVals.h0)/(REAL8)(inputParams->mesh.h0Steps - 1.);
-  }
-  else
-    inputParams->mesh.delta.h0 = 1.;
-
-  if( inputParams->mesh.phiSteps > 1 ){
-    inputParams->mesh.delta.phi0 = (inputParams->mesh.maxVals.phi0 -
-      inputParams->mesh.minVals.phi0)/(REAL8)(inputParams->mesh.phiSteps - 1.);
-  }
-  else
-    inputParams->mesh.delta.phi0 = 1.;
-
-  if( inputParams->mesh.psiSteps > 1 ){
-    inputParams->mesh.delta.psi = (inputParams->mesh.maxVals.psi -
-      inputParams->mesh.minVals.psi)/(REAL8)(inputParams->mesh.psiSteps - 1.);
-  }
-  else
-    inputParams->mesh.delta.psi = 1.;
-
-  if( inputParams->mesh.ciotaSteps > 1 ){
-    inputParams->mesh.delta.ci = (inputParams->mesh.maxVals.ci -
-      inputParams->mesh.minVals.ci)/(REAL8)(inputParams->mesh.ciotaSteps - 1.);
-  }
-  else
-      inputParams->mesh.delta.ci = 1.;
-
-  if( inputParams->chunkMin < 1 || inputParams->chunkMax <
-      inputParams->chunkMin ){
-    fprintf(stderr, "Error... data chunk lengths are wrong!\n");
-    exit(0);
-  }
 }
 
 
