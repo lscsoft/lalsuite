@@ -202,6 +202,7 @@ tagLALIFOData
   COMPLEX16TimeSeries       *compTimeData, *compModelData;
   LIGOTimeGPSVector         *dataTimes;
   LALVariables              *modelParams;
+  LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
   REAL8Window               *window;

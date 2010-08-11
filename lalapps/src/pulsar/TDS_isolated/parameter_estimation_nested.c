@@ -265,15 +265,38 @@ void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *run
 	
 	ppt=getProcParamVal(commandLine,"--chunk-max");
 	INT4 chunkMax;
-	if(ppt) chunkMin=atoi(ppt-value)
-		else chunkMin=30;
+	if(ppt) chunkMax=atoi(ppt-value)
+		else chunkMax=30;
 	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t);
 	
 	if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax = %i\n",chunkMin,chunkMax);
 	
 	/* Set up lookup tables */
 	/* Using psi bins, time bins */
+	ppt=getProcParamVal(commandLine,"--psi-bins");
+	INT4 psiBins;
+	if(ppt) psiBins=atoi(ppt-value)
+		else psiBins=50;
+	addVariable(runState->algorithmParams,"psi-bins",psiBins,INT4_t);
 	
+	ppt=getProcParamVal(commandLine,"--time-bins");
+	INT4 timeBins;
+	if(ppt) timeBins=atoi(ppt-value)
+		else timeBins=1440;
+	addVariable(runState->algorithmParams,"time-bins",timeBins,INT4_t);
+
+	if(verbose) fprintf(stdout,"psi-bins = %i, time-bins = %i\n",psiBins,timeBins);
+
+	gsl_matrix *LUfplus=NULL;
+	gsl_matrix *LUfcross=NULL;
+	
+	REAL8 t0;
+	
+	response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
+						  timeBins, psiBins, LUfplus, LUfcross);
+	
+	addVariable(runState->algorithmParams,"LU_Fplus",LUfplus,gslMatrix_t);
+	addVariable(runState->algotithmParams,"LU_Fcross",LUfcross,gslMatrix_t);
 	
 	return;
 }
