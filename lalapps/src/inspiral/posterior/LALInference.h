@@ -45,7 +45,13 @@
 # include <lal/FindChirp.h>
 # include <lal/Window.h>
 
+#include <lal/SFTUtils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/BinaryPulsarTiming.h>
+
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
@@ -79,7 +85,10 @@ typedef enum tagVariableType {
   REAL8_t, 
   COMPLEX8_t, 
   COMPLEX16_t, 
-  gslMatrix_t
+  gslMatrix_t,
+  REAL8Vector_t,
+  UINT4Vector_t,
+  string_t
 } VariableType;
 
 typedef enum {
@@ -190,13 +199,18 @@ tagLALIFOData
                             *timeModelhPlus, *timeModelhCross;
   COMPLEX16FrequencySeries  *freqData, 
                             *freqModelhPlus, *freqModelhCross;
+  COMPLEX16TimeSeries       *compTimeData, *compModelData;
+  LIGOTimeGPSVector         *dataTimes;
   LALVariables              *modelParams;
+  LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
   REAL8Window               *window;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8                     fLow, fHigh;	//integration limits;
   LALDetector               *detector;
+  BarycenterInput           *bary;
+  EphemerisData             *ephem;
   struct tagLALIFOData      *next;
 } LALIFOData;
 

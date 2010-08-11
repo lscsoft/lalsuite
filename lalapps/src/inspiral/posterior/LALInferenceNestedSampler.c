@@ -56,12 +56,14 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	if(checkVariable(runState->algorithmParams,"tolerance"))
 		TOLERANCE = *(REAL8 *) getVariable(runState->algorithmParams,"tolerance");
 
+	/* Check that necessary parameters are created */
 	if(!checkVariable(runState->algorithmParams,"logLmin"))
 		addVariable(runState->algorithmParams,"logLmin",-DBL_MAX,REAL8_t);
 
 	if(!checkVariable(runState->algorithmParams,"accept_rate"))
 		addVariable(runState->algorithmParams,"accept_rate",0.0,REAL8_t);
 
+	
 	/* FIXME: Open output file */
 	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
 	fp=open(outfile,"w");

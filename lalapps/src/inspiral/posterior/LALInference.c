@@ -38,7 +38,10 @@ size_t typeSize[] = {sizeof(INT4),
                      sizeof(REAL8), 
                      sizeof(COMPLEX8), 
                      sizeof(COMPLEX16), 
-                     sizeof(gsl_matrix *)};
+                     sizeof(gsl_matrix *),
+                     sizeof(REAL8Vector *),
+                     sizeof(UINT4Vector *),
+                     sizeof(CHAR *)};
 
 
 void die(char *message)
