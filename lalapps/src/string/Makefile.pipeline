@@ -7,7 +7,7 @@ dag :
 
 final :
 	lalapps_string_plot_likelihood --verbose dag/{noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/*LIKELIHOOD*.xml.gz
-	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
+	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
 	cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 50 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 50 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
 
 clean :
