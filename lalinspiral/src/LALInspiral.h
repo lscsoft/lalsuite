@@ -471,7 +471,6 @@ typedef enum {
    TaylorEt,
    TaylorT4,
    TaylorN,
-   PTF,
    NumApproximants
  } Approximant;
 /* </lalVerbatim>  */

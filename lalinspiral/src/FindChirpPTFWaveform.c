@@ -59,10 +59,6 @@ LALDestroyVector()
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
-#include <lal/DetResponse.h>
-#include <lal/Date.h>
-#include <lal/SeqFactories.h>
-#include <lal/Units.h>
 
 #ifndef isnan
 int isnan(double);
@@ -520,7 +516,7 @@ XLALFindChirpPTFWaveform(
   gsl_odeiv_step* solver_step
     = gsl_odeiv_step_alloc( solver_type, num_evolution_variables );
   gsl_odeiv_control* solver_control
-    = gsl_odeiv_control_standard_new( 1.0e-2, 1.0e-2, 1.0, 1.0 );
+    = gsl_odeiv_control_standard_new( 1.0e-5, 1.0e-5, 1.0, 1.0 );
   gsl_odeiv_evolve* solver_evolve
     = gsl_odeiv_evolve_alloc( num_evolution_variables );
   gsl_odeiv_system solver_system;
@@ -541,7 +537,7 @@ XLALFindChirpPTFWaveform(
   /* set up initial values for dynamical variables */
   /* in the precessing convention                  */
 
-  Phi    = y[0]  = InspTmplt->orbitPhi0;
+  Phi    = y[0]  = 0.0;
   omega  = y[1]  = f_min / omegam_to_hz;
   S1x    = y[2]  = sqrt( 1 - kappa * kappa ) * pn_params.mag_S1 ;
   S1y    = y[3]  = 0;
@@ -705,132 +701,4 @@ XLALFindChirpPTFWaveform(
     XLAL_ERROR( func, errcode );
 
   return errcode;
-}
-
-void XLALCreatePTFStrainData(
-    CoherentGW              *waveform,
-    InspiralTemplate        *PTFtemplate,
-    PPNParamStruc           *ppnParams
-    )
-/* Note that Theta is an inclination angle, varphi is angle between spin in x-y plane and the 
-initial phase, psi is polarization angle. These are defined in PBCVs paper on PTF and Diego's
-thesis. They have different definitions than those usually used by CBC.
-Distance is given in Mpc.*/
-{
-  UINT4 i,j, N;
-  REAL4Vector  *PTFphi;
-  REAL4Vector  *PTFomega_2_3;
-  REAL4VectorSequence  *PTFe1;
-  REAL4VectorSequence  *PTFe2;
-  REAL4TimeVectorSeries *strain;
-  REAL4 phi, omega_2_3, e1x, e1y, e1z, e2x, e2y, e2z, sqrtoftwo,
-        onebysqrtoftwo, onebysqrtofsix,deltaT,sampleRate;
-  REAL4 Pplus[5],Pcross[5],strains[5];
-  REAL4 Amp;
-  sqrtoftwo      = sqrt(2.0);
-  onebysqrtoftwo = 1.0 / sqrtoftwo;
-  onebysqrtofsix = 1.0 / sqrt(6.0);
- 
-  sampleRate = 4096.;
-  N = 256 * sampleRate;
-  deltaT = 1./sampleRate;
-
-/* Read values from ppnParams */
-
-  REAL4 Theta  = LAL_PI - ppnParams->inc;
-  REAL4 varphi = ppnParams->phi;
-  REAL4 Distance= ppnParams->d;
-
-/* Read and set values from PTFtemplate */
-
-  REAL8 m1 = PTFtemplate->mass1;
-  REAL8 m2 = PTFtemplate->mass2;
-  REAL8 mu = (m1*m2)/(m1+m2);
-  PTFtemplate->chi = pow(pow(PTFtemplate->spin1[0],2) + pow(PTFtemplate->spin1[1],2) + pow(PTFtemplate->spin1[2],2),0.5);
-  if (PTFtemplate->chi != 0)
-    PTFtemplate->kappa = PTFtemplate->spin1[2]/PTFtemplate->chi;
-  else
-    PTFtemplate->kappa = 0;
-  if (PTFtemplate->spin1[1] != 0 || PTFtemplate->spin1[0] != 0 )
-    PTFtemplate->orbitPhi0 = atan2(PTFtemplate->spin1[1],PTFtemplate->spin1[0]);
-  else
-    PTFtemplate->orbitPhi0 = 0.;
-  
-  /* Need to convert diastance into an amplitude for the Ps*/
-  Amp = 2*mu/Distance * 1476.6250399999999;
-
-  /* Here we define the P responses following Diego's thesis p50 */
-  Pplus[0] = -sqrtoftwo/4. * cos(2*varphi)*(3 + cos(2*Theta));
-  Pcross[0] = sqrtoftwo * cos(Theta) * sin(2*varphi) ;
-  Pplus[1] = -sqrtoftwo * cos(varphi)*sin(varphi)*(1+cos(Theta)*cos(Theta));
-  Pcross[1] = -sqrtoftwo * cos(Theta)*cos(2*varphi);
-  Pplus[2] = sqrtoftwo * cos(varphi)*sin(Theta)*cos(Theta);
-  Pcross[2] = -sqrtoftwo*sin(Theta)*sin(varphi);
-  Pplus[3] = sqrtoftwo * sin(varphi)*sin(Theta)*cos(Theta);
-  Pcross[3] = sqrtoftwo * sin(Theta) * cos(varphi);
-  Pplus[4] = sqrt(3./2.) * sin(Theta)*sin(Theta);
-  Pcross[4] = 0;
-
-  PTFphi = XLALCreateVector( N );
-  PTFomega_2_3 = XLALCreateVector( N );
-  PTFe1 = XLALCreateVectorSequence( 3, N );
-  PTFe2 = XLALCreateVectorSequence( 3, N );
-  strain=(REAL4TimeVectorSeries *)LALMalloc(sizeof(REAL4TimeVectorSeries));
-  memset( strain, 0, sizeof(REAL4TimeVectorSeries) );
-  strain->data = XLALCreateVectorSequence(N,2);
-  strain->deltaT = deltaT;
-  strain->sampleUnits = lalStrainUnit;
-  snprintf( strain->name,LALNameLength, "PTF strains" );
-
-  XLALFindChirpPTFWaveform( PTFphi, PTFomega_2_3,PTFe1,PTFe2, PTFtemplate,deltaT);
-
-  for ( i = 0; i < N; ++i )
-  {
-    omega_2_3 = PTFomega_2_3->data[i];
-    phi = PTFphi->data[i];
-    e1x = PTFe1->data[i];
-    e2x = PTFe2->data[i];
-    e1y = PTFe1->data[i + N];
-    e2y = PTFe2->data[i + N];
-    e1z = PTFe1->data[i + 2*N];
-    e2z = PTFe2->data[i + 2*N];
-    strain->data->data[i] = 0;
-    strain->data->data[i+N] = 0;
-    strains[0] = Amp*omega_2_3*onebysqrtoftwo*(cos(2*phi)*(e1x*e1x +
-          e2y * e2y - e2x * e2x - e1y * e1y ) + 2 * sin(2 * phi) *
-        ( e1x * e2x - e1y * e2y ));
-    strains[1] = Amp*omega_2_3*sqrtoftwo*( cos(2 * phi) * (e1x*e1y -
-          e2x * e2y ) + sin(2 * phi) * ( e1x * e2y + e1y * e2x ));
-    strains[2] = Amp*omega_2_3*sqrtoftwo*( cos(2 * phi) * (e1x*e1z -
-          e2x * e2z ) + sin(2 * phi) * ( e1x * e2z + e1z * e2x ));
-    strains[3] = Amp*omega_2_3*sqrtoftwo*( cos(2 * phi) * (e1y*e1z -
-          e2y * e2z ) + sin(2 * phi) * ( e1y * e2z + e1z * e2y ));
-    strains[4] = Amp*omega_2_3*onebysqrtofsix * ( cos(2 * phi) *
-        ( 2 * e2z * e2z - 2 * e1z * e1z + e1x * e1x + e1y * e1y -
-          e2x * e2x - e2y * e2y ) + 2 * sin(2 * phi) * ( e1x * e2x +
-            e1y * e2y - 2 * e1z * e2z ));
-    for ( j=0; j<5; j++ )
-    {
-      strain->data->data[2*i] += strains[j]*Pplus[j];
-      strain->data->data[2*i+1] += strains[j]*Pcross[j];
-    }
-  }
-  waveform->position = ppnParams->position;
-  waveform->psi = ppnParams->psi;
-  waveform->h = strain;
-  waveform->a = NULL;
-  waveform->f = NULL;
-  waveform->phi = NULL;
-  waveform->shift = NULL;
-  waveform->h->epoch = ppnParams->epoch;
-  ppnParams->tc = 0.;
-  ppnParams->length = 256.;
-  ppnParams->dfdt = deltaT/256.;
-  ppnParams->fStart = 30.;
-  ppnParams->fStop = PTFtemplate->fFinal;
-  XLALDestroyVector( PTFphi );
-  XLALDestroyVector( PTFomega_2_3 );
-  XLALDestroyVectorSequence( PTFe1 );
-  XLALDestroyVectorSequence( PTFe2 );
-  
 }
