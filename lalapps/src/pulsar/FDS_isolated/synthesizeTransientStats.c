@@ -93,7 +93,7 @@ typedef struct {
  * of signals
  */
 typedef struct {
-  SkyPosition skypos;	/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
+
   AmpParamsRange_t ampRange;
 } SignalParamsRange_t;
 
@@ -102,8 +102,15 @@ typedef struct {
  */
 typedef struct {
   AmpParamsRange_t AmpRange;	/**< signal parameter ranges: lower bounds + bands */
-  gsl_rng *rng;			/**< gsl random-number generator */
+  SkyPosition skypos;		/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
+
+  transientWindowRange_t transientSearchRange;	/**< transient-window range for the search (flat priors) */
+  transientWindowRange_t transientInjectRange;	/**< transient-window range for injections (flat priors) */
+
   MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
+  MultiLIGOTimeGPSVector *multiTS;		/**< corresponding timestamps vector for convenience */
+
+  gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *VCSInfoString;		/**< code VCS version info */
 } ConfigVariables;
 
@@ -125,6 +132,21 @@ typedef struct {
   /* Doppler parameters */
   REAL8 Alpha;		/**< skyposition Alpha (RA) in radians */
   REAL8 Delta;		/**< skyposition Delta (Dec) in radians */
+
+  /* transient window ranges: for injection ... */
+  CHAR *injectWindow_type; 	/**< Type of transient window to inject ('none', 'rect', 'exp'). */
+  INT4  injectWindow_t0;	/**< Earliest GPS start-time of transient window to inject, in seconds */
+  INT4  injectWindow_t0Band;	/**< Range of GPS start-time of transient window to inject, in seconds */
+  REAL8 injectWindow_tauDays;	/**< Shortest transient-window timescale to inject, in days */
+  REAL8 injectWindow_tauDaysBand; /**< Range of transient-window timescale to inject, in days */
+  /* ... and for search */
+  CHAR *searchWindow_type; 	/**< Type of transient window to search with ('none', 'rect', 'exp'). */
+  INT4  searchWindow_t0;		/**< Earliest GPS start-time of transient window to search, in seconds */
+  INT4  searchWindow_t0Band;	/**< Range of GPS start-time of transient window to search, in seconds */
+  REAL8 searchWindow_tauDays;	/**< Shortest transient-window timescale to search, in days */
+  REAL8 searchWindow_tauDaysBand; /**< Range of transient-window timescale to search, in days */
+  INT4  searchWindow_dt0;	/**< Step-size for search/marginalization over transient-window start-time, in seconds [Default:Tsft] */
+  INT4  searchWindow_dtau;       /**< Step-size for search/marginalization over transient-window timescale, in seconds [Default:Tsft] */
 
   /* other parameters */
   CHAR *IFO;		/**< IFO name */
@@ -163,6 +185,9 @@ int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_r
 
 int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
+
+gsl_vector *XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange, gsl_rng *rng );
+MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly );
 
 
 /*---------- empty initializers ---------- */
@@ -228,15 +253,37 @@ int main(int argc,char *argv[])
   }
 
 
+  /* ----- main MC loop over numDraws trials ---------- */
+  INT4 i;
+  for ( i=0; i < uvar.numDraws; i ++ )
+    {
+      /* generate signal random draws from ranges and generate Fstat atoms */
+      MultiFstatAtomVector *multiAtoms;
+      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &cfg, uvar.SignalOnly )) == NULL ) {
+        LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
+        return 1;
+      }
 
+      /* compute transient-Bstat search statistic on these atoms */
+      TransientCandidate_t cand;
+      if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange ) != XLAL_SUCCESS ) {
+        LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
+        return 1;
+      }
 
+      /* free memory */
+      XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
+    } /* for i < numDraws */
 
   /* ----- free memory ---------- */
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
+  XLALDestroyMultiTimestamps ( cfg.multiTS );
 
   if ( cfg.VCSInfoString ) XLALFree ( cfg.VCSInfoString );
   gsl_rng_free ( cfg.rng );
+
+  XLALSynthesizeTransientAtoms ( NULL, 0 );	/* special switch to clear internal buffer */
 
   XLALDestroyUserVars();
 
@@ -272,6 +319,13 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
 
+  /* transient window defaults */
+#define DEFAULT_TRANSIENT "none"
+  uvar->injectWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->injectWindow_type, DEFAULT_TRANSIENT );
+  uvar->searchWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->searchWindow_type, DEFAULT_TRANSIENT );
+
   /* register all our user-variables */
   XLALregBOOLUserStruct ( help, 		'h',     UVAR_HELP, "Print this message");
   /* signal amplitude parameters */
@@ -287,7 +341,22 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
+  /* transient window ranges: for injection ... */
+  XLALregSTRINGUserStruct ( injectWindow_type,   0, UVAR_OPTIONAL, "Type of transient window to inject ('none', 'rect', 'exp')");
+  XLALregINTUserStruct ( injectWindow_t0, 	 0, UVAR_OPTIONAL, "Earliest GPS start-time of transient window to inject, in seconds");
+  XLALregINTUserStruct ( injectWindow_t0Band,    0, UVAR_OPTIONAL, "Range of GPS start-time of transient window to inject, in seconds");
+  XLALregREALUserStruct( injectWindow_tauDays,   0, UVAR_OPTIONAL, "Shortest transient-window timescale to inject, in days");
+  XLALregREALUserStruct( injectWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to inject, in days");
+  /* ... and for search */
+  XLALregSTRINGUserStruct ( searchWindow_type,   0, UVAR_OPTIONAL, "Type of transient window to search with ('none', 'rect', 'exp')");
+  XLALregINTUserStruct ( searchWindow_t0,        0, UVAR_OPTIONAL, "Earliest GPS start-time of transient window to search, in seconds");
+  XLALregINTUserStruct ( searchWindow_t0Band,    0, UVAR_OPTIONAL, "Range of GPS start-time of transient window to search, in seconds");
+  XLALregREALUserStruct( searchWindow_tauDays,   0, UVAR_OPTIONAL, "Shortest transient-window timescale to search, in days");
+  XLALregREALUserStruct( searchWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to search, in days");
+  XLALregINTUserStruct ( searchWindow_dt0, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
+  XLALregINTUserStruct ( searchWindow_dtau, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:TAtom]");
 
+  /* misc params */
   XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
@@ -413,18 +482,96 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
       multiTS->data[0]->data[i].gpsSeconds = ti;
       multiTS->data[0]->data[i].gpsNanoSeconds = 0;
     }
+  cfg->multiTS = multiTS;   /* store timestamps vector */
 
+  /* get detector states */
   if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
     XLALPrintError ( "%s: XLALGetMultiDetectorStates() failed.\n", fn );
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
-
-  XLALDestroyMultiTimestamps ( multiTS );
   XLALDestroyMultiLALDetector ( multiDet );
-
   XLALFree(edat->ephemE);
   XLALFree(edat->ephemS);
   XLALFree ( edat );
+
+
+  /* ---------- initialize transient window ranges, for injection ... ---------- */
+  transientWindowRange_t InjectRange;
+  if ( !XLALUserVarWasSet ( &uvar->injectWindow_type ) || !strcmp ( uvar->injectWindow_type, "none") )
+    InjectRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
+  else if ( !strcmp ( uvar->injectWindow_type, "rect" ) )
+    InjectRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+  else if ( !strcmp ( uvar->injectWindow_type, "exp" ) )
+    InjectRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
+  else
+    {
+      XLALPrintError ("%s: Illegal transient inject window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->injectWindow_type);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+  /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
+  if ( InjectRange.type == TRANSIENT_NONE )
+    if ( XLALUserVarWasSet ( &uvar->injectWindow_t0 ) || XLALUserVarWasSet ( &uvar->injectWindow_t0Band ) ||
+         XLALUserVarWasSet ( &uvar->injectWindow_tauDays ) || XLALUserVarWasSet ( &uvar->injectWindow_tauDaysBand ) ) {
+      XLALPrintError ("%s: ERROR: injectWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+  if (   uvar->injectWindow_t0Band < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->injectWindow_t0Band, uvar->injectWindow_tauDaysBand );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  InjectRange.t0      = uvar->injectWindow_t0;
+  InjectRange.t0Band  = uvar->injectWindow_t0Band;
+
+  InjectRange.tau     = (UINT4) ( uvar->injectWindow_tauDays * DAY24 );
+  InjectRange.tauBand = (UINT4) ( uvar->injectWindow_tauDaysBand * DAY24 );
+
+  cfg->transientInjectRange = InjectRange;
+
+  /* ---------- ... and for search -------------------- */
+  transientWindowRange_t SearchRange;
+  if ( !XLALUserVarWasSet ( &uvar->searchWindow_type ) || !strcmp ( uvar->searchWindow_type, "none") )
+    SearchRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
+  else if ( !strcmp ( uvar->searchWindow_type, "rect" ) )
+    SearchRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+  else if ( !strcmp ( uvar->searchWindow_type, "exp" ) )
+    SearchRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
+  else
+    {
+      XLALPrintError ("%s: Illegal transient search window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->searchWindow_type);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+  /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
+  if ( SearchRange.type == TRANSIENT_NONE )
+    if ( XLALUserVarWasSet ( &uvar->searchWindow_t0 ) || XLALUserVarWasSet ( &uvar->searchWindow_t0Band ) ||
+         XLALUserVarWasSet ( &uvar->searchWindow_tauDays ) || XLALUserVarWasSet ( &uvar->searchWindow_tauDaysBand ) ) {
+      XLALPrintError ("%s: ERROR: searchWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+    }
+
+  if (   uvar->searchWindow_t0Band < 0 || uvar->searchWindow_tauDaysBand < 0 ) {
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->searchWindow_t0Band, uvar->searchWindow_tauDaysBand );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  SearchRange.t0      = uvar->searchWindow_t0;
+  SearchRange.t0Band  = uvar->searchWindow_t0Band;
+
+  SearchRange.tau     = (UINT4) ( uvar->searchWindow_tauDays * DAY24 );
+  SearchRange.tauBand = (UINT4) ( uvar->searchWindow_tauDaysBand * DAY24 );
+
+  if ( XLALUserVarWasSet ( &uvar->searchWindow_dt0 ) )
+    SearchRange.dt0 = uvar->searchWindow_dt0;
+  else
+    SearchRange.dt0 = uvar->TAtom;
+
+  if ( XLALUserVarWasSet ( &uvar->searchWindow_dtau ) )
+    SearchRange.dtau = uvar->searchWindow_dtau;
+  else
+    SearchRange.dtau = uvar->TAtom;
+
+  cfg->transientSearchRange = SearchRange;
 
   return XLAL_SUCCESS;
 
@@ -912,3 +1059,169 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
   return edat;
 
 } /* XLALInitEphemeris() */
+
+/** Generate a random ampltiude-parameter draw for signals, using 'physical' priors:
+ * uniform on phi_0, isotropic on {cosi,psi}, and (ad-hoc) uniform on h0
+ */
+gsl_vector *
+XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange,	/**< input amplitude ranges */
+                        gsl_rng * rng			/**< gsl random-number generator */
+                        )
+{
+  const char *fn = __func__;
+
+  /* check input arguments */
+  if ( !rng ) {
+    XLALPrintError ("%s: invalid NULL random number generator 'rng' passed.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* some handy shortcuts */
+  REAL8 h0NatMin, h0NatMax;
+  REAL8 cosiMin = AmpRange.cosi;
+  REAL8 cosiMax = cosiMin + AmpRange.cosiBand;
+  REAL8 psiMin  = AmpRange.psi;
+  REAL8 psiMax  = psiMin + AmpRange.psiBand;
+  REAL8 phi0Min = AmpRange.phi0;
+  REAL8 phi0Max = phi0Min + AmpRange.phi0Band;
+  REAL8 SNR = AmpRange.SNR;
+
+  /* if we'll do SNR normalization later, we simply fix the amplitude to 1 for now */
+  if ( SNR > 0 )
+    {
+      h0NatMin = 1;
+      h0NatMax = 1;
+    }
+  else
+    {
+      h0NatMin = AmpRange.h0Nat;
+      h0NatMax = h0NatMin + AmpRange.h0NatBand;
+    }
+
+  /* do random draw using 'physical priors' (except for h0) */
+  PulsarAmplitudeParams Amp;
+  Amp.h0   = gsl_ran_flat ( rng, h0NatMin, h0NatMax );
+  Amp.cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
+  Amp.psi  = gsl_ran_flat ( rng, psiMin, psiMax );
+  Amp.phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
+
+  /* ----- allocate temporary interal storage vectors */
+  gsl_vector *A_Mu;	/* output vector */
+  if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
+    XLALPrintError ( "%s: gsl_vector_alloc (4) failed.\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* convert amplitude params from 'physical' to 'canonical' coordinates */
+  if ( XLALAmplitudeParams2Vect ( A_Mu, &Amp ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* and return the result */
+  return A_Mu;
+
+} /* XLALDrawAmplitudeVect() */
+
+
+/** Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
+ *
+ * Input: detector states, signal sky-pos (or allsky), amplitudes (or range), transient window range
+ *
+ * NOTE: this function keeps an internal buffer for AM-coefficients, to avoid recomputing them if
+ * we use the same sky-position again.
+ * To free this buffer memory, call the function with cfg=NULL
+ *
+ */
+MultiFstatAtomVector *
+XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< input params for transient atoms synthesis */
+                               BOOLEAN SignalOnly		/**< signal-only switch: add noise or not */
+                               )
+{
+  const char *fn = __func__;
+
+  /* we do static buffering of AM-coeffs here, if skyposition is not randomly drawn */
+  static MultiAMCoeffs *multiAM = NULL;
+  static SkyPosition skypos = { 0, 0, 0 };
+
+  /* special switch: cfg=NULL ==> clean AM-coeffs buffer */
+  if ( !cfg )
+    {
+      if ( multiAM ) XLALDestroyMultiAMCoeffs ( multiAM );
+      return NULL;
+    }
+
+  /* check input */
+  if ( !cfg->rng ) {
+    XLALPrintError ("%s: invalid NULL input in random-number generator cfg->rng\n", fn );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  /* if Alpha < 0 ==> draw skyposition isotropically from all-sky */
+  if ( cfg->skypos.longitude < 0 )
+    {
+      skypos.longitude = gsl_ran_flat ( cfg->rng, 0, LAL_TWOPI );	/* alpha uniform in [ 0, 2pi ] */
+      skypos.latitude  = acos ( gsl_ran_flat ( cfg->rng, -1, 1 ) ) - LAL_PI_2;	/* cos(delta) uniform in [ -1, 1 ] */
+      skypos.system    = COORDINATESYSTEM_EQUATORIAL;
+      if ( multiAM ) XLALDestroyMultiAMCoeffs ( multiAM );
+      multiAM = NULL;
+    }
+  else /* otherwise: re-use AM-coeffs if already computed, or initialize them for the first time */
+    {
+      if ( multiAM && ( skypos.longitude != cfg->skypos.longitude || skypos.latitude != cfg->skypos.latitude || skypos.system != cfg->skypos.system) )
+        {
+          XLALDestroyMultiAMCoeffs ( multiAM );
+          multiAM = NULL;
+        }
+      skypos = cfg->skypos;
+    }
+
+  /* generate antenna-pattern functions for this sky-position */
+  const MultiNoiseWeights *weights = NULL;	/* NULL = unit weights */
+  if ( !multiAM && (multiAM = XLALComputeMultiAMCoeffs ( cfg->multiDetStates, weights, skypos )) == NULL ) {
+    XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
+  MultiFstatAtomVector *multiAtoms;
+  if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( cfg->multiTS, multiAM )) == NULL ) {
+    XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* add noise to the Fstat atoms, unless --SignalOnly was specified */
+  if ( !SignalOnly )
+    if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
+
+  /* draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
+  gsl_vector *A_Mu;
+  if ( (A_Mu = XLALDrawAmplitudeVect ( cfg->AmpRange, cfg->rng )) == NULL ) {
+    XLALPrintError ( "%s: XLALDrawAmplitudeVect() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* draw transient-window parameters from given ranges using flat priors */
+  transientWindow_t injectWindow = empty_transientWindow;
+  injectWindow.type = cfg->transientInjectRange.type;
+  if ( injectWindow.type != TRANSIENT_NONE )	/* nothing to be done if no window */
+    {
+      injectWindow.t0  = (UINT4) gsl_ran_flat ( cfg->rng, cfg->transientInjectRange.t0, cfg->transientInjectRange.t0 + cfg->transientInjectRange.t0Band );
+      injectWindow.tau = (UINT4) gsl_ran_flat ( cfg->rng, cfg->transientInjectRange.tau, cfg->transientInjectRange.tau + cfg->transientInjectRange.tauBand );
+    }
+
+  /* add transient signal to the Fstat atoms */
+  if ( XLALAddSignalToMultiFstatAtomVector ( multiAtoms, A_Mu, injectWindow ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVectorn() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* we're done, cleanup and return the final atoms-vector */
+  gsl_vector_free ( A_Mu );
+
+  return multiAtoms;
+
+} /* XLALSynthesizeTransientAtoms() */
