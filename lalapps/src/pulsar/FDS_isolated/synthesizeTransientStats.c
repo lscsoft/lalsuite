@@ -112,7 +112,15 @@ typedef struct {
 
   gsl_rng *rng;			/**< gsl random-number generator */
   CHAR *VCSInfoString;		/**< code VCS version info */
+
 } ConfigVariables;
+
+/* struct for buffering of AM-coeffs, if signal for same sky-position is injected */
+typedef struct {
+  SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
+  MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
+} multiAMBuffer_t;
+
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
@@ -187,13 +195,12 @@ int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, const gsl_vector *A
 int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 
 gsl_vector *XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange, gsl_rng *rng );
-MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly );
-
+MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
 UserInput_t empty_UserInput;
-
+multiAMBuffer_t empty_multiAMBuffer;
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
@@ -252,20 +259,34 @@ int main(int argc,char *argv[])
     return 1;
   }
 
+  FILE *fpTransientStats;
+  /* ----- prepare stats output ----- */
+  if ( uvar.outputStats )
+    {
+      if ( (fpTransientStats = fopen (uvar.outputStats, "wb")) == NULL)
+	{
+	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputStats );
+	  return 1;
+	}
+      fprintf (fpTransientStats, "%s", cfg.VCSInfoString );		/* write search log comment */
+      write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
+    }
 
   /* ----- main MC loop over numDraws trials ---------- */
+  multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;	  /* prepare AM-buffer */
   INT4 i;
+
   for ( i=0; i < uvar.numDraws; i ++ )
     {
       /* generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &cfg, uvar.SignalOnly )) == NULL ) {
+      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &cfg, uvar.SignalOnly, &multiAMBuffer )) == NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
         return 1;
       }
 
       /* compute transient-Bstat search statistic on these atoms */
-      TransientCandidate_t cand;
+      TransientCandidate_t cand = empty_TransientCandidate;
       if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange ) != XLAL_SUCCESS ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
         return 1;
@@ -274,16 +295,28 @@ int main(int argc,char *argv[])
       /* free memory */
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
+      /* add info on current transient-CW candidate */
+      cand.doppler.Alpha = multiAMBuffer.skypos.longitude;
+      cand.doppler.Delta = multiAMBuffer.skypos.latitude;
+
+      if ( uvar.SignalOnly )
+        cand.maxFstat += 4;
+
+      if ( write_TransientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
+        LogPrintf ( LOG_CRITICAL, "%s: write_TransientCandidate_to_fp() failed.\n", fn );
+        return 1;
+      }
+
     } /* for i < numDraws */
 
   /* ----- free memory ---------- */
+  fclose ( fpTransientStats );
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
   XLALDestroyMultiTimestamps ( cfg.multiTS );
+  XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
   if ( cfg.VCSInfoString ) XLALFree ( cfg.VCSInfoString );
   gsl_rng_free ( cfg.rng );
-
-  XLALSynthesizeTransientAtoms ( NULL, 0 );	/* special switch to clear internal buffer */
 
   XLALDestroyUserVars();
 
@@ -1128,34 +1161,22 @@ XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange,	/**< input amplitude ranges *
  *
  * Input: detector states, signal sky-pos (or allsky), amplitudes (or range), transient window range
  *
- * NOTE: this function keeps an internal buffer for AM-coefficients, to avoid recomputing them if
- * we use the same sky-position again.
- * To free this buffer memory, call the function with cfg=NULL
- *
  */
 MultiFstatAtomVector *
-XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< input params for transient atoms synthesis */
-                               BOOLEAN SignalOnly		/**< signal-only switch: add noise or not */
+XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input params for transient atoms synthesis */
+                               BOOLEAN SignalOnly,		/**< signal-only switch: add noise or not */
+                               multiAMBuffer_t *multiAMBuffer	/**< buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
                                )
 {
   const char *fn = __func__;
 
-  /* we do static buffering of AM-coeffs here, if skyposition is not randomly drawn */
-  static MultiAMCoeffs *multiAM = NULL;
-  static SkyPosition skypos = { 0, 0, 0 };
-
-  /* special switch: cfg=NULL ==> clean AM-coeffs buffer */
-  if ( !cfg )
-    {
-      if ( multiAM ) XLALDestroyMultiAMCoeffs ( multiAM );
-      return NULL;
-    }
-
   /* check input */
-  if ( !cfg->rng ) {
-    XLALPrintError ("%s: invalid NULL input in random-number generator cfg->rng\n", fn );
+  if ( !cfg || !cfg->rng || !multiAMBuffer ) {
+    XLALPrintError ("%s: invalid NULL input in cfg, random-number generator cfg->rng, or multiAMBuffer\n", fn );
     XLAL_ERROR_NULL (fn, XLAL_EINVAL );
   }
+
+  SkyPosition skypos;
 
   /* if Alpha < 0 ==> draw skyposition isotropically from all-sky */
   if ( cfg->skypos.longitude < 0 )
@@ -1163,29 +1184,34 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< input params for
       skypos.longitude = gsl_ran_flat ( cfg->rng, 0, LAL_TWOPI );	/* alpha uniform in [ 0, 2pi ] */
       skypos.latitude  = acos ( gsl_ran_flat ( cfg->rng, -1, 1 ) ) - LAL_PI_2;	/* cos(delta) uniform in [ -1, 1 ] */
       skypos.system    = COORDINATESYSTEM_EQUATORIAL;
-      if ( multiAM ) XLALDestroyMultiAMCoeffs ( multiAM );
-      multiAM = NULL;
-    }
-  else /* otherwise: re-use AM-coeffs if already computed, or initialize them for the first time */
+      /* never re-using buffered AM-coeffs here, as we randomly draw new skypositions */
+      if ( multiAMBuffer->multiAM ) XLALDestroyMultiAMCoeffs ( multiAMBuffer->multiAM );
+      multiAMBuffer->multiAM = NULL;
+    } /* if random skypos to draw */
+  else /* otherwise: re-use AM-coeffs if already computed, or initialize them if for the first time */
     {
-      if ( multiAM && ( skypos.longitude != cfg->skypos.longitude || skypos.latitude != cfg->skypos.latitude || skypos.system != cfg->skypos.system) )
-        {
-          XLALDestroyMultiAMCoeffs ( multiAM );
-          multiAM = NULL;
-        }
+      if ( multiAMBuffer->multiAM )
+        if ( multiAMBuffer->skypos.longitude != cfg->skypos.longitude ||
+             multiAMBuffer->skypos.latitude  != cfg->skypos.latitude  ||
+             multiAMBuffer->skypos.system    != cfg->skypos.system )
+          {
+            XLALDestroyMultiAMCoeffs ( multiAMBuffer->multiAM );
+            multiAMBuffer->multiAM = NULL;
+          }
       skypos = cfg->skypos;
-    }
+    } /* if single skypos given */
 
   /* generate antenna-pattern functions for this sky-position */
   const MultiNoiseWeights *weights = NULL;	/* NULL = unit weights */
-  if ( !multiAM && (multiAM = XLALComputeMultiAMCoeffs ( cfg->multiDetStates, weights, skypos )) == NULL ) {
+  if ( !multiAMBuffer->multiAM && (multiAMBuffer->multiAM = XLALComputeMultiAMCoeffs ( cfg->multiDetStates, weights, skypos )) == NULL ) {
     XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
+  multiAMBuffer->skypos = skypos; /* store buffered skyposition */
 
   /* generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
   MultiFstatAtomVector *multiAtoms;
-  if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( cfg->multiTS, multiAM )) == NULL ) {
+  if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( cfg->multiTS, multiAMBuffer->multiAM )) == NULL ) {
     XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
