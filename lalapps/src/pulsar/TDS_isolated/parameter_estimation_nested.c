@@ -3,6 +3,7 @@ LALInference tools */
 
 #include "pulsar_parameter_estimation.h"
 #include "LALInference.h"
+#include "LALInferenceNestedSampler.h"
 
 
 #define NUM_FACT 7
@@ -394,6 +395,9 @@ void setupFromParFile(LALInferenceRunState *runState)
 		data=data->next;
 	}
 	
+	/* Add initial (unchanging) variables for the model. */
+	add_initial_variables( runState->currentParams, pulsar );
+	
 	return;
 }
 
@@ -458,7 +462,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	setupLookupTables(&runState, LALSource *source);
 	
 	/* Create live points array and fill initial parameters */
-	add_initial_variables( LALVariables *ini, BinaryPulsarParams pars )
+	add_initial_variables(&runState);
 	
 	/* Call the nested sampling algorithm */
 	runState.algorithm(&runState);

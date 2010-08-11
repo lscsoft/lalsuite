@@ -106,7 +106,12 @@ INT4 getVariableDimension(LALVariables *vars)
 }
 
 
-VariableType getVariableType(LALVariables *vars, int index)
+VariableType getVariableType(LALVariables *vars, const char *name)
+{
+	return getItem(vars,name)->type;
+}
+
+VariableType getVariableTypeByIndex(LALVariables *vars, int index)
 /* Returns type of the i-th entry, */
 /* where  1 <= index <= dimension. */
 {
