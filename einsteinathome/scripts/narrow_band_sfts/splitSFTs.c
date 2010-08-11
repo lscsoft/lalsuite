@@ -34,7 +34,7 @@
 #include <string.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID "$Id: splitSFTs.c,v 1.43 2008/10/31 10:39:13 bema Exp $"
+#define RCSID "$Id: splitSFTs.c,v 1.44 2010/08/11 10:29:40 bema Exp $"
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -349,7 +349,7 @@ int main(int argc, char**argv) {
     nactivesamples += overlap + 1;
     /* if this number is larger than the bins in the input sft, just use the latter */
     if(nactivesamples > hd.nsamples + hd.firstfreqindex - start)
-      nactivesamples = hd.nsamples - start;
+       nactivesamples = hd.nsamples + hd.firstfreqindex - start;
 
     /* read in SFT bins */
     request_resource(&read_bandwidth, nactivesamples*8);
