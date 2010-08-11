@@ -207,6 +207,85 @@ defined!\n");
 }
 
 
+void initialiseAlgorithm(ProcParamsTable *commandLine, LALInferenceRunState *runState)
+/* Populates the structures for the algorithm control in runState, given the
+ commandLine arguments. Includes setting up a random number generator and creating
+ lookup tables for the pulsar model function.
+ Requires that the data fields have already been filled in */
+{
+	UINT4 verbose=0;
+	ProcessParamsTable *ppt=NULL;
+	
+	ppt=getProcParamVal(commandLine,"--verbose");
+	if(ppt) {
+		verbose=1;
+		addVariable(runState->algorithmParams,"verbose",1,INT4_t);
+	}
+		
+	/* Number of live points */
+	addVariable(runState->algorithmParams,"Nlive",atoi(getProcParamVal(commandLine,"--Nlive")->value),
+				INT4_t);
+	/* Number of points in MCMC chain */
+	addVariable(runState->algorithmParams,"Nmcmc",atoi(getProcParamVal(commandLine,"--Nmcmc")->value),
+				INT4_t);
+	/* Optionally specify number of parallel runs */
+	ppt=getProcParamVal(commandLine,"--Nruns");
+	if(ppt) addVariable(runState->algorithmParams,"Nruns",atoi(ppt->value),INT4_t);
+
+	/* Tolerance of the Nested sampling integrator */
+	ppt=getProcParamVal(commandLine,"--tolerance");
+	if(ppt) addVariable(runState->algorithmParams,"tolerance",atof(ppt->value),REAL4_t);
+	
+	/* Set up the random number generator */
+	gsl_rng_env_setup();
+	runState->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+	/* (try to) get random seed from command line: */
+	ppt = getProcParamVal(commandLine, "--randomseed");
+	if (ppt != NULL)
+		randomseed = atoi(ppt->value);
+	else { /* otherwise generate "random" random seed: */
+		if ((devrandom = fopen("/dev/random","r")) == NULL) {
+			gettimeofday(&tv, 0);
+			randomseed = tv.tv_sec + tv.tv_usec;
+		} 
+		else {
+			fread(&randomseed, sizeof(randomseed), 1, devrandom);
+			fclose(devrandom);
+		}
+	}
+	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
+	gsl_rng_set(irs->GSLrandom, randomseed);
+	
+	/* Get chunk min and chunk max */
+	ppt=getProcParamVal(commandLine,"--chunk-min");
+	INT4 chunkMin;
+	if(ppt) chunkMin=atoi(ppt-value)
+		else chunkMin=5;
+	addVariable(runState->algorithmParams,"chunk-min",chunkMin,INT4_t);
+	
+	ppt=getProcParamVal(commandLine,"--chunk-max");
+	INT4 chunkMax;
+	if(ppt) chunkMin=atoi(ppt-value)
+		else chunkMin=30;
+	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t);
+	
+	if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax = %i\n",chunkMin,chunkMax);
+	
+	/* Set up lookup tables */
+	/* Using psi bins, time bins */
+	
+	
+	return;
+}
+
+void initialisePrior(ProcParamsTable *commandLine, LALInferenceRunState *runState)
+/* Populates the priorArgs list in the runState using the command line arguments */
+{
+	
+	return;
+}
+
+void initialise
 
 INT4 main(INT4 argc, CHAR *argv[]){
   static LALStatus status;
@@ -252,12 +331,11 @@ INT4 main(INT4 argc, CHAR *argv[]){
 	runState.commandLine=param_table;
 	
 	/* Initialise data structures from the command line arguments */
-	/* Including generate lookup tables etc */
-
 	
 	
 	/* Initialise the algorithm structures from the command line arguments */
-	
+	/* Include setting up random number generator etc */
+	/* Including generate lookup tables etc */
 	
 	
 	/* Initialise the prior distribution given the command line arguments */
