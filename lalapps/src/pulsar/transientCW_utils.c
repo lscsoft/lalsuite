@@ -51,7 +51,8 @@ int compareAtoms(const void *in1, const void *in2);
 
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
-
+const transientWindow_t empty_transientWindow;
+const transientWindowRange_t empty_transientWindowRange;
 
 /* ==================== function definitions ==================== */
 
