@@ -10,6 +10,8 @@ LALInference tools */
 static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
 (1.0/24.0), (1.0/120.0), (1.0/720.0) };
 
+/* maximum number of different detectors */
+#define MAXDETS 6
 
 #include "pulsar_parameter_estimation.h"
 
@@ -45,26 +47,29 @@ INT4 verbose=0;
 " --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
 " --prop-file         file containing the parameters to search over and their\n\
                      upper and lower ranges\n"\
-" --nlive             (INT4) no. of live points for nested sampling\n"\
 " --ephem-earth       Earth ephemeris file\n"\
 " --ephem-sun         Sun ephemeris file\n"\
+" Nested sampling parameters:\n"\
+" --nlive             (INT4) no. of live points for nested sampling\n"\
 "\n"
 
 
 LALIFOData *readPulsarData(int argc, char **argv)
 {
-  CHAR *detectors;
-  CHAR *pulsar;
-  CHAR *inputdir;
-  CHAR *fname;
-  CHAR *outputdir;
-  CHAR *propfile;
-  CHAR *forcefile;
+  CHAR *detectors=NULL;
+  CHAR *pulsar=NULL;
+  CHAR *inputdir=NULL;
+  CHAR *fname=NULL;
+  CHAR *outputdir=NULL;
+  CHAR *propfile=NULL;
+  CHAR *forcefile=NULL;
   
-  CHAR *efile;
-  CHAR *sfile;
+  CHAR *filestr=NULL;
   
-  CHAR dets[5][3]; /* we'll have a max of five detectors */
+  CHAR *efile=NULL;
+  CHAR *sfile=NULL;
+  
+  CHAR dets[MAXDETS][256];
   INT4 numDets=0;
  
   BinaryPulsarParams pars;
@@ -75,7 +80,6 @@ LALIFOData *readPulsarData(int argc, char **argv)
   struct option long_options[] =
   {
     { "help",           no_argument,       0, 'h' },
-    { "verbose",        no_argument,    NULL, 'R' },
     { "detectors",      required_argument, 0, 'D' },
     { "pulsar",         required_argument, 0, 'p' },
     { "input-dir",      required_argument, 0, 'i' },
@@ -113,25 +117,25 @@ LALIFOData *readPulsarData(int argc, char **argv)
         verbose = 1;
         break;
       case 'D': /* detectors */
-        detectors = optarg;
+        detectors = XLALStringDuplicate(optarg);
         break;
       case 'p': /* pulsar name */
-        pulsar = optarg;
+        pulsar = XLALStringDuplicate(optarg);
         break;
       case 'i': /* input data file directory */
-        inputdir = optarg;
+        inputdir = XLALStringDuplicate(optarg);
         break;
       case 'o': /* output directory */
-        outputdir = optarg;
+        outputdir = XLALStringDuplicate(optarg);
         break;
       case 'o': /* force file names to be specifed values */
-        forcefile = optarg;
+        forcefile = XLALStringDuplicate(optarg);
         break;
       case 'J':
-        efile = optarg;
+        efile = XLALStringDuplicate(optarg);
         break;
       case 'M':
-        sfile = optarg;
+        sfile = XLALStringDuplicate(optarg);
         break;
       case '?':
         fprintf(stderr, "Unknown error while parsing options\n");
@@ -140,8 +144,25 @@ LALIFOData *readPulsarData(int argc, char **argv)
     }
   }
   
-  /* count the number of detectors from command line argument */
-  /* find the number of detectors being used */
+  /* count the number of detectors from command line argument of comma separated
+     vales and set their names */
+  {
+    CHAR *tempdets=NULL;
+    CHAR *tempdet=NULL;
+    
+    tempdets = XLALStringDuplicate( detectors );
+    
+    while(1){
+      tempdet = strsep(&tempdets, ",");
+      
+      XLALStringCopy(dets[numDets], tempdet, strlen(tempdet));
+      
+      numDets++;
+      
+      if( tempdets == NULL ) break;
+    }
+  }
+    
   if( strstr(detectors, "H1") != NULL ){
     sprintf(dets[numDets], "H1");
     numDets++;
@@ -171,9 +192,38 @@ defined!\n");
     exit(3);
   }
   
+  /* if file names are pre-defined (and seperated by comma, count the number of
+     input files (by counting commas) and check it's equal to the number of
+     detectors */
+  if ( forcefile != NULL ){
+    CHAR *inputstr=NULL;
+    CHAR *tempstr=NULL;
+    INT4 count=0;
+    
+    inputstr = XLALStringDuplicate( forcefile );
+    
+    /* count number of commas */
+    while(1){
+      tempstr = strsep(&inputstr, ",");
+      
+      if (inputstr == NULL) break;
+      
+      count++;
+    }
+    
+    if ( count+1 != numDets ){
+      fprintf(stderr, "Error... Number of input files given is not equal to the\
+ number of detectors given!\n");
+      exit(3);
+    }
+  }
+  
+  /* reset filestr */
+  if ( forcefile != NULL ) filestr = XLALStringDuplicate(forcefile);
+  
   /* read in data */
-  for( i = 0,prev=NULL ; i < numDets ; i++,prev=ifodata){
-    CHAR datafile[256];
+  for( i = 0,prev=NULL ; i < numDets ; i++,prev=ifodata ){
+    CHAR *datafile=NULL;
     REAL8 times=0;
     REAL8Vector *temptimes=NULL;
     INT4 k=0;
@@ -188,10 +238,20 @@ defined!\n");
     
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
-    sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputDir, dets[i],
-      pulsar, dets[i]);
-
-    
+    if (forcefile == NULL){
+      dataFile = XLALMalloc( 256 ); /* allocate memory for file name */
+      sprintf(dataFile, "%s/data%s/finehet_%s_%s", inputDir, dets[i],
+        pulsar, dets[i]);
+    }
+    else{ /* get i'th filename from the comma separated list */
+      INT4 count=0;
+      
+      while (count < i){
+        dataFile = strsep(&filestr, ",");
+      
+        count++;
+      }
+    }
       
     /* open data file */
     if((fp = fopen(dataFile, "r"))==NULL){
@@ -476,7 +536,7 @@ void setupFromParFile(LALInferenceRunState *runState)
 }
 
 
-setupLivePointsArray(LALInferenceRunState &runState){
+void setupLivePointsArray(LALInferenceRunState &runState){
 /* Set up initial basket of live points, drawn from prior,
  by copying runState->currentParams to all entries in the array*/
 	
