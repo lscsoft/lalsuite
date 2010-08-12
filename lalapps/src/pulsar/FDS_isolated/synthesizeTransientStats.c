@@ -505,6 +505,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   if ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) == NULL ) {
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
+  multiTS->length = 1;
   if ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) == NULL ) {
     XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSteps );
   }
@@ -755,7 +756,6 @@ XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< i
     XLALPrintError ("%s: inconsistent number of detectors in multiTS (%d) and multiAM (%d)\n", fn, multiTS->length, multiAM->length );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
-
 
   /* create multi-atoms vector */
   MultiFstatAtomVector *multiAtoms;
