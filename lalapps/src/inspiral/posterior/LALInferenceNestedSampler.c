@@ -21,7 +21,7 @@ REAL8 mean(REAL8 *array,int N){
 	return sum/((REAL8) N);
 }
 
-REAL8 sample_logt(int Nlive){
+REAL8 sample_logt(int Nlive,gsl_rng *RNG){
 	REAL8 t=0.0;
 	REAL8 a=0.0;
 	while((Nlive--)>1) {a=gsl_rng_uniform(RNG); t = t>a ? t : a;}
@@ -61,6 +61,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	UINT4 i,j,k;
 	UINT4 ND=0;
 	LALVariableItem *item,*k_item,*j_item;
+	REAL8 *means;
 	
 	/* Find the number of dimensions which vary in the covariance matrix */
 	for(item=Live[0]->head;item!=NULL;item=item->next)
@@ -68,7 +69,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	
 	/* Set up matrix if necessary */
 	if(cvm==NULL)
-		if(NULL==(cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}
+	{if(NULL==(cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}}
 	else {
 		if(cvm->size1!=cvm->size2 || cvm->size1!=ND)
 		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in calcCVM\n");
@@ -81,9 +82,9 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	/* Find the means */
 	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
 	for(i=0;i<ND;i++) means[i]=0.0;
-	for(i=0;i<N;i++){
+	for(i=0;i<Nlive;i++){
 		for(item=Live[i]->head;item;item=item->next) {
-			if(item->varyType==PARAM_LINEAR || item->vary==PARAM_CIRCULAR ) {
+			if(item->vary==PARAM_LINEAR || item->vary==PARAM_CIRCULAR ) {
 				if (item->type==REAL4_t) means[j]+=*(REAL4 *)item->value;
 				if (item->type==REAL8_t) means[j]+=*(REAL8 *)item->value;
 				j++;
@@ -94,7 +95,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	
 	/* Find the (co)-variances */
 	for(i=0;i<Nlive;i++){
-		i_item = j_item = item = Live[i]->head;
+		k_item = j_item = item = Live[i]->head;
 		for( j_item=item,j=0; j_item; j_item=j_item->next ){
 			if(j_item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR ) continue; /* Skip params that we don't vary */
 			for( k_item=item,k=0; k<=j; k_item=k_item->next ){
@@ -115,7 +116,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	free(means);
 	/* Fill in variances for circular parameters */
 	for(item=Live[0]->head,j=0;j<ND;j++,item=item->next) {
-		if(item->varyType==PARAM_CIRCULAR) {
+		if(item->vary==PARAM_CIRCULAR) {
 			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
 			gsl_matrix_set(cvm,j,j,ang_var(Live,item->name,Nlive));
 			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
@@ -144,10 +145,12 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmax=-DBL_MAX,logLtmp;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw;
 	LALVariables *temp;
-	FILE *fp=NULL;
+	FILE *fpout=NULL;
 	gsl_matrix *cvm=NULL;
+	REAL8 dblmax=-DBL_MAX;
+	REAL8 zero=0.0;
 
 	/* Operate on parallel runs if requested */
 	if(checkVariable(runState->algorithmParams,"Nruns"))
@@ -158,15 +161,15 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 	/* Check that necessary parameters are created */
 	if(!checkVariable(runState->algorithmParams,"logLmin"))
-		addVariable(runState->algorithmParams,"logLmin",-DBL_MAX,REAL8_t,PARAM_OUTPUT);
+		addVariable(runState->algorithmParams,"logLmin",&dblmax,REAL8_t,PARAM_OUTPUT);
 
 	if(!checkVariable(runState->algorithmParams,"accept_rate"))
-		addVariable(runState->algorithmParams,"accept_rate",0.0,REAL8_t,PARAM_OUTPUT);
+		addVariable(runState->algorithmParams,"accept_rate",&zero,REAL8_t,PARAM_OUTPUT);
 
 	
 	/* Open output file */
 	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
-	fp=open(outfile,"w");
+	fpout=open(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 
 	/* Set up arrays for parallel runs */
@@ -184,7 +187,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Find maximum likelihood */
 	for(i=0;i<Nlive;i++)
 	{
-		logLtmp=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i];
+		logLtmp=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i];
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
 	/* Add the covariance matrix for proposal distribution */
@@ -196,11 +199,11 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Find minimum likelihood sample to replace */
 		minpos=0;
 		for(i=0;i<Nlive;i++){
-			if((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i]
-			   <(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[minpos])
+			if(((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]
+			   <((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos])
 				minpos=i;
 		}
-		logLmin=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[minpos];
+		logLmin=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos];
 
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
@@ -217,7 +220,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		/* Write out old sample */
 		fprintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i]);
+		fprintf(fpout,"%lf\n",((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]);
 
 
 		/* Generate a new live point */
@@ -234,7 +237,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
-		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive);
+		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLRandom);
 		logw=mean(logwarray,Nruns);
 		if(MCMCinput->verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate"),
