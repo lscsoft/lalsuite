@@ -31,6 +31,9 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import segments as ligolwsegments
 from pylal import ligolw_tisi
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from lalapps import cosmicstring
@@ -58,16 +61,25 @@ def parse_command_line():
 	)
 	parser.add_option("-f", "--config-file", metavar = "filename", help = "Use this configuration file (required).")
 	parser.add_option("-l", "--log-path", metavar = "path", help = "Make condor put log files in this directory (required).")
-	parser.add_option("--background-time-slides", metavar = "filename", action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (required).  This option can be given multiple times to parallelize the background analysis across time slides.  You will want to make sure the time slide files have distinct vectors to not repeat the same analysis multiple times, and in particular you'll want to make sure only one of them has a zero-lag vector in it.") 
-	parser.add_option("--injection-time-slides", metavar = "filename", help = "Set file from which to obtain the time slide table for use in the injection branch of the pipeline (required).")
+	parser.add_option("--background-time-slides", metavar = "filename", action = "append", help = "Set the name of the file from which to obtain the time slide table for use in the background branch of the pipeline (required).  This option can be given multiple times to parallelize the background analysis across time slides.  You will want to make sure the time slide files have distinct vectors to not repeat the same analysis multiple times, and in particular you'll want to make sure only one of them has a zero-lag vector in it.") 
+	parser.add_option("--injection-time-slides", metavar = "filename", help = "Set the name of the file from which to obtain the time slide table for use in the injection branch of the pipeline (required).")
+	parser.add_option("--segments-file", metavar = "filename", help = "Set the name of the LIGO Light-Weight XML file from which to obtain segment lists (required).  See ligolw_segments and ligolw_segment_query for more information on constructing an XML-format segments file.  See also --segments-name.")
+	parser.add_option("--segments-name", metavar = "name", default = "segments", help = "Set the name of the segment lists to retrieve from the segments file (default = \"segments\").  See also --segments-file.")
+	parser.add_option("--vetoes-file", metavar = "filename", help = "Set the name of the LIGO Light-Weight XML file from which to obtain veto segment lists (optional).  See ligolw_segments and ligolw_segment_query for more information on constructing an XML-format segments file.  See also --vetos-name.")
+	parser.add_option("--vetoes-name", metavar = "name", default = "vetoes", help = "Set the name of the segment lists to retrieve from the veto segments file (default = \"vetoes\").  See also --vetoes-file.")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 
 	options, filenames = parser.parse_args()
 
-	required_options = ["log_path", "config_file", "background_time_slides", "injection_time_slides"]
+	required_options = ["log_path", "config_file", "background_time_slides", "injection_time_slides", "segments_file"]
 	missing_options = [option for option in required_options if getattr(options, option) is None]
 	if missing_options:
 		raise ValueError, "missing required options %s" % (sorted("--%s" % option.replace("_", "-") for option in missing_options))
+
+	if options.vetoes_file is not None:
+		options.vetoes_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.vetoes_file))])
+	else:
+		options.vetoes_cache = set()
 
 	options.injection_time_slides = [options.injection_time_slides]
 
@@ -160,9 +172,18 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 # get the instruments and raw segments
 #
 
-# FIXME:  use ligolw_segments to convert segwizard files to XML format and
-# use that as input for this script
-seglists = segments.segmentlistdict((instrument, segmentsUtils.fromsegwizard(file(config_parser.get('input','segments_%s' % instrument))).coalesce()) for instrument in set(s.strip() for s in config_parser.get('pipeline','ifos').split(',')))
+instruments = lsctables.instrument_set_from_ifos(config_parser.get('pipeline','ifos'))
+seglists = ligolwsegments.segmenttable_get_by_name(utils.load_filename(options.segments_file, gz = (options.segments_file or "stdin").endswith(".gz"), verbose = options.verbose), options.segments_name).coalesce()
+# remove extra instruments
+for instrument in set(seglists) - instruments:
+	if options.verbose:
+		print >>sys.stderr, "warning: ignoring segments for '%s' found in '%s'" % (instrument, options.segments_file)
+	del seglists[instrument]
+# check for missing instruments
+if not instruments.issubset(set(seglists)):
+	raise ValueError, "segment lists retrieved from '%s' missing segments for instruments %s" % (options.segments_file, ", ".join(instruments - set(seglists)))
+# now rely on seglists' keys to provide the instruments
+del instruments
 
 #
 # Using time slide information, construct segment lists describing times
@@ -214,7 +235,7 @@ datafinds = power.make_datafind_stage(dag, injection_seglists | background_segli
 #
 
 
-def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length, pad, overlap, short_segment_duration, tag, do_injections = False, injections_offset = 0.0, verbose = False):
+def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length, pad, overlap, short_segment_duration, tag, vetoes_cache = set(), do_injections = False, injections_offset = 0.0, verbose = False):
 	#
 	# injection job
 	#
@@ -261,7 +282,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
 		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 80000000.0 / len(these_time_slides), verbose = verbose):
-			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache)
+			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache | vetoes_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
 				# this is a fragment of a too-large burca
@@ -345,7 +366,7 @@ for i, folder in enumerate(injection_folders):
 	os.chdir(folder)
 	# note:  unpacking enforces rule that each injection run uses a
 	# single time-slides file
-	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (user_tag, i), do_injections = True, injections_offset = float(i) / len(injection_folders), verbose = options.verbose)
+	[these_coinc_nodes], [these_likelihood_nodes] = make_coinc_branch(dag, datafinds, injection_seglists, injection_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_INJ_%d" % (user_tag, i), vetoes_cache = options.vetoes_cache, do_injections = True, injections_offset = float(i) / len(injection_folders), verbose = options.verbose)
 	os.chdir(cwd)
 	injection_coinc_nodes.append(these_coinc_nodes)
 	injection_likelihood_nodes.append(these_likelihood_nodes)
@@ -355,7 +376,7 @@ for i, folder in enumerate(noninjection_folders):
 	assert i == 0	# loop only works for one iteration
 	cwd = os.getcwd()
 	os.chdir(folder)
-	background_coinc_nodes, background_likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (user_tag, i), do_injections = False, verbose = options.verbose)
+	background_coinc_nodes, background_likelihood_nodes = make_coinc_branch(dag, datafinds, background_seglists, background_time_slides, min_segment_length, pad, overlap, short_segment_duration, "%s_%d" % (user_tag, i), vetoes_cache = options.vetoes_cache, do_injections = False, verbose = options.verbose)
 	os.chdir(cwd)
 
 

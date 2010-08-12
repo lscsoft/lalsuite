@@ -48,7 +48,7 @@ LALBarycenterEarth(LALStatus *stat,
 		   EarthState *earth, 		/**< [out] the earth's state at time tGPS */
 		   const LIGOTimeGPS *tGPS, 	/**< [in] GPS time tgps */
 		   const EphemerisData *edat) 	/**< [in] ephemeris-files */
-{ /* </lalVerbatim> */
+{
 
   REAL8 tgps[2];   /*I convert from two-integer representation to
                       two REAL8s (just because I initially wrote my code for
