@@ -1535,7 +1535,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
         for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
-          pValues[j]->data->data[i - numPoints/4] = pValsTemp[j];
+          pValues[j]->data->data[i - numPoints/4] = 0.;
         } 
         // This loop verifies that the SNR obtained is as before
         recSNR = 0;
@@ -1561,13 +1561,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
   
         // The p Values need to be rotated back into the original frame.
         // Currently we are recording values in rotated frame
-/*        for ( j = 0 ; j < vecLengthTwo ; j++ )
+        for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           for ( k = 0 ; k < vecLengthTwo ; k++ )
           {
             pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
           }
-        }*/
+        }
  
         // And we check that this still gives the expected SNR in the
         // unrotated basis.
