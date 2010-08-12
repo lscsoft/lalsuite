@@ -602,14 +602,14 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     struct tm utc;
     time_t tp;
     CHAR dateStr[512], line[512], summary[1024];
-    UINT4 i, numDet;
+    UINT4 j, numDet;
     numDet = multiSFTs->length;
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
-    for ( i=0; i < numDet; i ++ ) {
-      sprintf (line, "%s:%d%s",  multiSFTs->data[i]->data->name, multiSFTs->data[i]->length,
-	       (i < numDet - 1)?", ":" ]\n");
+    for ( j=0; j < numDet; j ++ ) {
+      sprintf (line, "%s:%d%s",  multiSFTs->data[j]->data->name, multiSFTs->data[j]->length,
+	       (j < numDet - 1)?", ":" ]\n");
       strcat ( summary, line );
     }
     utc = *XLALGPSToUTC( &utc, (INT4)GPS2REAL8(startTime) );
