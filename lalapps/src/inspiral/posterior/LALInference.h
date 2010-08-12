@@ -278,6 +278,11 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
 
+LALVariableItem *getItem(LALVariables *vars,const char *name);
+LALVariableItem *getItemNr(LALVariables *vars, int index);
+void fprintSample(FILE *fp,LALVariables *sample);
+
+
 
 #endif
 

@@ -46,7 +46,7 @@ size_t typeSize[] = {sizeof(INT4),
 
 void die(char *message)
 {
-  fprintf(stderr, message);
+  fprintf(stderr, "%s", message);
   exit(1);
 }
 
@@ -69,15 +69,15 @@ LALVariableItem *getItem(LALVariables *vars,const char *name)
 }
 
 
-LALVariableItem *getItemNr(LALVariables *vars, int index)
+LALVariableItem *getItemNr(LALVariables *vars, int idx)
 /* (this function is only to be used internally)  */
 /* Returns pointer to item for given item number. */
 {
   int i=1;
-  if (index < i) die(" Error in getItemNr(): requesting zero or negative index entry.\n");
+  if (idx < i) die(" Error in getItemNr(): requesting zero or negative idx entry.\n");
   LALVariableItem *this=vars->head;
   while (this != NULL) { 
-    if (i == index) break;
+    if (i == idx) break;
     else {
       this = this->next;
       ++i;
@@ -86,8 +86,7 @@ LALVariableItem *getItemNr(LALVariables *vars, int index)
   return(this);
 }
 
-
-ParamVaryType getVariableVaryType(LALVariable *vars, const char *name)
+ParamVaryType getVariableVaryType(LALVariables *vars, const char *name)
 {
 	return (getItem(vars,name)->vary);
 }
@@ -117,32 +116,32 @@ VariableType getVariableType(LALVariables *vars, const char *name)
 	return getItem(vars,name)->type;
 }
 
-VariableType getVariableTypeByIndex(LALVariables *vars, int index)
+VariableType getVariableTypeByIndex(LALVariables *vars, int idx)
 /* Returns type of the i-th entry, */
-/* where  1 <= index <= dimension. */
+/* where  1 <= idx <= dimension. */
 {
   LALVariableItem *item;
-  if ((index < 1) | (index > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
-            index, vars->dimension);
+  if ((idx < 1) | (idx > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+            idx, vars->dimension);
     exit(1);
   }
-  item = getItemNr(vars, index);
+  item = getItemNr(vars, idx);
   return(item->type);
 }
 
 
-char *getVariableName(LALVariables *vars, int index)
+char *getVariableName(LALVariables *vars, int idx)
 /* Returns (pointer to) the name of the i-th entry, */
-/* where  1 <= index <= dimension.                  */
+/* where  1 <= idx <= dimension.                  */
 {
   LALVariableItem *item;
-  if ((index < 1) | (index > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
-            index, vars->dimension);
+  if ((idx < 1) | (idx > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+            idx, vars->dimension);
     exit(1);
   }
-  item = getItemNr(vars, index);
+  item = getItemNr(vars, idx);
   return(item->name);
 }
 
@@ -326,10 +325,10 @@ void printVariables(LALVariables *var)
 
 void fprintSample(FILE *fp,LALVariables *sample){
 	if(sample==NULL) return;
-	LALVariableItem *p=sample->head;
+	LALVariableItem *ptr=sample->head;
 	if(fp==NULL) return;
-	while(p!=NULL) {
-		switch (p->type) {
+	while(ptr!=NULL) {
+		switch (ptr->type) {
 			case INT4_t:
 				fprintf(fp, "%d", *(INT4 *) ptr->value);
 				break;
@@ -355,12 +354,13 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				break;
 			default:
 				fprintf(stdout, "<can't print>");
-		}
-		fprintf(fp,"\t");
-		p=p->next;
-		return;
+			}
+	
+	fprintf(fp,"\t");
+	ptr=ptr->next;
+	}
+	return;
 }
-
 
 int compareVariables(LALVariables *var1, LALVariables *var2)
 /*  Compare contents of "var1" and "var2".                       */
@@ -803,7 +803,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	double Fplus, Fcross;
 	double FplusScaled, FcrossScaled;
 	REAL8 plainTemplateReal, plainTemplateImag;
-	int i;
+	UINT4 i;
 
 	/* determine source's sky location & orientation parameters: */
 	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
@@ -1000,7 +1000,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
   FILE *outfile=NULL; 
   LALIFOData *dataPtr;
   double deltaT, deltaF, f;
-  int i;
+  UINT4 i;
 
   copyVariables(currentParams, data->modelParams);
   dataPtr = data;
@@ -1040,7 +1040,7 @@ void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data,
   FILE *outfile=NULL; 
   LALIFOData *dataPtr;
   double deltaT, deltaF, t, epoch;
-  int i;
+  UINT4 i;
 
   copyVariables(currentParams, data->modelParams);
   dataPtr = data;
@@ -1075,7 +1075,7 @@ void executeFT(LALIFOData *IFOdata)
 /* results go into IFOdata->freqModelh...                     */
 /*  CHECK: keep or drop normalisation step here ?!?  */
 {
-  int i;
+  UINT4 i;
   double norm;
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
