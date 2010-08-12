@@ -328,6 +328,8 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
  *
  * Note: this function is a C-implemention, partially based-on/inspired-by Stefanos Giampanis'
  * original matlab implementation of this search function.
+ *
+ * Note2: if window->type == none, we compute a single rectangular window covering all the data.
  */
 int
 XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
@@ -351,7 +353,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-
   /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
   FstatAtomVector *atoms;
   UINT4 TAtom = multiFstatAtoms->data[0]->TAtom;
@@ -360,9 +361,21 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
   UINT4 numAtoms = atoms->length;
-  /* actual data spans [t0_data, t1_data] in steps of TAtom */
+  /* actual data spans [t0_data, t0_data + numAtoms * TAtom] in steps of TAtom */
   UINT4 t0_data = atoms->data[0].timestamp;
-  
+
+  /* special treatment of window_type = none ==> replace by rectangular window spanning all the data */
+  if ( windowRange.type == TRANSIENT_NONE )
+    {
+      windowRange.type = TRANSIENT_RECTANGULAR;
+      windowRange.t0 = t0_data;
+      windowRange.t0Band = 0;
+      windowRange.dt0 = TAtom;	/* irrelevant */
+      windowRange.tau = numAtoms * TAtom;
+      windowRange.tauBand = 0;
+      windowRange.dtau = TAtom;	/* irrelevant */
+    }
+
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
    * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} 1/D_mn * e^{Fmn - Fmax} )
    * which is logB = Fmax + log( sum_{mn} e^FReg_mn ), where FReg_mn = -log(D_mn) + Fmn - Fmax.
