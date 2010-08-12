@@ -164,7 +164,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		addVariable(runState->algorithmParams,"accept_rate",0.0,REAL8_t,PARAM_OUTPUT);
 
 	
-	/* FIXME: Open output file */
+	/* Open output file */
 	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
 	fp=open(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
@@ -187,8 +187,9 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logLtmp=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i];
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
-
+	/* Add the covariance matrix for proposal distribution */
 	calcCVM(cvm,runState->livePoints,Nlive);
+	addVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
 	
 	/* Iterate until termination condition is met */
 	do {
@@ -244,6 +245,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		iter++;
 		/* Update the covariance matrix */
 		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
+		setVariable(runState->proposalArgs,"LiveCVM",cvm);
+
 	}
 	while(iter<Nlive || logadd(logZ,logLmax-((double iter)/(double)Nlive))-logZ > TOLERANCE)
 
@@ -308,6 +311,7 @@ NestedSamplingOneStep(LALInferenceRunState runState)
 			logPriorOld=logPriorNew;
 			copyVariables(newParams,runState->currentParams);
 			runState->currentLikelihood=logLnew;
+		}
 	} while(runState->currentLikelihood<=logLmin || mcmc_iter<Nmcmc);
 	destroyVariables(newParams);
 	setVariable(runState->algorithmParams,"accept_rate",(REAL8)Naccepted/(REAL8)mcmc_iter);
@@ -329,36 +333,60 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 									   LALVariables *parameter)
 	{
 		static LALStatus status;
-		LALMCMCParameter **Live=inputMCMC->Live;
+		LALVariables **Live=runState->Live;
 		int i=0,j=0,dim=0,same=1;
 		REAL4 randnum;
-		int Nlive = (int)inputMCMC->Nlive;
-		LALMCMCParam *paraHead=NULL;
-		LALMCMCParam *paraA=NULL;
-		LALMCMCParam *paraB=NULL;
+		INT4 Nlive = *(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+		LALVariableItem *paraHead=NULL;
+		LALVariableItem *paraA=NULL;
+		LALVariableItem *paraB=NULL;
 		
 		dim = parameter->dimension;
-		if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 		/* Select two other samples A and B*/
-		LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
+		randnum=gsl_rng_uniform(runState->GSLrandom);
 		i=(int)(Nlive*randnum);
 		/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
 	drawtwo:
-		do {LALUniformDeviate(&status,&randnum,inputMCMC->randParams); j=(int)(Nlive*randnum);} while(j==i);
-		paraHead=parameter->param;
-		paraA=Live[i]->param; paraB=Live[j]->param;
+		do {randnum=gsl_rng_uniform(runState->GSLrandom); j=(int)(Nlive*randnum);} while(j==i);
+		paraHead=parameter->head;
+		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
 		same=1;
-		while(paraHead)
+		for(;paraHead;paraHead=paraHead->next,paraA=paraA->next,paraB=paraB->next)
 		{
-			paraHead->value+=paraB->value;
-			paraHead->value-=paraA->value;
-			if(paraHead->value!=paraA->value && paraHead->value!=paraB->value && paraA->value!=paraB->value) same=0;
-			paraB=paraB->next; paraA=paraA->next;
-			paraHead=paraHead->next;
+			if(paraHead->vary!=PARAM_LINEAR || paraHead->vary!=PARAM_CIRCULAR) continue;
+			*paraHead->value+=*paraB->value;
+			*paraHead->value-=*paraA->value;
+			if(*paraHead->value!=*paraA->value && *paraHead->value!=*paraB->value && *paraA->value!=*paraB->value) same=0;
 		}
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
-		XLALMCMCCyclicReflectiveBound(parameter);
+		LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
 		return(0);
 	}
+
+LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs){
+/* Apply cyclic and reflective boundaries to parameter to bring it back within
+ the prior */
+	LALVariableItem *paraHead=NULL;
+	REAL8 delta;
+	REAL8 min,max;
+	for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
+	{
+		getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+		if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
+		{
+			delta = max-min;
+			while ( *paraHead->value > max) 
+				*paraHead->value -= delta;
+			while ( *paraHead->value < min) 
+				*paraHead->value += delta;
+		}
+		else if(paraHead->vary==PARAM_LINEAR) /* Use reflective boundaries */
+		{
+			if(max < *paraHead->value) *paraHead->value-=2.0*(*paraHead->value - max);
+			if(min > *paraHead->value) *paraHead->value+=2.0*(min - *paraHead->value);
+		}
+	}	
+	return;
+}

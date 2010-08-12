@@ -484,32 +484,6 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	return;
 }
 
-/* Function to add the min and max values for the prior onto the priorArgs */
-void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
-	char minName[VARNAME_MAX];
-	char maxName[VARNAME_MAX];
-	
-	sprintf(minName,"%s_min",name);
-	sprintf(maxName,"%s_max",name);
-	addVariable(priorArgs,minName,min,type,PARAM_FIXED);
-	addVariable(priorArgs,maxName,max,type,PARAM_FIXED);
-	return;
-}
-
-/* Get the min and max values of the prior from the priorArgs list, given a name */
-void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
-{
-	char minName[VARNAME_MAX];
-	char maxName[VARNAME_MAX];
-	
-	sprintf(minName,"%s_min",name);
-	sprintf(maxName,"%s_max",name);
-	min=getVariable(priorArgs,minName);
-	max=getVariable(priorArgs,maxName);
-	return;
-	
-}
-
 void initialiseProposal(LALInferenceRunState *runState)
 /* sets up the parameters to be varied, and the extent of the proposal
    distributions from a proposal distribution file */
