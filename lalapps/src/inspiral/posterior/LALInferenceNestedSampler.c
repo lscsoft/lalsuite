@@ -28,7 +28,104 @@ REAL8 sample_logt(int Nlive){
 	return(log(t));
 }
 
-/* UpdateProposalDistribution
+/* Calculate shortest angular distance between a1 and a2 */
+REAL8 ang_dist(REAL8 a1, REAL8 a2){
+	double raw = (a2>a1 ? a2-a1 : a1-a2);
+	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
+}
+
+/* Calculate the variance of a modulo-2pi distribution */
+REAL8 ang_var(LALVariables **list,const char *pname, int N){
+	int i=0;
+	REAL8 ang_mean=0.0;
+	REAL8 var=0.0;
+	REAL8 ms,mc;
+	/* Calc mean */
+	for(i=0,ms=0.0,mc=0.0;i<N;i++) {
+		ms+=sin(*(REAL8 *)getVariable(list[i],pname));
+		mc+=cos(*(REAL8 *)getVariable(list[i],pname));
+	}
+	ms/=N; mc/=N;
+	ang_mean=atan2(ms,mc);
+	ang_mean = ang_mean<0? 2.0*LAL_PI + ang_mean : ang_mean;
+	/* calc variance */
+	for(i=0;i<N;i++) var+=ang_dist(*(REAL8 *)getVariable(list[i],pname),ang_mean)*ang_dist(*(REAL8 *)getVariable(list[i],pname),ang_mean);
+	return(var/(REAL8)N);
+}
+
+/* estimateCovarianceMatrix reads the list of live points,
+ and works out the covariance matrix of the varying parameters
+ with varyType==PARAM_LINEAR */
+void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
+{
+	UINT4 i,j,k;
+	UINT4 ND=0;
+	LALVariableItem *item,*k_item,*j_item;
+	
+	/* Find the number of dimensions which vary in the covariance matrix */
+	for(item=Live[0]->head;item!=NULL;item=item->next)
+		if(item->vary==PARAM_LINEAR || item->vary==PARAM_CIRCULAR) ND++;
+	
+	/* Set up matrix if necessary */
+	if(cvm==NULL)
+		if(NULL==(cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}
+	else {
+		if(cvm->size1!=cvm->size2 || cvm->size1!=ND)
+		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in calcCVM\n");
+			exit(1);
+		}
+	}
+	/* clear the matrix */
+	for(i=0;i<cvm->size1;i++) for(j=0;j<cvm->size2;j++) gsl_matrix_set(cvm,i,j,0.0);
+
+	/* Find the means */
+	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	for(i=0;i<ND;i++) means[i]=0.0;
+	for(i=0;i<N;i++){
+		for(item=Live[i]->head;item;item=item->next) {
+			if(item->varyType==PARAM_LINEAR || item->vary==PARAM_CIRCULAR ) {
+				if (item->type==REAL4_t) means[j]+=*(REAL4 *)item->value;
+				if (item->type==REAL8_t) means[j]+=*(REAL8 *)item->value;
+				j++;
+			}
+		}
+	}
+	for(j=0;j<ND;j++) means[j]/=(REAL8)Nlive;
+	
+	/* Find the (co)-variances */
+	for(i=0;i<Nlive;i++){
+		i_item = j_item = item = Live[i]->head;
+		for( j_item=item,j=0; j_item; j_item=j_item->next ){
+			if(j_item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR ) continue; /* Skip params that we don't vary */
+			for( k_item=item,k=0; k<=j; k_item=k_item->next ){
+				if(k_item->vary!=PARAM_LINEAR || k_item->vary!=PARAM_CIRCULAR) continue;
+				/* Only set elements for non-circular parameters */
+				if(k_item->vary==PARAM_LINEAR && j_item->vary==PARAM_LINEAR)
+					gsl_matrix_set(cvm,j,k,gsl_matrix_get(cvm,j,k) +
+							   (*(REAL8 *)k_item->value - means[k])*
+							   (*(REAL8 *)j_item->value - means[j]));
+				k++;
+			}
+			j++;
+		}
+	}
+
+	/* Normalise */
+	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(cvm,i,j,gsl_matrix_get(cvm,i,j)/((REAL8) Nlive));
+	free(means);
+	/* Fill in variances for circular parameters */
+	for(item=Live[0]->head,j=0;j<ND;j++,item=item->next) {
+		if(item->varyType==PARAM_CIRCULAR) {
+			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
+			gsl_matrix_set(cvm,j,j,ang_var(Live,item->name,Nlive));
+			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
+		}
+	}
+	
+	/* the other half */
+	for(i=0;i<ND;i++) for(j=0;j<i;j++) gsl_matrix_set(cvm,j,i,gsl_matrix_get(cvm,i,j));
+	return;
+}
 
 
 /* NestedSamplingAlgorithm implements the nested sampling algorithm,
@@ -50,6 +147,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 logZ,logZnew,logLmax=-DBL_MAX,logLtmp;
 	LALVariables *temp;
 	FILE *fp=NULL;
+	gsl_matrix *cvm=NULL;
 
 	/* Operate on parallel runs if requested */
 	if(checkVariable(runState->algorithmParams,"Nruns"))
@@ -90,6 +188,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
 
+	calcCVM(cvm,runState->livePoints,Nlive);
+	
 	/* Iterate until termination condition is met */
 	do {
 		/* Find minimum likelihood sample to replace */
@@ -142,6 +242,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
+		/* Update the covariance matrix */
+		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
 	}
 	while(iter<Nlive || logadd(logZ,logLmax-((double iter)/(double)Nlive))-logZ > TOLERANCE)
 
@@ -211,3 +313,52 @@ NestedSamplingOneStep(LALInferenceRunState runState)
 	setVariable(runState->algorithmParams,"accept_rate",(REAL8)Naccepted/(REAL8)mcmc_iter);
 	return;
 }
+
+
+void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
+{
+	return;	
+}
+
+void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter)
+{
+	return;
+}
+
+void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
+									   LALVariables *parameter)
+	{
+		static LALStatus status;
+		LALMCMCParameter **Live=inputMCMC->Live;
+		int i=0,j=0,dim=0,same=1;
+		REAL4 randnum;
+		int Nlive = (int)inputMCMC->Nlive;
+		LALMCMCParam *paraHead=NULL;
+		LALMCMCParam *paraA=NULL;
+		LALMCMCParam *paraB=NULL;
+		
+		dim = parameter->dimension;
+		if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
+		/* Select two other samples A and B*/
+		LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
+		i=(int)(Nlive*randnum);
+		/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
+	drawtwo:
+		do {LALUniformDeviate(&status,&randnum,inputMCMC->randParams); j=(int)(Nlive*randnum);} while(j==i);
+		paraHead=parameter->param;
+		paraA=Live[i]->param; paraB=Live[j]->param;
+		/* Add the vector B-A */
+		same=1;
+		while(paraHead)
+		{
+			paraHead->value+=paraB->value;
+			paraHead->value-=paraA->value;
+			if(paraHead->value!=paraA->value && paraHead->value!=paraB->value && paraA->value!=paraB->value) same=0;
+			paraB=paraB->next; paraA=paraA->next;
+			paraHead=paraHead->next;
+		}
+		if(same==1) goto drawtwo;
+		/* Bring the sample back into bounds */
+		XLALMCMCCyclicReflectiveBound(parameter);
+		return(0);
+	}
