@@ -78,7 +78,7 @@ struct tagLALIFOData;
 
 /*Data storage type definitions*/
 
-typedef enum tagVariableType {
+typedef enum {
   INT4_t, 
   INT8_t, 
   REAL4_t, 
