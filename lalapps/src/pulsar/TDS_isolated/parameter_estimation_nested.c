@@ -423,21 +423,6 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 	}
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(runState->GSLrandom, randomseed);
-	
-	/* Get chunk min and chunk max */
-	ppt=getProcParamVal(commandLine,"--chunk-min");
-	INT4 chunkMin;
-	if(ppt) chunkMin=atoi(ppt->value);
-		else chunkMin=5;
-	addVariable(runState->algorithmParams,"chunk-min",chunkMin,INT4_t,PARAM_FIXED);
-	
-	ppt=getProcParamVal(commandLine,"--chunk-max");
-	INT4 chunkMax;
-	if(ppt) chunkMax=atoi(ppt-value);
-		else chunkMax=30;
-	addVariable(runState->algorithmParams,"chunk-max",chunkMax,INT4_t,PARAM_FIXED);
-	
-	if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax = %i\n",chunkMin,chunkMax);
 
 	return;
 }
@@ -448,6 +433,8 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	ProcessParamsTable *ppt;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	
+  INT4 chunkMin, chunkMax;
+  
 	ppt=getProcParamVal(commandLine,"--psi-bins");
 	INT4 psiBins;
 	if(ppt) psiBins=atoi(ppt->value);
@@ -462,6 +449,18 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 
 	if(verbose) fprintf(stdout,"psi-bins = %i, time-bins = %i\n",psiBins,timeBins);
 
+  /* Get chunk min and chunk max */
+  ppt=getProcParamVal(commandLine,"--chunk-min");
+  if(ppt) chunkMin=atoi(ppt->value);
+  else chunkMin=5;
+    
+  ppt=getProcParamVal(commandLine,"--chunk-max");
+  if(ppt) chunkMax=atoi(ppt-value);
+  else chunkMax=30; 
+  
+  if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax =%i\n", chunkMin,
+    chunkMax);
+  
 	LALIFOData *data=runState->data;
 
 	gsl_matrix *LUfplus=NULL;
@@ -473,7 +472,6 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	while(data){
 		REAL8Vector *sumData=NULL;
     UINT4Vector *chunkLength=NULL;
-    INT4 chunkMax;
     
     t0=XLALGPSGetREAL8(&data->dataTimes->data[0]);
 		detAndSource.pDetector=data->detector;
@@ -484,9 +482,11 @@ void setupLookupTables(LALInferenceRunState runState, LALSource *source){
 	
     addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t,PARAM_FIXED);
     addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t,PARAM_FIXED);
-              
+
+    addVariable(data->dataParams,"chunk-min",chunkMin,INT4_t,PARAM_FIXED);
+    addVariable(data->dataParams,"chunk-max",chunkMax,INT4_t,PARAM_FIXED);
+
     /* get chunk lengths of data */
-    chunkMax = *(INT4*)getVariable(runState->algorithmParams, "chunkMax");
     chunkLength = get_chunk_lengths( data, chunkMax );
     addVariable(data->dataParams, "chunkLength", chunkLength, UINT4Vector_t,
       PARAM_FIXED);
@@ -757,7 +757,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 REAL8 pulsar_log_likelihood( LALVariables *vars, 
   LALIFOData *data, LALTemplateFunction *get_pulsar_model ){
   INT4 i=0, j=0, count=0, k=0, cl=0;
-  INT4 length=0, chunkMin;
+  INT4 length=0, chunkMin, chunkMax;
   REAL8 chunkLength=0.;
 
   REAL8 tstart=0., T=0.;
@@ -770,7 +770,7 @@ REAL8 pulsar_log_likelihood( LALVariables *vars,
   REAL8 chiSquare=0.;
   COMPLEX16 B, M;
 
-  REAL8 exclamation[data.chunkMax+1]; /* all factorials up to chunkMax */
+  REAL8 *exclamation=NULL; /* all factorials up to chunkMax */
   REAL8 logOf2=log(2.);
 
   REAL8 loglike=0.; /* the log likelihood */
@@ -784,7 +784,10 @@ REAL8 pulsar_log_likelihood( LALVariables *vars,
 
   sumData = *(REAL8Vector*)getVariable(data->dataParams, "sumData");
   chunkLengths = *(UINT4Vector*)getVariable(data->dataParams, "chunkLengths");
-  chunkMin = *(INT4*)getVariable(data->algorithmParams, "chunkMin");
+  chunkMin = *(INT4*)getVariable(data->dataParams, "chunkMin");
+  chunkMax = *(INT4*)getVariable(data->dataParams, "chunkMax");
+  
+  exclamation = calloc(chunkMax+1, sizeof(REAL8));
   
   /* copy model parameters to data parameters */
   copyVariables(data->modelParams, vars);
@@ -1027,7 +1030,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
 
       /* add interptime to the time */
       DTplus = DT + interptime;
-      bary.tgps = XLALGPSAdd(bary.tgps, interptime);
+      bary.tgps = XLALGPSAdd(&bary.tgps, interptime);
 
       /* No point in updating the positions as difference will be tiny */
       LAL_CALL( LALBarycenterEarth(&status, &earth2, &bary.tgps, edat),
@@ -1074,10 +1077,10 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   REAL8 plus, cross;
 
   REAL8 Xplus, Xcross;
-  REAL8 Xpcosphi_2, Xccosphi_2, Xpsinphi_2, Xcsinphi_2;
-  REAL8 sinphi, cosphi;
+  REAL8 Xpcosphi, Xccosphi, Xpsinphi, Xcsinphi;
+  REAL4 sinphi, cosphi;
   
-  gsl_matrix LU_Fplus, LU_Fcross
+  gsl_matrix LU_Fplus, LU_Fcross;
   
   length = data->dataTimes.length;
   
@@ -1114,11 +1117,11 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
     /* set the psi bin for the lookup table */
     psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
 
-    tstart = XLALGPSGetREAL8( data->dataTimes->data[0] ); /*time of first B_k*/
+    tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
   
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/
-    T = fmod(XLALGPSGetREAL8(data->dataTimes->data[i]) - tstart,
+    T = fmod(XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
       LAL_DAYSID_SI);
     timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
 
