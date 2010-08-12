@@ -120,6 +120,7 @@ src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_power
 src/power/sense_compare
+src/pulsar/CombSearch/lalapps_CombSearch
 src/pulsar/FDS_binary/lalapps_CalculateSensitivity
 src/pulsar/FDS_binary/lalapps_ComputeFStatisticBinary
 src/pulsar/FDS_binary/lalapps_ComputeUL
