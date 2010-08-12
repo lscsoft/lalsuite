@@ -259,7 +259,7 @@ int main(int argc,char *argv[])
     return 1;
   }
 
-  FILE *fpTransientStats;
+  FILE *fpTransientStats = NULL;
   /* ----- prepare stats output ----- */
   if ( uvar.outputStats )
     {
@@ -292,7 +292,7 @@ int main(int argc,char *argv[])
         return 1;
       }
 
-      /* free memory */
+      /* free atoms */
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
       /* add info on current transient-CW candidate */
@@ -340,6 +340,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->help = 0;
   uvar->outputStats = NULL;
 
+  uvar->Alpha = -1;	/* Alpha < 0 indicates "allsky" */
+  uvar->Delta = 0;
+
   uvar->phi0 = 0;
   uvar->psi = 0;
 
@@ -361,6 +364,11 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* register all our user-variables */
   XLALregBOOLUserStruct ( help, 		'h',     UVAR_HELP, "Print this message");
+
+  /* signal Doppler parameters */
+  XLALregREALUserStruct ( Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default: allsky]");
+  XLALregREALUserStruct ( Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default: allsky]");
+
   /* signal amplitude parameters */
   XLALregREALUserStruct ( h0,			's', UVAR_OPTIONAL, "Overall GW amplitude h0, in natural units of sqrt{Sn}");
   XLALregREALUserStruct ( h0Band,	 	 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
@@ -422,12 +430,17 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
 
+  /* skypos */
+  cfg->skypos.longitude = uvar->Alpha;	/* Alpha < 0 indicates 'allsky' */
+  cfg->skypos.latitude  = uvar->Delta;
+  cfg->skypos.system = COORDINATESYSTEM_EQUATORIAL;
+
+  /* amplitude */
   if ( XLALUserVarWasSet ( &uvar->SNR ) && ( XLALUserVarWasSet ( &uvar->h0 ) || XLALUserVarWasSet (&uvar->h0Band) ) )
     {
       LogPrintf (LOG_CRITICAL, "%s: specify only one of either {--h0,--h0Band} or --SNR\n", fn);
       XLAL_ERROR ( fn, XLAL_EINVAL );
     }
-
   cfg->AmpRange.h0Nat = uvar->h0;
   cfg->AmpRange.h0NatBand = uvar->h0Band;
   cfg->AmpRange.SNR = uvar->SNR;
@@ -502,17 +515,18 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   if ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) == NULL ) {
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
+  multiTS->length = 1;
   if ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) == NULL ) {
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
-  multiTS->length = 1;
   if ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) == NULL ) {
     XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSteps );
   }
+  multiTS->data[0]->deltaT = uvar->TAtom;
   UINT4 i;
   for ( i=0; i < numSteps; i ++ )
     {
-      UINT4 ti = uvar->dataStartGPS + i * uvar->dataDuration;
+      UINT4 ti = uvar->dataStartGPS + i * uvar->TAtom;
       multiTS->data[0]->data[i].gpsSeconds = ti;
       multiTS->data[0]->data[i].gpsNanoSeconds = 0;
     }
@@ -530,7 +544,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
 
   /* ---------- initialize transient window ranges, for injection ... ---------- */
-  transientWindowRange_t InjectRange;
+  transientWindowRange_t InjectRange = empty_transientWindowRange;
   if ( !XLALUserVarWasSet ( &uvar->injectWindow_type ) || !strcmp ( uvar->injectWindow_type, "none") )
     InjectRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
   else if ( !strcmp ( uvar->injectWindow_type, "rect" ) )
@@ -763,6 +777,7 @@ XLALGenerateMultiFstatAtomVector ( const MultiLIGOTimeGPSVector *multiTS,	/**< i
     XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n", fn, sizeof(*multiAtoms) );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
+  multiAtoms->length = numDet;
   if ( ( multiAtoms->data = XLALCalloc ( numDet, sizeof(*multiAtoms->data) ) ) == NULL ) {
     XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numDet, sizeof(*multiAtoms->data) );
     XLALFree ( multiAtoms );
