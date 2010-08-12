@@ -34,6 +34,7 @@ RCSID(  "$Id$");
 RandomParams  *randParams=NULL;
 INT4          randnStartPad = 0;  /* injections always at the same time if zero*/
 INT4          ascii2xml = 0;
+INT4          xml_status;
 
 /* --- Main program ------------------------------------------------------- */
 int
@@ -49,7 +50,7 @@ main (INT4 argc, CHAR **argv )
   UserParametersIn       userParam;
 
   /* --- signal related --- */
-  REAL4Vector            signal;
+  REAL4Vector            signalvec;
   static RandomInspiralSignalIn randIn;
 
   /* --- template bank related --- */
@@ -97,7 +98,7 @@ main (INT4 argc, CHAR **argv )
   templateBank.snglInspiralTable = NULL;
   memset( &templateBank, 0, sizeof( MetadataTable ) );
   memset( &randIn, 0, sizeof( RandomInspiralSignalIn ) );
-  memset( &signal, 0, sizeof( REAL4Vector ) );
+  memset( &signalvec, 0, sizeof( REAL4Vector ) );
   memset( &mybank, 0, sizeof( Mybank ) );
   memset( &insptmplt, 0, sizeof( InspiralTemplate ) );
   memset( &coarseBankIn, 0, sizeof( InspiralCoarseBankIn ) );
@@ -146,21 +147,21 @@ main (INT4 argc, CHAR **argv )
   /* --- Allocate memory -------------------------------------------------- */
   /* --- First, estimate the size of the signal --- */
   LAL_CALL(BankEfficiencyGetMaximumSize(&status,
-      randIn, coarseBankIn, userParam, &(signal.length)),
+      randIn, coarseBankIn, userParam, &(signalvec.length)),
       &status);
 
   /* --- Set size of the other vectors --- */
-  randIn.psd.length     = signal.length/2 + 1;
-  correlation.length    = signal.length;
+  randIn.psd.length     = signalvec.length/2 + 1;
+  correlation.length    = signalvec.length;
   /* --- Allocate memory for some vectors --- */
-  signal.data      = (REAL4*)LALCalloc(1, sizeof(REAL4) * signal.length);
+  signalvec.data      = (REAL4*)LALCalloc(1, sizeof(REAL4) * signalvec.length);
   correlation.data = (REAL4*)LALCalloc(1, sizeof(REAL4) * correlation.length);
   randIn.psd.data  = (REAL8*)LALCalloc(1, sizeof(REAL8) * randIn.psd.length);
   /* --- Allocate memory for BCV filtering only --- */
   if (userParam.template == BCV)
   {
   	INT4 n;
-  	n = signal.length;
+  	n = signalvec.length;
     bankefficiencyBCV.FilterBCV1.length = n;
     bankefficiencyBCV.FilterBCV2.length = n;
     bankefficiencyBCV.FilterBCV1.data = (REAL4*)LALCalloc(1, sizeof(REAL4) * n);
@@ -190,8 +191,8 @@ main (INT4 argc, CHAR **argv )
   }
 
   /* --- Estimate the fft's plans ----------------------------------------- */
-  LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
-  LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
+  LALCreateForwardRealFFTPlan(&status, &fwdp, signalvec.length, 0);
+  LALCreateReverseRealFFTPlan(&status, &revp, signalvec.length, 0);
 
   /* --- The overlap structure -------------------------------------------- */
   overlapin.nBegin      = 0;
@@ -206,11 +207,11 @@ main (INT4 argc, CHAR **argv )
   if ((userParam.template == BCV) )
   {
     LAL_CALL( BankEfficiencyCreatePowerVector(&status,
-       &(bankefficiencyBCV.powerVector), randIn, signal.length),  &status);
+       &(bankefficiencyBCV.powerVector), randIn, signalvec.length),  &status);
 
     BankEfficiencyCreateBCVMomentVector(
         &(bankefficiencyBCV.moments), &coarseBankIn.shf,randIn.param.tSampling,
-        randIn.param.fLower, signal.length);
+        randIn.param.fLower, signalvec.length);
   }
 
   /* ------------------------------------------------------------------------ */
@@ -229,17 +230,17 @@ main (INT4 argc, CHAR **argv )
     /* --- initialisation for each simulation --- */
     BankEfficiencyInitOverlapOutputIn(&overlapOutputBestTemplate);
 
-    /* --- set the fcutoff (signal,overlap) --- */
+    /* --- set the fcutoff (signalvec,overlap) --- */
     randIn.param.fCutoff = userParam.signalfFinal;
     randIn.param.inclination = 0.;
     randIn.param.distance = 1.;
 
     /* --- generate the signal waveform --- */
     LAL_CALL(BankEfficiencyGenerateInputData(&status,
-        &signal, &randIn, userParam), &status);
+        &signalvec, &randIn, userParam), &status);
 
     /* --- populate the main structure of the overlap ---*/
-    overlapin.signal = signal;
+    overlapin.signal = signalvec;
 
     /*  --- populate the insptmplt with the signal parameter --- */
     insptmplt = randIn.param; /* set the sampling and other common parameters */
@@ -551,7 +552,7 @@ main (INT4 argc, CHAR **argv )
   LALFree(randIn.psd.data);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
 
-  LALFree(signal.data);
+  LALFree(signalvec.data);
   LALFree(correlation.data);
 
   LALDestroyRealFFTPlan(&status,&fwdp);
@@ -672,7 +673,7 @@ void BankEfficiencyPrintResults(
   RandomInspiralSignalIn   randIn,
   BankEfficiencySimulation simulation)
 {
-  FILE *fs;
+  (void)simulation;
   fprintf(stdout,
   "%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %d\n",
       result.mass1_trigger, result.mass2_trigger,
@@ -1610,27 +1611,36 @@ void BankEfficiencyPrintResultsXml(
 {
   LALStatus             status = blank_status;
   MetadataTable         templateBank;
-  CHAR                  ifo[3];               /* two character ifo code       */
+  CHAR                  ifo[3];           /* two character ifo code */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS           gpsStartTime    = { 0, 0 }; /* input data GPS start time*/
-  LIGOTimeGPS           gpsEndTime  = { 0, 0 };     /* input data GPS end time*/
+  /* GPS times do not appear to have been implemeted - the only place they
+     were used was in the broken snprintf statement. Commenting out to 
+     stop unused variable warnings */
+/*  LIGOTimeGPS        gpsStartTime = { 0, 0 };*//* input data GPS start time*/
+/*  LIGOTimeGPS        gpsEndTime  = { 0, 0 };*//* input data GPS end time*/
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
+  snprintf( fname, sizeof(fname), 
+           BANKEFFICIENCY_XMLRESULTS );
+  /* Original code for the above snprintf statement should have been as below,
+     but it looks like the gps times were never implemented - you just end
+     up with "BankEfficiency-Reults.xmlsimulation00"            
   snprintf( fname, sizeof(fname),
-           BANKEFFICIENCY_XMLRESULTS ,
+           "%s%s%d%d", BANKEFFICIENCY_XMLRESULTS,
            "simulation",
            gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  */
 
   if (trigger.ntrial == 1)
   {
-    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
 
@@ -1674,8 +1684,7 @@ void BankEfficiencyPrintResultsXml(
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* finally write sngl inspiral table column's names */
-
-    PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
+    xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp->fp);
   }
   else
   {
@@ -1717,7 +1726,7 @@ void BankEfficiencyPrintResultsXml(
   /* --- if we reached the last simulations, we close the file --- */
   if (trigger.ntrial == (UINT4)userParam.ntrials)
   {
-    PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
+    xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp->fp);
     PRINT_LIGOLW_XML_FOOTER(xmlStream.fp->fp);
     XLALFileClose(xmlStream.fp);
     xmlStream.fp = NULL;
@@ -1763,8 +1772,8 @@ BankEfficiencyPrintProtoXml(
   */
   strcat(fname, ".xml");
 
-  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
   memset( ifo, 0, sizeof(ifo) );
   memcpy( ifo, "MC", sizeof(ifo) - 1 );
 
@@ -2033,7 +2042,7 @@ void BankEfficiencyCreatePsd(
 
 void BankEfficiencyGenerateInputData(
   LALStatus               *status,
-  REAL4Vector             *signal,
+  REAL4Vector             *signalvec,
   RandomInspiralSignalIn  *randIn,
   UserParametersIn         userParam)
 {
@@ -2048,7 +2057,7 @@ void BankEfficiencyGenerateInputData(
   if (randnStartPad==1)
   {
     randIn->param.nStartPad = (int)( (float)rand() /
-        (float)RAND_MAX*signal->length/2);
+        (float)RAND_MAX*signalvec->length/2);
   }
 
   trial = 0 ;
@@ -2127,7 +2136,7 @@ void BankEfficiencyGenerateInputData(
           }
         }
       }
-      LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+      LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
       CHECKSTATUSPTR(status);
     }
     else /* EOB , T1 and so on*/
@@ -2162,7 +2171,7 @@ void BankEfficiencyGenerateInputData(
         randIn->param.mass1 = 11; /*dummy but valid values overwritten later*/
         randIn->param.mass1 = 11;
 
-        LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+        LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
         CHECKSTATUSPTR(status);
         randIn->param.massChoice = temp;
       }
@@ -2203,7 +2212,7 @@ void BankEfficiencyGenerateInputData(
       }
 
       /*Here, we  randomize the masses*/
-      LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+      LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
       CHECKSTATUSPTR(status);
     }
   }
@@ -2216,7 +2225,7 @@ void BankEfficiencyGenerateInputData(
   if (randIn->type == 1)
   {
     randIn->param.massChoice = m1Andm2;
-    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+    LALRandomInspiralSignal(status->statusPtr, signalvec, randIn);
     CHECKSTATUSPTR(status);
   }
 
@@ -2224,7 +2233,7 @@ void BankEfficiencyGenerateInputData(
   if (vrbflg)
   {
   BankEfficiencyPrintMessage(" ... done\n");
-  BankEfficiencySaveVector(BANKEFFICIENCY_ASCIISIGNAL, *signal,
+  BankEfficiencySaveVector(BANKEFFICIENCY_ASCIISIGNAL, *signalvec,
      randIn->param.tSampling);
   }
 
@@ -2405,16 +2414,17 @@ void BankEfficiencyBankPrintXML(
   CHAR                  ifo[3];         /* two character ifo code       */
   LIGOLwXMLStream       xmlStream;
   CHAR                  fname[256];
-  LIGOTimeGPS gpsStartTime  = { 0, 0 }; /* input data GPS start time    */
-  LIGOTimeGPS gpsEndTime    = { 0, 0 }; /* input data GPS end time      */
+  /* gps times do not appear to be implemented */
+/* LIGOTimeGPS gpsStartTime  = { 0, 0 };*/ /* input data GPS start time */
+/* LIGOTimeGPS gpsEndTime    = { 0, 0 };*/ /* input data GPS end time   */
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR  ifoName[3][LIGOMETA_IFO_MAX];
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
 
-  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
-  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+  strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX );
+  strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
   memset( ifo, 0, sizeof(ifo) );
   memset( comment, 0, sizeof( comment ) );
   memset( &proctable, 0, sizeof( proctable ) );
@@ -2423,9 +2433,16 @@ void BankEfficiencyBankPrintXML(
   
 
   /* --- first we create the filename --- */
-  snprintf( fname, sizeof(fname), BANKEFFICIENCY_XMLBANK ,
-           ifo, gpsStartTime.gpsSeconds,
+  snprintf( fname, sizeof(fname), 
+           BANKEFFICIENCY_XMLBANK );
+  /* Original code for the above snprintf statement should have been as below,
+     but it looks like the gps times were never implemented 
+  snprintf( fname, sizeof(fname),
+           "%s%s%d%d", BANKEFFICIENCY_XMLBANK,
+           ifo,
+           gpsStartTime.gpsSeconds,
            gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  */
 
   /* -- we start to fill the xml file here --- */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
@@ -2486,20 +2503,20 @@ void BankEfficiencyCreateListFromTmplt(
   LALStatus         *status,
   InspiralTemplate  *params,
   Mybank             mybank,
-  INT4               index)
+  INT4               bank_index)
 {
   INITSTATUS(status, "BankEfficiencyCreateListFromTmplt", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
   /* Right now only t03 and psi0psi3 bank exists so we
      only need those information in principle and nothing else*/
-  params->mass1  = mybank.mass1[index];
-  params->mass2  = mybank.mass2[index];
-  params->fFinal = mybank.fFinal[index];
-  params->t0     = mybank.tau0[index];
-  params->t3     = mybank.tau3[index];
-  params->psi0   = mybank.psi0[index];
-  params->psi3   = mybank.psi3[index];
-  params->eccentricity  = mybank.eccentricity[index];
+  params->mass1  = mybank.mass1[bank_index];
+  params->mass2  = mybank.mass2[bank_index];
+  params->fFinal = mybank.fFinal[bank_index];
+  params->t0     = mybank.tau0[bank_index];
+  params->t3     = mybank.tau3[bank_index];
+  params->psi0   = mybank.psi0[bank_index];
+  params->psi3   = mybank.psi3[bank_index];
+  params->eccentricity  = mybank.eccentricity[bank_index];
 
   DETATCHSTATUSPTR(status);
 }
@@ -3088,7 +3105,7 @@ void BankEfficiencyParseParameters(
     }
     else if (!strcmp(argv[i], "--user-tag")) {
       BankEfficiencyParseGetString(argv, &i);
-      sprintf(userParam->tag,argv[i]);
+      sprintf(userParam->tag, "%s", argv[i]);
     }
     /* no user parameters requeste, only flags below*/
     else if (!strcmp(argv[i],"--ambiguity")) {
@@ -3135,7 +3152,7 @@ void BankEfficiencyParseParameters(
     else if (!strcmp(argv[i],"--compute-moments")) {
       coarseBankIn->computeMoments = 1;
     }
-    else if (!strcmp(argv[i],"--xml-output")) {
+    else if (!strcmp(argv[i],"--print-xml")) {
       userParam->printResultXml = 1;
     }
     else if (!strcmp(argv[i],"--print-prototype")) {
@@ -3153,90 +3170,90 @@ void BankEfficiencyParseParameters(
 
 void BankEfficiencyParseGetInt(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   INT4    *data)
 {
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp1;
 
-  tmp1 = argv[*index+1];
+  tmp1 = argv[*bank_index+1];
 
-  if ( argv[*index+1] != NULL )
+  if ( argv[*bank_index+1] != NULL )
   {
-    *data = strtol(argv[*index+1], &tmp  , 10);
+    *data = strtol(argv[*bank_index+1], &tmp  , 10);
     if (*data==0 && tmp1[0] != '0')
     {
       sprintf(msg, "Expect a int after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
-      fprintf(stderr, msg);
+          argv[*bank_index],
+          argv[*bank_index+1]);
+      fprintf(stderr, "%s", msg);
       exit( 1 );
     }
   }
   else
   {
     sprintf(msg, "Expect a int after option %s (got %s)\n ",
-        argv[*index],
-        argv[*index+1]);
-    fprintf(stderr, msg);
+        argv[*bank_index],
+        argv[*bank_index+1]);
+    fprintf(stderr, "%s", msg);
     exit( 1 );
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 void BankEfficiencyParseGetString(
   CHAR    **argv,
-  INT4    *index)
+  INT4    *bank_index)
 {
   CHAR msg[2048];
 
-  if (argv[*index+1]==NULL)
+  if (argv[*bank_index+1]==NULL)
   {
     sprintf(msg, "Expect a string after %s\n ",
-        argv[*index] );
-    fprintf(stderr, msg);
+        argv[*bank_index] );
+    fprintf(stderr, "%s", msg);
     exit( 1 );
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 
 void BankEfficiencyParseGetDouble(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   REAL8   *data)
 {
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp2 ;
-  tmp2 = argv[*index+1];
+  tmp2 = argv[*bank_index+1];
 
-  if (argv[*index+1] != NULL)
+  if (argv[*bank_index+1] != NULL)
   {
-    *data = strtod(argv[*index+1], &tmp  );
+    *data = strtod(argv[*bank_index+1], &tmp  );
     if (*data == 0 && tmp2[0]!='0')
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
-          argv[*index],
-          argv[*index+1]);
-      fprintf(stderr, msg);
+          argv[*bank_index],
+          argv[*bank_index+1]);
+      fprintf(stderr, "%s", msg);
     }
   }
   else
   {
     sprintf(msg, "Expect a float after option %s (got %s)\n ",
-        argv[*index],
-        argv[*index+1]);
-    fprintf(stderr, msg);
+        argv[*bank_index],
+        argv[*bank_index+1]);
+    fprintf(stderr, "%s", msg);
   }
-  *index =*index + 1;
+  *bank_index =*bank_index + 1;
 }
 
 
 void BankEfficiencyParseGetDouble2(
   CHAR    **argv,
-  INT4    *index,
+  INT4    *bank_index,
   REAL8   *data1,
   REAL8   *data2)
 {
@@ -3244,33 +3261,33 @@ void BankEfficiencyParseGetDouble2(
   CHAR msg[2048];
   CHAR *tmp2 , *tmp1;
 
-  tmp1 = argv[*index+1];
-  tmp2=  argv[*index+2];
+  tmp1 = argv[*bank_index+1];
+  tmp2=  argv[*bank_index+2];
 
   *data1 = 0 ;
   *data2 = 0 ;
 
-  if (argv[*index+1]!=NULL && argv[*index+2]!=NULL)
+  if (argv[*bank_index+1]!=NULL && argv[*bank_index+2]!=NULL)
   {
-    *data1 = strtod(argv[*index+1], &tmp  );
-    *data2 = strtod(argv[*index+2], &tmp  );
+    *data1 = strtod(argv[*bank_index+1], &tmp  );
+    *data2 = strtod(argv[*bank_index+2], &tmp  );
     if ((!(*data1) && tmp1[0]!='0')
        ||  (!(*data2) && tmp2[0]!='0'))
     {
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
-          argv[*index],
-          argv[*index+1],argv[*index+2]);
-          fprintf(stderr,msg);
+          argv[*bank_index],
+          argv[*bank_index+1],argv[*bank_index+2]);
+          fprintf(stderr, "%s", msg);
     }
   }
   else
   {
     sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
-        argv[*index],
-        argv[*index+1],argv[*index+2]);
-    fprintf(stderr, msg);
+        argv[*bank_index],
+        argv[*bank_index+1],argv[*bank_index+2]);
+    fprintf(stderr, "%s", msg);
   }
-  *index = *index +2 ;
+  *bank_index = *bank_index +2 ;
 }
 
 
@@ -3371,7 +3388,7 @@ void BankEfficiencyUpdateParams(
       sprintf(msg,
           "--signal-max-total-mass (%f) must be > twice the minimal mass (%f) ",
           userParam->maxTotalMass, randIn->mMin );
-          fprintf(stderr, msg);
+          fprintf(stderr, "%s", msg);
           exit(1);
     }
   }
@@ -3383,7 +3400,7 @@ void BankEfficiencyUpdateParams(
       sprintf(msg,
           "--min-total-mass (%f) must be < twice the maximal mass (%f) ",
           userParam->maxTotalMass , randIn->mMax );
-          fprintf(stderr, msg);
+          fprintf(stderr, "%s", msg);
           exit(1);
       }
     }
@@ -3413,7 +3430,7 @@ void BankEfficiencyUpdateParams(
       "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. "
       "If particular injection is requested,  you must choose either"
       " (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-      fprintf(stderr, msg);
+      fprintf(stderr, "%s", msg);
       exit(1);
     }
   }
@@ -3426,7 +3443,7 @@ void BankEfficiencyUpdateParams(
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. "
      "If particular injection is requested,  you must choose either "
      "(--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     fprintf(stderr, msg);
+     fprintf(stderr, "%s", msg);
      exit(1);
    }
   }
@@ -3442,7 +3459,7 @@ void BankEfficiencyUpdateParams(
          "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error."
          " If particular injection is requested, you must choose"
          " either (--m1,--m2) or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     fprintf(stderr, msg);
+     fprintf(stderr, "%s", msg);
      exit(1);
    }
   }
@@ -3615,10 +3632,14 @@ void BankEfficiencyAscii2Xml(void)
   UINT8  id = 0;
 
   ResultIn trigger;
-
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3,phaseI, ecc, eccI,eccI_fl;
-  REAL4 polarisation,inclination;
-  REAL4 bestEMatch;
+  /* Initialising below variables to 0.0 to stop compilation warnings.
+     Are they actually used!? Someone has commented out the lines where
+     they are read in! */
+  REAL4 tau0 = 0.0, tau3 = 0.0, tau0I = 0.0, tau3I = 0.0;
+  REAL4 psi0 = 0.0, psi3 = 0.0, phaseI = 0.0; 
+  REAL4 ecc = 0.0, eccI = 0.0, eccI_fl = 0.0;
+  REAL4 polarisation = 0.0, inclination = 0.0;
+  REAL4 bestEMatch = 0.0; 
 
   FILE *input1;
   FILE *input2;
@@ -3629,7 +3650,7 @@ void BankEfficiencyAscii2Xml(void)
   SnglInspiralTable     *inputData = NULL;
 
   INT4 numFileTriggers = 0;
-  INT4 nStartPad;
+  INT4 nStartPad = 0; /* Not currently being read in so initialised here */
 
   char sbuf[2048];
   CHAR fname[256]="";
@@ -3660,7 +3681,7 @@ void BankEfficiencyAscii2Xml(void)
     {
       fprintf(stderr,"error while opening input file %s\n", fname);
       fprintf(stderr,"the xml file will not contains parameters information\n");
-      PRINT_LIGOLW_XML_HEADER(output);
+      xml_status = PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
     }
   else
@@ -3685,12 +3706,14 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stderr, "reading triggers from file: %s\n",
           BANKEFFICIENCY_XMLBANK);
+      CHAR *filename = XLALCalloc(strlen(BANKEFFICIENCY_XMLBANK), sizeof(CHAR));
       numFileTriggers = LALSnglInspiralTableFromLIGOLw( &inputData,
-          BANKEFFICIENCY_XMLBANK , 0, -1 );
+          filename, 0, -1 );
+      XLALFree(filename);
 
 
       fprintf(stderr," done %d\n", numFileTriggers);
-      myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+      xml_status = myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
       while(inputData)
       {
       /*      id = inputData->event_id->id;*/
@@ -3757,11 +3780,11 @@ void BankEfficiencyAscii2Xml(void)
       fprintf(output, "\n");
 
     }
-       myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
+       xml_status = myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
 
     }
 
-  PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
+  xml_status = PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
@@ -3779,9 +3802,11 @@ void BankEfficiencyAscii2Xml(void)
     &trigger.alphaF, &trigger.bin, &nStartPad, &trigger.nfast, &nfast_max,
     &bestEMatch);*/
 
-    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", &trigger.mass1_trigger, &trigger.mass2_trigger,
+    sscanf(sbuf,"%f %f %f %f %f %f %f %f %f %f %f %d", 
+      &trigger.mass1_trigger, &trigger.mass2_trigger,
       &tau0, &tau3, &tau0I, &tau3I,
-      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, &trigger.fend_inject,
+      &trigger.mass1_inject, &trigger.mass2_inject, &trigger.fend_trigger, 
+      &trigger.fend_inject,
       &trigger.rho_final, &trigger.bin );
 
 
@@ -3800,7 +3825,7 @@ void BankEfficiencyAscii2Xml(void)
 
 
   fprintf(stderr,"read %d lines...done\n", countline);
-  PRINT_LIGOLW_XML_TABLE_FOOTER(output);
+  xml_status = PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
   fclose(output);
@@ -4039,27 +4064,27 @@ void BankEfficiencyInspiralCreateFineBank(
 REAL4 BankEfficiencyComputeEMatch(
   RandomInspiralSignalIn *randIn,
   Mybank                   mybank,
-  INT4                     index)
+  INT4                     bank_index)
 {
   REAL8 dt0;
   REAL8 dt3;
   REAL8 g00, g01, g11;
   REAL8 match = 0;
 
-  BankEfficiencyValidity(index, 0,mybank.size,
+  BankEfficiencyValidity(bank_index, 0,mybank.size,
       "Requested template index larger than banksize!");
 
 
 
-  dt0 = -(randIn->param.t0 - mybank.tau0[index]);
-  dt3 = -(randIn->param.t3 - mybank.tau3[index]);
+  dt0 = -(randIn->param.t0 - mybank.tau0[bank_index]);
+  dt3 = -(randIn->param.t3 - mybank.tau3[bank_index]);
 
-  g00 = mybank.gamma3[index] - mybank.gamma1[index] *
-      mybank.gamma1[index] / mybank.gamma0[index];
-  g01 = mybank.gamma4[index] - mybank.gamma1[index] *
-      mybank.gamma2[index] / mybank.gamma0[index];
-  g11 = mybank.gamma5[index] - mybank.gamma2[index] *
-      mybank.gamma2[index] / mybank.gamma0[index];
+  g00 = mybank.gamma3[bank_index] - mybank.gamma1[bank_index] *
+      mybank.gamma1[bank_index] / mybank.gamma0[bank_index];
+  g01 = mybank.gamma4[bank_index] - mybank.gamma1[bank_index] *
+      mybank.gamma2[bank_index] / mybank.gamma0[bank_index];
+  g11 = mybank.gamma5[bank_index] - mybank.gamma2[bank_index] *
+      mybank.gamma2[bank_index] / mybank.gamma0[bank_index];
   /*fprintf(stderr, "dt0=%f dt3=%f g00=%f g01=%f g11=%f\n",dt0,dt3,g00,g11,g01);*/
   match = 1 - (g00*dt0*dt0 + 2*g01*dt0*dt3 + g11*dt3*dt3);
 
@@ -4563,20 +4588,20 @@ void GetClosestValidTemplate(
   )
 {
   REAL4 distance = -1e16;
-  UINT4 index =  0;
+  UINT4 bank_index =  0;
   UINT4 *index_backup;
   REAL4 ematch=-1e16;
 
   if (bank.approximant == BCV)
   {
     UINT4 i = 0;
-    index = 0;
+    bank_index = 0;
     while (i < bank.size)
     {
       if (bank.used[i]==0)
       {
         bank.used[i] = 1;
-        index = i;
+        bank_index = i;
         i = bank.size+1;
       }
       else
@@ -4584,7 +4609,7 @@ void GetClosestValidTemplate(
         i++;
       }
     }
-    *fast_index = index;
+    *fast_index = bank_index;
   }
   else
   {
@@ -4606,15 +4631,15 @@ void GetClosestValidTemplate(
       if ((ematch > distance) && bank.used[i] == 0)
       {
         distance = ematch;
-        index = i;
+        bank_index = i;
       }
     }
 
     for (i=0; i<bank.size; i++)
       bank.used[i] = index_backup[i];
 
-    bank.used[index] = 1;
- *fast_index = index;
+    bank.used[bank_index] = 1;
+ *fast_index = bank_index;
      free(index_backup);
   }
 

@@ -91,7 +91,7 @@ char* HSBOINCEXTRASCRCSID = "$Id$";
 
 typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 
-/** compare strings s1 and s2 up to the length of s1 (w/o the '\0'!!)
+/** compare strings s1 and s2 up to the length of s1 (without the trailing 0!!)
     and set l to the length */
 #define MATCH_START(s1,s2,l) (0 == strncmp(s1,s2,(l=strlen(s1))-1))
 
@@ -618,6 +618,7 @@ static void worker (void) {
   int output_help = 0;         /**< flag: should we write out an additional help string?
 				    describing additional command-line arguments handled
 			            only by this BOINC-wrapper? */
+  int output_version = 0;      /**< flag: version requested? This skips a check for an output file option */
   FILE*fp;                     /**< file pointer to check only if a file can be opened */
   int breakpoint = 0;          /**< stop at breakpoint? (for testing the Windows Runtime Debugger) */
   int crash_fpu = 0;
@@ -880,6 +881,11 @@ static void worker (void) {
       rargv[rarg] = argv[arg];
     }
 
+    else if (0 == strncmp("--version",argv[arg],strlen("--version"))) {
+      output_version = 1;
+      rargv[rarg] = argv[arg];
+    }
+
     /* any other argument - simply pass unchanged */
     else 
       rargv[rarg] = argv[arg];
@@ -889,7 +895,7 @@ static void worker (void) {
   } /* for all command line arguments */
 
   /* sanity check */
-  if (!resultfile[0]) {
+  if (!resultfile[0] && !output_help && !output_version) {
       LogPrintf (LOG_CRITICAL, "ERROR: no result file has been specified\n");
       res = HIERARCHICALSEARCH_EFILE;
   }

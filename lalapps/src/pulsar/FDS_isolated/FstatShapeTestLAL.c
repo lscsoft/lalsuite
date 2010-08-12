@@ -41,7 +41,7 @@
   ./FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > FST.txt
  
   (4)Validation:
-  Generate 10^5 signals of SNR = \sqrt{2F} ranging from sqrt(20) to ~ 30 with 
+  Generate 10^5 signals of \f$SNR = \sqrt{2F}\f$ ranging from sqrt(20) to ~ 30 with 
   a Gaussian stationary noise, run ComputeFStatistic with the threshold on 
   2F being 20.  The code reported 789135 outliers that includes statistical 
   disturbances. The resulting veto statistics by the original FstatShapeTest 
@@ -210,7 +210,7 @@ INT4 main(INT4 argc, CHAR ** argv)
 
   REAL8 probability = 0.0;  /* Confidence level = Chi-Square cumulative probability from 0 to data */
   BOOLEAN rejection = 0;    /* Reject the  hypothesis if 1. */
-  FSTUserInput cla;         /* user input: command line arguments */
+  FSTUserInput cla = {0, NULL, 0, NULL, NULL};         /* user input: command line arguments */
 
   FSTClustInfoPair clustInfoPair;
   FSTFstatPair *FaFbPair;
@@ -976,6 +976,8 @@ ReadData( LALStatus *status,
 
   FILE *fpobsv,*fptest;
 
+  char *str;
+
   INITSTATUS( status, "ReadData", rcsid );
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
@@ -992,8 +994,8 @@ ReadData( LALStatus *status,
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    fgets(buff,sizeof(buff),fpobsv);
-    fgets(buff,sizeof(buff),fptest);
+    str = fgets(buff,sizeof(buff),fpobsv);
+    str = fgets(buff,sizeof(buff),fptest);
   }
 
 

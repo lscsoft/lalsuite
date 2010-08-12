@@ -363,7 +363,7 @@ void shifter(float *data, int length, int shift){
   
   /* allocate memory */
   if (!(temp=(float *)LALMalloc(sizeof(float)*length))){
-    pout("Unable to allocate %d bytes of memory in shifter\n",
+    pout("Unable to allocate %lu bytes of memory in shifter\n",
 	 sizeof(float)*length);
     exit(1);
   }
@@ -661,11 +661,12 @@ int main(int argc,char *argv[]){
       /* if we haven't printed ls of the files, do so now (but just once!)*/
       if (!lsffl){
 	char command[256];
+        int rc;
 	if (saveerrno)
 	  pout("System error when reading Frame data: %s\n", strerror(saveerrno));
 	pout("Following is output of ls -l on Frame file list:\n");
 	sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
-	system(command);
+	rc = system(command);
 	lsffl=1;
       }
 
@@ -679,9 +680,10 @@ int main(int argc,char *argv[]){
 
       if (!verifyframes){
 	char command[256];
+        int rc;
 	pout("Using FrCheck to validate frame data:\n");
 	sprintf(command, "cat %s | xargs --maxlines=1 /home/ballen/projects/LIGO/src/v6r06/Linux-i686/FrCheck -d 1 -i 1>&2", framelist);
-	system(command);
+	rc = system(command);
 	verifyframes=1;
       }
       continue;

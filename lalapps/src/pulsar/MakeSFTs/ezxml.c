@@ -169,15 +169,15 @@ ezxml_t ezxml_get(ezxml_t xml, ...)
 
 /* returns a null terminated array of processing instructions for the given */
 /* target */
-const char **ezxml_pi(ezxml_t xml, const char *target)
+char **ezxml_pi(ezxml_t xml, const char *target)
 {
     ezxml_root_t root = (ezxml_root_t)xml;
     int i = 0;
 
-    if (! root) return (const char **)EZXML_NIL;
+    if (! root) return (char **)EZXML_NIL;
     while (root->xml.parent) root = (ezxml_root_t)root->xml.parent; /* root tag */
     while (root->pi[i] && strcmp(target, root->pi[i][0])) i++; /* find target */
-    return (const char **)((root->pi[i]) ? root->pi[i] + 1 : EZXML_NIL);
+    return (char **)((root->pi[i]) ? root->pi[i] + 1 : EZXML_NIL);
 }
 
 /* set an error string and return root */
@@ -409,7 +409,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
             else *s = '\0'; /* null terminate tag name */
             for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++);
 
-            while (*(n = ++s + strspn(s, EZXML_WS)) && *n != '>') {
+            while ( ++s && *(n = s + strspn(s, EZXML_WS)) && *n != '>') {
 	      if (*(s = n + strcspn(n, EZXML_WS))) *s = '\0'; /* attr name */
                 else { ezxml_err(root, t, "malformed <!ATTLIST"); break; }
 

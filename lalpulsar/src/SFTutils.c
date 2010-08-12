@@ -1009,6 +1009,81 @@ LALGetSFTtimestamps (LALStatus *status,
 } /* LALGetSFTtimestamps() */
 
 
+/** Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
+ * SFT timestamps
+ */
+MultiLIGOTimeGPSVector *
+XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
+{
+  static const char *fn = "XLALExtractMultiTimestampsFromSFTs()";
+
+  UINT4 X, i, numIFOs, numSFTs;
+  MultiLIGOTimeGPSVector *ret = NULL;
+
+  if ( !multiSFTs || multiSFTs->length == 0 ) {
+    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", fn, sizeof(*ret));
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  numIFOs = multiSFTs->length;
+
+  if ( (ret->data = XLALCalloc ( numIFOs, sizeof(ret->data[0]) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", fn, numIFOs, sizeof(ret->data[0]) );
+    XLALFree (ret);
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  ret->length = numIFOs;
+
+  for ( X=0; X < numIFOs; X ++ )
+    {
+      numSFTs = multiSFTs->data[X]->length;
+
+      if ( (ret->data[X] = XLALCreateTimestampVector (numSFTs)) == NULL ) {
+        XLALPrintError ("%s: XLALCreateTimestampVector (%d) failed.\n", fn, numSFTs );
+        XLALDestroyMultiTimestamps ( ret );
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      }
+
+      for ( i=0; i < numSFTs; i ++ ) {
+        ret->data[X]->data[i] = multiSFTs->data[X]->data[i].epoch;
+      }
+
+    } /* for X < numIFOs */
+
+  return ret;
+
+} /* XLALExtractMultiTimestampsFromSFTs() */
+
+
+
+/** Destroy a MultiLIGOTimeGPSVector timestamps vector
+ */
+void
+XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
+{
+  UINT4 numIFOs, X;
+
+  if ( !multiTS )
+    return;
+
+  numIFOs = multiTS->length;
+  for ( X=0; X < numIFOs; X ++ ) {
+    XLALDestroyTimestampVector ( multiTS->data[X] );
+  }
+
+  XLALFree ( multiTS->data );
+  XLALFree ( multiTS );
+
+  return;
+
+} /* XLALDestroyMultiTimestamps() */
+
+
 
 
 /** Extract/construct the unique 2-character "channel prefix" from the given

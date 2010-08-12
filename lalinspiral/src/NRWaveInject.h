@@ -18,7 +18,7 @@
  */
 
 
-/** \defgroup NRWaveInject
+/** \defgroup NRWaveInject Numerical-relativity waveforms
  * \ingroup inject
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
@@ -126,7 +126,7 @@ REAL4TimeSeries *
 XLALCalculateNRStrain(
     REAL4TimeVectorSeries *strain,
     SimInspiralTable      *thisInj,
-    CHAR                  *ifo,
+    const CHAR            *ifo,
     INT4                   sampleRate);
 
 REAL4TimeSeries *
@@ -181,7 +181,7 @@ XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
 	      REAL4   phi ); /**< position - polar angle */
 
 /** channel name for nr data in frame file */
-CHAR* XLALGetNinjaChannelName(CHAR *polarisation, /**< either plus or cross */
+CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */
 			      UINT4 l, /**< azimuthal mode index */
 			      INT4 m );/**< polar mode index */
 

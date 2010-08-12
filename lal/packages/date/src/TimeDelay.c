@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007  Jolien Creighton, and David Chin, and Steven
  * Fairhurst, and Kipp Cannon, and Alexander Dietz, and Drew Keppel
  *
@@ -23,7 +21,6 @@
 /* <lalVerbatim file="TimeDelayCV">
 
 Author: Chin, David <dwchin@umich.edu> +1-734-709-9119, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-$Id$
 
 </lalVerbatim> */
 
@@ -42,9 +39,8 @@ detectors.
 
 \subsubsection*{Description}
 
-The function LALTimeDelayFromEarthCenter() Computes difference in arrival time
-of the same signal at detector and at center of Earth-fixed frame.  Equivalent
-to LALTimeDelay() with detector 1 set to the geocenter.
+The function XLALTimeDelayFromEarthCenter() Computes difference in arrival
+time of the same signal at detector and at center of Earth-fixed frame.
 
 The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
@@ -75,13 +71,10 @@ a GMST which gives us the orientation of the Earth.
 #include <math.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALError.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
-
-NRCSID( TIMEDELAYC, "$Id$" );
 
 /* scalar product of two 3-vectors */
 static double dotprod(const double vec1[3], const double vec2[3])
@@ -100,13 +93,12 @@ XLALArrivalTimeDiff(
 	const LIGOTimeGPS *gpstime
 )
 { /* </lalVerbatim> */
-	static const char func[] = "XLALArrivalTimeDiff";
 	double delta_xyz[3];
 	double ehat_src[3];
 	const double greenwich_hour_angle = XLALGreenwichMeanSiderealTime(gpstime) - source_right_ascension_radians;
 
 	if(XLAL_IS_REAL8_FAIL_NAN(greenwich_hour_angle))
-		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
 	/*
 	 * compute the unit vector pointing from the geocenter to the
@@ -152,29 +144,6 @@ double XLALTimeDelayFromEarthCenter(
 	 */
 
 	return XLALArrivalTimeDiff(detector_earthfixed_xyz_metres, earth_center, source_right_ascension_radians, source_declination_radians, gpstime);
-}
-
-
-/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
-void LALTimeDelayFromEarthCenter(
-	LALStatus *stat,
-	REAL8 *p_time_diff,
-	const DetTimeAndASource *p_det_time_and_source
-)
-{/* </lalVerbatim> */
-	INITSTATUS(stat, "LALTimeDelayFromEarthCenter", TIMEDELAYC);
-	ATTATCHSTATUSPTR(stat);
-	ASSERT(p_time_diff, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-	ASSERT(p_det_time_and_source, stat, TIMEDELAYH_ENUL, TIMEDELAYH_MSGENUL);
-
-	XLALPrintDeprecationWarning("LALTimeDelayFromEarthCenter", "XLALTimeDelayFromEarthCenter");
-
-	*p_time_diff = XLALTimeDelayFromEarthCenter(p_det_time_and_source->p_det_and_time->p_detector->location, p_det_time_and_source->p_source->longitude, p_det_time_and_source->p_source->latitude, p_det_time_and_source->p_det_and_time->p_gps);
-
-	ASSERT(!XLAL_IS_REAL8_FAIL_NAN(*p_time_diff), stat, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
-
-	DETATCHSTATUSPTR(stat);
-	RETURN(stat);
 }
 
 

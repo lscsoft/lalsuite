@@ -680,6 +680,10 @@ XLALAddSnglRingdownToCoinc(
       coincRingdown->snglRingdown[LAL_IFO_L1] = snglRingdown;
       break;
 
+    case 'V':
+      coincRingdown->snglRingdown[LAL_IFO_V1] = snglRingdown;
+      break;
+
     default:
       /* Invalid Detector Site */
       XLALPrintError( "Invalid ifo in input snglInspiral" );

@@ -320,8 +320,10 @@ DestroyStorage (LALStatus *status,
 
   for(i=0;i<=2;i++)
     LALFree(*(store->gaussMask+i));
+#if 0
   /* set the storage structure to 0 */
   memset((void *)store,sizeof(*store),0);
+#endif
   RETURN(status);
 }
 
@@ -598,7 +600,7 @@ ConnectLinePoints(LALStatus *status,
   INT4  curveLength=0; /* the length of the current curve segment */
   REAL4 curvePower=0; /* the total energy of the current curve segment */
   REAL4 *curveDepth=NULL; /*tmp pointer for array of depth values to sum */
-  INT4 maxCurveLen=MAX_CURVE_LENGTH;/* the maximum curve lenght allowed */
+  INT4 maxCurveLen; /* the maximum curve lenght allowed */
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
@@ -609,6 +611,8 @@ ConnectLinePoints(LALStatus *status,
   REAL4 powerHalfContourB; /* The resulting power of half the contour from tfMap*/
   REAL4 *meanProfile=NULL; /* Pointer to array of REAL4s */
   REAL4 mySNR=0; /*current estimate of SNR for particular curve*/
+
+  maxCurveLen=MAX_CURVE_LENGTH;
 
   /* Initialize status structure   */
   INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);

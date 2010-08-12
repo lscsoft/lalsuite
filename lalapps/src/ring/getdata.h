@@ -37,7 +37,7 @@ REAL4TimeSeries * get_simulated_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
+    int          dataType,
     REAL8        sampleRate,
     UINT4        simSeed,
     REAL4        simScale
@@ -47,18 +47,18 @@ REAL4TimeSeries * get_zero_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
+    int          dataType,
     REAL8        sampleRate
     );
 
 
 /* read frame data */
-REAL4TimeSeries * get_frame_data(
+REAL4TimeSeries * ring_get_frame_data(
     const char  *cacheName,
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData
+    int          dataType
     );
 
 /* read double-precision frame data and convert to single-precision data */
@@ -67,9 +67,8 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
     const char  *channelName,
     LIGOTimeGPS *epoch,
     REAL8        duration,
-    int          strainData,
-    REAL8        dblHighPassFreq,
-    REAL8        dblScale
+    int          dataType,
+    REAL8        dblHighPassFreq
     );
 
 /* low-level routine to read single-precision frame data */

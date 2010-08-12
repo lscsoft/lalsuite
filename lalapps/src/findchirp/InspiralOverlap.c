@@ -107,15 +107,16 @@ main (  int argc, char **argv )
    static INT4 i, approx, tmplt;
    static UINT4 psdLength, quietFlag = 0, optFlag=0;
    static REAL8 df, norm;
-   static REAL4Vector signal, correlation;
-/*   void   *noisemodel = LALLIGOIPsd;*/
-   void   *noisemodel = LALVIRGOPsd;
+   static REAL4Vector signalvec, correlation;
+   void (*noisemodel)(LALStatus*, REAL8*, REAL8) = NULL;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
    static REAL8FrequencySeries shf;
    static RealFFTPlan *fwdp=NULL,*revp=NULL;
    static InspiralTemplate tmpltParams, params;
    static InspiralWaveNormaliseIn normin;
+
+   noisemodel = &LALVIRGOPsd;
    
    lalDebugLevel = 1; 
    quietFlag = 0;	
@@ -271,28 +272,28 @@ main (  int argc, char **argv )
 /*---------------------------------------------------------------------------*/
    overlapin.nBegin 	= 0;
    overlapin.nEnd 		= 0;
-   signal.length 		= 0.;
+   signalvec.length 		= 0.;
    params.approximant 	= EOB;  /*just for allocating memory */
-   LAL_CALL(LALInspiralWaveLength (&status, &signal.length, params),&status);
-   if (!quietFlag) fprintf(stdout, "#signal length = %d\n", signal.length);
+   LAL_CALL(LALInspiralWaveLength (&status, &signalvec.length, params),&status);
+   if (!quietFlag) fprintf(stdout, "#signal length = %d\n", signalvec.length);
 
 
-   correlation.length = signal.length;
-   psdLength = signal.length/2 + 1;
-   signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*signal.length);
+   correlation.length = signalvec.length;
+   psdLength = signalvec.length/2 + 1;
+   signalvec.data = (REAL4*) LALMalloc(sizeof(REAL4)*signalvec.length);
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    memset( &(shf), 0, sizeof(REAL8FrequencySeries) );
    shf.f0 = 0;
    LAL_CALL(LALDCreateVector( &status, &(shf.data), psdLength ),&status);
-   shf.deltaF = params.tSampling / signal.length;
-   df = params.tSampling/(float) signal.length;
+   shf.deltaF = params.tSampling / signalvec.length;
+   df = params.tSampling/(float) signalvec.length;
    LAL_CALL(LALNoiseSpectralDensity (&status, shf.data, noisemodel, df),&status);
 
 /* 
  * Estimate the plans 
  */
-   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0),&status);
-   LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0),&status);
+   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signalvec.length, 0),&status);
+   LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signalvec.length, 0),&status);
 /* REPORTSTATUS(&status); */
    
    
@@ -306,15 +307,15 @@ main (  int argc, char **argv )
    if (params.approximant != BCV && params.approximant != TaylorF1 && params.approximant != TaylorF2 )
    {
 	   LAL_CALL(LALInspiralWave(&status, &correlation, &params),&status);
-	   LAL_CALL(LALREAL4VectorFFT(&status, &signal, &correlation, fwdp),&status);
+	   LAL_CALL(LALREAL4VectorFFT(&status, &signalvec, &correlation, fwdp),&status);
    }
    else
    {
-	   LAL_CALL(LALInspiralWave(&status, &signal, &params),&status);
+	   LAL_CALL(LALInspiralWave(&status, &signalvec, &params),&status);
    }
 
    normin.psd = shf.data;
-   normin.df = params.tSampling / (REAL8)signal.length;
+   normin.df = params.tSampling / (REAL8)signalvec.length;
    normin.fCutoff = params.fFinal;
 
   /* normin.fLower = 0;*/
@@ -322,7 +323,7 @@ main (  int argc, char **argv )
    normin.samplingRate = params.tSampling;
 
 
-   LAL_CALL(LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin),&status);
+   LAL_CALL(LALInspiralWaveNormaliseLSO(&status, &signalvec, &norm, &normin),&status);
    
 
    tmpltParams.approximant = tmplt;
@@ -338,7 +339,7 @@ main (  int argc, char **argv )
 
    overlapin.param = tmpltParams;
    overlapin.psd = *shf.data;
-   overlapin.signal = signal;
+   overlapin.signal = signalvec;
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
    for (i=0; (UINT4) i<correlation.length; i++) correlation.data[i] = 0.;
@@ -379,7 +380,7 @@ main (  int argc, char **argv )
    /* destroy the plans, correlation and signal */
 
       LAL_CALL(LALDDestroyVector( &status, &(shf.data) ),&status);
-      if (signal.data != NULL) LAL_CALL(LALFree(signal.data),&status);
+      if (signalvec.data != NULL) LAL_CALL(LALFree(signalvec.data),&status);
       if (correlation.data != NULL) LAL_CALL(LALFree(correlation.data),&status);
       LALDestroyRealFFTPlan(&status,&fwdp);   
       LALDestroyRealFFTPlan(&status,&revp);
@@ -390,12 +391,12 @@ main (  int argc, char **argv )
 
 }
 
-void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0) 
+void printf_timeseries (INT4 n, REAL4 *signalvec, double delta, double t0) 
 {
   int i=0;
 
   do 
-     printf ("%e %e\n", i*delta+t0, *(signal+i));
+     printf ("%e %e\n", i*delta+t0, *(signalvec+i));
   while (n-++i); 
   printf("&\n");
 }

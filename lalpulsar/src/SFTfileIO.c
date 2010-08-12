@@ -126,6 +126,7 @@ static LALStringVector *find_files (const CHAR *fpattern);
 
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
+static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
 
 static BOOLEAN is_valid_detector (const char *channel);
 static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 );
@@ -1340,7 +1341,7 @@ LALWriteSFT2file (LALStatus *status,
   ASSERT ( sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-
+ 
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
@@ -3314,6 +3315,8 @@ is_valid_detector (const char *channel)
       "Z7",	  /* LISA pseudo TDI A */
       "Z8",	  /* LISA pseudo TDI E */
       "Z9",	  /* LISA pseudo TDI T */
+      "X1",       /* RXTE PCA */
+      "X2",       /* RXTE ASM */
       NULL
     };
 
@@ -3463,8 +3466,10 @@ find_files (const CHAR *globdir)
 	numFiles = newNumFiles;
       }
 
-    }
-  else
+    } /* if multi-pattern */
+
+  else if (is_pattern(globdir))
+
     { /* globdir is a single glob-style pattern */
 
       /* First we separate the globdir into directory-path and file-pattern */
@@ -3584,12 +3589,30 @@ find_files (const CHAR *globdir)
       LALFree (dname);
       LALFree (fpattern);
 
-    } /* if no multifile */
+    } /* if is_pattern */
+
+  else
+
+    { /* globdir is a single simple filename */
+      /* add it to the list of filenames as it is */
+
+      numFiles++;
+      if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
+	return (NULL);
+      }
+      namelen = strlen(globdir) + 1;
+      if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
+	LALFree (filelist);
+	return (NULL);
+      }
+      strcpy(filelist[numFiles-1], globdir );
+    }
 
   /* ok, did we find anything? */
   if (numFiles == 0)
     return (NULL);
 
+  /* make a LALStringVector from the list of filenames */
   if ( (ret = LALCalloc (1, sizeof (LALStringVector) )) == NULL)
     {
       for (j=0; j<numFiles; j++)
@@ -3597,12 +3620,12 @@ find_files (const CHAR *globdir)
       LALFree (filelist);
       return (NULL);
     }
-
   ret->length = numFiles;
   ret->data = filelist;
 
   /* sort this alphabetically (in-place) */
-  XLALSortStringVector (ret);
+  if(numFiles>1)
+    XLALSortStringVector (ret);
 
   return (ret);
 } /* find_files() */
@@ -3789,6 +3812,13 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
   return -1;
 
 } /* read_SFTversion_from_fp() */
+
+ /* filename string is a glob-style pattern, i.e. it contains '*' or '?' or '[' */
+static BOOLEAN is_pattern(const char*c) {
+  while((*c != '\0') && (*c != '*') && (*c != '?') && (*c != '['))
+    c++;
+  return(*c != '\0');
+}
 
 
 /*======================================================================*/

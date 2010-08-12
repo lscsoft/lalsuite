@@ -164,7 +164,7 @@ void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
 
 /**
  * Using the waveform metric components, translate an "e-thinca" treshold
- * into a \Delta t error interval.
+ * into a \f$\Delta t\f$ error interval.
  */
 
 

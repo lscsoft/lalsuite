@@ -179,11 +179,11 @@ int SetGlobalVariables(CLargs CLA,GlobVar *GV,binarysource sourceparams)
   GV->mismatch=CLA.mismatch;
   GV->mismatchedflag=CLA.mismatchedflag;
   GV->exactflag=CLA.exactflag;
-  sprintf(GV->ifo,CLA.ifo);
-  sprintf(GV->ephemdir,CLA.ephemdir);
-  sprintf(GV->yr,CLA.yr);
-  sprintf(GV->meshdir,CLA.meshdir);
-  sprintf(GV->source,CLA.source);
+  sprintf(GV->ifo,"%s",CLA.ifo);
+  sprintf(GV->ephemdir,"%s",CLA.ephemdir);
+  sprintf(GV->yr,"%s",CLA.yr);
+  sprintf(GV->meshdir,"%s",CLA.meshdir);
+  sprintf(GV->source,"%s",CLA.source);
 
   /* allocate memory for the number of bands */
   if (sourceparams.freq.f_err[0]!=0.0) {
@@ -1077,7 +1077,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   BMFheader.metric_XY=XYMetric->element->data[1];
   BMFheader.metric_YY=XYMetric->element->data[3];
   sprintf(BMFheader.version,"v1");
-  sprintf(BMFheader.det,GV->ifo);
+  sprintf(BMFheader.det,"%s",GV->ifo);
   BMFheader.RA=GV->RA;
   BMFheader.dec=GV->dec;
 
@@ -1144,11 +1144,11 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
       switch (c) {
       case 'S':
 	temp=optarg;
-	sprintf(CLA->sourcefile,temp);
+	sprintf(CLA->sourcefile,"%s",temp);
 	break;
       case 's':
 	temp=optarg;
-	sprintf(CLA->source,temp);
+	sprintf(CLA->source,"%s",temp);
 	break;
       case 'T':
 	CLA->tstart.gpsSeconds=atoi(optarg);
@@ -1159,7 +1159,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
 	break;
       case 'D':
 	temp=optarg;
-	sprintf(CLA->datadir,temp);
+	sprintf(CLA->datadir,"%s",temp);
 	CLA->datadirflag=1;
 	break;
       case 'm':
@@ -1170,19 +1170,19 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
 	break;
       case 'E':
 	temp=optarg;
-	sprintf(CLA->ephemdir,temp);
+	sprintf(CLA->ephemdir,"%s",temp);
 	break;
       case 'y':
 	temp=optarg;
-	sprintf(CLA->yr,temp);
+	sprintf(CLA->yr,"%s",temp);
 	break;
       case 'I':
 	temp=optarg;
-	sprintf(CLA->ifo,temp);
+	sprintf(CLA->ifo,"%s",temp);
 	break;
       case 'o':
 	temp=optarg;
-	sprintf(CLA->meshdir,temp);
+	sprintf(CLA->meshdir,"%s",temp);
 	break;
       case 'X':
 	CLA->mismatchedflag=1;

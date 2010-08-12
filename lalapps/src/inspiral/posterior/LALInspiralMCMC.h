@@ -75,7 +75,7 @@ NRCSID( LALINSPIRALMCMCH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 tho
 #define LALINSPIRALH_MSGEORDER        "unknown order specified"
 #define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid model"
 #define MAXDET 5			/* Maximum number of data streams/detectors to accept */
-/** ---------------------------------------------------------------------  
+/* ---------------------------------------------------------------------  
 </lalErrTable> */
 
 
@@ -286,7 +286,8 @@ tagLALMCMCInput
   UINT4   numPoints; /* numPoints */
   UINT4   stride;   /* ovrlap */
   Approximant approximant; /* Approximant to use for this model */
-
+  INT4	  ampOrder; /* Amplitude order to use with Higher Harmonic waveforms */
+	                /* Setting = 0 means Newtonian amplitude */
   MCMCmode mode;
   MCMCLikelihoodFunction *funcLikelihood; /* engine for likelihood */
   MCMCInitFunction       *funcInit;       /* engine for init function */

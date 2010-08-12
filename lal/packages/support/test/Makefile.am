@@ -2,6 +2,7 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 check_PROGRAMS = \
 	ConfigFileTest \
+	ConfigFileTest2 \
 	LALMath3DPlotTest \
 	LALMathNDPlotTest \
 	PrintFTSeriesTest \
@@ -14,6 +15,7 @@ check_PROGRAMS = \
 
 noinst_DATA = \
 	ConfigFileSample.cfg \
+	ConfigFileSample2.cfg \
 	SegmentsInput1.data \
 	StreamInput.data \
 	StreamSeriesInput.data
@@ -22,6 +24,11 @@ EXTRA_DIST = $(DATA)
 
 ConfigFileTest_SOURCES = ConfigFileTest.c
 ConfigFileTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+ConfigFileTest2_SOURCES = ConfigFileTest2.c
+ConfigFileTest2_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -74,6 +81,7 @@ TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 TESTS = \
 	ConfigFileTest \
+	ConfigFileTest2 \
 	LALMath3DPlotTest \
 	LALMathNDPlotTest \
 	PrintFTSeriesTest \
@@ -91,7 +99,8 @@ MOSTLYCLEANFILES = \
 	.dvi-dep \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \
-	SegmentsOutput1.data
+	SegmentsOutput1.data \
+	ConfigFile.cfg
 
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

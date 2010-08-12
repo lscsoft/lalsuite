@@ -1496,7 +1496,7 @@ int ReadSFTData(void)
       errorcode=fread((void*)(SFTData[filenum]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
 	perror(GV.filelist[filenum]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
+	fprintf(stderr, "The SFT data was truncated.  Only read %zu not %d complex floats\n", errorcode, ndeltaf);
 	return 6;
       }
       SFTData[filenum]->fft->epoch=timestamps[filenum];
@@ -2870,6 +2870,7 @@ int ReadBinaryTemplateBank(void)
   char filename[256];
   UINT4 i;
   REAL8 temp1,temp2;
+  int rc;
 
   
   strcpy(filename,uvar_binarytemplatefile);
@@ -2997,7 +2998,7 @@ int ReadBinaryTemplateBank(void)
   /* Now read in all templates into memory */
   i=0;
   while (i<BinaryBank->BMFheader.Nfilters) {
-    fscanf(BTBfp,"%le%le%d%d%le%le\n",
+    rc = fscanf(BTBfp,"%le%le%d%d%le%le\n",
 		 &(BinaryBank->BTB[i]).ProjSMaxis,
 		 &(BinaryBank->BTB[i]).Period,
 		 &(BinaryBank->BTB[i]).TperiSSB.gpsSeconds,

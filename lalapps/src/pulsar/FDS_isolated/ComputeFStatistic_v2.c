@@ -245,7 +245,7 @@ typedef struct {
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
-  REAL8 timerCount;		/**< output progress-meter every <timerCount> templates */
+  REAL8 timerCount;		/**< output progress-meter every timerCount templates */
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
@@ -730,7 +730,7 @@ int main(int argc,char *argv[])
     fprintf(fpFstatHist, "%s", GV.logstring);
 
     for (i = 0; i < Fstat_histogram->size; ++i)
-      fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+      fprintf(fpFstatHist, "%0.3f %0.3f %i\n",
 	      uvar.FstatHistBin * i,
 	      uvar.FstatHistBin * (i + 1),
 	      gsl_vector_int_get(Fstat_histogram, i));
@@ -748,11 +748,14 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
   XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
+  /* free memory allocated for binary parameters */
+  if (orbitalParams) LALFree(orbitalParams);
+  
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
     gsl_vector_int_free(Fstat_histogram);
-
+  
   /* close log-file */
   if (fpLogPrintf) {
     fclose(fpLogPrintf);
@@ -895,7 +898,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "The orbital argument of periapse in radians");
   LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "The orbital eccentricity");
 
-  LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Specify sky-region by polygon (or use 'allsky')");
+  LALregSTRINGUserStruct(status,skyRegion, 	'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'");
   LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files"); 
   LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
@@ -1460,7 +1463,7 @@ WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *log_string
   }
 
   fprintf (fplog, "%%%% LOG-FILE for ComputeFStatistic run\n\n");
-  fprintf (fplog, log_string);
+  fprintf (fplog, "%s", log_string);
   fclose (fplog);
 
 

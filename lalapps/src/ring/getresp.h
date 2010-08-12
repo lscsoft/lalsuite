@@ -39,7 +39,7 @@ COMPLEX8FrequencySeries * get_response(
     REAL8        dataDuration,
     REAL8        dataSampleRate,
     REAL4        responseScale,
-    int          impulseResponse,
+    int          strainData,
     const char  *channel_name
     );
 

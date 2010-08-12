@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.1.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -14,7 +14,6 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
-AC_CONFIG_FILES([src/git_version],[chmod +x src/git_version])
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
@@ -33,24 +32,41 @@ AC_CANONICAL_HOST
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBCURRENT],[1])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # default install path
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalstochastic])
 
+# nightly build
+LALSUITE_ENABLE_NIGHTLY
+
 # put version/configure info in config header
+lalstochastic_version_major=`echo "$VERSION" | cut -d. -f1`
+lalstochastic_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalstochastic_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalstochastic_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalstochastic_version_micro" && lalstochastic_version_micro=0
+test -z "$lalstochastic_version_devel" && lalstochastic_version_devel=0
 lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MAJOR],[$lalstochastic_version_major],
+                   [LALStochastic Version Major Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MINOR],[$lalstochastic_version_minor],
+                   [LALStochastic Version Minor Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MICRO],[$lalstochastic_version_micro],
+                   [LALStochastic Version Micro Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_DEVEL],[$lalstochastic_version_devel],
+                   [LALStochastic Version Devel Number])
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALStochastic Configure Arguments])
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_DATE],["$lalstochastic_configure_date"],
                    [LALStochastic Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -87,6 +103,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for header files
 AC_HEADER_STDC
 
@@ -102,10 +121,10 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -125,12 +144,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Stochastic has now been successfully configured
+        LALStochastic has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Stochastic
-        and run 'make install' to install LAL Stochastic
+        Now run 'make' to build LALStochastic
+        and run 'make install' to install LALStochastic
 
 ================================================================="

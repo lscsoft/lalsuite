@@ -43,8 +43,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -82,6 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
+#include <lal/LALFrameL.h>
+
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
@@ -346,7 +346,6 @@ int main(int argc, char *argv[])
 
     /* structures for preconditioning */
     ResampleTSParams resampleParams;
-    LALWindowParams wpars;
     AverageSpectrumParams avgSpecParams;
 
     /* findchirp data structures */
@@ -371,9 +370,11 @@ int main(int argc, char *argv[])
     SearchSummvarsTable *inputFiles = NULL;
     SearchSummaryTable *searchSummList = NULL;
 
+#if 0
     /* template bank veto structures */
     FindChirpSubBank *subBankHead = NULL;
     FindChirpSubBank *subBankCurrent = NULL;
+#endif
 
     /* inspiral events */
     INT4 numEvents = 0;
@@ -519,7 +520,7 @@ int main(int argc, char *argv[])
     searchsumm.searchSummaryTable->nnodes = 1;
 
     /* fill the ifos field of the search summary table */
-    snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo);
+    snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
 
     /* make sure all the output table pointers are null */
     savedEvents.snglInspiralTable = NULL;
@@ -528,7 +529,7 @@ int main(int argc, char *argv[])
 
     /* create the standard candle and database table */
     memset(&candle, 0, sizeof(FindChirpStandardCandle));
-    strncpy(candle.ifo, ifo, 2 * sizeof(CHAR));
+    strncpy(candle.ifo, ifo, 2);
     candle.tmplt.mass1 = CANDLE_MASS1;
     candle.tmplt.mass2 = CANDLE_MASS2;
     candle.rhosq = CANDLE_RHOSQ;
@@ -700,7 +701,7 @@ int main(int argc, char *argv[])
                                          frStream), &status);
 
         /* copy the data paramaters from the h(t) channel to input data channel */
-        snprintf(chan.name, LALNameLength * sizeof(CHAR), "%s",
+        snprintf(chan.name, LALNameLength, "%s",
                  strainChan.name);
         chan.epoch = strainChan.epoch;
         chan.deltaT = strainChan.deltaT;
@@ -715,7 +716,7 @@ int main(int argc, char *argv[])
     /* store the input sample rate */
     this_search_summvar = searchsummvars.searchSummvarsTable =
         (SearchSummvarsTable *) LALCalloc(1, sizeof(SearchSummvarsTable));
-    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX,
              "raw data sample rate");
     this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -795,8 +796,7 @@ int main(int argc, char *argv[])
         }
 
         /* re-copy the data paramaters from the h(t) channel to input data channel */
-        snprintf(chan.name, LALNameLength * sizeof(CHAR), "%s",
-                 strainChan.name);
+        snprintf(chan.name, LALNameLength, "%s", strainChan.name);
         chan.epoch = strainChan.epoch;
         chan.deltaT = strainChan.deltaT;
         chan.f0 = strainChan.f0;
@@ -897,8 +897,7 @@ int main(int argc, char *argv[])
         /* create the lal calibration frame cache */
         if (globCalData) {
             calGlobPattern = (CHAR *) LALCalloc(calGlobLen, sizeof(CHAR));
-            snprintf(calGlobPattern, calGlobLen * sizeof(CHAR),
-                     "*CAL*%s*.gwf", ifo);
+            snprintf(calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo);
             if (vrbflg)
                 fprintf(stdout, "globbing for %s calibration frame files "
                         "in current directory\n", calGlobPattern);
@@ -923,10 +922,10 @@ int main(int argc, char *argv[])
                                                   sizeof
                                                   (SearchSummvarsTable));
             snprintf(this_search_summvar->name,
-                     LIGOMETA_NAME_MAX * sizeof(CHAR),
+                     LIGOMETA_NAME_MAX,
                      "calibration frame %d", i);
             snprintf(this_search_summvar->string,
-                     LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+                     LIGOMETA_STRING_MAX, "%s",
                      calCache->frameFiles[i].url);
         }
 
@@ -1018,7 +1017,7 @@ int main(int argc, char *argv[])
     /* store the filter data sample rate */
     this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc(1, sizeof(SearchSummvarsTable));
-    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+    snprintf(this_search_summvar->name, LIGOMETA_NAME_MAX,
              "filter data sample rate");
     this_search_summvar->value = chan.deltaT;
 
@@ -1034,10 +1033,10 @@ int main(int argc, char *argv[])
 #ifdef LALAPPS_CONDOR
         condor_compress_ckpt = 1;
         if (ckptPath[0]) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
+            snprintf(fname, FILENAME_MAX, "%s/%s.ckpt",
                      ckptPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt",
+            snprintf(fname, FILENAME_MAX, "%s.ckpt",
                      fileName);
         }
         if (vrbflg)
@@ -1220,8 +1219,6 @@ int main(int argc, char *argv[])
     /* use the fft plan created by findchirp */
     avgSpecParams.plan = fcDataParams->fwdPlan;
 
-    wpars.type = Hann;
-    wpars.length = numPoints;
     if (badMeanPsd) {
         avgSpecParams.overlap = 0;
         if (vrbflg)
@@ -1232,8 +1229,7 @@ int main(int argc, char *argv[])
             fprintf(stdout, " with overlap %d\n", avgSpecParams.overlap);
     }
 
-    LAL_CALL(LALCreateREAL4Window(&status, &(avgSpecParams.window),
-                                  &wpars), &status);
+    avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
     LAL_CALL(LALREAL4AverageSpectrum
              (&status, &spec, &chan, &avgSpecParams), &status);
     XLALDestroyREAL4Window(avgSpecParams.window);
@@ -1617,15 +1613,15 @@ int main(int argc, char *argv[])
             for (currentTrigger = inspiralEventList; currentTrigger && !analyseTag; currentTrigger = currentTrigger->next) {
                 if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
                     /* Also need to check for time here... */
-                    INT8 trigEndTimeNS;
+                    INT8 trig_end_time_ns;
 
-                    trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                    trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                    if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                    if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                     {
                         analyseTag = 1;
                         if (vrbflg)
-                            fprintf(stdout, "Found trigger (%f,%f) @ t=%ld\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trigEndTimeNS);
+                            fprintf(stdout, "Found trigger (%f,%f) @ t=%" LAL_INT8_FORMAT "\n", fcFilterInput->fcTmplt->tmplt.mass1, fcFilterInput->fcTmplt->tmplt.mass2, trig_end_time_ns);
                     }
                 }
             }
@@ -1636,7 +1632,7 @@ int main(int argc, char *argv[])
             if (analyseTag) {
                 if (vrbflg) {
                     fprintf(stdout,
-                            "filtering segment %d/%d [%ld-%ld] "
+                            "filtering segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] "
                             "against template %d/%d (%e,%e)\n",
                             fcSegVec->data[i].number,
                             fcSegVec->length, fcSegStartTimeNS,
@@ -1761,15 +1757,15 @@ int main(int argc, char *argv[])
                 /* Now go through the list of triggers again and fill in chisq values */
                 for (currentTrigger = inspiralEventList; currentTrigger; currentTrigger = currentTrigger->next) {
                     if ((currentTrigger->mass1 == bankCurrent->mass1) && (currentTrigger->mass2 == bankCurrent->mass2)) {
-                        INT8 trigEndTimeNS;
+                        INT8 trig_end_time_ns;
 
-                        trigEndTimeNS = XLALGPSToINT8NS(&(currentTrigger->end_time));
+                        trig_end_time_ns = XLALGPSToINT8NS(&(currentTrigger->end_time));
 
-                        if (trigEndTimeNS >= (fcSegStartTimeNS+chunkOffset) && trigEndTimeNS < (fcSegEndTimeNS-chunkOffset))
+                        if (trig_end_time_ns >= (fcSegStartTimeNS+chunkOffset) && trig_end_time_ns < (fcSegEndTimeNS-chunkOffset))
                         {
                             INT4                       timeIndex;
 
-                            timeIndex = 1 + (INT4) ((trigEndTimeNS - fcSegStartTimeNS) / (1e9 * deltaT));
+                            timeIndex = 1 + (INT4) ((trig_end_time_ns - fcSegStartTimeNS) / (1e9 * deltaT));
 
                             /* we store chisq distributed with 2p - 2 degrees of freedom */
                             /* in the database. params->chisqVec->data = r^2 = chisq / p */
@@ -1779,7 +1775,7 @@ int main(int argc, char *argv[])
                                 fcFilterParams->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
                             
                             if (vrbflg)
-                                fprintf(stdout,"Event at %ld has chisq=%f\n",trigEndTimeNS,currentTrigger->chisq);
+                                fprintf(stdout,"Event at %" LAL_INT8_FORMAT " has chisq=%f\n",trig_end_time_ns,currentTrigger->chisq);
 
                             currentTrigger->chisq_dof = numChisqBins;
                         }
@@ -1874,10 +1870,10 @@ int main(int argc, char *argv[])
     if (writeRawData || writeFilterData || writeResponse || writeSpectrum
         || writeRhosq || writeChisq || writeCData) {
         if (outputPath[0]) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
+            snprintf(fname, FILENAME_MAX, "%s/%s.gwf",
                      outputPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf",
+            snprintf(fname, FILENAME_MAX, "%s.gwf",
                      fileName);
         }
         if (vrbflg)
@@ -1919,18 +1915,18 @@ int main(int argc, char *argv[])
     memset(&results, 0, sizeof(LIGOLwXMLStream));
     if (outputPath[0]) {
         if (outCompress) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+            snprintf(fname, FILENAME_MAX, "%s/%s.xml.gz",
                      outputPath, fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+            snprintf(fname, FILENAME_MAX, "%s/%s.xml",
                      outputPath, fileName);
         }
     } else {
         if (outCompress) {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz",
+            snprintf(fname, FILENAME_MAX, "%s.xml.gz",
                      fileName);
         } else {
-            snprintf(fname, FILENAME_MAX * sizeof(CHAR), "%s.xml",
+            snprintf(fname, FILENAME_MAX, "%s.xml",
                      fileName);
         }
     }
@@ -3176,9 +3172,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 break;
 
             case 'N':
-                if (snprintf
-                    (ckptPath, FILENAME_MAX * sizeof(CHAR), "%s",
-                     optarg) < 0) {
+                if (snprintf(ckptPath, FILENAME_MAX, "%s", optarg) < 0) {
                     fprintf(stderr,
                             "invalid argument to --%s\n"
                             "local path %s too long: string truncated\n",
@@ -3188,8 +3182,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                 ADD_PROCESS_PARAM("string", "%s", optarg);
 
             case 'O':
-                if (snprintf(outputPath, FILENAME_MAX * sizeof(CHAR),
-                             "%s", optarg) < 0) {
+                if (snprintf(outputPath, FILENAME_MAX, "%s", optarg) < 0) {
                     fprintf(stderr, "invalid argument to --%s\n"
                             "output path %s too long: string truncated\n",
                             long_options[option_index].name, optarg);
@@ -3669,14 +3662,14 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
     if (trigStartTimeNS) {
         if (trigStartTimeNS < gpsStartTimeNS) {
             fprintf(stderr,
-                    "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld",
+                    "trigStartTimeNS = %" LAL_INT8_FORMAT "\nis less than gpsStartTimeNS = %" LAL_INT8_FORMAT,
                     trigStartTimeNS, gpsStartTimeNS);
         }
     }
     if (trigEndTimeNS) {
         if (trigEndTimeNS > gpsEndTimeNS) {
             fprintf(stderr,
-                    "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld",
+                    "trigEndTimeNS = %" LAL_INT8_FORMAT "\nis greater than gpsEndTimeNS = %" LAL_INT8_FORMAT,
                     trigEndTimeNS, gpsEndTimeNS);
         }
     }
@@ -3756,12 +3749,12 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
         if (inputDataLengthNS != gpsChanIntervalNS) {
             fprintf(stderr,
                     "length of input data and data chunk do not match\n");
-            fprintf(stderr, "start time: %ld, end time %ld\n",
-                    gpsStartTimeNS / 1000000000LL,
-                    gpsEndTimeNS / 1000000000LL);
+            fprintf(stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
+                    (INT8)(gpsStartTimeNS / 1000000000LL),
+                    (INT8)(gpsEndTimeNS / 1000000000LL));
             fprintf(stderr,
-                    "gps channel time interval: %ld ns\n"
-                    "computed input data length: %ld ns\n",
+                    "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
+                    "computed input data length: %" LAL_INT8_FORMAT " ns\n",
                     gpsChanIntervalNS, inputDataLengthNS);
             exit(1);
         }

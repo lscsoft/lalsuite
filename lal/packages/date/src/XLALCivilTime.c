@@ -76,9 +76,6 @@
 
 #include "XLALLeapSeconds.h" /* contains the leap second table */
 
-#include <lal/LALRCSID.h>
-NRCSID (XLALCIVILTIMEC,"$Id$");
-
 /* in case this is not prototyped ... */
 struct tm * gmtime_r(const time_t *, struct tm *);
 
@@ -120,14 +117,13 @@ static int delta_tai_utc( INT4 gpssec )
 /** Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 {
-  static const char func[] = "XLALLeapSeconds";
   int leap;
 
   if ( gpssec < leaps[0].gpssec )
   {
     XLALPrintError( "XLAL Error - Don't know leap seconds before GPS time %d\n",
         leaps[0].gpssec );
-    XLAL_ERROR( func, XLAL_EDOM );
+    XLAL_ERROR( __func__, XLAL_EDOM );
   }
 
   /* scan leap second table and locate the appropriate interval */
@@ -142,13 +138,12 @@ int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 /** Returns the leap seconds GPS-UTC at a given GPS second. */
 int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 {
-  static const char func[] = "XLALGPSLeapSeconds";
   int leapTAI;
   int leapGPS;
 
   leapTAI = XLALLeapSeconds ( gpssec );
   if ( leapTAI < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
 
   leapGPS = leapTAI - 19;	/* subtract 19 seconds to get leap-seconds wrt to GPS epoch */
 
@@ -159,18 +154,17 @@ int XLALGPSLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 /** Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time.*/ )
 {
-  static const char func[] = "XLALLeapSecondsUTC";
   REAL8 jd;
   int leap;
 
   jd = XLALJulianDay( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
 
   if ( jd < leaps[0].jd )
   {
     XLALPrintError( "XLAL Error - Don't know leap seconds before Julian Day %9.1f\n", leaps[0].jd );
-    XLAL_ERROR( func, XLAL_EDOM );
+    XLAL_ERROR( __func__, XLAL_EDOM );
   }
 
   /* scan leap second table and locate the appropriate interval */
@@ -186,7 +180,6 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
  * specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char func[] = "XLALUTCToGPS";
   time_t unixsec;
   INT4 gpssec;
   int leapsec;
@@ -194,7 +187,7 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   /* compute leap seconds */
   leapsec = XLALLeapSecondsUTC( utc );
   if ( leapsec < 0 )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
   /* compute unix epoch time: seconds since 1970 JAN 1 0h UTC */
   /* POSIX:2001 definition of seconds since the (UNIX) Epoch */
   unixsec = utc->tm_sec + utc->tm_min*60 + utc->tm_hour*3600
@@ -218,13 +211,12 @@ struct tm * XLALGPSToUTC(
     INT4 gpssec /**< [In] Seconds since the GPS epoch. */
     )
 {
-  static const char func[] = "XLALGPSToUTC";
   time_t unixsec;
   int leapsec;
   int delta;
   leapsec = XLALLeapSeconds( gpssec );
   if ( leapsec < 0 )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( __func__, XLAL_EFUNC );
   unixsec  = gpssec - leapsec + XLAL_EPOCH_GPS_TAI_UTC; /* get rid of leap seconds */
   unixsec += XLAL_EPOCH_UNIX_GPS; /* change to unix epoch */
   memset( utc, 0, sizeof( *utc ) ); /* blank out utc structure */
@@ -239,7 +231,7 @@ struct tm * XLALGPSToUTC(
 /** Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure.
  *
- * See \cite{esaa:1992} and \cite{green:1985} for details.  First, some
+ * See \ref esaa1992 and \ref green1985 for details.  First, some
  * definitions:
  *
  * Mean Julian Year = 365.25 days
@@ -257,13 +249,15 @@ struct tm * XLALGPSToUTC(
  * Julian Epoch = J2000.0 + (JD - 2451545) / 365.25, i.e., number of years
  * elapsed since J2000.0.
  *
- * One algorithm for computing the Julian Day is from \cite{vfp:1979} based
- * on a formula in \cite{esaa:1992} where the algorithm is due to
- * \cite{fvf:1968} and ``compactified'' by P. M. Muller and R. N. Wimberly.
+ * One algorithm for computing the Julian Day is from \ref vfp1979 based
+ * on a formula in \ref esaa1992 where the algorithm is due to
+ * \ref fvf1968 and ``compactified'' by P. M. Muller and R. N. Wimberly.
  * The formula is
  *
+ * \f[
  * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 - 3 \times ((y + (m -
  * 9)/7)/100 + 1)/4 + 275 \times m/9 + d + 1721029
+ * \f]
  *
  * where jd is the Julian day number, y is the year, m is the month (1-12),
  * and d is the day (1-31).  This formula is valid only for JD > 0, i.e.,
@@ -272,34 +266,19 @@ struct tm * XLALGPSToUTC(
  * A shorter formula from the same reference, but which only works for
  * dates since 1900 March is:
  *
+ * \f[
  * jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 + 275 \times m/9 + d +
  * 1721014
+ * \f]
  *
  * We will use this shorter formula since there is unlikely to be any
  * analyzable data from before 1900 March.
  *
- *
- * References:
- *
- * \bibitem{esaa:1992} \textit{Explanatory Supplement to the Astronomical
- * Almanac}, P.~K. Seidelmann, \textit{ed.} (University Science Books, Mill
- * Valley, 1992)
- *
- * \bibitem{green:1985} R.~M. Green, \textit{Spherical Astronomy}
- * (Cambridge University Press, Cambridge, 1985)
- *
- * \bibitem{vfp:1979} T.~C. Van Flandern, and K.~F. Pulkkinen,
- * \textit{Astrophysical Journal Supplement Series}, \textbf{41}, 391-411,
- * 1979 Nov.
- *
- * \bibitem{fvf:1968} Fliegen, and Van~Flandern, \textit{Communications of
- * the ACM}, \textbf{11}, 657, 1968
  */
 
 
 REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char func[] = "XLALJulianDay";
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
   int year, month, day, sec;
   REAL8 jd;
@@ -308,7 +287,7 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
   if ( utc->tm_year <= 0 )
   {
     XLALPrintError( "XLAL Error - Year must be after 1900\n" );
-    XLAL_ERROR_REAL8( func, XLAL_EDOM );
+    XLAL_ERROR_REAL8( __func__, XLAL_EDOM );
   }
 
   year  = utc->tm_year + 1900;
@@ -337,12 +316,11 @@ REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down ti
  */
 INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
-  static const char func[] = "XLALModifiedJulianDay";
   REAL8 jd;
   INT4 mjd;
   jd = XLALJulianDay( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
   mjd = floor( jd - XLAL_MJD_REF );
   return mjd;
 }

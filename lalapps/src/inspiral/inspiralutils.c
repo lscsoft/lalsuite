@@ -41,8 +41,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -76,6 +74,7 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/LALFrameL.h>
 
 #include "inspiral.h"
 
@@ -99,11 +98,11 @@ REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     pow( LAL_MTSUN_SI / chanDeltaT, -1.0/6.0 );
   REAL8 sigmaSq = 4.0 * ( chanDeltaT / (REAL8) nPoints ) * 
     distNorm * distNorm * a * a; 
-  REAL8 fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
+  REAL8 f_max = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * totalMass * LAL_MTSUN_SI);
   REAL8 f = 0;
 
   for ( k = cut, f = spec->deltaF * cut; 
-      k < spec->data->length && f < fmax; 
+      k < spec->data->length && f < f_max;
       ++k, f = spec->deltaF * k )
   {
     sigmaSqSum += 
@@ -149,7 +148,7 @@ void AddNumRelStrainModes(  LALStatus              *status,
                             SimInspiralTable *thisinj     /** [in]   injection data */)
 {
   INT4 modeL, modeM, modeLlo, modeLhi;
-  INT4 len, lenPlus, lenCross, k, lenIni;
+  INT4 len, lenPlus, lenCross, k;
   CHAR *channel_name_plus;
   CHAR *channel_name_cross;
   FrStream  *frStream = NULL;
@@ -312,7 +311,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
   REAL8 startFreq, startFreqHz, massTotal;
   REAL8 thisSNR;
   SimInspiralTable *simTableOut=NULL;
-  SimInspiralTable *thisInjOut;
+  SimInspiralTable *thisInjOut=NULL;
 
   INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
   ATTATCHSTATUSPTR (status); 
@@ -419,7 +418,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   FrHistory *thisHist;
   CHAR *comment=NULL;
   CHAR *token=NULL;
-  REAL8 ret;
+  REAL8 ret=0;
 
   frFile =  XLALFrOpenURL( url );
   frame = FrameRead (frFile);
@@ -429,12 +428,12 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
   while (thisHist) {
 
     /* get history comment string and parse it */
-    comment = LALCalloc(1, 128*sizeof(CHAR));
+    comment = LALCalloc(1, (strlen(thisHist->comment)+1)*sizeof(CHAR));
     strcpy(comment, thisHist->comment);
 
     token = strtok(comment,":");
 
-    if (strstr(token,"freqStart22")) {
+    if (strstr(token,"freqStart22") || strstr(token,"freq_start_22")) {
       token = strtok(NULL,":");
       ret = atof(token);
     }
@@ -452,7 +451,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url)
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
                                        SimInspiralTable      *thisInj, 
-                                       CHAR                  ifo[3])
+                                       const CHAR            ifo[3])
 {
 
   REAL8 ret = -1, snrSq, freq, psdValue;
@@ -461,13 +460,10 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   REAL4FFTPlan *pfwd;
   COMPLEX8FrequencySeries *fftData;
   UINT4 k;
-  UINT4 length;
 
   /* create the time series */
-  chan = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
-
-  deltaF = chan->deltaT * strain->data->vectorLength;
-
+  chan    = XLALCalculateNRStrain( strain, thisInj, ifo, sampleRate );
+  deltaF  = chan->deltaT * strain->data->vectorLength;
   fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name,  &(chan->epoch), 
                                                0, deltaF, &lalDimensionlessUnit, 
                                                chan->data->length/2 + 1 );
@@ -476,23 +472,35 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
   XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
 
-  
   /* compute the SNR for initial LIGO at design */
   for ( snrSq = 0, k = 0; k < fftData->data->length; k++ )
     {
       freq = fftData->deltaF * k;
 
-      LALLIGOIPsd( NULL, &psdValue, freq );
+      if ( ifo[0] == 'V' )
+        {
+          if (freq < 50)
+            continue;
 
-      psdValue *= 9e-46;
+          LALVIRGOPsd( NULL, &psdValue, freq );
+          psdValue /= 9e-46;
+        }
+      else
+        {
+          if (freq < 40)
+            continue;
 
+          LALLIGOIPsd( NULL, &psdValue, freq );
+        }
+
+      fftData->data->data[k].re /= 3e-23;
+      fftData->data->data[k].im /= 3e-23;
+      
       snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
-
       snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
     }
   
   snrSq *= 4*fftData->deltaF;
-
 
   XLALDestroyREAL4FFTPlan( pfwd );
   XLALDestroyCOMPLEX8FrequencySeries( fftData );

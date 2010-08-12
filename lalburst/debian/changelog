@@ -1,5 +1,5 @@
-lalburst (1.0-1lscsoft1) unstable; urgency=low
+lalburst (1.0.0-1lscsoft1) unstable; urgency=low
 
-  * LALBurst-1.0
+  * LALBurst 1.0.0
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 21 Oct 2009 16:31:57 -0600
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500

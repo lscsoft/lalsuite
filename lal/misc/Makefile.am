@@ -8,7 +8,9 @@ EXTRA_DIST = \
 	include.mk \
 	install-sh \
 	lal.m4 \
+	lalsuite_build.m4 \
 	lalsuite_c99.m4 \
+	lalsuite_gccflags.m4 \
 	libtool.m4 \
 	ltmain.sh \
 	ltoptions.m4 \

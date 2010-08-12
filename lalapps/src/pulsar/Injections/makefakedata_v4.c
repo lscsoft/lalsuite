@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 
       /* add Gaussian noise if requested */
       if ( GV.noiseSigma > 0) {
-	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed ), &status);
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)(GV.noiseSigma), GV.randSeed + i_chunk ), &status);
       }
 
       /* output ASCII time-series if requested */
@@ -1444,6 +1444,8 @@ void FreeMem (LALStatus* status, ConfigVars_t *cfg)
  *
  * NOTE: inSeries is allowed to be identical to outSeries!
  *
+ * NOTE2: if seed==0, then time(NULL) is used as random-seed!
+ *
  */
 void
 AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed)
@@ -1564,7 +1566,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
     fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
     fprintf (fplog, "# User-input: [formatted as config-file]\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, logstr);
+    fprintf (fplog, "%s", logstr);
     LALFree (logstr);
     logstr = NULL;
 
@@ -1572,7 +1574,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
     TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CMDLINE), status);
     fprintf (fplog, "\n\n# User-input: [formatted as commandline]\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
-    fprintf (fplog, logstr);
+    fprintf (fplog, "%s", logstr);
     LALFree (logstr);
 
     /* append an VCS-version string of the code used */
@@ -1587,7 +1589,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
 } /* WriteMFDLog() */
 
 /**
- * Reads an actuation-function in format (r,\phi) from file 'fname',
+ * Reads an actuation-function in format (r,phi) from file 'fname',
  * and returns the associated transfer-function as a COMPLEX8FrequencySeries (Re,Im)
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */

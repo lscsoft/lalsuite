@@ -51,11 +51,11 @@
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>   /* FFT library: www.fftw.org                                      */
-#include <FrameL.h>  /* Frame library: http://lappweb.in2p3.fr/virgo/FrameL            */
 #include <time.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALFrameL.h>
 #include <gsl/gsl_rng.h>     /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Generation.html */
 #include <gsl/gsl_randist.h> /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Distributions.html */
 #include <gsl/gsl_vector.h>
@@ -68,7 +68,7 @@
 const double Msun = 1.9889194662e30;   /* solar mass kg */
 const double Mpc  = 3.08568025e22;     /* metres in a Mpc (LAL:3.0856775807e22) */
 const double G    = 6.67259e-11;       /* 6.674215e-11; */ 
-const double c    = 299792458.0;       /* speed of light m/s */ 
+const double C    = 299792458.0;       /* speed of light m/s */ 
 const double pi   = 3.141592653589793; 
 const double earthRadiusEquator = 6378137.0;           /* (WGS84 value)                    */
 const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.257223563) */
@@ -193,13 +193,13 @@ int verbose = 1;                /* verbosity flag (set through "--quiet" option)
 gsl_rng *GSLrandom;             /* GSL random number generator                   */
 
 void vectorInit(vector *vec);
-void vectorAdd(vector *vec, char name[], double value);
+void vectorAdd(vector *vec, const char name[], double value);
 void vectorSetup(vector *vec, int signal);
 void vectorDispose(vector *vec);
 void vectorCopy(vector *vec1, vector *vec2);
-void vectorSetValue(vector *vec, char name[], double value);
-double vectorGetValue(vector *vec, char name[]);
-int vectorIsElement(vector *vec, char name[]);
+void vectorSetValue(vector *vec, const char name[], double value);
+double vectorGetValue(vector *vec, const char name[]);
+int vectorIsElement(vector *vec, const char name[]);
 void vectorPrint(vector *vec);
 
 int char2template(char *templatename);
@@ -210,7 +210,7 @@ interferometer *ifoPointer(interferometer *ifolist, int ifoN, char locationStrin
 void parseParameterOptionString(char *input, char **parnames[], double **parvalues, int *n);
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 int noVectorStrg(char *input);
-void printhelpmessage();
+void printhelpmessage(void);
 int init(DataFramework *DFarg[], McmcFramework *MFarg[],
          int *coherentN,
          int argc, char *argv[],
@@ -231,7 +231,7 @@ double spectrumAdvLigo(double f);
 double spectrumVirgo(double f);
 double spectrumGeo(double f);
 void normalise(double vec[3]);
-void rotate(double x[3], double angle, double axis[3]);
+void rotate(double x[3], double ang, double axis[3]);
 int righthanded(double x[3], double y[3], double z[3]);
 void orthoproject(double x[3], double vec1[3], double vec2[3]);
 double angle(double x[3], double y[3]);
@@ -266,12 +266,13 @@ void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplu
 void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter);
 void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *filenameT);
 
+double loglikelihoodOLD(DataFramework *DF, int waveform, vector *parameter);
 double loglikelihood(DataFramework *DF, int coherentN, int waveform, vector *parameter);
 double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector *parameter,
                           double indivSNRs[]);
 
 void clearMF(McmcFramework *MF);
-int parindex(McmcFramework *MF, char parametername[]);
+int parindex(McmcFramework *MF, const char parametername[]);
 
 void setcov(McmcFramework *MF, int parameter1, int parameter2, double covariance);
 void setvar(McmcFramework *MF, int parameter, double variance);
@@ -309,10 +310,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                  long iteration, long accepted, 
-                 double logprior, double loglikelihood, double logposterior);
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry);
+                 double log_prior, double log_likelihood, double logposterior);
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry);
 
-void printtime();
+void printtime(void);
 void DateTimeString(char *charvec);
 void savePSD(DataFramework *DF, char *filename);
 void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN);
@@ -334,7 +335,7 @@ void vectorInit(vector *vec)
 }
 
 
-void vectorAdd(vector *vec, char name[], double value)
+void vectorAdd(vector *vec, const char name[], double value)
 /* Takes a given vector and adds a new dimension (name & value). */
 {
   int newdim=0;
@@ -385,7 +386,7 @@ void vectorAdd(vector *vec, char name[], double value)
 }
 
 
-void vectorSetup(vector *vec, int signal)
+void vectorSetup(vector *vec, int signal_type)
 /* Set up parameter vector according to given signal type. */
 /* !! Vector needs to be pre-initialised !!                */
 {
@@ -399,14 +400,14 @@ void vectorSetup(vector *vec, int signal)
     vectorAdd(vec, "polarisation", 0.0);  /* w.r.t. earth frame                    */
     vectorAdd(vec, "time", 0.0);          /* w.r.t. earth frame (at geocentre)     */
     /* signal-specific parameters: */
-    if (signal == InspiralNoSpin){
+    if (signal_type == InspiralNoSpin){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logdistance", 0.0);
       vectorAdd(vec, "chirpmass", 0.0);
       vectorAdd(vec, "massratio", 0.0);
       vectorAdd(vec, "inclination", 0.0);
     }
-    else if (signal == BurstSineGaussian){
+    else if (signal_type == BurstSineGaussian){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logamplitude", 0.0);
       vectorAdd(vec, "logsigma", 0.0);
@@ -471,7 +472,7 @@ void vectorCopy(vector *vec1, vector *vec2)
 }
 
 
-void vectorSetValue(vector *vec, char name[], double value)
+void vectorSetValue(vector *vec, const char name[], double value)
 {
   int i, notfound=1;
   if (vec->dimension > 0) {
@@ -489,7 +490,7 @@ void vectorSetValue(vector *vec, char name[], double value)
 }
 
 
-double vectorGetValue(vector *vec, char name[])
+double vectorGetValue(vector *vec, const char name[])
 {
   int i, notfound=1;
   double result=0.0;
@@ -509,7 +510,7 @@ double vectorGetValue(vector *vec, char name[])
 }
 
 
-int vectorIsElement(vector *vec, char name[])
+int vectorIsElement(vector *vec, const char name[])
 /* returns 1 if 'vec' has an element named 'name', and zero otherwise. */
 {
   int i, notfound=1;
@@ -765,7 +766,7 @@ int noVectorStrg(char *input)
 }
 
 
-void printhelpmessage()
+void printhelpmessage(void)
 {
   printf(" | \n");
   printf(" | Coherent follow-up MCMC code.\n");
@@ -2010,7 +2011,7 @@ char *cache2string(char *cachefilename, double *startTime, double *endTime, char
     *endTime = startGPS + deltaGPS;
     /* check length of new filename: */
     i=0;
-    while ((i<256) && (filename[i] != '\0')) ++i;
+    while ((i<255) && (filename[i] != '\0')) ++i;
     if (filename[i] != '\0') printf(" : WARNING: encountered un-terminated file name string in 'cache2string()'.\n");
     /* (i gives number of 'non-zero' characters, or index of end-of-string character)       */
     /* issue error message if string is too short to even hold the "file://localhost" part, */
@@ -2467,14 +2468,14 @@ void normalise(double vec[3])
 }
 
 
-void rotate(double x[3], double angle, double axis[3])
+void rotate(double x[3], double ang, double axis[3])
 /* rotates vector x clockwise around `axis'               */
 /* (looking along axis while it is pointing towards you). */
 /*   !!  `axis' must be a UNIT VECTOR  !!                 */
 {
   int i, j;
-  double cosa = cos(-angle);
-  double sina = sin(-angle);
+  double cosa = cos(-ang);
+  double sina = sin(-ang);
   double R[3][3] = {{cosa+axis[0]*axis[0]*(1.0-cosa), 
                      axis[0]*axis[1]*(1.0-cosa)-axis[2]*sina,
                      axis[0]*axis[2]*(1.0-cosa)+axis[1]*sina},
@@ -2672,7 +2673,7 @@ void localParameters(vector *parameter, interferometer *ifo,
   scalprod =   ifo->positionVector[0] * lineofsight[0]
              + ifo->positionVector[1] * lineofsight[1]
              + ifo->positionVector[2] * lineofsight[2];
-  *timeshift = (-1.0) * scalprod / c;
+  *timeshift = (-1.0) * scalprod / C;
   /* (negative timeshift means signal arrives earlier than at geocenter etc.) */
   /*-- determine ALTITUDE (with respect to ifo'): --*/
   *altitude = angle(ifo->normalVector, lineofsight); 
@@ -3167,7 +3168,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
 {
   double eta     = vectorGetValue(parameter,"massratio");
   double mt      = mc2mt(vectorGetValue(parameter,"chirpmass"), eta)*Msun;
-  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(c);
+  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(C);
   double log_eta = log(eta);
   double a[5];
   long i;
@@ -3177,7 +3178,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
   double complex cosinechirp;
   double phase = vectorGetValue(parameter,"phase");
 
-  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(c);
+  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(C);
   ampliConst = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)
                    -vectorGetValue(parameter,"logdistance")-log(Mpc));
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
@@ -3242,7 +3243,7 @@ void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcr
   double m2 = mc2mass2(vectorGetValue(parameter,"chirpmass"), eta);
   double totalmass = (m1+m2);              /* still in units if Msun */
   double reducedmass = eta*totalmass;      /* also in units if Msun  */
-  double taufactor = 3.0*log(c)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
+  double taufactor = 3.0*log(C)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
   double MomegaLSO  = 0.0138 * 1e6 * Msun;
   double MomegaMECO = (-((54.0+6.0*eta-6.0*sqrt(1539.0-(1008.0+19.0*eta)*eta))/(81.0-(57.0-eta)*eta))/27)*Msun;
   double maxMomega, oldMomega=-HUGE_VAL;
@@ -3365,7 +3366,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
 	   )
     params.distance  = exp(vectorGetValue(parameter,"logdistance"));          /* distance in Mpc */
   else                                                     
-    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(c)); /* distance in seconds */
+    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(C)); /* distance in seconds */
 
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
   sineCoef   = Fcross * (-1.0*cos(vectorGetValue(parameter,"inclination")));
@@ -3468,8 +3469,8 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     fftw_complex *InvFTinput=NULL;
     double *InvFToutput=NULL;
     double *amplitude;
-    long imax;
-    double p, pmax, pleft, pright, instant;
+    long imax=0;
+    double pmax, pleft, pright, instant;
 
     fftw_plan InvFTplan;
     InvFTinput  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*DF->FTSize);
@@ -3943,11 +3944,11 @@ void clearMF(McmcFramework *MF)
 }
 
 
-int parindex(McmcFramework *MF, char parametername[])
+int parindex(McmcFramework *MF, const char parametername[])
 /* returns index (w.r.t. that MF->startvalue vector) */
 /* of parameter named 'parametername'.               */
 {
-  int i, index=-1;
+  int i, j=-1;
   int notfound=1;
   if (MF->startvalue.dimension > 0) {
     i=0;
@@ -3958,12 +3959,12 @@ int parindex(McmcFramework *MF, char parametername[])
       printf(" : ERROR: requesting unknown vector element in 'parindex(...,\"%s\")'!\n", 
              parametername);
     else
-      index = i;
+      j = i;
   }
   else
     printf(" : ERROR: empty 'startvalue' vector in 'parindex(...,\"%s\")'!\n", 
            parametername);
-  return index;
+  return j;
 }
 
 
@@ -4754,7 +4755,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
   struct listelement *search=NULL;
   int  listlength=0, recycle = 0;
   int  i, j;
-  double maximp, impsum, random, probsum;
+  double maximp, impsum, randomn, probsum;
   time_t starttime, endtime;
   double seconds;
   int n = samplesize;
@@ -4868,10 +4869,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
       search = search->next;
     }
     /* draw a parameter set: */
-    random = gsl_ran_flat(GSLrandom, 0.0, impsum);
+    randomn = gsl_ran_flat(GSLrandom, 0.0, impsum);
     search = list;
     probsum = list->impratio;
-    while (probsum < random) {
+    while (probsum < randomn) {
       search = search->next;
       probsum += search->impratio;
     }
@@ -4891,7 +4892,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                   long iteration, long accepted, 
-                  double logprior, double loglikelihood, double logposterior)
+                  double log_prior, double log_likelihood, double logposterior)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add a line to the MCMC log file. The MCMC log file is a text file             */
 /* in CSV (comma-seperated-values) format.                                       */
@@ -4938,7 +4939,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
   else { /* append to existing file: */
     logfile = fopen(MF->csvfilename, "a");
     fprintf(logfile, "%ld,%ld,%.6f,%.6f,%.6f", iteration, accepted, 
-            logprior, loglikelihood, logposterior);
+            log_prior, log_likelihood, logposterior);
     for (i=0; i<outvector.dimension; ++i)
       if (!vectorIsElement(&MF->fixed, outvector.name[i]))
         fprintf(logfile, ",%.14e", outvector.value[i]);
@@ -4949,7 +4950,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
 }
 
 
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add an entry (i.e. a line) to the (existing!) "general" log file.             */
 /* This file is kept in CSV format as well; it contains two columns of (quoted?) */
@@ -4964,7 +4965,7 @@ void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
 }
 
 
-void printtime()
+void printtime(void)
 /* prints time (& date) to screen */
 {
   time_t tm;
@@ -5236,8 +5237,6 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
 {
   double complex *FourierTemplate=NULL;
   long i, j, maxftsize;
-  double absdiff, chisquared=0.0;
-  double logfactor;
   double locdeltat, locpolar, locazi, localti;
   vector localparameter;
   FILE *textfile;
@@ -5279,7 +5278,7 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
     j=0;
     while (templatefilename[j]) ++j;
     templatefilename[j-4] = 0;
-    sprintf(templatefilename, "%s-%d-%s.csv", templatefilename, i+1, DF[i].ifo->name);
+    sprintf(templatefilename, "%s-%ld-%s.csv", templatefilename, i+1, DF[i].ifo->name);
     printf(" : writing \"%s\"\n", templatefilename);
     textfile = fopen(templatefilename, "w");
     fprintf(textfile, "\"f\",\"logPSD\",\"dataReal\",\"dataImag\",\"templateReal\",\"templateImag\"\n");

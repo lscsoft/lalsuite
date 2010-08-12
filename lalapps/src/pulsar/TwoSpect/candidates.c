@@ -19,7 +19,6 @@
 
 #include <math.h>
 #include <lal/LALMalloc.h>
-#include <lal/RealFFT.h>
 #include "candidates.h"
 #include "templates.h"
 
@@ -37,8 +36,10 @@ candidate * new_candidate(void)
    cand->ra = 0.0;
    cand->dec = 0.0;
    cand->stat = 0.0;
-   cand->snr = 0.0;
+   cand->h0 = 0.0;
    cand->prob = 0.0;
+   cand->proberrcode = 0;
+   cand->normalization = 0.0;
    
    return cand;
 
@@ -56,8 +57,10 @@ void free_candidate(candidate *cand)
    cand->ra = 0.0;
    cand->dec = 0.0;
    cand->stat = 0.0;
-   cand->snr = 0.0;
+   cand->h0 = 0.0;
    cand->prob = 0.0;
+   cand->proberrcode = 0;
+   cand->normalization = 0.0;
    
    XLALFree((candidate*)cand);
 
@@ -66,7 +69,7 @@ void free_candidate(candidate *cand)
 
 //////////////////////////////////////////////////////////////
 // Load candidate data
-void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 snr, REAL8 prob)
+void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization)
 {
 
    out->fsig = fsig;
@@ -75,8 +78,10 @@ void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth,
    out->ra = ra;
    out->dec = dec;
    out->stat = stat;
-   out->snr = snr;
+   out->h0 = h0;
    out->prob = prob;
+   out->proberrcode = proberrcode;
+   out->normalization = normalization;
 
 }
 
@@ -85,7 +90,7 @@ void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth,
 // Cluster candidates by frequency and period using templates:
 // option = 0 uses Gaussian templates (default)
 // option = 1 uses exact templates
-void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, INT4 numofcandidates, INT4 option)
+void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, INT4 numofcandidates, INT4 option)
 {
 
    INT4 ii, jj, kk, loc, loc2, numcandoutlist;
@@ -186,18 +191,22 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             REAL8 weight = 0.0;
             REAL8 bestmoddepth = 0.0;
             REAL8 bestR = 0.0;
-            REAL8 bestSNR = 0.0;
+            REAL8 besth0 = 0.0;
+            REAL8 bestProb = 1.0;
+            INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
-               avefsig += in[locs2->data[kk]]->fsig*in[locs2->data[kk]]->snr;
-               aveperiod += in[locs2->data[kk]]->period*in[locs2->data[kk]]->snr;
-               weight += in[locs2->data[kk]]->snr;
+               avefsig += in[locs2->data[kk]]->fsig*in[locs2->data[kk]]->stat;
+               aveperiod += in[locs2->data[kk]]->period*in[locs2->data[kk]]->stat;
+               weight += in[locs2->data[kk]]->stat;
                if (mindf > in[locs2->data[kk]]->moddepth || mindf == 0.0) mindf = in[locs2->data[kk]]->moddepth;
                if (maxdf < in[locs2->data[kk]]->moddepth) maxdf = in[locs2->data[kk]]->moddepth;
                
                if (loc2==1 && aveperiod/weight >= params->Pmin && aveperiod/weight <= params->Pmax) {
-                  bestSNR = in[locs2->data[kk]]->snr;
+                  besth0 = in[locs2->data[kk]]->h0;
                   bestmoddepth = in[locs2->data[kk]]->moddepth;
                   bestR = in[locs2->data[kk]]->stat;
+                  bestProb = in[locs2->data[kk]]->prob;
+                  bestproberrcode = in[locs2->data[kk]]->proberrcode;
                }
                
                usedcandidate->data[locs2->data[kk]] = 1;
@@ -205,23 +214,28 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
             avefsig = avefsig/weight;
             aveperiod = aveperiod/weight;
             
+            INT4 proberrcode;
+            
             if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
                for (kk=0; kk<numofmoddepths; kk++) {
                   
                   candidate *cand = new_candidate();
-                  loadCandidateData(cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, in[0]->ra, in[0]->dec, 0, 0, 0.0);
+                  loadCandidateData(cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, in[0]->ra, in[0]->dec, 0, 0, 0.0, 0, 0.0);
                   templateStruct *template = new_templateStruct(params->templatelength);
                   if (option==1) makeTemplate(template, cand, params, plan);
                   else makeTemplateGaussians(template, cand, params);
                   farStruct *farval = new_farStruct();
-                  estimateFAR(farval, template, 10000, 0.01, ffplanenoise);
-                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise);
-                  REAL8 snr = (R - farval->distMean)/farval->distSigma;
-                  if (R > farval->far && snr > bestSNR) {
-                     bestSNR = snr;
+                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
+                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
+                  REAL8 prob = (probR(template, ffplanenoise, fbinaveratios, R, &proberrcode));
+                  REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
+                  if (R > farval->far && prob < bestProb) {
+                     besth0 = h0;
                      bestmoddepth = mindf + kk*0.5/params->Tcoh;
                      bestR = R;
+                     bestProb = prob;
+                     bestproberrcode = proberrcode;
                   }
                   free_candidate(cand);
                   cand = NULL;
@@ -232,9 +246,9 @@ void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, 
                }
             }
             
-            if (bestSNR != 0.0) {
+            if (bestR != 0.0) {
                out[numcandoutlist] = new_candidate();
-               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, bestSNR, 0.0);
+               loadCandidateData(out[numcandoutlist], avefsig, aveperiod, bestmoddepth, in[0]->ra, in[0]->dec, bestR, besth0, bestProb, bestproberrcode, in[0]->normalization);
                numcandoutlist++;
             }
             

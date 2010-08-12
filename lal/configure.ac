@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.4.1.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -84,7 +84,6 @@ AC_CONFIG_FILES([ \
   packages/support/test/Makefile
 ])
 AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
-AC_CONFIG_FILES([lib/git_version],[chmod +x lib/git_version])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
@@ -96,6 +95,25 @@ AH_BOTTOM([
 
 AC_CANONICAL_HOST
 
+# set library api info
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
 LAL_WITH_CC
 LAL_WITH_CFLAGS
 LAL_WITH_EXTRA_CFLAGS
@@ -105,13 +123,13 @@ LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
 LAL_WITH_CUDA
-LAL_ENABLE_BOINC
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_BOINC
+LALSUITE_ENABLE_GCC_FLAGS
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
-LAL_ENABLE_NIGHTLY
+LALSUITE_ENABLE_NIGHTLY
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
@@ -154,9 +172,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 # boinc requires a c++ compiler
-if test "${boinc}" = "true" ; then
-  AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 # check for programs
 AC_PROG_CPP
@@ -189,6 +205,9 @@ if test "x$build_vendor" = "xapple"; then
       ;;
   esac
 fi
+
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
 
 # check for support tex flags
 if test -z "$TEXFLAGS"
@@ -363,7 +382,12 @@ AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags -fno-strict-aliasing"
+  # don't use gcc flags when cuda is enabled
+  if test "${cuda}" != "true"; then
+    CFLAGS="$CFLAGS $lal_gcc_flags"
+  else
+    AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
+  fi
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then
