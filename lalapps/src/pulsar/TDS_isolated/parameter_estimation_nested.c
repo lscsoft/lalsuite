@@ -71,14 +71,14 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* Include setting up random number generator etc */
   initialiseAlgorithm(&runState);
   
-  /* Initialise the prior distribution given the command line arguments */
   
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile(&runState);
 
+  /* Initialise the prior distribution given the command line arguments */
   /* Initialise the proposal distribution given the command line arguments */
-  initialiseProposal(LALInferenceRunState *runState)
-  
+  initialiseProposal(LALInferenceRunState *runState);
+  runState->proposal=LALInferenceProposalDifferentialEvolution;
   /* Create live points array and fill initial parameters */
   setupLivePointsArray(&runState);
   
