@@ -50,7 +50,11 @@ INT4 verbose=0;
 " --ephem-earth       Earth ephemeris file\n"\
 " --ephem-sun         Sun ephemeris file\n"\
 " Nested sampling parameters:\n"\
-" --nlive             (INT4) no. of live points for nested sampling\n"\
+" --Nlive             (INT4) no. of live points for nested sampling\n"\
+" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n"\
+" --Nruns             (INT4) no. of parallel runs\n"\
+" --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
+" --randomseed        seed for random number generator\n"\
 "\n"
 
 
@@ -223,27 +227,6 @@ LALIFOData *readPulsarData(int argc, char **argv)
       
       if( tempdets == NULL ) break;
     }
-  }
-    
-  if( strstr(detectors, "H1") != NULL ){
-    sprintf(dets[numDets], "H1");
-    numDets++;
-  }
-  if( strstr(detectors, "H2") != NULL ){
-    sprintf(dets[numDets], "H2");
-    numDets++;
-  }
-  if( strstr(detectors, "L1") != NULL ){
-    sprintf(dets[numDets], "L1");
-    numDets++;
-  }
-  if( strstr(detectors, "V1") != NULL ){
-    sprintf(dets[numDets], "V1");
-    numDets++;
-  }
-  if( strstr(detectors, "G1") != NULL ){
-    sprintf(dets[numDets], "G1");
-    numDets++;
   }
   
   /* check ephemeris files exist and if not output an error message */
@@ -1076,11 +1059,16 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   REAL8 Xpcosphi_2, Xccosphi_2, Xpsinphi_2, Xcsinphi_2;
   REAL8 sinphi, cosphi;
   
+  gsl_matrix LU_Fplus, LU_Fcross
+  
   length = data->dataTimes.length;
   
   /* set lookup table parameters */
-  psteps = *(INT4*)getVariable( data->modelParams, "psiSteps" );
-  tsteps = *(INT4*)getVariable( data->modelParams, "timeSteps" );
+  psteps = *(INT4*)getVariable( data->dataParams, "psiSteps" );
+  tsteps = *(INT4*)getVariable( data->dataParams, "timeSteps" );
+  
+  LU_Fplus = *(gsl_matrix*)getVariable( data->dataParams, "LU_Fplus");
+  LU_Fcross = *(gsl_matrix*)getVariable( data->dataParams, "LU_Fcross");
   
   /* allocate memory for amplitudes */
   amp = XLALCreateREAL8Vector( length );
@@ -1116,8 +1104,8 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
       LAL_DAYSID_SI);
     timebin = (INT4)fmod( ROUND(T*tsteps/LAL_DAYSID_SI), tsteps );
 
-    plus = gsl_matrix_get(data->lookupTablePlus, psibin, timebin);
-    cross = gsl_matrix_get(data->lookupTableCross, psibin, timebin);
+    plus = gsl_matrix_get(LU_Fplus, psibin, timebin);
+    cross = gsl_matrix_get(LU_Fcross, psibin, timebin);
     
     /* create the complex signal amplitude model */
     data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
