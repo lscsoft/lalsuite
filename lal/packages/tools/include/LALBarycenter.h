@@ -41,11 +41,13 @@ NRCSID (LALBARYCENTERH,"$Id$");
 #define LALBARYCENTERH_EOUTOFRANGEE  4
 #define LALBARYCENTERH_EOUTOFRANGES  8
 #define LALBARYCENTERH_EBADSOURCEPOS 16
+#define LALBARYCENTERH_EXLAL 	     32
 
 #define LALBARYCENTERH_MSGENULL  "Null input to Barycenter routine."
 #define LALBARYCENTERH_MSGEOUTOFRANGEE  "tgps not in range of earth.dat file"
 #define LALBARYCENTERH_MSGEOUTOFRANGES  "tgps not in range of sun.dat file"
 #define LALBARYCENTERH_MSGEBADSOURCEPOS "source position not in standard range"
+#define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
 /*@}*/
 
 /**
@@ -207,9 +209,12 @@ to give, on average, the same arrival time as the GPS clock on Earth'' */
 
 /* Function prototypes. */
 
-void LALBarycenterEarth(LALStatus *, EarthState *, const LIGOTimeGPS *, const EphemerisData *);
+int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
+int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 
-void LALBarycenter(LALStatus *, EmissionTime *, const BarycenterInput *, const EarthState *);
+
+void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
+void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 
 #ifdef  __cplusplus
 }
