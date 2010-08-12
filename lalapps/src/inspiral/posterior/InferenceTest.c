@@ -186,7 +186,7 @@ void BasicMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposed
   if (checkVariable(runstate->proposalArgs, "logProposalRatio"))
     setVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
   else
-    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t);
+    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
 }
 
 
@@ -267,7 +267,7 @@ void ASinOmegaTProposal(LALInferenceRunState *runState, LALVariables *proposedPa
   if (checkVariable(runstate->proposalArgs, "logProposalRatio"))
     setVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
   else
-    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t);
+    addVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t,PARAM_OUTPUT);
 }
 
 
@@ -456,7 +456,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     for (j=1; j<=i; ++j) {  // check "currentParams" entries and copy all REAL( values:
       if (getVariableType(runstate->currentParams, j) == REAL8_t){
 	strcpy(str, getVariableName(runstate->currentParams, j));
-        addVariable(&param, str, getVariable(runstate->currentParams, str), REAL8_t);
+        addVariable(&param, str, getVariable(runstate->currentParams, str), REAL8_t, PARAM_LINEAR);
       }
     }
   }
@@ -623,19 +623,19 @@ void LALVariablesTest(void)
   variables.dimension=0;
 	
   memset(&status,0,sizeof(status));
-  addVariable(&variables, "number", &number, REAL4_t);
+  addVariable(&variables, "number", &number, REAL4_t,PARAM_FIXED);
   numberR8 = 7.0;
-  addVariable(&variables, "seven", &numberR8, REAL8_t);
+  addVariable(&variables, "seven", &numberR8, REAL8_t,PARAM_FIXED);
   numberR8 = LAL_PI;
-  addVariable(&variables, "pi", &numberR8, REAL8_t);
+  addVariable(&variables, "pi", &numberR8, REAL8_t,PARAM_FIXED);
   numberI4 = 123;
-  addVariable(&variables, "small", &numberI4, INT4_t);
+  addVariable(&variables, "small", &numberI4, INT4_t,PARAM_FIXED);
   numberI8 = 256*256*256*64;
-  addVariable(&variables, "large", &numberI8, INT8_t);
+  addVariable(&variables, "large", &numberI8, INT8_t,PARAM_FIXED);
   numberC8.re = 2.0;  numberC8.im = 3.0;
-  addVariable(&variables, "complex1", &numberC8, COMPLEX8_t);
+  addVariable(&variables, "complex1", &numberC8, COMPLEX8_t,PARAM_FIXED);
   numberC16.re = 1.23;  numberC16.im = -3.45;
-  addVariable(&variables, "complex2", &numberC16, COMPLEX16_t);
+  addVariable(&variables, "complex2", &numberC16, COMPLEX16_t,PARAM_FIXED);
 
   number=*(REAL4 *)getVariable(&variables,"number");
   fprintf(stdout,"Got %lf\n",number);
@@ -742,15 +742,15 @@ void DataTest(void)
 	REAL8 distMpc_current = injTable->distance;
 	
 	
-	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
-    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
-    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
-    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
-    addVariable(&currentParams, "time",            &tc   ,           REAL8_t); 
-    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
-    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
-    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
-    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
+	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t, PARAM_LINEAR); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
    /* fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorF2;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
@@ -823,11 +823,11 @@ void TemplateStatPhaseTest(void)
 	REAL8 tc=*((REAL8 *) getVariable(runstate->data->modelParams,"time"));
 	printf("t_c: %f\n", tc);
     destroyVariables(runstate->data->modelParams);
-    addVariable(runstate->data->modelParams, "chirpmass",   &mc,    REAL8_t);
-    addVariable(runstate->data->modelParams, "massratio",   &eta,   REAL8_t);
-    addVariable(runstate->data->modelParams, "inclination", &iota,  REAL8_t);
-    addVariable(runstate->data->modelParams, "phase",       &phi,   REAL8_t);
-    addVariable(runstate->data->modelParams, "time",        &tcoal, REAL8_t);
+    addVariable(runstate->data->modelParams, "chirpmass",   &mc,    REAL8_t, PARAM_LINEAR);
+    addVariable(runstate->data->modelParams, "massratio",   &eta,   REAL8_t, PARAM_LINEAR);
+    addVariable(runstate->data->modelParams, "inclination", &iota,  REAL8_t, PARAM_LINEAR);
+    addVariable(runstate->data->modelParams, "phase",       &phi,   REAL8_t, PARAM_LINEAR);
+    addVariable(runstate->data->modelParams, "time",        &tcoal, REAL8_t, PARAM_LINEAR);
     printVariables(runstate->data->modelParams);
     templateStatPhase(runstate->data);
     fprintf(stdout, " ...done.\n");
@@ -840,20 +840,20 @@ void TemplateStatPhaseTest(void)
 	  REAL8 psi_current       = 0.8;	/* radian      */
 	  REAL8 distMpc_current   = 10.0;	/* Mpc         */
 	  
-    addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
-    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
-    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
-    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
-    addVariable(&currentParams, "time",            &tc   ,           REAL8_t); 
-    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
-    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
-    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
-    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
+    addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t, PARAM_LINEAR); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
     fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorT1;
-    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
     numberI4 = LAL_PNORDER_TWO;
-    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, templateLAL);
     fprintf(stdout, " ...done.\n");
     fprintf(stdout," templateLAL log-likelihood %f\n", likelihood);  
@@ -933,26 +933,26 @@ void TemplateDumpTest(void)
 	 
 	 double mass1=10.;
 	 double mass2=1.4;
-    addVariable(&currentParams, "m1",       &mass1,              REAL8_t);
-	addVariable(&currentParams, "m2",       &mass2,              REAL8_t);
+    addVariable(&currentParams, "m1",       &mass1,              REAL8_t, PARAM_LINEAR);
+	addVariable(&currentParams, "m2",       &mass2,              REAL8_t, PARAM_LINEAR);
 	  double spin1x = 0.5;
 	  double spin1y = 0.1;
 	  double spin1z = 0.0;
 	  double spin2x = 0.2;
 	  double spin2y = 0.0;
 	  double spin2z = 0.3;
-	  addVariable(&currentParams, "spin1x",       &spin1x,              REAL8_t);	  
-	  addVariable(&currentParams, "spin1y",       &spin1y,              REAL8_t);
-	  addVariable(&currentParams, "spin1z",       &spin1z,              REAL8_t);
-	  addVariable(&currentParams, "spin2x",       &spin2x,              REAL8_t);	  
-	  addVariable(&currentParams, "spin2y",       &spin2y,              REAL8_t);	  
-	  addVariable(&currentParams, "spin2z",       &spin2z,              REAL8_t);
+	  addVariable(&currentParams, "spin1x",       &spin1x,              REAL8_t, PARAM_LINEAR);
+	  addVariable(&currentParams, "spin1y",       &spin1y,              REAL8_t, PARAM_LINEAR);
+	  addVariable(&currentParams, "spin1z",       &spin1z,              REAL8_t, PARAM_LINEAR);
+	  addVariable(&currentParams, "spin2x",       &spin2x,              REAL8_t, PARAM_LINEAR);
+	  addVariable(&currentParams, "spin2y",       &spin2y,              REAL8_t, PARAM_LINEAR);
+	  addVariable(&currentParams, "spin2z",       &spin2z,              REAL8_t, PARAM_LINEAR);
 	  double shift0 = 0.3;
-	  addVariable(&currentParams, "shift0",       &shift0,              REAL8_t);
+	  addVariable(&currentParams, "shift0",       &shift0,              REAL8_t, PARAM_LINEAR);
 	  double coa_phase = 0.1;
-	  addVariable(&currentParams, "coa_phase",    &coa_phase,           REAL8_t);	  
+	  addVariable(&currentParams, "coa_phase",    &coa_phase,           REAL8_t, PARAM_CIRCULAR);	  
 	  double PNorder = 3.5;
-	  addVariable(&currentParams, "PNorder",      &PNorder,             REAL8_t);	  
+	  addVariable(&currentParams, "PNorder",      &PNorder,             REAL8_t, PARAM_FIXED);	  
 	  dumptemplateTimeDomain(&currentParams, runstate->data, templateLALSTPN, "test_TTemplateLALSTPN.csv");
 
 	  
@@ -1003,17 +1003,17 @@ void TemplateDumpTest(void)
     fprintf(stdout," ----------\n");
 
     numberR8 = 440;
-    addVariable(&currentParams, "frequency", &numberR8, REAL8_t);
+    addVariable(&currentParams, "frequency", &numberR8, REAL8_t, PARAM_LINEAR);
     numberR8 = 1e-19;
-    addVariable(&currentParams, "amplitude", &numberR8, REAL8_t);
+    addVariable(&currentParams, "amplitude", &numberR8, REAL8_t, PARAM_LINEAR);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateSinc, "test_TTemplateSinc.csv");
 
     numberR8 = 0.01;
-    addVariable(&currentParams, "sigma", &numberR8, REAL8_t);
+    addVariable(&currentParams, "sigma", &numberR8, REAL8_t, PARAM_LINEAR);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateSineGaussian, "test_TTemplateSineGauss.csv");
 
     numberR8 = 0.01;
-    addVariable(&currentParams, "tau", &numberR8, REAL8_t);
+    addVariable(&currentParams, "tau", &numberR8, REAL8_t, PARAM_LINEAR);
     dumptemplateTimeDomain(&currentParams, runstate->data, templateDampedSinusoid, "test_TTemplateDampedSinus.csv");
 
     destroyVariables(&currentParams);
