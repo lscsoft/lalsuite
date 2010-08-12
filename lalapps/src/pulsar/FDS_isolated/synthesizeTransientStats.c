@@ -302,7 +302,7 @@ int main(int argc,char *argv[])
       if ( uvar.SignalOnly )
         cand.maxFstat += 4;
 
-      if ( write_TransientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
+      if ( fpTransientStats && write_TransientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
         LogPrintf ( LOG_CRITICAL, "%s: write_TransientCandidate_to_fp() failed.\n", fn );
         return 1;
       }
@@ -310,7 +310,7 @@ int main(int argc,char *argv[])
     } /* for i < numDraws */
 
   /* ----- free memory ---------- */
-  fclose ( fpTransientStats );
+  if ( fpTransientStats) fclose ( fpTransientStats );
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
