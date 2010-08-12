@@ -28,6 +28,8 @@ REAL8 sample_logt(int Nlive){
 	return(log(t));
 }
 
+/* UpdateProposalDistribution
+
 
 /* NestedSamplingAlgorithm implements the nested sampling algorithm,
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition.
