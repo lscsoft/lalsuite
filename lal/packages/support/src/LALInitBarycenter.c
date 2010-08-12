@@ -155,7 +155,7 @@ XLALReadEphemerisFile ( const CHAR *fname )
   UINT4 nEntries;	/* number of ephemeris-file entries */
 
   /* read first line */
-  if ( 3 != fscanf(fp,"%d %le %d\n", &gpsYr, &dt, &nEntries)) {
+  if ( 3 != fscanf(fp,"%d %le %u\n", &gpsYr, &dt, &nEntries)) {
     fclose(fp);
     XLALPrintError("%s: couldn't parse first line of %s: %d\n", fn, fname );
     XLAL_ERROR_NULL ( fn, XLAL_EDOM );
@@ -254,7 +254,7 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
 
   /* check position, velocity and acceleration */
   UINT4 j;
-  REAL8 tjm1;
+  REAL8 tjm1 = 0;
   for ( j=0; j < numEntries; j ++ )
     {
       REAL8 length;
