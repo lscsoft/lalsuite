@@ -71,7 +71,9 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* Include setting up random number generator etc */
   initialiseAlgorithm(&runState);
   
-  
+  runState->likelihood=pulsar_log_likelihood;
+  runState->prior=priorFunction;
+  runState->template=get_pulsar_model;
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile(&runState);
 
@@ -95,6 +97,22 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
 
   return 0;
+}
+
+REAL8 priorFunction(LALInferenceRunState *runState, LALVariables *params)
+{
+	LALVariableItem *item=params->head;
+	REAL8 min, REAL8 max;
+	for(;item;item=item->next)
+	{
+		if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
+		else
+		{
+			getMinMaxPrior(params, item->name, (void *)min, (void *)max);
+			if(*item->value<min || *item->value>max) return -DBL_MAX;
+		}
+	}
+	return (0);	
 }
 
 
@@ -732,9 +750,10 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
 }
 
 
+
 /* function to calculate the log(likelihood) given some data and a set of
    particular pulsar parameters */
-LALLikelihoodFunction pulsar_log_likelihood( LALVariables *vars, 
+REAL8 pulsar_log_likelihood( LALVariables *vars, 
   LALIFOData *data, LALTemplateFunction *get_pulsar_model ){
   INT4 i=0, j=0, count=0, k=0, cl=0;
   INT4 length=0, chunkMin;
