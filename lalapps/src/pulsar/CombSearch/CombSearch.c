@@ -150,41 +150,20 @@ typedef struct
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
  
-  CHAR *IFO;			/**< IFO name: only required if using v1 SFTs */
-  BOOLEAN SignalOnly;		/**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
-
   REAL8 Freq;			/**< start user frequency band for output */
   REAL8 FreqBand;		/**< user Frequency-band for output*/
   
   /* orbital parameters */
   REAL8 orbitPeriod;		/**< binary-system orbital period in s */
   REAL8 orbitasini;		/**< amplitude of radial motion */
-  INT4 orbitTpSSBsec;		/**< time of periapse passage */
-  INT4 orbitTpSSBnan;
-  REAL8 orbitTpSSBMJD;		/**< in MJD format */
-  REAL8 orbitArgp;		/**< angle of periapse */
-  REAL8 orbitEcc;		/**< orbital eccentricity */
-
+ 
   CHAR *DataFiles;		/**< glob-pattern for SFT data-files to use */
 
   BOOLEAN help;			/**< output help-string */
-  //CHAR *outputLogfile;		/**< write a log-file */
   //CHAR *outputFstat;		/**< filename to output Fstatistic in */
   CHAR *outputCstat;		/**< filename to output Cstatistic in */
-  //CHAR *outputLogPrintf;        /**< send output from LogPrintf statements to this file */
 
-  REAL8 refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
-  REAL8 refTimeMJD;		/**< the same in MJD */
 
-  REAL8 internalRefTime;	/**< which reference time to use internally for template-grid */
-  INT4 SSBprecision;		/**< full relativistic timing or Newtonian */
-
-  INT4 minStartTime;		/**< earliest start-time to use data from */
-  INT4 maxEndTime;		/**< latest end-time to use data from */
-  CHAR *workingDir;		/**< directory to use for output files */
-  REAL8 timerCount;		/**< output progress-meter every <timerCount> templates */
-
-  INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
   BOOLEAN version;		/**< output version information */
 } UserInput_t;
@@ -201,8 +180,6 @@ static CstatOut empty_CstatOut;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
 void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
-//void WriteCStatLog ( LALStatus *status, const CHAR *log_fname, const ConfigVariables *cfg, const UserInput_t *uvar);
-//void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
 void OutputVersion ( void );
 void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg);
 void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst);
@@ -537,11 +514,6 @@ int main(int argc,char *argv[])
   /* Free memory */
   LAL_CALL ( Freemem(&status, &cfg, &cst), &status); 
    
-  /* close log-file */
-  //if (fpLogPrintf) 	{
-  //  fclose(fpLogPrintf);
-  //  LogSetFile(fpLogPrintf = NULL);
-  //} 
  
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
@@ -562,10 +534,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
-  uvar->upsampleSFTs = 1;
   uvar->FreqBand = 0.0;
-
-  uvar->SignalOnly = FALSE;
 
   uvar->orbitasini = 0.0;	/* define default orbital semi-major axis */
 
@@ -574,18 +543,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   //uvar->outputLogfile = NULL;
   uvar->outputCstat = NULL;
-  
-  uvar->SSBprecision = SSBPREC_RELATIVISTIC;
-
-  uvar->minStartTime = 0;
-  uvar->maxEndTime = LAL_INT4_MAX;
-
-  uvar->workingDir = (CHAR*)LALMalloc(512);
-  strcpy(uvar->workingDir, ".");
-
-  uvar->timerCount = 1e5;	/* output a timer/progress count every N templates */
-
-
+ 
+ 
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
@@ -595,39 +554,13 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
    
   LALregREALUserStruct(status, 	orbitPeriod, 	'P',  UVAR_OPTIONAL, "Orbital period in seconds");
   LALregREALUserStruct(status, 	orbitasini, 	'A',  UVAR_OPTIONAL, "Orbital projected semi-major axis (normalised by the speed of light) in seconds [Default: 0.0]");
-  LALregINTUserStruct(status, 	orbitTpSSBsec, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (seconds part) in GPS seconds");
-  LALregINTUserStruct(status, 	orbitTpSSBnan, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (nanoseconds part)");
-  LALregREALUserStruct(status, 	orbitTpSSBMJD, 	 0,  UVAR_OPTIONAL, "The true time of periapsis in the SSB frame (in MJD)");
-  LALregREALUserStruct(status, 	orbitArgp, 	 0,  UVAR_OPTIONAL, "The orbital argument of periapse in radians");
-  LALregREALUserStruct(status, 	orbitEcc, 	 0,  UVAR_OPTIONAL, "The orbital eccentricity");
   
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (multi-IFO) input SFT-files"); 
-  LALregSTRINGUserStruct(status,IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
   
-  LALregBOOLUserStruct(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  //LALregSTRINGUserStruct(status,outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
-  LALregREALUserStruct(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: startTime]");
-  LALregREALUserStruct(status,	refTimeMJD,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters in MJD [Default: startTime]");
-  
-  //LALregSTRINGUserStruct(status,outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
   LALregSTRINGUserStruct(status,outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
    
-   
-  LALregINTUserStruct ( status, minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
-  LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
+   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
-  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
-
-  /* ----- more experimental/expert options ----- */
-  LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
-  
-  LALregSTRINGUserStruct(status,workingDir,	'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");  
-  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
-
-  LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
-  
-  //LALregSTRINGUserStruct(status,outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
  
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -666,11 +599,6 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
 
 
-  /* check that reference time has not been set twice */
-  if ( LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD) )	{
-    LALPrintError ("\nSet only uvar->refTime OR uvar->refTimeMJD OR leave empty to use SSB start time as Tref!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
 
   /* binary parameter checks */
   if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )	{
@@ -681,44 +609,10 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
       ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
   }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))	{
-    LALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (uvar->orbitTpSSBMJD < 0) )	{
-    LALPrintError ("\nNegative value of the true time of orbital periapsis not allowed!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )	{
-    LALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
-  if ( LALUserVarWasSet(&uvar->orbitTpSSBnan) && ((uvar->orbitTpSSBnan < 0) || (uvar->orbitTpSSBnan >= 1e9)) )	{
-    LALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
-  if ( LALUserVarWasSet(&uvar->orbitArgp) && ((uvar->orbitArgp < 0) || (uvar->orbitArgp >= LAL_TWOPI)) )	{
-    LALPrintError ("\nOrbital argument of periapse must lie in range [0 2*PI)!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
-  if ( LALUserVarWasSet(&uvar->orbitEcc) && (uvar->orbitEcc < 0) )	{
-    LALPrintError ("\nNegative value of orbital eccentricity not allowed!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
-  }
+  
 
   RETURN (status);
 } /* checkUserInputConsistency() */
 
 
-/** Simply output version information to stdout */
-/*void
-OutputVersion ( void )
-{
-  printf ( "%s\n", lalGitID );
-  printf ( "%s\n", lalappsGitID );
 
-  return;
-
-} 
-*/
-/* OutputVersion() */
