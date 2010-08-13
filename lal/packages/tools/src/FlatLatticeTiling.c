@@ -50,8 +50,11 @@ NRCSID(FLATLATTICETILINGC, "$Id$");
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /**
  * Create a new flat lattice tiling bound structure
@@ -1204,12 +1207,8 @@ int XLALSetFlatTilingAnstarLattice(
 /**
  * Set a flat lattice tiling to a square parameter space
  */
-static BOOLEAN ConstantBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
+static BOOLEAN ConstantBound(void *data, INT4 UNUSED dimension, gsl_vector UNUSED *point, REAL8 *lower, REAL8 *upper)
 {
-  /* dimension and point are unused in this function */
-  UNUSED(dimension);
-  UNUSED(point);
-
   /* Set lower and upper bound */
   *lower = gsl_vector_get((gsl_vector*)data, 0);
   *upper = gsl_vector_get((gsl_vector*)data, 1);
