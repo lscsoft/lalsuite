@@ -64,14 +64,19 @@ None.
 
 NRCSID (LALADVLIGOPSDC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*  <lalVerbatim file="LALAdvLIGOPsdCP"> */
 void
-LALAdvLIGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
+LALAdvLIGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
 
    REAL8 x2,x;
    x = f/215.;
-   status = NULL;
    x2 = x*x;
    *psd = pow(x,-4.14) - 5./x2 + 111. * (1. - x2 + 0.5 * x2*x2)/(1. + 0.5*x2);
 }
