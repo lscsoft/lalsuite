@@ -35,6 +35,12 @@
 
 NRCSID( XLALERRORC, "$Id$" );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*
  *
  * Routines to print generic error messages and warning messages.
@@ -469,12 +475,8 @@ void XLALDefaultErrorHandler( const char *func, const char *file, int line, int 
 }
 
 /** Silent XLAL error handler */
-void XLALSilentErrorHandler( const char *func, const char *file, int line, int errnum )
+void XLALSilentErrorHandler( const char UNUSED *func, const char UNUSED *file, int UNUSED line, int UNUSED errnum )
 {
-  func = NULL;
-  file = NULL;
-  line = 0;
-  errnum = 0;
   return;
 }
 
