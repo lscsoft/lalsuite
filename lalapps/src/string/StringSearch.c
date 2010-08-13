@@ -164,10 +164,6 @@ struct StringTemplateTag {
 /* GLOBAL VARIABLES */
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
-StringTemplate strtemplate[MAXTEMPLATES];
-
-int NTemplates;
-
 SnglBurst *events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
@@ -202,23 +198,23 @@ int DownSample(struct CommandLineArgsTag CLA);
 int AvgSpectrum(struct CommandLineArgsTag CLA);
 
 /* Creates the template bank based on the spectrum  */
-int CreateTemplateBank(struct CommandLineArgsTag CLA);
+int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates);
 
 /* Creates the frequency domain string cusp or kink filters  */
-int CreateStringFilters(struct CommandLineArgsTag CLA);
+int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates);
 
 /* Filters the data through the template banks  */
-int FindStringBurst(struct CommandLineArgsTag CLA);
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates);
 
 /* Finds events above SNR threshold specified  */
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
-	       INT4 i, INT4 m, SnglBurst **thisEvent);
+int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
+               REAL4Vector *vector, INT4 i, SnglBurst **thisEvent);
 
 /* Writes out the xml file with the events it found  */
 int OutputEvents(const struct CommandLineArgsTag *CLA);
 
 /* Frees the memory */
-int FreeMem(void);                                        
+int FreeMem(StringTemplate *strtemplate, int NTemplates);                                        
 
 /* Clustering comparison function */
 static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBurst * const *);
@@ -227,6 +223,9 @@ static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBur
 
 int main(int argc,char *argv[])
 {
+  StringTemplate strtemplate[MAXTEMPLATES];
+  int NTemplates;
+
   /****** ReadCommandLine ******/
   printf("ReadCommandLine()\n");
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
@@ -281,15 +280,15 @@ int main(int argc,char *argv[])
   
   /****** CreateTemplateBank ******/
   printf("CreateTemplateBank()\n");
-  if (CreateTemplateBank(CommandLineArgs)) return 10;
+  if (CreateTemplateBank(CommandLineArgs, strtemplate, &NTemplates)) return 10;
   
   /****** CreateStringFilters ******/
   printf("CreateStringFilters()\n");
-  if (CreateStringFilters(CommandLineArgs)) return 11;
+  if (CreateStringFilters(CommandLineArgs, strtemplate, NTemplates)) return 11;
   
   /****** FindStringBurst ******/
   printf("FindStringBurst()\n");
-  if (FindStringBurst(CommandLineArgs)) return 12;
+  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates)) return 12;
   
   /****** XLALClusterSnglBurstTable ******/
   printf("XLALClusterSnglBurstTable()\n");
@@ -308,7 +307,7 @@ int main(int argc,char *argv[])
   
   /****** FreeMem ******/
   printf("FreeMem()\n");
-  if (FreeMem()) return 14;
+  if (FreeMem(strtemplate, NTemplates)) return 14;
 
   printf("StringJob is done\n");
   
@@ -470,7 +469,7 @@ int OutputEvents(const struct CommandLineArgsTag *CLA){
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
+int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **thisEvent){
   int p, pp;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
@@ -482,7 +481,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
     for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
-      fprintf(stdout,"%d %e\n",m, vector->data[p]);
+      fprintf(stdout,"%p %e\n", strtemplate, vector->data[p]);
   
   /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
@@ -519,9 +518,9 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
-      for(pp=-strtemplate[m].chi2_index; pp<strtemplate[m].chi2_index; pp++){
-        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
-        ndof += (1-strtemplate[m].auto_cor->data[GV.seg_length/2+pp]*strtemplate[m].auto_cor->data[GV.seg_length/2+pp]);
+      for(pp=-strtemplate->chi2_index; pp<strtemplate->chi2_index; pp++){
+        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate->auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate->auto_cor->data[GV.seg_length/2+pp]);
+        ndof += (1-strtemplate->auto_cor->data[GV.seg_length/2+pp]*strtemplate->auto_cor->data[GV.seg_length/2+pp]);
       }
 
  
@@ -558,10 +557,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
       XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
       (*thisEvent)->duration     = duration;
-      (*thisEvent)->central_freq = (strtemplate[m].f+CLA.fbankstart)/2.0;	   
-      (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.fbankstart;				     
+      (*thisEvent)->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
+      (*thisEvent)->bandwidth    = strtemplate->f-CLA.fbankstart;				     
       (*thisEvent)->snr          = maximum;
-      (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
+      (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate->norm;
       (*thisEvent)->chisq = chi2;
       (*thisEvent)->chisq_dof = ndof;
     }
@@ -572,7 +571,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 /*******************************************************************************/
 
-int FindStringBurst(struct CommandLineArgsTag CLA){
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates){
   int i,p,m; 
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
@@ -609,7 +608,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
       
-      if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
+      if(FindEvents(CLA, &strtemplate[m], vector, i, &thisEvent)) return 1;
     }
   }
 
@@ -626,7 +625,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int CreateStringFilters(struct CommandLineArgsTag CLA){
+int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates){
 
   int p, m; 
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
@@ -721,9 +720,9 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int CreateTemplateBank(struct CommandLineArgsTag CLA){
+int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates){
   REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
-  int m, p, pcut, f_min_index, f_max_index, f_cut_index, k, f_low_cutoff_index, extr_ctr;
+  int m, p, pcut, f_min_index, f_max_index, f_cut_index, f_low_cutoff_index, extr_ctr;
   REAL4Vector *integral;
   REAL4Vector    *vector; /* time-domain vector workspace */
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
@@ -755,19 +754,19 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   strtemplate[0].f=f_cut;
   strtemplate[0].mismatch=0.0;
   strtemplate[0].norm=sqrt(t1t1);
-  k=1;
+  *NTemplates=1;
   fprintf(stdout,"%% Templ. frequency      sigma      mismatch\n");  
-  fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",k-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+  fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
   
   /* find the next cutoffs given the maximal mismatch */
   for(pcut=f_cut_index+1; pcut<f_max_index; pcut++){
     f_cut = pcut*GV.Spec->deltaF;
    
-    t2t2=integral->data[strtemplate[k-1].findex-f_min_index];
-    t1t2=integral->data[strtemplate[k-1].findex-f_min_index];
+    t2t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
+    t1t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
     
     /* compute (t2|t2) and (t1|t2) */
-    for( p = strtemplate[k-1].findex+1 ; p < f_max_index; p++ ){
+    for( p = strtemplate[*NTemplates-1].findex+1 ; p < f_max_index; p++ ){
       f = p*GV.Spec->deltaF;
       
       /* (t2|t2) */
@@ -778,9 +777,9 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
 
       /* (t1|t2) */
       if(f<=f_cut)
-	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f) /GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f) /GV.Spec->data->data[p]*GV.Spec->deltaF;
       else 
-	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[k-1].f)*exp(1-f/f_cut) /GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f)*exp(1-f/f_cut) /GV.Spec->data->data[p]*GV.Spec->deltaF;
     }
         
     previous_epsilon = epsilon;
@@ -789,14 +788,14 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
     /*if(pcut%50==0) printf("%d %f %f\n",pcut, f_cut, epsilon);*/
 
     if(epsilon >= CLA.fmismatchmax || pcut==f_max_index-1){
-      strtemplate[k].findex=pcut;
-      strtemplate[k].f=f_cut;
-      strtemplate[k].norm=sqrt(t2t2);
-      strtemplate[k].mismatch=epsilon;
-      k++;
-      fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm, strtemplate[k-1].mismatch);
+      strtemplate[*NTemplates].findex=pcut;
+      strtemplate[*NTemplates].f=f_cut;
+      strtemplate[*NTemplates].norm=sqrt(t2t2);
+      strtemplate[*NTemplates].mismatch=epsilon;
+      (*NTemplates)++;
+      fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[*NTemplates-1].f,strtemplate[*NTemplates-1].norm, strtemplate[*NTemplates-1].mismatch);
       t1t1=t2t2;
-      if(k == MAXTEMPLATES){
+      if(*NTemplates == MAXTEMPLATES){
 	fprintf(stderr,"Too many templates for code... Exiting\n");
 	return 1;
       }
@@ -808,7 +807,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
 
   }
 
-  NTemplates=k;
   XLALDestroyREAL4Vector( integral );
 
 
@@ -816,7 +814,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA){
   vector = XLALCreateREAL4Vector( GV.seg_length);
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
   f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec->deltaF+0.5);
-  for (m = 0; m < NTemplates; m++){
+  for (m = 0; m < *NTemplates; m++){
     
     /* create the space for the waveform vectors */
     strtemplate[m].waveform_f = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
@@ -1502,13 +1500,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
 
 /*******************************************************************************/
 
-int FreeMem(void){
+int FreeMem(StringTemplate *strtemplate, int NTemplates){
   int m;
   
   XLALDestroyREAL4TimeSeries(GV.ht_proc);
   XLALDestroyREAL4FrequencySeries(GV.Spec);
   
-  for (m=0; m < MAXTEMPLATES; m++)
+  for (m=0; m < NTemplates; m++)
     XLALDestroyREAL4FrequencySeries(strtemplate[m].StringFilter);
     
   XLALDestroyREAL4FFTPlan( GV.fplan );
