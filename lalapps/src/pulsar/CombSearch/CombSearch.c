@@ -44,11 +44,6 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-int finite(double);
 
 /* LAL-includes */
 #include <lal/LALConfig.h>
@@ -56,24 +51,15 @@ int finite(double);
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
 #include <lal/LALStdlib.h>
+#include <lal/UserInput.h>
+#include <lal/SFTfileIO.h>
+#include <lal/LogPrintf.h>
 
 #include <lal/AVFactories.h>
 #include <lal/GSLSupport.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/UserInput.h>
-#include <lal/SFTfileIO.h>
-#include <lal/ExtrapolatePulsarSpins.h>
 
-#include <lal/NormalizeSFTRngMed.h>
-#include <lal/ComputeFstat.h>
-#include <lal/LALHough.h>
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
-
-#include <lal/LogPrintf.h>
-#include <lal/DopplerFullScan.h>
-#include <lal/BinaryPulsarTiming.h>
-#include <lal/PulsarDataTypes.h>
 
 #include <lalapps.h>
 
@@ -87,22 +73,6 @@ RCSID( "$Id$");
 #define MAXLINELENGTH 1024   		/* Maximum # of characters of in a line */
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-/* error codes */
-#define COMBSEARCH_ENULL 	1
-#define COMBSEARCH_ESYS     	2
-#define COMBSEARCH_EINPUT   	3
-#define COMBSEARCH_EMEM   	4
-#define COMBSEARCH_ENONULL 	5
-#define COMBSEARCH_EXLAL	6
-
-#define COMBSEARCH_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define COMBSEARCH_MSGESYS	"System call failed (probably file IO)"
-#define COMBSEARCH_MSGEINPUT   	"Invalid input"
-#define COMBSEARCH_MSGEMEM   	"Out of memory. Bad."
-#define COMBSEARCH_MSGENONULL 	"Output pointer is non-NULL"
-#define COMBSEARCH_MSGEXLAL	"XLALFunction-call failed"
-
 
 /***********************************************************************************************/
 /* internal structures */
@@ -300,7 +270,7 @@ int computeCStat(ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst)
   ufreq_bin	= floor(0.5 + (uvar->Freq-cfg->fmin)/cfg->df);		/* nearest bin to user starting frequency */
   ufreq		= cfg->fmin + (cfg->df*ufreq_bin);			/* frequency of Fstat bin nearest to user frequency */
   ufband	= floor(0.5 + (uvar->FreqBand/cfg->df));		/* user frequency band in bins */
-  mm		= floor(0.5 + 2*M_PI*cfg->f0*uvar->orbitasini);		/* whole number of sidebands on either side of central spike */
+  mm		= floor(0.5 + LAL_TWOPI*cfg->f0*uvar->orbitasini);		/* whole number of sidebands on either side of central spike */
   cfg->dm	= floor(0.5 + mm/(uvar->orbitPeriod*cfg->df));		/* exclusion region: number of bins to exclude after Cstat calculation */
   cfg->N	= ufband + 2*cfg->dm;					/* number of bins for cstat memory allocation */
   fstart	= ufreq - cfg->df*cfg->dm;				/* start frequency of search, half a comb width before user specified Freq */
@@ -469,8 +439,8 @@ int main(int argc,char *argv[])
   //LogSetLevel ( lalDebugLevel );
   if (LALUserVarWasSet(&uvar.outputCstat)) 	{
     if ((Cstat_out = fopen(uvar.outputCstat, "wb")) == NULL) 	{
-      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputCstat);
-      return (COMBSEARCH_ESYS);
+      LogPrintf (LOG_CRITICAL, "%s: Error opening file '%s' for reading.. Error %d\n",fn,uvar.outputCstat,xlalErrno);
+      return XLAL_EIO;
     }
     
     /* get full commandline describing search */
@@ -534,7 +504,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,inputFstat, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
   LALregSTRINGUserStruct(status,outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
    
-  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+  LALregBOOLUserStruct(status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
  
   DETATCHSTATUSPTR (status);
