@@ -309,7 +309,7 @@ UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax );
 REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data );
 	void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars );
 	REAL8Vector * sum_data( LALIFOData *data );
-	REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
+	void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
 
 	
 #ifdef __cplusplus

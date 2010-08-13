@@ -162,7 +162,7 @@ LALIFOData *readPulsarData(int argc, char *argv[])
  
   BinaryPulsarParams pars;
  
-  LALIFOData *ifodata, *head;
+  LALIFOData *ifodata=NULL, *head=NULL;
   LALIFOData *prev=NULL;
   
   struct option long_options[] =
@@ -391,7 +391,6 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 /* Populates the structures for the algorithm control in runState, given the
  commandLine arguments. Includes setting up a random number generator.*/
 {
-	UINT4 verbose=0;
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	REAL8 tmp;
@@ -531,7 +530,7 @@ void initialiseProposal(LALInferenceRunState *runState)
   ProcessParamsTable *commandLine=runState->commandLine;
   FILE *fp=NULL;
   
-  CHAR *tempPar;
+  CHAR tempPar[100]="";
   REAL8 low, high;
   
   BinaryPulsarParams pulsar;
@@ -542,7 +541,7 @@ void initialiseProposal(LALInferenceRunState *runState)
   /* open file */
   fp = fopen(propfile, "r");
   
-  while(fscanf(fp, "%s %lf %lf", &tempPar, &low, &high) != EOF){
+  while(fscanf(fp, "%s %lf %lf", tempPar, &low, &high) != EOF){
     REAL8 tempVar;
     VariableType type;
     
@@ -774,8 +773,7 @@ void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource, INT4 timeStep
 
 /* function to calculate the log(likelihood) given some data and a set of
    particular pulsar parameters */
-REAL8 pulsar_log_likelihood( LALVariables *vars, 
-  LALIFOData *data, LALTemplateFunction *get_pulsar_model ){
+REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data, LALTemplateFunction *get_model ){
   INT4 i=0, j=0, count=0, k=0, cl=0;
   INT4 length=0, chunkMin, chunkMax;
   REAL8 chunkLength=0.;
@@ -813,7 +811,7 @@ REAL8 pulsar_log_likelihood( LALVariables *vars,
   copyVariables(data->modelParams, vars);
   
   /* get pulsar model */
-  get_pulsar_model( data );
+  get_model( data );
   
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < chunkMax+1 ; i++ )
@@ -881,7 +879,6 @@ void get_pulsar_model( LALIFOData *data ){
   BinaryPulsarParams pars;
   
   REAL8Vector *dphi=NULL;
-  REAL8Vector *amp=NULL;
   
   /* set model parameters */
   pars.h0 = *(REAL8*)getVariable( data->modelParams, "h0");
@@ -905,7 +902,7 @@ void get_pulsar_model( LALIFOData *data ){
   pars.f4 = *(REAL8*)getVariable( data->modelParams, "f4");
   pars.f5 = *(REAL8*)getVariable( data->modelParams, "f5");
   
-  pars.model = *(CHAR*)getVariable( data->modelParams, "model");
+  pars.model = (CHAR*)getVariable( data->modelParams, "model");
   
   /* binary parameters */
   if( pars.model != NULL ){
@@ -951,8 +948,8 @@ void get_pulsar_model( LALIFOData *data ){
     pars.m2 = *(REAL8*)getVariable( data->modelParams, "m2");
   }
 
-  amp = get_amplitude_model( pars, data );
-  length = amp->length;
+  get_amplitude_model( pars, data );
+  length = data->compModelData->data->length;
   
   /* assume that timeData vector within the LALIFOData structure contains the
      phase calculated using the initial (heterodyne) values of the phase
@@ -1086,7 +1083,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
   return phis;
 }
 
-REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
+void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   INT4 i=0, length;
   
   REAL8Vector *amp=NULL;
@@ -1156,69 +1153,69 @@ REAL8Vector *get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
 
 void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars ){
   /* amplitude model parameters */
-  addVariable(&ini, "h0", &pars.h0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "phi0", &pars.phi0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "cosiota", &pars.cosiota, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "psi", &pars.psi, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "h0", &pars.h0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "phi0", &pars.phi0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "cosiota", &pars.cosiota, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "psi", &pars.psi, REAL8_t,PARAM_FIXED);
   
   /* phase model parameters */
   
   /* frequency */
-  addVariable(&ini, "f0", &pars.f0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "f1", &pars.f1, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "f2", &pars.f2, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "f3", &pars.f3, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "f4", &pars.f4, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "f5", &pars.f5, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "pepoch", &pars.pepoch, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f0", &pars.f0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f1", &pars.f1, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f2", &pars.f2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f3", &pars.f3, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f4", &pars.f4, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "f5", &pars.f5, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "pepoch", &pars.pepoch, REAL8_t,PARAM_FIXED);
   
   /* sky position */
-  addVariable(&ini, "ra", &pars.ra, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "pmra", &pars.pmra, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "dec", &pars.dec, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "pmdec", &pars.pmdec, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "posepoch", &pars.posepoch, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "ra", &pars.ra, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "pmra", &pars.pmra, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "dec", &pars.dec, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "pmdec", &pars.pmdec, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "posepoch", &pars.posepoch, REAL8_t,PARAM_FIXED);
   
   /* binary system parameters */
-  addVariable(&ini, "model", &pars.model, string_t, PARAM_FIXED);
+  addVariable(ini, "model", &pars.model, string_t, PARAM_FIXED);
   
-  addVariable(&ini, "Pb", &pars.Pb, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "e", &pars.e, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "eps1", &pars.eps1, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "eps2", &pars.eps2, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "T0", &pars.T0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "Tasc", &pars.Tasc, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "x", &pars.x, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "w0", &pars.w0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "Pb", &pars.Pb, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "e", &pars.e, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "eps1", &pars.eps1, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "eps2", &pars.eps2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "T0", &pars.T0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "Tasc", &pars.Tasc, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "x", &pars.x, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "w0", &pars.w0, REAL8_t,PARAM_FIXED);
 
-  addVariable(&ini, "Pb2", &pars.Pb2, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "e2", &pars.e2, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "T02", &pars.T02, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "x2", &pars.x2, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "w02", &pars.w02, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "Pb2", &pars.Pb2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "e2", &pars.e2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "T02", &pars.T02, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "x2", &pars.x2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "w02", &pars.w02, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "Pb3", &pars.Pb3, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "e3", &pars.e3, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "T03", &pars.T03, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "x3", &pars.x3, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "w03", &pars.w03, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "Pb3", &pars.Pb3, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "e3", &pars.e3, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "T03", &pars.T03, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "x3", &pars.x3, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "w03", &pars.w03, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "xpbdot", &pars.xpbdot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "eps1dot", &pars.eps1dot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "eps2dot", &pars.eps2dot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "wdot", &pars.wdot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "gamma", &pars.gamma, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "Pbdot", &pars.Pbdot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "xdot", &pars.xdot, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "edot", &pars.edot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "xpbdot", &pars.xpbdot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "eps1dot", &pars.eps1dot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "eps2dot", &pars.eps2dot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "wdot", &pars.wdot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "gamma", &pars.gamma, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "Pbdot", &pars.Pbdot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "xdot", &pars.xdot, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "edot", &pars.edot, REAL8_t,PARAM_FIXED);
   
-  addVariable(&ini, "s", &pars.s, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "dr", &pars.dr, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "dth", &pars.dth, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "a0", &pars.a0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "b0", &pars.b0, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "M", &pars.M, REAL8_t,PARAM_FIXED);
-  addVariable(&ini, "m2", &pars.m2, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "s", &pars.s, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "dr", &pars.dr, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "dth", &pars.dth, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "a0", &pars.a0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "b0", &pars.b0, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "M", &pars.M, REAL8_t,PARAM_FIXED);
+  addVariable(ini, "m2", &pars.m2, REAL8_t,PARAM_FIXED);
 }
 
 
