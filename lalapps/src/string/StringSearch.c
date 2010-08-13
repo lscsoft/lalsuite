@@ -169,8 +169,6 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
-int Nevents=0;
-
 
 /***************************************************************************/
 
@@ -448,7 +446,7 @@ int OutputEvents(const struct CommandLineArgsTag *CLA){
   
   /* search summary table */
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-  searchsumm.searchSummaryTable->nevents = Nevents;
+  searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
   
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
 
