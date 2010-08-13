@@ -13,6 +13,7 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0),
 
 #include <lal/Units.h>
 #include <sys/time.h>
+#include <lal/XLALError.h>
 
 RCSID("$Id$");
 
@@ -206,6 +207,8 @@ LALIFOData *readPulsarData(int argc, char *argv[])
         break;
       case 'D': /* detectors */
         detectors = XLALStringDuplicate(optarg);
+			printf("very first one %s",XLALErrorString(xlalErrno));
+
         break;
       case 'p': /* pulsar name */
         pulsar = XLALStringDuplicate(optarg);
@@ -225,8 +228,8 @@ LALIFOData *readPulsarData(int argc, char *argv[])
       case 'M':
         sfile = XLALStringDuplicate(optarg);
         break;
-      case '?':
-        fprintf(stderr, "Unknown error while parsing options\n");
+      //case '?':
+        //fprintf(stderr, "Unknown error while parsing options\n");
       default:
         break;
     }
@@ -242,8 +245,8 @@ LALIFOData *readPulsarData(int argc, char *argv[])
     
     while(1){
       tempdet = strsep(&tempdets, ",");
-      
-      XLALStringCopy(dets[numDets], tempdet, strlen(tempdet));
+		printf("tempdet=%s\n",tempdet);
+      XLALStringCopy(dets[numDets], tempdet, strlen(tempdet)+1);
       
       numDets++;
       
@@ -268,7 +271,8 @@ defined!\n");
     INT4 count=0;
     
     inputstr = XLALStringDuplicate( forcefile );
-    
+	  printf("stringduplicate 1 %s",XLALErrorString(xlalErrno));
+
     /* count number of commas */
     while(1){
       tempstr = strsep(&inputstr, ",");
@@ -287,7 +291,8 @@ defined!\n");
   
   /* reset filestr */
   if ( forcefile != NULL ) filestr = XLALStringDuplicate(forcefile);
-  
+	printf("stringsuplicate %s",XLALErrorString(xlalErrno));
+
   /* read in data */
   for( i = 0,prev=NULL ; i < numDets ; i++,prev=ifodata ){
     CHAR *datafile=NULL;
@@ -301,29 +306,32 @@ defined!\n");
     
     ifodata=calloc(1,sizeof(LALIFOData));
     ifodata->next=NULL;
+	  ifodata->dataParams=calloc(1,sizeof(LALVariables));
     if(i==0) head=ifodata;
     if(i>0) prev->next=ifodata;
-       
+	
     /* set detector */
-    ifodata->detector = XLALGetSiteInfo( dets[numDets] );
-    
+    ifodata->detector = XLALGetSiteInfo( dets[i] );
+	  printf("getsiteinfo %s",XLALErrorString(xlalErrno));
+
     /*============================ GET DATA ==================================*/
     /* get detector B_ks data file in form finehet_JPSR_DET */
     if (forcefile == NULL){
       datafile = XLALMalloc( 256 ); /* allocate memory for file name */
+		printf("mallc %s",XLALErrorString(xlalErrno));
+
       sprintf(datafile, "%s/data%s/finehet_%s_%s", inputdir, dets[i],
         pulsar, dets[i]);
     }
     else{ /* get i'th filename from the comma separated list */
       INT4 count=0;
-      
-      while (count < i){
+      while (count <= i){
         datafile = strsep(&filestr, ",");
       
         count++;
       }
     }
-      
+	  printf("datafile name: %s\n",datafile);
     /* open data file */
     if((fp = fopen(datafile, "r"))==NULL){
       fprintf(stderr, "Error... can't open data file %s!\n", datafile);
@@ -333,15 +341,16 @@ defined!\n");
     j=0;
 
     /* read in data */
-    ifodata->dataTimes = NULL;
-    ifodata->dataTimes = XLALCreateTimestampVector( MAXLENGTH );
+	  temptimes = XLALCreateREAL8Vector( MAXLENGTH );
+	  printf("createreal8vector %s",XLALErrorString(xlalErrno));
 
     /* read in data */
     while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
       /* check that size of data file is not to large */
       if (j == 0){
         XLALGPSSetREAL8( &gpstime, times );
-        
+		  printf("gpssetreal8 %s",XLALErrorString(xlalErrno));
+
         ifodata->compTimeData = NULL;
         ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, MAXLENGTH );
       }
@@ -363,19 +372,25 @@ defined!\n");
     /* resize the data */
     ifodata->compTimeData =
       XLALResizeCOMPLEX16TimeSeries(ifodata->compTimeData,0,j);
-    
+	  printf("resizecomplex %s",XLALErrorString(xlalErrno));
+
     /* fill in time stamps as LIGO Time GPS Vector */
     ifodata->dataTimes = NULL;
     ifodata->dataTimes = XLALCreateTimestampVector( j );
-    
+	  
+	  printf("createtimestampsvector %s",XLALErrorString(xlalErrno));
+	  
+	  
     for ( k=0; k<j; k++ )
       XLALGPSSetREAL8(&ifodata->dataTimes->data[k], temptimes->data[k]);
-    
-    XLALDestroyREAL8Vector(temptimes);
-  
-    /* set ephemeris data */
-    ifodata->ephem = XLALMalloc(sizeof(EphemerisData *));
+	  printf("setreal8 %s",XLALErrorString(xlalErrno));
 
+    XLALDestroyREAL8Vector(temptimes);
+  	  printf("destroy vector %s",XLALErrorString(xlalErrno));
+
+    /* set ephemeris data */
+    ifodata->ephem = XLALMalloc(sizeof(EphemerisData));
+	  printf("malloc %s",XLALErrorString(xlalErrno));
     ifodata->ephem->ephiles.earthEphemeris = efile;
     ifodata->ephem->ephiles.sunEphemeris = sfile;
   
@@ -405,7 +420,13 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 		verbose=1;
 		addVariable(runState->algorithmParams,"verbose", &verbose , INT4_t, PARAM_FIXED);
 	}
-		
+	
+	/* Initialise parameters structure */
+	runState->algorithmParams=calloc(1,sizeof(LALVariables));
+	runState->priorArgs=calloc(1,sizeof(LALVariables));
+	runState->proposalArgs=calloc(1,sizeof(LALVariables));
+	
+	
 	/* Number of live points */
 	tmpi=atoi(getProcParamVal(commandLine,"--Nlive")->value);
 	addVariable(runState->algorithmParams,"Nlive",&tmpi, INT4_t,PARAM_FIXED);
@@ -453,7 +474,7 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 	/* Using psi bins, time bins */
 	ProcessParamsTable *ppt;
 	ProcessParamsTable *commandLine=runState->commandLine;
-	
+
   INT4 chunkMin, chunkMax;
   
 	ppt=getProcParamVal(commandLine,"--psi-bins");
@@ -493,13 +514,15 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 	while(data){
 		REAL8Vector *sumData=NULL;
     UINT4Vector *chunkLength=NULL;
-    
-    t0=XLALGPSGetREAL8(&data->dataTimes->data[0]);
+
+    t0=XLALGPSGetREAL8(&(data->dataTimes->data[0]));
 		detAndSource.pDetector=data->detector;
 		detAndSource.pSource=source;
 		
+		LUfplus = gsl_matrix_alloc(psiBins, timeBins);
+
+		LUfcross = gsl_matrix_alloc(psiBins, timeBins);
 	response_lookup_table(t0, detAndSource, timeBins, psiBins, LUfplus, LUfcross);
-	
     addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t,PARAM_FIXED);
     addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t,PARAM_FIXED);
 
@@ -508,12 +531,12 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 
     /* get chunk lengths of data */
     chunkLength = get_chunk_lengths( data, chunkMax );
-    addVariable(data->dataParams, "chunkLength", chunkLength, UINT4Vector_t,
+    addVariable(data->dataParams, "chunkLength", &chunkLength, UINT4Vector_t,
       PARAM_FIXED);
-    
+
     /* get sum of data for each chunk */
     sumData = sum_data( data );
-    addVariable(data->dataParams, "sumData", sumData, REAL8Vector_t,
+    addVariable(data->dataParams, "sumData", &sumData, REAL8Vector_t,
       PARAM_FIXED);
 
 		data=data->next;
@@ -705,10 +728,10 @@ REAL8Vector * sum_data( LALIFOData *data ){
   INT4 chunkLength=0, length=0, i=0, j=0, count=0;
   COMPLEX16 B;
   REAL8Vector *sumData=NULL; 
-  
+
   UINT4Vector *chunkLengths;
   
-  chunkLengths = (UINT4Vector *)getVariable(data->dataParams, "chunkLengths");
+  chunkLengths = *(UINT4Vector **)getVariable(data->dataParams, "chunkLength");
   
   length = data->dataTimes->length + 1 -
     chunkLengths->data[chunkLengths->length - 1];
@@ -801,7 +824,7 @@ REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data, LALTemplateFu
   UINT4Vector *chunkLengths=NULL;
 
   sumData = (REAL8Vector*)getVariable(data->dataParams, "sumData");
-  chunkLengths = (UINT4Vector*)getVariable(data->dataParams, "chunkLengths");
+  chunkLengths = (UINT4Vector*)getVariable(data->dataParams, "chunkLength");
   chunkMin = *(INT4*)getVariable(data->dataParams, "chunkMin");
   chunkMax = *(INT4*)getVariable(data->dataParams, "chunkMax");
   

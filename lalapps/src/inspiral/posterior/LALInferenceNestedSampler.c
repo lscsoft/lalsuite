@@ -83,7 +83,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
 	for(i=0;i<ND;i++) means[i]=0.0;
 	for(i=0;i<Nlive;i++){
-		for(item=Live[i]->head;item;item=item->next) {
+		for(item=Live[i]->head,j=0;item;item=item->next) {
 			if(item->vary==PARAM_LINEAR || item->vary==PARAM_CIRCULAR ) {
 				if (item->type==REAL4_t) means[j]+=*(REAL4 *)item->value;
 				if (item->type==REAL8_t) means[j]+=*(REAL8 *)item->value;
@@ -142,7 +142,6 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)getVariable(runState->algorithmParams,"Nlive");
-	LALVariables **Live=runState->livePoints;
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
@@ -176,7 +175,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	
 	/* Open output file */
 	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
-	fpout=open(outfile,"w");
+	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 
 	/* Set up arrays for parallel runs */
@@ -296,9 +295,9 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
  evolve runState->currentParams to a new point with higher
  likelihood than currentLikelihood. Uses the MCMC method.
  */
-NestedSamplingOneStep(LALInferenceRunState *runState)
+void NestedSamplingOneStep(LALInferenceRunState *runState)
 {
-	LALVariables *newParams;
+	LALVariables *newParams=NULL;
 	UINT4 mcmc_iter=0,accept=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
@@ -343,7 +342,6 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 									   LALVariables *parameter)
 	{
-		static LALStatus status;
 		LALVariables **Live=runState->livePoints;
 		int i=0,j=0,dim=0,same=1;
 		REAL4 randnum;
@@ -373,10 +371,10 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
 		LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
-		return(0);
+		return;
 	}
 
-LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs){
+void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs){
 /* Apply cyclic and reflective boundaries to parameter to bring it back within
  the prior */
 	LALVariableItem *paraHead=NULL;

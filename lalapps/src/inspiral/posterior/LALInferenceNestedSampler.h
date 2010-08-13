@@ -24,3 +24,8 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive);
 double logadd(double a,double b);
 
 void NestedSamplingOneStep(LALInferenceRunState *runState);
+
+REAL8 mean(REAL8 *array,int N);
+REAL8 sample_logt(int Nlive,gsl_rng *RNG);
+REAL8 ang_dist(REAL8 a1, REAL8 a2);
+REAL8 ang_var(LALVariables **list,const char *pname, int N);
