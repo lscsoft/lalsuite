@@ -1024,7 +1024,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
     return NULL;
   
   /* copy barycenter and ephemeris data */
-  memcpy(&bary, data->bary, sizeof(data->bary));
+	memset(&bary, 0, sizeof(bary));
+	memcpy(&(bary.site),data->detector,sizeof(LALDetector));
   memcpy(&edat, data->ephem, sizeof(data->ephem));
 
    /* set the position and frequency epochs if not already set */
