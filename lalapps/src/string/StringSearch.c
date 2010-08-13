@@ -20,16 +20,12 @@
 /*********************************************************************************/
 /*                            Cosmic string search code                          */
 /*                                                                               */
-/*                     X. Siemens, J. Creighton and F. Robinet                   */
+/*            X. Siemens, J. Creighton, F. Robinet, and K. Cannon                */
 /*                                                                               */
 /*                             UWM/LAL - December 2009                           */
 /*********************************************************************************/
 
 #include <config.h>
-#if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
-#include <stdio.h>
-int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
-#else
 
 #include <unistd.h>
 #include <sys/types.h>
