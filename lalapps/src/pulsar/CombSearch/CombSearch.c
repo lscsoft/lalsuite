@@ -161,10 +161,10 @@ static CstatOut empty_CstatOut;
 /* local prototypes */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
-void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
+int checkUserInputConsistency (const UserInput_t *uvar );
 void OutputVersion ( void );
-void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg);
-void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst);
+int getFStat(CHAR *filename, ConfigVariables *cfg);
+int computeCStat(ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst);
 void Freemem(LALStatus *,  ConfigVariables *cfg, CstatOut *cst);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
@@ -177,20 +177,19 @@ const char *va(const char *format, ...);	/* little var-arg string helper functio
  * reads in Fstat file input and assigns parameter values 
  */
 /*----------------------------------------------------------------*/
-void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
+int getFStat(CHAR *filename, ConfigVariables *cfg)
 {
+  static const char *fn = __func__;             /* store function name for log output */
+
   CHAR line[MAXLINELENGTH];
   REAL8 dummy, *a, *d, *frequency;
   FILE *data = NULL;
   INT4 c=0, l=0;
    
-  INITSTATUS (status, "getFStat", rcsid);
-  ATTATCHSTATUSPTR (status);
-
   /* Open data file - check it is good */
   if ((data = fopen(filename, "r")) == NULL)	{
-    LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
-    ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
+    LogPrintf (LOG_CRITICAL, "%s: Error opening file '%s' for reading.. Error %d\n",fn,filename,xlalErrno);
+    return XLAL_EIO;
   }
 
   /* need to know number of data points - counting the number of data lines (ignoring comments) */
@@ -204,32 +203,32 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
    
   /* Check data has more than one Fstat entry */
   if (l==1)	{
-    LALPrintError ("\nMust be more than one Fstat entry in data file");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+    LogPrintf (LOG_CRITICAL, "%s: Must be more than one Fstat entry in data file %s. Error %d\n",fn,filename,xlalErrno);
+    return XLAL_EDOM;
   }
   
   /* Allocate some memory according to number of frequency bins */  
   if ((frequency=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )	{
-    LALPrintError ("\nError allocating memory \n\n");
-    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM); 
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory.Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM;
   }
   if ((a=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )		{
-    LALPrintError ("\nError allocating memory \n\n");
-    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory. Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM;
   }
   if ((d=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )		{
-    LALPrintError ("\nError allocating memory \n\n");
-    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);  
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory. Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM; 
   }
   if ((cfg->Fstat=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )	{
-    LALPrintError ("\nError allocating memory \n\n");
-    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory. Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM;
   }
  
   /* Open data file - check it is good */
   if ((data = fopen(filename, "r")) == NULL)	{
-    LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
-    ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
+    LogPrintf (LOG_CRITICAL, "%s: Error opening file '%s' for reading.. Error %d\n",fn,filename,xlalErrno);
+    return XLAL_EIO;
   }
 
   /* Get data, assign configuration variables */  
@@ -250,16 +249,16 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
   /* check for constant frequency seperation and constant sky position */
   for (c=1; c<l; c++) {
     if (((frequency[c]-frequency[c-1]) - cfg->df) > 1e-8) 	{
-      LALPrintError ("\nFrequency separation (in Fstat file) must be constant. \n\n");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LogPrintf (LOG_CRITICAL, "%s: Frequency separation df in Fstat file '%s' must be constant.\n",fn,filename,xlalErrno);
+      return XLAL_EINVAL;
     }
     if ((a[c]-a[0]) != 0) 	{
-      LALPrintError ("\nSky position (alpha) must be constant. \n\n");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LogPrintf (LOG_CRITICAL, "%s: Sky position (alpha) must be constant. Error %d\n",fn,xlalErrno);
+      return XLAL_EINVAL;
     }
     if ((d[c]-d[0]) != 0) 	{
-      LALPrintError ("\nSky position (delta) must be constant. \n\n");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LogPrintf (LOG_CRITICAL, "%s: Sky position (delta) must be constant. Error %d\n",fn,xlalErrno);
+      return XLAL_EINVAL;
     }  
   }
  
@@ -268,8 +267,8 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
   LALFree(d);
   LALFree(frequency);
        
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
+  return XLAL_SUCCESS;
+
 } /* getFStat*/
 
 
@@ -279,8 +278,10 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
  * receives input of Fstat and outputs Cstat 
  */
 /*----------------------------------------------------------------*/
-void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst)
+int computeCStat(ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst)
 { 
+  static const char *fn = __func__;             /* store function name for log output */ 
+
   REAL8 ufreq, fstart, fend;
   INT4 ufband, ufreq_bin, mm, i, ind=0;
   		
@@ -293,9 +294,6 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   COMPLEX16Vector *cout = NULL;
   COMPLEX16Vector *out = NULL;
   REAL8Vector *cstat = NULL;
-
-  INITSTATUS (status, "computeCStat", rcsid);
-  ATTATCHSTATUSPTR (status);
 
   /* create comb search parameters */
   cfg->f0 	= uvar->Freq + 0.5*uvar->FreqBand ; 			/* allocate guess frequency as centre of user input search frequency band */ 
@@ -311,8 +309,8 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
    
   /* check search band plus exclusion region is within data frequency band */
   if ( (fstart < cfg->fmin) || (cfg->fmax < fend) )	{
-      LALPrintError ("\nUser input frequency range and/or exclusion range outside data limits.\n\n");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+      LogPrintf (LOG_CRITICAL, "%s: User input frequency range and/or exclusion range outside data limits. Error %d\n",fn,xlalErrno);
+      return XLAL_EDOM;
   } 
          
   /* Create FFT plans and vectors */
@@ -366,9 +364,9 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   
   /* Fill out CstatOut struct */
   /*  - Allocate some memory */
-  if ((cst->Cstat=(REAL8*)LALMalloc(cfg->N*sizeof(REAL8)))== NULL )	{	
-    LALPrintError ("\nError allocating memory \n\n");
-    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+  if ((cst->Cstat=(REAL8*)LALMalloc(cfg->N*sizeof(REAL8)))== NULL )	{
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory. Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM; 
   }
   
   /*  - Allocate total number of sidebands */
@@ -389,8 +387,7 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   XLALDestroyCOMPLEX16Vector( out);
   XLALDestroyREAL8Vector(cstat );
 
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
+  return XLAL_SUCCESS;
 
 } /* computeCStat */
 
@@ -405,26 +402,26 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
 /*----------------------------------------------------------------------*/ 
 int main(int argc,char *argv[])
 { 
+  static const char *fn = __func__;             	/* store function name for log output */
   LALStatus status = blank_status;			/* initialize status */
-  
-  //FILE *fpLogPrintf = NULL;
+  UserInput_t uvar = empty_UserInput;			/* global container for user variables */
+  ConfigVariables cfg = empty_ConfigVariables;		/* global container for various derived configuration settings */
+  CstatOut cst = empty_CstatOut;			/* global container for cstat struct */
   FILE *Cstat_out = NULL;
-  
   INT4 i;
   CHAR *cmdline = NULL; 
   
-  UserInput_t uvar = empty_UserInput;			/**< global container for user variables */
-  ConfigVariables cfg = empty_ConfigVariables;		/**< global container for various derived configuration settings */
-  CstatOut cst = empty_CstatOut;			/**< global container for cstat struct */
 
-  lalDebugLevel = 1;
+  lalDebugLevel = 0;
   vrbflg = 1;						/* verbose error-messages */
 
-  /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
+  if (XLALGetDebugLevel(argc, argv, 'v')) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALGetDebugLevel() failed with error = %d\n",fn,xlalErrno);
+    return XLAL_EFAULT;
+  }
+
   LAL_CALL (initUserVars(&status, &uvar), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
@@ -439,13 +436,13 @@ int main(int argc,char *argv[])
   }
    
   /* do some sanity checks on the user-input before we proceed */
-  LAL_CALL ( checkUserInputConsistency(&status, &uvar), &status);
+  LAL_CALL ( checkUserInputConsistency(&uvar), &status);
    
   /* call the function that reads the needed information from the data (Fstat) file */
-  LAL_CALL ( getFStat(&status, uvar.inputFstat, &cfg), &status);
+  LAL_CALL ( getFStat(uvar.inputFstat, &cfg), &status);
   
   /* call the function to compute Cstatistic */
-  LAL_CALL ( computeCStat(&status, &cfg, &uvar, &cst), &status);
+  LAL_CALL ( computeCStat( &cfg, &uvar, &cst ), &status);
   
   /*some programming checks, can removed from real code*/
   printf("\n number of sidebands = %d \n", cst.sideband);
@@ -573,22 +570,21 @@ Freemem(LALStatus *status,  ConfigVariables *cfg, CstatOut *cst)
  * Throws an error plus prints error-message if problems are found.
  */
 /*----------------------------------------------------------------------*/
-void
-checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
+int checkUserInputConsistency ( const UserInput_t *uvar )
 {
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);  
+  const CHAR *fn = __func__;      		/* store function name for log output */ 
 
   /* binary parameter checks */
-  if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )	{
-    LALPrintError ("\nNegative or zero value of orbital period not allowed!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+  if ( XLALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )	{
+    LogPrintf (LOG_CRITICAL, "%s: Negative or zero value of orbital period not allowed! Error %d\n",fn,xlalErrno);
+    return XLAL_EDOM;
   }
-  if ( LALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )	{
-    LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
-    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+  if ( XLALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )	{
+    LogPrintf (LOG_CRITICAL, "%s: Negative or zero value of projected orbital semi-major axis not allowed! Error %d\n",fn,xlalErrno);
+    return XLAL_EDOM;
   }
   
-  RETURN (status);
+  return XLAL_SUCCESS; 
 } /* checkUserInputConsistency() */
 
 
