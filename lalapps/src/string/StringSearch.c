@@ -175,9 +175,6 @@ MetadataTable  searchsumm;
 
 int Nevents=0;
 
-PassBandParamStruc highpassParams;
-
-
 
 /***************************************************************************/
 
@@ -196,7 +193,7 @@ int AddInjections(struct CommandLineArgsTag CLA);
 int WindowData(void);
 
 /* High pass filters and casts data to REAL4 */
-int ProcessData(void);
+int ProcessData(const struct CommandLineArgsTag *CLA);
 
 /* DownSamples data */
 int DownSample(struct CommandLineArgsTag CLA);
@@ -234,11 +231,6 @@ int main(int argc,char *argv[])
   printf("ReadCommandLine()\n");
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   
-  highpassParams.nMax =  4;
-  highpassParams.f1   = -1;
-  highpassParams.a1   = -1;
-  highpassParams.f2   = CommandLineArgs.flow;
-  highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
   printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
@@ -259,7 +251,7 @@ int main(int argc,char *argv[])
   
   /****** ProcessData ******/
   printf("ProcessData()\n");
-  if (ProcessData()) return 7;
+  if (ProcessData(&CommandLineArgs)) return 7;
   
   if ( CommandLineArgs.printdataflag ){
     int p;
@@ -945,8 +937,15 @@ int DownSample(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int ProcessData(void){
+int ProcessData(const struct CommandLineArgsTag *CLA){
   int p;
+  PassBandParamStruc highpassParams;
+
+  highpassParams.nMax =  4;
+  highpassParams.f1   = -1;
+  highpassParams.a1   = -1;
+  highpassParams.f2   = CLA->flow;
+  highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
 
   if(XLALButterworthREAL8TimeSeries(GV.ht, &highpassParams)) return 1;
   for (p=0; p<(int)GV.ht->data->length; p++)  
