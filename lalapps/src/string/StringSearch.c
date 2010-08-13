@@ -134,7 +134,6 @@ typedef
 struct GlobalVariablesTag {
   INT4 duration;              /* duration of entire segment to be analysed */
   REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
-  REAL4TimeSeries *ht_V;      /* raw input data (Virgo data) */
   REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries *Spec; /* average spectrum */
   RealFFTPlan *fplan;         /* fft plan */
@@ -969,6 +968,7 @@ int ReadData(struct CommandLineArgsTag CLA){
   int p;
   FrCache *framecache;
   FrStream *framestream=NULL;
+  REAL4TimeSeries *ht_V = NULL;   /* raw input data (Virgo data) */
 
   /* create Frame cache, open frame stream and delete frame cache */
   framecache = XLALFrImportCache(CLA.FrCacheFile);
@@ -978,19 +978,18 @@ int ReadData(struct CommandLineArgsTag CLA){
   GV.duration = XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart);
 
   GV.ht = NULL;
-  GV.ht_V = NULL;
 
   /* Double vs. simple precision data for LIGO vs. Virgo */
   if(CLA.ChannelName[0]=='V'){
 
     /* create and initialize _simple_ precision time series */
-    GV.ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
+    ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
-    XLALFrGetREAL4TimeSeriesMetadata(GV.ht_V,framestream);
+    XLALFrGetREAL4TimeSeriesMetadata(ht_V,framestream);
 
     /* resize ht to the correct number of samples */
-    XLALResizeREAL4TimeSeries(GV.ht_V, 0, (UINT4)(GV.duration/GV.ht_V->deltaT +0.5));
+    XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(GV.duration/ht_V->deltaT +0.5));
 
   } else{
 
@@ -1012,21 +1011,22 @@ int ReadData(struct CommandLineArgsTag CLA){
     XLALFrSeek( framestream, &CLA.GPSStart );
     
     if(CLA.ChannelName[0]=='V'){
-      XLALFrGetREAL4TimeSeries(GV.ht_V,framestream);
+      XLALFrGetREAL4TimeSeries(ht_V,framestream);
       
       /* Allocate space for REAL8 data */
-      GV.ht  = XLALCreateREAL8TimeSeries(GV.ht_V->name, 
-					 &GV.ht_V->epoch, 
-					 GV.ht_V->f0, 
-					 GV.ht_V->deltaT, 
+      GV.ht  = XLALCreateREAL8TimeSeries(ht_V->name, 
+					 &ht_V->epoch, 
+					 ht_V->f0, 
+					 ht_V->deltaT, 
 					 &lalStrainUnit, 
-					 (UINT4)(GV.duration/GV.ht_V->deltaT +0.5));
+					 (UINT4)(GV.duration/ht_V->deltaT +0.5));
 	
       /* Fill REAL8 data vector */
-      for (p=0; p<(int)GV.ht_V->data->length; p++)
-	GV.ht->data->data[p] = (REAL8)GV.ht_V->data->data[p];
+      for (p=0; p<(int)ht_V->data->length; p++)
+	GV.ht->data->data[p] = (REAL8)ht_V->data->data[p];
 
-      XLALDestroyREAL4TimeSeries(GV.ht_V);
+      XLALDestroyREAL4TimeSeries(ht_V);
+      ht_V = NULL;
     }
     else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
