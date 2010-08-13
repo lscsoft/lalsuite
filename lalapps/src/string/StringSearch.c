@@ -109,15 +109,15 @@ struct CommandLineArgsTag {
   char *InjectionFile;        /* LIGO/Virgo xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
   char *outputFileName;       /* Name of xml output filename */
-  INT4 GPSStart;              /* GPS start time of segment to be analysed */
-  INT4 GPSEnd;                /* GPS end time of segment to be analysed */
+  LIGOTimeGPS GPSStart;       /* GPS start time of segment to be analysed */
+  LIGOTimeGPS GPSEnd;         /* GPS end time of segment to be analysed */
   INT4 ShortSegDuration;      /* Number of fixed length sub-segments between GPSStart and GPSEnd */
   REAL4 TruncSecs;            /* Half the number of seconds truncated at beginning and end of a chunk */
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
-  INT4 trigstarttime;         /* start-time of allowed triggers */
+  LIGOTimeGPS trigstarttime;  /* GPS start time of allowed triggers */
   REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
   double chi2cut[3];          /* chi2 cut parameters */
@@ -133,13 +133,12 @@ struct CommandLineArgsTag {
 typedef 
 struct GlobalVariablesTag {
   INT4 duration;              /* duration of entire segment to be analysed */
-  LIGOTimeGPS gpsepoch;       /* GPS epoch of start of entire segment to be analysed */ 
   REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
   REAL4TimeSeries *ht_V;      /* raw input data (Virgo data) */
   REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries *Spec; /* average spectrum */
-  RealFFTPlan *fplan;         /* fft plans */
-  RealFFTPlan *rplan;         /* fft plans */
+  RealFFTPlan *fplan;         /* fft plan */
+  RealFFTPlan *rplan;         /* fft plan */
   INT4 seg_length;
 } GlobalVariables;
 
@@ -459,23 +458,16 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
   /* store the input and output start and end times */
-  {
-    int small_seg_length=CLA->ShortSegDuration;
-
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
-    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
-    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
-
-    if (CLA->trigstarttime > 0)
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
-    else
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4+CLA->pad;
-      
-    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4-CLA->pad;
-    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
+  searchsumm.searchSummaryTable->in_start_time = CLA->GPSStart;
+  searchsumm.searchSummaryTable->in_end_time = CLA->GPSEnd;
+  if (XLALGPSToINT8NS(&CLA->trigstarttime) > 0)
+    searchsumm.searchSummaryTable->out_start_time = CLA->trigstarttime;
+  else {
+    searchsumm.searchSummaryTable->out_start_time = CLA->GPSStart;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, CLA->ShortSegDuration/4+CLA->pad);
   }
+  searchsumm.searchSummaryTable->out_end_time = CLA->GPSEnd;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
@@ -496,9 +488,6 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
-  INT8  peaktime, starttime;
-  INT8  timeNS;
-  SnglBurst *new;
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
@@ -507,17 +496,22 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
   
   /* Now find event in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
+    SnglBurst *new;
+    LIGOTimeGPS peaktime, starttime;
+    LIGOTimeGPS t;
+
     maximum = 0.0;
     pmax=p;
-    timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
-    timeNS  +=   (INT8)( 1e9 * GV.ht_proc->deltaT * p );
+    t = GV.ht_proc->epoch;
+    XLALGPSAdd(&t, (GV.seg_length*i/2 + p) * GV.ht_proc->deltaT);
 
     /* Do we have the start of a cluster? */
-    if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime)){
+    if ( (fabs(vector->data[p]) > CLA.threshold) && (XLALGPSCmp(&t, &CLA.trigstarttime) >= 0)){
       pend=p; pstart=p;
-      
-      timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
-      
+
+      t = GV.ht_proc->epoch;
+      XLALGPSAdd(&t, GV.seg_length*i/2*GV.ht_proc->deltaT);
+
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
       while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
 	     && p<(int)(3*vector->length/4)){
@@ -534,9 +528,10 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 	p++;
       }
 
-      peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
+      starttime = peaktime = t;
+      XLALGPSAdd(&peaktime, GV.ht_proc->deltaT * pmax);
+      XLALGPSAdd(&starttime, GV.ht_proc->deltaT * pstart);
       duration = GV.ht_proc->deltaT * ( pend - pstart );
-      starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
@@ -569,11 +564,11 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
       
       /* give trigger a 1 sample fuzz on either side */
-      starttime -= round( 1e9 * GV.ht_proc->deltaT );
+      XLALGPSAdd(&starttime, -GV.ht_proc->deltaT);
       duration += 2 * GV.ht_proc->deltaT;
 
-      XLALINT8NSToGPS(&new->start_time, starttime);
-      XLALINT8NSToGPS(&new->peak_time, peaktime);
+      new->start_time = starttime;
+      new->peak_time = peaktime;
       new->duration     = duration;
       new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
       new->bandwidth    = strtemplate->f-CLA.fbankstart;				     
@@ -652,7 +647,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
   for (m = 0; m < NTemplates; m++){
     
     /* Initialize the filter */
-    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.Spec->data->length);
+    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.Spec->data->length);
     strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
                 
     /* populate vtilde with the template divided by the noise */
@@ -913,7 +908,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
   REAL4Window  *window4;
   
   GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
-  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
+  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
   GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
   GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
   
@@ -980,15 +975,16 @@ int ReadData(struct CommandLineArgsTag CLA){
   framestream = XLALFrCacheOpen(framecache);
   XLALFrDestroyCache(framecache);
   
-  GV.duration                = CLA.GPSEnd-CLA.GPSStart;
-  GV.gpsepoch.gpsSeconds     = CLA.GPSStart;
-  GV.gpsepoch.gpsNanoSeconds = 0;
-  
+  GV.duration = XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart);
+
+  GV.ht = NULL;
+  GV.ht_V = NULL;
+
   /* Double vs. simple precision data for LIGO vs. Virgo */
   if(CLA.ChannelName[0]=='V'){
 
     /* create and initialize _simple_ precision time series */
-    GV.ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, 1);
+    GV.ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
     XLALFrGetREAL4TimeSeriesMetadata(GV.ht_V,framestream);
@@ -996,11 +992,10 @@ int ReadData(struct CommandLineArgsTag CLA){
     /* resize ht to the correct number of samples */
     XLALResizeREAL4TimeSeries(GV.ht_V, 0, (UINT4)(GV.duration/GV.ht_V->deltaT +0.5));
 
-  }
-  else{
+  } else{
 
     /* create and initialize _double_ precision time series */
-    GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, 1);
+    GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
     XLALFrGetREAL8TimeSeriesMetadata(GV.ht,framestream);
@@ -1014,7 +1009,7 @@ int ReadData(struct CommandLineArgsTag CLA){
   /* If we are reading real noise then read it*/
   if(!CLA.fakenoiseflag){
     /* seek to and read data */
-    XLALFrSeek( framestream, &GV.gpsepoch );
+    XLALFrSeek( framestream, &CLA.GPSStart );
     
     if(CLA.ChannelName[0]=='V'){
       XLALFrGetREAL4TimeSeries(GV.ht_V,framestream);
@@ -1138,8 +1133,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
   CLA->outputFileName=NULL;
-  CLA->GPSStart=0;
-  CLA->GPSEnd=0;
+  XLALINT8NSToGPS(&CLA->GPSStart, 0);
+  XLALINT8NSToGPS(&CLA->GPSEnd, 0);
   CLA->ShortSegDuration=0;
   CLA->TruncSecs=0;
   CLA->power=0.0;
@@ -1147,7 +1142,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   CLA->fakenoiseflag=0;
   CLA->whitespectrumflag=0;
   CLA->samplerate=4096.0;
-  CLA->trigstarttime=0;
+  XLALINT8NSToGPS(&CLA->trigstarttime, 0);
   CLA->cluster=0.0;
   CLA->pad=0;
   CLA->printfilterflag=0;
@@ -1227,13 +1222,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       break;
     case 'S':
       /* GPS start time of search */
-       CLA->GPSStart=atof(optarg);
-      ADD_PROCESS_PARAM(process, "int");
+      if(XLALStrToGPS(&CLA->GPSStart, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'E':
-       /* GPS end time time of search */
-      CLA->GPSEnd=atof(optarg);
-      ADD_PROCESS_PARAM(process, "int");
+      /* GPS end time time of search */
+      if(XLALStrToGPS(&CLA->GPSEnd, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'd':
        /* Number of segment to break-up search into */
@@ -1247,8 +1248,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       break;
     case 'g':
       /* start time of allowed triggers */
-      CLA->trigstarttime=atof(optarg);
-      ADD_PROCESS_PARAM(process, "int");
+      if(XLALStrToGPS(&CLA->trigstarttime, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'p':
       /* start time of allowed triggers */
@@ -1425,18 +1429,28 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
-  if(CLA->GPSStart == 0)
+  if(XLALGPSToINT8NS(&CLA->GPSStart) == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
-  if(CLA->GPSEnd == 0)
+    }
+  if(CLA->GPSStart.gpsNanoSeconds)
+    {
+      fprintf(stderr,"Only integer values allowed for --gps-start-time.\n");
+      return 1;
+    }
+  if(XLALGPSToINT8NS(&CLA->GPSEnd) == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
+  if(CLA->GPSEnd.gpsNanoSeconds)
+    {
+      fprintf(stderr,"Only integer values allowed for --gps-end-time.\n");
+      return 1;
+    }
   if(CLA->ShortSegDuration == 0)
     {
       fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
@@ -1446,10 +1460,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
 
   /* Some consistency checking */
   {
-    int big_seg_length=CLA->GPSEnd-CLA->GPSStart-2*CLA->pad;
-    int small_seg_length=CLA->ShortSegDuration;
+    int big_seg_length=XLALGPSDiff(&CLA->GPSEnd, &CLA->GPSStart)-2*CLA->pad;
 
-    REAL4 x=((float)big_seg_length/(float)small_seg_length)-0.5;
+    REAL4 x=((float)big_seg_length/(float)CLA->ShortSegDuration)-0.5;
 
     if((int)x != x){
       fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
@@ -1463,7 +1476,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     }     
 
     if( CLA->ShortSegDuration/4.0  < CLA->TruncSecs){
-      fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n", small_seg_length);
+      fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n", CLA->ShortSegDuration);
 	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%f).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
     }    
