@@ -947,50 +947,6 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 	return overlap;
 }
 
-
-REAL8 NullLogLikelihood(LALIFOData *data)
-/*Idential to FreqDomainNullLogLikelihood                        */
-{
-  REAL8 loglikeli, totalChiSquared=0.0;
-  LALIFOData *ifoPtr=data;
-
-  /* loop over data (different interferometers): */
-  while (ifoPtr != NULL) {
-	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
-    ifoPtr = ifoPtr->next;
-  }
-  loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
-  return(loglikeli);
-}
-
-REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
-/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
-/* with the `templateNullFreqdomain()' template in order to return */
-/* the "Null likelihood" without having to bother specifying       */
-/* parameters or template while ensuring computations are exactly  */
-/* the same as in usual likelihood calculations.                   */
-{
-  LALVariables dummyParams;
-  double dummyValue;
-  double loglikeli;
-  /* set some (basically arbitrary) dummy values for intrinsic parameters */
-  /* (these shouldn't make a difference, but need to be present):         */
-  dummyParams.head      = NULL;
-  dummyParams.dimension = 0;
-  dummyValue = 0.5;
-  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t,PARAM_CIRCULAR);
-  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t,PARAM_LINEAR);
-  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t,PARAM_LINEAR);
-  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t,PARAM_LINEAR);
-  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
-               + (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
-  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t,PARAM_LINEAR);
-  loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
-  destroyVariables(&dummyParams);
-  return(loglikeli);
-}
-
-
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
@@ -1119,107 +1075,28 @@ void executeInvFT(LALIFOData *IFOdata)
 }
 
 
+/* Function to add the min and max values for the prior onto the priorArgs */
+void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
+		char minName[VARNAME_MAX];
+		char maxName[VARNAME_MAX];
+		
+		sprintf(minName,"%s_min",name);
+		sprintf(maxName,"%s_max",name);
+		addVariable(priorArgs,minName,min,type,PARAM_FIXED);
+		addVariable(priorArgs,maxName,max,type,PARAM_FIXED);
+		return;
+	}
 
-LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-/* calls the "ReadData()" function to gather data & PSD from files, */
-/* and initializes other variables accordingly.                     */
+/* Get the min and max values of the prior from the priorArgs list, given a name */
+void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
 {
-  LALInferenceRunState *irs=NULL;
-  LALIFOData *ifoPtr, *ifoListStart;
-  ProcessParamsTable *ppt=NULL;
-  unsigned long int randomseed;
-  struct timeval tv;
-  FILE *devrandom;
-
-  irs = calloc(1, sizeof(LALInferenceRunState));
-  /* read data from files: */
-  fprintf(stdout, " readData(): started.\n");
-  irs->data = readData(commandLine);
-  /* (this will already initialise each LALIFOData's following elements:  */
-  /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
-  /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  fprintf(stdout, " readData(): finished.\n");
-  if (irs->data != NULL) {
-    fprintf(stdout, " initialize(): successfully read data.\n");
-
-    fprintf(stdout, " injectSignal(): started.\n");
-    injectSignal(irs->data,commandLine);
-    fprintf(stdout, " injectSignal(): finished.\n");
-
-    ifoPtr = irs->data;
-	ifoListStart = irs->data;
-    while (ifoPtr != NULL) {
-		/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			freqModelh*, and modelParams variables to avoid excess computation 
-			in model waveform generation in the future*/
-		LALIFOData * ifoPtrCompare=ifoListStart;
-		int foundIFOwithSameSampleRate=0;
-		while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-			if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-				ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-				ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-				ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-				ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-				ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-				foundIFOwithSameSampleRate=1;	
-				break;
-			}
-		}
-		if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-                                                          &(ifoPtr->timeData->epoch),
-                                                          0.0,
-                                                          ifoPtr->timeData->deltaT,
-                                                          &lalDimensionlessUnit,
-                                                          ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-                                                          &(ifoPtr->timeData->epoch),
-                                                          0.0,
-                                                          ifoPtr->timeData->deltaT,
-                                                          &lalDimensionlessUnit,
-                                                          ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-                                                                  &(ifoPtr->freqData->epoch),
-                                                                  0.0,
-                                                                  ifoPtr->freqData->deltaF,
-                                                                  &lalDimensionlessUnit,
-                                                                  ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-                                                                   &(ifoPtr->freqData->epoch),
-                                                                   0.0,
-                                                                   ifoPtr->freqData->deltaF,
-                                                                   &lalDimensionlessUnit,
-                                                                   ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
-		}
-		ifoPtr = ifoPtr->next;
-    }
-    irs->currentLikelihood=NullLogLikelihood(irs->data);
-	printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
-  }
-  else
-    fprintf(stdout, " initialize(): no data read.\n");
-
-  /* set up GSL random number generator: */
-  gsl_rng_env_setup();
-  irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-  /* (try to) get random seed from command line: */
-  ppt = getProcParamVal(commandLine, "--randomseed");
-  if (ppt != NULL)
-    randomseed = atoi(ppt->value);
-  else { /* otherwise generate "random" random seed: */
-    if ((devrandom = fopen("/dev/random","r")) == NULL) {
-      gettimeofday(&tv, 0);
-      randomseed = tv.tv_sec + tv.tv_usec;
-    } 
-    else {
-      fread(&randomseed, sizeof(randomseed), 1, devrandom);
-      fclose(devrandom);
-    }
-  }
-  fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
-  gsl_rng_set(irs->GSLrandom, randomseed);
-
-  return(irs);
+		char minName[VARNAME_MAX];
+		char maxName[VARNAME_MAX];
+		
+		sprintf(minName,"%s_min",name);
+		sprintf(maxName,"%s_max",name);
+		min=getVariable(priorArgs,minName);
+		max=getVariable(priorArgs,maxName);
+		return;
+		
 }
-

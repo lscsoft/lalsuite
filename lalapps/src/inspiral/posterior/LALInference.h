@@ -228,8 +228,6 @@ tagLALIFOData
 /* Returns the element of the process params table with "name" */
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-LALIFOData *ReadData(ProcessParamsTable *commandLine);
-
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
@@ -245,14 +243,10 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data,
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
 								  
-REAL8 FreqDomainNullLogLikelihood(LALIFOData * data);
-
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
-
-REAL8 NullLogLikelihood(LALIFOData *data);							  
 
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);

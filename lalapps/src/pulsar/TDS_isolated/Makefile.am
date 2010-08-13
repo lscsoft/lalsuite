@@ -23,7 +23,6 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	parameter_estimation_nested.c \
 	parameter_estimation_nested.h \
 	LALInference.c LALInference.h \
-	LALInference.c LALInference.h \
 	LALInferenceNestedSampler.c LALInferenceNestedSampler.h
 
 EXTRA_DIST = \

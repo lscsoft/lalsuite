@@ -236,6 +236,9 @@ file */
 }ParamData;
 
 /** define functions */
+	
+/* function to return the (REAL8) log factorial of an integer */
+REAL8 log_factorial(INT4 num);
 
 /* function to get the input arguments from the command line */
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);

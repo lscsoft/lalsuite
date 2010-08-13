@@ -67,6 +67,15 @@ REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data, LALTemplateFu
 void get_pulsar_model( LALIFOData *data );
 void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource, INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus, gsl_matrix *LUfcross);
 
+REAL8 log_factorial(INT4 num){
+	INT4 i=0;
+	REAL8 logFac=0.;
+	
+	for( i=2 ; i <= num ; i++ ) logFac += log((REAL8)i);
+	
+	return logFac;
+}
+
 
 INT4 main(INT4 argc, CHAR *argv[]){
   ProcessParamsTable *param_table;
