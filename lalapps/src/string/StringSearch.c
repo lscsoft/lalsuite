@@ -164,7 +164,6 @@ struct StringTemplateTag {
 /* GLOBAL VARIABLES */
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
-SnglBurst *events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
@@ -202,14 +201,14 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates);
 
 /* Filters the data through the template banks  */
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates);
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head);
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
-               REAL4Vector *vector, INT4 i, SnglBurst **thisEvent);
+               REAL4Vector *vector, INT4 i, SnglBurst **head);
 
 /* Writes out the xml file with the events it found  */
-int OutputEvents(const struct CommandLineArgsTag *CLA);
+int OutputEvents(const struct CommandLineArgsTag *CLA, SnglBurst *events);
 
 /* Frees the memory */
 int FreeMem(StringTemplate *strtemplate, int NTemplates);                                        
@@ -223,6 +222,7 @@ int main(int argc,char *argv[])
 {
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
+  SnglBurst *events=NULL;
 
   /****** ReadCommandLine ******/
   printf("ReadCommandLine()\n");
@@ -286,8 +286,9 @@ int main(int argc,char *argv[])
   
   /****** FindStringBurst ******/
   printf("FindStringBurst()\n");
-  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates)) return 12;
-  
+  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates, &events)) return 12;
+  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
+
   /****** XLALClusterSnglBurstTable ******/
   printf("XLALClusterSnglBurstTable()\n");
   if (CommandLineArgs.cluster != 0.0 && events){
@@ -301,7 +302,7 @@ int main(int argc,char *argv[])
   
   /****** OutputEvents ******/
   printf("OutputEvents()\n");
-  if (OutputEvents(&CommandLineArgs)) return 13;
+  if (OutputEvents(&CommandLineArgs, events)) return 13;
   
   /****** FreeMem ******/
   printf("FreeMem()\n");
@@ -416,7 +417,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 /*******************************************************************************/
 
-int OutputEvents(const struct CommandLineArgsTag *CLA){  
+int OutputEvents(const struct CommandLineArgsTag *CLA, SnglBurst *events){
   LIGOLwXMLStream *xml;
   char ifo[3];
 
@@ -467,21 +468,21 @@ int OutputEvents(const struct CommandLineArgsTag *CLA){
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **thisEvent){
+int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **head){
   int p, pp;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
   INT8  peaktime, starttime;
   INT8  timeNS;
-
+  SnglBurst *new;
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
     for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
       fprintf(stdout,"%p %e\n", strtemplate, vector->data[p]);
   
-  /* Now find thisEvent in the inner half */
+  /* Now find event in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
     maximum = 0.0;
     pmax=p;
@@ -528,39 +529,35 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 	  && CLA.chi2cut[2] > -9999 )
 	if(log10(chi2/ndof)>CLA.chi2cut[0]
 	   && log10(chi2/ndof)> CLA.chi2cut[1]*log10(fabs(maximum))+CLA.chi2cut[2]) continue;
-      
 
-      if ( *thisEvent ){ /* create a new event */
-	(*thisEvent)->next = XLALCreateSnglBurst();
-	*thisEvent = (*thisEvent)->next;
-      }
-      else /* create the list */
-	*thisEvent = events = XLALCreateSnglBurst();
-            
-      if ( ! *thisEvent ){ /* allocation error */
+      /* prepend a new event to the linked list */
+      new = XLALCreateSnglBurst();
+      if ( ! new ){ /* allocation error */
 	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	return 1;
       }
+      new->next = *head;
+      *head = new;
 
       /* Now copy stuff into event */
-      strncpy( (*thisEvent)->ifo, CLA.ChannelName, 2 );
-      (*thisEvent)->ifo[3] = 0;
-      strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
-      strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
+      strncpy( new->ifo, CLA.ChannelName, 2 );
+      new->ifo[3] = 0;
+      strncpy( new->search, "StringCusp", sizeof( new->search ) );
+      strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
       
       /* give trigger a 1 sample fuzz on either side */
       starttime -= round( 1e9 * GV.ht_proc->deltaT );
       duration += 2 * GV.ht_proc->deltaT;
 
-      XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
-      XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
-      (*thisEvent)->duration     = duration;
-      (*thisEvent)->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
-      (*thisEvent)->bandwidth    = strtemplate->f-CLA.fbankstart;				     
-      (*thisEvent)->snr          = maximum;
-      (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate->norm;
-      (*thisEvent)->chisq = chi2;
-      (*thisEvent)->chisq_dof = ndof;
+      XLALINT8NSToGPS(&new->start_time, starttime);
+      XLALINT8NSToGPS(&new->peak_time, peaktime);
+      new->duration     = duration;
+      new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
+      new->bandwidth    = strtemplate->f-CLA.fbankstart;				     
+      new->snr          = maximum;
+      new->amplitude   = vector->data[pmax]/strtemplate->norm;
+      new->chisq = chi2;
+      new->chisq_dof = ndof;
     }
   }
     
@@ -569,11 +566,10 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 
 /*******************************************************************************/
 
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates){
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head){
   int i,p,m; 
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
-  SnglBurst *thisEvent = NULL;
 
   /* create vector that will hold the data for each overlapping chunk */ 
   vector = XLALCreateREAL4Vector( GV.seg_length);
@@ -606,14 +602,10 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
       
-      if(FindEvents(CLA, &strtemplate[m], vector, i, &thisEvent)) return 1;
+      if(FindEvents(CLA, &strtemplate[m], vector, i, head)) return 1;
     }
   }
 
-  /* sort events in time; if there are any */
-  if (events) /* first sort list in increasing GPS peak time */
-    XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
-  
   XLALDestroyCOMPLEX8Vector( vtilde );
   XLALDestroyREAL4Vector( vector );
 
