@@ -173,8 +173,6 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
-REAL4 SAMPLERATE;
-
 int Nevents=0;
 
 PassBandParamStruc highpassParams;
@@ -918,7 +916,8 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
   
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
     for ( p = 0 ; p < (int)GV.Spec->data->length; p++ )
-      GV.Spec->data->data[p]=2/SAMPLERATE;
+      /* FIXME:  shouldn't this be 2 * \Delta f */
+      GV.Spec->data->data[p]=2/(1.0/GV.ht_proc->deltaT);
     GV.Spec->deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
   }
   else{
@@ -1059,8 +1058,6 @@ int ReadData(struct CommandLineArgsTag CLA){
     
     XLALDestroyREAL4Vector(v1);
   }
-  
-  SAMPLERATE=1.0/GV.ht->deltaT;
 
   /* Allocate space for processed data */
   GV.ht_proc  = XLALCreateREAL4TimeSeries(GV.ht->name, 
@@ -1186,7 +1183,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
     case 's':
-      /* low frequency cutoff */
+      /* resample to this sample rate */
       CLA->samplerate=atof(optarg);
       ADD_PROCESS_PARAM(procTable.processTable, "float");
       break;
