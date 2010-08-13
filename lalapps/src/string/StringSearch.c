@@ -162,9 +162,6 @@ struct StringTemplateTag {
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
-FrCache *framecache;          /* frame reading variables */
-FrStream *framestream=NULL;
-
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
 StringTemplate strtemplate[MAXTEMPLATES];
@@ -966,7 +963,9 @@ int ProcessData(void){
 
 int ReadData(struct CommandLineArgsTag CLA){
   int p;
-  
+  FrCache *framecache;
+  FrStream *framestream=NULL;
+
   /* create Frame cache, open frame stream and delete frame cache */
   framecache = XLALFrImportCache(CLA.FrCacheFile);
   framestream = XLALFrCacheOpen(framecache);
