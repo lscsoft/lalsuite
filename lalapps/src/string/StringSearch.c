@@ -82,9 +82,6 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
-
 #define SCALE 1e20
 #define MAXTEMPLATES 50
 
@@ -164,17 +161,13 @@ struct StringTemplateTag {
 /* GLOBAL VARIABLES */
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
-MetadataTable  procTable;
-MetadataTable  procparams;
-MetadataTable  searchsumm;
-
 
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
 
 /* Reads the command line */
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
@@ -208,7 +201,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
                REAL4Vector *vector, INT4 i, SnglBurst **head);
 
 /* Writes out the xml file with the events it found  */
-int OutputEvents(const struct CommandLineArgsTag *CLA, SnglBurst *events);
+int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events);
 
 /* Frees the memory */
 int FreeMem(StringTemplate *strtemplate, int NTemplates);                                        
@@ -223,11 +216,19 @@ int main(int argc,char *argv[])
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
   SnglBurst *events=NULL;
+  MetadataTable  process;
+  MetadataTable  procparams;
+
+  /* create the process and process params tables */
+  procparams.processParamsTable = NULL;
+  process.processTable = XLALCreateProcessTableRow();
+  XLALGPSTimeNow(&(process.processTable->start_time));
+  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+    exit(1);
 
   /****** ReadCommandLine ******/
   printf("ReadCommandLine()\n");
-  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
-  
+  if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
   printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
@@ -298,14 +299,17 @@ int main(int argc,char *argv[])
   
   /****** XLALSnglBurstAssignIDs ******/
   printf("XLALSnglBurstAssignIDs()\n");
-  XLALSnglBurstAssignIDs(events, procTable.processTable->process_id, 0);
+  XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
   
   /****** OutputEvents ******/
   printf("OutputEvents()\n");
-  if (OutputEvents(&CommandLineArgs, events)) return 13;
+  if (OutputEvents(&CommandLineArgs, process.processTable, procparams.processParamsTable, events)) return 13;
   
   /****** FreeMem ******/
   printf("FreeMem()\n");
+  XLALDestroyProcessParamsTable(procparams.processParamsTable);
+  XLALDestroySnglBurstTable(events);
+  XLALDestroyProcessTable(process.processTable);
   if (FreeMem(strtemplate, NTemplates)) return 14;
 
   printf("StringJob is done\n");
@@ -415,14 +419,18 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
   return(&(*proc_param)->next);
 }
 
+#define ADD_PROCESS_PARAM(process, type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
+
 /*******************************************************************************/
 
-int OutputEvents(const struct CommandLineArgsTag *CLA, SnglBurst *events){
+int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events){
   LIGOLwXMLStream *xml;
+  MetadataTable  searchsumm;
   char ifo[3];
 
   strncpy( ifo, CLA->ChannelName, 2 );
-  ifo[2] = 0;
+  ifo[sizeof(ifo) - 1] = '\0';
   
   if (!CLA->outputFileName){
     CHAR outfilename[256];
@@ -437,31 +445,46 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, SnglBurst *events){
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
 
   /* process table */
-  snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-  XLALGPSTimeNow(&(procTable.processTable->start_time));
+  snprintf(proctable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+  XLALGPSTimeNow(&(proctable->end_time));
   
-  if(XLALWriteLIGOLwXMLProcessTable(xml, procTable.processTable)) return -1;
+  if(XLALWriteLIGOLwXMLProcessTable(xml, proctable)) return -1;
   
   /* process params table */
-  if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparams.processParamsTable)) return -1;
+  if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
   
   /* search summary table */
+  /* create the search summary table */
+  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
+  /* store the input and output start and end times */
+  {
+    int small_seg_length=CLA->ShortSegDuration;
+
+    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
+    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
+    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
+    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
+
+    if (CLA->trigstarttime > 0)
+      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
+    else
+      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4+CLA->pad;
+      
+    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
+    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4-CLA->pad;
+    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
+  }
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
-  
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
+  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
 
   /* burst table */
   if(XLALWriteLIGOLwXMLSnglBurstTable(xml, events)) return -1;
   
   XLALCloseLIGOLwXMLFile(xml);
-  
-  /* free event list, process table, search summary and process params */
-
-  XLALDestroySnglBurstTable(events);
-  XLALDestroyProcessTable(procTable.processTable);
-  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
-  XLALDestroyProcessParamsTable(procparams.processParamsTable);
 
   return 0;
 }
@@ -1064,10 +1087,9 @@ int ReadData(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint){
   static char default_comment[] = "";
   INT4 errflg = 0;
-  ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
     {"bw-flow",                   required_argument,	NULL,	'f'},
     {"bank-freq-start",           required_argument,	NULL,	'L'},
@@ -1106,17 +1128,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:";
 
   optarg = NULL;
-  /* set up xml output stuff */
-  /* create the process and process params tables */
-  procTable.processTable = XLALCreateProcessTableRow();
-  XLALGPSTimeNow(&(procTable.processTable->start_time));
-  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
-    exit(1);
-  procparams.processParamsTable = NULL;
-  /* create the search summary table */
-  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
-  /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
 
   /* Initialize default values */
   CLA->flow=0.0;
@@ -1167,157 +1178,157 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 's':
       /* resample to this sample rate */
       CLA->samplerate=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'H':
       /* lowest high frequency cutoff */
       CLA->fbankhighfcutofflow=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'M':
       /* Maximal mismatch */
       CLA->fmismatchmax=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'L':
       /* low frequency cutoff */
       CLA->fbankstart=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 't':
       /* low frequency cutoff */
       CLA->threshold=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'i':
       /* name of xml injection file */
       CLA->InjectionFile=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'o':
       /* name of xml injection file */
       CLA->outputFileName=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'S':
       /* GPS start time of search */
        CLA->GPSStart=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'E':
        /* GPS end time time of search */
       CLA->GPSEnd=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'd':
        /* Number of segment to break-up search into */
       CLA->ShortSegDuration=atoi(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
       CLA->TruncSecs=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'g':
       /* start time of allowed triggers */
       CLA->trigstarttime=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'p':
       /* start time of allowed triggers */
       CLA->pad=atoi(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'A':
       /* chi2 cut parameter 0 */
       CLA->chi2cut[0]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'B':
       /* chi2 cut parameter 1 */
       CLA->chi2cut[1]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'G':
       /* chi2 cut parameter 2 */
       CLA->chi2cut[2]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'k':
       /* kink power law */
       CLA->power=-5.0/3.0;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'n':
       /* fake gaussian noise flag */
       CLA->fakenoiseflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'w':
       /* fake gaussian noise flag */
       CLA->whitespectrumflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'l':
       /* fake gaussian noise flag */
       CLA->cluster=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'a':
       /* fake gaussian noise flag */
       CLA->printspectrumflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'b':
       /* fake gaussian noise flag */
       CLA->printfilterflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'j':
       /* --user-tag */
       CLA->comment = optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'r':
       /* fake gaussian noise flag */
       CLA->printsnrflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'x':
       /* fake gaussian noise flag */
       CLA->printfirflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'y':
       /* fake gaussian noise flag */
       CLA->printdataflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'z':
       /* fake gaussian noise flag */
       CLA->printinjectionflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'h':
       /* print usage/help message */
@@ -1463,26 +1474,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     REAL4 f99=CLA->flow*pow((1/0.9-1)/(1/0.99-1),0.25);
     if(CLA->fbankstart < f99)
       fprintf(stderr,"WARNING: Template starting frequency and BW high pass frequency are close. f99=%e, fbw=%e\n",f99, CLA->flow);
-  }
-
-  /* store the input start and end times */
-  /* set the start and end time for the search summary */
-  {
-    int small_seg_length=CLA->ShortSegDuration;
-
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
-    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
-    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
-
-    if (CLA->trigstarttime > 0)
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
-    else
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4+CLA->pad;
-      
-    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4-CLA->pad;
-    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
   }
 
   return errflg;
