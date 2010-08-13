@@ -16,6 +16,7 @@ check_PROGRAMS = \
 	GeneratePulsarSignalTest \
 	GetAMCoeffsTest \
 	NewGetAMCoeffsTest \
+	XLALComputeAMTest \
 	PtoleMeshTest \
 	PtoleMetricTest \
 	PulsarCatTest \
