@@ -142,16 +142,23 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)getVariable(runState->algorithmParams,"Nlive");
+	LALVariables **Live=runState->livePoints;
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H;
 	LALVariables *temp;
 	FILE *fpout=NULL;
 	gsl_matrix *cvm=NULL;
 	REAL8 dblmax=-DBL_MAX;
 	REAL8 zero=0.0;
+	REAL8 *logLikelihoods=NULL;
+	UINT4 verbose=0;
+	
+	logLikelihoods=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods");
 
+	verbose=checkVariable(runState->algorithmParams,"verbose");
+	
 	/* Operate on parallel runs if requested */
 	if(checkVariable(runState->algorithmParams,"Nruns"))
 		Nruns = *(UINT4 *) getVariable(runState->algorithmParams,"Nruns");
@@ -207,9 +214,9 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
-			logZarray[j]=logadd(logZarray[j],Live[minpos]->logLikelihood + logwarray[j]);
-			Wtarray[j]=logwarray[j]+Live[minpos]->logLikelihood;
-			Harray[j]= exp(Wtarray[j]-logZarray[j])*Live[minpos]->logLikelihood
+			logZarray[j]=logadd(logZarray[j],logLikelihoods[minpos]+ logwarray[j]);
+			Wtarray[j]=logwarray[j]+logLikelihoods[minpos];
+			Harray[j]= exp(Wtarray[j]-logZarray[j])*logLikelihoods[minpos]
 			+ exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
 		}
 		logZnew=mean(logZarray,Nruns);
@@ -231,16 +238,16 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 			setVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
 			runState->evolve(runState);
 			copyVariables(runState->currentParams,runState->livePoints[minpos]);
-			(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[minpos]=runState->currentLikelihood;
+			logLikelihoods[minpos]=runState->currentLikelihood;
 		}while(runState->currentLikelihood<=logLmin);
 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
-		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLRandom);
+		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
-		if(MCMCinput->verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
-									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate"),
+		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
+									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")
 									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
@@ -251,17 +258,17 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		setVariable(runState->proposalArgs,"LiveCVM",cvm);
 
 	}
-	while(iter<Nlive || logadd(logZ,logLmax-((double iter)/(double)Nlive))-logZ > TOLERANCE)
+	while(iter<Nlive || logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ > TOLERANCE);
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){
 			minpos=i;
-			logLmin=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i];
+			logLmin=logLikelihoods[i];
 			for(j=i+1;j<Nlive;j++){
-				if((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[j]<logLmin)
+				if(logLikelihoods[j]<logLmin)
 					{
 						minpos=j;
-						logLmin=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[j];
+						logLmin=logLikelihoods[j];
 					}
 			}
 			temp=runState->livePoints[minpos]; /* Put the minimum remaining point in the current position */
@@ -271,14 +278,14 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 	/* final corrections */
 	for(i=0;i<Nlive;i++){
-		logZ=logadd(logZ,(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i]+logw);
+		logZ=logadd(logZ,logLikelihoods[i]+logw);
 		for(j=0;j<Nruns;j++){
-			logwarray[j]+=sample_logt(Nlive);
-			logZarray[j]=logadd(logZarray[j],(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i]+logwarray[j]);
+			logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
+			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
 		}
 
 		fprintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods")[i]);
+		fprintf(fpout,"%lf\n",logLikelihoods[i]);
 	}
 
 	/* Write out the evidence */
@@ -289,7 +296,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
  evolve runState->currentParams to a new point with higher
  likelihood than currentLikelihood. Uses the MCMC method.
  */
-NestedSamplingOneStep(LALInferenceRunState runState)
+NestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALVariables *newParams;
 	UINT4 mcmc_iter=0,accept=0,Naccepted=0;
@@ -317,7 +324,8 @@ NestedSamplingOneStep(LALInferenceRunState runState)
 		}
 	} while(runState->currentLikelihood<=logLmin || mcmc_iter<Nmcmc);
 	destroyVariables(newParams);
-	setVariable(runState->algorithmParams,"accept_rate",(REAL8)Naccepted/(REAL8)mcmc_iter);
+	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
+	setVariable(runState->algorithmParams,"accept_rate",&accept_rate);
 	return;
 }
 
@@ -336,7 +344,7 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 									   LALVariables *parameter)
 	{
 		static LALStatus status;
-		LALVariables **Live=runState->Live;
+		LALVariables **Live=runState->livePoints;
 		int i=0,j=0,dim=0,same=1;
 		REAL4 randnum;
 		INT4 Nlive = *(INT4 *)getVariable(runState->algorithmParams,"Nlive");
@@ -354,13 +362,13 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		paraHead=parameter->head;
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
-		same=1;
+		same=0;
 		for(;paraHead;paraHead=paraHead->next,paraA=paraA->next,paraB=paraB->next)
 		{
 			if(paraHead->vary!=PARAM_LINEAR || paraHead->vary!=PARAM_CIRCULAR) continue;
-			*paraHead->value+=*paraB->value;
-			*paraHead->value-=*paraA->value;
-			if(*paraHead->value!=*paraA->value && *paraHead->value!=*paraB->value && *paraA->value!=*paraB->value) same=0;
+			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
+			*(REAL8 *)paraHead->value-=*(REAL8 *)paraA->value;
+			//if(*paraHead->value!=*paraA->value && *paraHead->value!=*paraB->value && *paraA->value!=*paraB->value) same=0;
 		}
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
@@ -380,15 +388,15 @@ LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorAr
 		if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
 		{
 			delta = max-min;
-			while ( *paraHead->value > max) 
-				*paraHead->value -= delta;
-			while ( *paraHead->value < min) 
-				*paraHead->value += delta;
+			while ( *(REAL8 *)paraHead->value > max) 
+				*(REAL8 *)paraHead->value -= delta;
+			while ( *(REAL8 *)paraHead->value < min) 
+				*(REAL8 *)paraHead->value += delta;
 		}
 		else if(paraHead->vary==PARAM_LINEAR) /* Use reflective boundaries */
 		{
-			if(max < *paraHead->value) *paraHead->value-=2.0*(*paraHead->value - max);
-			if(min > *paraHead->value) *paraHead->value+=2.0*(min - *paraHead->value);
+			if(max < *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value-=2.0*(*(REAL8 *)paraHead->value - max);
+			if(min > *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
 		}
 	}	
 	return;

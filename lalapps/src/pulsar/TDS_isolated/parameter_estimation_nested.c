@@ -82,6 +82,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
   /* Initialise the algorithm structures from the command line arguments */
   /* Include setting up random number generator etc */
   initialiseAlgorithm(&runState);
+  runState.algorithm=&NestedSamplingAlgorithm;
+  runState.evolve=&NestedSamplingOneStep;
   
   runState.likelihood=&pulsar_log_likelihood;
   runState.prior=&priorFunction;

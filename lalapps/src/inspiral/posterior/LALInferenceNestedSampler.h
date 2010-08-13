@@ -23,3 +23,4 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive);
 double logadd(double a,double b);
 
+NestedSamplingOneStep(LALInferenceRunState *runState);
