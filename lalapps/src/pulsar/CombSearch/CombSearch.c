@@ -19,15 +19,16 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
 /** \author L.Sammut, C. Messenger
  * \file
  * \brief
- * 
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.
- * Calls F-statistic from  output of lalapps_ComputeFStatistic (and later versions thereof).
+ * 
+ * Uses outputFStat file of lalapps_ComputeFStatistic_v2.c as input.
  *
- *********************************************************************************/
+ */
+
+/***********************************************************************************************/
 #include "config.h"
 
 /* System includes */
@@ -76,22 +77,18 @@ int finite(double);
 
 #include <lalapps.h>
 
-/*#include <lal/lalGitID.h>*/
-/*#include <lalappsGitID.h>*/
-
 
 RCSID( "$Id$");
 
-/*---------- DEFINES ----------*/
+/***********************************************************************************************/
+/* defines */
 
-#define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
-#define MAXLINELENGTH 1024   /* Maximum # of characters of in a line */
+#define MAXFILENAMELENGTH 256   	/* Maximum # of characters of a SFT filename */
+#define MAXLINELENGTH 1024   		/* Maximum # of characters of in a line */
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/*----- SWITCHES -----*/
-
-/*----- Error-codes -----*/
+/* error codes */
 #define COMBSEARCH_ENULL 	1
 #define COMBSEARCH_ESYS     	2
 #define COMBSEARCH_EINPUT   	3
@@ -106,77 +103,62 @@ RCSID( "$Id$");
 #define COMBSEARCH_MSGENONULL 	"Output pointer is non-NULL"
 #define COMBSEARCH_MSGEXLAL	"XLALFunction-call failed"
 
-/*----- Macros -----*/
 
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-#define SQ(x) ( (x) * (x) )
+/***********************************************************************************************/
+/* internal structures */
 
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-
-#define LAL_INT4_MAX 2147483647
-
-/*---------- internal types ----------*/
-
-/** Configuration settings required for and defining this semi-coherent binary pulsar search.
- * These are 'pre-processed' settings, which have been derived from the user-input.
- */
+/* Structure for parameters to be input to Cstat */
 typedef struct {
-  REAL8 Alpha;                              /**< sky position alpha in radians read in from data file */
-  REAL8 Delta;                              /**< sky position delta in radians read in from data file */
-  REAL8 *Fstat;				    /**< values of Fstatistic read in from data file */
-  REAL8 fmin;				    /**< min frequency read in from data file */
-  REAL8 fmax;				    /**< max frequency read in from data file */
-  REAL8 df;				    /**< size of frequency bin read in from data file */
+  REAL8 Alpha;				/**< sky position alpha in radians read in from data file 	*/
+  REAL8 Delta;                          /**< sky position delta in radians read in from data file 	*/
+  REAL8 *Fstat;				/**< values of Fstatistic read in from data file 		*/
+  REAL8 fmin;				/**< min frequency read in from data file 			*/
+  REAL8 fmax;				/**< max frequency read in from data file 			*/
+  REAL8 df;				/**< size of frequency bin read in from data file 		*/
    
-  REAL8 f0;				    /**< guess frequency of search */
-  INT4 dfout;				    /**< number of bins to exclude from the start of the Fstat file */
-  INT4 dm;			            /**< number of bins excluded from Cstat output */
+  REAL8 f0;				/**< guess frequency of search 					*/
+  INT4 dfout;				/**< number of bins to exclude from the start of the Fstat file */
+  INT4 dm;			        /**< number of bins excluded from Cstat output 			*/
 
-  INT4 N;				    /**< number of frequency bins to search in ComputeFStatistic */
-  //CHAR *logstring;                        /**< log containing max-info on this search setup */
+  INT4 N;				/**< number of frequency bins to search in ComputeFStatistic 	*/
 } ConfigVariables;
 
 
-/* Structure for output of computeCStat*/
-typedef struct
-{
-  INT4 sideband;			    /**< number of sidebands */
-  REAL8 *Cstat; 		            /**< cstat array */
+/* Structure for output of computeCStat */
+typedef struct {
+  INT4 sideband;			/**< number of sidebands 	*/
+  REAL8 *Cstat; 		        /**< cstat array 		*/
 } CstatOut;
 
 
-/* ----- User-variables: can be set from config-file or command-line */
+/* User-variables: can be set from config-file or command-line */
 typedef struct {
  
-  REAL8 Freq;			/**< start user frequency band for output */
-  REAL8 FreqBand;		/**< user Frequency-band for output*/
+  REAL8 Freq;				/**< start user frequency band for output 	*/
+  REAL8 FreqBand;			/**< user Frequency-band for output 		*/
   
   /* orbital parameters */
-  REAL8 orbitPeriod;		/**< binary-system orbital period in s */
-  REAL8 orbitasini;		/**< amplitude of radial motion */
+  REAL8 orbitPeriod;			/**< binary-system orbital period in s 		*/
+  REAL8 orbitasini;			/**< amplitude of radial motion 		*/
  
-  CHAR *DataFiles;		/**< glob-pattern for SFT data-files to use */
+  CHAR *inputFstat;			/**< filename of Fstat input data file to use 	*/
 
-  BOOLEAN help;			/**< output help-string */
-  //CHAR *outputFstat;		/**< filename to output Fstatistic in */
-  CHAR *outputCstat;		/**< filename to output Cstatistic in */
+  BOOLEAN help;				/**< output help-string 			*/
+  CHAR *outputCstat;			/**< filename to output Cstatistic in 		*/
 
-
-
-  BOOLEAN version;		/**< output version information */
+  BOOLEAN version;			/**< output version information 		*/
 } UserInput_t;
 
-/*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+/***********************************************************************************************/
+/* Global variables */
+extern int vrbflg;			/**< defined in lalapps.c */
 
-/*---------- empty initializers ---------- */
+/* empty initializers */
 static const ConfigVariables empty_ConfigVariables;
 static UserInput_t empty_UserInput;
 static CstatOut empty_CstatOut;
 
-/* ---------- local prototypes ---------- */
+/* local prototypes */
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *, UserInput_t *uvar);
 void checkUserInputConsistency (LALStatus *, const UserInput_t *uvar);
@@ -186,16 +168,15 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
 void Freemem(LALStatus *,  ConfigVariables *cfg, CstatOut *cst);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
-//CHAR *append_string ( CHAR *str1, const CHAR *append );
 
+/***********************************************************************************************/
+/* Function definitions */
 
-/*----------------------------------------------------------------------*/
-/* Function definitions start here */
-/*----------------------------------------------------------------------*/
-
-/**
- * getFStat function reads in input file (output from computeFstatistic) and assigns configuration variables 
+/*--------------------------------------------------------------- */
+/** getFstat function 
+ * reads in Fstat file input and assigns parameter values 
  */
+/*----------------------------------------------------------------*/
 void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
 {
   CHAR line[MAXLINELENGTH];
@@ -208,56 +189,55 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
 
   /* Open data file - check it is good */
   if ((data = fopen(filename, "r")) == NULL)	{
-      LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
-      ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
+    LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
+    ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
   }
 
   /* need to know number of data points - counting the number of data lines (ignoring comments) */
   while(fgets(line, MAXLINELENGTH, data) != NULL)	{
-     if (strncmp(&line[0], "%",1) != 0 && isdigit(line[0]) != 0) {
-       l++;
-     }
+    if (strncmp(&line[0], "%",1) != 0 && isdigit(line[0]) != 0) {
+      l++;
+    }
   }
  
   fclose(data); /* close the file prior to exiting the routine */
    
   /* Check data has more than one Fstat entry */
   if (l==1)	{
-      LALPrintError ("\nMust be more than one Fstat entry in data file");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+    LALPrintError ("\nMust be more than one Fstat entry in data file");
+    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
   }
   
   /* Allocate some memory according to number of frequency bins */  
   if ((frequency=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )	{
-     LALPrintError ("\nError allocating memory \n\n");
-     ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM); 
+    LALPrintError ("\nError allocating memory \n\n");
+    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM); 
   }
   if ((a=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )		{
-     LALPrintError ("\nError allocating memory \n\n");
-     ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+    LALPrintError ("\nError allocating memory \n\n");
+    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
   }
   if ((d=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )		{
-     LALPrintError ("\nError allocating memory \n\n");
-     ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);  
+    LALPrintError ("\nError allocating memory \n\n");
+    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);  
   }
   if ((cfg->Fstat=(REAL8*)LALMalloc(l*sizeof(REAL8)))== NULL )	{
-     LALPrintError ("\nError allocating memory \n\n");
-     ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+    LALPrintError ("\nError allocating memory \n\n");
+    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
   }
  
   /* Open data file - check it is good */
   if ((data = fopen(filename, "r")) == NULL)	{
-     LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
-     ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
+    LALPrintError ("\nError opening file '%s' for reading..\n\n", filename);
+    ABORT (status, COMBSEARCH_ESYS, COMBSEARCH_MSGESYS);
   }
 
   /* Get data, assign configuration variables */  
   while (fgets(line, MAXLINELENGTH, data) != NULL)	{
     if (strncmp(line,"%%",1) != 0 && isdigit(line[0]) != 0 ) 	{
-       sscanf (line, "%lf %lf %lf %lf %lf %lf %lf", &frequency[c], &a[c], &d[c], &dummy, &dummy ,&dummy, &(cfg->Fstat[c]) );
-       c++;
-    }
-   
+      sscanf (line, "%lf %lf %lf %lf %lf %lf %lf", &frequency[c], &a[c], &d[c], &dummy, &dummy ,&dummy, &(cfg->Fstat[c]) );
+      c++;
+    }  
   }	
 
   /* Assign config variables alpha, delta, fmin, fmax and df */
@@ -270,16 +250,16 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
   /* check for constant frequency seperation and constant sky position */
   for (c=1; c<l; c++) {
     if (((frequency[c]-frequency[c-1]) - cfg->df) > 1e-8) 	{
-       LALPrintError ("\nFrequency separation (in Fstat file) must be constant. \n\n");
-       ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LALPrintError ("\nFrequency separation (in Fstat file) must be constant. \n\n");
+      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
     }
     if ((a[c]-a[0]) != 0) 	{
-       LALPrintError ("\nSky position (alpha) must be constant. \n\n");
-       ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LALPrintError ("\nSky position (alpha) must be constant. \n\n");
+      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
     }
     if ((d[c]-d[0]) != 0) 	{
-       LALPrintError ("\nSky position (delta) must be constant. \n\n");
-       ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
+      LALPrintError ("\nSky position (delta) must be constant. \n\n");
+      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);	
     }  
   }
  
@@ -290,19 +270,21 @@ void getFStat(LALStatus *status, CHAR *filename, ConfigVariables *cfg)
        
   DETATCHSTATUSPTR(status);
   RETURN (status);
-}/* getFStat*/
+} /* getFStat*/
 
 
-/** -------------------------------------------------------------- */
-/* computeCStat function receives input of Fstat and outputs Cstat */
-/* ----------------------------------------------------------------*/
+
+/*--------------------------------------------------------------- */
+/** computCStat function 
+ * receives input of Fstat and outputs Cstat 
+ */
+/*----------------------------------------------------------------*/
 void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst)
-{
- 
+{ 
   REAL8 ufreq, fstart, fend;
   INT4 ufband, ufreq_bin, mm, i, ind=0;
   		
-  /** Allocate memory for FFT plans and vectors **/
+  /* Allocate memory for FFT plans and vectors */
   REAL8FFTPlan *pfwd = NULL;			
   REAL8FFTPlan *prev = NULL;
   REAL8Vector *fstat = NULL;
@@ -315,10 +297,10 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   INITSTATUS (status, "computeCStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /** create comb search parameters **/
-  cfg->f0 	= uvar->Freq + 0.5*uvar->FreqBand ; 			/* allocated guess frequency as centre of user input search frequency band */ 
-  ufreq_bin	= floor(0.5 + (uvar->Freq-cfg->fmin)/cfg->df);		/* user frequency nearest bin */
-  ufreq		= cfg->fmin + (cfg->df*ufreq_bin);			/* user frequency to the nearest bin */
+  /* create comb search parameters */
+  cfg->f0 	= uvar->Freq + 0.5*uvar->FreqBand ; 			/* allocate guess frequency as centre of user input search frequency band */ 
+  ufreq_bin	= floor(0.5 + (uvar->Freq-cfg->fmin)/cfg->df);		/* nearest bin to user starting frequency */
+  ufreq		= cfg->fmin + (cfg->df*ufreq_bin);			/* frequency of Fstat bin nearest to user frequency */
   ufband	= floor(0.5 + (uvar->FreqBand/cfg->df));		/* user frequency band in bins */
   mm		= floor(0.5 + 2*M_PI*cfg->f0*uvar->orbitasini);		/* whole number of sidebands on either side of central spike */
   cfg->dm	= floor(0.5 + mm/(uvar->orbitPeriod*cfg->df));		/* exclusion region: number of bins to exclude after Cstat calculation */
@@ -327,13 +309,13 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   fend		= ufreq + cfg->df*cfg->N;				/* end search frequency band half a comb width after user specified Freq */
   cfg->dfout	= (fstart - cfg->fmin)/cfg->df;				/* number of bins to exclude from calculation of cstat */
    
-  /** check search band plus exclusion region is within data frequency band **/
+  /* check search band plus exclusion region is within data frequency band */
   if ( (fstart < cfg->fmin) || (cfg->fmax < fend) )	{
       LALPrintError ("\nUser input frequency range and/or exclusion range outside data limits.\n\n");
       ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
   } 
          
-  /** Create FFT plans and vectors **/
+  /* Create FFT plans and vectors */
   pfwd=XLALCreateREAL8FFTPlan(cfg->N, 1, 0);
   prev=XLALCreateREAL8FFTPlan(cfg->N, 0, 0);
   fstat=XLALCreateREAL8Vector(cfg->N );
@@ -343,18 +325,18 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   out=XLALCreateCOMPLEX16Vector(cfg->N/2 +1 );
   cstat=XLALCreateREAL8Vector(cfg->N );  
 
-  /** Assign fstat arrary values of Fstatistic from input file **/
+  /* Assign fstat arrary values of Fstatistic from input file */
   for (i=0;i<(cfg->N);i++) {
     fstat->data[i] =cfg->Fstat[i+cfg->dfout];
   }
   
-  /** Fourier transform fstat array **/
+  /* Fourier transform fstat array */
   XLALREAL8ForwardFFT(fout, fstat, pfwd );
   
-  /** Create comb template **/
+  /* Create comb template */
   /*  - zero all values first */
   for (i=0;i<cfg->N;i++) { 
-     comb->data[i]=0;						
+    comb->data[i]=0;						
   }
   
   /*  - assign unity at spacings of 1/P for 1 zero spike + mm positive frequency spikes */
@@ -373,20 +355,20 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   XLALREAL8ForwardFFT(cout, comb, pfwd );			
 
 
-  /** Perform convolution of fstat with template by multiplication in Fourier time domain **/
+  /* Perform convolution of fstat with template by multiplication in Fourier time domain */
   for (i=0;i<(cfg->N/2 +1); i++)	{
-     out->data[i].re = (fout->data[i].re * cout->data[i].re) - (fout->data[i].im * cout->data[i].im); /* real part of out */
-     out->data[i].im = (fout->data[i].re * cout->data[i].im) + (fout->data[i].im * cout->data[i].re); /* imaginary part of out */
+    out->data[i].re = (fout->data[i].re * cout->data[i].re) - (fout->data[i].im * cout->data[i].im); /* real part of out */
+    out->data[i].im = (fout->data[i].re * cout->data[i].im) + (fout->data[i].im * cout->data[i].re); /* imaginary part of out */
    }
 
-  /** Inverse FFT back to frequency domain to retrieve Cstat **/
+  /* Inverse FFT back to frequency domain to retrieve Cstat */
   XLALREAL8ReverseFFT(cstat, out, prev );
   
-  /** Fill out CstatOut struct */
+  /* Fill out CstatOut struct */
   /*  - Allocate some memory */
   if ((cst->Cstat=(REAL8*)LALMalloc(cfg->N*sizeof(REAL8)))== NULL )	{	
-     LALPrintError ("\nError allocating memory \n\n");
-     ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
+    LALPrintError ("\nError allocating memory \n\n");
+    ABORT (status, COMBSEARCH_EMEM, COMBSEARCH_MSGEMEM);
   }
   
   /*  - Allocate total number of sidebands */
@@ -410,21 +392,22 @@ void computeCStat(LALStatus *status, ConfigVariables *cfg, UserInput_t *uvar, Cs
   DETATCHSTATUSPTR(status);
   RETURN (status);
 
-}/* computeCStat*/
+} /* computeCStat */
+
 
 
 /*----------------------------------------------------------------------*/ 
 /**
  * MAIN function of sb_search code.
  * Calculate the C-statistic over a given portion of the parameter-space
- * and write a list of 'candidates' into a file(default: 'Cstats').
+ * and write output into a file(default: 'Cstats').
  */
+/*----------------------------------------------------------------------*/ 
 int main(int argc,char *argv[])
 { 
-
   LALStatus status = blank_status;			/* initialize status */
   
-   //FILE *fpLogPrintf = NULL;
+  //FILE *fpLogPrintf = NULL;
   FILE *Cstat_out = NULL;
   
   INT4 i;
@@ -459,7 +442,7 @@ int main(int argc,char *argv[])
   LAL_CALL ( checkUserInputConsistency(&status, &uvar), &status);
    
   /* call the function that reads the needed information from the data (Fstat) file */
-  LAL_CALL ( getFStat(&status, uvar.DataFiles, &cfg), &status);
+  LAL_CALL ( getFStat(&status, uvar.inputFstat, &cfg), &status);
   
   /* call the function to compute Cstatistic */
   LAL_CALL ( computeCStat(&status, &cfg, &uvar, &cst), &status);
@@ -514,7 +497,6 @@ int main(int argc,char *argv[])
   /* Free memory */
   LAL_CALL ( Freemem(&status, &cfg, &cst), &status); 
    
- 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
     
@@ -522,11 +504,14 @@ int main(int argc,char *argv[])
   
 } /* main() */
 
+
+
 /*----------------------------------------------------------------------*/ 
 /**
  * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
+/*----------------------------------------------------------------------*/ 
 void
 initUserVars (LALStatus *status, UserInput_t *uvar)
 {
@@ -535,31 +520,24 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   /* set a few defaults */
   uvar->FreqBand = 0.0;
-
-  uvar->orbitasini = 0.0;	/* define default orbital semi-major axis */
-
+  uvar->orbitasini = 0.0;			/* define default orbital semi-major axis */
   uvar->help = FALSE;
   uvar->version = FALSE;
-
-  //uvar->outputLogfile = NULL;
   uvar->outputCstat = NULL;
  
- 
-  /* ---------- register all user-variables ---------- */
+  /* register all user-variables */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
 
-  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  
+  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz"); 
   LALregREALUserStruct(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
    
   LALregREALUserStruct(status, 	orbitPeriod, 	'P',  UVAR_OPTIONAL, "Orbital period in seconds");
   LALregREALUserStruct(status, 	orbitasini, 	'A',  UVAR_OPTIONAL, "Orbital projected semi-major axis (normalised by the speed of light) in seconds [Default: 0.0]");
   
-  LALregSTRINGUserStruct(status,DataFiles, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
-  
+  LALregSTRINGUserStruct(status,inputFstat, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
   LALregSTRINGUserStruct(status,outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
    
-   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
+  LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
  
   DETATCHSTATUSPTR (status);
@@ -587,18 +565,18 @@ Freemem(LALStatus *status,  ConfigVariables *cfg, CstatOut *cst)
 
 } /* Freemem() */
 
+
+
 /*----------------------------------------------------------------------*/
 /**
  * Some general consistency-checks on user-input.
  * Throws an error plus prints error-message if problems are found.
  */
+/*----------------------------------------------------------------------*/
 void
 checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
-
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
-
-
 
   /* binary parameter checks */
   if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )	{
@@ -606,11 +584,10 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
     ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
   }
   if ( LALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )	{
-      LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
-      ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
+    LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
+    ABORT (status, COMBSEARCH_EINPUT, COMBSEARCH_MSGEINPUT);
   }
   
-
   RETURN (status);
 } /* checkUserInputConsistency() */
 
