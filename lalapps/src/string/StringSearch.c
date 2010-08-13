@@ -92,6 +92,7 @@ NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
 
 /* FIXME:  should be "lalapps_StringSearch" to match the executable */
+/* requires post-processing codes to be updated */
 #define PROGRAM_NAME "StringSearch"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
@@ -175,8 +176,6 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
-CHAR ifo[4];
-
 REAL4 SAMPLERATE;
 
 int Nevents=0;
@@ -224,7 +223,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector,
 	       INT4 i, INT4 m, SnglBurst **thisEvent);
 
 /* Writes out the xml file with the events it found  */
-int OutputEvents(struct CommandLineArgsTag CLA);
+int OutputEvents(const struct CommandLineArgsTag *CLA);
 
 /* Frees the memory */
 int FreeMem(void);                                        
@@ -318,7 +317,7 @@ int main(int argc,char *argv[])
   
   /****** OutputEvents ******/
   printf("OutputEvents()\n");
-  if (OutputEvents(CommandLineArgs)) return 13;
+  if (OutputEvents(&CommandLineArgs)) return 13;
   
   /****** FreeMem ******/
   printf("FreeMem()\n");
@@ -433,10 +432,14 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 /*******************************************************************************/
 
-int OutputEvents(struct CommandLineArgsTag CLA){  
+int OutputEvents(const struct CommandLineArgsTag *CLA){  
   LIGOLwXMLStream *xml;
+  char ifo[3];
+
+  strncpy( ifo, CLA->ChannelName, 2 );
+  ifo[2] = 0;
   
-  if (!CLA.outputFileName){
+  if (!CLA->outputFileName){
     CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
 	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
@@ -446,7 +449,7 @@ int OutputEvents(struct CommandLineArgsTag CLA){
     xml = XLALOpenLIGOLwXMLFile(outfilename);
   }
   else
-    xml = XLALOpenLIGOLwXMLFile(CLA.outputFileName);
+    xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
 
   /* process table */
   snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
@@ -556,7 +559,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       }
 
       /* Now copy stuff into event */
-      strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-2 );
+      strncpy( (*thisEvent)->ifo, CLA.ChannelName, 2 );
+      (*thisEvent)->ifo[3] = 0;
       strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
       strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
       
@@ -1159,9 +1163,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->printdataflag=0;
   CLA->printinjectionflag=0;
   CLA->comment=default_comment;
-  
-  /* initialise ifo string */
-  memset(ifo, 0, sizeof(ifo));
 
   /* initialise chi2cut */
   memset(CLA->chi2cut, 0, sizeof(CLA->chi2cut));
@@ -1218,7 +1219,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
-      memcpy(ifo, optarg, sizeof(ifo) - 2);
       ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'i':
