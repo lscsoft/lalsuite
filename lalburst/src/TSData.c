@@ -672,6 +672,8 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
 
+  level = 0;
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

@@ -1514,7 +1514,7 @@ void SetUpSFTs( LALStatus *status,
 /** \brief Function for calculating Hough Maps and candidates 
     \param pgV is a HOUGHPeakGramVector obtained after thresholding Fstatistic vectors
     \param params is a pointer to HoughParams -- parameters for calculating Hough maps
-    \out houghCand Candidates from thresholding Hough number counts
+    \param out Candidates from thresholding Hough number counts
 
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function 

@@ -455,7 +455,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( detector.transfer->epoch ), epoch );
     ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
 	    == 1 );
@@ -517,7 +517,7 @@ main(int argc, char **argv)
     }
 
     /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %lld\n", &epoch ) == 1 );
+    ok &= ( fscanf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", &epoch ) == 1 );
     I8ToLIGOTimeGPS( &( output.epoch ), epoch );
     ok &= ( fscanf( fp, "# deltaT = %lf\n", &( output.deltaT ) )
 	    == 1 );
@@ -587,7 +587,7 @@ main(int argc, char **argv)
 
     /* Read and convert input line. */
     if ( sourcefile ) {
-      ok &= ( fscanf( fp, "%c %lli %f %f %f %f %f\n", &timeCode,
+      ok &= ( fscanf( fp, "%c %" LAL_INT8_FORMAT " %f %f %f %f %f\n", &timeCode,
 		      &epoch, &m1, &m2, &dist, &inc, &phic ) == 7 );
       ppnParams.mTot = m1 + m2;
       ppnParams.eta = m1*m2/( ppnParams.mTot*ppnParams.mTot );
@@ -685,7 +685,7 @@ main(int argc, char **argv)
     }
     epoch = 1000000000LL*(INT8)( output.epoch.gpsSeconds );
     epoch += (INT8)( output.epoch.gpsNanoSeconds );
-    fprintf( fp, "# epoch = %lld\n", epoch );
+    fprintf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", epoch );
     fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
       fprintf( fp, "%8.1f\n", (REAL4)( output.data->data[i] ) );

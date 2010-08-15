@@ -33,10 +33,146 @@ __version__ = '$Revision$'[11:-2]
 #
 # =============================================================================
 #
+#                                Configuration
+#
+# =============================================================================
+#
+
+
+def get_files_per_calc_likelihood(config_parser):
+	return config_parser.getint("pipeline", "files_per_calc_likelihood")
+
+
+#
+# =============================================================================
+#
 #                            DAG Node and Job Class
 #
 # =============================================================================
 #
+
+
+class MeasLikelihoodJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_string_meas_likelihood"))
+		self.set_sub_file("lalapps_string_meas_likelihood.sub")
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_meas_likelihood-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "lalapps_string_meas_likelihood")
+
+		self.cache_dir = power.get_cache_dir(config_parser)
+		self.output_dir = "."
+
+
+class MeasLikelihoodNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = []
+
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+
+	def set_name(self, *args):
+		pipeline.CondorDAGNode.set_name(self, *args)
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
+		self.add_var_opt("input-cache", self.cache_name)
+
+	def add_input_cache(self, cache):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		self.input_cache.extend(cache)
+
+	def add_file_arg(self, filename):
+		raise NotImplementedError
+
+	def set_output(self, description):
+		if self.output_cache:
+			raise AttributeError, "cannot change attributes after computing output cache"
+		cache_entry = power.make_cache_entry(self.input_cache, description, "")
+		filename = os.path.join(self.output_dir, "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
+		cache_entry.url = "file://localhost" + os.path.abspath(filename)
+		self.add_var_opt("output", filename)
+		del self.output_cache[:]
+		self.output_cache.append(cache_entry)
+		return filename
+
+	def get_input_cache(self):
+		return  self.input_cache
+
+	def get_output_cache(self):
+		if not self.output_cache:
+			raise AttributeError, "must call set_output(description) first"
+		return self.output_cache
+
+	def write_input_files(self, *args):
+		f = file(self.cache_name, "w")
+		for c in self.input_cache:
+			print >>f, str(c)
+		pipeline.CondorDAGNode.write_input_files(self, *args)
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
+
+
+class CalcLikelihoodJob(pipeline.CondorDAGJob):
+	def __init__(self, config_parser):
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_string_calc_likelihood"))
+		self.set_sub_file("lalapps_string_calc_likelihood.sub")
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_calc_likelihood-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_string_calc_likelihood-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+		self.add_ini_opts(config_parser, "lalapps_string_calc_likelihood")
+		self.cache_dir = power.get_cache_dir(config_parser)
+		self.files_per_calc_likelihood = get_files_per_calc_likelihood(config_parser)
+		if self.files_per_calc_likelihood < 1:
+			raise ValueError, "files_per_calc_likelihood < 1"
+
+
+class CalcLikelihoodNode(pipeline.CondorDAGNode):
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = self.input_cache
+		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+
+	def set_name(self, *args):
+		pipeline.CondorDAGNode.set_name(self, *args)
+		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
+		self.add_var_opt("input-cache", self.cache_name)
+
+	def add_input_cache(self, cache):
+		self.input_cache.extend(cache)
+		for c in cache:
+			self.add_output_file(c.path())
+
+	def add_likelihood_file(self, path):
+		self.add_var_arg("--likelihood-file %s" % path)
+
+	def add_file_arg(self, filename):
+		raise NotImplementedError
+
+	def get_input_cache(self):
+		return  self.input_cache
+
+	def get_output_cache(self):
+		return self.output_cache
+
+	def write_input_files(self, *args):
+		f = file(self.cache_name, "w")
+		for c in self.input_cache:
+			print >>f, str(c)
+		pipeline.CondorDAGNode.write_input_files(self, *args)
+
+	def get_output_files(self):
+		raise NotImplementedError
+
+	def get_output(self):
+		raise NotImplementedError
 
 
 class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -59,6 +195,8 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file("lalapps_StringSearch.sub")
     self.add_condor_cmd("Requirements", "Memory > 1100")
 
+    self.output_dir = power.get_triggers_dir(config_parser)
+
 
 class StringNode(pipeline.AnalysisNode):
   """
@@ -72,6 +210,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
+    self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
   def set_ifo(self, instrument):
     """
@@ -115,7 +254,7 @@ class StringNode(pipeline.AnalysisNode):
       if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
         raise ValueError, "start time, end time, ifo, or user tag has not been set"
       seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
-      self.set_output("triggers/%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start())))
+      self.set_output(os.path.join(self.output_dir, "%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 
     return self._AnalysisNode__output
 
@@ -160,7 +299,7 @@ def clip_segment(seg, pad, short_segment_duration):
 
   # bounds must be integers
   if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
-    raise ValueError, "segment %s does not have integer boundaries" % str(seg)
+    raise ValueError, "segment %s does not have integer boundaries" % repr(seg)
   seg = segments.segment(int(seg[0]), int(seg[1]))
 
   # done
@@ -231,17 +370,27 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 
 
 stringjob = None
+meas_likelihoodjob = None
+calc_likelihoodjob = None
 
 
-def init_job_types(config_parser, job_types = ("string",)):
+def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "calc_likelihood")):
   """
   Construct definitions of the submit files.
   """
-  global stringjob
+  global stringjob, meas_likelihoodjob, calc_likelihoodjob
 
   # lalapps_StringSearch
   if "string" in job_types:
     stringjob = StringJob(config_parser)
+
+  # lalapps_string_meas_likelihood
+  if "meas_likelihood" in job_types:
+    meas_likelihoodjob = MeasLikelihoodJob(config_parser)
+
+  # lalapps_string_calc_likelihood
+  if "calc_likelihood" in job_types:
+    calc_likelihoodjob = CalcLikelihoodJob(config_parser)
 
 
 #
@@ -297,7 +446,7 @@ def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
 	return seglist
 
 
-def make_string_segment_fragment(dag, datafindnodes, instrument, segment, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
@@ -311,7 +460,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, segment, tag, m
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}
-	seglist = split_segment(segment, min_segment_length, pad, overlap, short_segment_duration)
+	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = set()
@@ -342,3 +491,53 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 
 	# done
 	return nodes
+
+
+#
+# =============================================================================
+#
+#                          lalapps_string_meas_likelihood Jobs
+#
+# =============================================================================
+#
+
+
+def make_meas_likelihood_fragment(dag, parents, tag):
+    node = MeasLikelihoodNode(meas_likelihoodjob)
+    node.set_name("lalapps_string_meas_likelihood_%s" % tag)
+    for parent in parents:
+        node.add_parent(parent)
+        node.add_input_cache(parent.get_output_cache())
+    node.set_output(tag)
+    dag.add_node(node)
+    return set([node])
+
+
+#
+# =============================================================================
+#
+#                          lalapps_string_calc_likelihood Jobs
+#
+# =============================================================================
+#
+
+
+def make_calc_likelihood_fragment(dag, parents, likelihood_parents, tag, files_per_calc_likelihood = None, verbose = False):
+  if files_per_calc_likelihood is None:
+    files_per_calc_likelihood = calc_likelihoodjob.files_per_calc_likelihood
+  input_cache = power.collect_output_caches(parents)
+  likelihood_cache = power.collect_output_caches(likelihood_parents)
+  nodes = set()
+  while input_cache:
+    node = CalcLikelihoodNode(calc_likelihoodjob)
+    node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_calc_likelihood]])
+    for cache_entry, parent in input_cache[:files_per_calc_likelihood]:
+      node.add_parent(parent)
+    del input_cache[:files_per_calc_likelihood]
+    seg = power.cache_span(node.get_input_cache())
+    node.set_name("lalapps_string_calc_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+    for cache_entry, parent in likelihood_cache:
+      node.add_parent(parent)
+      node.add_likelihood_file(cache_entry.path())
+    dag.add_node(node)
+  return nodes

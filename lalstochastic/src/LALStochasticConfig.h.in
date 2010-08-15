@@ -6,6 +6,18 @@
 /* LALStochastic Version */
 #undef LALSTOCHASTIC_VERSION
 
+/* LALStochastic Version Major Number  */
+#undef LALSTOCHASTIC_VERSION_MAJOR
+
+/* LALStochastic Version Minor Number  */
+#undef LALSTOCHASTIC_VERSION_MINOR
+
+/* LALStochastic Version Micro Number  */
+#undef LALSTOCHASTIC_VERSION_MICRO
+
+/* LALStochastic Version Devel Number  */
+#undef LALSTOCHASTIC_VERSION_DEVEL
+
 /* LALStochastic Configure Arguments */
 #undef LALSTOCHASTIC_CONFIGURE_ARGS
 

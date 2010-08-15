@@ -57,7 +57,7 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALAtomicDatatypes.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -76,7 +76,7 @@ RCSID( "$Id$" );
 "  --verbose                turn verbose flag on\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (793130413)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (795679213)\n"\
-"  --time-step STEP         space injections by STEP / pi seconds apart (2630)\n"\
+"  --time-step STEP         space injections by STEP seconds apart\n"\
 "  --time-interval TIME     distribute injections in interval TIME (250)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -135,9 +135,8 @@ int main( int argc, char *argv[] )
   /* command line options */
   LIGOTimeGPS   gpsStartTime;
   LIGOTimeGPS   gpsEndTime;
-  REAL8         meanTimeStep = 7000 / LAL_PI;
+  REAL8         meanTimeStep = -1;
   REAL8         timeInterval = 250;
-  REAL8         tstep = 2630;
   UINT4         randSeed = 1;
   CHAR         *userTag = NULL;
   REAL4         minMass = 13.8;
@@ -159,8 +158,9 @@ int main( int argc, char *argv[] )
   REAL4  deltaM;
   SkyPosition           skyPos;
   LALSource             source;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector           lho   = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LALDetector           llo   = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector           virgo = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
   REAL8                 time_diff;
@@ -343,8 +343,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 't':
-        tstep = (REAL8) atof( optarg );
-        meanTimeStep = tstep / LAL_PI;
+        meanTimeStep = (REAL8) atof( optarg );
         if ( meanTimeStep <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -363,7 +362,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "time interval must be >= 0: (%le seconds specified)\n",
-              long_options[option_index].name, meanTimeStep );
+              long_options[option_index].name, timeInterval );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
@@ -569,16 +568,14 @@ int main( int argc, char *argv[] )
         break;
       
       case 'w':
-        snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
            next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
         break;
       
       case 'c':
-        snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
-            optarg);
+        snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "%s", optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
               "%s", optarg);
@@ -625,16 +622,21 @@ int main( int argc, char *argv[] )
   if ( !*waveform )
     {
       /* use Ringdown as the default waveform */
-      snprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
-          "Ringdown");
+      snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "Ringdown");
       }
   
   if ( !*coordinates )
         {
           /* use equatorial as the default system */
-          snprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
-                              "EQUATORIAL");
+          snprintf( coordinates, LIGOMETA_COORDINATES_MAX, "EQUATORIAL");
                       }
+
+   if ( meanTimeStep<=0 )
+         {
+           fprintf( stderr,
+               "Time step value must be specified.\n" );
+           exit( 1 );
+         }
   
                 
   /*
@@ -699,14 +701,14 @@ int main( int argc, char *argv[] )
                 sizeof(CHAR));
     
     this_inj->epsilon = epsilon;
-    
+ 
     /* set the geocentric start time of the injection */
     this_inj->geocent_start_time = gpsStartTime;
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       XLALGPSAdd(&(this_inj->geocent_start_time), u * timeInterval);
-    }    
+    } 
 
  
     if ( injdistr == 0 )
@@ -807,10 +809,10 @@ int main( int argc, char *argv[] )
     this_inj->hrss = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, 2., 0. );
 
     /* initialize end times with geocentric value */
-    this_inj->h_start_time = this_inj->l_start_time = this_inj->geocent_start_time;
+    this_inj->h_start_time = this_inj->l_start_time = this_inj->v_start_time = this_inj->geocent_start_time;
     
     /* initialize distances with real distance and compute splus and scross*/
-    this_inj->eff_dist_h = this_inj->eff_dist_l = 2.0 * this_inj->distance;
+    this_inj->eff_dist_h = this_inj->eff_dist_l = this_inj->eff_dist_v = 2.0 * this_inj->distance;
     cosiota = cos( this_inj->inclination );
     splus = -( 1.0 + cosiota * cosiota );
     scross = -2.0 * cosiota; 
@@ -843,10 +845,29 @@ int main( int argc, char *argv[] )
     /* compute the effective distance for LLO */
     this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
         + scross*scross*resp.cross*resp.cross );
-    
+
     /* compute hrss at LLO */
     this_inj->hrss_l = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
-        
+
+    /* increment the injection time */
+    XLALGPSAdd(&gpsStartTime, meanTimeStep);
+    
+    /* virgo */
+    time_diff = XLALTimeDelayFromEarthCenter( virgo.location, skyPos.longitude, skyPos.latitude, &(this_inj->geocent_start_time) );
+    XLALGPSAdd(&(this_inj->l_start_time), time_diff);
+
+    /* compute the response of the VIROG detector */
+    detAndSource.pDetector = &virgo;
+    LAL_CALL( LALComputeDetAMResponse( &status, &resp, &detAndSource,
+          &this_inj->geocent_start_time ), &status);
+    
+    /* compute the effective distance for VIRGO */
+    this_inj->eff_dist_v /= sqrt( splus*splus*resp.plus*resp.plus 
+        + scross*scross*resp.cross*resp.cross );
+
+    /* compute hrss at VIRGO */
+    this_inj->hrss_v = XLALBlackHoleRingHRSS( this_inj->frequency, this_inj->quality, this_inj->amplitude, splus*resp.plus, scross*resp.cross );
+
     /* increment the injection time */
     XLALGPSAdd(&gpsStartTime, meanTimeStep);
   } /* end loop over injection times */

@@ -1,4 +1,4 @@
-AC_INIT([lalpulsar],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,8 +44,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalpulsar])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
+lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalpulsar_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalpulsar_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalpulsar_version_micro" && lalpulsar_version_micro=0
+test -z "$lalpulsar_version_devel" && lalpulsar_version_devel=0
 lalpulsar_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALPULSAR_VERSION],["$VERSION"],[LALPulsar Version])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MAJOR],[$lalpulsar_version_major],
+                   [LALPulsar Version Major Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MINOR],[$lalpulsar_version_minor],
+                   [LALPulsar Version Minor Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_MICRO],[$lalpulsar_version_micro],
+                   [LALPulsar Version Micro Number])
+AC_DEFINE_UNQUOTED([LALPULSAR_VERSION_DEVEL],[$lalpulsar_version_devel],
+                   [LALPulsar Version Devel Number])
 AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALPulsar Configure Arguments])
 AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
@@ -55,16 +69,14 @@ AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
 LALSUITE_ENABLE_BOINC
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # boinc requires a c++ compiler
-if test "${boinc}" = "true" ; then
-  AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -97,6 +109,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for header files
 AC_HEADER_STDC
 
@@ -118,8 +133,8 @@ if test "${boinc}" = "true" ; then
   AC_LANG_PUSH([C++])
 fi
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
 
 # check that lal has been buil with boinc support, for boinc build
 if test "${boinc}" = "true" ; then
@@ -127,7 +142,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -152,12 +167,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Pulsar has now been successfully configured
+        LALPulsar has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Pulsar
-        and run 'make install' to install LAL Pulsar
+        Now run 'make' to build LALPulsar
+        and run 'make install' to install LALPulsar
 
 ================================================================="

@@ -102,9 +102,6 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-static void
-ClearStatus (LALStatus *status);
-
 NRCSID( DETECTORSITETESTC, "$Id$" );
 
 #define DETECTORSITETESTC_LOCTOL 3e-2
@@ -459,26 +456,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
 }
-
-
-/*
- *
- * ClearStatus ()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-void
-ClearStatus (LALStatus *status)
-{
-  if (status->statusPtr)
-  {
-    ClearStatus      (status->statusPtr);
-    DETATCHSTATUSPTR (status);
-  }
-}
-
 
 /*
  * Usage ()

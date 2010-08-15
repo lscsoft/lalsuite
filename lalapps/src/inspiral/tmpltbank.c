@@ -147,6 +147,8 @@ REAL4   maxMass         = -1;           /* maximum component mass       */
 REAL4   minTotalMass    = -1;           /* minimum total mass           */
 REAL4   maxTotalMass    = -1;           /* maximum total mass           */
 REAL4   chirpMassCutoff = -1;           /* maximum chirp mass to keep   */
+REAL4   etaMinCutoff    = -1;           /* minimum eta to keep          */
+REAL4   etaMaxCutoff    = -1;           /* maximum eta to keep          */
 REAL4   psi0Min         = 0;            /* minimum value of psi0        */
 REAL4   psi0Max         = 0;            /* maximum value of psi0        */
 REAL4   psi3Min         = 0;            /* minimum value of psi3        */
@@ -227,7 +229,6 @@ int main ( int argc, char *argv[] )
 
   /* structures for preconditioning */
   ResampleTSParams              resampleParams;
-  LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
   /* templates */
@@ -485,8 +486,7 @@ int main ( int argc, char *argv[] )
         frStream ), &status );
 
     /* copy the data paramaters from the h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -502,7 +502,7 @@ int main ( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
       "raw data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
@@ -583,8 +583,7 @@ int main ( int argc, char *argv[] )
     }
 
     /* re-copy the data paramaters from h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
-        strainChan.name );
+    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -656,8 +655,7 @@ int main ( int argc, char *argv[] )
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
-      "filter data sample rate" );
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
   /*
@@ -743,14 +741,11 @@ int main ( int argc, char *argv[] )
       exit( 1 );
   }
 
-  wpars.type = Hann;
-  wpars.length = numPoints;
   avgSpecParams.overlap = numPoints / 2;
   if ( vrbflg )
     fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
 
-  LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
-        &wpars ), &status );
+  avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
   XLALDestroyREAL4Window( avgSpecParams.window );
@@ -827,8 +822,7 @@ int main ( int argc, char *argv[] )
     if ( globCalData )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
-          "*CAL*%s*.gwf", ifo );
+      snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -849,11 +843,10 @@ int main ( int argc, char *argv[] )
     {
       this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
           "calibration frame %d", i );
       snprintf( this_search_summvar->string,
-          LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
-          calCache->frameFiles[i].url );
+          LIGOMETA_STRING_MAX, "%s", calCache->frameFiles[i].url );
     }
 
     /* generate the response function for the current time */
@@ -1060,6 +1053,14 @@ int main ( int argc, char *argv[] )
     numCoarse = XLALCountSnglInspiral( tmplt );
   }
 
+  /* Do eta cut */
+  if ( etaMinCutoff >= 0 || etaMaxCutoff > 0 )
+  {
+    tmplt = XLALMassCut( tmplt, "eta", etaMinCutoff, etaMaxCutoff, -1, -1 );
+    /* count the remaining tmplts */
+    numCoarse = XLALCountSnglInspiral( tmplt );
+  }
+
   if ( vrbflg )
   {
     fprintf( stdout, "done. Got %d templates\n", numCoarse );
@@ -1069,17 +1070,15 @@ int main ( int argc, char *argv[] )
   if ( numCoarse )
   {
     templateBank.snglInspiralTable = tmplt;
-    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
-    snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "tmpltbank" );
-    snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+    snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "tmpltbank" );
+    snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX,
         "%s", channelName );
     while( (tmplt = tmplt->next) )
     {
-      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "%s", ifo );
-      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-          "tmpltbank" );
-      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+      snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+      snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "tmpltbank" );
+      snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX,
           "%s", channelName );
     }
   }
@@ -1341,6 +1340,8 @@ fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to
 fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
 fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
 fprintf(a, "  --chirp-mass-cutoff MASS     set chirp mass cutoff to MASS\n");\
+fprintf(a, "  --max-eta ETA                set maximum symmetric mass ratio of the bank to ETA\n");\
+fprintf(a, "  --min-eta ETA                set minimum symmetric mass ratio of the bank to ETA\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n");\
 fprintf(a, "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n");\
@@ -1453,6 +1454,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"max-total-mass",          required_argument, 0,                'y'},
     {"min-total-mass",          required_argument, 0,                'W'},
     {"chirp-mass-cutoff",       required_argument, 0,                'q'},
+    {"max-eta",                 required_argument, 0,                '0'},
+    {"min-eta",                 required_argument, 0,                'X'},
     {"disable-polygon-fit",     no_argument,            &polygonFit,       0 },
     {"disable-compute-moments", no_argument,            &computeMoments,   0 },
     /* standard candle parameters */
@@ -1496,7 +1499,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv,
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
         long_options, &option_index );
 
@@ -2235,6 +2238,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", chirpMassCutoff );
+        break;
+
+      case 'X':
+        etaMinCutoff = (REAL4) atof( optarg );
+        if ( etaMinCutoff < 0 || etaMinCutoff >= 0.25 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimum eta must be >= 0 and < 0.25: "
+              "(%f specified)\n",
+              long_options[option_index].name, etaMinCutoff);
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", etaMinCutoff);
+        break;
+
+      case '0':
+        etaMaxCutoff = (REAL4) atof( optarg );
+        if ( etaMaxCutoff <= 0 || etaMaxCutoff > 0.25 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "maximum eta must be > 0 and <= 0.25: "
+              "(%f specified)\n",
+              long_options[option_index].name, etaMaxCutoff );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", etaMaxCutoff );
         break;
 
       case 'k':
@@ -3023,6 +3052,30 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr,
           "Error: argument to --minimum-kappa1 must be less than --maximum-kappa1 .\n" );
       exit( 1 );
+    }
+  }
+
+  if( etaMaxCutoff > 0 || etaMinCutoff >= 0 )
+  {
+    if( etaMaxCutoff <= 0 )
+    {
+      fprintf( stderr,
+          "Error: argument --max-eta must be given if --min-eta is given\n");
+      exit(1);
+    }
+
+    if( etaMinCutoff < 0 )
+    {
+      fprintf( stderr,
+          "Error: argument --min-eta must be given if --max-eta is given\n");
+      exit(1);
+    }
+    
+    if( etaMaxCutoff < etaMinCutoff )
+    {
+      fprintf( stderr,
+            "Error: value for --max-eta must be greater than or equal to value for --min-eta\n");
+      exit(1);
     }
   }
 

@@ -78,7 +78,7 @@ struct tagLALIFOData;
 
 /*Data storage type definitions*/
 
-typedef enum tagVariableType {
+typedef enum {
   INT4_t, 
   INT8_t, 
   REAL4_t, 
@@ -96,6 +96,13 @@ typedef enum {
   frequencyDomain
 } LALDomain;
 
+typedef enum {
+	PARAM_LINEAR,
+	PARAM_CIRCULAR,
+	PARAM_FIXED,    /* Never changes */
+	PARAM_OUTPUT    /* Changed by the inner code and passed out */
+} ParamVaryType;
+
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
@@ -107,6 +114,7 @@ tagVariableItem
   char                    name[VARNAME_MAX];
   void                    *value;
   VariableType            type;
+  ParamVaryType			  vary;
   struct tagVariableItem  *next;
 } LALVariableItem;
 
@@ -119,17 +127,20 @@ tagLALVariables
 
 void *getVariable(LALVariables * vars, const char * name);
 INT4 getVariableDimension(LALVariables *vars);
-VariableType getVariableType(LALVariables *vars, int index);
+VariableType getVariableTypeByIndex(LALVariables *vars, int index);
+VariableType getVariableType(LALVariables *vars, const char *name);
+ParamVaryType getVariableVaryType(LALVariables *vars, const char *name);
 char *getVariableName(LALVariables *vars, int index);
 void setVariable(LALVariables * vars, const char * name, void * value);
 void addVariable(LALVariables * vars, const char * name, void * value, 
-	VariableType type);
+	VariableType type, ParamVaryType vary);
 void removeVariable(LALVariables *vars,const char *name);
 int  checkVariable(LALVariables *vars,const char *name);
 void destroyVariables(LALVariables *vars);
 void copyVariables(LALVariables *origin, LALVariables *target);
 void printVariables(LALVariables *var);
 int compareVariables(LALVariables *var1, LALVariables *var2);
+
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
@@ -217,8 +228,6 @@ tagLALIFOData
 /* Returns the element of the process params table with "name" */
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-LALIFOData *ReadData(ProcessParamsTable *commandLine);
-
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
@@ -234,14 +243,10 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data,
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
 								  
-REAL8 FreqDomainNullLogLikelihood(LALIFOData * data);
-
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
-
-REAL8 NullLogLikelihood(LALIFOData *data);							  
 
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);
@@ -263,6 +268,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 void PTMCMCOneStep(LALInferenceRunState *runState);
 REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+
+void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
+void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
+
+LALVariableItem *getItem(LALVariables *vars,const char *name);
+LALVariableItem *getItemNr(LALVariables *vars, int index);
+void fprintSample(FILE *fp,LALVariables *sample);
+
+
 
 #endif
 

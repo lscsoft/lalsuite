@@ -252,6 +252,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
   char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
+  int c;
 
   char *cnames[] = { alphareName, gammareName, alphaimName, gammaimName, dqName };
 
@@ -348,16 +349,21 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, allargs);
 
   /* hostname and user */
-  gethostname(hostname,sizeof(hostname));
-  getdomainname(domainname,sizeof(domainname));
+  c = gethostname(hostname,sizeof(hostname));
+  c = getdomainname(domainname,sizeof(domainname));
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
 
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
   FrHistoryAdd( frame, freqInfo);
 
-  /* String containing the filter file cvs info (first line in filter file) */
-  FrHistoryAdd( frame, InputData.filter_vc_info);
+  /* Filters file checksum and cvs info (first 2 lines in filters file) */
+  {
+    char buffer[1024];
+    snprintf(buffer, sizeof buffer, "Filters file checksum and header: %s\n%s",
+             InputData.filter_chksum, InputData.filter_vc_info);
+    FrHistoryAdd(frame, buffer);
+  }
 
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);

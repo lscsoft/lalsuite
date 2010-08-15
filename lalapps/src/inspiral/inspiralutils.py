@@ -569,9 +569,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
-        "tmpltbank", "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
+        "tmpltbank", "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
+        "l1-inspiral", "g1-inspiral", "v1-inspiral", \
+        "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
-        "sire-inj", "condor-max-jobs", "calibration"]
+        "sire-inj", "condor-max-jobs", "calibration", \
+        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
+        "cohinspbank", "chia-inj", "cohire", "cohire-inj"]
   else:
     hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
@@ -581,8 +585,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
         "thinca-2", "thinca-slide", "trigbank", "sire",  \
         "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
-        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", "condor-max-jobs"]
-
+        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
+        "cohinspbank", "chia-inj", "cohire", "cohire-inj", "condor-max-jobs"]
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
 
@@ -712,7 +716,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     else:
       hipe_args = ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
-        "summary-single-ifo-triggers","write-script"]
+        "summary-single-ifo-triggers","write-script",
+        "coherent-bank","coherent-inspiral","cohire",
+        "summary-coherent-inspiral-triggers"]
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
@@ -757,10 +763,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   # collapse the short running jobs in the veto sub-dags
   if vetoCat:
     hipeNode.set_cluster_jobs('horizontal')
-
-  # sweep up the .input files hipe generates
-  hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
-    'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
@@ -1359,4 +1361,130 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
             pattern += "_" + suffix
         patterns[pattern_name + "-pattern"] = pattern
     return patterns
+
+###############################################################################
+# This function will set up the necessary omega scan inputs in the current
+# directory
+
+def omega_scan_setup(cp,ifos):
+  cp.set('omega-scans','do-omega-scan','')
+  cp.set('omega-scans','omega-executable',cp.get('condor','omegascan'))
+  print "Beginning set up of omega scan directory."
+  start = cp.get("input","gps-start-time")
+  end = cp.get("input","gps-end-time")
+  # First we set up the configuration files
+  sampleFrequency = cp.get('omega-setup','sample-frequency')
+  searchTRange = cp.get('omega-setup','search-time-range')
+  searchFRange = cp.get('omega-setup','search-frequency-range')
+  searchFRange = searchFRange.split(',')
+  searchFRange = '[' + searchFRange[0] + ' ' + searchFRange[1] + ']'
+  searchQRange = cp.get('omega-setup','search-q-range')
+  searchQRange = searchQRange.split(',')
+  searchQRange = '[' + searchQRange[0] + ' ' + searchQRange[1] + ']'
+  searchMaxELoss = cp.get('omega-setup','search-max-energy-loss')
+  whiteNoiseFAR = cp.get('omega-setup','white-noise-far')
+  searchWindowDuration = cp.get('omega-setup','search-window-duration')
+  plotNormERange = cp.get('omega-setup','plot-normalized-energy-range')
+  plotNormERange = plotNormERange.split(',')
+  plotNormERange = '[' + plotNormERange[0] + ' ' + plotNormERange[1] + ']'
+  plotTimeRanges = cp.get('omega-setup','plot-time-ranges')
+  plotTimeRanges = plotTimeRanges.split(',')
+  plotTimeRanges = ' '.join(plotTimeRanges)
+  plotTimeRanges = '[' + plotTimeRanges + ']'
+  configFileText = []
+  configFileHead = []
+  configFileHead.append('''[Context,Context]''')
+  configFileHead.append('')
+  configFileHead.append('''[Parameters,Parameter Estimation]''')
+  configFileHead.append('')
+  configFileHead.append('''[Notes,Notes]''')
+  configFileHead.append('')
+  configFileHead.append('''[Omega scans,Omega scans]''')
+  configFileHead.append('')
+  configFileText.append('{')
+  #This will be the line for the channel this is configFileText[1]
+  configFileText.append('')
+  #This will be the line for the frame this is configFileText[2]
+  configFileText.append('')
+  configFileText.append('  sampleFrequency:  ' + sampleFrequency)
+  configFileText.append('  searchTimeRange:  ' + searchTRange)
+  configFileText.append('  searchFrequencyRange:  ' + searchFRange)
+  configFileText.append('  searchQRange:  ' + searchQRange)
+  configFileText.append('  searchMaximumEnergyLoss:  ' + searchMaxELoss)
+  configFileText.append('  whiteNoiseFalseRate:  ' + whiteNoiseFAR)
+  configFileText.append('  alwaysPlotFlag:  1')
+  configFileText.append('  searchWindowDuration:  ' + searchWindowDuration)
+  configFileText.append('  plotTimeRanges:  ' + plotTimeRanges)
+  configFileText.append('  plotFrequencyRange:  []')
+  configFileText.append('  plotNormalizedEnergyRange:  ' + plotNormERange)
+  configFileText.append('}')
+  configFileText.append('')
+  typeNames = {}
+  for ifo in ifos:
+    ifo = ifo.upper()
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      channel_name = 'ligo-channel'
+      type_name = 'ligo-type'
+    elif ifo == 'V1':
+      channel_name = 'virgo-channel'
+      type_name = 'virgo-type'
+    else:
+      print "IFO " + ifo + " is not yet supported for omega scans in ihope"
+      continue
+    if cp.has_option('omega-setup',channel_name):
+      channels = (cp.get('omega-setup',channel_name)).split(',')
+      type = cp.get('omega-setup',type_name)
+    else:
+      channels = (cp.get('input',channel_name)).split(',')
+      type = cp.get('input',type_name)
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      type = ifo + '_' + type
+    typeNames[ifo] = type
+    configFileOut = '\n'.join(configFileHead)
+    configFileOut += '\n'
+    for channel in channels:
+      if channel[0:3] == 'PEM' or channel[0:3] == 'GDS':
+        configFileText[1] = "  channelName:  '" + ifo[0]+'0:'+channel + "'"
+      else:
+        configFileText[1] = "  channelName:  '" + ifo+':'+channel + "'"
+      configFileText[2] = "  frameType:  '" + type + "'"
+      configFileOut += '\n'.join(configFileText)
+      configFileOut +='\n'
+    outFile = open(ifo + '_omega_config.txt','w')
+    outFile.write(configFileOut)
+    outFile.close()
+    cp.set('omega-scans',ifo.lower() + '-omega-config-file','../omega_setup/'+ifo + '_omega_config.txt')
+
+  print "Created omega scan configuration files"
+
+  # And we need to create the necessary frame caches
+  if not os.path.isdir('cache'):
+    os.mkdir('cache')
+  dataFindCall = []
+  dataFindCall.append(cp.get('condor','datafind'))
+  for opt,val in cp.items('datafind'):
+    if opt == 'gaps':
+      continue
+    dataFindCall.append('--' + opt + ' ' + val)
+  dataFindCall.append('--lal-cache')
+  dataFindCall.append('--gps-start-time ' + start)
+  dataFindCall.append('--gps-end-time ' + end)
+  for ifo in ifos:
+    ifo = ifo.upper()
+    ifoSpecific = []
+    ifoSpecific.append('--observatory ' + ifo[0])
+    ifoSpecific.append('--type ' + typeNames[ifo])
+    ifoSpecific.append('--output cache/' + ifo + '_' + start + '_' + end + '_frames.cache')
+    command = ' '.join(dataFindCall) + ' ' + ' '.join(ifoSpecific)
+    make_external_call(command)
+    convertCall = cp.get('condor','convertlalcache')
+    convertCall += ' ' 
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.cache'
+    convertCall += ' '
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache'
+    make_external_call(convertCall)
+    cp.set('omega-scans',ifo.lower() + '-omega-frame-file','../omega_setup/' + 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache')
+
+  print "Created omega scan frame files \n"
+  
 

@@ -1,4 +1,4 @@
-/** \defgroup InspiralInjectionParams
+/** \defgroup InspiralInjectionParams Inspiral Injection package
  * \ingroup inject
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
@@ -8,12 +8,23 @@
  *
  */
 
-/** \file InspiralInjecionParams.h
+/** \file
  *  \ingroup InspiralInjectionParams
  * \date $Date$
  *
  *
  */
+
+/** enum containing the different ways in which the time step to
+ injections can be distributed */
+typedef enum
+{
+  LALINSPIRAL_UNKNOWN_TIME_DIST,
+  LALINSPIRAL_FIXED_TIME_DIST,
+  LALINSPIRAL_UNIFORM_TIME_DIST,
+  LALINSPIRAL_EXPONENTIAL_TIME_DIST
+}
+lalinspiral_time_distribution;
 
 /** enum containing the different ways in which the distance to
     injections can be distributed */
@@ -23,7 +34,8 @@ typedef enum
   distFromSourceFile,
   uniformDistance,
   uniformLogDistance,
-  uniformVolume
+  uniformVolume,
+  sfr
 }
 DistanceDistribution;
 

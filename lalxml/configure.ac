@@ -1,4 +1,4 @@
-AC_INIT([lalxml],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,15 +44,29 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalxml])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalxml_version_major=`echo "$VERSION" | cut -d. -f1`
+lalxml_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalxml_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalxml_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalxml_version_micro" && lalxml_version_micro=0
+test -z "$lalxml_version_devel" && lalxml_version_devel=0
 lalxml_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALXML_VERSION],["$VERSION"],[LALXML Version])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MAJOR],[$lalxml_version_major],
+                   [LALXML Version Major Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MINOR],[$lalxml_version_minor],
+                   [LALXML Version Minor Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_MICRO],[$lalxml_version_micro],
+                   [LALXML Version Micro Number])
+AC_DEFINE_UNQUOTED([LALXML_VERSION_DEVEL],[$lalxml_version_devel],
+                   [LALXML Version Devel Number])
 AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALXML Configure Arguments])
 AC_DEFINE_UNQUOTED([LALXML_CONFIGURE_DATE],["$lalxml_configure_date"],
                    [LALXML Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -89,6 +103,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for header files
 AC_HEADER_STDC
 
@@ -114,14 +131,10 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
-
-# check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-
-# check for lalpulsar
-LALSUITE_CHECK_LIB([LALPULSAR],[lalpulsar],[1.0.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.0.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -141,12 +154,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL XML has now been successfully configured
+        LALXML has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL XML
-        and run 'make install' to install LAL XML
+        Now run 'make' to build LALXML
+        and run 'make install' to install LALXML
 
 ================================================================="

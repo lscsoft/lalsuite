@@ -45,6 +45,7 @@ const char *lalXMLVCSIdentStatus = LALXML_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalXMLVCSInfo = { \
+  LALXML_VCS_NAME, \
   LALXML_VERSION, \
   LALXML_VCS_ID, \
   LALXML_VCS_DATE, \

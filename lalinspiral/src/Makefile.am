@@ -39,7 +39,7 @@ lalinspiralinclude_HEADERS = \
 	NRWaveIO.h \
 	NRWaveInject.h \
 	NullStatistic.h \
-	Ring.h \
+	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
@@ -187,7 +187,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
-	Ring.c \
+	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
 	SimulateInspiral.c \

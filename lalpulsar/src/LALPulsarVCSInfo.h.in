@@ -16,19 +16,21 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * Copyright (C) 2009 Adam Mercer
+ * Copyright (C) 2009-2010 Adam Mercer
  */
 
 #ifndef _LALPULSARVCSINFO_H
 #define _LALPULSARVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
+#include <lal/LALPulsarConfig.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALPULSAR_VCS_NAME "LALPulsar"
 #define LALPULSAR_VCS_ID "@ID@"
 #define LALPULSAR_VCS_DATE "@DATE@"
 #define LALPULSAR_VCS_BRANCH "@BRANCH@"
@@ -46,8 +48,19 @@ extern "C" {
 #define LALPULSAR_VCS_IDENT_COMMITTER "$" "LALPulsarCommitter: @COMMITTER@ " "$"
 #define LALPULSAR_VCS_IDENT_STATUS "$" "LALPulsarStatus: @STATUS@ " "$"
 
-/* vcs information structure */
+/* vcs information structures */
 extern struct tagLALVCSInfo lalPulsarVCSInfo;
+static const struct tagLALVCSInfo lalPulsarHeaderVCSInfo = { \
+  LALPULSAR_VCS_NAME, \
+  LALPULSAR_VERSION, \
+  LALPULSAR_VCS_ID, \
+  LALPULSAR_VCS_DATE, \
+  LALPULSAR_VCS_BRANCH, \
+  LALPULSAR_VCS_TAG, \
+  LALPULSAR_VCS_AUTHOR, \
+  LALPULSAR_VCS_COMMITTER, \
+  LALPULSAR_VCS_STATUS \
+};
 
 #ifdef __cplusplus
 }

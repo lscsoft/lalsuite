@@ -206,6 +206,21 @@ clustering returns the trigger with the smallest null-statistic value.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+typedef enum
+{
+  cohbank,
+  cohinspbank
+}
+CohbankRunType;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{CohbankRunType} provides choices for constructing a
+multi-detector template bank from either the output of the coincidence
+analysis (cohbank) or the outputs of multiple single-ifo filtering.
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagSnglInspiralBCVCalphafCut
 {
@@ -633,8 +648,7 @@ LALCoincCutSnglInspiral(
 int
 XLALGenerateCoherentBank(
     SnglInspiralTable         **coherentBank,
-    CoincInspiralTable         *coincInput,
-    CHAR                       *ifos
+    CoincInspiralTable         *coincInput
     );
 
 INT8
@@ -984,6 +998,23 @@ XLALMultiInspiralIfosCut(
     MultiInspiralTable **multiHead,
     char                *ifos
     );
+
+MultiInspiralTable *
+XLALMultiInspiralSlideCut(
+    MultiInspiralTable **eventHead,
+    int               extractSlide
+    );
+
+int XLALClusterInEventID(
+    SnglInspiralTable          **inspiralList,
+    SnglInspiralClusterChoice    clusterchoice
+    );
+
+int XLALCoincSegCutSnglInspiral(
+    INT4                         startTime,
+    SnglInspiralTable          **inspiralList
+    );
+
 
 /* inspiral param accuracy */
 

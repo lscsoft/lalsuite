@@ -20,7 +20,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 enum { write_frame, write_ascii };
 
@@ -42,6 +42,7 @@ struct ring_params {
   const char  *calibCache;
   const char  *dataCache;
   const char  *injectFile;
+  INT4         dataType;
   INT4         injectType;
   INT4         spectrumType;
   REAL8        sampleRate;
@@ -70,13 +71,7 @@ struct ring_params {
   char         outputFile[256];
   char         userTag[256];
   char         ifoTag[256];
-  int          geoData;
-  REAL8        geoHighpassFrequency;
-  REAL8        geoScale;
   /* flags */
-  int          strainData;
-  int          simData;
-  int          zeroData;
   int          whiteSpectrum;
   int          bankOnly;
   int          getData;

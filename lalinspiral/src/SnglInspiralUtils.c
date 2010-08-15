@@ -2178,6 +2178,7 @@ XLALMassCut(
   REAL4 mass2Param;
   INT4 numTriggers;
   INT4 massBOOL;
+  REAL4 eps = 1.e-08; /* Safeguard against roundoff error in eta */
 
   /* Remove all the triggers which are not of the desired type */
 
@@ -2195,6 +2196,10 @@ XLALMassCut(
     {
       massParam = tmpEvent->mchirp;
     }
+    else if ( ! strcmp(massCut,"eta") )
+    {
+      massParam = tmpEvent->eta;
+    }
     else if ( ! strcmp(massCut,"mtotal") )
     {
       massParam = tmpEvent->mass1 + tmpEvent->mass2;
@@ -2209,6 +2214,18 @@ XLALMassCut(
     {
       if ( ( massParam >= massRangeLow ) && ( massParam < massRangeHigh ) &&
            ( mass2Param >= mass2RangeLow ) && ( mass2Param < mass2RangeHigh ) )
+      {
+        massBOOL = 1;
+      }
+      else
+      {
+        massBOOL = 0;
+      }
+    }
+    else if ( ! strcmp(massCut,"eta") )
+    {
+      if ( ( massParam >= massRangeLow - eps ) &&
+           ( massParam <= massRangeHigh + eps ) )
       {
         massBOOL = 1;
       }

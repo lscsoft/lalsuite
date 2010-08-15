@@ -82,8 +82,8 @@ int main (void)
 void testfunction(LALStatus *status)
 {
   int i, j;
-  float x;
-  gsl_matrix *m;
+  float x = 0;
+  gsl_matrix *m = NULL;
 
   ATTATCHSTATUSPTR( status);
   CALLGSL((m = gsl_matrix_alloc (10, 3)), status);

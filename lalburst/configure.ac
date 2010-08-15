@@ -1,4 +1,4 @@
-AC_INIT([lalburst],[1.0.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalburst],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,15 +44,29 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalburst])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalburst_version_major=`echo "$VERSION" | cut -d. -f1`
+lalburst_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalburst_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalburst_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalburst_version_micro" && lalburst_version_micro=0
+test -z "$lalburst_version_devel" && lalburst_version_devel=0
 lalburst_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALBURST_VERSION],["$VERSION"],[LALBurst Version])
+AC_DEFINE_UNQUOTED([LALBURST_VERSION_MAJOR],[$lalburst_version_major],
+                   [LALBurst Version Major Number])
+AC_DEFINE_UNQUOTED([LALBURST_VERSION_MINOR],[$lalburst_version_minor],
+                   [LALBurst Version Minor Number])
+AC_DEFINE_UNQUOTED([LALBURST_VERSION_MICRO],[$lalburst_version_micro],
+                   [LALBurst Version Micro Number])
+AC_DEFINE_UNQUOTED([LALBURST_VERSION_DEVEL],[$lalburst_version_devel],
+                   [LALBurst Version Devel Number])
 AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALBurst Configure Arguments])
 AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
                    [LALBurst Configure Date])
 
 # enable strict gcc flags
-LAL_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_GCC_FLAGS
 
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
@@ -89,6 +103,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for header files
 AC_HEADER_STDC
 
@@ -114,10 +131,10 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
-# check for lal
-LALSUITE_CHECK_LIB([LAL],[lal],[6.4.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALMETAIO],[lalmetaio],[1.0.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+# check for lal libraries and headers
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -137,12 +154,12 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LAL Burst has now been successfully configured
+        LALBurst has now been successfully configured
         and will be installed under the directory:
 
           ${prefix}
 
-        Now run 'make' to build LAL Burst
-        and run 'make install' to install LAL Burst
+        Now run 'make' to build LALBurst
+        and run 'make install' to install LALBurst
 
 ================================================================="

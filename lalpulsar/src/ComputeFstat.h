@@ -48,6 +48,7 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 #include <lal/LALComputeAM.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/DetectorStates.h>
+#include <gsl/gsl_vector.h>
 
 /*---------- exported DEFINES ----------*/
 
@@ -347,6 +348,9 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  );
 
 FstatAtoms * XLALCreateFstatAtoms ( UINT4 num );
+
+int XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, const PulsarAmplitudeParams *Amp );
+int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const gsl_vector *A_Mu );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );

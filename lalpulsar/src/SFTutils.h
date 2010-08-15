@@ -195,6 +195,11 @@ void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
 
+MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs );
+void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
+
+
+
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
