@@ -41,6 +41,9 @@
 #include <getopt.h>
 #include <stdarg.h>
 
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -57,7 +60,6 @@
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/Random.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 
@@ -723,33 +725,33 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
 /*******************************************************************************/
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates){
-  REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
+  REAL8 fNyq, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
   int m, f_cut_index, f_low_cutoff_index, extr_ctr;
   unsigned p, pcut, f_min_index, f_max_index;
   REAL4Vector *integral;
   REAL4Vector    *vector; /* time-domain vector workspace */
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
 
-  fMax = (1.0/GV.ht_proc->deltaT) / 2.0;
-  f_min_index = CLA.fbankstart / GV.Spec->deltaF;
-  f_max_index = fMax / GV.Spec->deltaF;
+  fNyq = (1.0/GV.ht_proc->deltaT) / 2.0;
+  f_min_index = round(CLA.fbankstart / GV.Spec->deltaF);
+  f_max_index = round(fNyq / GV.Spec->deltaF);
   integral = XLALCreateREAL4Vector(f_max_index-f_min_index);
   epsilon=0;
 
   /* first template : f_cutoff = fbankhighfcutofflow */
-  f_cut = (int)(CLA.fbankhighfcutofflow/GV.Spec->deltaF)*GV.Spec->deltaF;
-  f_cut_index = CLA.fbankhighfcutofflow / GV.Spec->deltaF;
+  f_cut_index = round(CLA.fbankhighfcutofflow / GV.Spec->deltaF);
+  f_cut = f_cut_index * GV.Spec->deltaF;
 
   /* compute (t1|t1) */
   t1t1=0.0;
   integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/GV.Spec->data->data[f_min_index]*GV.Spec->deltaF;
   for( p = f_min_index ; p < f_max_index; p++ ){
     f = p*GV.Spec->deltaF;
-    
+
     if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
     else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
 
-    if(p>0) /* keep the integral in memory (to run faster) */
+    if(p>f_min_index) /* keep the integral in memory (to run faster) */
       integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
   }
   
@@ -954,109 +956,107 @@ int ProcessData(const struct CommandLineArgsTag *CLA){
 
 int ReadData(struct CommandLineArgsTag CLA){
   unsigned p;
-  FrCache *framecache;
-  FrStream *framestream=NULL;
-  REAL4TimeSeries *ht_V = NULL;   /* raw input data (Virgo data) */
 
-  /* create Frame cache, open frame stream and delete frame cache */
-  framecache = XLALFrImportCache(CLA.FrCacheFile);
-  framestream = XLALFrCacheOpen(framecache);
-  XLALFrDestroyCache(framecache);
-  
   GV.ht = NULL;
 
-  /* Double vs. simple precision data for LIGO vs. Virgo */
-  if(CLA.ChannelName[0]=='V'){
-    /* create and initialize _simple_ precision time series */
-    ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
-
-    /* get the meta data */
-    XLALFrGetREAL4TimeSeriesMetadata(ht_V,framestream);
-
-    /* resize ht_V to the correct number of samples */
-    XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/ht_V->deltaT +0.5));
-
-    /* Allocate space for REAL8 data */
-    GV.ht  = XLALCreateREAL8TimeSeries(ht_V->name, &ht_V->epoch, ht_V->f0, ht_V->deltaT, &ht_V->sampleUnits, ht_V->data->length);
-  } else{
-    /* create and initialize _double_ precision time series */
-    GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
-
-    /* get the meta data */
-    XLALFrGetREAL8TimeSeriesMetadata(GV.ht,framestream);
-
-    /* resize ht to the correct number of samples */
-    XLALResizeREAL8TimeSeries(GV.ht, 0, (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/GV.ht->deltaT +0.5));
-  }  
-
-
-  /* If we are reading real noise then read it*/
-  if(!CLA.fakenoiseflag){
-    /* seek to and read data */
-    XLALFrSeek( framestream, &CLA.GPSStart );
-
-    if(CLA.ChannelName[0]=='V'){
-      XLALFrGetREAL4TimeSeries(ht_V,framestream);
-
-      /* Fill REAL8 data vector */
-      for (p=0; p<ht_V->data->length; p++)
-	GV.ht->data->data[p] = (REAL8)ht_V->data->data[p];
-
-      XLALDestroyREAL4TimeSeries(ht_V);
-      ht_V = NULL;
-    } else
-      XLALFrGetREAL8TimeSeries(GV.ht,framestream);
-
-    /* Scale data to avoid single float precision problems */
-    for (p=0; p<GV.ht->data->length; p++)
-      GV.ht->data->data[p] *= SCALE;
-  }
-  /* otherwise create random data set */
-  else{
+  if(CLA.fakenoiseflag) {
+    /* create random data set */
+    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
     FILE *devrandom;
-    RandomParams   *randpar=NULL;
-    REAL4Vector    *v1=NULL;
-    int seed, errorcode;
-    
+    int errorcode;
+    unsigned long seed;
+
     if(!(devrandom=fopen("/dev/urandom","r"))){
       XLALPrintError("Unable to open device /dev/urandom\n");
       return 1;
     }
-    errorcode=fread((void*)&seed,sizeof(INT4),1,devrandom);
-    if (errorcode!=1){
+    errorcode=fread(&seed, sizeof(seed), 1, devrandom);
+    if(errorcode!=1){
       XLALPrintError("Error reading /dev/urandom file!\n");
       return 1;
     }
     fclose(devrandom);
-    
-    v1 = XLALCreateREAL4Vector(GV.ht->data->length);
-    
-    randpar = XLALCreateRandomParams (seed);
-    if(XLALNormalDeviates(v1, randpar)) return 1;;
-    XLALDestroyRandomParams (randpar);
-    
+    gsl_rng_set(rng, seed);
+
+    /* hard-code sample rate of simulated noise to 16384 Hz */
+    GV.ht = XLALCreateREAL8TimeSeries("white noise", &CLA.GPSStart, 0.0, 1.0 / 16384, &lalDimensionlessUnit, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart) * 16384);
+    for(p = 0; p < GV.ht->data->length; p++)
+      GV.ht->data->data[p] = gsl_ran_gaussian(rng, 1.0);
+    gsl_rng_free(rng);
+  } else {
+    FrCache *cache;
+    FrStream *stream;
+    LALTYPECODE series_type;
+
+    /* create Frame cache, open frame stream and delete frame cache */
+    cache = XLALFrImportCache(CLA.FrCacheFile);
+    if(!cache)
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+    stream = XLALFrCacheOpen(cache);
+    XLALFrDestroyCache(cache);
+    if(!stream)
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+
+    /* turn on checking for missing data */
+    XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
+
+    /* get the data type */
+    series_type = XLALFrGetTimeSeriesType(CLA.ChannelName, stream);
+    if((int) series_type < 0) {
+      XLALFrClose(stream);
+      XLAL_ERROR(__func__, XLAL_EFUNC);
+    }
+
+    /* read data */
+    switch(series_type) {
+    case LAL_S_TYPE_CODE: {
+      /* read single-precision data */
+      REAL4TimeSeries *ht_V = XLALFrReadREAL4TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
+      if(!ht_V) {
+        XLALFrClose(stream);
+        XLAL_ERROR(__func__, XLAL_EFUNC);
+      }
+
+      /* cast to double precision */
+      GV.ht = XLALCreateREAL8TimeSeries(ht_V->name, &ht_V->epoch, ht_V->f0, ht_V->deltaT, &ht_V->sampleUnits, ht_V->data->length);
+      for(p = 0; p < ht_V->data->length; p++)
+        GV.ht->data->data[p] = ht_V->data->data[p];
+
+      /* clean up */
+      XLALDestroyREAL4TimeSeries(ht_V);
+      break;
+    }
+
+    case LAL_D_TYPE_CODE:
+      /* read double-precision data */
+      GV.ht = XLALFrReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
+      if(!GV.ht) {
+        XLALFrClose(stream);
+        XLAL_ERROR(__func__, XLAL_EFUNC);
+      }
+      break;
+
+    default:
+      XLAL_ERROR(__func__, XLAL_EINVAL);
+    }
+
+    /* close */
+    XLALFrClose(stream);
+
+    /* Scale data to avoid single float precision problems */
     for (p=0; p<GV.ht->data->length; p++)
-      GV.ht->data->data[p] = v1->data[p];
-    
-    XLALDestroyREAL4Vector(v1);
+      GV.ht->data->data[p] *= SCALE;
+
+    /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
+     * their contents! */
+    GV.ht->sampleUnits = lalStrainUnit;
   }
 
   /* Allocate space for processed data */
-  GV.ht_proc  = XLALCreateREAL4TimeSeries(GV.ht->name, 
-					  &GV.ht->epoch, 
-					  GV.ht->f0, 
-					  GV.ht->deltaT, 
-					  &lalStrainUnit, 
-					  (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/GV.ht->deltaT +0.5));
+  GV.ht_proc  = XLALCreateREAL4TimeSeries(GV.ht->name, &GV.ht->epoch, GV.ht->f0, GV.ht->deltaT, &GV.ht->sampleUnits, GV.ht->data->length);
   /* zero out processed data */
   for (p=0; p<GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
-  
-  XLALFrClose(framestream);
 
-  /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
-   * their contents! */
-  GV.ht->sampleUnits = lalStrainUnit;
-   
   return 0;
 }
 
