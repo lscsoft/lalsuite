@@ -243,13 +243,21 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     return 0;
 
-  if ( (cfg.VCSInfoString = XLALGetVersionString(lalDebugLevel)) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", fn, lalDebugLevel, xlalErrno );
+  /* short VCS version string for results-tagging (ie add to output files etc) */
+  if ( (cfg.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+    LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(0) failed with errno=%d.\n", fn, xlalErrno );
     return 1;
   }
 
   if ( uvar.version ) {
-    printf ( "%s\n", cfg.VCSInfoString );
+    /* output verbose VCS version string if requested */
+    CHAR *vcs;
+    if ( (vcs = XLALGetVersionString (lalDebugLevel)) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(%d) failed with errno=%d.\n", fn, lalDebugLevel, xlalErrno );
+      return 1;
+    }
+    printf ( "%s\n", vcs );
+    XLALFree ( vcs );
     return 0;
   }
 
