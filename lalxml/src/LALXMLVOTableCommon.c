@@ -86,7 +86,7 @@ XLALCreateVOTParamNode ( const char *name,		/**< [in] \c name attribute of the \
                          )
 {
     /* set up local variables */
-    static const CHAR *fn = "XLALCreateVOTParamNode";
+    const char *fn = __func__;
     xmlNodePtr xmlParamNode = NULL;
     static const CHAR *datatypeString;
 
@@ -183,7 +183,7 @@ XLALCreateVOTFieldNode ( const char *name,		/**< [in] \c name attribute of the \
                          )
 {
     /* set up local variables */
-    static const CHAR *fn = "XLALCreateVOTFieldNode()";
+    const char *fn = __func__;
     xmlNodePtr xmlFieldNode = NULL;
     static const CHAR *datatypeString;
 
@@ -267,7 +267,7 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
                             )
 {
     /* set up local variables */
-    static const CHAR *fn = "XLALCreateVOTResourceNode";
+    const char *fn = __func__;
     xmlNodePtr xmlResourceNode = NULL;
     xmlNodePtr xmlChildNode = childNodeList;
 
@@ -346,7 +346,7 @@ XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to
                          xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the <DATA> element: TABLEDATA, BINARY or FITS */
                          )
 {
-  static const char *fn = "XLALCreateVOTTableNode()";
+    const char *fn = __func__;
 
     xmlNodePtr xmlTableNode = NULL;
     xmlNodePtr xmlChildNode = NULL;
@@ -441,7 +441,7 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
                              ...				/**< [in] list of void-pointers to field column data: must match FIELD datatype specs! */
                              )
 {
-    static const char *fn = "XLALCreateVOTTabledataNode()";
+    const char *fn = __func__;
     int err;
 
     va_list ap;	/* pointer to each unnamed argument in turn */
@@ -655,7 +655,7 @@ XLALReadVOTFIELDNodes ( const xmlDocPtr xmlDocument,	/**< [in] The XML document 
                         const CHAR *resourcePath 	/**< [in] hiearchical RESOURCE path 'res1.res2....resN' to table RESOURCE */
                         )
 {
-  static const char *fn = "XLALReadVOTFIELDNodes()";
+  const char *fn = __func__;
   CHAR ePath[XPATHSTR_MAXLEN];
   static const CHAR *pathExt = ".$TABLE.$FIELD";
 
@@ -799,7 +799,8 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
                                    UINT4 *numRows			/**< [out] number of successfully read table rows */
                                    )
 {
-  static const char *fn = "XLALReadVOTTabledataSimpleColumn()";
+  const char *fn = __func__;
+
   CHAR ePath[XPATHSTR_MAXLEN];
   static const CHAR *pathExt = ".$TABLE.$DATA.$TABLEDATA";
   xmlNodeSet *nodeSet;
@@ -908,7 +909,7 @@ XLALReadVOTTabledataSimpleColumn ( const xmlDocPtr xmlDocument, 	/**< [in] The X
 VOTFieldVector *
 XLALCreateVOTFieldVector ( UINT4 numFields )
 {
-  static const char *fn = "XLALCreateVOTFieldVector()";
+  const char *fn = __func__;
 
   VOTFieldVector *ret;
 
@@ -998,7 +999,8 @@ XLALCreateVOTDocFromTree ( xmlNodePtr xmlTree,		/**< [in] The XML fragment to be
                            )
 {
     /* set up local variables */
-    static const CHAR *fn = "XLALCreateVOTDocFromTree";
+    const char *fn = __func__;
+
     xmlDocPtr xmlDocument = NULL;
     xmlNodePtr xmlRootElement = NULL;
     xmlNsPtr xmlVOTableNamespace = NULL;
@@ -1111,7 +1113,7 @@ XLALReadVOTAttributeFromNamedElement ( const xmlDocPtr xmlDocument,	/**< [in] Th
                                        VOTABLE_ATTRIBUTE attrib		/**< [in] Attribute to be read */
                                        )
 {
-  static const CHAR *fn = "XLALReadVOTAttributeFromNamedElement()";
+  const char *fn = __func__;
 
   CHAR *xpath;
   static const XML_NAMESPACE xmlVOTableNamespace[1] = {{CAST_CONST_XMLCHAR(VOTABLE_NS_PREFIX), CAST_CONST_XMLCHAR(VOTABLE_NS_URL)}};
@@ -1164,7 +1166,7 @@ XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional 
                                    VOTABLE_ATTRIBUTE attrib	/**< [in] attribute to read out from element */
                                    )
 {
-  static const char *fn = "XLALgetXPathToVOTElementAttibute()";
+  const char *fn = __func__;
 
   char *xpath;
   char buf[XPATHSTR_MAXLEN];
@@ -1239,7 +1241,8 @@ XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional 
 CHAR *
 XLALVOTResourcePath2XPath ( const CHAR *extResourcePath )
 {
-  static const char *fn = "XLALVOTResourcePath2XPath()";
+  const char *fn = __func__;
+
   CHAR *xpath;
   CHAR buf[XPATHSTR_MAXLEN];
   UINT4 i;
@@ -1308,7 +1311,8 @@ XLALVOTResourcePath2XPath ( const CHAR *extResourcePath )
 CHAR *
 XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 {
-  const char *fn = "XLALCreateVOTStringFromTree()";
+  const char *fn = __func__;
+
   xmlChar *xmlString;
   xmlDocPtr xmlDocTmp;
   CHAR *ret;
@@ -1359,7 +1363,7 @@ XLALCreateVOTStringFromTree ( xmlNodePtr xmlTree )
 const char*
 XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 {
-  static const char *fn = "XLALVOTDatatype2String()";
+  const char *fn = __func__;
   const char *datatypeString = NULL;
 
   switch(datatype)
@@ -1418,7 +1422,8 @@ XLALVOTDatatype2String ( VOTABLE_DATATYPE datatype )
 const char*
 XLALVOTElement2String ( VOTABLE_ELEMENT element )
 {
-  static const char *fn = "XLALVOTElement2String()";
+  const char *fn = __func__;
+
   const char *elString = NULL;
 
   switch(element)
@@ -1457,7 +1462,7 @@ XLALVOTElement2String ( VOTABLE_ELEMENT element )
 VOTABLE_DATATYPE
 XLALVOTString2Datatype ( const char *datatypeString )
 {
-  static const char *fn = "XLALVOTString2Datatype()";
+  const char *fn = __func__;
 
   if ( !datatypeString ) {
     XLALPrintError("%s: invalid NULL input 'datatypeString'.\n", fn );
@@ -1502,7 +1507,7 @@ XLALVOTString2Datatype ( const char *datatypeString )
 const char*
 XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
 {
-  static const char *fn = "XLALVOTAttribute2String()";
+  const char *fn = __func__;
   const char *attributeString = NULL;
 
   switch(elementAttribute)
@@ -1563,7 +1568,7 @@ XLALVOTAttribute2String ( VOTABLE_ATTRIBUTE elementAttribute )
 CHAR *
 XMLCleanVOTTableWhitespace ( const char *xmlString )
 {
-  static const char *fn = "XMLCleanVOTTableWhitespace()";
+  const char *fn = __func__;
 
   /* check input consistency */
   if ( !xmlString ) {
@@ -1675,7 +1680,7 @@ XMLCleanVOTTableWhitespace ( const char *xmlString )
 const char *
 XLALgetDefaultFmt4Datatype ( VOTABLE_DATATYPE datatype )
 {
-  static const char *fn = "XLALgetDefaultFmt4Datatype()";
+  const char *fn = __func__;
 
   static const char *fmtString;
 
@@ -1741,7 +1746,7 @@ XLALVOTprintfFromArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of
                          UINT4 arrayIndex		/**< [in] index of element to write: arrayPtr[index] */
                          )
 {
-  static const char *fn = "XLALVOTprintfFromArray()";
+  const char *fn = __func__;
 
 #define TEXTBUFLEN 1024
   static char textbuf[TEXTBUFLEN];
@@ -1855,7 +1860,7 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
                        UINT4 arrayIndex			/**< [in] index of element to write: arrayPtr[index] */
                        )
 {
-  static const char *fn = "XLALVOTsscanfToArray()";
+  const char *fn = __func__;
 
   UINT4 len;
   const char *instring = (const char*)content;
@@ -1994,7 +1999,8 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
                             )
 {
   /* set up local variables */
-  static const CHAR *fn = "XLALFindVOTElementsAtPath()";
+  const char *fn = __func__;
+
   xmlXPathContextPtr xpathCtx = NULL;
   CHAR *xpath = NULL;
   xmlXPathObjectPtr xpathObj = NULL;
@@ -2075,7 +2081,7 @@ XLALFindVOTElementsAtPath ( const xmlDocPtr xmlDocument,	/**< [in] xmlDocument t
 void *
 XLALVOTAllocateArray ( VOTABLE_DATATYPE datatype, UINT4 length )
 {
-  static const char *fn = "XLALVOTAllocateArray()";
+  const char *fn = __func__;
   void *ret;
   size_t typelen;
 
