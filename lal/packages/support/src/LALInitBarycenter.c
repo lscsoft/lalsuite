@@ -489,7 +489,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
       {
 	REAL8 length;
 	length = sqrt(SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]));
-	if (abs(499.0 - length) > 25) /* 5% */ {
+	if ( fabs(499.0 - length) > 25) /* 5% */ {
 	  LALPrintError("earth position out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].pos[0], edat->ephemE[j].pos[1], edat->ephemE[j].pos[2], length);
@@ -498,7 +498,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
 	length = sqrt(SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]));
-	if (abs(1e-4 - length) > 1e-5) /* 10% */ {
+	if (fabs (1e-4 - length) > 1e-5) /* 10% */ {
 	  LALPrintError("earth velocity out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].vel[0], edat->ephemE[j].vel[1], edat->ephemE[j].vel[2], length);
@@ -507,7 +507,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
 	length = sqrt(SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]));
-	if (abs(2e-11 - length) > 3e-12) /* 15% */ {
+	if (fabs (2e-11 - length) > 3e-12) /* 15% */ {
 	  LALPrintError("earth acceleration out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].acc[0], edat->ephemE[j].acc[1], edat->ephemE[j].acc[2], length);
