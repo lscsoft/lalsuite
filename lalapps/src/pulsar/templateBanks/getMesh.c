@@ -470,24 +470,24 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 
   if (uvar->ephemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
+      XLALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
     }
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar->AlphaBand < 0) ||  (uvar->DeltaBand < 0) )
     {
-      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
+      XLALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
     }
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar->dAlpha) && (uvar->dAlpha < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
       ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->dDelta) && (uvar->dDelta < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
       ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
     }
 
@@ -507,24 +507,24 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
-	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
+	XLALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
     if ( !useSkyGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
-        LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
+        XLALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( haveSkyRegion && haveAlphaDelta )
       {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
+        XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
 		       " OR skyRegion!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( useSkyGridFile && !haveSkyGridFile )
       {
-        LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+        XLALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( !useSkyGridFile && haveSkyGridFile )
@@ -544,7 +544,7 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
       }
     if ( useMetric && !haveMetric)
       {
-        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+        XLALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
@@ -557,18 +557,18 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
     BOOLEAN haveDuration =LALUserVarWasSet(&uvar->duration);
     if ( !haveEndTime && !haveDuration )
       {
-	LALPrintError ("\nERROR: need either --endTime or --duration!\n\n");
+	XLALPrintError ("\nERROR: need either --endTime or --duration!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
     if ( haveEndTime && haveDuration )
       {
-	LALPrintError ("\nERROR: can specify only one of --endTime or --duration!\n\n");
+	XLALPrintError ("\nERROR: can specify only one of --endTime or --duration!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
     if ( haveEndTime && (uvar->endTime < uvar->startTime) )
       {
-	LALPrintError ("\nERROR: endTime must be later than startTime!\n\n");
+	XLALPrintError ("\nERROR: endTime must be later than startTime!\n\n");
         ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);
       }
 
@@ -737,7 +737,7 @@ setTrueRandomSeed(void)
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
   if ( fpRandom == NULL )
     {
-      LALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
+      XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
     }
   else
     {

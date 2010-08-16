@@ -129,7 +129,7 @@ extern int lalDebugLevel;
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, STACKMETRICTESTC, statement ? statement : \
                  "", (msg) );                                        \
@@ -140,7 +140,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 STACKMETRICTESTC, (statement) );                    \
 }                                                                    \
@@ -162,7 +162,7 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
 {                                                                    \
   ERROR( STACKMETRICTESTC_EVAL, STACKMETRICTESTC_MSGESUB,            \
          "Value of " #val " out of range:" );                        \
-  LALPrintError( #val " = %f, range = (%f,%f]\n", (REAL8)(val),      \
+  XLALPrintError( #val " = %f, range = (%f,%f]\n", (REAL8)(val),      \
                  (REAL8)(lower), (REAL8)(upper) );                   \
   return STACKMETRICTESTC_EVAL;                                      \
 }                                                                    \
@@ -217,7 +217,7 @@ main(int argc, char **argv)
 	t0 = atof( argv[arg++] );
       }else{
 	ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return STACKMETRICTESTC_EARG;
       }
     }
@@ -229,7 +229,7 @@ main(int argc, char **argv)
 	lon = atof( argv[arg++] );
       }else{
 	ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return STACKMETRICTESTC_EARG;
       }
     }
@@ -240,14 +240,14 @@ main(int argc, char **argv)
 	lalDebugLevel = atoi( argv[arg++] );
       }else{
 	ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return STACKMETRICTESTC_EARG;
       }
     }
     /* Check for unrecognized options. */
     else if ( argv[arg][0] == '-' ) {
       ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return STACKMETRICTESTC_EARG;
     }
     /* Parse remaining options. */
@@ -264,7 +264,7 @@ main(int argc, char **argv)
 	  spin[j++] = atof( argv[arg++] );
       }else{
 	ERROR( STACKMETRICTESTC_EARG, STACKMETRICTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return STACKMETRICTESTC_EARG;
       }
     }

@@ -780,7 +780,7 @@ void LALPulsarMetric ( LALStatus *stat,
       break;
 
     default:
-      LALPrintError ("Unknown metric type `%d`\n", input->metricType);
+      XLALPrintError ("Unknown metric type `%d`\n", input->metricType);
       ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC);
       break;
 
@@ -803,7 +803,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
 
   if ( !metric )
     {
-      LALPrintError ("\nNULL Input received!\n\n");
+      XLALPrintError ("\nNULL Input received!\n\n");
       XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
     }
 
@@ -821,7 +821,7 @@ XLALFindMetricDim ( const REAL8Vector *metric )
     }
 
   /* no fitting dimension found ==> error */
-  LALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
+  XLALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
   XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
 
 }/* XLALFindMetricDim() */

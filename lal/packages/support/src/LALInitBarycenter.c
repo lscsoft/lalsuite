@@ -431,7 +431,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
     ret = fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
     if (ret != 3) {
       fclose(fp1);
-      LALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
+      XLALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
 
@@ -459,14 +459,14 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
       if (ret != 10) {
 	fclose(fp1);
 	LALFree(edat->ephemE);
-	LALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
+	XLALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
 
       /* check timestamps */
       if(j == 0) {
 	if (gpsYr - edat->ephemE[j].gps > 3600 * 24 * 365) {
-	  LALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
+	  XLALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
 			j+2, edat->ephiles.earthEphemeris, gpsYr, edat->ephemE[j].gps);
 	  fclose(fp1);
 	  LALFree(edat->ephemE);
@@ -474,7 +474,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	}
       } else {
 	if (edat->ephemE[j].gps != edat->ephemE[j-1].gps + edat->dtEtable) {
-	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
+	  XLALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
 			j+2, edat->ephiles.earthEphemeris, edat->ephemE[j].gps, edat->ephemE[j-1].gps + edat->dtEtable);
 	  fclose(fp1);
 	  LALFree(edat->ephemE);
@@ -489,8 +489,8 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
       {
 	REAL8 length;
 	length = sqrt(SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]));
-	if (abs(499.0 - length) > 25) /* 5% */ {
-	  LALPrintError("earth position out of range in line %d of %s: %le %le %le: %le\n",
+	if ( fabs(499.0 - length) > 25) /* 5% */ {
+	  XLALPrintError("earth position out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].pos[0], edat->ephemE[j].pos[1], edat->ephemE[j].pos[2], length);
 	  fclose(fp1);
@@ -498,8 +498,8 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
 	length = sqrt(SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]));
-	if (abs(1e-4 - length) > 1e-5) /* 10% */ {
-	  LALPrintError("earth velocity out of range in line %d of %s: %le %le %le: %le\n",
+	if (fabs (1e-4 - length) > 1e-5) /* 10% */ {
+	  XLALPrintError("earth velocity out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].vel[0], edat->ephemE[j].vel[1], edat->ephemE[j].vel[2], length);
 	  fclose(fp1);
@@ -507,8 +507,8 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
 	}
 	length = sqrt(SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]));
-	if (abs(2e-11 - length) > 3e-12) /* 15% */ {
-	  LALPrintError("earth acceleration out of range in line %d of %s: %le %le %le: %le\n",
+	if (fabs (2e-11 - length) > 3e-12) /* 15% */ {
+	  XLALPrintError("earth acceleration out of range in line %d of %s: %le %le %le: %le\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemE[j].acc[0], edat->ephemE[j].acc[1], edat->ephemE[j].acc[2], length);
 	  fclose(fp1);
@@ -532,7 +532,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
     }
 
     if (fscanf(fp1,"%c",&dummy) != EOF) {
-      LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.earthEphemeris);
+      XLALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.earthEphemeris);
       fclose(fp1);
       LALFree(edat->ephemE);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
@@ -558,7 +558,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
     if (ret != 3) {
       LALFree(edat->ephemE);
       fclose(fp2);
-      LALPrintError("Couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
+      XLALPrintError("Couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
       ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
     }
 
@@ -583,14 +583,14 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	fclose(fp2);
 	LALFree(edat->ephemE);
 	LALFree(edat->ephemS);
-	LALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
+	XLALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
 	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
       }
 
       /* check timestamps */
       if(j == 0) {
 	if (gpsYr - edat->ephemS[j].gps > 3600 * 24 * 365) {
-	  LALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
+	  XLALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
 			j+2, edat->ephiles.sunEphemeris, gpsYr, edat->ephemS[j].gps);
 	  fclose(fp2);
 	  LALFree(edat->ephemE);
@@ -599,7 +599,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	}
       } else {
 	if (edat->ephemS[j].gps != edat->ephemS[j-1].gps + edat->dtStable) {
-	  LALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
+	  XLALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
 			j+2, edat->ephiles.sunEphemeris, edat->ephemS[j].gps, edat->ephemS[j-1].gps + edat->dtStable);
 	  fclose(fp2);
 	  LALFree(edat->ephemE);
@@ -613,7 +613,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	REAL8 length;
 	length = sqrt(SQR(edat->ephemS[j].pos[0]) + SQR(edat->ephemS[j].pos[1]) + SQR(edat->ephemS[j].pos[2]));
 	if ((1 > length) || (length > 10)) {
-	  LALPrintError("sun position out of range in line %d of %s: %f %f %f: %f\n",
+	  XLALPrintError("sun position out of range in line %d of %s: %f %f %f: %f\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemS[j].pos[0], edat->ephemS[j].pos[1], edat->ephemS[j].pos[2], length);
 	  fclose(fp2);
@@ -622,7 +622,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	}
 	length = sqrt(SQR(edat->ephemS[j].vel[0]) + SQR(edat->ephemS[j].vel[1]) + SQR(edat->ephemS[j].vel[2]));
 	if ((1e-8 > length) || (length > 1e-7)) {
-	  LALPrintError("sun velocity out of range in line %d of %s: %f %f %f: %f\n",
+	  XLALPrintError("sun velocity out of range in line %d of %s: %f %f %f: %f\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemS[j].vel[0], edat->ephemS[j].vel[1], edat->ephemS[j].vel[2], length);
 	  fclose(fp2);
@@ -631,7 +631,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
 	}
 	length = sqrt(SQR(edat->ephemS[j].acc[0]) + SQR(edat->ephemS[j].acc[1]) + SQR(edat->ephemS[j].acc[2]));
 	if ((1e-16 > length) || (length > 1e-14)) {
-	  LALPrintError("sun acceleration out of range in line %d of %s: %f %f %f: %f\n",
+	  XLALPrintError("sun acceleration out of range in line %d of %s: %f %f %f: %f\n",
 			j+2, edat->ephiles.earthEphemeris,
 			edat->ephemS[j].acc[0], edat->ephemS[j].acc[1], edat->ephemS[j].acc[2], length);
 	  fclose(fp2);
@@ -654,7 +654,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
     }
 
     if (fscanf(fp2,"%c",&dummy) != EOF) {
-      LALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.sunEphemeris);
+      XLALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.sunEphemeris);
       fclose(fp2);
       LALFree(edat->ephemE);
       LALFree(edat->ephemS);

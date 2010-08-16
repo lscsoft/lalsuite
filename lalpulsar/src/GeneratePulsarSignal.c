@@ -185,7 +185,7 @@ LALGeneratePulsarSignal (LALStatus *status,
   /* check that sampling interval was short enough */
   if ( sourceParams.dfdt > 2.0 )  /* taken from makefakedata_v2 */
     {
-      LALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
+      XLALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
       ABORT (status, GENERATEPULSARSIGNALH_ESAMPLING, GENERATEPULSARSIGNALH_MSGESAMPLING);
     }
 
@@ -415,12 +415,12 @@ LALSignalToSFTs (LALStatus *status,
 	  diff = XLALGPSDiff(&(timestamps->data[iSFT]),&tmpTime);
 	  if (diff != 0)
 	    {
-	      LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
+	      XLALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit"
 			     "with time-series\n", iSFT, diff);
 	      /* double check if magnitude of nudging seems reasonable .. */
 	      if ( fabs(diff) >= signalvec->deltaT )
 		{
-		  LALPrintError ("WARNING: nudged by more than deltaT=%e... "
+		  XLALPrintError ("WARNING: nudged by more than deltaT=%e... "
 				 "this sounds wrong! (We better stop)\n");
 		  ABORT (status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL );
 		}
@@ -1102,13 +1102,13 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
 
       if (deltaFn != deltaF) {
 	if (lalDebugLevel)
-	  LALPrintError ("\n\nTime-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
+	  XLALPrintError ("\n\nTime-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
 	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
       if ( (f0 < fn0) || (f1 > fn1) ) {
 	if (lalDebugLevel)
-	  LALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
+	  XLALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
 	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
 
@@ -1120,7 +1120,7 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
       relError = fabs( nshift - shift);
       if ( relError > eps ) {
 	if (lalDebugLevel)
-	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
+	  XLALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
 	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
 
@@ -1153,7 +1153,7 @@ correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   if ( fabs (deltaT - (INT4) deltaT ) > eps )
     {
       if (lalDebugLevel)
-	LALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()\n");
+	XLALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()\n");
 
       deltaT *= LAL_TWOPI;
 

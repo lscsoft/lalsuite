@@ -328,7 +328,7 @@ ComputeFStat ( LALStatus *status,
 
       /* noise-weight Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
@@ -351,7 +351,7 @@ ComputeFStat ( LALStatus *status,
 
       /* noise-weight Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
@@ -382,7 +382,7 @@ ComputeFStat ( LALStatus *status,
     }
   else
     {
-      LALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
+      XLALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
       ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
     }
 
@@ -395,7 +395,7 @@ ComputeFStat ( LALStatus *status,
 	{
 	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiCmplxAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nXALComputeFaFbCmplx() failed\n");
+	      XLALPrintError ("\nXALComputeFaFbCmplx() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
@@ -403,7 +403,7 @@ ComputeFStat ( LALStatus *status,
 	{
 	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nXALComputeFaFbXavie() failed\n");
+	      XLALPrintError ("\nXALComputeFaFbXavie() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	}
@@ -411,7 +411,7 @@ ComputeFStat ( LALStatus *status,
 	{
 	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
 	    {
-	      LALPrintError ("\nXALComputeFaFb() failed\n");
+	      XLALPrintError ("\nXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
 	    }
 	  if ( params->returnAtoms )
@@ -425,7 +425,7 @@ ComputeFStat ( LALStatus *status,
 
 #ifndef LAL_NDEBUG
       if ( !finite(FcX.Fa.re) || !finite(FcX.Fa.im) || !finite(FcX.Fb.re) || !finite(FcX.Fb.im) ) {
-	LALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
+	XLALPrintError("XLALComputeFaFb() returned non-finite: Fa=(%f,%f), Fb=(%f,%f)\n",
 		      FcX.Fa.re, FcX.Fa.im, FcX.Fb.re, FcX.Fb.im );
 	ABORT (status,  COMPUTEFSTATC_EIEEE,  COMPUTEFSTATC_MSGEIEEE);
       }
@@ -501,24 +501,24 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
-    LALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
-    LALPrintError ("\nInput SFTs are NULL!\n\n");
+    XLALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
-      LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
-      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( "XLALComputeFaFb", XLAL_EINVAL);
     }
@@ -632,7 +632,7 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 	k1 = k0 + 2 * Dterms - 1;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
 	  {
-	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
 	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
 	  }
@@ -796,24 +796,24 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
-    LALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
-    LALPrintError ("\nInput SFTs are NULL!\n\n");
+    XLALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
-      LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
-      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
@@ -912,7 +912,7 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 	k1 = k0 + 2 * Dterms - 1;
 	if ( (k0 < freqIndex0) || (k1 > freqIndex1) )
 	  {
-	    LALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
+	    XLALPrintError ("Required frequency-bins [%d, %d] not covered by SFT-interval [%d, %d]\n\n",
 			   k0, k1, freqIndex0, freqIndex1 );
 	    XLAL_ERROR("XLALComputeFaFbCmplx", XLAL_EDOM);
 	  }
@@ -1055,24 +1055,24 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
   /* ----- check validity of input */
 #ifndef LAL_NDEBUG
   if ( !FaFb ) {
-    LALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLALPrintError ("\nOutput-pointer is NULL !\n\n");
     XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
-    LALPrintError ("\nInput SFTs are NULL!\n\n");
+    XLALPrintError ("\nInput SFTs are NULL!\n\n");
     XLAL_ERROR ( __func__, XLAL_EINVAL);
   }
 
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
-      LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
 
   if ( PULSAR_MAX_SPINS > NUM_FACT )
     {
-      LALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
+      XLALPrintError ("\nInverse factorials table only up to order s=%d, can't handle %d spin-order\n\n",
 		     NUM_FACT, PULSAR_MAX_SPINS - 1 );
       XLAL_ERROR ( __func__, XLAL_EINVAL);
     }
@@ -1162,7 +1162,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	if ( (kstar < 0) || (kstar > freqIndex1 - freqIndex0) )
 	  {
-	    LALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
+	    XLALPrintError ("Required frequency-bin [%d] not covered by SFT-interval [%d, %d]\n\n",
 			   freqIndex0 + kstar, freqIndex0, freqIndex1 );
 	    XLAL_ERROR("XLALComputeFaFb", XLAL_EDOM);
 	  }
@@ -1769,7 +1769,7 @@ LALGetMultiBinarytimes (LALStatus *status,
       BinarytimesX = ret->data[X];
       BinarytimesX->DeltaT = XLALCreateREAL8Vector ( numStepsX );
       if ( (BinarytimesX->Tdot = XLALCreateREAL8Vector ( numStepsX )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
+	XLALPrintError ("\nOut of memory!\n\n");
 	goto failed;
       }
       /* printf("calling  LALGetBinarytimes\n"); */
@@ -1777,7 +1777,7 @@ LALGetMultiBinarytimes (LALStatus *status,
       /* printf("finished  LALGetBinarytimes\n"); */
       if ( status->statusPtr->statusCode )
 	{
-	  LALPrintError ( "\nCall to LALGetBinarytimes() has failed ... \n\n");
+	  XLALPrintError ( "\nCall to LALGetBinarytimes() has failed ... \n\n");
 	  goto failed;
 	}
 
@@ -1895,7 +1895,7 @@ LALGetSSBtimes (LALStatus *status,
 
       break;
     default:
-      LALPrintError ("\n?? Something went wrong.. this should never be called!\n\n");
+      XLALPrintError ("\n?? Something went wrong.. this should never be called!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       break;
     } /* switch precision */
@@ -1956,14 +1956,14 @@ LALGetMultiSSBtimes (LALStatus *status,
       SSBtimesX = ret->data[X];
       SSBtimesX->DeltaT = XLALCreateREAL8Vector ( numStepsX );
       if ( (SSBtimesX->Tdot = XLALCreateREAL8Vector ( numStepsX )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
+	XLALPrintError ("\nOut of memory!\n\n");
 	goto failed;
       }
 
       LALGetSSBtimes (status->statusPtr, SSBtimesX, multiDetStates->data[X], skypos, refTime, precision );
       if ( status->statusPtr->statusCode )
 	{
-	  LALPrintError ( "\nCall to LALGetSSBtimes() has failed ... \n\n");
+	  XLALPrintError ( "\nCall to LALGetSSBtimes() has failed ... \n\n");
 	  goto failed;
 	}
 
@@ -2030,7 +2030,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
       amcoeX = ret->data[X];
       amcoeX->a = XLALCreateREAL4Vector ( numStepsX );
       if ( (amcoeX->b = XLALCreateREAL4Vector ( numStepsX )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
+	XLALPrintError ("\nOut of memory!\n\n");
 	goto failed;
       }
 
@@ -2038,7 +2038,7 @@ LALGetMultiAMCoeffs (LALStatus *status,
       LALNewGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
       if ( status->statusPtr->statusCode )
 	{
-	  LALPrintError ( "\nCall to LALNewGetAMCoeffs() has failed ... \n\n");
+	  XLALPrintError ( "\nCall to LALNewGetAMCoeffs() has failed ... \n\n");
 	  goto failed;
 	}
 
@@ -2189,7 +2189,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 
   if ( multiWeights && ( multiWeights->length != numDetectors ) )
     {
-      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
       XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
     }
 
@@ -2206,7 +2206,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 	  REAL8Vector *weightsX = multiWeights->data[X];;
 	  if ( weightsX->length != numSteps )
 	    {
-	      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
 	      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
 	    }
 
@@ -2319,7 +2319,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 #ifndef LAL_NDEBUG
   if ( xt < 0.0 || xt > 1.0 )
     {
-      LALPrintError("\nFailed numerica in sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
+      XLALPrintError("\nFailed numerica in sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
       return XLAL_FAILURE;
     }
 #endif
@@ -2493,7 +2493,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
        ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
     {
       if ( lalDebugLevel )
-	LALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",
+	XLALPrintError ( "WARNING LALEstimatePulsarAmplitudeParams(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",
 			tolerance );
     }
 

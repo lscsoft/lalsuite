@@ -116,7 +116,7 @@ main(int argc, char *argv[])
 
   if ( !catalog )
     {
-      LALPrintError ("\nNo SFTs seemed to have matched your query!\n\n");
+      XLALPrintError ("\nNo SFTs seemed to have matched your query!\n\n");
       return 1;
     }
 

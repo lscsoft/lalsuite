@@ -82,9 +82,6 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define ADD_PROCESS_PARAM(process, type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
-
 #define SCALE 1e20
 #define MAXTEMPLATES 50
 
@@ -112,15 +109,15 @@ struct CommandLineArgsTag {
   char *InjectionFile;        /* LIGO/Virgo xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
   char *outputFileName;       /* Name of xml output filename */
-  INT4 GPSStart;              /* GPS start time of segment to be analysed */
-  INT4 GPSEnd;                /* GPS end time of segment to be analysed */
+  LIGOTimeGPS GPSStart;       /* GPS start time of segment to be analysed */
+  LIGOTimeGPS GPSEnd;         /* GPS end time of segment to be analysed */
   INT4 ShortSegDuration;      /* Number of fixed length sub-segments between GPSStart and GPSEnd */
   REAL4 TruncSecs;            /* Half the number of seconds truncated at beginning and end of a chunk */
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
-  INT4 trigstarttime;         /* start-time of allowed triggers */
+  LIGOTimeGPS trigstarttime;  /* GPS start time of allowed triggers */
   REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
   double chi2cut[3];          /* chi2 cut parameters */
@@ -136,13 +133,11 @@ struct CommandLineArgsTag {
 typedef 
 struct GlobalVariablesTag {
   INT4 duration;              /* duration of entire segment to be analysed */
-  LIGOTimeGPS gpsepoch;       /* GPS epoch of start of entire segment to be analysed */ 
   REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
-  REAL4TimeSeries *ht_V;      /* raw input data (Virgo data) */
   REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries *Spec; /* average spectrum */
-  RealFFTPlan *fplan;         /* fft plans */
-  RealFFTPlan *rplan;         /* fft plans */
+  RealFFTPlan *fplan;         /* fft plan */
+  RealFFTPlan *rplan;         /* fft plan */
   INT4 seg_length;
 } GlobalVariables;
 
@@ -164,18 +159,13 @@ struct StringTemplateTag {
 /* GLOBAL VARIABLES */
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
-SnglBurst *events=NULL;
-MetadataTable  procTable;
-MetadataTable  procparams;
-MetadataTable  searchsumm;
-
 
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
 
 /* Reads the command line */
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
@@ -202,14 +192,14 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates);
 
 /* Filters the data through the template banks  */
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates);
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head);
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
-               REAL4Vector *vector, INT4 i, SnglBurst **thisEvent);
+               REAL4Vector *vector, INT4 i, SnglBurst **head);
 
 /* Writes out the xml file with the events it found  */
-int OutputEvents(const struct CommandLineArgsTag *CLA);
+int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events);
 
 /* Frees the memory */
 int FreeMem(StringTemplate *strtemplate, int NTemplates);                                        
@@ -223,11 +213,20 @@ int main(int argc,char *argv[])
 {
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
+  SnglBurst *events=NULL;
+  MetadataTable  process;
+  MetadataTable  procparams;
+
+  /* create the process and process params tables */
+  procparams.processParamsTable = NULL;
+  process.processTable = XLALCreateProcessTableRow();
+  XLALGPSTimeNow(&(process.processTable->start_time));
+  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+    exit(1);
 
   /****** ReadCommandLine ******/
   printf("ReadCommandLine()\n");
-  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
-  
+  if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
   printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
   /****** ReadData ******/
@@ -286,8 +285,9 @@ int main(int argc,char *argv[])
   
   /****** FindStringBurst ******/
   printf("FindStringBurst()\n");
-  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates)) return 12;
-  
+  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates, &events)) return 12;
+  if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
+
   /****** XLALClusterSnglBurstTable ******/
   printf("XLALClusterSnglBurstTable()\n");
   if (CommandLineArgs.cluster != 0.0 && events){
@@ -297,14 +297,17 @@ int main(int argc,char *argv[])
   
   /****** XLALSnglBurstAssignIDs ******/
   printf("XLALSnglBurstAssignIDs()\n");
-  XLALSnglBurstAssignIDs(events, procTable.processTable->process_id, 0);
+  XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
   
   /****** OutputEvents ******/
   printf("OutputEvents()\n");
-  if (OutputEvents(&CommandLineArgs)) return 13;
+  if (OutputEvents(&CommandLineArgs, process.processTable, procparams.processParamsTable, events)) return 13;
   
   /****** FreeMem ******/
   printf("FreeMem()\n");
+  XLALDestroyProcessParamsTable(procparams.processParamsTable);
+  XLALDestroySnglBurstTable(events);
+  XLALDestroyProcessTable(process.processTable);
   if (FreeMem(strtemplate, NTemplates)) return 14;
 
   printf("StringJob is done\n");
@@ -414,14 +417,18 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
   return(&(*proc_param)->next);
 }
 
+#define ADD_PROCESS_PARAM(process, type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, optarg); } while(0)
+
 /*******************************************************************************/
 
-int OutputEvents(const struct CommandLineArgsTag *CLA){  
+int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events){
   LIGOLwXMLStream *xml;
+  MetadataTable  searchsumm;
   char ifo[3];
 
   strncpy( ifo, CLA->ChannelName, 2 );
-  ifo[2] = 0;
+  ifo[sizeof(ifo) - 1] = '\0';
   
   if (!CLA->outputFileName){
     CHAR outfilename[256];
@@ -436,64 +443,74 @@ int OutputEvents(const struct CommandLineArgsTag *CLA){
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
 
   /* process table */
-  snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-  XLALGPSTimeNow(&(procTable.processTable->start_time));
+  snprintf(proctable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+  XLALGPSTimeNow(&(proctable->end_time));
   
-  if(XLALWriteLIGOLwXMLProcessTable(xml, procTable.processTable)) return -1;
+  if(XLALWriteLIGOLwXMLProcessTable(xml, proctable)) return -1;
   
   /* process params table */
-  if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparams.processParamsTable)) return -1;
+  if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
   
   /* search summary table */
+  /* create the search summary table */
+  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
+  /* store the input and output start and end times */
+  searchsumm.searchSummaryTable->in_start_time = CLA->GPSStart;
+  searchsumm.searchSummaryTable->in_end_time = CLA->GPSEnd;
+  if (XLALGPSToINT8NS(&CLA->trigstarttime) > 0)
+    searchsumm.searchSummaryTable->out_start_time = CLA->trigstarttime;
+  else {
+    searchsumm.searchSummaryTable->out_start_time = CLA->GPSStart;
+    XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, CLA->ShortSegDuration/4+CLA->pad);
+  }
+  searchsumm.searchSummaryTable->out_end_time = CLA->GPSEnd;
+  XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
-  
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
+  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
 
   /* burst table */
   if(XLALWriteLIGOLwXMLSnglBurstTable(xml, events)) return -1;
   
   XLALCloseLIGOLwXMLFile(xml);
-  
-  /* free event list, process table, search summary and process params */
-
-  XLALDestroySnglBurstTable(events);
-  XLALDestroyProcessTable(procTable.processTable);
-  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
-  XLALDestroyProcessParamsTable(procparams.processParamsTable);
 
   return 0;
 }
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **thisEvent){
+int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **head){
   int p, pp;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
-  INT8  peaktime, starttime;
-  INT8  timeNS;
-
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
     for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
       fprintf(stdout,"%p %e\n", strtemplate, vector->data[p]);
   
-  /* Now find thisEvent in the inner half */
+  /* Now find event in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
+    SnglBurst *new;
+    LIGOTimeGPS peaktime, starttime;
+    LIGOTimeGPS t;
+
     maximum = 0.0;
     pmax=p;
-    timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
-    timeNS  +=   (INT8)( 1e9 * GV.ht_proc->deltaT * p );
+    t = GV.ht_proc->epoch;
+    XLALGPSAdd(&t, (GV.seg_length*i/2 + p) * GV.ht_proc->deltaT);
 
     /* Do we have the start of a cluster? */
-    if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime)){
+    if ( (fabs(vector->data[p]) > CLA.threshold) && (XLALGPSCmp(&t, &CLA.trigstarttime) >= 0)){
       pend=p; pstart=p;
-      
-      timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc->epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc->deltaT);
-      
+
+      t = GV.ht_proc->epoch;
+      XLALGPSAdd(&t, GV.seg_length*i/2*GV.ht_proc->deltaT);
+
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
       while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
 	     && p<(int)(3*vector->length/4)){
@@ -510,9 +527,10 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 	p++;
       }
 
-      peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
+      starttime = peaktime = t;
+      XLALGPSAdd(&peaktime, GV.ht_proc->deltaT * pmax);
+      XLALGPSAdd(&starttime, GV.ht_proc->deltaT * pstart);
       duration = GV.ht_proc->deltaT * ( pend - pstart );
-      starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
@@ -528,39 +546,35 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 	  && CLA.chi2cut[2] > -9999 )
 	if(log10(chi2/ndof)>CLA.chi2cut[0]
 	   && log10(chi2/ndof)> CLA.chi2cut[1]*log10(fabs(maximum))+CLA.chi2cut[2]) continue;
-      
 
-      if ( *thisEvent ){ /* create a new event */
-	(*thisEvent)->next = XLALCreateSnglBurst();
-	*thisEvent = (*thisEvent)->next;
-      }
-      else /* create the list */
-	*thisEvent = events = XLALCreateSnglBurst();
-            
-      if ( ! *thisEvent ){ /* allocation error */
+      /* prepend a new event to the linked list */
+      new = XLALCreateSnglBurst();
+      if ( ! new ){ /* allocation error */
 	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	return 1;
       }
+      new->next = *head;
+      *head = new;
 
       /* Now copy stuff into event */
-      strncpy( (*thisEvent)->ifo, CLA.ChannelName, 2 );
-      (*thisEvent)->ifo[3] = 0;
-      strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
-      strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
+      strncpy( new->ifo, CLA.ChannelName, 2 );
+      new->ifo[3] = 0;
+      strncpy( new->search, "StringCusp", sizeof( new->search ) );
+      strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
       
       /* give trigger a 1 sample fuzz on either side */
-      starttime -= round( 1e9 * GV.ht_proc->deltaT );
+      XLALGPSAdd(&starttime, -GV.ht_proc->deltaT);
       duration += 2 * GV.ht_proc->deltaT;
 
-      XLALINT8NSToGPS(&(*thisEvent)->start_time, starttime);
-      XLALINT8NSToGPS(&(*thisEvent)->peak_time, peaktime);
-      (*thisEvent)->duration     = duration;
-      (*thisEvent)->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
-      (*thisEvent)->bandwidth    = strtemplate->f-CLA.fbankstart;				     
-      (*thisEvent)->snr          = maximum;
-      (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate->norm;
-      (*thisEvent)->chisq = chi2;
-      (*thisEvent)->chisq_dof = ndof;
+      new->start_time = starttime;
+      new->peak_time = peaktime;
+      new->duration     = duration;
+      new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
+      new->bandwidth    = strtemplate->f-CLA.fbankstart;				     
+      new->snr          = maximum;
+      new->amplitude   = vector->data[pmax]/strtemplate->norm;
+      new->chisq = chi2;
+      new->chisq_dof = ndof;
     }
   }
     
@@ -569,11 +583,10 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 
 /*******************************************************************************/
 
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates){
+int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head){
   int i,p,m; 
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
-  SnglBurst *thisEvent = NULL;
 
   /* create vector that will hold the data for each overlapping chunk */ 
   vector = XLALCreateREAL4Vector( GV.seg_length);
@@ -606,14 +619,10 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
       
-      if(FindEvents(CLA, &strtemplate[m], vector, i, &thisEvent)) return 1;
+      if(FindEvents(CLA, &strtemplate[m], vector, i, head)) return 1;
     }
   }
 
-  /* sort events in time; if there are any */
-  if (events) /* first sort list in increasing GPS peak time */
-    XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
-  
   XLALDestroyCOMPLEX8Vector( vtilde );
   XLALDestroyREAL4Vector( vector );
 
@@ -637,7 +646,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
   for (m = 0; m < NTemplates; m++){
     
     /* Initialize the filter */
-    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.Spec->data->length);
+    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.Spec->data->length);
     strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
                 
     /* populate vtilde with the template divided by the noise */
@@ -898,7 +907,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA){
   REAL4Window  *window4;
   
   GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
-  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
+  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
   GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
   GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
   
@@ -959,33 +968,33 @@ int ReadData(struct CommandLineArgsTag CLA){
   int p;
   FrCache *framecache;
   FrStream *framestream=NULL;
+  REAL4TimeSeries *ht_V = NULL;   /* raw input data (Virgo data) */
 
   /* create Frame cache, open frame stream and delete frame cache */
   framecache = XLALFrImportCache(CLA.FrCacheFile);
   framestream = XLALFrCacheOpen(framecache);
   XLALFrDestroyCache(framecache);
   
-  GV.duration                = CLA.GPSEnd-CLA.GPSStart;
-  GV.gpsepoch.gpsSeconds     = CLA.GPSStart;
-  GV.gpsepoch.gpsNanoSeconds = 0;
-  
+  GV.duration = XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart);
+
+  GV.ht = NULL;
+
   /* Double vs. simple precision data for LIGO vs. Virgo */
   if(CLA.ChannelName[0]=='V'){
 
     /* create and initialize _simple_ precision time series */
-    GV.ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, 1);
+    ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
-    XLALFrGetREAL4TimeSeriesMetadata(GV.ht_V,framestream);
+    XLALFrGetREAL4TimeSeriesMetadata(ht_V,framestream);
 
     /* resize ht to the correct number of samples */
-    XLALResizeREAL4TimeSeries(GV.ht_V, 0, (UINT4)(GV.duration/GV.ht_V->deltaT +0.5));
+    XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(GV.duration/ht_V->deltaT +0.5));
 
-  }
-  else{
+  } else{
 
     /* create and initialize _double_ precision time series */
-    GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &GV.gpsepoch, 0, 0, &lalStrainUnit, 1);
+    GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
     XLALFrGetREAL8TimeSeriesMetadata(GV.ht,framestream);
@@ -999,24 +1008,25 @@ int ReadData(struct CommandLineArgsTag CLA){
   /* If we are reading real noise then read it*/
   if(!CLA.fakenoiseflag){
     /* seek to and read data */
-    XLALFrSeek( framestream, &GV.gpsepoch );
+    XLALFrSeek( framestream, &CLA.GPSStart );
     
     if(CLA.ChannelName[0]=='V'){
-      XLALFrGetREAL4TimeSeries(GV.ht_V,framestream);
+      XLALFrGetREAL4TimeSeries(ht_V,framestream);
       
       /* Allocate space for REAL8 data */
-      GV.ht  = XLALCreateREAL8TimeSeries(GV.ht_V->name, 
-					 &GV.ht_V->epoch, 
-					 GV.ht_V->f0, 
-					 GV.ht_V->deltaT, 
+      GV.ht  = XLALCreateREAL8TimeSeries(ht_V->name, 
+					 &ht_V->epoch, 
+					 ht_V->f0, 
+					 ht_V->deltaT, 
 					 &lalStrainUnit, 
-					 (UINT4)(GV.duration/GV.ht_V->deltaT +0.5));
+					 (UINT4)(GV.duration/ht_V->deltaT +0.5));
 	
       /* Fill REAL8 data vector */
-      for (p=0; p<(int)GV.ht_V->data->length; p++)
-	GV.ht->data->data[p] = (REAL8)GV.ht_V->data->data[p];
+      for (p=0; p<(int)ht_V->data->length; p++)
+	GV.ht->data->data[p] = (REAL8)ht_V->data->data[p];
 
-      XLALDestroyREAL4TimeSeries(GV.ht_V);
+      XLALDestroyREAL4TimeSeries(ht_V);
+      ht_V = NULL;
     }
     else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
@@ -1072,10 +1082,9 @@ int ReadData(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
+int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint){
   static char default_comment[] = "";
   INT4 errflg = 0;
-  ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
     {"bw-flow",                   required_argument,	NULL,	'f'},
     {"bank-freq-start",           required_argument,	NULL,	'L'},
@@ -1114,17 +1123,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:";
 
   optarg = NULL;
-  /* set up xml output stuff */
-  /* create the process and process params tables */
-  procTable.processTable = XLALCreateProcessTableRow();
-  XLALGPSTimeNow(&(procTable.processTable->start_time));
-  if(XLALPopulateProcessTable(procTable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
-    exit(1);
-  procparams.processParamsTable = NULL;
-  /* create the search summary table */
-  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(procTable.processTable);
-  /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
 
   /* Initialize default values */
   CLA->flow=0.0;
@@ -1135,8 +1133,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
   CLA->outputFileName=NULL;
-  CLA->GPSStart=0;
-  CLA->GPSEnd=0;
+  XLALINT8NSToGPS(&CLA->GPSStart, 0);
+  XLALINT8NSToGPS(&CLA->GPSEnd, 0);
   CLA->ShortSegDuration=0;
   CLA->TruncSecs=0;
   CLA->power=0.0;
@@ -1144,7 +1142,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->fakenoiseflag=0;
   CLA->whitespectrumflag=0;
   CLA->samplerate=4096.0;
-  CLA->trigstarttime=0;
+  XLALINT8NSToGPS(&CLA->trigstarttime, 0);
   CLA->cluster=0.0;
   CLA->pad=0;
   CLA->printfilterflag=0;
@@ -1175,157 +1173,166 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 's':
       /* resample to this sample rate */
       CLA->samplerate=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'H':
       /* lowest high frequency cutoff */
       CLA->fbankhighfcutofflow=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'M':
       /* Maximal mismatch */
       CLA->fmismatchmax=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'L':
       /* low frequency cutoff */
       CLA->fbankstart=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 't':
       /* low frequency cutoff */
       CLA->threshold=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'i':
       /* name of xml injection file */
       CLA->InjectionFile=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'o':
       /* name of xml injection file */
       CLA->outputFileName=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'S':
       /* GPS start time of search */
-       CLA->GPSStart=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      if(XLALStrToGPS(&CLA->GPSStart, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'E':
-       /* GPS end time time of search */
-      CLA->GPSEnd=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      /* GPS end time time of search */
+      if(XLALStrToGPS(&CLA->GPSEnd, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'd':
        /* Number of segment to break-up search into */
       CLA->ShortSegDuration=atoi(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
       CLA->TruncSecs=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'g':
       /* start time of allowed triggers */
-      CLA->trigstarttime=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      if(XLALStrToGPS(&CLA->trigstarttime, optarg, NULL)) {
+        fprintf(stderr,"range error parsing \"%s\"", optarg);
+        return 1;
+      }
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'p':
       /* start time of allowed triggers */
       CLA->pad=atoi(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "int");
+      ADD_PROCESS_PARAM(process, "int");
       break;
     case 'A':
       /* chi2 cut parameter 0 */
       CLA->chi2cut[0]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'B':
       /* chi2 cut parameter 1 */
       CLA->chi2cut[1]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'G':
       /* chi2 cut parameter 2 */
       CLA->chi2cut[2]=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "float");
+      ADD_PROCESS_PARAM(process, "float");
       break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'k':
       /* kink power law */
       CLA->power=-5.0/3.0;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'n':
       /* fake gaussian noise flag */
       CLA->fakenoiseflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'w':
       /* fake gaussian noise flag */
       CLA->whitespectrumflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'l':
       /* fake gaussian noise flag */
       CLA->cluster=atof(optarg);
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'a':
       /* fake gaussian noise flag */
       CLA->printspectrumflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'b':
       /* fake gaussian noise flag */
       CLA->printfilterflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'j':
       /* --user-tag */
       CLA->comment = optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'r':
       /* fake gaussian noise flag */
       CLA->printsnrflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'x':
       /* fake gaussian noise flag */
       CLA->printfirflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'y':
       /* fake gaussian noise flag */
       CLA->printdataflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'z':
       /* fake gaussian noise flag */
       CLA->printinjectionflag=1;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
+      ADD_PROCESS_PARAM(process, "string");
       break;
     case 'h':
       /* print usage/help message */
@@ -1422,18 +1429,28 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
-  if(CLA->GPSStart == 0)
+  if(XLALGPSToINT8NS(&CLA->GPSStart) == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
-  if(CLA->GPSEnd == 0)
+    }
+  if(CLA->GPSStart.gpsNanoSeconds)
+    {
+      fprintf(stderr,"Only integer values allowed for --gps-start-time.\n");
+      return 1;
+    }
+  if(XLALGPSToINT8NS(&CLA->GPSEnd) == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
-    }      
+    }
+  if(CLA->GPSEnd.gpsNanoSeconds)
+    {
+      fprintf(stderr,"Only integer values allowed for --gps-end-time.\n");
+      return 1;
+    }
   if(CLA->ShortSegDuration == 0)
     {
       fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
@@ -1443,10 +1460,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
 
   /* Some consistency checking */
   {
-    int big_seg_length=CLA->GPSEnd-CLA->GPSStart-2*CLA->pad;
-    int small_seg_length=CLA->ShortSegDuration;
+    int big_seg_length=XLALGPSDiff(&CLA->GPSEnd, &CLA->GPSStart)-2*CLA->pad;
 
-    REAL4 x=((float)big_seg_length/(float)small_seg_length)-0.5;
+    REAL4 x=((float)big_seg_length/(float)CLA->ShortSegDuration)-0.5;
 
     if((int)x != x){
       fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
@@ -1460,7 +1476,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     }     
 
     if( CLA->ShortSegDuration/4.0  < CLA->TruncSecs){
-      fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n", small_seg_length);
+      fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n", CLA->ShortSegDuration);
 	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%f).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
     }    
@@ -1471,26 +1487,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     REAL4 f99=CLA->flow*pow((1/0.9-1)/(1/0.99-1),0.25);
     if(CLA->fbankstart < f99)
       fprintf(stderr,"WARNING: Template starting frequency and BW high pass frequency are close. f99=%e, fbw=%e\n",f99, CLA->flow);
-  }
-
-  /* store the input start and end times */
-  /* set the start and end time for the search summary */
-  {
-    int small_seg_length=CLA->ShortSegDuration;
-
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
-    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
-    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
-
-    if (CLA->trigstarttime > 0)
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
-    else
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4+CLA->pad;
-      
-    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4-CLA->pad;
-    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
   }
 
   return errflg;
