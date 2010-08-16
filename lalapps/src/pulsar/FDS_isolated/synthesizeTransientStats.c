@@ -816,9 +816,8 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   UINT4 numAtoms = atoms->length;
-  REAL8 TAtom = atoms->TAtom;
 
-  /* prepare gsl-matrix for correlator L = 1/4 * [ a, a ; b , b ] */
+  /* prepare gsl-matrix for correlator L = 1/2 * [ a, a ; b , b ] */
   gsl_matrix *Lcor;
   if ( (Lcor = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
     XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
@@ -850,19 +849,18 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
       if ( ab < 0 )
         b = -b;
 
-      REAL8 a4 = 0.25 * a * sqrt(TAtom);
-      REAL8 b4 = 0.25 * b * sqrt(TAtom);
-
       /* upper-left block */
-      gsl_matrix_set ( Lcor, 0, 0, a4 );
-      gsl_matrix_set ( Lcor, 0, 1, a4 );
-      gsl_matrix_set ( Lcor, 1, 0, b4 );
-      gsl_matrix_set ( Lcor, 1, 1, b4 );
+      gsl_matrix_set ( Lcor, 0, 0, a );
+      gsl_matrix_set ( Lcor, 0, 1, a );
+      gsl_matrix_set ( Lcor, 1, 0, b );
+      gsl_matrix_set ( Lcor, 1, 1, b );
       /* lower-right block: +2 on all components */
-      gsl_matrix_set ( Lcor, 2, 2, a4 );
-      gsl_matrix_set ( Lcor, 2, 3, a4 );
-      gsl_matrix_set ( Lcor, 3, 2, b4 );
-      gsl_matrix_set ( Lcor, 3, 3, b4 );
+      gsl_matrix_set ( Lcor, 2, 2, a );
+      gsl_matrix_set ( Lcor, 2, 3, a );
+      gsl_matrix_set ( Lcor, 3, 2, b );
+      gsl_matrix_set ( Lcor, 3, 3, b );
+
+      gsl_matrix_scale ( Lcor, 0.5 );
 
       if ( XLALDrawCorrelatedNoise ( n_mu, Lcor, rng ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: failed to XLALDrawCorrelatedNoise().\n", fn );
@@ -986,10 +984,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
        * the per-atom block matrix TAtom/Sn * [a^2,  ab; ab, b^2 ]
        * where Sn=1:
        */
-      REAL8 win2 = win * win;
-      REAL8 a2 = win2 * TAtom * atoms->data[alpha].a2_alpha;
-      REAL8 b2 = win2 * TAtom * atoms->data[alpha].b2_alpha;
-      REAL8 ab = win2 * TAtom * atoms->data[alpha].ab_alpha;
+      REAL8 norm = win * win * sqrt(TAtom / 2.0);
+      REAL8 a2 = norm * atoms->data[alpha].a2_alpha;
+      REAL8 b2 = norm * atoms->data[alpha].b2_alpha;
+      REAL8 ab = norm * atoms->data[alpha].ab_alpha;
 
       /* upper-left block */
       gsl_matrix_set ( M_mu_nu, 0, 0, a2 );
