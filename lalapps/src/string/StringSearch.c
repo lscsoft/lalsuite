@@ -395,11 +395,7 @@ int AddInjections(struct CommandLineArgsTag CLA){
   XLALDestroyREAL8TimeSeries(injections);
 
   /* free the injection table */
-  while(sim_burst) {
-    SimBurst *next = sim_burst->next;
-    XLALDestroySimBurst(sim_burst);
-    sim_burst = next;
-  }
+  XLALDestroySimBurstTable(sim_burst);
 
   return 0;
 }
@@ -656,7 +652,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
       vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
       vtilde->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/(GV.Spec->data->data[p]));
     }
-    
+
     /* reverse FFT vtilde into vector */
     if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
 
@@ -961,7 +957,7 @@ int ProcessData(const struct CommandLineArgsTag *CLA){
 /*******************************************************************************/
 
 int ReadData(struct CommandLineArgsTag CLA){
-  unsigned int p;
+  unsigned p;
   FrCache *framecache;
   FrStream *framestream=NULL;
   REAL4TimeSeries *ht_V = NULL;   /* raw input data (Virgo data) */
@@ -986,7 +982,6 @@ int ReadData(struct CommandLineArgsTag CLA){
 
     /* resize ht to the correct number of samples */
     XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(GV.duration/ht_V->deltaT +0.5));
-
   } else{
 
     /* create and initialize _double_ precision time series */
@@ -997,7 +992,6 @@ int ReadData(struct CommandLineArgsTag CLA){
 
     /* resize ht to the correct number of samples */
     XLALResizeREAL8TimeSeries(GV.ht, 0, (UINT4)(GV.duration/GV.ht->deltaT +0.5));
-    
   }  
 
 
@@ -1023,8 +1017,8 @@ int ReadData(struct CommandLineArgsTag CLA){
 
       XLALDestroyREAL4TimeSeries(ht_V);
       ht_V = NULL;
-    }
-    else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
+    } else
+      XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
     /* Scale data to avoid single float precision problems */
     for (p=0; p<GV.ht->data->length; p++)
