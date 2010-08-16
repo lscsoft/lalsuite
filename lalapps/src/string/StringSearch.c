@@ -132,7 +132,6 @@ struct CommandLineArgsTag {
 
 typedef 
 struct GlobalVariablesTag {
-  INT4 duration;              /* duration of entire segment to be analysed */
   REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
   REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries *Spec; /* average spectrum */
@@ -268,9 +267,6 @@ int main(int argc,char *argv[])
   GV.ht_proc = XLALResizeREAL4TimeSeries(GV.ht_proc, 
 					 (int)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5),
 					 GV.ht_proc->data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5));
-
-  /* reduce duration of segment appropriately */
-  GV.duration -= 2*CommandLineArgs.pad; 
 
   /****** AvgSpectrum ******/
   XLALPrintInfo("AvgSpectrum()\n");
@@ -596,7 +592,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
   /* loop over templates  */
   for (m = 0; m < NTemplates; m++){
     /* loop over overlapping chunks */ 
-    for(i=0; i < 2*GV.duration/CLA.ShortSegDuration - 1 ;i++){
+    for(i=0; i < 2*(GV.ht_proc->data->length*GV.ht_proc->deltaT)/CLA.ShortSegDuration - 1 ;i++){
       /* populate vector that will hold the data for each overlapping chunk */
       memcpy( vector->data, GV.ht_proc->data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
 	  
@@ -967,23 +963,22 @@ int ReadData(struct CommandLineArgsTag CLA){
   framestream = XLALFrCacheOpen(framecache);
   XLALFrDestroyCache(framecache);
   
-  GV.duration = XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart);
-
   GV.ht = NULL;
 
   /* Double vs. simple precision data for LIGO vs. Virgo */
   if(CLA.ChannelName[0]=='V'){
-
     /* create and initialize _simple_ precision time series */
     ht_V  = XLALCreateREAL4TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
     /* get the meta data */
     XLALFrGetREAL4TimeSeriesMetadata(ht_V,framestream);
 
-    /* resize ht to the correct number of samples */
-    XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(GV.duration/ht_V->deltaT +0.5));
-  } else{
+    /* resize ht_V to the correct number of samples */
+    XLALResizeREAL4TimeSeries(ht_V, 0, (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/ht_V->deltaT +0.5));
 
+    /* Allocate space for REAL8 data */
+    GV.ht  = XLALCreateREAL8TimeSeries(ht_V->name, &ht_V->epoch, ht_V->f0, ht_V->deltaT, &ht_V->sampleUnits, ht_V->data->length);
+  } else{
     /* create and initialize _double_ precision time series */
     GV.ht  = XLALCreateREAL8TimeSeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, 1);
 
@@ -991,7 +986,7 @@ int ReadData(struct CommandLineArgsTag CLA){
     XLALFrGetREAL8TimeSeriesMetadata(GV.ht,framestream);
 
     /* resize ht to the correct number of samples */
-    XLALResizeREAL8TimeSeries(GV.ht, 0, (UINT4)(GV.duration/GV.ht->deltaT +0.5));
+    XLALResizeREAL8TimeSeries(GV.ht, 0, (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/GV.ht->deltaT +0.5));
   }  
 
 
@@ -999,18 +994,10 @@ int ReadData(struct CommandLineArgsTag CLA){
   if(!CLA.fakenoiseflag){
     /* seek to and read data */
     XLALFrSeek( framestream, &CLA.GPSStart );
-    
+
     if(CLA.ChannelName[0]=='V'){
       XLALFrGetREAL4TimeSeries(ht_V,framestream);
-      
-      /* Allocate space for REAL8 data */
-      GV.ht  = XLALCreateREAL8TimeSeries(ht_V->name, 
-					 &ht_V->epoch, 
-					 ht_V->f0, 
-					 ht_V->deltaT, 
-					 &lalStrainUnit, 
-					 (UINT4)(GV.duration/ht_V->deltaT +0.5));
-	
+
       /* Fill REAL8 data vector */
       for (p=0; p<ht_V->data->length; p++)
 	GV.ht->data->data[p] = (REAL8)ht_V->data->data[p];
@@ -1060,11 +1047,15 @@ int ReadData(struct CommandLineArgsTag CLA){
 					  GV.ht->f0, 
 					  GV.ht->deltaT, 
 					  &lalStrainUnit, 
-					  (UINT4)(GV.duration/GV.ht->deltaT +0.5));
+					  (UINT4)(XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart)/GV.ht->deltaT +0.5));
   /* zero out processed data */
   for (p=0; p<GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
   
   XLALFrClose(framestream);
+
+  /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
+   * their contents! */
+  GV.ht->sampleUnits = lalStrainUnit;
    
   return 0;
 }
