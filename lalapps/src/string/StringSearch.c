@@ -138,7 +138,7 @@ struct GlobalVariablesTag {
   REAL4FrequencySeries *Spec; /* average spectrum */
   RealFFTPlan *fplan;         /* fft plan */
   RealFFTPlan *rplan;         /* fft plan */
-  INT4 seg_length;
+  unsigned seg_length;
 } GlobalVariables;
 
 typedef
@@ -252,8 +252,8 @@ int main(int argc,char *argv[])
   if (ProcessData(&CommandLineArgs)) return 7;
 
   if ( CommandLineArgs.printdataflag ){
-    int p;
-    for (p=0; p<(int)GV.ht_proc->data->length; p++)
+    unsigned p;
+    for (p=0; p<GV.ht_proc->data->length; p++)
       fprintf(stdout,"%1.15e\n",GV.ht_proc->data->data[p]);
     return 0;
   }
@@ -484,18 +484,18 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **head){
-  int p, pp;
+  unsigned p;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
-    for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
+    for ( p = vector->length/4 ; p < 3*vector->length/4; p++ )
       fprintf(stdout,"%p %e\n", strtemplate, vector->data[p]);
   
   /* Now find event in the inner half */
-  for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ){
+  for ( p = vector->length/4 ; p < 3*vector->length/4; p++ ){
     SnglBurst *new;
     LIGOTimeGPS peaktime, starttime;
     LIGOTimeGPS t;
@@ -507,6 +507,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 
     /* Do we have the start of a cluster? */
     if ( (fabs(vector->data[p]) > CLA.threshold) && (XLALGPSCmp(&t, &CLA.trigstarttime) >= 0)){
+      int pp;
       pend=p; pstart=p;
 
       t = GV.ht_proc->epoch;
@@ -514,7 +515,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
       while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
-	     && p<(int)(3*vector->length/4)){
+	     && p<3*vector->length/4){
 	
 	/* This keeps track of the largest SNR point of the cluster */
 	if(fabs(vector->data[p]) > maximum){
@@ -585,7 +586,8 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
 /*******************************************************************************/
 
 int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head){
-  int i,p,m; 
+  int i,m;
+  unsigned p;
   REAL4Vector *vector = NULL;
   COMPLEX8Vector *vtilde = NULL;
 
@@ -606,7 +608,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
       if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
       
       /* multiply FT of data and String Filter and deltaT */
-      for ( p = 0 ; p < (int) vtilde->length; p++ ){
+      for ( p = 0 ; p < vtilde->length; p++ ){
 	vtilde->data[p].re *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
 	vtilde->data[p].im *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
       }
@@ -617,7 +619,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
 	 df (not inluded in LALReverseRealFFT)  factor of 2 is from 
 	 match-filter definition */
 
-      for ( p = 0 ; p < (int)vector->length; p++ )
+      for ( p = 0 ; p < vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
 
       if(FindEvents(CLA, &strtemplate[m], vector, i, head)) return 1;
@@ -634,8 +636,8 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
 /*******************************************************************************/
 
 int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates){
-
-  int p, m; 
+  int m;
+  unsigned p;
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
   REAL4Vector    *vector; /* time-domain vector workspace */
   REAL4 re, im;
@@ -650,7 +652,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
     strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
 
     /* populate vtilde with the template divided by the noise */
-    for ( p = 0; p < (int) vtilde->length; p++ ){
+    for ( p = 0; p < vtilde->length; p++ ){
       vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
       vtilde->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/(GV.Spec->data->data[p]));
     }
@@ -659,7 +661,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
     if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
 
     /* multiply times df to make sure units are correct */
-    for ( p = 0 ; p < (int)vector->length; p++ )
+    for ( p = 0 ; p < vector->length; p++ )
       vector->data[p] *= GV.Spec->deltaF;
 
     /* perform the truncation; the truncation is CLA.TruncSecs/2 because 
@@ -672,7 +674,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
     /* forward fft the truncated vector into vtilde */
     if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
 
-    for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
+    for ( p = 0 ; p < vtilde->length-1; p++ ){
       re = vtilde->data[p].re * GV.ht_proc->deltaT;
       im = vtilde->data[p].im * GV.ht_proc->deltaT;
       strtemplate[m].StringFilter->data->data[p] = (re * re + im * im);
@@ -700,7 +702,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
       series.epoch=GV.ht_proc->epoch;
       series.sampleUnits=GV.ht_proc->sampleUnits;
 
-      for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
+      for ( p = 0 ; p < vtilde->length-1; p++ ){
 	re = vtilde->data[p].re * GV.ht_proc->deltaT;
 	im = vtilde->data[p].im * GV.ht_proc->deltaT;
 
@@ -730,7 +732,8 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates){
   REAL8 fMax, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
-  int m, p, pcut, f_min_index, f_max_index, f_cut_index, f_low_cutoff_index, extr_ctr;
+  int m, f_cut_index, f_low_cutoff_index, extr_ctr;
+  unsigned p, pcut, f_min_index, f_max_index;
   REAL4Vector *integral;
   REAL4Vector    *vector; /* time-domain vector workspace */
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
@@ -829,7 +832,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
     strtemplate[m].auto_cor   = XLALCreateREAL4Vector( GV.seg_length);
     
     /* populate with the template waveform */
-    for ( p = f_low_cutoff_index; p < (int)strtemplate[m].waveform_f->length; p++ ){
+    for ( p = f_low_cutoff_index; p < strtemplate[m].waveform_f->length; p++ ){
       f=p*GV.Spec->deltaF;
       if(f<=strtemplate[m].f) 
 	strtemplate[m].waveform_f->data[p].re = pow(f,CLA.power);
@@ -845,7 +848,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
     strtemplate[m].waveform_f->data[0].re = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].re = 0;
     strtemplate[m].waveform_f->data[0].im = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].im = 0;
     
-    for (p=0 ; p<(int) vtilde->length; p++){
+    for (p=0 ; p< vtilde->length; p++){
       vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re/GV.Spec->data->data[p];
       vtilde->data[p].im = 0;
     }
@@ -862,7 +865,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 
     /* Normalize the autocorrelation by the central value */
     norm=strtemplate[m].auto_cor->data[0];
-    for ( p = 0 ; p < (int)strtemplate[m].auto_cor->length; p++ ){
+    for ( p = 0 ; p < strtemplate[m].auto_cor->length; p++ ){
       strtemplate[m].auto_cor->data[p] /= norm;
       vector->data[p]=strtemplate[m].auto_cor->data[p];
     }
@@ -936,7 +939,7 @@ int DownSample(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int ProcessData(const struct CommandLineArgsTag *CLA){
-  int p;
+  unsigned int p;
   PassBandParamStruc highpassParams;
 
   highpassParams.nMax =  4;
@@ -946,7 +949,7 @@ int ProcessData(const struct CommandLineArgsTag *CLA){
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
 
   if(XLALButterworthREAL8TimeSeries(GV.ht, &highpassParams)) return 1;
-  for (p=0; p<(int)GV.ht->data->length; p++)  
+  for (p=0; p<GV.ht->data->length; p++)  
     GV.ht_proc->data->data[p]=(REAL4)GV.ht->data->data[p]; 
     
   /* ht is no more needed -> free memory */
@@ -958,7 +961,7 @@ int ProcessData(const struct CommandLineArgsTag *CLA){
 /*******************************************************************************/
 
 int ReadData(struct CommandLineArgsTag CLA){
-  int p;
+  unsigned int p;
   FrCache *framecache;
   FrStream *framestream=NULL;
   REAL4TimeSeries *ht_V = NULL;   /* raw input data (Virgo data) */
@@ -1015,7 +1018,7 @@ int ReadData(struct CommandLineArgsTag CLA){
 					 (UINT4)(GV.duration/ht_V->deltaT +0.5));
 	
       /* Fill REAL8 data vector */
-      for (p=0; p<(int)ht_V->data->length; p++)
+      for (p=0; p<ht_V->data->length; p++)
 	GV.ht->data->data[p] = (REAL8)ht_V->data->data[p];
 
       XLALDestroyREAL4TimeSeries(ht_V);
@@ -1024,7 +1027,7 @@ int ReadData(struct CommandLineArgsTag CLA){
     else XLALFrGetREAL8TimeSeries(GV.ht,framestream);
 
     /* Scale data to avoid single float precision problems */
-    for (p=0; p<(int)GV.ht->data->length; p++)
+    for (p=0; p<GV.ht->data->length; p++)
       GV.ht->data->data[p] *= SCALE;
   }
   /* otherwise create random data set */
@@ -1051,7 +1054,7 @@ int ReadData(struct CommandLineArgsTag CLA){
     if(XLALNormalDeviates(v1, randpar)) return 1;;
     XLALDestroyRandomParams (randpar);
     
-    for (p=0; p<(int)GV.ht->data->length; p++)
+    for (p=0; p<GV.ht->data->length; p++)
       GV.ht->data->data[p] = v1->data[p];
     
     XLALDestroyREAL4Vector(v1);
@@ -1065,7 +1068,7 @@ int ReadData(struct CommandLineArgsTag CLA){
 					  &lalStrainUnit, 
 					  (UINT4)(GV.duration/GV.ht->deltaT +0.5));
   /* zero out processed data */
-  for (p=0; p<(int)GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
+  for (p=0; p<GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
   
   XLALFrClose(framestream);
    
