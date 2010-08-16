@@ -236,7 +236,7 @@ void *ptr;
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, MAKEFAKEDATAC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -245,7 +245,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               MAKEFAKEDATAC, (statement) );                     \
 } while (0)

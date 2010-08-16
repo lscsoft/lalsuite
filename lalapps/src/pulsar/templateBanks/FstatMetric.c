@@ -512,7 +512,7 @@ main(int argc, char *argv[])
 	  break;
 
 	default:
-	  LALPrintError("\nInvalid metric-number '%d'.\n\n", metricType );
+	  XLALPrintError("\nInvalid metric-number '%d'.\n\n", metricType );
 	  return -1;
 	  break;
 	} /* switch ( metricType ) */
@@ -1128,7 +1128,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     for ( X=0; X < numDet; X ++ )
       {
 	if ( ( ifo = XLALGetSiteInfo ( uvar->IFOs->data[X] ) ) == NULL ) {
-	  LALPrintError("\nFailed to get site-info for IFO '%s'\n\n", uvar->IFOs->data[X] );
+	  XLALPrintError("\nFailed to get site-info for IFO '%s'\n\n", uvar->IFOs->data[X] );
 	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	}
 	/* obtain detector positions and velocities, together with LMSTs */
@@ -1152,14 +1152,14 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
     {
       if ( uvar->IFOweights->length != numDet )
 	{
-	  LALPrintError ("\nNumber of IFOweights must agree with IFOs if given!\n\n");
+	  XLALPrintError ("\nNumber of IFOweights must agree with IFOs if given!\n\n");
 	  ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	}
       for ( X=0; X < numDet ; X ++ )
 	{
 	  if ( 1 != sscanf ( uvar->IFOweights->data[X], "%lf", &(detWeights->data[X])) )
 	    {
-	      LALPrintError ("\nFailed to parse noise-weight '%s' into float.\n\n",
+	      XLALPrintError ("\nFailed to parse noise-weight '%s' into float.\n\n",
 			     uvar->IFOweights->data[X] );
 	      ABORT (status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT);
 	    }
@@ -1203,7 +1203,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 
   if ( XLALWeighMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
     {
-      LALPrintError ( "\nSomething failed in XLALWeighMultiAMCoeffs() ...\n\n");
+      XLALPrintError ( "\nSomething failed in XLALWeighMultiAMCoeffs() ...\n\n");
       ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
     }
 
@@ -1349,7 +1349,7 @@ getMultiPhaseDerivs (LALStatus *status,
 
 	      break;
 	    default:
-	      LALPrintError ("Unknown phase-type specified '%d'\n", phaseType);
+	      XLALPrintError ("Unknown phase-type specified '%d'\n", phaseType);
 	      ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
 	      break;
 	    } /* switch(phaseType) */

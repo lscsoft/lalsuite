@@ -199,7 +199,7 @@ int main(int argc,char *argv[])
     printf("DET = H2\n");
   }
   else {
-    LALPrintError ("\nUnknown detector (use either G1,L1,H1,H2)!\n\n");
+    XLALPrintError ("\nUnknown detector (use either G1,L1,H1,H2)!\n\n");
   }
   
   /* Detector location */
@@ -315,7 +315,7 @@ int main(int argc,char *argv[])
 
   /* check if output file is OK */
   if ((fp = fopen(uvar_output,"w"))==NULL) {
-    LALPrintError("\nError opening file '%s' for writing..\n\n",uvar_output);
+    XLALPrintError("\nError opening file '%s' for writing..\n\n",uvar_output);
     return (GENERATESIDEBANDTEMPLATEC_ESYS);
   }
 
@@ -453,77 +453,77 @@ checkUserInputConsistency (LALStatus *status)
 
   /* don't allow negative orbital sem-major axis */
   if (uvar_semimajoraxis < 0.0) {
-    LALPrintError ("\nOrbital semi-major axis must be positive!\n\n");
+    XLALPrintError ("\nOrbital semi-major axis must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }      
   /* don't allow zero or negative orbital periods */
   if (uvar_orbitalperiod <= 0.0) {
-    LALPrintError ("\nOrbital period must be positive!\n\n");
+    XLALPrintError ("\nOrbital period must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative periapse passage times */
   if (uvar_timeofperiapse.gpsSeconds < 0) {
-    LALPrintError ("\nTime of periapse passage must be positive!\n\n");
+    XLALPrintError ("\nTime of periapse passage must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative periapse passage nanosecond parts */
   if (uvar_timeofperiapse.gpsNanoSeconds < 0) {
-    LALPrintError ("\nTime of periapse passage nanosecond part must be >= 0!\n\n");
+    XLALPrintError ("\nTime of periapse passage nanosecond part must be >= 0!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative observation start times */
   if (uvar_tstart.gpsSeconds < 0) {
-    LALPrintError ("\nTime of observation start must be positive!\n\n");
+    XLALPrintError ("\nTime of observation start must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative observation start time nanosecond parts */
   if (uvar_tstart.gpsNanoSeconds < 0) {
-    LALPrintError ("\nTime of observation start nanosecond part must be >= 0!\n\n");
+    XLALPrintError ("\nTime of observation start nanosecond part must be >= 0!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative frequency */
   if (uvar_f0 <= 0) {
-    LALPrintError ("\nFrequency must be positive!\n\n");
+    XLALPrintError ("\nFrequency must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative frequency band */
   if (uvar_freqband <= 0) {
-    LALPrintError ("\nFrequency band must be positive!\n\n");
+    XLALPrintError ("\nFrequency band must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative minimum frequency */
   if (uvar_minfreq <= 0) {
-    LALPrintError ("\nMinimum frequency must be positive!\n\n");
+    XLALPrintError ("\nMinimum frequency must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow phi0 out of range */
   if ((uvar_phi0 < 0) || (uvar_phi0 >= LAL_TWOPI)) {
-    LALPrintError ("\nPhi0 must be in range [0,2*pi)!\n\n");
+    XLALPrintError ("\nPhi0 must be in range [0,2*pi)!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative frequency resolution factor */
   if (uvar_freqresfactor <= 0) {
-    LALPrintError ("\nFrequency resolution factor must be positive!\n\n");
+    XLALPrintError ("\nFrequency resolution factor must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow negative observation time */
   if (uvar_tobs <= 0) {
-    LALPrintError ("\nObservation time must be positive!\n\n");
+    XLALPrintError ("\nObservation time must be positive!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow unspecified output file */
   if (uvar_output == NULL) {
-    LALPrintError ("\nOutput file must be specified (option 'output')\n\n");
+    XLALPrintError ("\nOutput file must be specified (option 'output')\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow right ascension out of range */
   if ((uvar_alpha < 0)||(uvar_alpha >= LAL_TWOPI)) {
-    LALPrintError ("\nRight ascension must be in range [0,2PI)!\n\n");
+    XLALPrintError ("\nRight ascension must be in range [0,2PI)!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   /* don't allow declination out of range */
   if ((uvar_delta < ((-1.0)*LAL_PI/2.0))||(uvar_delta > (LAL_PI/2.0))) {
-    LALPrintError ("\nDeclination must be in range [-PI/2,PI/2]!\n\n");
+    XLALPrintError ("\nDeclination must be in range [-PI/2,PI/2]!\n\n");
     ABORT (status, GENERATESIDEBANDTEMPLATEC_EINPUT, GENERATESIDEBANDTEMPLATEC_MSGEINPUT);
   }
   

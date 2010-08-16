@@ -618,7 +618,7 @@ LALSubtractSFTVectors (LALStatus *status,
 
   if ( numSFTs1 != numSFTs2 )
     {
-      LALPrintError ("\nERROR: the SFT-vectors must have the same number of SFTs!\n\n");
+      XLALPrintError ("\nERROR: the SFT-vectors must have the same number of SFTs!\n\n");
       ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
     }
 
@@ -642,19 +642,19 @@ LALSubtractSFTVectors (LALStatus *status,
       deltaF2  = inVect2->data[i].deltaF;
 
       if ( numBins1 != numBins2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
 	goto failed;
       }
       if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
-	LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
 	goto failed;
       }
       if ( Freq1 != Freq2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
 	goto failed;
       }
       if ( deltaF1 != deltaF2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
 	goto failed;
       }
       /* copy header info */
@@ -716,7 +716,7 @@ LALLinearlyCombineSFTVectors
 
   if ( numSFTVects < 1 )
     {
-      LALPrintError ("\nERROR: must be combining at least one SFT Vector!\n\n");
+      XLALPrintError ("\nERROR: must be combining at least one SFT Vector!\n\n");
       ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
     }
 
@@ -759,19 +759,19 @@ LALLinearlyCombineSFTVectors
 	  deltaF2  = inVects[j]->data[i].deltaF;
 
 	  if ( numBins1 != numBins2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
 	    goto failed;
 	  }
 	  if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
 	    goto failed;
 	  }
 	  if ( Freq1 != Freq2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
 	    goto failed;
 	  }
 	  if ( deltaF1 != deltaF2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
 	    goto failed;
 	  }
 
@@ -1165,7 +1165,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 	{
 	  strcpy ( channel, "H1" );
 	  if ( lalDebugLevel )
-	    LALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
+	    XLALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
 	}
     } /* if LHO */
   /* LISA channel names are simply left unchanged */
@@ -1189,7 +1189,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 
   if ( channel[0] == 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
+      if ( lalDebugLevel ) XLALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
       XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
     }
   else
@@ -1246,7 +1246,7 @@ XLALGetSiteInfo ( const CHAR *name )
     case 'Z':       /* create dummy-sites for LISA  */
       if ( XLALcreateLISA ( site, channel[1] ) != 0 )
 	{
-	  LALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
+	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
 	  LALFree ( channel );
 	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
@@ -1254,7 +1254,7 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
 
     default:
-      LALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
+      XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
       LALFree(site);
       LALFree(channel);
       XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
@@ -1573,7 +1573,7 @@ upsampleSFTVector (LALStatus *status,
       COMPLEX8Vector *this_data = inout->data[alpha].data;
       COMPLEX8Vector *new_data;
       if ( (new_data = XLALrefineCOMPLEX8Vector ( this_data, upsample, Dterms )) == NULL ) {
-	LALPrintError ("\nSFT oversampling failed ... \n\n");
+	XLALPrintError ("\nSFT oversampling failed ... \n\n");
 	ABORT ( status, SFTUTILS_EFUNC,SFTUTILS_MSGEFUNC );
       }
 

@@ -174,7 +174,7 @@ REAL8 twoPiFm; /* 2*Pi times the frequency of modulation */
 #define ERROR( code, msg, statement )                                \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, RESAMPLETESTC, statement ? statement : "",\
 		 (msg) );                                            \
@@ -184,7 +184,7 @@ else (void)(0)
 #define INFO( statement )                                            \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 RESAMPLETESTC, (statement) );                       \
 }                                                                    \
@@ -260,7 +260,7 @@ main( int argc, char **argv )
         f = atof( argv[arg++] );
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return RESAMPLETESTC_EARG;
       }
     }
@@ -273,7 +273,7 @@ main( int argc, char **argv )
         fm = atof( argv[arg++] );
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return RESAMPLETESTC_EARG;
       }
     }
@@ -284,7 +284,7 @@ main( int argc, char **argv )
         lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return RESAMPLETESTC_EARG;
       }
     }
@@ -295,7 +295,7 @@ main( int argc, char **argv )
         psfile = argv[arg++];
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return RESAMPLETESTC_EARG;
       }
     }
@@ -306,14 +306,14 @@ main( int argc, char **argv )
         tfile = argv[arg++];
       } else {
 	ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return RESAMPLETESTC_EARG;
       }
     }
     /* Unrecognized option. */
     else {
       ERROR( RESAMPLETESTC_EARG, RESAMPLETESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return RESAMPLETESTC_EARG;
     }
   } /* End of argument parsing loop. */

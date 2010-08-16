@@ -204,7 +204,7 @@ int main(int argc, char *argv[]){
         lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]){
         velPar.detector = detector;
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
@@ -230,7 +230,7 @@ int main(int argc, char *argv[]){
           earthEphemeris = argv[arg++];
         } else {
           ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-          LALPrintError( USAGE, *argv );
+          XLALPrintError( USAGE, *argv );
           return VALIDATION1_EARG;
         }
       }
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]){
           sunEphemeris = argv[arg++];
         } else {
           ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-          LALPrintError( USAGE, *argv );
+          XLALPrintError( USAGE, *argv );
           return VALIDATION1_EARG;
         }
       }
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]){
         fname = argv[arg++];
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]){
         parRes.f0Bin =  f0Bin;
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
@@ -279,7 +279,7 @@ int main(int argc, char *argv[]){
         parDem.skyPatch.delta = delta;
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
@@ -291,14 +291,14 @@ int main(int argc, char *argv[]){
         parRes.patchSkySizeY = patchSizeY = atof(argv[arg++]);
       } else {
         ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return VALIDATION1_EARG;
       }
     }
     /* Unrecognized option. */
     else {
       ERROR( VALIDATION1_EARG, VALIDATION1_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return VALIDATION1_EARG;
     }
   } /* End of argument parsing loop. */
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]){
 
   if ( f0 < 0 ) {
     ERROR( VALIDATION1_EBAD, VALIDATION1_MSGEBAD, "freq<0:" );
-    LALPrintError( USAGE, *argv  );
+    XLALPrintError( USAGE, *argv  );
     return VALIDATION1_EBAD;
   }
 

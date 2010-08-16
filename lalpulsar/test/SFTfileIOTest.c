@@ -70,7 +70,7 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, SFTFILEIOTESTC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -79,7 +79,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               SFTFILEIOTESTC, (statement) );                     \
 } while (0)
@@ -106,7 +106,7 @@ do { 											\
 #define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
 do { 											\
   if ( func, (statusptr)->statusCode != code) {						\
-    LALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
+    XLALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
 		   (statusptr)->statusCode );						\
     return SFTFILEIOTESTC_ESUB;   			                               	\
    }											\
@@ -176,13 +176,13 @@ int main(int argc, char *argv[])
   SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-test1", NULL ), &status );
   if ( crc_check != 0 )
     {
-      LALPrintError ("\nLALCheckSFTs(): SFT-test1 has correct checksum but LALCheckSFTs claimed it hasn't.\n\n");
+      XLALPrintError ("\nLALCheckSFTs(): SFT-test1 has correct checksum but LALCheckSFTs claimed it hasn't.\n\n");
       return crc_check;
     }
   SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TESTDIR "SFT-bad6", NULL ), &status );
   if ( crc_check != SFTFILEIO_ECRC64 )
     {
-      LALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
+      XLALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
       return SFTFILEIOTESTC_ESUB;
     }
 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
        || (multsft_vect->length != 2) 	/* or separated by detector */
        || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
     {
-      LALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
+      XLALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
 
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to read back in 'outputsftv2_*.sft'\n\n");
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_*.sft'\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
   /* the data of 'outputsftv2_v2.sft' and 'outputsftv2_v1.sft' should agree, as the normalization
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 
 	if ( (data1->re != data2->re) || (data1->im != data2->im) )
 	  {
-	    LALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
+	    XLALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
 	    return SFTFILEIOTESTC_ESFTDIFF;
 	  }
       } /* for i < numBins */
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) LALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
 
@@ -320,9 +320,9 @@ int main(int argc, char *argv[])
 
   LALCheckMemoryLeaks();
 
-  LALPrintError ("\n\n--------------------------------------------------------------------------------\n");
-  LALPrintError ("\n    OK. All tests passed correctly ! (error-messages above are OK!)\n");
-  LALPrintError ("\n--------------------------------------------------------------------------------\n");
+  XLALPrintError ("\n\n--------------------------------------------------------------------------------\n");
+  XLALPrintError ("\n    OK. All tests passed correctly ! (error-messages above are OK!)\n");
+  XLALPrintError ("\n--------------------------------------------------------------------------------\n");
 
 
   INFO( SFTFILEIOTESTC_MSGENORM );

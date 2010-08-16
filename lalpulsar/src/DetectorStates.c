@@ -122,13 +122,13 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
   if ( prefix[0] == 'Z' )	/* LISA */
     {
       if ( XLALprecomputeLISAarms ( detState ) != 0 ) {
-	LALPrintError ("\nXLALprecomputeLISAarms() failed !\n\n");
+	XLALPrintError ("\nXLALprecomputeLISAarms() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }
 
       if ( XLALgetLISADetectorTensorLWL ( &(detState->detT), detState->detArms, prefix[1] ) != 0 ) {
-	LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }

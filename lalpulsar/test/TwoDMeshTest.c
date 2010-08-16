@@ -300,7 +300,7 @@ extern int lalDebugLevel;
 #define ERROR( code, msg, statement )                                \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, TWODMESHTESTC, statement ? statement :    \
                  "", (msg) );                                        \
@@ -310,7 +310,7 @@ else (void)(0)
 #define INFO( statement )                                            \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 TWODMESHTESTC, (statement) );                       \
 }                                                                    \
@@ -380,7 +380,7 @@ main(int argc, char **argv)
 	outfile = argv[arg++];
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -392,7 +392,7 @@ main(int argc, char **argv)
 	flags = atoi( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -403,7 +403,7 @@ main(int argc, char **argv)
 	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -416,7 +416,7 @@ main(int argc, char **argv)
 	mismatch = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -430,7 +430,7 @@ main(int argc, char **argv)
 	y_2 = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -443,7 +443,7 @@ main(int argc, char **argv)
 	c = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -456,7 +456,7 @@ main(int argc, char **argv)
 	dcdx = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -469,7 +469,7 @@ main(int argc, char **argv)
 	dcdy = atof( argv[arg++] );
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
@@ -481,14 +481,14 @@ main(int argc, char **argv)
 	rangefile = argv[arg++];
       } else {
 	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
     }
     /* Check for unrecognized options. */
     else if ( argv[arg][0] == '-' ) {
       ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return TWODMESHTESTC_EARG;
     }
   } /* End of argument parsing loop. */
