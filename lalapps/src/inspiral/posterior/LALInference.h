@@ -45,7 +45,7 @@
 # include <lal/FindChirp.h>
 # include <lal/Window.h>
 
-#include <lal/SFTUtils.h>
+#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALBarycenter.h>
