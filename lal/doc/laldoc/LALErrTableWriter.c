@@ -167,7 +167,7 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
               char *errStr       , /* returns string "you really suck"  */
               char *errNum       ) /* Error Number                      */
 {
-    char *position, *savePosition;
+    char *position;
     char line[MAXSTR];
     int i,ni;
 
@@ -217,7 +217,6 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     }
 
     position += strcspn(position, " \t");
-    savePosition = position ;
     sscanf(position,"%s",errStr);
 
     /*
