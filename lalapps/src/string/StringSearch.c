@@ -217,6 +217,8 @@ int main(int argc,char *argv[])
   MetadataTable  process;
   MetadataTable  procparams;
 
+  lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
+
   /* create the process and process params tables */
   procparams.processParamsTable = NULL;
   process.processTable = XLALCreateProcessTableRow();
@@ -225,93 +227,93 @@ int main(int argc,char *argv[])
     exit(1);
 
   /****** ReadCommandLine ******/
-  printf("ReadCommandLine()\n");
+  XLALPrintInfo("ReadCommandLine()\n");
   if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
-  printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
-  
+  XLALPrintInfo("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
+
   /****** ReadData ******/
-  printf("ReadData()\n");
+  XLALPrintInfo("ReadData()\n");
   if (ReadData(CommandLineArgs)) return 4;
-  
+
   /****** AddInjections ******/
   if (CommandLineArgs.InjectionFile != NULL) {
-    printf("AddInjections()\n");
+    XLALPrintInfo("AddInjections()\n");
     if (AddInjections(CommandLineArgs)) return 5;
     /* at this stage, ht_proc contains only the injection */
     if ( CommandLineArgs.printinjectionflag ) LALSPrintTimeSeries( GV.ht_proc, "injection.txt" );
   }
-  
+
   /****** WindowData ******/
-  printf("WindowData()\n");
+  XLALPrintInfo("WindowData()\n");
   if (WindowData()) return 6;
-  
+
   /****** ProcessData ******/
-  printf("ProcessData()\n");
+  XLALPrintInfo("ProcessData()\n");
   if (ProcessData(&CommandLineArgs)) return 7;
-  
+
   if ( CommandLineArgs.printdataflag ){
     int p;
     for (p=0; p<(int)GV.ht_proc->data->length; p++)
       fprintf(stdout,"%1.15e\n",GV.ht_proc->data->data[p]);
     return 0;
   }
-  
+
   /****** DownSample ******/
-  printf("DownSample()\n");
+  XLALPrintInfo("DownSample()\n");
   if (DownSample(CommandLineArgs)) return 8;
-  
+
   /****** XLALResizeREAL4TimeSeries ******/
-  printf("XLALResizeREAL4TimeSeries()\n");	
+  XLALPrintInfo("XLALResizeREAL4TimeSeries()\n");	
   /* re-size the time series to remove the pad */
   GV.ht_proc = XLALResizeREAL4TimeSeries(GV.ht_proc, 
 					 (int)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5),
 					 GV.ht_proc->data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5));
-    
+
   /* reduce duration of segment appropriately */
   GV.duration -= 2*CommandLineArgs.pad; 
-  
+
   /****** AvgSpectrum ******/
-  printf("AvgSpectrum()\n");
+  XLALPrintInfo("AvgSpectrum()\n");
   if (AvgSpectrum(CommandLineArgs)) return 9;  
   if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( GV.Spec, "Spectrum.txt" );
-  
+
   /****** CreateTemplateBank ******/
-  printf("CreateTemplateBank()\n");
+  XLALPrintInfo("CreateTemplateBank()\n");
   if (CreateTemplateBank(CommandLineArgs, strtemplate, &NTemplates)) return 10;
-  
+
   /****** CreateStringFilters ******/
-  printf("CreateStringFilters()\n");
+  XLALPrintInfo("CreateStringFilters()\n");
   if (CreateStringFilters(CommandLineArgs, strtemplate, NTemplates)) return 11;
-  
+
   /****** FindStringBurst ******/
-  printf("FindStringBurst()\n");
+  XLALPrintInfo("FindStringBurst()\n");
   if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates, &events)) return 12;
   if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
 
   /****** XLALClusterSnglBurstTable ******/
-  printf("XLALClusterSnglBurstTable()\n");
+  XLALPrintInfo("XLALClusterSnglBurstTable()\n");
   if (CommandLineArgs.cluster != 0.0 && events){
     XLALClusterSnglBurstTable(&events, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime, XLALStringBurstCluster);
     XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR);
   }
-  
+
   /****** XLALSnglBurstAssignIDs ******/
-  printf("XLALSnglBurstAssignIDs()\n");
+  XLALPrintInfo("XLALSnglBurstAssignIDs()\n");
   XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
-  
+
   /****** OutputEvents ******/
-  printf("OutputEvents()\n");
+  XLALPrintInfo("OutputEvents()\n");
   if (OutputEvents(&CommandLineArgs, process.processTable, procparams.processParamsTable, events)) return 13;
-  
+
   /****** FreeMem ******/
-  printf("FreeMem()\n");
+  XLALPrintInfo("FreeMem()\n");
   XLALDestroyProcessParamsTable(procparams.processParamsTable);
   XLALDestroySnglBurstTable(events);
   XLALDestroyProcessTable(process.processTable);
   if (FreeMem(strtemplate, NTemplates)) return 14;
 
-  printf("StringJob is done\n");
-  
+  XLALPrintInfo("StringJob is done\n");
+
   return 0;
 }
 
@@ -369,9 +371,8 @@ int AddInjections(struct CommandLineArgsTag CLA){
   LIGOTimeGPS stopTime = GV.ht->epoch;
   SimBurst *sim_burst;
   unsigned p;
-  
-  XLALGPSAdd(&startTime, CLA.ShortSegDuration / 4 + CLA.pad);
-  XLALGPSAdd(&stopTime, GV.ht->data->length * GV.ht->deltaT - CLA.ShortSegDuration / 4 - CLA.pad);
+
+  XLALGPSAdd(&stopTime, GV.ht->data->length * GV.ht->deltaT);
 
   /* Get info from injection file */
   sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
@@ -429,7 +430,7 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
   strncpy( ifo, CLA->ChannelName, 2 );
   ifo[sizeof(ifo) - 1] = '\0';
-  
+
   if (!CLA->outputFileName){
     CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
@@ -550,7 +551,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       /* prepend a new event to the linked list */
       new = XLALCreateSnglBurst();
       if ( ! new ){ /* allocation error */
-	fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
+	XLALPrintError("Could not allocate memory for event. Memory allocation error. Exiting.\n");
 	return 1;
       }
       new->next = *head;
@@ -615,10 +616,10 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
       /* normalise the result by template normalisation and multiply by 
 	 df (not inluded in LALReverseRealFFT)  factor of 2 is from 
 	 match-filter definition */
-      
+
       for ( p = 0 ; p < (int)vector->length; p++ )
 	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
-      
+
       if(FindEvents(CLA, &strtemplate[m], vector, i, head)) return 1;
     }
   }
@@ -638,17 +639,16 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
   COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
   REAL4Vector    *vector; /* time-domain vector workspace */
   REAL4 re, im;
-  REAL4TimeSeries series;
 
   vector = XLALCreateREAL4Vector( GV.seg_length);
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
  
   for (m = 0; m < NTemplates; m++){
-    
+
     /* Initialize the filter */
     strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.Spec->data->length);
     strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
-                
+
     /* populate vtilde with the template divided by the noise */
     for ( p = 0; p < (int) vtilde->length; p++ ){
       vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
@@ -657,7 +657,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
     
     /* reverse FFT vtilde into vector */
     if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
-             
+
     /* multiply times df to make sure units are correct */
     for ( p = 0 ; p < (int)vector->length; p++ )
       vector->data[p] *= GV.Spec->deltaF;
@@ -668,20 +668,20 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
       memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5), 0,
 	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5)) 
 	      * sizeof( *vector->data ) );
-        
+
     /* forward fft the truncated vector into vtilde */
     if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
-    
+
     for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
       re = vtilde->data[p].re * GV.ht_proc->deltaT;
       im = vtilde->data[p].im * GV.ht_proc->deltaT;
       strtemplate[m].StringFilter->data->data[p] = (re * re + im * im);
     }
-    
+
     /* set DC and Nyquist to 0*/
     strtemplate[m].StringFilter->data->data[0] =
       strtemplate[m].StringFilter->data->data[vtilde->length-1] = 0;
-        
+
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
       CHAR filterfilename[256];
@@ -692,27 +692,28 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
 
     /* print out the time domain FIR filter */
     if (CLA.printfirflag){
+      REAL4TimeSeries series;
       CHAR filterfilename[256];
       series.deltaT=GV.ht_proc->deltaT;
       series.f0 = 0.0;
       strncpy(series.name, "fir filter", LALNameLength);
       series.epoch=GV.ht_proc->epoch;
       series.sampleUnits=GV.ht_proc->sampleUnits;
-      
+
       for ( p = 0 ; p < (int)vtilde->length-1; p++ ){
 	re = vtilde->data[p].re * GV.ht_proc->deltaT;
 	im = vtilde->data[p].im * GV.ht_proc->deltaT;
-	
+
 	vtilde->data[p].re = (re * re + im * im);
 	vtilde->data[p].im = 0.0;
       }
       vtilde->data[0].re = vtilde->data[0].im = 0.0;
       vtilde->data[vtilde->length-1].re = vtilde->data[vtilde->length-1].im =0;
-      
+
       if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
-      
+
       series.data = vector;
-      
+
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
       filterfilename[sizeof(filterfilename)-1] = '\0';
       LALSPrintTimeSeries( &series, filterfilename );
@@ -721,7 +722,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtempla
 
   XLALDestroyCOMPLEX8Vector( vtilde );
   XLALDestroyREAL4Vector( vector );
-  
+
   return 0;
 }
 
@@ -762,8 +763,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
   strtemplate[0].mismatch=0.0;
   strtemplate[0].norm=sqrt(t1t1);
   *NTemplates=1;
-  fprintf(stdout,"%% Templ. frequency      sigma      mismatch\n");  
-  fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+  XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
+  XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
   
   /* find the next cutoffs given the maximal mismatch */
   for(pcut=f_cut_index+1; pcut<f_max_index; pcut++){
@@ -792,7 +793,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
     previous_epsilon = epsilon;
     epsilon=1-t1t2/sqrt(t1t1*t2t2);
 
-    /*if(pcut%50==0) printf("%d %f %f\n",pcut, f_cut, epsilon);*/
+    /*if(pcut%50==0) XLALPrintInfo("%d %f %f\n",pcut, f_cut, epsilon);*/
 
     if(epsilon >= CLA.fmismatchmax || pcut==f_max_index-1){
       strtemplate[*NTemplates].findex=pcut;
@@ -800,10 +801,10 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
       strtemplate[*NTemplates].norm=sqrt(t2t2);
       strtemplate[*NTemplates].mismatch=epsilon;
       (*NTemplates)++;
-      fprintf(stdout,"%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[*NTemplates-1].f,strtemplate[*NTemplates-1].norm, strtemplate[*NTemplates-1].mismatch);
+      XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[*NTemplates-1].f,strtemplate[*NTemplates-1].norm, strtemplate[*NTemplates-1].mismatch);
       t1t1=t2t2;
       if(*NTemplates == MAXTEMPLATES){
-	fprintf(stderr,"Too many templates for code... Exiting\n");
+	XLALPrintError("Too many templates for code... Exiting\n");
 	return 1;
       }
     }
@@ -815,7 +816,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
   }
 
   XLALDestroyREAL4Vector( integral );
-
 
   /* Now, the point is to store the template waveform vector */
   vector = XLALCreateREAL4Vector( GV.seg_length);
@@ -900,36 +900,29 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 
 /*******************************************************************************/
 int AvgSpectrum(struct CommandLineArgsTag CLA){
-  
-  int p;
-  int segmentLength;
-  int segmentStride;
-  REAL4Window  *window4;
-  
   GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
   GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
   GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
   GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
   
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
-    for ( p = 0 ; p < (int)GV.Spec->data->length; p++ )
+    unsigned p;
+    for ( p = 0 ; p < GV.Spec->data->length; p++ )
       /* FIXME:  shouldn't this be 2 * \Delta f */
       GV.Spec->data->data[p]=2/(1.0/GV.ht_proc->deltaT);
     GV.Spec->deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
-  }
-  else{
-    segmentLength = GV.seg_length;
-    segmentStride = GV.seg_length/2;
-    window4  = NULL;
-    window4 = XLALCreateHannREAL4Window( segmentLength );
+  } else{
+    int segmentLength = GV.seg_length;
+    int segmentStride = GV.seg_length/2;
+    REAL4Window *window4 = XLALCreateHannREAL4Window( segmentLength );
     
     if(XLALREAL4AverageSpectrumMedianMean( GV.Spec, GV.ht_proc, segmentLength,
 					   segmentStride, window4, GV.fplan ))
       return 1;
-    
+
     XLALDestroyREAL4Window( window4 );
   }
-  
+
   return 0;
 }
 
@@ -1042,12 +1035,12 @@ int ReadData(struct CommandLineArgsTag CLA){
     int seed, errorcode;
     
     if(!(devrandom=fopen("/dev/urandom","r"))){
-      fprintf(stderr,"Unable to open device /dev/urandom\n");
+      XLALPrintError("Unable to open device /dev/urandom\n");
       return 1;
     }
     errorcode=fread((void*)&seed,sizeof(INT4),1,devrandom);
     if (errorcode!=1){
-      fprintf( stderr,"Error reading /dev/urandom file!\n");
+      XLALPrintError("Error reading /dev/urandom file!\n");
       return 1;
     }
     fclose(devrandom);
