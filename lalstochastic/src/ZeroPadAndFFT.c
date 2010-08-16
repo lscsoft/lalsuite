@@ -212,12 +212,12 @@ LALSZeroPadAndFFT(
   if (parameters->window != NULL)
   {
     /* check that pointer to data member of window function is non-null */
-    ASSERT(parameters->window->data != NULL, status, \
+    ASSERT(parameters->window->data->data != NULL, status, \
         STOCHASTICCROSSCORRELATIONH_ENULLPTR, \
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* check that window function is same length as input time series */
-    if (parameters->window->length != length)
+    if (parameters->window->data->length != length)
     {
       ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -295,7 +295,7 @@ LALSZeroPadAndFFT(
     /* window data */
     sStopPtr = input->data->data + input->data->length;
     for (sPtr = input->data->data, hBarPtr = hBar.data->data, \
-        windowPtr = parameters->window->data ; sPtr < sStopPtr ; \
+        windowPtr = parameters->window->data->data ; sPtr < sStopPtr ; \
         ++sPtr, ++hBarPtr, ++windowPtr)
     {
       *(hBarPtr) = *(sPtr) * *(windowPtr);
@@ -398,7 +398,7 @@ LALCZeroPadAndFFT(
         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* check that window function is same length as input time series */
-    if (parameters->window->length != length)
+    if (parameters->window->data->length != length)
     {
       ABORT(status, STOCHASTICCROSSCORRELATIONH_EMMLEN, \
           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
@@ -469,7 +469,7 @@ LALCZeroPadAndFFT(
     /* window data */
     cStopPtr = input->data->data + input->data->length;
     for (cPtr = input->data->data, hBarPtr = hBar.data->data, \
-        windowPtr = parameters->window->data ; cPtr < cStopPtr ; \
+        windowPtr = parameters->window->data->data ; cPtr < cStopPtr ; \
         ++cPtr, ++hBarPtr, ++windowPtr )
     {
       hBarPtr->re = cPtr->re * *(windowPtr);

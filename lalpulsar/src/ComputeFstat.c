@@ -316,13 +316,6 @@ ComputeFStat ( LALStatus *status,
  	}
     }
   else multiBinary = multiSSB;
-  /*
-  printf("multiSSB = %6.12f %6.12f multiBinary = %6.12f %6.12f\n",
-	 multiSSB->data[0]->DeltaT->data[0],
-	 multiSSB->data[0]->Tdot->data[0],
-	 multiBinary->data[0]->DeltaT->data[0],
-	 multiBinary->data[0]->Tdot->data[0]);
-  */
 
   /* special treatment of AM coefficients */
   if ( params->useRAA && !multiCmplxAMcoef )
@@ -1654,8 +1647,6 @@ LALGetBinarytimes (LALStatus *status,
   ASSERT (tBinary->DeltaT->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   ASSERT (tBinary->Tdot->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
-  /* printf("in LALGetBinarytimes\n"); */
-
   /* convenience variables */
   Porb = binaryparams->period;
   e = binaryparams->ecc;
@@ -1666,67 +1657,49 @@ LALGetBinarytimes (LALStatus *status,
   ope = 1.0 + e;
   refTimeREAL8 = GPS2REAL8(refTime);
 
-  /* printf("computed convienience varaibles\nPorb = %6.12f\ne = %6.12f\nasini = %6.12f\nsinw = %6.12f\ncosw = %6.12f\nome = %6.12f\nope = %6.12f\nrefTimeREAL8 = %6.12f\n",
-	 Porb,e,asini,sinw,cosw,ome,ope,refTimeREAL8);
-  */
-  /* Porb = (LAL_TWOPI/binaryparams->angularSpeed)*sqrt((2.0 - binaryparams->oneMinusEcc)/pow(binaryparams->oneMinusEcc,3.0)); */
-  /*   asini = binaryparams->rPeriNorm/binaryparams->oneMinusEcc; */
-  /*   e = 1.0 - binaryparams->oneMinusEcc; */
-  /*  ome = binaryparams->oneMinusEcc; */
-  /*   ope = 2.0 - binaryparams->oneMinusEcc; */
-  /*   sinw = sin(binaryparams->argp); */
-  /*   cosw = cos(binaryparams->argp); */
-
-  /* compute p and q coeeficients */
+  /* compute p, q and r coeeficients */
   p = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e);
   q = (LAL_TWOPI/Porb)*sinw*asini;
   r = (LAL_TWOPI/Porb)*sinw*asini*ome;
-
-  /* printf("p = %6.12f q = %6.12f r = %6.12f\n",p,q,r); */
-
+ 
   /* Calculate the required accuracy for the root finding procedure in the main loop */
   acc = LAL_TWOPI*(REAL8)EA_ACC/Porb;   /* EA_ACC is defined above and represents the required timing precision in seconds (roughly) */
-  /*
-     printf("acc = %6.12f\n",acc);
-     printf("numSteps = %d\n",numSteps);
-  */
 
   /* loop over the SFTs */
   for (i=0; i < numSteps; i++ )
     {
 
-      /* define current SSB time */
+      /* define SSB time for the current SFT midpoint */
       tSSB_now = refTimeREAL8 + (tSSB->DeltaT->data[i]);
-      /* printf("tSSB_now = %6.12f\n",tSSB_now); */
+      
+      /* define fractional orbit in SSB frame since periapsis (enforce result 0->1) */
+      /* the result of fmod uses the dividend sign hence the second procedure */ 
+      {
+	REAL8 temp = fmod((tSSB_now - GPS2REAL8(binaryparams->tp)),Porb)/(REAL8)Porb;
+	fracorb = temp - (REAL8)floor(temp);
+      }
 
-      /* define fractional orbit in SSB frame since periapsis */
-      fracorb = fmod((tSSB_now - GPS2REAL8(binaryparams->tp)),Porb)/(REAL8)Porb;
-      /* printf("fracorb = %6.12f\n",fracorb); */
-
-      /* compute eccentric anomoly */
-      /* begin root finding procedure */
-      input.function = EccentricAnomoly;   /* This is the name of the function we must solve to find E */
-      input.xmin = 0.0;      /* We know that E will be found between 0 and 2PI */
+      /* compute eccentric anomaly using a root finding procedure */
+      input.function = EccentricAnomoly;     /* This is the name of the function we must solve to find E */
+      input.xmin = 0.0;                      /* We know that E will be found between 0 and 2PI */
       input.xmax = LAL_TWOPI;
-      input.xacc = acc;      /* The accuracy of the root finding procedure */
+      input.xacc = acc;                      /* The accuracy of the root finding procedure */
 
       /* expand domain until a root is bracketed */
       LALDBracketRoot(status->statusPtr,&input,&fracorb);
 
       /* bisect domain to find eccentric anomoly E corresponding to the SSB time of the midpoint of this SFT */
       LALDBisectionFindRoot(status->statusPtr,&E,&input,&fracorb);
-      /* printf("E = %6.12f\n",E); */
 
       /* use our value of E to compute the additional binary time delay */
       tBinary->DeltaT->data[i] = tSSB->DeltaT->data[i] - ( asini*sinw*(cos(E)-e) + asini*cosw*sqrt(1.0-e*e)*sin(E) );
 
       /* combine with Tdot (dtSSB_by_dtdet) -> dtbin_by_dtdet */
-      tBinary->Tdot->data[i] = tSSB->Tdot->data[i] * ( (1.0 - e*cos(E))/(1.0 + p*cos(E) + q*sin(E)) );
-
-      /* printf("tBinary : deltaT = %6.12f Tdot = %6.12f\n",( asini*sinw*(cos(E)-e) + asini*cosw*sqrt(1.0-e*e)*sin(E) ),(1.0 - e*cos(E))/(1.0 + p*cos(E) + q*sin(E))); */
-
+      tBinary->Tdot->data[i] = tSSB->Tdot->data[i] * ( (1.0 - e*cos(E))/(1.0 + p*cos(E) - q*sin(E)) );
+      
     } /* for i < numSteps */
-
+ 
+  
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
@@ -1746,6 +1719,7 @@ static void EccentricAnomoly(LALStatus *status,
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
   *tr = *(REAL8 *)tr0*(-1.0) + (lE + (p*sin(lE)) + q*(cos(lE) - 1.0) + r)/(REAL8)LAL_TWOPI;
+
   RETURN(status);
 }
 

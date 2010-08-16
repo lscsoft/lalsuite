@@ -519,7 +519,10 @@ LALResampleREAL4TimeSeries(
     ts->data->data[j] = *dataPtr;
     dataPtr += resampleFactor;
   }
-  LALRealloc( ts->data->data, ts->data->length * sizeof(REAL4) );
+  if ( LALRealloc( ts->data->data, ts->data->length * sizeof(REAL4) ) == NULL ) {
+    XLALPrintError ("LALRealloc() failed!\n");
+    ABORT( status, RESAMPLETIMESERIESH_ENULL, RESAMPLETIMESERIESH_MSGENULL );
+  }
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

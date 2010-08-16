@@ -173,7 +173,7 @@ def make_cache_entry(input_cache, description, path):
 
 def collect_output_caches(parents):
 	cache = [(cache_entry, parent) for parent in parents for cache_entry in parent.get_output_cache()]
-	cache.sort(lambda (a, ap), (b, bp): cmp(a.segment, b.segment))
+	cache.sort(key = lambda (cache_entry, parent): cache_entry.segment)
 	return cache
 
 
@@ -697,7 +697,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 		raise NotImplementedError
 
 	def set_coincidence_segments(self, seglist):
-		self.add_var_opt("coincidence-segments", ",".join(segmentsUtils.to_range_strings(seglist)))
+		self.add_var_arg("--coincidence-segments %s" % ",".join(segmentsUtils.to_range_strings(seglist)))
 
 
 class SQLiteJob(pipeline.CondorDAGJob):
@@ -1143,8 +1143,12 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	return nodes
 
 
-def make_burca_fragment(dag, parents, tag, verbose = False):
+def make_burca_fragment(dag, parents, tag, coincidence_segments = None, verbose = False):
 	input_cache = collect_output_caches(parents)
+	if coincidence_segments is not None:
+		# doesn't sense to supply this keyword argument for
+		# more than one input file
+		assert len(input_cache) == 1
 	nodes = set()
 	while input_cache:
 		node = BurcaNode(burcajob)
@@ -1154,6 +1158,8 @@ def make_burca_fragment(dag, parents, tag, verbose = False):
 		del input_cache[:burcajob.files_per_burca]
 		seg = cache_span(node.get_input_cache())
 		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		if coincidence_segments is not None:
+			node.set_coincidence_segments(coincidence_segments)
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.add(node)
@@ -1383,13 +1389,47 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	if verbose:
 		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
 
+	#
 	# use ligolw_cafe to group each output file according to how they
 	# need to be combined to perform the coincidence analysis
-	bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)[1]
+	#
+
+	seglists, bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)
+
+	#
+	# retrieve the file caches and segments.  note that ligolw_cafe
+	# returns the bins sorted by segment, so we do too
+	#
+
 	caches = [set(bin.objects) for bin in bins]
 	segs = [bin.extent for bin in bins]
 
+	#
+	# determine the clipping boundaries to use for each coincidence job
+	# if an extentlimit has been imposed
+	#
+
+	clipsegs = [None] * len(segs)
+	if extentlimit is not None:
+		for i, seg in enumerate(segs):
+			# FIXME:  when we can rely on Python >= 2.5,
+			#lo = segments.NegInfinity if i == 0 or segs[i - 1].disjoint(seg) else seg[0]
+			# etc.
+			if i == 0 or segs[i - 1].disjoint(seg):
+				lo = segments.NegInfinity
+			else:
+				lo = seg[0]
+			if i >= len(segs) - 2 or segs[i + 1].disjoint(seg):
+				hi = segments.PosInfinity
+			else:
+				hi = seg[1]
+			if lo is not segments.NegInfinity or hi is not segments.PosInfinity:
+				clipsegs[i] = segments.segment(lo, hi)
+
+	#
 	# match parents to caches
+	#
+
 	if verbose:
 		print >>sys.stderr, "Matching jobs to caches ..."
 	parent_groups, unused = match_nodes_to_caches(parents, caches)
@@ -1399,5 +1439,8 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 		# needed
 		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
 
+	#
 	# done
-	return zip(segs, parent_groups, caches)
+	#
+
+	return zip(segs, parent_groups, caches, clipsegs)

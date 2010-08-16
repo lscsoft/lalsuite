@@ -1362,3 +1362,129 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
         patterns[pattern_name + "-pattern"] = pattern
     return patterns
 
+###############################################################################
+# This function will set up the necessary omega scan inputs in the current
+# directory
+
+def omega_scan_setup(cp,ifos):
+  cp.set('omega-scans','do-omega-scan','')
+  cp.set('omega-scans','omega-executable',cp.get('condor','omegascan'))
+  print "Beginning set up of omega scan directory."
+  start = cp.get("input","gps-start-time")
+  end = cp.get("input","gps-end-time")
+  # First we set up the configuration files
+  sampleFrequency = cp.get('omega-setup','sample-frequency')
+  searchTRange = cp.get('omega-setup','search-time-range')
+  searchFRange = cp.get('omega-setup','search-frequency-range')
+  searchFRange = searchFRange.split(',')
+  searchFRange = '[' + searchFRange[0] + ' ' + searchFRange[1] + ']'
+  searchQRange = cp.get('omega-setup','search-q-range')
+  searchQRange = searchQRange.split(',')
+  searchQRange = '[' + searchQRange[0] + ' ' + searchQRange[1] + ']'
+  searchMaxELoss = cp.get('omega-setup','search-max-energy-loss')
+  whiteNoiseFAR = cp.get('omega-setup','white-noise-far')
+  searchWindowDuration = cp.get('omega-setup','search-window-duration')
+  plotNormERange = cp.get('omega-setup','plot-normalized-energy-range')
+  plotNormERange = plotNormERange.split(',')
+  plotNormERange = '[' + plotNormERange[0] + ' ' + plotNormERange[1] + ']'
+  plotTimeRanges = cp.get('omega-setup','plot-time-ranges')
+  plotTimeRanges = plotTimeRanges.split(',')
+  plotTimeRanges = ' '.join(plotTimeRanges)
+  plotTimeRanges = '[' + plotTimeRanges + ']'
+  configFileText = []
+  configFileHead = []
+  configFileHead.append('''[Context,Context]''')
+  configFileHead.append('')
+  configFileHead.append('''[Parameters,Parameter Estimation]''')
+  configFileHead.append('')
+  configFileHead.append('''[Notes,Notes]''')
+  configFileHead.append('')
+  configFileHead.append('''[Omega scans,Omega scans]''')
+  configFileHead.append('')
+  configFileText.append('{')
+  #This will be the line for the channel this is configFileText[1]
+  configFileText.append('')
+  #This will be the line for the frame this is configFileText[2]
+  configFileText.append('')
+  configFileText.append('  sampleFrequency:  ' + sampleFrequency)
+  configFileText.append('  searchTimeRange:  ' + searchTRange)
+  configFileText.append('  searchFrequencyRange:  ' + searchFRange)
+  configFileText.append('  searchQRange:  ' + searchQRange)
+  configFileText.append('  searchMaximumEnergyLoss:  ' + searchMaxELoss)
+  configFileText.append('  whiteNoiseFalseRate:  ' + whiteNoiseFAR)
+  configFileText.append('  alwaysPlotFlag:  1')
+  configFileText.append('  searchWindowDuration:  ' + searchWindowDuration)
+  configFileText.append('  plotTimeRanges:  ' + plotTimeRanges)
+  configFileText.append('  plotFrequencyRange:  []')
+  configFileText.append('  plotNormalizedEnergyRange:  ' + plotNormERange)
+  configFileText.append('}')
+  configFileText.append('')
+  typeNames = {}
+  for ifo in ifos:
+    ifo = ifo.upper()
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      channel_name = 'ligo-channel'
+      type_name = 'ligo-type'
+    elif ifo == 'V1':
+      channel_name = 'virgo-channel'
+      type_name = 'virgo-type'
+    else:
+      print "IFO " + ifo + " is not yet supported for omega scans in ihope"
+      continue
+    if cp.has_option('omega-setup',channel_name):
+      channels = (cp.get('omega-setup',channel_name)).split(',')
+      type = cp.get('omega-setup',type_name)
+    else:
+      channels = (cp.get('input',channel_name)).split(',')
+      type = cp.get('input',type_name)
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      type = ifo + '_' + type
+    typeNames[ifo] = type
+    configFileOut = '\n'.join(configFileHead)
+    configFileOut += '\n'
+    for channel in channels:
+      if channel[0:3] == 'PEM' or channel[0:3] == 'GDS':
+        configFileText[1] = "  channelName:  '" + ifo[0]+'0:'+channel + "'"
+      else:
+        configFileText[1] = "  channelName:  '" + ifo+':'+channel + "'"
+      configFileText[2] = "  frameType:  '" + type + "'"
+      configFileOut += '\n'.join(configFileText)
+      configFileOut +='\n'
+    outFile = open(ifo + '_omega_config.txt','w')
+    outFile.write(configFileOut)
+    outFile.close()
+    cp.set('omega-scans',ifo.lower() + '-omega-config-file','../omega_setup/'+ifo + '_omega_config.txt')
+
+  print "Created omega scan configuration files"
+
+  # And we need to create the necessary frame caches
+  if not os.path.isdir('cache'):
+    os.mkdir('cache')
+  dataFindCall = []
+  dataFindCall.append(cp.get('condor','datafind'))
+  for opt,val in cp.items('datafind'):
+    if opt == 'gaps':
+      continue
+    dataFindCall.append('--' + opt + ' ' + val)
+  dataFindCall.append('--lal-cache')
+  dataFindCall.append('--gps-start-time ' + start)
+  dataFindCall.append('--gps-end-time ' + end)
+  for ifo in ifos:
+    ifo = ifo.upper()
+    ifoSpecific = []
+    ifoSpecific.append('--observatory ' + ifo[0])
+    ifoSpecific.append('--type ' + typeNames[ifo])
+    ifoSpecific.append('--output cache/' + ifo + '_' + start + '_' + end + '_frames.cache')
+    command = ' '.join(dataFindCall) + ' ' + ' '.join(ifoSpecific)
+    make_external_call(command)
+    convertCall = cp.get('condor','convertlalcache')
+    convertCall += ' ' 
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.cache'
+    convertCall += ' '
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache'
+    make_external_call(convertCall)
+    cp.set('omega-scans',ifo.lower() + '-omega-frame-file','../omega_setup/' + 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache')
+
+  print "Created omega scan frame files \n"
+  
+

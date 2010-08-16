@@ -52,7 +52,6 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SnglBurstUtilsCP}
-\idx{LALSortSnglBurst()}
 \idx{XLALSortSnglBurst()}
 \idx{XLALCompareSnglBurstByStartTime()}
 \idx{XLALCompareSnglBurstByLowFreq()}
@@ -176,7 +175,7 @@ int XLALSnglBurstTableLength(SnglBurst *head)
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
-void XLALSortSnglBurst(
+SnglBurst **XLALSortSnglBurst(
 	SnglBurst **head,
 	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)
 )
@@ -186,14 +185,17 @@ void XLALSortSnglBurst(
 	int length;
 	SnglBurst *event;
 	SnglBurst **array;
+	SnglBurst **next;
 
 	/* empty list --> no-op */
-	if(!head || !*head)
-		return;
+	if(!*head)
+		return head;
 
 	/* construct an array of pointers into the list */
 	length = XLALSnglBurstTableLength(*head);
 	array = XLALCalloc(length, sizeof(*array));
+	if(!array)
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 
@@ -201,12 +203,16 @@ void XLALSortSnglBurst(
 	qsort(array, length, sizeof(*array), (int(*)(const void *, const void *)) comparefunc);
 
 	/* re-link the list according to the sorted array */
-	for(i = 0; i < length; i++, head = &(*head)->next)
-		*head = array[i];
-	*head = NULL;
+	next = head;
+	for(i = 0; i < length; i++, next = &(*next)->next)
+		*next = array[i];
+	*next = NULL;
 
 	/* free the array */
 	XLALFree(array);
+
+	/* success */
+	return head;
 }
 
 
@@ -424,11 +430,10 @@ void XLALClusterSnglBurstTable (
 
 SnglBurst *XLALCreateSnglBurst(void)
 {
-	static const char func[] = "XLALCreateSnglBurst";
 	SnglBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
 	new->next = NULL;
 	new->process_id = new->event_id = -1;
@@ -457,11 +462,10 @@ SnglBurst *XLALCreateSnglBurst(void)
 
 SimBurst *XLALCreateSimBurst(void)
 {
-	static const char func[] = "XLALCreateSimBurst";
 	SimBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
 	new->next = NULL;
 	new->process_id = new->simulation_id = -1;

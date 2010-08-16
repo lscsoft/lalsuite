@@ -2340,7 +2340,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'minifollowups'
-    sections = ['minifollowups']
+    sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
@@ -3215,7 +3215,7 @@ class SearchVolumeJob(pipeline.SqliteJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'search_volume'
-    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['search-volume'], exec_name, dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchVolumeNode(pipeline.SqliteNode):
@@ -3239,7 +3239,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
     if output_tag:
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
-      self.add_var_opt("use-expected-loudest-event",'')
+      self.add_var_arg("--use-expected-loudest-event")
 
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
@@ -3266,4 +3266,13 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.add_var_opt("input-cache", input_cache)
+    self.open_box = False
+
+  def set_open_box(self):
+    '''
+    Set the open box flag.
+    '''
+    if not self.open_box:
+      self.open_box = True
+      self.add_var_arg("--open-box")
 
