@@ -237,12 +237,14 @@ void copyVariables(LALVariables *origin, LALVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
   LALVariableItem *ptr;
+  
   /* first dispose contents of "target" (if any): */
   destroyVariables(target);
+  
   /* then copy over elements of "origin": */
   ptr = origin->head;
   while (ptr != NULL) {
-    addVariable(target, ptr->name, ptr->value, ptr->type,ptr->vary);
+    addVariable(target, ptr->name, ptr->value, ptr->type, ptr->vary);
     ptr = ptr->next;
   }
   return;
@@ -1079,11 +1081,12 @@ void executeInvFT(LALIFOData *IFOdata)
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
 		char minName[VARNAME_MAX];
 		char maxName[VARNAME_MAX];
-		
+    
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
+    
 		addVariable(priorArgs,minName,min,type,PARAM_FIXED);
-		addVariable(priorArgs,maxName,max,type,PARAM_FIXED);
+		addVariable(priorArgs,maxName,max,type,PARAM_FIXED);    
 		return;
 	}
 
@@ -1095,6 +1098,7 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 		
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
+    
 		min=getVariable(priorArgs,minName);
 		max=getVariable(priorArgs,maxName);
 		return;
