@@ -416,7 +416,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   ret.maxFstat = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
   UINT4 m, n;
-  REAL8 norm = 1.0 / SQ(LAL_TWOPI);
 
   transientWindow_t window;
   window.type = windowRange.type;
@@ -524,9 +523,9 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           /* generic F-stat calculation from A,B,C, Fa, Fb */
           Dd = Ad * Bd - Cd * Cd;
 
-          twoF = norm * (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                                       - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
-                                       );
+          twoF = (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                                - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                                );
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( twoF > ret.maxFstat )

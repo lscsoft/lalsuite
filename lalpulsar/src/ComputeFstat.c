@@ -719,8 +719,10 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
 	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha   = Fa_alpha;
-	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha   = Fb_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.re   = norm * Fa_alpha.re;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.im   = norm * Fa_alpha.im;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.re   = norm * Fb_alpha.re;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.im   = norm * Fb_alpha.im;
 	}
 
       /* advance pointers over alpha */
