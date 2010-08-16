@@ -363,6 +363,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 numAtoms = atoms->length;
   /* actual data spans [t0_data, t0_data + numAtoms * TAtom] in steps of TAtom */
   UINT4 t0_data = atoms->data[0].timestamp;
+  UINT4 t1_data = atoms->data[numAtoms-1].timestamp + TAtom;
 
   /* special treatment of window_type = none ==> replace by rectangular window spanning all the data */
   if ( windowRange.type == TRANSIENT_NONE )
@@ -453,6 +454,15 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           if ( i_tmp < 0 ) i_tmp = 0;
           UINT4 i_t1 = (UINT4)i_tmp;
           if ( i_t1 >= numAtoms ) i_t1 = numAtoms - 1;
+
+          /* protection against degenerate 1-atom case: (this implies D=0 and therefore F->inf) */
+          if ( i_t1 == i_t0 ) {
+            XLALPrintError ("%s: encountered a single-atom Fstat-calculation. This is degenerate and cannot be computed!\n", fn );
+            XLALPrintError ("Window-values m=%d (t0=%d=t0_data + %d), n=%d (tau=%d) ==> t1_data - t0 = %d\n",
+                            m, window.t0, i_t0 * TAtom, n, window.tau, t1_data - window.t0 );
+            XLALPrintError ("The most likely cause is that your t0-range covered all of your data: t0 must stay away *at least* 2*TAtom from the end of the data!\n");
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
 
           REAL8 Dd, twoF;
 
