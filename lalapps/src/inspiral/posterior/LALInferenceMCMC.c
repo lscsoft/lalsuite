@@ -55,14 +55,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		TcurrentParams[t].head=NULL;
 		TcurrentParams[t].dimension=0;
 		copyVariables(runState->currentParams,&(TcurrentParams[t]));  //initiallize all chains
-		//tempLadder[t]=exp(t*tempDelta);  // set up temperature ladder
-		//printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
+		tempLadder[t]=exp(t*tempDelta);  // set up temperature ladder
+		printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 	}
-	tempLadder[0] = 1.0;
-	tempLadder[1] = 2.0;
-	tempLadder[2] = 5.0;
-	tempLadder[3] = 100.0;
-	tempLadder[4] = 10000.0;
 	
 	dummyLALVariable.head=NULL;
 	dummyLALVariable.dimension=0;

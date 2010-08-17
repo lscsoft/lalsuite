@@ -79,6 +79,20 @@ void PTMCMCTest(void);
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
 
+REAL8 NullLogLikelihood(LALIFOData *data)
+/*Idential to FreqDomainNullLogLikelihood                        */
+{
+	REAL8 loglikeli, totalChiSquared=0.0;
+	LALIFOData *ifoPtr=data;
+	
+	/* loop over data (different interferometers): */
+	while (ifoPtr != NULL) {
+		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
+		ifoPtr = ifoPtr->next;
+	}
+	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+	return(loglikeli);
+}
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -185,20 +199,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 }
 
 
-REAL8 NullLogLikelihood(LALIFOData *data)
-/*Idential to FreqDomainNullLogLikelihood                        */
-{
-	REAL8 loglikeli, totalChiSquared=0.0;
-	LALIFOData *ifoPtr=data;
-	
-	/* loop over data (different interferometers): */
-	while (ifoPtr != NULL) {
-		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
-		ifoPtr = ifoPtr->next;
-	}
-	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
-	return(loglikeli);
-}
+
 
 REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
@@ -1198,20 +1199,20 @@ void PTMCMCTest(void)
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
 	
-    numberI4 = TaylorT3;//TaylorF2;
-    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    numberI4 = TaylorF2;
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_LINEAR);
     numberI4 = LAL_PNORDER_TWO;
-    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_LINEAR);
 	
-	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
-    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
-    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
-    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
-    addVariable(&currentParams, "time",            &tc   ,           REAL8_t); 
-    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
-    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
-    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
-    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
+	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t, PARAM_LINEAR); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
 	
 	
 	
