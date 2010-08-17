@@ -140,9 +140,9 @@ double GMST(double GPSsec)
  * 
  * All quantities are in radians
  */
-double rightAscension(double longi, double GMST)
+double rightAscension(double longi, double gmst)
 {
-  return fmod(longi + GMST + mtpi,tpi);  //Bring it between 0 and 2pi
+  return fmod(longi + gmst + mtpi,tpi);  //Bring it between 0 and 2pi
 }
 // ****************************************************************************************************************************************************  
 
@@ -156,9 +156,9 @@ double rightAscension(double longi, double GMST)
  * All quantities are in radians.
  * In fact, 'longitude' is something like the Greenwich hour angle of the corresponding RA.
  */
-double longitude(double rightAscension, double GMST)
+double longitude(double ra, double gmst)
 {
-  return fmod(rightAscension - GMST + mtpi,tpi);
+  return fmod(ra - gmst + mtpi,tpi);
 }
 // ****************************************************************************************************************************************************  
 
@@ -258,11 +258,11 @@ void crossProduct(double vec1[3], double vec2[3], double result[3])
  * Rotates vector x clockwise around axis (looking along axis while it is pointing towards you).
  * axis must be a UNIT VECTOR
  */
-void rotate(double x[3], double angle, double axis[3])
+void rotate(double x[3], double ang, double axis[3])
 {
   int i, j;
-  double cosa = cos(-angle);
-  double sina = sin(-angle);
+  double cosa = cos(-ang);
+  double sina = sin(-ang);
   double omcosa = 1.0 - cosa;
   double R[3][3] = {{cosa+axis[0]*axis[0]*omcosa, 
                      axis[0]*axis[1]*omcosa-axis[2]*sina,
@@ -400,11 +400,11 @@ void vec2coord(double x[3], double *sinlati, double *longi)
 // ****************************************************************************************************************************************************  
 void setSeed(int *seed)
 {
-  struct timeval time;
+  struct timeval time_now;
   struct timezone tz;
   if(*seed==0) {
-    gettimeofday(&time, &tz);
-    *seed = time.tv_usec;
+    gettimeofday(&time_now, &tz);
+    *seed = time_now.tv_usec;
   }
 }
 // ****************************************************************************************************************************************************  

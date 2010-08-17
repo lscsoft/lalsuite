@@ -30,10 +30,9 @@ EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris);
 void free_Ephemeris(EphemerisData *ephemdata);
 void initEphemeris(EphemerisData *ephemdata);
 
-INT4Vector * CompBinShifts(REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier);
-
-REAL8Vector * CompAntennaPatternWeights(REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det);
-REAL4Vector * CompAntennaVelocity(REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat);
+void CompBinShifts(INT4Vector *out, REAL8 freq, REAL8Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier);
+void CompAntennaPatternWeights(REAL8Vector *out, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det);
+void CompAntennaVelocity(REAL8Vector *out, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat);
 
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 Tobs, LALDetector det, EphemerisData *edat);
 

@@ -249,6 +249,8 @@ int main( int argc, char *argv[] )
 	printf("\nPASS: non-null pointer to output structure results in error:\n");
 	printf("       \"%s\"\n", LALMOMENTH_MSGENULL);
   }
+#else
+  code = 0;
 #endif
 
 

@@ -16,7 +16,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 __name__ = 'ihope_status'
 
-
+import os
 import sys
 from optparse import OptionParser
 from time import sleep
@@ -151,10 +151,12 @@ for line in lines:
   if "SUBDAG" in line:
     strs = line.split()
     if "DIR" in strs:
-      fname = strs[-1] + "/"
+      fname = strs[-1]
+    else:
+      fname = ''
     for string in strs:
       if ".dag" in string:
-        filenames.append(string)
+        filenames.append(os.path.join(fname,string))
   if "pegasus-plan" in line:
     strs = line.split()
     for string in strs:
@@ -198,7 +200,7 @@ for i in xrange(0,len(filenames), 1):
   elif status==-1:
    print "dag not yet started!"
   elif status==-2:
-   print "dag NOT FOUND!"
+   print "dag pending and not yet planned!"
 
 
 # Print totals

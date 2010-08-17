@@ -38,12 +38,15 @@ size_t typeSize[] = {sizeof(INT4),
                      sizeof(REAL8), 
                      sizeof(COMPLEX8), 
                      sizeof(COMPLEX16), 
-                     sizeof(gsl_matrix *)};
+                     sizeof(gsl_matrix *),
+                     sizeof(REAL8Vector *),
+                     sizeof(UINT4Vector *),
+                     sizeof(CHAR *)};
 
 
 void die(char *message)
 {
-  fprintf(stderr, message);
+  fprintf(stderr, "%s", message);
   exit(1);
 }
 
@@ -66,21 +69,26 @@ LALVariableItem *getItem(LALVariables *vars,const char *name)
 }
 
 
-LALVariableItem *getItemNr(LALVariables *vars, int index)
+LALVariableItem *getItemNr(LALVariables *vars, int idx)
 /* (this function is only to be used internally)  */
 /* Returns pointer to item for given item number. */
 {
   int i=1;
-  if (index < i) die(" Error in getItemNr(): requesting zero or negative index entry.\n");
+  if (idx < i) die(" Error in getItemNr(): requesting zero or negative idx entry.\n");
   LALVariableItem *this=vars->head;
   while (this != NULL) { 
-    if (i == index) break;
+    if (i == idx) break;
     else {
       this = this->next;
       ++i;
     }
   }
   return(this);
+}
+
+ParamVaryType getVariableVaryType(LALVariables *vars, const char *name)
+{
+	return (getItem(vars,name)->vary);
 }
 
 
@@ -103,32 +111,37 @@ INT4 getVariableDimension(LALVariables *vars)
 }
 
 
-VariableType getVariableType(LALVariables *vars, int index)
+VariableType getVariableType(LALVariables *vars, const char *name)
+{
+	return getItem(vars,name)->type;
+}
+
+VariableType getVariableTypeByIndex(LALVariables *vars, int idx)
 /* Returns type of the i-th entry, */
-/* where  1 <= index <= dimension. */
+/* where  1 <= idx <= dimension. */
 {
   LALVariableItem *item;
-  if ((index < 1) | (index > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
-            index, vars->dimension);
+  if ((idx < 1) | (idx > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+            idx, vars->dimension);
     exit(1);
   }
-  item = getItemNr(vars, index);
+  item = getItemNr(vars, idx);
   return(item->type);
 }
 
 
-char *getVariableName(LALVariables *vars, int index)
+char *getVariableName(LALVariables *vars, int idx)
 /* Returns (pointer to) the name of the i-th entry, */
-/* where  1 <= index <= dimension.                  */
+/* where  1 <= idx <= dimension.                  */
 {
   LALVariableItem *item;
-  if ((index < 1) | (index > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,index=%d): index needs to be 1 <= index <= dimension = %d.\n", 
-            index, vars->dimension);
+  if ((idx < 1) | (idx > vars->dimension)){
+    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+            idx, vars->dimension);
     exit(1);
   }
-  item = getItemNr(vars, index);
+  item = getItemNr(vars, idx);
   return(item->name);
 }
 
@@ -142,13 +155,14 @@ void setVariable(LALVariables * vars, const char * name, void *value)
     fprintf(stderr, " ERROR in setVariable(): entry \"%s\" not found.\n", name);
     exit(1);
   }
+  if (item->vary==PARAM_FIXED) return;
   memcpy(item->value,value,typeSize[item->type]);
   return;
 }
 
 
 
-void addVariable(LALVariables * vars, const char * name, void *value, VariableType type)
+void addVariable(LALVariables * vars, const char * name, void *value, VariableType type, ParamVaryType vary)
 /* Add the variable name with type type and value value to vars */
 {
   /* Check the name doesn't already exist */
@@ -161,6 +175,7 @@ void addVariable(LALVariables * vars, const char * name, void *value, VariableTy
   if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
+  new->vary = vary;
   memcpy(new->value,value,typeSize[type]);
   new->next = vars->head;
   vars->head = new;
@@ -222,18 +237,18 @@ void copyVariables(LALVariables *origin, LALVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
   LALVariableItem *ptr;
+  
   /* first dispose contents of "target" (if any): */
   destroyVariables(target);
+  
   /* then copy over elements of "origin": */
   ptr = origin->head;
   while (ptr != NULL) {
-    addVariable(target, ptr->name, ptr->value, ptr->type);
+    addVariable(target, ptr->name, ptr->value, ptr->type, ptr->vary);
     ptr = ptr->next;
   }
   return;
 }
-
-
 
 void printVariables(LALVariables *var)
 /* output contents of a 'LALVariables' structure       */
@@ -310,7 +325,44 @@ void printVariables(LALVariables *var)
   return;
 }
 
-
+void fprintSample(FILE *fp,LALVariables *sample){
+	if(sample==NULL) return;
+	LALVariableItem *ptr=sample->head;
+	if(fp==NULL) return;
+	while(ptr!=NULL) {
+		switch (ptr->type) {
+			case INT4_t:
+				fprintf(fp, "%d", *(INT4 *) ptr->value);
+				break;
+			case INT8_t:
+				fprintf(fp, "%lld", *(INT8 *) ptr->value);
+				break;
+			case REAL4_t:
+				fprintf(fp, "%e", *(REAL4 *) ptr->value);
+				break;
+			case REAL8_t:
+				fprintf(fp, "%e", *(REAL8 *) ptr->value);
+				break;
+			case COMPLEX8_t:
+				fprintf(fp, "%e + i*%e",
+						(REAL4) ((COMPLEX8 *) ptr->value)->re, (REAL4) ((COMPLEX8 *) ptr->value)->im);
+				break;
+			case COMPLEX16_t:
+				fprintf(fp, "%e + i*%e",
+						(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
+				break;
+			case gslMatrix_t:
+				fprintf(stdout, "<can't print matrix>");
+				break;
+			default:
+				fprintf(stdout, "<can't print>");
+			}
+	
+	fprintf(fp,"\t");
+	ptr=ptr->next;
+	}
+	return;
+}
 
 int compareVariables(LALVariables *var1, LALVariables *var2)
 /*  Compare contents of "var1" and "var2".                       */
@@ -592,7 +644,7 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
 
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == timeDomain)
         executeFT(dataPtr);
@@ -600,7 +652,7 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
       /* (during "template()" computation)                                      */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -753,7 +805,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	double Fplus, Fcross;
 	double FplusScaled, FcrossScaled;
 	REAL8 plainTemplateReal, plainTemplateImag;
-	int i;
+	UINT4 i;
 
 	/* determine source's sky location & orientation parameters: */
 	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
@@ -799,7 +851,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
     if (different) { /* template needs to be re-computed: */
       copyVariables(&intrinsicParams, dataPtr->modelParams);
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
       if (dataPtr->modelDomain == timeDomain)
         executeFT(dataPtr);
@@ -807,7 +859,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
       /* (during "template()" computation)                                      */
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
-      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
     /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
@@ -897,50 +949,6 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 	return overlap;
 }
 
-
-REAL8 NullLogLikelihood(LALIFOData *data)
-/*Idential to FreqDomainNullLogLikelihood                        */
-{
-  REAL8 loglikeli, totalChiSquared=0.0;
-  LALIFOData *ifoPtr=data;
-
-  /* loop over data (different interferometers): */
-  while (ifoPtr != NULL) {
-	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
-    ifoPtr = ifoPtr->next;
-  }
-  loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
-  return(loglikeli);
-}
-
-REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
-/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
-/* with the `templateNullFreqdomain()' template in order to return */
-/* the "Null likelihood" without having to bother specifying       */
-/* parameters or template while ensuring computations are exactly  */
-/* the same as in usual likelihood calculations.                   */
-{
-  LALVariables dummyParams;
-  double dummyValue;
-  double loglikeli;
-  /* set some (basically arbitrary) dummy values for intrinsic parameters */
-  /* (these shouldn't make a difference, but need to be present):         */
-  dummyParams.head      = NULL;
-  dummyParams.dimension = 0;
-  dummyValue = 0.5;
-  addVariable(&dummyParams, "rightascension", &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "declination",    &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "polarisation",   &dummyValue, REAL8_t);
-  addVariable(&dummyParams, "distance",       &dummyValue, REAL8_t);
-  dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
-               + (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
-  addVariable(&dummyParams, "time",           &dummyValue, REAL8_t);
-  loglikeli = FreqDomainLogLikelihood(&dummyParams, data, &templateNullFreqdomain);
-  destroyVariables(&dummyParams);
-  return(loglikeli);
-}
-
-
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename)
 /* de-bugging function writing (frequency-domain) template to a CSV file */
@@ -950,7 +958,7 @@ void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data,
   FILE *outfile=NULL; 
   LALIFOData *dataPtr;
   double deltaT, deltaF, f;
-  int i;
+  UINT4 i;
 
   copyVariables(currentParams, data->modelParams);
   dataPtr = data;
@@ -990,7 +998,7 @@ void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data,
   FILE *outfile=NULL; 
   LALIFOData *dataPtr;
   double deltaT, deltaF, t, epoch;
-  int i;
+  UINT4 i;
 
   copyVariables(currentParams, data->modelParams);
   dataPtr = data;
@@ -1025,7 +1033,7 @@ void executeFT(LALIFOData *IFOdata)
 /* results go into IFOdata->freqModelh...                     */
 /*  CHECK: keep or drop normalisation step here ?!?  */
 {
-  int i;
+  UINT4 i;
   double norm;
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
@@ -1069,107 +1077,30 @@ void executeInvFT(LALIFOData *IFOdata)
 }
 
 
+/* Function to add the min and max values for the prior onto the priorArgs */
+void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
+		char minName[VARNAME_MAX];
+		char maxName[VARNAME_MAX];
+    
+		sprintf(minName,"%s_min",name);
+		sprintf(maxName,"%s_max",name);
+    
+		addVariable(priorArgs,minName,min,type,PARAM_FIXED);
+		addVariable(priorArgs,maxName,max,type,PARAM_FIXED);    
+		return;
+	}
 
-LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
-/* calls the "ReadData()" function to gather data & PSD from files, */
-/* and initializes other variables accordingly.                     */
+/* Get the min and max values of the prior from the priorArgs list, given a name */
+void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
 {
-  LALInferenceRunState *irs=NULL;
-  LALIFOData *ifoPtr, *ifoListStart;
-  ProcessParamsTable *ppt=NULL;
-  unsigned long int randomseed;
-  struct timeval tv;
-  FILE *devrandom;
-
-  irs = calloc(1, sizeof(LALInferenceRunState));
-  /* read data from files: */
-  fprintf(stdout, " readData(): started.\n");
-  irs->data = readData(commandLine);
-  /* (this will already initialise each LALIFOData's following elements:  */
-  /*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
-  /*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-  fprintf(stdout, " readData(): finished.\n");
-  if (irs->data != NULL) {
-    fprintf(stdout, " initialize(): successfully read data.\n");
-
-    fprintf(stdout, " injectSignal(): started.\n");
-    injectSignal(irs->data,commandLine);
-    fprintf(stdout, " injectSignal(): finished.\n");
-
-    ifoPtr = irs->data;
-	ifoListStart = irs->data;
-    while (ifoPtr != NULL) {
-		/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			freqModelh*, and modelParams variables to avoid excess computation 
-			in model waveform generation in the future*/
-		LALIFOData * ifoPtrCompare=ifoListStart;
-		int foundIFOwithSameSampleRate=0;
-		while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-			if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-				ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-				ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-				ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-				ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-				ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-				foundIFOwithSameSampleRate=1;	
-				break;
-			}
-		}
-		if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
-                                                          &(ifoPtr->timeData->epoch),
-                                                          0.0,
-                                                          ifoPtr->timeData->deltaT,
-                                                          &lalDimensionlessUnit,
-                                                          ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",
-                                                          &(ifoPtr->timeData->epoch),
-                                                          0.0,
-                                                          ifoPtr->timeData->deltaT,
-                                                          &lalDimensionlessUnit,
-                                                          ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",
-                                                                  &(ifoPtr->freqData->epoch),
-                                                                  0.0,
-                                                                  ifoPtr->freqData->deltaF,
-                                                                  &lalDimensionlessUnit,
-                                                                  ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",
-                                                                   &(ifoPtr->freqData->epoch),
-                                                                   0.0,
-                                                                   ifoPtr->freqData->deltaF,
-                                                                   &lalDimensionlessUnit,
-                                                                   ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALVariables));
-		}
-		ifoPtr = ifoPtr->next;
-    }
-    irs->currentLikelihood=NullLogLikelihood(irs->data);
-	printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
-  }
-  else
-    fprintf(stdout, " initialize(): no data read.\n");
-
-  /* set up GSL random number generator: */
-  gsl_rng_env_setup();
-  irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-  /* (try to) get random seed from command line: */
-  ppt = getProcParamVal(commandLine, "--randomseed");
-  if (ppt != NULL)
-    randomseed = atoi(ppt->value);
-  else { /* otherwise generate "random" random seed: */
-    if ((devrandom = fopen("/dev/random","r")) == NULL) {
-      gettimeofday(&tv, 0);
-      randomseed = tv.tv_sec + tv.tv_usec;
-    } 
-    else {
-      fread(&randomseed, sizeof(randomseed), 1, devrandom);
-      fclose(devrandom);
-    }
-  }
-  fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
-  gsl_rng_set(irs->GSLrandom, randomseed);
-
-  return(irs);
+		char minName[VARNAME_MAX];
+		char maxName[VARNAME_MAX];
+		
+		sprintf(minName,"%s_min",name);
+		sprintf(maxName,"%s_max",name);
+    
+		min=getVariable(priorArgs,minName);
+		max=getVariable(priorArgs,maxName);
+		return;
+		
 }
-

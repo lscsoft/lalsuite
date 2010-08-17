@@ -823,6 +823,7 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
 
   pstackslideData = stackslideSum->data->data;
 
+
   f0 = stackslideSum->f0;
   deltaF = stackslideSum->deltaF;
   thisCandidate.dFreq = deltaF; 
@@ -832,6 +833,10 @@ void GetStackSlideCandidates_threshold(LALStatus *status,
   thisCandidate.delta = outputPoint->Delta;
   thisCandidate.dAlpha = outputPointUnc->Alpha;
   thisCandidate.dDelta = outputPointUnc->Delta;
+  thisCandidate.varianceSig = 0;
+  thisCandidate.meanSig = 0;
+  thisCandidate.deltaBest = 0;
+  thisCandidate.alphaBest = 0;
 
   numCandidates = out->nCandidates;  
   nSearchBins = stackslideSum->data->length;

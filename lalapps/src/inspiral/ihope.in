@@ -101,6 +101,14 @@ parser.add_option("-l", "--node-local-dir",action="store",type="string",\
     help='''directory to write the temporary sql databases. This must be a
 directory that is local to all nodes.''')
 
+parser.add_option("-o", "--node-access-path",action="store",type="string",\
+    metavar=" OUTPATH", \
+    help="node path for outputting the temporary coherent files to.")
+
+parser.add_option("-u", "--username",action="store",type="string",\
+    metavar=" USERNAME", help='''username on cluster for constructing the
+full path-name for outputting the temporary coherent files.''')
+
 parser.add_option("-s", "--gps-start-time",action="store",type="int",\
     metavar=" GPS_START", help="begin analysis at GPS_START")
 
@@ -157,6 +165,9 @@ parser.add_option("-H", "--skip-pipedown",action="store_false",\
 parser.add_option("-W","--skip-hardware-injections",action="store_false",\
     default=True,dest="run_hardware_inj", help="Skip the hardware injection script")
 
+parser.add_option("-w","--skip-omega-scans",action="store_false",\
+    default=True,dest="do_omega_scans", help="Skip the omega scan setup.")
+
 parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Make a dax workflow")
 
@@ -195,6 +206,16 @@ if not opts.gps_end_time:
 if opts.gps_end_time < opts.gps_start_time:
   print >> sys.stderr, "The GPS end time must be after the GPS start time"
   sys.exit(1)
+
+if not opts.node_access_path:
+  print >> sys.stdout, "WARNING! No node-access-path specified:"
+  print >> sys.stdout, "  Use --node-access-path and --username to speed up"
+  print >> sys.stdout, "  the coherent-stage."
+
+if not opts.username:
+  print >> sys.stdout, "WARNING! No username specified:"
+  print >> sys.stdout, "  Use --node-access-path and --username to speed up"
+  print >> sys.stdout, "  the coherent-stage."
 
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
 
@@ -291,6 +312,7 @@ shutil.copy( opts.config_file, analysisDirectory )
 opts.config_file = opts.config_file.split("/")[-1]
 
 os.chdir(analysisDirectory)
+inspiralutils.mkdir('logs')
 
 # parse the ini file:
 cp = ConfigParser.ConfigParser()
@@ -299,16 +321,20 @@ cp.read(opts.config_file)
 # set gps start and end times in the cp object.
 cp.set("input", "gps-start-time", str(opts.gps_start_time) )
 cp.set("input", "gps-end-time", str(opts.gps_end_time) )
+cp.set("input", "output-path", str(opts.node_access_path) )
+cp.set("input", "username", str(opts.username) )
 
 # Check for --disable-dag-categories
 
 opts.do_dag_categories = not cp.has_option(
               "hipe-arguments","disable-dag-categories")
 
-# Add local dir to pipeline
+# Tell matplotlib to put its cache files in the the local dir
+cp.set("pipeline", "matplotlibdir", opts.node_local_dir )
 
+# Add local dir to pipeline
 if opts.run_pipedown:
-  cp.set("pipeline","node-tmp-dir",opts.node_local_dir)
+  cp.set("pipeline", "node-tmp-dir", opts.node_local_dir)
 
 ##############################################################################
 # create a directory called executables and copy them over
@@ -317,7 +343,10 @@ os.chdir("../")
 for (job, executable) in cp.items("condor"):
   if job != "universe":
     shutil.copy( executable, analysisDirectory + "/executables" )
-    executable = "../executables/" + executable.split("/")[-1]
+    if job == "hardware_inj_page":
+      executable = "executables/" + executable.split("/")[-1]
+    else:
+      executable = "../executables/" + executable.split("/")[-1]
     cp.set("condor", job, executable)
 
 os.chdir(analysisDirectory)
@@ -426,11 +455,17 @@ for ifo in ifos:
 
 os.chdir("..")
 
+hw_inj_dir = "hardware_injection_summary"
 if opts.run_hardware_inj:
-  inspiralutils.mkdir("hardware_inj")
-  os.chdir("hardware_inj")
-  inspiralutils.run_hardware_inj_part_one(cp,ifos)
-  os.chdir("..")
+  inspiralutils.mkdir(hw_inj_dir)
+  inspiralutils.get_hwinj_segments(cp,ifos,hw_inj_dir)
+
+if opts.do_omega_scans:
+  if not os.path.isdir('omega_setup'):
+    os.mkdir('omega_setup')
+  os.chdir('omega_setup')
+  inspiralutils.omega_scan_setup(cp,ifos)
+  os.chdir('..')
 
 # create the list of files that will be concatenated into the ihope cache
 cachelist = []
@@ -918,10 +953,21 @@ if opts.run_plots:
 # Set up jobs for HW injection page
 
 if opts.run_hardware_inj:
-  if opts.run_full_data:
-    HWinjNodes = inspiralutils.hwinj_setup(cp,ifos,veto_categories)
-    for node in HWinjNodes:
-    	dag.add_node(node)
+  # Set up parents correctly
+  parentNodes = []
+  if opts.run_search:
+    if opts.run_full_data:
+      parentNodes.append(hipeAnalysisNode)
+
+    if opts.run_full_data:
+      for category in veto_categories:
+        parentNodes.append(hipeAnalysisVetoNode[category])
+
+  HWinjNodes = inspiralutils.hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir)
+  for node in HWinjNodes:
+    for parent in parentNodes:
+      node.add_parent(parent)
+    dag.add_node(node)
 
 ##############################################################################
 # Set up the directories for followup and run lalapps_followup_pipe
@@ -1083,7 +1129,45 @@ basedir_fh.close()
 os.chmod("pegasus_basedir",0755)
 
 pegprop_fh = open("pegasus.properties", "w")
-print >> pegprop_fh, """\
+if opts.dax:
+  print >> pegprop_fh, """
+###############################################################################
+# pegasus properties file generated by ihope
+pegasus.catalog.replica=LRC
+pegasus.catalog.replica.url=rls://ldr.ligo.caltech.edu
+pegasus.catalog.site=XML3
+pegasus.catalog.transformation.mapper=Staged
+
+#for osg mode we always have third party sites enabled
+pegasus.transfer.*.thirdparty.sites=*
+
+#for remote job submission we need to run postscript
+#to determine the remote status correctly
+pegasus.exitcode.scope=all
+pegasus.exitcode.arguments=-e
+pegasus.dagman.maxpost=3
+
+pegasus.gridstart.kickstart.stat=false
+
+pegasus.transfer.force=true
+pegasus.transfer.links=true
+pegasus.transfer.refiner=Bundle
+pegasus.transfer.symlink.impl=Symlink
+
+pegasus.dagman.retry=3
+pegasus.dagman.maxpre=1
+pegasus.condor.arguments.quote=true
+
+pegasus.selector.site=RoundRobin
+pegasus.selector.replica=Default
+
+pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
+
+pegasus.dir.submit.subwf.labelbased=true
+pegasus.dir.submit.logs=%s
+""" % (opts.log_path)
+else:
+  print >> pegprop_fh, """
 ###############################################################################
 # pegasus properties file generated by ihope
 pegasus.catalog.replica=SimpleFile
@@ -1106,7 +1190,8 @@ pegasus.selector.replica=Default
 pegasus.clusterer.job.aggregator.seqexec.firstjobfail=true
 
 pegasus.dir.submit.subwf.labelbased=true
-"""
+pegasus.dir.submit.logs=%s
+""" % (opts.log_path)
 pegprop_fh.close()
 
 ##############################################################################
@@ -1122,7 +1207,19 @@ and then
 
     ./pegasus_submit_dax
 
-from a condor submit machine.
+from a condor submit machine. 
+
+From the analysis directory on the condor submit machine, you can run the
+command
+
+    pegasus-status --long -t -i `./pegasus_basedir`
+
+to check the status of your workflow. Once the workflow has finished you 
+can run the command
+
+    pegasus-analyzer -t -i `./pegasus_basedir`
+
+to debug any failed jobs.
 """
 
 ##############################################################################

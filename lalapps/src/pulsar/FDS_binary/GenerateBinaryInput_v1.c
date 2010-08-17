@@ -204,12 +204,12 @@ int GenTimeStamps()
     switch (c) {
     case 'Q':
       temp=optarg;
-      sprintf(sourcefile,temp);
+      sprintf(sourcefile,"%s",temp);
       sourceflag=1;
       break;
     case 'q':
       temp=optarg;
-      sprintf(source,temp);
+      sprintf(source,"%s",temp);
       break;
     case 'a':
       alpha=atof(optarg);
@@ -219,7 +219,7 @@ int GenTimeStamps()
       break;
     case 'I':
       temp=optarg;
-      sprintf(ifo,temp);
+      sprintf(ifo,"%s",temp);
       break;
     case 'p':
       phi=atof(optarg);
@@ -250,7 +250,7 @@ int GenTimeStamps()
       break;
     case 's':
       temp=optarg;
-      sprintf(stamps,temp);
+      sprintf(stamps,"%s",temp);
       stampsflag=1;
       break;
     case 'S':
@@ -264,20 +264,20 @@ int GenTimeStamps()
       break;
     case 'E':
       temp=optarg;
-      sprintf(efiles,temp);
+      sprintf(efiles,"%s",temp);
       break;
     case 'y':
       temp=optarg;
-      sprintf(yr,temp);
+      sprintf(yr,"%s",temp);
       break;
     case 'n':
       temp=optarg;
-      sprintf(noisedir,temp);
+      sprintf(noisedir,"%s",temp);
       noisedirflag=1;
       break;
     case 'm':
       temp=optarg;
-      sprintf(basename,temp);
+      sprintf(basename,"%s",temp);
       break;
     case '1':
       f1dot=atof(optarg);
@@ -308,7 +308,7 @@ int GenTimeStamps()
       break;
     case 'o':
       temp=optarg;
-      sprintf(outfile,temp);
+      sprintf(outfile,"%s",temp);
       break;
     case 'h':
       /* print usage/help message */

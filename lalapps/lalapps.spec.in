@@ -1,8 +1,8 @@
 %define _prefix @prefix@
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
-%define _pkgpythondir %{_prefix}/lib/python@PYTHON_VERSION@/site-packages/@PACKAGE@
-%define _pkgpyexecdir %{_libdir}/python@PYTHON_VERSION@/site-packages/@PACKAGE@
+%define _pkgpythondir %{_prefix}/lib/python2.4/site-packages/@PACKAGE@
+%define _pkgpyexecdir %{_libdir}/python2.4/site-packages/@PACKAGE@
 
 Name: @PACKAGE@
 Version: @VERSION@
@@ -30,7 +30,7 @@ Algorithm Library.
 source /opt/lscsoft/lscsoft-user-env.sh
 nightly_version=@NIGHTLY_VERSION@
 %configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
-%{__make}
+%{__make} V=1
 
 %install
 %makeinstall

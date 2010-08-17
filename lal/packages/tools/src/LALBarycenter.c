@@ -17,11 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="LALBarycenterCV">
-Author: Cutler, C.
-$Id$
-*********************************** </lalVerbatim> */
-
 /**
  * \author Curt Cutler
  * \date 2001
@@ -30,63 +25,7 @@ $Id$
  * \brief Converts from detector arrival time (recorded by GPS clock) to
  * pulse emission time, in TDB.
  *
- * $Id$
  */
-
-
-/* <lalLaTeX>
-
-\subsection{Module \texttt{LALBarycenter.c}}
-\label{ss:LALBarycenter.c}
-
-Converts from detector arrival time (recorded by GPS clock) to
-pulse emission time, in TDB.
-
-\subsubsection*{Prototypes}
-\input{LALBarycenterCP}
-\idx{\texttt{LALBarycenter()}}
-\idx{\texttt{LALBarycenter()}}
-
-\subsubsection*{Description}
-
-\verb@LALBarycenterEarth()@ computes the position and orientation
-of the Earth, at some arrival time $t_a$ , specified
-\verb@LIGOTimeGPS@ input structure. The Einstein delay is also
-calculated. The results are stored in the \verb@EarthState@ output
-structure, which can then be fed as input to \verb@LALBarycenter()@.
-The idea is that \verb@LALBarycenterEarth()@ calculates quantities that
-are independent of the source location and detector position
-on Earth. Thus this function is called ONCE for every desired
-arrival time; the results are then re-used as one steps around the
-sky (and/or changes detector) at that time.
-
-\verb@LALBarycenter()@ transforms from detector arrival time $t_a$
-in GPS (as specified in the \verb@LIGOTimeGPS@ structure) to pulse
-emission time $t_e$, in TDB. (Actually, the returned $t_e$ is
-the emission time plus the constant light-travel-time from
-source to SSB.) The inputs to \verb@LALBarycenter()@, through
-the \verb@BarycenterInput@ structure, are the source location,
-detector site identifier, and GPS arrival time.
-The function returns the  emission time $t_e(t_a)$, the
-derivative $d t_e/d t_a$, and the difference
-$t_e(t_a) - t_a $ through the \verb@EmissionTime@ structure.
-The emission time $t_e(t_a)$ is returned in the \verb@LIGOTimeGPS@ format,
-while the other two quantities are \verb@REAL8@s.
-
-\subsubsection*{Algorithm}
-The function "corrects" the pulse arrival time
-by removing the Roemer delay,
-(including effects of Moon, planets, and the
-Earths time-varying spin axis and spin rate),
-Einstein delay, and Shapiro delay. Accuracy is
-better than 3 $\mu$s. Full details will be in monograph
-by Cutler in Los Alamos preprint archive.
-
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{LALBarycenterCV}}
-
-</lalLaTeX> */
 
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
@@ -104,7 +43,6 @@ NRCSID(LALBARYCENTERC, "$Id$");
  * arrival time; the results are then re-used as one steps around the
  * sky (and/or changes detector) at that time.
  */
-/* <lalVerbatim file="LALBarycenterCP"> */
 void
 LALBarycenterEarth(LALStatus *stat,
 		   EarthState *earth, 		/**< [out] the earth's state at time tGPS */
@@ -498,7 +436,8 @@ LALBarycenterEarth(LALStatus *stat,
     /*Curt: do I have to detach status ptr below?*/
     DETATCHSTATUSPTR(stat);
     RETURN(stat);
-}
+
+} /* LALBarycenterEarth() */
 
 
 
@@ -517,13 +456,12 @@ LALBarycenterEarth(LALStatus *stat,
  * The emission time \f$t_e(t_a)\f$ is returned in the LIGOTimeGPS format,
  * while the other two quantities are REAL8's.
  */
-/* <lalVerbatim file="LALBarycenterCP"> */
 void
 LALBarycenter(LALStatus *stat,
 	      EmissionTime *emit, 		/**< [out] emission-time information */
 	      const BarycenterInput *baryinput, /**< [in] info about detector and source-location */
 	      const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */
-{ /* </lalVerbatim> */
+{
 
   REAL8 longitude,latitude,rd;  /*geocentric (not geodetic!!) longitude
                                   and latitude of detector vertex, and
@@ -790,4 +728,5 @@ LALBarycenter(LALStatus *stat,
 
     }
 RETURN(stat);
-  }
+
+} /* LALBarycenter() */

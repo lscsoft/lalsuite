@@ -26,13 +26,6 @@
 /*                                               */
 /* * * * * * * * * * * * * * * * * * * * * * * * */
 /*                                               */
-/*  Compilation works (for me) using the         */
-/*  following command:                           */
-/*                                               */
-/*  gcc -ansi -O3 -o followupMcmc followupMcmc.c -static -I ${LSCSOFT_LOCATION}/libframe/include -L ${LSCSOFT_LOCATION}/libframe/lib -I ${LSCSOFT_LOCATION}/lal/include -L ${LSCSOFT_LOCATION}/lal/lib -llal -lFrame -lfftw3 -lfftw3f -lgsl -lgslcblas -lm   */
-/*                                               */
-/* * * * * * * * * * * * * * * * * * * * * * * * */
-/*                                               */
 /*  Things you may want to play around with      */
 /*  are in particular proposals (look out        */
 /*  for occurrences of the "setstdev()" and      */
@@ -50,14 +43,14 @@
 #include <getopt.h>
 #include <math.h>
 #include <complex.h>
-#include <fftw3.h>   /* FFT library: www.fftw.org                                      */
-#include <FrameL.h>  /* Frame library: http://lappweb.in2p3.fr/virgo/FrameL            */
+#include <fftw3.h>
 #include <time.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/Units.h>
+#include <lal/LALFrameL.h>
 #include <lal/LALInspiral.h>
-#include <gsl/gsl_rng.h>     /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Generation.html */
-#include <gsl/gsl_randist.h> /* http://www.gnu.org/software/gsl/manual/html_node/Random-Number-Distributions.html */
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -68,7 +61,7 @@
 const double Msun = 1.9889194662e30;   /* solar mass kg */
 const double Mpc  = 3.08568025e22;     /* metres in a Mpc (LAL:3.0856775807e22) */
 const double G    = 6.67259e-11;       /* 6.674215e-11; */ 
-const double c    = 299792458.0;       /* speed of light m/s */ 
+const double C    = 299792458.0;       /* speed of light m/s */ 
 const double pi   = 3.141592653589793; 
 const double earthRadiusEquator = 6378137.0;           /* (WGS84 value)                    */
 const double earthFlattening    = 0.00335281066474748; /* (WGS84 value: 1.0/298.257223563) */
@@ -99,9 +92,10 @@ enum template {
   iLALTT3PN10,    /* 10) LAL Taylor T3 1.0 PN                   */
   iLALTT3PN15,    /* 11) LAL Taylor T3 1.5 PN                   */
   iLALTT3PN20,    /* 12) LAL Taylor T3 2.0 PN                   */
-  iLALIMRPhenomA, /* 13) LAL Phenomenological                   */   /* (Phenom. doesn't work yet) */
-  iLALEOBNR,      /* 14) LAL EOBNR                              */   /* (EOBNR neither)            */
-  bSineGaussian   /* 15) sine-gaussian burst                    */
+  iLALIMRPhenomA, /* 13) LAL Phenomenological                   */
+  iLALEOBNR,      /* 14) LAL EOBNR                              */   /* (EOBNR doesn't work yet) */
+  iLALPPN20,      /* 15) LAL PPN 2.0PN                          */
+  bSineGaussian   /* 16) sine-gaussian burst                    */
 };
 
 
@@ -193,13 +187,13 @@ int verbose = 1;                /* verbosity flag (set through "--quiet" option)
 gsl_rng *GSLrandom;             /* GSL random number generator                   */
 
 void vectorInit(vector *vec);
-void vectorAdd(vector *vec, char name[], double value);
-void vectorSetup(vector *vec, int signal);
+void vectorAdd(vector *vec, const char name[], double value);
+void vectorSetup(vector *vec, int signal_type);
 void vectorDispose(vector *vec);
 void vectorCopy(vector *vec1, vector *vec2);
-void vectorSetValue(vector *vec, char name[], double value);
-double vectorGetValue(vector *vec, char name[]);
-int vectorIsElement(vector *vec, char name[]);
+void vectorSetValue(vector *vec, const char name[], double value);
+double vectorGetValue(vector *vec, const char name[]);
+int vectorIsElement(vector *vec, const char name[]);
 void vectorPrint(vector *vec);
 
 int char2template(char *templatename);
@@ -210,7 +204,7 @@ interferometer *ifoPointer(interferometer *ifolist, int ifoN, char locationStrin
 void parseParameterOptionString(char *input, char **parnames[], double **parvalues, int *n);
 void parseCharacterOptionString(char *input, char **strings[], int *n);
 int noVectorStrg(char *input);
-void printhelpmessage();
+void printhelpmessage(void);
 int init(DataFramework *DFarg[], McmcFramework *MFarg[],
          int *coherentN,
          int argc, char *argv[],
@@ -231,7 +225,7 @@ double spectrumAdvLigo(double f);
 double spectrumVirgo(double f);
 double spectrumGeo(double f);
 void normalise(double vec[3]);
-void rotate(double x[3], double angle, double axis[3]);
+void rotate(double x[3], double ang, double axis[3]);
 int righthanded(double x[3], double y[3], double z[3]);
 void orthoproject(double x[3], double vec1[3], double vec2[3]);
 double angle(double x[3], double y[3]);
@@ -248,7 +242,10 @@ void antennaepattern(double altitude, double azimuth, double polarisation,
 double mc2mass1(double mc, double eta);
 double mc2mass2(double mc, double eta);
 double mc2mt(double mc, double eta);
+  void mass2lambda(double mass1, double mass2, double *lambda1, double *lambda2);
+  void lambda2mass(double lambda1, double lambda2, double *mass1, double *mass2);
 double logJacobianMcEta(double mc, double eta);
+double logJacobianChirptimes(double mc, double eta);
 
 void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double complex *output);
 void template2025(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
@@ -261,6 +258,8 @@ void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcr
                   double complex *output);
 void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
                  double complex *output, int approximant, int order);
+void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
+                    double complex *output, int order);
 void templateSineGaussianBurst(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
                                double complex *output);
 void inject(DataFramework *DF, int coherentN, int waveform, vector *parameter);
@@ -271,7 +270,7 @@ double signaltonoiseratio(DataFramework *DF, int coherentN, int waveform, vector
                           double indivSNRs[]);
 
 void clearMF(McmcFramework *MF);
-int parindex(McmcFramework *MF, char parametername[]);
+int parindex(McmcFramework *MF, const char parametername[]);
 
 void setcov(McmcFramework *MF, int parameter1, int parameter2, double covariance);
 void setvar(McmcFramework *MF, int parameter, double variance);
@@ -293,6 +292,9 @@ void priordraw(McmcFramework *MF, vector *parameter);
 void priordrawInspiralNospin(McmcFramework *MF, vector *parameter);
 void priordrawBurstSineGaussian(McmcFramework *MF, vector *parameter);
 
+void minimaxdrawInspiralNospin(McmcFramework *MF, vector *parameter);
+double logminimaxInspiralNospin(McmcFramework *MF, vector *parameter);
+
 void guess(McmcFramework *MF, vector *parameter);
 void guessInspiralNospin(McmcFramework *MF, vector *parameter);
 
@@ -309,10 +311,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                  long iteration, long accepted, 
-                 double logprior, double loglikelihood, double logposterior);
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry);
+                 double log_prior, double log_likelihood, double log_posterior);
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry);
 
-void printtime();
+void printtime(void);
 void DateTimeString(char *charvec);
 void savePSD(DataFramework *DF, char *filename);
 void metropolishastings(McmcFramework *MF, DataFramework *DF, int coherentN);
@@ -334,7 +336,7 @@ void vectorInit(vector *vec)
 }
 
 
-void vectorAdd(vector *vec, char name[], double value)
+void vectorAdd(vector *vec, const char name[], double value)
 /* Takes a given vector and adds a new dimension (name & value). */
 {
   int newdim=0;
@@ -385,7 +387,7 @@ void vectorAdd(vector *vec, char name[], double value)
 }
 
 
-void vectorSetup(vector *vec, int signal)
+void vectorSetup(vector *vec, int signal_type)
 /* Set up parameter vector according to given signal type. */
 /* !! Vector needs to be pre-initialised !!                */
 {
@@ -399,14 +401,14 @@ void vectorSetup(vector *vec, int signal)
     vectorAdd(vec, "polarisation", 0.0);  /* w.r.t. earth frame                    */
     vectorAdd(vec, "time", 0.0);          /* w.r.t. earth frame (at geocentre)     */
     /* signal-specific parameters: */
-    if (signal == InspiralNoSpin){
+    if (signal_type == InspiralNoSpin){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logdistance", 0.0);
       vectorAdd(vec, "chirpmass", 0.0);
       vectorAdd(vec, "massratio", 0.0);
       vectorAdd(vec, "inclination", 0.0);
     }
-    else if (signal == BurstSineGaussian){
+    else if (signal_type == BurstSineGaussian){
       vectorAdd(vec, "phase", 0.0);
       vectorAdd(vec, "logamplitude", 0.0);
       vectorAdd(vec, "logsigma", 0.0);
@@ -471,7 +473,7 @@ void vectorCopy(vector *vec1, vector *vec2)
 }
 
 
-void vectorSetValue(vector *vec, char name[], double value)
+void vectorSetValue(vector *vec, const char name[], double value)
 {
   int i, notfound=1;
   if (vec->dimension > 0) {
@@ -489,7 +491,7 @@ void vectorSetValue(vector *vec, char name[], double value)
 }
 
 
-double vectorGetValue(vector *vec, char name[])
+double vectorGetValue(vector *vec, const char name[])
 {
   int i, notfound=1;
   double result=0.0;
@@ -509,7 +511,7 @@ double vectorGetValue(vector *vec, char name[])
 }
 
 
-int vectorIsElement(vector *vec, char name[])
+int vectorIsElement(vector *vec, const char name[])
 /* returns 1 if 'vec' has an element named 'name', and zero otherwise. */
 {
   int i, notfound=1;
@@ -569,12 +571,14 @@ int char2template(char *templatename)
     result = iLALTT3PN15;
   else if (strcmp(templatename, "LALTaylorT3PN20")==0)  
     result = iLALTT3PN20;
-  else if (strcmp(templatename, "LALIMRPhenomA")==0) {
+  else if (strcmp(templatename, "LALIMRPhenomA")==0)
     result = iLALIMRPhenomA;
-    printf(" :\n : WARNING: Phenomenological templates do not yet work !!\n :\n");
-  }
-  else if (strcmp(templatename, "LALEOBNR")==0)  
+  else if (strcmp(templatename, "LALEOBNR")==0) {
     result = iLALEOBNR;
+    printf(" :\n : WARNING: EOBNR templates do not yet work !!\n :\n");
+  }
+  else if (strcmp(templatename, "LALPPN20")==0)  
+    result = iLALPPN20;
   else if (strcmp(templatename, "SineGaussian")==0)  
     result = bSineGaussian;
   return result;
@@ -765,7 +769,7 @@ int noVectorStrg(char *input)
 }
 
 
-void printhelpmessage()
+void printhelpmessage(void)
 {
   printf(" | \n");
   printf(" | Coherent follow-up MCMC code.\n");
@@ -1543,7 +1547,8 @@ int init(DataFramework *DFarg[], McmcFramework *MFarg[],
       | (MF->template == iLALTT3PN15)
       | (MF->template == iLALTT3PN20)
       | (MF->template == iLALIMRPhenomA)
-      | (MF->template == iLALEOBNR)     ) {
+      | (MF->template == iLALEOBNR)
+      | (MF->template == iLALPPN20)     ) {
     MF->parameterset=InspiralNoSpin;
     /* (already) set up starting value vector:                   */
     /* (proper list of variable names (dimension!) required for  */
@@ -2010,7 +2015,7 @@ char *cache2string(char *cachefilename, double *startTime, double *endTime, char
     *endTime = startGPS + deltaGPS;
     /* check length of new filename: */
     i=0;
-    while ((i<256) && (filename[i] != '\0')) ++i;
+    while ((i<255) && (filename[i] != '\0')) ++i;
     if (filename[i] != '\0') printf(" : WARNING: encountered un-terminated file name string in 'cache2string()'.\n");
     /* (i gives number of 'non-zero' characters, or index of end-of-string character)       */
     /* issue error message if string is too short to even hold the "file://localhost" part, */
@@ -2467,14 +2472,14 @@ void normalise(double vec[3])
 }
 
 
-void rotate(double x[3], double angle, double axis[3])
+void rotate(double x[3], double ang, double axis[3])
 /* rotates vector x clockwise around `axis'               */
 /* (looking along axis while it is pointing towards you). */
 /*   !!  `axis' must be a UNIT VECTOR  !!                 */
 {
   int i, j;
-  double cosa = cos(-angle);
-  double sina = sin(-angle);
+  double cosa = cos(-ang);
+  double sina = sin(-ang);
   double R[3][3] = {{cosa+axis[0]*axis[0]*(1.0-cosa), 
                      axis[0]*axis[1]*(1.0-cosa)-axis[2]*sina,
                      axis[0]*axis[2]*(1.0-cosa)+axis[1]*sina},
@@ -2672,7 +2677,7 @@ void localParameters(vector *parameter, interferometer *ifo,
   scalprod =   ifo->positionVector[0] * lineofsight[0]
              + ifo->positionVector[1] * lineofsight[1]
              + ifo->positionVector[2] * lineofsight[2];
-  *timeshift = (-1.0) * scalprod / c;
+  *timeshift = (-1.0) * scalprod / C;
   /* (negative timeshift means signal arrives earlier than at geocenter etc.) */
   /*-- determine ALTITUDE (with respect to ifo'): --*/
   *altitude = angle(ifo->normalVector, lineofsight); 
@@ -2750,6 +2755,41 @@ double mc2mt(double mc, double eta)
 }
 
 
+void mass2lambda(double mass1, double mass2, double *lambda1, double *lambda2)
+/* compute chirp times following Chronopoulos/Apostolatos, */
+/* PRD 64, 042003 (2001), pp. 7 & 8.                       */
+{
+  double MTSUN = 4.92549095e-6;  /* Geometrized solar mass, seconds. */
+  double f0 = 40.0;
+  double mt = (mass1 + mass2) * MTSUN;
+  *lambda1 = *lambda2 = ((mt*mt*mt)/(mass1*mass2*MTSUN*MTSUN));
+  *lambda1 *= (5.0/256.0) * pow(mt*pi*f0,-8.0/3.0);
+  *lambda2 *= (pi/8.0) * pow(mt*pi*f0,-5.0/3.0);
+}
+
+
+void lambda2mass(double lambda1, double lambda2, double *mass1, double *mass2)
+/* convert chirp times into individual masses                           */
+/* see also Chronopoulos/Apostolatos, PRD 64, 042003 (2001), pp. 7 & 8  */
+/* and Umstaetter/Tinto, PRD 77, 082002, (2008), p. 7                   */
+{
+  double MTSUN = 4.92549095e-6;  /* Geometrized solar mass, seconds. */
+  double f0 = 40.0;
+  double F1 = (5.0/256.0) * pow(pi*f0,-8.0/3.0);
+  double F2 = (pi/8.0) * pow(pi*f0,-5.0/3.0);
+  double C1 = (lambda2*F1) / (lambda1*F2);
+  double C2 = (lambda2/F2) * pow(F1/lambda1, 4.0);
+  double sqrtTerm = C1*C1-4.0*pow(C2,1.0/3.0);
+  if (sqrtTerm > 0) {
+    sqrtTerm = sqrt(sqrtTerm);
+    *mass1 = 0.5*(C1-sqrtTerm) / MTSUN;
+    *mass2 = 0.5*(C1+sqrtTerm) / MTSUN;
+  }
+  else
+    *mass1 = *mass2 = 0.0;
+}
+
+
 double logJacobianMcEta(double mc, double eta)
 /* posterior multiplier for transformed parameters */
 /* (jacobian of inverse tranformation)             */
@@ -2774,6 +2814,22 @@ double logJacobianMcEta(double mc, double eta)
   d = m1*term3-term4;
   result =  -log(fabs(a*d - b*c));
   return result;
+}
+
+double logJacobianChirptimes(double mass1, double mass2)
+/* see Umstaetter/Tinto, PRD 77, 082002, (2008), p. 7, eqn.(20) */
+{
+  double MTSUN = 4.92549095e-6;  /* Geometrized solar mass, seconds. */
+  double mt = mass1 + mass2;
+  double f0 = 40.0;
+  double F1 = (5.0/256.0) * pow(pi*f0,-8.0/3.0);
+  double F2 = (pi/8.0) * pow(pi*f0,-5.0/3.0);
+  double lambda1 = F1 * pow(mt,-8.0/3.0) * ((mt*mt*mt)/(mass1*mass2*MTSUN*MTSUN));
+  double lambda2 = F2 * pow(mt,-5.0/3.0) * ((mt*mt*mt)/(mass1*mass2*MTSUN*MTSUN));
+  double C1 = (lambda2*F1) / (lambda1*F2);
+  double C2 = (lambda2/F2) * pow(F1/lambda1,4.0);
+  double det = -(F1*F2*pow(C2,1.0/3.0)*sqrt(C1*C1-4*pow(C2,1.0/3.0))) / (pow(F1*lambda2,2.0)-4*pow(F2*lambda1,2.0)*pow(C2,1.0/3.0));
+  return log(fabs(det));
 }
 
 
@@ -2820,6 +2876,8 @@ void signaltemplate(DataFramework *DF, int waveform, vector *parameter, double c
     templateLAL(DF, parameter, Fplus, Fcross, output, IMRPhenomA, LAL_PNORDER_PSEUDO_FOUR);
   else if (waveform == iLALEOBNR)      /* LAL EOBNR                      */
     templateLAL(DF, parameter, Fplus, Fcross, output, EOBNR, LAL_PNORDER_PSEUDO_FOUR);
+  else if (waveform == iLALPPN20)      /* LAL PPN 2.0 PN                 */
+    templateLALPPN(DF, parameter, Fplus, Fcross, output, 2.0);
   /* burst: */
   else if (waveform == bSineGaussian)  /* Sine-Gaussian burst            */
     templateSineGaussianBurst(DF, parameter, Fplus, Fcross, output);
@@ -3167,7 +3225,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
 {
   double eta     = vectorGetValue(parameter,"massratio");
   double mt      = mc2mt(vectorGetValue(parameter,"chirpmass"), eta)*Msun;
-  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(c);
+  double log_q   = log(mt) + log(pi) + log(G) - 3.0*log(C);
   double log_eta = log(eta);
   double a[5];
   long i;
@@ -3177,7 +3235,7 @@ void templateStatPhase(DataFramework *DF, vector *parameter, double Fplus, doubl
   double complex cosinechirp;
   double phase = vectorGetValue(parameter,"phase");
 
-  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(c);
+  ampliConst = 0.5*log(5.0)+(5.0/6.0)*log(G)-log(2.0)-0.5*log(6.0)-(2.0/3.0)*log(pi)-1.5*log(C);
   ampliConst = exp(ampliConst+0.5*log_eta+(5.0/6.0)*log(mt)
                    -vectorGetValue(parameter,"logdistance")-log(Mpc));
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
@@ -3242,7 +3300,7 @@ void templateR2PN(DataFramework *DF, vector *parameter, double Fplus, double Fcr
   double m2 = mc2mass2(vectorGetValue(parameter,"chirpmass"), eta);
   double totalmass = (m1+m2);              /* still in units if Msun */
   double reducedmass = eta*totalmass;      /* also in units if Msun  */
-  double taufactor = 3.0*log(c)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
+  double taufactor = 3.0*log(C)-log(G) + log(eta) - log(5.0) - log(totalmass) - log(Msun);
   double MomegaLSO  = 0.0138 * 1e6 * Msun;
   double MomegaMECO = (-((54.0+6.0*eta-6.0*sqrt(1539.0-(1008.0+19.0*eta)*eta))/(81.0-(57.0-eta)*eta))/27)*Msun;
   double maxMomega, oldMomega=-HUGE_VAL;
@@ -3365,7 +3423,7 @@ void templateLAL(DataFramework *DF, vector *parameter, double Fplus, double Fcro
 	   )
     params.distance  = exp(vectorGetValue(parameter,"logdistance"));          /* distance in Mpc */
   else                                                     
-    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(c)); /* distance in seconds */
+    params.distance  = exp(vectorGetValue(parameter,"logdistance")+log(Mpc)-log(C)); /* distance in seconds */
 
   cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
   sineCoef   = Fcross * (-1.0*cos(vectorGetValue(parameter,"inclination")));
@@ -3468,8 +3526,8 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
     fftw_complex *InvFTinput=NULL;
     double *InvFToutput=NULL;
     double *amplitude;
-    long imax;
-    double p, pmax, pleft, pright, instant;
+    long imax=0;
+    double pmax, pleft, pright, instant;
 
     fftw_plan InvFTplan;
     InvFTinput  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*DF->FTSize);
@@ -3523,6 +3581,123 @@ for (i=0; i<DF->dataSize; ++i) LALSignal->data[i] = 0.0;
   }
 
   /* determine eventual actual response (returned in "output"): */
+  for (i=0; i<DF->FTSize; ++i)
+    output[i] = cosineCoef*cosinechirp[i] + sineCoef*I*cosinechirp[i];
+  free(cosinechirp);
+
+  /*
+   * NOTE: the dirty trick here is to assume the LAL waveform to constitute
+   *       the cosine chirp and then derive the corresponding sine chirp 
+   *       as the orthogonal ("i x cosinechirp") waveform.
+   *       In general they should not necessarily be only related 
+   *       by a mere phase shift though...
+   */
+}
+
+
+
+void templateLALPPN(DataFramework *DF, vector *parameter, double Fplus, double Fcross,
+                    double complex *output, int order)
+/*  uses LAL function "LALGeneratePPNInspiral()"     */
+/*  "order" parameter doesn't (yet?) have an effect. */
+{
+  double *timedomainwaveform=NULL;
+  double chirptime, timeshift;
+  long i,j, jStart;
+  double sineCoef, cosineCoef, twopit;
+  double complex *cosinechirp=NULL;
+  static LALStatus status;
+  CoherentGW       waveform;
+  PPNParamStruc    PPNPar;
+
+  /*  initialize "waveform" structure                                                */
+  /*  (only ".a", ".f" and ".phi" slots should be relevant,                          */
+  /*  ".position", ".psi" etc are eventually going to be copied over from "PPNPar"): */
+  waveform.psi   = 0.0;
+  waveform.h     = NULL;
+  waveform.a     = NULL;
+  waveform.f     = NULL;
+  waveform.phi   = NULL;
+  waveform.shift = NULL;
+  /*  initialize "PPNPar" structure                                                */
+  PPNPar.position.longitude = 0.0;
+  PPNPar.position.latitude  = 0.0;
+  PPNPar.position.system    = COORDINATESYSTEM_GEOGRAPHIC;
+  PPNPar.psi      = 0.0;
+  PPNPar.eta      = vectorGetValue(parameter,"massratio");
+  PPNPar.mTot     = mc2mt(vectorGetValue(parameter,"chirpmass"), PPNPar.eta);
+  PPNPar.d        = exp(vectorGetValue(parameter,"logdistance") + log(Mpc));
+  PPNPar.inc      = 0.0;
+  PPNPar.phi      = vectorGetValue(parameter,"phase");
+  PPNPar.deltaT   = DF->dataDeltaT;
+  PPNPar.fStartIn = DF->minF * 0.90;
+  PPNPar.fStopIn  = 0.0;
+  PPNPar.lengthIn = 0;
+  PPNPar.ppn      = NULL;  /* ("NULL" yields 2.0PN waveform) */
+
+  /* compute PPN waveform: */
+  LALGeneratePPNInspiral(&status, &waveform, &PPNPar);
+  if (status.statusCode != 0) {
+    printf(" : ERROR in templateLALPPN(): encountered non-zero status code.\n");
+    printf(" : LAL Status:\n");
+    REPORTSTATUS(&status);
+    exit(1);
+  }
+  if (waveform.a == NULL)
+    printf(" : ERROR in templateLALPPN(): `CoherentGW.a == NULL' !\n");
+  if (waveform.f == NULL)
+    printf(" : ERROR in templateLALPPN(): `CoherentGW.f == NULL' !\n");
+  if (waveform.phi == NULL)
+    printf(" : ERROR in templateLALPPN(): `CoherentGW.phi == NULL' !\n");
+
+  /* length of waveform is now given by "PPNPar.length", */
+  /* coalescence time is given by "PPNPar.tc".           */
+  chirptime = PPNPar.tc;
+  timeshift = (vectorGetValue(parameter,"time") - DF->dataStart) - chirptime;
+
+  /* check whether PPN waveform is longer or shorter than our data: */
+  if (chirptime > (((double)DF->dataSize)*DF->dataDeltaT)) {
+    jStart     = ceil((chirptime - (((double)DF->dataSize)*DF->dataDeltaT)) / DF->dataDeltaT);
+    timeshift -= ((double)jStart)*DF->dataDeltaT;
+  }
+  else
+    jStart = 0;
+  
+  /* compute actual time domain waveform: */
+  timedomainwaveform = (double*) malloc(sizeof(double)*DF->dataSize);
+  /* (the following is basically copied from "FincChirpTDTemplate.c". */
+  /* Hope this makes sense.)                                          */
+  for (i=0; i<DF->dataSize; ++i) {
+    j = jStart + i;
+    timedomainwaveform[i] = (j<PPNPar.length) ? waveform.a->data->data[2*j]*cos(waveform.phi->data->data[j]) : 0.0;
+  }
+
+  /* free memory allocated in "LALGeneratePPNInspiral()": */
+  LALSDestroyVectorSequence(&status, &waveform.a->data);
+  LALSDestroyVector(&status, &waveform.f->data);
+  LALSDestroyVector(&status, &waveform.f->data);
+  LALFree(waveform.a);   
+  LALFree(waveform.f);   
+  LALFree(waveform.phi); 
+  waveform.a   = NULL;
+  waveform.f   = NULL;
+  waveform.phi = NULL;
+
+  /* numerically Fourier-transform waveform: */
+  cosinechirp = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  FTexec(DF, timedomainwaveform, cosinechirp);
+  free(timedomainwaveform);
+
+  /* time-shift the template: */
+  if (timeshift != 0.0) { 
+    twopit = 2.0*pi*timeshift;
+    for (i=1; i<DF->FTSize-1; ++i)
+      cosinechirp[i] *= cexp(-twopit*I*(((double)i) * DF->FTDeltaF));
+  }
+
+  /* determine eventual actual response (returned in "output"): */
+  cosineCoef = Fplus  * (-0.5*(1.0+pow(cos(vectorGetValue(parameter,"inclination")),2.0)));
+  sineCoef   = Fcross * (-1.0*cos(vectorGetValue(parameter,"inclination")));
   for (i=0; i<DF->FTSize; ++i)
     output[i] = cosineCoef*cosinechirp[i] + sineCoef*I*cosinechirp[i];
   free(cosinechirp);
@@ -3647,6 +3822,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   double complex *FourierTemplate04=NULL;
   double complex *FourierTemplate05=NULL;
   double complex *FourierTemplate06=NULL;
+  double complex *FourierTemplate07=NULL;
 
   fftw_plan InvFTplan;
   double complex *fourierdomain=NULL;
@@ -3658,6 +3834,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   double *TimeTemplate04=NULL;
   double *TimeTemplate05=NULL;
   double *TimeTemplate06=NULL;
+  double *TimeTemplate07=NULL;
   long i;
   FILE *textfile;
 
@@ -3683,6 +3860,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   FourierTemplate04 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
   FourierTemplate05 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
   FourierTemplate06 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
+  FourierTemplate07 = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
 
   /* compute (Fourier-domain) templates: */
   signaltemplate(DF, i25SP,          &localparameter, FourierTemplate01);
@@ -3691,10 +3869,11 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   signaltemplate(DF, iLALTT2PN20,    &localparameter, FourierTemplate04);
   signaltemplate(DF, iLALTT3PN20,    &localparameter, FourierTemplate05);
   signaltemplate(DF, iLALIMRPhenomA, &localparameter, FourierTemplate06);
+  signaltemplate(DF, iLALPPN20,      &localparameter, FourierTemplate07);
 
   /* write to file: */
   textfile = fopen(filenameF, "w");
-  fprintf(textfile,"f PSD real01 imag01 real02 imag02 real03 imag03 real04 imag04 real05 imag05 real06 imag06\n");
+  fprintf(textfile,"f PSD real01 imag01 real02 imag02 real03 imag03 real04 imag04 real05 imag05 real06 imag06 real07 imag07\n");
   for (i=0; i<DF->FTSize; ++i){
     fprintf(textfile, "%f %e", ((double)i)*DF->FTDeltaF, exp(DF->powspec[i]));
     fprintf(textfile, " %e %e", creal(FourierTemplate01[i]), cimag(FourierTemplate01[i]));
@@ -3703,6 +3882,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
     fprintf(textfile, " %e %e", creal(FourierTemplate04[i]), cimag(FourierTemplate04[i]));
     fprintf(textfile, " %e %e", creal(FourierTemplate05[i]), cimag(FourierTemplate05[i]));
     fprintf(textfile, " %e %e", creal(FourierTemplate06[i]), cimag(FourierTemplate06[i]));
+    fprintf(textfile, " %e %e", creal(FourierTemplate07[i]), cimag(FourierTemplate07[i]));
     fprintf(textfile,"\n");
   }
   fclose(textfile);
@@ -3749,12 +3929,18 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   TimeTemplate06 = (double*) malloc(sizeof(double)*DF->dataSize);
   for (i=0; i<DF->dataSize; ++i) TimeTemplate06[i] = timedomain[i]/DF->dataSize;
 
+  for (i=0; i<DF->FTSize; ++i) fourierdomain[i] = FourierTemplate07[i];
+  fftw_execute(InvFTplan);
+  free(FourierTemplate07);
+  TimeTemplate07 = (double*) malloc(sizeof(double)*DF->dataSize);
+  for (i=0; i<DF->dataSize; ++i) TimeTemplate07[i] = timedomain[i]/DF->dataSize;
+
   free(InvFTplan);  free(fourierdomain);  free(timedomain);
   printf(" : ...done.\n");
 
   printf(" : writing T'domain templates to '%s'...\n", filenameT);
   textfile = fopen(filenameT, "w");
-  fprintf(textfile,"t h01 h02 h03 h04 h05 h06\n");
+  fprintf(textfile,"t h01 h02 h03 h04 h05 h06 h07\n");
   for (i=0; i<DF->dataSize; ++i){
     fprintf(textfile, "%f",  DF->dataStart + ((double)i)*DF->dataDeltaT);
     fprintf(textfile, " %e", TimeTemplate01[i]);
@@ -3763,6 +3949,7 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
     fprintf(textfile, " %e", TimeTemplate04[i]);
     fprintf(textfile, " %e", TimeTemplate05[i]);
     fprintf(textfile, " %e", TimeTemplate06[i]);
+    fprintf(textfile, " %e", TimeTemplate07[i]);
     fprintf(textfile,"\n");
   }
   fclose(textfile);
@@ -3773,33 +3960,8 @@ void dumptemplates(DataFramework *DF, vector *parameter, char *filenameF, char *
   free(TimeTemplate04);
   free(TimeTemplate05);
   free(TimeTemplate06);
+  free(TimeTemplate07);
   printf(" : ...done.\n");
-}
-
-
-double loglikelihoodOLD(DataFramework *DF, int waveform, vector *parameter)
-/* Generic function to compute the likelihood.                 */
-/* Uses the general "signaltemplate()" function to compute the */
-/* frequency-domain waveform template corresponding to the     */
-/* waveform model specified by the "waveform" argument, and    */
-/* then matches data & signal using the power spectrum         */
-/* and frequency range settings defined in the "DF" structure. */
-{
-  double complex *FourierTemplate=NULL;
-  long i;
-  double absdiff, chisquared=0.0;
-  double logfactor = log(DF->dataDeltaT) - log(DF->dataSize) + log(2.0);
-  FourierTemplate = (double complex*) malloc(sizeof(double complex)*DF->FTSize);
-  /* compute Fourier-domain template: */
-  signaltemplate(DF, waveform, parameter, FourierTemplate);
-  /* compute sum-of-squares: */
-  for (i=DF->minInd; i<=DF->maxInd; ++i){
-    absdiff    =  cabs(DF->dataFT[i] - FourierTemplate[i]);
-    chisquared += exp(logfactor + 2.0*log(absdiff) - DF->powspec[i]);
-  }
-  free(FourierTemplate);
-  /* log-likelihood is negative sum-of-squares: */
-  return -1.0 * chisquared;
 }
 
 
@@ -3943,11 +4105,11 @@ void clearMF(McmcFramework *MF)
 }
 
 
-int parindex(McmcFramework *MF, char parametername[])
+int parindex(McmcFramework *MF, const char parametername[])
 /* returns index (w.r.t. that MF->startvalue vector) */
 /* of parameter named 'parametername'.               */
 {
-  int i, index=-1;
+  int i, j=-1;
   int notfound=1;
   if (MF->startvalue.dimension > 0) {
     i=0;
@@ -3958,12 +4120,12 @@ int parindex(McmcFramework *MF, char parametername[])
       printf(" : ERROR: requesting unknown vector element in 'parindex(...,\"%s\")'!\n", 
              parametername);
     else
-      index = i;
+      j = i;
   }
   else
     printf(" : ERROR: empty 'startvalue' vector in 'parindex(...,\"%s\")'!\n", 
            parametername);
-  return index;
+  return j;
 }
 
 
@@ -4162,7 +4324,8 @@ double logguessdensity(McmcFramework *MF, vector *parameter)
   double result = -HUGE_VAL;
   if (MF->parameterset == InspiralNoSpin) {
     if (MF->guessparameters == NULL)
-      result = logpriorInspiralNospin(MF, parameter);
+      /*result = logpriorInspiralNospin(MF, parameter);*/
+      result = logminimaxInspiralNospin(MF, parameter);
     else 
       result = logguessInspiralNospin(MF, parameter);
   }
@@ -4266,7 +4429,7 @@ void priordrawInspiralNospin(McmcFramework *MF, vector *parameter)
   vectorSetValue(parameter, "logdistance",  logdist);
   vectorSetValue(parameter, "inclination",  acos(cosiota));
   vectorSetValue(parameter, "time",         gsl_ran_flat(GSLrandom, vectorGetValue(&MF->priorparameters,"timeLower"), 
-                                                   vectorGetValue(&MF->priorparameters,"timeLower")));
+                                                   vectorGetValue(&MF->priorparameters,"timeUpper")));
   vectorSetValue(parameter, "longitude",    gsl_ran_flat(GSLrandom, -pi, pi));
   vectorSetValue(parameter, "latitude",     asin(gsl_ran_flat(GSLrandom, -1.0, 1.0)));
   vectorSetValue(parameter, "polarisation", gsl_ran_flat(GSLrandom, 0.0, pi));
@@ -4290,6 +4453,133 @@ void priordrawBurstSineGaussian(McmcFramework *MF, vector *parameter)
 }
 
 
+void minimaxdrawInspiralNospin(McmcFramework *MF, vector *parameter)
+/* generates a random draw from the "minimax" distribution  */
+/* (as in Roever (2009): drawn uniformly in chirp times     */
+/* and log-distance)                                        */
+/* ...using a kind of rejection sampling: sampling from */
+/* the `occurence' density is straightforward,          */
+/* `undetected' samples are rejected...                 */
+{
+  double optiampli = log(0.5) + (5.0/6.0)*log(4.0) + 0.5*log(8.0);
+  double ampli90 = optiampli - log(vectorGetValue(&MF->priorparameters,"dist90"));
+  double ampli10 = optiampli - log(vectorGetValue(&MF->priorparameters,"dist10"));
+  double a = (ampli10+ampli90)/2.0;
+  double b = (ampli10-ampli90)/(-2.0*log(0.1/0.9));
+  double ampli;
+  double m1, m2, eta, logdist, cosiota, cosiota2;
+  int withinrange, detect = 0;
+  double detectionprob;
+  double maxdist = (vectorGetValue(&MF->priorparameters,"dist10")+2*(vectorGetValue(&MF->priorparameters,"dist10")-vectorGetValue(&MF->priorparameters,"dist90"))) 
+                   * pow(vectorGetValue(&MF->priorparameters,"massUpper")/2.0, 5.0/6.0);
+  double lambda1, lambda2;  /* chirp times */
+  double lambda1Min, lambda1Max, lambda2Min, lambda2Max;
+  double massLower = vectorGetValue(&MF->priorparameters,"massLower");
+  double massUpper = vectorGetValue(&MF->priorparameters,"massUpper");
+  /* figure out chirp time (lambda) ranges: */
+  mass2lambda(massLower, massLower, &lambda1, &lambda2);
+  lambda1Min = lambda1Max = lambda1;
+  lambda2Min = lambda2Max = lambda2;
+  mass2lambda(massLower, massUpper, &lambda1, &lambda2);
+  lambda1Min = (lambda1<lambda1Min) ? lambda1 : lambda1Min;
+  lambda1Max = (lambda1>lambda1Max) ? lambda1 : lambda1Max;
+  lambda2Min = (lambda2<lambda2Min) ? lambda2 : lambda2Min;
+  lambda2Max = (lambda2>lambda2Max) ? lambda2 : lambda2Max;
+  mass2lambda(massUpper, massUpper, &lambda1, &lambda2);
+  lambda1Min = (lambda1<lambda1Min) ? lambda1 : lambda1Min;
+  lambda1Max = (lambda1>lambda1Max) ? lambda1 : lambda1Max;
+  lambda2Min = (lambda2<lambda2Min) ? lambda2 : lambda2Min;
+  lambda2Max = (lambda2>lambda2Max) ? lambda2 : lambda2Max;
+  while (!detect){
+    /* m1            = gsl_ran_flat(GSLrandom, vectorGetValue(&MF->priorparameters,"massLower"), 
+                              vectorGetValue(&MF->priorparameters,"massUpper"));
+       m2            = gsl_ran_flat(GSLrandom, vectorGetValue(&MF->priorparameters,"massLower"), 
+                              vectorGetValue(&MF->priorparameters,"massUpper")); */
+    /*--------------------*/
+    withinrange = 0;
+    while (!withinrange) { /* rejection sampling step for mass parameters: */
+      lambda1 = gsl_ran_flat(GSLrandom, lambda1Min, lambda1Max);
+      lambda2 = gsl_ran_flat(GSLrandom, lambda2Min, lambda2Max);
+      lambda2mass(lambda1, lambda2, &m1, &m2);
+      withinrange = ((m1>=massLower) & (m1<=massUpper) & (m2>=massLower) & (m2<=massUpper));
+    }
+    /*--------------------*/
+    /*logdist       = (1.0/3.0)*log(gsl_rng_uniform(GSLrandom)) + log(maxdist);*/
+    logdist       = gsl_ran_flat(GSLrandom, log(10.0), log(maxdist));
+    eta           = (m1/(m1+m2)) * (m2/(m1+m2));
+    cosiota       = gsl_ran_flat(GSLrandom, -1.0, 1.0);
+    cosiota2      = cosiota * cosiota;
+    ampli         = 0.5*log(eta) + (5.0/6.0)*log(m1+m2)
+                    + 0.5 * log(1.0 + 6.0*cosiota2 + cosiota2*cosiota2)
+                    - logdist;
+    detectionprob = 1.0/(1.0+exp((ampli-a)/b));
+    detect        = gsl_rng_uniform(GSLrandom) < detectionprob;
+  }
+  vectorSetValue(parameter, "chirpmass",    pow(m1*m2,0.6)/pow(m1+m2,0.2));
+  vectorSetValue(parameter, "massratio",    eta);
+  vectorSetValue(parameter, "logdistance",  logdist);
+  vectorSetValue(parameter, "inclination",  acos(cosiota));
+  vectorSetValue(parameter, "time",         gsl_ran_flat(GSLrandom, vectorGetValue(&MF->priorparameters,"timeLower"), 
+                                                   vectorGetValue(&MF->priorparameters,"timeUpper")));
+  vectorSetValue(parameter, "longitude",    gsl_ran_flat(GSLrandom, -pi, pi));
+  vectorSetValue(parameter, "latitude",     asin(gsl_ran_flat(GSLrandom, -1.0, 1.0)));
+  vectorSetValue(parameter, "polarisation", gsl_ran_flat(GSLrandom, 0.0, pi));
+  vectorSetValue(parameter, "phase",        gsl_ran_flat(GSLrandom, 0.0, 2.0*pi));
+}
+
+
+double logminimaxInspiralNospin(McmcFramework *MF, vector *parameter)
+/* log - "minimax" drawing density for inspiral signal w/ no spin (9 parameters).  */
+/* (not normalised!)                                                               */
+/* Uniform on chirp times and log-distance.                                        */
+/* Accounts for (approximated) detection probability based on intrinsic parameters */
+/* as described in Roever (2007), http://hdl.handle.net/2292/2356, page 78 & sqq.  */
+{
+  double ampli90 = log(0.5) + (5.0/6.0)*log(4.0) + 0.5*log(8.0) 
+                   - log(vectorGetValue(&MF->priorparameters,"dist90"));
+  double ampli10 = log(0.5) + (5.0/6.0)*log(4.0) + 0.5*log(8.0) 
+                   - log(vectorGetValue(&MF->priorparameters,"dist10"));
+  double a = (ampli10+ampli90)/2.0;
+  double b = (ampli10-ampli90)/(-2.0*log(0.1/0.9));
+  double ampli;  /* logarithmic amplitude */
+  double prior=0.0;
+  double cosiota = cos(vectorGetValue(parameter,"inclination"));
+  double cosiota2 = cosiota*cosiota;
+
+  /* check whether parameter values fall within domain: */
+  if ((vectorGetValue(parameter,"massratio")>0.25) | (vectorGetValue(parameter,"massratio")<=0.0)
+      | (mc2mass1(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) < vectorGetValue(&MF->priorparameters,"massLower"))
+      | (mc2mass2(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")) > vectorGetValue(&MF->priorparameters,"massUpper"))
+      | (vectorGetValue(parameter,"time") < vectorGetValue(&MF->priorparameters,"timeLower")) 
+      | (vectorGetValue(parameter,"time") > vectorGetValue(&MF->priorparameters,"timeUpper"))
+      | (vectorGetValue(parameter,"longitude") < -pi) | (vectorGetValue(parameter,"longitude") > pi)
+      | (fabs(vectorGetValue(parameter,"latitude")) > pi/2.0)
+      | (vectorGetValue(parameter,"polarisation") < 0.0) | (vectorGetValue(parameter,"polarisation") > pi)
+      | (vectorGetValue(parameter,"phase") < 0.0) | (vectorGetValue(parameter,"phase") > 2.0*pi)
+      | (vectorGetValue(parameter,"inclination") < 0.0) | (vectorGetValue(parameter,"inclination") > pi)){
+    prior = -HUGE_VAL;
+  }
+  else {
+    prior += vectorIsElement(&MF->fixed,"latitude")    ? 0.0 : log(cos(vectorGetValue(parameter,"latitude")));
+    prior += vectorIsElement(&MF->fixed,"inclination") ? 0.0 : log(sin(vectorGetValue(parameter,"inclination")));
+    /* account for transformation of (lambda1,lambda2) --> (mass1,mass2): */
+    prior += logJacobianMcEta(mc2mass1(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")),
+                              mc2mass2(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio")));
+    /* account for transformation of (mass1,mass2) --> (mc,eta): */
+    prior += logJacobianMcEta(vectorGetValue(parameter,"chirpmass"), vectorGetValue(parameter,"massratio"));
+    /* account for transformation  dL --> log(dL) : */
+    prior += vectorGetValue(parameter,"logdistance");
+    /* include the `detection probability' dependent on the signal amplitude: */
+    ampli = (0.5*log(vectorGetValue(parameter,"massratio")) 
+             + (5.0/6.0)*log(mc2mt(vectorGetValue(parameter,"chirpmass"),vectorGetValue(parameter,"massratio"))) 
+             - vectorGetValue(parameter,"logdistance")
+             + 0.5*log(1.0+cosiota2*(6.0+cosiota2)));
+    prior -= log(1.0+exp((ampli-a)/b)); 
+  }
+  return prior;
+}
+
+
 void guess(McmcFramework *MF, vector *parameter)
 /* 'wrapper' function for sampling "guesses".               */
 /* Checks the "MF->parameterset" character string and calls */
@@ -4298,7 +4588,8 @@ void guess(McmcFramework *MF, vector *parameter)
   int i;
   if (MF->parameterset == InspiralNoSpin){
     if (MF->guessparameters == NULL)
-      priordrawInspiralNospin(MF, parameter);
+      /*priordrawInspiralNospin(MF, parameter);*/
+      minimaxdrawInspiralNospin(MF, parameter);
     else
       guessInspiralNospin(MF, parameter);
   }
@@ -4429,6 +4720,8 @@ void proposeInspiralNospin(McmcFramework *MF, DataFramework *DF, int coherentN,
   skylocAngle = jump[parindex(MF,"latitude")];
   jump[parindex(MF,"latitude")] = 0.0;
   jump[parindex(MF,"longitude")] = 0.0;
+  if (gsl_rng_uniform(GSLrandom) < 0.10)
+    skylocAngle *= (gsl_rng_uniform(GSLrandom)<0.33) ? 4.0 : ((gsl_rng_uniform(GSLrandom)<0.5) ? 8.0 : 64.0);
 
   /* add 'jump' to current parameter value:                     */
   /* (i.e., proposal is -so far- centered around current value) */
@@ -4754,7 +5047,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
   struct listelement *search=NULL;
   int  listlength=0, recycle = 0;
   int  i, j;
-  double maximp, impsum, random, probsum;
+  double maximp, impsum, randomUnif, probsum;
   time_t starttime, endtime;
   double seconds;
   int n = samplesize;
@@ -4868,10 +5161,10 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
       search = search->next;
     }
     /* draw a parameter set: */
-    random = gsl_ran_flat(GSLrandom, 0.0, impsum);
+    randomUnif = gsl_ran_flat(GSLrandom, 0.0, impsum);
     search = list;
     probsum = list->impratio;
-    while (probsum < random) {
+    while (probsum < randomUnif) {
       search = search->next;
       probsum += search->impratio;
     }
@@ -4891,7 +5184,7 @@ void importanceresample(DataFramework *DF, int coherentN, McmcFramework *MF,
 
 void logtoCSVfile(McmcFramework *MF, vector *parameter, 
                   long iteration, long accepted, 
-                  double logprior, double loglikelihood, double logposterior)
+                  double log_prior, double log_likelihood, double log_posterior)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add a line to the MCMC log file. The MCMC log file is a text file             */
 /* in CSV (comma-seperated-values) format.                                       */
@@ -4938,7 +5231,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
   else { /* append to existing file: */
     logfile = fopen(MF->csvfilename, "a");
     fprintf(logfile, "%ld,%ld,%.6f,%.6f,%.6f", iteration, accepted, 
-            logprior, loglikelihood, logposterior);
+            log_prior, log_likelihood, log_posterior);
     for (i=0; i<outvector.dimension; ++i)
       if (!vectorIsElement(&MF->fixed, outvector.name[i]))
         fprintf(logfile, ",%.14e", outvector.value[i]);
@@ -4949,7 +5242,7 @@ void logtoCSVfile(McmcFramework *MF, vector *parameter,
 }
 
 
-void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
+void logtoLOGfile(McmcFramework *MF, const char *entryname, char *entry)
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* Add an entry (i.e. a line) to the (existing!) "general" log file.             */
 /* This file is kept in CSV format as well; it contains two columns of (quoted?) */
@@ -4964,7 +5257,7 @@ void logtoLOGfile(McmcFramework *MF, char *entryname, char *entry)
 }
 
 
-void printtime()
+void printtime(void)
 /* prints time (& date) to screen */
 {
   time_t tm;
@@ -5236,8 +5529,6 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
 {
   double complex *FourierTemplate=NULL;
   long i, j, maxftsize;
-  double absdiff, chisquared=0.0;
-  double logfactor;
   double locdeltat, locpolar, locazi, localti;
   vector localparameter;
   FILE *textfile;
@@ -5279,7 +5570,7 @@ void writeDataAndTemplatesToFile(McmcFramework *MF, DataFramework *DF, int coher
     j=0;
     while (templatefilename[j]) ++j;
     templatefilename[j-4] = 0;
-    sprintf(templatefilename, "%s-%d-%s.csv", templatefilename, i+1, DF[i].ifo->name);
+    sprintf(templatefilename, "%s-%ld-%s.csv", templatefilename, i+1, DF[i].ifo->name);
     printf(" : writing \"%s\"\n", templatefilename);
     textfile = fopen(templatefilename, "w");
     fprintf(textfile, "\"f\",\"logPSD\",\"dataReal\",\"dataImag\",\"templateReal\",\"templateImag\"\n");
@@ -5358,6 +5649,18 @@ int main(int argc, char *argv[])
       else
         writeDataAndTemplatesToFile(McmcFW, DatFW, coherentN);
     }
+
+    /*
+    vector dummyvec;
+    vectorInit(&dummyvec);
+    vectorSetup(&dummyvec, McmcFW->parameterset);
+    logtoCSVfile(McmcFW, &dummyvec, LONG_MIN, 0, 0.0, 0.0, 0.0);
+    for (i=0; i<100000; ++i) {
+      minimaxdrawInspiralNospin(McmcFW, &dummyvec);
+      logtoCSVfile(McmcFW, &dummyvec, i, 0, 0.0, 0.0, 0.0);
+    }
+    */
+
     /* clearMF(McmcFW);          */
     /* clearDF(DatFW);           */
     /* clearIfo(ifodata, &ifoN); */

@@ -68,7 +68,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t);
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);
 
 	nullLikelihood = NullLogLikelihood(runState->data);
 	
@@ -271,7 +271,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
 		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 	else
-		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t);
+		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
 }
 
 

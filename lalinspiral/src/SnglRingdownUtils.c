@@ -49,7 +49,7 @@ $Id$
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
 
@@ -383,19 +383,24 @@ LALCompareRingdowns (
     goto exit;
   }
 
-  /* Make sure triggers lie within a reasonable time window */
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
-      + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+  /* If f_and_Q or ds_sq test requested, */
+  /* make sure triggers lie within a reasonable time window */
+  if ( params->test == LALRINGDOWN_F_AND_Q || params->test == LALRINGDOWN_DS_SQ )
   {
-    params->match = 1;
-  }
-  else
-  {
-    params->match = 0;
+     if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+         + 1.e-9 * XLALLightTravelTime(aDet,bDet) )
+     {
+       params->match = 1;
+     }
+     else
+     {
+       params->match = 0;
+       goto exit;
+     }
   }
 
   /* compare f and Q parameters */
-  if ( params->test == f_and_Q )
+  if ( params->test == LALRINGDOWN_F_AND_Q )
   {
     if( (fabs( aPtr->frequency - bPtr->frequency ) <= (aAcc.df + bAcc.df) )
       && (fabs( aPtr->quality - bPtr->quality ) <= (aAcc.dQ + bAcc.dQ) ) )
@@ -407,7 +412,7 @@ LALCompareRingdowns (
       params->match = 0;
     }
   }
-  else if ( params->test == ds_sq )
+  else if ( params->test == LALRINGDOWN_DS_SQ )
   {
     ds2 = XLAL2DRinca( aPtr, bPtr );
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
@@ -419,7 +424,7 @@ LALCompareRingdowns (
       params->match = 0;
     }
   }
-  else if ( params->test == ds_sq_fQt )
+  else if ( params->test == LALRINGDOWN_DS_SQ_FQT )
   {
     ds2 = XLAL3DRinca( aPtr, bPtr );
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )

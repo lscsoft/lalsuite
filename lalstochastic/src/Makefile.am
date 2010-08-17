@@ -83,13 +83,12 @@ lalstochastic-user-env.csh: Makefile
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \
 	LALStochasticVCSInfo.h.in \
-	git_version.in
+	generate_vcs_info.py
 
 LALStochasticVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALStochasticConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALStochasticConfig.h
 	@echo "creating LALStochasticVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALStochastic $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALStochastic $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

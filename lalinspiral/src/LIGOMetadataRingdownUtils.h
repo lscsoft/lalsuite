@@ -31,22 +31,39 @@ extern "C" {
  */
 typedef enum
 {
-  unknown_test,
-  f_and_Q,
-  ds_sq,
-  ds_sq_fQt
+  LALRINGDOWN_UNKNOWN_TEST,
+  LALRINGDOWN_F_AND_Q,
+  LALRINGDOWN_DS_SQ,
+  LALRINGDOWN_DS_SQ_FQT
 }
 SnglRingdownParameterTest;
 
 typedef enum
 {
-  ring_inject,
-  imr_inject,
-  imr_ring_inject,
-  EOBNR_inject,
-  Phenom_inject
+  LALRINGDOWN_RING_INJECT,
+  LALRINGDOWN_IMR_INJECT,
+  LALRINGDOWN_IMR_RING_INJECT,
+  LALRINGDOWN_EOBNR_INJECT,
+  LALRINGDOWN_PHENOM_INJECT
 }
-inject_type;
+lalringdown_inject_type;
+
+typedef enum
+{
+  LALRINGDOWN_SPECTRUM_MEDIAN,
+  LALRINGDOWN_SPECTRUM_MEDIAN_MEAN
+}
+lalringdown_spectrum_type;
+
+typedef enum
+{
+  LALRINGDOWN_DATATYPE_SIM,
+  LALRINGDOWN_DATATYPE_ZERO,
+  LALRINGDOWN_DATATYPE_UNCAL,
+  LALRINGDOWN_DATATYPE_HT_REAL4,
+  LALRINGDOWN_DATATYPE_HT_REAL8
+}
+lalringdown_data_type;
 
 typedef struct
 tagSnglRingdownAccuracy
@@ -67,7 +84,7 @@ typedef struct
 tagRingdownAccuracyList
 {
   INT4                      match;
-  SnglInspiralParameterTest test;
+  SnglRingdownParameterTest test;
   SnglRingdownAccuracy      ifoAccuracy[LAL_NUM_IFO];
   INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
   REAL8                     minimizerStep;

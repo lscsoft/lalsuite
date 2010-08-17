@@ -160,8 +160,11 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
     frame->dt     = epoch_diff( &ser->tend, &ser->tbeg );
   }
 
+  /* FIXME: work around for FrameL const string issue */
+  union { const char *c; char *s; } u = {ser->unit};
+
   vect = FrVectNew1D( channel, ser->type, ser->size, ser->step,
-      IS_TIME( ser->dom) ? seconds : hertz, ser->unit );
+      IS_TIME( ser->dom) ? seconds : hertz, u.s );
   proc = calloc( 1, sizeof( *proc ) );
   proc->classe     = FrProcDataDef();
 #if defined FR_VERS && FR_VERS < 5000

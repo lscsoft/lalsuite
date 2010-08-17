@@ -1,6 +1,5 @@
-lalframe (1.0-1lscsoft1) unstable; urgency=low
+lalframe (1.0.0-1lscsoft1) unstable; urgency=low
 
-  * LALFrame-1.0
+  * LALFrame 1.0.0
 
- -- Adam Mercer <adam.mercer@ligo.org>  Tue, 22 Sep 2009 12:19:27 +0200
-
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500

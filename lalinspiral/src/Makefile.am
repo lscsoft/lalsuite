@@ -39,7 +39,7 @@ lalinspiralinclude_HEADERS = \
 	NRWaveIO.h \
 	NRWaveInject.h \
 	NullStatistic.h \
-	Ring.h \
+	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
@@ -187,7 +187,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
-	Ring.c \
+	RingUtils.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
 	SimulateInspiral.c \
@@ -253,13 +253,12 @@ lalinspiral-user-env.csh: Makefile
 EXTRA_DIST = \
 	LALInspiralConfig.h.in \
 	LALInspiralVCSInfo.h.in \
-	git_version.in
+	generate_vcs_info.py
 
 LALInspiralVCSInfo.h: ._vcsinfo
 
-._vcsinfo: git_version LALInspiralConfig.h
+._vcsinfo: $(srcdir)/generate_vcs_info.py LALInspiralConfig.h
 	@echo "creating LALInspiralVCSInfo.h"
-	@buildd="`pwd`" && cd $(srcdir) && sourced="`pwd`" && cd $$buildd && \
-		./git_version --sed LALInspiral $$sourced $$buildd
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALInspiral $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

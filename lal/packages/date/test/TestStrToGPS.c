@@ -33,7 +33,7 @@ extern int lalDebugLevel;
 
 struct TESTCASE {
 	const char *string;
-	int sec, ns;
+	long int sec, ns;
 	const char *remainder;
 	int xlal_errno;
 };

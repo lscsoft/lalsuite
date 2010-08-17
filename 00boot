@@ -14,7 +14,7 @@ for d in lal lalframe; do
 done
 
 echo "00boot: running autoreconf"
-autoreconf || fail "autoreconf"
+LIBTOOLIZE=true autoreconf || fail "autoreconf"
 
 echo "00boot: success"
 echo "

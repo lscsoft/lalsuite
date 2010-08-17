@@ -17,7 +17,7 @@ STOCH_PREPROCESS_SRCS = stochastic_preprocess.c stochastic_virgo.h
 STOPP_SRCS       = stopp.c
 STOPP_BAYES_SRCS = stopp_bayes.c
 OLAPREDFCN_SRCS  = olapredfcn.c olapredfcn.h \
-                   olapredfcn_args.c olapredfcn_bars.c
+                   olapredfcn_args.c
 
 ## frame and stochastic library dependant programs
 if FRAME

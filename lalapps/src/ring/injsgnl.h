@@ -28,7 +28,7 @@
 
 #include <lal/LALDatatypes.h>
 
-int inject_signal( REAL4TimeSeries *series, int injectSignalType, 
+int ring_inject_signal( REAL4TimeSeries *series, int injectSignalType, 
     const char *injectFile, const char *calCacheFile, REAL4 responseScale, const char  *channel_name );
 
 #endif /* INJSGNL_H */

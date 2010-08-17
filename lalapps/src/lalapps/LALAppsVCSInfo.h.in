@@ -31,6 +31,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALAPPS_VCS_NAME "LALApps"
 #define LALAPPS_VCS_ID "@ID@"
 #define LALAPPS_VCS_DATE "@DATE@"
 #define LALAPPS_VCS_BRANCH "@BRANCH@"

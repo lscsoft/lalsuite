@@ -25,7 +25,7 @@
 /**** <lalLaTeX>
  * \subsection{Program \texttt{RingTest.c}}
  *
- * Calls the various routines in \verb+Ring.h+.
+ * Calls the various routines in \verb+RingUtils.h+.
  *
  * \subsubsection*{Usage}
  *
@@ -49,7 +49,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 
 NRCSID (RINGTESTC,"$Id$");
 

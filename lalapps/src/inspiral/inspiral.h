@@ -100,7 +100,7 @@ REAL8 start_freq_from_frame_url(CHAR  *url);
 
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
 				       SimInspiralTable      *thisInj,	  
-				       CHAR                  ifo[3]);
+				       const CHAR            ifo[3]);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

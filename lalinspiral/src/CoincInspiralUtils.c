@@ -1287,8 +1287,7 @@ XLALRecreateCoincFromSngls(
 int
 XLALGenerateCoherentBank(
     SnglInspiralTable         **coherentBank,
-    CoincInspiralTable         *coincInput,
-    CHAR                       *ifos
+    CoincInspiralTable         *coincInput
     )
 /* </lalVerbatim> */
 {
@@ -1311,7 +1310,6 @@ XLALGenerateCoherentBank(
   for ( thisCoinc = coincInput; thisCoinc; thisCoinc = thisCoinc->next )
   {
     REAL4 max_snr = 0;
-
     /* loop over the interferometers to get the highest snr*/
     for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
     {
@@ -1331,8 +1329,7 @@ XLALGenerateCoherentBank(
       XLALReturnIFO( ifo, ifoNumber);
 
       /* decide whether we want a template for this ifo */
-      if ( (thisCoinc->snglInspiral[ifoNumber] &&  !ifos) ||
-           ( ifos && strstr(ifos,ifo)) )
+      if ( (thisCoinc->snglInspiral[ifoNumber] ) )
       {
         numTmplts++;
 
@@ -1351,13 +1348,13 @@ XLALGenerateCoherentBank(
           goto error;
         }
         /* copy the info from the loudest trigger */
-        memcpy(currentTrigger, thisCoinc->snglInspiral[ifoMax],
+        memcpy(currentTrigger, thisCoinc->snglInspiral[ifoNumber],
             sizeof(SnglInspiralTable));
         /* terminate the list */
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
-        /* set the ifo */
-        snprintf(currentTrigger->ifo, LIGOMETA_IFO_MAX, "%s", ifo);
+        currentTrigger->mass1 = thisCoinc->snglInspiral[ifoMax]->mass1;
+        currentTrigger->mass2 = thisCoinc->snglInspiral[ifoMax]->mass2;
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )
@@ -2370,7 +2367,7 @@ XLALSortCoincInspiral (
 int
 XLALCoincInspiralIfos (
     CoincInspiralTable  *coincInspiral,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {
@@ -2402,7 +2399,7 @@ XLALCoincInspiralIfos (
 int
 XLALCoincInspiralIfosCut(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {
@@ -2447,7 +2444,7 @@ XLALCoincInspiralIfosCut(
 int
 XLALCoincInspiralIfosDiscard(
     CoincInspiralTable **coincHead,
-    char                *ifos
+    const char          *ifos
     )
 /* </lalVerbatim> */
 {

@@ -961,6 +961,10 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
   /* Make sure there is no size mismatch */
   ASSERT (weightV->length == catalog->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
 
+  (void)weightV;
+  (void)catalog;
+  (void)edat;
+
   DETATCHSTATUSPTR (status);
    /* normal exit */
   RETURN (status);

@@ -179,6 +179,7 @@ int ReadFullBank(void)
   REAL8 dummy;
   REAL8 dist_min=999999999.0;
   REAL8 Xmin,Ymin;
+  int rc;
  
   /* here we read in the full template file and its header information */
   
@@ -215,7 +216,7 @@ int ReadFullBank(void)
   gamYY=BMFheader.metric_YY;
   RA=BMFheader.RA;
   dec=BMFheader.dec;
-  sprintf(ifo,BMFheader.det);
+  sprintf(ifo,"%s",BMFheader.det);
 
   /* do a quick check that the targeted area lies within the full mesh boundaries */
   if ((sma0<smaMIN)||(sma0>smaMAX)) {
@@ -259,7 +260,7 @@ int ReadFullBank(void)
 
   /* cycle through the templates and calculate the distance from the central point */ 
   for (i=0;i<Nfull;i++) {
-    fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy);
+    rc = fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy);
     RTPloc.sma=sma[i];
     RTPloc.tperi.gpsSeconds=tperi[i].gpsSeconds;
     RTPloc.tperi.gpsNanoSeconds=tperi[i].gpsNanoSeconds;
@@ -383,7 +384,7 @@ INT4 OutputSortedDist(void)
     BMFheader.metric_XY=gamXY;
     BMFheader.metric_YY=gamYY;
     sprintf(BMFheader.version,"v1_sub");
-    sprintf(BMFheader.det,ifo);
+    sprintf(BMFheader.det,"%s",ifo);
     BMFheader.RA=RA;
     BMFheader.dec=dec;
 
@@ -466,19 +467,19 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'f':
       temp=optarg;
-      sprintf(fullbankfile,temp);
+      sprintf(fullbankfile,"%s",temp);
       break; 
     case 's':
       temp=optarg;
-      sprintf(subbankfile,temp);
+      sprintf(subbankfile,"%s",temp);
       break;
     case 'E':
       temp=optarg;
-      sprintf(ephemfile,temp);
+      sprintf(ephemfile,"%s",temp);
       break;
     case 'y':
       temp=optarg;
-      sprintf(yr,temp);
+      sprintf(yr,"%s",temp);
       break;
     case 'N':
       Nsub=atoi(optarg);

@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.3.2.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.4.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -29,13 +29,13 @@ AC_CONFIG_FILES([\
   src/pulsar/hough/src/Makefile \
   src/pulsar/FDS_binary/Makefile \
   src/pulsar/SideBand/Makefile \
+  src/pulsar/CombSearch/Makefile \
   src/pulsar/templateBanks/Makefile \
   src/pulsar/TimingTests/Makefile \
   src/pulsar/TDS_isolated/Makefile \
   src/inspiral/Makefile \
   src/inspiral/posterior/Makefile \
   src/inspiral/posterior/SPINspiral/Makefile \
-  src/zmsearch/Makefile \
   src/pulsar/hough/src2/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/MakeSFTs/Makefile \
@@ -45,7 +45,6 @@ AC_CONFIG_FILES([\
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])
-AC_CONFIG_FILES([src/lalapps/git_version],[chmod +x src/lalapps/git_version])
 AM_INIT_AUTOMAKE([foreign])
 AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
 AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
@@ -64,10 +63,10 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
-LALAPPS_ENABLE_GCC_FLAGS
-LALAPPS_ENABLE_NIGHTLY
+LALSUITE_ENABLE_GCC_FLAGS
+LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
-LALAPPS_ENABLE_BOINC
+LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
@@ -84,11 +83,13 @@ LALSUITE_ENABLE_LALXML
 
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
-# put version/configure info in config.h header
+# put version/configure info in config header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
 lalapps_version_minor=`echo "$VERSION" | cut -d. -f2`
 lalapps_version_micro=`echo "$VERSION" | cut -d. -f3`
 lalapps_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalapps_version_micro" && lalapps_version_micro=0
+test -z "$lalapps_version_devel" && lalapps_version_devel=0
 lalapps_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION],["$VERSION"],[LALApps Version])
 AC_DEFINE_UNQUOTED([LALAPPS_VERSION_MAJOR],[$lalapps_version_major],
@@ -104,8 +105,7 @@ AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALAPPS_CONFIGURE_DATE],["$lalapps_configure_date"],
                    [LALApps Configure Date])
 
-
-# remove -all-static from ldflags, breaks test
+# remove -all-static from ldflags, breaks tests
 allstatic=`echo $LDFLAGS | sed '/-all-static/!d'`
 if test "x$allstatic" = "x" ; then
   allstatic="false"
@@ -119,9 +119,7 @@ m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # boinc requires a c++ compiler
-if test "${boinc}" = "true" ; then
-  AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -147,17 +145,9 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
-
-  # enable condor compile
-  CC="$CONDOR_COMPILE $CC"
-  AM_LDFLAGS="$AM_LDFLAGS -all-static"
-  AC_DISABLE_SHARED
-  AC_SUBST([AM_LDFLAGS])
-  AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 CONDOR_ENABLE_VAL="`eval test x$condor = xtrue && echo "ENABLED" || echo "DISABLED"`"
 AM_CONDITIONAL([CONDOR_ENABLED],[test "$CONDOR_ENABLE_VAL" = "ENABLED"])
-
 
 # further program checks
 LT_INIT
@@ -189,6 +179,9 @@ if test "x$build_vendor" = "xapple"; then
   esac
 fi
 
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
+
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
 AC_CHECK_LIB([z],[compress])
@@ -206,7 +199,7 @@ if test "${boinc}" = "true" ; then
     AC_LANG_PUSH([C++])
 
     # has lal build built with boinc support
-    LALAPPS_CHECK_BOINC
+    LALSUITE_CHECK_BOINC
 
     # point to boinc headers and libraries
     CPPFLAGS="$CPPFLAGS -I$BOINC_PREFIX/include"
@@ -341,21 +334,21 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS],[pss])
 
-# use c++ mode for build build
+# use c++ mode for boinc build
 if test "${boinc}" = "true" ; then
    AC_LANG_PUSH([C++])
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[lal],[6.3.2.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSUPPORT],[lalsupport],[6.3.2.2],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_OPT_LIB([LALFRAME],[lalframe],[1.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMETAIO],[lalmetaio],[1.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALBURST],[lalburst],[1.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALINSPIRAL],[lalinspiral],[1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALSTOCHASTIC],[lalstochastic],[1.0.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
-LALSUITE_CHECK_OPT_LIB([LALPULSAR],[lalpulsar],[1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[lalxml],[1.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.0.2],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.0.0.2],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.0.0.2],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.0.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.0.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -379,12 +372,21 @@ AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lalapps_gcc_flags"
+  CFLAGS="$CFLAGS $lal_gcc_flags"
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
+fi
+
+# enable condor compile
+if test "x${condor}" = "xtrue" ; then
+  CC="$CONDOR_COMPILE $CC"
+  AM_LDFLAGS="$AM_LDFLAGS -all-static"
+  AC_DISABLE_SHARED
+  AC_SUBST([AM_LDFLAGS])
+  AC_DEFINE([LALAPPS_CONDOR],[1],[LALApps is condor compiled])
 fi
 
 # add -all-static to AM_LDFLAGS for --enable-static-binaries

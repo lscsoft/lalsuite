@@ -67,21 +67,12 @@ olapredfcn_usage (
     fprintf (stderr, "                   %d = %s\n",
              i, lalCachedDetectors[i].frDetector.name);
   }
-  for (i=0; i<LALNumCachedBars; ++i)
-  {
-    fprintf (stderr, "                   %d = %s\n",
-             LALNumCachedDetectors + i, lalCachedBars[i].name);
-  }
   fprintf (stderr, "  -a az     set azimuth of first detector to az degrees East of North\n");
   fprintf (stderr, "              Must be between -360 and 360;\n");
-  fprintf (stderr, "              Only valid for bars (ID %d thru %d)\n",
-	   LALNumCachedDetectors,
-	   LALNumCachedDetectors + LALNumCachedBars - 1);
+  fprintf (stderr, "              Only valid for bars \n");
   fprintf (stderr, "  -b az     set azimuth of second detector to az degrees East of North\n");
   fprintf (stderr, "              Must be between -360 and 360;\n");
-  fprintf (stderr, "              Only valid for bars (ID %d thru %d)\n",
-	   LALNumCachedDetectors,
-	   LALNumCachedDetectors + LALNumCachedBars - 1);
+  fprintf (stderr, "              Only valid for bars\n");
   fprintf (stderr, "  -f f0          set start frequency to f0\n");
   fprintf (stderr, "  -e deltaF      set frequency spacing to deltaF\n");
   fprintf (stderr, "  -n length      set number of points in frequency series to length\n");
@@ -98,6 +89,7 @@ olapredfcn_parse_options (
     )
 {
   const char *dbglvl  = NULL;
+  FILE *fp;
 
   while (1)
   {
@@ -153,8 +145,8 @@ olapredfcn_parse_options (
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */
-        freopen ("/dev/null", "w", stderr);
-        freopen ("/dev/null", "w", stdout);
+        fp = freopen("/dev/null", "w", stderr);
+        fp = freopen("/dev/null", "w", stdout);
         break;
 
       case 'h':

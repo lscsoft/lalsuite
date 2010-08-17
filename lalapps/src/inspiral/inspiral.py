@@ -369,46 +369,17 @@ class HWinjPageJob(InspiralAnalysisJob):
     """
     @cp: ConfigParser object from which options are read.
     """
-    exec_name = 'hwinjscript'
-    sections = ['hwinjpage']
+    exec_name = "hardware_inj_page"
+    universe = "vanilla"
+    sections = "[hardware-injection-page]"
     extension = 'html'
-    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
-#    self.add_condor_cmd('getenv', 'True')
-    self.__gps_start_time = None
-    self.__gps_end_time = None
-    # overwrite standard log file names
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
     self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
-
-  def set_experiment_start_time(self, experiment_start_time):
-    """
-    Sets the experiment-start-time option. This is a required option.
-    @experiment_start_time: gps start time of the experiment the thinca_to_coinc
-    job is in.
-    """
-    self.add_opt('gps-start-time', experiment_start_time)
-    self.__gps_start_time = experiment_start_time
-
-  def set_experiment_end_time(self, experiment_end_time):
-    """
-    Sets the experiment-end-time option. This is a required option.
-    @experiment_end_time: gps end time of the experiment the thinca_to_coinc
-    job is in.
-    """
-    self.add_opt('gps-end-time', experiment_end_time)
-    self.__gps_end_time = experiment_end_time
-
-  def get_experiment_start_time(self, experiment_start_time):
-    """
-    Returns the value of the experiment-start-time option.
-    """
-    return self.__gps_start_time
-
-  def get_experiment_end_time(self, experiment_end_time):
-    """
-    Returns the value of the experiment-end-time option.
-    """
-    return self.__gps_start_time
+    self.set_sub_file(exec_name + '.sub')
 
 class SireJob(InspiralAnalysisJob):
   """
@@ -482,6 +453,23 @@ class CohBankJob(InspiralAnalysisJob):
     """
     exec_name = 'cohbank'
     sections = ['cohbank']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+
+class CohInspBankJob(InspiralAnalysisJob):
+  """
+  A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
+  options are read from the section [cohinspbank] in the ini file.  The stdout and
+  stderr from the job are directed to the logs directory.  The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'cohinspbank'
+    sections = ['cohinspbank']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
@@ -626,6 +614,8 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     """
     gwffile = self.get_output_base()
     gwffile += '.gwf'
+
+    self.add_output_file(gwffile)
 
     return gwffile 
 
@@ -1254,15 +1244,25 @@ class HWinjPageNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self, job)
     self.__input_cache = None
     self.__cache_string = None
-    self.__outfile=None
+    self.__outfile = None
+    self.__segment_dir = None
+    self.__source_xml = None
 
   def set_input_cache(self, input_cache_name):
     """
     @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
     to read.
     """
-    self.add_file_opt('cache-file',input_cache_name)
+    self.add_var_opt('cache-file',input_cache_name)
     self.__input_cache = input_cache_name
+
+  def set_source_xml(self, source_xml):
+    """
+    @input_cache_name: cache file for ligolw_cbc_hardware_inj_page
+    to read.
+    """
+    self.add_var_opt('source-xml',source_xml)
+    self.__source_xml = source_xml
 
   def set_cache_string(self,cache_string):
     """
@@ -1278,6 +1278,11 @@ class HWinjPageNode(InspiralAnalysisNode):
     self.add_var_opt('outfile',outfile_name)
     self.__outfile=outfile_name
 
+  def set_segment_dir(self,dir):
+    """
+    @dir: directory in which to find hwinj segments
+    """
+    self.add_var_opt('segment-dir',dir)
 
 class SireNode(InspiralAnalysisNode):
   """
@@ -1354,18 +1359,6 @@ class SireNode(InspiralAnalysisNode):
     Returns the IFO tag string
     """
     return self.__ifo_tag
-
-  def set_glob(self, file_glob):
-    """
-    Sets the glob name
-    """
-    self.add_var_opt('glob',file_glob)
-
-  def set_input(self, input_file):
-    """
-    Sets the input file name
-    """
-    self.add_var_opt('input',input_file)
 
   def get_output(self):
     """
@@ -1508,18 +1501,6 @@ class CoireNode(InspiralAnalysisNode):
     """
     return self.__ifo_tag
 
-  def set_glob(self, file_glob):
-    """
-    Sets the glob name
-    """
-    self.add_var_opt('glob',file_glob)
-
-  def set_input(self, input_file):
-    """
-    Sets the input file name
-    """
-    self.add_var_opt('input',input_file)
-
   def set_output_tag(self):
     fname = self.job().get_exec_name().upper() 
     if self.get_slides(): fname += "_SLIDE"
@@ -1596,6 +1577,7 @@ class FrJoinNode(InspiralAnalysisNode):
     @param outputName: name of the injection file created
     """
     self.add_var_opt('output',outputName)
+    self.add_file_opt('output',outputName,file_is_output_file=True)
     self.__outputName = outputName
     
   def get_output(self):
@@ -1616,7 +1598,7 @@ class CohBankNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__bank = None
     self.__ifos = None
-    
+
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
@@ -1625,21 +1607,45 @@ class CohBankNode(InspiralAnalysisNode):
   def get_bank(self):
     return self.__bank
 
+  def set_ifo(self, ifo):
+    """
+    Add the interferometer to the list of ifos
+    ifo = IFO code (e.g. G1,L1, H1 or H2).
+    """
+    if ifo == 'G1':
+      self.add_var_opt('g1-triggers','')
+      self.__ifo_g1 = 'G1'
+    elif ifo == 'H1':
+      self.add_var_opt('h1-triggers','')
+      self.__ifo_h1 = 'H1'
+    elif ifo == 'H2':
+      self.add_var_opt('h2-triggers','')
+      self.__ifo_h2 = 'H2'
+    elif ifo == 'L1':
+      self.add_var_opt('l1-triggers','')
+      self.__ifo_l1 = 'L1'
+    elif ifo == 'T1':
+      self.add_var_opt('t1-triggers','')
+      self.__ifo_t1 = 'T1'
+    elif ifo == 'V1':
+      self.add_var_opt('v1-triggers','')
+      self.__ifo_v1 = 'V1'
+
   def set_ifos(self,ifos):
     self.add_var_opt('ifos', ifos)
     self.__ifos = ifos
-   
+
   def get_ifos(self):
     return self.__ifos
-    
+
   def get_output(self):
     """
     Returns the file name of output from the coherent bank. 
     """
-    
+
     if not self.get_ifos():
       raise InspiralError, "Ifos have not been set"
-    
+
     basename = self.get_ifos() + '-COHBANK'
 
     if self.get_user_tag():
@@ -1653,7 +1659,62 @@ class CohBankNode(InspiralAnalysisNode):
 
     self.add_output_file(filename)
 
-    return filename    
+    return filename
+
+
+class CohInspBankNode(InspiralAnalysisNode):
+  """
+  A CohBankNode runs an instance of the coherent code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__bank = None
+    self.__ifos = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+    self.__bank = bank
+
+  def get_bank(self):
+    return self.__bank
+
+  def set_ifos(self,ifos):
+    self.add_var_opt('ifos', ifos)
+    self.__ifos = ifos
+
+  def get_ifos(self):
+    return self.__ifos
+
+  def get_output(self):
+    """
+    Returns the file name of output from the coherent bank. 
+    """
+
+    if not self.get_ifos():
+      raise InspiralError, "Ifos have not been set"
+
+    basename = self.get_ifos() + '-COHINSPBANK'
+
+    if self.get_user_tag():
+      basename += '_' + self.get_user_tag()
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+    if self.get_zip_output():
+      filename += '.gz'
+
+    self.add_output_file(filename)
+
+    return filename
+
+    # overwrite standard log file names
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
 
 
 class ChiaNode(InspiralAnalysisNode):
@@ -1798,18 +1859,6 @@ class CohireNode(InspiralAnalysisNode):
     """
     return self.__ifo_tag
 
-  def set_glob(self, file_glob):
-    """
-    Sets the glob name
-    """
-    self.add_var_opt('glob',file_glob)
-
-  def set_input(self, input_file):
-    """
-    Sets the input file name
-    """
-    self.add_var_opt('input',input_file)
-
   def set_output_tag(self):
     fname = self.job().get_exec_name().upper()
     if self.get_slides(): fname += "_SLIDE"
@@ -1880,12 +1929,6 @@ class InspInjFindNode( InspiralAnalysisNode ):
     @job: A CondorDAGJob that can run an instance of ligolw_inspinjfind.
     """
     InspiralAnalysisNode.__init__(self, job)
-
-  def get_input_from_cache(self, cache):
-    """
-    Retrieves
-    """
-    self.add_var_arg(filename)
 
 
 ##############################################################################
@@ -1973,6 +2016,36 @@ class PlotThincaNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotthinca.
     """
     InspiralPlottingNode.__init__(self,job)
+
+
+###########################################################################################
+
+class PlotCohsnrJob(InspiralPlottingJob):
+  """
+  A plotthinca job. The static options are read from the section
+  [plotthinca] in the ini file.  The stdout and stderr from the job
+  are directed to the logs directory.  The path to the executable is
+  determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'plotcohsnr'
+    sections = ['plotcohsnr']
+    extension = 'html'
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+
+class PlotCohsnrNode(InspiralPlottingNode):
+  """
+  A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of plotthinca.
+    """
+    InspiralPlottingNode.__init__(self,job)
+
 
 #######################################################################################
 
@@ -2267,7 +2340,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'minifollowups'
-    sections = ['minifollowups']
+    sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
@@ -2570,7 +2643,7 @@ class LigolwCBCPrintNode(pipeline.SqliteNode):
     self.__extract_to_database = None
     self.__exclude_coincs = None
     self.__include_only_coincs = None
-    self.__sim_type = None
+    self.__sim_tag = None
     self.__output_format = None
     self.__columns = None
 
@@ -2828,6 +2901,44 @@ class PlotIfarNode(pipeline.SqliteNode):
     """
     return self.__datatype
 
+class PlotFMJob(pipeline.SqliteJob):
+  """
+  A plotfm job. The static options are read from the [plotfm] seciont.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which objects are read.
+    """
+    exec_name = 'plotfm'
+    sections = ['plot_input', 'plotfm']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+class PlotFMNode(pipeline.SqliteNode):
+  """
+  A PlotFM node.
+  """
+  def __init__(self, job):
+    """
+    @job: a PlotFMJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.__sim_tag = None
+
+  def set_sim_tag(self, sim_tag):
+    """
+    Sets the --sim-tag option.
+    """
+    self.add_var_opt('sim-tag', sim_tag)
+    self.__sim_tag = sim_tag
+
+  def get_sim_tag(self):
+    """
+    Gets sim-tag option.
+    """
+    return self.__sim_tag
+
+
+    
 #############################################################################
 class MvscGetDoublesJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
@@ -2978,7 +3089,7 @@ class MvscTrainForestNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
       return
     self.final = 1
     self.trainedforest = self.trainingfile.replace('_training.pat','.spr')
-    self.add_file_arg("-a 4 -n 100 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
+    self.add_file_arg("-a 4 -n 500 -l 4 -s 4 -c 6 -g 1 -i -d 1 -f %s %s" % (self.trainedforest, self.trainingfile))
     self.add_output_file(self.trainedforest)
 
 class MvscUseForestJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
@@ -3091,4 +3202,68 @@ def overlap_test(interval1, interval2, slide_sec=0):
   return (start1 >= left and start1 <= right) or \
          (end1 >= left and end1 <= right) or \
          (start1 <= left and end1 >= right)
+
+
+class SearchVolumeJob(pipeline.SqliteJob):
+  """
+  A search volume job. Computes the observed physical volume
+  above a specified FAR (if FAR is not specified, computes the
+  volume above the loudest event).
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'search_volume'
+    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+class SearchVolumeNode(pipeline.SqliteNode):
+  """
+  A search volume node.
+  """
+  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False):
+    """
+    @database: the pipedown database containing the injection triggers
+    @ouptut_cache: name prefix for cache file to be written out by program
+    @output_tag: a string label for the output files
+    @use_expected_loudest_event: disables the use of loudest event FAR, use 1./livetime instead
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.add_var_arg(database)
+
+    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
+    self.add_var_opt("veto-segments-name",veto_segments_name)
+    if output_cache:
+      self.add_var_opt("output-cache",output_cache)
+    if output_tag:
+      self.add_var_opt("output-name-tag",output_tag)
+    if use_expected_loudest_event:
+      self.add_var_opt("use-expected-loudest-event",'')
+
+
+class SearchUpperLimitJob(pipeline.SqliteJob):
+  """
+  A search upper limit job. Compute the search upper limit from the search
+  volume output. Generates upper limit plots.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    @sections: list of sections for cp to read from
+    """
+    exec_name = 'search_upper_limit'
+    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+class SearchUpperLimitNode(pipeline.SqliteNode):
+  """
+  A search upper limit node.
+  """
+  def __init__(self, job, input_cache):
+    """
+    @job: a SearchUpperLimitJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+    self.add_var_opt("input-cache", input_cache)
 

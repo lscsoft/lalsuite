@@ -102,7 +102,7 @@
 
    - Get timings and optimize the pipeline parameters
 
-   - Checkpointing for running on Einstein@Home
+   - Checkpointing for running on Einstein\@Home
 
    - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
 
@@ -123,7 +123,7 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* Hooks for Einstein@Home / BOINC
+/* Hooks for Einstein\@Home / BOINC
    These are defined to do nothing special in the standalone case
    and will be set in boinc_extras.h if EAH_BOINC is set
  */
@@ -471,7 +471,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useWeights",   0,  UVAR_OPTIONAL, "Weight each stack using noise and AM?", &uvar_useWeights ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "followUp",     0,  UVAR_OPTIONAL, "Follow up stage?", &uvar_followUp), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "sky-region polygon (or 'allsky')", &uvar_skyRegion), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
 
@@ -597,11 +597,11 @@ int MAIN( int argc, char *argv[]) {
       fprintf( fpLog, "## Log file for HierarchicalSearch.c\n\n");
       fprintf( fpLog, "# User Input:\n");
       fprintf( fpLog, "#-------------------------------------------\n");
-      fprintf( fpLog, logstr);
+      fprintf( fpLog, "%s", logstr);
       LALFree(logstr);
 
       /* add code version ID */
-      fprintf ( fpLog, VCSInfoString );
+      fprintf ( fpLog, "%s", VCSInfoString );
 
       fclose (fpLog);
 
@@ -1576,7 +1576,7 @@ void SetUpSFTs( LALStatus *status,
 /** \brief Function for calculating Hough Maps and candidates 
     \param pgV is a HOUGHPeakGramVector obtained after thresholding Fstatistic vectors
     \param params is a pointer to HoughParams -- parameters for calculating Hough maps
-    \out houghCand Candidates from thresholding Hough number counts
+    \param out Candidates from thresholding Hough number counts
 
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function 
@@ -2118,7 +2118,7 @@ void ComputeFstatHoughMap(LALStatus *status,
 /** \brief Function for selecting frequency bins from a set of Fstatistic vectors
     \param FstatVect : sequence of Fstatistic vectors
     \param thr is a REAL8 threshold for selecting frequency bins
-    \return pgV : a vector of peakgrams 
+    \param pgV a vector of peakgrams 
 
     Input is a vector of Fstatistic vectors.  It allocates memory 
     for the peakgrams based on the frequency span of the Fstatistic vectors

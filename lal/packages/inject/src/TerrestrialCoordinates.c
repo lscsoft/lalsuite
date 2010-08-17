@@ -75,7 +75,9 @@ fields <tt>location->position</tt> and <tt>location->radius</tt>.
 These routines follow the formulae in Sec.5.1 of \ref Lang_K1999,
 which we reproduce below.
 
-\paragraph{Geographic coordinates:} Since geographic and equatorial
+\par Geographic coordinates
+
+Since geographic and equatorial
 coordinates share the same \f$z\f$-axis, the geographic latitude \f$\phi\f$ of
 a direction in space is the same as its declination \f$\delta\f$, and
 longitude \f$\lambda\f$ and right ascension \f$\alpha\f$ differ only through
@@ -91,7 +93,8 @@ GMST for a given GPS time, and add it to the longitude.  While this is
 simple enough, it does involve several function calls, so it is
 convenient to collect these into one routine.
 
-\paragraph{Horizon coordinates:} We correct a typographical
+\par Horizon coordinates
+We correct a typographical
 error on the second line of Eq.(5.45) of \ref Lang_K1999 (it should
 have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
 coordinate is just the altitude \f$a\f$ in this system, our longitudinal
@@ -283,7 +286,7 @@ t \approx G\left(\frac{1}{2}H - \frac{3}{8}H^2
 	+ \frac{5}{16}H^3\right) \; .
 \f]
 
-\item When computing \f$\phi\f$, we first compute \f$t-\varpi\f$, \f$t+\varpi\f$,
+When computing \f$\phi\f$, we first compute \f$t-\varpi\f$, \f$t+\varpi\f$,
 \f$t^{-1}\f$, and \f$\varpi^{-1}\f$, sort them by order of magnitude, and
 alternately multiply large and small terms.  We note that if the
 argument of the \f$\arctan\f$ function is large we have

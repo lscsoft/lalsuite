@@ -28,7 +28,7 @@
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/RealFFT.h>
-#include <lal/Ring.h>
+#include <lal/RingUtils.h>
 #include <lal/FrameStream.h>
 
 #include "lalapps.h"
@@ -256,40 +256,48 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 
   if ( params->getData )
   {
-    if ( params->simData )
-      channel = get_simulated_data( params->channel, &params->startTime,
-          params->duration, params->strainData, params->sampleRate, 
+    switch ( params->dataType )
+    {
+      case LALRINGDOWN_DATATYPE_SIM:
+        channel = get_simulated_data( params->channel, &params->startTime,
+          params->duration, params->dataType, params->sampleRate,
           params->randomSeed, 1.0 );
-    else if ( params->zeroData )
-      channel = get_zero_data( params->channel, &params->startTime,
-          params->duration, params->strainData, params->sampleRate );
-    else if ( params->geoData )
-    {
-      channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
-          &params->frameDataStartTime, params->frameDataDuration, 
-          params->strainData,
-          params->geoHighpassFrequency, params->geoScale );
-      stripPad = 1;
-    }
-    else
-    {
-      channel = get_frame_data( params->dataCache, params->channel,
-          &params->frameDataStartTime, params->frameDataDuration, 
-          params->strainData );
-      stripPad = 1;
+      break;
+      case LALRINGDOWN_DATATYPE_ZERO:
+        channel = get_zero_data( params->channel, &params->startTime,
+            params->duration, params->dataType, params->sampleRate );
+      break;
+      case LALRINGDOWN_DATATYPE_HT_REAL8:
+        channel = get_frame_data_dbl_convert( params->dataCache, params->channel,
+            &params->frameDataStartTime, params->frameDataDuration,
+          params->dataType, params->highpassFrequency);
+        stripPad = 1;
+      break;
+      case LALRINGDOWN_DATATYPE_UNCAL: case LALRINGDOWN_DATATYPE_HT_REAL4:
+        channel = ring_get_frame_data( params->dataCache, params->channel,
+            &params->frameDataStartTime, params->frameDataDuration,
+            params->dataType );
+        stripPad = 1;
+      break;
     }
     if ( params->writeRawData ) /* write raw data */
       write_REAL4TimeSeries( channel );
     
     /* inject ring signals */
     if ( params->injectFile ) 
-      inject_signal( channel, params->injectType, params->injectFile,
+    {
+      ring_inject_signal( channel, params->injectType, params->injectFile,
           params->calibCache, 1.0, params->channel ); 
-    if ( params->writeRawData )
-       write_REAL4TimeSeries( channel );  
-    if( params->geoData ){
-      for (j=0; j<channel->data->length; j++){
-        channel->data->data[j] *= params->geoScale;
+      if ( params->writeRawData )
+        write_REAL4TimeSeries( channel );
+    }  
+
+    if ( params->dataType == LALRINGDOWN_DATATYPE_HT_REAL4 ||
+         params->dataType == LALRINGDOWN_DATATYPE_HT_REAL8)
+    {  
+      for (j=0; j<channel->data->length; j++)
+      {
+        channel->data->data[j] *= params->dynRangeFac;
       }
     }
     
@@ -318,11 +326,12 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 static COMPLEX8FrequencySeries *ring_get_response( struct ring_params *params )
 {
   COMPLEX8FrequencySeries *response = NULL;
-  if ( params->getResponse && ! params->strainData )
+  if ( params->getResponse && (params->dataType != LALRINGDOWN_DATATYPE_HT_REAL4
+         && params->dataType != LALRINGDOWN_DATATYPE_HT_REAL8 ))
   {
   response = get_response( params->calibCache, params->ifoName,
         &params->startTime, params->segmentDuration, params->sampleRate,
-        params->dynRangeFac, params->strainData, params->channel ) ; 
+        params->dynRangeFac, params->dataType, params->channel ) ; 
     if ( params->writeResponse ) /* write response */
       write_COMPLEX8FrequencySeries( response );
   }
@@ -343,7 +352,7 @@ static REAL4FrequencySeries *ring_get_invspec(
   if ( params->getSpectrum )
   {
     /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel, params->segmentDuration,
+    invspec = compute_average_spectrum( channel, params->spectrumType,params->segmentDuration,
         params->strideDuration, fwdplan, params->whiteSpectrum );
     if ( params->writeSpectrum ) /* write raw spectrum */
       write_REAL4FrequencySeries( invspec );

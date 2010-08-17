@@ -181,29 +181,31 @@ def science_segments(ifo, config, generate_segments = True):
 
 ##############################################################################
 # the hardware injection script part one to get segments for it to use later
-def run_hardware_inj_part_one(config,ifos):
+def get_hwinj_segments(config,ifos,hw_inj_dir):
 
-  mkdir('logs')
-  hwinjDefurl = config.get("hwinjpage_meta", "hwinj-def-server-url")
-  hwinjDefFile = config.get("hwinjpage_meta", "hwinj-def-file")
+  os.chdir(hw_inj_dir)
 
-  print "Downloading HW injection list " + hwinjDefFile + " from " \
+  hwinjDefurl = config.get("hardware-injections", "hwinj-def-server-url")
+  hwinjDefFile = config.get("hardware-injections", "hwinj-def-file")
+
+  print "Downloading hardware injection list " + hwinjDefFile + " from " \
         + hwinjDefurl
   hwinjDefFile, info = urllib.urlretrieve(hwinjDefurl + '/' + hwinjDefFile,
         hwinjDefFile)
-  config.set('hwinjpage','source-xml',hwinjDefFile)
   ifostr = ''
   for ifo in ifos:
 	ifostr = ifostr + '--' + ifo.lower() + '-injection '
 
-  hwinjpageCall = ' '.join([config.get("condor","hwinjscript"),
+  hwinjpageCall = ' '.join(['../'+config.get("condor","hardware_inj_page"),
 	"--gps-start-time",config.get("input","gps-start-time"),
 	"--gps-end-time",config.get("input","gps-end-time"),
 	"--segment-db",config.get("segfind","segment-url"),
 	"--segment-dir","./",ifostr,
-	"--source-xml",hwinjDefFile,"--part=1"])
+	"--source-xml",hwinjDefFile,"--get-segment-list"])
 
   make_external_call(hwinjpageCall)
+
+  os.chdir("..")
 
 #####################################################################
 # Function to set lp the veto-category xml files from the vetoDefFile
@@ -567,9 +569,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
     hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
-        "tmpltbank", "inspiral", "thinca", "thinca-2", "datafind", "virgo-data", \
+        "tmpltbank", "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
+        "l1-inspiral", "g1-inspiral", "v1-inspiral", \
+        "thinca", "thinca-2", "datafind", "virgo-data", \
         "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
-        "sire-inj", "condor-max-jobs", "calibration"]
+        "sire-inj", "condor-max-jobs", "calibration", \
+        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
+        "cohinspbank", "chia-inj", "cohire", "cohire-inj"]
   else:
     hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
@@ -579,8 +585,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
         "thinca-2", "thinca-slide", "trigbank", "sire",  \
         "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
-        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", "condor-max-jobs"]
-
+        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
+        "cohinspbank", "chia-inj", "cohire", "cohire-inj", "condor-max-jobs"]
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
 
@@ -710,7 +716,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     else:
       hipe_args = ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
-        "summary-single-ifo-triggers","write-script"]
+        "summary-single-ifo-triggers","write-script",
+        "coherent-bank","coherent-inspiral","cohire",
+        "summary-coherent-inspiral-triggers"]
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
@@ -755,10 +763,6 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   # collapse the short running jobs in the veto sub-dags
   if vetoCat:
     hipeNode.set_cluster_jobs('horizontal')
-
-  # sweep up the .input files hipe generates
-  hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
-    'hipe_input_files.%s.cache' % usertag,'*%s-*input' % usertag)))
 
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
@@ -1170,51 +1174,55 @@ def injZeroSlidePlots(dag, plotDir, config, logPath, injectionSuffix,
   return dag
 
 ##############################################################################
-# Functino to set up a HW inj page job
-def hwinj_setup(cp,ifos,veto_categories):
+# Function to set up a HW inj page job
+def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
   """
-  run ligolw_cbc_hardware injection page
+  run ligolw_cbc_hardware injection page, soring the input and output in
+  the subdirectory hardware_injection_summary
   """
-  cp.set('hwinjpage','part','2')
-  # Add range cache file option here later
-  cp.set('hwinjpage','segment-dir','./')
-  for ifo in ifos:
-    cp.set('hwinjpage',ifo.lower()+'-injections','')
   hwInjNodes = []
-  cp.set('condor','hwinjscript',(cp.get('condor','hwinjscript'))[1:])
+  hwinj_length = cp.getint("input","gps-end-time") - cp.getint("input","gps-start-time")
+
   hwInjJob = inspiral.HWinjPageJob(cp)
-  hwInjJob.set_experiment_start_time(cp.get("input","gps-start-time"))
-  hwInjJob.set_experiment_end_time(cp.get("input","gps-end-time"))
-  hwInjJob.set_sub_file('hardware_inj/hwinjpage.sub')
-  hwInjJob.set_universe('vanilla')
-  hwInjJob.add_condor_cmd('initialdir','hardware_inj')
-  hwInjJob.add_condor_cmd('getenv','True')
+
   veto_categories.append(None)
   for veto in veto_categories:
     if cp.get("pipeline","user-tag"):
       usertag = cp.get("pipeline", "user-tag") + "_" + "FULL_DATA"
     else:
       usertag = "FULL_DATA"
-    if veto: usertag += "_CAT_" + str(veto) + "_VETO"
-    cacheFile = hipe_cache( ifos,usertag, \
-         cp.getint("input", "gps-start-time"), \
-         cp.getint("input", "gps-end-time"))
-    if not os.path.isfile("full_data/" + cacheFile):
+
+    if veto: 
+      usertag += "_CAT_" + str(veto) + "_VETO"
+
+    cacheFile = hipe_cache( ifos, usertag, cp.getint("input", "gps-start-time"), cp.getint("input", "gps-end-time") )
+    
+    if not os.path.isfile(os.path.join("full_data", cacheFile)):
       print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
       print>>sys.stderr, "does not exist! This might cause later failures."
-    ifoprefix=''
-    for ifo in ifos:
-      cp.set('hwinjpage',ifo.lower()+'-injections','')
-      ifoprefix+=ifo
-    outfilename = ifoprefix+'_hwinjections'
+
+    outfilename = os.path.join(hw_inj_dir, ''.join(ifos) + '-HWINJ_SUMMARY')
     if veto:
-      outfilename += '_CAT_'+str(veto)
-    outfilename += '.html'
+      outfilename += '_CAT_' + str(veto)
+    outfilename += '-' + cp.get("input","gps-start-time") + '-' + str(hwinj_length) + '.html'
+
     hwInjNode = inspiral.HWinjPageNode(hwInjJob)
-    hwInjNode.set_input_cache('../full_data/'+cacheFile)
+    hwInjNode.set_start(cp.get("input","gps-start-time"))
+    hwInjNode.set_end(cp.get("input","gps-end-time"))
+
+    hwInjNode.set_input_cache(os.path.join('full_data', cacheFile))
     hwInjNode.set_cache_string('*COIRE_SECOND*')
+
+    hwInjNode.set_source_xml(os.path.join(hw_inj_dir,cp.get("hardware-injections", "hwinj-def-file")))
+    hwInjNode.set_segment_dir(hw_inj_dir)
     hwInjNode.set_output_file(outfilename)
+
+    hwInjNode.add_var_opt('analyze-injections','')
+    for ifo in ifos:
+      hwInjNode.add_var_opt(ifo.lower()+'-injections','')
+
     hwInjNodes.append(hwInjNode)
+
   return hwInjNodes
 
 ##############################################################################
@@ -1353,4 +1361,130 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
             pattern += "_" + suffix
         patterns[pattern_name + "-pattern"] = pattern
     return patterns
+
+###############################################################################
+# This function will set up the necessary omega scan inputs in the current
+# directory
+
+def omega_scan_setup(cp,ifos):
+  cp.set('omega-scans','do-omega-scan','')
+  cp.set('omega-scans','omega-executable',cp.get('condor','omegascan'))
+  print "Beginning set up of omega scan directory."
+  start = cp.get("input","gps-start-time")
+  end = cp.get("input","gps-end-time")
+  # First we set up the configuration files
+  sampleFrequency = cp.get('omega-setup','sample-frequency')
+  searchTRange = cp.get('omega-setup','search-time-range')
+  searchFRange = cp.get('omega-setup','search-frequency-range')
+  searchFRange = searchFRange.split(',')
+  searchFRange = '[' + searchFRange[0] + ' ' + searchFRange[1] + ']'
+  searchQRange = cp.get('omega-setup','search-q-range')
+  searchQRange = searchQRange.split(',')
+  searchQRange = '[' + searchQRange[0] + ' ' + searchQRange[1] + ']'
+  searchMaxELoss = cp.get('omega-setup','search-max-energy-loss')
+  whiteNoiseFAR = cp.get('omega-setup','white-noise-far')
+  searchWindowDuration = cp.get('omega-setup','search-window-duration')
+  plotNormERange = cp.get('omega-setup','plot-normalized-energy-range')
+  plotNormERange = plotNormERange.split(',')
+  plotNormERange = '[' + plotNormERange[0] + ' ' + plotNormERange[1] + ']'
+  plotTimeRanges = cp.get('omega-setup','plot-time-ranges')
+  plotTimeRanges = plotTimeRanges.split(',')
+  plotTimeRanges = ' '.join(plotTimeRanges)
+  plotTimeRanges = '[' + plotTimeRanges + ']'
+  configFileText = []
+  configFileHead = []
+  configFileHead.append('''[Context,Context]''')
+  configFileHead.append('')
+  configFileHead.append('''[Parameters,Parameter Estimation]''')
+  configFileHead.append('')
+  configFileHead.append('''[Notes,Notes]''')
+  configFileHead.append('')
+  configFileHead.append('''[Omega scans,Omega scans]''')
+  configFileHead.append('')
+  configFileText.append('{')
+  #This will be the line for the channel this is configFileText[1]
+  configFileText.append('')
+  #This will be the line for the frame this is configFileText[2]
+  configFileText.append('')
+  configFileText.append('  sampleFrequency:  ' + sampleFrequency)
+  configFileText.append('  searchTimeRange:  ' + searchTRange)
+  configFileText.append('  searchFrequencyRange:  ' + searchFRange)
+  configFileText.append('  searchQRange:  ' + searchQRange)
+  configFileText.append('  searchMaximumEnergyLoss:  ' + searchMaxELoss)
+  configFileText.append('  whiteNoiseFalseRate:  ' + whiteNoiseFAR)
+  configFileText.append('  alwaysPlotFlag:  1')
+  configFileText.append('  searchWindowDuration:  ' + searchWindowDuration)
+  configFileText.append('  plotTimeRanges:  ' + plotTimeRanges)
+  configFileText.append('  plotFrequencyRange:  []')
+  configFileText.append('  plotNormalizedEnergyRange:  ' + plotNormERange)
+  configFileText.append('}')
+  configFileText.append('')
+  typeNames = {}
+  for ifo in ifos:
+    ifo = ifo.upper()
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      channel_name = 'ligo-channel'
+      type_name = 'ligo-type'
+    elif ifo == 'V1':
+      channel_name = 'virgo-channel'
+      type_name = 'virgo-type'
+    else:
+      print "IFO " + ifo + " is not yet supported for omega scans in ihope"
+      continue
+    if cp.has_option('omega-setup',channel_name):
+      channels = (cp.get('omega-setup',channel_name)).split(',')
+      type = cp.get('omega-setup',type_name)
+    else:
+      channels = (cp.get('input',channel_name)).split(',')
+      type = cp.get('input',type_name)
+    if ifo == 'H1' or ifo == 'H2' or ifo == 'L1':
+      type = ifo + '_' + type
+    typeNames[ifo] = type
+    configFileOut = '\n'.join(configFileHead)
+    configFileOut += '\n'
+    for channel in channels:
+      if channel[0:3] == 'PEM' or channel[0:3] == 'GDS':
+        configFileText[1] = "  channelName:  '" + ifo[0]+'0:'+channel + "'"
+      else:
+        configFileText[1] = "  channelName:  '" + ifo+':'+channel + "'"
+      configFileText[2] = "  frameType:  '" + type + "'"
+      configFileOut += '\n'.join(configFileText)
+      configFileOut +='\n'
+    outFile = open(ifo + '_omega_config.txt','w')
+    outFile.write(configFileOut)
+    outFile.close()
+    cp.set('omega-scans',ifo.lower() + '-omega-config-file','../omega_setup/'+ifo + '_omega_config.txt')
+
+  print "Created omega scan configuration files"
+
+  # And we need to create the necessary frame caches
+  if not os.path.isdir('cache'):
+    os.mkdir('cache')
+  dataFindCall = []
+  dataFindCall.append(cp.get('condor','datafind'))
+  for opt,val in cp.items('datafind'):
+    if opt == 'gaps':
+      continue
+    dataFindCall.append('--' + opt + ' ' + val)
+  dataFindCall.append('--lal-cache')
+  dataFindCall.append('--gps-start-time ' + start)
+  dataFindCall.append('--gps-end-time ' + end)
+  for ifo in ifos:
+    ifo = ifo.upper()
+    ifoSpecific = []
+    ifoSpecific.append('--observatory ' + ifo[0])
+    ifoSpecific.append('--type ' + typeNames[ifo])
+    ifoSpecific.append('--output cache/' + ifo + '_' + start + '_' + end + '_frames.cache')
+    command = ' '.join(dataFindCall) + ' ' + ' '.join(ifoSpecific)
+    make_external_call(command)
+    convertCall = cp.get('condor','convertlalcache')
+    convertCall += ' ' 
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.cache'
+    convertCall += ' '
+    convertCall += 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache'
+    make_external_call(convertCall)
+    cp.set('omega-scans',ifo.lower() + '-omega-frame-file','../omega_setup/' + 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache')
+
+  print "Created omega scan frame files \n"
+  
 
