@@ -308,9 +308,9 @@ int main( int argc, char **argv )
 
   /* Determine time delays and response functions */
   /* This is computed for all detectors, even if not being analyzed */ 
-  timeOffsets = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
-  Fplus = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
-  Fcross = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
+  timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
+  Fplus = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
+  Fcross = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
@@ -323,17 +323,17 @@ int main( int argc, char **argv )
     {
       /* Despite being called segStartTime we use the time at the middle 
       * of a segment */
-      segStartTime = params->startTime;
+      segStartTime = params->trigTime;
       
       /*XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);*/
-      XLALGPSAdd(&segStartTime,8.5*params->segmentDuration/2.0);
+//      XLALGPSAdd(&segStartTime,8.5*params->segmentDuration/2.0);
       /*XLALGPSMultiply(&segStartTime,0.);
       XLALGPSAdd(&segStartTime,874610713.072549154);*/
-      timeOffsets[j*LAL_NUM_IFO+ifoNumber] = 
+      timeOffsets[ifoNumber] = 
           XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
           params->declination,&segStartTime);
-      XLALComputeDetAMResponse(&Fplus[j*LAL_NUM_IFO+ifoNumber],
-         &Fcross[j*LAL_NUM_IFO+ifoNumber],
+      XLALComputeDetAMResponse(&Fplus[ifoNumber],
+         &Fcross[ifoNumber],
          detectors[ifoNumber]->response,params->rightAscension,
          params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
     }
@@ -1389,8 +1389,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
   // a = Fplus , b = Fcross
   for (i = 0; i < LAL_NUM_IFO; i++)
   {
-    a[i] = Fplus[segmentNumber*LAL_NUM_IFO+i];
-    b[i] = Fcross[segmentNumber*LAL_NUM_IFO+i];
+    a[i] = Fplus[i];
+    b[i] = Fcross[i];
   }
 
   // This function takes the (Q_i|Q_j) matrices, combines it across the ifos
@@ -1437,7 +1437,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   * in data points */
   for (i = 0; i < LAL_NUM_IFO; i++ )
   {
-    timeOffsetPoints[i]=(int)(timeOffsets[segmentNumber*LAL_NUM_IFO+i]/deltaT);
+    timeOffsetPoints[i]=(int)(timeOffsets[i]/deltaT);
   }
 
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));

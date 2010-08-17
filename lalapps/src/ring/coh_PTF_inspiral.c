@@ -1535,7 +1535,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
         for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
-          pValues[j]->data->data[i - numPoints/4] = pValsTemp[j];
+          pValues[j]->data->data[i - numPoints/4] = 0.;
         } 
         // This loop verifies that the SNR obtained is as before
         recSNR = 0;
@@ -1561,13 +1561,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
   
         // The p Values need to be rotated back into the original frame.
         // Currently we are recording values in rotated frame
-/*        for ( j = 0 ; j < vecLengthTwo ; j++ )
+        for ( j = 0 ; j < vecLengthTwo ; j++ )
         {
           for ( k = 0 ; k < vecLengthTwo ; k++ )
           {
             pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
           }
-        }*/
+        }
  
         // And we check that this still gives the expected SNR in the
         // unrotated basis.
@@ -2002,7 +2002,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-
 /*  outfile = fopen("bank_veto_timeseries.dat","w");
   for ( i = 0; i < bankVeto->data->length; ++i)
   {
@@ -2031,8 +2030,6 @@ void cohPTFmodBasesUnconstrainedStatistic(
     fprintf (outfile,"%f %f \n",deltaT*i,nullSNR->data->data[i]);
   }
   fclose(outfile);*/
-  
-
   
 /*  outfile = fopen("traceSNR_timeseries.dat","w");
   for ( i = 0; i < traceSNR->data->length; ++i)

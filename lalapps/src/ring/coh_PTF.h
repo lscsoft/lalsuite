@@ -66,6 +66,7 @@ struct coh_PTF_params {
   INT4         haveTrig[LAL_NUM_IFO];
   LIGOTimeGPS  startTime;
   LIGOTimeGPS  endTime;
+  LIGOTimeGPS  trigTime;
   INT8         trigStartTimeNS;
   INT8         trigEndTimeNS;
   LIGOTimeGPS  frameDataStartTime;

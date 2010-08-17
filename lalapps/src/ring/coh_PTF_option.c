@@ -74,6 +74,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
     { "gps-end-time-ns",         required_argument, 0, 'B' },
+    { "trigger-time",            required_argument, 0, '<' },
+    { "trigger-time-ns",         required_argument, 0, '>' },
     { "h1-channel-name",            required_argument, 0, 'c' },
     { "h1-frame-cache",             required_argument, 0, 'D' },
     { "h2-channel-name",            required_argument, 0, 'x' },
@@ -150,6 +152,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'B': /* gps-end-time-ns */
         localparams.endTime.gpsNanoSeconds = atol( optarg );
+        break;
+      case '<': /* trigger-time */
+        localparams.trigTime.gpsSeconds = atol( optarg );
+        break;
+      case '>': /* trigger-time-ns */ 
+        localparams.trigTime.gpsNanoSeconds = atol( optarg );
         break;
       case 'c': /* h1 channel-name */
         localparams.channel[LAL_IFO_H1] = optarg;
@@ -414,6 +422,9 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
 /* Sanity check for coh_PTF_inspiral specific */
 int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
 {
+  INT8 trigTime;
+  trigTime = epoch_to_ns( &params->trigTime );
+  sanity_check( trigTime > 0 );
   sanity_check( params->threshold );
   sanity_check( params->timeWindow );
   sanity_check( params->outputFile );
