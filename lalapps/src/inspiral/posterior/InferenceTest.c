@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
   
   if(runstate->data) {
     /* Test the created data */  
-    DataTest();
+    //DataTest();
     
     /* TemplateStatPhase() test */
 	//TemplateStatPhaseTest();
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]){
 	//TemplateDumpTest();
 	  
 	/* PTMCMC test */
-	//PTMCMCTest();
+	PTMCMCTest();
 	  
 
   }
@@ -1032,6 +1032,43 @@ void PTMCMCTest(void)
 	runstate->proposalArgs->dimension=0;
 	runstate->likelihood=FreqDomainLogLikelihood;
 	runstate->template=templateLAL;
+	
+	
+	SimInspiralTable *injTable=NULL;
+	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(ppt,"--injXML")->value,0,0));
+	
+	REAL8 mc = injTable->mchirp;
+	REAL8 eta = injTable->eta;
+    REAL8 iota = injTable->inclination;
+    REAL8 phi = injTable->coa_phase;
+	LIGOTimeGPS trigger_time=injTable->geocent_end_time;
+	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
+	REAL8 ra_current = injTable->longitude;
+	REAL8 dec_current = injTable->latitude;
+	REAL8 psi_current = injTable->polarization;
+	REAL8 distMpc_current = injTable->distance;
+	
+    numberI4 = TaylorT3;//TaylorF2;
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    numberI4 = LAL_PNORDER_TWO;
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);
+	
+	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t);
+	
+	
+	
+	
+	
+	
+	
 	runstate->currentParams=&currentParams;
 	PTMCMCAlgorithm(runstate);
 	fprintf(stdout, "End of PTMCMC test\n");
