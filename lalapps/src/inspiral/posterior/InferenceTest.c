@@ -904,9 +904,9 @@ void DataTest(void)
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
    /* fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorF2;
-    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
     numberI4 = LAL_PNORDER_TWO;
-    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);*/
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);*/
 	 fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood..\n");
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
     nulllikelihood = NullLogLikelihood(runstate->data);
