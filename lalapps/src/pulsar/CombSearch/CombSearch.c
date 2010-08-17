@@ -270,7 +270,7 @@ int computeCStat(ConfigVariables *cfg, UserInput_t *uvar, CstatOut *cst)
   ufreq_bin	= floor(0.5 + (uvar->Freq-cfg->fmin)/cfg->df);		/* nearest bin to user starting frequency */
   ufreq		= cfg->fmin + (cfg->df*ufreq_bin);			/* frequency of Fstat bin nearest to user frequency */
   ufband	= floor(0.5 + (uvar->FreqBand/cfg->df));		/* user frequency band in bins */
-  mm		= floor(0.5 + LAL_TWOPI*cfg->f0*uvar->orbitasini);		/* whole number of sidebands on either side of central spike */
+  mm		= floor(0.5 + LAL_TWOPI*cfg->f0*uvar->orbitasini);	/* whole number of sidebands on either side of central spike */
   cfg->dm	= floor(0.5 + mm/(uvar->orbitPeriod*cfg->df));		/* exclusion region: number of bins to exclude after Cstat calculation */
   cfg->N	= ufband + 2*cfg->dm;					/* number of bins for cstat memory allocation */
   fstart	= ufreq - cfg->df*cfg->dm;				/* start frequency of search, half a comb width before user specified Freq */
