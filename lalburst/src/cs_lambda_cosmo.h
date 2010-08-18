@@ -27,7 +27,7 @@
 
 /*  "$Id$" "$Name$" */
 
-#include "cs_cosmo.h"
+#include "lal/cs_cosmo.h"
 
 #define LAMBDA_Z_EQ 5440.0		/* redshift of matter-radiation equilib: 10^3.94 */
 #define LAMBDA_H_0 2.27e-18		/* Hubble constant (s^-1) */
