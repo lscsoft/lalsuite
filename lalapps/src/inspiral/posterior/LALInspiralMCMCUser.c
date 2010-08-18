@@ -741,27 +741,27 @@ in the frequency domain */
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
-/* Version derived 19/08/08 */
+			/* Version derived 18/08/10 */
+			/* This is the time delayed waveforms as it appears at the detector */
+			/* data[idx] is real and data[Nmodel-idx] is imaginary part of the waveform at index idx */
+			/* H+ = hc + i*hs, and Hx=iH+, ONLY WHERE H+=cos(phi) and Hx=sin(phi) in the time domain (SPA, non-spinning, no-HH) */
 			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
 			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			
+			/* Compute detector response in the real and imaginary parts */
+			/* resp_r =   F+ * Re(H+)   -  Fx * Im(H+) */
+			resp_r = det_resp.plus * hc - det_resp.cross * hs;
+			/* resp_im =  Fx * Re(H+)   +  F+ * Im(H+) */
+			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-		}
 
-/* Gaussian version */
-/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
-that LAL uses. Please check this whenever any change is made */
-
-/* Student-t version */
-/*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
-			#endif
-
+			#endif		
+		} /* End loop over frequency */
 
 
 		#if DEBUGMODEL !=0
@@ -924,8 +924,8 @@ in the frequency domain */
 /* Version derived 19/08/08 */
 			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
 			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			resp_r = det_resp.plus * hc - det_resp.cross * hs;
+			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
