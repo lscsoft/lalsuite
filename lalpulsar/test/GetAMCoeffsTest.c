@@ -56,7 +56,7 @@ NRCSID (GETAMCOEFFSTEST, "$Id$");
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, GETAMCOEFFSTEST, statement ? statement :  \
                    "", (msg) );                                      \
@@ -65,7 +65,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               GETAMCOEFFSTEST, (statement) );                     \
 } while (0)
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
   if ( ( det = XLALGetSiteInfo ( sites[pickedSite] )) == NULL )
     {
-      LALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n",
+      XLALPrintError ("\nCall to XLALGetSiteInfo() has failed for site = '%s'... \n\n",
 		     sites[pickedSite]);
       return GETAMCOEFFSTEST_ESUB;
     }
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 
   if ( (averr_a > tolerance) || (averr_b > tolerance) || (maxerr_a > tolerance) ||(maxerr_b > tolerance))
     {
-      LALPrintError ("Maximal error-tolerance of %g %% was exceeded!\n", 100.0 * tolerance );
+      XLALPrintError ("Maximal error-tolerance of %g %% was exceeded!\n", 100.0 * tolerance );
       return 1;
     }
 

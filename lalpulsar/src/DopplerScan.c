@@ -1227,18 +1227,18 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
       V2[j] = v[j] + 0.5 * a[j]*Tobs + (2.0/5.0)*accDot[j] * Tobs * Tobs; /* 2nd order */
     }
 
-  LALPrintError ("dT = %f, tdiffE = %f, Tobs = %f\n", dT, tdiffE, Tobs);
-  LALPrintError (" vel =  [ %g, %g, %g ]\n", vel[0], vel[1], vel[2]);
-  LALPrintError (" acc =  [ %g, %g, %g ]\n", acc[0], acc[1], acc[2]);
-  LALPrintError (" accDot =  [ %g, %g, %g ]\n\n", accDot[0], accDot[1], accDot[2]);
+  XLALPrintError ("dT = %f, tdiffE = %f, Tobs = %f\n", dT, tdiffE, Tobs);
+  XLALPrintError (" vel =  [ %g, %g, %g ]\n", vel[0], vel[1], vel[2]);
+  XLALPrintError (" acc =  [ %g, %g, %g ]\n", acc[0], acc[1], acc[2]);
+  XLALPrintError (" accDot =  [ %g, %g, %g ]\n\n", accDot[0], accDot[1], accDot[2]);
 
-  LALPrintError (" v =  [ %g, %g, %g ]\n", v[0], v[1], v[2]);
-  LALPrintError (" a =  [ %g, %g, %g ]\n", a[0], a[1], a[2]);
+  XLALPrintError (" v =  [ %g, %g, %g ]\n", v[0], v[1], v[2]);
+  XLALPrintError (" a =  [ %g, %g, %g ]\n", a[0], a[1], a[2]);
 
-  LALPrintError ("\nVelocity-expression in circle-equation: \n");
-  LALPrintError (" V0 = [ %g, %g, %g ]\n", V0[0], V0[1], V0[2] );
-  LALPrintError (" V1 = [ %g, %g, %g ]\n", V1[0], V1[1], V1[2] );
-  LALPrintError (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
+  XLALPrintError ("\nVelocity-expression in circle-equation: \n");
+  XLALPrintError (" V0 = [ %g, %g, %g ]\n", V0[0], V0[1], V0[2] );
+  XLALPrintError (" V1 = [ %g, %g, %g ]\n", V1[0], V1[1], V1[2] );
+  XLALPrintError (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
 
   node = skyScan->skyGrid;
 
@@ -1305,7 +1305,7 @@ getDopplermax(EphemerisData *edat)
       maxvS = mymax( maxvS, beta );
     }
 
-  LALPrintError ("Maximal Doppler-shift to be expected from ephemeris: %e", maxvE + maxvS );
+  XLALPrintError ("Maximal Doppler-shift to be expected from ephemeris: %e", maxvE + maxvS );
 
   return (maxvE + maxvS);
 

@@ -173,7 +173,7 @@ def make_cache_entry(input_cache, description, path):
 
 def collect_output_caches(parents):
 	cache = [(cache_entry, parent) for parent in parents for cache_entry in parent.get_output_cache()]
-	cache.sort(lambda (a, ap), (b, bp): cmp(a.segment, b.segment))
+	cache.sort(key = lambda (cache_entry, parent): cache_entry.segment)
 	return cache
 
 

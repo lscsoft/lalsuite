@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   LALCheckMemoryLeaks();
 
   if ( lalDebugLevel & LALINFO ) {
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
        "        %s\n", *argv, __FILE__, __LINE__,
        GENERATEPULSARSIGNALTESTC, (GENERATEPULSARSIGNALTESTC_MSGENORM) );
   }

@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 
     /* Check the mismatch */
     if (max_mismatch <= 0.0) {
-      LALPrintError("Maximum mismatch must be strictly positive\n");
+      XLALPrintError("Maximum mismatch must be strictly positive\n");
       return EXIT_FAILURE;
     }
     
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 
     /* Allocate memory */
     if ((mism_hist = gsl_matrix_alloc(file->lines->nTokens, 3)) == NULL) {
-      LALPrintError("Couldn't allocate a gsl_matrix\n");
+      XLALPrintError("Couldn't allocate a gsl_matrix\n");
       return EXIT_FAILURE;
     }
 
@@ -184,11 +184,11 @@ int main(int argc, char *argv[]) {
     for (i = 0; i < mism_hist->size1; ++i) {
       double left_bin, right_bin, prob_bin;
       if (sscanf(file->lines->tokens[i], "%lf %lf %lf", &left_bin, &right_bin, &prob_bin) != 3) {
-	LALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
+	XLALPrintError("Couldn't parse line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       if (left_bin >= right_bin || prob_bin < 0.0) {
-	LALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
+	XLALPrintError("Invalid syntax: line %i of '%s'\n", i, mism_hist_file);
 	return EXIT_FAILURE;
       }
       gsl_matrix_set(mism_hist, i, 0, left_bin);
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");
     LAL_CALL(LALSFTdataFind(&status, &catalog, sft_pattern, &constraints), &status);
     if (!catalog || catalog->length == 0) {
-      LALPrintError("Couldn't find SFTs matching '%s'\n", sft_pattern);
+      XLALPrintError("Couldn't find SFTs matching '%s'\n", sft_pattern);
       return EXIT_FAILURE;
     }
     LogPrintfVerbatim(LOG_DEBUG, "done: %i SFTs starting at GPS %i\n",
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
     /* Allocate memory */
     if ((ephemeris.ephiles.earthEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL ||
 	(ephemeris.ephiles.sunEphemeris   = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL) {
-      LALPrintError("Couldn't allocate memory\n");
+      XLALPrintError("Couldn't allocate memory\n");
       return EXIT_FAILURE;
     }
     
@@ -310,11 +310,11 @@ int main(int argc, char *argv[]) {
     FILE *fpr = NULL;
     size_t num;
     if ((rng = gsl_rng_alloc(gsl_rng_mt19937)) == NULL) {
-      LALPrintError("Couldn't allocate a gsl_rng\n");
+      XLALPrintError("Couldn't allocate a gsl_rng\n");
       return EXIT_FAILURE;
     }
     if ((fpr = fopen("/dev/random", "r")) == NULL) {
-      LALPrintError("Couldn't open '/dev/random'\n");
+      XLALPrintError("Couldn't open '/dev/random'\n");
       return EXIT_FAILURE;
     }
     num = fread(&seed, sizeof(seed), 1, fpr);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[]) {
     /* Open the output file */
     if (LALUserVarWasSet(&output_file)) {
       if ((fp = fopen(output_file, "wb")) == NULL) {
-	LALPrintError("Couldn't open output file '%s'\n", output_file);
+	XLALPrintError("Couldn't open output file '%s'\n", output_file);
 	return EXIT_FAILURE;
       }
     }
@@ -498,7 +498,7 @@ int main(int argc, char *argv[]) {
 	  /* Resize histogram vector if needed */
 	  if (!twoF_pdf_hist || bin >= twoF_pdf_hist->size)
 	    if (NULL == (twoF_pdf_hist = XLALResizeGSLVectorInt(twoF_pdf_hist, bin + 1, 0))) {
-	      LALPrintError("\nCouldn't (re)allocate 'twoF_pdf_hist'\n");
+	      XLALPrintError("\nCouldn't (re)allocate 'twoF_pdf_hist'\n");
 	      return EXIT_FAILURE;
 	    }
 	  
@@ -577,7 +577,7 @@ int main(int argc, char *argv[]) {
     FILE *fpH;
 
     if ((fpH = fopen(twoF_pdf_hist_file, "wb")) == NULL) {
-      LALPrintError("Couldn't open histogram file '%s'\n", twoF_pdf_hist_file);
+      XLALPrintError("Couldn't open histogram file '%s'\n", twoF_pdf_hist_file);
       return EXIT_FAILURE;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
@@ -637,7 +637,7 @@ BOOLEAN calc_AM_coeffs(
   /* Calculate and noise-weigh the AM coefficients */
   LAL_CALL(LALGetMultiAMCoeffs(status, &AM_coeffs, detector_states, sky), status);
   if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-    LALPrintError("XLALWeighMultiAMCoeffs failed\n");
+    XLALPrintError("XLALWeighMultiAMCoeffs failed\n");
     return EXIT_FAILURE;
   }
   *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;

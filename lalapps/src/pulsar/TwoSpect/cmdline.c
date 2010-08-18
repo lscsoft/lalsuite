@@ -50,10 +50,11 @@ const char *gengetopt_args_info_help[] = {
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
   "      --outdirectory=STRING     Output directory",
   "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
-  "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lal/share/lal')",
+  "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Number of pixels to use in the template  \n                                  (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
+  "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
     0
 };
 
@@ -125,6 +126,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_given = 0 ;
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
+  args_info->SFToverlap_given = 0 ;
 }
 
 static
@@ -156,7 +158,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->outdirectory_orig = NULL;
   args_info->sftDir_arg = gengetopt_strdup ("./");
   args_info->sftDir_orig = NULL;
-  args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lal/share/lal");
+  args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
   args_info->ephemDir_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
@@ -164,6 +166,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->templateLength_orig = NULL;
   args_info->skyRegion_arg = gengetopt_strdup ("allsky");
   args_info->skyRegion_orig = NULL;
+  args_info->SFToverlap_arg = 900;
+  args_info->SFToverlap_orig = NULL;
   
 }
 
@@ -194,6 +198,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_help = gengetopt_args_info_help[19] ;
   args_info->templateLength_help = gengetopt_args_info_help[20] ;
   args_info->skyRegion_help = gengetopt_args_info_help[21] ;
+  args_info->SFToverlap_help = gengetopt_args_info_help[22] ;
   
 }
 
@@ -299,6 +304,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->templateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
+  free_string_field (&(args_info->SFToverlap_orig));
   
   
 
@@ -373,6 +379,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "templateLength", args_info->templateLength_orig, 0);
   if (args_info->skyRegion_given)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
+  if (args_info->SFToverlap_given)
+    write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -649,6 +657,7 @@ cmdline_parser_internal (
         { "dopplerMultiplier",	1, NULL, 0 },
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
+        { "SFToverlap",	1, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -901,7 +910,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->ephemDir_arg), 
                  &(args_info->ephemDir_orig), &(args_info->ephemDir_given),
-                &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lal/share/lal", ARG_STRING,
+                &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lalpulsar/share/lalpulsar", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "ephemDir", '-',
                 additional_error))
@@ -946,6 +955,20 @@ cmdline_parser_internal (
                 &(local_args_info.skyRegion_given), optarg, 0, "allsky", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "skyRegion", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* SFT overlap in seconds, usually Tcoh/2.  */
+          else if (strcmp (long_options[option_index].name, "SFToverlap") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->SFToverlap_arg), 
+                 &(args_info->SFToverlap_orig), &(args_info->SFToverlap_given),
+                &(local_args_info.SFToverlap_given), optarg, 0, "900", ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "SFToverlap", '-',
                 additional_error))
               goto failure;
           

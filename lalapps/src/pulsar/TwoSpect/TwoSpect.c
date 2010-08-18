@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
    
     //Defaults given or option passed
    inputParams->Tcoh = args_info.Tcoh_arg;
+   inputParams->SFToverlap = args_info.SFToverlap_arg;
    inputParams->Pmin = args_info.Pmin_arg;
    ihsfarthresh = args_info.ihsfar_arg;
    templatefarthresh = args_info.tmplfar_arg;
@@ -191,6 +192,7 @@ int main(int argc, char *argv[])
    
    fprintf(LOG,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(LOG,"Tcoh = %f sec\n",inputParams->Tcoh);
+   fprintf(LOG,"SFToverlap = %f sec\n",inputParams->SFToverlap);
    fprintf(LOG,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(LOG,"fspan = %f Hz\n",inputParams->fspan);
    fprintf(LOG,"Pmin = %f s\n",inputParams->Pmin);
@@ -202,6 +204,7 @@ int main(int argc, char *argv[])
    fprintf(LOG,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    fprintf(stderr,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(stderr,"Tcoh = %f sec\n",inputParams->Tcoh);
+   fprintf(stderr,"SFToverlap = %f sec\n",inputParams->SFToverlap);
    fprintf(stderr,"fmin = %f Hz\n",inputParams->fmin);
    fprintf(stderr,"fspan = %f Hz\n",inputParams->fspan);
    fprintf(stderr,"Pmin = %f s\n",inputParams->Pmin);
@@ -213,7 +216,8 @@ int main(int argc, char *argv[])
    fprintf(stderr,"FAR for IHS = %f, for templates = %f\n",ihsfarthresh,templatefarthresh);
    
    //Basic units
-   INT4 numffts = (INT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1);
+   //INT4 numffts = (INT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1);
+   INT4 numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
    INT4 numfbins = (INT4)(round(inputParams->fspan*inputParams->Tcoh)+1);
    REAL8 tempfspan = inputParams->fspan + (inputParams->blksize-1)/inputParams->Tcoh;
    INT4 tempnumfbins = (INT4)(round(tempfspan*inputParams->Tcoh)+1);
@@ -222,14 +226,15 @@ int main(int argc, char *argv[])
    ffdataStruct *ffdata = new_ffdata(inputParams);
    
    //Second fft plan, only need to make this once for all the exact templates
-   secondFFTplan = XLALCreateForwardREAL8FFTPlan((UINT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1), 0);
+   //secondFFTplan = XLALCreateForwardREAL8FFTPlan((UINT4)floor(2*(inputParams->Tobs/inputParams->Tcoh)-1), 0);
+   secondFFTplan = XLALCreateForwardREAL8FFTPlan((UINT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1), 0);
    
    //Maximum number of IHS values to sum = twice the maximum modulation depth
    //Minimum number of IHS values to sum = twice the minimum modulation depth
    INT4 maxcols = (INT4)floor(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
    
    //Assume maximum bin shift possible
-   inputParams->maxbinshift = (INT4)round(detectorVmax * inputParams->fmin * inputParams->Tcoh); //TODO: better way to do this?
+   inputParams->maxbinshift = (INT4)round(detectorVmax * inputParams->fmin * inputParams->Tcoh)+1; //TODO: better way to do this?
    
    //Read in the T-F data
    fprintf(LOG,"Loading in SFTs... ");
@@ -305,19 +310,16 @@ int main(int argc, char *argv[])
       numofcandidates = numofcandidates2 = 0;
       
       //Determine detector velocity w.r.t. a sky location for each SFT
-      CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det, edat);
+      CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, det, edat);
       
       //Compute the bin shifts for each SFT
       CompBinShifts(binshifts, inputParams->fmin+inputParams->fspan*0.5, detectorVelocities, inputParams->Tcoh, inputParams->dopplerMultiplier);
       
       //Compute antenna pattern weights
       REAL8Vector *antweights = XLALCreateREAL8Vector((UINT4)numffts);
-      CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->Tobs, det);
-      //for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0; //TEST: REMOVE THIS!!!
+      CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, det);
+      //for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0; //TEST: Remove this!
       REAL8 currentAntWeightsRMS = calcRms(antweights);
-      /* FILE *ANTDATA = fopen("./antdata.dat","w");
-      for (jj=0; jj<(INT4)antweights->length; jj++) fprintf(ANTDATA,"%g\n",antweights->data[jj]);
-      fclose(ANTDATA); */
       
       //Slide SFTs here -- need to slide the data and the estimated background
       REAL8Vector *TFdata_slided = XLALCreateREAL8Vector((UINT4)(numffts*numfbins));
@@ -329,21 +331,15 @@ int main(int argc, char *argv[])
       //Check the RMS of the antenna weights, if bigger than standard deviation then reset the IHS FAR and the average noise background of the 2nd FFT
       if (antweightsrms == 0.0) {
          antweightsrms = currentAntWeightsRMS;
-         //ffdata->ffnormalization = 1.0;
-         //ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
       }
-      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
+      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.02 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
-         //ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
       }
       
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
       ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, &(ffdata->ffnormalization));
-      /* FILE *NOISEDATA = fopen("./noisedata.dat","w");
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) fprintf(NOISEDATA,"%g\n",aveNoise->data[jj]);
-      fclose(NOISEDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
       REAL8 aveTFinv = 1.0/avgTFdataBand(background_slided, numfbins, numffts, 0, numfbins);
@@ -381,13 +377,6 @@ int main(int argc, char *argv[])
       /* FFDATA = fopen(u,"w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
-      /* FILE *NORMFFDATA = fopen("./normffdata","w");
-      for (ii=0; ii<numfbins; ii++) {
-         for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-            fprintf(NORMFFDATA,"%.9g\n",ffdata->ffdata->data[ii*aveNoise->length + jj]/aveNoise->data[jj]);
-         }
-      }
-      fclose(NORMFFDATA); */
       
       
       
@@ -420,6 +409,7 @@ int main(int argc, char *argv[])
             
             //Make a Gaussian train template
             makeTemplateGaussians(template, ihsCandidates[ii], inputParams);
+            //makeTemplate(template, ihsCandidates[ii], inputParams, secondFFTplan);
             
             //Estimate the FAR for these bin weights
             farval = new_farStruct();
@@ -430,6 +420,13 @@ int main(int argc, char *argv[])
             REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
             REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
             REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            
+            /* if (prob!=0.0) {
+               FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
+               INT4 mm;
+               for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
+               fclose(TEMPLATEOUT);
+            } */
             
             //Destroy unneeded things
             free_templateStruct(template);
@@ -998,7 +995,7 @@ int main(int argc, char *argv[])
                         
                         /* FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
                         INT4 mm;
-                        for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %d %d %d\n",template->templatedata->data[mm],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
+                        for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
                         fclose(TEMPLATEOUT); */
                      }
                      free_candidate(cand);
@@ -1156,10 +1153,10 @@ inputParamsStruct * new_inputParams(void)
 
 //////////////////////////////////////////////////////////////
 // Destroy inputParamsStruct  -- done
-void free_inputParams(inputParamsStruct *input)
+void free_inputParams(inputParamsStruct *inputParams)
 {
 
-   XLALFree((inputParamsStruct*)input);
+   XLALFree((inputParamsStruct*)inputParams);
 
 }
 
@@ -1180,14 +1177,15 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 
 //////////////////////////////////////////////////////////////
 // Allocate ffdataStruct vectors  -- done
-ffdataStruct * new_ffdata(inputParamsStruct *param)
+ffdataStruct * new_ffdata(inputParamsStruct *inputParams)
 {
    
    ffdataStruct *ffdata;
    ffdata = (ffdataStruct*)XLALMalloc(sizeof(ffdataStruct));
    
-   UINT4 numfbins = (UINT4)(round(param->fspan*param->Tcoh)+1);
-   UINT4 numffts = (UINT4)floor(2*(param->Tobs/param->Tcoh)-1);
+   UINT4 numfbins = (UINT4)(round(inputParams->fspan*inputParams->Tcoh)+1);
+   //UINT4 numffts = (UINT4)floor(2*(param->Tobs/param->Tcoh)-1);
+   UINT4 numffts = (UINT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
    
    ffdata->f = XLALCreateREAL8Vector(numfbins);
    ffdata->fpr = XLALCreateREAL8Vector((UINT4)floor(numffts*0.5)+1);
@@ -1213,7 +1211,7 @@ void free_ffdata(ffdataStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Read in SFT data to produce a TF vector
-REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
+REAL8Vector * readInSFTs(inputParamsStruct *inputParams, REAL8 *normalization)
 {
 
    INT4 ii, jj;
@@ -1228,8 +1226,8 @@ REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    if (status.statusCode != 0) exit(-1);
    
    //Determine band size (remember to get extra bins because of the running median and the bin shifts due to detector velocity)
-   REAL8 minfbin = round(input->fmin*input->Tcoh - 0.5*(input->blksize-1) - (input->maxbinshift))/input->Tcoh;
-   REAL8 maxfbin = round((input->fmin + input->fspan)*input->Tcoh + 0.5*(input->blksize-1) + (input->maxbinshift))/input->Tcoh;
+   REAL8 minfbin = round(inputParams->fmin*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (inputParams->maxbinshift))/inputParams->Tcoh;
+   REAL8 maxfbin = round((inputParams->fmin + inputParams->fspan)*inputParams->Tcoh + 0.5*(inputParams->blksize-1) + (inputParams->maxbinshift))/inputParams->Tcoh;
    
    //Now extract the data
    LALLoadSFTs(&status, &sfts, catalog, minfbin, maxfbin);
@@ -1240,18 +1238,19 @@ REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    
    //Now put the power data into the TF plane, looping through each SFT
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
-   INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
+   //INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
+   INT4 numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
    REAL8Vector *tfdata = XLALCreateREAL8Vector((UINT4)(numffts*sftlength));
+   REAL8 sqrtnorm = sqrt(*(normalization));
    for (ii=0; ii<numffts; ii++) {
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
       SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
       
-      if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*0.5*input->Tcoh+input->searchstarttime)) {
+      if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*(inputParams->Tcoh-inputParams->SFToverlap)+inputParams->searchstarttime)) {
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            REAL8 sqrtnorm = sqrt(*(normalization));
             //tfdata->data[ii*sftlength + jj] = *(normalization)*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im);  //power
             tfdata->data[ii*sftlength + jj] = ((sqrtnorm*sftcoeff.re)*(sqrtnorm*sftcoeff.re) + (sqrtnorm*sftcoeff.im)*(sqrtnorm*sftcoeff.im));  //power
          }
@@ -1276,15 +1275,16 @@ REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 
 //////////////////////////////////////////////////////////////
 // Slide SFT TF data  -- 
-void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata, INT4Vector *binshifts)
+void slideTFdata(REAL8Vector *out, inputParamsStruct *inputParams, REAL8Vector *tfdata, INT4Vector *binshifts)
 {
    
    INT4 ii, jj;
-   INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
+   //INT4 numffts = (INT4)floor(2*(input->Tobs/input->Tcoh)-1);
+   INT4 numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
    INT4 numfbins = (INT4)(round(inputParams->fspan*inputParams->Tcoh)+1);
    
    for (ii=0; ii<numffts; ii++) {
-      for (jj=0; jj<numfbins; jj++) out->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
+      for (jj=0; jj<numfbins; jj++) out->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*inputParams->maxbinshift) + jj + inputParams->maxbinshift + binshifts->data[ii]];
    }
    
 }
@@ -1340,13 +1340,14 @@ void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbi
 
 //////////////////////////////////////////////////////////////
 // Do the weighting by noise variance (from tfRngMeans), mean subtraction, and antenna pattern weights  -- done
-void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *params)
+void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *inputParams)
 {
    
    INT4 ii, jj;
    
-   INT4 numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);         //Number of FFTs
-   INT4 numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);     //Number of frequency bins
+   //INT4 numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);         //Number of FFTs
+   INT4 numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
+   INT4 numfbins = (INT4)(round(inputParams->fspan*inputParams->Tcoh)+1);     //Number of frequency bins
    
    REAL8Vector *antweightssq = XLALCreateREAL8Vector(numffts);
    for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
@@ -1380,13 +1381,14 @@ void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rn
 
 //////////////////////////////////////////////////////////////
 // Make the second FFT powers
-void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, inputParamsStruct *params, REAL8FFTPlan *plan)
+void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, inputParamsStruct *inputParams, REAL8FFTPlan *plan)
 {
    
    INT4 ii, jj;
    
-   INT4 numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);    //Number of FFTs
-   INT4 numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);    //Number of frequency bins
+   //INT4 numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);    //Number of FFTs
+   INT4 numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1);
+   INT4 numfbins = (INT4)(round(inputParams->fspan*inputParams->Tcoh)+1);    //Number of frequency bins
    
    //Do the second FFT
    REAL8Vector *x = XLALCreateREAL8Vector((UINT4)numffts);
@@ -1410,6 +1412,14 @@ void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, i
       if (check != 0) {
          printf("Something wrong with second PSD...\n");
          fprintf(LOG,"Something wrong with second PSD...\n");
+      }
+      
+      //TEST
+      if (ii==807 || ii==808) {
+         COMPLEX16Vector *testvect = XLALCreateCOMPLEX16Vector(psd->length);
+         check = XLALREAL8ForwardFFT(testvect,x,plan);
+         XLALDestroyCOMPLEX16Vector(testvect);
+         testvect = NULL;
       }
       
       //Fix beginning and end values if even, otherwise just the beginning if odd
@@ -1480,15 +1490,15 @@ REAL8 rmsTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 //////////////////////////////////////////////////////////////
 // Measure of the average noise power in each 2st FFT frequency bin  --
 //REAL8Vector * ffPlaneNoise(inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
-void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
+void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization)
 {
 
    INT4 ii, jj, numfbins, numffts, numfprbins;
    REAL8 invsumofweights = 0.0;
    REAL8 sumofweights = 0.0;
    
-   numfbins = (INT4)(round(param->fspan*param->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(2*(param->Tobs/param->Tcoh)-1);     //Number of FFTs
+   numfbins = (INT4)(round(inputParams->fspan*inputParams->Tcoh)+1);   //Number of frequency bins
+   numffts = (INT4)floor(inputParams->Tobs/(inputParams->Tcoh-inputParams->SFToverlap)-1); //Number of FFTs
    numfprbins = (INT4)floor(numffts*0.5)+1;     //number of 2nd fft frequency bins
    
    //Initialize the random number generator
@@ -1503,7 +1513,7 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *
    REAL8Window *win = XLALCreateHannREAL8Window((UINT4)numffts);
    REAL8 winFactor = 8.0/3.0;
    REAL8FFTPlan *plan = XLALCreateForwardREAL8FFTPlan((UINT4)numffts, 0 );
-   REAL8Vector *psd = XLALCreateREAL8Vector((UINT4)numfprbins);
+   REAL8Vector *psd = XLALCreateREAL8Vector((UINT4)numfprbins);   //Current PSD calculation
    
    //Average each SFT across the frequency band, also compute normalization factor
    REAL8Vector *aveNoiseInTime = XLALCreateREAL8Vector((UINT4)numffts);
@@ -1511,7 +1521,9 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       
       if (backgrnd->data[ii*numfbins]!=0.0) {
-         for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) rngMeansOverBand->data[jj] = backgrnd->data[ii*numfbins + jj];
+         for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) {
+            rngMeansOverBand->data[jj] = backgrnd->data[ii*numfbins + jj];
+         }
          aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
          
          sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
@@ -1533,12 +1545,12 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *
    REAL8 psdfactor = winFactor;
    
    for (ii=0; ii<(INT4)x->length; ii++) {
-      if (aveNoiseInTime->data[ii] != 0.0) {
-         multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/aveNoiseInTime->data[ii]*invsumofweights;
-      }
+      if (aveNoiseInTime->data[ii] != 0.0) multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/aveNoiseInTime->data[ii]*invsumofweights;
+      else multiplicativeFactor->data[ii] = 0.0;
    }
    
-   for (ii=0; ii<200; ii++) {
+   //Previous version with no correlation between SFTs when there is overlap
+   /* for (ii=0; ii<100000; ii++) {
       for (jj=0; jj<(INT4)x->length; jj++) {
          if (aveNoiseInTime->data[jj] != 0.0) x->data[jj] = multiplicativeFactor->data[jj]*(expRandNum(aveNoiseInTime->data[jj], rng)/aveNoiseInTime->data[jj]-1.0);
          else x->data[jj] = 0.0;
@@ -1552,11 +1564,49 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *
       }
       
       //Rescale and sum into the bins
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) aveNoise->data[jj] += psd->data[jj];
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
+         aveNoise->data[jj] += psd->data[jj];
+      }
+   } */
+   
+   //New version. Computes expected background with correlation estimate from Hann windowed and overlapped (based on input arguments) SFTs
+   REAL8 correlationfactor = 0.0;
+   for (ii=0; ii<(INT4)floor(win->data->length*(inputParams->SFToverlap/inputParams->Tcoh)-1); ii++) correlationfactor += win->data->data[ii]*win->data->data[ii + (INT4)((1.0-(inputParams->SFToverlap/inputParams->Tcoh))*win->data->length)];
+   correlationfactor /= win->sumofsquares;
+   REAL8 corrfactorsquared = correlationfactor*correlationfactor;
+   REAL8 prevnoiseval = 0.0;
+   REAL8 noiseval = 0.0;
+   for (ii=0; ii<200; ii++) {
+      for (jj=0; jj<(INT4)x->length; jj++) {
+         if (aveNoiseInTime->data[jj] != 0.0) {
+            noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
+            if (jj==0 || (jj>0 && aveNoiseInTime->data[jj-1] == 0.0)) {
+               x->data[jj] = multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0);
+            } else {
+               REAL8 newnoiseval = (1.0-corrfactorsquared)*noiseval + corrfactorsquared*prevnoiseval;
+               x->data[jj] = multiplicativeFactor->data[jj]*(newnoiseval/aveNoiseInTime->data[jj]-1.0);
+            }
+            prevnoiseval = noiseval;
+         } else {
+            x->data[jj] = 0.0;
+         }
+      }
+      
+      //Do the FFT
+      INT4 check = XLALREAL8PowerSpectrum(psd,x,plan);
+      if (check != 0) {
+         printf("Something wrong with second PSD in background estimate...\n");
+         fprintf(LOG,"Something wrong with second PSD in background estimate...\n");
+      }
+      
+      //Rescale and sum into the bins
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
+         aveNoise->data[jj] += psd->data[jj];
+      }
    }
    
    //Average
-   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= 5.0e-3*psdfactor;
+   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= 5.0e-3*psdfactor*(1.0+2.0*corrfactorsquared);
    
    //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
    if (GSL_IS_EVEN(x->length)==1) {
@@ -1583,8 +1633,6 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *param, REAL8Vector *
    XLALDestroyREAL8Vector(rngMeansOverBand);
    XLALDestroyREAL8Vector(multiplicativeFactor);
    gsl_rng_free(rng);
-   
-   //return aveNoise;
 
 }
 
@@ -1604,9 +1652,12 @@ REAL8 calculateR(REAL8Vector *ffdata, templateStruct *templatestruct, REAL8Vecto
    REAL8 sumofsqweightsinv = 1.0/sumofsqweights;
    
    REAL8 R = 0.0;
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) if (templatestruct->templatedata->data[ii]!=0.0) R += (ffdata->data[ templatestruct->pixellocations->data[ii] ] - noise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])*templatestruct->templatedata->data[ii];
-   
-   R *= sumofsqweightsinv;
+   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
+      if (templatestruct->templatedata->data[ii]!=0.0) {
+         R += (ffdata->data[ templatestruct->pixellocations->data[ii] ] - noise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])*templatestruct->templatedata->data[ii]*sumofsqweightsinv;
+         //fprintf(stderr,"%g %g %g %g\n", templatestruct->templatedata->data[ii]*sumofsqweightsinv, ffdata->data[ templatestruct->pixellocations->data[ii] ], noise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ], R);
+      }
+   }
    
    return R;
    

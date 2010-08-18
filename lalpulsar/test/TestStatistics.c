@@ -120,7 +120,7 @@ INT4 lalDebugLevel=0;
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, TESTSTATISTICSC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -129,7 +129,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               TESTSTATISTICSC, (statement) );                     \
 } while (0)
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]){
         lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTSTATISTICSC_EARG, TESTSTATISTICSC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTSTATISTICSC_EARG;
       }
     }
@@ -188,14 +188,14 @@ int main(int argc, char *argv[]){
         fname = argv[arg++];
       } else {
         ERROR( TESTSTATISTICSC_EARG, TESTSTATISTICSC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTSTATISTICSC_EARG;
       }
     }
     /* Unrecognized option. */
     else {
       ERROR( TESTSTATISTICSC_EARG, TESTSTATISTICSC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return TESTSTATISTICSC_EARG;
     }
   } /* End of argument parsing loop. */

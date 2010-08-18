@@ -1400,7 +1400,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 
       if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) {
-        LALPrintError ( 
+        XLALPrintError ( 
                 "Imaginary Cos[iota]; cannot compute parameters\n"
                 "in the EstimateSignalParameters routine\n"
                 "in ComputeFStatistic code\n"
@@ -1423,7 +1423,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       if(Asq*Asq < 4.0*detA*detA)
         {
-          LALPrintError ( "Imaginary beta; cannot compute parameters");
+          XLALPrintError ( "Imaginary beta; cannot compute parameters");
           break;
         }
 
@@ -1460,44 +1460,44 @@ int EstimateSignalParameters(INT4 * maxIndex)
                     +mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
 
 
-      LALPrintError ( "LALDemod_Estimate output: "
+      XLALPrintError ( "LALDemod_Estimate output: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
               ,A1,A2,A3,A4);
-      LALPrintError ( "Reconstructed from MLE: "
+      XLALPrintError ( "Reconstructed from MLE: "
               "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
               A1test,A2test,A3test,A4test);
       fflush(stderr);
 
 
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
-        LALPrintError ( "Something is wrong with Estimate A1\n");
-        LALPrintError ( "Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
+        XLALPrintError ( "Something is wrong with Estimate A1\n");
+        XLALPrintError ( "Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A1,A1test);
-        LALPrintError ( "relative error Abs((A1-A1test)/A1)=%lf\n",
+        XLALPrintError ( "relative error Abs((A1-A1test)/A1)=%lf\n",
                 fabs(A1-A1test)/fabs(A1));
         return 1;
       }
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
-        LALPrintError ( "Something is wrong with Estimate A2\n");
-        LALPrintError ( "Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
+        XLALPrintError ( "Something is wrong with Estimate A2\n");
+        XLALPrintError ( "Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A2,A2test);
-        LALPrintError ( "relative error Abs((A2-A2test)/A2)=%lf\n",
+        XLALPrintError ( "relative error Abs((A2-A2test)/A2)=%lf\n",
                 fabs(A2-A2test)/fabs(A2));
         return 1;
       }
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
-        LALPrintError ( "Something is wrong with Estimate A3\n");
-        LALPrintError ( "Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
+        XLALPrintError ( "Something is wrong with Estimate A3\n");
+        XLALPrintError ( "Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A3,A3test);
-        LALPrintError ( "relative error Abs((A3-A3test)/A3)=%lf\n",
+        XLALPrintError ( "relative error Abs((A3-A3test)/A3)=%lf\n",
                 fabs(A3-A3test)/fabs(A3));
         return 1;
       }
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
-        LALPrintError ( "Something is wrong with Estimate A4\n");
-        LALPrintError ( "Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
+        XLALPrintError ( "Something is wrong with Estimate A4\n");
+        XLALPrintError ( "Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,A1,A1test);
-        LALPrintError ( "relative error Abs((A4-A4test)/A4)=%lf\n",
+        XLALPrintError ( "relative error Abs((A4-A4test)/A4)=%lf\n",
                 fabs(A4-A4test)/fabs(A4));
         return 1;
       }
@@ -1509,10 +1509,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
-        LALPrintError ( "Something is wrong with Estimate in F\n");
-        LALPrintError ( "Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
+        XLALPrintError ( "Something is wrong with Estimate in F\n");
+        XLALPrintError ( "Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
                 irec,GV.fkdot0->data[0]+irec*DemodParams->df,Fstat.F[irec],Ftest);
-        LALPrintError ( "relative error Abs((F-Ftest)/Ftest)=%lf\n",
+        XLALPrintError ( "relative error Abs((F-Ftest)/Ftest)=%lf\n",
                 fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
         return 1;
       }
@@ -1539,7 +1539,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
                                    +C*sin(4.0*psi_mle))
                             +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
                                     -C*sin(4.0*psi_mle)));
-      LALPrintError ( "A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
+      XLALPrintError ( "A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
               A,B,C,GV.spinRange.fkdot[0]+irec* DemodParams->df,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
@@ -1584,7 +1584,7 @@ int writeFaFb(INT4 *maxIndex, PulsarDopplerParams searchpos)
   CHAR FaFbfilename[MAXFILENAMELENGTH];
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    LALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
+    XLALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
   
   strcpy(FaFbfilename,"FaFb");
   if (uvar_outputLabel)
@@ -3129,7 +3129,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, PulsarDopplerParams searchpo
   log2val = medianbias;
 
   if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
-    LALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
+    XLALPrintError (  "%f, %f", searchpos.Alpha, searchpos.Delta);
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -3393,7 +3393,7 @@ EstimateFLines(LALStatus *stat)
      TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
      TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
 
-     /*      LALPrintError ( "Nclusters zero \n"); */
+     /*      XLALPrintError ( "Nclusters zero \n"); */
      /*      fflush(stderr); */
 
      goto finished;

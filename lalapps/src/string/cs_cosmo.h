@@ -46,6 +46,5 @@ extern double zeq;
 extern double H0;
 cs_cosmo_functions_t cs_cosmo_functions( double *z, size_t n );
 cs_cosmo_functions_t cs_cosmo_functions_alloc( double zmin, double dlnz, size_t n );
-#define cs_cosmo_functions_free(cosmofns) \
-	((void)(free((cosmofns).z),free((cosmofns).phit),free((cosmofns).phiA),free((cosmofns).phiV)))
+void cs_cosmo_functions_free(cs_cosmo_functions_t);
 #endif /* CS_COSMO_H */

@@ -229,7 +229,7 @@ extern int lalDebugLevel;
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, SIMULATETAYLORCWTESTC,                    \
 		 statement ? statement : "", (msg) );                \
@@ -240,7 +240,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 SIMULATETAYLORCWTESTC, (statement) );               \
 }                                                                    \
@@ -250,7 +250,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
-  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
+  XLALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 SIMULATETAYLORCWTESTC, (statement) );               \
 }                                                                    \
@@ -273,7 +273,7 @@ if ( ( (val) < (lower) ) || ( (val) > (upper) ) )                    \
   ERROR( SIMULATETAYLORCWTESTC_EVAL, SIMULATETAYLORCWTESTC_MSGEVAL,  \
          "Value of " #val " out of range:" );                        \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( #val " = %f, range = [%f,%f]\n", (REAL8)(val),    \
+    XLALPrintError( #val " = %f, range = [%f,%f]\n", (REAL8)(val),    \
                    (REAL8)(lower), (REAL8)(upper) );                 \
   return SIMULATETAYLORCWTESTC_EVAL;                                 \
 }                                                                    \
@@ -338,7 +338,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -350,7 +350,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -362,7 +362,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -376,7 +376,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -391,7 +391,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -405,7 +405,7 @@ main(int argc, char **argv)
       } else {
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -417,7 +417,7 @@ main(int argc, char **argv)
       }else{
 	ERROR( SIMULATETAYLORCWTESTC_EARG,
 	       SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return SIMULATETAYLORCWTESTC_EARG;
       }
     }
@@ -425,7 +425,7 @@ main(int argc, char **argv)
     else if ( argv[arg][0] == '-' ) {
       ERROR( SIMULATETAYLORCWTESTC_EARG,
 	     SIMULATETAYLORCWTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return SIMULATETAYLORCWTESTC_EARG;
     }
   } /* End of argument parsing loop. */
@@ -552,7 +552,7 @@ main(int argc, char **argv)
       ERROR( SIMULATETAYLORCWTESTC_EVAL,
 	     SIMULATETAYLORCWTESTC_MSGEVAL, "Unrecognized site:" );
       if ( lalDebugLevel & LALERROR )
-	LALPrintError( "%s", site );
+	XLALPrintError( "%s", site );
       return SIMULATETAYLORCWTESTC_EVAL;
     }
     detector.site = (LALDetector *)LALMalloc( sizeof(LALDetector) );

@@ -49,7 +49,7 @@ RCSID("$Id$");
 
 #define LALAPPS_ERROR(message, errno) \
 {                                     \
-  LALPrintError(message);             \
+  XLALPrintError(message);             \
   return EXIT_FAILURE;                \
 }
 

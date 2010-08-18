@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     REAL4 *timeavg =NULL;
     REAL4 PWR,SNR;
     REAL8 f =0;
-    CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256], outfile6[256];
+    CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256]; /*, outfile6[256]; */
     REAL8 NumBinsAvg =0;
     REAL8 timebaseline =0;
     

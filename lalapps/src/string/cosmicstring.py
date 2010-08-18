@@ -39,6 +39,10 @@ __version__ = '$Revision$'[11:-2]
 #
 
 
+def get_files_per_meas_likelihood(config_parser):
+	return config_parser.getint("pipeline", "files_per_meas_likelihood")
+
+
 def get_files_per_calc_likelihood(config_parser):
 	return config_parser.getint("pipeline", "files_per_calc_likelihood")
 
@@ -63,6 +67,9 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 
 		self.cache_dir = power.get_cache_dir(config_parser)
 		self.output_dir = "."
+		self.files_per_meas_likelihood = get_files_per_meas_likelihood(config_parser)
+		if self.files_per_meas_likelihood < 1:
+			raise ValueError, "files_per_meas_likelihood < 1"
 
 
 class MeasLikelihoodNode(pipeline.CondorDAGNode):
@@ -137,6 +144,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
+		self.likelihood_cache = []
 		self.output_cache = self.input_cache
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
@@ -144,14 +152,16 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.set_name(self, *args)
 		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
+		self.likelihood_cache_name = os.path.join(self.cache_dir, "%s_likelihood.cache" % self.get_name())
+		self.add_var_opt("likelihood-cache", self.likelihood_cache_name)
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
 			self.add_output_file(c.path())
 
-	def add_likelihood_file(self, path):
-		self.add_var_arg("--likelihood-file %s" % path)
+	def add_likelihood_cache(self, cache):
+		self.likelihood_cache.extend(cache)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
@@ -162,9 +172,15 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def get_output_cache(self):
 		return self.output_cache
 
+	def get_likelihood_cache(self):
+		return self.likelihood_cache
+
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
+			print >>f, str(c)
+		f = file(self.likelihood_cache_name, "w")
+		for c in self.likelihood_cache:
 			print >>f, str(c)
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 
@@ -502,15 +518,26 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 #
 
 
-def make_meas_likelihood_fragment(dag, parents, tag):
-    node = MeasLikelihoodNode(meas_likelihoodjob)
-    node.set_name("lalapps_string_meas_likelihood_%s" % tag)
-    for parent in parents:
-        node.add_parent(parent)
-        node.add_input_cache(parent.get_output_cache())
-    node.set_output(tag)
-    dag.add_node(node)
-    return set([node])
+def make_meas_likelihood_fragment(dag, parents, tag, files_per_meas_likelihood = None):
+	if files_per_meas_likelihood is None:
+		files_per_meas_likelihood = meas_likelihoodjob.files_per_meas_likelihood
+	nodes = set()
+	input_cache = power.collect_output_caches(parents)
+	while input_cache:
+		node = MeasLikelihoodNode(meas_likelihoodjob)
+		this_input_cache = input_cache[:files_per_meas_likelihood]
+		del input_cache[:files_per_meas_likelihood]
+
+		for cache_entry, parent in this_input_cache:
+			node.add_input_cache([cache_entry])
+			node.add_parent(parent)
+
+		seg = power.cache_span(node.get_input_cache())
+		node.set_name("lalapps_string_meas_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_output(tag)
+		dag.add_node(node)
+		nodes.add(node)
+	return nodes
 
 
 #
@@ -538,6 +565,7 @@ def make_calc_likelihood_fragment(dag, parents, likelihood_parents, tag, files_p
     node.set_name("lalapps_string_calc_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
     for cache_entry, parent in likelihood_cache:
       node.add_parent(parent)
-      node.add_likelihood_file(cache_entry.path())
+      node.add_likelihood_cache([cache_entry])
     dag.add_node(node)
+    nodes.add(node)
   return nodes
