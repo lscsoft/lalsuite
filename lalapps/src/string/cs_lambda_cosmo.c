@@ -151,3 +151,11 @@ cs_cosmo_functions_t cs_cosmo_functions( double *z, size_t n )
 	gsl_integration_workspace_free( w );
 	return cosmofns;
 }
+
+void cs_cosmo_functions_free(cs_cosmo_functions_t cosmofns)
+{
+	free(cosmofns.z);
+	free(cosmofns.phit);
+	free(cosmofns.phiA);
+	free(cosmofns.phiV);
+}
