@@ -308,7 +308,7 @@ int main(int argc,char *argv[])
       cand.doppler.Delta = multiAMBuffer.skypos.latitude;
 
       if ( uvar.SignalOnly )
-        cand.maxFstat += 4;
+        cand.maxTwoF += 4;
 
       if ( fpTransientStats && write_TransientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
         LogPrintf ( LOG_CRITICAL, "%s: write_TransientCandidate_to_fp() failed.\n", fn );
