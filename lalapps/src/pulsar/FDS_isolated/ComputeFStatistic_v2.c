@@ -683,7 +683,7 @@ int main(int argc,char *argv[])
           transientCand.doppler = dopplerpos;
           transientCand.twoFtotal =  2.0 * thisFCand.Fstat.F;
           if ( uvar.SignalOnly )
-            transientCand.maxFstat += 4;
+            transientCand.maxTwoF += 4;
 
           if ( write_TransientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );

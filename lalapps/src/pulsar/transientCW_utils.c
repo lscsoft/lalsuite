@@ -415,7 +415,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
-  ret.maxFstat = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
+  ret.maxTwoF = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
   UINT4 m, n;
 
   transientWindow_t window;
@@ -538,9 +538,9 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                                 );
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
-          if ( twoF > ret.maxFstat )
+          if ( twoF > ret.maxTwoF )
             {
-              ret.maxFstat = twoF;
+              ret.maxTwoF = twoF;
               ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
               ret.tau_maxF = window.tau;
             }
@@ -554,7 +554,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
     } /* for m in m[t0] : m[t0+t0Band] */
 
-  /* now step through FReg_mn array subtract maxFstat and sum e^{FReg - Fmax}*/
+  /* now step through FReg_mn array subtract maxTwoF and sum e^{FReg - Fmax}*/
   REAL8 sum_eB = 0;
 
   for ( m=0; m < N_t0Range; m ++ )
@@ -563,7 +563,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
         {
           REAL8 FReg = FReg_mn [ IND_MN(m,n) ];
 
-          sum_eB += exp ( FReg - 0.5 * ret.maxFstat );
+          sum_eB += exp ( FReg - 0.5 * ret.maxTwoF );
 
         } /* for n < N_tauRange */
 
@@ -571,7 +571,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* combine this to final log(Bstat) result with proper normalization (assuming hmaxhat=1) : */
 
-  REAL8 logBhat = 0.5 * ret.maxFstat + log ( windowRange.dt0 * windowRange.dtau ) + log ( sum_eB );	/* unnormalized Bhat */
+  REAL8 logBhat = 0.5 * ret.maxTwoF + log ( windowRange.dt0 * windowRange.dtau ) + log ( sum_eB );	/* unnormalized Bhat */
   /* final normalized Bayes factor, assuming hmaxhat=1 */
   /* NOTE: correct for different hmaxhat by adding "- 4 * log(hmaxhat)" to this */
 
@@ -711,13 +711,13 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand 
   }
 
   if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxFstat       logBstat\n");
+    fprintf (fp, "\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
   else
     fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g        %7.5f      %7.5f   %11.9g    %11.9g\n",
              thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
              thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
              thisCand->twoFtotal,
-             1.0 * thisCand->t0offs_maxF / DAY24, 1.0 * thisCand->tau_maxF / DAY24, thisCand->maxFstat,
+             1.0 * thisCand->t0offs_maxF / DAY24, 1.0 * thisCand->tau_maxF / DAY24, thisCand->maxTwoF,
              thisCand->logBstat
              );
 

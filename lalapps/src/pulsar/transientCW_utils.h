@@ -94,7 +94,7 @@ typedef struct
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   REAL8 twoFtotal;			/**< 2F obtained in the full search over all SFTs */
-  REAL8 maxFstat;			/**< maximal 2F value obtained over transientWindowRange */
+  REAL8 maxTwoF;			/**< maximal 2F value obtained over transientWindowRange */
   UINT4 t0offs_maxF;			/**< start-time offset from transient_t0 of max{2F} over transientWindowRange (in GPS seconds)*/
   UINT4 tau_maxF;			/**< duration Tcoh where max{2F} occurred over the transientWindowRange (in seconds) */
   REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
