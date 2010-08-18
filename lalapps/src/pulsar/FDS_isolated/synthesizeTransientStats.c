@@ -162,6 +162,7 @@ typedef struct {
   INT4 dataDuration;	/**< data-span to generate */
   INT4 TAtom;		/**< Fstat atoms time baseline */
 
+  BOOLEAN computeFtotal; /**< Also compute 'total' F-statistic over the full data-span */
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
@@ -300,6 +301,20 @@ int main(int argc,char *argv[])
         return 1;
       }
 
+      /* if requested, also compute Ftotal over full data-span */
+      if ( uvar.computeFtotal )
+        {
+          TransientCandidate_t candTotal;
+          transientWindowRange_t winRangeAll = empty_transientWindowRange;
+          winRangeAll.type = TRANSIENT_NONE;	/* window 'none' will simply cover all the data with 1 F-stat calculation */
+          if ( XLALComputeTransientBstat ( &candTotal, multiAtoms,  winRangeAll ) != XLAL_SUCCESS ) {
+            LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed for totalFstat (winRangeAll) with xlalErrno = %d\n", fn, xlalErrno );
+            return 1;
+          }
+          /* we only carry over twoFtotal = maxTwoF from this single-Fstat calculation */
+          cand.twoFtotal = candTotal.maxTwoF;
+        } /* if computeFtotal */
+
       /* free atoms */
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
@@ -363,6 +378,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->numDraws = 1;
   uvar->TAtom = 1800;
 
+  uvar->computeFtotal = 0;
+
   /* transient window defaults */
 #define DEFAULT_TRANSIENT "none"
   uvar->injectWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
@@ -398,14 +415,18 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregREALUserStruct( injectWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to inject, in days");
   /* ... and for search */
   XLALregSTRINGUserStruct ( searchWindow_type,   0, UVAR_OPTIONAL, "Type of transient window to search with ('none', 'rect', 'exp')");
+
   XLALregINTUserStruct ( searchWindow_t0,        0, UVAR_OPTIONAL, "Earliest GPS start-time of transient window to search, in seconds");
   XLALregINTUserStruct ( searchWindow_t0Band,    0, UVAR_OPTIONAL, "Range of GPS start-time of transient window to search, in seconds");
+  XLALregINTUserStruct ( searchWindow_dt0, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
+
   XLALregREALUserStruct( searchWindow_tauDays,   0, UVAR_OPTIONAL, "Shortest transient-window timescale to search, in days");
   XLALregREALUserStruct( searchWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to search, in days");
-  XLALregINTUserStruct ( searchWindow_dt0, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
   XLALregINTUserStruct ( searchWindow_dtau, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:TAtom]");
 
   /* misc params */
+  XLALregBOOLUserStruct ( computeFtotal,	 0, UVAR_OPTIONAL, "Also compute 'total' F-statistic over the full data-span" );
+
   XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
