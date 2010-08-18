@@ -65,7 +65,7 @@ void CompBinShifts(INT4Vector *out, REAL8 freq, REAL8Vector *velocities, REAL8 T
    
    INT4 ii;
    
-   for (ii=0; ii<(INT4)velocities->length; ii++) out->data[ii] = (INT4)roundf(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
+   for (ii=0; ii<(INT4)velocities->length; ii++) out->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tcoh);
    
 }
 

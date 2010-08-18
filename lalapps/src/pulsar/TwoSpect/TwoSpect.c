@@ -332,7 +332,7 @@ int main(int argc, char *argv[])
       if (antweightsrms == 0.0) {
          antweightsrms = currentAntWeightsRMS;
       }
-      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
+      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.02 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
       }
@@ -374,9 +374,9 @@ int main(int argc, char *argv[])
       
       XLALDestroyREAL8Vector(TFdata_weighted);
       fprintf(stderr,"2nd FFT ave = %g, expected ave = %g\n",secFFTmean,calcMean(aveNoise)*calcMean(aveTFnoisePerFbinRatio));
-      FFDATA = fopen(u,"w");
+      /* FFDATA = fopen(u,"w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
-      fclose(FFDATA);
+      fclose(FFDATA); */
       
       
       
@@ -993,10 +993,10 @@ int main(int argc, char *argv[])
                         bestProb = prob;
                         bestproberrcode = proberrcode;
                         
-                        FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
+                        /* FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
                         INT4 mm;
                         for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
-                        fclose(TEMPLATEOUT);
+                        fclose(TEMPLATEOUT); */
                      }
                      free_candidate(cand);
                      cand = NULL;
@@ -1414,6 +1414,14 @@ void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, i
          fprintf(LOG,"Something wrong with second PSD...\n");
       }
       
+      //TEST
+      if (ii==807 || ii==808) {
+         COMPLEX16Vector *testvect = XLALCreateCOMPLEX16Vector(psd->length);
+         check = XLALREAL8ForwardFFT(testvect,x,plan);
+         XLALDestroyCOMPLEX16Vector(testvect);
+         testvect = NULL;
+      }
+      
       //Fix beginning and end values if even, otherwise just the beginning if odd
       if (GSL_IS_EVEN(x->length)==1) {
          psd->data[0] *= 2.0;
@@ -1505,7 +1513,7 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Ve
    REAL8Window *win = XLALCreateHannREAL8Window((UINT4)numffts);
    REAL8 winFactor = 8.0/3.0;
    REAL8FFTPlan *plan = XLALCreateForwardREAL8FFTPlan((UINT4)numffts, 0 );
-   REAL8Vector *psd = XLALCreateREAL8Vector((UINT4)numfprbins);
+   REAL8Vector *psd = XLALCreateREAL8Vector((UINT4)numfprbins);   //Current PSD calculation
    
    //Average each SFT across the frequency band, also compute normalization factor
    REAL8Vector *aveNoiseInTime = XLALCreateREAL8Vector((UINT4)numffts);
@@ -1526,7 +1534,7 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Ve
    }
    invsumofweights = 1.0/sumofweights;
    
-   FILE *BACKGRND = fopen("./background.dat","w");
+   //FILE *BACKGRND = fopen("./background.dat","w");
    
    //Load time series of powers, normalize, mean subtract and Hann window
    REAL8Vector *x = XLALCreateREAL8Vector(aveNoiseInTime->length);
@@ -1541,7 +1549,8 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Ve
       else multiplicativeFactor->data[ii] = 0.0;
    }
    
-   for (ii=0; ii<100000; ii++) {
+   //Previous version with no correlation between SFTs when there is overlap
+   /* for (ii=0; ii<100000; ii++) {
       for (jj=0; jj<(INT4)x->length; jj++) {
          if (aveNoiseInTime->data[jj] != 0.0) x->data[jj] = multiplicativeFactor->data[jj]*(expRandNum(aveNoiseInTime->data[jj], rng)/aveNoiseInTime->data[jj]-1.0);
          else x->data[jj] = 0.0;
@@ -1558,10 +1567,46 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Ve
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
          aveNoise->data[jj] += psd->data[jj];
       }
+   } */
+   
+   //New version. Computes expected background with correlation estimate from Hann windowed and overlapped (based on input arguments) SFTs
+   REAL8 correlationfactor = 0.0;
+   for (ii=0; ii<(INT4)floor(win->data->length*(inputParams->SFToverlap/inputParams->Tcoh)-1); ii++) correlationfactor += win->data->data[ii]*win->data->data[ii + (INT4)((1.0-(inputParams->SFToverlap/inputParams->Tcoh))*win->data->length)];
+   correlationfactor /= win->sumofsquares;
+   REAL8 corrfactorsquared = correlationfactor*correlationfactor;
+   REAL8 prevnoiseval = 0.0;
+   REAL8 noiseval = 0.0;
+   for (ii=0; ii<200; ii++) {
+      for (jj=0; jj<(INT4)x->length; jj++) {
+         if (aveNoiseInTime->data[jj] != 0.0) {
+            noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
+            if (jj==0 || (jj>0 && aveNoiseInTime->data[jj-1] == 0.0)) {
+               x->data[jj] = multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0);
+            } else {
+               REAL8 newnoiseval = (1.0-corrfactorsquared)*noiseval + corrfactorsquared*prevnoiseval;
+               x->data[jj] = multiplicativeFactor->data[jj]*(newnoiseval/aveNoiseInTime->data[jj]-1.0);
+            }
+            prevnoiseval = noiseval;
+         } else {
+            x->data[jj] = 0.0;
+         }
+      }
+      
+      //Do the FFT
+      INT4 check = XLALREAL8PowerSpectrum(psd,x,plan);
+      if (check != 0) {
+         printf("Something wrong with second PSD in background estimate...\n");
+         fprintf(LOG,"Something wrong with second PSD in background estimate...\n");
+      }
+      
+      //Rescale and sum into the bins
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
+         aveNoise->data[jj] += psd->data[jj];
+      }
    }
    
    //Average
-   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= 1.0e-5*psdfactor;
+   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= 5.0e-3*psdfactor*(1.0+2.0*corrfactorsquared);
    
    //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
    if (GSL_IS_EVEN(x->length)==1) {
@@ -1575,10 +1620,10 @@ void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Ve
    *(normalization) = 1.0/calcMean(aveNoise);
    for (ii=0; ii<(INT4)aveNoise->length; ii++) {
       aveNoise->data[ii] *= *(normalization);
-      fprintf(BACKGRND,"%g\n",aveNoise->data[ii]);
+      //fprintf(BACKGRND,"%g\n",aveNoise->data[ii]);
    }
    
-   fclose(BACKGRND);
+   //fclose(BACKGRND);
 
    XLALDestroyREAL8Vector(x);
    XLALDestroyREAL8Vector(psd);

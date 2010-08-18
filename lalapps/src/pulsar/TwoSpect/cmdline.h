@@ -91,7 +91,7 @@ struct gengetopt_args_info
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lal/share/lal').  */
+  char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lalpulsar/share/lalpulsar').  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
   double dopplerMultiplier_arg;	/**< @brief Multiplier for the Doppler velocity (default='1.0').  */

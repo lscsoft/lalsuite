@@ -50,7 +50,7 @@ const char *gengetopt_args_info_help[] = {
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
   "      --outdirectory=STRING     Output directory",
   "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
-  "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lal/share/lal')",
+  "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Number of pixels to use in the template  \n                                  (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
@@ -158,7 +158,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->outdirectory_orig = NULL;
   args_info->sftDir_arg = gengetopt_strdup ("./");
   args_info->sftDir_orig = NULL;
-  args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lal/share/lal");
+  args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
   args_info->ephemDir_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
@@ -910,7 +910,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->ephemDir_arg), 
                  &(args_info->ephemDir_orig), &(args_info->ephemDir_given),
-                &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lal/share/lal", ARG_STRING,
+                &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lalpulsar/share/lalpulsar", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "ephemDir", '-',
                 additional_error))
