@@ -166,7 +166,7 @@ typedef struct {
   INT4 numDraws;	/**< number of random 'draws' to simulate for F-stat and B-stat */
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
-
+  CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
@@ -315,6 +315,34 @@ int main(int argc,char *argv[])
           cand.twoFtotal = candTotal.maxTwoF;
         } /* if computeFtotal */
 
+      /* if requested, output atoms-vector into file */
+      if ( uvar.outputAtoms )
+        {
+          FILE *fpAtoms;
+          char *fnameAtoms;
+          UINT4 len = strlen ( uvar.outputAtoms ) + 20;
+          if ( (fnameAtoms = LALCalloc ( 1, len )) == NULL ) {
+            XLALPrintError ("%s: failed to LALCalloc ( 1, %d )\n", fn, len );
+            return 1;
+          }
+          sprintf ( fnameAtoms, "%s_%04d_of_%04d.dat", uvar.outputAtoms, i + 1, uvar.numDraws );
+
+          if ( ( fpAtoms = fopen ( fnameAtoms, "wb" )) == NULL ) {
+            XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", fn, fnameAtoms );
+            return 1;
+          }
+	  fprintf ( fpAtoms, "%s", cfg.VCSInfoString );	/* output header info */
+
+	  if ( write_MultiFstatAtoms_to_fp ( fpAtoms, multiAtoms ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", fn, fnameAtoms, xlalErrno );
+            return 1;
+          }
+
+          XLALFree ( fnameAtoms );
+	  fclose (fpAtoms);
+        } /* if outputAtoms */
+
+
       /* free atoms */
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
@@ -430,7 +458,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
-
+  XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL,  "Output F-statistic atoms into a file with this basename");
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
 
   XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
