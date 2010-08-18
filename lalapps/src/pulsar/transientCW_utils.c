@@ -569,8 +569,14 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
     } /* for m < N_t0Range */
 
-  /* combine this to final log(Bstat) result: */
-  ret.logBstat = 0.5 * ret.maxFstat + log ( windowRange.dt0 * windowRange.dtau ) + log ( sum_eB );
+  /* combine this to final log(Bstat) result with proper normalization (assuming hmaxhat=1) : */
+
+  REAL8 logBhat = 0.5 * ret.maxFstat + log ( windowRange.dt0 * windowRange.dtau ) + log ( sum_eB );	/* unnormalized Bhat */
+  /* final normalized Bayes factor, assuming hmaxhat=1 */
+  /* NOTE: correct for different hmaxhat by adding "- 4 * log(hmaxhat)" to this */
+
+  REAL8 normBh = 70.0 / ( N_t0Range * N_tauRange * TAtom * TAtom );
+  ret.logBstat = log ( normBh ) +  logBhat;	/* - 4.0 * log ( hmaxhat ) */
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
