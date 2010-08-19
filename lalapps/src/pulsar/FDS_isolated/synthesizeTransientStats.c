@@ -408,6 +408,10 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   uvar->computeFtotal = 0;
 
+#define DEFAULT_IFO "H1"
+  uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
+  strcpy ( uvar->IFO, DEFAULT_IFO );
+
   /* transient window defaults */
 #define DEFAULT_TRANSIENT "none"
   uvar->injectWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
@@ -431,7 +435,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
   XLALregREALUserStruct ( phi0,		 	 0,  UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
-  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_REQUIRED, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_OPTIONAL, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
   XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
   XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
 
