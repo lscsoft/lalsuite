@@ -711,7 +711,7 @@ write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand 
   }
 
   if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "\n%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
+    fprintf (fp, "%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
   else
     fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g        %7.5f      %7.5f   %11.9g    %11.9g\n",
              thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,

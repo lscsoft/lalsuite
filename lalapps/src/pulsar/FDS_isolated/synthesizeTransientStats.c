@@ -111,7 +111,7 @@ typedef struct {
   MultiLIGOTimeGPSVector *multiTS;		/**< corresponding timestamps vector for convenience */
 
   gsl_rng *rng;			/**< gsl random-number generator */
-  CHAR *VCSInfoString;		/**< code VCS version info */
+  CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
 
 } ConfigVariables;
 
@@ -244,12 +244,6 @@ int main(int argc,char *argv[])
   if (uvar.help)	/* if help was requested, we're done here */
     return 0;
 
-  /* short VCS version string for results-tagging (ie add to output files etc) */
-  if ( (cfg.VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s:XLALGetVersionString(0) failed with errno=%d.\n", fn, xlalErrno );
-    return 1;
-  }
-
   if ( uvar.version ) {
     /* output verbose VCS version string if requested */
     CHAR *vcs;
@@ -277,7 +271,7 @@ int main(int argc,char *argv[])
 	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputStats );
 	  return 1;
 	}
-      fprintf (fpTransientStats, "%s", cfg.VCSInfoString );		/* write search log comment */
+      fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
       write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
     }
 
@@ -321,8 +315,8 @@ int main(int argc,char *argv[])
           FILE *fpAtoms;
           char *fnameAtoms;
           UINT4 len = strlen ( uvar.outputAtoms ) + 20;
-          if ( (fnameAtoms = LALCalloc ( 1, len )) == NULL ) {
-            XLALPrintError ("%s: failed to LALCalloc ( 1, %d )\n", fn, len );
+          if ( (fnameAtoms = XLALCalloc ( 1, len )) == NULL ) {
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
             return 1;
           }
           sprintf ( fnameAtoms, "%s_%04d_of_%04d.dat", uvar.outputAtoms, i + 1, uvar.numDraws );
@@ -331,7 +325,7 @@ int main(int argc,char *argv[])
             XLALPrintError ("%s: failed to open atoms-output file '%s' for writing.\n", fn, fnameAtoms );
             return 1;
           }
-	  fprintf ( fpAtoms, "%s", cfg.VCSInfoString );	/* output header info */
+	  fprintf ( fpAtoms, "%s", cfg.logString );	/* output header info */
 
 	  if ( write_MultiFstatAtoms_to_fp ( fpAtoms, multiAtoms ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to write atoms to output file '%s'. xlalErrno = %d\n", fn, fnameAtoms, xlalErrno );
@@ -366,7 +360,7 @@ int main(int argc,char *argv[])
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
 
-  if ( cfg.VCSInfoString ) XLALFree ( cfg.VCSInfoString );
+  if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
 
   XLALDestroyUserVars();
@@ -400,7 +394,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
   uvar->dataDuration = LAL_YRSID_SI;	/* 1 year of data */
 
-  uvar->ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);
 
   uvar->numDraws = 1;
@@ -414,9 +408,9 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   /* transient window defaults */
 #define DEFAULT_TRANSIENT "none"
-  uvar->injectWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  uvar->injectWindow_type = XLALMalloc(strlen(DEFAULT_TRANSIENT)+1);
   strcpy ( uvar->injectWindow_type, DEFAULT_TRANSIENT );
-  uvar->searchWindow_type = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  uvar->searchWindow_type = XLALMalloc(strlen(DEFAULT_TRANSIENT)+1);
   strcpy ( uvar->searchWindow_type, DEFAULT_TRANSIENT );
 
   /* register all our user-variables */
@@ -489,8 +483,28 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
   const char *fn = __func__;
 
-  /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
+  /* generate log-string for file-output, containing cmdline-options + code VCS version info */
+  char *vcs;
+  if ( (vcs = XLALGetVersionString(0)) == NULL ) {	  /* short VCS version string */
+    XLALPrintError ( "%s: XLALGetVersionString(0) failed with errno=%d.\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  char *cmdline;
+  if ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) == NULL ) {
+    XLALPrintError ( "%s: XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE ) failed with errno=%d.\n", fn, xlalErrno );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+  const char fmt[] = "%%%% cmdline: %s\n%%%%\n%s%%%%\n";
+  UINT4 len = strlen(vcs) + strlen(cmdline) + strlen(fmt) + 1;
+  if ( ( cfg->logString = XLALMalloc ( len  )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc ( %d ) failed.\n", len );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+  sprintf ( cfg->logString, fmt, cmdline, vcs );
+  XLALFree ( cmdline );
+  XLALFree ( vcs );
 
+  /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
   /* skypos */
   cfg->skypos.longitude = uvar->Alpha;	/* Alpha < 0 indicates 'allsky' */
   cfg->skypos.latitude  = uvar->Delta;
