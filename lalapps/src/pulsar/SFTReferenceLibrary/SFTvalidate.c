@@ -1,15 +1,46 @@
-/* $Id$ */
+/*
+ *  Copyright (C) 2004, 2005 Bruce Allen
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
+
+/** 
+ *  \author Bruce Allen
+ *  \file
+ *  \brief
+ *  Verify that a set of SFT files is valid
+ *
+ *  The exit status will be zero if all SFTs are valid.  The exit status
+ *  will be non-zero if any of the SFTs was invalid.  grep SFTE
+ *  SFTReferenceLibrary.h will show the return values.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
+
+#define RCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
 
 int main(int argc, char** argv) {
   int i;
   float *data=NULL;
-  const char* rcsid = "$Id$";
   
   /* loop over all file names on command line */
   for (i=1; i<argc; i++) {
@@ -38,7 +69,7 @@ int main(int argc, char** argv) {
       
       /* SFT was invalid: say why */
       if (err) {
-	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", rcsid, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -47,7 +78,7 @@ int main(int argc, char** argv) {
       /* check that various bits of header information are consistent */
       if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
 	{
-	  fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", rcsid, argv[i], SFTErrorMessage(err));
+	  fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
 	  if (errno)
 	    perror(NULL);
 	  return err;
@@ -57,7 +88,7 @@ int main(int argc, char** argv) {
       data=(float *)realloc((void *)data, info.nsamples*4*2);
       if (!data) {
 	errno=SFTENULLPOINTER;
-	fprintf(stderr, "%s\nran out of memory at %s. %s\n", rcsid, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\nran out of memory at %s. %s\n", RCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -65,7 +96,7 @@ int main(int argc, char** argv) {
 
       err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
       if (err) {
-	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", rcsid, argv[i], SFTErrorMessage(err));
+	fprintf(stderr, "%s\n%s is not a valid SFT. %s\n", RCSID, argv[i], SFTErrorMessage(err));
 	if (errno)
 	  perror(NULL);
 	return err;
@@ -73,7 +104,7 @@ int main(int argc, char** argv) {
 
       for (j=0; j<info.nsamples; j++) {
 	if (!finite(data[2*j]) || !finite(data[2*j+1])) {
-	  fprintf(stderr, "%s\n%s is not a valid SFT (data infinite at freq bin %d)\n", rcsid, argv[i], j+info.firstfreqindex);
+	  fprintf(stderr, "%s\n%s is not a valid SFT (data infinite at freq bin %d)\n", RCSID, argv[i], j+info.firstfreqindex);
 	  return SFTNOTFINITE;
 	}
       }
