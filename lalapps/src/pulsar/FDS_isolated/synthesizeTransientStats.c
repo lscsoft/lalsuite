@@ -1030,17 +1030,17 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
     XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
-  /* prepare gsl-matrix for M_mu_nu = Tsft/Sn * [ a^2, a*b ; a*b , b^2 ] */
-  gsl_matrix *M_mu_nu;
-  if ( (M_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
+  /* prepare gsl-matrix for Mh_mu_nu = [ a^2, a*b ; a*b , b^2 ] */
+  gsl_matrix *Mh_mu_nu;
+  if ( (Mh_mu_nu = gsl_matrix_calloc ( 4, 4 )) == NULL ) {
     XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
-  /* prepare placeholder for 4-vector s_mu */
-  gsl_vector *s_mu;
-  if ( (s_mu = gsl_vector_calloc ( 4 ) ) == NULL ) {
+  /* prepare placeholder for 4-vector sh_mu */
+  gsl_vector *sh_mu;
+  if ( (sh_mu = gsl_vector_calloc ( 4 ) ) == NULL ) {
     XLALPrintError ("%s: gsl_vector_calloc ( 4 ) failed.\n", fn );
-    gsl_matrix_free ( M_mu_nu );
+    gsl_matrix_free ( Mh_mu_nu );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
@@ -1055,43 +1055,44 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       if ( win == 0 )
         continue;
 
-      /* compute s_mu = M_mu_nu A^nu, where M_mu_nu is now just
-       * the per-atom block matrix TAtom/Sn * [a^2,  ab; ab, b^2 ]
-       * where Sn=1:
+      /* compute sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu, where Mh_mu_nu is now just
+       * the per-atom block matrix [a^2,  ab; ab, b^2 ]
+       * where Sn=1, so gamma = Sinv*TAtom = TAtom
        */
-      REAL8 norm = win * win * sqrt(TAtom / 2.0);
+      REAL8 norm = win * win;
       REAL8 a2 = norm * atoms->data[alpha].a2_alpha;
       REAL8 b2 = norm * atoms->data[alpha].b2_alpha;
       REAL8 ab = norm * atoms->data[alpha].ab_alpha;
 
       /* upper-left block */
-      gsl_matrix_set ( M_mu_nu, 0, 0, a2 );
-      gsl_matrix_set ( M_mu_nu, 1, 1, b2 );
-      gsl_matrix_set ( M_mu_nu, 0, 1, ab );
-      gsl_matrix_set ( M_mu_nu, 1, 0, ab );
+      gsl_matrix_set ( Mh_mu_nu, 0, 0, a2 );
+      gsl_matrix_set ( Mh_mu_nu, 1, 1, b2 );
+      gsl_matrix_set ( Mh_mu_nu, 0, 1, ab );
+      gsl_matrix_set ( Mh_mu_nu, 1, 0, ab );
       /* lower-right block: +2 on all components */
-      gsl_matrix_set ( M_mu_nu, 2, 2, a2 );
-      gsl_matrix_set ( M_mu_nu, 3, 3, b2 );
-      gsl_matrix_set ( M_mu_nu, 2, 3, ab );
-      gsl_matrix_set ( M_mu_nu, 3, 2, ab );
+      gsl_matrix_set ( Mh_mu_nu, 2, 2, a2 );
+      gsl_matrix_set ( Mh_mu_nu, 3, 3, b2 );
+      gsl_matrix_set ( Mh_mu_nu, 2, 3, ab );
+      gsl_matrix_set ( Mh_mu_nu, 3, 2, ab );
 
       /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
        *
-       * s_mu = M_mu_nu A^nu
+       * sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu, where here gamma = TAtom (as Sinv=1)
        */
-      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, M_mu_nu, A_Mu, 0.0, s_mu)) != 0 ) {
+      REAL8 norm_s = sqrt(TAtom / 2.0);
+      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, A_Mu, 0.0, sh_mu)) != 0 ) {
         XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
 
       /* add this signal to the atoms, using the relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
       REAL8 s1,s2,s3,s4;
-      s1 = gsl_vector_get ( s_mu, 0 );
-      s2 = gsl_vector_get ( s_mu, 1 );
-      s3 = gsl_vector_get ( s_mu, 2 );
-      s4 = gsl_vector_get ( s_mu, 3 );
+      s1 = gsl_vector_get ( sh_mu, 0 );
+      s2 = gsl_vector_get ( sh_mu, 1 );
+      s3 = gsl_vector_get ( sh_mu, 2 );
+      s4 = gsl_vector_get ( sh_mu, 3 );
 
       atoms->data[alpha].Fa_alpha.re +=   s1;
       atoms->data[alpha].Fa_alpha.im += - s3;
@@ -1101,8 +1102,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
     } /* for alpha < numAtoms */
 
   /* free memory */
-  gsl_vector_free ( s_mu );
-  gsl_matrix_free ( M_mu_nu );
+  gsl_vector_free ( sh_mu );
+  gsl_matrix_free ( Mh_mu_nu );
 
   /* return status */
   return XLAL_SUCCESS;
