@@ -32,6 +32,12 @@
 
 #include <math.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagBBHPhenomParams{
   REAL8 fMerger;
   REAL8 fRing;
@@ -1185,7 +1191,7 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
 static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
 				   REAL4Vector     *freq,
 				   REAL8           cutFreq,
-				   REAL8           deltaT)
+				   REAL8           UNUSED deltaT)
 {
   UINT4 k, k0, kMid, len;
   REAL4 currentFreq;
