@@ -964,13 +964,12 @@ LALFindPosition(LALStatus       *status,
 {
   REAL8 	mint3;
   REAL4   	eta;
-  REAL4 	totalMass,ieta, oneby4, tiny, piFl, A0, A3;
+  REAL4 	totalMass, oneby4, tiny, piFl, A0, A3;
 
   INITSTATUS( status, "LALFindPosition",
 	      LALINSPIRALHEXAGONALBANKC );
   ATTATCHSTATUSPTR( status );
 
-  ieta 	        = 1.;
   oneby4 	= 1./4.;
   tiny 	        = 1.e-10;
   piFl 	        = LAL_PI * paramsIn->fLower;
