@@ -61,6 +61,7 @@ src/inspiral/lalapps_calcexpsnr
 src/inspiral/lalapps_cbc_pipedown
 src/inspiral/lalapps_check_flag
 src/inspiral/lalapps_check_hipe_times
+src/inspiral/lalapps_cohPTF_hipe
 src/inspiral/lalapps_coherent_inspiral
 src/inspiral/lalapps_coherentbank
 src/inspiral/lalapps_cohire
@@ -161,6 +162,11 @@ src/pulsar/Injections/lalapps_makefakedatabinary
 src/pulsar/MakeSFTs/lalapps_ConvertToSFTv2
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
+src/pulsar/SFTReferenceLibrary/lalapps_SFTdumpall
+src/pulsar/SFTReferenceLibrary/lalapps_SFTdumpheader
+src/pulsar/SFTReferenceLibrary/lalapps_SFTvalidate
+src/pulsar/SFTReferenceLibrary/lalapps_SFTwrite
+src/pulsar/SFTReferenceLibrary/lalapps_splitSFTs
 src/pulsar/SideBand/lalapps_GenerateSideBandTemplate
 src/pulsar/SideBand/lalapps_GetTimeStamps
 src/pulsar/SideBand/lalapps_SideBandMCMC
@@ -209,6 +215,9 @@ src/pulsar/templateBanks/lalapps_skynet
 src/pulsar/templateBanks/lalapps_testFlatLatticeTilingPulsar
 src/pulsar/templateBanks/lalapps_testFlatPulsarMetric
 src/pulsar/templateBanks/lalapps_testLatticeCovering
+src/ring/lalapps_coh_PTF_inspiral
+src/ring/lalapps_coh_PTF_spin_checker
+src/ring/lalapps_coh_PTF_testing
 src/ring/lalapps_coincringread
 src/ring/lalapps_collatesim
 src/ring/lalapps_qnmode
