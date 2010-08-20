@@ -1897,7 +1897,6 @@ LALReadSFTfile (LALStatus *status,
 		const CHAR *fname)	/**< path+filename */
 {
   SFTHeader  header;		/* SFT file-header version1 */
-  REAL8 deltaF;
   UINT4 readlen;
   INT4 fminBinIndex, fmaxBinIndex;
   SFTtype *outputSFT = NULL;
@@ -1916,7 +1915,6 @@ LALReadSFTfile (LALStatus *status,
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
 
   /* ----- figure out which data we want to read ----- */
-  deltaF = 1.0 / header.timeBase;
 
   /* special case: fMin==fMax==0 means "read all" */
   if ( (fMin == 0) && (fMax == 0) )
