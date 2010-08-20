@@ -326,8 +326,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
     REAL8 sqResp;
     REAL8 spectralDensity;
 
-    //UNUSED(deltaT);
-
     /* Allocate memory for workspace and the autocorrelation if necessary */
     if ( !bankVetoData->acorr )
       bankVetoData->acorr = XLALCreateREAL4Vector((templateLength-1) * 2);
