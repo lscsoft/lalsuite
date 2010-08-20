@@ -116,6 +116,12 @@ at the last stable orbit. It is recommended that a rather generous
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
 } rOfOmegaIn;
@@ -522,7 +528,7 @@ omegaofr3PN (
 
 void
 LALrOfOmega3PN(
-	    LALStatus *status,
+	    LALStatus UNUSED *status,
 	    REAL8 *x,
 	    REAL8 r,
 	    void *params)
@@ -530,7 +536,6 @@ LALrOfOmega3PN(
   REAL8  omega1,omega2;
   pr3In *pr3in;
 
-  status = NULL;
   pr3in = (pr3In *) params;
 
   omega1 = pr3in->omega;
@@ -543,7 +548,7 @@ NRCSID (LALLIGHTRINGRADIUS3PNC,
 "$Id$");
  void
 LALlightRingRadius3PN(
-		      LALStatus *status,
+		      LALStatus UNUSED *status,
 		      REAL8 *x,
 		      REAL8 r,
 		      void *params
@@ -551,7 +556,6 @@ LALlightRingRadius3PN(
 {
   REAL8 eta, u, u2, u3, a4, a4p4eta,a4peta2, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
-  status = NULL;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
 
@@ -812,7 +816,7 @@ omegaofrP4PN (
 /*-------------------------------------------------------------------*/
 void
 LALrOfOmegaP4PN(
-            LALStatus *status,
+            LALStatus UNUSED *status,
             REAL8 *x,
             REAL8 r,
             void *params)
@@ -820,7 +824,6 @@ LALrOfOmegaP4PN(
   REAL8  omega1,omega2;
   pr3In *pr3in;
 
-  status = NULL;
   pr3in = (pr3In *) params;
 
   omega1 = pr3in->omega;
@@ -833,7 +836,7 @@ LALrOfOmegaP4PN(
 /*-------------------------------------------------------------------*/
 static void
 LALlightRingRadiusP4PN(
-                      LALStatus *status,
+                      LALStatus UNUSED *status,
                       REAL8 *x,
                       REAL8 r,
                       void *params
@@ -841,7 +844,6 @@ LALlightRingRadiusP4PN(
 {
   REAL8 eta, eta2, u, u2, u3, u4, a4, a5, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
-  status = NULL;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
   eta2 = eta*eta;
@@ -877,7 +879,7 @@ LALHCapDerivativesP4PN(
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
    REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
    REAL8 a5;
-   double dr, ds, dp, dq;
+   double UNUSED dr, UNUSED ds, UNUSED dp, UNUSED dq;
 
    InspiralDerivativesIn *ak;
 
