@@ -486,7 +486,6 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 f;			/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
   INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
@@ -561,8 +560,6 @@ XLALComputeFaFb ( Fcomponents *FaFb,
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
     if ( fkdot[spdnOrder] )
       break;
-
-  f = fkdot[0];
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -781,7 +778,6 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 f;			/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
   INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
@@ -842,8 +838,6 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
     if ( fkdot[spdnOrder] )
       break;
-
-  f = fkdot[0];
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -1041,7 +1035,6 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 f;			/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
   INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
@@ -1099,8 +1092,6 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
     if ( fkdot[spdnOrder] )
       break;
-
-  f = fkdot[0];
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -1621,7 +1612,7 @@ LALGetBinarytimes (LALStatus *status,
   REAL8 refTimeREAL8;
   REAL8 Porb;           /* binary orbital period */
   REAL8 asini;          /* the projected orbital semimajor axis */
-  REAL8 e,ome,ope;      /* the eccentricity, one minus eccentricity, one plus eccentricity */
+  REAL8 e,ome    ;      /* the eccentricity, one minus eccentricity */
   REAL8 sinw,cosw;      /* the sin and cos of the argument of periapsis */
   REAL8 tSSB_now;       /* the SSB time at the midpoint of each SFT in REAL8 form */
   REAL8 fracorb;        /* the fraction of orbits completed since current SSB time */
@@ -1654,7 +1645,6 @@ LALGetBinarytimes (LALStatus *status,
   sinw = sin(binaryparams->argp);
   cosw = cos(binaryparams->argp);
   ome = 1.0 - e;
-  ope = 1.0 + e;
   refTimeREAL8 = GPS2REAL8(refTime);
 
   /* compute p, q and r coeeficients */
