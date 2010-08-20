@@ -91,8 +91,11 @@ in Equation (\ref{eq:ode2}).
 #include <lal/DetResponse.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 static void
 LALInspiralAmplitudeCorrectedWaveEngine(
@@ -364,8 +367,8 @@ LALInspiralAmplitudeCorrectedWaveEngine(
 		REAL4Vector      *signalvec1,
 		REAL4Vector      *signalvec2,
 		REAL4Vector      *a,
-		REAL4Vector      *ff,
-		REAL8Vector      *phi,
+		REAL4Vector      UNUSED *ff,
+		REAL8Vector      UNUSED *phi,
 		INT4             *countback,
 		InspiralTemplate *params)
 {
@@ -374,20 +377,16 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    INT4 i, count;
    REAL8 dt;
    REAL8 mTot = 0;
-   REAL8 unitHz = 0;
+   REAL8 UNUSED unitHz = 0;
    REAL8 mu = 0;
    REAL8 cosI = 0;/* cosine of system inclination */
    REAL8 etab = 0;
    REAL8 fFac = 0; /* SI normalization for f and t */
-   REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
+   REAL8 UNUSED f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 
    REAL4 hPlus, hCross;
    double fPlus, fCross;
-
-   /* ff and phi are unused in this function */
-   UNUSED(ff);
-   UNUSED(phi);
 
   /* LALDetector det;
    InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
