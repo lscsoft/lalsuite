@@ -36,6 +36,12 @@ $Id$
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagxiInitIn {
   REAL8 eta, omega, e0;
 } xiInitIn;
@@ -101,7 +107,7 @@ NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
 static void LALxiInit4PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      xi,
    void      *params)
@@ -111,7 +117,6 @@ static void LALxiInit4PN(
    xiInitIn *in;
    REAL8 xi2, xi43, xi23, eta, eta2, pisq;
 
-   status = NULL;
    in = (xiInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -125,7 +130,7 @@ static void LALxiInit4PN(
 }
 
 static void LALxiInit5PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      xi,
    void      *params)
@@ -135,7 +140,6 @@ static void LALxiInit5PN(
    xiInitIn *in;
    REAL8 xi2, xi43, xi23, eta, eta2, pisq;
 
-   status = NULL;
    in = (xiInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -149,7 +153,7 @@ static void LALxiInit5PN(
 }
 
 static void LALxiInit6PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      xi,
    void      *params)
@@ -159,7 +163,6 @@ static void LALxiInit6PN(
    xiInitIn *in;
    REAL8 xi2, xi43, xi23, eta, eta2, pisq;
 
-   status = NULL;
    in = (xiInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -174,7 +177,7 @@ static void LALxiInit6PN(
 }
 
 static void LALxiInit7PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      xi,
    void      *params)
@@ -184,7 +187,6 @@ static void LALxiInit7PN(
    xiInitIn *in;
    REAL8 xi2, xi43, xi23, eta, eta2, pisq;
 
-   status = NULL;
    in = (xiInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
