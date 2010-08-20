@@ -70,8 +70,6 @@ NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 #define UNUSED
 #endif
 
-double modf( double value, double *integerPart );
-
 void
 LALFindChirpCreateCoherentInput(
      LALStatus                  *status,

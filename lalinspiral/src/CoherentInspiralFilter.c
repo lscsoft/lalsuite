@@ -53,7 +53,6 @@
 #define UNUSED
 #endif
 
-double modf( double value, double *integerPart );
 int compare( const void* a, const void* b );
 void XLALAssignEventQuads(INT4 caseID[6], COMPLEX8 quadTemp[6], MultiInspiralTable *thisEvent);
 void XLALSaveStatsInEventTable(REAL4 cohSnrSqLocal,REAL4 autoCorrCohSq,REAL4 crossCorrCohSq,REAL4 autoCorrNullSq,REAL4 crossCorrNullSq,REAL8 ampMetricEigenVal1,REAL8 ampMetricEigenVal2,REAL4 VVPlus[4],REAL4 VVMinus[4],MultiInspiralTable *thisEvent);

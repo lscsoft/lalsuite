@@ -46,8 +46,6 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/NullStatistic.h>
 
-double modf( double value, double *integerPart );
-
 NRCSID (NULLSTATISTICC, "$Id$");
 
 
