@@ -73,7 +73,7 @@
 
 /*---------- DEFINES ----------*/
 #define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
-
+#define SQ(x) ((x)*(x))
 
 /** Signal (amplitude) parameter ranges
  */
@@ -192,11 +192,13 @@ MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPS
 int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
 
-int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
-int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, const gsl_vector *A_Mu, transientWindow_t transientWindow );
+int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
+int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 
 gsl_vector *XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange, gsl_rng *rng );
 MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
+
+int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -1040,6 +1042,7 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
  */
 int
 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
+                                 REAL8 *rho2,			 /**< [out] expected optimal SNR^2 for this signal */
                                  const gsl_vector *A_Mu,	 /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                                  transientWindow_t transientWindow /**< transient signal window */
                                  )
@@ -1050,6 +1053,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   /* check input consistency */
   if ( !atoms || !atoms->data ) {
     XLALPrintError ( "%s: Invalid NULL input 'atoms'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( !rho2 ) {
+    XLALPrintError ( "%s: Invalid NULL input 'rho2'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   if ( !A_Mu || (A_Mu->size != 4) ) {
@@ -1081,6 +1088,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   REAL8 TAtom = atoms->TAtom;
   UINT4 numAtoms = atoms->length;
   UINT4 alpha;
+  REAL8 Ad = 0, Bd = 0, Cd = 0;
   for ( alpha=0; alpha < numAtoms; alpha ++ )
     {
       UINT4 ti = atoms->data[alpha].timestamp;
@@ -1097,6 +1105,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       REAL8 a2 = norm * atoms->data[alpha].a2_alpha;
       REAL8 b2 = norm * atoms->data[alpha].b2_alpha;
       REAL8 ab = norm * atoms->data[alpha].ab_alpha;
+
+      Ad += a2;
+      Bd += b2;
+      Cd += ab;
 
       /* upper-left block */
       gsl_matrix_set ( Mh_mu_nu, 0, 0, a2 );
@@ -1135,6 +1147,14 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 
     } /* for alpha < numAtoms */
 
+  /* compute optimal SNR^2 expected for this signal */
+  REAL8 A1 = gsl_vector_get ( A_Mu, 0 );
+  REAL8 A2 = gsl_vector_get ( A_Mu, 1 );
+  REAL8 A3 = gsl_vector_get ( A_Mu, 2 );
+  REAL8 A4 = gsl_vector_get ( A_Mu, 3 );
+
+  (*rho2) = TAtom  * ( Ad * ( SQ(A1) + SQ(A3) ) + 2.0*Cd * ( A1*A2 + A3*A4 ) + Bd * ( SQ(A2) + SQ(A4) ) );
+
   /* free memory */
   gsl_vector_free ( sh_mu );
   gsl_matrix_free ( Mh_mu_nu );
@@ -1150,6 +1170,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
  */
 int
 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [in/out] multi atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
+                                      REAL8 *rho2,			 /**< [out] expected optimal SNR^2 for this signal */
                                       const gsl_vector *A_Mu,	 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                                       transientWindow_t transientWindow /**< transient signal window */
                                       )
@@ -1161,6 +1182,10 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
     XLALPrintError ( "%s: Invalid NULL input 'multiAtoms'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
+  if ( !rho2 ) {
+    XLALPrintError ( "%s: Invalid NULL input 'rho2'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
   if ( !A_Mu || (A_Mu->size != 4) ) {
     XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
@@ -1169,12 +1194,17 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   UINT4 numDet = multiAtoms->length;
   UINT4 X;
 
+  (*rho2) = 0;
   for ( X=0; X < numDet; X ++ )
     {
-      if ( XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], A_Mu, transientWindow ) != XLAL_SUCCESS ) {
+      REAL8 rho2X;
+
+      if ( XLALAddSignalToFstatAtomVector ( multiAtoms->data[X], &rho2X, A_Mu, transientWindow ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: XLALAddSignalToFstatAtomVector() failed.\n", fn );
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
+
+      (*rho2) += rho2X;		/* multi-IFO SNR^2 = sum_X SNR_X^2 */
 
     } /* for X < numDet */
 
@@ -1339,13 +1369,6 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input param
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  /* add noise to the Fstat atoms, unless --SignalOnly was specified */
-  if ( !SignalOnly )
-    if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-    }
-
   /* draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
   gsl_vector *A_Mu;
   if ( (A_Mu = XLALDrawAmplitudeVect ( cfg->AmpRange, cfg->rng )) == NULL ) {
@@ -1363,10 +1386,28 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input param
     }
 
   /* add transient signal to the Fstat atoms */
-  if ( XLALAddSignalToMultiFstatAtomVector ( multiAtoms, A_Mu, injectWindow ) != XLAL_SUCCESS ) {
+  REAL8 rho2 = 0;
+  if ( XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &rho2, A_Mu, injectWindow ) != XLAL_SUCCESS ) {
     XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVectorn() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
+
+  if ( cfg->AmpRange.SNR > 0 )
+    {
+      printf ("Expected SNR = %g, Requested SNR = %g\n", sqrt(rho2), cfg->AmpRange.SNR );
+      REAL8 rescale = cfg->AmpRange.SNR / sqrt(rho2);	/* rescale atoms by this factor, s.t. SNR = cfg->AmpRange.SNR */
+      if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {
+        XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+    } /* if fixed SNR given */
+
+  /* add noise to the Fstat atoms, unless --SignalOnly was specified */
+  if ( !SignalOnly )
+    if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    }
 
   /* we're done, cleanup and return the final atoms-vector */
   gsl_vector_free ( A_Mu );
@@ -1374,3 +1415,45 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input param
   return multiAtoms;
 
 } /* XLALSynthesizeTransientAtoms() */
+
+/** Rescale a given multi-Fstat atoms vector {Fa,Fb} by given scalar factor.
+ * This is used to rescale signal atoms to desired fixed SNR.
+ */
+int
+XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out] multi atoms vectors containing a signal in {Fa,Fb} to be rescaled */
+                                  REAL8 rescale				/**< rescale factor: Fa' = rescale * Fa, and Fb'= rescale * Fb */
+                                  )
+{
+  const char *fn = __func__;
+
+  /* check input */
+  if ( !multiAtoms ) {
+    XLALPrintError ("%s: invalid NULL input 'multiAtoms'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numDet = multiAtoms->length;
+  UINT4 X;
+
+  for ( X=0; X < numDet; X ++ )
+    {
+      FstatAtomVector *atoms = multiAtoms->data[X];
+      UINT4 numAtoms = atoms->length;
+      UINT4 i;
+      for ( i=0; i < numAtoms; i ++ )
+        {
+          FstatAtom *thisAtom = &atoms->data[i];
+
+          thisAtom->Fa_alpha.re *= rescale;
+          thisAtom->Fa_alpha.im *= rescale;
+
+          thisAtom->Fb_alpha.re *= rescale;
+          thisAtom->Fb_alpha.im *= rescale;
+
+        } /* for i < numAtoms */
+
+    } /* for X < numDet */
+
+  return XLAL_SUCCESS;
+
+} /* XLALRescaleMultiFstatAtomVector() */
