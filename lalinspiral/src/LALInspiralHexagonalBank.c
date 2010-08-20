@@ -54,9 +54,11 @@ LALInspiralComputeMetric()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
-
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* Thomas:: definition for hexagonal grid. */
 
@@ -714,17 +716,13 @@ GetPositionRectangle(
 		INT4 			id,
 		InspiralTemplate 	*params,
 		    HexaGridParam 		*gridParam,
-		    CellEvolution 		*cellEvolution,
-		    CellList 			**cellList,
+		    CellEvolution 		UNUSED *cellEvolution,
+		    CellList 			UNUSED **cellList,
 		    INT4 				*valid)
 {
   RectangleIn   RectIn;
   RectangleOut  RectOut;
   InspiralTemplate paramsIn;
-
-  /* cellEvolution and cellList are unused in this function */
-  UNUSED(cellEvolution);
-  UNUSED(cellList);
 
   INITSTATUS( status, "GetPosition",
 	      LALINSPIRALHEXAGONALBANKC );
@@ -807,15 +805,12 @@ void
 LALSPAValidPosition(LALStatus *status,
 		    InspiralCell **cell,
 		    INT4 id1,
-		    InspiralMomentsEtc *moments,
+		    InspiralMomentsEtc UNUSED *moments,
 		    CellEvolution *cellEvolution,
 		    CellList **cellList
 		    )
 {
   INT4 below = 0, in = 0, out = 0, above = 0;
-
-  /* moments is unused in this function */
-  UNUSED(moments);
 
   INITSTATUS( status, "LALSPAFindPosition",
 	      LALINSPIRALHEXAGONALBANKC );
