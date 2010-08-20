@@ -3,8 +3,7 @@ SUBDIRS = \
 	laldoc
 
 man_MANS = \
-	lal.3 \
-	lal-config.1
+	lal.3
 
 INSTALLFILES = \
 	lalspec.dvi \
