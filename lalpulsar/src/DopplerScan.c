@@ -405,13 +405,10 @@ freeSkyGrid (DopplerSkyGrid *skygrid)
 void getRange( LALStatus *status, meshREAL y[2], meshREAL x, void *params )
 {
   SkyRegion *region = (SkyRegion*)params;
-  meshREAL nix;
 
   /* Set up shop. */
   INITSTATUS( status, "getRange", DOPPLERSCANC );
   /*   ATTATCHSTATUSPTR( status ); */
-
-  nix = x;	/* avoid compiler warning */
 
   /* for now: we return the fixed y-range, indendent of x */
   if (meshOrder == ORDER_ALPHA_DELTA)
@@ -986,7 +983,6 @@ buildMetricSkyGrid (LALStatus *status,
 		    SkyRegion *skyRegion,
 		    const DopplerSkyScanInit *init)
 {
-  SkyPosition thisPoint;
   meshNODE *mesh2d = NULL;
   meshPARAMS meshpar = empty_meshpar;
   PtoleMetricIn metricpar = empty_metricpar;
@@ -1003,8 +999,6 @@ buildMetricSkyGrid (LALStatus *status,
 
   if ( skyRegion->numVertices < 3 )	/* got no surface to cover */
     goto done;
-
-  thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
   /* some general mesh-settings are needed in metric case */
   meshpar.getRange = getRange;
@@ -1166,9 +1160,8 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
   const DopplerSkyGrid *node = NULL;
 
   REAL8 v[3], a[3];
-  REAL8 np[3], n[3];
-  REAL8 fact, kappa0;
-  REAL8 Alpha, Delta, f0;
+  REAL8 np[3];
+  REAL8 fact;
   REAL8* vel;
   REAL8* acc;
   REAL8 t0e;        /*time since first entry in Earth ephem. table */
@@ -1180,7 +1173,7 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
   REAL8 tgps[2];
   const EphemerisData *edat = init->ephemeris;
   UINT4 j;
-  REAL8 corr1, accN, accDot[3];
+  REAL8 accDot[3];
   REAL8 Tobs, dT;
   REAL8 V0[3], V1[3], V2[3];
 
@@ -1241,20 +1234,6 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
   XLALPrintError (" V2 = [ %g, %g, %g ]\n", V2[0], V2[1], V2[2] );
 
   node = skyScan->skyGrid;
-
-  /* signal params */
-  Alpha = 0.8;
-  Delta = 1.0;
-  f0 = 101.0;
-
-  n[0] = cos(Delta) * cos(Alpha);
-  n[1] = cos(Delta) * sin(Alpha);
-  n[2] = sin(Delta);
-
-  kappa0 = (1.0 + n[0]*v[0] + n[1]*v[1] + n[2]*v[2] );
-
-  accN = (acc[0]*n[0] + acc[1]*n[1] + acc[2]*n[2]);
-  corr1 = (1.0/60.0)* (accN * accN) * Tobs * Tobs / kappa0;
 
   while (node)
     {
