@@ -258,9 +258,9 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   REAL4 devent;
   REAL4Vector *z = NULL;
   REAL4Vector *tevent = NULL;
-  REAL4 t,x, ampl, dlum=0, norm;
+  REAL4 t,x, dlum=0, norm;
    /* counters */
-  UINT4 i, j, k, detect, dataset, Ndataset, nevent, inf, sup, jref;
+  UINT4 i, j, k, detect, dataset, Ndataset, inf, sup, jref;
 
   /* random generator */
   RandomParams *randParams=NULL;
@@ -441,7 +441,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
 
   for (dataset=0;dataset<Ndataset;dataset++){
 
-  i=0;tevent->data[0]=-1.*duration;nevent=0;
+  i=0;tevent->data[0]=-1.*duration;
   while(tevent->data[i]<length+0.5*duration)
    {
      i++;
@@ -458,7 +458,6 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
      while (alea2>reject);
      z->data[i]=5.*alea1;
    }
-  nevent=i;
 
 
 /*strain amplitude in the time domain   */
@@ -468,7 +467,6 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   for (j=0;j<N;j++)
    {
      t=j*deltat;
-     ampl=0.;
      while((t-tevent->data[inf])>duration){inf++;}
      while((tevent->data[sup]-t)<=0.5*duration){sup++;}
      for(k=inf;k<sup;k++)
