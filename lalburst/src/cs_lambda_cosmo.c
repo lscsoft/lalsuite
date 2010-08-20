@@ -28,6 +28,12 @@
 #include <gsl/gsl_integration.h>
 #include "lal/cs_lambda_cosmo.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*  "$Id$" "$Name$"; */
 
 static double cs_lambda_hubble( double one_plus_z )
@@ -43,7 +49,7 @@ static double cs_lambda_hubble( double one_plus_z )
 	return ans;
 }
 
-static double cs_lambda_phit_integrand( double y, void * p )
+static double cs_lambda_phit_integrand( double y, void UNUSED * p )
 {
 	double one_plus_z;
 	double z;
@@ -58,7 +64,7 @@ static double cs_lambda_phit_integrand( double y, void * p )
 	return ans;
 }
 
-static double cs_lambda_phiA_integrand( double z, void * p )
+static double cs_lambda_phiA_integrand( double z, void UNUSED * p )
 {
 	double ans;
 
