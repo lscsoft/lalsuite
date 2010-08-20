@@ -41,8 +41,11 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLRead.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID( CREATEMETATABLEDIRC, "$Id$" );
 
@@ -356,14 +359,11 @@ void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
-    const MetaioParseEnv    env,
+    const MetaioParseEnv    UNUSED env,
     MetadataTableType       table
     )
 /* </lalVerbatim> */
 {
-  /* env is unused in this function */
-  UNUSED(env);
-
   INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
   ATTATCHSTATUSPTR (status);
 
