@@ -58,8 +58,6 @@ $Id$
 #define UNUSED
 #endif
 
-double rint(double x);
-
 NRCSID (FINDCHIRPBCVFILTERC, "$Id$");
 
 

@@ -131,8 +131,6 @@ input to the function for future work.
 #define UNUSED
 #endif
 
-double rint(double x);
-
 NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
 
 /* <lalVerbatim file="FindChirpFilterOutputVetoCP"> */

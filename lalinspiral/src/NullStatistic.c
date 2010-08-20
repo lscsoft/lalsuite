@@ -46,7 +46,6 @@
 #include <lal/CoherentInspiral.h>
 #include <lal/NullStatistic.h>
 
-#define rint(x) (floor((x)+0.5))
 double modf( double value, double *integerPart );
 
 NRCSID (NULLSTATISTICC, "$Id$");

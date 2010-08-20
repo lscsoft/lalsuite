@@ -47,8 +47,6 @@
 #include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
 
-#define rint(x) (floor((x)+0.5))
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

@@ -136,8 +136,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-#define rint(x) (floor((x)+0.5))
-
 NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
 
 /* <lalVerbatim file="FindChirpBCVSpinFilterCP"> */

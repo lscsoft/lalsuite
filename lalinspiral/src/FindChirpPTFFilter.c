@@ -58,8 +58,6 @@ NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
 /* <lalVerbatim file="FindChirpPTFFilterCP"> */
 
-double rint(double x);
-
 void
 LALFindChirpPTFFilterSegment (
     LALStatus                  *status,

@@ -180,8 +180,6 @@ However, you need to point to a function that initializes the parameter structur
 #include <lal/DetResponse.h>
 
 
-#define rint(x) floor((x)+0.5)
-
 NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); 
 
 /* *****************************
