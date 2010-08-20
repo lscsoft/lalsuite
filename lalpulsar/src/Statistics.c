@@ -102,7 +102,7 @@ void LALHoughStatistics( LALStatus     *status,
 		         HOUGHMapTotal *in)
 { /*-------------------------------------------------</lalVerbatim> */
 
-  INT4   i,j, xSide, ySide, mObsCoh;
+  INT4   i,j, xSide, ySide;
   INT4   maxIndexX, maxIndexY, minIndexX, minIndexY;
   REAL8  average, nPixel, variance, ep, temp, sum;
   HoughTT max, min;
@@ -123,7 +123,6 @@ void LALHoughStatistics( LALStatus     *status,
   /* read input parameters */
   xSide = in->xSide;
   ySide = in->ySide;
-  mObsCoh = in->mObsCoh;
 
   /* first find maximum, minimum and average */
   maxIndexX = maxIndexY = minIndexX = minIndexY = 0;
