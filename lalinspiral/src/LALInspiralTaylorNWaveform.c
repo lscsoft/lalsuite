@@ -115,15 +115,12 @@ static void LALxiInit4PN(
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    xiInitIn *in;
-   REAL8 xi2, xi43, xi23, eta, eta2, pisq;
+   REAL8 xi43, xi23, eta;
 
    in = (xiInitIn *) params;
    eta = in->eta;
-   eta2 = eta*eta;
-   xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
-   pisq = LAL_PI*LAL_PI;
 
    *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 );
    *x -= in->omega;
@@ -138,15 +135,12 @@ static void LALxiInit5PN(
 
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    xiInitIn *in;
-   REAL8 xi2, xi43, xi23, eta, eta2, pisq;
+   REAL8 xi43, xi23, eta;
 
    in = (xiInitIn *) params;
    eta = in->eta;
-   eta2 = eta*eta;
-   xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
-   pisq = LAL_PI*LAL_PI;
 
    *x = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43 );
    *x -= in->omega;
@@ -209,20 +203,16 @@ void LALTaylorNDerivatives4PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
+   REAL8 xi, xi23, xi43, xi113, eta, eta2;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
-   xi53 = pow(xi, 5./3.);
-   xi73 = pow(xi, 7./3.);
    xi113 = pow(xi, 11./3.);
-   pisq = LAL_PI*LAL_PI;
 
    dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43);
 
@@ -238,21 +228,17 @@ void LALTaylorNDerivatives5PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi23, xi43, xi53, xi73, xi113, eta, eta2, pisq;
+   REAL8 xi, xi23, xi43, xi53, xi113, eta, eta2;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    xi = values->data[1];
    eta2 = eta * eta;
-   xi2 = xi*xi;
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
    xi53 = pow(xi, 5./3.);
-   xi73 = pow(xi, 7./3.);
    xi113 = pow(xi, 11./3.);
-   pisq = LAL_PI*LAL_PI;
-
 
    dvalues->data[0] = xi * ( 1. + 3. * xi23 + (39./2. - 7*eta) * xi43);
    dvalues->data[1] = 96./5.*eta*xi113*(1. + (1273./336. - 11./4.*eta) * xi23
@@ -268,7 +254,7 @@ void LALTaylorNDerivatives6PN(
 {
    /* The variable xi=GMn/c^3, where omega = n (1 + k) */
    InspiralDerivativesIn *ak;
-   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi73, xi113, eta, eta2, eta3, pisq;
+   REAL8 xi, xi2, xi13, xi23, xi43, xi53, xi113, eta, eta2, eta3, pisq;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -281,7 +267,6 @@ void LALTaylorNDerivatives6PN(
    xi23 = pow(xi, 2./3.);
    xi43 = pow(xi, 4./3.);
    xi53 = pow(xi, 5./3.);
-   xi73 = pow(xi, 7./3.);
    xi113 = pow(xi, 11./3.);
    pisq = LAL_PI*LAL_PI;
 
