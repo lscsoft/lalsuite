@@ -71,6 +71,12 @@ LALComputeDetAMResponse()
 
 NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define FALSE 0
 #define TRUE  1
 #define LALDR_MATRIXSIZE 3
@@ -2654,9 +2660,8 @@ void setup_global_detectors(LALStatus *status)
 
 
 
-BOOLEAN passed_special_locations_tests_p(LALStatus *status)
+BOOLEAN passed_special_locations_tests_p(LALStatus UNUSED *status)
 {
-  status = NULL;
   return TRUE;
 }
 
