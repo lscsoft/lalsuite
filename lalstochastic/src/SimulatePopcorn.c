@@ -90,6 +90,12 @@ The cosmological model considered here corresponds to a flat Einstein de Sitter 
 #include <lal/DetectorSite.h>
 #include "SimulatePopcorn.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define ho SIMULATEPOPCORN_ho
 #define om SIMULATEPOPCORN_OMEGAMATTER
 #define ov SIMULATEPOPCORN_OMEGAVACUUM
@@ -117,12 +123,11 @@ static void Ezfunc (REAL4 *result, REAL4 z)
 
 /*comovile volume element*/
 /*the factor c/Ho is omitted*/
-static void drfunc (LALStatus *s, REAL4 *result, REAL4 z, void *p)
+static void drfunc (LALStatus *s, REAL4 *result, REAL4 z, void UNUSED *p)
 {
   REAL4 Ez;
   INITSTATUS (s, "drfunc", SIMULATEPOPCORNC);
   ATTATCHSTATUSPTR (s);
-  p = NULL;
   Ezfunc(&Ez,z);
   *result=1./Ez;
   CHECKSTATUSPTR (s);
