@@ -162,7 +162,7 @@ main(int UNUSED argc, char **argv)
 
   static InspiralMetric metric;
   static InspiralTemplate params;
-  UINT4   nlist, numPSDpts=262144;
+  UINT4   numPSDpts=262144;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
@@ -174,7 +174,6 @@ main(int UNUSED argc, char **argv)
 
   fp = fopen("BCVTemplatesFlatMesh.out", "w");
   dim = DIM;
-  nlist = 0;
 
   params.OmegaS = 0.;
   params.Theta = 0.;
