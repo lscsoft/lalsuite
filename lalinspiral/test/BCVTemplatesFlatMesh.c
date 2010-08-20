@@ -84,6 +84,12 @@ LALSCreateVector()              LALSDestroyVector()
 
 NRCSID(FLATMESHTESTC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define MISMATCH 0.3
@@ -143,7 +149,7 @@ LALInspiralComputeBCVMetric(
 );
 
 int
-main(int argc, char **argv)
+main(int UNUSED argc, char **argv)
 {
   UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
@@ -163,8 +169,6 @@ main(int argc, char **argv)
   InspiralMomentsEtc moments;
 
   lalDebugLevel = 0;
-
-  argc = 0;
 
 /* Number of templates is nlist */
 
