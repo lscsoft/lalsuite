@@ -53,9 +53,11 @@ $Id$
 
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
-/* macro to "use" unused function parameters */
-
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* Some static function prototypes */
 static int compareTemplateByLevel (const void * a, const void * b);
@@ -228,23 +230,19 @@ XLALFindChirpCreateSubBanks(
 REAL4
 XLALComputeFullChisq(
     FindChirpBankVetoData      *bankVetoData,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,
+    FindChirpFilterInput       UNUSED *input,
+    FindChirpFilterParams      UNUSED *params,
     COMPLEX8                   *q,
     UINT4 			i,
     UINT4                       snrIX,
     UINT4                      *dof,
-    REAL4                       norm
+    REAL4                      norm
 )
 
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq, angle, snri, snrk;
   UINT4 numsamps = bankVetoData->acorrMatSize;
-
-  /* input, params and norm are unused */
-  UNUSED(input);
-  UNUSED(params);
 
   /* test isn't being done */
   if (!bankVetoData->acorrMat) return 0.0;
