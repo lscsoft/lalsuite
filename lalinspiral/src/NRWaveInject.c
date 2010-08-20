@@ -51,8 +51,11 @@
 
 #include <gsl/gsl_heapsort.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (NRWAVEINJECTC, "$Id$");
 
@@ -1197,7 +1200,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
     REAL8TimeVectorSeries     *strain,
     SimInspiralTable          *thisInj,
     CHAR                      *ifo,
-    REAL8                     dynRange)
+    REAL8                     UNUSED dynRange)
 {
 
   REAL8TimeSeries *htData = NULL;
@@ -1210,9 +1213,6 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
   INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
   ATTATCHSTATUSPTR (status);
-
-  /* dynRange is unused in this function */
-  UNUSED(dynRange);
 
   /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );
