@@ -404,11 +404,15 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   uvar->computeFtotal = 0;
 
+
+  uvar->h0 = 0;
+  uvar->SNR = -1;	/* only used if >= 0 */
+
 #define DEFAULT_IFO "H1"
   uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
   strcpy ( uvar->IFO, DEFAULT_IFO );
 
-  /* transient window defaults */
+  /* ---------- transient window defaults ---------- */
 #define DEFAULT_TRANSIENT "rect"
   uvar->injectWindow_type = XLALMalloc(strlen(DEFAULT_TRANSIENT)+1);
   strcpy ( uvar->injectWindow_type, DEFAULT_TRANSIENT );
@@ -1278,7 +1282,11 @@ XLALDrawAmplitudeVect ( AmpParamsRange_t AmpRange,	/**< input amplitude ranges *
       h0NatMin = 1;
       h0NatMax = 1;
     }
-  else
+  else if ( SNR == 0 )
+    {
+      h0NatMin = h0NatMax = 0;
+    }
+  else /* if SNR < 0 ==> use [h0, h0+h0Band] */
     {
       h0NatMin = AmpRange.h0Nat;
       h0NatMax = h0NatMin + AmpRange.h0NatBand;
@@ -1394,7 +1402,6 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input param
 
   if ( cfg->AmpRange.SNR > 0 )
     {
-      printf ("Expected SNR = %g, Requested SNR = %g\n", sqrt(rho2), cfg->AmpRange.SNR );
       REAL8 rescale = cfg->AmpRange.SNR / sqrt(rho2);	/* rescale atoms by this factor, s.t. SNR = cfg->AmpRange.SNR */
       if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {
         XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
