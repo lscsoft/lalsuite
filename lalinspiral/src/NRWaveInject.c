@@ -1200,7 +1200,6 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
     REAL8                     dynRange)
 {
 
-  REAL8 sampleRate;
   REAL8TimeSeries *htData = NULL;
   REAL8TimeSeries *hplus = NULL;
   REAL8TimeSeries *hcross = NULL;
@@ -1227,9 +1226,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
     ABORT( status, NRWAVEINJECT_EVAL, NRWAVEINJECT_MSGEVAL );
   }
 
-  /* sampleRate = 1.0/strain->deltaT;   */
   /* use the sample rate required for the output time series */
-  sampleRate = 1.0/injData->deltaT;
   len = strain->data->vectorLength;
 
   hplus = XLALCreateREAL8TimeSeries ( strain->name, &strain->epoch, strain->f0,
