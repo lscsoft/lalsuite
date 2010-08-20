@@ -125,6 +125,12 @@ input to the function for future work.
 #include <lal/FindChirp.h>
 /*#include <lal/FindChirpFilterOutputVeto.h>*/
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 double rint(double x);
 
 NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
@@ -151,7 +157,7 @@ LALFindChirpFilterOutputVeto(
   FindChirpSegment     *segment;
   REAL4Vector          *chisqVec;
   REAL8                 deltaT;
-  COMPLEX8Vector       *qVec;
+  COMPLEX8Vector       UNUSED *qVec;
   FindChirpFilterOutputVetoParams *params;
 
   event = *eventList;
