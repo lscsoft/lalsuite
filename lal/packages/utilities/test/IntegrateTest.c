@@ -80,6 +80,12 @@ Options:
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
@@ -261,16 +267,14 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
  * not converge.  Make this routine fast... no status handling!
  *
  */
-static void bad (LALStatus *s, REAL4 *y, REAL4 x, void *p)
+static void bad (LALStatus UNUSED *s, REAL4 *y, REAL4 UNUSED x, void *p)
 {
   INT4 *n = (INT4 *)p;
-  s = NULL; x = 0; /* do nothing with s and x */
   *y = *n = 1664525L*(*n) + 1013904223L;
 }
 
-static void bbad (LALStatus *s, REAL8 *y, REAL8 x, void *p)
+static void bbad (LALStatus UNUSED *s, REAL8 *y, REAL8 UNUSED x, void *p)
 {
-  s = NULL; x = 0; /* do nothing with s and x */
   *y = (REAL8)(++(*(INT4 *)p));
 }
 #endif
