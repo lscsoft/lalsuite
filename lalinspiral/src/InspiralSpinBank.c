@@ -111,6 +111,11 @@
 #include <lal/MatrixUtils.h>
 #include <lal/SeqFactories.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 #define INSPIRALSPINBANKC_ENOTILES 5
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
@@ -317,7 +322,7 @@ LALInspiralSpinBank(
   REAL4 x0, myy0, z0;          		/* minimum values of x, y, z */
   REAL4 x1, myy1, z1;          		/* maximum values of x, y, z */
   REAL4 xp, yp, zp;          		/* metric eigenvector coordinates */
-  REAL4 xp0, yp0, zp0;       		/* minimum values of xp, yp, zp */
+  REAL4 xp0, yp0, UNUSED zp0;       		/* minimum values of xp, yp, zp */
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
   REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
   REAL4 theta;               		/* angle of rotation for xp and yp */
