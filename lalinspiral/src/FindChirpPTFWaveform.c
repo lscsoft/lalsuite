@@ -60,11 +60,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 
-#ifndef isnan
-int isnan(double);
-#define isnan(x) ((isnan)((double)(x)))
-#endif
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
