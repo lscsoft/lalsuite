@@ -96,6 +96,11 @@ double rint(double x);
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
@@ -117,7 +122,7 @@ LALFindChirpFilterSegment (
   REAL8                 deltaT;
   REAL8                 deltaF;
   REAL4                 norm;
-  REAL4                 modqsqThresh;
+  REAL4                 UNUSED modqsqThresh;
   /*BOOLEAN               haveEvent     = 0;*/
   COMPLEX8             *qtilde        = NULL;
   COMPLEX8             *q             = NULL;
