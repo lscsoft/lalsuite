@@ -97,8 +97,11 @@ LALFree()
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
@@ -825,7 +828,7 @@ LALFindChirpSetAnalyseTemplate (
     REAL8                      deltaF,
     INT4                       sampleRate,
     FindChirpDataParams        *fcDataParams,
-    int                        numTmplts,
+    int                        UNUSED numTmplts,
     InspiralTemplate           *tmpltHead,
     int                        numInjections,
     SimInspiralTable           *injections
@@ -842,9 +845,6 @@ LALFindChirpSetAnalyseTemplate (
   REAL4                 dt0, dt3, metricDist, match;
   CHAR                  myMsg[8192];
   UINT4                 approximant;
-
-  /* numTmplts is unused in this function */
-  UNUSED(numTmplts);
 
   INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
