@@ -511,9 +511,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     /* complex cross correlation */
     COMPLEX8 chisq;
 
-    /* normalization factor to make chi-sq distributed */
-    REAL4 bankNorm;
-
     /* Output of function */
     REAL4 chisq_mag = 0;
 
@@ -541,9 +538,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
         /* having the crossCorr == 0 means that we are outside the valid range for this subbank */
 	if (crossCorr.re == 0 && crossCorr.im == 0) continue;
-
-	/* this keeps track of the normalization factor to make it \chi^2 distributed */
-	bankNorm = 2.0 - XLALCOMPLEX8Abs2(crossCorr);
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
 	/* Look at the col SNR deltaTimeShift/deltaT samples in the past.  The choice of sign
