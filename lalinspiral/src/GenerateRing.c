@@ -72,8 +72,11 @@ LALDCreateVector()            LALDDestroyVector()
 #include <lal/RealFFT.h>
 #include <lal/TimeFreqFFT.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID( GENERATERINGC, "$Id$" );
 
@@ -82,7 +85,7 @@ void
 LALGenerateRing(
     LALStatus          *stat,
     CoherentGW         *output,
-    REAL4TimeSeries    *series,
+    REAL4TimeSeries    UNUSED *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     )
@@ -110,9 +113,6 @@ LALGenerateRing(
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
 #endif
-
-  /* series is unused in this function */
-  UNUSED(series);
 
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
