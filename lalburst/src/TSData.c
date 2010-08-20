@@ -32,8 +32,11 @@
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (TSDATAC,"$Id$");
 
@@ -91,8 +94,8 @@ LALTracksearchFindLambdaMean(
 #if 0
   REAL8 myFloor=10e20;/*Lowest value in TFR */
 #endif
-  INT4        lowerFRow=-1;
-  INT4        upperFRow=-1;
+  INT4        UNUSED lowerFRow=-1;
+  INT4        UNUSED upperFRow=-1;
   REAL8       binPerHz=0;
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
@@ -484,7 +487,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
 				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
-				    TSWhitenParams          params
+				    TSWhitenParams         UNUSED params
 				    )
 {
   UINT4                      i=0;
@@ -499,9 +502,6 @@ LALTrackSearchWhitenREAL4TimeSeries(
   RAT4                      exponent;
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
-
-  /* params is unused in this function */
-  UNUSED(params);
 
   /*Setup FFT Plans*/
   planLength=signalvec->data->length;
