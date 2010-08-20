@@ -848,7 +848,7 @@ int main(int argc, char *argv[])
   LALTimeIntervalAndNSample time_info;
 
   INT4  k;
-  INT4  i, j, count;
+  INT4  i, j;
   INT4  cnt;
   REAL4 tolerance;
 
@@ -1604,7 +1604,6 @@ int main(int argc, char *argv[])
       printf("\nStarting whole-sky test...\n");
       det_and_pulsar.pDetector = &det_north_pole;
       PrintLALDetector(det_and_pulsar.pDetector);
-      count = 0;
       printf("NUM_RA = %d; NUM_DEC = %d\n", NUM_RA, NUM_DEC);
 
       file_plus_sq_avg    = xfopen("plus_sq_avg.txt", "w");
