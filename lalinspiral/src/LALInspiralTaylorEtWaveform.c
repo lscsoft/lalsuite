@@ -36,6 +36,12 @@ $Id$
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagzetaInitIn {
   REAL8 eta, omega, e0;
 } zetaInitIn;
@@ -104,7 +110,7 @@ NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
 static void LALzetaInit4PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -112,7 +118,6 @@ static void LALzetaInit4PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -128,7 +133,7 @@ static void LALzetaInit4PN(
 }
 
 static void LALzetaInit5PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -136,7 +141,6 @@ static void LALzetaInit5PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -152,7 +156,7 @@ static void LALzetaInit5PN(
 }
 
 static void LALzetaInit6PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -160,7 +164,6 @@ static void LALzetaInit6PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -178,7 +181,7 @@ static void LALzetaInit6PN(
 }
 
 static void LALzetaInit7PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -186,7 +189,6 @@ static void LALzetaInit7PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
