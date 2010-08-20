@@ -776,7 +776,6 @@ INT4 XLALInspiralComputePTFWDeriv (
   REAL8 reldelta = initdelta;
   REAL8 absdelta = 0;
   REAL8 relderivdiff = 1.0;
-  REAL8 relderivdifflist[20];
   REAL8 invpsd;
   REAL8 powerderiv;
   REAL8 powerderivdiff;
@@ -968,7 +967,6 @@ INT4 XLALInspiralComputePTFWDeriv (
 	powerderivdiff = 4.0 * wavederivdiff_2->data[0];
 
 	relderivdiff = powerderivdiff / powerderiv;
-	relderivdifflist[iter-1] = relderivdiff;
 
 	if (relderivdiff < tolerance)
 	{
