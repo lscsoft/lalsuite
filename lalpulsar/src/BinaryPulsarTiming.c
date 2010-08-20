@@ -178,7 +178,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   REAL8 a0, b0;	/* abberation parameters */
 
-  REAL8 M, m2;
+  REAL8 m2;
   REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
 
   CHAR *model = params->model;
@@ -235,7 +235,6 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   a0 = params->a0*1.0e-6; /* from microsecs to secs */
   b0 = params->b0*1.0e-6;
 
-  M = params->M*LAL_MSUN_SI; /* from solar masses to kg */
   m2 = params->m2*LAL_MSUN_SI;
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
