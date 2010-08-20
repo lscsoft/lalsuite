@@ -43,6 +43,12 @@
 
 
 /*---------- DEFINES ----------*/
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define MIN(x,y) (x < y ? x : y)
 #define MAX(x,y) (x > y ? x : y)
 
@@ -402,7 +408,7 @@ freeSkyGrid (DopplerSkyGrid *skygrid)
  * by about EPS~1e-6 [as REAL4-arithmetic is used in TwoDMesh()].
  *
  */
-void getRange( LALStatus *status, meshREAL y[2], meshREAL x, void *params )
+void getRange( LALStatus *status, meshREAL y[2], meshREAL UNUSED x, void *params )
 {
   SkyRegion *region = (SkyRegion*)params;
 
