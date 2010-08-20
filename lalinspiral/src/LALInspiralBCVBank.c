@@ -157,8 +157,11 @@ LALRalloc()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID(LALINSPIRALBCVBANKC, "$Id$");
 
@@ -934,15 +937,12 @@ void
 LALExcludeTemplate(
     LALStatus            *status,
     INT4                 *valid,
-    InspiralBankParams   *bankParams,
+    InspiralBankParams   UNUSED *bankParams,
     REAL4                 x,
     REAL4                 y)
 {
   REAL4 psi0Int = 2500000.;
   REAL4 psi3Int = -10000.;
-
-  /* bankParams is unused in this function */
-  UNUSED(bankParams);
 
   INITSTATUS( status, "LALExcludeTemplate",
       LALINSPIRALBCVBANKC );
