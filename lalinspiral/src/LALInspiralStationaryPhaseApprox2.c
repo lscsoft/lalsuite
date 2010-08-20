@@ -233,8 +233,6 @@ LALInspiralStationaryPhaseApprox2 (
 static void LALInspiralTaylorF2Phasing0PN (REAL8 v, REAL8 *phase, expnCoeffs *ak) {
 /* </lalVerbatim>  */
 
-   REAL8 x;
-   x = v*v;
    *phase = ak->pfaN/pow(v,5.);
 }
 
