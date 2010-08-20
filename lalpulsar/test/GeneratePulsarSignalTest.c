@@ -113,6 +113,12 @@ example uses of the functions tested by this code.
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* prototype for function that runs the tests */
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status);
@@ -124,7 +130,7 @@ NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
 /* START FUNCTION: main                                  */
 /*                                                       */
 /*********************************************************/
-int main(int argc, char **argv)
+int main(int UNUSED argc, char **argv)
 {
 
   static LALStatus status; /* status structure */
