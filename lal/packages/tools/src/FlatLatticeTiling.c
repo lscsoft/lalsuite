@@ -303,7 +303,7 @@ static void GetBounds(
   int i, ii;
   FlatLatticeTilingBound *bound = NULL;
   double x;
-  /*BOOLEAN retn;*/
+  BOOLEAN retn;
 
   /* Get the appropriate bound dimension */
   bound = tiling->bounds[gsl_vector_int_get(tiling->bound_map, dimension)];
@@ -319,8 +319,6 @@ static void GetBounds(
     }
   }
 
-#if 0
-  /* retn nor v are used - comment out */
   /* Call parameter space bounds function */
   if (ii == 0) {
     retn = (bound->func)(bound->data, ii, NULL, lower, upper);
@@ -329,7 +327,6 @@ static void GetBounds(
     gsl_vector_view v = gsl_vector_subvector(tiling->bound_point, 0, ii);
     retn = (bound->func)(bound->data, ii, &v.vector, lower, upper);
   }
-#endif
 
   /* Normalise bounds */
   *lower -= gsl_vector_get(tiling->real_offset, dimension);
