@@ -47,6 +47,10 @@
 #include <unistd.h>
 #endif
 
+#define GSL_RANGE_CHECK_OFF 1
+#define GSL_C99_INLINE 1
+#define HAVE_INLINE 1
+
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -424,7 +428,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   REAL8 tauMax = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand ) * DAY24;
   /* default window-ranges are t0 in [dataStartTime, dataStartTime - 3 * tauMax] */
   uvar->injectWindow_t0     = uvar->dataStartGPS;
-  uvar->injectWindow_t0Band = uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax;
+  uvar->injectWindow_t0Band = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax );	/* make sure it's >= 0 */
   /* search-windows by default identical to inject-windows */
   uvar->searchWindow_t0 = uvar->injectWindow_t0;
   uvar->searchWindow_t0Band = uvar->injectWindow_t0Band;
@@ -671,7 +675,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   REAL8 tauMax = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand ) * DAY24;
   if ( !XLALUserVarWasSet (&uvar->injectWindow_t0Band ) )
-    InjectRange.t0Band  = uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax;
+    InjectRange.t0Band  = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax ); 	/* make sure it's >= 0 */
   else
     InjectRange.t0Band  = uvar->injectWindow_t0Band;
 
@@ -756,7 +760,7 @@ XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector o
 {
   const CHAR *fn = __func__;
 
-  gsl_vector *normal;
+  static gsl_vector *normal = NULL;    /* keep a static copy to avoid repeated malloc/free cycles */
   int gslstat;
 
   /* ----- check input arguments ----- */
@@ -775,7 +779,7 @@ XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector o
 
 
   /* ----- generate 4 normal-distributed, uncorrelated random numbers ----- */
-  if ( (normal = gsl_vector_calloc ( 4 ) ) == NULL) {
+  if ( !normal && (normal = gsl_vector_alloc ( 4 ) ) == NULL) {
     XLALPrintError ( "%s: gsl_vector_calloc(4) failed\n", fn );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
@@ -800,7 +804,7 @@ XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector o
   }
 
   /* ---------- free memory ---------- */
-  gsl_vector_free ( normal );
+  // gsl_vector_free ( normal ); /* we keep this statically as it's always a 4D vector */
 
   return XLAL_SUCCESS;
 
@@ -958,24 +962,22 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
       REAL8 b2 = atoms->data[alpha].b2_alpha;
       REAL8 ab = atoms->data[alpha].ab_alpha;
 
-      REAL8 a = sqrt(a2);
-      REAL8 b = sqrt(b2);
+      REAL8 a_by_2 = 0.5 * sqrt(a2);
+      REAL8 b_by_2 = 0.5 * sqrt(b2);
       /* convention: always set sign on b */
       if ( ab < 0 )
-        b = -b;
+        b_by_2 = - b_by_2;
 
       /* upper-left block */
-      gsl_matrix_set ( Lcor, 0, 0, a );
-      gsl_matrix_set ( Lcor, 0, 1, a );
-      gsl_matrix_set ( Lcor, 1, 0, b );
-      gsl_matrix_set ( Lcor, 1, 1, b );
+      gsl_matrix_set ( Lcor, 0, 0, a_by_2 );
+      gsl_matrix_set ( Lcor, 0, 1, a_by_2 );
+      gsl_matrix_set ( Lcor, 1, 0, b_by_2);
+      gsl_matrix_set ( Lcor, 1, 1, b_by_2);
       /* lower-right block: +2 on all components */
-      gsl_matrix_set ( Lcor, 2, 2, a );
-      gsl_matrix_set ( Lcor, 2, 3, a );
-      gsl_matrix_set ( Lcor, 3, 2, b );
-      gsl_matrix_set ( Lcor, 3, 3, b );
-
-      gsl_matrix_scale ( Lcor, 0.5 );
+      gsl_matrix_set ( Lcor, 2, 2, a_by_2 );
+      gsl_matrix_set ( Lcor, 2, 3, a_by_2 );
+      gsl_matrix_set ( Lcor, 3, 2, b_by_2);
+      gsl_matrix_set ( Lcor, 3, 3, b_by_2);
 
       if ( XLALDrawCorrelatedNoise ( n_mu, Lcor, rng ) != XLAL_SUCCESS ) {
         XLALPrintError ("%s: failed to XLALDrawCorrelatedNoise().\n", fn );
