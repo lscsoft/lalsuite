@@ -1541,6 +1541,8 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
     {
       CHAR *versionstring = NULL;               /* pointer to a string containing the git version information */
       CHAR npcus_string[STRINGLENGTH];
+      CHAR deltat_string[STRINGLENGTH];
+      CHAR tobs_string[STRINGLENGTH];
       CHAR nchannels_string[STRINGLENGTH];
       versionstring = XLALGetVersionString(1); 
       FrHistoryAdd(outFrame,versionstring); 
@@ -1548,6 +1550,8 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
       for (i=0;i<header->length;i++) FrHistoryAdd(outFrame,header->data[i].header_string);
       XLALFree(versionstring);
       snprintf(npcus_string,STRINGLENGTH,"NPCUS = %d\n",plan->channellist.npcus);
+      snprintf(deltat_string,STRINGLENGTH,"DELTAT = %6.12f\n",ts->deltaT);
+      snprintf(tobs_string,STRINGLENGTH,"TOBS = %6.12f\n",T);
       snprintf(nchannels_string,STRINGLENGTH,"NCHANNELS = %d\n",plan->channellist.length);
 
       /* loop over each channel and add some metadata to the history field */
@@ -1560,16 +1564,16 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
 	CHAR lld_string[STRINGLENGTH];
 	CHAR type_string[STRINGLENGTH];
 	CHAR detconfig_string[STRINGLENGTH];
-	snprintf(detconfig_string,STRINGLENGTH,"DETCONFIG_%d = %d%d%d%d%d\n",i,plan->channellist.channel[i].detconfig[0],
+	snprintf(detconfig_string,STRINGLENGTH,"DETCONFIG_%d = %d%d%d%d%d",i,plan->channellist.channel[i].detconfig[0],
 		 plan->channellist.channel[i].detconfig[1],plan->channellist.channel[i].detconfig[2],
 		 plan->channellist.channel[i].detconfig[3],plan->channellist.channel[i].detconfig[4]);
-	snprintf(type_string,STRINGLENGTH,"TYPE_%d = %d\n",i,plan->channellist.channel[i].type);
-	snprintf(lld_string,STRINGLENGTH,"LLD_%d = %d\n",i,plan->channellist.channel[i].lld);
-	snprintf(minenergy_string,STRINGLENGTH,"MAXENERGY_%d = %d\n",i,plan->channellist.channel[i].energy[1]);
-	snprintf(maxenergy_string,STRINGLENGTH,"MINENERGY_%d = %d\n",i,plan->channellist.channel[i].energy[0]);
-	snprintf(dt_string,STRINGLENGTH,"DT_%d = %6.12f\n",i,plan->channellist.channel[i].dt);
-	snprintf(channelname_string,STRINGLENGTH,"CHANNELNAME_%d = %s\n",i,plan->channellist.channel[i].channelname);
-	snprintf(filename_string,STRINGLENGTH,"FILENAME_%d = %s\n",i,plan->channellist.channel[i].filename);
+	snprintf(type_string,STRINGLENGTH,"TYPE_%d = %d",i,plan->channellist.channel[i].type);
+	snprintf(lld_string,STRINGLENGTH,"LLD_%d = %d",i,plan->channellist.channel[i].lld);
+	snprintf(minenergy_string,STRINGLENGTH,"MAXENERGY_%d = %d",i,plan->channellist.channel[i].energy[1]);
+	snprintf(maxenergy_string,STRINGLENGTH,"MINENERGY_%d = %d",i,plan->channellist.channel[i].energy[0]);
+	snprintf(dt_string,STRINGLENGTH,"DT_%d = %6.12f",i,plan->channellist.channel[i].dt);
+	snprintf(channelname_string,STRINGLENGTH,"CHANNELNAME_%d = %s",i,plan->channellist.channel[i].channelname);
+	snprintf(filename_string,STRINGLENGTH,"FILENAME_%d = %s",i,plan->channellist.channel[i].filename);
 	FrHistoryAdd(outFrame,detconfig_string);
 	FrHistoryAdd(outFrame,type_string);
 	FrHistoryAdd(outFrame,lld_string);
