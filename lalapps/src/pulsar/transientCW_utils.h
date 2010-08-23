@@ -116,7 +116,7 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
-int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange );
+int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange, BOOLEAN useFReg );
 
 
 /* ---------- Fstat-atoms related functions ----------*/
