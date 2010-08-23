@@ -123,7 +123,6 @@ UINT8 cohPTFaddTriggers(
 );
 
 void cohPTFclusterTriggers(
-  struct coh_PTF_params   *params,
   MultiInspiralTable      **eventList,
   MultiInspiralTable      **thisEvent
 );
@@ -1309,7 +1308,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 // This function generates the SNR for every point in time and, where
 // appropriate calculates the desired signal based vetoes.
 
-  UINT4 i,j,k,m,n,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
+  UINT4 i,j,k,m,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
   INT4 l;
   INT4 timeOffsetPoints[LAL_NUM_IFO];
   REAL4 deltaT = cohSNR->deltaT;
@@ -1369,11 +1368,11 @@ void cohPTFmodBasesUnconstrainedStatistic(
 
   gsl_matrix *BNull = gsl_matrix_alloc(vecLength,vecLength);
   gsl_matrix *B2Null = gsl_matrix_alloc(vecLength,vecLength);
-  gsl_matrix *Bankeigenvecs[subBankSize+1];
-  gsl_vector *Bankeigenvals[subBankSize+1];
+  gsl_matrix *Bankeigenvecs[50];
+  gsl_vector *Bankeigenvals[50];
   gsl_matrix *Autoeigenvecs = NULL;
   gsl_vector *Autoeigenvals = NULL;
-  for (i = 0; i < subBankSize+1; i++)
+  for (i = 0; i < 50; i++)
   {
     Bankeigenvecs[i] = NULL;
     Bankeigenvals[i] = NULL;  
@@ -1481,7 +1480,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
   struct bankDataOverlaps *chisqOverlaps = NULL;
   COMPLEX8VectorSequence *tempqVec = NULL;
-  REAL4 *frequencyRanges = NULL;
+  REAL4 *frequencyRangesPlus = NULL;
+  REAL4 *frequencyRangesCross = NULL;
   REAL4 fLow,fHigh;
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
@@ -1909,11 +1909,13 @@ void cohPTFmodBasesUnconstrainedStatistic(
             calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
                 a,b,PTFM,1,2,5);
           }
-          if (! frequencyRanges)
+          if (! frequencyRangesPlus)
           {
-            frequencyRanges = (REAL4 *)
+            frequencyRangesPlus = (REAL4 *)
               LALCalloc( params->numChiSquareBins-1, sizeof(REAL4) );
-            calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRanges);
+            frequencyRangesCross = (REAL4 *)
+              LALCalloc( params->numChiSquareBins-1, sizeof(REAL4) );
+            calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,frequencyRangesCross,Autoeigenvecs);
           }
           if (! tempqVec)
             tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
@@ -1930,17 +1932,17 @@ void cohPTFmodBasesUnconstrainedStatistic(
               else if (j == 0)
               {
                 fLow = 0;
-                fHigh = frequencyRanges[0];
+                fHigh = frequencyRangesPlus[0];
               }
               else if (j == params->numChiSquareBins-1)
               {
-                fLow = frequencyRanges[params->numChiSquareBins-2];
+                fLow = frequencyRangesPlus[params->numChiSquareBins-2];
                 fHigh = 0;
               }
               else
               {
-                fLow = frequencyRanges[j-1];
-                fHigh = frequencyRanges[j];
+                fLow = frequencyRangesPlus[j-1];
+                fHigh = frequencyRangesPlus[j];
               }                 
               for( k = 0; k < LAL_NUM_IFO; k++)
               {
@@ -1974,8 +1976,10 @@ void cohPTFmodBasesUnconstrainedStatistic(
       gsl_matrix_free( Autoeigenvecs );
     if ( Autoeigenvals )
       gsl_vector_free( Autoeigenvals );
-    if (frequencyRanges)
-      LALFree(frequencyRanges);
+    if (frequencyRangesPlus)
+      LALFree(frequencyRangesPlus);
+    if (frequencyRangesCross)
+      LALFree(frequencyRangesCross);
     if (tempqVec)
       XLALDestroyCOMPLEX8VectorSequence( tempqVec );
     if (chisqOverlaps)
@@ -2245,7 +2249,6 @@ UINT8 cohPTFaddTriggers(
 }
 
 void cohPTFclusterTriggers(
-  struct coh_PTF_params   *params,
   MultiInspiralTable      **eventList,
   MultiInspiralTable      **thisEvent
 )
