@@ -303,7 +303,7 @@ static void GetBounds(
   int i, ii;
   FlatLatticeTilingBound *bound = NULL;
   double x;
-  BOOLEAN retn;
+  BOOLEAN UNUSED retn;
 
   /* Get the appropriate bound dimension */
   bound = tiling->bounds[gsl_vector_int_get(tiling->bound_map, dimension)];
