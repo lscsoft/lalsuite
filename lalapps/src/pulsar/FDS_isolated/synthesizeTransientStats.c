@@ -47,16 +47,10 @@
 #include <unistd.h>
 #endif
 
-#define GSL_RANGE_CHECK_OFF 1
-#define GSL_C99_INLINE 1
-#define HAVE_INLINE 1
+#include "../transientCW_utils.h"
 
 /* GSL includes */
-#include <lal/LALGSL.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
-#include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -71,7 +65,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/ComputeFstat.h>
 
-#include "../transientCW_utils.h"
 
 #include <lalapps.h>
 
@@ -367,6 +360,8 @@ int main(int argc,char *argv[])
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
+  if ( cfg.transientSearchRange.exp_buffer )
+    gsl_matrix_free ( cfg.transientSearchRange.exp_buffer );
 
   if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
@@ -688,7 +683,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->transientInjectRange = InjectRange;
 
   /* ---------- ... and for search -------------------- */
-  transientWindowRange_t SearchRange;
+  transientWindowRange_t SearchRange = empty_transientWindowRange;
   if ( !uvar->searchWindow_type || !strcmp ( uvar->searchWindow_type, "none") )
     SearchRange.type = TRANSIENT_NONE;			/* default: no transient signal window */
   else if ( !strcmp ( uvar->searchWindow_type, "rect" ) )
@@ -740,6 +735,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     SearchRange.dtau = uvar->searchWindow_dtau;
   else
     SearchRange.dtau = uvar->TAtom;
+
+  /* if exponential window --> prebuffer the window-values */
+  if ( SearchRange.type == TRANSIENT_EXPONENTIAL )
+    if ( XLALFillExpWindowBuffer ( &SearchRange ) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: XLALFillExpWindowBuffer() failed.\n", fn );
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+    }
 
   cfg->transientSearchRange = SearchRange;
 

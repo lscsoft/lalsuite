@@ -26,8 +26,8 @@
  *
  *********************************************************************************/
 
-#ifndef _COMPUTEFSTATISTIC_H
-#define _COMPUTEFSTATISTIC_H
+#ifndef _TRANSIENTCW_UTILS_H
+#define _TRANSIENTCW_UTILS_H
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -37,6 +37,14 @@ extern "C" {
 #include "config.h"
 
 /* ---------- System includes ---------- */
+
+/* gsl-includes */
+#define GSL_RANGE_CHECK_OFF 1
+#define GSL_C99_INLINE 1
+#define HAVE_INLINE 1
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
 
 /* LAL-includes */
 #include <lal/AVFactories.h>
@@ -88,6 +96,7 @@ typedef struct
   UINT4 tau;			/**< shortest transient timescale tau in seconds */
   UINT4 tauBand;		/**< range of transient timescales tau to search, in seconds */
   UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
+  gsl_matrix *exp_buffer;	/**< buffer matrix storing exp(-(t0-ti)/tau) values for this window-range (optional) */
 } transientWindowRange_t;
 
 /** Struct holding a transient CW candidate */
@@ -116,6 +125,7 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
+int XLALFillExpWindowBuffer ( transientWindowRange_t *windowRange );
 int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange, BOOLEAN useFReg );
 
 

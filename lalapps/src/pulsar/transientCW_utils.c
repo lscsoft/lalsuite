@@ -43,9 +43,6 @@
 #define SQ(x) ((x)*(x))
 #define LAL_INT4_MAX 2147483647
 
-/* macro to map indices {m,n} over {t0, tau} space into 1-dimensional array index, with tau-index n faster varying */
-#define IND_MN(m,n) ( (m) * N_tauRange + (n) )
-
 /* ---------- internal prototypes ---------- */
 int compareAtoms(const void *in1, const void *in2);
 
@@ -99,7 +96,7 @@ XLALGetTransientWindowTimespan ( UINT4 *t0,				/**< [out] window start-time */
     default:
       XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
                       transientWindow.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
-      XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+      XLAL_ERROR ( fn, XLAL_EINVAL );
 
     } /* switch window-type */
 
@@ -211,7 +208,7 @@ XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,	/*
   UINT4 t0, t1;
   if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
   /* loop over all detectors X */
@@ -339,6 +336,12 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                             )
 {
   const char *fn = __func__;
+
+  /* macro to be used only inside this function!
+   * map indices {m,n} over {t0, tau} space into 1-dimensional
+   * array index, with tau-index n faster varying
+   */
+#define IND_MN(m,n) ( (m) * N_tauRange + (n) )
 
   /* initialize empty return, in case sth goes wrong */
   TransientCandidate_t ret = empty_TransientCandidate;
@@ -507,7 +510,12 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                   FstatAtom *thisAtom_i = &atoms->data[i];
                   UINT4 t_i = thisAtom_i->timestamp;
 
-                  REAL8 win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
+                  REAL8 win_i;
+                  if ( windowRange.exp_buffer )
+                    win_i = gsl_matrix_get ( windowRange.exp_buffer, n, i );
+                  else
+                    win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
+
                   REAL8 win2_i = win_i * win_i;
 
                   Ad += thisAtom_i->a2_alpha * win2_i;
@@ -769,3 +777,66 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
 
 } /* write_MultiFstatAtoms_to_fp() */
 
+
+/** Precompute the buffer-array storing values for an exponential-window of given window-ranges.
+ *
+ * If the windowRange contains a non-NULL buffer already, return an error.
+ */
+int
+XLALFillExpWindowBuffer ( transientWindowRange_t *windowRange )	/**< [in/out] window-range to buffer exponential window-values for */
+{
+  const char *fn = __func__;
+
+  /* check input */
+  if ( !windowRange ) {
+    XLALPrintError ("%s: invalid NULL input 'windowRange'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( windowRange->type != TRANSIENT_EXPONENTIAL ) {
+    XLALPrintError ("%s: expected an exponential transient-window range (%d), instead got %d\n", fn,  TRANSIENT_EXPONENTIAL, windowRange->type);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( windowRange->exp_buffer != NULL ) {
+    XLALPrintError ("%s: non-NULL exponential-window buffer !\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 tauMax = windowRange->tau + windowRange->tauBand;
+  /* compute maximal offset (t0 - ti) for tauMax */
+  transientWindow_t window;
+  window.type = TRANSIENT_EXPONENTIAL;
+  window.t0 = 0;
+  window.tau = tauMax;
+  UINT4 t0, t1;
+  if ( XLALGetTransientWindowTimespan ( &t0, &t1, window ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+
+  UINT4 N_ti  = (UINT4)ceil ( 1.0 * t1 / windowRange->dt0 );	/* round up for safety */
+  UINT4 N_tau = (UINT4)ceil ( 1.0 * tauMax / windowRange->dtau );
+
+  if ( (windowRange->exp_buffer = gsl_matrix_calloc (N_tau, N_ti)) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_matrix_calloc( %d, %d )\n", fn, N_tau, N_ti );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  }
+
+  /* loop over matrix and fill with exp values */
+  UINT4 i, n;
+  for ( n=0; n < N_tau; n ++ )
+    {
+      for ( i = 0; i < N_ti; i ++ )
+        {
+          UINT4 t_i = t0 + i * windowRange->dt0;
+          UINT4 tau_n = windowRange->tau + n * windowRange->dtau;
+          REAL8 win_n_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, tau_n );
+
+          gsl_matrix_set ( windowRange->exp_buffer, n, i, win_n_i );
+
+        } /* for i < N_ti */
+
+    } /* for m < N_tau */
+
+  return XLAL_SUCCESS;
+
+} /* XLALcomputeExpWindowBuffer() */
