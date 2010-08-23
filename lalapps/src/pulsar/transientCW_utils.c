@@ -334,7 +334,9 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 int
 XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
                             const MultiFstatAtomVector *multiFstatAtoms,/**< [in] multi-IFO F-statistic atoms */
-                            transientWindowRange_t windowRange )	/**< [in] type and parameters specifying transient window range to search */
+                            transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range to search */
+                            BOOLEAN useFReg				/**< [in] experimental switch: marginalize e^F if FALSE, or (1/D)*e^F if TRUE */
+                            )
 {
   const char *fn = __func__;
 
@@ -545,8 +547,13 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
               ret.tau_maxF = window.tau;
             }
 
-          /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
-          REAL8 FReg = - log( Dd ) + 0.5 * twoF;
+          REAL8 FReg;
+          if ( useFReg )
+            /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
+            FReg = - log( Dd ) + 0.5 * twoF;
+          else /* or standard F-stat otherwise */
+            FReg = 0.5 * twoF;
+
           /* and store this in Fstat-matrix as element {m,n} */
           FReg_mn[IND_MN(m,n)] = FReg;
 

@@ -173,6 +173,8 @@ typedef struct {
   CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
+  BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
+
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   BOOLEAN version;	/**< output version-info */
@@ -296,7 +298,7 @@ int main(int argc,char *argv[])
 
       /* compute transient-Bstat search statistic on these atoms */
       TransientCandidate_t cand = empty_TransientCandidate;
-      if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange ) != XLAL_SUCCESS ) {
+      if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
         return 1;
       }
@@ -307,7 +309,7 @@ int main(int argc,char *argv[])
           TransientCandidate_t candTotal;
           transientWindowRange_t winRangeAll = empty_transientWindowRange;
           winRangeAll.type = TRANSIENT_NONE;	/* window 'none' will simply cover all the data with 1 F-stat calculation */
-          if ( XLALComputeTransientBstat ( &candTotal, multiAtoms,  winRangeAll ) != XLAL_SUCCESS ) {
+          if ( XLALComputeTransientBstat ( &candTotal, multiAtoms,  winRangeAll, uvar.useFReg ) != XLAL_SUCCESS ) {
             LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed for totalFstat (winRangeAll) with xlalErrno = %d\n", fn, xlalErrno );
             return 1;
           }
@@ -407,7 +409,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->TAtom = 1800;
 
   uvar->computeFtotal = 0;
-
+  uvar->useFReg = 0;
 
   uvar->h0 = 0;
   uvar->SNR = -1;	/* only used if >= 0 */
@@ -481,6 +483,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
   XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL,  "Output F-statistic atoms into a file with this basename");
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
+  XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F");
 
   XLALregSTRINGUserStruct( ephemYear, 	        'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
 
