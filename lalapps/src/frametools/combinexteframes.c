@@ -1583,7 +1583,9 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
 	FrHistoryAdd(outFrame,channelname_string);
 	FrHistoryAdd(outFrame,filename_string);
       }
-      FrHistoryAdd(outFrame,nchannels_string); 
+      FrHistoryAdd(outFrame,nchannels_string);
+      FrHistoryAdd(outFrame,tobs_string); 
+      FrHistoryAdd(outFrame,deltat_string);
       FrHistoryAdd(outFrame,npcus_string); 
     }
       
