@@ -413,10 +413,9 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 N_t0Range  = (UINT4) floor ( windowRange.t0Band / windowRange.dt0 ) + 1;
   UINT4 N_tauRange = (UINT4) floor ( windowRange.tauBand / windowRange.dtau ) + 1;
 
-  REAL8 *FReg_mn;	/* 2D matrix {m x n} of FReg values, will be initialized to zeros ! */
-  UINT4 N_grid2D   = N_t0Range * N_tauRange;
-  if ( ( FReg_mn = XLALCalloc ( N_grid2D, sizeof(REAL8) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, sizeof(REAL8)\n", fn, N_grid2D );
+  gsl_matrix *FReg_mn;	/* 2D matrix {m x n} of FReg values, will be initialized to zeros ! */
+  if ( ( FReg_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
+    XLALPrintError ("%s: failed gsl_matrix_calloc ( %d, %s )\n", fn, N_tauRange, N_t0Range );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
@@ -563,7 +562,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
             FReg = 0.5 * twoF;
 
           /* and store this in Fstat-matrix as element {m,n} */
-          FReg_mn[IND_MN(m,n)] = FReg;
+          gsl_matrix_set ( FReg_mn, m, n, FReg );
 
         } /* for n in n[tau] : n[tau+tauBand] */
 
@@ -571,14 +570,14 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* now step through FReg_mn array subtract maxTwoF and sum e^{FReg - Fmax}*/
   REAL8 sum_eB = 0;
-
+  REAL8 maxF = 0.5 * ret.maxTwoF;
   for ( m=0; m < N_t0Range; m ++ )
     {
       for ( n=0; n < N_tauRange; n ++ )
         {
-          REAL8 FReg = FReg_mn [ IND_MN(m,n) ];
+          REAL8 FReg = gsl_matrix_get ( FReg_mn, m, n );
 
-          sum_eB += exp ( FReg - 0.5 * ret.maxTwoF );
+          sum_eB += exp ( FReg - maxF );
 
         } /* for n < N_tauRange */
 
@@ -596,7 +595,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
-  XLALFree ( FReg_mn );
+  gsl_matrix_free ( FReg_mn );
 
   /* return */
   (*cand) = ret;
