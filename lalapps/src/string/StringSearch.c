@@ -129,7 +129,7 @@ struct CommandLineArgsTag {
   INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
   INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
   char *comment;              /* for "comment" columns in some tables */
-} CommandLineArgs;
+};
 
 typedef 
 struct GlobalVariablesTag {
@@ -154,6 +154,9 @@ struct StringTemplateTag {
 /* GLOBAL VARIABLES */
 GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
+/* time window for trigger clustering */
+/* FIXME:  global variables = BAD BAD BAD! (my fault -- Kipp) */
+static double cluster_window;	/* seconds */
 
 /***************************************************************************/
 
@@ -200,6 +203,7 @@ static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBur
 
 int main(int argc,char *argv[])
 {
+  struct CommandLineArgsTag CommandLineArgs;
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
   SnglBurst *events=NULL;
@@ -223,6 +227,8 @@ int main(int argc,char *argv[])
   XLALPrintInfo("ReadCommandLine()\n");
   if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
   XLALPrintInfo("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
+  /* set the trigger cluster window global variable */
+  cluster_window = CommandLineArgs.cluster;
 
   /****** ReadData ******/
   XLALPrintInfo("ReadData()\n");
@@ -333,12 +339,10 @@ static int XLALCompareStringBurstByTime(
 /* </lalVerbatim> */
 {
   double delta_t = XLALGPSDiff(&(*a)->peak_time, &(*b)->peak_time);
-  /* FIXME:  global variables = BAD BAD BAD! (my fault -- Kipp) */
-  double epsilon = CommandLineArgs.cluster;
 
-  if(delta_t > epsilon)
+  if(delta_t > cluster_window)
     return(1);
-  if(delta_t < -epsilon)
+  if(delta_t < -cluster_window)
     return(-1);
   return(0);
 }
