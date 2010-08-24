@@ -32,7 +32,7 @@
 #include <lal/Units.h>
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-
+#include <lal/TimeSeries.h>
 
 LALVariables variables;
 LALVariables variables2;
@@ -1199,7 +1199,7 @@ void PTMCMCTest(void)
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
 	
-    numberI4 = TaylorF2;
+    numberI4 = TaylorT2;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_LINEAR);
     numberI4 = LAL_PNORDER_TWO;
     addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_LINEAR);

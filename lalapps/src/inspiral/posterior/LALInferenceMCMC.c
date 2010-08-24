@@ -77,7 +77,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printf("0\n");
 	
 	// iterate:
-	for(i=0; i<1000; i++) {
+	for(i=0; i<100; i++) {
 		printf(" MCMC iteration: %d\t", i+1);
 		for(t=0; t<nChain; t++) { //loop over temperatures
 			copyVariables(&(TcurrentParams[t]),runState->currentParams);
