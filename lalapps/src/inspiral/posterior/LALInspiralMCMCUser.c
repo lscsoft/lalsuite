@@ -58,7 +58,6 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
 
-#define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0

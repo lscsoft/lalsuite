@@ -196,7 +196,6 @@ int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
   INT2                 opt;       /* command-line option character */
-  BOOLEAN              errors;    /* whether or not to showcase error traps */
   BOOLEAN              grace;     /* whether or not to graph using xmgrace */
   BOOLEAN              nonGrace;  /* whether or not to write to data file */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
@@ -222,7 +221,6 @@ int main( int argc, char **argv )
 
   /* Set default values. */
   metric_code = 1;
-  errors = 0; /* BEN: this is unused right now */
   grace = 0;
   nonGrace = 0;
   begin = 731265908;

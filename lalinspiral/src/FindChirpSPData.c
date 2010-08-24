@@ -86,7 +86,6 @@ LALFindChirpSPData (
   REAL4		        PSDsum = 0;
   INT4 			startIX = 0;
   INT4			endIX = 0;
-  INT4			sortFlag = 0;
   COMPLEX8Vector       *fftVec = NULL;
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -457,8 +456,6 @@ LALFindChirpSPData (
 
   }
   /* reset each dataPower's last element to the min power */
-/*  sortFlag = rint(dataSegVec->length / 2 + 1);*/
-  sortFlag = 0;
   for ( i = 0; i < dataSegVec->length; ++i )
   {
     fcSeg = &(fcSegVec->data[i]);

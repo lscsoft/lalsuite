@@ -205,8 +205,6 @@ int main( int argc, char *argv[] ) {
   float           a,b,c,d,e,f;      /* To input point in standard format */
   int             ra_min, ra_max;   /* Min and max RA for ellipse plot */
   int             dec_min, dec_max; /* Min and max dec for ellipse plot */
-  float           f1;               /* The max spindown parameter */
-  float           tau;              /* The spindown age */
   float           c_ellipse;        /* Centers of ellipses */
   float           r_ellipse;        /* Radii of ellipses */
   REAL8           determinant;      /* Determinant of projected metric */
@@ -232,8 +230,6 @@ int main( int argc, char *argv[] ) {
   ra_max = 90;
   dec_min = 0;
   dec_max = 85;
-  tau=1e10;
-  f1 = tevparam.deltaT/tau;
   f0 = 1000;
   numSpindown = 0;
 
@@ -280,8 +276,6 @@ int main( int argc, char *argv[] ) {
       nongrace = 1;
       break;
     case 's':
-      tau = atof( optarg );
-      f1 = tevparam.deltaT/tau;
       break;
     case 't':
       in.duration = tevparam.deltaT = atof( optarg );

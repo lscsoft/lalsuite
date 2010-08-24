@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #include "LALDoc.h"
 /*
  *
@@ -81,7 +87,7 @@ int WriteLaTeX( char *line , LALEnvironment *Env )
 void *
 TopOfLaTeXEnv(void *recastToEnv)
 {
-    LALEnvironment *Env;
+    LALEnvironment UNUSED *Env;
     Env = (LALEnvironment *)recastToEnv;
     /* nothing is needed in the latex file, ie no \begin{...} */
     return recastToEnv;
@@ -90,7 +96,7 @@ TopOfLaTeXEnv(void *recastToEnv)
 void *
 EndOfLaTeXEnv(void *recastToEnv)
 {
-    LALEnvironment *Env;
+    LALEnvironment UNUSED *Env;
     Env = (LALEnvironment *)recastToEnv;
     /* nothing is needed in the latex file, ie no \end{...} */
     return recastToEnv;

@@ -117,9 +117,6 @@ main( void )
   REAL4Vector                 dummy;
   DirichletParameters         parameters;
 
-  UINT4                        length;
-  length = 10;
-
   lalDebugLevel = LALNDEBUG;
 
 

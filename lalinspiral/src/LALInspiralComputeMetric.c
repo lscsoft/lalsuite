@@ -336,7 +336,6 @@ LALFree
 
 	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
 	Outputs:
-	    det: Determinant of the metric. (not in versions after 02/05)
 	    g00:
 	    g11:
 	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
@@ -374,7 +373,7 @@ LALInspiralComputeMetric (
   static REAL8 Psi[METRIC_DIMENSION][METRIC_ORDER];
   static REAL8 g[METRIC_DIMENSION][METRIC_DIMENSION];
 
-  REAL8 a, b, c, q, det;
+  REAL8 a, b, c, q;
   UINT4 PNorder, m, n;
 
   INITSTATUS(status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC );
@@ -454,7 +453,6 @@ LALInspiralComputeMetric (
   metric->G11 = c;
 
   /* Diagonalize the metric. */
-  det = a * c - b * b;
   q = sqrt( (a-c)*(a-c) + 4. * b*b );
 
   metric->g00 = 0.5 * (a + c - q);
@@ -540,7 +538,7 @@ LALInspiralComputeMetricBCV (
   REAL8 g[METRIC_DIMENSION][METRIC_DIMENSION];
   InspiralMomentsEtcBCV moments;
   REAL8 num;
-  REAL8 a, b, c, q, det;
+  REAL8 a, b, c, q;
 
   INITSTATUS( status,
       "LALInspiralComputeMetricBCV ", LALINSPIRALCOMPUTEMETRICC );
@@ -583,7 +581,6 @@ LALInspiralComputeMetricBCV (
   a = metric->G00;
   b = metric->G01;
   c = metric->G11;
-  det = a * c - b * b;
   q = sqrt( (a-c)*(a-c) + 4. * b*b );
   metric->g00 = 0.5 * (a + c - q);
   metric->g11 = 0.5 * (a + c + q);

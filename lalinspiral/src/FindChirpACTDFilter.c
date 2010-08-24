@@ -38,7 +38,6 @@ binary inspiral chirps.
 #include <lal/FindChirpChisq.h>
 #include <lal/FindChirpACTD.h>
 
-double rint(double x);
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 

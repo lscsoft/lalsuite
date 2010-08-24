@@ -33,7 +33,7 @@ void LALEstimateEffectiveDistance (
         REAL8                   *effDistance
         )
 {
-    REAL8   msevenby3, powerNorm, totalMass, eta, flso, distanceNorm;
+    REAL8   msevenby3, powerNorm, totalMass, flso, distanceNorm;
     REAL8   f, ins_amp;
     INT4    i;
     REAL8   dynRange = 1.0;
@@ -44,7 +44,6 @@ void LALEstimateEffectiveDistance (
     msevenby3 = -7.L/3.L;
     powerNorm = 0.;
     totalMass = param.totalMass*LAL_MTSUN_SI;
-    eta       = param.eta;
 
     flso      = 1.L/(pow(6.L,1.5L)*totalMass*LAL_PI);
 

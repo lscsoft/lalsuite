@@ -45,6 +45,12 @@ an error code is returned if the GSL function fails.
 
 NRCSID( LALGSLTESTC, "$Id$" );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* macro for testing status */
 #define TESTSTATUS( pstatus, code ) \
   if ( (pstatus)->statusCode != code ) { REPORTSTATUS(pstatus); exit(1); } \
@@ -105,13 +111,11 @@ static void Logarithm( LALStatus *status, REAL8 *output, REAL8 input )
 
 /* here is a really stupid Heaviside function: take the log of x;
  * return 1 if no error otherwise return 0 */
-static double Heaviside( double x, void * params )
+static double Heaviside( double x, void UNUSED * params )
 {
   LALStatus newStatus;
   double dummy;
   double ans;
-
-  params = NULL;
 
   /* blank the new status structure */
   memset( &newStatus, 0, sizeof( newStatus ) );

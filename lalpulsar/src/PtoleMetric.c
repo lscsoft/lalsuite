@@ -147,9 +147,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 D_cos_2p_s;
   /* Some useful short-hand notations involving spin and orbital phases: */
   REAL8 D_sin_p_o_plus_s;
-  REAL8 D_p_o_plus_s;
   REAL8 D_sin_p_o_minus_s;
-  REAL8 D_p_o_minus_s;
   REAL8 D_cos_p_o_plus_s;
   REAL8 D_cos_p_o_minus_s;
   /* Quantities related to the short-time Tatlor expansions : */
@@ -273,10 +271,8 @@ void LALPtoleMetric( LALStatus *status,
   /* Some mixed quantities: */
   D_sin_p_o_plus_s
     = (sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
-  D_p_o_plus_s      = D_p_o + D_p_s;
   D_sin_p_o_minus_s
     = (sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
-  D_p_o_minus_s     = D_p_o - D_p_s;
   D_cos_p_o_plus_s
     = (cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
   D_cos_p_o_minus_s

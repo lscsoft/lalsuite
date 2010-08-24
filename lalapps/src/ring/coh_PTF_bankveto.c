@@ -425,8 +425,8 @@ struct bankCohTemplateOverlaps *cohBankOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
-gsl_matrix *Bankeigenvecs[subBankSize],
-gsl_vector *Bankeigenvals[subBankSize]
+gsl_matrix *Bankeigenvecs[50],
+gsl_vector *Bankeigenvals[50]
 )
 {
   UINT4 ui,uj,uk,ifoNumber,halfNumPoints;
@@ -750,12 +750,13 @@ void calculate_standard_chisq_freq_ranges(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4 a[LAL_NUM_IFO],
     REAL4 b[LAL_NUM_IFO],
-    REAL4 *frequencyRanges
+    REAL4 *frequencyRangesPlus,
+    REAL4 *frequencyRangesCross,
+    gsl_matrix *eigenvecs
 )
 {
-  UINT4 i,k,kmin,kmax,len,freqBin,numFreqBins;
-  REAL4 v1,v2,overlapCont,SNRtemp;
-  REAL4 SNRmax = 0;
+  UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
+  REAL4 v1,v2,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
 
@@ -782,23 +783,32 @@ void calculate_standard_chisq_freq_ranges(
   numFreqBins = params->numChiSquareBins;
 
   v1 = 0;
+  v2 = 0;
 
   for( k = 0; k < LAL_NUM_IFO; k++)
   {
     if ( params->haveTrig[k] )
     {
-      v1 += PTFM[k]->data[0];
-//      v2 += b[k]*PTFM[k]->data[0];
+      v1 += a[k]*a[k]*PTFM[k]->data[0];
+      v2 += b[k]*b[k]*PTFM[k]->data[0];
 //      SNRmax = v1*v1 + v2*v2;
 //      SNRmax = v1 + v2;
     }
   }
-  SNRmax = v1;
+  u1 = gsl_matrix_get(eigenvecs,0,0)*v1+gsl_matrix_get(eigenvecs,1,0)*v2;
+  u2 = gsl_matrix_get(eigenvecs,0,1)*v1+gsl_matrix_get(eigenvecs,1,1)*v2;
+  SNRmaxPlus = u1;
+  if (SNRmaxPlus < 0) SNRmaxPlus = -SNRmaxPlus;
+  SNRmaxCross = u2;
+  if (SNRmaxCross < 0) SNRmaxCross = -SNRmaxCross;
 
   v1 = 0;
+  v2 = 0;
 
-  freqBin = 1;
-  SNRtemp = 0;
+  freqBinPlus = 1;
+  freqBinCross = 1;
+  SNRtempPlus = 0;
+  SNRtempCross = 0;
   for ( i = kmin; i < kmax ; ++i )
   {
     for( k = 0; k < LAL_NUM_IFO; k++)
@@ -807,22 +817,37 @@ void calculate_standard_chisq_freq_ranges(
       {
         overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
                PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
-        v1 += overlapCont * 4 * deltaF;
-//        v2 += b[k] * overlapCont * 4 * deltaF;
+        v1 += a[k] * a[k] * overlapCont * 4 * deltaF;
+        v2 += b[k] * b[k] * overlapCont * 4 * deltaF;
       }
     }
     /* Calculate SNR */
 //    SNRtemp = v1*v1 + v2*v2;
-    SNRtemp = v1;
+    u1 = gsl_matrix_get(eigenvecs,0,0)*v1+gsl_matrix_get(eigenvecs,1,0)*v2;
+    u2 = gsl_matrix_get(eigenvecs,0,1)*v1+gsl_matrix_get(eigenvecs,1,1)*v2;
+    SNRtempPlus = u1;
+    if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
+    SNRtempCross = u2;
+    if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
     /* Compare to max SNR */
-    if (SNRtemp > SNRmax * ((REAL4)freqBin/(REAL4)numFreqBins))
+    if (SNRtempPlus > SNRmaxPlus * ((REAL4)freqBinPlus/(REAL4)numFreqBins))
     {
-      if (freqBin < numFreqBins)
+      if (freqBinPlus < numFreqBins)
       {
         /* Record the frequency */
-        frequencyRanges[freqBin-1] = i*deltaF;
+        frequencyRangesPlus[freqBinPlus-1] = i*deltaF;
 //        fprintf(stderr,"Frequency bin:%e \n",frequencyRanges[freqBin-1]);
-        freqBin+=1;
+        freqBinPlus+=1;
+      }
+    }
+    if (SNRtempCross > SNRmaxCross * ((REAL4)freqBinCross/(REAL4)numFreqBins))
+    {
+      if (freqBinCross < numFreqBins)
+      {
+        /* Record the frequency */
+        frequencyRangesCross[freqBinCross-1] = i*deltaF;
+//        fprintf(stderr,"Frequency bin:%e \n",frequencyRanges[freqBin-1]);
+        freqBinCross+=1;
       }
     }
   }

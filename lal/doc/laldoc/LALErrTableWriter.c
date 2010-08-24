@@ -19,6 +19,12 @@
 
 #include "LALDoc.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 int
 ParseErrLine(char *Ptr , LALEnvironment *Env,
              char *caps , char *errName , char *errStr , char *errNum );
@@ -66,7 +72,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
     char caps2[MAXSTR],errName2[MAXSTR],errStr2[MAXSTR],errNum2[MAXSTR],line[MAXSTR];
     int  j,szHASH,numberOfHashDefines,numLinesInTable,numPairsFound,FoundTheEnd;
     fpos_t  filePositionX,filePositionY,filePositionAtArrival;
-    char *s;
+    char UNUSED *s;
 
     fgetpos( Env->InFilePtr , &filePositionAtArrival);
     szHASH = strlen(HASHDEFINE);
@@ -167,7 +173,7 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
               char *errStr       , /* returns string "you really suck"  */
               char *errNum       ) /* Error Number                      */
 {
-    char *position, *savePosition;
+    char *position;
     char line[MAXSTR];
     int i,ni;
 
@@ -217,7 +223,6 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     }
 
     position += strcspn(position, " \t");
-    savePosition = position ;
     sscanf(position,"%s",errStr);
 
     /*

@@ -94,9 +94,6 @@ RCSID( "$Id$" );
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
-#define rint(x) (floor((x)+0.5))
-
-
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
 

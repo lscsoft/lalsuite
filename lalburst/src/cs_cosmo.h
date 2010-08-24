@@ -44,7 +44,7 @@ typedef struct cs_cosmo_functions {
 extern const char * cosmoname;
 extern double zeq;
 extern double H0;
-cs_cosmo_functions_t cs_cosmo_functions( double *z, size_t n );
-cs_cosmo_functions_t cs_cosmo_functions_alloc( double zmin, double dlnz, size_t n );
-void cs_cosmo_functions_free(cs_cosmo_functions_t);
+cs_cosmo_functions_t XLALCSCosmoFunctions( double *z, size_t n );
+cs_cosmo_functions_t XLALCSCosmoFunctionsAlloc( double zmin, double dlnz, size_t n );
+void XLALCSCosmoFunctionsFree(cs_cosmo_functions_t);
 #endif /* CS_COSMO_H */

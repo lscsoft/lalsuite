@@ -130,7 +130,11 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 
-#define rint(x) (floor((x)+0.5))
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
 
@@ -150,7 +154,7 @@ LALFindChirpBCVSpinFilterSegment (
   UINT4                 deltaEventIndex  = 0;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
-  REAL4                 deltaF;
+  REAL4                 UNUSED deltaF;
   REAL4                 modqsqThresh;
   REAL4                 rhosqThresh;
   UINT4                 eventStartIdx    = 0;
@@ -180,17 +184,17 @@ LALFindChirpBCVSpinFilterSegment (
   REAL8                *A2Vec            = NULL;
   REAL8                *A3Vec            = NULL;
   REAL4                 normData;
-  REAL4                 invRootNormData;
+  REAL4                 UNUSED invRootNormData;
 
-  REAL8                 I;
-  REAL8                 J;
-  REAL8                 K;
+  REAL8                 UNUSED I;
+  REAL8                 UNUSED J;
+  REAL8                 UNUSED K;
 
-  REAL8			rootI;
-  REAL8                 denominator;
-  REAL8                 rootDenominator;
-  REAL8                 numerator1;
-  REAL8                 denominator1;
+  REAL8                 UNUSED rootI;
+  REAL8                 UNUSED denominator;
+  REAL8                 UNUSED rootDenominator;
+  REAL8                 UNUSED numerator1;
+  REAL8                 UNUSED denominator1;
 
 /* REAL4                 A1A1             = 0.0;
  REAL4                 A2A2             = 0.0;

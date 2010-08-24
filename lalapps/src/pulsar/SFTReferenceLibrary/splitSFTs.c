@@ -79,6 +79,14 @@ typedef struct {
   time_t last_checked; /**< time we last checked */
 } UNIT_SOURCE;
 
+/** throtteling settings */
+UNIT_SOURCE read_bandwidth={0, 0, 0};
+UNIT_SOURCE read_open_rate={0, 0, 0};
+UNIT_SOURCE write_bandwidth={0, 0, 0};
+UNIT_SOURCE write_open_rate={0, 0, 0};
+
+void request_resource(UNIT_SOURCE *, int);
+
 /** request a resurce. Function returns after waiting for throttle time */
 void request_resource(UNIT_SOURCE *us, int units) {
   time_t now;
@@ -104,15 +112,9 @@ void request_resource(UNIT_SOURCE *us, int units) {
   }
 }
 
-/** throtteling settings */
-UNIT_SOURCE read_bandwidth={0, 0, 0};
-UNIT_SOURCE read_open_rate={0, 0, 0};
-UNIT_SOURCE write_bandwidth={0, 0, 0};
-UNIT_SOURCE write_open_rate={0, 0, 0};
-
 /** main program */
 int main(int argc, char**argv) {
-  unsigned int arg;               /* current command-line argument */
+  int arg;                        /* current command-line argument */
   unsigned int bin;               /* current bin */
   struct headertag2 hd;           /* header of input SFT */
   FILE *fp;                       /* currently open filepointer */
@@ -122,7 +124,8 @@ int main(int argc, char**argv) {
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
   char *outname;                  /* name of output SFT file */
-  char *prefix = "";              /* output filename prefix */
+  char empty = '\0';
+  char *prefix = &empty;          /* output filename prefix */
   char *detector = NULL;          /* detector name */
   double factor = 1.0;            /* "mystery" factor */
   double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
@@ -310,7 +313,7 @@ int main(int argc, char**argv) {
 	"out of memory allocating data",8);
 
     /* error if desired start bin < hd.firstfreqindex */
-    if(start < hd.firstfreqindex) {
+    if((int)start < hd.firstfreqindex) {
       fprintf(stderr,
 	      "ERROR: start bin (%d) is smaller than first bin in input SFT (%d)\n",
 	      start, hd.firstfreqindex);
