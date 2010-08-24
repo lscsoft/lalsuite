@@ -133,8 +133,6 @@ struct CommandLineArgsTag {
 
 typedef 
 struct GlobalVariablesTag {
-  REAL8FFTPlan *fplan;        /* fft plan */
-  REAL8FFTPlan *rplan;        /* fft plan */
   unsigned seg_length;
 } GlobalVariables;
 
@@ -174,16 +172,16 @@ int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 int DownSample(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 
 /* Computes the average spectrum  */
-REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
+REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FFTPlan *fplan);
 
 /* Creates the template bank based on the spectrum  */
-int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates);
+int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan);
 
 /* Creates the frequency domain string cusp or kink filters  */
-int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates);
+int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan);
 
 /* Filters the data through the template banks  */
-int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head);
+int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan, SnglBurst **head);
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringTemplate *strtemplate,
@@ -208,6 +206,8 @@ int main(int argc,char *argv[])
   MetadataTable  process;
   MetadataTable  procparams;
   REAL8TimeSeries *ht;        /* strain data */
+  REAL8FFTPlan *fplan;        /* fft plan */
+  REAL8FFTPlan *rplan;        /* fft plan */
   REAL8FrequencySeries *Spec; /* average spectrum */
 
   lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
@@ -254,28 +254,39 @@ int main(int argc,char *argv[])
 					 (int)round(CommandLineArgs.pad/ht->deltaT),
 					 ht->data->length-2*(int)round(CommandLineArgs.pad/ht->deltaT));
 
+  /****** FFT plans ******/
+  GV.seg_length = round(CommandLineArgs.ShortSegDuration / ht->deltaT);
+  fplan = XLALCreateForwardREAL8FFTPlan( GV.seg_length, 0 );
+  rplan = XLALCreateReverseREAL8FFTPlan( GV.seg_length, 0 );
+  if(!fplan || !rplan) {
+    XLALDestroyREAL8FFTPlan(fplan);
+    XLALDestroyREAL8FFTPlan(rplan);
+    return 9;
+  }
+
   /****** AvgSpectrum ******/
   XLALPrintInfo("AvgSpectrum()\n");
-  Spec = AvgSpectrum(CommandLineArgs, ht);
+  Spec = AvgSpectrum(CommandLineArgs, ht, fplan);
   if (!Spec) return 9;  
   if (CommandLineArgs.printspectrumflag) LALDPrintFrequencySeries( Spec, "Spectrum.txt" );
 
   /****** CreateTemplateBank ******/
   XLALPrintInfo("CreateTemplateBank()\n");
-  if (CreateTemplateBank(CommandLineArgs, ht, Spec, strtemplate, &NTemplates)) return 10;
+  if (CreateTemplateBank(CommandLineArgs, ht, Spec, strtemplate, &NTemplates, rplan)) return 10;
 
   /****** CreateStringFilters ******/
   XLALPrintInfo("CreateStringFilters()\n");
-  if (CreateStringFilters(CommandLineArgs, ht, Spec, strtemplate, NTemplates)) return 11;
+  if (CreateStringFilters(CommandLineArgs, ht, Spec, strtemplate, NTemplates, fplan, rplan)) return 11;
   XLALDestroyREAL8FrequencySeries(Spec);
   Spec = NULL;
 
   /****** FindStringBurst ******/
   XLALPrintInfo("FindStringBurst()\n");
-  if (FindStringBurst(CommandLineArgs, ht, strtemplate, NTemplates, &events)) return 12;
+  if (FindStringBurst(CommandLineArgs, ht, strtemplate, NTemplates, fplan, rplan, &events)) return 12;
   if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
   XLALDestroyREAL8TimeSeries(ht);
-  ht = NULL;
+  XLALDestroyREAL8FFTPlan(fplan);
+  XLALDestroyREAL8FFTPlan(rplan);
 
   /****** XLALClusterSnglBurstTable ******/
   XLALPrintInfo("XLALClusterSnglBurstTable()\n");
@@ -535,7 +546,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringT
 
 /*******************************************************************************/
 
-int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head){
+int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan, SnglBurst **head){
   int i,m;
   unsigned p;
   REAL8Vector *vector = NULL;
@@ -555,7 +566,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const St
       memcpy( vector->data, ht->data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
 	  
       /* fft it */
-      if(XLALREAL8ForwardFFT( vtilde, vector, GV.fplan )) return 1;
+      if(XLALREAL8ForwardFFT( vtilde, vector, fplan )) return 1;
       
       /* multiply FT of data and String Filter and deltaT */
       for ( p = 0 ; p < vtilde->length; p++ ){
@@ -563,7 +574,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const St
 	vtilde->data[p].im *= strtemplate[m].StringFilter->data->data[p]*ht->deltaT;
       }
       
-      if(XLALREAL8ReverseFFT( vector, vtilde, GV.rplan )) return 1;
+      if(XLALREAL8ReverseFFT( vector, vtilde, rplan )) return 1;
 
       /* normalise the result by template normalisation and multiply by 
 	 df (not inluded in LALReverseRealFFT)  factor of 2 is from 
@@ -585,7 +596,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const St
 
 /*******************************************************************************/
 
-int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates){
+int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan){
   int m;
   unsigned p;
   COMPLEX16Vector *vtilde; /* frequency-domain vector workspace */
@@ -608,7 +619,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
     }
 
     /* reverse FFT vtilde into vector */
-    if(XLALREAL8ReverseFFT( vector, vtilde, GV.rplan )) return 1;
+    if(XLALREAL8ReverseFFT( vector, vtilde, rplan )) return 1;
 
     /* multiply times df to make sure units are correct */
     for ( p = 0 ; p < vector->length; p++ )
@@ -622,7 +633,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
 	      * sizeof( *vector->data ) );
 
     /* forward fft the truncated vector into vtilde */
-    if(XLALREAL8ForwardFFT( vtilde, vector, GV.fplan )) return 1;
+    if(XLALREAL8ForwardFFT( vtilde, vector, fplan )) return 1;
 
     for ( p = 0 ; p < vtilde->length-1; p++ ){
       re = vtilde->data[p].re * ht->deltaT;
@@ -662,7 +673,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
       vtilde->data[0].re = vtilde->data[0].im = 0.0;
       vtilde->data[vtilde->length-1].re = vtilde->data[vtilde->length-1].im =0;
 
-      if(XLALREAL8ReverseFFT( vector, vtilde, GV.rplan )) return 1;
+      if(XLALREAL8ReverseFFT( vector, vtilde, rplan )) return 1;
 
       series.data = vector;
 
@@ -680,7 +691,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
 
 /*******************************************************************************/
 
-int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates){
+int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan){
   REAL8 fNyq, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
   int m, f_cut_index, f_low_cutoff_index, extr_ctr;
   unsigned p, pcut, f_min_index, f_max_index;
@@ -804,8 +815,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8
     }
     
     /* reverse FFT */
-    if(XLALREAL8ReverseFFT(vector, strtemplate[m].waveform_f, GV.rplan)) return 1;
-    if(XLALREAL8ReverseFFT(strtemplate[m].auto_cor, vtilde, GV.rplan)) return 1;
+    if(XLALREAL8ReverseFFT(vector, strtemplate[m].waveform_f, rplan)) return 1;
+    if(XLALREAL8ReverseFFT(strtemplate[m].auto_cor, vtilde, rplan)) return 1;
 
     /* The vector is reshuffled in the right order */
     for ( p = 0 ; p < GV.seg_length/2; p++ ){
@@ -852,13 +863,11 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8
 
 
 /*******************************************************************************/
-REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
+REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL8FFTPlan *fplan){
   REAL8FrequencySeries *Spec;
-
-  GV.seg_length = (int)(CLA.ShortSegDuration/ht->deltaT + 0.5);
   Spec  = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
-  GV.fplan = XLALCreateForwardREAL8FFTPlan( GV.seg_length, 0 );
-  GV.rplan = XLALCreateReverseREAL8FFTPlan( GV.seg_length, 0 );
+  if(!Spec)
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
     unsigned p;
@@ -870,9 +879,11 @@ REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries
     int segmentLength = GV.seg_length;
     int segmentStride = GV.seg_length/2;
     REAL8Window *window = XLALCreateHannREAL8Window( segmentLength );
-    
+    if(!window)
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+
     if(XLALREAL8AverageSpectrumMedianMean( Spec, ht, segmentLength,
-					   segmentStride, window, GV.fplan ))
+					   segmentStride, window, fplan ))
       XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
     XLALDestroyREAL8Window( window );
@@ -1387,10 +1398,7 @@ int FreeMem(StringTemplate *strtemplate, int NTemplates){
 
   for (m=0; m < NTemplates; m++)
     XLALDestroyREAL8FrequencySeries(strtemplate[m].StringFilter);
-    
-  XLALDestroyREAL8FFTPlan( GV.fplan );
-  XLALDestroyREAL8FFTPlan( GV.rplan );
-  
+
   LALCheckMemoryLeaks();
   
   return 0;
