@@ -1104,3 +1104,19 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 		return;
 		
 }
+
+
+REAL8 NullLogLikelihood(LALIFOData *data)
+/*Idential to FreqDomainNullLogLikelihood                        */
+{
+	REAL8 loglikeli, totalChiSquared=0.0;
+	LALIFOData *ifoPtr=data;
+	
+	/* loop over data (different interferometers): */
+	while (ifoPtr != NULL) {
+		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
+		ifoPtr = ifoPtr->next;
+	}
+	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+	return(loglikeli);
+}
