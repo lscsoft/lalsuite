@@ -44,18 +44,50 @@ example$ ./sw_inj_frames H1_LDAS_C02_L2_CWINJ H1:LDAS-STRAIN 128 1927836 for the
 #include <lal/TimeSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/UserInput.h>
+
+typedef struct{
+    BOOLEAN help; /* Trigger output of help string*/
+    CHAR *out_chan; /* Channel output ie. H1_LDAS_C02_L2_CWINJ*/
+    CHAR *in_chan;  /*Channel input from .gwf ie. H1:LDAS-STRAIN*/
+    REAL8 srate; /* sample rate (16384)*/
+    REAL8 duration; /*duration (sec)*/
+    REAL8 start; /*epoch (GPSSeconds)*/
+    CHAR *inputdir; /* directory for .par files*/
+    } UserInput_t;
+  
+UserInput_t uvar_struct;    
 
 int main(int argc, char **argv){
-  char lalframefile[256];
+    const char *fn = __func__;
+    
+    UserInput_t *uvar = &uvar_struct; /*structure for user-defined input variables*/
+    
+    uvar->srate=16384;
+    /* Register User Variables*/
+    XLALregBOOLUserStruct( help,            'h', UVAR_HELP, "Print this meessage");
+    XLALregSTRINGUserStruct(out_chan,   'o', UVAR_OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");
+    XLALregSTRINGUserStruct(in_chan,        'i', UVAR_OPTIONAL, "Input channel from .gwf file, i.e. (IFO):LDAS-STRAIN");
+    XLALregREALUserStruct(srate,            'r', UVAR_OPTIONAL, "user defined sample rate, default = 16384");
+    XLALregREALUserStruct(duration,       'd', UVAR_OPTIONAL, "duration of frame (sec)");
+    XLALregREALUserStruct(start,            's', UVAR_OPTIONAL, "epoch in GPS Seconds");
+    XLALregSTRINGUserStruct(inputdir,       'p', UVAR_OPTIONAL, "directory for .par files");
+    
+    if (XLALUserVarReadAllInput (argc, argv ) != XLAL_SUCCESS) {
+        XLALPrintError ("%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno);
+        return 1;
+        }
+  /*char lalframefile[256];
   char gwfframefile[256];
 
   double srate;
-  double ndata; /* data taken every 1 sec */
+  double ndata; *//* data taken every 1 sec */
 
   REAL8Vector *injsig=NULL;
   FILE *inject;
   REAL8Vector *Tstamp=NULL;
   FILE *outtest;
+
 
   int j=0;
   int k=0;
@@ -92,33 +124,47 @@ int main(int argc, char **argv){
     return 1;
   }
 
-  sprintf(lalframefile, "%s", argv[1]); /* User defined frame file -- need to simplify */
-  sprintf(gwfframefile, "%s", argv[2]); /* Frame file to be read in*/
+/*  sprintf(lalframefile, "%s", argv[1]);  User defined frame file -- need to simplify */
+/*  sprintf(gwfframefile, "%s", argv[2]);  Frame file to be read in*/
 
-  srate = atoi(argv[3]); /* User defined sample rate (16384)*/
+/*  srate = atoi(argv[3]);  User defined sample rate (16384)*/
 
-  ndata = atoi(argv[4]); /* length of data set */
+/*  ndata = atoi(argv[4]);  length of data set */
 
-  epoch.gpsSeconds = atoi(argv[5]); /* User defined gps epoch */
+/*  epoch.gpsSeconds = atoi(argv[5]);  User defined gps epoch */
+/*  epoch.gpsNanoSeconds = 0;*/
+
+/*   define the input directory for the mfd_files*/
+/*  sprintf(inputdir, "/home/emacdonald/par_files/generated/%s/mfd_files", argv[6]);*/
+/*  fprintf(stderr, "%s\n", inputdir);*/
+  epoch.gpsSeconds = uvar->start;
   epoch.gpsNanoSeconds = 0;
 
-  /* define the input directory for the mfd_files*/
-  sprintf(inputdir, "/home/emacdonald/par_files/generated/%s/mfd_files", argv[6]);
-  /*fprintf(stderr, "%s\n", inputdir);*/
+/*Error Checks*/
+    if (uvar->in_chan == 0){
+        XLALPrintError ("\nNeed an input channel!\n");
+        return 1;
+    }
+
+    REAL8 ndata;
+    REAL8 srate;
+    
+    ndata = uvar->duration;
+    srate = uvar->srate;
 
   /* Get .gwf Frame File */
-  gwfseries = XLALCreateREAL8TimeSeries( gwfframefile, &epoch, 0., 1./srate,
+  gwfseries = XLALCreateREAL8TimeSeries( uvar->in_chan, &epoch, 0., 1./srate,
 					 &lalSecondUnit, (int)(ndata*srate) );
 
   /* extract .gwf file name from inputs*/
-  pos = strchr(lalframefile, '_');
-  ipos = pos-lalframefile;
-  strncpy(detname, lalframefile, ipos);
+  pos = strchr(uvar->out_chan, '_');
+  ipos = pos-(uvar->out_chan);
+  strncpy(detname, uvar->out_chan, ipos);
   /*fprintf(stderr, "%s\n", detname);*/
 
-  strcpy(channame, &lalframefile[ipos+1]);
+  strcpy(channame, uvar->out_chan[ipos+1]);
 
-  strncpy(injpos, lalframefile, 14);
+  strncpy(injpos, uvar->out_chan, 14);
 
   sprintf( gwfname, "%c-%s-%d-%s.gwf", detname[0], injpos, epoch.gpsSeconds, argv[4] );
   /*fprintf( stderr, "%s\n", gwfname);*/
@@ -134,31 +180,23 @@ int main(int argc, char **argv){
 
 
   /* create CWINJ time series */
-  series = XLALCreateREAL8TimeSeries( lalframefile, &epoch, 0., 1./srate,
+  series = XLALCreateREAL8TimeSeries( uvar->out_chan, &epoch, 0., 1./srate,
 				      &lalSecondUnit, (int)(ndata*srate) );
 
   fprintf(stderr, "length = %d\n", series->data->length);
 
   /* define output .gwf file */
-  sprintf(fname, "%c-%s-%d-%s.gwf", detname[0], lalframefile, epoch.gpsSeconds, argv[4]);
+  sprintf(fname, "%c-%s-%d-%s.gwf", detname[0], uvar->out_chan, epoch.gpsSeconds, argv[4]);
   /*fprintf(stderr, "%s\n", fname);*/
-
-  /* Write out series using XLAL function */
-
-  XLALFrWriteREAL8TimeSeries( series, 1 );
-
-  XLALDestroyREAL8TimeSeries( series );
 
   /* read in and test generated frame with XLAL function*/
-
-  /*fprintf(stderr, "%s\n", fname);*/
 
   if (( frfile = XLALFrOpen( "CWINJframes/.", fname )) == NULL)
     fprintf(stderr, "Cannot open file!\n");
   else fprintf(stderr, "File opened successfully - Hooray!\n");
 
   series=NULL;
-  series = XLALCreateREAL8TimeSeries( lalframefile, &epoch, 0., 1./srate,
+  series = XLALCreateREAL8TimeSeries( uvar->out_chan, &epoch, 0., 1./srate,
 				      &lalSecondUnit, (int)(ndata*srate) );
 
   XLALFrGetREAL8TimeSeries( series, frfile );
