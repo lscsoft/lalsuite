@@ -279,7 +279,7 @@ void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
-int  XLALWriteSFT (const SFTtype *sft, FILE *fp, const CHAR *comment );
+int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *comment );
 int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *comment );
 int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
 int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *comment);

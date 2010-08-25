@@ -1276,38 +1276,32 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  *
  */
 int
-XLALWriteSFT(
-	     const SFTtype *sft,	/**< SFT to write to disk */
-	     FILE *fp,			/**< pointer to open file */
-	     const CHAR *comment)	/**< optional comment (for v2 only) */
+XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
+                  FILE *fp,		/**< pointer to open file */
+                  const CHAR *comment)	/**< optional comment (for v2 only) */
 {
-  const CHAR *fn = "XLALWriteSFT";
+  const CHAR *fn = __func__;
   UINT4 comment_len = 0;
   CHAR *SFTcomment;
   UINT4 pad_len = 0;
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
   _SFT_header_v2_t rawheader;
 
-  /*   Make sure the arguments are not NULL and perform basic checks*/
-  if (!( sft ))
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  if (!( sft->data ))
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  if (!( sft->deltaF > 0 ))
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  if (!( sft->f0 >= 0 ))
+  /* check input consistency */
+  if (!sft || !sft->data || sft->deltaF <= 0 || sft->f0 < 0 || sft->data->length ==0 )
     XLAL_ERROR ( fn, XLAL_EINVAL );
   if (!( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0) ))
     XLAL_ERROR ( fn, XLAL_EINVAL );
   if (!( sft->epoch.gpsNanoSeconds < 1000000000 ))
     XLAL_ERROR ( fn, XLAL_EINVAL );
-  if (!( sft->data->length > 0 ))
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
+
+  if ( !fp )
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+
 
   /* concat sft->name + comment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
@@ -1372,7 +1366,7 @@ XLALWriteSFT(
 
   return XLAL_SUCCESS;
 
-} /* XLALWriteSFT() */
+} /* XLALWriteSFT2fp() */
 
 /** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
  *  Add the comment to SFT if comment != NULL.
@@ -1390,7 +1384,7 @@ XLALWriteSFT2file(
 		  const CHAR *fname,		/**< filename */
 		  const CHAR *comment)		/**< optional comment (for v2 only) */
 {
-  const CHAR *fn = "XLALWriteSFT2file";
+  const CHAR *fn = __func__;
   FILE  *fp = NULL;
 
   /*   Make sure the arguments are not NULL */
@@ -1414,7 +1408,7 @@ XLALWriteSFT2file(
     }
 
   /* write SFT to file */
-  if ( XLALWriteSFT(sft, fp, comment) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFT2fp (sft, fp, comment) != XLAL_SUCCESS ) {
     XLAL_ERROR ( fn, XLAL_EIO );
   }
 
@@ -1457,7 +1451,7 @@ XLALWriteSFTVector2Dir(
 		       const CHAR *comment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
-  const CHAR *fn = "XLALWriteSFTVector2Dir";
+  const CHAR *fn = __func__;
   UINT4 length, k;
   CHAR *filename = NULL;
   CHAR filenumber[16];
@@ -1572,7 +1566,7 @@ XLALWriteSFTVector2File(
 		       const CHAR *filename,		/**< filename of concatenated SFT */
 		       const CHAR *comment)		/**< optional comment (for v2 only) */
 {
-  const CHAR *fn = "XLALWriteSFTVector2File";
+  const CHAR *fn = __func__;
   UINT4 length, k;
   FILE *fp = NULL;
   SFTtype *sft;
@@ -1603,7 +1597,7 @@ XLALWriteSFTVector2File(
     }
 
     /* write the k^th sft */
-    if ( XLALWriteSFT( sft, fp, comment ) != XLAL_SUCCESS ) {
+    if ( XLALWriteSFT2fp ( sft, fp, comment ) != XLAL_SUCCESS ) {
       XLAL_ERROR ( fn, xlalErrno );
     }
   }
