@@ -43,6 +43,9 @@ libz.a:
 exchndl.o: $(EAHsrc)/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common

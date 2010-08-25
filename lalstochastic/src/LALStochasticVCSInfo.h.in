@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALSTOCHASTIC_VCS_NAME "LALStochastic"
 #define LALSTOCHASTIC_VCS_ID "@ID@"
 #define LALSTOCHASTIC_VCS_DATE "@DATE@"
 #define LALSTOCHASTIC_VCS_BRANCH "@BRANCH@"
@@ -50,6 +51,7 @@ extern "C" {
 /* vcs information structures */
 extern struct tagLALVCSInfo lalStochasticVCSInfo;
 static const struct tagLALVCSInfo lalStochasticHeaderVCSInfo = { \
+  LALSTOCHASTIC_VCS_NAME, \
   LALSTOCHASTIC_VERSION, \
   LALSTOCHASTIC_VCS_ID, \
   LALSTOCHASTIC_VCS_DATE, \

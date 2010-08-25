@@ -887,11 +887,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
 	/* get timestamps from the loaded noise SFTs */
-	if ( ( cfg->timestamps = XLALgetSFTtimestamps ( cfg->noiseSFTs )) == NULL ) {
-          XLALPrintError ("%s: XLALgetSFTtimestamps() failed to obtain timestamps from SFTvector.\n", fn );
+	if ( ( cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs )) == NULL ) {
+          XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed to obtain timestamps from SFTvector.\n", fn );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
-
 
       } /* if uvar_noiseSFTs */
 

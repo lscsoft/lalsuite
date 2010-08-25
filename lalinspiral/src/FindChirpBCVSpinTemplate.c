@@ -182,7 +182,6 @@ LALFindChirpBCVSpinTemplate (
   REAL8                *A2Vec            = NULL;
   REAL8                *A3Vec            = NULL;
   REAL4                 deltaT;
-  REAL4                 fLow;
   REAL4                 rLSOto3by2       = 0.0;
 
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
@@ -250,7 +249,6 @@ LALFindChirpBCVSpinTemplate (
   deltaTto2by3  = pow(deltaT, Twoby3);
   deltaF        = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
   x1            = pow( deltaF, -1.0/3.0 );
-  fLow          = params->fLow;
   fFinal        = tmplt->fFinal;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;

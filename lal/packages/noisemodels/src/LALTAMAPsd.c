@@ -65,13 +65,18 @@ None.
 
 NRCSID (LALTAMAPSDC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*  <lalVerbatim file="LALTAMAPsdCP"> */
-void  LALTAMAPsd(LALStatus *status, REAL8 *psd, REAL8 f)
+void  LALTAMAPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
 
    REAL8 seismic, thermal, shot, x;
 
-   status = NULL;
    x = f/400.;
    seismic = pow(x,-5);
    thermal = 13. / x;

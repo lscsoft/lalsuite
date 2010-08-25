@@ -217,7 +217,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
   if ( (channel = XLALGetChannelPrefix ( site->name )) == NULL )
     {
-      LALPrintError ("\nXLALGetChannelPrefix() Failed to extract channel-prefix from site '%s'\n\n", site->name );
+      XLALPrintError ("\nXLALGetChannelPrefix() Failed to extract channel-prefix from site '%s'\n\n", site->name );
       ABORT (status, GENERATEPULSARSIGNALH_EDETECTOR, GENERATEPULSARSIGNALH_MSGEDETECTOR );
     }
 
@@ -248,7 +248,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   if ( params->pulsar.spindown && (params->pulsar.spindown->length > numSpins) )
     {
-      LALPrintError ("Sorry, SimulatePulsarSignal() only supports up to %d spindowns!\n", numSpins );
+      XLALPrintError ("Sorry, SimulatePulsarSignal() only supports up to %d spindowns!\n", numSpins );
       ABORT (status,  SIMULATEPULSARSIGNAL_EINPUT,  SIMULATEPULSARSIGNAL_MSGEINPUT);
     }
   if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 3 ) )

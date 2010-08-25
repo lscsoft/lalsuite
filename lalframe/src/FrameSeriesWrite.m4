@@ -283,7 +283,7 @@ FSFUNC (
   CHAR   units[LALUnitTextSize];
   CHARVector vnits;
   struct FrFile *frfile;
-  UINT4 nframes;
+  UINT4 UNUSED nframes;
   REAL4 deltaT;
   INT8 t;
   INT8 tend;

@@ -43,6 +43,12 @@ NRCSID (LALFRAMEIOC,"$Id$");
 /* FIXME: WARNING: this value might need to change in the future */
 #define FR_FILE_HEADER_SIZE 40 /* size of frame file header in bytes */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 struct FrFile * XLALFrOpenURL( const char *url )
 {
   static const char *func = "XLALFrOpenURL";
@@ -889,7 +895,7 @@ LALCalData * XLALFrameGetCalData( LIGOTimeGPS *epoch, const char *readoutChannel
   char readoutPoint[LALNameLength]; /* DARM_ERR or AS_Q */
   char ifo[3];
   LIGOTimeGPS tend;
-  int errnum;
+  int UNUSED errnum;
 
   /* setup channel names based on readout channel */
   XLALStringCopy( ifo, readoutChannel, sizeof( ifo ) );

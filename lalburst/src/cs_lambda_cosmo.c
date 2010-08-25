@@ -26,7 +26,13 @@
 /*********************************************************************************/
 #include <math.h>
 #include <gsl/gsl_integration.h>
-#include "cs_lambda_cosmo.h"
+#include "lal/cs_lambda_cosmo.h"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*  "$Id$" "$Name$"; */
 
@@ -43,7 +49,7 @@ static double cs_lambda_hubble( double one_plus_z )
 	return ans;
 }
 
-static double cs_lambda_phit_integrand( double y, void * p )
+static double cs_lambda_phit_integrand( double y, void UNUSED * p )
 {
 	double one_plus_z;
 	double z;
@@ -58,7 +64,7 @@ static double cs_lambda_phit_integrand( double y, void * p )
 	return ans;
 }
 
-static double cs_lambda_phiA_integrand( double z, void * p )
+static double cs_lambda_phiA_integrand( double z, void UNUSED * p )
 {
 	double ans;
 
@@ -70,7 +76,7 @@ static double cs_lambda_phiA_integrand( double z, void * p )
 
 #define WORKSZ 100000
 #define EPS 1e-7
-cs_cosmo_functions_t cs_cosmo_functions_alloc( double zmin, double dlnz, size_t n )
+cs_cosmo_functions_t XLALCSCosmoFunctionsAlloc( double zmin, double dlnz, size_t n )
 {
 	cs_cosmo_functions_t cosmofns;
 	gsl_integration_workspace * w = gsl_integration_workspace_alloc(WORKSZ);
@@ -111,7 +117,7 @@ cs_cosmo_functions_t cs_cosmo_functions_alloc( double zmin, double dlnz, size_t 
 	return cosmofns;
 }
 
-cs_cosmo_functions_t cs_cosmo_functions( double *z, size_t n )
+cs_cosmo_functions_t XLALCSCosmoFunctions( double *z, size_t n )
 {
 	cs_cosmo_functions_t cosmofns;
 	gsl_integration_workspace * w = gsl_integration_workspace_alloc(WORKSZ);
@@ -150,4 +156,12 @@ cs_cosmo_functions_t cs_cosmo_functions( double *z, size_t n )
 
 	gsl_integration_workspace_free( w );
 	return cosmofns;
+}
+
+void XLALCSCosmoFunctionsFree(cs_cosmo_functions_t cosmofns)
+{
+	free(cosmofns.z);
+	free(cosmofns.phit);
+	free(cosmofns.phiA);
+	free(cosmofns.phiV);
 }

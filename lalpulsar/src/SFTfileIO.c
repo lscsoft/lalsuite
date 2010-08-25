@@ -483,47 +483,6 @@ LALSFTdataFind (LALStatus *status,
 
 } /* LALSFTdataFind() */
 
-
-/** Extract a timstamps-vector from the given SFTVector.
- *
- * \note This returns exactly the timestamps corresponding to the SFTs in the input vector,
- * in the same order.
- *
- */
-LIGOTimeGPSVector *
-XLALgetSFTtimestamps ( const SFTVector *sfts )	/**< input SFT-vector (single-IFO) */
-{
-  static const char *fn = "XLALgetSFTtimestamps()";
-
-  UINT4 i, numSFTs;
-  LIGOTimeGPSVector *ret = NULL;
-
-  if ( !sfts || sfts->length == 0 ) {
-    XLALPrintError ("%s: invalid NULL or empty SFT input vector.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  numSFTs = sfts->length;
-
-  /* create timestamps vector */
-  if ( (ret = XLALCreateTimestampVector( numSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  for ( i=0; i < numSFTs; i ++ )
-    {
-      ret->data[i] = sfts->data[i].epoch;
-    } /* for i < numSFTs */
-
-  ret->deltaT = 1.0 / sfts->data[0].deltaF;	/* TSFT */
-
-  return ret;
-
-} /* XLALgetSFTtimestamps() */
-
-
-
 /** Extract a timstamps-vector from the given SFTCatalog.
  *
  * \note A list of *unique* timestamps is returned, i.e. only a single copy of a timestamp
@@ -1938,7 +1897,6 @@ LALReadSFTfile (LALStatus *status,
 		const CHAR *fname)	/**< path+filename */
 {
   SFTHeader  header;		/* SFT file-header version1 */
-  REAL8 deltaF;
   UINT4 readlen;
   INT4 fminBinIndex, fmaxBinIndex;
   SFTtype *outputSFT = NULL;
@@ -1957,7 +1915,6 @@ LALReadSFTfile (LALStatus *status,
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
 
   /* ----- figure out which data we want to read ----- */
-  deltaF = 1.0 / header.timeBase;
 
   /* special case: fMin==fMax==0 means "read all" */
   if ( (fMin == 0) && (fMax == 0) )

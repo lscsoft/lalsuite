@@ -58,7 +58,6 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
 
-#define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0
@@ -362,7 +361,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   ParamInRange(parameter);
   if(inputMCMC->approximant==IMRPhenomA && mc2mt(mc,eta)>475.0) parameter->logPrior=-DBL_MAX;
-  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX; 
+  if(m1<minCompMass || m2<minCompMass) parameter->logPrior=-DBL_MAX;
   if(m1>maxCompMass || m2>maxCompMass) parameter->logPrior=-DBL_MAX;
   return parameter->logPrior;
 }
@@ -454,7 +453,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		chisq=DBL_MAX;
 		goto noWaveform;
 	}
-	
+
 	/* Set the epoch so that the t_c is correct */
 	end_time = XLALMCMCGetParameter(parameter,"time");
 
@@ -479,7 +478,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		h_p_t->data->data[i]=0.0;
 		h_c_t->data->data[i]=0.0;
 	}
-	
+
 	/* Get H+ and Hx in the Freq Domain */
 	NFD=inputMCMC->stilde[det_i]->data->length;
 	H_p_t = XLALCreateCOMPLEX8FrequencySeries("Hplus",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
@@ -488,9 +487,9 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,
 																	  NtimeDomain,
 																	  FFTW_PATIENT); fprintf(stderr,"Created FFTW plan\n");}
-	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan); 
-	LALTimeFreqRealFFT(&status,H_c_t,h_c_t,inputMCMC->likelihoodPlan); 
-	
+	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan);
+	LALTimeFreqRealFFT(&status,H_c_t,h_c_t,inputMCMC->likelihoodPlan);
+
 #if DEBUGMODEL !=0
 	char tmodelname[100];
 	sprintf(tmodelname,"tmodel_plus_%i.dat",det_i);
@@ -509,17 +508,17 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
-	
+
 	/* This also holds the source and the detector, LAL has two different structs for this! */
 	LALDetAndSource det_source;
 	det_source.pSource=&source;
-	
+
 	REAL8 TimeShiftToGC=XLALMCMCGetParameter(parameter,"time");
-	
+
 	TimeShiftToGC-=inputMCMC->epoch.gpsSeconds + 1.e-9*inputMCMC->epoch.gpsNanoSeconds;
 	TimeShiftToGC-=PPNparams.tc;
-	
-	
+
+
 	/* For each IFO */
 	for(det_i=0;det_i<inputMCMC->numberDataStreams;det_i++){
 		REAL8 TimeFromGC;
@@ -530,8 +529,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		char modelname[100];
 		sprintf(modelname,"model_%i.dat",det_i);
 		modelout = fopen(modelname,"w");
-#endif		
-	
+#endif
+
 		TimeFromGC = XLALTimeDelayFromEarthCenter(inputMCMC->detector[det_i]->location, source.equatorialCoords.longitude, source.equatorialCoords.latitude, &(inputMCMC->epoch)); /* Compute time delay */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
@@ -542,33 +541,37 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin;
+		/* Only compute sum up to maximum frquency of the waveform. PPNparams.fStop is the maximum of the 2*f_orb harmonic */
+		
 		REAL8 fMultiplier = (inputMCMC->ampOrder + 2.0)/2.0; /* The frequency of the highest harmonic as determined by ampOrder */
 		highBin = (UINT4)(PPNparams.fStop * fMultiplier / inputMCMC->stilde[det_i]->deltaF);
 		
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)
-		   highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
+			highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
 		for(idx=lowBin;idx<=highBin;idx++){
+			/* The phase shift angle, determined by the time FROM the geocentre to the Detector, plus the time */
+			/* FROM the start of the segment to the t_c at geocentre */
+			/* Phase shift is exp(-i*ang), but - signs on sin below take the negative into account */
+			/* exp(-i*ang) = cos(ang) - sin(ang) */
 			REAL8 ang = 2.0*LAL_PI*(TimeFromGC+TimeShiftToGC)*inputMCMC->stilde[det_i]->deltaF*idx;
 			/* Calculate rotated parts of the plus and cross */
+			
+			/* Negative signs on sins: see comment above for definition of ang */
 			REAL4 plus_re,plus_im,cross_re,cross_im;
-			plus_re = H_p_t->data->data[idx].re*cos(ang)+H_p_t->data->data[idx].im*sin(ang);
-			plus_im = H_p_t->data->data[idx].im*cos(ang)+H_p_t->data->data[idx].re*sin(ang);
-			cross_re = H_c_t->data->data[idx].re*cos(ang)+H_c_t->data->data[idx].im*sin(ang);
-			cross_im = H_c_t->data->data[idx].im*cos(ang)+H_c_t->data->data[idx].re*sin(ang);
+			plus_re = H_p_t->data->data[idx].re*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
+			plus_im = H_p_t->data->data[idx].im*cos(ang) - H_p_t->data->data[idx].re*sin(ang);
+			cross_re = H_c_t->data->data[idx].re*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
+			cross_im = H_c_t->data->data[idx].im*cos(ang) - H_c_t->data->data[idx].re*sin(ang);
 			
 			/* Compute total real and imaginary responses */
-			resp_r = (REAL8)(plus_re*det_resp.plus+cross_re*det_resp.cross);
-			resp_i = (REAL8)(plus_im*det_resp.plus+cross_im*det_resp.cross);
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/*/deltaF*/;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/*/deltaF*/;
+			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
+			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
 			
 			/* Gaussian version */
-			/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
-			 that LAL uses. Please check this whenever any change is made */
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
 			
-			/* Student-t version */
-			/*			chisq+=log(real*real+imag*imag); */
 #if DEBUGMODEL !=0
 			fprintf(modelout,"%lf %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",idx*deltaF,resp_r,resp_i,H_p_t->data->data[idx].re,H_p_t->data->data[idx].im,H_c_t->data->data[idx].re,H_c_t->data->data[idx].im);
 #endif
@@ -576,6 +579,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 #if DEBUGMODEL !=0
 		fclose(modelout);
 #endif
+		/* Add on the remaining sum, consulting the lookup table */
 		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		else if(highBin<=lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
@@ -610,7 +614,7 @@ in the frequency domain */
 	InspiralTemplate template;
 	UINT4 Nmodel; /* Length of the model */
 	UINT4 idx;
-	
+
 	LALDetAMResponse det_resp;
 	REAL8 chisq=0.0;
 	REAL8 real,imag;
@@ -621,7 +625,7 @@ in the frequency domain */
 	REAL8 eta,mtot,mchirp;
 	expnFunc expnFunction;
 	expnCoeffs ak;
-	
+
 	if(inputMCMC->numberDataStreams==0){
 		parameter->logLikelihood=0.0;
 		return 0.0;
@@ -662,11 +666,10 @@ in the frequency domain */
 		case IMRPhenomFB : IMRPhenomFB_template(&status,&template,parameter,inputMCMC); break;
 		case EOBNR : EOBNR_template(&status,&template,parameter,inputMCMC); break;
 		case TaylorF2 : TaylorF2_template(&status,&template,parameter,inputMCMC); break;
-		case TaylorT3 : 
+		case TaylorT3 :
 		case TaylorT2 :
         case TaylorT4 : TaylorT_template(&status,&template,parameter,inputMCMC); break;
 		case SpinTaylor : SpinTaylor_template(&status,&template,parameter,inputMCMC); break;
-        //case PhenSpinTaylorRD : PhenSpinTaylorRD_template(&status,&template,parameter,inputMCMC); break;
 		default: {fprintf(stderr,"This template is not available. Exiting."); exit(1);}
 	}
 
@@ -732,32 +735,32 @@ in the frequency domain */
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
 		REAL8 hc,hs;
-		
+
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
-/* Version derived 19/08/08 */
+			/* Version derived 18/08/10 */
+			/* This is the time delayed waveforms as it appears at the detector */
+			/* data[idx] is real and data[Nmodel-idx] is imaginary part of the waveform at index idx */
+			/* H+ = hc + i*hs, and Hx=iH+, ONLY WHERE H+=cos(phi) and Hx=sin(phi) in the time domain (SPA, non-spinning, no-HH) */
 			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
 			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			
+			/* Compute detector response in the real and imaginary parts */
+			/* resp_r =   F+ * Re(H+)   -  Fx * Im(H+) */
+			resp_r = det_resp.plus * hc - det_resp.cross * hs;
+			/* resp_im =  Fx * Re(H+)   +  F+ * Im(H+) */
+			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-		}
 
-/* Gaussian version */
-/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
-that LAL uses. Please check this whenever any change is made */
-	
-/* Student-t version */
-/*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
-			#endif
-		
+			#endif		
+		} /* End loop over frequency */
 
 
 		#if DEBUGMODEL !=0
@@ -920,8 +923,8 @@ in the frequency domain */
 /* Version derived 19/08/08 */
 			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
 			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			resp_r = det_resp.plus * hc - det_resp.cross * hs;
+			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;
@@ -962,12 +965,12 @@ that LAL uses. Please check this whenever any change is made */
 
     ///* -- length in seconds from Newtonian formula; */
     //double lengths = (5.0/256.0)/LAL_PI * pow(LAL_PI * template->chirpMass * LAL_MTSUN_SI * template->fLower,-5.0/3.0) / template->fLower;
-    
+
     //UINT4 NtimeModel,Nmodel,idx;
     //NtimeModel =  inputMCMC->numPoints;
     //template->order=LAL_PNORDER_THREE_POINT_FIVE;
     //if(Tmodel==NULL)LALCreateVector(status,&Tmodel,NtimeModel); /* Allocate storage for the waveform */
-    
+
     //template->spin1[0]=XLALMCMCGetParameter(parameter,"spin1x");
 	//template->spin1[1]=XLALMCMCGetParameter(parameter,"spin1y");
 	//template->spin1[2]=XLALMCMCGetParameter(parameter,"spin1z");
@@ -1033,17 +1036,33 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	/*'x' and 'y' components of spins must be set to zero.*/
 	template->spin1[0]=0.;
 	template->spin1[1]=0.;
+    template->spin1[2]=0.;
 
 	template->spin2[0]=0.;
 	template->spin2[1]=0.;
+    template->spin2[2]=0.;
 
-	/*Get aligned spins configuration/magnitude*/
-	
-    template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
-    template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+	/*Get aligned spins configuration/magnitude if these are set*/
+	if(XLALMCMCCheckParameter(parameter,"spin1z")) {
+        template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
+    }
+
+    if(XLALMCMCCheckParameter(parameter,"spin2z")) {
+        template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+    }
+
     /* Fill out parameter structure*/
     LALInspiralParameterCalc(status,template);
     LALInspiralRestrictedAmplitude(status,template);
+
+    if(XLALMCMCCheckParameter(parameter,"chiSpin")) {
+        double spin1z = 0.1;
+        template->spin1[2] = spin1z ;
+        double chiSpin = XLALMCMCGetParameter(parameter,"chiSpin");
+        double delta = ( template->mass1 - template->mass2 ) / (template->mass1 + template->mass2);
+
+        template->spin2[2] = (chiSpin*2.0 - (1+delta)*spin1z)/ (1-delta);
+    }
 
     /* IMRPhenomFB takes distance in metres */
     double distanceMPC = template->distance;
@@ -1052,7 +1071,7 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 
     LALBBHPhenWaveFreqDom(status,model,template);
     template->distance = distanceMPC;
-	
+
 }
 
 void TaylorF2_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
@@ -1176,7 +1195,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 
 	double qnm223freq;
 
-	
+
 	UINT4 i,NtimeModel, idx;
 
 	/*Containers for EOBNR data */
@@ -1268,7 +1287,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 //    NtimeModel =  inputMCMC->numPoints;
 //    template->order=LAL_PNORDER_THREE_POINT_FIVE;
 //    if(Tmodel==NULL)LALCreateVector(status,&Tmodel,NtimeModel); /* Allocate storage for the waveform */
-    
+
 //    template->spin1[0]=XLALMCMCGetParameter(parameter,"spin1x");
 //	template->spin1[1]=XLALMCMCGetParameter(parameter,"spin1y");
 //	template->spin1[2]=XLALMCMCGetParameter(parameter,"spin1z");

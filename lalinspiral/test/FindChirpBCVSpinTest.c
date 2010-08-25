@@ -122,8 +122,6 @@ main (int argc, char *argv[])
 
   REAL4                         sigma;
   REAL4                         Sfk;
-  REAL4                         respRe;
-  REAL4                         respIm;
   REAL4                         deltaT;
   REAL4                         deltaF;
 
@@ -244,8 +242,6 @@ main (int argc, char *argv[])
   deltaT = 1.0 / (float) srate;
   deltaF = 1.0 / (numPoints * deltaT);
   Sfk    = 2.0 * sigmasq * deltaT; /* used to calc gaussian noise spectrum*/
-  respRe = 1.0;
-  respIm = 0.0;
 
   /* print input parameters */
   fprintf( stdout, "\n              srate = %d\n          numPoints = %d\n",

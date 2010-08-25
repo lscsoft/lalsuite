@@ -66,14 +66,19 @@ None.
 
 NRCSID (LALGEOPSDC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* <lalVerbatim file="LALGEOPsdCP"> */
 void
-LALGEOPsd(LALStatus *status, REAL8 *psd, REAL8 f)
+LALGEOPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
 
    REAL8 x, seismic, thermal, shot;
 
-   status = NULL;
    x = f/150.;
    seismic = pow(10.,-16.) *  pow(x,-30.);
    thermal = 34. / x;

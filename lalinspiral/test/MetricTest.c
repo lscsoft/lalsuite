@@ -78,12 +78,11 @@ LALInspiralComputeBCVMetric(
 int
 main(void)
 {
-  UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
 
   static InspiralMetric metric;
   static InspiralTemplate params;
-  UINT4  nlist, numPSDpts=65536;
+  UINT4  numPSDpts=65536;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
@@ -96,11 +95,6 @@ main(void)
   fpr = fopen("MetricTest.out", "w");
 
   mismatch = 0.10L;
-
-/* Number of templates is nlist */
-
-  dim = 2;
-  nlist = 0;
 
   params.OmegaS = 0.;
   params.Theta = 0.;

@@ -217,8 +217,9 @@ REAL8 probability_redshift(REAL8 rshift)
 {
   REAL8 pz;
 
-  pz = 0.75673*pow(rshift,4.) - 4.348*pow(rshift,3.) + 6.2793*rshift*rshift 
-	- 0.33247*rshift + 0.0087611;
+  pz = -0.000429072589677+(rshift*(-0.036349728568888+(rshift*(0.860892111762314
+     +(rshift*(-0.740935488674010+rshift*(0.265848831356864+rshift*(-0.050041573542298
+     +rshift*(0.005184554232421+rshift*(-0.000281450045300+rshift*0.000006400690921))))))))));
 
   return pz;
 }
@@ -227,9 +228,9 @@ REAL8 luminosity_distance(REAL8 rshift)
 {
   REAL8 dL;
 	
-  dL = - 17.615*pow(rshift,5.) + 288.31*pow(rshift,4.) - 1288.5*pow(rshift,3.) 
-	 + 3345.1*rshift*rshift + 4280.4*rshift + 0.047017;	
-
+	dL = -2.89287707063171+(rshift*(4324.33492012756+(rshift*(3249.74193862773
+	   +(rshift*(-1246.66339928289+rshift*(335.354613407693+rshift*(-56.1194965448065
+       +rshift*(5.20261234121263+rshift*(-0.203151569744028))))))))));
   return dL;
 }
 
@@ -237,9 +238,9 @@ REAL8 mean_time_step_sfr(REAL8 zmax, REAL8 rate_local)
 {
   REAL8 logzmax,loglambda,step;
 
-  logzmax=log10(zmax);		 
-  loglambda = 0.082339*pow(logzmax,4.) + 0.53523*pow(logzmax,3.) 
-			+ 0.91664*logzmax*logzmax - 2.389*logzmax + 2.019;
+  logzmax=log10(zmax);
+  loglambda = -0.039563*pow(logzmax,6.)-0.15282*pow(logzmax,5.)-0.017596*pow(logzmax,4.)
+            + 0.67193*pow(logzmax,3.)+1.1347*pow(logzmax,2.)-2.3543*logzmax+ 2.0228;
   step=pow(10.,loglambda)/rate_local;
 
   return step;
@@ -262,7 +263,7 @@ REAL8 drawRedshift(REAL8 zmin, REAL8 zmax, REAL8 pzmax)
 REAL8 redshift_mass(REAL8 mass, REAL8 z)
 {
   REAL8 mz;
-  mz= mass * (1+z);
+  mz= mass * (1.+z);
 	
   return mz;
 }
@@ -444,7 +445,7 @@ static void print_usage(char *program)
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
-      " [--incl-std]  inclStd       std dev for gaussian inclination dist\n"\
+      " [--incl-std]  inclStd     std dev for gaussian inclination dist\n"\
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
@@ -457,6 +458,8 @@ static void print_usage(char *program)
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
       "                           min/max distance required if d-distr not 'source'\n"\
+      " [--use-chirp-distance]    Use this option to scale injections using \n"
+      "                           chirp distance (relative to a 1.4,1.4)\n"\
       " [--min-snr] SMIN          Sets the minimum network snr\n"\
       " [--max-snr] SMAX          Sets the maximum network snr\n"\
       " [--log-snr]               If set distribute uniformly in log(snr) rather than snr\n"\
@@ -474,7 +477,7 @@ static void print_usage(char *program)
       "                           log: log distribution in comonent mass\n"\
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
-      "                                  and uniform in total mass ratio\n"\
+      "                           and uniform in total mass ratio\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -1127,6 +1130,7 @@ int main( int argc, char *argv[] )
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
+  UINT4 useChirpDist = 0;
   REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
   REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
   size_t ninj;
@@ -1195,6 +1199,7 @@ int main( int argc, char *argv[] )
     {"max-mratio",              required_argument, 0,                'y'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
+    {"use-chirp-distance",      no_argument,       0,                ','},
     {"min-snr",                 required_argument, 0,                '1'},
     {"max-snr",                 required_argument, 0,                '2'},
     {"log-snr",                 no_argument,       &logSNR,            1},
@@ -1658,6 +1663,14 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", dmax );
+        break;
+
+      case ',':
+        /* Distribute injections in chirp distance not distance*/
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        useChirpDist = 1;
         break;
 
       case 'e':
@@ -2584,6 +2597,13 @@ int main( int argc, char *argv[] )
     {
       simTable=XLALRandomInspiralDistance(simTable, randParams, 
           dDistr, dmin/1000.0, dmax/1000.0);
+    }
+    /* Scale by chirp mass if desired, relative to a 1.4,1.4 object */
+    if (useChirpDist)
+    {
+      REAL4 scaleFac;
+      scaleFac = simTable->mchirp/(2.8*pow(0.25,0.6));
+      simTable->distance = simTable->distance*pow(scaleFac,5./6.);
     }
 
     /* populate location */

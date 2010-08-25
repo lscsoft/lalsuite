@@ -193,12 +193,10 @@ void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT
 void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
 void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
-void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
 
+LIGOTimeGPSVector *XLALExtractTimestampsFromSFTs ( const SFTVector *sfts );
 MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs );
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
-
-
 
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
@@ -208,6 +206,14 @@ void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFT
 void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd,
 				   UINT4 blocksRngMed, UINT4 excludePercentile);
 void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
+
+
+/* ============================================================
+ * ===== deprecated LAL interface API ==========
+ * ============================================================
+ */
+
+void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
 
 #ifdef  __cplusplus
 }

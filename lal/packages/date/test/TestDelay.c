@@ -85,7 +85,6 @@ extern int lalDebugLevel;
 
 int main(int argc, char **argv)
 {
-  static LALStatus stat;
   LALFrDetector    frdet1;     /* Framelib detector info */
   LALFrDetector    frdet2;
   LALDetector      detector1;
@@ -94,9 +93,6 @@ int main(int argc, char **argv)
   SkyPosition      source;
   REAL8            delay;
   REAL8            difference;
-  /* TwoDetsTimeAndASource dets_and_source; */
-  LALPlaceAndGPS        det1_and_gps;
-  /* LALPlaceAndGPS        det2_and_gps; */
 
   lalDebugLevel = 0;
 
@@ -125,16 +121,12 @@ int main(int argc, char **argv)
   frdet1.yArmAltitudeRadians    = LAL_PI_2;
   frdet1.yArmAzimuthRadians     = 0.;
 
-  LALCreateDetector(&stat, &detector1, &frdet1, LALDETECTORTYPE_IFODIFF);
-  if (stat.statusCode && lalDebugLevel > 0)
+  if(!XLALCreateDetector(&detector1, &frdet1, LALDETECTORTYPE_IFODIFF))
     {
-      fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
+      fprintf(stderr, "TestDelay: XLALCreateDetector failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&stat);
-      return stat.statusCode;
+      return 1;
     }
-  if (lalDebugLevel > 2)
-    REPORTSTATUS(&stat);
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
@@ -145,7 +137,7 @@ int main(int argc, char **argv)
       detector1.location[1] != 0.                         ||
       detector1.location[2] != 0.)
     {
-      fprintf(stderr, "TestDelay: LALCreateDetector output is wrong, line %i, %s\n",
+      fprintf(stderr, "TestDelay: XLALCreateDetector output is wrong, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
       fprintf(stderr, "Got Det #1 location: (% 16.8e, % 16.8e, % 16.8e)\n",
               (float)detector1.location[0], (float)detector1.location[1],
@@ -153,7 +145,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "Expected:            (% 16.8e, % 16.8e, % 16.8e)\n",
               (float)LAL_REARTH_SI, 0., 0.);
 
-      return(1);
+      return 1;
     }
 
   if (lalDebugLevel > 2)
@@ -171,16 +163,12 @@ int main(int argc, char **argv)
   frdet2.yArmAltitudeRadians    = 0.;
   frdet2.yArmAzimuthRadians     = LAL_PI_2;
 
-  LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
-  if (stat.statusCode && lalDebugLevel > 0)
+  if(!XLALCreateDetector(&detector2, &frdet2, LALDETECTORTYPE_IFODIFF))
     {
-      fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
+      fprintf(stderr, "TestDelay: XLALCreateDetector failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&stat);
-      return stat.statusCode;
+      return 1;
     }
-  if (lalDebugLevel > 2)
-    REPORTSTATUS(&stat);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
@@ -188,9 +176,6 @@ int main(int argc, char **argv)
    */
   gps.gpsSeconds     = 60858;
   gps.gpsNanoSeconds = 0;
-
-  det1_and_gps.p_detector = &detector1;
-  det1_and_gps.p_gps      = &gps;
 
   delay = XLALTimeDelayFromEarthCenter(detector1.location, source.longitude, source.latitude, &gps);
   if (XLAL_IS_REAL8_FAIL_NAN(delay))

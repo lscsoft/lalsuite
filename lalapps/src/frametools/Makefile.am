@@ -7,7 +7,7 @@ LALFRAMEPROGRAMS = \
 	lalapps_frread \
 	lalapps_frextr \
 	lalapps_frjoin \
-	lalapps_combinexteframes
+	lalapps_framestats
 lalapps_animate_SOURCES = animate.c
 lalapps_calfacs_SOURCES = calfacs.c
 lalapps_computespec_SOURCES = computespec.c
@@ -16,7 +16,14 @@ lalapps_frinfo_SOURCES = info.c
 lalapps_frread_SOURCES = read.c
 lalapps_frextr_SOURCES = extr.c
 lalapps_frjoin_SOURCES = join.c
+lalapps_framestats_SOURCES = framestats.c
+endif
+
+if LALFRAME
+if LALPULSAR
+LALPULSARPROGRAMS = lalapps_combinexteframes
 lalapps_combinexteframes_SOURCES = combinexteframes.c
+endif
 endif
 
 if LALFRAME
@@ -39,6 +46,7 @@ endif
 
 bin_PROGRAMS = \
 	$(LALFRAMEPROGRAMS) \
+	$(LALPULSARPROGRAMS) \
 	$(LALFRAMEMETAIOBURSTPROGRAMS) \
 	$(LALFRAMECFITSIOPROGRAMS)
 

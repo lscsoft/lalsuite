@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 
   /* ---------- do some sanity checks of consistency of SFTs ----------*/
   if (SFTs1->length != SFTs2->length) {
-    LALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
+    XLALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
     exit(1);
   }
   for (i=0; i < SFTs1->length; i++)
@@ -143,29 +143,29 @@ main(int argc, char *argv[])
 
       if( strcmp( sft1->name, sft2->name ) )
 	{
-	  if ( lalDebugLevel ) LALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", sft1->name, sft2->name );
+	  if ( lalDebugLevel ) XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", sft1->name, sft2->name );
 	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
 	}
 
       if (sft1->data->length != sft2->data->length)
 	{
-	  LALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
+	  XLALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
 	  exit(1);
 	}
       Tdiff = XLALGPSDiff(&(sft1->epoch), &(sft2->epoch));
       if ( Tdiff != 0.0 )
-	LALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
+	XLALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
 		       sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
 
       if ( sft1->f0 != sft2->f0)
 	{
-	  LALPrintError ("ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0);
+	  XLALPrintError ("ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0);
 	  exit(1);
 	}
 
       if ( sft1->deltaF != sft2->deltaF )
 	{
-	  LALPrintError ("ERROR SFT %d: deltaF differs: %fHz vs %fHz\n", i, sft1->deltaF, sft2->deltaF);
+	  XLALPrintError ("ERROR SFT %d: deltaF differs: %fHz vs %fHz\n", i, sft1->deltaF, sft2->deltaF);
 	  exit(1);
 	}
     } /* for i < numSFTs */

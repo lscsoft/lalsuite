@@ -850,7 +850,7 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength ,
   tmp = (CellData *)LALRealloc (*cell, ( CLength * sizeof(CellData)) );
   if ( !tmp ) 
     { 
-      LALPrintError("Could not re-allocate memory for cells \n\n");
+      XLALPrintError("Could not re-allocate memory for cells \n\n");
       ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
     }
   *cell = tmp;
@@ -981,7 +981,7 @@ void PrintResult(LALStatus *lalStatus,
  
   /* Allocate memory for the histogram of coincidences */
   if( (count = (INT8 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT8))) == NULL ) {
-    LALPrintError("Could not allocate Memory! \n");
+    XLALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
   
@@ -993,7 +993,7 @@ void PrintResult(LALStatus *lalStatus,
      This file can be too huge to be tractable.*/
   if( (fp = fopen(fnameAllCells,"w")) == NULL ) 
     {
-      LALPrintError("\n Cannot open file %s\n",fnameAllCells); 
+      XLALPrintError("\n Cannot open file %s\n",fnameAllCells); 
       ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
     }
   /* output for all the cells */
@@ -1048,7 +1048,7 @@ void PrintResult(LALStatus *lalStatus,
     {
       if( (fpCoiCell = fopen(fnameCoiCell,"w")) == NULL || (fpCoiTime = fopen(fnameCoiTime,"w")) == NULL )
 	{ 
-	  LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
+	  XLALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
 	  exit(POLKA_EXIT_ERR); 
 	}
     }
@@ -1057,7 +1057,7 @@ void PrintResult(LALStatus *lalStatus,
     {
       if( (fpSigCell = fopen(fnameSigCell,"w")) == NULL || (fpSigTime = fopen(fnameSigTime,"w")) == NULL )
 	{ 
-	  LALPrintError("\n Cannot open file %s or %s\n",fnameSigCell,fnameSigTime); 
+	  XLALPrintError("\n Cannot open file %s or %s\n",fnameSigCell,fnameSigTime); 
 	  exit(POLKA_EXIT_ERR); 
 	}
     }
@@ -1143,7 +1143,7 @@ void PrintResult(LALStatus *lalStatus,
 
     if( ( fp = fopen(fnameMaxOverSky,"w") ) == NULL ) {
       { 
-	LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
+	XLALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
 	exit(POLKA_EXIT_ERR); 
       }
     }
@@ -1183,7 +1183,7 @@ void PrintResult(LALStatus *lalStatus,
 
 		  if( (fpMinCellCoin = fopen(fnameMinCellCoin,"w")) == NULL )
 		    {
-		      LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime);
+		      XLALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime);
 		      exit(POLKA_EXIT_ERR);
 		    }
 		  print_Fstat_of_the_cell( lalStatus->statusPtr, fpMinCellCoin, cell, CList, CellListi[icell], CellListi[icell]+1, 0, 0 );
@@ -1388,7 +1388,7 @@ void add_int8_data(LALStatus *lalStatus, struct int8_linked_list **list_ptr, con
 
   p = (struct int8_linked_list *) LALMalloc(sizeof(struct int8_linked_list));
   if( p == NULL ) {
-    LALPrintError("Could not allocate Memory! \n");
+    XLALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
   p->data = *(data);
@@ -1421,7 +1421,7 @@ void delete_int8_linked_list( LALStatus *lalStatus, struct int8_linked_list *lis
     ic++;
   }
   if( ic >  LINKEDSTR_MAX_DEPTH ) {
-    LALPrintError("Maximum depth of linked structure reached!");
+    XLALPrintError("Maximum depth of linked structure reached!");
     exit(POLKA_EXIT_ERR);
   }
 
@@ -1486,7 +1486,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
     ic++;
   }
   if( ic >  LINKEDSTR_MAX_DEPTH ) {
-    LALPrintError("Maximum depth of linked structure reached!");
+    XLALPrintError("Maximum depth of linked structure reached!");
     exit(POLKA_EXIT_ERR);
   }
 
@@ -1551,7 +1551,7 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
   }
 
   if( ic >  LINKEDSTR_MAX_DEPTH ) {
-    LALPrintError("Maximum depth of linked structure reached!");
+    XLALPrintError("Maximum depth of linked structure reached!");
     exit(POLKA_EXIT_ERR);
   }
 
@@ -1618,7 +1618,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
 
       if( ic >  LINKEDSTR_MAX_DEPTH ) {
-	LALPrintError("Maximum depth of linked structure reached!");
+	XLALPrintError("Maximum depth of linked structure reached!");
 	exit(POLKA_EXIT_ERR);
       }
 
@@ -1843,7 +1843,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
   else 
     { /* We should not be here. */
-      LALPrintError("\nYou have to specify either input data directory or input data file.\n");
+      XLALPrintError("\nYou have to specify either input data directory or input data file.\n");
       exit(POLKA_EXIT_ERR);;
     }
 
@@ -1895,7 +1895,7 @@ GetFilesListInThisDir( LALStatus *lalStatus,
   ASSERT( *filelist == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
 
 #ifndef HAVE_GLOB_H   
-  LALPrintError("Cannot use GetFilesListInThisDir() without glob.");
+  XLALPrintError("Cannot use GetFilesListInThisDir() without glob.");
   ABORT( lalStatus, POLKAC_EGLOB, POLKAC_MSGEGLOB);
 #endif
 
@@ -1918,7 +1918,7 @@ GetFilesListInThisDir( LALStatus *lalStatus,
   
   if(globbuf.gl_pathc==0)
     {
-      LALPrintError ("\nNo Input files in directory %s ... Exiting.\n\n", directory);
+      XLALPrintError ("\nNo Input files in directory %s ... Exiting.\n\n", directory);
       ABORT (lalStatus, POLKAC_ESYS, POLKAC_MSGESYS);
     }
 
@@ -2009,7 +2009,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("File %s doesn't exist!\n",fname);
+      XLALPrintError("File %s doesn't exist!\n",fname);
       ABORT( lalStatus, POLKAC_ESYS, POLKAC_MSGESYS ); 
      }
   fclose(fp);
@@ -2017,8 +2017,8 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   /* Check if the memory to be allocated is not huge 
      (say, < 512MB. sizeof(CandidateList) ~ 60B. 512/60 = 8000000). */
   if( *candlen > max_num_candidates ) {
-    LALPrintError("\nMaximum number of candidate events reached.\n");
-    LALPrintError("\nWe have %u events while the maximum allowed number of events is %u.\n",*candlen,max_num_candidates);
+    XLALPrintError("\nMaximum number of candidate events reached.\n");
+    XLALPrintError("\nWe have %u events while the maximum allowed number of events is %u.\n",*candlen,max_num_candidates);
     ABORT( lalStatus, POLKAC_ESYS, POLKAC_MSGESYS ); 
   }
 
@@ -2031,7 +2031,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   /* Read into buffer.  If this fails, we can't proceed. */
   if ( getfile( &uzpbuff, fname )  < 0 ) {
     if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-    LALPrintError("Cannot read file %s . \n",fname);
+    XLALPrintError("Cannot read file %s . \n",fname);
     ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
 
@@ -2039,7 +2039,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   line = uzpbuff.strptr;
   if ( !line || length == 0 || *line == '\0' ) {
     if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-    LALPrintError ("Unknown format of the file  %s.\n\n", fname);
+    XLALPrintError ("Unknown format of the file  %s.\n\n", fname);
     ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
 
@@ -2050,7 +2050,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   if ( ( length < 8 || strncmp( line - 8, "\n%DONE\r\n", 8 ) ) &&
        ( length < 7 || strncmp( line - 7, "\n%DONE\n", 7 ) ) ) {
     free(uzpbuff.strptr);
-    LALPrintError("File %s does not end with the DONE_MARKER. \n",fname);
+    XLALPrintError("File %s does not end with the DONE_MARKER. \n",fname);
     ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
 
@@ -2072,7 +2072,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     } else if ( !strncmp( line, "%2", 2 ) ) {
       if( section != 1 ) { /* We should have section 1 before 2. */
 	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-	LALPrintError("Unknown format file %s.",fname);
+	XLALPrintError("Unknown format file %s.",fname);
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
       section = 2;
@@ -2080,7 +2080,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     } else if ( !strncmp( line, "%coincidence", 12 ) ) {
       if( section != 2 ) { /* We should have section 2 before 3. */
 	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-	LALPrintError("Unknown format file %s.",fname);
+	XLALPrintError("Unknown format file %s.",fname);
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
       section = 3;
@@ -2091,7 +2091,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     /* Do non-POLKA checks: */
     if ( section == 0 ) 
       {
-	LALPrintError("Unknown format file %s.",fname);
+	XLALPrintError("Unknown format file %s.",fname);
 	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
@@ -2104,7 +2104,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     else 
       { /* we should not be here */
 	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-	LALPrintError("Unknown format file %s.",fname);
+	XLALPrintError("Unknown format file %s.",fname);
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       } /*     if ( section == 0 )  */
 
@@ -2117,7 +2117,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 
   if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
     if( lalDebugLevel > 1 ) {
-      LALPrintError( "No candidate events in the file %s\n\n", fname);
+      XLALPrintError( "No candidate events in the file %s\n\n", fname);
     }
     free(uzpbuff.strptr);
     DETATCHSTATUSPTR (lalStatus);
@@ -2133,7 +2133,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
       if ( !tmp ) 
 	{ 
 	  if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
-	  LALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
+	  XLALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
 	}
       *CList = tmp;
@@ -2195,7 +2195,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 	    !finite(cl->Delta)                 ||
 	    !finite(cl->TwoF)
 	    ) {
-	  LALPrintError(
+	  XLALPrintError(
 			"Line %d of file %s has invalid values.\n"
 			"First 255 chars are:\n"
 			"%s\n"
@@ -2212,7 +2212,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     /* Do POLKA coincidence-section checks. */
     else 
       { /* we should not be here */
-	LALPrintError("Unknown format file %s.",fname);
+	XLALPrintError("Unknown format file %s.",fname);
 	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       } /* if ( section == 1 || section == 2 )  */
@@ -2225,7 +2225,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
     /* check that we read 4 quantities with exactly the right format */
     if ( nread != 4 )
       {
-	LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+	XLALPrintError ("Found %d not %d values on line %d in file '%s'\n"
 		       "Line in question is\n%s",
 		       nread, 4, ic+1, fname, line);               
 	LALFree ((*CList));
@@ -2239,7 +2239,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 
 
   if (ic != (*candlen) + numlines ) {
-    LALPrintError(
+    XLALPrintError(
             "Read of file %s terminated after %d line but numlines=%d\n",
             fname, ic, numlines);
     LALFree((*CList));
@@ -2247,7 +2247,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
   }
 
   if ( section != 3 ) {
-    LALPrintError(
+    XLALPrintError(
             "Read of file %s terminated not by coincidence section but %s\n",
             fname, line);
     LALFree((*CList));
@@ -2312,7 +2312,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("File %s doesn't exist!\n",fname);
+      XLALPrintError("File %s doesn't exist!\n",fname);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
   while(fgets(line1,sizeof(line1),fp)) {
@@ -2322,7 +2322,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     /* check that each line ends with a newline char (no overflow of
        line1 or null chars read) */
     if (!len || line1[len-1] != '\n') {
-      LALPrintError(
+      XLALPrintError(
               "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
               i+1, fname, line1);
       fclose(fp);
@@ -2343,7 +2343,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 
   if ( numlines == 0) 
     {
-      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
+      XLALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
 
@@ -2353,7 +2353,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+      XLALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
   else
@@ -2363,7 +2363,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 
   if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
     if( lalDebugLevel > 1 ) {
-      LALPrintError( "No candidate events in the file %s\n\n", fname);
+      XLALPrintError( "No candidate events in the file %s\n\n", fname);
     }
     DETATCHSTATUSPTR (lalStatus);
     RETURN (lalStatus);
@@ -2372,7 +2372,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 #if 0 /* Do we need to check this for INT8? */
   if ( numlines < 0  )
     {
-      LALPrintError("candidate length overflow (or indeed negative) = %ud!\n",numlines);
+      XLALPrintError("candidate length overflow (or indeed negative) = %ud!\n",numlines);
       exit(POLKA_EXIT_ERR);
     }/* check that we have candidates. */
 #endif
@@ -2386,7 +2386,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       tmp = (CandidateList *)LALRealloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
       if ( !tmp ) 
 	{ 
-	  LALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
+	  XLALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
 	}
       *CList = tmp;
@@ -2399,7 +2399,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("fopen(%s) failed!\n", fname);
+      XLALPrintError("fopen(%s) failed!\n", fname);
       LALFree ((*CList));
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
@@ -2409,7 +2409,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       CandidateList *cl=&(*CList)[i+(*candlen)];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-        LALPrintError(
+        XLALPrintError(
                 "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
                 i+1, fname, line1);
         LALFree ((*CList));
@@ -2438,7 +2438,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
           !finite(cl->Delta)                 ||
           !finite(cl->TwoF)
           ) {
-          LALPrintError(
+          XLALPrintError(
                   "Line %d of file %s has invalid values.\n"
                   "First 255 chars are:\n"
                   "%s\n"
@@ -2458,7 +2458,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
          newline.  Note deliberate LACK OF WHITE SPACE char before %c
          above */
       if (newline != '\n') {
-        LALPrintError(
+        XLALPrintError(
                 "Line %d of file %s had extra chars after F value and before newline.\n"
                 "First 255 chars are:\n"
                 "%s\n",
@@ -2471,7 +2471,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
       /* check that we read 7 quantities with exactly the right format */
       if ( nread != 7 )
         {
-          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+          XLALPrintError ("Found %d not %d values on line %d in file '%s'\n"
                          "Line in question is\n%s",
                          nread, 7, i+1, fname, line1);               
           LALFree ((*CList));
@@ -2485,7 +2485,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
     } /*  end of main while loop */
   /* check that we read ALL lines! */
   if (i != numlines) {
-    LALPrintError(
+    XLALPrintError(
             "Read of file %s terminated after %d line but numlines=%d\n",
             fname, i, numlines);
     LALFree((*CList));
@@ -2495,7 +2495,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 
   /* read final line with %DONE\n marker */
   if (!fgets(line1, sizeof(line1), fp)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to find marker line of file %s\n",
             fname);
     LALFree((*CList));
@@ -2505,7 +2505,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 
   /* check for %DONE\n marker */
   if (strcmp(line1, DONE_MARKER)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to parse marker: 'final' line of file %s contained %s not %s",
             fname, line1, DONE_MARKER);
     LALFree ((*CList));
@@ -2515,7 +2515,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
 
   /* check that we are now at the end-of-file */
   if (fgetc(fp) != EOF) {
-    LALPrintError(
+    XLALPrintError(
             "File %s did not terminate after %s",
             fname, DONE_MARKER);
     LALFree ((*CList));
@@ -2586,7 +2586,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("File %s doesn't exist!\n",fname);
+      XLALPrintError("File %s doesn't exist!\n",fname);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
 
@@ -2597,7 +2597,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
     /* check that each line ends with a newline char (no overflow of
        line1 or null chars read) */
     if (!len || line1[len-1] != '\n') {
-      LALPrintError(
+      XLALPrintError(
               "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
               i+1, fname, line1);
       fclose(fp);
@@ -2618,7 +2618,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   if ( numlines == 0) 
     {
-      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
+      XLALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
 
@@ -2628,7 +2628,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+      XLALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
   else
@@ -2639,7 +2639,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 #if 0 /* Do we need to check this? */
   if (*candlen <= 0  )
     {
-      LALPrintError("candidate length = %ud!\n",*candlen);
+      XLALPrintError("candidate length = %ud!\n",*candlen);
       exit(POLKA_EXIT_ERR);;
     }/* check that we have candidates. */
 #endif
@@ -2651,7 +2651,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       *CList = (CandidateList *)LALMalloc (numlines*sizeof(CandidateList));
       if ( !CList ) 
         { 
-          LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
+          XLALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
         }
     }
@@ -2661,7 +2661,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("fopen(%s) failed!\n", fname);
+      XLALPrintError("fopen(%s) failed!\n", fname);
       LALFree ((*CList));
       ABORT (lalStatus, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
     }
@@ -2671,7 +2671,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       CandidateList *cl=&(*CList)[i];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-        LALPrintError(
+        XLALPrintError(
                 "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
                 i+1, fname, line1);
         LALFree ((*CList));
@@ -2715,7 +2715,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 	  !finite(cl->F1dot)                 ||
 	  !finite(cl->TwoF)
           ) {
-          LALPrintError(
+          XLALPrintError(
                   "Line %d of file %s has invalid values.\n"
                   "First 255 chars are:\n"
                   "%s\n"
@@ -2735,7 +2735,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
          newline.  Note deliberate LACK OF WHITE SPACE char before %c
          above */
       if (newline != '\n') {
-        LALPrintError(
+        XLALPrintError(
                 "Line %d of file %s had extra chars after F value and before newline.\n"
                 "First 255 chars are:\n"
                 "%s\n",
@@ -2748,7 +2748,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
       /* check that we read 7 quantities with exactly the right format */
       if ( nread != 7 )
         {
-          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+          XLALPrintError ("Found %d not %d values on line %d in file '%s'\n"
                          "Line in question is\n%s",
                          nread, 7, i+1, fname, line1);               
           LALFree ((*CList));
@@ -2764,7 +2764,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   /* check that we read ALL lines! */
   if (i != numlines) {
-    LALPrintError(
+    XLALPrintError(
             "Read of file %s terminated after %d line but numlines=%d\n",
             fname, i, numlines);
     LALFree((*CList));
@@ -2774,7 +2774,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   /* read final line with %DONE\n marker */
   if (!fgets(line1, sizeof(line1), fp)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to find marker line of file %s\n",
             fname);
     LALFree((*CList));
@@ -2784,7 +2784,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   /* check for %DONE\n marker */
   if (strcmp(line1, DONE_MARKER)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to parse marker: 'final' line of file %s contained %s not %s",
             fname, line1, DONE_MARKER);
     LALFree ((*CList));
@@ -2794,7 +2794,7 @@ ReadOneCandidateFile( LALStatus *lalStatus,
 
   /* check that we are now at the end-of-file */
   if (fgetc(fp) != EOF) {
-    LALPrintError(
+    XLALPrintError(
             "File %s did not terminate after %s",
             fname, DONE_MARKER);
     LALFree ((*CList));
@@ -2942,7 +2942,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   if (uvar_help) {	/* if help was requested, we're done here */
-    LALPrintError("%s\n",rcsid);
+    XLALPrintError("%s\n",rcsid);
     fflush(stderr);
     LALDestroyUserVars(lalStatus->statusPtr);
     exit(POLKA_EXIT_OK);
@@ -2951,20 +2951,20 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   if( LALUserVarWasSet (&uvar_InputData) && 
       LALUserVarWasSet (&uvar_InputDirectory) ) {
-    LALPrintError("\nCannot set both of InputData and InputDirectory\n");
+    XLALPrintError("\nCannot set both of InputData and InputDirectory\n");
     exit(POLKA_EXIT_ERR);
   }
 
   if( (!LALUserVarWasSet (&uvar_InputData)) && 
       (!LALUserVarWasSet (&uvar_InputDirectory)) ) {
-    LALPrintError("\nPlease set either InputData and InputDirectory\n");
+    XLALPrintError("\nPlease set either InputData and InputDirectory\n");
     exit(POLKA_EXIT_ERR);
   }
 
 
   if( uvar_UseUnzip ) {
 #ifndef USE_UNZIP
-    LALPrintError("\n unzip can be used only when compiling with unzip enabled.\n");
+    XLALPrintError("\n unzip can be used only when compiling with unzip enabled.\n");
     exit(POLKA_EXIT_ERR);
 #endif
   }
@@ -2982,8 +2982,8 @@ ReadCommandLineArgs( LALStatus *lalStatus,
     CLA->FstatsFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
     if(CLA->FstatsFile == NULL)
       {
-	LALPrintError("No candidates file specified; input with -I option.\n");
-	LALPrintError("For help type %s -h\n", argv[0]);
+	XLALPrintError("No candidates file specified; input with -I option.\n");
+	XLALPrintError("For help type %s -h\n", argv[0]);
 	exit(POLKA_EXIT_ERR);
       }      
     strcpy(CLA->FstatsFile,uvar_InputData);
@@ -3000,7 +3000,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   if( LALUserVarWasSet (&uvar_InputDirectory) ) {
 #ifndef HAVE_GLOB_H   
-    LALPrintError("Sorry, but you cannot use this feature without glob.h.\n");
+    XLALPrintError("Sorry, but you cannot use this feature without glob.h.\n");
     exit(POLKA_EXIT_ERR);
 #endif
     CLA->InputDir = (CHAR *) LALMalloc(strlen(uvar_InputDirectory)+1);
@@ -3310,12 +3310,12 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
       } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
 
       if( ic >  LINKEDSTR_MAX_DEPTH ) {
-        LALPrintError("Maximum depth of linked structure reached!");
+        XLALPrintError("Maximum depth of linked structure reached!");
         exit(POLKA_EXIT_ERR);
       }
 
       if( cd[icell].nCand != (cH1+cL1) ) {
-        LALPrintError("Split-up of number of coincidences among detectors incorrect!");
+        XLALPrintError("Split-up of number of coincidences among detectors incorrect!");
         exit(POLKA_EXIT_ERR);
       }
 
@@ -3434,12 +3434,12 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
       } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
       
       if( ic >  LINKEDSTR_MAX_DEPTH ) {
-	LALPrintError("Maximum depth of linked structure reached!");
+	XLALPrintError("Maximum depth of linked structure reached!");
 	exit(POLKA_EXIT_ERR);
       }
       
       if( cd[icell].nCand != (cH1+cL1) ) {
-	LALPrintError("Split-up of number of coincidences among detectors incorrect!");
+	XLALPrintError("Split-up of number of coincidences among detectors incorrect!");
 	exit(POLKA_EXIT_ERR);
 	}
       

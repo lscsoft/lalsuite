@@ -173,3 +173,10 @@ here <tt>tdb()</tt>.
     The documentation and functionality of this package is <b>incomplete</b>.
 
 */
+
+
+/** \defgroup pulsarAntenna Antenna-pattern functions
+    \ingroup pulsarCommon
+    \brief Module for antenna-pattern functions and amplitude
+    modulation of pulsar signals.
+*/

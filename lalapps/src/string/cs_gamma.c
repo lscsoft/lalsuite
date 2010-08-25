@@ -31,8 +31,8 @@
 #include <stdarg.h>
 #include "gsl/gsl_interp.h"
 #include <gsl/gsl_errno.h>
-#include "cs_cosmo.h"
-#include "cs_lambda_cosmo.h"
+#include <lal/cs_cosmo.h>
+#include <lal/cs_lambda_cosmo.h>
 #include <lal/LALStdio.h>
 
 #define CUSPS_PER_LOOP 1.0		/* c */
@@ -159,7 +159,7 @@ int finddRdz(double Gmu, double alpha, double f, double Gamma)
   cs_cosmo_functions_t cosmofns;
   int j;
 
-  cosmofns = cs_cosmo_functions( zofA, (size_t) Namp);
+  cosmofns = XLALCSCosmoFunctions( zofA, (size_t) Namp);
   
   for ( j = 0; j < Namp; j++ )
     {
@@ -182,7 +182,7 @@ int finddRdz(double Gmu, double alpha, double f, double Gamma)
     }
 
 
-  cs_cosmo_functions_free( cosmofns );
+  XLALCSCosmoFunctionsFree( cosmofns );
 
   return 0;
 }
@@ -198,7 +198,7 @@ int findzofA(double Gmu, double alpha)
   gsl_interp *zofa_interp; 
   gsl_interp_accel *acc_zofa = gsl_interp_accel_alloc(); 
 
-  cosmofns = cs_cosmo_functions_alloc( exp( lnz_min ), dlnz, numz );
+  cosmofns = XLALCSCosmoFunctionsAlloc( exp( lnz_min ), dlnz, numz );
 
   zofa_interp = gsl_interp_alloc (gsl_interp_linear, cosmofns.n);
 
@@ -225,7 +225,7 @@ int findzofA(double Gmu, double alpha)
 /*       fprintf(stdout,"%e %e %e\n", amp[j],a, zofA[j]); */
     }
 
-  cs_cosmo_functions_free( cosmofns );
+  XLALCSCosmoFunctionsFree( cosmofns );
   free(fz);
   free(z);
   gsl_interp_free (zofa_interp);

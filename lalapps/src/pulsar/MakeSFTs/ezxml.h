@@ -122,7 +122,7 @@ char *ezxml_toxml(ezxml_t xml);
 
   /* returns a NULL terminated array of processing instructions for the given */
   /* target */
-const char **ezxml_pi(ezxml_t xml, const char *target);
+char **ezxml_pi(ezxml_t xml, const char *target);
 
   /* frees the memory allocated for an ezxml structure */
 void ezxml_free(ezxml_t xml);

@@ -20,7 +20,6 @@ liblalframe_la_SOURCES = \
 	FrameData.c \
 	FrameSeries.c \
 	FrameStream.c \
-	FrameStreamDef.h \
 	LALFrameIO.c \
 	LALFrameVCSInfo.c
 

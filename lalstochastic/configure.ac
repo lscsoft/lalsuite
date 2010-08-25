@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.1.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.1.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,8 +44,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalstochastic])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalstochastic_version_major=`echo "$VERSION" | cut -d. -f1`
+lalstochastic_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalstochastic_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalstochastic_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalstochastic_version_micro" && lalstochastic_version_micro=0
+test -z "$lalstochastic_version_devel" && lalstochastic_version_devel=0
 lalstochastic_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION],["$VERSION"],[LALStochastic Version])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MAJOR],[$lalstochastic_version_major],
+                   [LALStochastic Version Major Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MINOR],[$lalstochastic_version_minor],
+                   [LALStochastic Version Minor Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_MICRO],[$lalstochastic_version_micro],
+                   [LALStochastic Version Micro Number])
+AC_DEFINE_UNQUOTED([LALSTOCHASTIC_VERSION_DEVEL],[$lalstochastic_version_devel],
+                   [LALStochastic Version Devel Number])
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALStochastic Configure Arguments])
 AC_DEFINE_UNQUOTED([LALSTOCHASTIC_CONFIGURE_DATE],["$lalstochastic_configure_date"],
@@ -88,6 +102,9 @@ if test "x$build_vendor" = "xapple"; then
       ;;
   esac
 fi
+
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC

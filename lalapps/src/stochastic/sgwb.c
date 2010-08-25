@@ -482,7 +482,7 @@ COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
 
   /* set zeropad parameters */
   zero_pad_params.fftPlan = plan;
-  zero_pad_params.window = window->data;
+  zero_pad_params.window = window;
   zero_pad_params.length = 2 * series->data->length;
 
   /* zero pad and fft */

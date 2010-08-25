@@ -16,7 +16,7 @@ export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
 REFERENCE_XML_DIR=~cbc/nmi/share/reference-data/S6AVSR2
 
 # TODO: subtools need to be relocatable -- this is ugly but needed for now
-export LSCSOFT_SRCDIR=~cbc/nmi/src
+#export LSCSOFT_SRCDIR=~cbc/nmi/src
 
 # this is necessary so we can store our Metronome run dirs on NFS without DAGMan complaining
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
@@ -29,8 +29,11 @@ set -e
 # treat unset variables as an error when performing parameter expansion.
 set -u
 
-if [[ $# -lt 2 ]]; then
-    echo "usage: $(basename $0) branch1:tag1 branch2:tag2"
+if [[ $# -lt 3 ]]; then
+    echo "usage: $(basename $0) branch1:tag1 branch2:tag2 git_url"
+    echo
+    echo "example:"
+    echo "$(basename $0) origin/master:d21b154897fb961919c51dff7be4f3fafe22e1e7 origin/s6_20090722:60d8943667e1088027a26d138127382a9453ff0b git://ligo-vcs.phys.uwm.edu/lalsuite.git"
     exit 1
 fi
 
@@ -39,6 +42,7 @@ export _NMI_GIT_BRANCH_A=$(echo $1 | cut -f1 -d:)
 export _NMI_GIT_BRANCH_B=$(echo $2 | cut -f1 -d:)
 export _NMI_GIT_ID_A=$(echo $1 | cut -f2 -d:)
 export _NMI_GIT_ID_B=$(echo $2 | cut -f2 -d:)
+export _NMI_GIT_URL=$3
 
 # create a temp dir for our working files
 # name is based on git tags, pid, and epoch time for uniqueness
@@ -52,8 +56,8 @@ env | grep ^_NMI_
 ### build each given git tag
 
 cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
-./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
-./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
+./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.a.out
+./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
 
 # needed by subsequent tests
 export BUILD_A_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.a.out)
@@ -62,11 +66,16 @@ export BUILD_B_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.b.out)
 ### run unit tests for each tag
 
 # workaround for nmi-support #6668
-set +e
-sleep 30
-nmi_gid2runid $BUILD_A_GID
-nmi_gid2runid $BUILD_B_GID
-set -e
+# set +e
+# while ! nmi_gid2runid $BUILD_A_GID; do
+#     echo "sleeping 10 seconds and trying again..."
+#     sleep 10
+# done
+# while ! nmi_gid2runid $BUILD_B_GID; do
+#     echo "sleeping 10 seconds and trying again..."
+#     sleep 10
+# done
+# set -e
 
 # for each XML data product named in test_suite.txt, submit unit & diff tests
 # the unit tests will block until the build test is complete (or 24h timeout)
@@ -95,7 +104,7 @@ for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
     cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/diff
 
     # workaround for nmi-support #6668
-    sleep 30
+#    sleep 30
 
     # given two unit test ids, submit the diff test for this XML data product
     # this Metronome job will block until the unit tests are complete (or 24h)

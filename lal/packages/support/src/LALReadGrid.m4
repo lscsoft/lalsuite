@@ -28,7 +28,9 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
   UINT4 nTot = 0;          /* number of elements read */
   UINT4 n;                 /* countdown index from nTot */
   TYPE *gData = NULL;      /* pointer to data in output grid */
+#if COMPLEX
   int numRead = 0;         /* number of data values read from file */
+#endif
 
   /* Temporary storage for metadata fields: */
   CHAR name[LALNameLength] = "";
@@ -514,8 +516,8 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
   nTot = 1;
   for ( n = 0; n < (*grid)->data->dimLength->length; n++ )
     nTot *= (*grid)->data->dimLength->data[n];
-  numRead = 0;
 #if COMPLEX
+  numRead = 0;
   do {
     STRINGTODATA ( stat->statusPtr, &(gData->re), start = end,
 		   &end );

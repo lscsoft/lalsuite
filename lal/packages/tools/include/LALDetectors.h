@@ -478,7 +478,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_TAMA_300_DETECTOR_PREFIX             	"T1"	/**< TAMA_300 detector prefix string */
 #define LAL_TAMA_300_DETECTOR_LONGITUDE_RAD      	2.43536359469	/**< TAMA_300 vertex longitude (rad) */
 #define LAL_TAMA_300_DETECTOR_LATITUDE_RAD       	0.62267336022	/**< TAMA_300 vertex latitude (rad) */
-#define LAL_TAMA_300_DETECTOR_ELEVATION_SI       	90	/**< TAMA_300 vertex elevation (rad) */
+#define LAL_TAMA_300_DETECTOR_ELEVATION_SI       	90	/**< TAMA_300 vertex elevation (m) */
 #define LAL_TAMA_300_DETECTOR_ARM_X_AZIMUTH_RAD  	4.71238898038	/**< TAMA_300 x arm azimuth (rad) */
 #define LAL_TAMA_300_DETECTOR_ARM_Y_AZIMUTH_RAD  	3.14159265359	/**< TAMA_300 y arm azimuth (rad) */
 #define LAL_TAMA_300_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< TAMA_300 x arm altitude (rad) */
@@ -505,7 +505,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_VIRGO_DETECTOR_PREFIX             	"V1"	/**< VIRGO detector prefix string */
 #define LAL_VIRGO_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO vertex longitude (rad) */
 #define LAL_VIRGO_DETECTOR_LATITUDE_RAD       	0.76151183984	/**< VIRGO vertex latitude (rad) */
-#define LAL_VIRGO_DETECTOR_ELEVATION_SI       	51.884	/**< VIRGO vertex elevation (rad) */
+#define LAL_VIRGO_DETECTOR_ELEVATION_SI       	51.884	/**< VIRGO vertex elevation (m) */
 #define LAL_VIRGO_DETECTOR_ARM_X_AZIMUTH_RAD  	0.33916285222	/**< VIRGO x arm azimuth (rad) */
 #define LAL_VIRGO_DETECTOR_ARM_Y_AZIMUTH_RAD  	5.05155183261	/**< VIRGO y arm azimuth (rad) */
 #define LAL_VIRGO_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< VIRGO x arm altitude (rad) */
@@ -532,7 +532,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_GEO_600_DETECTOR_PREFIX             	"G1"	/**< GEO_600 detector prefix string */
 #define LAL_GEO_600_DETECTOR_LONGITUDE_RAD      	0.17116780435	/**< GEO_600 vertex longitude (rad) */
 #define LAL_GEO_600_DETECTOR_LATITUDE_RAD       	0.91184982752	/**< GEO_600 vertex latitude (rad) */
-#define LAL_GEO_600_DETECTOR_ELEVATION_SI       	114.425	/**< GEO_600 vertex elevation (rad) */
+#define LAL_GEO_600_DETECTOR_ELEVATION_SI       	114.425	/**< GEO_600 vertex elevation (m) */
 #define LAL_GEO_600_DETECTOR_ARM_X_AZIMUTH_RAD  	1.19360100484	/**< GEO_600 x arm azimuth (rad) */
 #define LAL_GEO_600_DETECTOR_ARM_Y_AZIMUTH_RAD  	5.83039279401	/**< GEO_600 y arm azimuth (rad) */
 #define LAL_GEO_600_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< GEO_600 x arm altitude (rad) */
@@ -559,7 +559,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LHO_2K_DETECTOR_PREFIX             	"H2"	/**< LHO_2k detector prefix string */
 #define LAL_LHO_2K_DETECTOR_LONGITUDE_RAD      	-2.08405676917	/**< LHO_2k vertex longitude (rad) */
 #define LAL_LHO_2K_DETECTOR_LATITUDE_RAD       	0.81079526383	/**< LHO_2k vertex latitude (rad) */
-#define LAL_LHO_2K_DETECTOR_ELEVATION_SI       	142.554	/**< LHO_2k vertex elevation (rad) */
+#define LAL_LHO_2K_DETECTOR_ELEVATION_SI       	142.554	/**< LHO_2k vertex elevation (m) */
 #define LAL_LHO_2K_DETECTOR_ARM_X_AZIMUTH_RAD  	5.65487724844	/**< LHO_2k x arm azimuth (rad) */
 #define LAL_LHO_2K_DETECTOR_ARM_Y_AZIMUTH_RAD  	4.08408092164	/**< LHO_2k y arm azimuth (rad) */
 #define LAL_LHO_2K_DETECTOR_ARM_X_ALTITUDE_RAD 	-0.00061950000	/**< LHO_2k x arm altitude (rad) */
@@ -586,7 +586,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LHO_4K_DETECTOR_PREFIX             	"H1"	/**< LHO_4k detector prefix string */
 #define LAL_LHO_4K_DETECTOR_LONGITUDE_RAD      	-2.08405676917	/**< LHO_4k vertex longitude (rad) */
 #define LAL_LHO_4K_DETECTOR_LATITUDE_RAD       	0.81079526383	/**< LHO_4k vertex latitude (rad) */
-#define LAL_LHO_4K_DETECTOR_ELEVATION_SI       	142.554	/**< LHO_4k vertex elevation (rad) */
+#define LAL_LHO_4K_DETECTOR_ELEVATION_SI       	142.554	/**< LHO_4k vertex elevation (m) */
 #define LAL_LHO_4K_DETECTOR_ARM_X_AZIMUTH_RAD  	5.65487724844	/**< LHO_4k x arm azimuth (rad) */
 #define LAL_LHO_4K_DETECTOR_ARM_Y_AZIMUTH_RAD  	4.08408092164	/**< LHO_4k y arm azimuth (rad) */
 #define LAL_LHO_4K_DETECTOR_ARM_X_ALTITUDE_RAD 	-0.00061950000	/**< LHO_4k x arm altitude (rad) */
@@ -613,7 +613,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_LLO_4K_DETECTOR_PREFIX             	"L1"	/**< LLO_4k detector prefix string */
 #define LAL_LLO_4K_DETECTOR_LONGITUDE_RAD      	-1.58430937078	/**< LLO_4k vertex longitude (rad) */
 #define LAL_LLO_4K_DETECTOR_LATITUDE_RAD       	0.53342313506	/**< LLO_4k vertex latitude (rad) */
-#define LAL_LLO_4K_DETECTOR_ELEVATION_SI       	-6.574	/**< LLO_4k vertex elevation (rad) */
+#define LAL_LLO_4K_DETECTOR_ELEVATION_SI       	-6.574	/**< LLO_4k vertex elevation (m) */
 #define LAL_LLO_4K_DETECTOR_ARM_X_AZIMUTH_RAD  	4.40317772346	/**< LLO_4k x arm azimuth (rad) */
 #define LAL_LLO_4K_DETECTOR_ARM_Y_AZIMUTH_RAD  	2.83238139666	/**< LLO_4k y arm azimuth (rad) */
 #define LAL_LLO_4K_DETECTOR_ARM_X_ALTITUDE_RAD 	-0.00031210000	/**< LLO_4k x arm altitude (rad) */
@@ -640,7 +640,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_CIT_40_DETECTOR_PREFIX             	"P1"	/**< CIT_40 detector prefix string */
 #define LAL_CIT_40_DETECTOR_LONGITUDE_RAD      	-2.06175744538	/**< CIT_40 vertex longitude (rad) */
 #define LAL_CIT_40_DETECTOR_LATITUDE_RAD       	0.59637900541	/**< CIT_40 vertex latitude (rad) */
-#define LAL_CIT_40_DETECTOR_ELEVATION_SI       	0	/**< CIT_40 vertex elevation (rad) */
+#define LAL_CIT_40_DETECTOR_ELEVATION_SI       	0	/**< CIT_40 vertex elevation (m) */
 #define LAL_CIT_40_DETECTOR_ARM_X_AZIMUTH_RAD  	3.14159265359	/**< CIT_40 x arm azimuth (rad) */
 #define LAL_CIT_40_DETECTOR_ARM_Y_AZIMUTH_RAD  	1.57079632679	/**< CIT_40 y arm azimuth (rad) */
 #define LAL_CIT_40_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< CIT_40 x arm altitude (rad) */
@@ -670,7 +670,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ALLEGRO_320_DETECTOR_PREFIX             	"A1"	/**< ALLEGRO_320 detector prefix string */
 #define LAL_ALLEGRO_320_DETECTOR_LONGITUDE_RAD      	-1.59137068496	/**< ALLEGRO_320 vertex longitude (rad) */
 #define LAL_ALLEGRO_320_DETECTOR_LATITUDE_RAD       	0.53079879206	/**< ALLEGRO_320 vertex latitude (rad) */
-#define LAL_ALLEGRO_320_DETECTOR_ELEVATION_SI       	0	/**< ALLEGRO_320 vertex elevation (rad) */
+#define LAL_ALLEGRO_320_DETECTOR_ELEVATION_SI       	0	/**< ALLEGRO_320 vertex elevation (m) */
 #define LAL_ALLEGRO_320_DETECTOR_ARM_X_AZIMUTH_RAD  	-0.69813170080	/**< ALLEGRO_320 x arm azimuth (rad) */
 #define LAL_ALLEGRO_320_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.00000000000	/**< ALLEGRO_320 y arm azimuth (rad) UNUSED FOR BARS */
 #define LAL_ALLEGRO_320_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< ALLEGRO_320 x arm altitude (rad) */
@@ -693,7 +693,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_AURIGA_DETECTOR_PREFIX             	"O1"	/**< AURIGA detector prefix string */
 #define LAL_AURIGA_DETECTOR_LONGITUDE_RAD      	0.20853775679	/**< AURIGA vertex longitude (rad) */
 #define LAL_AURIGA_DETECTOR_LATITUDE_RAD       	0.79156499342	/**< AURIGA vertex latitude (rad) */
-#define LAL_AURIGA_DETECTOR_ELEVATION_SI       	0	/**< AURIGA vertex elevation (rad) */
+#define LAL_AURIGA_DETECTOR_ELEVATION_SI       	0	/**< AURIGA vertex elevation (m) */
 #define LAL_AURIGA_DETECTOR_ARM_X_AZIMUTH_RAD  	0.76794487088	/**< AURIGA x arm azimuth (rad) */
 #define LAL_AURIGA_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.00000000000	/**< AURIGA y arm azimuth (rad) UNUSED FOR BARS */
 #define LAL_AURIGA_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< AURIGA x arm altitude (rad) */
@@ -716,7 +716,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_EXPLORER_DETECTOR_PREFIX             	"E1"	/**< EXPLORER detector prefix string */
 #define LAL_EXPLORER_DETECTOR_LONGITUDE_RAD      	0.10821041362	/**< EXPLORER vertex longitude (rad) */
 #define LAL_EXPLORER_DETECTOR_LATITUDE_RAD       	0.81070543755	/**< EXPLORER vertex latitude (rad) */
-#define LAL_EXPLORER_DETECTOR_ELEVATION_SI       	0	/**< EXPLORER vertex elevation (rad) */
+#define LAL_EXPLORER_DETECTOR_ELEVATION_SI       	0	/**< EXPLORER vertex elevation (m) */
 #define LAL_EXPLORER_DETECTOR_ARM_X_AZIMUTH_RAD  	0.68067840828	/**< EXPLORER x arm azimuth (rad) */
 #define LAL_EXPLORER_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.00000000000	/**< EXPLORER y arm azimuth (rad) UNUSED FOR BARS */
 #define LAL_EXPLORER_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< EXPLORER x arm altitude (rad) */
@@ -739,7 +739,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_NAUTILUS_DETECTOR_PREFIX             	"N1"	/**< Nautilus detector prefix string */
 #define LAL_NAUTILUS_DETECTOR_LONGITUDE_RAD      	0.22117684946	/**< Nautilus vertex longitude (rad) */
 #define LAL_NAUTILUS_DETECTOR_LATITUDE_RAD       	0.72996456710	/**< Nautilus vertex latitude (rad) */
-#define LAL_NAUTILUS_DETECTOR_ELEVATION_SI       	0	/**< Nautilus vertex elevation (rad) */
+#define LAL_NAUTILUS_DETECTOR_ELEVATION_SI       	0	/**< Nautilus vertex elevation (m) */
 #define LAL_NAUTILUS_DETECTOR_ARM_X_AZIMUTH_RAD  	0.76794487088	/**< Nautilus x arm azimuth (rad) */
 #define LAL_NAUTILUS_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.00000000000	/**< Nautilus y arm azimuth (rad) UNUSED FOR BARS */
 #define LAL_NAUTILUS_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< Nautilus x arm altitude (rad) */
@@ -762,7 +762,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_NIOBE_DETECTOR_PREFIX             	"B1"	/**< NIOBE detector prefix string */
 #define LAL_NIOBE_DETECTOR_LONGITUDE_RAD      	2.02138216202	/**< NIOBE vertex longitude (rad) */
 #define LAL_NIOBE_DETECTOR_LATITUDE_RAD       	-0.55734180780	/**< NIOBE vertex latitude (rad) */
-#define LAL_NIOBE_DETECTOR_ELEVATION_SI       	0	/**< NIOBE vertex elevation (rad) */
+#define LAL_NIOBE_DETECTOR_ELEVATION_SI       	0	/**< NIOBE vertex elevation (m) */
 #define LAL_NIOBE_DETECTOR_ARM_X_AZIMUTH_RAD  	0.00000000000	/**< NIOBE x arm azimuth (rad) */
 #define LAL_NIOBE_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.00000000000	/**< NIOBE y arm azimuth (rad) UNUSED FOR BARS */
 #define LAL_NIOBE_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< NIOBE x arm altitude (rad) */
