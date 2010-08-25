@@ -45,7 +45,7 @@
 # include <lal/FindChirp.h>
 # include <lal/Window.h>
 
-#include <lal/SFTUtils.h>
+#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALBarycenter.h>
@@ -242,6 +242,7 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data, 
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
+REAL8 NullLogLikelihood(LALIFOData *data);
 								  
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);

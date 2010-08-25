@@ -32,7 +32,7 @@
 #include <lal/Units.h>
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-
+#include <lal/TimeSeries.h>
 
 LALVariables variables;
 LALVariables variables2;
@@ -76,9 +76,24 @@ void BasicMCMCTest(void);
 void TemplateDumpTest(void);
 void PTMCMCTest(void);
 
+
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
 
+//REAL8 NullLogLikelihood(LALIFOData *data)
+///*Idential to FreqDomainNullLogLikelihood                        */
+//{
+//	REAL8 loglikeli, totalChiSquared=0.0;
+//	LALIFOData *ifoPtr=data;
+//	
+//	/* loop over data (different interferometers): */
+//	while (ifoPtr != NULL) {
+//		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
+//		ifoPtr = ifoPtr->next;
+//	}
+//	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+//	return(loglikeli);
+//}
 
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
@@ -185,20 +200,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 }
 
 
-REAL8 NullLogLikelihood(LALIFOData *data)
-/*Idential to FreqDomainNullLogLikelihood                        */
-{
-	REAL8 loglikeli, totalChiSquared=0.0;
-	LALIFOData *ifoPtr=data;
-	
-	/* loop over data (different interferometers): */
-	while (ifoPtr != NULL) {
-		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
-		ifoPtr = ifoPtr->next;
-	}
-	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
-	return(loglikeli);
-}
+
 
 REAL8 FreqDomainNullLogLikelihood(LALIFOData *data)
 /* calls the `FreqDomainLogLikelihood()' function in conjunction   */
@@ -245,7 +247,7 @@ int main(int argc, char *argv[]){
   
   if(runstate->data) {
     /* Test the created data */  
-    DataTest();
+    //DataTest();
     
     /* TemplateStatPhase() test */
 	//TemplateStatPhaseTest();
@@ -263,7 +265,7 @@ int main(int argc, char *argv[]){
 	//TemplateDumpTest();
 	  
 	/* PTMCMC test */
-	//PTMCMCTest();
+	PTMCMCTest();
 	  
 
   }
@@ -903,9 +905,9 @@ void DataTest(void)
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
    /* fprintf(stdout, " trying 'templateLAL' likelihood...\n");
     numberI4 = TaylorF2;
-    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t);
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
     numberI4 = LAL_PNORDER_TWO;
-    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t);*/
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);*/
 	 fprintf(stdout, " trying 'LALTemplateGeneratePPN' likelihood..\n");
     likelihood = FreqDomainLogLikelihood(&currentParams, runstate->data, LALTemplateGeneratePPN);
     nulllikelihood = NullLogLikelihood(runstate->data);
@@ -1182,6 +1184,43 @@ void PTMCMCTest(void)
 	runstate->proposalArgs->dimension=0;
 	runstate->likelihood=FreqDomainLogLikelihood;
 	runstate->template=templateLAL;
+	
+	
+	SimInspiralTable *injTable=NULL;
+	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,getProcParamVal(ppt,"--injXML")->value,0,0));
+	
+	REAL8 mc = injTable->mchirp;
+	REAL8 eta = injTable->eta;
+    REAL8 iota = injTable->inclination;
+    REAL8 phi = injTable->coa_phase;
+	LIGOTimeGPS trigger_time=injTable->geocent_end_time;
+	REAL8 tc = XLALGPSGetREAL8(&trigger_time);
+	REAL8 ra_current = injTable->longitude;
+	REAL8 dec_current = injTable->latitude;
+	REAL8 psi_current = injTable->polarization;
+	REAL8 distMpc_current = injTable->distance;
+	
+    numberI4 = TaylorT2;
+    addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_LINEAR);
+    numberI4 = LAL_PNORDER_TWO;
+    addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_LINEAR);
+	
+	addVariable(&currentParams, "chirpmass",       &mc,              REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "massratio",       &eta,             REAL8_t, PARAM_LINEAR);
+    addVariable(&currentParams, "inclination",     &iota,            REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "phase",           &phi,             REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "time",            &tc   ,           REAL8_t, PARAM_LINEAR); 
+    addVariable(&currentParams, "rightascension",  &ra_current,      REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "declination",     &dec_current,     REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "polarisation",    &psi_current,     REAL8_t, PARAM_CIRCULAR);
+    addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
+	
+	
+	
+	
+	
+	
+	
 	runstate->currentParams=&currentParams;
 	PTMCMCAlgorithm(runstate);
 	fprintf(stdout, "End of PTMCMC test\n");
