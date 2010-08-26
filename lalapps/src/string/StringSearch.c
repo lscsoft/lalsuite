@@ -523,7 +523,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, const StringT
 
       /* Now copy stuff into event */
       strncpy( new->ifo, CLA.ChannelName, 2 );
-      new->ifo[3] = 0;
+      new->ifo[2] = 0;
       strncpy( new->search, "StringCusp", sizeof( new->search ) );
       strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
       
