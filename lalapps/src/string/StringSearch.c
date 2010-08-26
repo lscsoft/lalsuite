@@ -398,26 +398,22 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
   if (!CLA->outputFileName){
     CHAR outfilename[256];
-    snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
-	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
-	     searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
-	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+    snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo, CLA->GPSStart.gpsSeconds, CLA->GPSEnd.gpsSeconds - CLA->GPSEnd.gpsSeconds);
     outfilename[sizeof(outfilename)-1] = '\0';
     xml = XLALOpenLIGOLwXMLFile(outfilename);
-  }
-  else
+  } else
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
 
-  /* process table */
+  /* finish populating process table */
   snprintf(proctable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   XLALGPSTimeNow(&(proctable->end_time));
-  
+
+  /* write process table */
   if(XLALWriteLIGOLwXMLProcessTable(xml, proctable)) return -1;
   
-  /* process params table */
+  /* write process params table */
   if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
   
-  /* search summary table */
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
   /* the number of nodes for a standalone job is always 1 */
@@ -435,6 +431,8 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
+
+  /* write search_summary table */
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
   XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
 
