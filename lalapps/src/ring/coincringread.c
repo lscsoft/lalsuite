@@ -140,7 +140,6 @@ int main( int argc, char *argv[] )
   int j;
   FILE *fp = NULL;
   int numInFiles = 0;
-  char line[MAX_PATH];
   UINT8 triggerInputTimeNS = 0;
 
   MetadataTable         proctable;
