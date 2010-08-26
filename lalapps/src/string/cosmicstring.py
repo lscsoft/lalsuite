@@ -318,6 +318,10 @@ class RunSqliteNode(pipeline.CondorDAGNode):
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
 
 	def get_input_cache(self):
 		return self.input_cache

@@ -116,7 +116,8 @@ pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
 dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass \
-                   lalapps_cbc_code_compare
+                   lalapps_cbc_code_compare \
+                   followup/followup_InspiralDataMover.sh
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
