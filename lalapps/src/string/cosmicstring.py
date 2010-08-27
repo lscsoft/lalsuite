@@ -506,10 +506,10 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration):
 	seglist = segments.segmentlist()
 	while abs(seg) >= min_segment_length + 2 * pad:
-		# try to use 5* min_segment_length each time (must be an odd
+		# try to use 9* min_segment_length each time (must be an odd
 		# multiple!).
-		if abs(seg) >= 5 * min_segment_length + 2 * pad:
-			seglist.append(segments.segment(seg[0], seg[0] + 5 * min_segment_length + 2 * pad))
+		if abs(seg) >= 9 * min_segment_length + 2 * pad:
+			seglist.append(segments.segment(seg[0], seg[0] + 9 * min_segment_length + 2 * pad))
 		else:
 			seglist.append(clip_segment(seg, pad, short_segment_duration))
 		# advance segment
