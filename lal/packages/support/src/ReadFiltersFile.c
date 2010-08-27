@@ -318,22 +318,16 @@ static int check_checksum(const char *filterfile, const char *claimed_chksum)
     char command[1024];
     char actual_chksum[1024];
 
-    char* avoid_unused_err_msg;
-
     /* Actual checksum */
     snprintf(command, sizeof command, "tail -n +3 %s | sha1sum", filterfile);
     if ( !(fpipe = (FILE*) popen(command, "r")) ) {
         perror("Problem in popen when checking checksum.");
-        return -1;
+	return -1;
     }
-<<<<<<< HEAD:lal/packages/support/src/ReadFiltersFile.c
-    avoid_unused_err_msg=fgets(actual_chksum, sizeof actual_chksum, fpipe);
-=======
     if ( !(fgets(actual_chksum, sizeof actual_chksum, fpipe)) ) {
         perror("Problem in fgets when checking checksum.");
         return -1;
     }
->>>>>>> b4bffbe06f92a7b4aeac12723d5f45523bbba2e2:lal/packages/support/src/ReadFiltersFile.c
     pclose(fpipe);
 
     /* Compare! */
