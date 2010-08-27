@@ -102,6 +102,8 @@ LALFindChirpTDTemplate (
   PPNParamStruc ppnParams;
   CoherentGW    waveform;
 
+  //REAL8 norm;
+
   REAL4Vector  *tmpxfac = NULL; /* Used for band-passing */
 
 
@@ -153,6 +155,7 @@ LALFindChirpTDTemplate (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case PhenSpinTaylorRD:
       break;
 
     default:
@@ -175,14 +178,11 @@ LALFindChirpTDTemplate (
   if ( params->approximant == GeneratePPN )
   {
 
-
     /*
      *
      * generate the waveform using LALGeneratePPNInspiral() from inject
      *
      */
-
-
 
     /* input parameters */
     memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -217,6 +217,7 @@ LALFindChirpTDTemplate (
       xfac[j] =
         waveform.a->data->data[2*j] * cos( waveform.phi->data->data[j] );
     }
+    
 
     /* free the memory allocated by LALGeneratePPNInspiral() */
     LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
@@ -276,8 +277,19 @@ LALFindChirpTDTemplate (
     }
 
     /* generate the chirp in the time domain */
+    //fprintf(stdout,"                          : distance=%11.4e\n",tmplt->distance);
+    //if (tmplt->distance<=0.) tmplt->distance=1.;
+    /*fprintf(stdout,"** FindChirpTDTemplate.c**: m1=%11.3e m2=%11.3e\n",tmplt->mass1,tmplt->mass2);
+    fprintf(stdout,"                          : s1=(%8.3f %8.3f %8.3f)\n",tmplt->spin1[0],tmplt->spin1[1],tmplt->spin1[2]);
+    fprintf(stdout,"                          : s2=(%8.3f %8.3f %8.3f)\n",tmplt->spin2[0],tmplt->spin2[1],tmplt->spin2[2]);*/
+    //fprintf(stdout,"                          : distance=%11.4e\n",tmplt->distance);
     LALInspiralWave( status->statusPtr, params->xfacVec, tmplt );
     CHECKSTATUSPTR( status );
+
+    /*norm=0.;
+    fprintf(stdout,"** FindChirpTDTemplate.c**: Wflength=%d %d\n",params->xfacVec->length,numPoints);
+    for (int count=0;count<numPoints;count++) norm+=params->xfacVec->data[count]*params->xfacVec->data[count];
+    fprintf(stdout,"** FindChirpTDTemplate.c **: LALInspiralWave dice che tmplt norm=%11.3e\n",sqrt(norm));    */
 
 
     /* template dependent normalization */
@@ -411,12 +423,20 @@ LALFindChirpTDTemplate (
    *
    */
 
+  /*for (int count=0;count<numPoints;count++) norm+=params->xfacVec->data[count]*params->xfacVec->data[count];
+    fprintf(stdout,"** FindChirpTDTemplate.c **: tmplt norm=%11.3e\n",sqrt(norm));*/
+
   /* fft chirp */
   if ( XLALREAL4ForwardFFT( fcTmplt->data, params->xfacVec,
       params->fwdPlan ) == XLAL_FAILURE )
   {
     ABORTXLAL( status );
   }
+
+  /*norm=0.;
+  for (int count=0;count<numPoints;count++) norm+=fcTmplt->data->data[count].re*fcTmplt->data->data[count].re+fcTmplt->data->data[count].im*fcTmplt->data->data[count].im;
+  fprintf(stdout,"** FindChirpTDTemplate.c **: tmplt norm dopo FFT=%11.3e\n",sqrt(norm));
+  */
 
   /* copy the template parameters to the findchirp template structure */
   memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
@@ -474,6 +494,7 @@ LALFindChirpTDNormalize(
     case PadeT1:
     case EOB:
     case EOBNR:
+    case PhenSpinTaylorRD:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );

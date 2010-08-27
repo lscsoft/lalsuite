@@ -127,7 +127,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGESWITCH       "Unknown case in switch"
 #define LALINSPIRALH_MSGEMASSCHOICE   "Improper choice for massChoice"
 
-/** ---------------------------------------------------------------------  </lalErrTable> */
+/* ---------------------------------------------------------------------  </lalErrTable> */
 
 
 
@@ -1750,13 +1750,11 @@ INT4 XLALPSpinGenerateWaveDerivative (
 INT4 XLALPSpinGenerateQNMFreq (
        COMPLEX8Vector          *modefreqs,
        InspiralTemplate        *params,
-       REAL8                   energy,
        UINT4                   l,
        INT4                    m,
        UINT4                   nmodes,
-       REAL8                   LNhx,
-       REAL8                   LNhy,
-       REAL8                   LNhz
+       REAL8                   finalMass,
+       REAL8                   finalSpin
        );
 
 INT4 XLALPSpinFinalMassSpin(
@@ -1764,22 +1762,18 @@ INT4 XLALPSpinFinalMassSpin(
        REAL8                   *finalSpin,
        InspiralTemplate        *params,
        REAL8                   energy,
-       REAL8                   LNhx,
-       REAL8                   LNhy,
-       REAL8                   LNhz
+       REAL8                   *LNhvec
        );
 
 INT4 XLALPSpinInspiralAttachRingdownWave (
-       REAL4Vector     *signalvec,
-       InspiralTemplate *params,
-       REAL8             energy,
+       REAL4Vector       *signalvec,
+       InspiralTemplate  *params,
        UINT4             *attpos,
        UINT4             nmodes,
        UINT4             l,
        INT4              m,
-       REAL8             LNhx,
-       REAL8             LNhy,
-       REAL8             LNhz
+       REAL8             finalMass,
+       REAL8             finalSpin
 );
 
 int XLALInspiralGetApproximantString( CHAR        *output,

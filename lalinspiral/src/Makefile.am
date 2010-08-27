@@ -37,7 +37,7 @@ lalinspiralinclude_HEADERS = \
 	NRWaveIO.h \
 	NRWaveInject.h \
 	NullStatistic.h \
-	RingUtils.h \
+	Ring.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
@@ -138,7 +138,6 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
 	LALInspiralRingdownWave.c \
-	LALPSpinInspiralRingdownWave.c \
 	LALInspiralSetParams.c \
 	LALInspiralSetSearchLimits.c \
 	LALInspiralSetup.c \
@@ -169,12 +168,13 @@ liblalinspiral_la_SOURCES = \
 	LALInverse3.c \
 	LALMatrixTransform.c \
 	LALPhenomWaveform.c \
+	LALPSpinInspiralRD.c \
+	LALPSpinInspiralRingdownWave.c \
 	LALPrintTimeseries.c \
 	LALRandomInspiralSignal.c \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
 	LALSTPNWaveform.c \
-	LALPSpinInspiralRD.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALTrigScanCluster.c \
@@ -185,7 +185,7 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
-	RingUtils.c \
+	Ring.c \
 	SimInspiralUtils.c \
 	SimRingdownUtils.c \
 	SimulateInspiral.c \

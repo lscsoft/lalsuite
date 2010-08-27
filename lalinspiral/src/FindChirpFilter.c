@@ -210,6 +210,7 @@ LALFindChirpFilterSegment (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case PhenSpinTaylorRD:
     case FindChirpSP:
       break;
 

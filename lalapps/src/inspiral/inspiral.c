@@ -41,6 +41,8 @@
 #include <time.h>
 #include <math.h>
 
+#include <FrameL.h>
+
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -64,7 +66,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -78,9 +80,8 @@
 #include <lal/LALTrigScanCluster.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/LALFrameL.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/lalGitID.h>
+#include <lalappsGitID.h>
 
 #include "inspiral.h"
 
@@ -93,7 +94,7 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-/* define the parameters for a 1.4,.4 sloar mass standard candle with snr 8 */
+/* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
@@ -238,7 +239,6 @@ LALPNOrder order;                       /* pN order of waveform         */
 CHAR *orderName = NULL;                 /* pN order of the waveform     */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 INT4 flagFilterInjOnly  = -1;           /* flag for filtering inj. only */
-REAL4  CDataLength      = 1;            /* set length of c-data snippet (sec) */
 
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
@@ -274,11 +274,6 @@ InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
-UINT4 autochisqLength      = 0;         /* num templates in a subbank   */
-UINT4 autochisqStride      = 1;         /* Stride for autochisq         */
-INT4  autochisqTwo         = 0;         /* flag for two sided auto chsq */
-INT4  timeFreqBankVeto     = 0;         /* flag for experimental bank veto option */
-
 UINT4 ccFlag = 0;
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -470,8 +465,19 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID,
-      LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0);
+  if (strcmp(CVS_REVISION,"$Revi" "sion$"))
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable,
+                                        PROGRAM_NAME, CVS_REVISION,
+                                        CVS_SOURCE, CVS_DATE ), &status );
+    }
+  else
+    {
+      LAL_CALL( populate_process_table( &status, proctable.processTable,
+                                        PROGRAM_NAME, lalappsGitCommitID,
+                                        lalappsGitGitStatus,
+                                        lalappsGitCommitDate ), &status );
+    }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -553,7 +559,7 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable->nnodes = 1;
 
   /* fill the ifos field of the search summary table */
-  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+  snprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifo );
 
   /* make sure all the output table pointers are null */
   savedEvents.snglInspiralTable = NULL;
@@ -562,7 +568,7 @@ int main( int argc, char *argv[] )
 
   /* create the standard candle and database table */
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
-  strncpy( candle.ifo, ifo, 2 );
+  strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
   candle.tmplt.mass1 = CANDLE_MASS1;
   candle.tmplt.mass2 = CANDLE_MASS2;
   candle.rhosq       = CANDLE_RHOSQ;
@@ -715,7 +721,8 @@ int main( int argc, char *argv[] )
           frStream ), &status );
 
     /* copy the data paramaters from the h(t) channel to input data channel */
-    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
+              strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -731,7 +738,7 @@ int main( int argc, char *argv[] )
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "raw data sample rate" );
   this_search_summvar->value = inputDeltaT = chan.deltaT;
 
@@ -811,7 +818,8 @@ int main( int argc, char *argv[] )
     }
 
     /* re-copy the data paramaters from the h(t) channel to input data channel*/
-    snprintf( chan.name, LALNameLength, "%s", strainChan.name );
+    snprintf( chan.name, LALNameLength * sizeof(CHAR), "%s",
+              strainChan.name );
     chan.epoch          = strainChan.epoch;
     chan.deltaT         = strainChan.deltaT;
     chan.f0             = strainChan.f0;
@@ -873,7 +881,7 @@ int main( int argc, char *argv[] )
     /* store the seed in the search summvars table */
     this_search_summvar = this_search_summvar->next =
       (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
         "template bank simulation seed" );
 
     if ( randSeedType == urandom )
@@ -1094,7 +1102,8 @@ int main( int argc, char *argv[] )
     if ( globCalData )
     {
       calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
+      snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
+                "*CAL*%s*.gwf", ifo );
       if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
           "in current directory\n", calGlobPattern );
     }
@@ -1115,9 +1124,10 @@ int main( int argc, char *argv[] )
     {
       this_search_summvar = this_search_summvar->next =
         (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
                 "calibration frame %d", i );
-      snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX, "%s",
+      snprintf( this_search_summvar->string,
+                LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
                 calCache->frameFiles[i].url );
     }
 
@@ -1293,7 +1303,8 @@ int main( int argc, char *argv[] )
           if ( globCalData )
           {
             calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-            snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
+            snprintf( calGlobPattern, calGlobLen * sizeof(CHAR),
+                      "*CAL*%s*.gwf", ifo );
             if ( vrbflg ) fprintf( stdout,
                 "globbing for %s calibration frame files "
                 "in current directory\n", calGlobPattern );
@@ -1316,10 +1327,12 @@ int main( int argc, char *argv[] )
             this_search_summvar = this_search_summvar->next =
               (SearchSummvarsTable *)
               LALCalloc( 1, sizeof(SearchSummvarsTable) );
-            snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+            snprintf( this_search_summvar->name,
+                      LIGOMETA_NAME_MAX * sizeof(CHAR),
                       "injection calibration frame %d", i );
-            snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX,
-                      "%s", calCache->frameFiles[i].url );
+            snprintf( this_search_summvar->string,
+                      LIGOMETA_STRING_MAX * sizeof(CHAR), "%s",
+                      calCache->frameFiles[i].url );
           }
 
           /* extract the calibration from frames */
@@ -1364,7 +1377,7 @@ int main( int argc, char *argv[] )
       }
 
       /* inject the signals, preserving the channel name (Tev mangles it) */
-      snprintf( tmpChName, LALNameLength, "%s", chan.name );
+      snprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
 
       /* if injectOverhead option, then set chan.name to "ZENITH".
        * This causes no detector site to be found in the injection code so
@@ -1372,7 +1385,7 @@ int main( int argc, char *argv[] )
        * function of F+ = 1; Fx = 0) */
       if ( injectOverhead )
       {
-        snprintf( chan.name, LALNameLength, "ZENITH" );
+        snprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
       }
 
       /* read the event waveform approximant to see if we've been asked to
@@ -1405,7 +1418,7 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections,
                                              injRespPtr ), &status );
       }
-      snprintf( chan.name,  LALNameLength, "%s", tmpChName );
+      snprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
           numInjections, injectionFile, chan.name );
@@ -1453,7 +1466,7 @@ int main( int argc, char *argv[] )
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next =
     (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
+  snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
@@ -1471,11 +1484,12 @@ int main( int argc, char *argv[] )
     condor_compress_ckpt = 1;
     if ( ckptPath[0] )
     {
-      snprintf( fname, FILENAME_MAX, "%s/%s.ckpt", ckptPath, fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt",
+                ckptPath, fileName );
     }
     else
     {
-      snprintf( fname, FILENAME_MAX, "%s.ckpt", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
@@ -2102,13 +2116,6 @@ int main( int argc, char *argv[] )
       }
     }
 
-    /* set the autocorrelation chisq length and type */
-
-    bankVetoData.acorrMatSize = autochisqLength;
-    bankVetoData.two_sided_auto_chisq = autochisqTwo;
-    bankVetoData.time_freq_bank_veto = timeFreqBankVeto;
-    bankVetoData.autochisqStride = autochisqStride;
-
     /*
      *
      * split the template bank into subbanks for the bank veto
@@ -2120,7 +2127,7 @@ int main( int argc, char *argv[] )
     if (!bankSimCount && numTmplts > 0) /*just doing this once is fine*/
     {
       if (subBankSize > 1)
-	bankHead = XLALFindChirpSortTemplates( bankHead, &bankVetoData, numTmplts, subBankSize);
+         bankHead = XLALFindChirpSortTemplates( bankHead, numTmplts, subBankSize);
 
       if ( vrbflg ) fprintf( stdout,
         "splitting bank in to subbanks of size ~ %d\n", subBankSize );
@@ -2149,9 +2156,9 @@ int main( int argc, char *argv[] )
         LALCalloc( bankVetoData.length, sizeof(FindChirpFilterInput*) );
       /* create ccMat for bank veto */
       bankVetoData.ccMat =
-        XLALCreateCOMPLEX8Vector( bankVetoData.length * bankVetoData.length );
+        XLALCreateVector( bankVetoData.length * bankVetoData.length );
       bankVetoData.normMat =
-        XLALCreateVector( bankVetoData.length );
+        XLALCreateVector( bankVetoData.length * bankVetoData.length );
       /* point to response and spectrum */
       bankVetoData.spec = spec.data;
       bankVetoData.resp = resp.data;
@@ -2166,8 +2173,6 @@ int main( int argc, char *argv[] )
               &(bankVetoData.fcInputArray[i]), fcInitParams ), &status );
       }
     }
-    /* set the workspace vectors to null before they are allocated later */
-    XLALInitBankVetoData(&bankVetoData);
 
     /*
      *
@@ -2175,8 +2180,6 @@ int main( int argc, char *argv[] )
      *
      */
 
-
-    /* Analyze all templates from a given subbank at once. */
     for ( subBankCurrent = subBankHead, thisTemplateIndex = 0;
         subBankCurrent;
         subBankCurrent = subBankCurrent->next, thisTemplateIndex++ )
@@ -2201,7 +2204,7 @@ int main( int argc, char *argv[] )
         fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
         if ( vrbflg ) fprintf( stdout,
             "Creating template in fcInputArray[%d] at %p\n", subBankIndex,
-            (void *)fcFilterInput );
+            fcFilterInput );
 
         /*  generate template */
         switch ( approximant )
@@ -2254,27 +2257,27 @@ int main( int argc, char *argv[] )
         COMPLEX8Vector *templateFFTDataVector = NULL;
         REAL4FFTPlan *plan = NULL;
         REAL8 deltaF;
-        INT4 kmax, num_points;
-        UINT4 nb2;
-        snprintf( snrsqStr, LALNameLength, "TEMPLATE");
+        INT4 kmax, numPoints, nb2;
+        snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
+                  "TEMPLATE");
         memcpy(&templateTimeSeries, &chan, sizeof(REAL4TimeSeries));
         strcpy( templateTimeSeries.name, chan.name );
         /* Things are complicated if the template is in the Frequency domain */
         if ( approximant==FindChirpSP )
           {
           nb2 = fcTmpltParams->xfacVec->length;
-          num_points = (INT4) floor( (nb2-1) * 2.0);
-          templateTimeSeriesVector = XLALCreateREAL4Vector(num_points);
+          numPoints = (int) floor( (nb2-1) * 2.0);
+          templateTimeSeriesVector = XLALCreateREAL4Vector(numPoints);
           templateFFTDataVector = XLALCreateCOMPLEX8Vector(nb2);
-          num_points = templateTimeSeriesVector->length;
+          numPoints = templateTimeSeriesVector->length;
 
-          deltaF = 1.0 / ( fcTmpltParams->deltaT * (REAL8) num_points / 2.0);
-          kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF < num_points/2 ?
-            fcFilterInput->fcTmplt->tmplt.fFinal / deltaF : num_points/2;
+          deltaF = 1.0 / ( fcTmpltParams->deltaT * (REAL8) numPoints / 2.0);
+          kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ?
+            fcFilterInput->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
 
           for (i = 0; i < nb2; i++)
             {
-            if (1 || (((i * deltaF) > fLow) && (i < kmax)))
+            if (1 || (i * deltaF) > fLow && i < kmax)
               {
               templateFFTDataVector->data[i].re = fcFilterInput->fcTmplt->data->data[i].re * fcTmpltParams->xfacVec->data[i];
               templateFFTDataVector->data[i].im = fcFilterInput->fcTmplt->data->data[i].im * fcTmpltParams->xfacVec->data[i];
@@ -2285,7 +2288,7 @@ int main( int argc, char *argv[] )
               templateFFTDataVector->data[i].im = 0;
               }
             }
-          plan = XLALCreateReverseREAL4FFTPlan( num_points, 0);
+          plan = XLALCreateReverseREAL4FFTPlan( numPoints, 0);
           if ( XLALREAL4ReverseFFT( templateTimeSeriesVector, templateFFTDataVector, plan) )  fprintf(stderr, "\n\nFFT FAILED\n\n");
           templateTimeSeries.data = templateTimeSeriesVector;
           }
@@ -2302,7 +2305,6 @@ int main( int argc, char *argv[] )
         if (templateFFTDataVector) XLALDestroyCOMPLEX8Vector(templateFFTDataVector);
         if (plan) XLALDestroyREAL4FFTPlan( plan );
       }
-
 
       ccFlag = 1;
       /* loop over data segments */
@@ -2321,7 +2323,7 @@ int main( int argc, char *argv[] )
             (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) ) )
         {
           if ( vrbflg ) fprintf( stdout,
-              "skipping segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] (outside trig time)\n",
+              "skipping segment %d/%d [%ld-%ld] (outside trig time)\n",
               fcSegVec->data[i].number, fcSegVec->length,
               fcSegStartTimeNS, fcSegEndTimeNS );
 
@@ -2374,14 +2376,14 @@ int main( int argc, char *argv[] )
             fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Using template in fcInputArray[%d] at %p\n", subBankIndex,
-                (void *)fcFilterInput );
+                fcFilterInput );
             fcFilterParams->qVec=bankVetoData.qVecArray[subBankIndex];
             fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Using qVec in qVecArray[%d] at %p\n", subBankIndex,
-                (void *)fcFilterParams->qVec );
+                fcFilterParams->qVec );
             if ( vrbflg ) fprintf( stdout,
-                "filtering segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "] "
+                "filtering segment %d/%d [%ld-%ld] "
                 "against template %d/%d (%e,%e)\n",
                 fcSegVec->data[i].number, fcSegVec->length,
                 fcSegStartTimeNS, fcSegEndTimeNS,
@@ -2450,7 +2452,8 @@ int main( int argc, char *argv[] )
             if ( writeRhosq )
             {
               CHAR snrsqStr[LALNameLength];
-              snprintf( snrsqStr, LALNameLength, "SNRSQ_%d", nRhosqFr++ );
+              snprintf( snrsqStr, LALNameLength*sizeof(CHAR),
+                        "SNRSQ_%d", nRhosqFr++ );
               strcpy( fcFilterParams->rhosqVec->name, chan.name );
               outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
                   fcFilterParams->rhosqVec, "none", snrsqStr );
@@ -2463,7 +2466,7 @@ int main( int argc, char *argv[] )
           else /* not analyzeTag */
           {
             if ( vrbflg ) fprintf( stdout,
-                "skipping segment %d/%d [%" LAL_INT8_FORMAT "-%" LAL_INT8_FORMAT "]\n",
+                "skipping segment %d/%d [%ld-%ld]\n",
                 fcSegVec->data[i].number, fcSegVec->length,
                 fcSegStartTimeNS, fcSegEndTimeNS );
           }
@@ -2506,16 +2509,22 @@ int main( int argc, char *argv[] )
         } /* end of loop over templates in subbank */
 
         /* If doing bank veto compute CC Matrix */
-        if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
+        /* I removed the ccFlag dependence - this is being computed
+           for each segment now!!! */
+        if (ccFlag && (subBankCurrent->subBankSize > 1) && analyseTag)
         {
-	  
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, 
-			     fcDataParams->ampVec,
-			     subBankCurrent->subBankSize, 
-			     dynRange, fLow, spec.deltaF,chan.deltaT);
-
-	  ccFlag = 0;
+          XLALBankVetoCCMat( &bankVetoData, subBankCurrent, fcDataParams,
+          dynRange, fLow, spec.deltaF, chan.deltaT);
+          ccFlag = 0;
+          /*char filename[10];
+          sprintf(filename, "ccmat%d.dat",i);
+          FILE *FP = NULL;
+          FP = fopen(filename,"w");
+          for(j = 0; j < bankVetoData.ccMat->length; ++j)
+          {
+            fprintf(FP, "%e\n",bankVetoData.ccMat->data[j]);
+          }*/
         }
         /* now look through the filter outputs of the subbank for events */
         for ( bankCurrent = subBankCurrent->bankHead, subBankIndex = 0;
@@ -2527,12 +2536,12 @@ int main( int argc, char *argv[] )
             fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using template in fcInputArray[%d] at %p\n",
-                subBankIndex, (void *)fcFilterInput );
+                subBankIndex, fcFilterInput );
             fcFilterParams->qtildeVec=bankVetoData.qtildeVecArray[subBankIndex];
             fcFilterParams->qVec = bankVetoData.qVecArray[subBankIndex];
             if ( vrbflg ) fprintf( stdout,
                 "Finding Events - Using qVec in qVecArray[%d] at %p\n",
-                subBankIndex, (void *)fcFilterParams->qVec );
+                subBankIndex, fcFilterParams->qVec );
 
             /* determine if FindChirpFilterSegment returned any events */
             switch ( approximant )
@@ -2564,10 +2573,11 @@ int main( int argc, char *argv[] )
                 {
                   CHAR chisqStr[LALNameLength];
                   REAL4TimeSeries chisqts;
-                  snprintf( chisqStr, LALNameLength, "CHISQ_%d", nChisqFr++ );
+                  snprintf( chisqStr, LALNameLength*sizeof(CHAR),
+                      "CHISQ_%d", nChisqFr++ );
                   chisqts.epoch = fcFilterInput->segment->data->epoch;
                   memcpy( &(chisqts.name), fcFilterInput->segment->data->name,
-                      LALNameLength);
+                      LALNameLength * sizeof(CHAR) );
                   chisqts.deltaT = fcFilterInput->segment->deltaT;
                   chisqts.data = fcFilterParams->chisqVec;
                   outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
@@ -2586,19 +2596,7 @@ int main( int argc, char *argv[] )
                   if ( trigTime >= lowerBound && trigTime <= upperBound )
                   {
                     REAL8 sigmasq = 0.0;
-		    REAL4 chisq=0.0;
 
-                    if ( ! eventList ) {
-                      chisq = 1.0;
-		      if ( vrbflg ) fprintf(stdout,
-			  "No eventlist found! chisq is set to %e\n",chisq);
-                    } 
-		    else {
-		      chisq = eventList->chisq;
-		      if ( vrbflg ) fprintf(stdout,
-			  "Eventlist found; chisq read is %e\n",chisq);
-		    }
-		    
                     tempTmplt = (SnglInspiralTable *)
                       LALCalloc(1, sizeof(SnglInspiralTable) );
                     tempTmplt->event_id = (EventIDColumn *)
@@ -2608,9 +2606,7 @@ int main( int argc, char *argv[] )
                       bankCurrent->end_time.gpsSeconds;
                     tempTmplt->end_time.gpsNanoSeconds =
                       bankCurrent->end_time.gpsNanoSeconds;
-                    if (bankCurrent->event_id)
-                      tempTmplt->event_id->id = bankCurrent->event_id->id;
-                    else tempTmplt->event_id->id = 0;
+                    tempTmplt->event_id->id = bankCurrent->event_id->id;
 
                     if ( ! eventList ) {
                       UINT4 kmax;
@@ -2646,18 +2642,20 @@ int main( int argc, char *argv[] )
                       tempTmplt->sigmasq = eventList->sigmasq;
                     }
 
-		    tempTmplt->chisq = chisq;
-
                     LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                           &coherentInputData, fcFilterParams->cVec,
-                          tempTmplt, CDataLength/2, numPoints / 4 ), &status );
+                          tempTmplt, 0.5, numPoints / 4 ), &status );
+
+                    LALFree( tempTmplt->event_id );
+                    LALFree( tempTmplt );
 
                     if ( coherentInputData )
                     {
                       cDataForFrame = 1;
-                      snprintf( cdataStr, LALNameLength,
-                                   "%" LAL_UINT8_FORMAT, tempTmplt->event_id->id );
-                      snprintf( coherentInputData->name, LALNameLength,
+                      snprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                                   "%Ld", bankCurrent->event_id->id );
+                      snprintf( coherentInputData->name,
+                                   LALNameLength*sizeof(CHAR),
                                    "%s:CBC-CData", ifo );
                       if ( ! coherentFrames )
                       {
@@ -2676,8 +2674,6 @@ int main( int argc, char *argv[] )
                       LALFree( coherentInputData );
                       coherentInputData = NULL;
                     }
-                    LALFree( tempTmplt->event_id );
-                    LALFree( tempTmplt );
                   }
                 }
 
@@ -2873,15 +2869,13 @@ int main( int argc, char *argv[] )
     LALFree( bankVetoData.qVecArray );
     LALFree( bankVetoData.qtildeVecArray );
     LALFree( bankVetoData.fcInputArray );
-    XLALDestroyCOMPLEX8Vector( bankVetoData.ccMat );
+    XLALDestroyVector( bankVetoData.ccMat );
     XLALDestroyVector( bankVetoData.normMat );
     /* XLALDestroyVector( bankVetoData.normMat ); */
     fcFilterParams->qVec = NULL;
     fcFilterParams->qtildeVec = NULL;
   }
 
-  /* Free other bankVeto memory */
-  XLALDestroyBankVetoData(&bankVetoData);
 
   if ( fcFilterParams->filterOutputVetoParams )
   {
@@ -2896,6 +2890,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
+
   /* free the template bank */
   if ( subBankHead )
   {
@@ -2935,6 +2930,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
   LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
+
   /* free the random parameters structure */
   if ( randSeedType != unset )
   {
@@ -2955,12 +2951,12 @@ int main( int argc, char *argv[] )
   {
     if ( outputPath[0] )
     {
-      snprintf( fname, FILENAME_MAX, "%s/%s.gwf",
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf",
                 outputPath, fileName );
     }
     else
     {
-      snprintf( fname, FILENAME_MAX, "%s.gwf", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
     frOutFile = FrFileONew( fname, 0 );
@@ -3097,22 +3093,24 @@ int main( int argc, char *argv[] )
   {
     if ( outCompress )
     {
-      snprintf( fname, FILENAME_MAX, "%s/%s.xml.gz", outputPath, fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml.gz",
+          outputPath, fileName );
     }
     else
     {
-      snprintf( fname, FILENAME_MAX, "%s/%s.xml", outputPath, fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+          outputPath, fileName );
     }
   }
   else
   {
     if ( outCompress )
     {
-      snprintf( fname, FILENAME_MAX, "%s.xml.gz", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml.gz", fileName );
     }
      else
     {
-      snprintf( fname, FILENAME_MAX, "%s.xml", fileName );
+      snprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
     }
   }
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
@@ -3419,10 +3417,6 @@ fprintf( a, "  --rsq-veto-coeff COEFF       set the r^2 veto coefficient to COEF
 fprintf( a, "  --rsq-veto-pow POW           set the r^2 veto power to POW\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --bank-veto-subbank-size N   set the number of tmplts in a subbank to N\n");\
-fprintf( a, "  --autochisq-length N         set the DOF of the autochisq to N in (1,1000)\n");\
-fprintf( a, "  --autochisq-stride N         set the stride of the autochisq to N in (1,1000)\n");\
-fprintf( a, "  --autochisq-two-sided        do a two-sided auto chisq test instead of one-sided.\n");\
-fprintf( a, "  --bank-veto-time-freq        do a time-frequency bank veto. \n");\
 fprintf( a, "\n");\
 fprintf( a, "  --maximization-interval MSEC set length of interval (in ms) for\n");\
 fprintf( a, "                                 maximization of triggers over the template bank.\n");\
@@ -3440,7 +3434,6 @@ fprintf( a, "  --band-pass-template         Band-pass filter the time-domain ins
 fprintf( a, "  --taper-template OPT         Taper the inspiral template using option OPT\n");\
 fprintf( a, "                                 (start|end|startend) \n");\
 fprintf( a, "\n");\
-fprintf( a, "  --cdata-length               Length of c-data snippet (in seconds) \n");\
 fprintf( a, "  --enable-output              write the results to a LIGO LW XML file\n");\
 fprintf( a, "  --output-mask MASK           write the output sngl_inspiral table\n");\
 fprintf( a, "                                 with optional MASK (bns|bcv) \n");\
@@ -3585,13 +3578,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rsq-veto-coeff",          required_argument, 0,                '['},
     {"rsq-veto-pow",            required_argument, 0,                ']'},
     {"bank-veto-subbank-size",  required_argument, 0,                ','},
-    {"autochisq-length",        required_argument, 0,                 0 },
-    {"autochisq-stride",        required_argument, 0,                 0 },
-    {"autochisq-two-sided",     no_argument,       &autochisqTwo    ,'}'},
-    {"bank-veto-time-freq",     no_argument,       &timeFreqBankVeto,'}'},
     {"band-pass-template",      no_argument,       0,                '}'},
     {"taper-template",          required_argument, 0,                '{'},
-    {"cdata-length",            required_argument, 0,                '|'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3628,7 +3616,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     c = getopt_long_only( argc, argv,
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
-        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:+:=:^:.:",
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:+:=:^:.:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -3640,33 +3628,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     switch ( c )
     {
       case 0:
-
-        /* check for autochisq long options */
-        if ( !strcmp( long_options[option_index].name, "autochisq-length") )
-        {
-          autochisqLength = atoi(optarg);
-	  /* FIXME have a sensible upper bound for dof computed from arguments */
-          if (autochisqLength < 1 || autochisqLength > 1000)
-          {
-          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
-                  long_options[option_index].name, optarg);
-          exit( 1 );
-          }
-          break;
-        }
-        /* check for autochisq long options */
-        if ( !strcmp( long_options[option_index].name, "autochisq-stride") )
-        {
-          autochisqStride = atoi(optarg);
-	  /* FIXME have a sensible upper bound for dof computed from arguments */
-          if (autochisqStride < 1 || autochisqStride > 1000)
-          {
-          fprintf(stderr, "error parsing option %s with argument %s\n must be int in range (1,1000)",
-                  long_options[option_index].name, optarg);
-          exit( 1 );
-          }
-          break;
-        }
         /* if this option set a flag, do nothing else now */
         if ( long_options[option_index].flag != 0 )
         {
@@ -4523,14 +4484,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf(stderr,"invalid power spectrum for colored Gaussian noise;"
                   "colorSpec must be either LIGO or advLIGO "
-                  "(%u specified)", colorSpec);
+                  "(%f specified)", colorSpec);
           exit( 1 );
         }
         coloredGaussian = 1;
         break;
 
       case 'N':
-        if ( snprintf( ckptPath, FILENAME_MAX, "%s", optarg ) < 0 )
+        if ( snprintf( ckptPath, FILENAME_MAX * sizeof(CHAR),
+                       "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "local path %s too long: string truncated\n",
@@ -4540,7 +4502,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
 
       case 'O':
-        if ( snprintf( outputPath, FILENAME_MAX, "%s", optarg ) < 0 )
+        if ( snprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
+                       "%s", optarg ) < 0 )
         {
           fprintf( stderr, "invalid argument to --%s\n"
               "output path %s too long: string truncated\n",
@@ -4581,8 +4544,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Search Engine\n"
-            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        fprintf( stdout, lalappsGitID );
         exit( 0 );
         break;
 
@@ -4928,18 +4893,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case '|':
-        CDataLength = atof( optarg );
-        if ( CDataLength < 0 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "Length of c-data snippet must be positive: "
-              "(%f specified)\n",
-              long_options[option_index].name, CDataLength );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
+
 
       default:
         fprintf( stderr, "unknown error while parsing options (%d)\n", c );
@@ -5061,7 +5015,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigStartTimeNS < gpsStartTimeNS )
     {
       fprintf( stderr,
-          "trigStartTimeNS = %" LAL_INT8_FORMAT "\nis less than gpsStartTimeNS = %" LAL_INT8_FORMAT,
+          "trigStartTimeNS = %ld\nis less than gpsStartTimeNS = %ld",
           trigStartTimeNS, gpsStartTimeNS );
     }
   }
@@ -5070,7 +5024,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( trigEndTimeNS > gpsEndTimeNS )
     {
       fprintf( stderr,
-          "trigEndTimeNS = %" LAL_INT8_FORMAT "\nis greater than gpsEndTimeNS = %" LAL_INT8_FORMAT,
+          "trigEndTimeNS = %ld\nis greater than gpsEndTimeNS = %ld",
           trigEndTimeNS, gpsEndTimeNS );
     }
   }
@@ -5165,10 +5119,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( inputDataLengthNS != gpsChanIntervalNS )
     {
       fprintf( stderr, "length of input data and data chunk do not match\n" );
-      fprintf( stderr, "start time: %" LAL_INT8_FORMAT ", end time %" LAL_INT8_FORMAT "\n",
-          (INT8)(gpsStartTimeNS / 1000000000LL), (INT8)(gpsEndTimeNS / 1000000000LL) );
-      fprintf( stderr, "gps channel time interval: %" LAL_INT8_FORMAT " ns\n"
-          "computed input data length: %" LAL_INT8_FORMAT "ns\n",
+      fprintf( stderr, "start time: %ld, end time %ld\n",
+          gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
+      fprintf( stderr, "gps channel time interval: %ld ns\n"
+          "computed input data length: %ld ns\n",
           gpsChanIntervalNS, inputDataLengthNS );
       exit( 1 );
     }

@@ -435,6 +435,7 @@ LALWriteLIGOLwXMLTable (
     )
 /* </lalVerbatim> */
 {
+
   /* print contents of the database struct into the xml table */
   INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
@@ -557,6 +558,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->eta,
               tablePtr.snglInspiralTable->kappa,
               tablePtr.snglInspiralTable->chi,
+              tablePtr.snglInspiralTable->s1z,
+              tablePtr.snglInspiralTable->s2z,
               tablePtr.snglInspiralTable->tau0,
               tablePtr.snglInspiralTable->tau2,
               tablePtr.snglInspiralTable->tau3,
@@ -730,6 +733,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->eta,
               tablePtr.multiInspiralTable->chi,
               tablePtr.multiInspiralTable->kappa,
+              tablePtr.multiInspiralTable->s1z,
+              tablePtr.multiInspiralTable->s2z,
               tablePtr.multiInspiralTable->tau0,
               tablePtr.multiInspiralTable->tau2,
               tablePtr.multiInspiralTable->tau3,
@@ -1378,6 +1383,8 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:eta\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:kappa\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:chi\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:s1z\" Type=\"real_4\"/>\n", xml->fp);
+	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:s2z\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau0\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau2\" Type=\"real_4\"/>\n", xml->fp);
 	fputs("\t\t<Column Name=\"sngl_inspiralgroup:sngl_inspiral:tau3\" Type=\"real_4\"/>\n", xml->fp);
@@ -1422,7 +1429,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
+		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
 			   row_head,
 			   sngl_inspiral->ifo,
 			   sngl_inspiral->search,
@@ -1444,6 +1451,8 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 			   sngl_inspiral->eta,
 			   sngl_inspiral->kappa,
 			   sngl_inspiral->chi,
+			   sngl_inspiral->s1z,
+			   sngl_inspiral->s2z,
 			   sngl_inspiral->tau0,
 			   sngl_inspiral->tau2,
 			   sngl_inspiral->tau3,

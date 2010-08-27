@@ -45,9 +45,12 @@ LALInspiralBankGeneration(
   REAL8 q         = 0;
   INT4  chicnt    = 0;
   INT4  kappacnt  = 0;
+  INT4  s1zcnt    = 0;
+  INT4  s2zcnt    = 0;
   INT4  numTmplts = 0;
   INT4  i;
   REAL8 *chi, *kappa, dChi, dKappa;
+  REAL8 *s1z, *s2z, ds1z, ds2z;
 
   INITSTATUS(status, "LALInspiralBankGeneration", INSPIRALBANKGENERATIONC);
   ATTATCHSTATUSPTR(status);
@@ -417,6 +420,83 @@ LALInspiralBankGeneration(
     if (*ntiles < 1){
       ABORT( status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
     }
+    break;
+
+  case PhenSpinTaylorRD:
+
+    s1z = malloc (input->nPointss1z * sizeof(REAL8));
+    s2z = malloc (input->nPointss2z * sizeof(REAL8));
+    ds1z = ( input->s1zMax - input->s1zMin) / (REAL8) input->nPointss1z;
+    ds2z = ( input->s2zMax - input->s2zMin) / (REAL8) input->nPointss2z;
+
+    for (i=0; i < input->nPointss1z; i++)
+    {
+      s1z[i] = input->s1zMin + ds1z *((REAL4)(i)+0.5);
+    }
+    for (i=0; i < input->nPointss2z; i++)
+    {
+      s2z[i] = input->s2zMin + ds2z *((REAL4)(i)+0.5);
+    }
+
+    /* Use LALInspiralCreateCoarseBank(). */
+    TRY( LALInspiralCreateCoarseBank( status->statusPtr, &coarseList, ntiles,
+         *input ), status );
+
+    /* Convert output data structure. */
+    bank = (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
+    if (bank == NULL){
+      ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+    }
+    *first = bank;
+
+    for ( s1zcnt = 0; s1zcnt < input->nPointss1z; s1zcnt++ )
+    {
+      for ( s2zcnt = 0; s2zcnt < input->nPointss2z; s2zcnt++ )
+	{
+	  for( cnt = 0; cnt < *ntiles; cnt++ )
+	    {
+	      /* restrict the bank boundaries to the region of validity of PTF */
+	      bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable ) );
+	      if (bank == NULL)
+		{
+		  ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+		}
+	      numTmplts     = numTmplts + 1 ;
+	      bank->mass1   = coarseList[cnt].params.mass1;
+	      bank->mass2   = coarseList[cnt].params.mass2;
+	      bank->mchirp  = coarseList[cnt].params.chirpMass;
+	      bank->mtotal  = coarseList[cnt].params.totalMass;
+	      bank->eta     = coarseList[cnt].params.eta;
+	      bank->s1z  = (REAL4) s1z[s1zcnt];
+	      bank->s2z  = (REAL4) s2z[s2zcnt];
+	      bank->tau0    = coarseList[cnt].params.t0;
+	      bank->tau2    = coarseList[cnt].params.t2;
+	      bank->tau3    = coarseList[cnt].params.t3;
+	      bank->tau4    = coarseList[cnt].params.t4;
+	      bank->tau5    = coarseList[cnt].params.t5;
+	      bank->ttotal  = coarseList[cnt].params.tC;
+	      bank->psi0    = coarseList[cnt].params.psi0;
+	      bank->psi3    = coarseList[cnt].params.psi3;
+	      bank->f_final = coarseList[cnt].params.fFinal;
+	      bank->eta     = coarseList[cnt].params.eta;
+	      bank->beta    = coarseList[cnt].params.beta;
+	      
+	      /* Copy the 10 metric co-efficients ... */
+	      memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
+	      
+	    }
+	}
+    }
+
+    free(s1z);
+    free(s2z);
+    /* Free first template, which is blank. */
+    bank = (*first)->next;
+    LALFree( *first );
+    *first = bank;
+    /* free the coarse list returned by create coarse bank */
+    LALFree( coarseList );
+    *ntiles = numTmplts;
     break;
 
   default:

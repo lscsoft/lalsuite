@@ -346,7 +346,6 @@ int main(int argc, char *argv[])
 
     /* structures for preconditioning */
     ResampleTSParams resampleParams;
-    LALWindowParams wpars;
     AverageSpectrumParams avgSpecParams;
 
     /* findchirp data structures */
@@ -1220,8 +1219,6 @@ int main(int argc, char *argv[])
     /* use the fft plan created by findchirp */
     avgSpecParams.plan = fcDataParams->fwdPlan;
 
-    wpars.type = Hann;
-    wpars.length = numPoints;
     if (badMeanPsd) {
         avgSpecParams.overlap = 0;
         if (vrbflg)
@@ -1232,8 +1229,7 @@ int main(int argc, char *argv[])
             fprintf(stdout, " with overlap %d\n", avgSpecParams.overlap);
     }
 
-    LAL_CALL(LALCreateREAL4Window(&status, &(avgSpecParams.window),
-                                  &wpars), &status);
+    avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
     LAL_CALL(LALREAL4AverageSpectrum
              (&status, &spec, &chan, &avgSpecParams), &status);
     XLALDestroyREAL4Window(avgSpecParams.window);
@@ -1410,6 +1406,7 @@ int main(int argc, char *argv[])
         case PadeT1:
         case EOB:
         case EOBNR:
+        case PhenSpinTaylorRD:
         case FindChirpPTF:
             if (vrbflg)
                 fprintf(stdout,
@@ -1558,6 +1555,7 @@ int main(int argc, char *argv[])
             case PadeT1:
             case EOB:
             case EOBNR:
+            case PhenSpinTaylorRD:
                 LAL_CALL(LALFindChirpTDTemplate
                          (&status, fcFilterInput->fcTmplt,
                           bankCurrent, fcTmpltParams), &status);
@@ -1658,6 +1656,7 @@ int main(int argc, char *argv[])
                   case PadeT1:
                   case EOB:
                   case EOBNR:
+                  case PhenSpinTaylorRD:
                     /* construct normalization for time domain templates... */
                     LAL_CALL( LALFindChirpTDNormalize( &status,
                           fcFilterInput->fcTmplt, fcFilterInput->segment,
@@ -1715,6 +1714,7 @@ int main(int argc, char *argv[])
                     case PadeT1:
                     case EOB:
                     case EOBNR:
+		    case PhenSpinTaylorRD:
                     case FindChirpSP:
                 */
 
@@ -1797,6 +1797,7 @@ int main(int argc, char *argv[])
                 case PadeT1:
                 case EOB:
                 case EOBNR:
+	        case PhenSpinTaylorRD:
                 case FindChirpSP:
                     /* the chisq bins need to be re-computed for the next template */
                     for (j = 0; j < fcSegVec->length; ++j) {
@@ -2193,7 +2194,7 @@ fprintf( a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n")
 fprintf( a, "\n");\
 fprintf( a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
 fprintf( a, "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n");\
-fprintf( a, "                                  TaylorT3|PadeT1|EOB|GeneratePPN|FindChirpPTF) \n");\
+fprintf( a, "                                  TaylorT3|PadeT1|EOB|EOBNR|PhenSpinTaylorRD|GeneratePPN|FindChirpPTF) \n");\
 fprintf( a, "  --order ORDER                set the pN order of the waveform to ORDER\n");\
 fprintf( a, "                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n");\
 fprintf( a, "                                  pseudoFourPN) \n");\
@@ -2859,6 +2860,8 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     approximant = EOB;
                 } else if (!strcmp("EOBNR", optarg)) {
                     approximant = EOBNR;
+                } else if (!strcmp("PhenSpinTaylorRD", optarg)) {
+                    approximant = PhenSpinTaylorRD;
                 } else if (!strcmp("FindChirpSP", optarg)) {
                     approximant = FindChirpSP;
                 } else if (!strcmp("BCV", optarg)) {
@@ -2874,7 +2877,7 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "unknown order specified: "
                             "%s (must be either FindChirpSP, BCV, BCVC, BCVSpin, FindChirpPTF\n"
-                            "TaylorT1, TaylorT2, TaylorT3, GeneratePPN, PadeT1 or EOB)\n",
+                            "TaylorT1, TaylorT2, TaylorT3, GeneratePPN, PadeT1, EOB, EOBNR or PhenSpinTaylorRD)\n",
                             long_options[option_index].name, optarg);
                     exit(1);
                 }
@@ -3085,14 +3088,16 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
                     bankSimParams.approx = PadeT1;
                 } else if (!strcmp("EOB", optarg)) {
                     bankSimParams.approx = EOB;
+		} else if (!strcmp("PhenSpinTaylorRD", optarg)) {
+		  bankSimParams.approx = PhenSpinTaylorRD;		
                 } else if (!strcmp("GeneratePPN", optarg)) {
                     bankSimParams.approx = GeneratePPN;
                 } else if (!strcmp("FrameFile", optarg)) {
                     bankSimParams.approx = FrameFile;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
-                            "unknown order specified: %s\n(must be one of TaylorT1, "
-                            "TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN, FrameFile)\n",
+                            "unknown approximant specified: %s\n(must be one of TaylorT1, "
+                            "TaylorT2, TaylorT3, PadeT1, EOB, PhenSpinTayloRD, GeneratePPN, FrameFile)\n",
                             long_options[option_index].name, optarg);
                     exit(1);
                 }
