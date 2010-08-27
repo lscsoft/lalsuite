@@ -500,7 +500,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
 
   default:
 
-    LALPrintError("'%i' is not a valid math. operation", type);
+    XLALPrintError("'%i' is not a valid math. operation", type);
     exit (-1);
 
   }

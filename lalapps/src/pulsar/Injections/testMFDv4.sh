@@ -95,6 +95,14 @@ if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdCODE' ..."
     exit 1
 fi
+# generate concatenated SFT
+mfdCL="$mfdCL.sft --outSingleSFT"
+cmdline="$mfdCODE $mfdCL";
+echo "$cmdline (concatenated SFT version)";
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdCODE' ..."
+    exit 1
+fi
 
 
 echo
@@ -163,9 +171,22 @@ else
 fi
 
 
+echo
+echo "comparison of concatenating SFTs:"
+
+cmdline="$cmpCODE -e 0.0 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
+echo ${cmdline}
+if ! eval $cmdline; then
+    echo "OUCH... concatenated SFTs differ! Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR1 $testDIR2 $testDIR3
+    rm -rf $testDIR1 $testDIR1.sft $testDIR2 $testDIR3
 fi
 
 

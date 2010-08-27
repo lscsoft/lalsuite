@@ -113,6 +113,12 @@ example uses of the functions tested by this code.
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/Random.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* prototype for function that runs the tests */
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status);
@@ -124,10 +130,9 @@ NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
 /* START FUNCTION: main                                  */
 /*                                                       */
 /*********************************************************/
-int main(int argc, char **argv)
+int main(int UNUSED argc, char **argv)
 {
 
-  int mainArgc = 0; /* 02/02/05 gam; */
   static LALStatus status; /* status structure */
 
   lalDebugLevel = 0;
@@ -136,8 +141,6 @@ int main(int argc, char **argv)
   status.statusCode = 0;
   status.statusPtr = NULL;
   status.statusDescription = NULL;
-
-  mainArgc = argc; /* 02/02/05 gam; get rid of warning about unused argc */
 
   /* Actual test are performed by this function */
   /* RunGeneratePulsarSignalTest(&status,argc,argv); */ /* 02/02/05 gam */
@@ -151,7 +154,7 @@ int main(int argc, char **argv)
   LALCheckMemoryLeaks();
 
   if ( lalDebugLevel & LALINFO ) {
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
        "        %s\n", *argv, __FILE__, __LINE__,
        GENERATEPULSARSIGNALTESTC, (GENERATEPULSARSIGNALTESTC_MSGENORM) );
   }
@@ -239,8 +242,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   REAL4 maxDiffSFTMod, diffAtMaxPower;
   REAL4 overallMaxDiffSFTMod;
   REAL4 maxMod, fastMaxMod;
-  INT4  jMaxMod, jFastMaxMod,jMaxDiff,jOverallMaxDiff;
-  INT4  iOverallMaxDiffSFTMod;
+  INT4  jMaxMod, jFastMaxMod;
   REAL4 tmpDiffSFTMod, sftMod, fastSFTMod;
   REAL4 smallMod = 1.e-30;
   REAL4 epsDiffMod;
@@ -602,8 +604,6 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        /* find maximum difference in power */
        epsDiffMod = 0.20; /* maximum allowed percent difference */ /* 10/12/04 gam */
        overallMaxDiffSFTMod = 0.0;
-       iOverallMaxDiffSFTMod = -1;
-       jOverallMaxDiff = -1;
        for (i = 0; i < numSFTs; i++) {
           renorm = ((REAL4)nsamples)/((REAL4)(outputSFTs->data[i].data->length - 1));
           maxDiffSFTMod = 0.0;
@@ -612,7 +612,6 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           fastMaxMod = 0.0;
           jMaxMod = -1;
           jFastMaxMod = -1;
-          jMaxDiff = -1;
           /* Since doppler shifts can move the signal by an unknown number of bins search the whole band for max modulus: */
           for(j=0;j<nBinsSFT;j++) {
                sftMod = renorm*renorm*outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + renorm*renorm*outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
@@ -623,12 +622,9 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
                    tmpDiffSFTMod = fabs((sftMod - fastSFTMod)/sftMod);
                    if (tmpDiffSFTMod > maxDiffSFTMod) {
                        maxDiffSFTMod = tmpDiffSFTMod;
-                       jMaxDiff = j;
                    }
                    if (tmpDiffSFTMod > overallMaxDiffSFTMod) {
                        overallMaxDiffSFTMod = tmpDiffSFTMod;
-                       iOverallMaxDiffSFTMod = i;
-                       jOverallMaxDiff = j;
                    }
                    if (sftMod > maxMod) {
                        maxMod = sftMod;

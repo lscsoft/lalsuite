@@ -117,7 +117,6 @@ snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
 snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
           "%s", sv_comment );                                         \
 
-#define rint(x) (floor((x)+0.5))
 #define ALLSKYSTR "allsky"
 
 /*

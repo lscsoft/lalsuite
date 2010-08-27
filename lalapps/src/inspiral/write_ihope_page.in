@@ -2157,7 +2157,7 @@ def copy_files(dataDir,webDir,name):
   '''
   A function to use find and xargs to copy a list of files
   '''
-  command = 'find ' + dataDir + ' -name "' + name + '" | xargs cp -r --target-directory ' + webDir
+  command = 'find ' + dataDir + ' -name "' + name + '" -maxdepth 1 | xargs cp -r --target-directory ' + webDir
   make_external_call(command, opts.debug, opts.debug, True)
 
 def copy_plot_directory(dataDir,webDir,open_box = True):
@@ -2172,6 +2172,9 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
     copy_files(dataDir,webDir,'*html')
     copy_files(dataDir,webDir,'*cache')
     command = 'cp -r ' + dataDir + '/Images '
+    command += webDir
+    make_external_call(command, opts.debug, opts.debug, True)
+    command = 'cp -r ' + dataDir + '/omega_scans '
     command += webDir
     make_external_call(command, opts.debug, opts.debug, True)
     print >> sys.stdout, '... Done'

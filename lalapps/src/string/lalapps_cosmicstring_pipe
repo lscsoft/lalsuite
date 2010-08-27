@@ -120,7 +120,7 @@ config_parser.read(options.config_file)
 #
 
 power.init_job_types(config_parser, job_types = ("datafind", "binj", "lladd", "binjfind", "burca", "sqlite"))
-cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likelihood", "calc_likelihood"))
+cosmicstring.init_job_types(config_parser, job_types = ("string", "meas_likelihood", "calc_likelihood", "runsqlite"))
 
 #
 # make directories to store the cache files, job logs, and trigger output
@@ -157,6 +157,7 @@ logfile = tempfile.mkstemp(prefix = basename, suffix = '.log', dir = options.log
 
 dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
+clipsegments_sql_filename = os.path.abspath("clipsegments.sql")
 
 #
 # get chunk lengths from the values in the ini file
@@ -281,7 +282,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
-		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 80000000.0 / len(these_time_slides), verbose = verbose):
+		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 40000000.0 / len(these_time_slides), verbose = verbose):
 			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache | vetoes_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
@@ -325,12 +326,13 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		coinc_nodes = [power.make_binjfind_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
-	# ligolw_sqlite
+	# ligolw_sqlite and lalapps_run_sqlite
 	#
 
 	if verbose:
 		print >>sys.stderr, "building sqlite jobs ..."
 	coinc_nodes = [power.make_sqlite_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
+	coinc_nodes = [cosmicstring.make_run_sqlite_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), clipsegments_sql_filename) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# lalapps_string_meas_likelihood
@@ -338,7 +340,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if verbose:
 		print >>sys.stderr, "building lalapps_string_meas_likelihood jobs ..."
-	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n)) for n, these_coinc_nodes in enumerate(coinc_nodes)]
+	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), files_per_meas_likelihood = not do_injections and 1 or None) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# write output cache
@@ -410,7 +412,7 @@ def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_no
 
 coinc_nodes = set()
 for n, (these_coinc_nodes, these_likelihood_nodes) in enumerate(round_robin_and_flatten(injection_coinc_nodes, injection_likelihood_nodes)):
-	coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, these_coinc_nodes, these_likelihood_nodes | all_background_likelihood_nodes, "%s_INJ_%d" % (user_tag, n), files_per_calc_likelihood = cosmicstring.calc_likelihoodjob.files_per_calc_likelihood, verbose = options.verbose)
+	coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, these_coinc_nodes, these_likelihood_nodes | all_background_likelihood_nodes, "%s_INJ_%d" % (user_tag, n), verbose = options.verbose)
 coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, flatten_node_groups(background_coinc_nodes), all_injection_likelihood_nodes | all_background_likelihood_nodes, user_tag, files_per_calc_likelihood = 1, verbose = options.verbose)
 
 
@@ -431,6 +433,7 @@ if options.verbose:
 	print >>sys.stderr, "writing dag ..."
 dag.write_sub_files()
 dag.write_dag()
+cosmicstring.write_clip_segment_sql_file(clipsegments_sql_filename)
 
 #
 # write a message telling the user that the DAG has been written

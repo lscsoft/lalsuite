@@ -346,7 +346,7 @@ int main(int argc,char *argv[])
 
       if ( (fpStat = fopen (uvar.outputStats, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputStats);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputStats);
 	  return (SYNTHBSTAT_ESYS);
 	}
 

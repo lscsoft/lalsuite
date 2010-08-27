@@ -94,6 +94,12 @@
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* a local function to compute the phase of the Fourier transform */
 void
 LALPsiOfT (
@@ -232,7 +238,7 @@ LALInspiralStationaryPhaseApprox1 (
 
 void
 LALPsiOfT(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *psioft,
    REAL8      v,
    void      *param
@@ -241,7 +247,6 @@ LALPsiOfT(
    REAL8 vf, dE, F;
    TofVIntegrandIn *par;
 
-   status = NULL;
    par = (TofVIntegrandIn *) param;
 
    /* The integrand below has an overall -ve sign as compared to

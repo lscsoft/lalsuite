@@ -466,6 +466,8 @@ _getopt_initialize (int argc, char *const *argv, const char *optstring)
 #endif
 
   return optstring;
+  (void)argc;
+  (void)argv;
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters

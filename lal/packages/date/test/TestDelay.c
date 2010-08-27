@@ -93,9 +93,6 @@ int main(int argc, char **argv)
   SkyPosition      source;
   REAL8            delay;
   REAL8            difference;
-  /* TwoDetsTimeAndASource dets_and_source; */
-  LALPlaceAndGPS        det1_and_gps;
-  /* LALPlaceAndGPS        det2_and_gps; */
 
   lalDebugLevel = 0;
 
@@ -179,9 +176,6 @@ int main(int argc, char **argv)
    */
   gps.gpsSeconds     = 60858;
   gps.gpsNanoSeconds = 0;
-
-  det1_and_gps.p_detector = &detector1;
-  det1_and_gps.p_gps      = &gps;
 
   delay = XLALTimeDelayFromEarthCenter(detector1.location, source.longitude, source.latitude, &gps);
   if (XLAL_IS_REAL8_FAIL_NAN(delay))

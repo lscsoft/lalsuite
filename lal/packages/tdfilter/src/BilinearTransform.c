@@ -126,18 +126,23 @@ LALSHeapIndex()                 LALDHeapIndex()
 
 NRCSID(BILINEARTRANSFORMC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*
  * WARNING: NOT A PROPER COMPARE FUNCTION
  * this returns -1 if abs(a)<abs(b), otherwise it returns 1 (don't check equal)
  * also: don't worry about possible overflow
  */
-static int CompareCOMPLEX8Abs( void *p, const void *a, const void *b )
+static int CompareCOMPLEX8Abs( void UNUSED *p, const void *a, const void *b )
 {
   REAL8 ar = ((const COMPLEX8 *)a)->re;
   REAL8 ai = ((const COMPLEX8 *)a)->im;
   REAL8 br = ((const COMPLEX8 *)b)->re;
   REAL8 bi = ((const COMPLEX8 *)b)->im;
-  p = NULL;
   if ( (ar*ar+ai*ai) < (br*br+bi*bi) )
     return -1;
   return 1;
@@ -148,13 +153,12 @@ static int CompareCOMPLEX8Abs( void *p, const void *a, const void *b )
  * this returns -1 if abs(a)<abs(b), otherwise it returns 1 (don't check equal)
  * also: don't worry about possible overflow
  */
-static int CompareCOMPLEX16Abs( void *p, const void *a, const void *b )
+static int CompareCOMPLEX16Abs( void UNUSED *p, const void *a, const void *b )
 {
   REAL8 ar = ((const COMPLEX16 *)a)->re;
   REAL8 ai = ((const COMPLEX16 *)a)->im;
   REAL8 br = ((const COMPLEX16 *)b)->re;
   REAL8 bi = ((const COMPLEX16 *)b)->im;
-  p = NULL;
   if ( (ar*ar+ai*ai) < (br*br+bi*bi) )
     return -1;
   return 1;

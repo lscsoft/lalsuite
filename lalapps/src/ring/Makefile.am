@@ -8,7 +8,10 @@ RINGPROG = \
 	lalapps_ringread \
 	lalapps_rinca \
 	lalapps_coincringread \
-	lalapps_collatesim
+	lalapps_collatesim \
+        lalapps_coh_PTF_inspiral \
+        lalapps_coh_PTF_testing \
+        lalapps_coh_PTF_spin_checker
 endif
 endif
 endif
@@ -49,6 +52,30 @@ lalapps_ring_SOURCES = \
 	spectrm.h \
 	segment.c \
 	segment.h
+lalapps_coh_PTF_inspiral_SOURCES = coh_PTF_inspiral.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c coh_PTF_utils.c \
+         errutil.c errutil.h \
+         gpstime.c gpstime.h \
+         injsgnl.c injsgnl.h \
+         getdata.c getdata.h \
+         getresp.c getresp.h \
+         spectrm.c spectrm.h \
+         segment.c segment.h
+lalapps_coh_PTF_testing_SOURCES = coh_PTF_testing.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c coh_PTF_bankveto.c coh_PTF_utils.c \
+         errutil.c errutil.h \
+         gpstime.c gpstime.h \
+         injsgnl.c injsgnl.h \
+         getdata.c getdata.h \
+         getresp.c getresp.h \
+         spectrm.c spectrm.h \
+         segment.c segment.h
+lalapps_coh_PTF_spin_checker_SOURCES = coh_PTF_spin_checker.c coh_PTF.h coh_PTF_option.c coh_PTF_template.c coh_PTF_output.c \
+         errutil.c errutil.h \
+         gpstime.c gpstime.h \
+         injsgnl.c injsgnl.h \
+         getdata.c getdata.h \
+         getresp.c getresp.h \
+         spectrm.c spectrm.h \
+         segment.c segment.h
 lalapps_rinj_SOURCES = rinj.c
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
@@ -73,7 +100,7 @@ bin_SCRIPTS = \
 	lalapps_ringcorse
 endif
 
-pkgdata_DATA = ring_test.ini
+pkgdata_DATA = ring_test.ini ringpost_remove_cluster.sql
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse

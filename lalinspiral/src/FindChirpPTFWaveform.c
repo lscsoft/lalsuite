@@ -60,13 +60,11 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 
-#ifndef isnan
-int isnan(double);
-#define isnan(x) ((isnan)((double)(x)))
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
 #endif
-
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
 
 NRCSID(FINDCHIRPPTFWAVEFORMC, "$Id$");
 
@@ -89,7 +87,7 @@ ptf_evolution_params_t;
 /* function that computes the derivatives of the dynamical */
 /* variables for the GSL ODE integrator                    */
 INT4 XLALPTFWaveformDerivatives(
-    REAL8 t, const REAL8 y[11], REAL8 dydt[11], void* params )
+    REAL8 UNUSED t, const REAL8 y[11], REAL8 dydt[11], void* params )
 {
   /* equation numbers in description of variables and algorithms refer to
    * Pan, Buonanno, Chan and Vallisneri, Phys. Rev. D 69, 104017 (2004)
@@ -188,9 +186,6 @@ INT4 XLALPTFWaveformDerivatives(
   /* phase evolution is purely orbital as we are working in the    */
   /* precessing converion: see the discussion after Eq. (14)       */
   const REAL8 dPhi_dt = omega;
-
-  /* t is unused in this function */
-  UNUSED(t);
 
   /* pass LNhat_dot_back so we can check it's constant */
   pn_params->LNhat_dot_S1 = LNhat_dot_S1;
@@ -494,9 +489,9 @@ XLALFindChirpPTFWaveform(
   /* Dynamical evolution variables and their derivatives */
   REAL8 Phi ;   /* gravitational wave phase in BCV2 Eq. (18)     */
   REAL8 omega;  /* omega as in Eq. (5)                           */
-  REAL8 S1x;    /* x-cmpt of first bodies spin in Eq. (6)        */
-  REAL8 S1y;    /* y-cmpt of first bodies spin in Eq. (6)        */
-  REAL8 S1z;    /* z-cmpt of first bodies spin in Eq. (6)        */
+  REAL8 UNUSED S1x;    /* x-cmpt of first bodies spin in Eq. (6)        */
+  REAL8 UNUSED S1y;    /* y-cmpt of first bodies spin in Eq. (6)        */
+  REAL8 UNUSED S1z;    /* z-cmpt of first bodies spin in Eq. (6)        */
   REAL8 LNhatx; /* x-cmpt of orb plane normal in Eq. (7)         */
   REAL8 LNhaty; /* y-cmpt of orb plane normal in Eq. (7)         */
   REAL8 LNhatz; /* z-cmpt of orb plane normal in Eq. (7)         */

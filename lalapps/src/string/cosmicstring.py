@@ -39,8 +39,16 @@ __version__ = '$Revision$'[11:-2]
 #
 
 
+def get_files_per_meas_likelihood(config_parser):
+	return config_parser.getint("pipeline", "files_per_meas_likelihood")
+
+
 def get_files_per_calc_likelihood(config_parser):
 	return config_parser.getint("pipeline", "files_per_calc_likelihood")
+
+
+def get_files_per_run_sqlite(config_parser):
+	return config_parser.getint("pipeline", "files_per_run_sqlite")
 
 
 #
@@ -63,6 +71,9 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 
 		self.cache_dir = power.get_cache_dir(config_parser)
 		self.output_dir = "."
+		self.files_per_meas_likelihood = get_files_per_meas_likelihood(config_parser)
+		if self.files_per_meas_likelihood < 1:
+			raise ValueError, "files_per_meas_likelihood < 1"
 
 
 class MeasLikelihoodNode(pipeline.CondorDAGNode):
@@ -137,6 +148,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def __init__(self, *args):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
+		self.likelihood_cache = []
 		self.output_cache = self.input_cache
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
@@ -144,14 +156,16 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.set_name(self, *args)
 		self.cache_name = os.path.join(self.cache_dir, "%s.cache" % self.get_name())
 		self.add_var_opt("input-cache", self.cache_name)
+		self.likelihood_cache_name = os.path.join(self.cache_dir, "%s_likelihood.cache" % self.get_name())
+		self.add_var_opt("likelihood-cache", self.likelihood_cache_name)
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
 		for c in cache:
 			self.add_output_file(c.path())
 
-	def add_likelihood_file(self, path):
-		self.add_var_arg("--likelihood-file %s" % path)
+	def add_likelihood_cache(self, cache):
+		self.likelihood_cache.extend(cache)
 
 	def add_file_arg(self, filename):
 		raise NotImplementedError
@@ -162,9 +176,15 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def get_output_cache(self):
 		return self.output_cache
 
+	def get_likelihood_cache(self):
+		return self.likelihood_cache
+
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
+			print >>f, str(c)
+		f = file(self.likelihood_cache_name, "w")
+		for c in self.likelihood_cache:
 			print >>f, str(c)
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 
@@ -193,7 +213,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
     self.set_sub_file("lalapps_StringSearch.sub")
-    self.add_condor_cmd("Requirements", "Memory > 1100")
+    #self.add_condor_cmd("Requirements", "Memory > 1100")
 
     self.output_dir = power.get_triggers_dir(config_parser)
 
@@ -265,6 +285,52 @@ class StringNode(pipeline.AnalysisNode):
     """
     self.add_var_opt("injection-file", file)
     self.add_input_file(file)
+
+
+class RunSqliteJob(pipeline.CondorDAGJob):
+	"""
+        A lalapps_run_sqlite job used by the gstlal pipeline. The static
+        options are read from the [lalapps_run_sqlite] section in the ini
+        file.  The stdout and stderr from the job are directed to the logs
+        directory.  The job runs in the universe specified in the ini file.
+        The path to the executable is determined from the ini file.
+	"""
+        def __init__(self, config_parser):
+                """
+                config_parser = ConfigParser object
+                """
+                pipeline.CondorDAGJob.__init__(self, power.get_universe(config_parser), power.get_executable(config_parser, "lalapps_run_sqlite"))
+                self.add_ini_opts(config_parser, "lalapps_run_sqlite")
+                self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
+                self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+                self.set_sub_file("lalapps_run_sqlite.sub")
+		self.files_per_run_sqlite = get_files_per_run_sqlite(config_parser)
+		if self.files_per_run_sqlite < 1:
+			raise ValueError, "files_per_run_sqlite < 1"
+
+
+class RunSqliteNode(pipeline.CondorDAGNode):
+        def __init__(self, *args):
+                pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = self.input_cache
+
+	def add_input_cache(self, cache):
+		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
+	def get_input_cache(self):
+		return self.input_cache
+
+	def get_output_cache(self):
+		return self.output_cache
+
+	def set_sql_file(self, filename):
+		self.add_var_opt("sql-file", filename)
 
 
 #
@@ -372,13 +438,14 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 stringjob = None
 meas_likelihoodjob = None
 calc_likelihoodjob = None
+runsqlitejob = None
 
 
-def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "calc_likelihood")):
+def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "calc_likelihood", "runsqlite")):
   """
   Construct definitions of the submit files.
   """
-  global stringjob, meas_likelihoodjob, calc_likelihoodjob
+  global stringjob, meas_likelihoodjob, calc_likelihoodjob, runsqlitejob
 
   # lalapps_StringSearch
   if "string" in job_types:
@@ -391,6 +458,10 @@ def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "
   # lalapps_string_calc_likelihood
   if "calc_likelihood" in job_types:
     calc_likelihoodjob = CalcLikelihoodJob(config_parser)
+
+  # lalapps_run_sqlite
+  if "runsqlite" in job_types:
+    runsqlitejob = RunSqliteJob(config_parser)
 
 
 #
@@ -496,21 +567,70 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 #
 # =============================================================================
 #
+#                           lalapps_run_sqlite Jobs
+#
+# =============================================================================
+#
+
+
+def write_clip_segment_sql_file(filename):
+	code = """DELETE FROM
+	segment
+WHERE
+	(end_time + 1e-9 * end_time_ns < (SELECT MIN(in_start_time + 1e-9 * in_start_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'))
+	OR
+	(start_time + 1e-9 * start_time_ns > (SELECT MAX(in_end_time + 1e-9 * in_end_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'));"""
+
+	print >>file(filename, "w"), code
+
+	return filename
+
+
+def make_run_sqlite_fragment(dag, parents, tag, sql_file, files_per_run_sqlite = None):
+	if files_per_run_sqlite is None:
+		files_per_run_sqlite = runsqlitejob.files_per_run_sqlite
+	nodes = set()
+	input_cache = power.collect_output_caches(parents)
+	while input_cache:
+		node = RunSqliteNode(runsqlitejob)
+		node.set_sql_file(sql_file)
+		node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_run_sqlite]])
+		for parent in set(parent for cache_entry, parent in input_cache[:files_per_run_sqlite]):
+			node.add_parent(parent)
+		del input_cache[:files_per_run_sqlite]
+		seg = power.cache_span(node.get_output_cache())
+		node.set_name("lalapps_run_sqlite_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		dag.add_node(node)
+		nodes.add(node)
+	return nodes
+
+
+#
+# =============================================================================
+#
 #                          lalapps_string_meas_likelihood Jobs
 #
 # =============================================================================
 #
 
 
-def make_meas_likelihood_fragment(dag, parents, tag):
-    node = MeasLikelihoodNode(meas_likelihoodjob)
-    node.set_name("lalapps_string_meas_likelihood_%s" % tag)
-    for parent in parents:
-        node.add_parent(parent)
-        node.add_input_cache(parent.get_output_cache())
-    node.set_output(tag)
-    dag.add_node(node)
-    return set([node])
+def make_meas_likelihood_fragment(dag, parents, tag, files_per_meas_likelihood = None):
+	if files_per_meas_likelihood is None:
+		files_per_meas_likelihood = meas_likelihoodjob.files_per_meas_likelihood
+	nodes = set()
+	input_cache = power.collect_output_caches(parents)
+	while input_cache:
+		node = MeasLikelihoodNode(meas_likelihoodjob)
+		node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_meas_likelihood]])
+		for parent in set(parent for cache_entry, parent in input_cache[:files_per_meas_likelihood]):
+			node.add_parent(parent)
+		del input_cache[:files_per_meas_likelihood]
+		seg = power.cache_span(node.get_input_cache())
+		node.set_name("lalapps_string_meas_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_output(tag)
+		dag.add_node(node)
+		nodes.add(node)
+	return nodes
 
 
 #
@@ -531,13 +651,14 @@ def make_calc_likelihood_fragment(dag, parents, likelihood_parents, tag, files_p
   while input_cache:
     node = CalcLikelihoodNode(calc_likelihoodjob)
     node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_calc_likelihood]])
-    for cache_entry, parent in input_cache[:files_per_calc_likelihood]:
+    for parent in set(parent for cache_entry, parent in input_cache[:files_per_calc_likelihood]):
       node.add_parent(parent)
     del input_cache[:files_per_calc_likelihood]
     seg = power.cache_span(node.get_input_cache())
     node.set_name("lalapps_string_calc_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
     for cache_entry, parent in likelihood_cache:
       node.add_parent(parent)
-      node.add_likelihood_file(cache_entry.path())
+      node.add_likelihood_cache([cache_entry])
     dag.add_node(node)
+    nodes.add(node)
   return nodes

@@ -127,15 +127,18 @@ if ( (func), (statusptr)->statusCode )                               \
 }                                                                    \
 while (0)
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 char *program;
 
 
 
 /* --- Main program start here --- */
-int main(int argc, char **argv)
+int main(int UNUSED argc, char **argv)
 {
   /* some variables to create the data */
   UINT4 	startTime;
@@ -155,10 +158,7 @@ int main(int argc, char **argv)
   CHAR *filename;
   UINT4 lenfile;
 
-  /* argc is unused in this function */
-  UNUSED(argc);
-
-   /* --- for debugging --- */
+  /* --- for debugging --- */
   lalDebugLevel = 33;
   program       = *argv;
 

@@ -58,8 +58,6 @@ NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
 /* <lalVerbatim file="FindChirpPTFFilterCP"> */
 
-double rint(double x);
-
 void
 LALFindChirpPTFFilterSegment (
     LALStatus                  *status,
@@ -74,9 +72,9 @@ LALFindChirpPTFFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT, max_eigen, r, s, x, y;
-  REAL4                 deltaF, fFinal, f_min, length;
+  REAL4                 deltaF, fFinal, f_min;
   REAL4                 u1[5], u2[5], v1[5], v2[5], *Binv;
-  REAL4                 N, thresh;
+  REAL4                 N;
   REAL4                 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2;
   COMPLEX8             *pft_snr            = NULL;
   COMPLEX8             *PTFQtilde, *qtilde, *PTFq, *inputData;
@@ -100,7 +98,6 @@ LALFindChirpPTFFilterSegment (
 
   /* template and data */
   inputData   = input->segment->data->data->data;
-  length      = input->segment->data->data->length;
   PTFQtilde   = input->fcTmplt->PTFQtilde->data;
   Binv        = input->fcTmplt->PTFBinverse->data;
 
@@ -260,9 +257,6 @@ LALFindChirpPTFFilterSegment (
   }
 
   /* now we have PTFqVec which contains <s|Q^I_0> + i <s|Q^I_\pi/2> */
-
-  /* set the threshold on max eigenvalue to be 48 (~ 7 for snr) */
-  thresh = 12.0 * N * N;
 
   for ( j = 0; j < numPoints; ++j ) /* beginning of main loop over time */
   {

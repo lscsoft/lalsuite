@@ -39,6 +39,7 @@ typedef struct
    REAL8 fspan;
    REAL8 Tobs;
    REAL8 Tcoh;
+   REAL8 SFToverlap;
    REAL8 searchstarttime;
    REAL8 Pmin;
    REAL8 Pmax;

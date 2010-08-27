@@ -173,7 +173,7 @@ def make_cache_entry(input_cache, description, path):
 
 def collect_output_caches(parents):
 	cache = [(cache_entry, parent) for parent in parents for cache_entry in parent.get_output_cache()]
-	cache.sort(lambda (a, ap), (b, bp): cmp(a.segment, b.segment))
+	cache.sort(key = lambda (cache_entry, parent): cache_entry.segment)
 	return cache
 
 
@@ -280,8 +280,8 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
 		self.set_sub_file("lalapps_binj.sub")
 
 		self.output_dir = "."
@@ -872,7 +872,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 
 	# ligolw_add
 	if "lladd" in job_types:
-		lladdjob = pipeline.LigolwAddJob(get_out_dir(config_parser), config_parser)
+		lladdjob = pipeline.LigolwAddJob(os.path.join(get_out_dir(config_parser)), config_parser)
 		lladdjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_binjfind
@@ -1097,7 +1097,7 @@ def make_binjfind_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BinjfindNode(binjfindjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:binjfindjob.files_per_binjfind]])
-		for cache_entry, parent in input_cache[:binjfindjob.files_per_binjfind]:
+		for parent in set(parent for cache_entry, parent in input_cache[:binjfindjob.files_per_binjfind]):
 			node.add_parent(parent)
 		del input_cache[:binjfindjob.files_per_binjfind]
 		seg = cache_span(node.get_input_cache())
@@ -1114,7 +1114,7 @@ def make_bucluster_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BuclusterNode(buclusterjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:buclusterjob.files_per_bucluster]])
-		for cache_entry, parent in input_cache[:buclusterjob.files_per_bucluster]:
+		for parent in set(parent for cache_entry, parent in input_cache[:buclusterjob.files_per_bucluster]):
 			node.add_parent(parent)
 		del input_cache[:buclusterjob.files_per_bucluster]
 		seg = cache_span(node.get_input_cache())
@@ -1132,7 +1132,7 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BucutNode(bucutjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:bucutjob.files_per_bucut]])
-		for cache_entry, parent in input_cache[:bucutjob.files_per_bucut]:
+		for parent in set(parent for cache_entry, parent in input_cache[:bucutjob.files_per_bucut]):
 			node.add_parent(parent)
 		del input_cache[:bucutjob.files_per_bucut]
 		seg = cache_span(node.get_input_cache())
@@ -1153,7 +1153,7 @@ def make_burca_fragment(dag, parents, tag, coincidence_segments = None, verbose 
 	while input_cache:
 		node = BurcaNode(burcajob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:burcajob.files_per_burca]])
-		for cache_entry, parent in input_cache[:burcajob.files_per_burca]:
+		for parent in set(parent for cache_entry, parent in input_cache[:burcajob.files_per_burca]):
 			node.add_parent(parent)
 		del input_cache[:burcajob.files_per_burca]
 		seg = cache_span(node.get_input_cache())

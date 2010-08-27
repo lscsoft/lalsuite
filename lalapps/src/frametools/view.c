@@ -628,7 +628,6 @@ int output_psd( const char *outfile, REAL4FrequencySeries *series )
 int output( const char *outfile, int outtype, REAL4TimeSeries *series )
 {
 	UINT4 i;
-	int nfreq;
 	FILE *fp;
 	fp = outfile ? fopen( outfile, "w" ) : stdout;
 
@@ -646,11 +645,9 @@ int output( const char *outfile, int outtype, REAL4TimeSeries *series )
 			}
 			break;
 		case WAVE_OUTPUT:
-			nfreq = 1.0/series->deltaT;
 			XLALAudioWAVRecordREAL4TimeSeries( fp, series );
 			break;
 		case AU_OUTPUT:
-			nfreq = 1.0/series->deltaT;
 			XLALAudioAURecordREAL4TimeSeries( fp, series );
 			break;
 		default:
