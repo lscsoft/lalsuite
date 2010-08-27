@@ -326,7 +326,14 @@ static int check_checksum(const char *filterfile, const char *claimed_chksum)
         perror("Problem in popen when checking checksum.");
         return -1;
     }
+<<<<<<< HEAD:lal/packages/support/src/ReadFiltersFile.c
     avoid_unused_err_msg=fgets(actual_chksum, sizeof actual_chksum, fpipe);
+=======
+    if ( !(fgets(actual_chksum, sizeof actual_chksum, fpipe)) ) {
+        perror("Problem in fgets when checking checksum.");
+        return -1;
+    }
+>>>>>>> b4bffbe06f92a7b4aeac12723d5f45523bbba2e2:lal/packages/support/src/ReadFiltersFile.c
     pclose(fpipe);
 
     /* Compare! */

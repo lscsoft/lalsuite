@@ -730,7 +730,7 @@ int main(int argc,char *argv[])
     fprintf(fpFstatHist, "%s", GV.logstring);
 
     for (i = 0; i < Fstat_histogram->size; ++i)
-      fprintf(fpFstatHist, "%0.3g %0.3g %i\n",
+      fprintf(fpFstatHist, "%0.3f %0.3f %i\n",
 	      uvar.FstatHistBin * i,
 	      uvar.FstatHistBin * (i + 1),
 	      gsl_vector_int_get(Fstat_histogram, i));
@@ -748,11 +748,14 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
   XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
+  /* free memory allocated for binary parameters */
+  if (orbitalParams) LALFree(orbitalParams);
+  
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
     gsl_vector_int_free(Fstat_histogram);
-
+  
   /* close log-file */
   if (fpLogPrintf) {
     fclose(fpLogPrintf);

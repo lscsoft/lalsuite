@@ -18,7 +18,7 @@
  */
 
 /** \author J. T. Whelan, Reinhard Prix
- * \ingroup pulsar
+ * \ingroup pulsarAntenna
  * \file
  * \brief
  * Functions related to F-statistic calculation when the AM coefficients are complex.

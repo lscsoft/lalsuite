@@ -113,7 +113,6 @@ struct CommandLineArgsTag {
   REAL4 fmismatchmax;         /* maximal mismatch allowed from 1 template to the next */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO/Virgo xml injection file */
-  char *VetoFile;             /* LIGO/Virgo veto file */
   char *ChannelName;          /* Name of channel to be read in from frames */
   char *outputFileName;       /* Name of xml output filename */
   INT4 GPSStart;              /* GPS start time of segment to be analysed */
@@ -180,12 +179,7 @@ MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
 
-CHAR outfilename[256];
 CHAR ifo[4];
-
-long double veto_start[100000];/* start of veto segments */
-long double veto_end[100000];  /* end of veto segments */
-int nseg;                     /* number of veto segments */
 
 REAL4 SAMPLERATE;
 
@@ -201,9 +195,6 @@ PassBandParamStruc highpassParams;
 
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
-
-/* Reads Veto file */
-int ReadVetoFile(struct CommandLineArgsTag CLA);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
@@ -260,12 +251,6 @@ int main(int argc,char *argv[])
   highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
   printf("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   
-  /****** ReadVetoFile ******/
-  if (CommandLineArgs.VetoFile != NULL) {
-    printf("ReadVetoFile()\n");
-    if (ReadVetoFile(CommandLineArgs)) return 2;
-  }
-
   /****** ReadData ******/
   printf("ReadData()\n");
   if (ReadData(CommandLineArgs)) return 4;
@@ -456,18 +441,16 @@ int OutputEvents(struct CommandLineArgsTag CLA){
   LIGOLwXMLStream *xml;
   
   if (!CLA.outputFileName){
+    CHAR outfilename[256];
     snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
 	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
 	     searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
 	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
     outfilename[sizeof(outfilename)-1] = '\0';
+    xml = XLALOpenLIGOLwXMLFile(outfilename);
   }
-  else{
-    snprintf(outfilename, sizeof(outfilename)-1, "%s", CLA.outputFileName);
-    outfilename[sizeof(outfilename)-1] = '\0';
-  }
-
-  xml = XLALOpenLIGOLwXMLFile(outfilename);
+  else
+    xml = XLALOpenLIGOLwXMLFile(CLA.outputFileName);
 
   /* process table */
   snprintf(procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
@@ -502,13 +485,12 @@ int OutputEvents(struct CommandLineArgsTag CLA){
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurst **thisEvent){
-  int s, p, pp, veto;
+  int p, pp;
   REAL4 maximum, chi2, ndof;
   REAL8 duration;
   INT4 pmax, pend, pstart;
   INT8  peaktime, starttime;
   INT8  timeNS;
-  double eventtime;
 
 
   /* print the snr to stdout */
@@ -548,25 +530,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       peaktime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pmax );
       duration = GV.ht_proc->deltaT * ( pend - pstart );
       starttime = timeNS + (INT8) round( 1e9 * GV.ht_proc->deltaT * pstart );
-
-      /* Apply vetoes */
-      if ( nseg>0 ){
-
-	/* time of the event given with nano-seconds */
-	eventtime=(double)peaktime/1e9;
-
-	/* the event is OK by default unless... */
-	veto=0;
-		    
-	/* ...it is inside a veto segment */
-	for(s=0; veto==0&&s<nseg; s++){
-	  if(eventtime>=veto_start[s] && eventtime<veto_end[s]) veto=1;
-	}
-	
-	/* rejection if veto */
-	if(veto) continue;
-      }
-	
 
       /* compute \chi^{2} */
       chi2=0, ndof=0;
@@ -683,7 +646,6 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
   REAL4Vector    *vector; /* time-domain vector workspace */
   REAL4 re, im;
   REAL4TimeSeries series;
-  CHAR filterfilename[256];
 
   vector = XLALCreateREAL4Vector( GV.seg_length);
   vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
@@ -729,13 +691,15 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
         
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
+      CHAR filterfilename[256];
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
-      filterfilename[sizeof(outfilename)-1] = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALSPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
     /* print out the time domain FIR filter */
     if (CLA.printfirflag){
+      CHAR filterfilename[256];
       series.deltaT=GV.ht_proc->deltaT;
       series.f0 = 0.0;
       strncpy(series.name, "fir filter", LALNameLength);
@@ -757,7 +721,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA){
       series.data = vector;
       
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
-      filterfilename[sizeof(outfilename)-1] = '\0';
+      filterfilename[sizeof(filterfilename)-1] = '\0';
       LALSPrintTimeSeries( &series, filterfilename );
     }
   }
@@ -1115,47 +1079,6 @@ int ReadData(struct CommandLineArgsTag CLA){
 }
 
 
-
-/*******************************************************************************/
-
-int ReadVetoFile(struct CommandLineArgsTag CLA){
- 
-  FILE *VetoFile;
-  int seg_index;
-  char line[1024];
-  long double gps_start, gps_end, duration;
- 
-  /* Open the veto file */
-  VetoFile = fopen (CLA.VetoFile,"r");
-
-  /* Initialization */
-  nseg=0;
-
-  /* If the file does not exist, no veto are applied */
-  if (VetoFile==NULL){
-    printf("\tNo Veto file --> no veto are applied\n");
-    return 0;
-  }
-
-  /* Read the file line by line */
-  while(fgets(line,sizeof(line),VetoFile)){
-    sscanf (line,"%d %Lf %Lf %Lf",&seg_index,&gps_start,&gps_end,&duration);
-    
-    /* Store the start and the end of each segment */    
-    veto_start[nseg]=gps_start;
-    veto_end[nseg]=gps_end;
-    nseg++;
-    if(nseg==100000){ 
-      printf("\tToo many segments in the veto file\n"); 
-      return 1;
-    }
-  }
-  
-  fclose(VetoFile);
-  
-  return 0;
-}
-
 /*******************************************************************************/
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
@@ -1174,7 +1097,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     {"gps-end-time",              required_argument,	NULL,	'E'},
     {"gps-start-time",            required_argument,	NULL,	'S'},
     {"injection-file",            required_argument,	NULL,	'i'},
-    {"veto-file",                 required_argument,	NULL,	'v'},
     {"short-segment-duration",    required_argument,	NULL,	'd'},
     {"settling-time",             required_argument,	NULL,	'T'},
     {"sample-rate",               required_argument,	NULL,	's'},
@@ -1220,7 +1142,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   CLA->fmismatchmax=0.05;
   CLA->FrCacheFile=NULL;
   CLA->InjectionFile=NULL;
-  CLA->VetoFile=NULL;
   CLA->ChannelName=NULL;
   CLA->outputFileName=NULL;
   CLA->GPSStart=0;
@@ -1250,10 +1171,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
   memset(CLA->chi2cut, 0, sizeof(CLA->chi2cut));
   CLA->chi2cut[0]=CLA->chi2cut[1]=CLA->chi2cut[2]=-9999.1;
 
-  /* initialise veto stuff */
-  memset(veto_start, 0, sizeof(veto_start));
-  memset(veto_end, 0, sizeof(veto_end));
-  
   /* Scan through list of command line arguments */
   while ( 1 )
   {
@@ -1311,11 +1228,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
     case 'i':
       /* name of xml injection file */
       CLA->InjectionFile=optarg;
-      ADD_PROCESS_PARAM(procTable.processTable, "string");
-      break;
-    case 'v':
-      /* name of veto file */
-      CLA->VetoFile=optarg;
       ADD_PROCESS_PARAM(procTable.processTable, "string");
       break;
     case 'o':
@@ -1440,7 +1352,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA){
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
-      fprintf(stdout,"\t--veto-file (-v)\t\tSTRING\t Name of veto file.\n");
       fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");

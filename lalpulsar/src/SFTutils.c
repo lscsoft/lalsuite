@@ -974,39 +974,69 @@ LALMakeTimestamps(LALStatus *status,
 } /* LALMakeTimestamps() */
 
 
-/** Extract timstamps-vector from the given SFTVector.
+/** Deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
  */
 void
 LALGetSFTtimestamps (LALStatus *status,
 		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 		     const SFTVector *sfts )		/**< input SFT-vector  */
 {
-  UINT4 numSFTs;
-  UINT4 i;
+  const char *fn = __func__;
+
   LIGOTimeGPSVector *ret = NULL;
 
-  INITSTATUS (status, "LALGetSFTtimestamps", SFTUTILSC );
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS (status, fn, SFTUTILSC );
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts->length > 0, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( *timestamps == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
 
-  numSFTs = sfts->length;
-
-  TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
-
-  for ( i=0; i < numSFTs; i ++ )
-    ret->data[i] = sfts->data[i].epoch;
+  if ( ( ret = XLALExtractTimestampsFromSFTs ( sfts )) == NULL ) {
+    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", fn, xlalErrno );
+    ABORT (status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC);
+  }
 
   /* done: return Ts-vector */
   (*timestamps) = ret;
 
-  DETATCHSTATUSPTR(status);
   RETURN(status);
 
 } /* LALGetSFTtimestamps() */
+
+
+
+/** Extract timstamps-vector from the given SFTVector
+ */
+LIGOTimeGPSVector *
+XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vector  */
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !sfts ) {
+    XLALPrintError ("%s: invalid NULL input 'sfts'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numSFTs = sfts->length;
+  /* create output vector */
+  LIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCreateTimestampVector ( numSFTs )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  REAL8 Tsft = 1.0 / sfts->data[0].deltaF;
+  ret->deltaT = Tsft;
+
+  UINT4 i;
+  for ( i=0; i < numSFTs; i ++ )
+    ret->data[i] = sfts->data[i].epoch;
+
+  /* done: return Ts-vector */
+  return ret;
+
+} /* XLALExtractTimestampsFromSFTs() */
 
 
 /** Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
@@ -1015,42 +1045,37 @@ LALGetSFTtimestamps (LALStatus *status,
 MultiLIGOTimeGPSVector *
 XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 {
-  static const char *fn = "XLALExtractMultiTimestampsFromSFTs()";
+  static const char *fn = __func__;
 
-  UINT4 X, i, numIFOs, numSFTs;
-  MultiLIGOTimeGPSVector *ret = NULL;
-
+  /* check input consistency */
   if ( !multiSFTs || multiSFTs->length == 0 ) {
     XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
+  UINT4 numIFOs = multiSFTs->length;
 
+  /* create output vector */
+  MultiLIGOTimeGPSVector *ret = NULL;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
     XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", fn, sizeof(*ret));
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
-  numIFOs = multiSFTs->length;
-
-  if ( (ret->data = XLALCalloc ( numIFOs, sizeof(ret->data[0]) )) == NULL ) {
+  if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
     XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", fn, numIFOs, sizeof(ret->data[0]) );
     XLALFree (ret);
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
   ret->length = numIFOs;
 
+  /* now extract timestamps vector from each SFT-vector */
+  UINT4 X;
   for ( X=0; X < numIFOs; X ++ )
     {
-      numSFTs = multiSFTs->data[X]->length;
-
-      if ( (ret->data[X] = XLALCreateTimestampVector (numSFTs)) == NULL ) {
-        XLALPrintError ("%s: XLALCreateTimestampVector (%d) failed.\n", fn, numSFTs );
+      if ( (ret->data[X] = XLALExtractTimestampsFromSFTs ( multiSFTs->data[X] )) == NULL ) {
+        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", fn, X );
         XLALDestroyMultiTimestamps ( ret );
-        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-      }
-
-      for ( i=0; i < numSFTs; i ++ ) {
-        ret->data[X]->data[i] = multiSFTs->data[X]->data[i].epoch;
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
       }
 
     } /* for X < numIFOs */
@@ -1058,7 +1083,6 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   return ret;
 
 } /* XLALExtractMultiTimestampsFromSFTs() */
-
 
 
 /** Destroy a MultiLIGOTimeGPSVector timestamps vector
@@ -1649,3 +1673,12 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
   return ret;
 
 } /* XLALrefineCOMPLEX8Vector() */
+
+
+/* ============================================================
+ * deprecated LAL interface API follow below
+ * mostly these are now just LAL-wrappers to the corresponding
+ * XLAL-inteface functions
+ * ============================================================
+ */
+

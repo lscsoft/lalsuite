@@ -1,4 +1,4 @@
-AC_INIT([lalframe],[1.0.0.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalframe],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -44,8 +44,22 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalframe])
 LALSUITE_ENABLE_NIGHTLY
 
 # put version/configure info in config header
+lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
+lalframe_version_minor=`echo "$VERSION" | cut -d. -f2`
+lalframe_version_micro=`echo "$VERSION" | cut -d. -f3`
+lalframe_version_devel=`echo "$VERSION" | cut -d. -f4-`
+test -z "$lalframe_version_micro" && lalframe_version_micro=0
+test -z "$lalframe_version_devel" && lalframe_version_devel=0
 lalframe_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 AC_DEFINE_UNQUOTED([LALFRAME_VERSION],["$VERSION"],[LALFrame Version])
+AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MAJOR],[$lalframe_version_major],
+                   [LALFrame Version Major Number])
+AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MINOR],[$lalframe_version_minor],
+                   [LALFrame Version Minor Number])
+AC_DEFINE_UNQUOTED([LALFRAME_VERSION_MICRO],[$lalframe_version_micro],
+                   [LALFrame Version Micro Number])
+AC_DEFINE_UNQUOTED([LALFRAME_VERSION_DEVEL],[$lalframe_version_devel],
+                   [LALFrame Version Devel Number])
 AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALFrame Configure Arguments])
 AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_DATE],["$lalframe_configure_date"],

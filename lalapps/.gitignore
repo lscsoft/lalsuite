@@ -30,6 +30,7 @@ misc/lalapps-user-env.*sh
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrainDriver
+src/calibration/lalapps_NoiseComparison
 src/calibration/lalapps_noise_comp_pipe
 src/calibration/lalapps_strain_pipe
 src/config.h
@@ -48,6 +49,7 @@ src/frametools/lalapps_animate
 src/frametools/lalapps_calfacs
 src/frametools/lalapps_combinexteframes
 src/frametools/lalapps_computespec
+src/frametools/lalapps_framestats
 src/frametools/lalapps_frextr
 src/frametools/lalapps_frinfo
 src/frametools/lalapps_frjoin

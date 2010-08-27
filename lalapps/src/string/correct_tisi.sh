@@ -35,9 +35,9 @@ while read line; do
 	    V1offset=`echo "0-($L1offset)" | bc`
 
 	    if [ ! ${L1offset} == ${previous_offset} ]; then
-		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "H1","time_slide:time_slide_id:'$config'","process:process_id:0,",0' ${new_tisi_file} > ${tmp_tisi_file}
+		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "H1","time_slide:time_slide_id:'$config'","process:process_id:0",0,' ${new_tisi_file} > ${tmp_tisi_file}
 		mv ${tmp_tisi_file} ${new_tisi_file}
-		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "H2","time_slide:time_slide_id:'$config'","process:process_id:0,",0' ${new_tisi_file} > ${tmp_tisi_file}
+		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "H2","time_slide:time_slide_id:'$config'","process:process_id:0",0,' ${new_tisi_file} > ${tmp_tisi_file}
 		mv ${tmp_tisi_file} ${new_tisi_file}
 		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "L1","time_slide:time_slide_id:'$config'","process:process_id:0",'$L1offset',' ${new_tisi_file} > ${tmp_tisi_file}
 		mv ${tmp_tisi_file} ${new_tisi_file}

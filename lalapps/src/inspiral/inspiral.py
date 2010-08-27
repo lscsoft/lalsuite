@@ -2340,7 +2340,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'minifollowups'
-    sections = ['minifollowups']
+    sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
@@ -3239,7 +3239,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
     if output_tag:
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
-      self.add_opt("use-expected-loudest-event",'')
+      self.add_var_opt("use-expected-loudest-event",'')
 
 
 class SearchUpperLimitJob(pipeline.SqliteJob):

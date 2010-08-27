@@ -359,7 +359,6 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries       injResp;
   COMPLEX8FrequencySeries      *injRespPtr;
   ResampleTSParams              resampleParams;
-  LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
 
   /* findchirp data structures */
@@ -1654,8 +1653,6 @@ int main( int argc, char *argv[] )
   /* use the fft plan created by findchirp */
   avgSpecParams.plan = fcDataParams->fwdPlan;
 
-  wpars.type = Hann;
-  wpars.length = numPoints;
   if ( badMeanPsd )
   {
     avgSpecParams.overlap = 0;
@@ -1668,8 +1665,7 @@ int main( int argc, char *argv[] )
       fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
   }
 
-  LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
-        &wpars ), &status );
+  avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
       &status );
   XLALDestroyREAL4Window( avgSpecParams.window );

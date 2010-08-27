@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALPULSAR_VCS_NAME "LALPulsar"
 #define LALPULSAR_VCS_ID "@ID@"
 #define LALPULSAR_VCS_DATE "@DATE@"
 #define LALPULSAR_VCS_BRANCH "@BRANCH@"
@@ -50,6 +51,7 @@ extern "C" {
 /* vcs information structures */
 extern struct tagLALVCSInfo lalPulsarVCSInfo;
 static const struct tagLALVCSInfo lalPulsarHeaderVCSInfo = { \
+  LALPULSAR_VCS_NAME, \
   LALPULSAR_VERSION, \
   LALPULSAR_VCS_ID, \
   LALPULSAR_VCS_DATE, \
