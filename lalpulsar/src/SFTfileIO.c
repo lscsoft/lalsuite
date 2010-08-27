@@ -52,6 +52,7 @@
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
+#include <lal/ConfigFile.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
@@ -3447,6 +3448,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 /*----------------------------------------------------------------------
  * glob() has been reported to fail under condor, so we use our own
  * function to get a filelist from a directory, using a glob-like pattern.
+ * also can read a list of file names from a "list file".
  *
  * looks pretty ugly with all the #ifdefs for the Microsoft C compiler
  *
@@ -3456,6 +3458,7 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 static LALStringVector *
 find_files (const CHAR *globdir)
 {
+  const CHAR *fn = __func__;
 #ifndef _MSC_VER
   DIR *dir;
   struct dirent *entry;
@@ -3547,6 +3550,83 @@ find_files (const CHAR *globdir)
       }
 
     } /* if multi-pattern */
+
+  /* read list of file names from a "list file" */
+#define LIST_PREFIX "list:"
+  else if (strncmp(globdir, LIST_PREFIX, strlen(LIST_PREFIX)) == 0) {
+    LALParsedDataFile *list = NULL;
+    CHAR* listfname = NULL;
+
+    /* create list file name
+       prefix with "./" if not an absolute file name (see LALOpenDataFile()) */
+    if ((listfname = LALCalloc(1, strlen(globdir) + 3)) == NULL) {
+      return NULL;
+    }
+    ptr1 = globdir + strlen(LIST_PREFIX);
+    if (*ptr1 == '/')
+      *listfname = '\0';
+    else
+      strcpy(listfname, "./");
+    strcat(listfname, ptr1);
+#undef LIST_PREFIX
+
+    /* read list of file names from file */
+    if (XLALParseDataFile(&list, listfname) != XLAL_SUCCESS) {
+      XLALPrintError("\n%s: Could not parse list file '%s'\n", fn, listfname);
+      return NULL;
+    }
+
+    /* allocate "filelist" */
+    numFiles = list->lines->nTokens;
+    if (numFiles == 0) {
+      XLALPrintWarning("\n%s: List file '%s' contains no file names\n", fn, listfname);
+      LALFree(listfname);
+      XLALDestroyParsedDataFile(&list);
+      return NULL;
+    }
+    if ((filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
+      LALFree(listfname);
+      XLALDestroyParsedDataFile(&list);
+      return NULL;
+    }
+
+    /* copy file names from "list" to "filelist" */
+    for (j = 0; j < numFiles; ++j) {
+      ptr1 = list->lines->tokens[j];
+
+      /* these prefixes are added to file names by e.g. ligo_data_find */
+#define FILE_PREFIX "file://localhost"
+      if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
+	ptr1 += strlen(FILE_PREFIX);
+      }
+#undef FILE_PREFIX
+      else
+#define FILE_PREFIX "file://"
+      if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
+	ptr1 += strlen(FILE_PREFIX);
+      }
+#undef FILE_PREFIX
+
+      /* allocate "filelist", and cleanup if it fails  */
+      if ((filelist[j] = LALCalloc(1, strlen(ptr1) + 1)) == NULL) {
+	while (j-- > 0)
+	  LALFree(filelist[j]);
+	LALFree(filelist);
+	LALFree(listfname);
+	XLALDestroyParsedDataFile(&list);
+	return NULL;
+      }
+
+      /* copy string */
+      strcpy(filelist[j], ptr1);
+
+    }
+
+    /* cleanup */
+    LALFree(listfname);
+    XLALDestroyParsedDataFile(&list);
+
+  } /* if list file */
 
   else if (is_pattern(globdir))
 
