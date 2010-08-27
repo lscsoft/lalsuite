@@ -609,10 +609,8 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
   vtilde = XLALCreateCOMPLEX16Vector( GV.seg_length / 2 + 1 );
  
   for (m = 0; m < NTemplates; m++){
-
     /* Initialize the filter */
-    strtemplate[m].StringFilter = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, Spec->data->length);
-    strtemplate[m].StringFilter->deltaF=Spec->deltaF;
+    strtemplate[m].StringFilter = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, Spec->deltaF, &lalStrainUnit, Spec->data->length);
 
     /* populate vtilde with the template divided by the noise */
     for ( p = 0; p < vtilde->length; p++ ){
@@ -637,6 +635,7 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, REAL
     /* forward fft the truncated vector into vtilde */
     if(XLALREAL8ForwardFFT( vtilde, vector, fplan )) return 1;
 
+    /* store the square magnitude in the filter */
     for ( p = 0 ; p < vtilde->length-1; p++ ){
       re = vtilde->data[p].re * ht->deltaT;
       im = vtilde->data[p].im * ht->deltaT;
