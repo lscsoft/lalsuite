@@ -110,12 +110,14 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
               lalapps_ihope_status lalapps_write_ihope_page \
 	      lalapps_compare_ini lalapps_link_old_ihope \
 	      lalapps_generate_upper_limits lalapps_followup0_page \
-	      lalapps_cbc_pipedown lalapps_glitch_probe
+	      lalapps_cbc_pipedown lalapps_glitch_probe \
+              lalapps_cohPTF_hipe
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
 dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass \
-                   lalapps_cbc_code_compare
+                   lalapps_cbc_code_compare \
+                   followup/followup_InspiralDataMover.sh
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
@@ -156,6 +158,9 @@ lalapps_multi_hipe: $(srcdir)/multi_hipe.in python_config.sed
 lalapps_trigger_hipe: $(srcdir)/trigger_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/trigger_hipe.in > lalapps_trigger_hipe
 	chmod +x lalapps_trigger_hipe
+lalapps_cohPTF_hipe: $(srcdir)/cohPTF_hipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/cohPTF_hipe.in > lalapps_cohPTF_hipe
+	chmod +x lalapps_cohPTF_hipe
 lalapps_check_hipe_times: $(srcdir)/check_hipe_times.in python_config.sed
 	sed -f python_config.sed $(srcdir)/check_hipe_times.in > lalapps_check_hipe_times
 	chmod +x lalapps_check_hipe_times
@@ -195,7 +200,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiralutils.py inspiral_pipe.in \
-             inspiral_online_pipe.in inspiral_hipe.in \
+             inspiral_online_pipe.in inspiral_hipe.in cohPTF_hipe.in \
 	     multi_hipe.in trigger_hipe.in ihope.in ihope_status.in\
              inspiral_online_pipe_inject.in check_hipe_times.in \
 	     followup0_pipe.in plot_hipe.in  write_ihope_page.in\

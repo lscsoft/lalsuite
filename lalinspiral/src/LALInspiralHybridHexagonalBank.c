@@ -322,7 +322,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 
     i=0;
     while (i<cellEvolution.nTemplate){
-      if (cells[i].status == Edge){
+      if (cells[i].position == Edge){
 	edge1 = i;
 	cells[i].status = In;
 	i=cellEvolution.nTemplate;
@@ -331,7 +331,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     }
     i=0;
     while (i<cellEvolution.nTemplate){
-      if (cells[i].status == Edge){
+      if (cells[i].position == Edge){
 	edge2=i;
 	cells[i].status = In;
 	i=cellEvolution.nTemplate;
@@ -597,8 +597,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
 		      )
 {
   REAL4 dx0, dx1;
-  REAL4 theta, ctheta,stheta;
-  INT4 offSpring;
+  REAL4 theta;
   INT4 next, iteration;
   REAL4 x_int, y_int,xr_int, yr_int, c,s, dy,theta_min, theta_max, theta_int, a, b, t0, t3;
 
@@ -614,9 +613,6 @@ LALPopulateNarrowEdge(LALStatus               *status,
     dx0           = (*cell)[headId].dx0/sqrt(2.);
     dx1           = (*cell)[headId].dx1/sqrt(2.);
     theta         = (*cell)[headId].metric.theta;
-    ctheta        = cos(theta); /*aliases*/
-    stheta        = sin(theta); /*aliases*/
-    offSpring     = cellEvolution->nTemplate;
 
     /* reallocate memory by set of 1000 cells if needed*/
     if ( cellEvolution->nTemplate  >= cellEvolution->nTemplateMax){

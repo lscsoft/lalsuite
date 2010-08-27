@@ -22,8 +22,11 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALNoiseModels.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (LALLIGOIPSDC,"$Id$");
 
@@ -33,15 +36,14 @@ NRCSID (LALLIGOIPSDC,"$Id$");
  * frequency.  The input is frequency in Hz, and the return value is the
  * noise spectral density, $S_{h}(f)$, for that frequency.
  *
- * The noise PSD is based on data provided by K. Blackburn (see T. Damour,
- * B.R.  Iyer and B.S. Sathyaprakash, Phys. Rev. D 63, 044023 (2001)) and
+ * The noise PSD is based on data provided by K. Blackburn (see \ref dis2001) and
  * is approximated by the following:
  *
- * \begin{equation}
+ * \f[
  * S_h(f) = 9 \times 10^{-46} \left[ \left( 4.49 \frac{f}{f_0}
  * \right)^{-56} + 0.16 \left( \frac{f}{f_0} \right)^{-4.52} + 0.52 + 0.32
  * \left( \frac{f}{f_0} \right)^2 \right]
- * \end{equation}
+ * \f]
  *
  * Multiply the return value of this function by 2 \Delta f to put it in
  * the same units as used by the LAL average spectrum functions like
@@ -60,15 +62,12 @@ REAL8 XLALLIGOIPsd(REAL8 f)
 /**
  * Legacy LAL wrapper of XLALLIGOIPsd().  Note that the return value is
  * scaled up by $s_0 = 10^{46}/9.$ In otherwords, the expected noise PSD is
- * $9 \times 10^{-46}$ times the return value.
+ * \f$9 \times 10^{-46}\f$ times the return value.
  */
 
 
-void LALLIGOIPsd(LALStatus *status, REAL8 *psd, REAL8 f)
+void LALLIGOIPsd(LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 {
-  /* status is unused in this function */
-  UNUSED(status);
-
 	/* Deprecation warning temporarily commented out to make life
 	 * easier for the nightly build --- please update calling code */
 	/*XLALPrintDeprecationWarning("LALLIGOIPsd", "XLALLIGOIPsd");*/

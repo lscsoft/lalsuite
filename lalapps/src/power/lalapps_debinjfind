@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for filename in "${@}" ; do
+	echo ${filename}
+	tmp=$(mktemp)
+	{ ligolw_sqlite --replace --preserve-ids --database ${tmp} ${filename} && sqlite3 ${tmp} "DELETE FROM process WHERE program == 'ligolw_binjfind'; DELETE FROM process_params WHERE process_id NOT IN (SELECT process_id FROM process); DELETE FROM search_summary WHERE process_id NOT IN (SELECT process_id FROM process); DELETE FROM coinc_event WHERE process_id NOT IN (SELECT process_id FROM process); DELETE FROM coinc_event_map WHERE coinc_event_id NOT IN (SELECT coinc_event_id FROM coinc_event);" && ligolw_sqlite --database ${tmp} --extract ${filename} && rm -f ${tmp} ; } || break
+done

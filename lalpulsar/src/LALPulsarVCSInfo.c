@@ -45,6 +45,7 @@ const char *lalPulsarVCSIdentStatus = LALPULSAR_VCS_IDENT_STATUS;
 
 /* vcs information structure */
 struct tagLALVCSInfo lalPulsarVCSInfo = { \
+  LALPULSAR_VCS_NAME, \
   LALPULSAR_VERSION, \
   LALPULSAR_VCS_ID, \
   LALPULSAR_VCS_DATE, \

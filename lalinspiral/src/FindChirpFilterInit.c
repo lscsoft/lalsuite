@@ -52,8 +52,6 @@ $Id$
 #include <lal/LALDatatypes.h>
 #include <lal/FindChirpACTD.h>
 
-double rint(double x);
-
 NRCSID (FINDCHIRPFILTERINITC, "$Id$");
 
 

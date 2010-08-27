@@ -32,8 +32,11 @@
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (TSDATAC,"$Id$");
 
@@ -91,8 +94,8 @@ LALTracksearchFindLambdaMean(
 #if 0
   REAL8 myFloor=10e20;/*Lowest value in TFR */
 #endif
-  INT4        lowerFRow=-1;
-  INT4        upperFRow=-1;
+  INT4        UNUSED lowerFRow=-1;
+  INT4        UNUSED upperFRow=-1;
   REAL8       binPerHz=0;
   INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
   ATTATCHSTATUSPTR (status);
@@ -484,7 +487,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
 				    LALStatus              *status,
 				    REAL4TimeSeries        *signalvec,
 				    REAL4FrequencySeries   *signalPSD,
-				    TSWhitenParams          params
+				    TSWhitenParams         UNUSED params
 				    )
 {
   UINT4                      i=0;
@@ -499,9 +502,6 @@ LALTrackSearchWhitenREAL4TimeSeries(
   RAT4                      exponent;
   INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
   ATTATCHSTATUSPTR (status);
-
-  /* params is unused in this function */
-  UNUSED(params);
 
   /*Setup FFT Plans*/
   planLength=signalvec->data->length;
@@ -1004,11 +1004,11 @@ connect2Segments(
 		 Curve          *curveB
 		 )
 {
-  INT4         i,j,k,m;
-  INT4         deltaY;
-  INT4         deltaX;
-  INT4         newLength;
-  INT4         intermediateSegment;
+  UINT4         i,j,k,m;
+  UINT4         deltaY;
+  UINT4         deltaX;
+  UINT4         newLength;
+  UINT4         intermediateSegment;
   Curve        tempCurve;
   /* Determine DeltaY */
   /* Determine DeltaX */
@@ -1017,12 +1017,12 @@ connect2Segments(
   /* Determine points between head-tail to include */
   /* Calculate straight line segement between two points */
 
-  deltaY=curveA->row[curveA->n]-curveB->row[0];
-  deltaX=curveA->row[curveA->n]-curveB->row[0];
+  deltaY=(UINT4) curveA->row[curveA->n]-curveB->row[0];
+  deltaX=(UINT4) curveA->row[curveA->n]-curveB->row[0];
   newLength=0;
-  intermediateSegment=(int)floor(sqrt(deltaY*deltaY+deltaX*deltaX));
+  intermediateSegment=(UINT4)floor(sqrt(deltaY*deltaY+deltaX*deltaX));
 
-  newLength=curveA->n+curveB->n+intermediateSegment;
+  newLength=(UINT4)(curveA->n+curveB->n+intermediateSegment);
   /* Allocate concatenated curve */
   tempCurve.row=LALMalloc(sizeof(INT4) * newLength);
   tempCurve.col=LALMalloc(sizeof(INT4) * newLength);
@@ -1033,7 +1033,7 @@ connect2Segments(
   /* Copy in segments information use map also */
   i=0;
   /* Copy in curveA */
-  for (j=0;j<curveA->n;j++)
+  for (j=0;j<(UINT4) curveA->n;j++)
     {
       tempCurve.row[j]=curveA->row[j];
       tempCurve.col[j]=curveA->col[j];
@@ -1046,7 +1046,7 @@ connect2Segments(
   /* Copy intermediate curve information */
   /* X direction loop */
   m=0;
-  for (j=curveA->n;j<(curveA->n+deltaX);j++)
+  for (j=curveA->n;j<((UINT4)curveA->n+deltaX);j++)
     {
       for (k=0;k<deltaY;k++)
 	{
@@ -1065,7 +1065,7 @@ connect2Segments(
 	}
     }
   /* Copy End segment information */
-  for (k=curveA->n+deltaX;k<curveA->n+curveB->n;k++)
+  for (k=((UINT4)curveA->n)+deltaX;k<((UINT4)curveA->n)+((UINT4)curveB->n);k++)
     {
       tempCurve.row[k]=curveB->row[k];
       tempCurve.col[k]=curveB->col[k];
@@ -1079,7 +1079,7 @@ connect2Segments(
   /*Index i tracking elements of tempCurve*/
   tempCurve.n=i;
   /*Set total sum of power field */
-  for (k=0;i<tempCurve.n;k++)
+for (k=0;i<(UINT4) tempCurve.n;k++)
     {
       tempCurve.totalPower=tempCurve.totalPower+tempCurve.depth[k];
     };

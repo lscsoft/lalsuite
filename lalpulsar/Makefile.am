@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST = \
+	COPYING \
 	doc \
 	lalpulsar.pc.in \
 	lalpulsar.spec.in \
@@ -17,6 +18,7 @@ SUBDIRS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lalpulsar.pc
 
+DISTCLEANFILES = config.lt
 distcleancheck_listfiles = find . -type f \! -name "LALPulsarVCSInfo.h" -print
 
 # vcs-clean: more than maintainer-clean, this cleans everything not in

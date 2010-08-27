@@ -1319,7 +1319,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* safety-check: only allow EITHER of skyRegion OR (Alpha,AlphaBand, Delta, DeltaBand) */
   if ( !LALUserVarWasSet(&uvar_skyRegion) && (!LALUserVarWasSet(&uvar_Alpha)||!LALUserVarWasSet(&uvar_Delta)) ) 
     {
-      LALPrintError ("Either (Alpha,Delta) or a skyRegion have to be specified!\n");
+      XLALPrintError ("Either (Alpha,Delta) or a skyRegion have to be specified!\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   /* now check that only one of those two has been given! ;) */
@@ -1327,7 +1327,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
        && (LALUserVarWasSet(&uvar_Alpha)||LALUserVarWasSet(&uvar_Delta)
 	   ||LALUserVarWasSet(&uvar_AlphaBand)||LALUserVarWasSet(&uvar_DeltaBand)) ) 
     {
-      LALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
+      XLALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 

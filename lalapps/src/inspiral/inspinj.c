@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst
+ *  Copyright (C) 2007 Chad Hanna, Alexander Dietz, Duncan Brown, Gareth Jones, Jolien Creighton, Nickolas Fotopoulos, Patrick Brady, Stephen Fairhurst, Tania Regimbau
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -92,16 +92,23 @@ void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifos);
 REAL8 network_snr(const char *ifos, SimInspiralTable *inj);
 REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj);
 
+REAL8 probability_redshift(REAL8 rshift);
+REAL8 luminosity_distance(REAL8 rshift);
+REAL8 mean_time_step_sfr(REAL8 zmax, REAL8 rate_local);
+REAL8 drawRedshift(REAL8 zmin, REAL8 zmax, REAL8 pzmax);
+REAL8 redshift_mass(REAL8 mass, REAL8 z);
+
 /* 
  *  *************************************
  *  Defining of the used global variables
  *  *************************************
  */
 
-DistanceDistribution    dDistr;
-SkyLocationDistribution lDistr;
-MassDistribution        mDistr;
-InclDistribution        iDistr;
+lalinspiral_time_distribution tDistr;
+DistanceDistribution          dDistr;
+SkyLocationDistribution       lDistr;
+MassDistribution              mDistr;
+InclDistribution              iDistr;
 
 SimInspiralTable *simTable;
 SimRingdownTable *simRingTable;
@@ -124,6 +131,7 @@ char *ifos       = NULL;
 float mwLuminosity = -1;
 REAL4 dmin= -1;
 REAL4 dmax= -1;
+REAL4 localRate = -1.0;
 REAL4 minMass1=-1;
 REAL4 maxMass1=-1;
 REAL4 minMass2=-1;
@@ -154,7 +162,7 @@ REAL4 maxabsKappa1=1.0;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
 InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
-
+REAL8 redshift;
 
 static LALStatus status;
 static RandomParams* randParams=NULL;
@@ -205,7 +213,60 @@ SimInspiralTable **nrSimArray = NULL;
  *  *********************************
  */
 
+REAL8 probability_redshift(REAL8 rshift)
+{
+  REAL8 pz;
 
+  pz = -0.000429072589677+(rshift*(-0.036349728568888+(rshift*(0.860892111762314
+     +(rshift*(-0.740935488674010+rshift*(0.265848831356864+rshift*(-0.050041573542298
+     +rshift*(0.005184554232421+rshift*(-0.000281450045300+rshift*0.000006400690921))))))))));
+
+  return pz;
+}
+
+REAL8 luminosity_distance(REAL8 rshift)
+{
+  REAL8 dL;
+	
+	dL = -2.89287707063171+(rshift*(4324.33492012756+(rshift*(3249.74193862773
+	   +(rshift*(-1246.66339928289+rshift*(335.354613407693+rshift*(-56.1194965448065
+       +rshift*(5.20261234121263+rshift*(-0.203151569744028))))))))));
+  return dL;
+}
+
+REAL8 mean_time_step_sfr(REAL8 zmax, REAL8 rate_local)
+{
+  REAL8 logzmax,loglambda,step;
+
+  logzmax=log10(zmax);
+  loglambda = -0.039563*pow(logzmax,6.)-0.15282*pow(logzmax,5.)-0.017596*pow(logzmax,4.)
+            + 0.67193*pow(logzmax,3.)+1.1347*pow(logzmax,2.)-2.3543*logzmax+ 2.0228;
+  step=pow(10.,loglambda)/rate_local;
+
+  return step;
+}
+
+REAL8 drawRedshift(REAL8 zmin, REAL8 zmax, REAL8 pzmax)
+{
+  REAL8 test,z,p;
+    do 
+	{
+      test = pzmax * XLALUniformDeviate(randParams);
+      z = (zmax-zmin) * XLALUniformDeviate(randParams)+zmin;
+	  p= probability_redshift(z);   
+	}
+	while (test>p);
+	
+  return z;
+}
+
+REAL8 redshift_mass(REAL8 mass, REAL8 z)
+{
+  REAL8 mz;
+  mz= mass * (1.+z);
+	
+  return mz;
+}
 
 REAL8 snr_in_ifo(const char *ifo, SimInspiralTable *inj)
 {
@@ -352,6 +413,10 @@ static void print_usage(char *program)
       "Time distribution information:\n"\
       "  --gps-start-time start   GPS start time for injections\n"\
       "  --gps-end-time end       GPS end time for injections\n"\
+      "  --t-distr timeDist       set the time step distribution of injections\n"\
+      "                           fixed: fixed time step\n"\
+      "                           uniform: uniform distribution\n"\
+      "                           exponential: exponential distribution for Poisson process\n"\
       "  [--time-step] step       space injections by average of step seconds\n"\
       "                           (suggestion : 2630 / pi seconds)\n"\
       "  [--time-interval] int    distribute injections in an interval, int s\n"\
@@ -371,13 +436,16 @@ static void print_usage(char *program)
       "                           uniform: uniform distribution in distance\n"\
       "                           log10: uniform distribution in log10(d) \n"\
       "                           volume: uniform distribution in volume\n"\
+      "                           sfr: distribution derived from the SFR\n"\
+      " [--local-rate] rho        set the local coalescence rate when --d-dist sfr\n"\
+      "                           (suggestion: 1 per Mpc^3 per Myr)\n"\
       "  --i-distr INCDIST        set the inclination distribution, must be either\n"\
       "                           uniform: distribute uniformly over arccos(i)\n"\
       "                           gaussian: gaussian distributed in (i)\n"\
       "                           fixed: no distribution, fixed valued of (i)\n"\
       " --polarization psi        set the polarization angle for all \n"
       "                           injections (degrees)\n"\
-      " [--incl-std]  inclStd       std dev for gaussian inclination dist\n"\
+      " [--incl-std]  inclStd     std dev for gaussian inclination dist\n"\
       " [--fixed-inc]  fixed_inc  read inclination dist if fixed value (degrees)\n"\
       " [--source-file] sources   read source parameters from sources\n"\
       "                           requires enable/disable milkyway\n"\
@@ -390,6 +458,8 @@ static void print_usage(char *program)
       " [--min-distance] DMIN     set the minimum distance to DMIN kpc\n"\
       " [--max-distance] DMAX     set the maximum distance to DMAX kpc\n"\
       "                           min/max distance required if d-distr not 'source'\n"\
+      " [--use-chirp-distance]    Use this option to scale injections using \n"
+      "                           chirp distance (relative to a 1.4,1.4)\n"\
       " [--min-snr] SMIN          Sets the minimum network snr\n"\
       " [--max-snr] SMAX          Sets the maximum network snr\n"\
       " [--log-snr]               If set distribute uniformly in log(snr) rather than snr\n"\
@@ -407,7 +477,7 @@ static void print_usage(char *program)
       "                           log: log distribution in comonent mass\n"\
       "                           totalMassRatio: uniform distribution in total mass ratio\n"\
       "                           logTotalMassUniformMassRatio: log distribution in total mass\n"\
-      "                                  and uniform in total mass ratio\n"\
+      "                           and uniform in total mass ratio\n"\
       " [--ninja2-mass]           use the NINJA 2 mass-selection algorithm\n"\
       " [--mass-file] mFile       read population mass parameters from mFile\n"\
       " [--nr-file] nrFile        read mass/spin parameters from xml nrFile\n"\
@@ -881,8 +951,8 @@ void drawMassFromSource( SimInspiralTable* table )
 
   /* choose masses from the mass-list */  
   mass_index = (int)( num_mass * XLALUniformDeviate( randParams ) );
-  m1=mass_data[mass_index].mass1;
-  m2=mass_data[mass_index].mass2;
+  m1 = redshift_mass(mass_data[mass_index].mass1,redshift);
+  m2 = redshift_mass(mass_data[mass_index].mass2,redshift);
 
   eta=m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
   table->mass1 = m1;
@@ -1060,7 +1130,9 @@ int main( int argc, char *argv[] )
   REAL8 timeInterval = 0;
   REAL4 fLower = -1;
   REAL4 eps=0.01;  /* needed for some awkward spinning injections */
-
+  UINT4 useChirpDist = 0;
+  REAL4 minMass10, maxMass10, minMass20, maxMass20, minMtotal0, maxMtotal0, meanMass10, meanMass20, massStdev10, massStdev20; /* masses at z=0 */
+  REAL8 pzmax=0; /* maximal value of the probability distribution of the redshift */ 
   size_t ninj;
   int rand_seed = 1;
 
@@ -1103,6 +1175,7 @@ int main( int argc, char *argv[] )
     {"f-lower",                 required_argument, 0,                'F'},
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
+    {"t-distr",                 required_argument, 0,                '('},
     {"time-step",               required_argument, 0,                't'},
     {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
@@ -1126,11 +1199,13 @@ int main( int argc, char *argv[] )
     {"max-mratio",              required_argument, 0,                'y'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
+    {"use-chirp-distance",      no_argument,       0,                ','},
     {"min-snr",                 required_argument, 0,                '1'},
     {"max-snr",                 required_argument, 0,                '2'},
     {"log-snr",                 no_argument,       &logSNR,            1},
     {"ifos",                    required_argument, 0,                '3'},
     {"d-distr",                 required_argument, 0,                'e'},
+    {"local-rate",              required_argument, 0,                ')'},
     {"l-distr",                 required_argument, 0,                'l'},
     {"longitude",               required_argument, 0,                'v'},
     {"latitude",                required_argument, 0,                'z'},
@@ -1315,6 +1390,40 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, "int", 
               "%d", rand_seed );
         break;
+			
+      case '(':
+		optarg_len = strlen( optarg ) + 1;
+		memcpy( dummy, optarg, optarg_len );
+
+		if (!strcmp(dummy, "fixed")) 
+		{         
+		  tDistr=LALINSPIRAL_FIXED_TIME_DIST; 
+		} 
+		else if (!strcmp(dummy, "uniform")) 
+		{
+		  tDistr=LALINSPIRAL_UNIFORM_TIME_DIST;
+		}  
+		else if(!strcmp(dummy, "exponential")) 
+		{         
+		  tDistr=LALINSPIRAL_EXPONENTIAL_TIME_DIST; 
+		} 
+		else 
+		{
+		  tDistr=LALINSPIRAL_UNKNOWN_TIME_DIST; 
+		  fprintf( stderr, "invalid argument to --%s:\n"
+			  "unknown time distribution: %s must be one of\n"
+			  "fixed, uniform or exponential\n", 
+			  long_options[option_index].name, optarg );
+		  exit( 1 );
+		}
+		break;
+  
+      case ')':
+	    localRate = atof( optarg );
+	    this_proc_param = this_proc_param->next = 
+	    next_process_param( long_options[option_index].name,
+			"float", "%le", localRate );
+	    break;
 
       case 't':
         {
@@ -1399,12 +1508,12 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
 
-        if (!strcmp(dummy, "source")) 
-        {         
-          mDistr=massFromSourceFile; 
-        } 
+        if (!strcmp(dummy, "source"))
+        {
+          mDistr=massFromSourceFile;
+        }
         else if (!strcmp(dummy, "nrwaves")) 
-        {         
+        {
           mDistr=massFromNRFile; 
         } 
         else if (!strcmp(dummy, "totalMass")) 
@@ -1556,6 +1665,14 @@ int main( int argc, char *argv[] )
               "float", "%e", dmax );
         break;
 
+      case ',':
+        /* Distribute injections in chirp distance not distance*/
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "" );
+        useChirpDist = 1;
+        break;
+
       case 'e':
         optarg_len = strlen( optarg ) + 1;
         memcpy( dummy, optarg, optarg_len );
@@ -1583,7 +1700,11 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "volume")) 
         {
           dDistr=uniformVolume;
-        } 
+        }
+        else if (!strcmp(dummy, "sfr"))
+        {
+          dDistr=sfr;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -2212,6 +2333,13 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  if ( dDistr==sfr && (dmax<0.2 || dmax>1.0) )
+  {
+	fprintf( stderr,
+        "Maximal redshift can only take values between 0.2 and 1 .\n" );
+    exit( 1 );
+  }
+
   /* check if waveform is specified */    
   if ( !*waveform )
   {
@@ -2284,6 +2412,12 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
   }
+	
+  if( dDistr==sfr && localRate > 0.)
+  {
+    /* calculate mean time step from the SFR  */ 
+	meanTimeStep = mean_time_step_sfr(dmax,localRate);   
+  }
 
   if (meanTimeStep<=0)
   {
@@ -2292,8 +2426,14 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  
-  
+  if (timeInterval > 0. && tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST)
+  {
+    fprintf( stderr,
+         "time interval must be zero\n" );
+    exit( 1 );
+  }
+
+
   if ( userTag && outCompress )
   {
     snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%ld.xml.gz",
@@ -2336,6 +2476,27 @@ int main( int argc, char *argv[] )
 
   simRingTable = ringparams.simRingdownTable = (SimRingdownTable *)
     calloc( 1, sizeof(SimRingdownTable) );
+	  
+  /* set redshift to zero */ 
+  redshift=0.;
+
+  /* set mass distribution parameters to their value at z = 0 */
+  minMass10 = minMass1; 
+  maxMass10 = maxMass1;
+  minMass20 = minMass2;
+  maxMass20 = maxMass2;
+  minMtotal0 = minMtotal; 
+  maxMtotal0 = maxMtotal;
+  meanMass10 = meanMass1;
+  meanMass20 = meanMass2;
+  massStdev10 = massStdev1;
+  massStdev20 = massStdev2;
+
+  /* calculate the maximal value of the probability distribution of the redshift */	
+  if (dDistr == sfr) 
+  {
+    pzmax = probability_redshift(dmax); 
+  }
 
   /* loop over parameter generation until end time is reached */
   ninj = 0;
@@ -2354,6 +2515,23 @@ int main( int argc, char *argv[] )
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     simTable->f_lower = fLower;
     simTable->amp_order = amp_order;
+
+    /* draw redshift */
+    if (dDistr==sfr)
+    {
+	  redshift= drawRedshift(dmin,dmax,pzmax);	
+
+      minMass1 = redshift_mass(redshift,minMass10);
+      maxMass1 = redshift_mass(redshift,maxMass10);
+      meanMass1 = redshift_mass(redshift,meanMass10);  
+      massStdev1 = redshift_mass(redshift,massStdev10);
+      minMass2 = redshift_mass(redshift,minMass20);
+      maxMass2 = redshift_mass(redshift,maxMass20);
+      meanMass2 = redshift_mass(redshift,meanMass20);  
+      massStdev2 = redshift_mass(redshift,massStdev20);  
+      minMtotal = redshift_mass(redshift,minMtotal0);
+      maxMtotal = redshift_mass(redshift,maxMtotal0);  
+    }
 
     /* populate masses */
     if ( mDistr==massFromSourceFile )
@@ -2410,10 +2588,22 @@ int main( int argc, char *argv[] )
       }
       simTable->distance = drawnDistance;
     }
+    else if (dDistr == sfr )
+    {
+       /* fit of luminosity distance  between z=0-1, in Mpc for h0=0.7, omega_m=0.3, omega_v=0.7*/
+       simTable->distance = luminosity_distance(redshift);
+	}
     else
     {
       simTable=XLALRandomInspiralDistance(simTable, randParams, 
           dDistr, dmin/1000.0, dmax/1000.0);
+    }
+    /* Scale by chirp mass if desired, relative to a 1.4,1.4 object */
+    if (useChirpDist)
+    {
+      REAL4 scaleFac;
+      scaleFac = simTable->mchirp/(2.8*pow(0.25,0.6));
+      simTable->distance = simTable->distance*pow(scaleFac,5./6.);
     }
 
     /* populate location */
@@ -2483,6 +2673,15 @@ int main( int argc, char *argv[] )
           aligned);
     }
 
+    if ( ifos != NULL )
+    {
+        targetSNR = minSNR + (maxSNR - minSNR) * XLALUniformDeviate( randParams );
+        if ( logSNR )
+          targetSNR = exp(targetSNR);
+
+        adjust_snr(simTable, targetSNR, ifos);
+    }
+
     /* populate the site specific information */
     LALPopulateSimInspiralSiteInfo( &status, simTable );
 
@@ -2515,15 +2714,7 @@ int main( int argc, char *argv[] )
     
     /* populate the bandpass options */
     simTable->bandpass = bandPassInj;
-   
-    if ( ifos != NULL )
-    {
-        targetSNR = minSNR + (maxSNR - minSNR) * XLALUniformDeviate( randParams ); 
-        if ( logSNR )
-          targetSNR = exp(targetSNR);
 
-        adjust_snr(simTable, targetSNR, ifos);
-    }
 
     /* populate the sim_ringdown table */ 
    if ( writeSimRing )
@@ -2535,6 +2726,7 @@ int main( int argc, char *argv[] )
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;
        simRingTable->l_start_time = simTable->l_end_time;
+       simRingTable->v_start_time = simTable->v_end_time;
        simRingTable->start_time_gmst = simTable->end_time_gmst;
        simRingTable->longitude = simTable->longitude;
        simRingTable->latitude = simTable->latitude;
@@ -2550,16 +2742,25 @@ int main( int argc, char *argv[] )
        simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
        simRingTable->eff_dist_h = simTable->eff_dist_h; 
        simRingTable->eff_dist_l = simTable->eff_dist_l; 
+       simRingTable->eff_dist_v = simTable->eff_dist_v; 
        simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
        // need hplus & hcross in each detector to populate these
        simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
        simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
+       simRingTable->hrss_v = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
     }
 
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
-    currentGpsTime = gpsStartTime;
-    XLALGPSAdd(&currentGpsTime, ninj * meanTimeStep);
+    if (tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST)
+    {
+      XLALGPSAdd( &currentGpsTime, -(REAL8 )meanTimeStep * log( XLALUniformDeviate(randParams) ) );
+    }
+    else
+    {
+      currentGpsTime = gpsStartTime;
+      XLALGPSAdd( &currentGpsTime, ninj * meanTimeStep );
+    }
     if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
       break;
     

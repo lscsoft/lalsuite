@@ -104,7 +104,7 @@ cov_Phi_ij ( const cov_params_t *params )
   stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_ij, &abserr, &neval);
   if ( stat != 0 )
     {
-      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed!\n");
+      XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
   /*
@@ -116,7 +116,7 @@ cov_Phi_ij ( const cov_params_t *params )
   stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_i, &abserr, &neval);
   if ( stat != 0 )
     {
-      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i> failed!\n");
+      XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_i> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
   /*
@@ -128,7 +128,7 @@ cov_Phi_ij ( const cov_params_t *params )
   stat = gsl_integration_qng (&integrand, 0, 1, epsabs, epsrel, &av_j, &abserr, &neval);
   if ( stat != 0 )
     {
-      LALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_j> failed!\n");
+      XLALPrintError ( "\nGSL-integration 'gsl_integration_qng()' of <Phi_j> failed!\n");
       XLAL_ERROR_REAL8( "cov_Phi_ij", XLAL_EFUNC );
     }
   /*
@@ -232,7 +232,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
   dim = gij->size1;
   if ( dim < 3 || dim > 6 )
     {
-      LALPrintError ("\nMetric dimension must be 3 <= dim <= 6!\n\n");
+      XLALPrintError ("\nMetric dimension must be 3 <= dim <= 6!\n\n");
       return -1;
     }
   numSpins = dim - 2;

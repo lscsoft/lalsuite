@@ -20,7 +20,7 @@
 /**
  * \author Whelan, J.T., Reinhard Prix
  * \date 2007
- * \ingroup pulsar
+ * \ingroup pulsarAntenna
  * \file
  * \ingroup pulsarCoherent
  * \brief structures and prototypes associated with complex AM coefficients

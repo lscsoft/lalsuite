@@ -184,7 +184,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counters */
   INT4 i, j;
   INT4 lInter, lSeg;
+#if 0
   REAL8 nu;
+#endif
   /* results parameters */
   REAL8 y, yOpt;
   REAL8 varTheo, inVarTheoSum ;
@@ -197,12 +199,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* input data segment */
   LIGOTimeGPS gpsStartTime,gpsStartPadTime,gpsMidSegTime;
-  INT4 duration, durationEff, extrasec, intervalDuration;
+  INT4 duration, durationEff, extrasec; /*intervalDuration;*/
   INT4 numIntervals, midSegment;
   INT4 segmentLength1,segmentLength2;
   INT4 segmentPadDuration,segmentPadLength1,segmentPadLength2;
-  INT4 intervalLength,intervalLength1,intervalLength2; 
+#if 0
+  INT4 intervalLength,intervalLength1,intervalLength2;
   INT4 segmentShift;
+#endif
   ResampleTSParams resampleParams1, resampleParams2; 
   REAL8TimeSeries segmentPadD1,segmentPadD2;
   REAL4TimeSeries segmentPad1,segmentPad2,segmentPadMC1,segmentPadMC2,segment1,segment2;
@@ -228,11 +232,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   PassBandParamStruc highpassParam,DhighpassParam;
 
   /* window for segment data streams */
-  REAL4TimeSeries dataWindow1, dataWindow2;
-
-  /* hann window */
-  REAL4Window *hannWindow1 = NULL, *hannWindow2 = NULL;
-
+  REAL4Window *dataWindow1, *dataWindow2;
 
   /* overlap reduction function */
   LALDetectorPair detectors;
@@ -298,14 +298,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get durations etc...*/
   duration = stopTime - startTime;
+#if 0
   intervalDuration = numSegments * segmentDuration;
+#endif
   midSegment = (INT4)((numSegments-1)/2); 
   numIntervals = (INT4)((duration-2*padData)/segmentDuration)-numSegments+1;
-  
+
+#if 0
   if (overlap_hann_flag)
    segmentShift = segmentDuration / 2;
   else
    segmentShift = segmentDuration;
+#endif
 
   /* recenter */
   if (recenter_flag)
@@ -396,9 +400,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsMidSegTime.gpsNanoSeconds = 0.;
 
   /* set length for data segments */
+#if 0
   intervalLength = (intervalDuration + 2 * padData);
   intervalLength1 = (UINT4)(intervalLength * resampleRate1);
   intervalLength2 = (UINT4)(intervalLength * resampleRate2);
+#endif
   segmentPadDuration = (segmentDuration + 2 * padData);
   segmentPadLength1 = (UINT4)(segmentPadDuration * sampleRate1);
   segmentPadLength2 = (UINT4)(segmentPadDuration * sampleRate2);
@@ -602,71 +608,15 @@ INT4 main(INT4 argc, CHAR *argv[])
      DhighpassParam.a2 = DhighPassAt;
    }
 
-  /* set window parameters for segment data streams */
-  strncpy(dataWindow1.name, "dataWindow1", LALNameLength);
-  strncpy(dataWindow2.name, "dataWindow2", LALNameLength);
-  dataWindow1.sampleUnits = dataWindow2.sampleUnits = lalDimensionlessUnit;
-  dataWindow1.deltaT = 1./(REAL8)resampleRate1;
-  dataWindow2.deltaT = 1./(REAL8)resampleRate2;
-  dataWindow1.f0 =dataWindow2.f0 = 0;
-
-  if (verbose_flag)
-   { fprintf(stdout, "Allocating memory for data segment windows...\n");}
-
-  /* allocate memory for segment window */
-  dataWindow1.data = dataWindow2.data = NULL;
-  LAL_CALL( LALSCreateVector(&status, &(dataWindow1.data), segmentLength1), 
-            &status );
-  LAL_CALL( LALSCreateVector(&status, &(dataWindow2.data), segmentLength2), 
-            &status );
-  memset( dataWindow1.data->data, 0, 
-          dataWindow1.data->length * sizeof(*dataWindow1.data->data));
-  memset( dataWindow2.data->data, 0, 
-          dataWindow2.data->length * sizeof(*dataWindow2.data->data));
-
+  /* generate windows */
   if (verbose_flag)
    { fprintf(stdout, "Generating data segment windows...\n");}
 
-  /* generate windows */
-  for (i = 0; i < segmentLength1; i++)
-   dataWindow1.data->data[i] = 1.;
-  for (i = 0; i < segmentLength2; i++)
-   dataWindow2.data->data[i] = 1.;
-  
   if (overlap_hann_flag)
    { hannDuration = segmentDuration;}
 
-  if (hannDuration != 0)
-   {
-    /* generate hann windows */
-    hannWindow1 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate1));
-    hannWindow2 = XLALCreateHannREAL4Window((UINT4)(hannDuration * resampleRate2));
-
-    /* construct Tukey windows */
-    /* FIXME:  do you know about XLALCreateTukeyREAL4Window()? */
-    for (i = 0; (unsigned) i < hannWindow1->data->length / 2; i++)
-      dataWindow1.data->data[i] = hannWindow1->data->data[i];
-    for (i = 0; (unsigned) i < hannWindow2->data->length / 2; i++)
-      dataWindow2.data->data[i] = hannWindow2->data->data[i];
-
-    for (i = segmentLength1 - (hannWindow1->data->length / 2); i < segmentLength1; i++)
-     {
-      dataWindow1.data->data[i] = 
-      hannWindow1->data->data[i - segmentLength1 + hannWindow1->data->length];
-     }                   
-    for (i = segmentLength2 - (hannWindow2->data->length / 2); i < segmentLength2; i++)
-     {
-      dataWindow2.data->data[i] = 
-      hannWindow2->data->data[i - segmentLength2 + hannWindow2->data->length];
-     }           
-   }
-
-  /* print window */
-  if (test_flag)
-  { 
-   LALSPrintTimeSeries(&dataWindow1, "dataWindow1.dat");
-   LALSPrintTimeSeries(&dataWindow2, "dataWindow2.dat");
-  }
+  dataWindow1 = XLALCreateTukeyREAL4Window(segmentLength1, hannDuration * resampleRate1 / segmentLength1);
+  dataWindow2 = XLALCreateTukeyREAL4Window(segmentLength2, hannDuration * resampleRate2 / segmentLength2);
 
   /* PSDs */
   /* set parameters for PSD estimation */
@@ -837,8 +787,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set zeropad parameters */
   zeroPadParams1.fftPlan = fftDataPlan1;
   zeroPadParams2.fftPlan = fftDataPlan2;
-  zeroPadParams1.window = dataWindow1.data;
-  zeroPadParams2.window = dataWindow2.data;
+  zeroPadParams1.window = dataWindow1;
+  zeroPadParams2.window = dataWindow2;
   zeroPadParams1.length = zeroPadLength1;
   zeroPadParams2.length = zeroPadLength2;
 
@@ -920,8 +870,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set normalisation parameters */
   normParams.fRef = fRef;
   normParams.heterodyned = 0;
-  normParams.window1 = dataWindow1.data;
-  normParams.window2 = dataWindow1.data;
+  normParams.window1 = dataWindow1->data;
+  normParams.window2 = dataWindow2->data;
 
   /* set normalisation input */
   normInput.overlapReductionFunction = &overlap;
@@ -983,7 +933,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* initialize parameters for post analysis */
   yOpt = 0.; inVarTheoSum = 0.;
+#if 0
   nu=0.;
+#endif
   /* open output file */
   snprintf(outputFilename1, LALNameLength,"%s/stat-%s%s-%d-%d.dat",
               outputFilePath, ifo1, ifo2,(INT4)startTime, (INT4)stopTime);
@@ -2008,8 +1960,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   LAL_CALL( LALDestroyRealFFTPlan(&status,&(specparPSD1.plan)),&status);
   LAL_CALL( LALDestroyRealFFTPlan(&status,&(specparPSD2.plan)),&status);
-  LAL_CALL( LALDestroyVector(&status, &(dataWindow1.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(dataWindow2.data)), &status );
+  XLALDestroyREAL4Window(dataWindow1);
+  XLALDestroyREAL4Window(dataWindow2);
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan1),&status);
   LAL_CALL(LALDestroyRealFFTPlan(&status,&fftDataPlan2),&status);
   LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
@@ -2030,8 +1982,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     LAL_CALL( LALDestroyVector(&status, &cosinus1), &status );
     LAL_CALL( LALDestroyVector(&status, &cosinus2), &status );
    }  
-  XLALDestroyREAL4Window(hannWindow1);
-  XLALDestroyREAL4Window(hannWindow2);
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTemp1.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTemp2.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(hBarTilde1.data)), &status );

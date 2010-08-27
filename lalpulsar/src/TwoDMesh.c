@@ -94,7 +94,7 @@ coarsest mesh.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-lalDebugLevel               LALPrintError()
+lalDebugLevel               XLALPrintError()
 LALWarning()                LALInfo()
 LALTwoDMesh()               LALTwoDNodeCopy()
 LALFree()
@@ -156,9 +156,9 @@ LALCreateTwoDMesh( LALStatus          *stat,
 #ifndef NDEBUG
   if ( lalDebugLevel&LALINFO )
     if ( ( params->nIn == 0 ) || ( params->nOut < params->nIn ) ) {
-      LALPrintError( "\n" );
+      XLALPrintError( "\n" );
       LALInfo( stat, "Mesh complete" );
-      LALPrintError( "\tnumber of mesh points: %u\n", params->nOut );
+      XLALPrintError( "\tnumber of mesh points: %u\n", params->nOut );
     }
 #endif
 
@@ -312,7 +312,7 @@ LALRefineTwoDMesh( LALStatus    *stat,
       lost++;
       if ( lalDebugLevel&LALINFO ) {
 	LALInfo( stat, "Fine mesh tile has no overlapping coarse tile" );
-	LALPrintError( "\tlocation: (%f,%f)\n", xFine, yFine );
+	XLALPrintError( "\tlocation: (%f,%f)\n", xFine, yFine );
       }
     }
 #endif
@@ -322,7 +322,7 @@ LALRefineTwoDMesh( LALStatus    *stat,
   if ( lalDebugLevel&LALWARNING )
     if ( lost > 0 ) {
       LALWarning( stat, "Some fine mesh tiles were lost" );
-      LALPrintError( "\tnumber lost = %u\n", lost );
+      XLALPrintError( "\tnumber lost = %u\n", lost );
     }
 #endif
 

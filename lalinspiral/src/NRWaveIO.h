@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup NRWaveIO
+/** \defgroup NRWaveIO Numrel-waveform IO
  * \ingroup support
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *

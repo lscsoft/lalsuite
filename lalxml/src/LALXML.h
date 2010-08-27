@@ -19,7 +19,7 @@
 */
 
 /**
- * \defgroup XML
+ * \defgroup XML VOTable and generic XML support
  * \ingroup support
  * \author Oliver Bock, Reinhard Prix, Jolien Creighton
  * \brief Module for reading/writing/manipulating XML as well as data serialization.

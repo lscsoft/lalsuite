@@ -31,6 +31,12 @@
 #include <lal/LALRCSID.h>
 NRCSID (FINDCHIRPTDTESTC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define TEST_STATUS( ps ) \
   ( ( ps )->statusCode && ( exit( 1 ), \
     fprintf( stderr, "LAL Routine failed near line %d\n", __LINE__ ), 1 ) )
@@ -258,7 +264,7 @@ int SPFini(
 int TDInit(
     FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
-    REAL4 srate,
+    REAL4 UNUSED srate,
     REAL4 f_min,
     REAL4 dynRange,
     UINT4 lal_trunc

@@ -216,7 +216,7 @@ int main(int argc,char *argv[])
 
       if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
 	  return (PREDICTFSTAT_ESYS);
 	}
 

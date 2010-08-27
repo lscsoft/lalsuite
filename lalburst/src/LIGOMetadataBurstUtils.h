@@ -53,7 +53,7 @@ XLALSnglBurstAssignIDs(
 	long event_id
 );
 
-void
+SnglBurst **
 XLALSortSnglBurst(
 	SnglBurst **head,
 	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)

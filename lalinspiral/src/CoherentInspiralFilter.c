@@ -47,12 +47,12 @@
 #include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
-#define rint(x) (floor((x)+0.5))
-
-double modf( double value, double *integerPart );
 int compare( const void* a, const void* b );
 void XLALAssignEventQuads(INT4 caseID[6], COMPLEX8 quadTemp[6], MultiInspiralTable *thisEvent);
 void XLALSaveStatsInEventTable(REAL4 cohSnrSqLocal,REAL4 autoCorrCohSq,REAL4 crossCorrCohSq,REAL4 autoCorrNullSq,REAL4 crossCorrNullSq,REAL8 ampMetricEigenVal1,REAL8 ampMetricEigenVal2,REAL4 VVPlus[4],REAL4 VVMinus[4],MultiInspiralTable *thisEvent);
@@ -881,9 +881,7 @@ LALCoherentInspiralFilterParamsInit (
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
-
 }
-
 
 
 void
@@ -1533,7 +1531,7 @@ void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
     REAL8                                 *sigmasq,
-    REAL4                                  templateNorm,
+    REAL4                                  UNUSED templateNorm,
     REAL8                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
     REAL4                                  coherentSNR,
@@ -1544,11 +1542,7 @@ LALCoherentInspiralEstimateDistance (
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
 
-  /* templateNorm is unused in this function */
-  UNUSED(templateNorm);
-
-  /* CHECK: Assume that sigma[0] (sigma[1]) are of H1 (H2) and calculate
-     the effective distance for the H1-H2 pair */
+  /* This function computes the effective distance for the H1-H2 pair */
   *distance = sqrt( 0.5 * (sigmasq[0] + sigmasq[1]) * deltaT / segmentLength) / coherentSNR;
 
   /* normal exit */
@@ -1565,7 +1559,6 @@ XLALCoherentInspiralFilterSegment (
     const SkyGrid                         *skyGridPtr,
     REAL4                                 chisq[4],
     REAL4                                 chisq_dof[4],
-    REAL8                                 snrsqthinca[4],
     REAL4                                 eff_snr_denom_fac,
     REAL4                                 nullStatRegul
     )
@@ -1575,9 +1568,9 @@ XLALCoherentInspiralFilterSegment (
   UINT4                               cohSNROut = 0;
   UINT4                               nullStatOut = 0;
   UINT4                               nullStatH1H2Out = 0;
-  UINT4                               case2a = 0;
-  UINT4                               case2b = 0;
-  UINT4                               case3a = 0;
+  UINT4                               UNUSED case2a = 0;
+  UINT4                               UNUSED case2b = 0;
+  UINT4                               UNUSED case3a = 0;
   UINT4                               case3b = 0;
   UINT4                               case4a = 0;
   INT4                                caseID[6] = {0,0,0,0,0,0};
@@ -1588,7 +1581,7 @@ XLALCoherentInspiralFilterSegment (
   INT4                                eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
   INT4                                slidePoints4D[4] = {0,0,0,0};
-  INT4                                segmentLength = 0;
+  INT4                                UNUSED segmentLength = 0;
   INT4                                sortedSlidePoints3D[3]= {0,0,0};
   INT4                                sortedSlidePoints4D[4]= {0,0,0,0};
   int                                 locIdx;
@@ -1598,7 +1591,7 @@ XLALCoherentInspiralFilterSegment (
   REAL4                               distance[4] = {0,0,0,0};
   REAL4                               chirpTime = 0.0;
   REAL4                               cohSNRThresh = 0.0;
-  REAL4                               cohSNRThreshSq = 0.0;
+  REAL4                               UNUSED cohSNRThreshSq = 0.0;
   double                              inclination = 0.0;
   double                              polarization = 0.0;
   /*REAL4                               distanceEstimate = 0.0;*/
@@ -1625,8 +1618,8 @@ XLALCoherentInspiralFilterSegment (
   REAL8                               tempTime = 0.0;
   REAL8                               fracpart = 0.0;
   REAL8                               intpart = 0.0;
-  double                              decStep = 0.0;
-  double                              raStep = 0.0;
+  double                              UNUSED decStep = 0.0;
+  double                              UNUSED raStep = 0.0;
   double                              theta = 0.0;
   double                              phi = 0.0;
   double                              timeDelay[4]= {0.0,0.0,0.0,0.0};
@@ -1643,9 +1636,9 @@ XLALCoherentInspiralFilterSegment (
   CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
   CHAR                                caseStr[FILENAME_MAX];
 
-  UINT4          degenerateStat = 0;
+  UINT4          UNUSED degenerateStat = 0;
   INT4           timePt[4] = {0,0,0,0};
-  INT4           timePtTemp[4] = {0,0,0,0};
+  INT4           UNUSED timePtTemp[4] = {0,0,0,0};
   REAL4          AA=0.0;
   REAL4          BB=0.0;
   REAL4          CC=0.0;
@@ -1659,7 +1652,6 @@ XLALCoherentInspiralFilterSegment (
   REAL4          AAn[4]={0.0,0.0,0.0,0.0};
   REAL4          BBn[4]={0.0,0.0,0.0,0.0};
   REAL4          CCn[4]={0.0,0.0,0.0,0.0};
-  REAL4          discrimSqrtn[4]={0.0,0.0,0.0,0.0};
   REAL8          MM1=0.0;
   REAL8          MM2=0.0;
   REAL4          O11=0.0;
@@ -1668,8 +1660,8 @@ XLALCoherentInspiralFilterSegment (
   REAL4          O22=0.0;
   REAL8          gmstInRadians=0.0;
   double         amplitudeConst=1.0,chirpMass=1.0;
-  double         DRe[4]={0.0,0.0,0.0,0.0};
-  double         DIm[4]={0.0,0.0,0.0,0.0};
+  double         UNUSED DRe[4]={0.0,0.0,0.0,0.0};
+  double         UNUSED DIm[4]={0.0,0.0,0.0,0.0};
   double         InvMMAA = 0.0, InvMMBB = 0.0, InvMMCC = 0.0;
   double         determinantMM=1.0;
   double         uSigma[4]={0.0,0.0,0.0,0.0};
@@ -1752,18 +1744,16 @@ XLALCoherentInspiralFilterSegment (
   segmentLength = params->segmentLength;
   raStep = (double) params->raStep;
   decStep = (double) params->decStep;
+  /*chirpTime in seconds, just like deltaT*/
   chirpTime = params->chirpTime;
   deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
   buffer = rint( (timingError/deltaT) + 1.0 );
   chirpMass = pow(input->tmplt->eta,3.0/5.0)*input->tmplt->totalMass;
-  /* Compute signal amplitude in units of Mpc */
-  /* The following setting is CORRECT since sigmasq
-     includes N_Curly*sqrt{xi}*g: amplitudeConst = 1.0; */
-  /* Because of the above, the following is not required:
-     amplitudeConst = 2.0*pow((double)LAL_MRSUN_SI*(double)chirpMass,5.0/3.0) ;
-     amplitudeConst *= pow((double)LAL_PI*params->fLow/((double)LAL_C_SI),2.0/3.0);
-     amplitudeConst /= 1e6 * LAL_PC_SI;
-   */
+
+  /* Prefactor (in Mpc) for distance estimation */
+  amplitudeConst = 4 * pow(LAL_PI * params->fLow,2/3) * pow(LAL_MTSUN_SI*chirpMass,5/12) 
+    * pow(params->fLow,2/3) * pow(chirpTime/5,0.25);
+
   /* if the full coherent snr / null vector is required, set it to zero */
   if ( cohSNROut ) {
     if ( params->threeSiteCase ) {
@@ -1803,7 +1793,7 @@ XLALCoherentInspiralFilterSegment (
     }
 
   /*** get detector-site locations */
-  /* CHECK: Note that this may be replaced with
+  /* FIXME: Replace with
      ~XLALReadIfo functions in the future.
      Also note that the ifo orders in InterferometerNumber and
      lalCachedDetectors are different:
@@ -2051,7 +2041,6 @@ XLALCoherentInspiralFilterSegment (
       { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
 	/*Here, the time delay looping must start */
 	/* Now calculate the distance (in meters) */
-        /*CHECK: */
 	case2b = 1;
 	for (i=0;i<3;i++) {
 	  s[i] = (REAL4) ( detectors[1].location[i] - detectors[0].location[i]);
@@ -2068,8 +2057,8 @@ XLALCoherentInspiralFilterSegment (
 	  {
             REAL4          snrsq1 = 0.0;
             REAL4          snrsq2 = 0.0;
-            REAL4          chisqFac1 = 1.0;
-            REAL4          chisqFac2 = 1.0;
+            REAL4          UNUSED chisqFac1 = 1.0;
+            REAL4          UNUSED chisqFac2 = 1.0;
             cohSNR = 0.0;
             chisq[2] = chisq_dof[0];
             chisq[3] = chisq_dof[1];
@@ -2087,9 +2076,6 @@ XLALCoherentInspiralFilterSegment (
 		      pow(cData[1]->data->data[q].im,2);
 		    chisqFac2 = (1 + snrsq2/eff_snr_denom_fac)*chisq[1]/
 				     (2*chisq_dof[1] -2);
-		    /* CHECK: This is the effective-coherent-SNR-squared:
-		       cohSNRLocal = pow(snrsq1*snrsq1/chisqFac1 + snrsq2*snrsq2/chisqFac2,0.5);
-                    */
 		    cohSNRLocal = snrsq1 + snrsq2;
 
 		    if(cohSNRLocal > cohSNR)
@@ -2138,7 +2124,7 @@ XLALCoherentInspiralFilterSegment (
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
 	        /*Calculate distance/effective distance */
-                /* CHECK: Temp. using snrsq in sigmasq4DArray */
+                /* NOTE: Using snrsq in sigmasq4DArray */
                 XLALCoherentCBCEstimateDistanceCase2b( caseID,
 		    (double) quadTemp[0].re,(double) quadTemp[0].im,
 		    (double) quadTemp[1].re,(double) quadTemp[1].im,
@@ -2180,7 +2166,7 @@ XLALCoherentInspiralFilterSegment (
 		thisEvent->eta = input->tmplt->eta;
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
-	        /*CHECK: Calculate distance/effective distance */
+	        /*Calculate effective distance */
                 XLALCoherentCBCEstimateDistanceCase2b( caseID,
 		    (double) quadTemp[0].re,(double) quadTemp[0].im,
 		    (double) quadTemp[1].re,(double) quadTemp[1].im,
@@ -2234,7 +2220,7 @@ XLALCoherentInspiralFilterSegment (
 		thisEvent->eta = input->tmplt->eta;
                 /* With two non-coaligned ifo, the null-statistic is not meaningful */
                 thisEvent->null_statistic = -1;
-	        /*CHECK: Calculate distance/effective distance */
+	        /*Calculate effective distance */
                 XLALCoherentCBCEstimateDistanceCase2b( caseID,
 		    (double) quadTemp[0].re,(double) quadTemp[0].im,
 		    (double) quadTemp[1].re,(double) quadTemp[1].im,
@@ -2294,7 +2280,9 @@ XLALCoherentInspiralFilterSegment (
 		      {
 			if(q >= 0 && q < (INT4) numPoints)
 			  {
-			    /*CHECK: This will NOT work if G1 is present! because it assumes that the "0" det is H1 and "1" det is H2! Rectify in next rev. */
+			    /*FIXME: This will NOT work if G1 is present! 
+                              because it assumes that the "0" det is H1 and 
+                              "1" det is H2! Rectify in next rev. */
 			    REAL4          snrsq1 = 0.0;
 			    REAL4          snrsq2 = 0.0;
 			    REAL4          snrsq3 = 0.0;
@@ -2620,8 +2608,6 @@ XLALCoherentInspiralFilterSegment (
 	  /* Loop over detectors computing the theta-, phi-dependent
 	     pieces of F+, Fx */
 	  detId = 0;
-          MM1 = 0;
-          MM2 = 0;
 	  for( j=0; j<LAL_NUM_IFO; j++ ) {
 	    /* Compute antenna-patterns if caseID[j] != 0 */
 	    if ( !(params->detIDVec->data[j] == 0 )) {
@@ -2634,40 +2620,11 @@ XLALCoherentInspiralFilterSegment (
 	      BBn[detId] = ( fplus[detId]) * ( fcross[detId]);
 	      CCn[detId] = ( fcross[detId]) * ( fcross[detId]);
 
-	      discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId]
-					 + 4*BBn[detId]*BBn[detId]
-					 - 2*AAn[detId]*CCn[detId]
-					 + CCn[detId]*CCn[detId]);
 
-	      O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId]);
-	      O11 /= (BBn[detId]
-		      *sqrt( 4 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
-			     *( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
-			     / ( BBn[detId]*BBn[detId] ) ) );
-	      O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
-			      *(-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
-			      / ( 4*BBn[detId]*BBn[detId] ) );
-	      O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId]);
-	      O21 /= ( BBn[detId]
-		       *sqrt( 4 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			      *(-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			      / ( BBn[detId]*BBn[detId] ) ) );
-	      O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			      *(-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			      / ( 4*BBn[detId]*BBn[detId] ) );
-
-	      VVPlus[detId] = O11 * ( fplus[detId])
-		+ O12 * ( fcross[detId]);
-	      VVMinus[detId] = O21 * ( fplus[detId])
-		+ O22 * ( fcross[detId]);
-
-	      /* CHECK: If sigmasq should be in the denominator!
-		 Compute the elements of the helicity-plane projection matrix */
+	      /* Compute the elements of the helicity-plane projection matrix */ 
 	      AAn[detId] *= sigmasq[j];
 	      BBn[detId] *= sigmasq[j];
 	      CCn[detId] *= sigmasq[j];
-	      VVPlus[detId] *= sqrt(sigmasq[j]);
-	      VVMinus[detId] *= sqrt(sigmasq[j]);
 
 	      /* Calculate factors necessary for parameter estimation*/
 	      uSigma[detId] = (double)fplus[detId] * sqrt((double)sigmasq[j]);
@@ -2675,9 +2632,6 @@ XLALCoherentInspiralFilterSegment (
 
 	      /* Sort sigmasq for degeneracy resoln. */
 	      sortedSigmasq3D[detId] = sigmasq[j]/3;
-
-              MM1 += VVPlus[detId]*VVPlus[detId];
-              MM2 += VVMinus[detId]*VVMinus[detId];
 
 	      detId++;
 	    }
@@ -2690,8 +2644,42 @@ XLALCoherentInspiralFilterSegment (
 	  BB = BBn[0] + BBn[1] +BBn[2];
 	  CC = CCn[0] + CCn[1] +CCn[2];
 
-	  discrimSqrt = sqrt(AA*AA + 4*BB*BB
+	  discrimSqrt = (AA*AA + 4*BB*BB
 			     - 2*AA*CC + CC*CC);
+          if ( (discrimSqrt>0.0) ) {
+            discrimSqrt = sqrt(discrimSqrt);
+          }
+          else {
+            discrimSqrt = 0.0;
+          }
+
+	  O22 = ( -AA + CC + discrimSqrt);
+	  O22 /= (BB * sqrt( 4 + pow( AA - CC - discrimSqrt, 2)/( BB*BB ) ) );
+	  
+	  O21 = 1 / sqrt( 1 + pow(-AA+CC+discrimSqrt, 2)/ ( 4*BB*BB ) );
+
+	  O12 = ( -AA + CC - discrimSqrt);
+	  O12 /= ( BB * sqrt( 4 + pow(-AA+CC-discrimSqrt, 2) / ( BB*BB ) ) );
+
+	  O11 = 1 / sqrt( 1 + pow(-AA+CC-discrimSqrt, 2)/ ( 4*BB*BB ) );
+	  
+	  detId = 0;
+	  for( j=0; j<LAL_NUM_IFO; j++ ) {
+	    if ( !(params->detIDVec->data[j] == 0 )) {
+	      VVPlus[detId] = O11 * ( fplus[detId])
+		+ O12 * ( fcross[detId]);
+	      VVMinus[detId] = O21 * ( fplus[detId])
+		+ O22 * ( fcross[detId]);
+	      
+	      VVPlus[detId] *= sqrt((REAL4) sigmasq[j]);
+	      VVMinus[detId] *= sqrt((REAL4) sigmasq[j]);
+	      
+	      detId++;
+	    }
+	  }
+	  
+	  MM1 = 2*(AA*CC - BB*BB)/(AA+CC+discrimSqrt);
+	  MM2 = 2*(AA*CC - BB*BB)/(AA+CC-discrimSqrt);
 
 	  /* Factors for determining & computing degenerate case/statistics*/
 	  zetaRe = (AA-CC)/(AA+CC);
@@ -2741,8 +2729,6 @@ XLALCoherentInspiralFilterSegment (
             }
 	    else {
 	      if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		/* CHECK: For now turn-off computing degenerate statistics:
-		   XLALComputeDEGStatCase3b(cData,DRe,DIm,timePt[0],slidePoints,params->numDetectors); */
 		cohSnrSqLocal = 0.0;
 		ratioStatLocal = 0.0;
 	      }
@@ -2753,11 +2739,6 @@ XLALCoherentInspiralFilterSegment (
 
 		autoCorrNullSq = (REAL4) XLALComputeIncohStatCase3b(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints,cData,nullStatistic,&crossCorrNullSq,chisq,chisq_dof,eff_snr_denom_fac);
 
-		/*CHECK:
-		  ratioStatLocal = autoCorrNullSq / (nullStatistic + nullStatRegul);
-		*/
-                /*CHECK: Remove this line once the usage of nullStatRegul is restored*/
-                nullStatRegul = snrsqthinca[3];
 		ratioStatLocal = cohSnrSqLocal;
 	      }
 	      /* Updating RatioStat here */
@@ -2823,15 +2804,12 @@ XLALCoherentInspiralFilterSegment (
 		  thisEvent->eta = input->tmplt->eta;
 		  /* Save a set of alternative statistics */
 		  crossCorrCohSq = XLALComputeCrossCohStatCase3b(cData,VVPlus,VVMinus,timePt[0],slidePoints,params->numDetectors,MM1,MM2,&autoCorrCohSq,chisq,chisq_dof,eff_snr_denom_fac,&crossCorrCohSqEff);
-		  /*CHECK: Not needed since computed above
-		    crossCorrNullSq = XLALComputeCrossNullStatCase3b(cData,VVPlus,VVMinus,timePt[0],slidePoints,params->numDetectors,MM1,MM2); */
 		  thisEvent->tau5 = eff_coh_snr;
                   thisEvent->tau0 = crossCorrCohSqEff;
+                  thisEvent->kappa = nullStatRegul;
 		  XLALSaveStatsInEventTable(cohSnrSqLocal,autoCorrCohSq,crossCorrCohSq,autoCorrNullSq,crossCorrNullSq, MM1, MM2, VVPlus, VVMinus, thisEvent);
 
 		  /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
-                  /* CHECK: Temporary change:
-		  thisEvent->null_stat_h1h2 = -1; */
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
                     thisEvent->null_stat_h1h2 = -2;
                   }
@@ -2840,10 +2818,7 @@ XLALCoherentInspiralFilterSegment (
                   }
 		  /* Compute network null-statistic at just trigger end-time */
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		    /* CHECK: For now turn-off computing degenerate statistics for now:
-		       thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		    thisEvent->null_stat_degen = -100.0;
-		    /* CHECK: Temporarily saving this as well */
 		    thisEvent->null_statistic = thisEvent->null_stat_degen;
 		  }
 		  else {
@@ -2856,25 +2831,21 @@ XLALCoherentInspiralFilterSegment (
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		    for ( i=0 ; i < 3 ; i++ ) {
+		    for ( i=0 ; i < 4 ; i++ ) {
 		      NN[i] = 0.0;
 		    }
-		    for ( detId=0 ; detId < 3 ; detId++ ) {
+		    for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		      NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		      NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		      NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		      NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		    }
-		    for ( i=0 ; i < 3 ; i++ ) {
-		      NN[i] *= sqrt((double) chirpTime);
-		    }
 		    determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		    if ( ( determinantMM*determinantMM < 1e-40 ) )
-		      determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		    determinantMM = 1/determinantMM;
-		    InvMMAA = (double)CC * determinantMM;
-		    InvMMBB = -(double)BB * determinantMM;
-		    InvMMCC = (double)AA * determinantMM;
+		      determinantMM = 1e-20; /* Note: Saving with positive sign */
+		    InvMMAA = (double)CC / determinantMM;
+		    InvMMBB = -(double)BB / determinantMM;
+		    InvMMCC = (double)AA / determinantMM;
 		    aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		    aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		    aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -2926,11 +2897,10 @@ XLALCoherentInspiralFilterSegment (
 		  XLALSaveStatsInEventTable(cohSnrSqLocal,autoCorrCohSq,crossCorrCohSq,autoCorrNullSq,crossCorrNullSq, MM1, MM2, VVPlus, VVMinus, thisEvent);
 
 		  /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
-                  /* CHECK: Temporary change:
-                  thisEvent->null_stat_h1h2 = -1; */
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
 		    thisEvent->tau5 = eff_coh_snr;
                     thisEvent->tau0 = crossCorrCohSqEff;
+                    thisEvent->kappa = nullStatRegul;
                     thisEvent->null_stat_h1h2 = -2;
                   }
                   else {
@@ -2939,10 +2909,7 @@ XLALCoherentInspiralFilterSegment (
 
 		  /* Compute network null-statistic at just trigger end-time */
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		    /* CHECK: For now turn-off computing degenerate statistics for now:
-		       thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		    thisEvent->null_stat_degen = -100.0;
-		    /* CHECK: Temporarily saving this as well */
 		    thisEvent->null_statistic = thisEvent->null_stat_degen;
 		  }
 		  else {
@@ -2954,25 +2921,21 @@ XLALCoherentInspiralFilterSegment (
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		    for ( i=0 ; i < 3 ; i++ ) {
+		    for ( i=0 ; i < 4 ; i++ ) {
 		      NN[i] = 0.0;
 		    }
-		    for ( detId=0 ; detId < 3 ; detId++ ) {
+		    for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		      NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		      NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		      NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		      NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		    }
-		    for ( i=0 ; i < 3 ; i++ ) {
-		      NN[i] *= sqrt((double) chirpTime);
-		    }
 		    determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		    if ( ( determinantMM*determinantMM < 1e-40 ) )
-		      determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		    determinantMM = 1/determinantMM;
-		    InvMMAA = (double)CC * determinantMM;
-		    InvMMBB = -(double)BB * determinantMM;
-		    InvMMCC = (double)AA * determinantMM;
+		      determinantMM = 1e-20; /* Note: Saving with positive sign */
+		    InvMMAA = (double)CC / determinantMM;
+		    InvMMBB = -(double)BB / determinantMM;
+		    InvMMCC = (double)AA / determinantMM;
 		    aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		    aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		    aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -3036,10 +2999,10 @@ XLALCoherentInspiralFilterSegment (
 		  XLALSaveStatsInEventTable(cohSnrSqLocal,autoCorrCohSq,crossCorrCohSq,autoCorrNullSq,crossCorrNullSq, MM1, MM2, VVPlus, VVMinus, thisEvent);
 
 		  /* Since not both H1 and H2 are present, the H1H2 null-stat is not meaningful*/
-                  /* CHECK: Temporary change:
-                  thisEvent->null_stat_h1h2 = -1; */
 		  thisEvent->tau5 = eff_coh_snr;
                   thisEvent->tau0 = crossCorrCohSqEff;
+                  /*Note: Temporarily save combined eff-snr here */
+                  thisEvent->kappa = nullStatRegul;
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
                     thisEvent->null_stat_h1h2 = -2;
                   }
@@ -3049,10 +3012,7 @@ XLALCoherentInspiralFilterSegment (
 
 		  /* Compute network null-statistic at just trigger end-time */
                   if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		    /* CHECK: For now turn-off computing degenerate statistics for now:
-		       thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		    thisEvent->null_stat_degen = -100.0;
-		    /* CHECK: Temporarily saving this as well */
 		    thisEvent->null_statistic = thisEvent->null_stat_degen;
 		  }
 		  else {
@@ -3064,25 +3024,21 @@ XLALCoherentInspiralFilterSegment (
 		  if ( params->estimParams || params->followup ) {
 		    /* Parameter estimation: Distance
 		       for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		    for ( i=0 ; i < 3 ; i++ ) {
+		    for ( i=0 ; i < 4 ; i++ ) {
 		      NN[i] = 0.0;
 		    }
-		    for ( detId=0 ; detId < 3 ; detId++ ) {
+		    for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		      NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		      NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		      NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		      NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		    }
-		    for ( i=0 ; i < 3 ; i++ ) {
-		      NN[i] *= sqrt((double) chirpTime);
-		    }
 		    determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		    if ( ( determinantMM*determinantMM < 1e-40 ) )
-		      determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		    determinantMM = 1/determinantMM;
-		    InvMMAA = (double)CC * determinantMM;
-		    InvMMBB = -(double)BB * determinantMM;
-		    InvMMCC = (double)AA * determinantMM;
+		      determinantMM = 1e-20; /* Note: Saving with positive sign */
+		    InvMMAA = (double)CC / determinantMM;
+		    InvMMBB = -(double)BB / determinantMM;
+		    InvMMCC = (double)AA / determinantMM;
 		    aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		    aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		    aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -3208,40 +3164,10 @@ XLALCoherentInspiralFilterSegment (
 	    BBn[detId] = ( fplus[detId]) * ( fcross[detId]);
 	    CCn[detId] = ( fcross[detId]) * ( fcross[detId]);
 
-	    discrimSqrtn[detId] = sqrt(AAn[detId]*AAn[detId]
-				       + 4*BBn[detId]*BBn[detId]
-				       - 2*AAn[detId]*CCn[detId]
-				       + CCn[detId]*CCn[detId]);
-
-	    O11 = ( AAn[detId] - CCn[detId] - discrimSqrtn[detId]);
-	    O11 /= (BBn[detId]
-		    *sqrt( 4 + ( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
-			   *( AAn[detId] - CCn[detId] - discrimSqrtn[detId])
-			   / ( BBn[detId]*BBn[detId] ) ) );
-	    O12 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
-			    *(-AAn[detId]+CCn[detId]+discrimSqrtn[detId])
-			    / ( 4*BBn[detId]*BBn[detId] ) );
-	    O21 = ( AAn[detId] - CCn[detId] + discrimSqrtn[detId]);
-	    O21 /= ( BBn[detId]
-		     *sqrt( 4 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			    *(-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			    / ( BBn[detId]*BBn[detId] ) ) );
-	    O22 = 1 / sqrt( 1 + (-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			    *(-AAn[detId]+CCn[detId]-discrimSqrtn[detId])
-			    / ( 4*BBn[detId]*BBn[detId] ) );
-
-	    VVPlus[detId] = O11 * ( fplus[detId])
-	      + O12 * ( fcross[detId]);
-	    VVMinus[detId] = O21 * ( fplus[detId])
-	      + O22 * ( fcross[detId]);
-
-	    /* CHECK: If sigmasq should be in the denominator!
-	       Compute the elements of the helicity-plane projection matrix */
-	    AAn[detId] *= (REAL4) sigmasq[j];
-	    BBn[detId] *= (REAL4) sigmasq[j];
-	    CCn[detId] *= (REAL4) sigmasq[j];
-	    VVPlus[detId] *= sqrt((REAL4) sigmasq[j]);
-	    VVMinus[detId] *= sqrt((REAL4) sigmasq[j]);
+            /* Compute the elements of the helicity-plane projection matrix */ 
+            AAn[detId] *= sigmasq[j];
+            BBn[detId] *= sigmasq[j];
+            CCn[detId] *= sigmasq[j];
 
 	    /* Calculate factors necessary for parameter estimation*/
 	    uSigma[detId] = (double)fplus[detId] * sqrt((double)sigmasq[j]);
@@ -3269,6 +3195,34 @@ XLALCoherentInspiralFilterSegment (
 	else {
 	  discrimSqrt = 0.0;
 	}
+
+        O22 = ( -AA + CC + discrimSqrt);
+        O22 /= (BB * sqrt( 4 + pow( AA - CC - discrimSqrt, 2)/( BB*BB ) ) );
+
+        O21 = 1 / sqrt( 1 + pow(-AA+CC+discrimSqrt, 2)/ ( 4*BB*BB ) );
+
+        O12 = ( -AA + CC - discrimSqrt);
+        O12 /= ( BB * sqrt( 4 + pow(-AA+CC-discrimSqrt, 2) / ( BB*BB ) ) );
+
+        O11 = 1 / sqrt( 1 + pow(-AA+CC-discrimSqrt, 2)/ ( 4*BB*BB ) );
+
+        detId = 0;
+        for( j=0; j<LAL_NUM_IFO; j++ ) {
+          if ( !(params->detIDVec->data[j] == 0 )) {
+            VVPlus[detId] = O11 * ( fplus[detId])
+              + O12 * ( fcross[detId]);
+            VVMinus[detId] = O21 * ( fplus[detId])
+              + O22 * ( fcross[detId]);
+
+            VVPlus[detId] *= sqrt((REAL4) sigmasq[j]);
+            VVMinus[detId] *= sqrt((REAL4) sigmasq[j]);
+
+            detId++;
+          }
+        }
+
+        MM1 = 2*(AA*CC - BB*BB)/(AA+CC+discrimSqrt);
+        MM2 = 2*(AA*CC - BB*BB)/(AA+CC-discrimSqrt);
 
 	/* Factors for determining & computing degenerate case/statistics*/
 	zetaRe = (AA-CC)/(AA+CC);
@@ -3322,17 +3276,13 @@ XLALCoherentInspiralFilterSegment (
 	      ratioStatLocal = 0.0;
 	    }
 	    else {
-              /* CHECK: This computation can be pushed to within threshcross loop */
+              /* Note: This computation can be pushed to within threshcross loop */
 	      cohSnrSqLocal = XLALComputeCohStatCase4a(cData,VVPlus,VVMinus,timePt[0],slidePoints4D,params->numDetectors,MM1,MM2,chisq,chisq_dof,eff_snr_denom_fac,&eff_coh_snr);
 	      /* Note that unlike above, the next 3 are *squared* statistics */
 	      nullStatistic = (REAL4) XLALComputeNonQuadNullStatCase4a(fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData);
 
 	      autoCorrNullSq = (REAL4) XLALComputeIncohStatCase4a(caseID,fplus,fcross,sigmasq,timePt[0],slidePoints4D,cData,nullStatistic,&crossCorrNullSq,chisq,chisq_dof,eff_snr_denom_fac);
 
-
-	      /*CHECK:
-		ratioStatLocal = autoCorrNullSq / (nullStatistic + nullStatRegul);
-	      */
 	      ratioStatLocal = cohSnrSqLocal;
 
 	    }
@@ -3414,11 +3364,10 @@ XLALCoherentInspiralFilterSegment (
 		/* Compute network null-statistic at just trigger end-time */
 		thisEvent->tau5 = eff_coh_snr;
                 thisEvent->tau0 = crossCorrCohSqEff;
+                /*Note: Temporarily save combined eff-snr here */
+                thisEvent->kappa = nullStatRegul;
                 if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		  /* CHECK: For now turn-off computing degenerate statistics for now:
-		     thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		  thisEvent->null_stat_degen = -100.0;
-		  /* CHECK: Temporarily saving this as well */
 		  thisEvent->null_statistic = thisEvent->null_stat_degen;
 		}
 		else {
@@ -3435,27 +3384,21 @@ XLALCoherentInspiralFilterSegment (
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		  for ( i=0 ; i < 3 ; i++ ) {
+		  for ( i=0 ; i < 4 ; i++ ) {
 		    NN[i] = 0.0;
 		  }
-		  for ( detId=0 ; detId < 3 ; detId++ ) {
+		  for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		    NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		    NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		    NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		    NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		  }
-
-
-		  for ( i=0 ; i < 3 ; i++ ) {
-		    NN[i] *= sqrt((double) chirpTime);
-		  }
 		  determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		  if ( ( determinantMM*determinantMM < 1e-40 ) )
-		    determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		  determinantMM = 1/determinantMM;
-		  InvMMAA = (double)CC * determinantMM;
-		  InvMMBB = -(double)BB * determinantMM;
-		  InvMMCC = (double)AA * determinantMM;
+		    determinantMM = 1e-20; /* Note: Saving with positive sign */
+		  InvMMAA = (double)CC / determinantMM;
+		  InvMMBB = -(double)BB / determinantMM;
+		  InvMMCC = (double)AA / determinantMM;
 		  aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		  aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		  aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -3522,11 +3465,10 @@ XLALCoherentInspiralFilterSegment (
 		/* Compute network null-statistic at just trigger end-time */
 		thisEvent->tau5 = eff_coh_snr;
                 thisEvent->tau0 = crossCorrCohSqEff;
+                /*Note: Temporarily save combined eff-snr here */
+                thisEvent->kappa = nullStatRegul;
                 if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		  /* CHECK: For now turn-off computing degenerate statistics for now:
-		     thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		  thisEvent->null_stat_degen = -100.0;
-		  /* CHECK: Temporarily saving this as well */
 		  thisEvent->null_statistic = thisEvent->null_stat_degen;
 		}
 		else {
@@ -3543,25 +3485,21 @@ XLALCoherentInspiralFilterSegment (
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		  for ( i=0 ; i < 3 ; i++ ) {
+		  for ( i=0 ; i < 4 ; i++ ) {
 		    NN[i] = 0.0;
 		  }
-		  for ( detId=0 ; detId < 3 ; detId++ ) {
+		  for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		    NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		    NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		    NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		    NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		  }
-		  for ( i=0 ; i < 3 ; i++ ) {
-		    NN[i] *= sqrt((double) chirpTime);
-		  }
 		  determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		  if ( ( determinantMM*determinantMM < 1e-40 ) )
-		    determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		  determinantMM = 1/determinantMM;
-		  InvMMAA = (double)CC * determinantMM;
-		  InvMMBB = -(double)BB * determinantMM;
-		  InvMMCC = (double)AA * determinantMM;
+		    determinantMM = 1e-20; /* Note: Saving with positive sign */
+		  InvMMAA = (double)CC / determinantMM;
+		  InvMMBB = -(double)BB / determinantMM;
+		  InvMMCC = (double)AA / determinantMM;
 		  aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		  aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		  aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -3641,11 +3579,10 @@ XLALCoherentInspiralFilterSegment (
 		/* Compute network null-statistic at just trigger end-time */
 		thisEvent->tau5 = eff_coh_snr;
                 thisEvent->tau0 = crossCorrCohSqEff;
+                /*Note: Temporarily save combined eff-snr here */
+                thisEvent->kappa = nullStatRegul;
                 if ( (MM1 == 0.0) || (MM2 == 0.0 ) ) {
-		  /* CHECK: For now turn-off computing degenerate statistics for now:
-		     thisEvent->null_stat_degen = (REAL4) XLALComputeDEGNullStatCase3b(caseID,DRe,DIm,sigmasq,thisEvent);*/
 		  thisEvent->null_stat_degen = -100.0;
-		  /* CHECK: Temporarily saving this as well */
 		  thisEvent->null_statistic = thisEvent->null_stat_degen;
 		}
 		else {
@@ -3664,25 +3601,21 @@ XLALCoherentInspiralFilterSegment (
 		if ( params->estimParams || params->followup ) {
 		  /* Parameter estimation: Distance
 		     for ( detId=0 ; detId<params->numDetectors ; detId++ ) {*/
-		  for ( i=0 ; i < 3 ; i++ ) {
+		  for ( i=0 ; i < 4 ; i++ ) {
 		    NN[i] = 0.0;
 		  }
-		  for ( detId=0 ; detId < 3 ; detId++ ) {
+		  for ( detId=0 ; detId < params->numDetectors ; detId++ ) {
 		    NN[0] += uSigma[detId] * (double)quadTemp[detId].re;
 		    NN[1] += vSigma[detId] * (double)quadTemp[detId].re;
 		    NN[2] += uSigma[detId] * (double)quadTemp[detId].im;
 		    NN[3] += vSigma[detId] * (double)quadTemp[detId].im;
 		  }
-		  for ( i=0 ; i < 3 ; i++ ) {
-		    NN[i] *= sqrt((double) chirpTime);
-		  }
 		  determinantMM = (double)AA*(double)CC-(double)BB*(double)BB;
 		  if ( ( determinantMM*determinantMM < 1e-40 ) )
-		    determinantMM = 1e-20; /* CHECK: Saving with positive sign */
-		  determinantMM = 1/determinantMM;
-		  InvMMAA = (double)CC * determinantMM;
-		  InvMMBB = -(double)BB * determinantMM;
-		  InvMMCC = (double)AA * determinantMM;
+		    determinantMM = 1e-20; /* Note: Saving with positive sign */
+		  InvMMAA = (double)CC / determinantMM;
+		  InvMMBB = -(double)BB / determinantMM;
+		  InvMMCC = (double)AA / determinantMM;
 		  aa[0] = InvMMAA*NN[0] + InvMMBB*NN[1];
 		  aa[1] = InvMMBB*NN[0] + InvMMCC*NN[1];
 		  aa[2] = InvMMAA*NN[2] + InvMMBB*NN[3];
@@ -3737,7 +3670,7 @@ XLALCoherentInspiralFilterSegment (
        not been computed above already*/
     memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
 
-    /*CHECK: Will not give intended result if first det is "G1", since it
+    /*Note: Will not give intended result if first det is "G1", since it
       assumes that cdata[0] is H1 and cdata[1] is H1; rectify this in next rev. */
     for (k=0;k<(INT4)numPoints;k++) {
 
@@ -3772,7 +3705,7 @@ XLALCoherentInspiralFilterSegment (
     /* Allocate memory for null statistic */
     memset( params->nullStatH1H2Vec->data->data, 0, numPoints*sizeof(REAL4));
 
-    /*CHECK: Will not give intended result if first det is "G1", since it
+    /*Note: Will not give intended result if first det is "G1", since it
       assumes that cdata[0] is H1 and cdata[1] is H2; rectify this in next rev. */
     for (k=0;k<(INT4)numPoints;k++) {
       /* Compute null-stream statistic;
@@ -3793,7 +3726,7 @@ XLALCoherentInspiralFilterSegment (
        not been computed above already*/
     memset( params->cohH1H2SNRVec->data->data, 0, numPoints*sizeof(REAL4));
 
-    /*CHECK: Will not give intended result if first det is "G1", since it
+    /*Note: Will not give intended result if first det is "G1", since it
       assumes that cdata[0] is H1 and cdata[1] is H1; rectify this in next rev. */
     for (k=0;k<(INT4)numPoints;k++) {
 
@@ -3892,7 +3825,7 @@ void XLALSaveStatsInEventTable(REAL4 cohSnrSqLocal,REAL4 autoCorrCohSq,REAL4 cro
   thisEvent->crossCorrNullSq = crossCorrNullSq;
   thisEvent->ampMetricEigenVal1 = ampMetricEigenVal1;
   thisEvent->ampMetricEigenVal2 = ampMetricEigenVal2;
-  /* CHECK: Temporary storage, only for H1L1V1 */
+  /* Note: Storage, only for H1L1V1 */
   thisEvent->tau2 = VVPlus[0];
   thisEvent->tau3 = VVPlus[1];
   thisEvent->tau4 = VVPlus[2];
@@ -3935,16 +3868,6 @@ REAL4 XLALComputeCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
       cData[detId]->data->data[detIdSlidTimePt].re;
     CImMinus += VVMinus[detId] *
       cData[detId]->data->data[detIdSlidTimePt].im;
-   /*CHECK:
-    CRePlusEff += VVPlus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].re / chisqFac;
-    CImPlusEff += VVPlus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].im / chisqFac;
-    CReMinusEff += VVMinus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].re / chisqFac;
-    CImMinusEff += VVMinus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].im / chisqFac;
-   */
     CRePlusEff += cData[detId]->data->data[detIdSlidTimePt].re
       * cData[detId]->data->data[detIdSlidTimePt].re / pow(chisqFac,2);
 
@@ -3958,12 +3881,6 @@ REAL4 XLALComputeCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
                   CReMinus*CReMinus/MM2 +
 		  CImMinus*CImMinus/MM2;
 
-  /* CHECK: Compute effective coherent SNR
-  *eff_coh_snr = CRePlusEff*CRePlusEff/MM1 +
-                  CImPlusEff*CImPlusEff/MM1 +
-                  CReMinusEff*CReMinusEff/MM2 +
-		  CImMinusEff*CImMinusEff/MM2;
-  */
   *eff_coh_snr = CRePlusEff + CImPlusEff;
 
   return cohSnrSqLocal;
@@ -4054,7 +3971,6 @@ REAL4 XLALComputeCrossCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
   autoCorrCohSqLocal = (Incohsq1 + Incohsq2)/MM1 + (Incohsq3 + Incohsq4)/MM2;
   crossCorrCohSq -= autoCorrCohSqLocal;
 
-  /* CHECK: *autoCorrCohSq = autoCorrCohSqLocal;*/
   *autoCorrCohSq = (Incohsq1Eff + Incohsq2Eff)/MM1 + (Incohsq3Eff + Incohsq4Eff)/MM2;
 
   *crossCorrCohSqEff = ( CRePlusEff*CRePlusEff/MM1 +
@@ -4162,7 +4078,7 @@ double XLALComputeIncohStatCase3b(INT4 caseID[6], double fplus[4], double fcross
   if ( (caseID[1] == 0) ) {
     /* This is a H2 trigger */
     sigmasqH = sigmasq[2];
-    chisqH = chisq[0];/*CHECK: Correct for G1*/
+    chisqH = chisq[0];/*Note: Correct for G1*/
     chisq_dofH = chisq_dof[0];
   }
   else {
@@ -4171,14 +4087,18 @@ double XLALComputeIncohStatCase3b(INT4 caseID[6], double fplus[4], double fcross
     chisq_dofH = chisq_dof[0];
   }
 
-  HchisqFacSq = (1 + (Hquadre*Hquadre+Hquadim*Hquadim)/eff_snr_denom_fac)*chisqH/
+  if ( chisqH != 0.0 ) {
+    HchisqFacSq = (1 + (Hquadre*Hquadre+Hquadim*Hquadim)/eff_snr_denom_fac)*chisqH/
                  (2*chisq_dofH -2);
-
-  l1chisqFacSq =  (1 + (l1quadre*l1quadre + l1quadim*l1quadim)/eff_snr_denom_fac)*chisq[1]/
+  }
+  if ( chisq[1] != 0.0 ) {
+    l1chisqFacSq =  (1 + (l1quadre*l1quadre + l1quadim*l1quadim)/eff_snr_denom_fac)*chisq[1]/
                  (2*chisq_dof[1] -2);
-
-  v1chisqFacSq =  (1 + (v1quadre*v1quadre + v1quadim*v1quadim)/eff_snr_denom_fac)*chisq[2]/
+  }
+  if ( chisq[2] != 0.0 ) {
+    v1chisqFacSq =  (1 + (v1quadre*v1quadre + v1quadim*v1quadim)/eff_snr_denom_fac)*chisq[2]/
                  (2*chisq_dof[2] -2);
+  }
 
 
   nullNumerSqRe8 = pow((fplus[1]*fcross[2]-fplus[2]*fcross[1])*Hquadre/ sqrt(sigmasqH),2) +
@@ -4339,16 +4259,7 @@ REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
       cData[detId]->data->data[detIdSlidTimePt].re;
     CImMinus += VVMinus[detId] *
       cData[detId]->data->data[detIdSlidTimePt].im;
-    /*CHECK:
-    CRePlusEff += VVPlus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].re / chisqFac;
-    CImPlusEff += VVPlus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].im / chisqFac;
-    CReMinusEff += VVMinus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].re / chisqFac;
-    CImMinusEff += VVMinus[detId] *
-      cData[detId]->data->data[detIdSlidTimePt].im / chisqFac;
-    */
+
     CRePlusEff += cData[detId]->data->data[detIdSlidTimePt].re
       * cData[detId]->data->data[detIdSlidTimePt].re / pow(chisqFac,2);
 
@@ -4362,12 +4273,6 @@ REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
                   CReMinus*CReMinus/MM2 +
 		  CImMinus*CImMinus/MM2;
 
-  /*CHECK: Compute effective coherent SNR
-  *eff_coh_snr = CRePlusEff*CRePlusEff/MM1 +
-                  CImPlusEff*CImPlusEff/MM1 +
-                  CReMinusEff*CReMinusEff/MM2 +
-		  CImMinusEff*CImMinusEff/MM2;
-  */
   *eff_coh_snr = CRePlusEff + CImPlusEff;
 
   return cohSnrSqLocal;
@@ -4459,7 +4364,6 @@ REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
   autoCorrCohSqLocal = (Incohsq1 + Incohsq2)/MM1 + (Incohsq3 + Incohsq4)/MM2;
   crossCorrCohSq -= autoCorrCohSqLocal;
 
-  /* CHECK: *autoCorrCohSq = autoCorrCohSqLocal;*/
   *autoCorrCohSq = (Incohsq1Eff + Incohsq2Eff)/MM1 + (Incohsq3Eff + Incohsq4Eff)/MM2;
 
   *crossCorrCohSqEff = ( CRePlusEff*CRePlusEff/MM1 +
@@ -4517,9 +4421,8 @@ double XLALComputeNonQuadNullStatCase4a(double fplus[4], double fcross[4], REAL8
 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
-double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4], REAL4 nullStatistic, REAL4 *crossCorrNullSq, REAL4 chisq[4], REAL4 chisq_dof[4], REAL4 eff_snr_denom_fac) {
+double XLALComputeIncohStatCase4a(INT4 UNUSED caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4], REAL4 nullStatistic, REAL4 *crossCorrNullSq, REAL4 chisq[4], REAL4 chisq_dof[4], REAL4 eff_snr_denom_fac) {
   /* caseID is unused in this function */
-  UNUSED(caseID);
 
   /* This trigger is from either H1 or H2 but not both */
   double nullNorm8 = 0.0;
@@ -4537,14 +4440,18 @@ double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross
   REAL4 l1chisqFacSq = 1.0;
   REAL4 v1chisqFacSq = 1.0;
 
-  HchisqFacSq = (1 + (Hquadre*Hquadre+Hquadim*Hquadim)/eff_snr_denom_fac)*chisq[0]/
+  if ( chisq[0] != 0.0 ) {
+    HchisqFacSq = (1 + (Hquadre*Hquadre+Hquadim*Hquadim)/eff_snr_denom_fac)*chisq[0]/
                  (2*chisq_dof[0] -2);
-
-  l1chisqFacSq =  (1 + (l1quadre*l1quadre + l1quadim*l1quadim)/eff_snr_denom_fac)*chisq[2]/
+  }
+  if ( chisq[2] != 0.0 ) {
+    l1chisqFacSq =  (1 + (l1quadre*l1quadre + l1quadim*l1quadim)/eff_snr_denom_fac)*chisq[2]/
                  (2*chisq_dof[2] -2);
-
-  v1chisqFacSq =  (1 + (v1quadre*v1quadre + v1quadim*v1quadim)/eff_snr_denom_fac)*chisq[3]/
+  }
+  if ( chisq[3] != 0.0 ) {
+    v1chisqFacSq =  (1 + (v1quadre*v1quadre + v1quadim*v1quadim)/eff_snr_denom_fac)*chisq[3]/
                  (2*chisq_dof[3] -2);
+  }
 
   /* Compute components of the coherent SNR */
   Hquadre = cData[0]->data->data[timeP+slidePoints4D[0]].re;
@@ -4619,16 +4526,13 @@ double XLALComputeNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigma
     return nullStatistic;
 }
 
-double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
+double XLALComputeNullTimeSeriesCase4a(INT4 UNUSED caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
     /* This trigger is from both H1 and H2;
      but using H1 and not H2 for now*/
     double nullNorm8 = 0.0;
     double nullNumerRe8 = 0.0;
     double nullNumerIm8 = 0.0;
     double nullStatistic = 0.0;
-
-    /* caseID is unused in this function */
-    UNUSED(caseID);
 
     /* Prepare norm for null statistic */
     nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
@@ -4664,7 +4568,7 @@ void XLALCoherentCBCEstimateDistanceCase2a(double C_Real0, double C_Im0, double 
  thisEvent->eff_dist_h1 = sqrt(sigmasq[0])/pow((C_Real0*C_Real0+C_Im0*C_Im0),.5);
  thisEvent->eff_dist_h2 = sqrt(sigmasq[1])/pow((C_Real1*C_Real1+C_Im1*C_Im1),.5);
 
- /*CHECK: Need to update the code here so that the C's correspond to H1 and H2 */
+ /*Note: Need to update the code here so that the C's correspond to H1 and H2 */
  thisEvent->eff_dist_h1h2 = (sigmasq[0]+
      sigmasq[1])/sqrt(sigmasq[0]*(C_Real0*C_Real0+C_Im0*C_Im0)+
      sigmasq[1]*(C_Real1*C_Real1+C_Im1*C_Im1)+
@@ -4686,7 +4590,6 @@ void XLALCoherentCBCEstimateDistanceCase2a(double C_Real0, double C_Im0, double 
 void XLALCoherentCBCEstimateDistanceCase2b(INT4 caseID[6], double C_Real0, double C_Im0, double C_Real1, double C_Im1, REAL8 sigmasq[4], REAL4 chisq[4], MultiInspiralTable *thisEvent) {
   UINT4 det1Found = 0;
 
-  /*CHECK: */
   thisEvent->chisq_g = chisq[2];
   thisEvent->chisq_t = chisq[3];
 
@@ -4946,14 +4849,12 @@ void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq[4], REAL4 chi
   }
 }
 
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b,INT4 caseID[6] ) {
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double UNUSED chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b,INT4 caseID[6] ) {
 
   double lum_dist_est,f_a,f_a_sq,g_a,h_a,sine_psi=0.0,sine_coa_phase=0.0,p=0.0;
   UINT4 det1Found = 0;
   UINT4 det2Found = 0;
 
-  /* chirpTime is unused in this function */
-  UNUSED(chirpTime);
   thisEvent->eff_dist_g = -1;
   thisEvent->eff_dist_h1 = -1;
   thisEvent->eff_dist_h2 = -1;
@@ -4980,7 +4881,6 @@ double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa
     {
       h_a=(1/g_a)+pow(((1/(g_a*g_a)-1)),.5);
     }
-
 
 
  *iota_est=acos(h_a);

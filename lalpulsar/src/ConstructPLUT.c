@@ -34,9 +34,9 @@ This module is the core of the Hough transform. The LAL function
 LALHOUGHConstructPLUT()
 constructs the look up tables that will be used to build the so-called
 partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
-frequency range around a certain  \verb@f0@ value. The look up table contains
+frequency range around a certain \a f0 value. The look up table contains
 all the necessary information regarding the borders of the annuli clipped on
-the \lq projected' two dimensional sky-patch.
+the projected' two dimensional sky-patch.
 
 The inputs are:  HOUGHPatchGrid   containing the grid patch
 information. This is independent of the sky location of the
@@ -129,7 +129,6 @@ use of the stereographic projection.
 #define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
-#define rint(x) floor((x)+0.5)
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -265,7 +264,6 @@ NRCSID (CONSTRUCTPLUTC, "$Id$");
 #define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
-#define rint(x) floor((x)+0.5)
 
 
 /*

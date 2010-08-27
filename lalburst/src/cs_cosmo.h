@@ -25,11 +25,26 @@
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 
-/*  "$Id$" "$Name$" */
+#ifndef CS_COSMO_H
+#define CS_COSMO_H
+#include <stdlib.h>
 
-#include "cs_cosmo.h"
+/*  "$Id$" "$Name$"; */
 
-#define LAMBDA_Z_EQ 5440.0		/* redshift of matter-radiation equilib: 10^3.94 */
-#define LAMBDA_H_0 2.27e-18		/* Hubble constant (s^-1) */
-#define LAMBDA_OMEGA_M 0.279
-#define LAMBDA_OMEGA_R 8.5e-5
+typedef struct cs_cosmo_functions {
+	double *phit;
+	double *phiA;
+	double *phiV;
+	double *z;
+	double  zmin;
+	double  dlnz;
+	size_t  n;
+} cs_cosmo_functions_t;
+
+extern const char * cosmoname;
+extern double zeq;
+extern double H0;
+cs_cosmo_functions_t XLALCSCosmoFunctions( double *z, size_t n );
+cs_cosmo_functions_t XLALCSCosmoFunctionsAlloc( double zmin, double dlnz, size_t n );
+void XLALCSCosmoFunctionsFree(cs_cosmo_functions_t);
+#endif /* CS_COSMO_H */

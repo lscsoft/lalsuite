@@ -91,9 +91,8 @@ typedef struct LALSTPNstructparams {
 
 void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams) {
 
-    REAL8 s;
     REAL8 omega;
-    REAL8 LNhx,LNhy,LNhz,LNmag;
+    REAL8 LNhx,LNhy,LNhz,LNhxy,LNmag;
     REAL8 S1x,S1y,S1z;
     REAL8 S2x,S2y,S2z;
     REAL8 alphadotcosi;
@@ -112,7 +111,6 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     REAL8 v, v2, v3, v4, v7, v11;
 
     /* --- computation start here --- */
-    s     = values->data[0];
     omega = values->data[1];
 
     LNhx  = values->data[2];
@@ -265,8 +263,10 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     /* Michele-041208: but I think it was an experimental term introduced by Yi and Alessandra */
 
     /* dphi*/
+    LNhxy = LNhx*LNhx + LNhy*LNhy;
+    if(LNhxy > 0.0) alphadotcosi = LNhz * (LNhx*dLNhy - LNhy*dLNhx) / LNhxy;
+    else	    alphadotcosi = 0.0;
 
-    alphadotcosi = -LNhz * (LNhy*dLNhx - LNhx*dLNhy) / (LNhx*LNhx + LNhy*LNhy);
     ds = omega - alphadotcosi;
 
     /* copy back into dvalues structure*/
@@ -669,7 +669,6 @@ LALSTPNWaveformEngine (
   rk4GSLIntegrator *integrator;
 
   expnCoeffs 	ak;
-  expnFunc 	func;
 
 
   REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -780,7 +779,6 @@ LALSTPNWaveformEngine (
       DETATCHSTATUSPTR(status);
       RETURN (status);
     }
-  func = paramsInit->func;
   ak   = paramsInit->ak;
 
 

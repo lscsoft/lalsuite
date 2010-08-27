@@ -35,6 +35,12 @@
 #include "getdate.h"
 #include "lalapps.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define MAX_DATE_STRING_LENGTH 256
 
 /* Longitudes of LHO and LLO taken from LIGO-T980044-08 */
@@ -865,7 +871,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
 
   if ( optind == argc && fp )
   {
-      char *c;
+      char UNUSED *c;
       c = fgets( buf, buflen, fp );
   }
   else

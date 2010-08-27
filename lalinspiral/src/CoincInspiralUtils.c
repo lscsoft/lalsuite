@@ -986,7 +986,6 @@ XLALCreateCoincSlideTable(
 {
   static const char *func = "XLALCreateCoincSlideTable";
   CoincInspiralSlideTable  *thisSlideTable = NULL;
-  CoincInspiralSlideTable  *prevSlideTable = NULL;
   INT4                      idx = 0;
   INT4                      slideNum = 0;
 
@@ -1003,7 +1002,6 @@ XLALCreateCoincSlideTable(
 
     if ( *slideTableHead )
     {
-      prevSlideTable = thisSlideTable;
       thisSlideTable->next = (CoincInspiralSlideTable*)
           LALCalloc( 1, sizeof(CoincInspiralSlideTable) );
       thisSlideTable = thisSlideTable->next;
@@ -1287,8 +1285,7 @@ XLALRecreateCoincFromSngls(
 int
 XLALGenerateCoherentBank(
     SnglInspiralTable         **coherentBank,
-    CoincInspiralTable         *coincInput,
-    CHAR                       *ifos
+    CoincInspiralTable         *coincInput
     )
 /* </lalVerbatim> */
 {
@@ -1311,7 +1308,6 @@ XLALGenerateCoherentBank(
   for ( thisCoinc = coincInput; thisCoinc; thisCoinc = thisCoinc->next )
   {
     REAL4 max_snr = 0;
-
     /* loop over the interferometers to get the highest snr*/
     for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
     {
@@ -1331,8 +1327,7 @@ XLALGenerateCoherentBank(
       XLALReturnIFO( ifo, ifoNumber);
 
       /* decide whether we want a template for this ifo */
-      if ( (thisCoinc->snglInspiral[ifoNumber] &&  !ifos) ||
-           ( ifos && strstr(ifos,ifo)) )
+      if ( (thisCoinc->snglInspiral[ifoNumber] ) )
       {
         numTmplts++;
 
@@ -1351,13 +1346,13 @@ XLALGenerateCoherentBank(
           goto error;
         }
         /* copy the info from the loudest trigger */
-        memcpy(currentTrigger, thisCoinc->snglInspiral[ifoMax],
+        memcpy(currentTrigger, thisCoinc->snglInspiral[ifoNumber],
             sizeof(SnglInspiralTable));
         /* terminate the list */
         currentTrigger->next = NULL;
         currentTrigger->event_id = NULL;
-        /* set the ifo */
-        snprintf(currentTrigger->ifo, LIGOMETA_IFO_MAX, "%s", ifo);
+        currentTrigger->mass1 = thisCoinc->snglInspiral[ifoMax]->mass1;
+        currentTrigger->mass2 = thisCoinc->snglInspiral[ifoMax]->mass2;
         /* set the event id */
         currentTrigger->event_id = LALCalloc( 1, sizeof(EventIDColumn) );
         if ( !(currentTrigger->event_id) )
@@ -2863,7 +2858,6 @@ XLALRateErrorCalcCoincInspiral (
 {
   static const char *func = "XLALRateErrorCalcCoincInspiral";
 
-  CoincInspiralSlideTable    *headSlideHeads = NULL;
   CoincInspiralSlideTable    *thisSlideHead = NULL;
   CoincInspiralSlideTable    *thisHeadSlideHead = NULL;
   CoincInspiralSlideTable    *tmpSlideHead = NULL;
@@ -2877,7 +2871,6 @@ XLALRateErrorCalcCoincInspiral (
   REAL4  thisRateError = 0.;
   REAL4  loudestRate = -1;
 
-  headSlideHeads = slideHeads;
   XLALCreateCoincSlideTable( &thisHeadSlideHead, numSlides );
   thisSlideHead = thisHeadSlideHead;
 

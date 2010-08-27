@@ -207,7 +207,7 @@ any sophisticated sanity-checking, though.
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-LALInfo()                   LALPrintError()
+LALInfo()                   XLALPrintError()
 LALMalloc()                 LALDestroyTwoDMesh()
 \end{verbatim}
 
@@ -259,7 +259,7 @@ do {                                                                 \
   UINT4 nFree;                                                       \
   if ( lalDebugLevel&LALINFO ) {                                     \
     LALInfo( stat, "Column too wide" );                              \
-    LALPrintError( "\tnode count %u\n", params->nOut );              \
+    XLALPrintError( "\tnode count %u\n", params->nOut );              \
   }                                                                  \
   TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),        \
 			   &nFree ), stat );                         \
@@ -374,7 +374,7 @@ LALTwoDMesh( LALStatus          *stat,
   if (lalDebugLevel >= 3)
     {
       columnNo = 0;
-      LALPrintError( "      Node count    Column count\n" );
+      XLALPrintError( "      Node count    Column count\n" );
     }
 
   /* Main loop: add columns until we're past the end of the space. */
@@ -454,14 +454,14 @@ LALTwoDMesh( LALStatus          *stat,
     column.leftRange[1] = column.rightRange[1];
     if (lalDebugLevel >= 3)
       {
-	LALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
+	XLALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
       }
   }
 
   /* We're done.  Update the *tail pointer and exit. */
   if (lalDebugLevel >= 3)
     {
-      LALPrintError( "\n" );
+      XLALPrintError( "\n" );
     }
 
   *tail = here;
@@ -546,7 +546,7 @@ LALTwoDColumn( LALStatus            *stat,
     params->nOut++;
     if (lalDebugLevel >= 3)
       {
-	LALPrintError( "\r%16u", params->nOut );
+	XLALPrintError( "\r%16u", params->nOut );
       }
     GETSIZE( here->next->dy, dx, metric, params->mThresh );
     here->next->y = position[1];
@@ -590,7 +590,7 @@ LALTwoDColumn( LALStatus            *stat,
       params->nOut++;
       if (lalDebugLevel >= 3)
 	{
-	  LALPrintError( "\r%16u", params->nOut );
+	  XLALPrintError( "\r%16u", params->nOut );
 	}
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
       myy0 = here->dy[1] - here->next->dy[0];

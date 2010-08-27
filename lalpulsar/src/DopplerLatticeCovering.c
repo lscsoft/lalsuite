@@ -312,7 +312,7 @@ XLALgetCurrentLatticeIndex ( gsl_vector_int **Index, const DopplerLatticeScan *s
       }
     }
   else if ( (*Index)->size != scan->dimLattice ) {
-    LALPrintError ("\n\nOutput vector has wrong dimension %d instead of %d!\n\n", (*Index)->size, scan->dimLattice);
+    XLALPrintError ("\n\nOutput vector has wrong dimension %d instead of %d!\n\n", (*Index)->size, scan->dimLattice);
     XLAL_ERROR (fn, XLAL_EINVAL );
   }
 
@@ -777,7 +777,7 @@ setupSearchRegion ( LALStatus *status, DopplerLatticeScan *scan, const DopplerRe
 
   if ( (scan->boundary.hemisphere = onWhichHemisphere ( points3D )) == HEMI_BOTH )
     {
-      LALPrintError ("\n\nSorry, currently only (ecliptic) single-hemisphere sky-regions are supported!\n");
+      XLALPrintError ("\n\nSorry, currently only (ecliptic) single-hemisphere sky-regions are supported!\n");
       ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
     }
   if ( (scan->boundary.skyRegion.data = LALCalloc ( points3D->length, sizeof(scan->boundary.skyRegion.data[0]) )) == NULL ) {
@@ -853,7 +853,7 @@ IndexToCanonical ( gsl_vector **canonical, const gsl_vector_int *Index, const Do
     return -1;
 
   if ( (*canonical != NULL) && ( (*canonical)->size != DIM_CANONICAL ) ) {
-    LALPrintError ("\nIndexToCanonicalOffset(): output-vector has dim=%d instead of dimCanonical=%d!\n\n",
+    XLALPrintError ("\nIndexToCanonicalOffset(): output-vector has dim=%d instead of dimCanonical=%d!\n\n",
 		   (*canonical)->size, DIM_CANONICAL );
     return -1;
   }
@@ -1132,7 +1132,7 @@ vect2DToSkypos ( SkyPosition *skypos, vect2D_t * const vect2D, hemisphere_t hemi
 
   vn2 = SQUARE ( vn3D[0] ) + SQUARE ( vn3D[1] );
   if ( gsl_fcmp ( vn2, 1.0, EPS_REAL8 ) > 0 ) {
-    LALPrintError ( "\n\nvect2DToSkypos(): Sky-vector has length > 1! (vn2 = %f)\n\n", vn2 );
+    XLALPrintError ( "\n\nvect2DToSkypos(): Sky-vector has length > 1! (vn2 = %f)\n\n", vn2 );
     vn3D[2] = 0;
   }
   else

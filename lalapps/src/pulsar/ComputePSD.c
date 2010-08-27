@@ -83,17 +83,17 @@ RCSID( "$Id$");
 
 /** types of mathematical operations */
 enum tagMATH_OP_TYPE {
-  MATH_OP_ARITHMETIC_SUM = 0,   /** sum(x)     */
-  MATH_OP_ARITHMETIC_MEAN,      /** sum(x) / n */
-  MATH_OP_ARITHMETIC_MEDIAN,    /** x_1 <= ... x_{n/2} <= .. <= x_n */
-  MATH_OP_HARMONIC_SUM,         /** 1 / sum(1/x) */
-  MATH_OP_HARMONIC_MEAN,        /** n / sum(1/x) */
-  MATH_OP_POWERMINUS2_SUM,        /** 1 / sqrt( sum(1/x/x) )*/
-  MATH_OP_POWERMINUS2_MEAN,        /** 1 / sqrt( sum(1/x/x) /n )*/
-  MATH_OP_MINIMUM,              /** x_1 <= ... */
-  MATH_OP_MAXIMUM,              /** ... <= x_n */
+  MATH_OP_ARITHMETIC_SUM = 0,   /**< sum(x)     */
+  MATH_OP_ARITHMETIC_MEAN,      /**< sum(x) / n */
+  MATH_OP_ARITHMETIC_MEDIAN,    /**< x_1 <= ... x_{n/2} <= .. <= x_n */
+  MATH_OP_HARMONIC_SUM,         /**< 1 / sum(1/x) */
+  MATH_OP_HARMONIC_MEAN,        /**< n / sum(1/x) */
+  MATH_OP_POWERMINUS2_SUM,      /**< 1 / sqrt( sum(1/x/x) )*/
+  MATH_OP_POWERMINUS2_MEAN,     /**< 1 / sqrt( sum(1/x/x) /n )*/
+  MATH_OP_MINIMUM,              /**< x_1 <= ... */
+  MATH_OP_MAXIMUM,              /**< ... <= x_n */
   MATH_OP_LAST
-};    
+};
 
 /** user input variables */
 typedef struct 
@@ -500,7 +500,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
 
   default:
 
-    LALPrintError("'%s' is not a valid math. operation", type);
+    XLALPrintError("'%i' is not a valid math. operation", type);
     exit (-1);
 
   }
@@ -560,9 +560,9 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
   LALregINTUserStruct ( status, 	blocksRngMed,  	'w', UVAR_OPTIONAL, 	"Running Median window size");
   LALregINTUserStruct ( status,         mthopOverSFTs,  'S', UVAR_OPTIONAL,     "Type of math. operation over SFTs:  0=arith-sum, 1=arith-mean, 2=arith-median, 3=harm-sum, 4=harm-mean, 5=power-2-sum, 6=power-2-mean, 7=min, 8=max");
   LALregINTUserStruct ( status,         mthopOverIFOs,  'I', UVAR_OPTIONAL,     "Type of math. operation over IFOs: as for mthopOverSFTs");
-  LALregREALUserStruct( status,         finalPSDBinSize,'B', UVAR_OPTIONAL,     "Bin the final PSD into bins of size (default: no binning)");
+  LALregREALUserStruct( status,         finalPSDBinSize,'B', UVAR_OPTIONAL,     "Bin the final PSD into bins of size in Hz (default: no binning)");
   LALregINTUserStruct ( status,        finalPSDBinMthOp,'A', UVAR_OPTIONAL,     "If binning, type of math. operation over frequency bins: as for mthopOverSFTs");
-  LALregREALUserStruct( status,         finalPSDBinStep,'D', UVAR_OPTIONAL,     "If binning, step size to move bin along (default: size of bin)");
+  LALregREALUserStruct( status,         finalPSDBinStep,'D', UVAR_OPTIONAL,     "If binning, step size to move bin along in Hz (default: size of bin)");
 
   LALregINTUserStruct ( status, 	maxBinsClean, 	'm', UVAR_OPTIONAL, 	"Maximum Cleaning Bins");
   LALregLISTUserStruct ( status, 	linefiles, 	 0, UVAR_OPTIONAL, 	"Comma separated list of linefiles (names must contain IFO name)");
@@ -595,7 +595,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 
 /** Write a multi-PSD into spectrograms for each IFO.
  * Using gnuplot 'binary' matrix format
- * The filename for each <IFO> is generated as 'bname-<IFO>'
+ * The filename for each IFO is generated as 'bname-IFO'
  */
 void
 LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVector *multiPSD )

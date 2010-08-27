@@ -112,8 +112,11 @@ LALHOUGHIntegrHD2HT()
 
 NRCSID (DRIVEHOUGHC, "$Id$");
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*
  * The functions that make up the guts of this module
@@ -939,13 +942,9 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8Vector        *weightV,
 					SFTCatalog         *catalog,
 					EphemerisData      *edat,
-					REAL8              alpha,
-					REAL8              delta)
+					REAL8              UNUSED alpha,
+					REAL8              UNUSED delta)
 { /*   *********************************************  </lalVerbatim> */
-
-  /* alpha and delta are unused in this function */
-  UNUSED(alpha);
-  UNUSED(delta);
 
   /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHComputeAMWeights", DRIVEHOUGHC);

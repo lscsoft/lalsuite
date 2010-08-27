@@ -98,6 +98,14 @@ typedef struct
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
 
+/** simple multi-IFO array of detector-information, standard LAL-vector
+ */
+typedef struct
+{
+  UINT4 length;		/**< number of IFOs */
+  LALDetector *data;	/**< array of LALDetector structs */
+} MultiLALDetector;
+
 /* ----- Output types for LALGetDetectorStates() */
 /** State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
@@ -153,6 +161,12 @@ LALGetMultiDetectorStates( LALStatus *,
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
 
+DetectorStateSeries*
+XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps, const LALDetector *detector, const EphemerisData *edat, REAL8 tOffset );
+MultiDetectorStateSeries*
+XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, const MultiLALDetector *multiIFO, const EphemerisData *edat, REAL8 tOffset );
+
+
 int XLALAddSymmTensor3s ( SymmTensor3 *sum, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALSubtractSymmTensor3s ( SymmTensor3 *diff, const SymmTensor3 *aT, const SymmTensor3 *bT );
 int XLALScaleSymmTensor3   ( SymmTensor3 *mult, const SymmTensor3 *aT, REAL4 factor );
@@ -160,11 +174,16 @@ int XLALTensorSquareVector3 ( SymmTensor3 *vxv, REAL4 v[3] );
 int XLALSymmetricTensorProduct3 ( SymmTensor3 *vxw, REAL4 v[3], REAL4 w[3] );
 REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
 
+/* creators */
+MultiLALDetector *XLALCreateMultiLALDetector ( UINT4 numDetectors );
+MultiLALDetector *XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs );
+DetectorStateSeries *XLALCreateDetectorStateSeries ( UINT4 length );
 
 /* destructors */
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
+void XLALDestroyMultiLALDetector ( MultiLALDetector *multiIFO );
 
 
 /* helpers */

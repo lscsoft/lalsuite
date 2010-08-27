@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/** \file clusters.c 
+/** \file
  * Set of routines that have been used to calculate outliers and clusters of outliers in the data.*/
 /* Author: M. A. Papa - AEI August 2003 */
 /* Revision: Y. Itoh - AEI December 2003  */
@@ -73,7 +73,7 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
   
   if ( M <= 0 )	/* did we have enough bins? */
     {
-      LALPrintError ("\nDon't have enough frequency-bins (%d) for a rngmed-window of %d!\n\n", nbins, windowSize );
+      XLALPrintError ("\nDon't have enough frequency-bins (%d) for a rngmed-window of %d!\n\n", nbins, windowSize );
       ABORT ( stat, CLUSTERSC_EINPUT, CLUSTERSC_MSGEINPUT );
     }
 
@@ -373,7 +373,7 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
   }/* loop over clusters*/
 
   if (Ntot != NtotCheck){
-    LALPrintError("\nNtot not equal NtotCheck In DetectClusters\n\n");
+    XLALPrintError("\nNtot not equal NtotCheck In DetectClusters\n\n");
     LALFree(Iclust);
     LALFree(NclustPoints);
     LALFree(output->Iclust);

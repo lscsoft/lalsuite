@@ -116,6 +116,12 @@ at the last stable orbit. It is recommended that a rather generous
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
 } rOfOmegaIn;
@@ -366,7 +372,7 @@ LALHCapDerivatives(
    void *funcParams
    )
 {
-   REAL8 r, s, p, q, r2, r3, p2, q2, A, B, dA, dB, hcap, Hcap, etahH;
+   REAL8 r, p, q, r2, r3, p2, q2, A, B, dA, dB, hcap, Hcap, etahH;
    REAL8 omega, v, eta;
    InspiralDerivativesIn *ak;
 
@@ -375,7 +381,6 @@ LALHCapDerivatives(
    eta = ak->coeffs->eta;
 
    r = values->data[0];
-   s = values->data[1];
    p = values->data[2];
    q = values->data[3];
 
@@ -446,7 +451,7 @@ LALprInit3PN(
 	     void *params
 	     )
 {
-  REAL8   u, u2, u3, u4, p2, p3, p4, q2, A, DA, NA;
+  REAL8   u, u2, u3, p2, p3, p4, A, DA, NA;
   REAL8  onebyD, AbyD, Heff, HReal, etahH;
   REAL8 omegaS, eta, a4, a4p4eta, a4peta2, z3, r, vr, q;
   pr3In *ak;
@@ -465,11 +470,9 @@ LALprInit3PN(
    p2 = p*p;
    p3 = p2*p;
    p4 = p2*p2;
-   q2 = q*q;
    u = 1./ r;
    u2 = u*u;
    u3 = u2 * u;
-   u4 = u2 * u2;
    z3 = 2. * (4. - 3. * eta) * eta;
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
    a4p4eta = a4 + 4. * eta;
@@ -525,17 +528,15 @@ omegaofr3PN (
 
 void
 LALrOfOmega3PN(
-	    LALStatus *status,
+	    LALStatus UNUSED *status,
 	    REAL8 *x,
 	    REAL8 r,
 	    void *params)
 {
-  REAL8  omega1,omega2,eta ;
+  REAL8  omega1,omega2;
   pr3In *pr3in;
 
-  status = NULL;
   pr3in = (pr3In *) params;
-  eta = pr3in->eta;
 
   omega1 = pr3in->omega;
   omegaofr3PN(&omega2,r, params);
@@ -547,7 +548,7 @@ NRCSID (LALLIGHTRINGRADIUS3PNC,
 "$Id$");
  void
 LALlightRingRadius3PN(
-		      LALStatus *status,
+		      LALStatus UNUSED *status,
 		      REAL8 *x,
 		      REAL8 r,
 		      void *params
@@ -555,7 +556,6 @@ LALlightRingRadius3PN(
 {
   REAL8 eta, u, u2, u3, a4, a4p4eta,a4peta2, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
-  status = NULL;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
 
@@ -582,9 +582,9 @@ LALHCapDerivatives3PN(
 		  void *funcParams
 		  )
 {
-   REAL8 r, s, p, q, u, u2, u3, u4, p2, p3, p4, q2, Apot, DA, NA;
+   REAL8 r, p, q, u, u2, u3, u4, p2, p3, p4, q2, Apot, DA, NA;
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
-   REAL8 omega, v, eta, a4, a4p4eta, a4peta2, z2, z30, z3, zeta2;
+   REAL8 omega, v, eta, a4, a4p4eta, a4peta2, z2, z30, zeta2;
    REAL8 n1, c1, d1, d2, d3, oneby4meta;
    REAL8    flexNonAdiab = 0;
    REAL8    flexNonCirc = 0;
@@ -596,7 +596,6 @@ LALHCapDerivatives3PN(
    zeta2 = ak->coeffs->zeta2;
 
    r = values->data[0];
-   s = values->data[1];
    p = values->data[2];
    q = values->data[3];
 
@@ -610,7 +609,6 @@ LALHCapDerivatives3PN(
    u4 = u2 * u2;
    z30 = 2.L * (4.L - 3.L * eta) * eta;
    z2 = 0.75L * z30 * zeta2,
-   z3 = z30 * (1.L - zeta2);
 
    a4 = ninty4by3etc * eta;
    a4p4eta = a4 + 4. * eta;
@@ -732,7 +730,7 @@ LALprInitP4PN(
              void *params
              )
 {
-  REAL8   u, u2, u3, u4, p2, p3, p4, q2, A, DA, NA;
+  REAL8   u, u2, u3, u4, p2, p3, p4, A, DA, NA;
   REAL8  onebyD, AbyD, Heff, HReal, etahH;
   REAL8 eta, eta2, a4, a5, z3, r, vr, q;
   pr3In *ak;
@@ -751,7 +749,6 @@ LALprInitP4PN(
    p2 = p*p;
    p3 = p2*p;
    p4 = p2*p2;
-   q2 = q*q;
    u = 1./ r;
    u2 = u*u;
    u3 = u2 * u;
@@ -819,17 +816,15 @@ omegaofrP4PN (
 /*-------------------------------------------------------------------*/
 void
 LALrOfOmegaP4PN(
-            LALStatus *status,
+            LALStatus UNUSED *status,
             REAL8 *x,
             REAL8 r,
             void *params)
 {
-  REAL8  omega1,omega2,eta ;
+  REAL8  omega1,omega2;
   pr3In *pr3in;
 
-  status = NULL;
   pr3in = (pr3In *) params;
-  eta = pr3in->eta;
 
   omega1 = pr3in->omega;
   omegaofrP4PN(&omega2,r, params);
@@ -841,7 +836,7 @@ LALrOfOmegaP4PN(
 /*-------------------------------------------------------------------*/
 static void
 LALlightRingRadiusP4PN(
-                      LALStatus *status,
+                      LALStatus UNUSED *status,
                       REAL8 *x,
                       REAL8 r,
                       void *params
@@ -849,7 +844,6 @@ LALlightRingRadiusP4PN(
 {
   REAL8 eta, eta2, u, u2, u3, u4, a4, a5, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
-  status = NULL;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
   eta2 = eta*eta;
@@ -881,11 +875,11 @@ LALHCapDerivativesP4PN(
                   void *funcParams
                   )
 {
-   REAL8 r, s, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
+   REAL8 r, p, q, u, u2, u3, u4, u5, p2, p3, p4, q2, Apot, DA, NA;
    REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
    REAL8 omega, v, eta, eta2, a4, z2, z30, z3, zeta2;
-   REAL8 a5, c1;
-   double dr, ds, dp, dq;
+   REAL8 a5;
+   double UNUSED dr, UNUSED ds, UNUSED dp, UNUSED dq;
 
    InspiralDerivativesIn *ak;
 
@@ -894,7 +888,6 @@ LALHCapDerivativesP4PN(
    zeta2 = ak->coeffs->zeta2;
 
    r = values->data[0];
-   s = values->data[1];
    p = values->data[2];
    q = values->data[3];
 
@@ -941,7 +934,6 @@ LALHCapDerivativesP4PN(
    dp = dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3
               + (dA * onebyD + Apot * DonebyD) * p2
               + z30 * u3 *(-2.* p4+zeta2*(0.5*p4 - 3.0*p2*q2*u2))) / etahH;
-   c1 = 1.+(u2 - 2.*u3*Apot/dA) * q2;/*below:dpphi/dt = F_RR*/
    dq = dvalues->data[3] = - ak->flux(v,ak->coeffs)/(eta * omega);
    /*
    fprintf(stdout, "%e %e %e %e %e %e %e %e %e %e %e\n", r, s, p, q, Heff, v, Apot, dr, ds, dp, dq);

@@ -37,7 +37,6 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
-#include <glob.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
@@ -47,7 +46,6 @@
 #include <lal/LIGOLwXMLRingdownRead.h>
 #include <lalapps.h>
 #include <processtable.h>
-
 #include <LALAppsVCSInfo.h>
 
 RCSID("$Id$");
@@ -79,53 +77,41 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 static void print_usage(char *program)
 {
-  fprintf(stderr,
-      "Usage: %s [options] [LIGOLW XML input files]\n"\
-      "The following options are recognized.  Options not surrounded in []\n"\
-      "are required.\n", program );
-  fprintf(stderr,    
-      " [--help]                       display this message\n"\
-      " [--verbose]                    print progress information\n"\
-      " [--version]                    print version information and exit\n"\
-      " [--debug-level]       level    set the LAL debug level to LEVEL\n"\
-      " [--user-tag]          usertag  set the process_params usertag\n"\
-      " [--comment]           string   set the process table comment\n"\
-      "\n"\
-      " [--glob]              glob     use pattern glob to determine the input files\n"\
-      " [--input]             input    read list of input XML files from input\n"\
-      "\n"\
-      "  --output             output   write output data to file: output\n"\
-      "  --summary-file       summ     write trigger analysis summary to summ\n"\
-      "\n"\
-     "  --data-type          datatype specify the data type, must be one of\n"\
-      "                                (playground_only|exclude_play|all_data)\n"\
-      "\n"\
-      " [--discard-ifo]       ifo      discard all triggers from ifo\n"\
-      " [--coinc-cut]         ifos     only keep triggers from IFOS\n"\
-      " [--extract-slide]     slide    only keep triggers from specified slide\n"\
-      "\n"\
-      " [--num-slides]        slides   number of time slides performed \n"\
-      "                                (used in clustering)\n"\
-      " [--sort-triggers]              time sort the coincident triggers\n"\
-      " [--cluster-time]      time     cluster triggers with time ms window\n"\
-      " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
-      " [--injection-file]    inj_file read injection parameters from inj_file\n"\
-      " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
-      " [--missed-injections] missed   write missed injections to file missed\n"\
-      "\n"\
-      " [--h1-h2-distance-cut]         do a h1-h2 distance cut\n"\
-      " [--h1-kappa]             kappa  cut triggers which lie outside the given range\n"\
-      " [--h2-kappa]             kappa  cut triggers which lie outside the given range\n" );
-}
+  fprintf(stderr,    "Usage: %s [options] [LIGOLW XML input files]\n",  program                 );
+  fprintf(stderr,    "The following options are recognized.  Options not surrounded in []\n"    );
+  fprintf(stderr,    "are required.\n"                                                          );
 
-/* function to read the next line of data from the input file list */
-static char *get_next_line( char *line, size_t size, FILE *fp )
-{
-  char *s;
-  do
-    s = fgets( line, size, fp );
-  while ( ( line[0] == '#' || line[0] == '%' ) && s );
-  return s;
+  fprintf(stderr,     " [--help]                        display this message\n"                           );
+  fprintf(stderr,     " [--verbose]                     print progress information\n"                     );
+  fprintf(stderr,     " [--version]                     print version information and exit\n"             );
+  fprintf(stderr,     " [--debug-level]       level     set the LAL debug level to LEVEL\n"               );
+  fprintf(stderr,     " [--user-tag]          usertag   set the process_params usertag\n"                 );
+  fprintf(stderr,     " [--comment]           string    set the process table comment\n"                  );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     "  --output             output    write output data to file: output\n"              );
+  fprintf(stderr,     "  --summary-file       summ      write trigger analysis summary to summ\n"         );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     "  --data-type          datatype  specify the data type, must be one of\n"          );
+  fprintf(stderr,     "                                 (playground_only|exclude_play|all_data)\n"        );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--discard-ifo]       ifo       discard all triggers from ifo\n"                  );
+  fprintf(stderr,     " [--coinc-cut]         ifos      only keep triggers from IFOS\n"                   );
+  fprintf(stderr,     " [--extract-slide]     slide     only keep triggers from specified slide\n"        );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--num-slides]        slides    number of time slides performed \n"               );
+  fprintf(stderr,     "                                 (used in clustering)\n"                           );
+  fprintf(stderr,     " [--sort-triggers]               time sort the coincident triggers\n"              );
+  fprintf(stderr,     " [--cluster-time]      time      cluster triggers with time ms window\n"           );
+  fprintf(stderr,     " [--coinc-stat]        stat      use coinc statistic for cluster/cut\n"            );
+  fprintf(stderr,     " [--injection-file]    inj_file  read injection parameters from inj_file\n"        );
+  fprintf(stderr,     " [--injection-window]  inj_win   trigger and injection coincidence window (ms)\n"  );
+  fprintf(stderr,     " [--missed-injections] missed    write missed injections to file missed\n"         );
+  fprintf(stderr,     "\n"                                                                                );
+  fprintf(stderr,     " [--h1-h2-distance-cut]          do a h1-h2 distance cut\n"                        );
+  fprintf(stderr,     " [--h1-kappa]             kappa  cut triggers which lie outside the given range\n" );
+  fprintf(stderr,     " [--h2-kappa]             kappa  cut triggers which lie outside the given range\n" );
+  fprintf( stderr,    "\n");
+  fprintf( stderr,    "[LIGOLW XML input files] list of the input trigger files.\n");
 }
 
 int sortTriggers = 0;
@@ -143,8 +129,6 @@ int main( int argc, char *argv[] )
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
   char *ifo  = NULL;
-  char *inputGlob = NULL;
-  char *inputFileName = NULL;
   char *outputFileName = NULL;
   char *summFileName = NULL;
   CoincInspiralStatistic coincstat = no_stat;
@@ -155,9 +139,7 @@ int main( int argc, char *argv[] )
   char *missedFileName = NULL;
   int j;
   FILE *fp = NULL;
-  glob_t globbedFiles;
   int numInFiles = 0;
-  char **inFileNameList;
   char line[MAX_PATH];
   UINT8 triggerInputTimeNS = 0;
 
@@ -207,6 +189,7 @@ int main( int argc, char *argv[] )
   
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
+  MetadataTable         searchSummvarsTable;
 
 
   /*
@@ -254,8 +237,6 @@ int main( int argc, char *argv[] )
       {"comment",                 required_argument,      0,              'c'},
       {"version",                 no_argument,            0,              'V'},
       {"data-type",               required_argument,      0,              'k'},
-      {"glob",                    required_argument,      0,              'g'},
-      {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
       {"extract-slide",           required_argument,      0,              'e'},
@@ -285,7 +266,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "a:b:c:d:e:g:h:i:j:k:l:m:n:o:p:t:z:"
+    c = getopt_long_only ( argc, argv, "a:b:c:d:e:hj:k:l:m:n:o:p:t:z:"
                                        "A:C:D:E:I:N:S:T:V:W:Y:Z", long_options, 
                                        &option_index );
 
@@ -385,22 +366,6 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'g':
-        /* create storage for the input file glob */
-        optarg_len = strlen( optarg ) + 1;
-        inputGlob = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputGlob, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "'%s'", optarg );
-        break;
-
-      case 'i':
-        /* create storage for the input file name */
-        optarg_len = strlen( optarg ) + 1;
-        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'o':
@@ -599,16 +564,6 @@ int main( int argc, char *argv[] )
     }   
   }
 
-  if ( optind < argc )
-  {
-    fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
-    {
-      fprintf ( stderr, "%s\n", argv[optind++] );
-    }
-    exit( 1 );
-  }
-
 
   /*
    *
@@ -631,12 +586,7 @@ int main( int argc, char *argv[] )
         "%s", comment );
   }
 
-  /* check that the input and output file names have been specified */
-  if ( (! inputGlob && ! inputFileName) || (inputGlob && inputFileName) )
-  {
-    fprintf( stderr, "exactly one of --glob or --input must be specified\n" );
-    exit( 1 );
-  }
+  /* check that the output file name has been specified */
   if ( ! outputFileName )
   {
     fprintf( stderr, "--output must be specified\n" );
@@ -711,77 +661,30 @@ int main( int argc, char *argv[] )
    *
    */
 
-
-  if ( inputGlob )
+  /* if we have run out of arguments on the command line, throw an error */
+  if ( ! (optind < argc) )
   {
-    /* use glob() to get a list of the input file names */
-    if ( glob( inputGlob, GLOB_ERR, NULL, &globbedFiles ) )
-    {
-      fprintf( stderr, "error globbing files from %s\n", inputGlob );
-      perror( "error:" );
-      exit( 1 );
-    }
-
-    numInFiles = globbedFiles.gl_pathc;
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      inFileNameList[j] = globbedFiles.gl_pathv[j];
-    }
-  }
-  else if ( inputFileName )
-  {
-    /* read the list of input filenames from a file */
-    fp = fopen( inputFileName, "r" );
-    if ( ! fp )
-    {
-      fprintf( stderr, "could not open file containing list of xml files\n" );
-      perror( "error:" );
-      exit( 1 );
-    }
-
-    /* count the number of lines in the file */
-    while ( get_next_line( line, sizeof(line), fp ) )
-    {
-      ++numInFiles;
-    }
-    rewind( fp );
-
-    /* allocate memory to store the input file names */
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    /* read in the input file names */
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      inFileNameList[j] = (char *) LALCalloc( MAX_PATH, sizeof(char) );
-      get_next_line( line, sizeof(line), fp );
-      strncpy( inFileNameList[j], line, strlen(line) - 1);
-    }
-
-    fclose( fp );
-  }
-  else
-  {
-    fprintf( stderr, "no input file mechanism specified\n" );
+    fprintf( stderr, "Error: No input trigger files specified.\n" );
     exit( 1 );
   }
 
   /* read in the triggers */
-  for( j = 0; j < numInFiles; ++j )
+  for( j = optind; j < argc; ++j )
   {
     INT4 numFileTriggers = 0;
     INT4 numFileCoincs   = 0;
     SnglRingdownTable   *ringdownFileList = NULL;
     SnglRingdownTable   *thisFileTrigger  = NULL;
     CoincRingdownTable  *coincFileHead    = NULL;
+
+    numInFiles++;
     
     numFileTriggers = XLALReadRingdownTriggerFile( &ringdownFileList,
-        &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
+        &thisFileTrigger, &searchSummList, &inputFiles, argv[j] );
     if (numFileTriggers < 0)
     {
       fprintf(stderr, "Error reading triggers from file %s\n",
-          inFileNameList[j]);
+          argv[j]);
       exit( 1 );
     }
     else
@@ -789,7 +692,7 @@ int main( int argc, char *argv[] )
       if ( vrbflg )
       {
         fprintf(stdout, "Read %d reading triggers from file %s\n",
-            numFileTriggers, inFileNameList[j]);
+            numFileTriggers, argv[j]);
       }
     }
     
@@ -844,7 +747,7 @@ int main( int argc, char *argv[] )
     {
       fprintf( stdout,
           "Recreated %d coincs from the %d triggers in file %s\n", 
-          numFileCoincs, numFileTriggers, inFileNameList[j] );
+          numFileCoincs, numFileTriggers, argv[j] );
     }
     numCoincs += numFileCoincs;
 
@@ -1253,6 +1156,15 @@ why??????????????
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
+  /* write the search_summvars table */
+  if ( vrbflg ) fprintf( stdout, "search_summvars... " );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream,
+        search_summvars_table), &status );
+  searchSummvarsTable.searchSummvarsTable = inputFiles;
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
+        search_summvars_table), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+
   /* Write the found injections to the sim table */
   if ( simEventHead )
   {
@@ -1426,21 +1338,6 @@ why??????????????
     tmpSimEvent = missedSimHead;
     missedSimHead = missedSimHead->next;
     LALFree( tmpSimEvent );
-  }
-
-  /* free the input file name data */
-  if ( inputGlob )
-  {
-    LALFree( inFileNameList ); 
-    globfree( &globbedFiles );
-  }
-  else
-  {
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      LALFree( inFileNameList[j] );
-    }
-    LALFree( inFileNameList );
   }
 
   /* free input files list */

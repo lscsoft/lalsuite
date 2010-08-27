@@ -618,7 +618,7 @@ LALSubtractSFTVectors (LALStatus *status,
 
   if ( numSFTs1 != numSFTs2 )
     {
-      LALPrintError ("\nERROR: the SFT-vectors must have the same number of SFTs!\n\n");
+      XLALPrintError ("\nERROR: the SFT-vectors must have the same number of SFTs!\n\n");
       ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
     }
 
@@ -642,19 +642,19 @@ LALSubtractSFTVectors (LALStatus *status,
       deltaF2  = inVect2->data[i].deltaF;
 
       if ( numBins1 != numBins2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
 	goto failed;
       }
       if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
-	LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
 	goto failed;
       }
       if ( Freq1 != Freq2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
 	goto failed;
       }
       if ( deltaF1 != deltaF2 ) {
-	LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	XLALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
 	goto failed;
       }
       /* copy header info */
@@ -716,7 +716,7 @@ LALLinearlyCombineSFTVectors
 
   if ( numSFTVects < 1 )
     {
-      LALPrintError ("\nERROR: must be combining at least one SFT Vector!\n\n");
+      XLALPrintError ("\nERROR: must be combining at least one SFT Vector!\n\n");
       ABORT ( status, SFTUTILS_EINPUT,  SFTUTILS_MSGEINPUT);
     }
 
@@ -759,19 +759,19 @@ LALLinearlyCombineSFTVectors
 	  deltaF2  = inVects[j]->data[i].deltaF;
 
 	  if ( numBins1 != numBins2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same number of frequency-bins!\n\n");
 	    goto failed;
 	  }
 	  if ( (epoch1.gpsSeconds != epoch2.gpsSeconds) || ( epoch1.gpsNanoSeconds != epoch2.gpsNanoSeconds ) ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same epochs!\n\n");
 	    goto failed;
 	  }
 	  if ( Freq1 != Freq2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same start frequency!\n\n");
 	    goto failed;
 	  }
 	  if ( deltaF1 != deltaF2 ) {
-	    LALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
+	    XLALPrintError ("\nERROR: the SFTs must have the same frequency-steps!\n\n");
 	    goto failed;
 	  }
 
@@ -974,39 +974,138 @@ LALMakeTimestamps(LALStatus *status,
 } /* LALMakeTimestamps() */
 
 
-/** Extract timstamps-vector from the given SFTVector.
+/** Deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
  */
 void
 LALGetSFTtimestamps (LALStatus *status,
 		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 		     const SFTVector *sfts )		/**< input SFT-vector  */
 {
-  UINT4 numSFTs;
-  UINT4 i;
+  const char *fn = __func__;
+
   LIGOTimeGPSVector *ret = NULL;
 
-  INITSTATUS (status, "LALGetSFTtimestamps", SFTUTILSC );
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS (status, fn, SFTUTILSC );
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts->length > 0, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( *timestamps == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
 
-  numSFTs = sfts->length;
-
-  TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
-
-  for ( i=0; i < numSFTs; i ++ )
-    ret->data[i] = sfts->data[i].epoch;
+  if ( ( ret = XLALExtractTimestampsFromSFTs ( sfts )) == NULL ) {
+    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", fn, xlalErrno );
+    ABORT (status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC);
+  }
 
   /* done: return Ts-vector */
   (*timestamps) = ret;
 
-  DETATCHSTATUSPTR(status);
   RETURN(status);
 
 } /* LALGetSFTtimestamps() */
+
+
+
+/** Extract timstamps-vector from the given SFTVector
+ */
+LIGOTimeGPSVector *
+XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vector  */
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !sfts ) {
+    XLALPrintError ("%s: invalid NULL input 'sfts'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  UINT4 numSFTs = sfts->length;
+  /* create output vector */
+  LIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCreateTimestampVector ( numSFTs )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  REAL8 Tsft = 1.0 / sfts->data[0].deltaF;
+  ret->deltaT = Tsft;
+
+  UINT4 i;
+  for ( i=0; i < numSFTs; i ++ )
+    ret->data[i] = sfts->data[i].epoch;
+
+  /* done: return Ts-vector */
+  return ret;
+
+} /* XLALExtractTimestampsFromSFTs() */
+
+
+/** Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
+ * SFT timestamps
+ */
+MultiLIGOTimeGPSVector *
+XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
+{
+  static const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !multiSFTs || multiSFTs->length == 0 ) {
+    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  UINT4 numIFOs = multiSFTs->length;
+
+  /* create output vector */
+  MultiLIGOTimeGPSVector *ret = NULL;
+  if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", fn, sizeof(*ret));
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", fn, numIFOs, sizeof(ret->data[0]) );
+    XLALFree (ret);
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  ret->length = numIFOs;
+
+  /* now extract timestamps vector from each SFT-vector */
+  UINT4 X;
+  for ( X=0; X < numIFOs; X ++ )
+    {
+      if ( (ret->data[X] = XLALExtractTimestampsFromSFTs ( multiSFTs->data[X] )) == NULL ) {
+        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", fn, X );
+        XLALDestroyMultiTimestamps ( ret );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+
+    } /* for X < numIFOs */
+
+  return ret;
+
+} /* XLALExtractMultiTimestampsFromSFTs() */
+
+
+/** Destroy a MultiLIGOTimeGPSVector timestamps vector
+ */
+void
+XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
+{
+  UINT4 numIFOs, X;
+
+  if ( !multiTS )
+    return;
+
+  numIFOs = multiTS->length;
+  for ( X=0; X < numIFOs; X ++ ) {
+    XLALDestroyTimestampVector ( multiTS->data[X] );
+  }
+
+  XLALFree ( multiTS->data );
+  XLALFree ( multiTS );
+
+  return;
+
+} /* XLALDestroyMultiTimestamps() */
 
 
 
@@ -1066,7 +1165,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 	{
 	  strcpy ( channel, "H1" );
 	  if ( lalDebugLevel )
-	    LALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
+	    XLALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
 	}
     } /* if LHO */
   /* LISA channel names are simply left unchanged */
@@ -1090,7 +1189,7 @@ XLALGetChannelPrefix ( const CHAR *name )
 
   if ( channel[0] == 0 )
     {
-      if ( lalDebugLevel ) LALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
+      if ( lalDebugLevel ) XLALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
       XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
     }
   else
@@ -1147,7 +1246,7 @@ XLALGetSiteInfo ( const CHAR *name )
     case 'Z':       /* create dummy-sites for LISA  */
       if ( XLALcreateLISA ( site, channel[1] ) != 0 )
 	{
-	  LALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
+	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
 	  LALFree ( channel );
 	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
@@ -1155,7 +1254,7 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
 
     default:
-      LALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
+      XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
       LALFree(site);
       LALFree(channel);
       XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
@@ -1474,7 +1573,7 @@ upsampleSFTVector (LALStatus *status,
       COMPLEX8Vector *this_data = inout->data[alpha].data;
       COMPLEX8Vector *new_data;
       if ( (new_data = XLALrefineCOMPLEX8Vector ( this_data, upsample, Dterms )) == NULL ) {
-	LALPrintError ("\nSFT oversampling failed ... \n\n");
+	XLALPrintError ("\nSFT oversampling failed ... \n\n");
 	ABORT ( status, SFTUTILS_EFUNC,SFTUTILS_MSGEFUNC );
       }
 
@@ -1574,3 +1673,12 @@ XLALrefineCOMPLEX8Vector (const COMPLEX8Vector *in,
   return ret;
 
 } /* XLALrefineCOMPLEX8Vector() */
+
+
+/* ============================================================
+ * deprecated LAL interface API follow below
+ * mostly these are now just LAL-wrappers to the corresponding
+ * XLAL-inteface functions
+ * ============================================================
+ */
+

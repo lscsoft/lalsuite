@@ -357,8 +357,13 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   /* Frequency range of validity (FIXME: This should be updated regularly somehow) */
   FrHistoryAdd( frame, freqInfo);
 
-  /* String containing the filter file cvs info (first line in filter file) */
-  FrHistoryAdd( frame, InputData.filter_vc_info);
+  /* Filters file checksum and cvs info (first 2 lines in filters file) */
+  {
+    char buffer[1024];
+    snprintf(buffer, sizeof buffer, "Filters file checksum and header: %s\n%s",
+             InputData.filter_chksum, InputData.filter_vc_info);
+    FrHistoryAdd(frame, buffer);
+  }
 
   /* Add in the h(t) data */
   XLALFrameAddREAL8TimeSeriesProcData( frame, &OutputData.h);

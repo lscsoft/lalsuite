@@ -38,7 +38,6 @@
 #include <fcntl.h>
 #include <regex.h>
 #include <time.h>
-#include <glob.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
@@ -92,9 +91,6 @@ static void print_usage(char *program)
       " [--user-tag]          usertag  set the process_params usertag\n"\
       " [--comment]           string   set the process table comment\n"\
       "\n"\
-      " [--glob]              glob     use pattern glob to determine the input files\n"\
-      " [--input]             input    read list of input XML files from input\n"\
-      "\n"\
       "  --output             output   write output data to file: output\n"\
       "  --summary-file       summ     write trigger analysis summary to summ\n"\
       "\n"\
@@ -139,16 +135,8 @@ static void print_usage(char *program)
       " [--injection-window]  inj_win  trigger and injection coincidence window (ms)\n"\
       " [--missed-injections] missed   write missed injections to file missed\n"\
       "\n");
-}
-
-/* function to read the next line of data from the input file list */
-static char *get_next_line( char *line, size_t size, FILE *fp )
-{
-  char *s;
-  do
-    s = fgets( line, size, fp );
-  while ( ( line[0] == '#' || line[0] == '%' ) && s );
-  return s;
+    fprintf( stderr, "\n");
+    fprintf( stderr, "[LIGOLW XML input files] list of the input trigger files.\n");
 }
 
 int sortTriggers = 0;
@@ -165,8 +153,6 @@ int main( int argc, char *argv[] )
   CHAR comment[LIGOMETA_COMMENT_MAX];
   char *ifos = NULL;
   char *ifo  = NULL;
-  char *inputGlob = NULL;
-  char *inputFileName = NULL;
   char *outputFileName = NULL;
   char *summFileName = NULL;
   CoincInspiralStatistic coincstat = no_stat;
@@ -177,10 +163,7 @@ int main( int argc, char *argv[] )
   char *missedFileName = NULL;
   int j;
   FILE *fp = NULL;
-  glob_t globbedFiles;
   int numInFiles = 0;
-  char **inFileNameList;
-  char line[MAX_PATH];
 
   char *massCut = NULL;
   REAL4 massRangeLow = -1;
@@ -241,6 +224,7 @@ int main( int argc, char *argv[] )
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
+  MetadataTable         searchSummvarsTable;
 
 
   /*
@@ -288,8 +272,6 @@ int main( int argc, char *argv[] )
       {"comment",                 required_argument,      0,              'c'},
       {"version",                 no_argument,            0,              'V'},
       {"data-type",               required_argument,      0,              'k'},
-      {"glob",                    required_argument,      0,              'g'},
-      {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
       {"summary-file",            required_argument,      0,              'S'},
       {"extract-slide",           required_argument,      0,              'e'},
@@ -327,7 +309,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "A:a:b:c:d:g:hi:j:k:l:m:n:o:p:q:r:t:x:z:"
+    c = getopt_long_only ( argc, argv, "A:a:b:c:d:hj:k:l:m:n:o:p:q:r:t:x:z:"
                                        "C:D:E:I:M:N:P:Q:R:S:T:U:VZ", 
                                        long_options, 
                                        &option_index );
@@ -432,22 +414,6 @@ int main( int argc, char *argv[] )
             "Steve Fairhurst\n");
         XLALOutputVersionString(stderr, 0);
         exit( 0 );
-        break;
-
-      case 'g':
-        /* create storage for the input file glob */
-        optarg_len = strlen( optarg ) + 1;
-        inputGlob = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputGlob, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "'%s'", optarg );
-        break;
-
-      case 'i':
-        /* create storage for the input file name */
-        optarg_len = strlen( optarg ) + 1;
-        inputFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-        memcpy( inputFileName, optarg, optarg_len );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'o':
@@ -724,16 +690,6 @@ int main( int argc, char *argv[] )
     }   
   }
 
-  if ( optind < argc )
-  {
-    fprintf( stderr, "extraneous command line arguments:\n" );
-    while ( optind < argc )
-    {
-      fprintf ( stderr, "%s\n", argv[optind++] );
-    }
-    exit( 1 );
-  }
-
 
   /*
    *
@@ -756,12 +712,7 @@ int main( int argc, char *argv[] )
         "%s", comment );
   }
 
-  /* check that the input and output file names have been specified */
-  if ( (! inputGlob && ! inputFileName) || (inputGlob && inputFileName) )
-  {
-    fprintf( stderr, "exactly one of --glob or --input must be specified\n" );
-    exit( 1 );
-  }
+  /* check that the output file name has been specified */
   if ( ! outputFileName )
   {
     fprintf( stderr, "--output must be specified\n" );
@@ -896,76 +847,30 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( inputGlob )
+  /* if we have run out of arguments on the command line, throw an error */
+  if ( ! (optind < argc) )
   {
-    /* use glob() to get a list of the input file names */
-    if ( glob( inputGlob, GLOB_ERR, NULL, &globbedFiles ) )
-    {
-      perror( "error:" );
-      fprintf( stderr, "error globbing files from %s\n", inputGlob );
-      exit( 1 );
-    }
-
-    numInFiles = globbedFiles.gl_pathc;
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      inFileNameList[j] = globbedFiles.gl_pathv[j];
-    }
-  }
-  else if ( inputFileName )
-  {
-    /* read the list of input filenames from a file */
-    fp = fopen( inputFileName, "r" );
-    if ( ! fp )
-    {
-      perror( "error:" );
-      fprintf( stderr, "could not open file containing list of xml files\n" );
-      exit( 1 );
-    }
-
-    /* count the number of lines in the file */
-    while ( get_next_line( line, sizeof(line), fp ) )
-    {
-      ++numInFiles;
-    }
-    rewind( fp );
-
-    /* allocate memory to store the input file names */
-    inFileNameList = (char **) LALCalloc( numInFiles, sizeof(char *) );
-
-    /* read in the input file names */
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      inFileNameList[j] = (char *) LALCalloc( MAX_PATH, sizeof(char) );
-      get_next_line( line, sizeof(line), fp );
-      strncpy( inFileNameList[j], line, strlen(line) - 1);
-    }
-
-    fclose( fp );
-  }
-  else
-  {
-    fprintf( stderr, "no input file mechanism specified\n" );
+    fprintf( stderr, "Error: No input trigger files specified.\n" );
     exit( 1 );
   }
 
   /* read in the triggers */
-  for( j = 0; j < numInFiles; ++j )
+  for( j = optind; j < argc; ++j )
   {
     INT4 numFileTriggers = 0;
     INT4 numFileCoincs   = 0;
     SnglInspiralTable   *inspiralFileList = NULL;
     SnglInspiralTable   *thisFileTrigger  = NULL;
     CoincInspiralTable  *coincFileHead    = NULL;
+
+    numInFiles++;
     
     numFileTriggers = XLALReadInspiralTriggerFile( &inspiralFileList,
-        &thisFileTrigger, &searchSummList, &inputFiles, inFileNameList[j] );
+        &thisFileTrigger, &searchSummList, &inputFiles, argv[j] );
     if (numFileTriggers < 0)
     {
       fprintf(stderr, "Error reading triggers from file %s\n",
-          inFileNameList[j]);
+          argv[j]);
       exit( 1 );
     }
     else
@@ -973,12 +878,12 @@ int main( int argc, char *argv[] )
       if ( vrbflg )
       {
         fprintf(stdout, "Read %d reading triggers from file %s\n",
-            numFileTriggers, inFileNameList[j]);
+            numFileTriggers, argv[j]);
       }
     }
 
     /* read the summ value table as well. */
-    XLALReadSummValueFile(&summValueList, inFileNameList[j]);
+    XLALReadSummValueFile(&summValueList, argv[j]);
 
     /* Discard triggers from requested ifo */
     if ( ifo )
@@ -1044,7 +949,7 @@ int main( int argc, char *argv[] )
     {
       fprintf( stdout,
           "Recreated %d coincs from the %d triggers in file %s\n", 
-          numFileCoincs, numFileTriggers, inFileNameList[j] );
+          numFileCoincs, numFileTriggers, argv[j] );
     }
     numCoincs += numFileCoincs;
 
@@ -1393,6 +1298,7 @@ int main( int argc, char *argv[] )
         numClusteredEvents );
   }
 
+
   /*
    *
    * update search_summary->nevents with an authoritative count of coincs
@@ -1456,6 +1362,15 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+
+  /* write the search_summvars table */
+  if ( vrbflg ) fprintf( stdout, "search_summvars... " );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream,
+        search_summvars_table), &status );
+  searchSummvarsTable.searchSummvarsTable = inputFiles;
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
+        search_summvars_table), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
   /* write summ_value table */
   if ( summValueList )
@@ -1707,21 +1622,6 @@ int main( int argc, char *argv[] )
     tmpSimEvent = missedSimHead;
     missedSimHead = missedSimHead->next;
     LALFree( tmpSimEvent );
-  }
-
-  /* free the input file name data */
-  if ( inputGlob )
-  {
-    LALFree( inFileNameList ); 
-    globfree( &globbedFiles );
-  }
-  else
-  {
-    for ( j = 0; j < numInFiles; ++j )
-    {
-      LALFree( inFileNameList[j] );
-    }
-    LALFree( inFileNameList );
   }
 
   /* free input files list */

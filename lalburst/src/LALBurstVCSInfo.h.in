@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information defines */
+#define LALBURST_VCS_NAME "LALBurst"
 #define LALBURST_VCS_ID "@ID@"
 #define LALBURST_VCS_DATE "@DATE@"
 #define LALBURST_VCS_BRANCH "@BRANCH@"
@@ -50,6 +51,7 @@ extern "C" {
 /* vcs information structures */
 extern struct tagLALVCSInfo lalBurstVCSInfo;
 static const struct tagLALVCSInfo lalBurstHeaderVCSInfo = { \
+  LALBURST_VCS_NAME, \
   LALBURST_VERSION, \
   LALBURST_VCS_ID, \
   LALBURST_VCS_DATE, \

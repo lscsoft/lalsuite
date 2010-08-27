@@ -50,6 +50,7 @@ Provides a set of utilities for manipulating \texttt{multiInspiralTable}s.
 \idx{XLALPlayTestSingleInspiral()}
 \idx{XLALMaxMultiInspiralOverIntervals(()}
 \idx{XLALCountMultiInspiral()}
+\idx{XLALCoincInspiralSlideCut()}
 
 \subsubsection*{Description}
 
@@ -645,16 +646,9 @@ XLALMultiSimInspiralTest (
 
         if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {
-	  /*CHECK: The following assumes that the first ifo
-	    in the ifos string is the
-	    reference ifo for checking time consistency. */
-          /* This event may be in coincidence window, need to check site
-           * end time
-	   strncpy( ifos, thisEvent->ifos, 2);
-	   simSiteTime = XLALReturnSimInspiralEndTime( thisSimEvent,
-	                                                       ifos );
-	  */
-
+	  /*NOTE: The following assumes that the first ifo
+	    in the ifos string is the reference ifo for checking time consistency.
+	    This is consistent with coherent_inspiral.c */
 	  /* read in the first (single) ifo in the multiInspiral network (ifos) */
 	  snprintf( ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
 		       "%s", thisEvent->ifos );
@@ -864,4 +858,66 @@ XLALMultiInspiralIfosCut(
   }
 
   return( numTrig );
+}
+
+/* <lalVerbatim file="MultiInspiralUtilsCP"> */
+MultiInspiralTable *
+XLALMultiInspiralSlideCut(
+    MultiInspiralTable **multiHead,
+    int                  slideNum
+    )
+{
+  MultiInspiralTable    *prevMulti      = NULL;
+  MultiInspiralTable    *thisMulti      = NULL;
+  MultiInspiralTable    *slideHead      = NULL;
+  MultiInspiralTable    *thisSlideMulti = NULL;
+
+  UINT8 idNumber = 0;
+
+  if( slideNum < 0 )
+  {
+    slideNum = 5000 - slideNum;
+  }
+
+  thisMulti = *multiHead;
+  *multiHead = NULL;
+
+  while ( thisMulti )
+  {
+    idNumber = thisMulti->event_id->id;
+
+    if ( (int) ((idNumber % 1000000000) / 100000) == slideNum )
+    {
+      /* add thisMulti to the slideMulti list */
+      if ( slideHead )
+      {
+        thisSlideMulti = thisSlideMulti->next = thisMulti;
+      }
+      else
+      {
+        slideHead = thisSlideMulti = thisMulti;
+      }
+
+      /* remove from multiHead list */
+      if ( prevMulti )
+      {
+        prevMulti->next = thisMulti->next;
+      }
+
+      thisMulti = thisMulti->next;
+      thisSlideMulti->next = NULL;
+    }
+    else
+    {
+      /* move along the list */
+      if( ! *multiHead )
+      {
+        *multiHead = thisMulti;
+      }
+
+      prevMulti = thisMulti;
+      thisMulti = thisMulti->next;
+    }
+  }
+  return( slideHead );
 }

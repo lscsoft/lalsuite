@@ -180,8 +180,6 @@ However, you need to point to a function that initializes the parameter structur
 #include <lal/DetResponse.h>
 
 
-#define rint(x) floor((x)+0.5)
-
 NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); 
 
 /* *****************************
@@ -1112,7 +1110,7 @@ XLALMCMCJump(
     /* downweight the off-axis elements */
     for (i=0; i<dim; ++i)
     {
-      for (j=0; j<dim; ++j)
+      for (j=0; j<i; ++j)
       {
         aij=gsl_matrix_get( work, i, j);
         aii=gsl_matrix_get( work, i, i);

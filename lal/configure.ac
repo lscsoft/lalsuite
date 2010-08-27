@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.4.1.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.4.1.3],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -172,9 +172,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
 # boinc requires a c++ compiler
-if test "${boinc}" = "true" ; then
-  AC_PROG_CXX
-fi
+AC_PROG_CXX
 
 # check for programs
 AC_PROG_CPP
@@ -207,6 +205,9 @@ if test "x$build_vendor" = "xapple"; then
       ;;
   esac
 fi
+
+# link tests using libtool
+LALSUITE_USE_LIBTOOL
 
 # check for support tex flags
 if test -z "$TEXFLAGS"
