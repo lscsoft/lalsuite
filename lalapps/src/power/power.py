@@ -239,6 +239,7 @@ class RMJob(pipeline.CondorDAGJob):
 		pipeline.CondorDAGJob.__init__(self, "local", "/bin/rm")
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.add_opt("force", "")
 		self.set_sub_file("rm.sub")
 
@@ -248,6 +249,7 @@ class RMNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, job)
 		self.input_cache = set()
 		self.output_cache = set()
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache |= cache
@@ -282,6 +284,7 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.add_ini_opts(config_parser, "lalapps_binj")
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.set_sub_file("lalapps_binj.sub")
 
 		self.output_dir = "."
@@ -294,6 +297,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		self.__usertag = None
 		self.output_cache = []
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -361,6 +365,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.add_ini_opts(config_parser, "lalapps_power")
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.set_sub_file("lalapps_power.sub")
 
 		self.output_dir = "."
@@ -373,6 +378,7 @@ class PowerNode(pipeline.AnalysisNode):
 		self.__usertag = None
 		self.output_cache = []
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_ifo(self, instrument):
 		"""
@@ -440,6 +446,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), ".")	# "." == self.job().output_dir except the job class doesn't yet have this info
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.remove_input = bool(remove_input)
 		if self.remove_input:
 			self.add_var_arg("--remove-input")
@@ -510,6 +517,7 @@ class BucutNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -557,6 +565,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = self.input_cache
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -607,6 +616,7 @@ class BinjfindNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -663,6 +673,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -715,6 +726,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
@@ -768,6 +780,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)

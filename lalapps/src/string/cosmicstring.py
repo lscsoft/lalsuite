@@ -82,6 +82,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = []
 
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
@@ -150,6 +151,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.likelihood_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
@@ -212,6 +214,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_ini_opts(config_parser, "lalapps_StringSearch")
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
+    self.add_condor_cmd("getenv", "True")
     self.set_sub_file("lalapps_StringSearch.sub")
     #self.add_condor_cmd("Requirements", "Memory > 1100")
 
@@ -230,6 +233,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
+    self._CondorDAGNode__macros["initialdir"] = os.getcwd()
     self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
   def set_ifo(self, instrument):
@@ -315,6 +319,7 @@ class RunSqliteNode(pipeline.CondorDAGNode):
                 pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
