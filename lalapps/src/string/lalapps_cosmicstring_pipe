@@ -284,7 +284,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
-		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 30000000.0 / len(these_time_slides), verbose = verbose):
+		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 50000000.0 / len(these_time_slides), verbose = verbose):
 			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache | vetoes_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
