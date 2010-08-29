@@ -681,7 +681,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
-		longest_duration = max([abs(cache_entry.segment) for cache_entry in self.input_cache])
+		longest_duration = max(abs(cache_entry.segment) for cache_entry in self.input_cache)
 		if longest_duration > 25000:
 			# ask for >= 1300 MB
 			self.add_macro("macrominram", 1300)
