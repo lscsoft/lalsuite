@@ -347,7 +347,7 @@ class RunSqliteNode(pipeline.CondorDAGNode):
 #
 
 
-def clip_segment(seg, pad, short_segment_duration):
+def clip_segment_length(segment_length, pad, short_segment_duration):
   # clip segment to the length required by lalapps_StringSearch.  if
   #
   #   duration = segment length - padding
@@ -361,20 +361,17 @@ def clip_segment(seg, pad, short_segment_duration):
   #   2 * duration + short_segment_duration
   #
   # must be divisble by (4 * short_segment_duration)
-  duration = float(abs(seg)) - 2 * pad
+  assert segment_length >= 2 * pad
+  duration = segment_length - 2 * pad
   extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
   extra /= 2
 
-  # clip segment
-  seg = segments.segment(seg[0], seg[1] - extra)
+  # clip
+  segment_length -= extra
 
-  # bounds must be integers
-  if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
-    raise ValueError, "segment %s does not have integer boundaries" % repr(seg)
-  seg = segments.segment(int(seg[0]), int(seg[1]))
-
-  # done
-  return seg
+  # done. negative return value not allowed
+  assert segment_length >= 0
+  return segment_length
 
 
 def segment_ok(seg, min_segment_length, pad):
@@ -508,21 +505,33 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 #
 
 
-def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration):
+def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length):
+	# avoid infinite loop
+	if min_segment_length + 2 * pad <= overlap:
+		raise ValueError, "infinite loop: min_segment_length + 2 * pad must be > overlap"
+
+	# clip max_job_length down to an allowed size
+	max_job_length = clip_segment_length(max_job_length, pad, short_segment_duration)
+
 	seglist = segments.segmentlist()
 	while abs(seg) >= min_segment_length + 2 * pad:
-		# try to use 9* min_segment_length each time (must be an odd
-		# multiple!).
-		if abs(seg) >= 9 * min_segment_length + 2 * pad:
-			seglist.append(segments.segment(seg[0], seg[0] + 9 * min_segment_length + 2 * pad))
+		# try to use max_job_length each time
+		if abs(seg) >= max_job_length:
+			seglist.append(segments.segment(seg[0], seg[0] + max_job_length))
 		else:
-			seglist.append(clip_segment(seg, pad, short_segment_duration))
+			seglist.append(segments.segment(seg[0], seg[0] + clip_segment_length(abs(seg), pad, short_segment_duration)))
+		assert abs(seglist[-1]) != 0	# safety-check for no-op
+		# bounds must be integers
+		if abs((int(seglist[-1][0]) - seglist[-1][0]) / seglist[-1][0]) > 1e-14 or abs((int(seglist[-1][1]) - seglist[-1][1]) / seglist[-1][1]) > 1e-14:
+			raise ValueError, "segment %s does not have integer boundaries" % str(seglist[-1])
 		# advance segment
 		seg = segments.segment(seglist[-1][1] - overlap, seg[1])
+	if not seglist:
+		raise ValueError, "unable to use segment %s" % str(seg)
 	return seglist
 
 
-def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
@@ -536,7 +545,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}
-	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
+	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = set()
@@ -550,7 +559,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 #
 
 
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	nodes = set()
 	for instrument, seglist in seglistdict.items():
 		for seg in seglist:
@@ -563,7 +572,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
 
 			# trigger generator jobs
-			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = binjnodes, verbose = verbose)
+			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = binjnodes, verbose = verbose)
 
 	# done
 	return nodes
