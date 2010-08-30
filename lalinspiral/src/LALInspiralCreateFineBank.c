@@ -129,7 +129,7 @@ void LALInspiralCreateFineBank(LALStatus            *status,
                                InspiralFineBankIn   fineIn)
 { /* </lalVerbatim> */
 
-  REAL8 x0, x1, Dx0, Dx1, dx0, dx1, x0FineMin, x1FineMin, x0FineMax, x1FineMax;
+  REAL8 x0, x1, Dx0, Dx1, dx0, dx1, x0FineMin, x1FineMin;
   INT4  i, j, validPars, bins0, bins1;
   InspiralTemplate   *tempPars=NULL;
   InspiralBankParams *bankPars=NULL;
@@ -181,9 +181,7 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   bins1 = (int)(Dx1/dx1) + 1;
 
   x0FineMin = x0 - (float) bins0/2. * dx0;
-  x0FineMax = x0 + (float) bins0/2. * dx0;
   x1FineMin = x1 - (float) bins1/2. * dx1;
-  x1FineMax = x1 + (float) bins1/2. * dx1;
 
   bankPars->x1 = x1FineMin;
   for(i=0; i<=bins1; i++) {

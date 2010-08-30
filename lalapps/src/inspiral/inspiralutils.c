@@ -336,7 +336,7 @@ void InjectNumRelWaveforms (LALStatus           *status,
           
           thisSNR = calculate_ligo_snr_from_strain( tempStrain, thisInj, ifo);
 
-          fprintf(stdout, "injection %s has a snr of %f\n", thisInj->numrel_data, thisSNR);          
+          fprintf(stdout, "injection %s at %d has an snr of %f\n", thisInj->numrel_data, thisInj->geocent_end_time.gpsSeconds, thisSNR);
 
           /* set channel name */
           snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),

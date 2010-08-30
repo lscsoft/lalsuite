@@ -1434,6 +1434,10 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 parser.add_option("-w", "--write-script", action="store_true", default=False,
       help="write the workflow to a locally executable script")
 
+parser.add_option("--summary-first-coinc-triggers", action='store_true', default=False,\
+    help="coire (first coincidence) files containing triggers from the whole run. "
+    "Use with care, as files can become very large.")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -2307,8 +2311,13 @@ for ifos in ifo_coincs:
   if not doExtTrig:
     coire_segments_individually(coinc_nodes[ifos], coire_job, dag, 
         opts.coire_coincidence, opts.coincidence, ifos, inj_file=inj_file, 
-        ifotag="FIRST", usertag=usertag, inspinjNode=inspinj) 
-  
+        ifotag="FIRST", usertag=usertag, inspinjNode=inspinj)
+
+    if opts.summary_first_coinc_triggers and len(coinc_nodes[ifos]):
+      coire_segments(coinc_nodes[ifos], coire_summary_job, dag,
+          opts.summary_first_coinc_triggers,
+          opts.coire_coincidence, ifos, gps_start_time, gps_end_time,
+          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, inspinjNode=inspinj)
 
 
   # Step 6 slide: Time slides 
@@ -2332,6 +2341,13 @@ for ifos in ifo_coincs:
           dag, opts.coire_coincidence, opts.coincidence, ifos, 
           inj_file = inj_file, num_slides = num_slides, ifotag="FIRST", 
           usertag=usertag,inspinjNode=inspinj)
+
+      if opts.summary_first_coinc_triggers and len(coinc_nodes[ifos]):
+        coire_segments(coinc_slide_nodes[ifos], coire_slide_summary_job, dag,
+            opts.summary_first_coinc_triggers,
+            opts.coire_coincidence, ifos, gps_start_time, gps_end_time,
+            inj_file=inj_file, ifotag="SLIDE_SUMMARY_FIRST_" + ifos, usertag=usertag,
+            inspinjNode=inspinj)
 
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]

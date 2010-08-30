@@ -305,8 +305,8 @@ struct bankCohTemplateOverlaps *cohBankOverlaps,
 struct bankDataOverlaps *dataOverlaps,
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
-gsl_matrix *Bankeigenvecs[subBankSize],
-gsl_vector *Bankeigenvals[subBankSize]);
+gsl_matrix *Bankeigenvecs[50],
+gsl_vector *Bankeigenvals[50]);
 
 REAL4 calculate_auto_veto_max_phase_coherent(
 UINT4           numPoints,
@@ -374,7 +374,9 @@ void calculate_standard_chisq_freq_ranges(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4 a[LAL_NUM_IFO],
     REAL4 b[LAL_NUM_IFO],
-    REAL4 *frequencyRanges
+    REAL4 *frequencyRangesPlus,
+    REAL4 *frequencyRangesCross,
+    gsl_matrix *eigenvecs
 );
 
 REAL4 calculate_chi_square(

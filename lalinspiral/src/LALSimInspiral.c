@@ -34,6 +34,12 @@
 
 #include "check_series_macros.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID(LALSIMINSPIRALC, "$Id$");
 
 /**
@@ -422,7 +428,7 @@ REAL8 XLALSimInspiralPNEnergy(
 
 /* GSL integrand routine */
 struct XLALSimInspiralPNEvolveOrbitParams { REAL8 m1; REAL8 m2; int O; };
-static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double t, const double y[], double ydot[], void *params)
+static int XLALSimInspiralPNEvolveOrbitTaylorT4Integrand(double UNUSED t, const double y[], double ydot[], void *params)
 {
 	struct XLALSimInspiralPNEvolveOrbitParams *p = params;
 	ydot[0] = XLALSimInspiralPNAngularAcceleration(y[0], p->m1, p->m2, p->O);

@@ -427,7 +427,7 @@ LALInspiralWave2Engine(
                 )
 { /* </lalVerbatim> */
 
-  REAL8 amp, eta, dt, fs, fu, fHigh, phase0, phase1, tC;
+  REAL8 amp, dt, fs, fu, fHigh, phase0, phase1, tC;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
   INT4 i, startShift, count;
   DFindRootIn rootIn;
@@ -492,7 +492,6 @@ LALInspiralWave2Engine(
   ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->eta <=0.25, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  eta = params->eta;
   totalMass = params->totalMass*LAL_MTSUN_SI; /* solar mass in seconds */
 
   toffIn.tN = ak.tvaN;

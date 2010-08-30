@@ -128,6 +128,12 @@ NRCSID( FRAMECACHEC, "$Id$" );
 #define XSTR( x ) #x
 #define STR( x ) XSTR( x )
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 static int FrStatCompare( const void *p1, const void *p2 );
 
 FrCache * XLALFrImportCache( const char *fname )
@@ -183,7 +189,7 @@ FrCache * XLALFrImportCache( const char *fname )
     int src0, src1;
     int dsc0, dsc1;
     int url0, url1;
-    int c;
+    int UNUSED c;
     sscanf( line, "%n%*[a-zA-Z0-9_+#-]%n %n%*[a-zA-Z0-9_+#-]%n %*"
         STR( TMPSTRLEN ) "s %*" STR( TMPSTRLEN ) "s %n%*s%n",
         &src0, &src1, &dsc0, &dsc1, &url0, &url1 );
@@ -447,7 +453,7 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
     {
       size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
       CHAR cwd[MAXPATHLEN];
-      char *ptr;
+      char UNUSED *ptr;
       ptr = getcwd( cwd, MAXPATHLEN - 1 );
       urlsz += strlen( cwd ) + 1;
       file->url = LALMalloc( urlsz );

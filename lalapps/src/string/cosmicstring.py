@@ -47,6 +47,10 @@ def get_files_per_calc_likelihood(config_parser):
 	return config_parser.getint("pipeline", "files_per_calc_likelihood")
 
 
+def get_files_per_run_sqlite(config_parser):
+	return config_parser.getint("pipeline", "files_per_run_sqlite")
+
+
 #
 # =============================================================================
 #
@@ -78,6 +82,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = []
 
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
@@ -146,6 +151,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.likelihood_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
@@ -208,6 +214,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_ini_opts(config_parser, "lalapps_StringSearch")
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
+    self.add_condor_cmd("getenv", "True")
     self.set_sub_file("lalapps_StringSearch.sub")
     #self.add_condor_cmd("Requirements", "Memory > 1100")
 
@@ -226,6 +233,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
+    self._CondorDAGNode__macros["initialdir"] = os.getcwd()
     self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
   def set_ifo(self, instrument):
@@ -283,6 +291,53 @@ class StringNode(pipeline.AnalysisNode):
     self.add_input_file(file)
 
 
+class RunSqliteJob(pipeline.CondorDAGJob):
+	"""
+        A lalapps_run_sqlite job used by the gstlal pipeline. The static
+        options are read from the [lalapps_run_sqlite] section in the ini
+        file.  The stdout and stderr from the job are directed to the logs
+        directory.  The job runs in the universe specified in the ini file.
+        The path to the executable is determined from the ini file.
+	"""
+        def __init__(self, config_parser):
+                """
+                config_parser = ConfigParser object
+                """
+                pipeline.CondorDAGJob.__init__(self, power.get_universe(config_parser), power.get_executable(config_parser, "lalapps_run_sqlite"))
+                self.add_ini_opts(config_parser, "lalapps_run_sqlite")
+                self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
+                self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
+                self.set_sub_file("lalapps_run_sqlite.sub")
+		self.files_per_run_sqlite = get_files_per_run_sqlite(config_parser)
+		if self.files_per_run_sqlite < 1:
+			raise ValueError, "files_per_run_sqlite < 1"
+
+
+class RunSqliteNode(pipeline.CondorDAGNode):
+        def __init__(self, *args):
+                pipeline.CondorDAGNode.__init__(self, *args)
+		self.input_cache = []
+		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
+
+	def add_input_cache(self, cache):
+		self.input_cache.extend(cache)
+		for c in cache:
+			filename = c.path()
+			pipeline.CondorDAGNode.add_file_arg(self, filename)
+			self.add_output_file(filename)
+
+	def get_input_cache(self):
+		return self.input_cache
+
+	def get_output_cache(self):
+		return self.output_cache
+
+	def set_sql_file(self, filename):
+		self.add_var_opt("sql-file", filename)
+
+
 #
 # =============================================================================
 #
@@ -292,7 +347,7 @@ class StringNode(pipeline.AnalysisNode):
 #
 
 
-def clip_segment(seg, pad, short_segment_duration):
+def clip_segment_length(segment_length, pad, short_segment_duration):
   # clip segment to the length required by lalapps_StringSearch.  if
   #
   #   duration = segment length - padding
@@ -306,20 +361,17 @@ def clip_segment(seg, pad, short_segment_duration):
   #   2 * duration + short_segment_duration
   #
   # must be divisble by (4 * short_segment_duration)
-  duration = float(abs(seg)) - 2 * pad
+  assert segment_length >= 2 * pad
+  duration = segment_length - 2 * pad
   extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
   extra /= 2
 
-  # clip segment
-  seg = segments.segment(seg[0], seg[1] - extra)
+  # clip
+  segment_length -= extra
 
-  # bounds must be integers
-  if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
-    raise ValueError, "segment %s does not have integer boundaries" % repr(seg)
-  seg = segments.segment(int(seg[0]), int(seg[1]))
-
-  # done
-  return seg
+  # done. negative return value not allowed
+  assert segment_length >= 0
+  return segment_length
 
 
 def segment_ok(seg, min_segment_length, pad):
@@ -388,13 +440,14 @@ def compute_segment_lists(seglists, offset_vectors, min_segment_length, pad):
 stringjob = None
 meas_likelihoodjob = None
 calc_likelihoodjob = None
+runsqlitejob = None
 
 
-def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "calc_likelihood")):
+def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "calc_likelihood", "runsqlite")):
   """
   Construct definitions of the submit files.
   """
-  global stringjob, meas_likelihoodjob, calc_likelihoodjob
+  global stringjob, meas_likelihoodjob, calc_likelihoodjob, runsqlitejob
 
   # lalapps_StringSearch
   if "string" in job_types:
@@ -407,6 +460,10 @@ def init_job_types(config_parser, job_types = ("string", "meas_likelihoodjob", "
   # lalapps_string_calc_likelihood
   if "calc_likelihood" in job_types:
     calc_likelihoodjob = CalcLikelihoodJob(config_parser)
+
+  # lalapps_run_sqlite
+  if "runsqlite" in job_types:
+    runsqlitejob = RunSqliteJob(config_parser)
 
 
 #
@@ -448,21 +505,33 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 #
 
 
-def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration):
+def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length):
+	# avoid infinite loop
+	if min_segment_length + 2 * pad <= overlap:
+		raise ValueError, "infinite loop: min_segment_length + 2 * pad must be > overlap"
+
+	# clip max_job_length down to an allowed size
+	max_job_length = clip_segment_length(max_job_length, pad, short_segment_duration)
+
 	seglist = segments.segmentlist()
 	while abs(seg) >= min_segment_length + 2 * pad:
-		# try to use 5* min_segment_length each time (must be an odd
-		# multiple!).
-		if abs(seg) >= 5 * min_segment_length + 2 * pad:
-			seglist.append(segments.segment(seg[0], seg[0] + 5 * min_segment_length + 2 * pad))
+		# try to use max_job_length each time
+		if abs(seg) >= max_job_length:
+			seglist.append(segments.segment(seg[0], seg[0] + max_job_length))
 		else:
-			seglist.append(clip_segment(seg, pad, short_segment_duration))
+			seglist.append(segments.segment(seg[0], seg[0] + clip_segment_length(abs(seg), pad, short_segment_duration)))
+		assert abs(seglist[-1]) != 0	# safety-check for no-op
+		# bounds must be integers
+		if abs((int(seglist[-1][0]) - seglist[-1][0]) / seglist[-1][0]) > 1e-14 or abs((int(seglist[-1][1]) - seglist[-1][1]) / seglist[-1][1]) > 1e-14:
+			raise ValueError, "segment %s does not have integer boundaries" % str(seglist[-1])
 		# advance segment
 		seg = segments.segment(seglist[-1][1] - overlap, seg[1])
+	if not seglist:
+		raise ValueError, "unable to use segment %s" % str(seg)
 	return seglist
 
 
-def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
@@ -476,7 +545,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}
-	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
+	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = set()
@@ -490,7 +559,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 #
 
 
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	nodes = set()
 	for instrument, seglist in seglistdict.items():
 		for seg in seglist:
@@ -503,9 +572,50 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
 
 			# trigger generator jobs
-			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = binjnodes, verbose = verbose)
+			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = binjnodes, verbose = verbose)
 
 	# done
+	return nodes
+
+
+#
+# =============================================================================
+#
+#                           lalapps_run_sqlite Jobs
+#
+# =============================================================================
+#
+
+
+def write_clip_segment_sql_file(filename):
+	code = """DELETE FROM
+	segment
+WHERE
+	(end_time + 1e-9 * end_time_ns < (SELECT MIN(in_start_time + 1e-9 * in_start_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'))
+	OR
+	(start_time + 1e-9 * start_time_ns > (SELECT MAX(in_end_time + 1e-9 * in_end_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'));"""
+
+	print >>file(filename, "w"), code
+
+	return filename
+
+
+def make_run_sqlite_fragment(dag, parents, tag, sql_file, files_per_run_sqlite = None):
+	if files_per_run_sqlite is None:
+		files_per_run_sqlite = runsqlitejob.files_per_run_sqlite
+	nodes = set()
+	input_cache = power.collect_output_caches(parents)
+	while input_cache:
+		node = RunSqliteNode(runsqlitejob)
+		node.set_sql_file(sql_file)
+		node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_run_sqlite]])
+		for parent in set(parent for cache_entry, parent in input_cache[:files_per_run_sqlite]):
+			node.add_parent(parent)
+		del input_cache[:files_per_run_sqlite]
+		seg = power.cache_span(node.get_output_cache())
+		node.set_name("lalapps_run_sqlite_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		dag.add_node(node)
+		nodes.add(node)
 	return nodes
 
 
@@ -525,13 +635,10 @@ def make_meas_likelihood_fragment(dag, parents, tag, files_per_meas_likelihood =
 	input_cache = power.collect_output_caches(parents)
 	while input_cache:
 		node = MeasLikelihoodNode(meas_likelihoodjob)
-		this_input_cache = input_cache[:files_per_meas_likelihood]
-		del input_cache[:files_per_meas_likelihood]
-
-		for cache_entry, parent in this_input_cache:
-			node.add_input_cache([cache_entry])
+		node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_meas_likelihood]])
+		for parent in set(parent for cache_entry, parent in input_cache[:files_per_meas_likelihood]):
 			node.add_parent(parent)
-
+		del input_cache[:files_per_meas_likelihood]
 		seg = power.cache_span(node.get_input_cache())
 		node.set_name("lalapps_string_meas_likelihood_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.set_output(tag)
@@ -558,7 +665,7 @@ def make_calc_likelihood_fragment(dag, parents, likelihood_parents, tag, files_p
   while input_cache:
     node = CalcLikelihoodNode(calc_likelihoodjob)
     node.add_input_cache([cache_entry for cache_entry, parent in input_cache[:files_per_calc_likelihood]])
-    for cache_entry, parent in input_cache[:files_per_calc_likelihood]:
+    for parent in set(parent for cache_entry, parent in input_cache[:files_per_calc_likelihood]):
       node.add_parent(parent)
     del input_cache[:files_per_calc_likelihood]
     seg = power.cache_span(node.get_input_cache())

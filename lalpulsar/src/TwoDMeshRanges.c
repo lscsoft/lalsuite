@@ -87,9 +87,7 @@ NRCSID( TWODMESHRANGESC, "$Id$" );
 void
 LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 { /* </lalVerbatim> */
-  UINT4 length;    /* number of range mesh points */
   REAL4VectorSequence *p; /* params cast to a REAL4VectorSequence */
-  REAL4 *data;            /* pointer to p->data */
 
   INITSTATUS( stat, "LALGetNearestRange", TWODMESHRANGESC );
 
@@ -104,8 +102,6 @@ LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *para
     ASSERT( p->vectorLength == 2, stat, TWODMESHH_EDIM, TWODMESHH_MSGEDIM );
   }
 #endif
-  data = p->data;
-  length = p->length;
 
   /* Fill this in later. */
   range[0] = 0.0*x;

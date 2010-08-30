@@ -73,7 +73,6 @@ LALFindChirpStoreEvent (
   INT8                       timeNS;
   INT4                       timeIndex;
   REAL4                      deltaT;
-  UINT4			     numPoints;
 
   INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
   ATTATCHSTATUSPTR( status );
@@ -113,7 +112,6 @@ LALFindChirpStoreEvent (
   /* note: we expect the gps seconds to be set before calling this routine */
   timeIndex = thisEvent->end_time.gpsSeconds;
   deltaT = params->deltaT;
-  numPoints = params->qVec->length;
 
   /* set the event LIGO GPS time of the event */
   timeNS = 1000000000L *

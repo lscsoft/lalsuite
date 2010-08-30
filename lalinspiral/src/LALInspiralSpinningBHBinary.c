@@ -422,7 +422,7 @@ LALACSTDerivatives
 	enum { Dim=3 };
 	UINT4 i, j, k, p, q;
 	/* magnitudes of S1, S2, L etc. */
-	REAL8 /*Theta,*/ v, M, magS1, magS2, magL, S1DotL, S2DotL;
+	REAL8 /*Theta,*/ v, magL, S1DotL, S2DotL;
         REAL8 fourM1Plus, fourM2Plus, oneBy2Mcube, Lsq, dL0, c2, v6;
         REAL8 L[Dim], S1[Dim], S2[Dim], S1CrossL[Dim], S2CrossL[Dim], S1CrossS2[Dim];
 	InspiralACSTParams *ACSTIn;
@@ -431,9 +431,6 @@ LALACSTDerivatives
 	ACSTIn = (InspiralACSTParams *) funcParams;
 	/* extract 'velocity' and masses */
 	v = ACSTIn->v;
-	M = ACSTIn->M;
-	magS1 = ACSTIn->magS1;
-	magS2 = ACSTIn->magS2;
 	fourM1Plus = ACSTIn->fourM1Plus;
 	fourM2Plus = ACSTIn->fourM2Plus;
 	oneBy2Mcube = ACSTIn->oneBy2Mcube;
@@ -510,7 +507,7 @@ LALInspiralSpinModulatedWaveForInjection(
   UINT4 i,j, count, length = 0;
   /* polarisation and antenna pattern */
   REAL8 omega,psi, psiOld, Fplus, Fcross, Fp0, Fp1, Fc0, Fc1, magL, amp, amp0, phi, phiOld, /*Amplitude,*/ Phi/*, dPhi*/;
-  REAL8 v, t, tMax, dt, f, fOld, fn, phase, phi0, MCube, Theta, etaBy5M, NCapDotL, NCapDotLByL;
+  REAL8 v, t, tMax, dt, f, fOld, fn, phase, MCube, Theta, etaBy5M, NCapDotL, NCapDotLByL;
   /* source direction angles */
   InspiralACSTParams acstPars;
   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -691,7 +688,6 @@ LALInspiralSpinModulatedWaveForInjection(
 
 
     phase = Phi + phi;
-    phi0 = -phase + params->startPhase;
 
     fOld = f - 0.1;
     while (f < fn && t < tMax && f>fOld)
