@@ -192,8 +192,8 @@ int XLALReadGoodPCUInterval(GoodPCUIntervals **pcu,FrameChannelList *framechanne
 int XLALFindFramesInInterval(FrameChannelList **subframechannels, FrameChannelList *framechannels,LIGOTimeGPS intstart,LIGOTimeGPS intend,UINT2 npcus);
 int XLALCreateCombinationPlan(FrameCombinationPlanVector *plans,FrameChannelList *framechannels,LIGOTimeGPS *intstart,LIGOTimeGPS *intend);
 static int compareGPS(const void *p1, const void *p2);
-int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,HeaderVector *history,FrameCombinationPlan *plan,UINT2 npcus);
-int XLALREAL8TimeSeriesToFrame(CHAR *outdir,REAL8TimeSeries *ts,FrameCombinationPlan *plan,CHAR *clargs,HeaderVector *history);
+int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,HeaderVector *history,FrameCombinationPlan *plan,UINT2 npcus);
+int XLALREAL4TimeSeriesToFrame(CHAR *outdir,REAL4TimeSeries *ts,FrameCombinationPlan *plan,CHAR *clargs,HeaderVector *history);
 int XLALReadFrameHistory(CHAR **history_string, FrFile *file);
 
 /***********************************************************************************************/
@@ -288,11 +288,11 @@ int main( int argc, char *argv[] )  {
       for (j=0;j<plans.length;j++) {
 	
 	HeaderVector header;
-	REAL8TimeSeries *ts = NULL;
+	REAL4TimeSeries *ts = NULL;
 	INT4 k;
 	LogPrintf(LOG_DEBUG,"%s : generating and ouputting timeseries %d/%d\n",fn,j+1,plans.length);
 
-	if (XLALCombinationPlanToREAL8TimeSeries(&ts,&header,&(plans.data[j]),pcu->pcucount[i])) {
+	if (XLALCombinationPlanToREAL4TimeSeries(&ts,&header,&(plans.data[j]),pcu->pcucount[i])) {
 	  LogPrintf(LOG_CRITICAL,"%s : XLALCombinationPlanToINT4TimeSeries() failed with error = %d\n",fn,xlalErrno);
 	  return 1;
 	}
@@ -301,7 +301,7 @@ int main( int argc, char *argv[] )  {
 	/* NOW GENERATE AN OUTPUT FRAME */
 	/**********************************************************************************/
 
-	if (XLALREAL8TimeSeriesToFrame(uvar.outputdir,ts,&(plans.data[j]),clargs,&header)) {
+	if (XLALREAL4TimeSeriesToFrame(uvar.outputdir,ts,&(plans.data[j]),clargs,&header)) {
 	  LogPrintf(LOG_CRITICAL,"%s : XLALINT4TimeSeriesToFrame() failed with error = %d\n",fn,xlalErrno);
 	  return 1;
 	}
@@ -309,7 +309,7 @@ int main( int argc, char *argv[] )  {
 	/* store the output frame stats */
 
 	/* free the timeseries */
- 	XLALDestroyREAL8TimeSeries(ts);
+ 	XLALDestroyREAL4TimeSeries(ts);
 	for (k=0;k<header.length;k++) {
 	  XLALFree(header.data[k].header_string);
 	}
@@ -1380,9 +1380,9 @@ static int compareGPS(const void *p1, const void *p2)
   
 }
 
-/** this function combines the files listed in the combination plan into a single REAL8 timeseries 
+/** this function combines the files listed in the combination plan into a single REAL4 timeseries 
  */
-int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,           /**< [out] the timeseries containing the combined data */
+int XLALCombinationPlanToREAL4TimeSeries(REAL4TimeSeries **ts,           /**< [out] the timeseries containing the combined data */
 					 HeaderVector *header,          /**< [out] the combined history fields of all files */
 					 FrameCombinationPlan *plan,    /**< [in] the plan describing which files to combine */
 					 UINT2 npcus                    /**< [in] the number of operational PCUs in this segment */
@@ -1414,14 +1414,14 @@ int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,           /**< [o
   LogPrintf(LOG_DEBUG,"%s : combined timeseries requires %ld samples.\n",fn,N);
   
   /* create the output timeseries */
-  if ( ((*ts) = XLALCreateREAL8TimeSeries("X1:COMBINED_PHOTONFLUX",&(plan->epoch),0,plan->dt,&lalDimensionlessUnit,N)) == NULL) {
-    LogPrintf(LOG_CRITICAL, "%s : XLALCreateREAL8TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
+  if ( ((*ts) = XLALCreateREAL4TimeSeries("X1:COMBINED_PHOTONFLUX",&(plan->epoch),0,plan->dt,&lalDimensionlessUnit,N)) == NULL) {
+    LogPrintf(LOG_CRITICAL, "%s : XLALCreateREAL4TimeSeries() failed to allocate an %d length timeseries with error = %d.\n",fn,N,xlalErrno);
     XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   LogPrintf(LOG_DEBUG,"%s : allocated memory for temporary timeseries\n",fn);
   
   /* initialise the output timeseries */
-  memset((*ts)->data->data,0,(*ts)->data->length*sizeof(REAL8));
+  memset((*ts)->data->data,0,(*ts)->data->length*sizeof(REAL4));
   
   /* allocate mem for the ascii headers */
   header->length = (INT4)plan->channellist.length;
@@ -1439,7 +1439,7 @@ int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,           /**< [o
     CHAR channelname[STRINGLENGTH];
     INT4 lldfactor = 1;
     INT8 testN = (INT8)(plan->duration/plan->channellist.channel[i].dt);
-    REAL8 fluxfactor = 1.0/((REAL8)npcus*(REAL8)PCU_AREA*(REAL8)plan->dt);
+    REAL4 fluxfactor = 1.0/((REAL4)npcus*(REAL4)PCU_AREA*(REAL4)plan->dt);
 
     /* define channel name */
     snprintf(channelname,STRINGLENGTH,"%s",plan->channellist.channel[i].channelname);
@@ -1510,7 +1510,7 @@ int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,           /**< [o
 	  }
 
 	  /* add to output timeseries */
-	  (*ts)->data->data[j] += fluxfactor*lldfactor*(REAL8)temp;
+	  (*ts)->data->data[j] += fluxfactor*lldfactor*(REAL4)temp;
 	}
       
       }
@@ -1532,8 +1532,8 @@ int XLALCombinationPlanToREAL8TimeSeries(REAL8TimeSeries **ts,           /**< [o
 
 /** this function combines the files listed in the combination plan into a single timeseries 
  */
-int XLALREAL8TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of output directory */
-			       REAL8TimeSeries *ts,           /**< [in] timeseries to output */
+int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of output directory */
+			       REAL4TimeSeries *ts,           /**< [in] timeseries to output */
 			       FrameCombinationPlan *plan,    /**< [in] the plan used to generate the timeseries */
 			       CHAR *clargs,                  /**< [in] the command line args */
 			       HeaderVector *header           /**< [in] the combined history information */
@@ -1576,7 +1576,7 @@ int XLALREAL8TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
     LogPrintf(LOG_DEBUG,"%s : set-up frame structure\n",fn);
     
     /* add timeseries to frame structure */
-    if (XLALFrameAddREAL8TimeSeriesProcData(outFrame,ts)) {
+    if (XLALFrameAddREAL4TimeSeriesProcData(outFrame,ts)) {
       LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_EFAILED);
     }
