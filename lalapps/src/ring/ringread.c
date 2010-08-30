@@ -108,6 +108,12 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* function to read the next line of data from the input file list */
 char *get_next_line( char *line, size_t size, FILE *fp );
 char *get_next_line( char *line, size_t size, FILE *fp )
@@ -1442,7 +1448,8 @@ int main( int argc, char *argv[] )
   /* write out the TAMA file if it is requested */
   if ( tamaFileName )
   {
-    REAL8 trigtime;
+    /* FIXME */
+    REAL8 UNUSED trigtime;
 
     fp = fopen( tamaFileName, "w" );
     if ( ! fp )

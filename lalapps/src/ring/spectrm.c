@@ -32,6 +32,12 @@
 #include "spectrm.h"
 #include "errutil.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 RCSID( "$Id$" );
 
 
@@ -105,7 +111,7 @@ REAL4FrequencySeries *compute_average_spectrum(
 int invert_spectrum(
     REAL4FrequencySeries *spectrum,
     REAL8                 dataSampleRate,
-    REAL8                 strideDuration,
+    REAL8                 UNUSED strideDuration,
     REAL8                 truncateDuration,
     REAL8                 lowCutoffFrequency,
     REAL4FFTPlan         *fwdPlan,
@@ -114,7 +120,7 @@ int invert_spectrum(
 {
   REAL8 segmentDuration;
   UINT4 segmentLength;
-  UINT4 segmentStride;
+  UINT4 UNUSED segmentStride;
   UINT4 truncateLength;
   char name[LALNameLength];
 

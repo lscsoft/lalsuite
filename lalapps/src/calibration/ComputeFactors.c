@@ -208,9 +208,6 @@ UpdateFactorsParams params;
 
 REAL4Window *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 
-REAL4 magexc,magasq,magdarm;
-
-
 INT4 k,m;
 LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate the calibration factors */
 LIGOTimeGPS tend; /* end time */
@@ -356,10 +353,6 @@ FILE *fpAlpha=NULL;
 
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
-
-      magexc=sqrt(factors.exc.re*factors.exc.re+factors.exc.im*factors.exc.im)*2/CLA.t;
-      magasq=sqrt(factors.asq.re*factors.asq.re+factors.asq.im*factors.asq.im)*2/CLA.t;
-      magdarm=sqrt(factors.darm.re*factors.darm.re+factors.darm.im*factors.darm.im)*2/CLA.t;
 
       fprintf(fpAlpha,"%18.9Lf %f %f %f %f %f %f %f %f %f %f %f %f \n",gtime,
 	      factors.alpha.re,factors.alpha.im,

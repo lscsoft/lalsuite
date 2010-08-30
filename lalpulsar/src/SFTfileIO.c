@@ -1401,7 +1401,7 @@ XLALWriteSFT2file(
   }
 
   /* open SFT-file for writing */
-  if ( (fp = fopen ( fname, "wb" )) == NULL )
+  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
     {
       XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
       XLAL_ERROR ( fn, XLAL_EIO );
@@ -1579,7 +1579,7 @@ XLALWriteSFTVector2File(
   length = sftVect->length;
 
   /* open SFT-file for writing */
-  if ( (fp = fopen ( filename, "wb" )) == NULL )
+  if ( (fp = LALFopen ( filename, "wb" )) == NULL )
     {
       XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", filename, strerror(errno));
       XLAL_ERROR ( fn, XLAL_EIO );

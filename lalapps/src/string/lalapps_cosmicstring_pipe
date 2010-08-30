@@ -263,7 +263,9 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	# trigger generator jobs
 	#
 
-	trigger_nodes = cosmicstring.make_single_instrument_stage(dag, datafinds, seglists, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = binjnodes, verbose = verbose)
+	# set max job length to ~3600 s (will be clipped to an allowed
+	# size)
+	trigger_nodes = cosmicstring.make_single_instrument_stage(dag, datafinds, seglists, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length = 3600, binjnodes = binjnodes, verbose = verbose)
 
 	#
 	# coincidence analysis
@@ -282,7 +284,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
-		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 40000000.0 / len(these_time_slides), verbose = verbose):
+		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 50000000.0 / len(these_time_slides), verbose = verbose):
 			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache | vetoes_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
@@ -340,7 +342,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if verbose:
 		print >>sys.stderr, "building lalapps_string_meas_likelihood jobs ..."
-	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), files_per_meas_likelihood = not do_injections and 1 or None) for n, these_coinc_nodes in enumerate(coinc_nodes)]
+	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n)) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
 	# write output cache
