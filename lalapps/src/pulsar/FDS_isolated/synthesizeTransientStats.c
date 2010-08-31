@@ -210,10 +210,10 @@ MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPS
 int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
 int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
 
-int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
-int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
+int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, REAL8 *rho2, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
+int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, REAL8 *rho2, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 
-MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
+MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 
@@ -1074,7 +1074,7 @@ XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms,	/**< inpu
 int
 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                  REAL8 *rho2,			 /**< [out] expected optimal SNR^2 for this signal */
-                                 const gsl_vector *A_Mu,	 /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
+                                 const PulsarAmplitudeVect A_Mu, /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                                  transientWindow_t transientWindow /**< transient signal window */
                                  )
 {
@@ -1088,10 +1088,6 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   }
   if ( !rho2 ) {
     XLALPrintError ( "%s: Invalid NULL input 'rho2'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( !A_Mu || (A_Mu->size != 4) ) {
-    XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
@@ -1152,6 +1148,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       gsl_matrix_set ( Mh_mu_nu, 2, 3, ab );
       gsl_matrix_set ( Mh_mu_nu, 3, 2, ab );
 
+      gsl_vector_const_view A_Mu_view = gsl_vector_const_view_array ( A_Mu, 4 );
       /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
@@ -1159,7 +1156,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
        * sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu, where here gamma = TAtom (as Sinv=1)
        */
       REAL8 norm_s = sqrt(TAtom / 2.0);
-      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, A_Mu, 0.0, sh_mu)) != 0 ) {
+      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, &A_Mu_view.vector, 0.0, sh_mu)) != 0 ) {
         XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
@@ -1179,10 +1176,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
     } /* for alpha < numAtoms */
 
   /* compute optimal SNR^2 expected for this signal */
-  REAL8 A1 = gsl_vector_get ( A_Mu, 0 );
-  REAL8 A2 = gsl_vector_get ( A_Mu, 1 );
-  REAL8 A3 = gsl_vector_get ( A_Mu, 2 );
-  REAL8 A4 = gsl_vector_get ( A_Mu, 3 );
+  REAL8 A1 = A_Mu[0];
+  REAL8 A2 = A_Mu[1];
+  REAL8 A3 = A_Mu[2];
+  REAL8 A4 = A_Mu[3];
 
   (*rho2) = TAtom  * ( Ad * ( SQ(A1) + SQ(A3) ) + 2.0*Cd * ( A1*A2 + A3*A4 ) + Bd * ( SQ(A2) + SQ(A4) ) );
 
@@ -1202,7 +1199,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 int
 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [in/out] multi atoms vectors containing antenna-functions and possibly noise {Fa,Fb} */
                                       REAL8 *rho2,			 /**< [out] expected optimal SNR^2 for this signal */
-                                      const gsl_vector *A_Mu,	 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
+                                      const PulsarAmplitudeVect A_Mu, 	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                                       transientWindow_t transientWindow /**< transient signal window */
                                       )
 {
@@ -1215,10 +1212,6 @@ XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	 /**< [i
   }
   if ( !rho2 ) {
     XLALPrintError ( "%s: Invalid NULL input 'rho2'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( !A_Mu || (A_Mu->size != 4) ) {
-    XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
@@ -1283,7 +1276,7 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
  *
  */
 MultiFstatAtomVector *
-XLALSynthesizeTransientAtoms ( ConfigVariables *cfg,		/**< [in] input params for transient atoms synthesis */
+XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input params for transient atoms synthesis */
                                BOOLEAN SignalOnly,		/**< signal-only switch: add noise or not */
                                multiAMBuffer_t *multiAMBuffer	/**< buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
                                )
@@ -1347,14 +1340,9 @@ XLALSynthesizeTransientAtoms ( ConfigVariables *cfg,		/**< [in] input params for
   Amp.psi  = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_psi,  cfg->rng );
   Amp.phi0 = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_phi0, cfg->rng );
 
-  gsl_vector *A_Mu;	/* output vector */
-  if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
-    XLALPrintError ( "%s: gsl_vector_alloc (4) failed.\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
   /* convert amplitude params to 'canonical' vector coordinates */
-  if ( XLALAmplitudeParams2Vect ( A_Mu, &Amp ) != XLAL_SUCCESS ) {
+  PulsarAmplitudeVect A_Mu;
+  if ( XLALAmplitudeParams2Vect ( A_Mu, Amp ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
@@ -1390,9 +1378,6 @@ XLALSynthesizeTransientAtoms ( ConfigVariables *cfg,		/**< [in] input params for
       XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
-
-  /* we're done, cleanup and return the final atoms-vector */
-  gsl_vector_free ( A_Mu );
 
   return multiAtoms;
 
