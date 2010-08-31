@@ -133,7 +133,7 @@ BOOLEAN outputIntegrand = 0;
 
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
-gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp );
+gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
 
 double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 double CWPhaseDeriv_i ( double tt, void *params );
@@ -999,7 +999,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       }
 
       /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
-      if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, &metricParams->signalParams.Amp )) == NULL ) {
+      if ( (metric->Fisher_ab = XLALComputeFisherFromAtoms ( atoms, metricParams->signalParams.Amp )) == NULL ) {
         XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
         XLALDestroyDopplerMetric ( metric );
@@ -1836,16 +1836,16 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
  *  full CW parameter-space of Amplitude + Doppler parameters !
  */
 gsl_matrix*
-XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeParams *Amp )
+XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp )
 {
-  const CHAR *fn = "XLALComputeFisherFromAtoms()";
+  const CHAR *fn = __func__;
   gsl_matrix *fisher = NULL;	/* output matrix */
 
   UINT4 dimDoppler, dimFull, i, j;
   REAL8 al1, al2, al3;
 
   /* check input consistency */
-  if ( !atoms || !Amp ) {
+  if ( !atoms ) {
     XLALPrintError ("%s: illegal NULL input.\n\n", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
@@ -1857,21 +1857,16 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, const PulsarAmplitudeP
 
   REAL8 A1,A2,A3,A4;
   {
-    gsl_vector *Amu;
-    if ( ( Amu = gsl_vector_calloc ( 4 )) == NULL ) {
-      XLALPrintError ("%s: failed to Amu = gsl_vector_calloc(4)\n", fn );
-      XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-    }
+    PulsarAmplitudeVect Amu;
     if ( XLALAmplitudeParams2Vect ( Amu, Amp ) != XLAL_SUCCESS ) {
       XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
-    A1 = gsl_vector_get ( Amu, 0 );
-    A2 = gsl_vector_get ( Amu, 1 );
-    A3 = gsl_vector_get ( Amu, 2 );
-    A4 = gsl_vector_get ( Amu, 3 );
-    gsl_vector_free ( Amu );
+    A1 = Amu[0];
+    A2 = Amu[1];
+    A3 = Amu[2];
+    A4 = Amu[3];
   }
 
   dimDoppler = atoms->a_a_i->size;
