@@ -213,14 +213,13 @@ int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_r
 int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, REAL8 *rho2, const gsl_vector *A_Mu, transientWindow_t transientWindow );
 
-gsl_vector *XLALDrawAmplitudeVect ( AmplitudePrior_t *AmpPrior, gsl_rng *rng );
 MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 
 
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, UINT4 Npoints, AmpPriorType_t priorType );
-REAL8 XLALDrawFromPDF ( pdf1D_t *probDist, gsl_rng *rng );
+REAL8 XLALDrawFromPDF ( const pdf1D_t *probDist, const gsl_rng *rng );
 
 
 /*---------- empty initializers ---------- */
@@ -1278,53 +1277,6 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
 
 } /* XLALInitEphemeris() */
 
-
-/** Generate a random amplitude-parameter draw for signals, using 'physical' priors:
- * uniform on phi_0, isotropic on {cosi,psi}, and (ad-hoc) uniform on h0
- */
-gsl_vector *
-XLALDrawAmplitudeVect ( AmplitudePrior_t *AmpPrior,	/**< input amplitude ranges */
-                        gsl_rng * rng			/**< gsl random-number generator */
-                        )
-{
-  const char *fn = __func__;
-
-  /* check input arguments */
-  if ( !AmpPrior || !rng ) {
-    XLALPrintError ("%s: invalid NULL input 'AmpPrior' or 'rng'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  /* do a random draw from the given priors */
-  PulsarAmplitudeParams Amp;
-  if ( AmpPrior->fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
-    Amp.h0 = 1.0;
-  else
-    Amp.h0   = XLALDrawFromPDF ( &AmpPrior->pdf_h0Nat, rng );
-
-  Amp.cosi = XLALDrawFromPDF ( &AmpPrior->pdf_cosi, rng );
-  Amp.psi  = XLALDrawFromPDF ( &AmpPrior->pdf_psi,  rng );
-  Amp.phi0 = XLALDrawFromPDF ( &AmpPrior->pdf_phi0, rng );
-
-  /* ----- allocate temporary interal storage vectors */
-  gsl_vector *A_Mu;	/* output vector */
-  if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
-    XLALPrintError ( "%s: gsl_vector_alloc (4) failed.\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  /* convert amplitude params from 'physical' to 'canonical' coordinates */
-  if ( XLALAmplitudeParams2Vect ( A_Mu, &Amp ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", fn, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  /* and return the result */
-  return A_Mu;
-
-} /* XLALDrawAmplitudeVect() */
-
-
 /** Generates a multi-Fstat atoms vector for given parameters, drawing random parameters wherever required.
  *
  * Input: detector states, signal sky-pos (or allsky), amplitudes (or range), transient window range
@@ -1385,9 +1337,25 @@ XLALSynthesizeTransientAtoms ( ConfigVariables *cfg,		/**< [in] input params for
   }
 
   /* draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
-  gsl_vector *A_Mu;
-  if ( (A_Mu = XLALDrawAmplitudeVect ( &cfg->AmpPrior, cfg->rng )) == NULL ) {
-    XLALPrintError ( "%s: XLALDrawAmplitudeVect() failed with xlalErrno = %d\n", fn, xlalErrno );
+  PulsarAmplitudeParams Amp;
+  if ( cfg->AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
+    Amp.h0 = 1.0;
+  else
+    Amp.h0   = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_h0Nat, cfg->rng );
+
+  Amp.cosi = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_cosi, cfg->rng );
+  Amp.psi  = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_psi,  cfg->rng );
+  Amp.phi0 = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_phi0, cfg->rng );
+
+  gsl_vector *A_Mu;	/* output vector */
+  if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
+    XLALPrintError ( "%s: gsl_vector_alloc (4) failed.\n", fn);
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* convert amplitude params to 'canonical' vector coordinates */
+  if ( XLALAmplitudeParams2Vect ( A_Mu, &Amp ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALAmplitudeParams2Vect() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
@@ -1507,6 +1475,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
   }
 
   UINT4 i;
+  pdf1D_t *thisPDF;
+
   switch ( priorType )
     {
     case AMP_PRIOR_PHYSICAL:
@@ -1524,42 +1494,58 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
 
     case AMP_PRIOR_CANONICAL:
 
-      /* pdf(h0) ~ h0^3 amplitude prior */
-      if ( AmpPrior->pdf_h0Nat.xBand > 0 )
+      /* ----- pdf(h0) ~ h0^3 amplitude prior ----- */
+      thisPDF = &AmpPrior->pdf_h0Nat;
+      if ( thisPDF->xBand > 0 )
         {
-          if ( (AmpPrior->pdf_h0Nat.prob = XLALCreateREAL8Vector ( Npoints )) == NULL ) {
+          if ( (thisPDF->prob = XLALCreateREAL8Vector ( Npoints )) == NULL ) {
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
-          REAL8 hMin = AmpPrior->pdf_h0Nat.xMin;
-          REAL8 dh = AmpPrior->pdf_h0Nat.xBand / Npoints;
+          REAL8 hMin = thisPDF->xMin;
+          REAL8 dh   = thisPDF->xBand / Npoints;
           for ( i=0; i < Npoints; i ++ )
             {
               REAL8 hi = hMin + i * dh;
-              AmpPrior->pdf_h0Nat.prob->data[i] = CUBE(hi);
+              thisPDF->prob->data[i] = CUBE(hi);
             } /* for i < Npoints */
-          AmpPrior->pdf_h0Nat.normalized = false;
-        } /* if h0Band > 0 */
+          thisPDF->normalized = false;
 
-      /* pdf(cosi) ~ ( 1 - cosi^2)^3 */
-      if ( AmpPrior->pdf_cosi.xBand > 0 )
+          /* setup precomputed sampling data */
+          if ( (thisPDF->sampling = gsl_ran_discrete_preproc ( thisPDF->prob->length, thisPDF->prob->data ) ) == NULL ) {
+            XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFAILED );
+          }
+        } /* if h0NatBand > 0 */
+
+
+      /* ----- pdf(cosi) ~ ( 1 - cosi^2)^3 ----- */
+      thisPDF = &AmpPrior->pdf_cosi;
+      if ( thisPDF->xBand > 0 )
         {
-          if ( (AmpPrior->pdf_cosi.prob = XLALCreateREAL8Vector ( Npoints )) == NULL ) {
+          if ( (thisPDF->prob = XLALCreateREAL8Vector ( Npoints )) == NULL ) {
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
-          REAL8 cosiMin = AmpPrior->pdf_cosi.xMin;
-          REAL8 dcosi = AmpPrior->pdf_cosi.xBand / Npoints;
+          REAL8 cosiMin = thisPDF->xMin;
+          REAL8 dcosi   = thisPDF->xBand / Npoints;
           for ( i=0; i < Npoints; i ++ )
             {
               REAL8 cosi = cosiMin + i * dcosi;
               REAL8 y = 1.0 - SQ(cosi);
-              AmpPrior->pdf_cosi.prob->data[i] = CUBE( y );
+              thisPDF->prob->data[i] = CUBE( y );
             } /* for i < Npoints */
         } /* if cosiBand > 0 */
-      AmpPrior->pdf_cosi.normalized = false;
+      thisPDF->normalized = false;
 
-      /* flat prior for psi */
+      /* setup precomputed sampling data */
+      if ( (thisPDF->sampling = gsl_ran_discrete_preproc ( thisPDF->prob->length, thisPDF->prob->data ) ) == NULL ) {
+        XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", fn );
+        XLAL_ERROR ( fn, XLAL_EFAILED );
+      }
+
+
+      /* ----- flat prior for psi ----- */
       AmpPrior->pdf_psi.prob = NULL;
-      /* flat prior for phi0 */
+      /* ----- flat prior for phi0 ----- */
       AmpPrior->pdf_phi0.prob = NULL;
 
       break;
@@ -1579,8 +1565,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
 /** Function to generate random samples drawn from the given pdf(x)
  */
 REAL8
-XLALDrawFromPDF ( pdf1D_t *probDist,	/**< probability distribution to sample from */
-                  gsl_rng *rng		/**< random-number generator */
+XLALDrawFromPDF ( const pdf1D_t *probDist,	/**< probability distribution to sample from */
+                  const gsl_rng *rng		/**< random-number generator */
                   )
 {
   const char *fn = __func__;
@@ -1608,13 +1594,10 @@ XLALDrawFromPDF ( pdf1D_t *probDist,	/**< probability distribution to sample fro
   /* ----- general case: draw from discretized pdf, buffer gsl_ran_discrete_t if not computed previously */
   REAL8 dx = probDist->xBand / probDist->prob->length;
 
-  if ( !probDist->sampling )
-    {
-      if ( (probDist->sampling = gsl_ran_discrete_preproc ( probDist->prob->length, probDist->prob->data ) ) == NULL ) {
-        XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", fn );
-        XLAL_ERROR_REAL8 ( fn, XLAL_EFAILED );
-      }
-    }
+  if ( !probDist->sampling ) {
+    XLALPrintError ("%s: no pre-computed sampling data in pdf.\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+  }
 
   UINT4 ind = gsl_ran_discrete (rng, probDist->sampling );
   REAL8 x = xMin + ind * dx;
