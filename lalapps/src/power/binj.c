@@ -382,7 +382,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		break;
 
 	case 'Q':
-		options.time_step = atof(optarg) / LAL_PI;
+		options.time_step = atof(optarg);
 		ADD_PROCESS_PARAM(process, "real_8");
 		break;
 

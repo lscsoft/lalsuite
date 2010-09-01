@@ -1081,8 +1081,8 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
-	# one injection every time-step / pi seconds
-	period = float(binjjob.get_opts()["time-step"]) / math.pi
+	# one injection every time-step seconds
+	period = float(binjjob.get_opts()["time-step"])
 
 	# adjust start time to be commensurate with injection period
 	start = seg[0] - seg[0] % period + period * offset
