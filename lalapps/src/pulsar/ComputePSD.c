@@ -116,9 +116,11 @@ typedef struct
 
   INT4 mthopOverSFTs;        /* type of math. operation over SFTs */
   INT4 mthopOverIFOs;        /* type of math. operation over IFOs */
-  REAL8 finalPSDBinSize;     /* bin final PSD size */
-  INT4 finalPSDBinMthOp;     /* type of math. operation over bins */
-  REAL8 finalPSDBinStep;     /* final PSD bin step size */
+  REAL8 outPSDBinSizeHz;     /* output PSD bin size in Hz */
+  INT4  outPSDBinSize;       /* output PSD bin size in no. of bins */ 
+  INT4  mthopOverBins;       /* type of math. operation over bins */
+  REAL8 outPSDBinStepHz;     /* output PSD bin step in Hz */
+  INT4  outPSDBinStep;       /* output PSD bin step in no. of bins */ 
 
 } UserVariables_t;
 
@@ -322,19 +324,25 @@ main(int argc, char *argv[]){
   }
 
   /* work out bin size */
-  if (uvar.finalPSDBinSize <= 0.0) {
-    finalBinSize = 1;
+  if (XLALUserVarWasSet(&uvar.outPSDBinSize)) {
+    finalBinSize = uvar.outPSDBinSize;
+  }
+  else if (XLALUserVarWasSet(&uvar.outPSDBinSizeHz)) {
+    finalBinSize = (UINT4)floor(uvar.outPSDBinSizeHz / dFreq + 0.5); /* round to nearest bin */
   }
   else {
-    finalBinSize = (UINT4)floor(uvar.finalPSDBinSize / dFreq + 0.5); /* round to nearest bin */
+    finalBinSize = 1;
   }
 
   /* work out bin step */
-  if (uvar.finalPSDBinStep <= 0.0) {
-    finalBinStep = finalBinSize;
+  if (XLALUserVarWasSet(&uvar.outPSDBinStep)) {
+    finalBinStep = uvar.outPSDBinStep;
+  }
+  else if (XLALUserVarWasSet(&uvar.outPSDBinStepHz)) {
+    finalBinStep = (UINT4)floor(uvar.outPSDBinStepHz / dFreq + 0.5); /* round to nearest bin */
   }
   else {
-    finalBinStep = (UINT4)floor(uvar.finalPSDBinStep / dFreq + 0.5); /* round to nearest bin */
+    finalBinStep = finalBinSize;
   }
 
   /* work out total number of bins */
@@ -354,7 +362,7 @@ main(int argc, char *argv[]){
     for (k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
       REAL8 f = Freq0 + b * dFreq;
-      REAL8 p = math_op(&(finalPSD->data[b]), finalBinSize, uvar.finalPSDBinMthOp);
+      REAL8 p = math_op(&(finalPSD->data[b]), finalBinSize, uvar.mthopOverBins);
       if (XLALIsREAL8FailNaN( p ))
 	return EXIT_FAILURE;
       fprintf(fpOut, "%f   %e\n", f, p);
@@ -547,9 +555,11 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   uvar->mthopOverSFTs = MATH_OP_HARMONIC_MEAN;
   uvar->mthopOverIFOs = MATH_OP_HARMONIC_SUM;
-  uvar->finalPSDBinSize = -1.0;
-  uvar->finalPSDBinMthOp = MATH_OP_ARITHMETIC_MEDIAN;
-  uvar->finalPSDBinStep = -1.0;
+  uvar->outPSDBinSizeHz = 0.0;
+  uvar->outPSDBinSize   = 1;
+  uvar->mthopOverBins   = MATH_OP_ARITHMETIC_MEDIAN;
+  uvar->outPSDBinStep   = 0.0;
+  uvar->outPSDBinStep   = 1;
 
   /* register user input variables */
   XLALregBOOLUserStruct  (help,             'h', UVAR_HELP,     "Print this message" );
@@ -566,14 +576,20 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   XLALregINTUserStruct   (blocksRngMed,     'w', UVAR_OPTIONAL, "Running Median window size");
   XLALregINTUserStruct   (mthopOverSFTs,    'S', UVAR_OPTIONAL, "Type of math. operation over SFTs: "
-								"0=arith-sum, 1=arith-mean, 2=arith-median, "
-								"3=harm-sum, 4=harm-mean, "
-								"5=power-2-sum, 6=power-2-mean, "
-								"7=min, 8=max");
-  XLALregINTUserStruct   (mthopOverIFOs,    'I', UVAR_OPTIONAL, "Type of math. operation over IFOs: as for mthopOverSFTs");
-  XLALregREALUserStruct  (finalPSDBinSize,  'B', UVAR_OPTIONAL, "Bin the final PSD into bins of size in Hz (default: no binning)");
-  XLALregINTUserStruct   (finalPSDBinMthOp, 'A', UVAR_OPTIONAL, "If binning, type of math. operation over frequency bins: as for mthopOverSFTs");
-  XLALregREALUserStruct  (finalPSDBinStep,  'D', UVAR_OPTIONAL, "If binning, step size to move bin along in Hz (default: size of bin)");
+                                                                "0=arith-sum, 1=arith-mean, 2=arith-median, "
+                                                                "3=harm-sum, 4=harm-mean, "
+                                                                "5=power-2-sum, 6=power-2-mean, "
+                                                                "7=min, 8=max");
+  XLALregINTUserStruct   (mthopOverIFOs,    'I', UVAR_OPTIONAL, "Type of math. op. over IFOs: as for mthopOverSFTs");
+
+  XLALregINTUserStruct   (outPSDBinSize,    'z', UVAR_OPTIONAL, "Bin the final PSD into bins of size (in number of bins)");
+  XLALregREALUserStruct  (outPSDBinSizeHz,  'Z', UVAR_OPTIONAL, "Bin the final PSD into bins of size (in Hz)");
+  XLALregINTUserStruct   (mthopOverBins,    'A', UVAR_OPTIONAL, "If binning, type of math. op. over frequency bins: "
+                                                                "as for mthopOverSFTs");
+  XLALregINTUserStruct   (outPSDBinStep,    'p', UVAR_OPTIONAL, "If binning, step size to move bin along "
+                                                                "(in number of bins, default is bin size)");
+  XLALregREALUserStruct  (outPSDBinStepHz,  'P', UVAR_OPTIONAL, "If binning, step size to move bin along "
+                                                                "(in Hz, default is bin size)");
 
   XLALregINTUserStruct   (maxBinsClean,     'm', UVAR_OPTIONAL, "Maximum Cleaning Bins");
   XLALregLISTUserStruct  (linefiles,         0 , UVAR_OPTIONAL, "Comma separated list of linefiles "
@@ -582,6 +598,44 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   /* read all command line variables */
   if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
     return XLAL_FAILURE;
+
+  /* check user-input consistency */
+  if (XLALUserVarWasSet(&(uvar->mthopOverSFTs)) && !(0 <= uvar->mthopOverSFTs && uvar->mthopOverSFTs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --mthopOverSFTs(-S) must be between 0 and %i", MATH_OP_LAST - 1);
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->mthopOverIFOs)) && !(0 <= uvar->mthopOverIFOs && uvar->mthopOverIFOs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --mthopOverIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1);
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->mthopOverBins)) && !(0 <= uvar->mthopOverBins && uvar->mthopOverBins < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --mthopOverBins(-A) must be between 0 and %i", MATH_OP_LAST - 1);
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinSize)) && XLALUserVarWasSet(&(uvar->outPSDBinSizeHz))) {
+    XLALPrintError("ERROR: --outPSDBinSize(-z) and --outPSDBinSizeHz(-Z) are mutually exclusive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinSize)) && uvar->outPSDBinSize <= 0) {
+    XLALPrintError("ERROR: --outPSDBinSize(-z) must be strictly positive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinSizeHz)) && uvar->outPSDBinSizeHz <= 0.0) {
+    XLALPrintError("ERROR: --outPSDBinSizeHz(-Z) must be strictly positive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinStep)) && XLALUserVarWasSet(&(uvar->outPSDBinStepHz))) {
+    XLALPrintError("ERROR: --outPSDBinStep(-p) and --outPSDBinStepHz(-P) are mutually exclusive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinStep)) && uvar->outPSDBinStep <= 0) {
+    XLALPrintError("ERROR: --outPSDBinStep(-p) must be strictly positive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->outPSDBinStepHz)) && uvar->outPSDBinStepHz <= 0.0) {
+    XLALPrintError("ERROR: --outPSDBinStepHz(-P) must be strictly positive");
+    return XLAL_FAILURE;
+  }
 
   return XLAL_SUCCESS;
 
