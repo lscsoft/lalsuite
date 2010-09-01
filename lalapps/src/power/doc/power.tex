@@ -1835,8 +1835,7 @@ population to be reconstructed identically, or to ensure that two different
 files do not contain the same injections.
 
 \item[\option{--time-step} \parm{value}]
-Set the time interval between injections.  The time interval is
-\(\text{\parm{value}} / \pi\) seconds.
+Set the time interval between injections in seconds.
 
 \item[\option{--user-tag} \parm{string}]
 Set the user tag appearing in the output filename, and in the metadata
@@ -1856,7 +1855,7 @@ lalapps_binj \
 --population all_sky_sinegaussian \
 --q 8.89 \
 --seed 45 \
---time-step 200
+--time-step 63.661977236758133
 \end{verbatim}
 
 \item[Author] 

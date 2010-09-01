@@ -254,7 +254,6 @@ int XLALSimAddMode(
 	       	int sym                      /**< flag to add -m mode too */
 		)
 {
-	static const char *func = "XLALSimAddMode";
 	COMPLEX16 Y;
 	UINT4 j;
 
