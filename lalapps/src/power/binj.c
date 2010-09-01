@@ -217,7 +217,7 @@ static void print_usage(void)
 "	Set the random number generator's seed (0 = off, default = 0).\n" \
 "\n" \
 "--time-step value\n" \
-"	Set the time betwen injections to value/pi seconds (default = 210).\n" \
+"	Set the time betwen injections in seconds (default = 210 / pi).\n" \
 "\n" \
 "--user-tag string\n" \
 "	Set the user tag in the process and search summary tables to this.\n"
