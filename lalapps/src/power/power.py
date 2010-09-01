@@ -289,6 +289,9 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 		self.output_dir = "."
 
+		# one injection every time-step seconds
+		self.time_step = config_parser.getfloat("lalapps_binj", "time-step")
+
 
 class BurstInjNode(pipeline.AnalysisNode):
 	def __init__(self, job):
@@ -1081,11 +1084,8 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
-	# one injection every time-step seconds
-	period = float(binjjob.get_opts()["time-step"])
-
 	# adjust start time to be commensurate with injection period
-	start = seg[0] - seg[0] % period + period * offset
+	start = seg[0] - seg[0] % binjjob.time_step + binjjob.time_step * offset
 
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
