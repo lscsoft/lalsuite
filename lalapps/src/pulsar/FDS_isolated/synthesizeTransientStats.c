@@ -76,6 +76,8 @@
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))
 
+/* ---------- local types ---------- */
+
 /** Enumeration of allowed amplitude-prior types
  */
 typedef enum
@@ -85,59 +87,8 @@ typedef enum
     AMP_PRIOR_LAST
   } AmpPriorType_t;
 
-/** Encode a probability distribution pdf(x) over an interval [xMin, xMin+xBand].
- * Set xBand=0 for the special case of one certain value with p(x_0)=1 (pdf is not used in this case).
- * The optional field 'sampling' allows to use gsl_ran_discrete() to draw samples from that distribution.
- */
-typedef struct
-{
-  REAL8 xMin;			/**< lower bound on random-variable domain [xMin, xMin+xBand] */
-  REAL8 xBand;			/**< size of random-variable domain, can be 0 */
-  REAL8Vector *prob;		/**< vector of pdf(x_i) over x-domain. NULL means uniform pdf over [xMin,xMax] */
-  BOOLEAN normalized;		/**< true if the pdf(x) is normalized: sum_i pdf(x_i) dx = 1 */
-  gsl_ran_discrete_t *sampling;	/**< optional: sampling distribution input for drawing samples using gsl_ran_discrete() */
-} pdf1D_t;
 
-
-/** Signal (amplitude) parameter ranges
- */
-typedef struct {
-  pdf1D_t pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
-  REAL8 fixedSNR;	/**< alternative: if > 0 => fix SNR of injected signals */
-  pdf1D_t pdf_cosi;	/**< pdf(cosi) */
-  pdf1D_t pdf_psi;	/**< pdf(psi) */
-  pdf1D_t pdf_phi0;	/**< pdf(phi0) */
-} AmplitudePrior_t;
-
-/** Configuration settings required for and defining a coherent pulsar search.
- * These are 'pre-processed' settings, which have been derived from the user-input.
- */
-typedef struct {
-  AmplitudePrior_t AmpPrior;	/**< amplitude-parameter priors to draw signals from */
-  SkyPosition skypos;		/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
-
-  transientWindowRange_t transientSearchRange;	/**< transient-window range for the search (flat priors) */
-  transientWindowRange_t transientInjectRange;	/**< transient-window range for injections (flat priors) */
-
-  MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
-  MultiLIGOTimeGPSVector *multiTS;		/**< corresponding timestamps vector for convenience */
-
-  gsl_rng *rng;			/**< gsl random-number generator */
-  CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
-
-} ConfigVariables;
-
-/* struct for buffering of AM-coeffs, if signal for same sky-position is injected */
-typedef struct {
-  SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
-  MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
-} multiAMBuffer_t;
-
-
-/*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
-
-/* ----- User-variables: can be set from config-file or command-line */
+/** User-variables: can be set from config-file or command-line */
 typedef struct {
   BOOLEAN help;		/**< trigger output of help string */
 
@@ -181,6 +132,7 @@ typedef struct {
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
   CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
+  CHAR *outputInjParams;/**< output injection parameters into this file */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
   BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
@@ -188,8 +140,56 @@ typedef struct {
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   BOOLEAN version;	/**< output version-info */
-
 } UserInput_t;
+
+/** Encode a probability distribution pdf(x) over an interval [xMin, xMin+xBand].
+ * Set xBand=0 for the special case of one certain value with p(x_0)=1 (pdf is not used in this case).
+ * The optional field 'sampling' allows to use gsl_ran_discrete() to draw samples from that distribution.
+ */
+typedef struct
+{
+  REAL8 xMin;			/**< lower bound on random-variable domain [xMin, xMin+xBand] */
+  REAL8 xBand;			/**< size of random-variable domain, can be 0 */
+  REAL8Vector *prob;		/**< vector of pdf(x_i) over x-domain. NULL means uniform pdf over [xMin,xMax] */
+  BOOLEAN normalized;		/**< true if the pdf(x) is normalized: sum_i pdf(x_i) dx = 1 */
+  gsl_ran_discrete_t *sampling;	/**< optional: sampling distribution input for drawing samples using gsl_ran_discrete() */
+} pdf1D_t;
+
+
+/** Signal (amplitude) parameter ranges
+ */
+typedef struct {
+  pdf1D_t pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
+  REAL8 fixedSNR;	/**< alternative: if > 0 => fix SNR of injected signals */
+  pdf1D_t pdf_cosi;	/**< pdf(cosi) */
+  pdf1D_t pdf_psi;	/**< pdf(psi) */
+  pdf1D_t pdf_phi0;	/**< pdf(phi0) */
+} AmplitudePrior_t;
+
+/** Configuration settings required for and defining a coherent pulsar search.
+ * These are 'pre-processed' settings, which have been derived from the user-input.
+ */
+typedef struct {
+  AmplitudePrior_t AmpPrior;	/**< amplitude-parameter priors to draw signals from */
+  SkyPosition skypos;		/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
+  BOOLEAN SignalOnly;		/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
+
+  transientWindowRange_t transientSearchRange;	/**< transient-window range for the search (flat priors) */
+  transientWindowRange_t transientInjectRange;	/**< transient-window range for injections (flat priors) */
+
+  MultiDetectorStateSeries *multiDetStates;	/**< multi-detector state series covering observation time */
+  MultiLIGOTimeGPSVector *multiTS;		/**< corresponding timestamps vector for convenience */
+
+  gsl_rng *rng;			/**< gsl random-number generator */
+  CHAR *logString;		/**< logstring for file-output, containing cmdline-options + code VCS version info */
+
+} ConfigVariables;
+
+/* struct for buffering of AM-coeffs, if signal for same sky-position is injected */
+typedef struct {
+  SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
+  MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
+} multiAMBuffer_t;
 
 
 
@@ -202,7 +202,7 @@ int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 EphemerisData * XLALInitEphemeris (const CHAR *ephemYear );
 
 /* exportable API */
-int XLALDrawCorrelatedNoise ( gsl_vector *n_mu, const gsl_matrix *L, gsl_rng * rng );
+int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
 
 FstatAtomVector* XLALGenerateFstatAtomVector ( const LIGOTimeGPSVector *TS, const AMCoeffs *amcoeffs );
 MultiFstatAtomVector* XLALGenerateMultiFstatAtomVector ( const  MultiLIGOTimeGPSVector *multiTS, const MultiAMCoeffs *multiAM );
@@ -213,7 +213,7 @@ int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_r
 int XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, REAL8 *rho2, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 int XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, REAL8 *rho2, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
 
-MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, BOOLEAN SignalOnly, multiAMBuffer_t *multiAMBuffer );
+MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg, multiAMBuffer_t *multiAMBuffer );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 
@@ -221,6 +221,9 @@ int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 re
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, UINT4 Npoints, AmpPriorType_t priorType );
 REAL8 XLALDrawFromPDF ( const pdf1D_t *probDist, const gsl_rng *rng );
 
+
+/*---------- Global variables ----------*/
+extern int vrbflg;		/**< defined in lalapps.c */
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -285,21 +288,33 @@ int main(int argc,char *argv[])
   /* ---------- Initialize code-setup ---------- */
   if ( XLALInitCode( &cfg, &uvar ) != XLAL_SUCCESS ) {
     LogPrintf (LOG_CRITICAL, "%s: XLALInitCode() failed with error = %d\n", fn, xlalErrno );
-    return 1;
+    XLAL_ERROR ( fn, XLAL_EFUNC );
   }
 
-  FILE *fpTransientStats = NULL;
   /* ----- prepare stats output ----- */
+  FILE *fpTransientStats = NULL;
   if ( uvar.outputStats )
     {
       if ( (fpTransientStats = fopen (uvar.outputStats, "wb")) == NULL)
 	{
 	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputStats );
-	  return 1;
+	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
       write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
-    }
+    } /* if outputStats */
+
+  /* ----- prepare injection params output ----- */
+  FILE *fpInjParams = NULL;
+  if ( uvar.outputInjParams )
+    {
+      if ( (fpInjParams = fopen (uvar.outputInjParams, "wb")) == NULL)
+	{
+	  LogPrintf (LOG_CRITICAL, "Error opening file '%s' for writing..\n\n", uvar.outputInjParams );
+	  XLAL_ERROR ( fn, XLAL_EIO );
+	}
+      fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
+    } /* if outputInjParams */
 
   /* ----- main MC loop over numDraws trials ---------- */
   multiAMBuffer_t multiAMBuffer = empty_multiAMBuffer;	  /* prepare AM-buffer */
@@ -309,7 +324,7 @@ int main(int argc,char *argv[])
     {
       /* generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
-      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &cfg, uvar.SignalOnly, &multiAMBuffer )) == NULL ) {
+      if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &cfg, &multiAMBuffer )) == NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
         return 1;
       }
@@ -321,7 +336,7 @@ int main(int argc,char *argv[])
         return 1;
       }
 
-      /* if requested, also compute Ftotal over full data-span */
+      /* if requested, compute Ftotal over full data-span */
       if ( uvar.computeFtotal )
         {
           TransientCandidate_t candTotal;
@@ -504,6 +519,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
   XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL,  "Output F-statistic atoms into a file with this basename");
+  XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
+
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
   XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
 
@@ -551,6 +568,9 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   sprintf ( cfg->logString, fmt, cmdline, vcs );
   XLALFree ( cmdline );
   XLALFree ( vcs );
+
+  /* trivial settings from user-input */
+  cfg->SignalOnly = uvar->SignalOnly;
 
   /* ----- parse user-input on signal amplitude-paramters + ranges ----- */
   /* skypos */
@@ -778,21 +798,15 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
  * from a higher-level function to translate the antenna-pattern functions into pre-factorized Lcor
  */
 int
-XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector of noise-components {n_mu}, with correlation L * L^T */
+XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu,	/**< [out] 4d vector of noise-components {n_mu}, with correlation L * L^T */
                           const gsl_matrix *L,		/**< [in] correlator matrix to get n_mu = L_mu_nu * norm_nu from 4 uncorr. unit variates norm_nu */
                           gsl_rng * rng			/**< gsl random-number generator */
                           )
 {
   const CHAR *fn = __func__;
-
-  static gsl_vector *normal = NULL;    /* keep a static copy to avoid repeated malloc/free cycles */
   int gslstat;
 
   /* ----- check input arguments ----- */
-  if ( !n_mu || n_mu->size != 4 ) {
-    XLALPrintError ( "%s: Invalid input, n_mu must be pre-allocate 4-vector", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
   if ( !L || (L->size1 != 4) || (L->size2 != 4) ) {
     XLALPrintError ( "%s: Invalid correlator matrix, n_mu must be pre-allocate 4x4 matrix", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
@@ -802,34 +816,28 @@ XLALDrawCorrelatedNoise ( gsl_vector *n_mu,		/**< [out] pre-allocated 4-vector o
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-
   /* ----- generate 4 normal-distributed, uncorrelated random numbers ----- */
-  if ( !normal && (normal = gsl_vector_alloc ( 4 ) ) == NULL) {
-    XLALPrintError ( "%s: gsl_vector_calloc(4) failed\n", fn );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
-  }
+  PulsarAmplitudeVect n;
 
-  gsl_vector_set (normal, 0,  gsl_ran_gaussian ( rng, 1.0 ) );
-  gsl_vector_set (normal, 1,  gsl_ran_gaussian ( rng, 1.0 ) );
-  gsl_vector_set (normal, 2,  gsl_ran_gaussian ( rng, 1.0 ) );
-  gsl_vector_set (normal, 3,  gsl_ran_gaussian ( rng, 1.0 ) );
-
+  n[0] = gsl_ran_gaussian ( rng, 1.0 );
+  n[1] = gsl_ran_gaussian ( rng, 1.0 );
+  n[2] = gsl_ran_gaussian ( rng, 1.0 );
+  n[3] = gsl_ran_gaussian ( rng, 1.0 );
 
   /* use four normal-variates {norm_nu} with correlator matrix L to get: n_mu = L_{mu nu} norm_nu
    * which gives {n_\mu} satisfying cov(n_mu,n_nu) = (L L^T)_{mu nu} = M_{mu nu}
    */
+  gsl_vector_view n_view = gsl_vector_view_array ( n, 4 );
+  gsl_vector_view n_mu_view = gsl_vector_view_array ( n_mu, 4 );
 
   /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
    * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
    * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
    */
-  if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, L, normal, 0.0, n_mu)) != 0 ) {
+  if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, 1.0, L, &n_view.vector, 0.0, &n_mu_view.vector)) != 0 ) {
     XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
     XLAL_ERROR ( fn, XLAL_EFAILED );
   }
-
-  /* ---------- free memory ---------- */
-  // gsl_vector_free ( normal ); /* we keep this statically as it's always a 4D vector */
 
   return XLAL_SUCCESS;
 
@@ -968,12 +976,7 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
   /* prepare placeholder for 4 n_mu noise draws */
-  gsl_vector *n_mu;
-  if ( (n_mu = gsl_vector_calloc ( 4 ) ) == NULL ) {
-    XLALPrintError ("%s: gsl_vector_calloc ( 4 ) failed.\n", fn );
-    gsl_matrix_free ( Lcor );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
-  }
+  PulsarAmplitudeVect n_mu;
 
   /* ----- step through atoms and synthesize noise ----- */
   UINT4 alpha;
@@ -1009,10 +1012,10 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
       REAL8 x1,x2,x3,x4;
-      x1 = gsl_vector_get ( n_mu, 0 );
-      x2 = gsl_vector_get ( n_mu, 1 );
-      x3 = gsl_vector_get ( n_mu, 2 );
-      x4 = gsl_vector_get ( n_mu, 3 );
+      x1 = n_mu[0];
+      x2 = n_mu[1];
+      x3 = n_mu[2];
+      x4 = n_mu[3];
 
       /* add this to Fstat-atom */
       /* relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
@@ -1024,7 +1027,6 @@ XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms,	/**< input atoms-vector,
     } /* for i < numAtoms */
 
   /* free internal memory */
-  gsl_vector_free ( n_mu );
   gsl_matrix_free ( Lcor );
 
   return XLAL_SUCCESS;
@@ -1104,13 +1106,8 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
     XLALPrintError ("%s: gsl_matrix_calloc ( 4, 4 ) failed.\n", fn );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
-  /* prepare placeholder for 4-vector sh_mu */
-  gsl_vector *sh_mu;
-  if ( (sh_mu = gsl_vector_calloc ( 4 ) ) == NULL ) {
-    XLALPrintError ("%s: gsl_vector_calloc ( 4 ) failed.\n", fn );
-    gsl_matrix_free ( Mh_mu_nu );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
-  }
+
+  gsl_vector_const_view A_Mu_view = gsl_vector_const_view_array ( A_Mu, 4 );
 
   REAL8 TAtom = atoms->TAtom;
   UINT4 numAtoms = atoms->length;
@@ -1148,7 +1145,10 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       gsl_matrix_set ( Mh_mu_nu, 2, 3, ab );
       gsl_matrix_set ( Mh_mu_nu, 3, 2, ab );
 
-      gsl_vector_const_view A_Mu_view = gsl_vector_const_view_array ( A_Mu, 4 );
+      /* placeholder for 4-vector sh_mu */
+      PulsarAmplitudeVect sh_mu = {0,0,0,0};
+      gsl_vector_view sh_mu_view = gsl_vector_view_array ( sh_mu, 4 );
+
       /* int gsl_blas_dgemv (CBLAS_TRANSPOSE_t TransA, double alpha, const gsl_matrix * A, const gsl_vector * x, double beta, gsl_vector * y)
        * compute the matrix-vector product and sum y = \alpha op(A) x + \beta y, where op(A) = A, A^T, A^H
        * for TransA = CblasNoTrans, CblasTrans, CblasConjTrans.
@@ -1156,17 +1156,17 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
        * sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu, where here gamma = TAtom (as Sinv=1)
        */
       REAL8 norm_s = sqrt(TAtom / 2.0);
-      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, &A_Mu_view.vector, 0.0, sh_mu)) != 0 ) {
+      if ( (gslstat = gsl_blas_dgemv (CblasNoTrans, norm_s, Mh_mu_nu, &A_Mu_view.vector, 0.0, &sh_mu_view.vector)) != 0 ) {
         XLALPrintError ( "%s: gsl_blas_dgemv(L * norm) failed: %s\n", fn, gsl_strerror (gslstat) );
         XLAL_ERROR ( fn, XLAL_EFAILED );
       }
 
       /* add this signal to the atoms, using the relation Fa,Fb <--> x_mu: see Eq.(72) in CFSv2-LIGO-T0900149-v2.pdf */
       REAL8 s1,s2,s3,s4;
-      s1 = gsl_vector_get ( sh_mu, 0 );
-      s2 = gsl_vector_get ( sh_mu, 1 );
-      s3 = gsl_vector_get ( sh_mu, 2 );
-      s4 = gsl_vector_get ( sh_mu, 3 );
+      s1 = sh_mu[0];
+      s2 = sh_mu[1];
+      s3 = sh_mu[2];
+      s4 = sh_mu[3];
 
       atoms->data[alpha].Fa_alpha.re +=   s1;
       atoms->data[alpha].Fa_alpha.im += - s3;
@@ -1184,7 +1184,6 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   (*rho2) = TAtom  * ( Ad * ( SQ(A1) + SQ(A3) ) + 2.0*Cd * ( A1*A2 + A3*A4 ) + Bd * ( SQ(A2) + SQ(A4) ) );
 
   /* free memory */
-  gsl_vector_free ( sh_mu );
   gsl_matrix_free ( Mh_mu_nu );
 
   /* return status */
@@ -1277,7 +1276,6 @@ XLALInitEphemeris (const CHAR *ephemYear )	/**< which years do we need? */
  */
 MultiFstatAtomVector *
 XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input params for transient atoms synthesis */
-                               BOOLEAN SignalOnly,		/**< signal-only switch: add noise or not */
                                multiAMBuffer_t *multiAMBuffer	/**< buffer for AM-coefficients if re-using same skyposition (must be !=NULL) */
                                )
 {
@@ -1373,7 +1371,7 @@ XLALSynthesizeTransientAtoms ( const ConfigVariables *cfg,	/**< [in] input param
     } /* if fixed SNR given */
 
   /* add noise to the Fstat atoms, unless --SignalOnly was specified */
-  if ( !SignalOnly )
+  if ( !cfg->SignalOnly )
     if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
       XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
