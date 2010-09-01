@@ -114,13 +114,18 @@ typedef struct
   INT4 blocksRngMed;
   INT4 maxBinsClean;
 
-  INT4 mthopOverSFTs;        /* type of math. operation over SFTs */
-  INT4 mthopOverIFOs;        /* type of math. operation over IFOs */
-  REAL8 outPSDBinSizeHz;     /* output PSD bin size in Hz */
-  INT4  outPSDBinSize;       /* output PSD bin size in no. of bins */ 
-  INT4  mthopOverBins;       /* type of math. operation over bins */
-  REAL8 outPSDBinStepHz;     /* output PSD bin step in Hz */
-  INT4  outPSDBinStep;       /* output PSD bin step in no. of bins */ 
+  INT4 PSDmthopSFTs;     /* for PSD, type of math. operation over SFTs */
+  INT4 PSDmthopIFOs;     /* for PSD, type of math. operation over IFOs */
+  BOOLEAN outputNormSFT; /* output normalised SFT power? */
+  INT4 nSFTmthopSFTs;    /* for norm. SFT, type of math. operation over SFTs */
+  INT4 nSFTmthopIFOs;    /* for norm. SFT, type of math. operation over IFOs */
+
+  REAL8 binSizeHz;       /* output PSD bin size in Hz */
+  INT4  binSize;         /* output PSD bin size in no. of bins */ 
+  INT4  mthopBins;       /* type of math. operation over bins */
+  REAL8 binStepHz;       /* output PSD bin step in Hz */
+  INT4  binStep;         /* output PSD bin step in no. of bins */ 
+  BOOLEAN outFreqBinEnd; /* output the end frequency of each bin? */
 
 } UserVariables_t;
 
@@ -155,6 +160,7 @@ main(int argc, char *argv[]){
   REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
   REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
   REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
+  REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
 
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
@@ -252,10 +258,9 @@ main(int argc, char *argv[]){
     } /* end cleaning */
 
   LogPrintf (LOG_DEBUG, "Computing spectrogram and PSD ... ");
+
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
-  /* Throw away SFTs, not needed any more */
-  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
 
   /* start frequency and frequency spacing */
   Freq0 = multiPSD->data[0]->data[0].f0;
@@ -304,19 +309,59 @@ main(int argc, char *argv[]){
       }
 
       /* compute math. operation over SFTs for this IFO */
-      overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.mthopOverSFTs);
+      overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.PSDmthopSFTs);
       if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
 	return EXIT_FAILURE;
 
     } /* over IFOs */
 
     /* compute math. operation over IFOs for this frequency */
-    finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.mthopOverIFOs);
+    finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
     if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
       return EXIT_FAILURE;
 
   } /* over freq bins */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+  /* compute normalised SFT power */
+  if (uvar.outputNormSFT) {
+    LogPrintf (LOG_DEBUG, "Computing normalised SFT power ... ");
+
+    if ( (finalNormSFT = XLALCreateREAL8Vector ( numBins )) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "Out of memory!\n");
+      return EXIT_FAILURE;
+    }
+
+    /* loop over frequency bins in SFTs */
+    for (k = 0; k < numBins; ++k) {
+
+      /* loop over IFOs */
+      for (X = 0; X < numIFOs; ++X) {
+
+	/* number of SFTs for this IFO */
+	UINT4 numSFTs = inputSFTs->data[X]->length;
+
+	/* compute SFT power */
+	for (alpha = 0; alpha < numSFTs; ++alpha) {
+	  COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
+	  overSFTs->data[alpha] = bin.re*bin.re + bin.im*bin.im;
+	}
+
+	/* compute math. operation over SFTs for this IFO */
+	overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
+	if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
+	  return EXIT_FAILURE;
+
+      } /* over IFOs */
+      
+      /* compute math. operation over IFOs for this frequency */
+      finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
+      if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
+	return EXIT_FAILURE;
+
+    } /* over freq bins */
+    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+  }
 
   /* output spectrograms */
   if ( uvar.outputSpectBname ) {
@@ -324,22 +369,22 @@ main(int argc, char *argv[]){
   }
 
   /* work out bin size */
-  if (XLALUserVarWasSet(&uvar.outPSDBinSize)) {
-    finalBinSize = uvar.outPSDBinSize;
+  if (XLALUserVarWasSet(&uvar.binSize)) {
+    finalBinSize = uvar.binSize;
   }
-  else if (XLALUserVarWasSet(&uvar.outPSDBinSizeHz)) {
-    finalBinSize = (UINT4)floor(uvar.outPSDBinSizeHz / dFreq + 0.5); /* round to nearest bin */
+  else if (XLALUserVarWasSet(&uvar.binSizeHz)) {
+    finalBinSize = (UINT4)floor(uvar.binSizeHz / dFreq + 0.5); /* round to nearest bin */
   }
   else {
     finalBinSize = 1;
   }
 
   /* work out bin step */
-  if (XLALUserVarWasSet(&uvar.outPSDBinStep)) {
-    finalBinStep = uvar.outPSDBinStep;
+  if (XLALUserVarWasSet(&uvar.binStep)) {
+    finalBinStep = uvar.binStep;
   }
-  else if (XLALUserVarWasSet(&uvar.outPSDBinStepHz)) {
-    finalBinStep = (UINT4)floor(uvar.outPSDBinStepHz / dFreq + 0.5); /* round to nearest bin */
+  else if (XLALUserVarWasSet(&uvar.binStepHz)) {
+    finalBinStep = (UINT4)floor(uvar.binStepHz / dFreq + 0.5); /* round to nearest bin */
   }
   else {
     finalBinStep = finalBinSize;
@@ -361,11 +406,26 @@ main(int argc, char *argv[]){
     LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
     for (k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
-      REAL8 f = Freq0 + b * dFreq;
-      REAL8 p = math_op(&(finalPSD->data[b]), finalBinSize, uvar.mthopOverBins);
-      if (XLALIsREAL8FailNaN( p ))
+      
+      REAL8 f0 = Freq0 + b * dFreq;
+      REAL8 f1 = f0 + finalBinStep * dFreq;
+      fprintf(fpOut, "%f", f0);
+      if (uvar.outFreqBinEnd)
+	fprintf(fpOut, "   %f", f1);	  
+      
+      REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.mthopBins);
+      if (XLALIsREAL8FailNaN( psd ))
 	return EXIT_FAILURE;
-      fprintf(fpOut, "%f   %e\n", f, p);
+      fprintf(fpOut, "   %e", psd);
+      
+      if (uvar.outputNormSFT) {
+	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.mthopBins);
+	if (XLALIsREAL8FailNaN( nsft ))
+	  return EXIT_FAILURE;
+	fprintf(fpOut, "   %f", nsft);
+      }
+      
+      fprintf(fpOut, "\n");
     }
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
@@ -375,12 +435,14 @@ main(int argc, char *argv[]){
 
   /* we are now done with the psd */
   LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
+  LAL_CALL ( LALDestroyMultiSFTVector  (&status, &inputSFTs), &status);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
 
   XLALDestroyREAL8Vector ( overSFTs );
   XLALDestroyREAL8Vector ( overIFOs );
   XLALDestroyREAL8Vector ( finalPSD );
+  XLALDestroyREAL8Vector ( finalNormSFT );
 
   LALCheckMemoryLeaks();
 
@@ -552,14 +614,20 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->fBand = 0;
 
   uvar->outputPSD = NULL;
+  uvar->outputNormSFT = FALSE;
+  uvar->outFreqBinEnd = FALSE;
 
-  uvar->mthopOverSFTs = MATH_OP_HARMONIC_MEAN;
-  uvar->mthopOverIFOs = MATH_OP_HARMONIC_SUM;
-  uvar->outPSDBinSizeHz = 0.0;
-  uvar->outPSDBinSize   = 1;
-  uvar->mthopOverBins   = MATH_OP_ARITHMETIC_MEDIAN;
-  uvar->outPSDBinStep   = 0.0;
-  uvar->outPSDBinStep   = 1;
+  uvar->PSDmthopSFTs = MATH_OP_HARMONIC_MEAN;
+  uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
+
+  uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
+  uvar->nSFTmthopIFOs = MATH_OP_ARITHMETIC_MEAN;
+
+  uvar->binSizeHz = 0.0;
+  uvar->binSize   = 1;
+  uvar->mthopBins = MATH_OP_ARITHMETIC_MEDIAN;
+  uvar->binStep   = 0.0;
+  uvar->binStep   = 1;
 
   /* register user input variables */
   XLALregBOOLUserStruct  (help,             'h', UVAR_HELP,     "Print this message" );
@@ -575,21 +643,29 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregSTRINGUserStruct(IFO,               0 , UVAR_OPTIONAL, "Detector filter");
 
   XLALregINTUserStruct   (blocksRngMed,     'w', UVAR_OPTIONAL, "Running Median window size");
-  XLALregINTUserStruct   (mthopOverSFTs,    'S', UVAR_OPTIONAL, "Type of math. operation over SFTs: "
+
+  XLALregINTUserStruct   (PSDmthopSFTs,     'S', UVAR_OPTIONAL, "For PSD, type of math. operation over SFTs: "
                                                                 "0=arith-sum, 1=arith-mean, 2=arith-median, "
                                                                 "3=harm-sum, 4=harm-mean, "
                                                                 "5=power-2-sum, 6=power-2-mean, "
                                                                 "7=min, 8=max");
-  XLALregINTUserStruct   (mthopOverIFOs,    'I', UVAR_OPTIONAL, "Type of math. op. over IFOs: as for mthopOverSFTs");
+  XLALregINTUserStruct   (PSDmthopIFOs,     'I', UVAR_OPTIONAL, "For PSD, type of math. op. over IFOs: "
+                                                                "see --PSDmthopSFTs");
+  XLALregBOOLUserStruct  (outputNormSFT,    'n', UVAR_OPTIONAL, "Output normalised SFT power to PSD file");
+  XLALregINTUserStruct   (nSFTmthopSFTs,    'N', UVAR_OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
+                                                                "see --PSDmthopSFTs");
+  XLALregINTUserStruct   (nSFTmthopIFOs,    'J', UVAR_OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
+                                                                "see --PSDmthopSFTs");
 
-  XLALregINTUserStruct   (outPSDBinSize,    'z', UVAR_OPTIONAL, "Bin the final PSD into bins of size (in number of bins)");
-  XLALregREALUserStruct  (outPSDBinSizeHz,  'Z', UVAR_OPTIONAL, "Bin the final PSD into bins of size (in Hz)");
-  XLALregINTUserStruct   (mthopOverBins,    'A', UVAR_OPTIONAL, "If binning, type of math. op. over frequency bins: "
-                                                                "as for mthopOverSFTs");
-  XLALregINTUserStruct   (outPSDBinStep,    'p', UVAR_OPTIONAL, "If binning, step size to move bin along "
+  XLALregINTUserStruct   (binSize,          'z', UVAR_OPTIONAL, "Bin the output into bins of size (in number of bins)");
+  XLALregREALUserStruct  (binSizeHz,        'Z', UVAR_OPTIONAL, "Bin the output into bins of size (in Hz)");
+  XLALregINTUserStruct   (mthopBins,        'A', UVAR_OPTIONAL, "If binning, type of math. op. over frequency bins: "
+                                                                "see --PSDmthopSFTs");
+  XLALregINTUserStruct   (binStep,          'p', UVAR_OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in number of bins, default is bin size)");
-  XLALregREALUserStruct  (outPSDBinStepHz,  'P', UVAR_OPTIONAL, "If binning, step size to move bin along "
+  XLALregREALUserStruct  (binStepHz,        'P', UVAR_OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in Hz, default is bin size)");
+  XLALregBOOLUserStruct  (outFreqBinEnd,    'E', UVAR_OPTIONAL, "Output the end frequency of each bin");
 
   XLALregINTUserStruct   (maxBinsClean,     'm', UVAR_OPTIONAL, "Maximum Cleaning Bins");
   XLALregLISTUserStruct  (linefiles,         0 , UVAR_OPTIONAL, "Comma separated list of linefiles "
@@ -600,40 +676,48 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
     return XLAL_FAILURE;
 
   /* check user-input consistency */
-  if (XLALUserVarWasSet(&(uvar->mthopOverSFTs)) && !(0 <= uvar->mthopOverSFTs && uvar->mthopOverSFTs < MATH_OP_LAST)) {
-    XLALPrintError("ERROR: --mthopOverSFTs(-S) must be between 0 and %i", MATH_OP_LAST - 1);
+  if (XLALUserVarWasSet(&(uvar->PSDmthopSFTs)) && !(0 <= uvar->PSDmthopSFTs && uvar->PSDmthopSFTs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --PSDmthopSFTs(-S) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->mthopOverIFOs)) && !(0 <= uvar->mthopOverIFOs && uvar->mthopOverIFOs < MATH_OP_LAST)) {
-    XLALPrintError("ERROR: --mthopOverIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1);
+  if (XLALUserVarWasSet(&(uvar->PSDmthopIFOs)) && !(0 <= uvar->PSDmthopIFOs && uvar->PSDmthopIFOs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --PSDmthopIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->mthopOverBins)) && !(0 <= uvar->mthopOverBins && uvar->mthopOverBins < MATH_OP_LAST)) {
-    XLALPrintError("ERROR: --mthopOverBins(-A) must be between 0 and %i", MATH_OP_LAST - 1);
+  if (XLALUserVarWasSet(&(uvar->nSFTmthopSFTs)) && !(0 <= uvar->nSFTmthopSFTs && uvar->nSFTmthopSFTs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --nSFTmthopSFTs(-N) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinSize)) && XLALUserVarWasSet(&(uvar->outPSDBinSizeHz))) {
-    XLALPrintError("ERROR: --outPSDBinSize(-z) and --outPSDBinSizeHz(-Z) are mutually exclusive");
+  if (XLALUserVarWasSet(&(uvar->nSFTmthopIFOs)) && !(0 <= uvar->nSFTmthopIFOs && uvar->nSFTmthopIFOs < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --nSFTmthopIFOs(-J) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinSize)) && uvar->outPSDBinSize <= 0) {
-    XLALPrintError("ERROR: --outPSDBinSize(-z) must be strictly positive");
+  if (XLALUserVarWasSet(&(uvar->mthopBins)) && !(0 <= uvar->mthopBins && uvar->mthopBins < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --mthopBins(-A) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinSizeHz)) && uvar->outPSDBinSizeHz <= 0.0) {
-    XLALPrintError("ERROR: --outPSDBinSizeHz(-Z) must be strictly positive");
+  if (XLALUserVarWasSet(&(uvar->binSize)) && XLALUserVarWasSet(&(uvar->binSizeHz))) {
+    XLALPrintError("ERROR: --binSize(-z) and --binSizeHz(-Z) are mutually exclusive");
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinStep)) && XLALUserVarWasSet(&(uvar->outPSDBinStepHz))) {
-    XLALPrintError("ERROR: --outPSDBinStep(-p) and --outPSDBinStepHz(-P) are mutually exclusive");
+  if (XLALUserVarWasSet(&(uvar->binSize)) && uvar->binSize <= 0) {
+    XLALPrintError("ERROR: --binSize(-z) must be strictly positive");
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinStep)) && uvar->outPSDBinStep <= 0) {
-    XLALPrintError("ERROR: --outPSDBinStep(-p) must be strictly positive");
+  if (XLALUserVarWasSet(&(uvar->binSizeHz)) && uvar->binSizeHz <= 0.0) {
+    XLALPrintError("ERROR: --binSizeHz(-Z) must be strictly positive");
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->outPSDBinStepHz)) && uvar->outPSDBinStepHz <= 0.0) {
-    XLALPrintError("ERROR: --outPSDBinStepHz(-P) must be strictly positive");
+  if (XLALUserVarWasSet(&(uvar->binStep)) && XLALUserVarWasSet(&(uvar->binStepHz))) {
+    XLALPrintError("ERROR: --binStep(-p) and --binStepHz(-P) are mutually exclusive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->binStep)) && uvar->binStep <= 0) {
+    XLALPrintError("ERROR: --binStep(-p) must be strictly positive");
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->binStepHz)) && uvar->binStepHz <= 0.0) {
+    XLALPrintError("ERROR: --binStepHz(-P) must be strictly positive");
     return XLAL_FAILURE;
   }
 
