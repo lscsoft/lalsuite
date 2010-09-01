@@ -89,7 +89,6 @@ olapredfcn_parse_options (
     )
 {
   const char *dbglvl  = NULL;
-  FILE *fp;
 
   while (1)
   {
@@ -145,8 +144,8 @@ olapredfcn_parse_options (
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */
-        fp = freopen("/dev/null", "w", stderr);
-        fp = freopen("/dev/null", "w", stdout);
+        freopen("/dev/null", "w", stderr);
+        freopen("/dev/null", "w", stdout);
         break;
 
       case 'h':
