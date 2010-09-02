@@ -680,8 +680,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *mask;
   REAL4FrequencySeries *omegaGW;
   REAL4Window *dataWindow;
+#if 0
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
+#endif
 
   /* noise */
   REAL4TimeSeries *noiseOne;
@@ -694,7 +696,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numSegments;
   INT4 segsInInt;
   INT4 segmentLength;
+#if 0
   INT4 padData;
+#endif
   REAL8 deltaF;
   INT4 filterLength;
   INT4 numFMin;
@@ -731,10 +735,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* initialise gps time structures */
   endTime = startTime + totalDuration;
+#if 0
   gpsStartTime.gpsSeconds = 0;
   gpsStartTime.gpsNanoSeconds = 0;
   gpsEndTime.gpsSeconds = endTime;
   gpsEndTime.gpsNanoSeconds = 0;
+#endif
 
   /* get xml file basename */
   if (outputFileName)
@@ -756,11 +762,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   numSegments = totalDuration / segmentDuration;
   segsInInt = intervalDuration / segmentDuration;
 
+#if 0
   /* add a resample buffer, if required */
   if ((resampleRate) || (high_pass_flag))
     padData = 1;
   else
     padData = 0;
+#endif
 
   /* get deltaF for optimal filter */
   deltaF = 1./(REAL8)PSD_WINDOW_DURATION;

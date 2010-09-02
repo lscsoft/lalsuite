@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
  * crc64() taken from SFTReferenceLibrary.c Copyright (C) 2004 Bruce Allen
@@ -1264,7 +1265,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
 } /* LALReadTimestampsFile() */
 
 
-/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
  *  Add the comment to SFT if comment != NULL.
  *
  * NOTE: Currently this only supports writing v2-SFTs.
@@ -1274,52 +1275,41 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
  * the user-specified 'comment'
  *
  */
-void
-LALWriteSFT2file (LALStatus *status,
-		  const SFTtype *sft,		/**< SFT to write to disk */
-		  const CHAR *fname,		/**< filename */
-		  const CHAR *comment)		/**< optional comment (for v2 only) */
+int
+XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
+                  FILE *fp,		/**< pointer to open file */
+                  const CHAR *comment)	/**< optional comment (for v2 only) */
 {
-  FILE  *fp = NULL;
+  const CHAR *fn = __func__;
   UINT4 comment_len = 0;
   CHAR *SFTcomment;
   UINT4 pad_len = 0;
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
   _SFT_header_v2_t rawheader;
 
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);
-
-  /*   Make sure the arguments are not NULL and perform basic checks*/
-  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT ( sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-
-  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
- 
+  /* check input consistency */
+  if (!sft || !sft->data || sft->deltaF <= 0 || sft->f0 < 0 || sft->data->length ==0 )
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0) ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->epoch.gpsNanoSeconds < 1000000000 ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   if ( !is_valid_detector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
-    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  /* open SFT-file for writing */
-  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
-    {
-      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
-      ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
-    }
+  if ( !fp )
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+
 
   /* concat sft->name + comment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
   if ( comment )
     comment_len += strlen(comment) + 2;	/* separate by "; " */
 
-  if ( (SFTcomment = LALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
-    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  if ( (SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
+    XLAL_ERROR( fn, XLAL_ENOMEM );
   }
   strcpy ( SFTcomment, sft->name );
   if ( comment ) {
@@ -1356,29 +1346,92 @@ LALWriteSFT2file (LALStatus *status,
 
   /* ----- write the header to file */
   if (1 != fwrite( &rawheader, sizeof(rawheader), 1, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
   /* ----- write the comment to file */
   if ( comment_len != fwrite( SFTcomment, 1, comment_len, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
   if (pad_len != fwrite( pad, 1, pad_len, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
-  LALFree ( SFTcomment );
+  XLALFree ( SFTcomment );
 
   /* write the data to the file.  Data must be packed REAL,IMAG,REAL,IMAG,... */
   if ( sft->data->length != fwrite( sft->data->data, sizeof(*sft->data->data), sft->data->length, fp) ) {
-    ABORT ( status, SFTFILEIO_ESFTWRITE, SFTFILEIO_MSGESFTWRITE );
+    XLAL_ERROR ( fn, XLAL_EIO );
+  }
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFT2fp() */
+
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
+ *
+ * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
+ * the user-specified 'comment'
+ *
+ */
+int
+XLALWriteSFT2file(
+		  const SFTtype *sft,		/**< SFT to write to disk */
+		  const CHAR *fname,		/**< filename */
+		  const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  const CHAR *fn = __func__;
+  FILE  *fp = NULL;
+
+  /*   Make sure the arguments are not NULL */
+  if (!( sft ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( sft->data ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (!( fname ))
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+ 
+  if ( !is_valid_detector(sft->name) ) {
+    XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* open SFT-file for writing */
+  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
+    {
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
+      XLAL_ERROR ( fn, XLAL_EIO );
+    }
+
+  /* write SFT to file */
+  if ( XLALWriteSFT2fp (sft, fp, comment) != XLAL_SUCCESS ) {
+    XLAL_ERROR ( fn, XLAL_EIO );
   }
 
   fclose(fp);
 
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFT2file() */
+
+void
+LALWriteSFT2file (LALStatus *status,
+		  const SFTtype *sft,		/**< SFT to write to disk */
+		  const CHAR *fname,		/**< filename */
+		  const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  XLALPrintDeprecationWarning("LALWriteSFT2file", "XLALWriteSFT2file");
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);
+  if ( XLALWriteSFT2file( sft, fname, comment ) != XLAL_SUCCESS ) {
+    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+  }
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 } /* WriteSFTtoFile() */
 
 
@@ -1391,13 +1444,14 @@ LALWriteSFT2file (LALStatus *status,
  *
  * Output SFTs have naming convention following LIGO-T040164-01
  */
-void
-LALWriteSFTVector2Dir (LALStatus *status,
+int
+XLALWriteSFTVector2Dir(
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
 		       const CHAR *comment,		/**< optional comment (for v2 only) */
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
+  const CHAR *fn = __func__;
   UINT4 length, k;
   CHAR *filename = NULL;
   CHAR filenumber[16];
@@ -1406,13 +1460,10 @@ LALWriteSFTVector2Dir (LALStatus *status,
   UINT4 filenamelen;
   LIGOTimeGPS time0;
 
-  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (sftVect, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sftVect->data, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
-  ASSERT (sftVect->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
-  ASSERT (dirname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  if (! (sftVect) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->data) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->length > 0) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (dirname) ) XLAL_ERROR ( fn, XLAL_EINVAL );
 
   length = sftVect->length;
 
@@ -1420,8 +1471,8 @@ LALWriteSFTVector2Dir (LALStatus *status,
   if ( description )
     filenamelen += strlen ( description );
 
-  if ( (filename = (CHAR *)LALCalloc(1, filenamelen )) == NULL) {
-    ABORT( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  if ( (filename = (CHAR *)XLALCalloc(1, filenamelen )) == NULL) {
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
   /* will not be same as actual sft timebase if it is not
@@ -1432,11 +1483,11 @@ LALWriteSFTVector2Dir (LALStatus *status,
 
     sft = sftVect->data + k;
     if ( sft == NULL ) {
-      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+      XLAL_ERROR ( fn, XLAL_EFAULT );
     }
 
     if ( sft->name == NULL ) {
-      ABORT( status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+      XLAL_ERROR ( fn, XLAL_EFAULT );
     }
 
 
@@ -1473,17 +1524,89 @@ LALWriteSFTVector2Dir (LALStatus *status,
     strcat( filename, ".sft");
 
     /* write the k^th sft */
-    TRY ( LALWriteSFT2file ( status->statusPtr, sft, filename, comment), status);
+    if ( XLALWriteSFT2file( sft, filename, comment ) != XLAL_SUCCESS ) {
+      XLAL_ERROR ( fn, xlalErrno );
+    }
   }
 
-  LALFree(filename);
+  XLALFree(filename);
 
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFTVector2Dir() */
+
+void
+LALWriteSFTVector2Dir (LALStatus *status,
+		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
+		       const CHAR *dirname,		/**< base filename (including directory path)*/
+		       const CHAR *comment,		/**< optional comment (for v2 only) */
+		       const CHAR *description)         /**< optional sft description to go in the filename */
+{
+  XLALPrintDeprecationWarning("LALWriteSFTVector2Dir", "XLALWriteSFTVector2Dir");
+  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);
+  if ( XLALWriteSFTVector2Dir( sftVect, dirname, comment, description ) != XLAL_SUCCESS ) {
+    ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
+  }
   DETATCHSTATUSPTR (status);
   RETURN (status);
+}
 
-} /* WriteSFTVector2Dir() */
 
 
+/** Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
+ *  Add the comment to SFT if comment != NULL.
+ *
+ * NOTE: Currently this only supports writing v2-SFTs.
+ * If you need to write a v1-SFT, you should use LALWriteSFTfile()
+ */
+int
+XLALWriteSFTVector2File(
+		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
+		       const CHAR *filename,		/**< filename of concatenated SFT */
+		       const CHAR *comment)		/**< optional comment (for v2 only) */
+{
+  const CHAR *fn = __func__;
+  UINT4 length, k;
+  FILE *fp = NULL;
+  SFTtype *sft;
+
+  if (! (sftVect) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->data) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (sftVect->length > 0) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+  if (! (filename) ) XLAL_ERROR ( fn, XLAL_EINVAL );
+
+  length = sftVect->length;
+
+  /* open SFT-file for writing */
+  if ( (fp = LALFopen ( filename, "wb" )) == NULL )
+    {
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", filename, strerror(errno));
+      XLAL_ERROR ( fn, XLAL_EIO );
+    }
+
+  for ( k = 0; k < length; k++) {
+
+    sft = sftVect->data + k;
+    if ( sft == NULL ) {
+      XLAL_ERROR ( fn, XLAL_EFAULT );
+    }
+
+    if ( sft->name == NULL ) {
+      XLAL_ERROR ( fn, XLAL_EFAULT );
+    }
+
+    /* write the k^th sft */
+    if ( XLALWriteSFT2fp ( sft, fp, comment ) != XLAL_SUCCESS ) {
+      XLAL_ERROR ( fn, xlalErrno );
+    }
+  }
+
+  fclose(fp);
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFTVector2File() */
 
 
 
@@ -1897,7 +2020,6 @@ LALReadSFTfile (LALStatus *status,
 		const CHAR *fname)	/**< path+filename */
 {
   SFTHeader  header;		/* SFT file-header version1 */
-  REAL8 deltaF;
   UINT4 readlen;
   INT4 fminBinIndex, fmaxBinIndex;
   SFTtype *outputSFT = NULL;
@@ -1916,7 +2038,6 @@ LALReadSFTfile (LALStatus *status,
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
 
   /* ----- figure out which data we want to read ----- */
-  deltaF = 1.0 / header.timeBase;
 
   /* special case: fMin==fMax==0 means "read all" */
   if ( (fMin == 0) && (fMax == 0) )

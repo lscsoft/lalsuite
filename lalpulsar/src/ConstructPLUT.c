@@ -129,7 +129,6 @@ use of the stereographic projection.
 #define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
-#define rint(x) floor((x)+0.5)
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -265,7 +264,6 @@ NRCSID (CONSTRUCTPLUTC, "$Id$");
 #define MAX(A, B)  (((A) < (B)) ? (B) : (A))
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
-#define rint(x) floor((x)+0.5)
 
 
 /*

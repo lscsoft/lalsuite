@@ -49,8 +49,6 @@ $Id$
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-#define rint(x) (floor((x)+0.5))
-
 NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$");
 
 /* <lalVerbatim file="FindChirpClusterEventsCP"> */
@@ -75,7 +73,6 @@ LALFindChirpClusterEvents (
   UINT4  		deltaEventIndex = 0;
   UINT4                 j, kmax;
   UINT4 		doChisqFlag = 1;
-  UINT4			BVLen = 0;
   REAL4                 norm = 0;
   REAL4                 deltaT;
   REAL8                 deltaF;
@@ -137,7 +134,6 @@ LALFindChirpClusterEvents (
 
   /* normalisation */
   norm = input->fcTmplt->norm;
-  BVLen = bankVetoData->length;
 
   /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm;

@@ -64,7 +64,6 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 
 /*---------- Global variables ----------*/
 /* empty init-structs for the types defined in here */
-static LALStatus emptyStatus;
 static SpinOrbitCWParamStruc emptyCWParams;
 static CoherentGW emptySignal;
 
@@ -1040,12 +1039,9 @@ LALConvertSSB2GPS (LALStatus *status,
 int
 check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
 {
-  LALStatus status1, status2;
   INT4 diff0_s, diff0_ns, diff1_s, diff1_ns;
   UINT4 i;
   LIGOTimeGPS *ti;
-
-  status1 = status2 = emptyStatus;
 
   for (i = 0; i < timestamps->length; i ++)
     {

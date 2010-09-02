@@ -123,6 +123,11 @@ NRCSID( FRAMESERIESC, "$Id$" );
     pe->gpsSeconds=t/(INT8)1000000000; pe->gpsNanoSeconds=t%(INT8)1000000000; \
   } while( 0 )
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*
  *

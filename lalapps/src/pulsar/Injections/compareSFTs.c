@@ -244,7 +244,7 @@ main(int argc, char *argv[])
 
   LALCheckMemoryLeaks();
 
-  if ( maxd < uvar_relErrorMax )
+  if ( maxd <= uvar_relErrorMax )
     return 0;
   else
     return 1;

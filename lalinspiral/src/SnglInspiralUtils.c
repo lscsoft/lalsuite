@@ -1698,7 +1698,6 @@ LALCreateTrigBank(
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
 
-  INT4 numTriggers = 0;
   INT4 numEvents = 0;
   INT4 i = 0;
 
@@ -1743,9 +1742,7 @@ LALCreateTrigBank(
   /* create a linked list of sorted templates */
   LALInfo( status, "discarding template with duplicate masses: " );
 
-  numTriggers = 0;
   trigBankList = prevEvent = eventHandle[0];
-  if ( trigBankList ) numTriggers = 1;
 
   for ( i = 1; i < numEvents; ++i )
   {

@@ -135,8 +135,6 @@ int main( int argc, char *argv[] )
   REAL8Vector *psd = NULL;
   REAL8 df = 1.0;
   InspiralTemplate inspiralTemplate;
-  INT2 printMoments = 0;
-  REAL4 F0 = 0;
   REAL4 noiseMin = 1;
   BOOLEAN haveXML = 0;
 
@@ -182,7 +180,6 @@ int main( int argc, char *argv[] )
         Math3DPlot = 1;
         break;
       case 's':
-        printMoments = 1;
         break;
       case 'x':
         coarseIn.MMax = atof( optarg );
@@ -192,7 +189,6 @@ int main( int argc, char *argv[] )
         coarseIn.mMin = 1.0;
         coarseIn.MMax = 2*3.0;
         Math3DPlot = 0;
-        printMoments = 0;
         break;
     }
   }
@@ -213,7 +209,6 @@ int main( int argc, char *argv[] )
     {
       if( psd->data[loop] > 0 && psd->data[loop] < noiseMin )
       {
-        F0 = (REAL4) coarseIn.shf.deltaF * loop;
         noiseMin = psd->data[loop];
       }
     }

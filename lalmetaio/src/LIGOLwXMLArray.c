@@ -46,22 +46,19 @@
  *
  * int main()
  * {
- * 	LALStatus stat;
- * 	LIGOLwXMLStream xml;
+ * 	LIGOLwXMLStream *xml;
  * 	REAL8FrequencySeries *series;
  * 	LIGOTimeGPS epoch = {772847291, 500000000};
  * 	int i;
- *
- * 	memset(&stat, 0, sizeof(stat));
  *
  * 	series = XLALCreateREAL8FrequencySeries("PSD", &epoch, 0.0, 1.0 / 16384, &lalVoltUnit, 16384);
  * 	series->data->data[0] = 1.0;
  * 	for(i = 1; i < series->data->length; i++)
  * 		series->data->data[i] = sin(3.14 * i / 1000) / (3.14 * i / 1000);
  *
- * 	LALOpenLIGOLwXMLFile(&stat, &xml, "fseries.xml");
- * 	XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(&xml, "a sin(x)/x function", series);
- * 	LALCloseLIGOLwXMLFile(&stat, &xml);
+ * 	xml = XLALOpenLIGOLwXMLFile("fseries.xml");
+ * 	XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(xml, "a sin(x)/x function", series);
+ * 	XLALCloseLIGOLwXMLFile(xml);
  *
  * 	return 0;
  * }
@@ -335,10 +332,8 @@ int XLALWriteLIGOLwXMLArrayREAL4TimeSeries(
 	const REAL4TimeSeries *series	/*< REAL4TimeSeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayREAL4TimeSeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaT, 1, 0, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 
@@ -355,10 +350,8 @@ int XLALWriteLIGOLwXMLArrayREAL8TimeSeries(
 	const REAL8TimeSeries *series	/*< REAL8TimeSeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayREAL8TimeSeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaT, 1, 0, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 
@@ -375,10 +368,8 @@ int XLALWriteLIGOLwXMLArrayREAL4FrequencySeries(
 	const REAL4FrequencySeries *series	/*< REAL4TimeSeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayREAL4FrequencySeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 0, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 
@@ -395,10 +386,8 @@ int XLALWriteLIGOLwXMLArrayREAL8FrequencySeries(
 	const REAL8FrequencySeries *series	/*< REAL8FrequencySeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayREAL8FrequencySeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 0, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 
@@ -415,10 +404,8 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries(
 	const COMPLEX8FrequencySeries *series	/*< COMPLEX8FrequencySeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayCOMPLEX8FrequencySeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 1, 1, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 
@@ -435,10 +422,8 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(
 	const COMPLEX16FrequencySeries *series	/*< COMPLEX16FrequencySeries to write */
 )
 {
-	const char func[] = "XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries";
-
 	if(WriteLIGOLwXMLArray(xml->fp, comment, series->name, &series->epoch, &series->sampleUnits, series->f0, series->deltaF, 0, 1, 0, series->data->length, series->data->data) < 0)
-		XLAL_ERROR(func, XLAL_EIO);
+		XLAL_ERROR(__func__, XLAL_EIO);
 	return 0;
 }
 

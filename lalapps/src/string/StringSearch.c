@@ -45,6 +45,7 @@
 #include <gsl/gsl_randist.h>
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -58,7 +59,6 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -102,11 +102,10 @@ RCSID( "StringSearch $Id$");
 
 /* STRUCTURES */
 struct CommandLineArgsTag {
-  REAL4 flow;                 /* High pass filtering frequency */
   REAL8 samplerate;           /* desired sample rate */
-  REAL4 fbankstart;           /* lowest frequency of templates */
-  REAL4 fbankhighfcutofflow;  /* lowest high frequency cut-off */
-  REAL4 fmismatchmax;         /* maximal mismatch allowed from 1 template to the next */
+  REAL8 fbankstart;           /* lowest frequency of templates */
+  REAL8 fbankhighfcutofflow;  /* lowest high frequency cut-off */
+  REAL8 fmismatchmax;         /* maximal mismatch allowed from 1 template to the next */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO/Virgo xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
@@ -114,13 +113,13 @@ struct CommandLineArgsTag {
   LIGOTimeGPS GPSStart;       /* GPS start time of segment to be analysed */
   LIGOTimeGPS GPSEnd;         /* GPS end time of segment to be analysed */
   INT4 ShortSegDuration;      /* Number of fixed length sub-segments between GPSStart and GPSEnd */
-  REAL4 TruncSecs;            /* Half the number of seconds truncated at beginning and end of a chunk */
-  REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
-  REAL4 threshold;            /* event SNR threshold */
+  REAL8 TruncSecs;            /* Half the number of seconds truncated at beginning and end of a chunk */
+  REAL8 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
+  REAL8 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
   LIGOTimeGPS trigstarttime;  /* GPS start time of allowed triggers */
-  REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
+  REAL8 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
   double chi2cut[3];          /* chi2 cut parameters */
   INT4 printspectrumflag;     /* flag set to 1 if user wants to print the spectrum */
@@ -130,36 +129,26 @@ struct CommandLineArgsTag {
   INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
   INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
   char *comment;              /* for "comment" columns in some tables */
-} CommandLineArgs;
-
-typedef 
-struct GlobalVariablesTag {
-  REAL8TimeSeries *ht;        /* raw input data (LIGO data) */
-  REAL4TimeSeries *ht_proc;   /* processed (band-pass filtered and down-sampled) input data */
-  REAL4FrequencySeries *Spec; /* average spectrum */
-  RealFFTPlan *fplan;         /* fft plan */
-  RealFFTPlan *rplan;         /* fft plan */
-  unsigned seg_length;
-} GlobalVariables;
+};
 
 typedef
 struct StringTemplateTag {
   INT4 findex;                /* Template frequency index */
-  REAL4 f;                    /* Template frequency */
-  REAL4 norm;                 /* Template normalisation */
-  REAL4 mismatch;             /* Template mismatch relative to last one */
-  REAL4FrequencySeries *StringFilter; /* Frequency domain filter corresponding to this template */
-  REAL4Vector *waveform_t;    /* Template waveform - time-domain */
-  COMPLEX8Vector *waveform_f; /* Template waveform - frequency domain */
-  REAL4Vector *auto_cor;      /* Auto-correlation vector */
+  REAL8 f;                    /* Template frequency */
+  REAL8 norm;                 /* Template normalisation */
+  REAL8 mismatch;             /* Template mismatch relative to last one */
+  REAL8FrequencySeries *StringFilter; /* Frequency domain filter corresponding to this template */
+  REAL8Vector *waveform_t;    /* Template waveform - time-domain */
+  COMPLEX16Vector *waveform_f; /* Template waveform - frequency domain */
+  REAL8Vector *auto_cor;      /* Auto-correlation vector */
   INT4 chi2_index;            /* index to compute chi2 */
 } StringTemplate;
 
 /***************************************************************************/
 
-/* GLOBAL VARIABLES */
-GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to protect it from accidents */
-
+/* time window for trigger clustering */
+/* FIXME:  global variables = BAD BAD BAD! (my fault -- Kipp) */
+static double cluster_window;	/* seconds */
 
 /***************************************************************************/
 
@@ -169,35 +158,29 @@ GlobalVariables GV;           /* A bunch of stuff is stored in here; mainly to p
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
-int ReadData(struct CommandLineArgsTag CLA);
+REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA);
 
 /* Adds injections if an xml injection file is given */
-int AddInjections(struct CommandLineArgsTag CLA);
-
-/* windows the data with a Tukey window */
-int WindowData(void);
-
-/* High pass filters and casts data to REAL4 */
-int ProcessData(const struct CommandLineArgsTag *CLA);
+int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 
 /* DownSamples data */
-int DownSample(struct CommandLineArgsTag CLA);
+int DownSample(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 
 /* Computes the average spectrum  */
-int AvgSpectrum(struct CommandLineArgsTag CLA);
+REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FFTPlan *fplan);
 
 /* Creates the template bank based on the spectrum  */
-int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates);
+int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan);
 
 /* Creates the frequency domain string cusp or kink filters  */
-int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates);
+int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan);
 
 /* Filters the data through the template banks  */
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head);
+int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, const StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan, SnglBurst **head);
 
 /* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
-               REAL4Vector *vector, INT4 i, SnglBurst **head);
+               const REAL8TimeSeries *vector, SnglBurst **head);
 
 /* Writes out the xml file with the events it found  */
 int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events);
@@ -212,11 +195,17 @@ static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBur
 
 int main(int argc,char *argv[])
 {
+  struct CommandLineArgsTag CommandLineArgs;
+  unsigned seg_length;
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
   SnglBurst *events=NULL;
   MetadataTable  process;
   MetadataTable  procparams;
+  REAL8TimeSeries *ht;        /* strain data */
+  REAL8FFTPlan *fplan;        /* fft plan */
+  REAL8FFTPlan *rplan;        /* fft plan */
+  REAL8FrequencySeries *Spec; /* average spectrum */
 
   lalDebugLevel = LALINFO | LALWARNING | LALERROR | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK;
 
@@ -231,62 +220,71 @@ int main(int argc,char *argv[])
   XLALPrintInfo("ReadCommandLine()\n");
   if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
   XLALPrintInfo("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
+  /* set the trigger cluster window global variable */
+  cluster_window = CommandLineArgs.cluster;
 
   /****** ReadData ******/
   XLALPrintInfo("ReadData()\n");
-  if (ReadData(CommandLineArgs)) return 4;
+  ht = ReadData(CommandLineArgs);
+  if (!ht) return 4;
 
   /****** AddInjections ******/
   if (CommandLineArgs.InjectionFile != NULL) {
     XLALPrintInfo("AddInjections()\n");
-    if (AddInjections(CommandLineArgs)) return 5;
-    /* at this stage, ht_proc contains only the injection */
-    if ( CommandLineArgs.printinjectionflag ) LALSPrintTimeSeries( GV.ht_proc, "injection.txt" );
+    if (AddInjections(CommandLineArgs, ht)) return 5;
+    if ( CommandLineArgs.printinjectionflag ) LALDPrintTimeSeries( ht, "injection.txt" );
   }
-
-  /****** WindowData ******/
-  XLALPrintInfo("WindowData()\n");
-  if (WindowData()) return 6;
-
-  /****** ProcessData ******/
-  XLALPrintInfo("ProcessData()\n");
-  if (ProcessData(&CommandLineArgs)) return 7;
 
   if ( CommandLineArgs.printdataflag ){
     unsigned p;
-    for (p=0; p<GV.ht_proc->data->length; p++)
-      fprintf(stdout,"%1.15e\n",GV.ht_proc->data->data[p]);
+    for (p=0; p<ht->data->length; p++)
+      fprintf(stdout,"%1.15e\n",ht->data->data[p]);
     return 0;
   }
 
   /****** DownSample ******/
   XLALPrintInfo("DownSample()\n");
-  if (DownSample(CommandLineArgs)) return 8;
+  if (DownSample(CommandLineArgs, ht)) return 8;
 
-  /****** XLALResizeREAL4TimeSeries ******/
-  XLALPrintInfo("XLALResizeREAL4TimeSeries()\n");	
+  /****** XLALResizeREAL8TimeSeries ******/
+  XLALPrintInfo("XLALResizeREAL8TimeSeries()\n");	
   /* re-size the time series to remove the pad */
-  GV.ht_proc = XLALResizeREAL4TimeSeries(GV.ht_proc, 
-					 (int)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5),
-					 GV.ht_proc->data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc->deltaT+0.5));
+  ht = XLALResizeREAL8TimeSeries(ht, (int)round(CommandLineArgs.pad/ht->deltaT),
+				 ht->data->length-2*(int)round(CommandLineArgs.pad/ht->deltaT));
+
+  /****** FFT plans ******/
+  seg_length = round(CommandLineArgs.ShortSegDuration / ht->deltaT);
+  fplan = XLALCreateForwardREAL8FFTPlan( seg_length, 1 );
+  rplan = XLALCreateReverseREAL8FFTPlan( seg_length, 1 );
+  if(!fplan || !rplan) {
+    XLALDestroyREAL8FFTPlan(fplan);
+    XLALDestroyREAL8FFTPlan(rplan);
+    return 9;
+  }
 
   /****** AvgSpectrum ******/
   XLALPrintInfo("AvgSpectrum()\n");
-  if (AvgSpectrum(CommandLineArgs)) return 9;  
-  if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( GV.Spec, "Spectrum.txt" );
+  Spec = AvgSpectrum(CommandLineArgs, ht, seg_length, fplan);
+  if (!Spec) return 9;  
+  if (CommandLineArgs.printspectrumflag) LALDPrintFrequencySeries( Spec, "Spectrum.txt" );
 
   /****** CreateTemplateBank ******/
   XLALPrintInfo("CreateTemplateBank()\n");
-  if (CreateTemplateBank(CommandLineArgs, strtemplate, &NTemplates)) return 10;
+  if (CreateTemplateBank(CommandLineArgs, ht, seg_length, Spec, strtemplate, &NTemplates, rplan)) return 10;
 
   /****** CreateStringFilters ******/
   XLALPrintInfo("CreateStringFilters()\n");
-  if (CreateStringFilters(CommandLineArgs, strtemplate, NTemplates)) return 11;
+  if (CreateStringFilters(CommandLineArgs, ht, seg_length, Spec, strtemplate, NTemplates, fplan, rplan)) return 11;
+  XLALDestroyREAL8FrequencySeries(Spec);
+  Spec = NULL;
 
   /****** FindStringBurst ******/
   XLALPrintInfo("FindStringBurst()\n");
-  if (FindStringBurst(CommandLineArgs, strtemplate, NTemplates, &events)) return 12;
+  if (FindStringBurst(CommandLineArgs, ht, seg_length, strtemplate, NTemplates, fplan, rplan, &events)) return 12;
   if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByExactPeakTime)) return 12;
+  XLALDestroyREAL8TimeSeries(ht);
+  XLALDestroyREAL8FFTPlan(fplan);
+  XLALDestroyREAL8FFTPlan(rplan);
 
   /****** XLALClusterSnglBurstTable ******/
   XLALPrintInfo("XLALClusterSnglBurstTable()\n");
@@ -333,64 +331,29 @@ static int XLALCompareStringBurstByTime(
 /* </lalVerbatim> */
 {
   double delta_t = XLALGPSDiff(&(*a)->peak_time, &(*b)->peak_time);
-  /* FIXME:  global variables = BAD BAD BAD! (my fault -- Kipp) */
-  double epsilon = CommandLineArgs.cluster;
 
-  if(delta_t > epsilon)
+  if(delta_t > cluster_window)
     return(1);
-  if(delta_t < -epsilon)
+  if(delta_t < -cluster_window)
     return(-1);
   return(0);
 }
 
 /*******************************************************************************/
 
-int WindowData(void){
-  REAL8Window *window;
-  REAL8 r = 0.001;
-  int k;
-  int N=GV.ht->data->length;
-  
-  window = XLALCreateTukeyREAL8Window(N, r);
-    
-  for (k = 0; k < N; k++)
-    GV.ht->data->data[k] *= window->data->data[k];
-      
-  XLALDestroyREAL8Window(window);
-  
-  return 0;
-}
-
-/*******************************************************************************/
-
-int AddInjections(struct CommandLineArgsTag CLA){
-  REAL8TimeSeries *injections;
-  LIGOTimeGPS startTime = GV.ht->epoch;
-  LIGOTimeGPS stopTime = GV.ht->epoch;
+int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
+  LIGOTimeGPS startTime = ht->epoch;
+  LIGOTimeGPS stopTime = ht->epoch;
   SimBurst *sim_burst;
-  unsigned p;
 
-  XLALGPSAdd(&stopTime, GV.ht->data->length * GV.ht->deltaT);
+  XLALGPSAdd(&stopTime, ht->data->length * ht->deltaT);
 
   /* Get info from injection file */
   sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
-  
-  /* new injection code is double precision, so we need to create a
-   * buffer to put the injections in and then quantize to single precision
-   * for the string code */
-  injections = XLALCreateREAL8TimeSeries(GV.ht_proc->name, &GV.ht_proc->epoch, GV.ht_proc->f0, GV.ht_proc->deltaT, &GV.ht_proc->sampleUnits, (UINT4)GV.ht_proc->data->length);
-  memset(injections->data->data, 0, injections->data->length * sizeof(*injections->data->data));
 
-  /* Inject the signals into ht_proc -> for printing
-     Inject the signals into ht */
-  if(XLALBurstInjectSignals(injections, sim_burst, NULL)) return 1;
-  for(p = 0; p < GV.ht_proc->data->length; p++){
-    GV.ht_proc->data->data[p] += (REAL4)injections->data->data[p];
-    GV.ht->data->data[p] += injections->data->data[p];
-  }
-
-  /* injection time series is no more needed */
-  XLALDestroyREAL8TimeSeries(injections);
+  /* Inject the signals into ht */
+  if(XLALBurstInjectSignals(ht, sim_burst, NULL))
+    return 1;
 
   /* free the injection table */
   XLALDestroySimBurstTable(sim_burst);
@@ -427,26 +390,22 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
   if (!CLA->outputFileName){
     CHAR outfilename[256];
-    snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
-	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
-	     searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
-	     searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+    snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo, CLA->GPSStart.gpsSeconds, CLA->GPSEnd.gpsSeconds - CLA->GPSEnd.gpsSeconds);
     outfilename[sizeof(outfilename)-1] = '\0';
     xml = XLALOpenLIGOLwXMLFile(outfilename);
-  }
-  else
+  } else
     xml = XLALOpenLIGOLwXMLFile(CLA->outputFileName);
 
-  /* process table */
+  /* finish populating process table */
   snprintf(proctable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   XLALGPSTimeNow(&(proctable->end_time));
-  
+
+  /* write process table */
   if(XLALWriteLIGOLwXMLProcessTable(xml, proctable)) return -1;
   
-  /* process params table */
+  /* write process params table */
   if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
   
-  /* search summary table */
   /* create the search summary table */
   searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
   /* the number of nodes for a standalone job is always 1 */
@@ -464,6 +423,8 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
   snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
   searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
+
+  /* write search_summary table */
   if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
   XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
 
@@ -477,151 +438,132 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
 /*******************************************************************************/
 
-int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, REAL4Vector *vector, INT4 i, SnglBurst **head){
+int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, const REAL8TimeSeries *vector, SnglBurst **head){
   unsigned p;
-  REAL4 maximum, chi2, ndof;
-  REAL8 duration;
   INT4 pmax, pend, pstart;
 
   /* print the snr to stdout */
   if (CLA.printsnrflag)
-    for ( p = vector->length/4 ; p < 3*vector->length/4; p++ )
-      fprintf(stdout,"%p %e\n", strtemplate, vector->data[p]);
-  
-  /* Now find event in the inner half */
-  for ( p = vector->length/4 ; p < 3*vector->length/4; p++ ){
-    SnglBurst *new;
-    LIGOTimeGPS peaktime, starttime;
-    LIGOTimeGPS t;
+    for ( p = vector->data->length/4 ; p < 3*vector->data->length/4; p++ )
+      fprintf(stdout,"%p %e\n", strtemplate, vector->data->data[p]);
 
-    maximum = 0.0;
+  /* Now find event in the inner half */
+  for ( p = vector->data->length/4 ; p < 3*vector->data->length/4; p++ ){
+    REAL8 maximum_snr = 0.0;
     pmax=p;
-    t = GV.ht_proc->epoch;
-    XLALGPSAdd(&t, (GV.seg_length*i/2 + p) * GV.ht_proc->deltaT);
 
     /* Do we have the start of a cluster? */
-    if ( (fabs(vector->data[p]) > CLA.threshold) && (XLALGPSCmp(&t, &CLA.trigstarttime) >= 0)){
+    if ( (fabs(vector->data->data[p]) > CLA.threshold) && (XLALGPSDiff(&vector->epoch, &CLA.trigstarttime) + p * vector->deltaT >= 0)){
+      SnglBurst *new;
+      REAL8 chi2, ndof;
       int pp;
       pend=p; pstart=p;
 
-      t = GV.ht_proc->epoch;
-      XLALGPSAdd(&t, GV.seg_length*i/2*GV.ht_proc->deltaT);
-
       /* Clustering in time: While we are above threshold, or within clustering time of the last point above threshold... */
-      while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc->deltaT < (float)(CLA.cluster)) ) 
-	     && p<3*vector->length/4){
-	
+      while( ((fabs(vector->data->data[p]) > CLA.threshold) || ((p-pend)* vector->deltaT < (float)(CLA.cluster)) ) 
+	     && p<3*vector->data->length/4){
+
 	/* This keeps track of the largest SNR point of the cluster */
-	if(fabs(vector->data[p]) > maximum){
-	  maximum=fabs(vector->data[p]);
+	if(fabs(vector->data->data[p]) > maximum_snr){
+	  maximum_snr=fabs(vector->data->data[p]);
 	  pmax=p;
 	}
 	/* pend is the last point above threshold */
-	if ( (fabs(vector->data[p]) > CLA.threshold))
+	if ( (fabs(vector->data->data[p]) > CLA.threshold))
 	  pend =  p; 
 	
 	p++;
       }
 
-      starttime = peaktime = t;
-      XLALGPSAdd(&peaktime, GV.ht_proc->deltaT * pmax);
-      XLALGPSAdd(&starttime, GV.ht_proc->deltaT * pstart);
-      duration = GV.ht_proc->deltaT * ( pend - pstart );
-
       /* compute \chi^{2} */
       chi2=0, ndof=0;
       for(pp=-strtemplate->chi2_index; pp<strtemplate->chi2_index; pp++){
-        chi2 += (vector->data[pmax+pp]-vector->data[pmax]*strtemplate->auto_cor->data[GV.seg_length/2+pp])*(vector->data[pmax+pp]-vector->data[pmax]*strtemplate->auto_cor->data[GV.seg_length/2+pp]);
-        ndof += (1-strtemplate->auto_cor->data[GV.seg_length/2+pp]*strtemplate->auto_cor->data[GV.seg_length/2+pp]);
+        chi2 += (vector->data->data[pmax+pp]-vector->data->data[pmax]*strtemplate->auto_cor->data[vector->data->length/2+pp])*(vector->data->data[pmax+pp]-vector->data->data[pmax]*strtemplate->auto_cor->data[vector->data->length/2+pp]);
+        ndof += (1-strtemplate->auto_cor->data[vector->data->length/2+pp]*strtemplate->auto_cor->data[vector->data->length/2+pp]);
       }
 
- 
       /* Apply the \chi^{2} cut */
       if( CLA.chi2cut[0]    > -9999
 	  && CLA.chi2cut[1] > -9999
 	  && CLA.chi2cut[2] > -9999 )
 	if(log10(chi2/ndof)>CLA.chi2cut[0]
-	   && log10(chi2/ndof)> CLA.chi2cut[1]*log10(fabs(maximum))+CLA.chi2cut[2]) continue;
+	   && log10(chi2/ndof)> CLA.chi2cut[1]*log10(fabs(maximum_snr))+CLA.chi2cut[2]) continue;
 
       /* prepend a new event to the linked list */
       new = XLALCreateSnglBurst();
-      if ( ! new ){ /* allocation error */
-	XLALPrintError("Could not allocate memory for event. Memory allocation error. Exiting.\n");
-	return 1;
-      }
+      if ( ! new )
+        XLAL_ERROR(__func__, XLAL_EFUNC);
       new->next = *head;
       *head = new;
 
       /* Now copy stuff into event */
       strncpy( new->ifo, CLA.ChannelName, 2 );
-      new->ifo[3] = 0;
+      new->ifo[2] = 0;
       strncpy( new->search, "StringCusp", sizeof( new->search ) );
       strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
-      
-      /* give trigger a 1 sample fuzz on either side */
-      XLALGPSAdd(&starttime, -GV.ht_proc->deltaT);
-      duration += 2 * GV.ht_proc->deltaT;
 
-      new->start_time = starttime;
-      new->peak_time = peaktime;
-      new->duration     = duration;
+      /* compute start and peak time and duration, give 1 sample of fuzz on
+       * both sides */
+      new->start_time = new->peak_time = vector->epoch;
+      XLALGPSAdd(&new->peak_time, pmax * vector->deltaT);
+      XLALGPSAdd(&new->start_time, (pstart - 1) * vector->deltaT);
+      new->duration = vector->deltaT * ( pend - pstart + 2 );
+
       new->central_freq = (strtemplate->f+CLA.fbankstart)/2.0;	   
       new->bandwidth    = strtemplate->f-CLA.fbankstart;				     
-      new->snr          = maximum;
-      new->amplitude   = vector->data[pmax]/strtemplate->norm;
+      new->snr          = maximum_snr;
+      new->amplitude    = vector->data->data[pmax]/strtemplate->norm;
       new->chisq = chi2;
       new->chisq_dof = ndof;
     }
   }
-    
+
   return 0;
 }
 
 /*******************************************************************************/
 
-int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate, int NTemplates, SnglBurst **head){
+int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, const StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan, SnglBurst **head){
   int i,m;
   unsigned p;
-  REAL4Vector *vector = NULL;
-  COMPLEX8Vector *vtilde = NULL;
-
-  /* create vector that will hold the data for each overlapping chunk */ 
-  vector = XLALCreateREAL4Vector( GV.seg_length);
+  COMPLEX16FrequencySeries *vtilde;
   
-  /* create vector that will hold FFT of data*/
-  vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
+  /* create vector that will hold FFT of data;  metadata will be populated
+   * by FFT function */
+  vtilde = XLALCreateCOMPLEX16FrequencySeries( ht->name, &ht->epoch, ht->f0, 0.0, &lalDimensionlessUnit, seg_length / 2 + 1 );
   
   /* loop over templates  */
   for (m = 0; m < NTemplates; m++){
     /* loop over overlapping chunks */ 
-    for(i=0; i < 2*(GV.ht_proc->data->length*GV.ht_proc->deltaT)/CLA.ShortSegDuration - 1 ;i++){
-      /* populate vector that will hold the data for each overlapping chunk */
-      memcpy( vector->data, GV.ht_proc->data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
-	  
-      /* fft it */
-      if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
+    for(i=0; i < 2*(ht->data->length*ht->deltaT)/CLA.ShortSegDuration - 1 ;i++){
+      /* extract overlapping chunk of data */
+      REAL8TimeSeries *vector = XLALCutREAL8TimeSeries(ht, i * seg_length / 2, seg_length);
+
+      /* FFT it */
+      if(XLALREAL8TimeFreqFFT( vtilde, vector, fplan )) return 1;
       
-      /* multiply FT of data and String Filter and deltaT */
-      for ( p = 0 ; p < vtilde->length; p++ ){
-	vtilde->data[p].re *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
-	vtilde->data[p].im *= strtemplate[m].StringFilter->data->data[p]*GV.ht_proc->deltaT;
-      }
-      
-      if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
+      /* multiply FT of data and String Filter */
+      for ( p = 0 ; p < vtilde->data->length; p++ )
+        vtilde->data->data[p] = XLALCOMPLEX16MulReal(vtilde->data->data[p], strtemplate[m].StringFilter->data->data[p]);
 
-      /* normalise the result by template normalisation and multiply by 
-	 df (not inluded in LALReverseRealFFT)  factor of 2 is from 
-	 match-filter definition */
+      /* reverse FFT it */
+      if(XLALREAL8FreqTimeFFT( vector, vtilde, rplan )) return 1;
+      vector->deltaT = ht->deltaT;	/* gets mucked up by round-off */
 
-      for ( p = 0 ; p < vector->length; p++ )
-	vector->data[p] *= 2.0 * GV.Spec->deltaF / strtemplate[m].norm;
+      /* normalise the result by template normalisation
+	 factor of 2 is from match-filter definition */
+      for ( p = 0 ; p < vector->data->length; p++ )
+	vector->data->data[p] *= 2.0 / strtemplate[m].norm;
 
-      if(FindEvents(CLA, &strtemplate[m], vector, i, head)) return 1;
+      /* find triggers */
+      if(FindEvents(CLA, &strtemplate[m], vector, head)) return 1;
+
+      /* free chunk */
+      XLALDestroyREAL8TimeSeries( vector );
     }
   }
 
-  XLALDestroyCOMPLEX8Vector( vtilde );
-  XLALDestroyREAL4Vector( vector );
+  XLALDestroyCOMPLEX16FrequencySeries( vtilde );
 
   return 0;
 }
@@ -629,132 +571,114 @@ int FindStringBurst(struct CommandLineArgsTag CLA, const StringTemplate *strtemp
 
 /*******************************************************************************/
 
-int CreateStringFilters(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int NTemplates){
+int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan){
   int m;
   unsigned p;
-  COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
-  REAL4Vector    *vector; /* time-domain vector workspace */
-  REAL4 re, im;
+  COMPLEX16FrequencySeries *vtilde; /* frequency-domain vector workspace */
+  REAL8TimeSeries *vector; /* time-domain vector workspace */
 
-  vector = XLALCreateREAL4Vector( GV.seg_length);
-  vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
+  vector = XLALCreateREAL8TimeSeries( ht->name, &ht->epoch, ht->f0, ht->deltaT, &ht->sampleUnits, seg_length );
+  vtilde = XLALCreateCOMPLEX16FrequencySeries( ht->name, &ht->epoch, ht->f0, 1.0 / (vector->data->length * vector->deltaT), &lalDimensionlessUnit, vector->data->length / 2 + 1 );
  
   for (m = 0; m < NTemplates; m++){
-
     /* Initialize the filter */
-    strtemplate[m].StringFilter = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.Spec->data->length);
-    strtemplate[m].StringFilter->deltaF=GV.Spec->deltaF;
+    strtemplate[m].StringFilter = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, Spec->deltaF, &lalStrainUnit, Spec->data->length);
 
     /* populate vtilde with the template divided by the noise */
-    for ( p = 0; p < vtilde->length; p++ ){
-      vtilde->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/(GV.Spec->data->data[p]));
-      vtilde->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/(GV.Spec->data->data[p]));
+    for ( p = 0; p < vtilde->data->length; p++ ){
+      vtilde->data->data[p].re = sqrt(strtemplate[m].waveform_f->data[p].re/Spec->data->data[p]);
+      vtilde->data->data[p].im = sqrt(strtemplate[m].waveform_f->data[p].im/Spec->data->data[p]);
     }
 
     /* reverse FFT vtilde into vector */
-    if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
-
-    /* multiply times df to make sure units are correct */
-    for ( p = 0 ; p < vector->length; p++ )
-      vector->data[p] *= GV.Spec->deltaF;
+    if(XLALREAL8FreqTimeFFT( vector, vtilde, rplan )) return 1;
+    /* this gets mucked up by round-off each time through the loop */
+    vector->deltaT = ht->deltaT;
 
     /* perform the truncation; the truncation is CLA.TruncSecs/2 because 
        we are dealing with the sqrt of the filter at the moment*/
     if(CLA.TruncSecs != 0.0)
-      memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5), 0,
-	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc->deltaT +0.5)) 
-	      * sizeof( *vector->data ) );
+      memset( vector->data->data + (int)round(CLA.TruncSecs/2/vector->deltaT), 0,
+	      ( vector->data->length -  2 * (int)round(CLA.TruncSecs/2/vector->deltaT)) 
+	      * sizeof( *vector->data->data ) );
 
     /* forward fft the truncated vector into vtilde */
-    if(XLALREAL4ForwardFFT( vtilde, vector, GV.fplan )) return 1;
+    if(XLALREAL8TimeFreqFFT( vtilde, vector, fplan )) return 1;
+    /* this gets mucked up by round-off each time through the loop */
+    vtilde->deltaF = 1.0 / (vector->data->length * vector->deltaT);
 
-    for ( p = 0 ; p < vtilde->length-1; p++ ){
-      re = vtilde->data[p].re * GV.ht_proc->deltaT;
-      im = vtilde->data[p].im * GV.ht_proc->deltaT;
-      strtemplate[m].StringFilter->data->data[p] = (re * re + im * im);
-    }
+    /* store the square magnitude in the filter */
+    for ( p = 0 ; p < vtilde->data->length; p++ )
+      strtemplate[m].StringFilter->data->data[p] = XLALCOMPLEX16Abs2(vtilde->data->data[p]);
 
-    /* set DC and Nyquist to 0*/
-    strtemplate[m].StringFilter->data->data[0] =
-      strtemplate[m].StringFilter->data->data[vtilde->length-1] = 0;
+    /* set DC and Nyquist to 0 */
+    strtemplate[m].StringFilter->data->data[0] = strtemplate[m].StringFilter->data->data[strtemplate[m].StringFilter->data->length-1] = 0;
 
     /* print out the frequency domain filter */
     if (CLA.printfilterflag){
       CHAR filterfilename[256];
       snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
       filterfilename[sizeof(filterfilename)-1] = '\0';
-      LALSPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
+      LALDPrintFrequencySeries( strtemplate[m].StringFilter, filterfilename );
     }
 
     /* print out the time domain FIR filter */
     if (CLA.printfirflag){
-      REAL4TimeSeries series;
-      CHAR filterfilename[256];
-      series.deltaT=GV.ht_proc->deltaT;
-      series.f0 = 0.0;
-      strncpy(series.name, "fir filter", LALNameLength);
-      series.epoch=GV.ht_proc->epoch;
-      series.sampleUnits=GV.ht_proc->sampleUnits;
+      char filterfilename[256];
 
-      for ( p = 0 ; p < vtilde->length-1; p++ ){
-	re = vtilde->data[p].re * GV.ht_proc->deltaT;
-	im = vtilde->data[p].im * GV.ht_proc->deltaT;
-
-	vtilde->data[p].re = (re * re + im * im);
-	vtilde->data[p].im = 0.0;
+      strncpy(vector->name, "fir filter", LALNameLength);
+      for ( p = 0 ; p < vtilde->data->length; p++ ) {
+        vtilde->data->data[p].re = XLALCOMPLEX16Abs2(vtilde->data->data[p]);
+        vtilde->data->data[p].im = 0;
       }
-      vtilde->data[0].re = vtilde->data[0].im = 0.0;
-      vtilde->data[vtilde->length-1].re = vtilde->data[vtilde->length-1].im =0;
-
-      if(XLALREAL4ReverseFFT( vector, vtilde, GV.rplan )) return 1;
-
-      series.data = vector;
+      vtilde->data->data[0] = vtilde->data->data[vtilde->data->length - 1] = LAL_COMPLEX16_ZERO;
+      XLALREAL8FreqTimeFFT( vector, vtilde, rplan );
 
       snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
       filterfilename[sizeof(filterfilename)-1] = '\0';
-      LALSPrintTimeSeries( &series, filterfilename );
+      LALDPrintTimeSeries( vector, filterfilename );
     }
   }
 
-  XLALDestroyCOMPLEX8Vector( vtilde );
-  XLALDestroyREAL4Vector( vector );
+  XLALDestroyCOMPLEX16FrequencySeries( vtilde );
+  XLALDestroyREAL8TimeSeries( vector );
 
   return 0;
 }
 
 /*******************************************************************************/
 
-int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplate, int *NTemplates){
-  REAL8 fNyq, f_cut, f, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
+int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan){
+  REAL8 fNyq, f_cut, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
   int m, f_cut_index, f_low_cutoff_index, extr_ctr;
   unsigned p, pcut, f_min_index, f_max_index;
-  REAL4Vector *integral;
-  REAL4Vector    *vector; /* time-domain vector workspace */
-  COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
+  REAL8Vector *integral;
+  REAL8Vector *vector; /* time-domain vector workspace */
+  COMPLEX16Vector *vtilde; /* frequency-domain vector workspace */
 
-  fNyq = (1.0/GV.ht_proc->deltaT) / 2.0;
-  f_min_index = round(CLA.fbankstart / GV.Spec->deltaF);
-  f_max_index = round(fNyq / GV.Spec->deltaF);
-  integral = XLALCreateREAL4Vector(f_max_index-f_min_index);
+  fNyq = (1.0/ht->deltaT) / 2.0;
+  f_min_index = round(CLA.fbankstart / Spec->deltaF);
+  f_max_index = round(fNyq / Spec->deltaF);
+  integral = XLALCreateREAL8Vector(f_max_index-f_min_index);
   epsilon=0;
 
   /* first template : f_cutoff = fbankhighfcutofflow */
-  f_cut_index = round(CLA.fbankhighfcutofflow / GV.Spec->deltaF);
-  f_cut = f_cut_index * GV.Spec->deltaF;
+  f_cut_index = round(CLA.fbankhighfcutofflow / Spec->deltaF);
+  f_cut = f_cut_index * Spec->deltaF;
 
   /* compute (t1|t1) */
   t1t1=0.0;
-  integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/GV.Spec->data->data[f_min_index]*GV.Spec->deltaF;
+  integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/Spec->data->data[f_min_index]*Spec->deltaF;
   for( p = f_min_index ; p < f_max_index; p++ ){
-    f = p*GV.Spec->deltaF;
+    double f = p*Spec->deltaF;
 
-    if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
-    else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
+    if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
+    else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/Spec->data->data[p]*Spec->deltaF;
 
     if(p>f_min_index) /* keep the integral in memory (to run faster) */
-      integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
+      integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
   }
-  
+
   strtemplate[0].findex=f_cut_index;
   strtemplate[0].f=f_cut;
   strtemplate[0].mismatch=0.0;
@@ -765,26 +689,26 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
   
   /* find the next cutoffs given the maximal mismatch */
   for(pcut=f_cut_index+1; pcut<f_max_index; pcut++){
-    f_cut = pcut*GV.Spec->deltaF;
+    f_cut = pcut*Spec->deltaF;
    
     t2t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
     t1t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
     
     /* compute (t2|t2) and (t1|t2) */
     for( p = strtemplate[*NTemplates-1].findex+1 ; p < f_max_index; p++ ){
-      f = p*GV.Spec->deltaF;
+      double f = p*Spec->deltaF;
       
       /* (t2|t2) */
       if(f<=f_cut)
-	t2t2 += 4*pow(pow(f,CLA.power),2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t2t2 += 4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
       else 
-	t2t2 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t2t2 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/Spec->data->data[p]*Spec->deltaF;
 
       /* (t1|t2) */
       if(f<=f_cut)
-	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f) /GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f) /Spec->data->data[p]*Spec->deltaF;
       else 
-	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f)*exp(1-f/f_cut) /GV.Spec->data->data[p]*GV.Spec->deltaF;
+	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f)*exp(1-f/f_cut) /Spec->data->data[p]*Spec->deltaF;
     }
         
     previous_epsilon = epsilon;
@@ -812,69 +736,65 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 
   }
 
-  XLALDestroyREAL4Vector( integral );
+  XLALDestroyREAL8Vector( integral );
 
   /* Now, the point is to store the template waveform vector */
-  vector = XLALCreateREAL4Vector( GV.seg_length);
-  vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
-  f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec->deltaF+0.5);
+  vector = XLALCreateREAL8Vector( seg_length);
+  vtilde = XLALCreateCOMPLEX16Vector( vector->length / 2 + 1 );
+  f_low_cutoff_index = round(CLA.fbankstart/ Spec->deltaF);
   for (m = 0; m < *NTemplates; m++){
-    
+
     /* create the space for the waveform vectors */
-    strtemplate[m].waveform_f = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
-    strtemplate[m].waveform_t = XLALCreateREAL4Vector( GV.seg_length);
-    strtemplate[m].auto_cor   = XLALCreateREAL4Vector( GV.seg_length);
-    
+    strtemplate[m].waveform_f = XLALCreateCOMPLEX16Vector( vtilde->length );
+    strtemplate[m].waveform_t = XLALCreateREAL8Vector( vector->length );
+    strtemplate[m].auto_cor   = XLALCreateREAL8Vector( vector->length );
+
     /* populate with the template waveform */
     for ( p = f_low_cutoff_index; p < strtemplate[m].waveform_f->length; p++ ){
-      f=p*GV.Spec->deltaF;
+      double f = p*Spec->deltaF;
       if(f<=strtemplate[m].f) 
-	strtemplate[m].waveform_f->data[p].re = pow(f,CLA.power);
+	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power), 0.0);
       else 
-	strtemplate[m].waveform_f->data[p].re = pow(f,CLA.power)*exp(1-f/strtemplate[m].f);
-      strtemplate[m].waveform_f->data[p].im = 0;
+	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power)*exp(1-f/strtemplate[m].f), 0.0);
     }
-    
+
     /* set all frequencies below the low freq cutoff to zero */
     memset(strtemplate[m].waveform_f->data, 0, f_low_cutoff_index*sizeof(*strtemplate[m].waveform_f->data));
-    
+
     /* set DC and Nyquist to zero anyway */
-    strtemplate[m].waveform_f->data[0].re = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].re = 0;
-    strtemplate[m].waveform_f->data[0].im = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1].im = 0;
-    
-    for (p=0 ; p< vtilde->length; p++){
-      vtilde->data[p].re = strtemplate[m].waveform_f->data[p].re*strtemplate[m].waveform_f->data[p].re/GV.Spec->data->data[p];
-      vtilde->data[p].im = 0;
-    }
-    
+    strtemplate[m].waveform_f->data[0] = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1] = LAL_COMPLEX16_ZERO;
+
+    /* whiten and convolve the template with itself, store in vtilde.
+     * template is assumed to be real-valued */
+    for (p=0 ; p< vtilde->length; p++)
+      vtilde->data[p] = XLALCOMPLEX16Rect(pow(strtemplate[m].waveform_f->data[p].re, 2) / Spec->data->data[p], 0.0);
+
     /* reverse FFT */
-    if(XLALREAL4ReverseFFT(vector, strtemplate[m].waveform_f, GV.rplan)) return 1;
-    if(XLALREAL4ReverseFFT(strtemplate[m].auto_cor, vtilde, GV.rplan)) return 1;
+    if(XLALREAL8ReverseFFT(vector, strtemplate[m].waveform_f, rplan)) return 1;
+    if(XLALREAL8ReverseFFT(strtemplate[m].auto_cor, vtilde, rplan)) return 1;
 
     /* The vector is reshuffled in the right order */
-    for ( p = 0 ; p < GV.seg_length/2; p++ ){
-      strtemplate[m].waveform_t->data[p] = vector->data[GV.seg_length/2+p]*GV.Spec->deltaF;;
-      strtemplate[m].waveform_t->data[GV.seg_length/2+p] = vector->data[p]*GV.Spec->deltaF;;
+    for ( p = 0 ; p < vector->length / 2; p++ ){
+      strtemplate[m].waveform_t->data[p] = vector->data[vector->length/2+p]*Spec->deltaF;
+      strtemplate[m].waveform_t->data[vector->length/2+p] = vector->data[p]*Spec->deltaF;
     }
 
     /* Normalize the autocorrelation by the central value */
     norm=strtemplate[m].auto_cor->data[0];
-    for ( p = 0 ; p < strtemplate[m].auto_cor->length; p++ ){
+    for ( p = 0 ; p < strtemplate[m].auto_cor->length; p++ )
       strtemplate[m].auto_cor->data[p] /= norm;
-      vector->data[p]=strtemplate[m].auto_cor->data[p];
-    }
 
     /* The vector is reshuffled in the right order */
-    for ( p = 0 ; p < GV.seg_length/2; p++ ){
-      strtemplate[m].auto_cor->data[p] = vector->data[GV.seg_length/2+p];
-      strtemplate[m].auto_cor->data[GV.seg_length/2+p] = vector->data[p];
+    memcpy(vector->data, strtemplate[m].auto_cor->data, vector->length * sizeof(*vector->data));
+    for ( p = 0 ; p < vector->length/2; p++ ){
+      strtemplate[m].auto_cor->data[p] = vector->data[vector->length/2+p];
+      strtemplate[m].auto_cor->data[vector->length/2+p] = vector->data[p];
     }
 
     /* search for the index of the 3rd extremum */
     extr_ctr=0;
     strtemplate[m].chi2_index=0;
-    for ( p = GV.seg_length/2+1; p< GV.seg_length-1; p++ ){
-
+    for ( p = strtemplate[m].waveform_t->length/2+1; p< strtemplate[m].waveform_t->length-1; p++ ){
       slope1 = strtemplate[m].waveform_t->data[p+1]-strtemplate[m].waveform_t->data[p];
       slope0 = strtemplate[m].waveform_t->data[p]-strtemplate[m].waveform_t->data[p-1];
       strtemplate[m].chi2_index++;
@@ -882,82 +802,56 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, StringTemplate *strtemplat
 	extr_ctr++;
 	if(extr_ctr==2) break;
       }
-
     }
-      
-
   }
-  
-  XLALDestroyREAL4Vector( vector );
-  XLALDestroyCOMPLEX8Vector( vtilde );
+
+  XLALDestroyREAL8Vector( vector );
+  XLALDestroyCOMPLEX16Vector( vtilde );
 
   return 0;
 }
 
 
 /*******************************************************************************/
-int AvgSpectrum(struct CommandLineArgsTag CLA){
-  GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc->deltaT + 0.5);
-  GV.Spec  = XLALCreateREAL4FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, GV.seg_length / 2 + 1);
-  GV.fplan = XLALCreateForwardREAL4FFTPlan( GV.seg_length, 0 );
-  GV.rplan = XLALCreateReverseREAL4FFTPlan( GV.seg_length, 0 );
-  
+REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FFTPlan *fplan){
+  REAL8FrequencySeries *Spec;
+  Spec  = XLALCreateREAL8FrequencySeries(CLA.ChannelName, &CLA.GPSStart, 0, 0, &lalStrainUnit, seg_length / 2 + 1);
+  if(!Spec)
+    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+
   if (CLA.fakenoiseflag && CLA.whitespectrumflag){
     unsigned p;
-    for ( p = 0 ; p < GV.Spec->data->length; p++ )
+    for ( p = 0 ; p < Spec->data->length; p++ )
       /* FIXME:  shouldn't this be 2 * \Delta f */
-      GV.Spec->data->data[p]=2/(1.0/GV.ht_proc->deltaT);
-    GV.Spec->deltaF=1/(GV.seg_length*GV.ht_proc->deltaT);
+      Spec->data->data[p]=2/(1.0/ht->deltaT);
+    Spec->deltaF=1/(seg_length*ht->deltaT);
   } else{
-    int segmentLength = GV.seg_length;
-    int segmentStride = GV.seg_length/2;
-    REAL4Window *window4 = XLALCreateHannREAL4Window( segmentLength );
-    
-    if(XLALREAL4AverageSpectrumMedianMean( GV.Spec, GV.ht_proc, segmentLength,
-					   segmentStride, window4, GV.fplan ))
-      return 1;
+    unsigned segmentStride = seg_length/2;
+    REAL8Window *window = XLALCreateHannREAL8Window( seg_length );
+    if(!window)
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
-    XLALDestroyREAL4Window( window4 );
+    if(XLALREAL8AverageSpectrumMedianMean( Spec, ht, seg_length, segmentStride, window, fplan ))
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+
+    XLALDestroyREAL8Window( window );
   }
 
+  return Spec;
+}
+
+/*******************************************************************************/
+
+int DownSample(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
+  if(XLALResampleREAL8TimeSeries(ht, 1.0/CLA.samplerate)) return 1;
   return 0;
 }
 
 /*******************************************************************************/
 
-int DownSample(struct CommandLineArgsTag CLA){
-  if(XLALResampleREAL4TimeSeries(GV.ht_proc, 1.0/CLA.samplerate)) return 1;
-  return 0;
-}
-
-/*******************************************************************************/
-
-int ProcessData(const struct CommandLineArgsTag *CLA){
-  unsigned int p;
-  PassBandParamStruc highpassParams;
-
-  highpassParams.nMax =  4;
-  highpassParams.f1   = -1;
-  highpassParams.a1   = -1;
-  highpassParams.f2   = CLA->flow;
-  highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
-
-  if(XLALButterworthREAL8TimeSeries(GV.ht, &highpassParams)) return 1;
-  for (p=0; p<GV.ht->data->length; p++)  
-    GV.ht_proc->data->data[p]=(REAL4)GV.ht->data->data[p]; 
-    
-  /* ht is no more needed -> free memory */
-  XLALDestroyREAL8TimeSeries(GV.ht);
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-int ReadData(struct CommandLineArgsTag CLA){
+REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
   unsigned p;
-
-  GV.ht = NULL;
+  REAL8TimeSeries *ht = NULL;
 
   if(CLA.fakenoiseflag) {
     /* create random data set */
@@ -968,20 +862,20 @@ int ReadData(struct CommandLineArgsTag CLA){
 
     if(!(devrandom=fopen("/dev/urandom","r"))){
       XLALPrintError("Unable to open device /dev/urandom\n");
-      return 1;
+      return NULL;
     }
     errorcode=fread(&seed, sizeof(seed), 1, devrandom);
     if(errorcode!=1){
       XLALPrintError("Error reading /dev/urandom file!\n");
-      return 1;
+      return NULL;
     }
     fclose(devrandom);
     gsl_rng_set(rng, seed);
 
     /* hard-code sample rate of simulated noise to 16384 Hz */
-    GV.ht = XLALCreateREAL8TimeSeries("white noise", &CLA.GPSStart, 0.0, 1.0 / 16384, &lalDimensionlessUnit, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart) * 16384);
-    for(p = 0; p < GV.ht->data->length; p++)
-      GV.ht->data->data[p] = gsl_ran_gaussian(rng, 1.0);
+    ht = XLALCreateREAL8TimeSeries("white noise", &CLA.GPSStart, 0.0, 1.0 / 16384, &lalDimensionlessUnit, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart) * 16384);
+    for(p = 0; p < ht->data->length; p++)
+      ht->data->data[p] = gsl_ran_gaussian(rng, 1.0);
     gsl_rng_free(rng);
   } else {
     FrCache *cache;
@@ -991,11 +885,11 @@ int ReadData(struct CommandLineArgsTag CLA){
     /* create Frame cache, open frame stream and delete frame cache */
     cache = XLALFrImportCache(CLA.FrCacheFile);
     if(!cache)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
     stream = XLALFrCacheOpen(cache);
     XLALFrDestroyCache(cache);
     if(!stream)
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 
     /* turn on checking for missing data */
     XLALFrSetMode(stream, LAL_FR_VERBOSE_MODE);
@@ -1004,7 +898,7 @@ int ReadData(struct CommandLineArgsTag CLA){
     series_type = XLALFrGetTimeSeriesType(CLA.ChannelName, stream);
     if((int) series_type < 0) {
       XLALFrClose(stream);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
+      XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
     }
 
     /* read data */
@@ -1014,13 +908,13 @@ int ReadData(struct CommandLineArgsTag CLA){
       REAL4TimeSeries *ht_V = XLALFrReadREAL4TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
       if(!ht_V) {
         XLALFrClose(stream);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
       }
 
       /* cast to double precision */
-      GV.ht = XLALCreateREAL8TimeSeries(ht_V->name, &ht_V->epoch, ht_V->f0, ht_V->deltaT, &ht_V->sampleUnits, ht_V->data->length);
+      ht = XLALCreateREAL8TimeSeries(ht_V->name, &ht_V->epoch, ht_V->f0, ht_V->deltaT, &ht_V->sampleUnits, ht_V->data->length);
       for(p = 0; p < ht_V->data->length; p++)
-        GV.ht->data->data[p] = ht_V->data->data[p];
+        ht->data->data[p] = ht_V->data->data[p];
 
       /* clean up */
       XLALDestroyREAL4TimeSeries(ht_V);
@@ -1029,37 +923,32 @@ int ReadData(struct CommandLineArgsTag CLA){
 
     case LAL_D_TYPE_CODE:
       /* read double-precision data */
-      GV.ht = XLALFrReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
-      if(!GV.ht) {
+      ht = XLALFrReadREAL8TimeSeries(stream, CLA.ChannelName, &CLA.GPSStart, XLALGPSDiff(&CLA.GPSEnd, &CLA.GPSStart), 0);
+      if(!ht) {
         XLALFrClose(stream);
-        XLAL_ERROR(__func__, XLAL_EFUNC);
+        XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
       }
       break;
 
     default:
-      XLAL_ERROR(__func__, XLAL_EINVAL);
+      XLALFrClose(stream);
+      XLAL_ERROR_NULL(__func__, XLAL_EINVAL);
     }
 
     /* close */
     XLALFrClose(stream);
 
     /* Scale data to avoid single float precision problems */
-    for (p=0; p<GV.ht->data->length; p++)
-      GV.ht->data->data[p] *= SCALE;
+    for (p=0; p<ht->data->length; p++)
+      ht->data->data[p] *= SCALE;
 
     /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
      * their contents! */
-    GV.ht->sampleUnits = lalStrainUnit;
+    ht->sampleUnits = lalStrainUnit;
   }
 
-  /* Allocate space for processed data */
-  GV.ht_proc  = XLALCreateREAL4TimeSeries(GV.ht->name, &GV.ht->epoch, GV.ht->f0, GV.ht->deltaT, &GV.ht->sampleUnits, GV.ht->data->length);
-  /* zero out processed data */
-  for (p=0; p<GV.ht_proc->data->length; p++) GV.ht_proc->data->data[p] = 0.0;
-
-  return 0;
+  return ht;
 }
-
 
 /*******************************************************************************/
 
@@ -1067,7 +956,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   static char default_comment[] = "";
   INT4 errflg = 0;
   struct option long_options[] = {
-    {"bw-flow",                   required_argument,	NULL,	'f'},
     {"bank-freq-start",           required_argument,	NULL,	'L'},
     {"bank-lowest-hifreq-cutoff", required_argument,	NULL,	'H'},
     {"max-mismatch",              required_argument,	NULL,	'M'},
@@ -1106,7 +994,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   optarg = NULL;
 
   /* Initialize default values */
-  CLA->flow=0.0;
   CLA->fbankstart=0.0;
   CLA->fbankhighfcutofflow=0.0;
   CLA->fmismatchmax=0.05;
@@ -1150,12 +1037,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
 
     switch ( c )
     {
-
-    case 'f':
-      /* low frequency cutoff */
-      CLA->flow=atof(optarg);
-      ADD_PROCESS_PARAM(process, "float");
-      break;
     case 's':
       /* resample to this sample rate */
       CLA->samplerate=atof(optarg);
@@ -1318,7 +1199,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o, -x, -y, -z, -b, -r -a, -l, -p, -T  and -i. One of -k or -c must be specified. They are:\n");
-      fprintf(stdout,"\t--bw-flow (-f)\t\tFLOAT\t Low frequency cut-off.\n");
       fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
       fprintf(stdout,"\t--bank-lowest-hifreq-cutoff (-H)\tFLOAT\t Template bank lowest high frequency cut-off.\n");
       fprintf(stdout,"\t--max-mismatch (-M)\tFLOAT\t Maximal mismatch allowed from 1 template to the next.\n");
@@ -1349,7 +1229,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --output ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1361,12 +1241,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     }
   }
 
-  if(CLA->flow == 0.0)
-    {
-      fprintf(stderr,"No low cutoff frequency specified.\n");
-      fprintf(stderr,"Try %s -h \n",argv[0]);
-      return 1;
-    }      
   if(CLA->fbankstart == 0.0)
     {
       fprintf(stderr,"No low frequency for frequency bank specified.\n");
@@ -1463,13 +1337,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     }    
   }
 
-  /* check frequencies */
-  {
-    REAL4 f99=CLA->flow*pow((1/0.9-1)/(1/0.99-1),0.25);
-    if(CLA->fbankstart < f99)
-      fprintf(stderr,"WARNING: Template starting frequency and BW high pass frequency are close. f99=%e, fbw=%e\n",f99, CLA->flow);
-  }
-
   return errflg;
 }
 
@@ -1477,16 +1344,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
 
 int FreeMem(StringTemplate *strtemplate, int NTemplates){
   int m;
-  
-  XLALDestroyREAL4TimeSeries(GV.ht_proc);
-  XLALDestroyREAL4FrequencySeries(GV.Spec);
-  
+
   for (m=0; m < NTemplates; m++)
-    XLALDestroyREAL4FrequencySeries(strtemplate[m].StringFilter);
-    
-  XLALDestroyREAL4FFTPlan( GV.fplan );
-  XLALDestroyREAL4FFTPlan( GV.rplan );
-  
+    XLALDestroyREAL8FrequencySeries(strtemplate[m].StringFilter);
+
   LALCheckMemoryLeaks();
   
   return 0;

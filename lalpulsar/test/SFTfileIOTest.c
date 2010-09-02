@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -96,6 +97,7 @@ do {                                                                 \
 
 #define SHOULD_FAIL( func, statusptr )							\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, ! (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' should have failed for this SFT but didn't!\n");	\
@@ -105,6 +107,7 @@ do { 											\
 
 #define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode != code) {						\
     XLALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
 		   (statusptr)->statusCode );						\
@@ -115,6 +118,7 @@ do { 											\
 
 #define SHOULD_WORK( func, statusptr )							\
 do { 											\
+  xlalErrno = 0;							                \
   if ( func, (statusptr)->statusCode ) {						\
     ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
           "Function call '" #func "' failed but should have worked for this SFT!");	\
@@ -254,6 +258,83 @@ int main(int argc, char *argv[])
 
   SHOULD_WORK ( LALWriteSFTVector2Dir( &status, multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test"), &status);
 
+  /* write v2-SFT to single file */
+  {
+    const CHAR *concatSFT = "H-1_H1_60SFT_test-concat.sft";
+    const CHAR *currSingleSFT = NULL;
+    UINT4 i = 0;
+    FILE *fpConcat = NULL, *fpSingle = NULL;
+    int concat = 0, single = 0;
+
+    xlalErrno = 0;
+    if (XLAL_SUCCESS != XLALWriteSFTVector2File(multsft_vect->data[0], concatSFT, "A v2-SFT file for testing!")) {
+      LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+    /* check that the single file SFT is the same as the single SFTs */
+    const UINT4 numSingleSFTs = 5;
+    const CHAR *singleSFTs[] = {
+      "H-1_H1_60SFT_test-000012345-61.sft",
+      "H-1_H1_60SFT_test-000012465-61.sft",
+      "H-1_H1_60SFT_test-000012585-61.sft",
+      "H-1_H1_60SFT_test-000012765-61.sft",
+      "H-1_H1_60SFT_test-000012825-61.sft"
+    };
+    fprintf(stderr, "*** Comparing single and concatenated SFTs ***\n");
+    /* try to open concatenated SFT */
+    if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
+      LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
+      return SFTFILEIOTESTC_ESUB;
+    }
+    /* do loop while concat. SFT has data */
+    while (!feof(fpConcat)) {
+      /* get character from concat. SFT */
+      concat = fgetc(fpConcat);
+      if ( ferror(fpConcat) ) {
+	LALPrintError ( "\n IO error reading '%s'!\n\n", concatSFT);
+	return SFTFILEIOTESTC_ESUB;
+      }
+      /* get character from single SFT */
+      while (1) {
+	/* need to open next single SFT file */
+	if (fpSingle == NULL) {
+	  /* break if we've run out of single SFTs */
+	  if (i == numSingleSFTs)
+	    break;
+	  /* try to open single SFT */
+	  if ( ( fpSingle = fopen(singleSFTs[i], "rb" ) ) == NULL ) {
+	    LALPrintError ( "\n Cound not open SFT '%s'!\n\n", singleSFTs[i]);
+	    return SFTFILEIOTESTC_ESUB;
+	  }
+	  currSingleSFT = singleSFTs[i];
+	}
+	/* get character from single SFT */
+	single = fgetc(fpSingle);
+	if ( ferror(fpSingle) ) {
+	  LALPrintError ( "\n IO error reading '%s'!\n\n", singleSFTs[i]);
+	  return SFTFILEIOTESTC_ESUB;
+	}
+	/* if single SFT is out of data, close it (open next one at beginning of loop) */
+	if (feof(fpSingle)) {
+	  fclose(fpSingle);
+	  fpSingle = NULL;
+	  ++i;
+	}
+	/* otherwise we have a valid character */
+	else
+	  break;
+      }
+      /* do character-by-character comparison */
+      if ( concat != single ) {
+	LALPrintError ( "\n Comparison failed between '%s'(last char = %i) and '%s'(last char = %i)!!\n\n",
+			concatSFT, concat, currSingleSFT, single );
+	return SFTFILEIOTESTC_ESFTDIFF;
+      }
+    }
+    fclose(fpConcat);
+    fprintf(stderr, "*** Comparing was successful!!! ***\n");
+  }
+  
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;	/* shift start-time so they don't look like segmented SFTs! */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );

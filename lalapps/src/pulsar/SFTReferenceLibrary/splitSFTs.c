@@ -79,6 +79,14 @@ typedef struct {
   time_t last_checked; /**< time we last checked */
 } UNIT_SOURCE;
 
+/** throtteling settings */
+UNIT_SOURCE read_bandwidth={0, 0, 0};
+UNIT_SOURCE read_open_rate={0, 0, 0};
+UNIT_SOURCE write_bandwidth={0, 0, 0};
+UNIT_SOURCE write_open_rate={0, 0, 0};
+
+void request_resource(UNIT_SOURCE *, int);
+
 /** request a resurce. Function returns after waiting for throttle time */
 void request_resource(UNIT_SOURCE *us, int units) {
   time_t now;
@@ -104,15 +112,9 @@ void request_resource(UNIT_SOURCE *us, int units) {
   }
 }
 
-/** throtteling settings */
-UNIT_SOURCE read_bandwidth={0, 0, 0};
-UNIT_SOURCE read_open_rate={0, 0, 0};
-UNIT_SOURCE write_bandwidth={0, 0, 0};
-UNIT_SOURCE write_open_rate={0, 0, 0};
-
 /** main program */
 int main(int argc, char**argv) {
-  unsigned int arg;               /* current command-line argument */
+  int arg;                        /* current command-line argument */
   unsigned int bin;               /* current bin */
   struct headertag2 hd;           /* header of input SFT */
   FILE *fp;                       /* currently open filepointer */
@@ -122,11 +124,13 @@ int main(int argc, char**argv) {
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
   char *outname;                  /* name of output SFT file */
-  char *prefix = "";              /* output filename prefix */
+  char empty = '\0';
+  char *prefix = &empty;          /* output filename prefix */
   char *detector = NULL;          /* detector name */
   double factor = 1.0;            /* "mystery" factor */
   double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
   int firstfile = TRUE;           /* are we processing the first input SFT file? */
+  int allcomments = FALSE;        /* write comment into _every_ SFT in the file */
   int add_comment = CMT_FULL;     /* add RCSID and full command-line to every SFT file */
   unsigned int start = 0, end = 0;     /* start and end in bins */
   unsigned int width = 0, overlap = 0; /* width and overlap in bins */
@@ -149,7 +153,7 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "  Write this help message\n"
 	    "\n"
-	    "%s [-c 0|1|2] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
+	    "%s [-c 0|1|2] [-a] [-s <startbin>] [-e <endbin (exclusively)>] [-b <sftbins>]\n"
 	    "  [-fs <startfrequency>] [-fe <endfrequency (exclusively)>] [-fb <frequencywidth>]\n"
 	    "  [-m <factor>] [-d <detector>] [-o <outputprefix>] -i <inputfile> ...\n"
 	    "\n"
@@ -175,9 +179,10 @@ int main(int argc, char**argv) {
 	    "\n"
 	    "  The '-c' options specifies how to deal with comments - 0 means no comment is written\n"
 	    "  at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default)\n"
-	    "  means that the program appends its RCS id and command-line to the comment. Any comment\n"
-	    "  is writteon only to the first SFT of a merged SFT output 'block' (i.e. call to this\n"
-	    "  program).\n"
+	    "  means that the program appends its RCS id and command-line to the comment.\n"
+	    "  By default a comment is written only to the first SFT of a merged SFT output 'block'\n"
+	    "  (i.e. call to this program). Adding the option '-a' to the command line specifies that\n"
+	    "  instead the comment is written into every SFT in the resulting file.\n"
 	    "\n"
 	    "  The last option on the command-line needs to be '-i', followed by as many input files\n"
 	    "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
@@ -219,6 +224,9 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-c") == 0) ||
 	      (strcmp(argv[arg], "--add-comment") == 0)) {
       add_comment = atoi(argv[++arg]);
+    } else if((strcmp(argv[arg], "-a") == 0) ||
+	      (strcmp(argv[arg], "--all-comments") == 0)) {
+      allcomments = TRUE;
     } else if((strcmp(argv[arg], "-s") == 0) ||
 	      (strcmp(argv[arg], "--start-bin") == 0)) {
       start = atoi(argv[++arg]);
@@ -310,7 +318,7 @@ int main(int argc, char**argv) {
 	"out of memory allocating data",8);
 
     /* error if desired start bin < hd.firstfreqindex */
-    if(start < hd.firstfreqindex) {
+    if((int)start < hd.firstfreqindex) {
       fprintf(stderr,
 	      "ERROR: start bin (%d) is smaller than first bin in input SFT (%d)\n",
 	      start, hd.firstfreqindex);
@@ -415,7 +423,7 @@ int main(int argc, char**argv) {
       request_resource(&write_bandwidth, 40 + this_width * 8);
       TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
 		      bin, this_width, detector,
-		      firstfile ? comment : NULL,
+		      (firstfile || allcomments) ? comment : NULL,
 		      data + 2 * (bin - start)),
 	     "could not write SFT data");
 

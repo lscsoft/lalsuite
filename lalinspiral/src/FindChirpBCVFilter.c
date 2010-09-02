@@ -52,7 +52,11 @@ $Id$
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCV.h>
 
-double rint(double x);
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (FINDCHIRPBCVFILTERC, "$Id$");
 
@@ -71,7 +75,7 @@ LALFindChirpBCVFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex = 0;
   UINT4                 ignoreIndex;
-  REAL4                 myfmin;
+  REAL4                 UNUSED myfmin;
   REAL4                 deltaT, deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
@@ -102,11 +106,12 @@ LALFindChirpBCVFilterSegment (
   REAL4                 a1 = 0.0;
   REAL4                 b1 = 0.0;
   REAL4                 b2 = 0.0;
-  REAL4                 templateNorm;
+  REAL4                 UNUSED templateNorm;
   /* REAL4                 modqsq; */
   REAL4                 Num1, Num2, Den1, Den2;
   REAL4                 omega, InvTan1, InvTan2;
-  REAL4                 m, psi0, psi3, fFinal;
+  REAL4                 m, fFinal;
+  REAL4                 UNUSED psi0, UNUSED psi3;
   /* CHAR                  infomsg[256]; */
 
 

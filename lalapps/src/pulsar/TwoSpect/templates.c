@@ -247,11 +247,13 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    REAL8Vector *noncentrality = XLALCreateREAL8Vector((UINT4)numweights);
    INT4Vector *dofs = XLALCreateINT4Vector((UINT4)numweights);
    INT4Vector *sorting = XLALCreateINT4Vector((UINT4)numweights);
+   REAL8 sigma = 0.0;
    REAL8 Rpr = R;
    for (ii=0; ii<(INT4)newweights->length; ii++) {
       newweights->data[ii] = 0.5*templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
       noncentrality->data[ii] = 0.0;
       dofs->data[ii] = 2;
+      sigma += 1.0/(templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]/(sumwsq*sumwsq*100.0));
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
    }
    
@@ -263,10 +265,14 @@ REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vect
    vars.sorting = sorting;
    vars.lim = 10000;
    vars.c = Rpr;
+   sigma = sqrt(sigma)*1.0e4;
    REAL8 accuracy = 1.0e-5;
    
+   sigma = 0.0;
+   //fprintf(stderr,"Sigma is %g\n",sigma);
+   
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
-   prob = 1.0 - cdfwchisq(&vars, 0.0, accuracy, errcode); 
+   prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode); 
    
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
@@ -363,7 +369,8 @@ void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct
    INT4 ii, jj, kk, numfbins, numffts, N;
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
+   //numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
+   numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);
    N = (INT4)floor(params->Tobs/in->period);     //Number of Gaussians
    
    REAL8 periodf = 1.0/in->period;
@@ -505,7 +512,8 @@ void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params,
    INT4 ii, jj, kk, numfbins, numffts;
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
+   //numffts = (INT4)floor(2*(params->Tobs/params->Tcoh)-1);     //Number of FFTs
+   numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);
    
    REAL8Vector *psd1 = XLALCreateREAL8Vector((UINT4)(numfbins*numffts));
    INT4Vector *freqbins = XLALCreateINT4Vector((UINT4)numfbins);

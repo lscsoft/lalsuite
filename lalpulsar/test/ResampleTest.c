@@ -144,6 +144,12 @@ LALDestroyResampleRules()
 #include <lal/LALConstants.h>
 #include <lal/Resample.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID( RESAMPLETESTC, "$Id$" );
 
 /* Default parameter settings. */
@@ -239,7 +245,7 @@ main( int argc, char **argv )
   UINT4 n = NPTS;       /* Number of points in time series */
   UINT4 m = NPTS/DEC;   /* Number of points in decimated series */
   UINT4 dec = DEC;      /* Decimation factor */
-  REAL4 a = AMP;        /* Amplitude of carrier wave */
+  REAL4 UNUSED a = AMP; /* Amplitude of carrier wave */
   REAL4 f = FREQ;       /* Frequency of carrier wave */
   REAL4 df = DF;        /* Amplitude of frequency modulation */
   REAL4 fm = FM;        /* Frequency of modulation */
