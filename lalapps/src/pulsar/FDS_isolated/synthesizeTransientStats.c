@@ -202,6 +202,7 @@ typedef struct
   PulsarAmplitudeVect ampVect;
   AntennaPatternMatrix M_mu_nu;
   transientWindow_t transientWindow;
+  REAL8 SNR;
 } InjParams_t;
 
 
@@ -231,6 +232,8 @@ int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 re
 
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, UINT4 Npoints, AmpPriorType_t priorType );
 REAL8 XLALDrawFromPDF ( const pdf1D_t *probDist, const gsl_rng *rng );
+
+int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par );
 
 
 /*---------- Global variables ----------*/
@@ -312,7 +315,9 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
-      write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
+      if ( write_TransientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
     } /* if outputStats */
 
   /* ----- prepare injection params output ----- */
@@ -325,6 +330,9 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
       fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
+      if ( write_InjParams_to_fp ( fpInjParams, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      }
     } /* if outputInjParams */
 
   /* ----- main MC loop over numDraws trials ---------- */
@@ -341,6 +349,11 @@ int main(int argc,char *argv[])
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
+
+      /* if requested, output signal injection parameters into file */
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParams ) != XLAL_SUCCESS ) ) {
+        XLAL_ERROR ( fn, XLAL_EFUNC );
+      } /* if fpInjParams & failure*/
 
       /* compute transient-Bstat search statistic on these atoms */
       TransientCandidate_t cand = empty_TransientCandidate;
@@ -1640,3 +1653,50 @@ XLALDrawFromPDF ( const pdf1D_t *probDist,	/**< probability distribution to samp
   return x;
 
 } /* XLALDrawFromPDF() */
+
+/** Write an injection-parameters structure to the given file-pointer,
+ * adding one line with the injection parameters
+ */
+int
+write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
+                        const InjParams_t *par	/**< [in] injection params to write. NULL means write header-comment line */
+                        )
+{
+  const char *fn = __func__;
+
+  /* input consistency */
+  if ( ! fp ) {
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  int ret;
+  /* if requested, write header-comment line */
+  if ( par == NULL ) {
+    ret = fprintf ( fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0          A1       A2       A3       A4       Ad     Bd     Cd     Dd           t0       tau  type\n");
+    if ( ret < 0 ) {
+      XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
+      XLAL_ERROR ( fn, XLAL_EIO );
+    }
+
+    return XLAL_SUCCESS;	/* we're done here */
+
+  } /* if par == NULL */
+
+  /* if injParams given, output them to the file */
+  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %6.3f %6.3f %6.3f %6.3f    %8d  %8d    %1d\n",
+                  par->skypos.longitude, par->skypos.latitude,						/* skypos */
+                  par->SNR,										/* SNR */
+                  par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/
+                  par->ampVect[0], par->ampVect[1], par->ampVect[2], par->ampVect[3],			/* ampltiude vector A^mu */
+                  par->M_mu_nu.Ad, par->M_mu_nu.Bd, par->M_mu_nu.Cd, par->M_mu_nu.Dd,			/* antenna-pattern matrix components */
+                  par->transientWindow.t0, par->transientWindow.tau, par->transientWindow.type		/* transient-window params */
+                  );
+  if ( ret < 0 ) {
+    XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EIO );
+  }
+
+ return XLAL_SUCCESS;
+
+} /* write_InjParams_to_fp() */
