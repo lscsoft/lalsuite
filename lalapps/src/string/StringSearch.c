@@ -43,6 +43,7 @@
 
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_roots.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALComplex.h>
@@ -170,7 +171,7 @@ int DownSample(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FFTPlan *fplan);
 
 /* Creates the template bank based on the spectrum  */
-int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan);
+int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan);
 
 /* Creates the frequency domain string cusp or kink filters  */
 int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan);
@@ -270,7 +271,7 @@ int main(int argc,char *argv[])
 
   /****** CreateTemplateBank ******/
   XLALPrintInfo("CreateTemplateBank()\n");
-  if (CreateTemplateBank(CommandLineArgs, ht, seg_length, Spec, strtemplate, &NTemplates, rplan)) return 10;
+  if (CreateTemplateBank(CommandLineArgs, seg_length, Spec, strtemplate, &NTemplates, rplan)) return 10;
 
   /****** CreateStringFilters ******/
   XLALPrintInfo("CreateStringFilters()\n");
@@ -648,92 +649,141 @@ int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsi
 
 /*******************************************************************************/
 
-int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan){
-  REAL8 fNyq, f_cut, t1t1, t2t2, t1t2, epsilon, previous_epsilon, norm, slope0, slope1;
-  int m, f_cut_index, f_low_cutoff_index, extr_ctr;
-  unsigned p, pcut, f_min_index, f_max_index;
+/* compute (t2|t2) and (t1|t2) */
+static void compute_t2t2_and_t1t2(double power, const REAL8FrequencySeries *Spec, const REAL8Vector *integral, double last_templates_f_cut, double f_cut, double *t2t2, double *t1t2)
+{
+  unsigned i = round((last_templates_f_cut - Spec->f0) / Spec->deltaF);
+
+  *t2t2 = *t1t2 = integral->data[i];
+
+  for(i++; i < Spec->data->length; i++) {
+    double f = Spec->f0 + i * Spec->deltaF;
+
+    if(f < f_cut) {
+      *t2t2 += 4 * pow(pow(f, power), 2) / Spec->data->data[i] * Spec->deltaF;
+      *t1t2 += 4 * pow(pow(f, power), 2) * exp(1 - f / last_templates_f_cut) / Spec->data->data[i] * Spec->deltaF;
+    } else {
+      *t2t2 += 4 * pow(pow(f, power) * exp(1 - f / f_cut), 2) / Spec->data->data[i] * Spec->deltaF;
+      *t1t2 += 4 * pow(pow(f, power), 2) * exp(1 - f / last_templates_f_cut) * exp(1 - f / f_cut) / Spec->data->data[i] * Spec->deltaF;
+    }
+  }
+}
+
+struct compute_epsilon_minus_desired_params {
+  double desired_epsilon;
+  double string_spectrum_power;
+  const REAL8FrequencySeries *Spec;
+  const REAL8Vector *integral;
+  double last_templates_f_cut;
+  double last_templates_norm;
+};
+
+static double compute_epsilon_minus_desired(double f_cut, void *params)
+{
+  struct compute_epsilon_minus_desired_params *p = params;
+  double epsilon;
+  double t1t1 = pow(p->last_templates_norm, 2);
+  double t2t2, t1t2;
+
+  compute_t2t2_and_t1t2(p->string_spectrum_power, p->Spec, p->integral, p->last_templates_f_cut, f_cut, &t2t2, &t1t2);
+
+  epsilon = 1 - t1t2 / sqrt(t1t1 * t2t2);
+
+  return epsilon - p->desired_epsilon;
+}
+
+static double next_f_cut(double desired_epsilon, double string_spectrum_power, const REAL8FrequencySeries *Spec, const REAL8Vector *integral, double last_templates_f_cut, double last_templates_norm)
+{
+  struct compute_epsilon_minus_desired_params params = {
+    .desired_epsilon = desired_epsilon,
+    .string_spectrum_power = string_spectrum_power,
+    .Spec = Spec,
+    .integral = integral,
+    .last_templates_f_cut = last_templates_f_cut,
+    .last_templates_norm = last_templates_norm
+  };
+  gsl_function F = {
+    .function = compute_epsilon_minus_desired,
+    .params = &params
+  };
+  gsl_root_fsolver *solver = gsl_root_fsolver_alloc(gsl_root_fsolver_bisection);
+  double flo = last_templates_f_cut;
+  double fhi = Spec->f0 + (Spec->data->length - 1) * Spec->deltaF;
+
+  /* there isn't enough mismatch to place another template between the
+   * previous one and fhi, so return fhi.  note that we must ensure that
+   * the last template has exactly this frequency to cause the template
+   * construction loop to terminate */
+  if(compute_epsilon_minus_desired(fhi, &params) <= 0)
+    return fhi;
+
+  gsl_root_fsolver_set(solver, &F, flo, fhi);
+
+  while(fhi - flo >= Spec->deltaF) {
+    gsl_root_fsolver_iterate(solver);
+    flo = gsl_root_fsolver_x_lower(solver);
+    fhi = gsl_root_fsolver_x_upper(solver);
+  }
+
+  gsl_root_fsolver_free(solver);
+
+  return (fhi + flo) / 2;
+}
+
+int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan){
+  REAL8 f_cut, t1t1, t2t2, t1t2, norm, slope0, slope1;
+  int m, f_low_cutoff_index, extr_ctr;
+  unsigned p;
   REAL8Vector *integral;
   REAL8Vector *vector; /* time-domain vector workspace */
   COMPLEX16Vector *vtilde; /* frequency-domain vector workspace */
 
-  fNyq = (1.0/ht->deltaT) / 2.0;
-  f_min_index = round(CLA.fbankstart / Spec->deltaF);
-  f_max_index = round(fNyq / Spec->deltaF);
-  integral = XLALCreateREAL8Vector(f_max_index-f_min_index);
-  epsilon=0;
+  *NTemplates = 0;
 
-  /* first template : f_cutoff = fbankhighfcutofflow */
-  f_cut_index = round(CLA.fbankhighfcutofflow / Spec->deltaF);
-  f_cut = f_cut_index * Spec->deltaF;
-
-  /* compute (t1|t1) */
-  t1t1=0.0;
-  integral->data[0]=4*pow( pow(CLA.fbankstart,CLA.power),2)/Spec->data->data[f_min_index]*Spec->deltaF;
-  for( p = f_min_index ; p < f_max_index; p++ ){
-    double f = p*Spec->deltaF;
-
-    if(f<=f_cut) t1t1 += 4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
-    else t1t1 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/Spec->data->data[p]*Spec->deltaF;
-
-    if(p>f_min_index) /* keep the integral in memory (to run faster) */
-      integral->data[p-f_min_index] = integral->data[p-f_min_index-1]+4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
+  /* populate integral */
+  integral = XLALCreateREAL8Vector(Spec->data->length);
+  memset(integral->data, 0, integral->length * sizeof(*integral->data));
+  for( p = round((CLA.fbankstart - Spec->f0) / Spec->deltaF) ; p < integral->length; p++ ) {
+    integral->data[p] = 4 * pow(pow(Spec->f0 + p * Spec->deltaF, CLA.power), 2) / Spec->data->data[p] * Spec->deltaF;
+    if(p > 0)
+      integral->data[p] += integral->data[p - 1];
   }
 
-  strtemplate[0].findex=f_cut_index;
-  strtemplate[0].f=f_cut;
-  strtemplate[0].mismatch=0.0;
-  strtemplate[0].norm=sqrt(t1t1);
-  *NTemplates=1;
+  /* first template : f_cut = fbankhighfcutofflow */
+  f_cut = CLA.fbankhighfcutofflow;
+
+  /* compute (t1|t1) for fist template.  we can do this by re-using the
+   * (t2|t2),(t1|t2) function with the correct inputs.  t1t2 result is
+   * meaningless and not used */
+  compute_t2t2_and_t1t2(CLA.power, Spec, integral, CLA.fbankstart, f_cut, &t1t1, &t1t2);
+
+  strtemplate[0].findex = round((f_cut - Spec->f0) / Spec->deltaF);
+  strtemplate[0].f = f_cut;
+  strtemplate[0].mismatch = 0.0;
+  strtemplate[0].norm = sqrt(t1t1);
   XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
-  XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+  XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+  *NTemplates = 1;
   
-  /* find the next cutoffs given the maximal mismatch */
-  for(pcut=f_cut_index+1; pcut<f_max_index; pcut++){
-    f_cut = pcut*Spec->deltaF;
-   
-    t2t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
-    t1t2=integral->data[strtemplate[*NTemplates-1].findex-f_min_index];
-    
-    /* compute (t2|t2) and (t1|t2) */
-    for( p = strtemplate[*NTemplates-1].findex+1 ; p < f_max_index; p++ ){
-      double f = p*Spec->deltaF;
-      
-      /* (t2|t2) */
-      if(f<=f_cut)
-	t2t2 += 4*pow(pow(f,CLA.power),2)/Spec->data->data[p]*Spec->deltaF;
-      else 
-	t2t2 += 4*pow( pow(f,CLA.power)*exp(1-f/f_cut) ,2)/Spec->data->data[p]*Spec->deltaF;
+  /* find the next cutoffs given the maximal mismatch, until we hit the
+   * highest frequency.  note that the algorithm will hit that frequency
+   * bin by construction */
+  while(strtemplate[*NTemplates - 1].findex != (int) Spec->data->length - 1) {
+    f_cut = next_f_cut(CLA.fmismatchmax, CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, strtemplate[*NTemplates-1].norm);
 
-      /* (t1|t2) */
-      if(f<=f_cut)
-	t1t2 += 4*pow(pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f) /Spec->data->data[p]*Spec->deltaF;
-      else 
-	t1t2 += 4*pow( pow(f,CLA.power),2)*exp(1-f/strtemplate[*NTemplates-1].f)*exp(1-f/f_cut) /Spec->data->data[p]*Spec->deltaF;
+    compute_t2t2_and_t1t2(CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, f_cut, &t2t2, &t1t2);
+
+    strtemplate[*NTemplates].findex = round((f_cut - Spec->f0) / Spec->deltaF);
+    strtemplate[*NTemplates].f = f_cut;
+    strtemplate[*NTemplates].norm = sqrt(t2t2);
+    strtemplate[*NTemplates].mismatch = 1 - t1t2 / sqrt(t1t1 * t2t2);
+    XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n", *NTemplates, strtemplate[*NTemplates].f, strtemplate[*NTemplates].norm, strtemplate[*NTemplates].mismatch);
+    (*NTemplates)++;
+    if(*NTemplates == MAXTEMPLATES){
+      XLALPrintError("Too many templates for code... Exiting\n");
+      return 1;
     }
-        
-    previous_epsilon = epsilon;
-    epsilon=1-t1t2/sqrt(t1t1*t2t2);
-
-    /*if(pcut%50==0) XLALPrintInfo("%d %f %f\n",pcut, f_cut, epsilon);*/
-
-    if(epsilon >= CLA.fmismatchmax || pcut==f_max_index-1){
-      strtemplate[*NTemplates].findex=pcut;
-      strtemplate[*NTemplates].f=f_cut;
-      strtemplate[*NTemplates].norm=sqrt(t2t2);
-      strtemplate[*NTemplates].mismatch=epsilon;
-      (*NTemplates)++;
-      XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates-1,strtemplate[*NTemplates-1].f,strtemplate[*NTemplates-1].norm, strtemplate[*NTemplates-1].mismatch);
-      t1t1=t2t2;
-      if(*NTemplates == MAXTEMPLATES){
-	XLALPrintError("Too many templates for code... Exiting\n");
-	return 1;
-      }
-    }
-    
-    /* to get faster (not so smart though) */
-    if(pcut<f_max_index-16 && (epsilon-previous_epsilon)<0.005) 
-      pcut+=15;
-
+    t1t1 = t2t2;
   }
 
   XLALDestroyREAL8Vector( integral );
@@ -743,25 +793,24 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsig
   vtilde = XLALCreateCOMPLEX16Vector( vector->length / 2 + 1 );
   f_low_cutoff_index = round(CLA.fbankstart/ Spec->deltaF);
   for (m = 0; m < *NTemplates; m++){
-
     /* create the space for the waveform vectors */
     strtemplate[m].waveform_f = XLALCreateCOMPLEX16Vector( vtilde->length );
     strtemplate[m].waveform_t = XLALCreateREAL8Vector( vector->length );
     strtemplate[m].auto_cor   = XLALCreateREAL8Vector( vector->length );
 
-    /* populate with the template waveform */
+    /* set all frequencies below the low freq cutoff to zero */
+    memset(strtemplate[m].waveform_f->data, 0, f_low_cutoff_index*sizeof(*strtemplate[m].waveform_f->data));
+
+    /* populate the rest with the template waveform */
     for ( p = f_low_cutoff_index; p < strtemplate[m].waveform_f->length; p++ ){
-      double f = p*Spec->deltaF;
+      double f = Spec->f0 + p * Spec->deltaF;
       if(f<=strtemplate[m].f) 
 	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power), 0.0);
       else 
 	strtemplate[m].waveform_f->data[p] = XLALCOMPLEX16Rect(pow(f, CLA.power)*exp(1-f/strtemplate[m].f), 0.0);
     }
 
-    /* set all frequencies below the low freq cutoff to zero */
-    memset(strtemplate[m].waveform_f->data, 0, f_low_cutoff_index*sizeof(*strtemplate[m].waveform_f->data));
-
-    /* set DC and Nyquist to zero anyway */
+    /* set DC and Nyquist to zero */
     strtemplate[m].waveform_f->data[0] = strtemplate[m].waveform_f->data[strtemplate[m].waveform_f->length - 1] = LAL_COMPLEX16_ZERO;
 
     /* whiten and convolve the template with itself, store in vtilde.
