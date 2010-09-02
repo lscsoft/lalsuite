@@ -534,7 +534,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
       res = (data[length/2] + data[length/2+1])/2;
     }
     else /* length is odd */ {
-      res = data[length/2+1];
+      res = data[length/2];
     }
 
     break;
