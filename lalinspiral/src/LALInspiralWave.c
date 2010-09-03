@@ -224,6 +224,10 @@ LALInspiralWave(
            //fprintf(stdout,"                      norm=%11.3e\n",norm);
            CHECKSTATUSPTR(status);
 	   break;
+      case PhenSpinTaylorRDF:
+           LALPSpinInspiralRDFreqDom(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
+           break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);

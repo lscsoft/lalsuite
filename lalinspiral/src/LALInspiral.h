@@ -457,6 +457,7 @@ typedef enum {
    SpinTaylorT3,
    SpinTaylor,
    PhenSpinTaylorRD,
+   PhenSpinTaylorRDF,
    FindChirpSP,
    FindChirpPTF,
    GeneratePPN,
@@ -1282,6 +1283,8 @@ void LALPSpinInspiralRDderivatives(
                          REAL8Vector *dvalues, 
                          void *mparams );
 
+
+
 void LALPSpinInspiralRDForInjection(
                            LALStatus        *status,
                            CoherentGW       *waveform,
@@ -1312,6 +1315,11 @@ void LALPSpinInspiralRD(
      LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
+
+void LALPSpinInspiralRDFreqDom (
+				LALStatus        *status,
+				REAL4Vector      *signalvec,
+				InspiralTemplate *params);
 
 
 /* Phenomenological waveform generation functions */

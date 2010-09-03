@@ -96,6 +96,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/NRWaveInject.h>
+#include <lal/RealFFT.h>
 
 NRCSID (LALPSPININSPIRALRDC, "$Id$");
 
@@ -624,6 +625,123 @@ void LALPSpinInspiralRDForInjection (
 
 } /* End LALPSpinInspiralRDForInjection */
 
+void LALPSpinInspiralRDFreqDom (
+				LALStatus        *status,
+				REAL4Vector      *signalvec,
+				InspiralTemplate *params
+				)
+{
+
+  REAL4Vector *tsignalvec = NULL;
+  REAL4Vector *fsignalvec = NULL;
+  REAL4FFTPlan *forwPlan = NULL;
+
+  InspiralInit paramsInit;
+
+  REAL4 mod,ph;
+
+  UINT4 count,nbins,sub;
+  UINT4 i,j,iperiod;
+
+  INITSTATUS(status, "LALPSpinInspiralRDFReqDom", LALPSPININSPIRALRDC);
+  ATTATCHSTATUSPTR(status);
+  
+  ASSERT(signalvec,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec->data,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params,  status,
+	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params->nStartPad >= 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->nEndPad >= 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0, status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->totalMass > 0., status,
+	 LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  LALInspiralInit(status->statusPtr, params, &paramsInit);
+  CHECKSTATUSPTR(status);
+
+  if (paramsInit.nbins==0)
+    {
+      DETATCHSTATUSPTR(status);
+      RETURN (status);
+    }
+
+  nbins=paramsInit.nbins;
+
+  if (nbins<signalvec->length) nbins=signalvec->length;
+
+  tsignalvec   = XLALCreateREAL4Vector( nbins);
+  fsignalvec   = XLALCreateREAL4Vector( nbins);
+
+  memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
+  memset(tsignalvec->data, 0, nbins * sizeof(REAL4));
+  memset(fsignalvec->data, 0, nbins * sizeof(REAL4));
+
+  /* Call the engine function */
+  LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+  CHECKSTATUSPTR( status );
+
+  iperiod=(INT4)(1./params->tSampling/params->fLower);
+  for (i=0;i<iperiod;i++)
+    tsignalvec->data[i]*=exp(7.*(((REAL4)(i))/((REAL4)(iperiod))-1.));
+
+  //  norm=0.;
+  //for (i=0;i<tsignalvec->length;i++) {
+  //  norm+=tsignalvec->data[i]*tsignalvec->data[i];
+  //}
+  //fprintf(stdout,"Dopo smoothing norm=%11.3e\n",norm);
+
+  forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
+  if (forwPlan == NULL) ABORTXLAL(status);
+
+  XLALREAL4VectorFFT(fsignalvec, tsignalvec, forwPlan);
+  XLALDestroyREAL4Vector(tsignalvec);
+  XLALDestroyREAL4FFTPlan(forwPlan);  
+ 
+  sub=nbins/signalvec->length;
+  //fprintf(stdout,"RD sub=%d\n",sub);
+
+  mod=0.;
+  ph=0.;
+  //  norm=0.;
+  j=1;
+  for (i=1;i<nbins/2;i++) {
+    mod+=sqrt(fsignalvec->data[2*i]*fsignalvec->data[2*i]+fsignalvec->data[2*i+1]*fsignalvec->data[2*i+1]);
+    ph+=atan2(fsignalvec->data[2*i+1],fsignalvec->data[2*i+1]);
+    if (i%sub==0) {
+      mod/=(REAL4)(sub);
+      ph/=(REAL4)(sub);
+      signalvec->data[2*j]=mod*cos(ph);
+      signalvec->data[2*j+1]=mod*sin(ph);
+      //  norm+=2.*mod*mod;
+      mod=0.;
+      ph=0.;
+      j++;
+    }
+  }
+  signalvec->data[0]=0.;
+  if (i%sub==0)
+    signalvec->data[1]=(mod+fsignalvec->data[1])/((REAL4)(sub));
+  else {
+    fprintf(stdout,"Qui non dovrei entrarci mai\n");
+    signalvec->data[1]=fsignalvec->data[1];
+  }
+  //norm+=signalvec->data[0]*signalvec->data[0]+signalvec->data[1]*signalvec->data[1];
+  //  fprintf(stdout,"FFTnorm=%11.3e\n",norm/signalvec->length);
+
+  XLALDestroyREAL4Vector(fsignalvec);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
 /*
  *
  * Main function
@@ -791,7 +909,7 @@ void LALPSpinInspiralRDEngine (
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
   //omegamatch = params->fCutoff *unitHz;
-  omegamatch = 0.0560 +6.05e-3*sqrt(1.-4.*mparams->eta);// - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);  
+  omegamatch = 0.0560 +6.05e-3*sqrt(1.-4.*params->eta);// - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);  
 
   while ((omegamatch * 16./unitHz) >  (REAL4)(subsampling)*params->tSampling ) subsampling*=2; 
   dt/= (REAL4)(subsampling);
@@ -1190,7 +1308,10 @@ void LALPSpinInspiralRDEngine (
 
   REAL8 amp22ini;
   if (params->distance > 0.) amp22ini= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
-  else amp22ini  = 2.0 * sqrt( LAL_PI / 5.0) * params->signalAmplitude;
+  else {
+    amp22ini  = 2.0 * sqrt( LAL_PI / 5.0);
+    if (params->signalAmplitude>0.) amp22ini *= params->signalAmplitude;
+  }
 
   do {
 
@@ -1428,6 +1549,7 @@ void LALPSpinInspiralRDEngine (
     params->fFinal =fap->data[count-1];
   }
 
+  dt=1./params->tSampling;
   t0=t-dt;
   Psi0=Psi+tAs*om1*log(1.-t0/tAs)/m;
   alpha0=alpha+tAs*alphadot1*log(1.-t0/tAs)/m;
@@ -1455,7 +1577,6 @@ void LALPSpinInspiralRDEngine (
   if (rett==1) {
 
     count=write;
-    dt=1./params->tSampling;
 
     do {
       

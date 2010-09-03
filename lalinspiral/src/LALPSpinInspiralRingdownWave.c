@@ -667,7 +667,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       static const char *func = "XLALInspiralAttachRingdownWave";
 
       COMPLEX8Vector *modefreqs;
-      UINT4 Nrdwave, Npatch, Npatch2;
+      UINT4 Nrdwave, Npatch;
       UINT4 j=0;
       UINT4 k=0;
       UINT4 atpos;
@@ -701,13 +701,15 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 
       //fprintf(stdout,"RD atpos=%d attpos=%d  Nrdwave=%d  f=I%11.3e +%11.3e\n",atpos,*attpos,Nrdwave,modefreqs->data[0].im,modefreqs->data[0].re);
       (*attpos)+=Nrdwave;
-      Npatch = 11;
-      Npatch2 = Npatch/2;
+      Npatch = 6;
+
+      //      fprintf(stdout,"Value of attpos inconsistent with given value of Npatch: atpos=%d  Npatch=%d, sign->length=%d, m1=%11.5f  m2=%11.5f  s1z=%8.3f  s2z=%8.3f fL=%11.3e\n",atpos,Npatch,sigl->length,params->mass1,params->mass2,params->spin1[2],params->spin2[2],params->fLower);
 
       /* Check the value of attpos, to prevent memory access problems later */
       if ( atpos < Npatch || atpos + Npatch >= sigl->length )
       {
-        XLALPrintError( "Value of attpos inconsistent with given value of Npatch.\n" );
+
+        XLALPrintError( "Value of attpos inconsistent with given value of Npatch: atpos=%d  Npatch=%d, sign->length=%d, m1=%11.5f  m2=%11.5f  s1z=%8.3f  s2z=%8.3f  fL=%11.3e\n",atpos,Npatch,sigl->length,params->mass1,params->mass2,params->spin1[2],params->spin2[2],params->fLower);
         XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFAILED );
       }
@@ -790,15 +792,9 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       }
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
 
-      //      for (j=0 ; j< Npatch; j++) fprintf(stderr,"signal [%d]= %11.3e  \n",j+2*(atpos-Npatch2-1),signal->data[j+2*(atpos-Npatch2-1)]);
-
       for (j = 0; j < 2*Nrdwave; j++)
       {
 	sigl->data[j + 2*atpos - 2] = rdwave->data[j];
-	/*	if (j<30) {
-	  fprintf(stderr,"signal [%d]= %11.3e   rdwave->data[%d]=%11.3e  ",j+2*(atpos-1),sigl->data[j+2*(atpos-1)],j,rdwave->data[j]);
-	  if (j%2==1) fprintf(stderr,"\n");
-	  }*/
       }
 
       /* Free memory */
