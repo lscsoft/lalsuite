@@ -1306,12 +1306,8 @@ void LALPSpinInspiralRDEngine (
 
   UINT4 write=0;
 
-  REAL8 amp22ini;
-  if (params->distance > 0.) amp22ini= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
-  else {
-    amp22ini  = 2.0 * sqrt( LAL_PI / 5.0);
-    if (params->signalAmplitude>0.) amp22ini *= params->signalAmplitude;
-  }
+  REAL8 amp22ini= -2.0 * params->mu * LAL_MRSUN_SI * sqrt( 16.*LAL_PI/5.);
+  if (params->distance > 0.) amp22ini /= params->distance;
 
   do {
 
