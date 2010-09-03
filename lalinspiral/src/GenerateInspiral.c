@@ -574,8 +574,8 @@ LALGenerateInspiralPopulateInspiral(
 
   inspiralParams->orbitTheta0 = thisEvent->theta0;
   inspiralParams->orbitPhi0   = thisEvent->phi0;
-  inspiralParams->qmParameter[0] = thisEvent->qmParameter[0];
-  inspiralParams->qmParameter[1] = thisEvent->qmParameter[1];
+  inspiralParams->qmParameter[0] = thisEvent->qmParameter1;
+  inspiralParams->qmParameter[1] = thisEvent->qmParameter2;
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
