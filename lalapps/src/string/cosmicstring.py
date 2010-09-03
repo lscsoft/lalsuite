@@ -82,6 +82,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = []
 
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
@@ -150,6 +151,7 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.likelihood_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 
 	def set_name(self, *args):
@@ -212,6 +214,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_ini_opts(config_parser, "lalapps_StringSearch")
     self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).out"))
     self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_StringSearch-$(cluster)-$(process).err"))
+    self.add_condor_cmd("getenv", "True")
     self.set_sub_file("lalapps_StringSearch.sub")
     #self.add_condor_cmd("Requirements", "Memory > 1100")
 
@@ -230,6 +233,7 @@ class StringNode(pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user_tag')
     self.output_cache = []
+    self._CondorDAGNode__macros["initialdir"] = os.getcwd()
     self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
 
   def set_ifo(self, instrument):
@@ -315,6 +319,7 @@ class RunSqliteNode(pipeline.CondorDAGNode):
                 pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -342,7 +347,7 @@ class RunSqliteNode(pipeline.CondorDAGNode):
 #
 
 
-def clip_segment(seg, pad, short_segment_duration):
+def clip_segment_length(segment_length, pad, short_segment_duration):
   # clip segment to the length required by lalapps_StringSearch.  if
   #
   #   duration = segment length - padding
@@ -356,20 +361,17 @@ def clip_segment(seg, pad, short_segment_duration):
   #   2 * duration + short_segment_duration
   #
   # must be divisble by (4 * short_segment_duration)
-  duration = float(abs(seg)) - 2 * pad
+  assert segment_length >= 2 * pad
+  duration = segment_length - 2 * pad
   extra = (2 * duration + short_segment_duration) % (4 * short_segment_duration)
   extra /= 2
 
-  # clip segment
-  seg = segments.segment(seg[0], seg[1] - extra)
+  # clip
+  segment_length -= extra
 
-  # bounds must be integers
-  if abs((int(seg[0]) - seg[0]) / seg[0]) > 1e-14 or abs((int(seg[1]) - seg[1]) / seg[1]) > 1e-14:
-    raise ValueError, "segment %s does not have integer boundaries" % repr(seg)
-  seg = segments.segment(int(seg[0]), int(seg[1]))
-
-  # done
-  return seg
+  # done. negative return value not allowed
+  assert segment_length >= 0
+  return segment_length
 
 
 def segment_ok(seg, min_segment_length, pad):
@@ -503,25 +505,40 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 #
 
 
-def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration):
+def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length):
+	# avoid infinite loop
+	if min_segment_length + 2 * pad <= overlap:
+		raise ValueError, "infinite loop: min_segment_length + 2 * pad must be > overlap"
+
+	# clip max_job_length down to an allowed size
+	max_job_length = clip_segment_length(max_job_length, pad, short_segment_duration)
+
 	seglist = segments.segmentlist()
 	while abs(seg) >= min_segment_length + 2 * pad:
-		# try to use 5* min_segment_length each time (must be an odd
-		# multiple!).
-		if abs(seg) >= 5 * min_segment_length + 2 * pad:
-			seglist.append(segments.segment(seg[0], seg[0] + 5 * min_segment_length + 2 * pad))
+		# try to use max_job_length each time
+		if abs(seg) >= max_job_length:
+			seglist.append(segments.segment(seg[0], seg[0] + max_job_length))
 		else:
-			seglist.append(clip_segment(seg, pad, short_segment_duration))
+			seglist.append(segments.segment(seg[0], seg[0] + clip_segment_length(abs(seg), pad, short_segment_duration)))
+		assert abs(seglist[-1]) != 0	# safety-check for no-op
+		# bounds must be integers
+		if abs((int(seglist[-1][0]) - seglist[-1][0]) / seglist[-1][0]) > 1e-14 or abs((int(seglist[-1][1]) - seglist[-1][1]) / seglist[-1][1]) > 1e-14:
+			raise ValueError, "segment %s does not have integer boundaries" % str(seglist[-1])
 		# advance segment
 		seg = segments.segment(seglist[-1][1] - overlap, seg[1])
+	if not seglist:
+		raise ValueError, "unable to use segment %s" % str(seg)
 	return seglist
 
 
-def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	"""
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
 	"""
+	# figure out which binj nodes, if any, produce output for this job
+	binjnodes = set(node for node in binjnodes if power.cache_span(node.get_output_cache()).intersects(seg))
+
 	# only one frame cache file can be provided as input, and only one
 	# injection description file can be provided as input.
 	# the unpacking indirectly tests that the file count is correct
@@ -531,7 +548,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 		injargs = {"injection-file": simfile}
 	else:
 		injargs = {}
-	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration)
+	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length)
 	if verbose:
 		print >>sys.stderr, "Segment split: " + str(seglist)
 	nodes = set()
@@ -545,7 +562,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 #
 
 
-def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = set(), verbose = False):
+def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = set(), verbose = False):
 	nodes = set()
 	for instrument, seglist in seglistdict.items():
 		for seg in seglist:
@@ -558,7 +575,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
 
 			# trigger generator jobs
-			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, binjnodes = binjnodes, verbose = verbose)
+			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = binjnodes, verbose = verbose)
 
 	# done
 	return nodes
@@ -579,7 +596,9 @@ def write_clip_segment_sql_file(filename):
 WHERE
 	(end_time + 1e-9 * end_time_ns < (SELECT MIN(in_start_time + 1e-9 * in_start_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'))
 	OR
-	(start_time + 1e-9 * start_time_ns > (SELECT MAX(in_end_time + 1e-9 * in_end_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'));"""
+	(start_time + 1e-9 * start_time_ns > (SELECT MAX(in_end_time + 1e-9 * in_end_time_ns) FROM search_summary NATURAL JOIN process WHERE program == 'StringSearch'));
+
+VACUUM;"""
 
 	print >>file(filename, "w"), code
 

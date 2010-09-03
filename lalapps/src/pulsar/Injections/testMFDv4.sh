@@ -174,7 +174,7 @@ fi
 echo
 echo "comparison of concatenating SFTs:"
 
-cmdline="$cmpCODE -e 0.0 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
+cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."

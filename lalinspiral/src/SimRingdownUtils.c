@@ -304,6 +304,10 @@ XLALReturnSimRingdownStartTime (
       {
         return( XLALGPSToINT8NS(&(event->h_start_time) ) );
       }
+      else if ( ! strcmp( "V1", ifo ) )
+      {
+        return( XLALGPSToINT8NS(&(event->v_start_time) ) );
+      }
       else
       {
         XLAL_ERROR(func,XLAL_EIO);
