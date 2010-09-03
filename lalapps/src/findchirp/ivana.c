@@ -87,7 +87,6 @@ int main( int argc, char **argv )
   FILE *uvfile = NULL;
   char intext[256], temptext[256];
   char *arg, *val, opt='\0';
-  size_t vallen;
   char *rangespec = NULL;
   float tempval;
   float snrcut = 1.0;
@@ -139,7 +138,6 @@ int main( int argc, char **argv )
   double dur;
   double tUseNeg = 0.0, tUsePos=0.0;
   double tUse=0.0, tDur=0.0;
-  float tSnr;
   float snrThresh=0.0;
   int usevfile;
 
@@ -156,7 +154,6 @@ int main( int argc, char **argv )
   double tVetoNeg[RINGBUFSIZE];
   double tVetoPos[RINGBUFSIZE];
   double tVetoDur[RINGBUFSIZE];
-  float tVetoSnr[RINGBUFSIZE];
   float cSnrThresh[RINGBUFSIZE];
   Range* rVeto[RINGBUFSIZE];
   int usedVeto[RINGBUFSIZE];
@@ -191,14 +188,11 @@ int main( int argc, char **argv )
       opt = arg[1];
       if ( strlen(arg) > 2 ) {
 	val = arg+2;
-	vallen = strlen(arg) - 2;
       } else {
 	val = NULL;
-	vallen = 0;
       }
     } else {
       val = arg;
-      vallen = strlen(val);
     }
 
     switch (opt) {
@@ -1047,7 +1041,6 @@ int main( int argc, char **argv )
 	  }
 	  tUsePos = vFile->tLastPos;
 	  tDur = vFile->lastDur;
-	  tSnr = vFile->lastSnr;
 	  snrThresh = vFile->snrRatio * vFile->lastSnr;
 	  usevfile = ivfile;
 	}
@@ -1135,7 +1128,6 @@ int main( int argc, char **argv )
       tVetoNeg[vbufW] = tUseNeg;
       tVetoPos[vbufW] = tUsePos;
       tVetoDur[vbufW] = tDur;
-      tVetoSnr[vbufW] = tSnr;
       cSnrThresh[vbufW] = snrThresh;
       rVeto[vbufW] = vRange;
       usedVeto[vbufW] = 0;

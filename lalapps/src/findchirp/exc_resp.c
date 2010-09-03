@@ -55,7 +55,6 @@ RCSID( "$Id$" );
 "  -h            print this message\n"\
 "  -V            print version info\n"\
 "  -v            verbose\n"\
-"  -d dbglvl     set debug level to dbglvl [0]\n"\
 "  -L flow       low frequency cutoff for response function [25.0]\n"\
 "  -H fhigh      high frequency cutoff for response function [3000.0]\n"\
 "  -n numpoints  number of points in response function [8192]\n"
@@ -69,7 +68,6 @@ extern int vrbflg;
 int main ( int argc, char *argv[] )
 {
   const char *program = argv[0];
-  const char *dbglvl  = NULL;
   int   k;
   int   opt;
   int   numpts = 8192;
@@ -79,7 +77,7 @@ int main ( int argc, char *argv[] )
   FILE  *l1_fp = NULL, *h2_fp = NULL, *h1_fp = NULL;
   
   /* parse options */
-  while ( 0 < ( opt = getopt( argc, argv, "hVvd:L:H:n:" ) ) )
+  while ( 0 < ( opt = getopt( argc, argv, "hVvL:H:n:" ) ) )
   {
     switch ( opt )
     {
@@ -91,9 +89,6 @@ int main ( int argc, char *argv[] )
         return 0;
       case 'v':
         vrbflg = 1;
-        break;
-      case 'd':
-        dbglvl = optarg;
         break;
       case 'L':
         f_min = (REAL4) atof(optarg);

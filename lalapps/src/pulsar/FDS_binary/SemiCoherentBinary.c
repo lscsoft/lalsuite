@@ -32,7 +32,6 @@
 
 /***********************************************************************************************/
 /* includes */
-#include <fitsio.h>
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -625,7 +624,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* set priors flag if the sigma width has been set */
   if (XLALUserVarWasSet(&(uvar->nsig))) {
-    uvar->gaussianpriors = TRUE;
+    uvar->gaussianpriors = 1;
     LogPrintf(LOG_DEBUG,"%s : using Gaussian priors on orbital parameters.\n",fn);
   }
   else uvar->nsig = 1.0;
