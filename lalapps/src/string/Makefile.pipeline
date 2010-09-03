@@ -8,12 +8,13 @@ dag :
 TOTALTIME=$(shell sed -n -e 's/Total time in zero-lag segments: \([0-9.]*\) s/\1/p' < lalapps_stringfinal.log)
 
 final :
-	lalapps_string_plot_likelihood --verbose dag/{noninjections,injections{0,1,2,3,4,5,6,7,8,9}}/*LIKELIHOOD*.xml.gz
-	lalapps_stringfinal --verbose --open-box --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
+	lalapps_string_plot_likelihood --verbose $(shell find dag -name *LIKELIHOOD*.xml.gz)
+	lalapps_stringfinal --verbose --open-box --tmp-space $(TMPDIR) --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
 
 contour :
 	lalapps_string_cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 50 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 50 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
 	lalapps_string_contour_plotter --live-time $(TOTALTIME) gamma.dat
 
 clean :
+	#rm -vf $(shell grep -h "log.*=.*usr1" dag/*sub | sed -e "s?.*[[:space:]]\([^[:space:]]*\)\$$?\1?" | sort -u)
 	rm -Rvf vetoes.xml.gz segments.xml.gz *_time_slides_*.xml.gz dag
