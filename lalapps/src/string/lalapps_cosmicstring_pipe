@@ -248,15 +248,16 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		# run, instead a separate list is constructed for each
 		# block of data to be analyzed.  we need to be careful that
 		# two nearby injection lists don't contain injections for
-		# the same time, so we protract the segments by 1/2 the
-		# time step and coalesce so that only gaps between segments
-		# larger than the time step result in separate files being
-		# generated
+		# the same time, so we protract the segments by the time
+		# step and coalesce so that only gaps between segments
+		# larger than twice the time step result in separate files
+		# being generated.  we could allow smaller gaps to survive,
+		# but this way we don't have to worry about it.
 
 		# injections_offset is a number between 0 and 1 in units of
 		# the period between injections
 
-		for seg in seglists.union(seglists).protract(power.binjjob.time_step / 2).coalesce().contract(power.binjjob.time_step / 2):
+		for seg in seglists.union(seglists).protract(power.binjjob.time_step).coalesce().contract(power.binjjob.time_step):
 			binjnodes |= power.make_binj_fragment(dag, seg, tag, offset = injections_offset)
 
 		# artificial parent-child relationship to induce dagman to
