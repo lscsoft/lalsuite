@@ -12,7 +12,7 @@ final :
 	lalapps_stringfinal --verbose --open-box --tmp-space $(TMPDIR) --cal-uncertainty 0.08 --injections-bin-size 8 --vetoes-name vetoes dag/injections*/*.sqlite dag/noninjections/*.sqlite >lalapps_stringfinal.log 2>&1
 
 contour :
-	lalapps_string_cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 50 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 50 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
+	lalapps_string_cs_gamma --frequency 75 --log-Gmustart -12 --log-Gmuend -4 --nGmu 150 --log-epsilonstart -12 --log-epsilonend 0 --nepsilon 150 --index 1.0 --log-pstart 0 --log-pend 1 --np 1 --efficiency-file string_efficiency.dat
 	lalapps_string_contour_plotter --live-time $(TOTALTIME) gamma.dat
 
 clean :
