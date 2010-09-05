@@ -85,7 +85,6 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define SCALE 1e20
 #define MAXTEMPLATES 50
 
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
@@ -687,8 +686,17 @@ static double compute_epsilon_minus_desired(double f_cut, void *params)
 
   compute_t2t2_and_t1t2(p->string_spectrum_power, p->Spec, p->integral, p->last_templates_f_cut, f_cut, &t2t2, &t1t2);
 
+  /* "epsilon" is the mismatch between two templates.  in this case we've
+   * computed it between a template with a cut-off frequency placed at
+   * f_cut a template with a cut-off frequency placed at
+   * last_templates_f_cut */
   epsilon = 1 - t1t2 / sqrt(t1t1 * t2t2);
 
+  /* the "desired epsilon" is the template bank mismatch provided on the
+   * command line, by writing a function that returns the difference
+   * between the measured epsilon and the value requested by the user we
+   * can use a root-solver to find the f_cut that gives the desired epsilon
+   * with repsect to the previous template */
   return epsilon - p->desired_epsilon;
 }
 
@@ -706,27 +714,30 @@ static double next_f_cut(double desired_epsilon, double string_spectrum_power, c
     .function = compute_epsilon_minus_desired,
     .params = &params
   };
-  gsl_root_fsolver *solver = gsl_root_fsolver_alloc(gsl_root_fsolver_bisection);
+  gsl_root_fsolver *solver;
+  /* we seek an f_cut bracketed by these values */
   double flo = last_templates_f_cut;
   double fhi = Spec->f0 + (Spec->data->length - 1) * Spec->deltaF;
 
-  /* there isn't enough mismatch to place another template between the
-   * previous one and fhi, so return fhi.  note that we must ensure that
-   * the last template has exactly this frequency to cause the template
+  /* if there isn't enough mismatch to place another template between the
+   * previous one and fhi, return fhi.  note that we must ensure that the
+   * last template has exactly this frequency to cause the template
    * construction loop to terminate */
   if(compute_epsilon_minus_desired(fhi, &params) <= 0)
     return fhi;
 
+  /* iterate the bisection algorithm until fhi and flo are less than 1
+   * frequency bin apart */
+  solver = gsl_root_fsolver_alloc(gsl_root_fsolver_bisection);
   gsl_root_fsolver_set(solver, &F, flo, fhi);
-
-  while(fhi - flo >= Spec->deltaF) {
+  do {
     gsl_root_fsolver_iterate(solver);
     flo = gsl_root_fsolver_x_lower(solver);
     fhi = gsl_root_fsolver_x_upper(solver);
-  }
-
+  } while(fhi - flo >= Spec->deltaF);
   gsl_root_fsolver_free(solver);
 
+  /* return the mid-point as f_cut */
   return (fhi + flo) / 2;
 }
 
@@ -768,7 +779,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
   /* find the next cutoffs given the maximal mismatch, until we hit the
    * highest frequency.  note that the algorithm will hit that frequency
    * bin by construction */
-  while(strtemplate[*NTemplates - 1].findex != (int) Spec->data->length - 1) {
+  while(strtemplate[*NTemplates - 1].findex < (int) Spec->data->length - 1) {
     f_cut = next_f_cut(CLA.fmismatchmax, CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, strtemplate[*NTemplates-1].norm);
 
     compute_t2t2_and_t1t2(CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, f_cut, &t2t2, &t1t2);
@@ -986,10 +997,6 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
 
     /* close */
     XLALFrClose(stream);
-
-    /* Scale data to avoid single float precision problems */
-    for (p=0; p<ht->data->length; p++)
-      ht->data->data[p] *= SCALE;
 
     /* FIXME:  ARGH!!!  frame files cannot be trusted to provide units for
      * their contents! */
