@@ -4,7 +4,7 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = lalapps_SemiCoherentBinary \
+bin_PROGRAMS = lalapps_SemiCoherentBinary lalapps_HJDtoGPSSSB \
 	lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
 	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	\
@@ -12,6 +12,8 @@ bin_PROGRAMS = lalapps_SemiCoherentBinary \
 	lalapps_ComputeUL
 
 lalapps_SemiCoherentBinary_SOURCES = SemiCoherentBinary.c
+
+lalapps_HJDtoGPSSSB_SOURCES = HJDtoGPSSSB.c
 
 lalapps_ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary_v2.c ReadWriteBinaryHeader_v1.c \
 	ComputeFStatisticBinary_v2.h clusters.c clusters.h ReadSourceFile_v1.c \
