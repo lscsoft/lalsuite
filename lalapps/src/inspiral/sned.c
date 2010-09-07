@@ -105,7 +105,6 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
-
 #define USAGE \
   "lalapps_sned [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
@@ -126,6 +125,12 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --snr-threshold SNR      for simulating full search, will print triggers with\n\
 SNRs greater than this to a Found xml file. Disables --output-file.\n"\
 "\n"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 static void destroyCoherentGW( CoherentGW *waveform );
 
@@ -186,7 +191,7 @@ int main( int argc, char *argv[] )
 
   ResampleTSParams              resampleParams;
 
-  REAL4                         statValue;
+  REAL4                         UNUSED statValue;
 
   /* vars required to make freq series */
   LIGOTimeGPS                   epoch = { 0, 0 };

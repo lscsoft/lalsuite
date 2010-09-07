@@ -58,6 +58,11 @@
 [--max-chirp-dist DIST	     Set the maximum chirp distance in H, L or V to DIST]\n\
 lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 RCSID("$Id");
 
@@ -147,7 +152,7 @@ int main(int argc, char *argv[])
   COMPLEX8FrequencySeries *transfer;
   COMPLEX8Vector *unity;
 
-  FrOutPar        VirgoOutPars;
+  FrOutPar        UNUSED VirgoOutPars;
   CHAR                VirgoParsSource[100];
   CHAR                VirgoParsInfo[100];
   REAL8                NetworkSNR=0.0;
@@ -158,10 +163,10 @@ int main(int argc, char *argv[])
   REAL8 mySNRsq,mySNR;
   REAL4FFTPlan *fwd_plan;
   REAL8 minSNR=0.0,maxSNR=0.0;
-  REAL8 maxRatio=1.0,minRatio=1.0;
+  REAL8 UNUSED maxRatio=1.0, UNUSED minRatio=1.0;
   REAL8 targetSNR=0.0;
   INT4 GPSstart=0,GPSend=2147483647;
-  int SNROK=1;
+  int UNUSED SNROK=1;
   int rewriteXML=0;
   FrameH *frame;
   /*vrbflg=6;
