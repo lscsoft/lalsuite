@@ -80,6 +80,11 @@ Optional OPTIONS:\n \
 [--version\t:\tPrint version information and exit]\n \
 [--help\t:\tPrint this message]\n"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 extern CHAR outfile[FILENAME_MAX];
 extern double etawindow;
@@ -404,7 +409,7 @@ int main( int argc, char *argv[])
 	INT4 stride=0;
 	REAL8 strideDur=0.0;
 	REAL8 evidence=0;
-	INT4 segnum=0;
+	INT4 UNUSED segnum=0;
 	RandomParams *randparam=NULL;
 	RandomParams *datarandparam=NULL;
 	REAL4 TSoffset;
@@ -977,13 +982,13 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	return;
 }
 
-void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
+/* FIXME: parameter iT is unused */
+void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 {
 	double etamin=0.01;
 	double mcmin,mcmax;
 	double deltaLong=0.001;
 	double deltaLat=0.001;
-	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	fprintf(stderr,"Using longitude = %f, latitude = %f\n",manual_RA,manual_dec);
@@ -1007,11 +1012,11 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void *iT)
 	return;
 }
 
-void NestInitManual(LALMCMCParameter *parameter, void *iT)
+/* FIXME: parameter iT is unused */
+void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 {
 	double etamin=0.03;
 	double mcmin,mcmax;
-	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
@@ -1035,11 +1040,11 @@ void NestInitManual(LALMCMCParameter *parameter, void *iT)
 	return;
 }
 
-void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT)
+/* FIXME: parameter iT is unused */
+void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 {
 	double etamin=0.03;
 	double mcmin,mcmax;
-	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
@@ -1072,11 +1077,11 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT)
 	return;
 }
 
-void NestInitManualIMRBChi(LALMCMCParameter *parameter, void *iT)
+/* FIXME: parameter iT is unused */
+void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 {
 	double etamin=0.03;
 	double mcmin,mcmax;
-	iT=NULL;
 	parameter->param=NULL;
 	parameter->dimension = 0;
 	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
@@ -1106,10 +1111,10 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void *iT)
     return;
 }
 
-void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
+/* FIXME: parameter iT is unused */
+void NestInitNINJAManual(LALMCMCParameter *parameter, void UNUSED *iT){
 	REAL8 trg_time,mcmin,mcmax;
 	REAL4 localetawin;
-	iT=NULL;
 	parameter->param = NULL;
 	parameter->dimension = 0;
 	trg_time = manual_end_time;
@@ -1143,8 +1148,8 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void *iT){
 void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	REAL8 trg_time;
 	SimInspiralTable *injTable = (SimInspiralTable *)iT;
-	REAL4 mtot,eta,mwindow,localetawin;
-	REAL8 mc,mcmin,mcmax,lmmin,lmmax;
+	REAL4 UNUSED mtot, UNUSED eta, UNUSED mwindow, localetawin;
+	REAL8 UNUSED mc, mcmin, mcmax, lmmin, lmmax;
 	parameter->param = NULL;
 	parameter->dimension = 0;
 	trg_time = (REAL8) injTable->geocent_end_time.gpsSeconds + (REAL8)injTable->geocent_end_time.gpsNanoSeconds *1.0e-9;
