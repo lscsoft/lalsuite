@@ -20,6 +20,12 @@ RCSID( "$Id$" );
 #define CVS_SOURCE   "$Source$"
 #define CVS_DATE     "$Date$"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
 static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
 static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
@@ -203,7 +209,7 @@ int main( int argc, char **argv )
   UINT8                   eventId = 0;
   UINT4                   numDetectors = 0;
   UINT4                   singleDetector = 0;
-  UINT4                   spinBank = 0;
+  UINT4                   UNUSED spinBank = 0;
   char                    spinFileName[256];
   char                    noSpinFileName[256];
   
@@ -1113,9 +1119,9 @@ static RingDataSegments *coh_PTF_get_segments(
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
     SimInspiralTable        *thisInject = NULL;
-    LIGOTimeGPS injTime;
+    LIGOTimeGPS UNUSED injTime;
     REAL8 deltaTime;
-    INT4 segNumber,segLoc,ninj;
+    INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
     ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
     while (injectList)
@@ -1309,7 +1315,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
 // This function generates the SNR for every point in time and, where
 // appropriate calculates the desired signal based vetoes.
 
-  UINT4 i,j,k,m,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
+  UINT4 i, j, k, m, vecLength, vecLengthTwo, UNUSED vecLengthSquare, UNUSED vecLengthTwoSquare;
   INT4 l;
   INT4 timeOffsetPoints[LAL_NUM_IFO];
   REAL4 deltaT = cohSNR->deltaT;
@@ -1354,7 +1360,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
 
-  FILE *outfile;
+  FILE UNUSED *outfile;
   outfile = NULL;
 /*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
