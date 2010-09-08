@@ -67,8 +67,10 @@ typedef struct {
   BOOLEAN help;		            /**< trigger output of help string */
   REAL8 HJD;                        /**< the heliocentric julian date */
   CHAR *HJDconv;                    /**< the timing convention of the input HJD time */
-  REAL8 ra;                         /**< the right ascension in radians */
-  REAL8 dec;                        /**< the declination in radians */
+  CHAR *ra;                         /**< the right ascension in hh:mm:ss.s format */
+  CHAR *dec;                        /**< the declination in dd:mm:ss.s format */
+  REAL8 ra_rads;                    /**< the right ascension in radians */
+  REAL8 dec_rads;                   /**< the declination in radians */
   CHAR *ephemdir;                   /**< the ephemeris directory */
   CHAR *ephemyear;                  /**< the ephemeris year */
   BOOLEAN version;	            /**< output version-info */
@@ -97,6 +99,7 @@ REAL8 *z = NULL;
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar,CHAR **clargs);
 static void TimeOfEmission(LALStatus *status,REAL8 *tr,REAL8 lE,void *tr0);
+REAL8 LALUTCMJDtoGPS(REAL8 MJDutc);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -118,6 +121,7 @@ int main( int argc, char *argv[] )  {
   DFindRootIn input;                            /* the input structure for the root finding procedure */
   REAL8 helio_gps;                              /* the gps version of the input HJD time */
   REAL8 te;                                     /* the GPS emission time at the earth */
+  REAL8 ra,dec;                                 /* the sky position angles in radians */
 
   lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
@@ -139,22 +143,32 @@ int main( int argc, char *argv[] )  {
   }
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
  
+  /* if coordinates input in hh:mm:ss.s format then convert to radians */
+  if (XLALUserVarWasSet(&(uvar.ra))) ra = LALDegsToRads(uvar.ra,"ra");
+  else ra = uvar.ra_rads;
+  if (XLALUserVarWasSet(&(uvar.dec))) dec = LALDegsToRads(uvar.dec,"dec");
+  else dec = uvar.dec_rads;
+ 
   /* define cartesian components of the sky position vector */
-  n[0] = cos(uvar.ra)*cos(uvar.dec);
-  n[1] = sin(uvar.ra)*cos(uvar.dec);
-  n[2] = sin(uvar.dec);
+  n[0] = cos(ra)*cos(dec);
+  n[1] = sin(ra)*cos(dec);
+  n[2] = sin(dec);
 
   /* convert MJD to TT GPS time */
-  if (strstr(uvar.HJDconv,"TT") == 0) {
+  if (strstr(uvar.HJDconv,"TT")) {
     helio_gps = LALTTMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TT) %6.12f\n",fn,uvar.HJD,helio_gps);
   }
-  else if (strstr(uvar.HJDconv,"TDB") == 0) {
+  else if (strstr(uvar.HJDconv,"TDB")) {
     helio_gps = LALTDBMJDtoGPS(uvar.HJD-2400000.5);
     LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(TDB) %6.12f\n",fn,uvar.HJD,helio_gps);
   }
+  else if (strstr(uvar.HJDconv,"UTC")) {
+    helio_gps = LALUTCMJDtoGPS(uvar.HJD-2400000.5);
+    LogPrintf(LOG_DEBUG,"%s : heliocentric MJD %6.12f -> GPS(UTC) %6.12f\n",fn,uvar.HJD,helio_gps);
+  }
   else {
-    LogPrintf(LOG_CRITICAL,"%s : Can only convert HJD times in TT or TDB at present.  Exiting.\n",fn);
+    LogPrintf(LOG_CRITICAL,"%s : Can only convert HJD times in TT, TDB and UTC at present.  Exiting.\n",fn);
     return 1;
   }
 
@@ -216,7 +230,7 @@ int main( int argc, char *argv[] )  {
   
   /* bisect domain to find eccentric anomoly E corresponding to the SSB time of the midpoint of this SFT */
   LALDBisectionFindRoot(&status,&te,&input,&helio_gps);
-  LogPrintf(LOG_DEBUG,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",fn,te);
+  LogPrintf(LOG_NORMAL,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",fn,te);
  
   /* free ephemeris info */
   XLALDestroyEphemerisData(ephemeris);
@@ -291,9 +305,11 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
   XLALregREALUserStruct(HJD,                    'H', UVAR_REQUIRED, "The time in Heliocentric Julian Days");
-  XLALregSTRINGUserStruct(HJDconv, 	        'c', UVAR_REQUIRED, "The timing convention for the HJD value (TT or TDB)");
-  XLALregREALUserStruct(ra,                     'r', UVAR_REQUIRED, "The source right ascension in radians");
-  XLALregREALUserStruct(dec,                    'd', UVAR_REQUIRED, "The source declination in radians");
+  XLALregSTRINGUserStruct(HJDconv, 	        'c', UVAR_REQUIRED, "The timing convention for the HJD value (TT, TDB or UTC)");
+  XLALregSTRINGUserStruct(ra, 	                'R', UVAR_OPTIONAL, "The source right ascension in hh:mm:ss.s format");
+  XLALregSTRINGUserStruct(dec, 	                'D', UVAR_OPTIONAL, "The source declination in dd:mm:ss.s format");
+  XLALregREALUserStruct(ra_rads,                'r', UVAR_OPTIONAL, "The source right ascension in radians");
+  XLALregREALUserStruct(dec_rads,               'd', UVAR_OPTIONAL, "The source declination in radians");
   XLALregSTRINGUserStruct(ephemdir, 	        'E', UVAR_REQUIRED, "The ephemeris directory");
   XLALregSTRINGUserStruct(ephemyear, 	        'y', UVAR_REQUIRED, "The ephemeris year string"); 
   XLALregBOOLUserStruct(version,                'V', UVAR_SPECIAL,  "Output code version");
@@ -318,6 +334,15 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   }
   XLALFree(version_string);
 
+  if ((!XLALUserVarWasSet(&(uvar->ra))) && (!XLALUserVarWasSet(&(uvar->ra_rads)))) {
+    LogPrintf(LOG_CRITICAL,"%s : user must specify at least ra or ra_rads !  Exiting.\n",fn,xlalErrno);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  if ((!XLALUserVarWasSet(&(uvar->dec))) && (!XLALUserVarWasSet(&(uvar->dec_rads)))) {
+    LogPrintf(LOG_CRITICAL,"%s : user must specify at least dec or dec_rads !  Exiting.\n",fn,xlalErrno);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+
   /* put clargs into string */
   *clargs = XLALCalloc(1,sizeof(CHAR));
   for (i=0;i<argc;i++) {
@@ -332,5 +357,22 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   
 }
 
+/** Compute the GPS time from an input UTC time in MJD format 
+ *
+ * This is a copy of an octapps code that Reinhard prix originally
+ * copied from a lalapps code that no longer exists.
+ *
+ */
+REAL8 LALUTCMJDtoGPS(REAL8 MJDutc     /**< [in] the UTC time in MJD format */
+		     )
+{
+ 
+  REAL8 REF_GPS_SECS = 793130413.0;
+  REAL8 REF_MJD = 53423.75;
+  
+  REAL8 GPS = (-REF_MJD + MJDutc) * 86400.0 + REF_GPS_SECS;
 
+  return GPS;
+  
+}
 
