@@ -119,7 +119,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare
+    REAL4TimeSeries         *chiSquare,
+    REAL8Array              *PTFM[LAL_NUM_IFO+1]
 );
 
 void cohPTFclusterTriggers(
@@ -759,7 +760,7 @@ int main( int argc, char **argv )
           j,i,time(NULL)-startTime);      
 
       // This function adds any loud events to the list of triggers 
-      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare);
+      eventId = cohPTFaddTriggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
       verbose("Generated triggers for segment %d, template %d at %ld \n",
           j,i,time(NULL)-startTime);
 //      cohPTFclusterTriggers(params,&eventList,&thisEvent);
@@ -2114,7 +2115,8 @@ UINT8 cohPTFaddTriggers(
     REAL4TimeSeries         *traceSNR,
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
-    REAL4TimeSeries         *chiSquare
+    REAL4TimeSeries         *chiSquare,
+    REAL8Array              *PTFM[LAL_NUM_IFO+1]
 )
 {
   // This function adds a trigger to the event list
@@ -2215,18 +2217,35 @@ UINT8 cohPTFaddTriggers(
         currEvent->g1quad.re = gammaBeta[0]->data->data[i];
         currEvent->g1quad.im = gammaBeta[1]->data->data[i];
         if (snrComps[LAL_IFO_G1])
+        {
           currEvent->chisq_g = snrComps[LAL_IFO_G1]->data->data[i];
+          currEvent->sigmasq_g = PTFM[LAL_IFO_G1]->data[0];
+        }
         if (snrComps[LAL_IFO_H1])
+        {
           currEvent->chisq_h1 = snrComps[LAL_IFO_H1]->data->data[i];
+          currEvent->sigmasq_h1 = PTFM[LAL_IFO_H1]->data[0];
+        }
         if (snrComps[LAL_IFO_H2])
+        {
           currEvent->chisq_h2 = snrComps[LAL_IFO_H2]->data->data[i];
+          currEvent->sigmasq_h2 = PTFM[LAL_IFO_H2]->data[0];
+        }
         if (snrComps[LAL_IFO_L1])
+        {
           currEvent->chisq_l = snrComps[LAL_IFO_L1]->data->data[i];
+          currEvent->sigmasq_l = PTFM[LAL_IFO_L1]->data[0];
+        }
         if (snrComps[LAL_IFO_T1])
+        {
           currEvent->chisq_t = snrComps[LAL_IFO_T1]->data->data[i];
+          currEvent->sigmasq_t = PTFM[LAL_IFO_T1]->data[0];
+        }
         if (snrComps[LAL_IFO_V1])
+        {
           currEvent->chisq_v = snrComps[LAL_IFO_V1]->data->data[i];
-
+          currEvent->sigmasq_v = PTFM[LAL_IFO_V1]->data[0];
+        }
         if (spinTrigger == 1)
         {
           if (singleDetector == 1)
