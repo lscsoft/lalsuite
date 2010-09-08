@@ -79,6 +79,12 @@ NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:0
 #define sanity_check( condition ) \
   ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* <lalVerbatim file="FindChirpPTFTemplateCP"> */
 void
 cohPTFTemplate (
@@ -468,7 +474,7 @@ cohPTFTemplateOverlaps(
   // This function calculates the real part of the overlap between two templates
 
   UINT4         i, j, k, kmin, kmax, len,vecLen;
-  REAL8         f_min, deltaF, fFinal,test1,test2;
+  REAL8         f_min, deltaF, fFinal, UNUSED test1, UNUSED test2;
   COMPLEX8     *PTFQtilde1   = NULL;
   COMPLEX8     *PTFQtilde2   = NULL;
 
@@ -613,7 +619,7 @@ void cohPTFBankFilters(
   // middle half of the time series with some buffer to allow for time shifts
 
   UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
-  REAL8          deltaF,deltaT,r, s, x, y, length;
+  REAL8          deltaF, UNUSED deltaT, r, s, x, y, UNUSED length;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
   COMPLEX8       *PTFQtilde   = NULL;  
@@ -751,7 +757,7 @@ void autoVetoOverlaps(
   // for the auto veto
 
   UINT4          i, j, k, kmin, len, kmax,vecLen,numPoints;
-  REAL8          f_min, deltaF,deltaT, fFinal, r, s, x, y;
+  REAL8          f_min, deltaF, UNUSED deltaT, fFinal, r, s, x, y;
   COMPLEX8       *qtilde;
   COMPLEX8Vector *qtildeVec,*qVec;
   COMPLEX8       *PTFQtilde   = NULL;

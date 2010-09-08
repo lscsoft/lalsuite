@@ -179,6 +179,11 @@ However, you need to point to a function that initializes the parameter structur
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 #define rint(x) floor((x)+0.5)
 
@@ -669,7 +674,7 @@ XLALMCMCSample(
   REAL4 alpha, my_random, s; 
   REAL4 logPrior, logLikelihood, logPosterior;
   UINT4 move, accept, c;
-  INT4 testPrior;
+  INT4 UNUSED testPrior;
 
   /* set the parameter */
   parameter=*paraPtr;
@@ -814,7 +819,7 @@ INT4 XLALMCMCDifferentialEvolution(
 {
 	static LALStatus status;
 	LALMCMCParameter **Live=inputMCMC->Live;
-	int i=0,j=0,dim=0,same=1;
+	int i=0, j=0, UNUSED dim=0, same=1;
 	REAL4 randnum;
 	int Nlive = (int)inputMCMC->Nlive;
 	LALMCMCParam *paraHead=NULL;

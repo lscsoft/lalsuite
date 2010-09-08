@@ -5,6 +5,12 @@
 #include <limits.h>
 #include <time.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 UINT4 read_sub_bank(
 struct coh_PTF_params   *params,
 InspiralTemplate        **PTFBankTemplates)
@@ -26,13 +32,14 @@ InspiralTemplate        **PTFBankTemplates)
   return numTemplates;
 }
 
+/* FIXME: parameter spinBank is unused */
 void initialise_sub_bank(
 struct coh_PTF_params   *params,
 InspiralTemplate        *PTFBankTemplates,
 FindChirpTemplate       *bankFcTmplts,
 UINT4                    subBankSize,
 UINT4                    numPoints,
-UINT4                    spinBank)
+UINT4                    UNUSED spinBank)
 {
   spinBank = 0;
   UINT4 i;
@@ -275,7 +282,7 @@ INT4            timeOffsetPoints[LAL_NUM_IFO]
 )
 {
 //  fprintf(stderr,"Entering bank veto calculator\n");
-  UINT4 ui,ifoNumber,halfNumPoints,bankVecLength,calTimeOffset;
+  UINT4 ui, ifoNumber, UNUSED halfNumPoints, UNUSED bankVecLength, calTimeOffset;
   REAL4 overlapCount,PTFMcomp;
   REAL4 bankVeto;
   COMPLEX8 Qoverlap,TjwithS,PTFMComplexcomp,alpha,bankVetoTemp,cSNR;
