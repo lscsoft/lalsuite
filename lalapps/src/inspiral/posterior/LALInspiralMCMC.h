@@ -341,8 +341,13 @@ tagLALMCMCInput
   UINT4 Nlive;
   LALMCMCParameter **Live;
 
+/* For plus and cross polarisations in PhenSpinRD */
+  REAL4Vector* Fwfp;
+  REAL4Vector* Fwfc;
+
 }  LALMCMCInput;
 /* </lalVerbatim>  */
+
 
 
 

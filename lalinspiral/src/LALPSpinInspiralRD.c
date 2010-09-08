@@ -429,18 +429,27 @@ void LALPSpinInspiralRDTemplates (
    ASSERT(params->totalMass > 0., status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
+   /*   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
-   CHECKSTATUSPTR(status);
- 
+   CHECKSTATUSPTR(status);*/
    LALInspiralInit(status->statusPtr, params, &paramsInit);
+   CHECKSTATUSPTR(status);
 
    memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
-   LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   //fprintf(stdout,"** PSIRDTemplate **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e  nbins=%d\n",params->mass1,params->mass2,params->inclination,params->startPhase,paramsInit.nbins);
+   //fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
 
+   LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
+   CHECKSTATUSPTR( status );
+
+   /*   REAL8 norm=0.;
+   for (UINT4 ccount=0;ccount<signalvec1->length;ccount++) norm+=pow(signalvec1->data[ccount],2)+pow(signalvec2->data[ccount],2);
+   fprintf(stdout," RDT:%11.3e",norm);*/
+
+   DETATCHSTATUSPTR(status);
    RETURN(status);
 }
 
@@ -514,8 +523,10 @@ void LALPSpinInspiralRDForInjection (
   /* Uncommenting the following line and a companion one in 
      LALPSpinInspiralRDEngine makes omegamatch controlled by fCutoff*/
   //params->fCutoff     = ppnParams->fStop;
-  //params->startPhase  = ppnParams->phi;
+  params->startPhase  = ppnParams->phi;
   //params->OmegaS      = ppnParams->psi;
+  //  fprintf(stdout,"** PSIRDInjection **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e\n",params->mass1,params->mass2,params->inclination,params->startPhase);
+  //fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
   LALPSpinInspiralRDEngine(status->statusPtr, NULL, NULL, hh, ff, phi, alpha,&count, params, &paramsInit);
 
   BEGINFAIL( status )
@@ -684,6 +695,9 @@ void LALPSpinInspiralRDFreqDom (
   memset(fsignalvec->data, 0, nbins * sizeof(REAL4));
 
   /* Call the engine function */
+  
+   fprintf(stdout,"** PSIRD_freqDOM **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e\n",params->mass1,params->mass2,params->inclination,params->startPhase);
+   fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
   LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
   CHECKSTATUSPTR( status );
 
@@ -872,6 +886,7 @@ void LALPSpinInspiralRDEngine (
   /* switch to keep track of matching of the linear frequency growth phase*/
   INT4 rett=0;
 
+
   INITSTATUS(status, "LALPSpinInspiralRDEngine", LALPSPININSPIRALRDENGINEC);
   ATTATCHSTATUSPTR(status);
 
@@ -883,17 +898,30 @@ void LALPSpinInspiralRDEngine (
   
   /* Compute some parameters*/
   
+  /*  if (signalvec1) fprintf(stdout,"E: nbins=%d L=%d\n",paramsInit->nbins,signalvec1->length);
+      if (hh) fprintf(stdout,"E: nbins=%d L=%d\n",paramsInit->nbins,hh->length);*/
+
   if (paramsInit->nbins==0)
     {
       DETATCHSTATUSPTR(status);
       RETURN (status);
     }
   ak   = paramsInit->ak;
-  
+
   mparams = &PSIRDparameters;
 
   /* set units*/
+  if (params->massChoice==totalMassAndEta) {
+    params->mass1=params->totalMass*(1.+sqrt(1.-4*params->eta))/2.;
+    params->mass2=params->totalMass*(1.-sqrt(1.-4*params->eta))/2.;
+  } 
+  else {
+    params->totalMass=params->mass1+params->mass2;
+    params->eta=params->mass1*params->mass2/params->totalMass/params->totalMass;
+  }
+
   m = params->totalMass * LAL_MTSUN_SI;
+  params->mu=params->mass1*params->mass2/params->totalMass; 
   unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8)LAL_PI;
   /*    tSampling is in Hz, so dt is in seconds*/
   dt = 1.0/params->tSampling;
@@ -1306,8 +1334,11 @@ void LALPSpinInspiralRDEngine (
 
   UINT4 write=0;
 
-  REAL8 amp22ini= -2.0 * params->mu * LAL_MRSUN_SI * sqrt( 16.*LAL_PI/5.);
-  if (params->distance > 0.) amp22ini /= params->distance;
+  REAL8 amp22ini;
+  if (params->distance > 0.) amp22ini= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
+  else amp22ini  = 2.0 * sqrt( LAL_PI / 5.0) * params->signalAmplitude;
+
+  //  fprintf(stdout,"** PSIRD Engine **: amp22=%11.3e  d=%11.3e  A=%11.3e  mu=%11.3e  m1=%11.3e  m2=%11.3e\n",amp22ini,params->distance,params->signalAmplitude,params->mu,params->mass1,params->mass2);
 
   do {
 
@@ -1848,6 +1879,10 @@ void LALPSpinInspiralRDEngine (
      sig1->data[i]+= (x1 * y_1) + (x2 * y_2);
      sig2->data[i]+= (x1 * z1)  + (x2 * z2);
    }
+
+   /*   REAL8 pippo=0.;
+   for (i=0;i<length;i++) pippo+=pow(sig1->data[i],2)+pow(sig2->data[i],2);
+   fprintf(stdout,"E:%11.3e",pippo);*/
 
 
    /*------------------------------------------------------
