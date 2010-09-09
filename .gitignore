@@ -11,3 +11,9 @@ configure
 lalsuite-*.tar.gz
 lalsuite.spec
 libtool
+*configDevelop*
+*configProduct*
+temp
+.cproject
+.project
+Debug

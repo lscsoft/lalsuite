@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
 	injParams.spin2x = atof(argv[6]);
 	injParams.spin2y = atof(argv[7]);
 	injParams.spin2z = atof(argv[8]);
-	injParams.qmParameter[0] = 1.;//atof(argv[9]);
-	injParams.qmParameter[1] = 1.;//atof(argv[10]);
+	injParams.qmParameter1 = 1.;//atof(argv[9]);
+	injParams.qmParameter2 = 1.;//atof(argv[10]);
 	injParams.inclination = atof(argv[9]);
 	injParams.f_lower = atof(argv[10]);
 	injParams.f_final = atof(argv[11]);

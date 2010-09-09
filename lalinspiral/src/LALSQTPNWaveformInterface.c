@@ -292,5 +292,17 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	wave->spinInteraction = params->spinInteraction;
 	if (wave->spinInteraction != 0)
 		wave->spinInteraction |= LAL_SOInter;
+	/*printf("masses: %lg %lg\n", wave->mass[0], wave->mass[1]);
+	printf("chis1: %lg %lg %lg\n", wave->chi[0][0], wave->chi[0][1], wave->chi[0][2]);
+	printf("chis2: %lg %lg %lg\n", wave->chi[1][0], wave->chi[1][1], wave->chi[1][2]);
+	printf("qmParams: %lg %lg\n", wave->qmParameter[0], wave->qmParameter[1]);
+	printf("dist: %lg\n", wave->distance);
+	printf("incl: %lg\n", wave->inclination);
+	printf("Freq: %lg\n", wave->lowerFreq);
+	printf("sF: %lg\n", wave->samplingFreq);
+	printf("sT: %lg\n", wave->samplingTime);
+	printf("amp: %lg\n", wave->signalAmp);
+	printf("order: %d\n", wave->order);
+	printf("spin: %d\n", wave->spinInteraction);*/
 }
 
