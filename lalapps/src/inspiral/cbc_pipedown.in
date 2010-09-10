@@ -235,7 +235,7 @@ minifup_cm_job = inspiral.MiniFollowupsJob(cp)
 # the number of and options given to plotfm job is optional and is set by the ini file
 # to handle this, we do a similar thing as is done in ihope with inspinj: the 'plot_found/missed'
 # section in the ini file gives the names of sections to read for plotfm jobs; these sections are cycled over
-# and temprarily re-named to 'plotfm' then passed to the PlotFMJob class to create the job
+# and temporarily re-named to 'plotfm' then passed to the PlotFMJob class to create the job
 plotfm_jobs = []
 if cp.has_section('plotfm'):
   for plotfm_tag in cp.options('plotfm'):
@@ -253,9 +253,10 @@ dbsimplify_job = inspiral.DBSimplifyJob(cp)
 dbaddinj_job = inspiral.DBAddInjJob(cp)
 inspinjfind_job = inspiral.InspInjFindJob(cp)
 comp_durs_job = inspiral.ComputeDurationsJob(cp)
+repop_coinc_job = inspiral.RepopCoincJob(cp)
 cluster_job = inspiral.ClusterCoincsJob(cp)
 ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
-ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
+accfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
 printlc_job = inspiral.LigolwCBCPrintJob(cp, 'printlc', ['cbc_print', 'printlc'])
 plotifar_job = inspiral.PlotIfarJob(cp)
 search_volume_job = inspiral.SearchVolumeJob(cp)
@@ -278,6 +279,7 @@ dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', 'sub' ]) )
 dbaddinj_job.set_sub_file( '.'.join([ basename, 'dbaddinj', 'sub' ]) )
 inspinjfind_job.set_sub_file( '.'.join([ basename, 'inspinjfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
+repop_coinc_job.set_sub_file( '.'.join([ basename, 'repop_coinc', 'sub' ]) )
 cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
 mvsc_get_doubles_job.set_sub_file( '.'.join([ basename, 'mvsc_get_doubles', 'sub' ]) )
 mvsc_train_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_train_forest', 'sub' ]) )
@@ -492,8 +494,25 @@ for tag in user_tags:
   dbsimplify_node.add_parent( t2c2sql_node )
   
   dag.add_node( dbsimplify_node )
- 
+
   ############################################################################
+  # Step 3.5: Make the detection statistic nicer as Kipp and Duncan want it
+ 
+  print "\tsetting up repop_coinc node to recalculate detection statistic..."
+
+  # set node options
+  repop_coinc_node = inspiral.RepopCoincNode( repop_coinc_job )
+  repop_coinc_node.set_category('repop_coinc')
+  repop_coinc_node.set_tmp_space( tmp_space )
+  repop_coinc_node.set_input( raw_result_db )
+  repop_coinc_node.set_output( raw_result_db )
+
+  # set parent node
+  repop_coinc_node.add_parent( dbsimplify_node )
+
+  dag.add_node( repop_coinc_node )
+
+  #############################################################################
   # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
   print "\tsetting up cluster node to cluster coincs in the database..."
@@ -512,7 +531,7 @@ for tag in user_tags:
   cluster_node.set_output(result_db)
   
   # set parent node
-  cluster_node.add_parent( dbsimplify_node )
+  cluster_node.add_parent( repop_coinc_node )
   
   dag.add_node( cluster_node )
 
