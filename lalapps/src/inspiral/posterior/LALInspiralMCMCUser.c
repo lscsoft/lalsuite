@@ -904,7 +904,7 @@ in the frequency domain */
 
     Nmodel = (inputMCMC->stilde[0]->data->length-1)*2; /* *2 for real/imag packing format */
 
-    if(template.approximant==PhenSpinTaylorRD){
+    if((template.approximant==PhenSpinTaylorRD)||(template.approximant==PhenSpinTaylorRDF)){
       
       /* Create the likelihood Plan: PhenSpin is T-domain so we do this here to avoid making the plan multiple times */
       
@@ -916,7 +916,9 @@ in the frequency domain */
 	inputMCMC->likelihoodPlan = XLALCreateForwardREAL4FFTPlan((UINT4) NtimeModel,FFTW_ESTIMATE); 
 	fprintf(stdout,"Plan creato da F_Test %d\n",Nmodel);
       }
-      PhenSpinTaylorRD_template(&status,&template,parameter,inputMCMC); 
+
+      if (template.approximant==PhenSpinTaylorRD) PhenSpinTaylorRD_template(&status,&template,parameter,inputMCMC); 
+      else PhenSpinTaylorRDF_template(&status,&template,parameter,inputMCMC); 
       
       memset(&ak,0,sizeof(expnCoeffs));
       memset(&TofVparams,0,sizeof(TofVparams));
@@ -1796,7 +1798,6 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 
 void PhenSpinTaylorRDF_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC){
  
-  fprintf(stdout,"Ora setto a zero tutti gli elementi di Fwfp e Fwfc\n");
   memset(inputMCMC->Fwfp->data,0,inputMCMC->numPoints*sizeof(REAL4));
   memset(inputMCMC->Fwfc->data,0,inputMCMC->numPoints*sizeof(REAL4));
 
@@ -1829,10 +1830,23 @@ void PhenSpinTaylorRDF_template(LALStatus *status,InspiralTemplate *template, LA
   double distanceSI = LAL_PC_SI*1e6*distanceMPC;
   template->distance = distanceSI/inputMCMC->deltaF;
 
+  double norm=inputMCMC->deltaF/sqrt(inputMCMC->numPoints);
+  int pippo=0;
+
   LALPSpinInspiralRDFreqDom(status, inputMCMC->Fwfp, template);
-  
+  for (pippo=0;pippo<inputMCMC->numPoints;pippo++) {
+    inputMCMC->Fwfp->data[pippo]*=norm;
+    //    norm+=2.*pow(inputMCMC->Fwfp->data[pippo],2.);
+  }
+  //  fprintf(stdout,"RDFp norm=%11.3e\n",norm);
+
   template->startPhase+=LAL_PI/4.;
   LALPSpinInspiralRDFreqDom(status, inputMCMC->Fwfc, template);
+  for (pippo=0;pippo<inputMCMC->numPoints;pippo++) {
+    inputMCMC->Fwfc->data[pippo]*=norm;
+    //norm+=2.*pow(inputMCMC->Fwfc->data[pippo],2.);
+  }
+  //fprintf(stdout,"RDFc norm=%11.3e\n",norm);
 
   template->distance = distanceMPC;
 
@@ -1885,7 +1899,7 @@ void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LAL
   template->distance = distanceMPC;
 
   TDomain=fopen("TdomainWavenew.dat", "w");/*output of time-domain waveform (remove when code is ready)*/
-  //REAL8 norm=0.;
+  //  REAL8 norm=0.;
   for(idx=0;idx<TmodelPlus->length;idx++){
     fprintf(TDomain, "%i %10.10e %10.10e\n", idx, TmodelPlus->data[idx],TmodelCross->data[idx]);
     //norm+= pow(TmodelPlus->data[idx],2.)+pow(TmodelCross->data[idx],2.);
@@ -1912,15 +1926,15 @@ void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LAL
   FDomain=fopen("FdomainWavenew.dat", "w");/*output of freq-domain waveform (remove when code is ready)*/ 
   //norm=0.;
   fprintf(FDomain, "0. %10.6e  0.  %10.6e  0.\n",inputMCMC->Fwfp->data[0],inputMCMC->Fwfc->data[0]);
-  //norm+=pow(inputMCMC->Fwfp->data[0],2.)+pow(inputMCMC->Fwfc->data[0],2.);
+  //norm+=pow(inputMCMC->Fwfp->data[0],2.);//+pow(inputMCMC->Fwfc->data[0],2.);
   for(idx=1;idx<Nmodel/2;idx++){
-    fprintf(FDomain, "%10.3f  %10.6e %10.6e  %10.6e  %10.6e\n", idx, inputMCMC->Fwfp->data[idx],inputMCMC->Fwfp->data[Nmodel-idx],inputMCMC->Fwfc->data[idx],inputMCMC->Fwfc->data[Nmodel-idx]);
-    //norm+=2.*(pow(inputMCMC->Fwfp->data[Nmodel-idx],2)+pow(inputMCMC->Fwfp->data[idx],2)+pow(inputMCMC->Fwfc->data[Nmodel-idx],2)+pow(inputMCMC->Fwfc->data[idx],2)); 
+    fprintf(FDomain, "%d  %10.6e %10.6e  %10.6e  %10.6e\n", idx, inputMCMC->Fwfp->data[idx],inputMCMC->Fwfp->data[Nmodel-idx],inputMCMC->Fwfc->data[idx],inputMCMC->Fwfc->data[Nmodel-idx]);
+    //norm+=2.*(pow(inputMCMC->Fwfp->data[Nmodel-idx],2)+pow(inputMCMC->Fwfp->data[idx],2));//+pow(inputMCMC->Fwfc->data[Nmodel-idx],2)+pow(inputMCMC->Fwfc->data[idx],2)); 
   }
-  fprintf(FDomain, "%10.3f %10.6e  0.  %10.6e  0.\n", Nmodel/2,inputMCMC->Fwfp->data[Nmodel/2],inputMCMC->Fwfc->data[Nmodel/2]);
+  fprintf(FDomain, "%d %10.6e  0.  %10.6e  0.\n", Nmodel/2,inputMCMC->Fwfp->data[Nmodel/2],inputMCMC->Fwfc->data[Nmodel/2]);
   //  norm+=pow(inputMCMC->Fwfp->data[Nmodel/2],2.)+pow(inputMCMC->Fwfc->data[Nmodel/2],2.);
   fclose(FDomain);
-  //  fprintf(stdout," F:%11.3e\n",norm);
+  //fprintf(stdout," F:%11.3e\n",norm);
 
    XLALDestroyREAL4Vector(TmodelPlus);
    XLALDestroyREAL4Vector(TmodelCross);

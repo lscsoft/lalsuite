@@ -656,7 +656,7 @@ void LALPSpinInspiralRDFreqDom (
 
   INITSTATUS(status, "LALPSpinInspiralRDFReqDom", LALPSPININSPIRALRDC);
   ATTATCHSTATUSPTR(status);
-  
+
   ASSERT(signalvec,  status,
 	 LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(signalvec->data,  status,
@@ -696,8 +696,8 @@ void LALPSpinInspiralRDFreqDom (
 
   /* Call the engine function */
   
-   fprintf(stdout,"** PSIRD_freqDOM **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e\n",params->mass1,params->mass2,params->inclination,params->startPhase);
-   fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
+  //   fprintf(stdout,"** PSIRD_freqDOM **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e\n",params->mass1,params->mass2,params->inclination,params->startPhase);
+  //fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
   LALPSpinInspiralRDEngine(status->statusPtr, tsignalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
   CHECKSTATUSPTR( status );
 
@@ -705,11 +705,12 @@ void LALPSpinInspiralRDFreqDom (
   for (i=0;i<iperiod;i++)
     tsignalvec->data[i]*=exp(7.*(((REAL4)(i))/((REAL4)(iperiod))-1.));
 
-  //  norm=0.;
-  //for (i=0;i<tsignalvec->length;i++) {
-  //  norm+=tsignalvec->data[i]*tsignalvec->data[i];
-  //}
-  //fprintf(stdout,"Dopo smoothing norm=%11.3e\n",norm);
+  REAL8 norm;
+  norm=0.;
+  for (i=0;i<tsignalvec->length;i++) {
+    norm+=tsignalvec->data[i]*tsignalvec->data[i];
+  }
+  //  fprintf(stdout,"RDF:Dopo smoothing norm=%11.3e\n",norm);
 
   forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
   if (forwPlan == NULL) ABORTXLAL(status);
@@ -723,7 +724,7 @@ void LALPSpinInspiralRDFreqDom (
 
   mod=0.;
   ph=0.;
-  //  norm=0.;
+  norm=0.;
   j=1;
   for (i=1;i<nbins/2;i++) {
     mod+=sqrt(fsignalvec->data[2*i]*fsignalvec->data[2*i]+fsignalvec->data[2*i+1]*fsignalvec->data[2*i+1]);
@@ -733,7 +734,7 @@ void LALPSpinInspiralRDFreqDom (
       ph/=(REAL4)(sub);
       signalvec->data[2*j]=mod*cos(ph);
       signalvec->data[2*j+1]=mod*sin(ph);
-      //  norm+=2.*mod*mod;
+      norm+=2.*mod*mod;
       mod=0.;
       ph=0.;
       j++;
@@ -746,7 +747,7 @@ void LALPSpinInspiralRDFreqDom (
     fprintf(stdout,"Qui non dovrei entrarci mai\n");
     signalvec->data[1]=fsignalvec->data[1];
   }
-  //norm+=signalvec->data[0]*signalvec->data[0]+signalvec->data[1]*signalvec->data[1];
+  norm+=signalvec->data[0]*signalvec->data[0]+signalvec->data[1]*signalvec->data[1];
   //  fprintf(stdout,"FFTnorm=%11.3e\n",norm/signalvec->length);
 
   XLALDestroyREAL4Vector(fsignalvec);
