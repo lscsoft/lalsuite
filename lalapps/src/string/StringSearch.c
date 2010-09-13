@@ -1048,41 +1048,30 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
 
 int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *fcutoff_fix){
 
-  FILE *TemplateFile;
-  char line[1024];
-  float fcutoff;
+  SnglBurst *templates=NULL, *templates_root=NULL;
   int i;
   
   /* Initialize */
   *NTemplates_fix=0;
   
-  /* Open the template file */
-  TemplateFile = fopen (CLA.TemplateFile,"r");
+  /* Get templates from burst table */
+  templates_root = XLALSnglBurstTableFromLIGOLw(CLA.TemplateFile);
   
-  /* Check the file exists */
-  if (!TemplateFile){
-    XLALPrintError("No template file: %s\n",CLA.TemplateFile);
-    return 1;
-  }
-  
-  /* Read the file line by line */
-  while(fgets(line,sizeof(line),TemplateFile)){
-    sscanf (line,"%f",&fcutoff);
-    fcutoff_fix[*NTemplates_fix]=fcutoff;
+  for(templates = templates_root; templates != NULL; templates = templates->next){ 
+    fcutoff_fix[*NTemplates_fix]=templates->central_freq + (templates->bandwidth)/2;
     *NTemplates_fix=*NTemplates_fix+1;
     if(*NTemplates_fix==MAXTEMPLATES){
       XLALPrintError("Too many templates (> %d)\n",MAXTEMPLATES);
       return 1;
     }
   }
-  fclose(TemplateFile);
-
+  
   /* Check that the bank has at least one template */
   if(*NTemplates_fix<=0){
     XLALPrintError("Empty template bank\n");
     return 1;
   }
-
+  
   /* Check that the frequencies are well ordered */
   for(i=0; i<*NTemplates_fix-1; i++){
     if(fcutoff_fix[i]>fcutoff_fix[i+1]){
@@ -1090,7 +1079,7 @@ int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *
       return 1;
     }
   }
-
+  
   /* check that  the highest frequency is below the Nyquist frequency */
   if(fcutoff_fix[*NTemplates_fix-1]>CLA.samplerate/2){
     XLALPrintError("The templates frequencies go beyond the Nyquist frequency\n");
