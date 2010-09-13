@@ -26,6 +26,8 @@
 * Function to calculate the noise power spectral density of the projected
 * ET-B detector.
 *
+* Fit taken from a Matlab script by T. Dent which can be found at:
+* https://workarea.et-gw.eu/et/WG4-Astrophysics/base-sensitivity/
 */
 
 #include <lal/LALNoiseModels.h>
