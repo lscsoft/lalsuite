@@ -41,6 +41,7 @@
 #include <gsl/gsl_randist.h>       /* for random number generation */ 
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_statistics.h>
+#include <gsl/gsl_sf_log.h>        /* for log computation */
 #include <lal/TimeSeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Units.h>
@@ -61,7 +62,9 @@
 #define WINGS_FACTOR 1.05             /* the safety factor in reading extra frequency from SFTs */
 #define PCU_AREA 0.13                 /* the collecting area of a single PCU in square metres */
 #define DEFAULT_SOURCE "SCOX1"        /* the default source name */
-#define AMPVECLENGTH 50               /* the fixed number of amplitude values to sample */
+#define AMPVECLENGTH 25               /* the fixed number of amplitude values to sample */
+#define NLOGLUT 64                    /* the number of elements in the log LUT */
+#define NBESSELLUT 256                 /* the number of elements in the bessel function LUT */
 
 /***********************************************************************************************/
 /* some useful macros */
@@ -111,6 +114,7 @@ typedef struct {
 typedef struct { 
   REAL8 min;                        /**< the starting points of the grid */
   REAL8 delta;                      /**< the grid spacings */
+  REAL8 oneoverdelta;               /**< the inverse of the spacing */
   UINT4 length;                     /**< the number of templates in each dimension */
   CHAR name[LALNameLength];         /**< string containing the name of the dimension */
 } Grid;
@@ -188,7 +192,10 @@ typedef struct {
   LikelihoodParams *data;           /**< a vector of likelihood parameter structures */
   UINT4 length;                     /**< the length of the vector */
   REAL8Vector *logLratio_phase;     /**< a temporary storage for the fixed amplitude logL ratio for each alpha value */
-  REAL8Vector *logLratio_phase_temp;   /**< a temporary storage for the fixed amplitude logL ratio for each alpha value */
+  gsl_interp_accel *log_acc;        /**< gsl interpolation structure for log LUT */
+  gsl_spline *log_spline;           /**< gsl interpolation structure for log LUT */
+  gsl_interp_accel *logbesselI0_acc;   /**< gsl interpolation structure for bessel LUT */
+  gsl_spline *logbesselI0_spline;      /**< gsl interpolation structure for bessel LUT */
 } LikelihoodParamsVector;
 
 /** Stores the results of a Bayesian posterior integration (Bayes factor, evidence, posteriors, etc...)
@@ -197,10 +204,12 @@ typedef struct {
   REAL8 logBayesFactor_phaseamp;                /**< the log Bayes factor for phase and amplitude marginalised per segment */
   REAL8 logBayesFactor_phase;                   /**< the log Bayes factor for phase marginalised per segment */
   REAL8Vector *logBayesFactor_phaseamp_vector;  /**< the log Bayes factor for each segment individually */
-  REAL8Vector *logBayesFactor_phase_vector;     /**< the log Bayes factor for fixed amplitude for each segment individually */
+ /*  REAL8Vector *logBayesFactor_phase_vector;     /\**< the log Bayes factor for fixed amplitude for each segment individually *\/ */
   REAL8Vector **logposteriors_phaseamp;         /**< the output log posteriors for phase and amplitude marginalised per segment */
   REAL8Vector **logposteriors_phase;            /**< the output log posteriors for phase marginalised per segment */
+  REAL8Vector *logposterior_amp;                /**< the log posterior for the fixed amplitude parameter */
   GridParameters *gridparams;                   /**< the grid used for the marginalisation */
+  Grid *ampgrid;                                /**< the grid used for amplitude marginalisation */
   UINT4 ndim;                                   /**< the dimensionality of the space */
   LIGOTimeGPS *epoch;                           /**< the epochs of each segment */
   UINT4 nsegments;                              /**< the number of segments used */
@@ -290,9 +299,11 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,REAL4DemodulatedPowerVector 
 int XLALGetNextBinaryTemplate(Template **temp,GridParameters *gridparams);
 int XLALComputeBinaryFreqDerivitives(Template *fdots,Template *bintemp,REAL8 tmid);
 REAL8 XLALComputePhaseAmpMargLogLRatio(REAL8 X,LikelihoodParams *Lparams);
+REAL8 XLALComputePhaseAmpMargLogLRatioLUT(REAL8 X,LikelihoodParams *Lparams,gsl_interp_accel *logbesselI0_acc,gsl_spline *logbesselI0_spline);
 int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,BayesianProducts **Bayes,REAL4DemodulatedPowerVector *power,GridParameters *binarygrid,Grid *ampgrid,REAL8 sigalpha);
 REAL8 XLALLogBesselI0(REAL8 z);
 REAL8 XLALLogSumExp(REAL8 logx,REAL8 logy);
+REAL8 XLALLogSumExpLUT(REAL8 logx,REAL8 logy,gsl_interp_accel *log_acc,gsl_spline *log_spline);    
 int XLALFreeParameterSpace(ParameterSpace *pspace);
 int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power);
 int XLALFreeBayesianProducts(BayesianProducts *Bayes);
@@ -300,6 +311,7 @@ int XLALOutputBayesResults(CHAR *outputdir,BayesianProducts *Bayes,ParameterSpac
 int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,ParameterSpace *pspace,REAL8 inject_amplitude,INT4 seed);
 int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
 int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio,REAL8 X,LikelihoodParams *Lparams);
+int XLALComputePhaseMargLogLRatioLUT(REAL8Vector *logLratio,REAL8 X,LikelihoodParams *Lparams,gsl_interp_accel *logbesselI0_acc,gsl_spline *logbesselI0_spline);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -344,7 +356,7 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
- 
+
   /**********************************************************************************/
   /* DEFINE THE BINARY PARAMETER SPACE */
   /**********************************************************************************/
@@ -799,7 +811,7 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
   /* define amplitude space */
   snprintf((*ampspace)->name,LALNameLength,"alpha");
   (*ampspace)->min = 0.0;
-  (*ampspace)->max = 3.0*ampsigma;
+  (*ampspace)->max = 2.0*ampsigma;
   (*ampspace)->mid = 0.0;
   (*ampspace)->sig = ampsigma;
   (*ampspace)->span = (*ampspace)->max;
@@ -812,7 +824,8 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
   }
 
   /* define amplitude grid params */
-  (*ampgrid)->delta = (*ampspace)->max/(REAL8)(AMPVECLENGTH - 1);					 
+  (*ampgrid)->delta = (*ampspace)->max/(REAL8)(AMPVECLENGTH - 1);
+  (*ampgrid)->oneoverdelta = 1.0/(*ampgrid)->delta;
   (*ampgrid)->length = AMPVECLENGTH;
   (*ampgrid)->min = (*ampspace)->min;
   strncpy((*ampgrid)->name,(*ampspace)->name,LALNameLength*sizeof(CHAR));
@@ -831,17 +844,18 @@ int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,        /**< [out] the 
   {
     REAL8 x0 = (*ampspace)->mid;
     REAL8 sig = (*ampspace)->sig;
+    REAL8 norm = (-0.5)*log(LAL_PI) + 0.5*LAL_LN2 - log(sig);
     LogPrintf(LOG_DEBUG,"%s : computing Gaussian priors for parameter %s\n",fn,(*ampspace)->name);
     
     /* compute prior - with amplitude prior centered on zero we double the Gaussian profile */
     for (j=0;j<(*ampgrid)->length;j++) {
       REAL8 x = (*ampgrid)->min + j*(*ampgrid)->delta;
-      REAL8 norm = (-0.5)*log(LAL_PI) + 0.5*log(2.0) - log(sig);
       (*amppriors)->logpriors->data[j] = norm - 0.5*pow((x-x0)/sig,2.0);
     }
     (*amppriors)->logdelta = log((*ampgrid)->delta);
+    (*amppriors)->gaussian = (*ampspace)->gaussian;
   }
-  
+
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
 
@@ -1644,7 +1658,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
      REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;
      
-     (*gridparams)->grid[n].delta = deltafn;					 
+     (*gridparams)->grid[n].delta = deltafn;
+     (*gridparams)->grid[n].oneoverdelta = 1.0/deltafn;
      (*gridparams)->grid[n].length = length;
      (*gridparams)->grid[n].min = minfn;
      snprintf((*gridparams)->grid[n].name,LALNameLength,"f%d",n);
@@ -1790,10 +1805,11 @@ int XLALComputeDemodulatedPower(REAL4DemodulatedPower **power,     /**< [out] th
 
   /* compute timeseries parameters given the requested frequency resolution */
   {
-    REAL8 Teff = 1.0/gridparams->grid[0].delta;
+    REAL8 Teff = gridparams->grid[0].oneoverdelta;
     UINT4 N = floor(0.5 + Teff/dsdata->deltaT);
     Teff = (REAL8)N*dsdata->deltaT;
     gridparams->grid[0].delta = 1.0/Teff;
+    gridparams->grid[0].oneoverdelta = Teff;
     norm = pow(1.0/(REAL8)dsdata->data->length,2.0);
    /*  LogPrintf(LOG_DEBUG,"%s : length of FFT input = %d\n",fnc,N); */
 /*     LogPrintf(LOG_DEBUG,"%s : computed effective length for inverse FFT as %f sec.\n",fnc,Teff); */
@@ -2105,7 +2121,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
     }
     
-    (*binarygridparams)->grid[n].delta = deltax;					 
+    (*binarygridparams)->grid[n].delta = deltax;
+    (*binarygridparams)->grid[n].oneoverdelta = 1.0/deltax;
     (*binarygridparams)->grid[n].length = length;
     (*binarygridparams)->grid[n].min = xmin;
     strncpy((*binarygridparams)->grid[n].name,space->data[n].name,LALNameLength*sizeof(CHAR));
@@ -2150,7 +2167,12 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
   REAL8 logBayesfactor_phase = -1e200;                /* the final BayesFactor result for the fixed amplitude signal model */
   REAL8PriorsVector *priors = pspace->priors;         /* shortcut pointer to priors */
   UINT4 percent = 0;                                  /* counter for status update */
-
+  REAL8 thisdelta = 0.0;                              /* initialise the prior spacing contribution for this binary template */
+  gsl_interp_accel *bess_acc = NULL;                  /* gsl interpolation structure for bessel LUT */
+  gsl_spline *bess_spline = NULL;                     /* gsl interpolation structure for bessel LUT */
+  gsl_interp_accel *log_acc = NULL;                  /* gsl interpolation structure for log LUT */
+  gsl_spline *log_spline = NULL;                     /* gsl interpolation structure for log LUT */
+ 
   /* validate input parameters */
   if ((*Bayes) != NULL) {
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, output BayesianProducts structure != NULL.\n",fn);
@@ -2174,6 +2196,10 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
     LogPrintf(LOG_CRITICAL,"%s : XLALSetupLikelihood() failed with error = %d\n",fn,xlalErrno);
     XLAL_ERROR(fn,XLAL_EFAULT);
   }
+  bess_acc = Lparamsvec->logbesselI0_acc;
+  bess_spline = Lparamsvec->logbesselI0_spline;
+  log_acc = Lparamsvec->log_acc;
+  log_spline = Lparamsvec->log_spline;
 
   /* allocate memory for the fdots */
   if ((fdots.x = XLALCalloc(power->segment[0]->gridparams->ndim,sizeof(REAL8))) == NULL) {
@@ -2182,37 +2208,43 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
   }
   fdots.ndim = power->segment[0]->gridparams->ndim;
 
-  /* single loop over all templates */
+  /* compute binary priors grid spacing contribution for all binary templates */
+  for (j=0;j<pspace->gridparams->ndim;j++) {
+    thisdelta += priors->data[j].logdelta;
+  }
+
+  /* single loop over binary templates */
   while (XLALGetNextBinaryTemplate(&bintemp,pspace->gridparams)) {
 
+    REAL8 thisprior = 0.0;                          /* initialise the prior for this binary template */
     REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
-    REAL8 logLratiosum_phase = 0.0;                 /* initialise likelihood ratio for the fixed amplitude signal model */
-    memset(Lparamsvec->logLratio_phase->data,0,Lparamsvec->logLratio_phase->length*sizeof(REAL8));     /* initialise the temporary logLratio vector */
+    REAL8 logLratiosum_phase = -1e200;              /* initialise likelihood ratio for the fixed amplitude signal model */
 
-    /* LogPrintf(LOG_DEBUG,"%s : current template %d/%d = [%f %f %f %e]\n",fn,bintemp->currentidx,pspace->gridparams->max,bintemp->x[0],bintemp->x[1],bintemp->x[2],bintemp->x[3]); */
+    /* initialise the temporary logLratio vector */
+    memset(Lparamsvec->logLratio_phase->data,0.0,Lparamsvec->logLratio_phase->length*sizeof(REAL8));
+
+    /* compute binary priors contribution for current n-dim template */
+    for (j=0;j<pspace->gridparams->ndim;j++) {
+      thisprior += priors->data[j].logpriors->data[bintemp->idx[j]];
+    }
     
-    /*************************************************************************************/
-    /* loop over segments */
+    /** loop over segments **********************************************************************************/
     for (i=0;i<power->length;i++) {
       
       REAL4DemodulatedPower *currentpower = power->segment[i];
       GridParameters *fdotgrid = power->segment[i]->gridparams;
       REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
+      LikelihoodParams Lparams = Lparamsvec->data[i];
       UINT4 idx = 0;
       REAL8 logLratio = 0.0;
-      REAL8 logLratio_phase = 0.0;
       REAL4 X;
       
       /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      if (XLALComputeBinaryFreqDerivitives(&fdots,bintemp,tmid)) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALFindBinaryFreqDerivitives() failed with error = %d\n",fn,xlalErrno);
-	return XLAL_EFAULT;
-      }
-     /*  LogPrintf(LOG_DEBUG,"%s : segment %d/%d -> (tmid = %6.0f) spin derivitives = [%6.12f]\n",fn,i,tmid,power->length,fdots.x[0]); */
-      
+      XLALComputeBinaryFreqDerivitives(&fdots,bintemp,tmid);
+
       /* find indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots.ndim;j++) {
-	UINT4 tempidx = floor(0.5 + (fdots.x[j] - fdotgrid->grid[j].min)/fdotgrid->grid[j].delta);
+	UINT4 tempidx = 0.5 + (fdots.x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
 	idx += tempidx*fdotgrid->prod[j];
       }
       
@@ -2223,71 +2255,70 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
       if (pspace->ampspace) {
 
 	/* compute the log likelihood ratio at each value of alpha */
-	XLALComputePhaseMargLogLRatio(Lparamsvec->logLratio_phase_temp,X,&(Lparamsvec->data[i]));
-	
-	/* add log-likelihoods over segments as a function of amplitude */
-	for (j=0;j<pspace->ampgrid->length;j++) {
-	  Lparamsvec->logLratio_phase->data[j] += Lparamsvec->logLratio_phase_temp->data[j];
-	}
-	
-	/* apply amplitude priors for individual segment Bayes factor results */
-	for (j=0;j<pspace->ampgrid->length;j++) {
-	  REAL8 temp = Lparamsvec->logLratio_phase->data[j] + pspace->amppriors->logpriors->data[j];
-	  logLratio_phase = XLALLogSumExp(logLratio_phase,temp);
-	}
-      
-	/* apply binary priors for the individual SFT Bayes factors - this is a multiplication of likelihoods OR a sum in log-likelihoods */
-	for (j=0;j<pspace->gridparams->ndim;j++) {
-	  logLratio_phase += priors->data[j].logpriors->data[bintemp->idx[j]];
-	}
-	logLratio_phase += pspace->amppriors->logdelta;
-     
-	/* record the log BayesFactor for each SFT */
-	(*Bayes)->logBayesFactor_phase_vector->data[i] = XLALLogSumExp((*Bayes)->logBayesFactor_phase_vector->data[i],logLratio_phase);
-
+	XLALComputePhaseMargLogLRatioLUT(Lparamsvec->logLratio_phase,X,&Lparams,bess_acc,bess_spline);
+	      
       }
     
       /* compute the likelihood for this location given the power value */
       /* inside loop over segments we compute the product of likelihood ratios */
       /* this is the sum of log-likelihood ratios */
-      logLratio = XLALComputePhaseAmpMargLogLRatio(X,&(Lparamsvec->data[i]));      
+      /* logLratio = XLALComputePhaseAmpMargLogLRatio(X,&Lparams); */
+      logLratio = XLALComputePhaseAmpMargLogLRatioLUT(X,&Lparams,bess_acc,bess_spline);
       logLratiosum += logLratio;
 
+      /** individual SFT stuff *************************************************************/
       /* apply binary priors for the individual SFT Bayes factors - this is a multiplication of likelihoods OR a sum in log-likelihoods */
-      for (j=0;j<pspace->gridparams->ndim;j++) {
-	logLratio += priors->data[j].logpriors->data[bintemp->idx[j]];
-      }
-
+      logLratio += thisprior;
+      
       /* record the log BayesFactor for each SFT */
-      (*Bayes)->logBayesFactor_phaseamp_vector->data[i] = XLALLogSumExp((*Bayes)->logBayesFactor_phaseamp_vector->data[i],logLratio);
+      (*Bayes)->logBayesFactor_phaseamp_vector->data[i] = XLALLogSumExpLUT((*Bayes)->logBayesFactor_phaseamp_vector->data[i],logLratio,log_acc,log_spline);
+      /*************************************************************************************/
       
     } /* end loop over segments */
     /*************************************************************************************/
     
     /* compute the Bayes factor for the fixed amplitude model by summing over the amplitudes */
+    /* we specifically weight the first point by 0.5 since this is on the boundary of the parameter */
+    /* space and for no signal is usually a large contribution */
     if (pspace->ampspace) {
-      for (j=0;j<pspace->ampgrid->length;j++) {
-	REAL8 temp = Lparamsvec->logLratio_phase->data[j] + pspace->amppriors->logpriors->data[j];
-	logLratiosum_phase = XLALLogSumExp(logLratiosum_phase,temp);
+      REAL8 temp = Lparamsvec->logLratio_phase->data[0] + pspace->amppriors->logpriors->data[0] - LAL_LN2;
+      logLratiosum_phase = XLALLogSumExpLUT(logLratiosum_phase,temp,log_acc,log_spline);
+      for (j=1;j<pspace->ampgrid->length;j++) {
+	REAL8 temp2 = Lparamsvec->logLratio_phase->data[j] + pspace->amppriors->logpriors->data[j];
+	logLratiosum_phase = XLALLogSumExpLUT(logLratiosum_phase,temp2,log_acc,log_spline);
       }
+      logLratiosum_phase += pspace->amppriors->logdelta;
     }
 
     /* apply binary priors - this is a multiplication of likelihoods OR a sum in log-likelihoods */
-    for (i=0;i<pspace->gridparams->ndim;i++) {
-      logLratiosum += priors->data[i].logpriors->data[bintemp->idx[i]];
-      if (pspace->ampspace) logLratiosum_phase += priors->data[i].logpriors->data[bintemp->idx[i]];
-    }
-
+    logLratiosum += thisprior;
+    if (pspace->ampspace) logLratiosum_phase += thisprior;
+ 
     /* for this template we contribute to each posterior vector */
     /* we sum likelihood-ratios NOT log-likelihood-ratios */
     for (i=0;i<pspace->gridparams->ndim;i++) {
       REAL8 temp = (*Bayes)->logposteriors_phaseamp[i]->data[bintemp->idx[i]];
-      (*Bayes)->logposteriors_phaseamp[i]->data[bintemp->idx[i]] = XLALLogSumExp(temp,logLratiosum); 
+      (*Bayes)->logposteriors_phaseamp[i]->data[bintemp->idx[i]] = XLALLogSumExpLUT(temp,logLratiosum,log_acc,log_spline); 
     }
 
-    /* we also sum likelihood-ratios to compute the overall Bayes-factor */
-    logBayesfactor = XLALLogSumExp(logBayesfactor,logLratiosum);
-    if (pspace->ampspace) logBayesfactor_phase = XLALLogSumExp(logBayesfactor_phase,logLratiosum_phase);
+    /* for fixed amplitude and for this template we contribute to each posterior vector */
+    /* we sum likelihood-ratios NOT log-likelihood-ratios */
+    for (i=0;i<pspace->gridparams->ndim;i++) {
+      REAL8 temp = (*Bayes)->logposteriors_phase[i]->data[bintemp->idx[i]];
+      (*Bayes)->logposteriors_phase[i]->data[bintemp->idx[i]] = XLALLogSumExpLUT(temp,logLratiosum_phase,log_acc,log_spline); 
+    }
+
+    /* for fixed amplitude and for the amplitude parameter itself we construct the posterior */
+    if (pspace->ampspace) {
+      for (j=0;j<pspace->ampgrid->length;j++) {
+	REAL8 temp = Lparamsvec->logLratio_phase->data[j] + pspace->amppriors->logpriors->data[j] + thisprior;
+	(*Bayes)->logposterior_amp->data[j] = XLALLogSumExpLUT((*Bayes)->logposterior_amp->data[j],temp,log_acc,log_spline); 
+      }
+    }
+
+    /* we also sum likelihood-ratios to compute the overall Bayes-factors */
+    logBayesfactor = XLALLogSumExpLUT(logBayesfactor,logLratiosum,log_acc,log_spline);
+    if (pspace->ampspace) logBayesfactor_phase = XLALLogSumExpLUT(logBayesfactor_phase,logLratiosum_phase,log_acc,log_spline);
     
     /* output status to screen */
     if ((UINT4)floor(0.5 + 100*bintemp->currentidx/pspace->gridparams->max) > percent) {
@@ -2298,26 +2329,20 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
   } /* end loop over templates */
   /*************************************************************************************/
 
-  /* normalise the Bayesfactors */
-  for (i=0;i<pspace->gridparams->ndim;i++) {
-    logBayesfactor += priors->data[i].logdelta;
-    if (pspace->ampspace) logBayesfactor_phase += priors->data[i].logdelta;
-    for (j=0;j<power->length;j++) {
-      (*Bayes)->logBayesFactor_phaseamp_vector->data[j] += priors->data[i].logdelta;
-      if (pspace->ampspace) (*Bayes)->logBayesFactor_phase_vector->data[j] += priors->data[i].logdelta;
-    }
+  /* normalise the Bayesfactors with the binary grid spacing */
+  logBayesfactor += thisdelta;
+  for (j=0;j<power->length;j++) {
+    (*Bayes)->logBayesFactor_phaseamp_vector->data[j] += thisdelta;
   }
   if (pspace->ampspace) {
-    logBayesfactor_phase += pspace->amppriors->logdelta;
-    for (j=0;j<power->length;j++) {
-      (*Bayes)->logBayesFactor_phase_vector->data[j] += pspace->amppriors->logdelta;
-    }
+    logBayesfactor_phase += thisdelta;
   }
   LogPrintf(LOG_DEBUG,"%s : computed log(B) = %e\n",fn,logBayesfactor);
   LogPrintf(LOG_DEBUG,"%s : computed log(B) (fixed amp) = %e\n",fn,logBayesfactor_phase);
- 
+
   /* point the Bayesfactor results grid to the grid used and the result obtained */
   (*Bayes)->gridparams = pspace->gridparams;
+  (*Bayes)->ampgrid = pspace->ampgrid;
   (*Bayes)->logBayesFactor_phaseamp = logBayesfactor;
   if (pspace->ampspace) (*Bayes)->logBayesFactor_phase = logBayesfactor_phase;
 
@@ -2330,7 +2355,10 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
     XLALDestroyREAL8Vector(Lparamsvec->data[i].alphasqY);
   }
   XLALDestroyREAL8Vector(Lparamsvec->logLratio_phase);
-  XLALDestroyREAL8Vector(Lparamsvec->logLratio_phase_temp);
+  gsl_spline_free(Lparamsvec->log_spline);
+  gsl_interp_accel_free(Lparamsvec->log_acc);
+  gsl_spline_free(Lparamsvec->logbesselI0_spline);
+  gsl_interp_accel_free(Lparamsvec->logbesselI0_acc);
   XLALFree(Lparamsvec->data);
   XLALFree(Lparamsvec);
 
@@ -2355,6 +2383,9 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
 {
   const CHAR *fn = __func__;            /* store function name for log output */
   UINT4 i,j;                            /* counters */
+  REAL8 maxpower = 0.0;                 /* initialise the maximum power in the input grid */
+  REAL8 maxmodpower = 0.0;              /* initialise the maximum mod power in the input grid */ 
+  REAL8 maxarg = 0.0;                   /* initialise the maximum bessel function argument */
 
   /* validate input */
   
@@ -2370,10 +2401,6 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
   }
   if (ampgrid) {
     if (((*Lparamsvec)->logLratio_phase = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
-    if (((*Lparamsvec)->logLratio_phase_temp = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
@@ -2415,10 +2442,14 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
     /* initialise results */
     for (j=0;j<binarygrid->grid[i].length;j++) (*Bayes)->logposteriors_phaseamp[i]->data[j] = -1e200;
   }
-
+  
   /* allocate memory for the fixed amplitude results */
   if (ampgrid) {
-    if (((*Bayes)->logBayesFactor_phase_vector = XLALCreateREAL8Vector(power->length)) == NULL) {
+  /*   if (((*Bayes)->logBayesFactor_phase_vector = XLALCreateREAL8Vector(power->length)) == NULL) { */
+/*       LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno); */
+/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
+/*     } */
+    if (((*Bayes)->logposterior_amp = XLALCreateREAL8Vector(ampgrid->length)) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
@@ -2426,7 +2457,7 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
       LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
-    for (i=0;i<binarygrid->ndim;i++) { 
+    for (i=0;i<binarygrid->ndim;i++) {
       if (((*Bayes)->logposteriors_phase[i] = XLALCreateREAL8Vector(binarygrid->grid[i].length)) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : XLALCrateREAL8Vector() failed with error = %d\n",fn,xlalErrno);
 	XLAL_ERROR(fn,XLAL_ENOMEM);
@@ -2434,6 +2465,7 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
       /* initialise results */
       for (j=0;j<binarygrid->grid[i].length;j++) (*Bayes)->logposteriors_phase[i]->data[j] = -1e200;
     }
+    for (j=0;j<ampgrid->length;j++) (*Bayes)->logposterior_amp->data[j] = -1e200;
   }
   
   (*Bayes)->gridparams = binarygrid;
@@ -2441,7 +2473,10 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
   (*Bayes)->nsegments = power->length;
 
    /* initialise results - we add using XLALlogsumexp so we initialise to the log of a very low number */
-  for (j=0;j<power->length;j++) (*Bayes)->logBayesFactor_phaseamp_vector->data[j] = -1e200;
+  for (j=0;j<power->length;j++) {
+    (*Bayes)->logBayesFactor_phaseamp_vector->data[j] = -1e200;
+  /*   (*Bayes)->logBayesFactor_phase_vector->data[j] = -1e200; */
+  }
   
   /**************************************************************************************************/
   /* parameters for phase and amplitude marginalisation */
@@ -2454,6 +2489,12 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
     REAL8 nV = (REAL8)power->segment[i]->npcus*PCU_AREA;
     REAL8 r = power->segment[i]->r;
    
+    /* find max power value */
+    for (j=0;j<power->segment[i]->data->length;j++) {
+      if (power->segment[i]->data->data[j] > maxpower) maxpower = power->segment[i]->data->data[j];
+    }
+    maxmodpower = sqrt(maxpower);
+
     /* compute the parameters needed for the computation of the */
     /* phase and amplitude marginalised log-likelihood ratio */ 
     REAL8 Y = 0.25*T*nV/r;
@@ -2462,13 +2503,18 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
     (*Lparamsvec)->data[i].logsqrtP = 0.5*log(P);
     (*Lparamsvec)->data[i].PQ = P*0.25*sigalpha*sigalpha*X*X;
     
+    /* record max value of PQ*power for bessel LUT */
+    if ((*Lparamsvec)->data[i].PQ*maxpower) maxarg = (*Lparamsvec)->data[i].PQ*maxpower;
+
     /* if we're dealing with an amplitude grid */
     if (ampgrid) {
       for (j=0;j<ampgrid->length;j++) {
 	REAL8 alpha = ampgrid->min + ampgrid->delta*(REAL8)j;
 	(*Lparamsvec)->data[i].alphaX->data[j] = alpha*X;
 	(*Lparamsvec)->data[i].alphasqY->data[j] = alpha*alpha*Y;
-/* 	LogPrintf(LOG_DEBUG,"%s : computed alphaX = %e alpha*alpha*Y = %e for SFT %d/%d\n",fn,(*Lparamsvec)->data[i].alphaX->data[j],(*Lparamsvec)->data[i].alphasqY->data[j],i+1,power->length); */
+ 	/* LogPrintf(LOG_DEBUG,"%s : computed alphaX = %e alpha*alpha*Y = %e for SFT %d/%d\n",fn,(*Lparamsvec)->data[i].alphaX->data[j],(*Lparamsvec)->data[i].alphasqY->data[j],i+1,power->length); */
+	
+	if ((*Lparamsvec)->data[i].alphaX->data[j]*maxmodpower) maxarg = (*Lparamsvec)->data[i].alphaX->data[j]*maxmodpower;
       }
     }
     LogPrintf(LOG_DEBUG,"%s : computed X = %e Y = %e P = %e PQ = %e for SFT %d/%d\n",fn,X,Y,P,(*Lparamsvec)->data[i].PQ,i+1,power->length);
@@ -2477,7 +2523,38 @@ int XLALSetupLikelihood(LikelihoodParamsVector **Lparamsvec,       /**< [out] se
     memcpy(&((*Bayes)->epoch[i]),&(power->segment[i]->epoch),sizeof(LIGOTimeGPS));
     
   }
+  LogPrintf(LOG_DEBUG,"%s : found maximum bessel function argument = %f\n",fn,maxarg);
+  
+  /* log look-up-table */
+  {
+    REAL8 x[NLOGLUT];
+    REAL8 y[NLOGLUT];
+    (*Lparamsvec)->log_acc = gsl_interp_accel_alloc();
+    (*Lparamsvec)->log_spline = gsl_spline_alloc(gsl_interp_cspline,NLOGLUT);
+    
+    /* precompute discrete function */
+    for (i=0;i<NLOGLUT;i++) {
+      y[i] = 2.0*(REAL8)i/(REAL8)(NLOGLUT-1);
+      x[i] = exp(y[i]);
+    }
+    gsl_spline_init((*Lparamsvec)->log_spline,x,y,NLOGLUT);  
+  }    
  
+  /* bessel look-up-table */
+  {
+    REAL8 x[NBESSELLUT];
+    REAL8 y[NBESSELLUT];
+    (*Lparamsvec)->logbesselI0_acc = gsl_interp_accel_alloc();
+    (*Lparamsvec)->logbesselI0_spline = gsl_spline_alloc(gsl_interp_cspline,NBESSELLUT);
+    
+    /* precompute discrete function */
+    for (i=0;i<NBESSELLUT;i++) {
+      x[i] = i*(1.1*maxarg)/(NBESSELLUT-1);
+      y[i] = XLALLogBesselI0(x[i]);
+    }
+    gsl_spline_init((*Lparamsvec)->logbesselI0_spline,x,y,NBESSELLUT);  
+  }    
+
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
   
@@ -2532,7 +2609,7 @@ int XLALGetNextBinaryTemplate(Template **temp,                        /**< [out]
   for (j=gridparams->ndim-1;j>=0;j--) {
 
     /* compute the index for the j'th dimension and compute the actual value */
-    UINT4 q = floor(idx/gridparams->prod[j]);
+    UINT4 q = idx/gridparams->prod[j];
     (*temp)->x[j] = gridparams->grid[j].min + q*gridparams->grid[j].delta;
     (*temp)->idx[j] = q;
 
@@ -2561,13 +2638,19 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
   REAL8 asini = bintemp->x[1];           /* define asini */
   REAL8 tasc = bintemp->x[2];            /* define tasc */
   REAL8 omega = bintemp->x[3];           /* define omega */
+  
+  /* precompute repeated quantities */
+  REAL8 nuasiniomega = nu*asini*omega;
+  REAL8 orbphase = omega*(tmid-tasc);
+  REAL8 omegan = 1;
 
   /* the instantanous frequency is therefore f0 = nu - a*nu*W*cos(W*(t-tasc) ) */
-  fdots->x[0] = nu - nu*asini*omega*cos(omega*(tmid-tasc));
+  fdots->x[0] = nu - nuasiniomega*cos(orbphase);
 
   /* the instantanous nth frequency derivitive is therefore fn = - a * nu * W^(n+1) * cos ( W*(t-tasc) + n*pi/2 ) */
   for (n=1;n<fdots->ndim;n++) {
-    fdots->x[n] = (-1.0)*nu*asini*pow(omega,n+1)*cos(omega*(tmid-tasc) + 0.5*n*LAL_PI);
+    omegan *= omega;
+    fdots->x[n] = (-1.0)*nuasiniomega*omegan*cos(orbphase + 0.5*n*LAL_PI);
   }
   
   return XLAL_SUCCESS;
@@ -2591,13 +2674,32 @@ REAL8 XLALComputePhaseAmpMargLogLRatio(REAL8 X,                       /**< [in] 
   
 }
 
+/** Compute the phase and amplitude marginalised log-likelihood for a signal in Poisson noise 
+ *
+ * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
+ * power value given Poisson noise and marginalising over an unknown phase and amplitude.
+ *
+ */
+REAL8 XLALComputePhaseAmpMargLogLRatioLUT(REAL8 X,                              /**< [in] the Fourier power */ 
+					  LikelihoodParams *Lparams,            /**< [in] pre-computed parameters useful in the likelihood */
+					  gsl_interp_accel *logbesselI0_acc,    /**< [in] gsl interpolation accellerator */
+					  gsl_spline *logbesselI0_spline        /**< [in] gsl interpolation structure */
+					  ) 
+{
+  REAL8 arg = Lparams->PQ*X;    /* define the argument to the bessel function */
+
+  /* compute the log-likelihood ratio */
+  return Lparams->logsqrtP + arg + gsl_spline_eval(logbesselI0_spline,arg,logbesselI0_acc);
+  
+}
+
 /** Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
  *
  * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
  * power value given Poisson noise and marginalising over an unknown phase only for a vector of amplitudes.
  *
  */
-int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio_phase,  /**< [out] the output log-likelihood ratio vector */
+int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio_phase,  /**< [out] the output log-likelihood ratio vector (result added to input) */
 				  REAL8 X,                       /**< [in] the Fourier power */ 
 				  LikelihoodParams *Lparams      /**< [in] pre-computed parameters useful in the likelihood */
 				  ) 
@@ -2607,9 +2709,34 @@ int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio_phase,  /**< [out] the 
 
   /* compute the log-likelihood ratio */
   for (i=0;i<Lparams->alphasqY->length;i++) {
-    logLratio_phase->data[i] = (-1.0)*Lparams->alphasqY->data[i] + XLALLogBesselI0(Lparams->alphaX->data[i]*modX);
+    logLratio_phase->data[i] += (-1.0)*Lparams->alphasqY->data[i] + XLALLogBesselI0(Lparams->alphaX->data[i]*modX);
   }
 
+  return XLAL_SUCCESS;
+
+}
+
+/** Compute the phase marginalised log-likelihood for a signal in Poisson noise assuming constant amplitude
+ *
+ * This function computes (as efficiently as possible) the log-likelihood of obtaining a particular
+ * power value given Poisson noise and marginalising over an unknown phase only for a vector of amplitudes.
+ *
+ */
+int XLALComputePhaseMargLogLRatioLUT(REAL8Vector *logLratio_phase,         /**< [out] the output log-likelihood ratio vector (result added to input) */
+				     REAL8 X,                              /**< [in] the Fourier power */ 
+				     LikelihoodParams *Lparams,            /**< [in] pre-computed parameters useful in the likelihood */
+				     gsl_interp_accel *logbesselI0_acc,    /**< [in] gsl interpolation accellerator */
+				     gsl_spline *logbesselI0_spline        /**< [in] gsl interpolation structure */
+				     ) 
+{
+  REAL8 modX = sqrt(X);         /* define part of the argument to the bessel function */
+  UINT4 i;                      /* counter */
+
+  /* compute the log-likelihood ratio */
+  for (i=0;i<Lparams->alphasqY->length;i++) {
+    logLratio_phase->data[i] += (-1.0)*Lparams->alphasqY->data[i] + gsl_spline_eval(logbesselI0_spline,Lparams->alphaX->data[i]*modX,logbesselI0_acc);
+  }
+  
   return XLAL_SUCCESS;
 
 }
@@ -2658,7 +2785,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     snprintf(outputfile,LONGSTRINGLENGTH,"%s/BayesianResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
 	     outputdir,pspace->source,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); 
   }
-  LogPrintf(LOG_DEBUG,"%s : output to %s\n",fn,outputfile);
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",fn,outputfile);
 
   /* open the output file */
   if ((fp = fopen(outputfile,"w")) == NULL) {
@@ -2717,18 +2844,51 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   fprintf(fp,"%%%%\n");
 
   /* output the Bayes factor for each segment */
-  if (!pspace->ampspace) {
-    for (i=0;i<Bayes->nsegments;i++) fprintf(fp,"%d\t%d\t%6.12e\n",Bayes->epoch[i].gpsSeconds,
-					     Bayes->epoch[i].gpsSeconds+(UINT4)pspace->tseg,
-					     Bayes->logBayesFactor_phaseamp_vector->data[i]);
-  }
-  else {
-    for (i=0;i<Bayes->nsegments;i++) fprintf(fp,"%d\t%d\t%6.12e\t%6.12e\n",Bayes->epoch[i].gpsSeconds,
-					     Bayes->epoch[i].gpsSeconds+(UINT4)pspace->tseg,
-					     Bayes->logBayesFactor_phaseamp_vector->data[i],
-					     Bayes->logBayesFactor_phase_vector->data[i]);
-  }
+  for (i=0;i<Bayes->nsegments;i++) fprintf(fp,"%d\t%d\t%6.12e\n",Bayes->epoch[i].gpsSeconds,
+					   Bayes->epoch[i].gpsSeconds+(UINT4)pspace->tseg,
+					   Bayes->logBayesFactor_phaseamp_vector->data[i]);
+  
   fprintf(fp,"%%%%\n");
+  
+  /* output the amplitude posterior */
+  if (pspace->ampspace) {
+    fprintf(fp,"%%%% -------------------------------------------------------------------------------------------------------\n%%%%\n");
+    fprintf(fp,"%%%% name_amp\t= %s\n",Bayes->ampgrid->name);
+    fprintf(fp,"%%%% min_amp\t= %6.12e\n",pspace->ampspace->min);
+    fprintf(fp,"%%%% max_amp\t= %6.12e\n",pspace->ampspace->max);
+    fprintf(fp,"%%%% sig_amp\t= %6.12e\n",pspace->ampspace->sig);
+    fprintf(fp,"%%%% start_amp\t= %6.12e\n",Bayes->ampgrid->min);
+    fprintf(fp,"%%%% delta_amp\t= %6.12e\n",Bayes->ampgrid->delta);
+    fprintf(fp,"%%%% length_amp\t= %d\n",Bayes->ampgrid->length);
+    if (pspace->amppriors->gaussian) fprintf(fp,"%%%%a prior_amp\t= GAUSSIAN\n");
+    else fprintf(fp,"%%%% prior_amp\t= FLAT\n"); 
+    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tnorm_prior(%s)\n%%%%\n",
+	    Bayes->ampgrid->name,Bayes->ampgrid->name,
+	    Bayes->ampgrid->name,Bayes->ampgrid->name);
+  
+    /* output posteriors - we output un-normalised and normalised posteriors plus priors */
+    {
+      REAL8 sum = 0.0;
+      REAL8 mx = Bayes->logposterior_amp->data[0];
+      for (j=0;j<Bayes->ampgrid->length;j++) if (Bayes->logposterior_amp->data[j] > mx) mx = Bayes->logposterior_amp->data[j];
+  
+      /* compute normalising constant for the variable amplitude posteriors */
+      for (j=0;j<Bayes->ampgrid->length;j++) {
+	sum += exp(Bayes->logposterior_amp->data[j]-mx)*Bayes->ampgrid->delta;
+      }
+  
+      /* output posteriors and priors to file */
+      for (j=0;j<Bayes->ampgrid->length;j++) {
+	REAL8 x = Bayes->ampgrid->min + j*Bayes->ampgrid->delta;
+	REAL8 log_post = Bayes->logposterior_amp->data[j];
+	REAL8 norm_post = exp(Bayes->logposterior_amp->data[j]-mx)/sum;
+	REAL8 norm_prior = exp(pspace->amppriors->logpriors->data[j]);
+	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,norm_prior);
+      }
+  
+    }
+
+  }
 
   /* loop over each search dimension and output the grid parameters and posteriors */
   for (i=0;i<Bayes->gridparams->ndim;i++) {
@@ -2741,28 +2901,50 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     fprintf(fp,"%%%% delta_%d\t= %6.12e\n",i,Bayes->gridparams->grid[i].delta);
     fprintf(fp,"%%%% length_%d\t= %d\n",i,Bayes->gridparams->grid[i].length);
     if (pspace->priors->data[i].gaussian) fprintf(fp,"%%%% prior_%d\t= GAUSSIAN\n",i);
-    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",i);
-    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\t\tnorm_prior(%s)\n%%%%\n",
-	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name);
+    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",i); 
+    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
+	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,
+	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,
+	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name);
 
     /* output posteriors - we output un-normalised and normalised posteriors plus priors */
     {
       REAL8 sum = 0.0;
+      REAL8 sum_phase = 0.0;
       REAL8 mx = Bayes->logposteriors_phaseamp[i]->data[0];
+      REAL8 mx_phase = 0.0;
       for (j=0;j<Bayes->gridparams->grid[i].length;j++) if (Bayes->logposteriors_phaseamp[i]->data[j] > mx) mx = Bayes->logposteriors_phaseamp[i]->data[j];
       
-      /* compute normalising constant for the posteriors */
+      /* compute normalising constant for the variable amplitude posteriors */
       for (j=0;j<Bayes->gridparams->grid[i].length;j++) {
 	sum += exp(Bayes->logposteriors_phaseamp[i]->data[j]-mx)*Bayes->gridparams->grid[i].delta;
       }
 
+      /* if we're also doing the fixed amplitude case */
+      if (pspace->ampspace) {
+
+	mx_phase = Bayes->logposteriors_phase[i]->data[0];
+	for (j=0;j<Bayes->gridparams->grid[i].length;j++) if (Bayes->logposteriors_phase[i]->data[j] > mx_phase) mx_phase = Bayes->logposteriors_phase[i]->data[j];
+	
+	/* compute normalising constant for the fixed amplitude posteriors */
+	for (j=0;j<Bayes->gridparams->grid[i].length;j++) {
+	  sum_phase += exp(Bayes->logposteriors_phase[i]->data[j]-mx_phase)*Bayes->gridparams->grid[i].delta;
+	}
+      }
+      
       /* output posteriors and priors to file */
       for (j=0;j<Bayes->gridparams->grid[i].length;j++) {
 	REAL8 x = Bayes->gridparams->grid[i].min + j*Bayes->gridparams->grid[i].delta;
 	REAL8 log_post = Bayes->logposteriors_phaseamp[i]->data[j];
 	REAL8 norm_post = exp(Bayes->logposteriors_phaseamp[i]->data[j]-mx)/sum;
 	REAL8 norm_prior = exp(pspace->priors->data[i].logpriors->data[j]);
-	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,norm_prior);
+	REAL8 log_post_phase = 0.0;
+	REAL8 norm_post_phase = 0.0;
+	if (pspace->ampspace) {
+	  log_post_phase = Bayes->logposteriors_phase[i]->data[j];
+	  norm_post_phase = exp(Bayes->logposteriors_phase[i]->data[j]-mx_phase)/sum_phase;
+	}
+	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,log_post_phase,norm_post_phase,norm_prior);
       }
     
     }
@@ -2797,9 +2979,9 @@ REAL8 XLALLogBesselI0(REAL8 z            /**< [in] the argument of the Bessel fu
   /* for large input args */
   if (z>3.75) {
 
-    REAL8 invt = 3.75/z;
-    REAL8 y = BESSCO_HIGH[0];
-       
+     REAL8 invt = 3.75/z;
+     REAL8 y = BESSCO_HIGH[0];
+    
     /* compute expansion */
     for (i=1;i<LEN_BESSCO_HIGH;i++) {
       tn = tn*invt;
@@ -2807,22 +2989,22 @@ REAL8 XLALLogBesselI0(REAL8 z            /**< [in] the argument of the Bessel fu
     }
     
     /* compute log of bessel function */
-    return log(y) + z - 0.5*log(z);
+    return gsl_sf_log(y) + z - 0.5*gsl_sf_log(z);
     
   }
   /* for small input args */
   else {
     
     REAL8 I0 = BESSCO_LOW[0];
-    REAL8 tnsq = z*z/14.0625;
-   
+    REAL8 tnsq = z*z/14.0625; 
+    
     for (i=1;i<LEN_BESSCO_LOW;i++) {
       tn *= tnsq;
       I0 += BESSCO_LOW[i]*tn;
     }
 
-    return log(I0);
-
+    return gsl_sf_log(I0); 
+    
   }
   
 }
@@ -2838,22 +3020,46 @@ REAL8 XLALLogSumExp(REAL8 logx,      /**< [in] the log of x */
 		    REAL8 logy       /**< [in] the log of y */
 		    )
 {
-  
-  /* initially set max arg as logx */
-  REAL8 logmax = logx; 
-  REAL8 logmin = logy;
 
-  /* if logy > logx then switch the max and min */
-  if (logy>logx) {
-    logmax = logy;
-    logmin = logx;
-  }
- 
   /* compute log(x + y) = logmax + log(1.0 + exp(logmin - logmax)) */
   /* this way the argument to the exponential is always negative */
-  return logmax + log(1.0 + exp(logmin - logmax));     
+  /* return logmax + log(1.0 + exp(logmin - logmax)); */
+  if (logy>=logx) {
+    return logy + log(1.0 + exp(logx - logy));
+  }
+  else { 
+    return logx + log(1.0 + exp(logy - logx));
+  }
   
- }
+}
+
+/* function to compute the log of the sum of the arguments of two logged quantities
+ *
+ * Eg. input log(x) and log(y) -> output log(x+y)
+ *
+ * If you do this by exponentiating first, then summing and then logging again you
+ * can easily gat overflow errors.  We use a trick to avoid this.
+ */
+REAL8 XLALLogSumExpLUT(REAL8 logx,                   /**< [in] the log of x */  
+		       REAL8 logy,                   /**< [in] the log of y */
+		       gsl_interp_accel *log_acc,    /**< [in] gsl interpolation accellerator */
+		       gsl_spline *log_spline        /**< [in] gsl interpolation structure */
+		       )
+{
+  
+  /* compute log(x + y) = logmax + log(1.0 + exp(logmin - logmax)) */
+  /* this way the argument to the exponential is always negative */
+  /* return logmax + log(1.0 + exp(logmin - logmax)); */
+  if (logy>=logx) {
+    REAL8 arg = 1.0 + exp(logx - logy);
+    return logy + gsl_spline_eval(log_spline,arg,log_acc);
+  }
+  else { 
+    REAL8 arg = 1.0 + exp(logy - logx);
+    return logx + gsl_spline_eval(log_spline,arg,log_acc);
+  }
+  
+}
 
 /** Free the memory allocated within a ParameterSpace structure
  *
@@ -2950,13 +3156,14 @@ int XLALFreeBayesianProducts(BayesianProducts *Bayes            /**< [in] the da
   XLALFree(Bayes->epoch);
  
   /* if using a fixed amplitude */
-  if (Bayes->logBayesFactor_phase_vector) XLALDestroyREAL8Vector(Bayes->logBayesFactor_phase_vector);
-   if (Bayes->logposteriors_phase) {
-     for (i=0;i<Bayes->ndim;i++) {
-       XLALDestroyREAL8Vector(Bayes->logposteriors_phase[i]);
+ /*  if (Bayes->logBayesFactor_phase_vector) XLALDestroyREAL8Vector(Bayes->logBayesFactor_phase_vector); */
+  if (Bayes->logposteriors_phase) {
+    for (i=0;i<Bayes->ndim;i++) {
+      XLALDestroyREAL8Vector(Bayes->logposteriors_phase[i]);
     }
   }
-   if (Bayes->logposteriors_phase) XLALFree(Bayes->logposteriors_phase);
+  if (Bayes->logposteriors_phase) XLALFree(Bayes->logposteriors_phase);
+  if (Bayes->logposterior_amp) XLALDestroyREAL8Vector(Bayes->logposterior_amp);
  
   XLALFree(Bayes);
   LogPrintf(LOG_DEBUG,"%s : freed the Bayesian results\n",fn); 
