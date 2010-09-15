@@ -436,7 +436,7 @@ int main(int argc,char *argv[])
     {
       if ( (fpFstat = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
 
@@ -446,7 +446,7 @@ int main(int argc,char *argv[])
   /* start Fstatistic histogram with a single empty bin */
   if (uvar_outputFstatHist) {
     if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
-      LALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
+      XLALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
       return COMPUTEFSTATISTIC_EMEM;
     }
     gsl_vector_int_set_zero(Fstat_histogram);
@@ -458,7 +458,7 @@ int main(int argc,char *argv[])
     {
       if ( (fpTSeries = fopen (uvar_outputTimeSeries, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputTimeSeries);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputTimeSeries);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
     } /* if outputTimeSeries */
@@ -587,7 +587,7 @@ int main(int argc,char *argv[])
 	  /* resize histogram vector if needed */
 	  if (!Fstat_histogram || bin >= Fstat_histogram->size)
 	    if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
-	      LALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
+	      XLALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
 	      return COMPUTEFSTATISTIC_EMEM;
 	    }
 	  
@@ -647,7 +647,7 @@ int main(int argc,char *argv[])
 
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
 
@@ -677,7 +677,7 @@ int main(int argc,char *argv[])
       FILE *fpFstatHist = fopen(uvar_outputFstatHist, "wb");
       
       if (fpFstatHist == NULL) {
-	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	return (COMPUTEFSTATISTIC_ESYS);
       }
       fprintf(fpFstatHist, "%s", GV.logstring);
@@ -979,7 +979,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
 
   if ( !catalog || catalog->length == 0 )
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
+      XLALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar_DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -1442,24 +1442,24 @@ checkUserInputConsistency (LALStatus *status)
 
   if (uvar_ephemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
+      XLALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -1484,24 +1484,24 @@ checkUserInputConsistency (LALStatus *status)
       }
     if ( useSkyGridFile && !haveGridFile )
       {
-        LALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
+        XLALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( useFullGridFile && !haveGridFile )
       {
-	LALPrintError ("\nERROR: gridType=GRID-FILE, but no --gridFile specified!\n\n");
+	XLALPrintError ("\nERROR: gridType=GRID-FILE, but no --gridFile specified!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
-	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
+	XLALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
     if ( haveSkyRegion && haveAlphaDelta )
       {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+        XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( !useMetric && haveMetric)
@@ -1510,7 +1510,7 @@ checkUserInputConsistency (LALStatus *status)
       }
     if ( useMetric && !haveMetric)
       {
-        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+        XLALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
@@ -2821,7 +2821,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
 
       /* noise-weight Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
  
@@ -2843,7 +2843,7 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
     }
   else
     {
-      LALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
+      XLALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
       ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
     }
 

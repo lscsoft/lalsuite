@@ -73,8 +73,8 @@ html_template = """
 
   <p>Veto level:
   <form id="whichVetoLevel">
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="0" onclick="switchViewIframe()" checked>Science<br>
-    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="1" onclick="switchViewIframe()">Cat 1<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="0" onclick="switchViewIframe()">Science<br>
+    &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="1" onclick="switchViewIframe()" checked>Cat 1<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="2" onclick="switchViewIframe()">Cats 1 and 2<br>
     &nbsp;&nbsp;&nbsp;<input type="radio" name="box0" value="4" onclick="switchViewIframe()">Cats 1,2 and 4<br>
   </form>
@@ -116,7 +116,7 @@ html_template = """
       <h3>%(start_time)d &mdash; %(end_time)d</h3>
     </div>
 
-    <iframe name="theframe" class="iframecontent" src="H1_CAT0_UNCLUSTERED_Summary.html" height="600">
+    <iframe name="theframe" class="iframecontent" src="H1_CAT1_UNCLUSTERED_Summary.html" height="600">
     </iframe>
 
   </div>

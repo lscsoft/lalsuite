@@ -127,6 +127,12 @@ couple of minutes.
 #include <lal/FileIO.h>
 #include <lal/CLR.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID (MAIN, "$Id$");
 
 INT4  lalDebugLevel = 2;
@@ -141,7 +147,7 @@ int main ( void )
 
   FILE   *in_file, *out_file;
   char   filename[100];
-  int    number;
+  int    UNUSED number;
 
   INT4            i;
 

@@ -74,6 +74,11 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
 
@@ -91,11 +96,11 @@ LALFindChirpBCVSpinData (
   UINT4                 cut;
 
   REAL4                *w;
-  REAL4                *amp;
-  REAL4                *ampBCV;
+  REAL4                UNUSED *amp;
+  REAL4                UNUSED *ampBCV;
   COMPLEX8             *wtilde;
-  REAL4		       *tmpltPower;
-  REAL4		       *tmpltPowerBCV;
+  REAL4                UNUSED *tmpltPower;
+  REAL4                UNUSED *tmpltPowerBCV;
 
   REAL4Vector          *dataVec;
   REAL4                *spec = NULL;
@@ -103,11 +108,11 @@ LALFindChirpBCVSpinData (
 
   COMPLEX8             *outputData;
 
-  UINT4                *chisqBin    = NULL;
-  UINT4                *chisqBinBCV = NULL;
-  UINT4                 numChisqBins;
+  UINT4                UNUSED *chisqBin    = NULL;
+  UINT4                UNUSED *chisqBinBCV = NULL;
+  UINT4                UNUSED numChisqBins;
 
-  REAL8                 *ampBCVSpin2;
+  REAL8                UNUSED *ampBCVSpin2;
 
   FindChirpSegment     *fcSeg   = NULL;
   DataSegment          *dataSeg = NULL;

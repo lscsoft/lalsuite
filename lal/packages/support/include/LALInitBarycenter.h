@@ -40,6 +40,14 @@
 extern "C" {
 #endif
 
+#include <lal/LALBarycenter.h>
+
+/* exported API Function prototypes. */
+EphemerisData * XLALInitBarycenter ( const CHAR *earthEphemerisFile, const CHAR *sunEphemerisFile );
+void XLALDestroyEphemerisData ( EphemerisData *edat );
+
+
+/* ==================== deprecated LAL interface  ==================================================*/
 NRCSID (LALINITBARYCENTERH,"$Id$");
 
 /** \name Error codes */
@@ -54,9 +62,6 @@ NRCSID (LALINITBARYCENTERH,"$Id$");
 /*@}*/
 
 
-#include <lal/LALBarycenter.h>
-
-/* Function prototypes. */
 void LALInitBarycenter(LALStatus *, EphemerisData *);
 
 #ifdef  __cplusplus

@@ -105,7 +105,7 @@ main (  int argc, char **argv )
 {
    static LALStatus status;
    static INT4 i, approx, tmplt;
-   static UINT4 psdLength, quietFlag = 0, optFlag=0;
+   static UINT4 psdLength, quietFlag = 0;
    static REAL8 df, norm;
    static REAL4Vector signalvec, correlation;
    void (*noisemodel)(LALStatus*, REAL8*, REAL8) = NULL;
@@ -183,8 +183,6 @@ main (  int argc, char **argv )
 		   tmpltParams.mass2 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"--quiet")==0)
 		   quietFlag = 1;
-	   else if (strcmp(argv[i],"--opt")==0)
-		   optFlag = 1;
 	   else if (strcmp(argv[i],"--alpha")==0)
 		   tmpltParams.alpha = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"--psi0")==0)

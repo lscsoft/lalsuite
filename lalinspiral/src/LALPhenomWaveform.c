@@ -32,6 +32,12 @@
 
 #include <math.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagBBHPhenomParams{
   REAL8 fMerger;
   REAL8 fRing;
@@ -585,7 +591,7 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   REAL8 fLower;
   REAL8 fCut, fRes, f, totalMass, softWin;
   REAL8 fLowerOrig, eta, tau0;
-  REAL8 winFLo, winFHi, sigLo, sigHi;
+  REAL8 winFLo, sigLo, sigHi;
   REAL4 windowLength;
   INT4 i, k, n;
   /* INT4 kMin, kMax; */
@@ -680,7 +686,6 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
   fRes = insp_template->tSampling/n;
 
   winFLo = (fLowerOrig + fLower)/2.;
-  winFHi = (fCut + phenParams.fCut)/2.;
   sigLo = 4.;
   sigHi = 4.;
 
@@ -1186,14 +1191,12 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
 static REAL4Vector *XLALCutAtFreq( REAL4Vector     *h,
 				   REAL4Vector     *freq,
 				   REAL8           cutFreq,
-				   REAL8           deltaT)
+				   REAL8           UNUSED deltaT)
 {
-  REAL8 dt;
   UINT4 k, k0, kMid, len;
   REAL4 currentFreq;
 
   len = freq->length;
-  dt = deltaT;
 
   /* Since the boundaries of this freq vector are likely to have   */
   /* FFT crap, let's scan the freq values starting from the middle */

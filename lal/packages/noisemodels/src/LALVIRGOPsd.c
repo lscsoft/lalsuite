@@ -57,12 +57,17 @@ None.
 
 NRCSID (LALVIRGOPSDC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*  <lalVerbatim file="LALVIRGOPsdCP"> */
-void LALVIRGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
+void LALVIRGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
    REAL8 s0, x;
 
-   status = NULL;
    x = f/500.;
 /*
  * s1 = 34.6;

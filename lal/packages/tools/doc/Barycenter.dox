@@ -8,7 +8,7 @@
  * at detector (GPS) to pulse emission time (TDB); ie
  * for ``barycentering'' the measured astronomical time series.
  *
- * LALInitBarycenter(): reads Earth and Sun position information from data files.
+ * LALInitBarycenter() / XLALInitBarycenter(): reads Earth and Sun position information from data files.
  *
  *
  * LALBarycenterEarth(): computes the position and orientation of the Earth, at some arrival time

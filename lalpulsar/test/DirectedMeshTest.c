@@ -229,7 +229,7 @@ extern int lalDebugLevel;
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, DIRECTEDMESHTESTC, statement ? statement :\
                  "", (msg) );                                        \
@@ -240,7 +240,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
-  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
+  XLALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
                  "        %s\n", *argv, __FILE__, __LINE__,          \
                  DIRECTEDMESHTESTC, (statement) );                   \
 }                                                                    \
@@ -250,7 +250,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 DIRECTEDMESHTESTC, (statement) );                   \
 }                                                                    \
@@ -272,7 +272,7 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
 {                                                                    \
   ERROR( DIRECTEDMESHTESTC_EVAL, DIRECTEDMESHTESTC_MSGESUB,          \
          "Value of " #val " out of range:" );                        \
-  LALPrintError( #val " = %f, range = (%f,%f]\n", (REAL8)(val),      \
+  XLALPrintError( #val " = %f, range = (%f,%f]\n", (REAL8)(val),      \
                  (REAL8)(lower), (REAL8)(upper) );                   \
   return DIRECTEDMESHTESTC_EVAL;                                     \
 }                                                                    \
@@ -350,7 +350,7 @@ main(int argc, char **argv)
 	outfile = argv[arg++];
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -364,7 +364,7 @@ main(int argc, char **argv)
 	f0 = atof( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -376,7 +376,7 @@ main(int argc, char **argv)
 	lon = atof( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -388,7 +388,7 @@ main(int argc, char **argv)
 	dec = atof( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -400,7 +400,7 @@ main(int argc, char **argv)
 	ddec = atof( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -411,7 +411,7 @@ main(int argc, char **argv)
 	tau = atof( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
@@ -422,14 +422,14 @@ main(int argc, char **argv)
 	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return DIRECTEDMESHTESTC_EARG;
       }
     }
     /* Check for unrecognized options. */
     else {
       ERROR( DIRECTEDMESHTESTC_EARG, DIRECTEDMESHTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return DIRECTEDMESHTESTC_EARG;
     }
   } /* End of argument parsing loop. */

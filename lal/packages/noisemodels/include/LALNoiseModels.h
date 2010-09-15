@@ -268,6 +268,8 @@ extern "C" {
        \newpage\input{NoisePSDTestC}
        </lalLaTeX> */
 
+    REAL8 XLALETBPsd( REAL8 f );
+
 #ifdef  __cplusplus
 }
 #endif

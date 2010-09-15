@@ -110,6 +110,12 @@
 #include <lal/LALString.h>
 #include <lal/ComputeFstat.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 
 /******* DEFINE RCS ID STRING ************/
@@ -178,7 +184,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   REAL8 a0, b0;	/* abberation parameters */
 
-  REAL8 M, m2;
+  REAL8 m2;
   REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
 
   CHAR *model = params->model;
@@ -235,7 +241,6 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   a0 = params->a0*1.0e-6; /* from microsecs to secs */
   b0 = params->b0*1.0e-6;
 
-  M = params->M*LAL_MSUN_SI; /* from solar masses to kg */
   m2 = params->m2*LAL_MSUN_SI;
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
@@ -621,7 +626,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
-  int c;
+  int UNUSED c;
 
   if( output == (BinaryPulsarParams *)NULL ){
     XLAL_ERROR_VOID( fn, XLAL_EFAULT );

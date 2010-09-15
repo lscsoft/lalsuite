@@ -59,14 +59,19 @@ None.
 
 NRCSID (LALEGOPSDC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*  <lalVerbatim file="LALEGOPsdCP"> */
-void LALEGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
+void LALEGOPsd (LALStatus UNUSED *status, REAL8 *psd, REAL8 f)
 { /* </lalVerbatim> */
    REAL8 s0, x, x2, x3, x4, x5, x6;
    REAL8 a1, a2, p1, p2, c1, c2, c3, c4, b1, b2, b3, b4, b5, b6;
    REAL8 num,den;
 
-   status = NULL;
    x = f/200.;
 
    a1 = 185.62;

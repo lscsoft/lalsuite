@@ -203,7 +203,7 @@ main(int argc, char **argv)
   CHAR *fftout  = NULL; 	      /* FFT outfile */
   REAL4 m1 = M1, m2 = M2;       /* binary masses */
   REAL4 dist = DIST;            /* binary distance */
-  REAL4 inc = 0.0, phii = 0.0, psi = LAL_PI_2;  /* inclination, coalescence phase, and polarization angle */
+  REAL4 inc = 0.0, psi = LAL_PI_2;  /* inclination, and polarization angle */
   REAL4 f_min = FMIN, f_max=FMAX; /* start and stop frequencies */
   REAL8 dt = DT;                /* sampling interval */
   INT4 order = ORDER;           /* PN order */
@@ -268,7 +268,6 @@ main(int argc, char **argv)
       if ( argc > arg + 3 ) {
 	arg++;
 	inc = atof( argv[arg++] )*LAL_PI/180.0;
-	phii = atof( argv[arg++] )*LAL_PI/180.0;
         psi = atof(argv[arg++] )*LAL_PI/180.0;
       }else{
 	ERROR( GENERATEPPNINSPIRALTESTC_EARG,

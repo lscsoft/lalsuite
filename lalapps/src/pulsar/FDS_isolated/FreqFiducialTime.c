@@ -259,7 +259,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   ASSERT( CList != NULL, lalStatus, FIDUCIALC_ENULL, FIDUCIALC_MSGENULL);
   
   if( (count = (INT4 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT4))) == NULL ) {
-    LALPrintError("Could not allocate Memory! \n");
+    XLALPrintError("Could not allocate Memory! \n");
     ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
   }
   
@@ -274,7 +274,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   else {
     if( (fp = fopen(fname,"w")) == NULL ) 
       {
-	LALPrintError("\n Cannot open output file %s\n",CLA->OutputFile); 
+	XLALPrintError("\n Cannot open output file %s\n",CLA->OutputFile); 
 	ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
       }
   }
@@ -375,7 +375,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
     fp=fopen(fname,"rb");
     if (fp==NULL) 
       {
-	LALPrintError("File %s doesn't exist!\n",fname);
+	XLALPrintError("File %s doesn't exist!\n",fname);
 	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
       }
   }
@@ -407,7 +407,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
       /* check that each line ends with a newline char (no overflow of
 	 line1 or null chars read) */
       if (!len || line1[len-1] != '\n') {
-	LALPrintError(
+	XLALPrintError(
 		      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
 		      i+1, fname, line1);
 	fclose(fp);
@@ -431,18 +431,18 @@ void ReadCombinedFile( LALStatus *lalStatus,
   
   if ( numlines == 0) 
     {
-      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
+      XLALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
     }
 
   if(strcmp(fname,"-") != 0){
     /* output a record of the running checksun amd byte count */
-    LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+    XLALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
     
     /* check validity of this Fstats-file */
     if ( strcmp(strcat(line1,"\n"), DONE_MARKER ) ) 
       {
-	LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+	XLALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
 	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
       }
     else
@@ -455,7 +455,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 #if 0 /* Do we need to check this? */
   if (*candlen <= 0  )
     {
-      LALPrintError("candidate length = %ud!\n",*candlen);
+      XLALPrintError("candidate length = %ud!\n",*candlen);
       exit(FIDUCIAL_EXIT_ERR);;
     }/* check that we have candidates. */
 #endif
@@ -467,7 +467,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
       *CList = (CandidateList *)LALMalloc (sizelist*sizeof(CandidateList));
       if ( !CList ) 
         { 
-          LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
+          XLALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
         }
     }
@@ -481,7 +481,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
     fp=fopen(fname,"rb");
     if (fp==NULL) 
       {
-	LALPrintError("fopen(%s) failed!\n", fname);
+	XLALPrintError("fopen(%s) failed!\n", fname);
 	LALFree ((*CList));
 	ABORT (lalStatus, FIDUCIALC_EINVALIDFSTATS, FIDUCIALC_MSGEINVALIDFSTATS);
       }
@@ -502,7 +502,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	  CandidateList *tmp;
 	  tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
 	  if ( !tmp ){
-	    LALPrintError("couldnot re-allocate memory for candidate list \n\n");
+	    XLALPrintError("couldnot re-allocate memory for candidate list \n\n");
 	    ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
 	  }
 	  *CList = tmp;
@@ -532,7 +532,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	      !finite(cl->F1dot)                 ||
 	      !finite(cl->TwoF)
 	      ) {
-	    LALPrintError(
+	    XLALPrintError(
 			  "Line %d of file %s has invalid values.\n"
 			  "First 255 chars are:\n"
 			  "%s\n"
@@ -551,7 +551,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	  /* check that we read 6 quantities with exactly the right format */
 	  if ( nread != 6 )
 	    {
-	      LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+	      XLALPrintError ("Found %d not %d values on line %d in file '%s'\n"
 			     "Line in question is\n%s",
 			     nread, 6, i+1, fname, line1);               
 	      LALFree ((*CList));
@@ -575,7 +575,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	  CandidateList *tmp;
 	  tmp = (CandidateList *)LALRealloc(*CList, (sizelist * sizeof(CandidateList)) );
 	  if ( !tmp ){
-	    LALPrintError("couldnot re-allocate memory for candidate list \n\n");
+	    XLALPrintError("couldnot re-allocate memory for candidate list \n\n");
 	    ABORT (lalStatus, FIDUCIALC_EMEM, FIDUCIALC_MSGEMEM);
 	  }
 	  *CList = tmp;
@@ -584,7 +584,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	CandidateList *cl=&(*CList)[jj];
 	
 	if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-	  LALPrintError(
+	  XLALPrintError(
 			"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
 			i+1, fname, line1);
 	  LALFree ((*CList));
@@ -615,7 +615,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	      !finite(cl->F1dot)                 ||
 	      !finite(cl->TwoF)
 	      ) {
-	    LALPrintError(
+	    XLALPrintError(
 			  "Line %d of file %s has invalid values.\n"
 			  "First 255 chars are:\n"
 			  "%s\n"
@@ -635,7 +635,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	     newline.  Note deliberate LACK OF WHITE SPACE char before %c
 	     above */
 	  if (newline != '\n') {
-	    LALPrintError(
+	    XLALPrintError(
 			  "Line %d of file %s had extra chars after F value and before newline.\n"
 			  "First 255 chars are:\n"
 			  "%s\n",
@@ -648,7 +648,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 	  /* check that we read 8 quantities with exactly the right format */
 	  if ( nread != 8 )
 	    {
-	      LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+	      XLALPrintError ("Found %d not %d values on line %d in file '%s'\n"
 			     "Line in question is\n%s",
 			     nread, 8, i+1, fname, line1);               
 	      LALFree ((*CList));
@@ -669,7 +669,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* check that we read ALL lines! */
   if (i != numlines) {
-    LALPrintError(
+    XLALPrintError(
             "Reading of file %s terminated after %d line but numlines=%d\n",
             fname, i, numlines);
     LALFree((*CList));
@@ -679,7 +679,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* read final line with %DONE\n marker */
   if (!fgets(line1, sizeof(line1), fp)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to find marker line of file %s\n",
             fname);
     LALFree((*CList));
@@ -689,7 +689,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* check for %DONE\n marker */
   if (strcmp(line1, DONE_MARKER)) {
-    LALPrintError(
+    XLALPrintError(
             "Failed to parse marker: 'final' line of file %s contained %s not %s",
             fname, line1, DONE_MARKER);
     LALFree ((*CList));
@@ -699,7 +699,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
 
   /* check that we are now at the end-of-file */
   if (fgetc(fp) != EOF) {
-    LALPrintError(
+    XLALPrintError(
             "File %s did not terminate after %s",
             fname, DONE_MARKER);
     LALFree ((*CList));
@@ -758,7 +758,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   if (uvar_help) {	/* if help was requested, we're done here */
-    LALPrintError("%s\n",rcsid);
+    XLALPrintError("%s\n",rcsid);
     fflush(stderr);
     LALDestroyUserVars(lalStatus->statusPtr);
     exit(FIDUCIAL_EXIT_OK);
@@ -776,7 +776,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
       CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
       if(CLA->OutputFile == NULL) {
 	TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-	LALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
+	XLALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
 	exit(FIDUCIAL_EXIT_ERR);
       }
     }
@@ -786,7 +786,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   else 
     { 
       TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-      LALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
+      XLALPrintError("Output file '%s' is incorrect. \n\n",uvar_OutputData);
       exit(FIDUCIAL_EXIT_ERR);
     }
 
@@ -796,7 +796,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
       CLA->InputFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
       if(CLA->InputFile == NULL){
 	TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-	LALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
+	XLALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
 	exit(FIDUCIAL_EXIT_ERR);
       }
     }
@@ -805,7 +805,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   else
     {
       TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-      LALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
+      XLALPrintError("Input file '%s' is incorrect. \n\n",uvar_InputData);
       exit(FIDUCIAL_EXIT_ERR);
     }
 
@@ -814,7 +814,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   }
   else    {
     TRY( FreeConfigVars( lalStatus->statusPtr, CLA ), lalStatus);
-    LALPrintError("The fiducial GPS time %d is incorrect. \n\n",uvar_FiducialTime);
+    XLALPrintError("The fiducial GPS time %d is incorrect. \n\n",uvar_FiducialTime);
     exit(FIDUCIAL_EXIT_ERR);
   }
   CLA->InNumLines = uvar_InNumLines;

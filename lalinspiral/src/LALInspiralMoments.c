@@ -177,7 +177,6 @@ LALGetInspiralMomentsBCV (
 {
   UINT4 k;
   InspiralMomentsIn in;
-  double q;
 
   INITSTATUS( status, "LALGetInspiralMomentsBCV", LALINSPIRALMOMENTSC );
   ATTATCHSTATUSPTR( status );
@@ -221,49 +220,39 @@ LALGetInspiralMomentsBCV (
 
 
   /* 17 */
-  q = 2* moments->n0; /*=10/3 */
   moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +
       moments->alpha * moments->alpha*moments->i[13]) / in.norm;
   /* 14 */
-  q = moments->n0 +moments->n15;
   moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +
       moments->alpha * moments->alpha*moments->i[10]) / in.norm;
   /* 11 */
-  q = 2 * moments->n15;
   moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +
       moments->alpha * moments->alpha*moments->i[7]) / in.norm;
 
   moments->M1[1][0]=moments->M1[0][1] ;
 
   /*  12 */
-  q = moments->n0;
   moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +
       moments->alpha * moments->alpha*moments->i[8]) / in.norm;
   /* 9 */
-  q = moments->n15;
 
   moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +
       moments->alpha * moments->alpha*moments->i[5]) / in.norm;
   /*  9 */
-  q = moments->n0-1;
 
   moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +
       moments->alpha * moments->alpha*moments->i[5]) / in.norm;
   /*  6 */
-  q = moments->n15-1;
   moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +
       moments->alpha * moments->alpha*moments->i[2]) / in.norm;
 
   /* 7 */
-  q = 0;
   moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +
       moments->alpha * moments->alpha*moments->i[3]) / in.norm;
   /* 4 */
-  q = -1;
   moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +
       moments->alpha * moments->alpha*moments->i[0]) / in.norm;
   /* 1 */
-  q = -2;
   moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[18] +
       moments->alpha * moments->alpha * moments->i[20]) / in.norm;
 

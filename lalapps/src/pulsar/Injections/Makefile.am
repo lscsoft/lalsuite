@@ -4,10 +4,16 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+if FRAME
+frameprogs = lalapps_sw_inj_frames
+else
+frameprogs =
+endif
+
 bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSFTs lalapps_compareTS \
 	lalapps_dumpSFT lalapps_makefakedatabinary lalapps_makefakedata_test
 
-EXTRA_PROGRAMS = psinject eah_Makefakedata_v4
+EXTRA_PROGRAMS = psinject eah_Makefakedata_v4 $(frameprogs)
 
 lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
 
@@ -26,8 +32,10 @@ lalapps_makefakedatabinary_SOURCES = makefakedatabinary.c
 
 lalapps_makefakedata_test_SOURCES =  makefakedata_test.c sft_extra.c sft_extra.h
 
-## extra-programs
+## ----- extra-programs
 psinject_SOURCES = psinject.c
+
+lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800
 TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh

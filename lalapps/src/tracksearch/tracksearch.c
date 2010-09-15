@@ -2020,7 +2020,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   TSAMap                *tmpTSA=NULL;/*point to correct vars for cropping*/
   REAL8                 signalStop=0;
   REAL8                 signalStart=0;
+#if 0
   REAL8                 cropDeltaT=0;
+#endif
   INT4                  tmpSegDataPoints=0;
   INT4                  tmpMapTimeBins=0;
   INT4                  errCode=0;
@@ -2207,7 +2209,9 @@ LALappsDoTSeriesSearch(LALStatus         *status,
   /*Translate buffer points to GPS delta T */
   /*Add this time to the time of the buffered data segment */
   /*Report this as the true start time of cropped map */
+#if 0
   cropDeltaT=signalSeries->deltaT*params.SegBufferPoints;
+#endif
 
   mapMarkerParams.mapStartGPS=signalSeries->epoch;
   signalStart = XLALGPSGetREAL8(&signalSeries->epoch);

@@ -123,7 +123,6 @@ snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
 snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment );\
 
-double rint(double x);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 #ifdef LALAPPS_CONDOR

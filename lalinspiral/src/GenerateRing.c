@@ -72,8 +72,11 @@ LALDCreateVector()            LALDDestroyVector()
 #include <lal/RealFFT.h>
 #include <lal/TimeFreqFFT.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID( GENERATERINGC, "$Id$" );
 
@@ -82,7 +85,7 @@ void
 LALGenerateRing(
     LALStatus          *stat,
     CoherentGW         *output,
-    REAL4TimeSeries    *series,
+    REAL4TimeSeries    UNUSED *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     )
@@ -98,7 +101,6 @@ LALGenerateRing(
   REAL8 *phiData;      /* pointer to phase data */
   REAL8 init_phase;    /*initial phase of injection */
   REAL4 *aData;        /* pointer to frequency data */
-  LIGOTimeGPS startTime;  /* start time of injection */
   UINT4 nPointInj; /* number of data points in a block */
 #if 0
   UINT4 n;
@@ -111,9 +113,6 @@ LALGenerateRing(
   INT8 inj_diff;       /* time between start of segment and injection */
   LALTimeInterval dummyInterval;
 #endif
-
-  /* series is unused in this function */
-  UNUSED(series);
 
   INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
   ATTATCHSTATUSPTR( stat );
@@ -137,7 +136,6 @@ LALGenerateRing(
 
   /* Set up some other constants, to avoid repeated dereferencing. */
   dt = params->deltaT;
-  startTime = simRingdown->geocent_start_time;
 /* N_point = 2 * floor(0.5+ 1/ dt); */
 
   nPointInj = 163840;

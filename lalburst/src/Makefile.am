@@ -15,7 +15,9 @@ lalburstinclude_HEADERS = \
 	TSSearch.h \
 	Thresholds.h \
 	TimeFreq.h \
-	TrackSearch.h
+	TrackSearch.h \
+	cs_cosmo.h \
+	cs_lambda_cosmo.h
 
 lib_LTLIBRARIES = liblalburst.la
 liblalburst_la_SOURCES = \
@@ -42,6 +44,7 @@ liblalburst_la_SOURCES = \
 	TfrWv.c \
 	Thresholds.c \
 	TrackSearch.c \
+	cs_lambda_cosmo.c \
 	check_series_macros.h
 
 liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
