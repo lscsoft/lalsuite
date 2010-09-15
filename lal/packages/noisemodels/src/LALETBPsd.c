@@ -35,8 +35,6 @@
 REAL8 XLALETBPsd( REAL8 f )
 {
 
-  static const char func[] = "XLALETBPsd";
-
   /* Constants for calculating the fit */
   const REAL8 c1 = 2.39e-27;
   const REAL8 c2 = 0.349;
@@ -53,7 +51,7 @@ REAL8 XLALETBPsd( REAL8 f )
 
 #ifndef LAL_NDEBUG
   if ( f <= 0 )
-    XLAL_ERROR_REAL8( func, XLAL_EINVAL );
+    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
 #endif
 
   xt = f / 100.;
