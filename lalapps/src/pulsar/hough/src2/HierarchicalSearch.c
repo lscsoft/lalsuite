@@ -163,6 +163,7 @@ RCSID( "$Id$");
 extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
+BOOLEAN uvar_printGrid = FALSE; /**< global variable for printing Hough grid */
 BOOLEAN uvar_printStats = FALSE;/**< global variable for calculating Hough map stats */
 BOOLEAN uvar_dumpLUT = FALSE;  	/**< global variable for printing Hough look-up-tables for debugging */
 
@@ -224,6 +225,8 @@ void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT, MultiN
 
 void PrintFstatVec (LALStatus *status, REAL4FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint, 
 		    LIGOTimeGPS  refTime, INT4 stackIndex);
+
+void PrintHoughGrid(LALStatus *status, HOUGHPatchGrid *patch, HOUGHDemodPar  *parDem, CHAR *fnameOut, INT4 iHmap);
 
 void PrintSemiCohCandidates(LALStatus *status, SemiCohCandidateList *in, FILE *fp, LIGOTimeGPS refTime);
 
@@ -507,6 +510,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printMaps",    0, UVAR_DEVELOPER, "Print Hough maps -- for debugging", &uvar_printMaps), &status);  
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printGrid",    0, UVAR_DEVELOPER, "Print Hough fine grid -- for debugging", &uvar_printGrid), &status);  
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "dumpLUT",      0, UVAR_DEVELOPER, "Print Hough look-up-tables -- for debugging", &uvar_dumpLUT), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printStats",   0, UVAR_DEVELOPER, "Print Hough map statistics", &uvar_printStats), &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No.of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
@@ -2030,6 +2034,10 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  if ( uvar_printMaps ) {
 	    TRY( PrintHmap2file( status->statusPtr, &ht, params->outBaseName, iHmap), status);
 	  }
+
+	  if ( uvar_printGrid ) {
+	    TRY( PrintHoughGrid( status->statusPtr, &patch, &parDem, params->outBaseName, iHmap), status);
+	  }
 	  
 	  /* increment hough map index */ 	  
 	  ++iHmap;
@@ -2358,6 +2366,70 @@ void PrintHmap2file(LALStatus *status,
 }
 
 
+void PrintHoughGrid(LALStatus *status,
+		    HOUGHPatchGrid *patch, 
+		    HOUGHDemodPar  *parDem,
+		    CHAR *fnameOut,
+		    INT4 iHmap)
+{
+
+  UINT2 xSide, ySide;
+  FILE  *fp1=NULL;   /* Output file */
+  FILE  *fp2=NULL;   /* Output file */
+  CHAR filename1[256], filename2[256], filenumber[16]; 
+  INT4  k, i ;
+  REAL8UnitPolarCoor sourceLocation;
+
+  INITSTATUS( status, "PrintHoughGrid", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  sprintf( filenumber, ".%06d",iHmap); 
+
+  strcpy( filename1, fnameOut);
+  strcat( filename1, "_GridAlpha");
+  strcat( filename1, filenumber);
+
+  strcpy( filename2, fnameOut);
+  strcat( filename2, "_GridDelta");
+  strcat( filename2, filenumber);
+
+  fp1=fopen(filename1,"wb");  
+  ASSERT ( fp1 != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
+
+  fp2=fopen(filename2,"wb");  
+  ASSERT ( fp2 != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
+
+  xSide = patch->xSide;
+  ySide = patch->ySide;
+
+
+  for(k=ySide-1; k>=0; --k){
+    for(i=0;i<xSide;++i){
+
+      TRY( LALStereo2SkyLocation ( status->statusPtr, &sourceLocation, 
+				   k, i, patch, parDem), status);
+
+      fprintf( fp1 ," %f", sourceLocation.alpha);
+      fflush( fp1 );
+
+      fprintf( fp2 ," %f", sourceLocation.delta);
+      fflush( fp2 );
+    }
+
+    fprintf( fp1 ," \n");
+    fflush( fp1 );
+
+    fprintf( fp2 ," \n");
+    fflush( fp2 );
+  }
+
+  fclose( fp1 );  
+  fclose( fp2 );  
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
 
 /** Print single Hough map to a specified output file */
 void DumpLUT2file(LALStatus       *status,
