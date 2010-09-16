@@ -2036,9 +2036,12 @@ void ComputeFstatHoughMap(LALStatus *status,
 	  }
 
 	  if ( uvar_printGrid ) {
-	    TRY( PrintHoughGrid( status->statusPtr, &patch, &parDem, params->outBaseName, iHmap), status);
+	    /* just print one grid */
+	    if ( iHmap == 0 ) { 
+	      TRY( PrintHoughGrid( status->statusPtr, &patch, &parDem, params->outBaseName, iHmap), status);
+	    }
 	  }
-	  
+
 	  /* increment hough map index */ 	  
 	  ++iHmap;
 	  
