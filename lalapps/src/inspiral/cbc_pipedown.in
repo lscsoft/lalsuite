@@ -348,7 +348,7 @@ for tag in user_tags:
 
 
   ############################################################################
-  # Step 1: Setup thinca_to_coinc nodes
+  # Setup thinca_to_coinc nodes
 
   print "\tsetting up thinca_to_coinc nodes..."
 
@@ -451,8 +451,7 @@ for tag in user_tags:
   fp.close()
 
   ############################################################################
-  # Step 2: Setup a LigolwSqliteNode for putting thinca_to_coincs 
-  # into a sql db
+  # Setup a LigolwSqliteNode for putting thinca_to_coincs into a sql db
 
   print "\tsetting up node to put thinca_to_coinc files into a SQLite database..."
   
@@ -480,7 +479,7 @@ for tag in user_tags:
   dag.add_node( t2c2sql_node )
   
   ############################################################################
-  # Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
+  # Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
   
   print "\tsetting up dbsimplify node to clean the database..."
   
@@ -496,7 +495,7 @@ for tag in user_tags:
   dag.add_node( dbsimplify_node )
 
   ############################################################################
-  # Step 3.5: Make the detection statistic nicer as Kipp and Duncan want it
+  # Make the detection statistic nicer and Kipp and Duncan happier
  
   print "\tsetting up repop_coinc node to recalculate detection statistic..."
 
@@ -513,7 +512,7 @@ for tag in user_tags:
   dag.add_node( repop_coinc_node )
 
   #############################################################################
-  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+  # Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
   print "\tsetting up cluster node to cluster coincs in the database..."
   
@@ -539,7 +538,7 @@ for tag in user_tags:
   cluster_nodes[tag] = cluster_node
   
   ############################################################################
-  # Step 5: Do additional jobs for injection tags
+  # Do additional jobs for injection tags
 
   if simulation:
     # add dbaddinj node
@@ -684,7 +683,7 @@ for result_db in result_dbs_cache:
   dag.add_node( veto2sql_node )
   
   ############################################################################
-  # Step 3b: Compute durations in the database
+  # Compute durations in the database
 
   print "\tsetting up compute_durations node..."
 
@@ -700,7 +699,7 @@ for result_db in result_dbs_cache:
   dag.add_node(comp_durs_node)
   
   ############################################################################
-  # Step 4: MVSC Calculation
+  # MVSC Calculation
 
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
     print "\tsetting up MVSC nodes..."
@@ -771,7 +770,7 @@ for result_db in result_dbs_cache:
     dag.add_node( mvsc_update_sql_node )
 
   ############################################################################
-  # Step 5a: Setup a CfarNode to compute the uncombined false alarm rates
+  # Compute the uncombined false alarm rates
   
   print "\tsetting up cfar nodes:"
   print "\t\tfor uncombined false alarm rates..."
@@ -791,7 +790,7 @@ for result_db in result_dbs_cache:
   dag.add_node( ucfar_node )
   
   ############################################################################
-  # Step 5b: Setup a CfarNode to compute the combined false alarm rates
+  # Compute the combined false alarm rates
   
   print "\t\tfor combined false alarm rates..."
   
