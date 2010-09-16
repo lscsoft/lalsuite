@@ -496,7 +496,7 @@ for tag in user_tags:
   dag.add_node( dbsimplify_node )
 
   ############################################################################
-  # Step 4: Make the detection statistic nicer as Kipp and Duncan want it
+  # Step 3.5: Make the detection statistic nicer as Kipp and Duncan want it
  
   print "\tsetting up repop_coinc node to recalculate detection statistic..."
 
@@ -513,7 +513,7 @@ for tag in user_tags:
   dag.add_node( repop_coinc_node )
 
   #############################################################################
-  # Step 5: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
   print "\tsetting up cluster node to cluster coincs in the database..."
   
@@ -539,7 +539,7 @@ for tag in user_tags:
   cluster_nodes[tag] = cluster_node
   
   ############################################################################
-  # Step 6: Do additional jobs for injection tags
+  # Step 5: Do additional jobs for injection tags
 
   if simulation:
     # add dbaddinj node
