@@ -63,6 +63,7 @@
 #define ARRAY 0                       /* data type codes */
 #define EVENT 1                       /* data type codes */
 #define NPCU 5                        /* the number of PCUs on XTE */
+#define MAXZEROCOUNT 10               /* the maximum number of consecutive zeros alowed in the data */
 
 /***********************************************************************************************/
 /* error codes */
@@ -2835,9 +2836,11 @@ int XLALFreeBarycentricData(BarycentricData *stamps   /**< [out] a null timeseri
 /** This function outputs an XTEUINT4TimeSeriesArray to a frame file or files.
  * 
  */
-int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts) 
-{
-
+int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] the output GTI table */ 
+				     XTEUINT4TimeSeriesArray *ts    /**< [in] the timeseries array */
+   ) 
+{  
+ 
   static const char *fn = __func__;        /* store function name for log output */
   INT4 ngti = 0;                           /* the number of gti entries */
   CHAR *temp_undefined = NULL;             /* temporary pointer to master undefined vector */
@@ -2870,12 +2873,39 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts)
     for (j=0;j<ts->ts[i]->length;j++) temp_undefined[j] += ts->ts[i]->undefined[j];
   }
 
+  /* test for extended zero data - this is only really applicable to sources with high expected counts */
+  /* weak sources may have extended spans of zero counts */
+  for (i=0;i<ts->length;i++) {
+
+    j = 0;
+    UINT4 zerocount = 0;
+    
+    /* loop over samples within the timeseries */
+    while (j<ts->ts[i]->length) {
+      
+      /* identify a stretch of zeros */
+      if (ts->ts[i]->data[j] == 0) zerocount++;
+
+      /* if the number of zeros is beyond the max allowed then we mark the stretch undefined */
+      else if (ts->ts[i]->data[j] != 0) { 
+	
+	if (zerocount>MAXZEROCOUNT) {
+	  UINT4 k;
+	  for (k=j-zerocount;k<j;k++) temp_undefined[k] += 1;	  
+	}
+	zerocount = 0;
+  
+      }
+      j++;
+    }
+  }
+ 
   /* compute the number of GTIs */  
   {
     BOOLEAN flag = FALSE;
     for (j=0;j<tempts->length;j++) {
-      if ((!flag) && (tempts->undefined[j] == 0)) flag = TRUE;
-      if (flag && tempts->undefined[j]) {
+      if ((!flag) && (temp_undefined[j] == 0)) flag = TRUE;
+      if (flag && temp_undefined[j]) {
 	flag = FALSE;
 	ngti++;
       }
@@ -2883,7 +2913,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts)
     if (flag) ngti++;
   }
   LogPrintf(LOG_DEBUG,"%s : final GTI table has %d entries.\n",fn,ngti);
-
+ 
   /* if there were actual good time intervals */
   if (ngti > 0) {
 
@@ -2898,11 +2928,11 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,XTEUINT4TimeSeriesArray *ts)
       BOOLEAN flag = FALSE;
       i = 0;
       for (j=0;j<tempts->length;j++) {
-	if ((!flag) && (tempts->undefined[j] == 0)) {
+	if ((!flag) && (temp_undefined[j] == 0)) {
 	  flag = TRUE;
 	  (*gti)->start[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
 	}
-	if (flag && tempts->undefined[j]) {
+	if (flag && temp_undefined[j]) {
 	  flag = FALSE;
 	  (*gti)->end[i] = tempts->tstart + (REAL8)j*tempts->deltat; 
 	  i++;
