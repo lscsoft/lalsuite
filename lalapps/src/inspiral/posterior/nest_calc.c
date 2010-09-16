@@ -18,6 +18,12 @@
 
 #define TOLERANCE 0.1
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 gsl_matrix *cov_mat;
 
 CHAR outfile[FILENAME_MAX];
@@ -33,7 +39,7 @@ double logadd(double a,double b){
 void NestInit2PN(LALMCMCParameter *parameter, void *iT){
 	REAL8 trg_time;
 	SnglInspiralTable *inspiralTable = (SnglInspiralTable *)iT;
-	REAL4 mtot,eta,mwindow;
+	REAL4 UNUSED mtot, eta, UNUSED mwindow;
 	trg_time = (REAL8)inspiralTable->end_time.gpsSeconds + (REAL8)inspiralTable->end_time.gpsNanoSeconds *1.0e-9;
 	parameter->param=NULL;
 	parameter->dimension=0;
@@ -132,7 +138,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	static LALStatus status;
 	REAL4 accept;
 	REAL8 *logZarray,*logwarray,*Harray,*oldZarray,*Wtarray;
-	REAL8 logw,H=0.0,logLmin,logWt,logZ=-DBL_MAX,logZnew,deltaZ;
+	REAL8 logw, H=0.0, logLmin, UNUSED logWt, logZ=-DBL_MAX, logZnew, UNUSED deltaZ;
 	REAL8 MCMCfail=0;
 	REAL8 logZnoise=0.0;
 	REAL8 logLmax=-DBL_MAX;

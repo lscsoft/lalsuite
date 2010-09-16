@@ -122,7 +122,8 @@ typedef struct
 
   REAL8 binSizeHz;       /* output PSD bin size in Hz */
   INT4  binSize;         /* output PSD bin size in no. of bins */ 
-  INT4  mthopBins;       /* type of math. operation over bins */
+  INT4  PSDmthopBins;    /* for PSD, type of math. operation over bins */
+  INT4  nSFTmthopBins;   /* for norm. SFT, type of math. operation over bins */
   REAL8 binStepHz;       /* output PSD bin step in Hz */
   INT4  binStep;         /* output PSD bin step in no. of bins */ 
   BOOLEAN outFreqBinEnd; /* output the end frequency of each bin? */
@@ -413,13 +414,13 @@ main(int argc, char *argv[]){
       if (uvar.outFreqBinEnd)
 	fprintf(fpOut, "   %f", f1);	  
       
-      REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.mthopBins);
+      REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
       if (XLALIsREAL8FailNaN( psd ))
 	return EXIT_FAILURE;
       fprintf(fpOut, "   %e", psd);
       
       if (uvar.outputNormSFT) {
-	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.mthopBins);
+	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
 	if (XLALIsREAL8FailNaN( nsft ))
 	  return EXIT_FAILURE;
 	fprintf(fpOut, "   %f", nsft);
@@ -534,7 +535,7 @@ REAL8 math_op(REAL8* data, size_t length, INT4 type) {
       res = (data[length/2] + data[length/2+1])/2;
     }
     else /* length is odd */ {
-      res = data[length/2+1];
+      res = data[length/2];
     }
 
     break;
@@ -621,11 +622,12 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
-  uvar->nSFTmthopIFOs = MATH_OP_ARITHMETIC_MEAN;
+  uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
 
   uvar->binSizeHz = 0.0;
   uvar->binSize   = 1;
-  uvar->mthopBins = MATH_OP_ARITHMETIC_MEDIAN;
+  uvar->PSDmthopBins  = MATH_OP_ARITHMETIC_MEDIAN;
+  uvar->nSFTmthopBins = MATH_OP_MAXIMUM;
   uvar->binStep   = 0.0;
   uvar->binStep   = 1;
 
@@ -659,7 +661,9 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   XLALregINTUserStruct   (binSize,          'z', UVAR_OPTIONAL, "Bin the output into bins of size (in number of bins)");
   XLALregREALUserStruct  (binSizeHz,        'Z', UVAR_OPTIONAL, "Bin the output into bins of size (in Hz)");
-  XLALregINTUserStruct   (mthopBins,        'A', UVAR_OPTIONAL, "If binning, type of math. op. over frequency bins: "
+  XLALregINTUserStruct   (PSDmthopBins,     'A', UVAR_OPTIONAL, "If binning, for PSD type of math. op. over bins: "
+                                                                "see --PSDmthopSFTs");
+  XLALregINTUserStruct   (nSFTmthopBins,    'B', UVAR_OPTIONAL, "If binning, for norm. SFT type of math. op. over bins: "
                                                                 "see --PSDmthopSFTs");
   XLALregINTUserStruct   (binStep,          'p', UVAR_OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in number of bins, default is bin size)");
@@ -692,8 +696,12 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
     XLALPrintError("ERROR: --nSFTmthopIFOs(-J) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
-  if (XLALUserVarWasSet(&(uvar->mthopBins)) && !(0 <= uvar->mthopBins && uvar->mthopBins < MATH_OP_LAST)) {
-    XLALPrintError("ERROR: --mthopBins(-A) must be between 0 and %i", MATH_OP_LAST - 1);
+  if (XLALUserVarWasSet(&(uvar->PSDmthopBins)) && !(0 <= uvar->PSDmthopBins && uvar->PSDmthopBins < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --PSDmthopBins(-A) must be between 0 and %i", MATH_OP_LAST - 1);
+    return XLAL_FAILURE;
+  }
+  if (XLALUserVarWasSet(&(uvar->nSFTmthopBins)) && !(0 <= uvar->nSFTmthopBins && uvar->nSFTmthopBins < MATH_OP_LAST)) {
+    XLALPrintError("ERROR: --nSFTmthopBins(-B) must be between 0 and %i", MATH_OP_LAST - 1);
     return XLAL_FAILURE;
   }
   if (XLALUserVarWasSet(&(uvar->binSize)) && XLALUserVarWasSet(&(uvar->binSizeHz))) {

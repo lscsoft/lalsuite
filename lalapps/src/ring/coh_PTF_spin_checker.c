@@ -25,6 +25,12 @@ RCSID( "$Id$" );
 #define CVS_SOURCE   "$Source$"
 #define CVS_DATE     "$Date$"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
 static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
 static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
@@ -138,8 +144,8 @@ int main( int argc, char **argv )
   REAL8                   *Fplus;
   REAL8                   *Fcross;
   REAL8                   detLoc[3];
-  REAL4TimeSeries         *pValues[10];
-  REAL4TimeSeries         *gammaBeta[2];
+  REAL4TimeSeries         UNUSED *pValues[10];
+  REAL4TimeSeries         UNUSED *gammaBeta[2];
   LIGOTimeGPS             segStartTime;
   MultiInspiralTable      *eventList = NULL;
   UINT4                   numDetectors = 0;
@@ -612,9 +618,9 @@ static RingDataSegments *coh_PTF_get_segments(
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
     SimInspiralTable        *thisInject = NULL;
-    LIGOTimeGPS injTime;
+    LIGOTimeGPS UNUSED injTime;
     REAL8 deltaTime;
-    INT4 segNumber,segLoc,ninj;
+    INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
     ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
     while (injectList)
@@ -786,8 +792,8 @@ int cohPTFspinChecker(
 )
 
 {
-  UINT4 i,j,k,l,vecLength,vecLengthTwo,vecLengthSquare,vecLengthTwoSquare;
-  UINT4 nsVecLength,nsVecLengthTwo,nsVecLengthSquare,nsVecLengthTwoSquare;
+  UINT4 i, j, k, l, vecLength, vecLengthTwo, vecLengthSquare, UNUSED vecLengthTwoSquare;
+  UINT4 UNUSED nsVecLength, nsVecLengthTwo, UNUSED nsVecLengthSquare,UNUSED nsVecLengthTwoSquare;
 
   if (singleDetector == 1)
   {

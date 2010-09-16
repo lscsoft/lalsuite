@@ -1670,6 +1670,10 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
     }
     LogPrintf(LOG_DEBUG,"%s : written frame to output file\n",fn);
 
+    /* free the frame structure */
+    /* there doesn't seem to be an XLAL function for doing this */
+    FrameFree(outFrame);
+
   }
   else {
     LogPrintf(LOG_NORMAL,"%s : timeseries contains only zero counts.  Not generating a frame file.\n",fn);

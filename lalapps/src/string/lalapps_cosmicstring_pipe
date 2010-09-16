@@ -241,23 +241,37 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	# injection job
 	#
 
+	binjnodes = set()
 	if do_injections:
+		# to save disk space and speed the dag along we don't
+		# generate a single injection list for the entire analysis
+		# run, instead a separate list is constructed for each
+		# block of data to be analyzed.  we need to be careful that
+		# two nearby injection lists don't contain injections for
+		# the same time, so we protract the segments by the time
+		# step and coalesce so that only gaps between segments
+		# larger than twice the time step result in separate files
+		# being generated.  we could allow smaller gaps to survive,
+		# but this way we don't have to worry about it.
+
 		# injections_offset is a number between 0 and 1 in units of
 		# the period between injections
 
-		binjnodes = power.make_binj_fragment(dag, seglists.extent_all(), tag, offset = injections_offset)
+		for seg in seglists.union(seglists).protract(power.binjjob.time_step).coalesce().contract(power.binjjob.time_step):
+			binjnodes |= power.make_binj_fragment(dag, seg, tag, offset = injections_offset)
 
-		# artificial parent-child relationship to force binj jobs
-		# to run before all datafinds.  makes dag run faster
-		# because it allows string search jobs to start moving onto
-		# the cluster without waiting for all the datafinds
-		# complete
+		# artificial parent-child relationship to induce dagman to
+		# submit binj jobs as the corresponding datafinds complete
+		# instead of submiting all of one kind before any of the next.
+		# makes dag run faster because it allows string search jobs to
+		# start moving onto the cluster without waiting for all the
+		# datafinds and/or all the binjs to complete
 
-		for binjnode in binjnodes:
-			for datafindnode in datafinds:
-				datafindnode.add_parent(binjnode)
-	else:
-		binjnodes = set()
+		for datafindnode in datafinds:
+			seg = segments.segment(datafindnode.get_start(), datafindnode.get_end())
+			for binjnode in binjnodes:
+				if seg.intersects(power.cache_span(binjnode.get_output_cache())):
+					binjnode.add_parent(datafindnode)
 
 	#
 	# trigger generator jobs
@@ -272,7 +286,6 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	#
 
 	coinc_nodes = []
-	binj_cache = set(cache_entry for node in binjnodes for cache_entry in node.get_output_cache())
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
 			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path())
@@ -285,6 +298,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
 		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 50000000.0 / len(these_time_slides), verbose = verbose):
+			binj_cache = set(cache_entry for node in binjnodes for cache_entry in node.get_output_cache() if cache_entry.segment.intersects(seg))
 			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = tisi_cache | vetoes_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#

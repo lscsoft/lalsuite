@@ -536,6 +536,9 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 	Construct a DAG fragment for an entire segment, splitting the
 	segment into multiple trigger generator jobs.
 	"""
+	# figure out which binj nodes, if any, produce output for this job
+	binjnodes = set(node for node in binjnodes if power.cache_span(node.get_output_cache()).intersects(seg))
+
 	# only one frame cache file can be provided as input, and only one
 	# injection description file can be provided as input.
 	# the unpacking indirectly tests that the file count is correct

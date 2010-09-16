@@ -36,7 +36,7 @@ int main ( int argc, char *argv[])
 {
     FILE *fpin = NULL;
     int i,nlines=NLINES,arg=1,record=0;
-    float f[NLINES],amp[NLINES],dum1, df;
+    float f[NLINES],amp[NLINES],dum1;
     float m1, m2, eta, mtot, mu, arm_length=1.0;
     float ins_amp,d_optimal;
 
@@ -109,7 +109,6 @@ int main ( int argc, char *argv[])
     for(i=1;i<nlines;i++){
         if ( fscanf(fpin,"%f %f",&f[i],&amp[i]) == EOF )
             break;
-        df = f[i]-f[i-1];
         dum1+=pow(f[i],-7.0/3.0)/(amp[i]*amp[i]);
         /* Assume ISCO is at 200 (20 Msun / mtot) Hz */
         if (f[i] * mtot > 4000)
