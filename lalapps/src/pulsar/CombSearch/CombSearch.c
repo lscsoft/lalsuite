@@ -566,9 +566,6 @@ int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
 
   INT4 i=0, ind=0;				/* declare and initialise counters*/
   
-  /* halfwidth of tophat template */
-  INT4 bins = floor(0.5+ exr->mm/(userParams->orbitPeriod*exr->df));
-
   /* Allocate some memory for tophat template vector */  
   if ( (tophat->fvect=XLALCreateREAL8Vector(exr->fbins)) == NULL ){
     LogPrintf (LOG_CRITICAL, "%s: Error allocating memory to tophat->fvect. Error %d\n",fn,xlalErrno);
@@ -580,13 +577,13 @@ int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
     tophat->fvect->data[i]=0;						
   }
   
-  /* Assign unity at spacings for 1 zero spike + mm/P*df positive frequency spikes */
-  for (i=0;i<=bins;i++)	{
+  /* Assign unity at spacings for 1 zero spike + dm = mm/P*df positive frequency spikes */
+  for (i=0;i<=exr->dm;i++)	{
     tophat->fvect->data[i]=1;						
   }
   
-  /*  assign unity for mm/P*df negative frequency spikes */
-  for (i=1;i<=bins;i++)	{
+  /*  assign unity for dm = mm/P*df negative frequency spikes */
+  for (i=1;i<=exr->dm;i++)	{
     ind=(exr->fbins -i);
     tophat->fvect->data[ind]=1;						
   }
@@ -596,7 +593,7 @@ int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
   tophat->dof		= userParams->unitspikes;
   
    
-  LogPrintf(LOG_DEBUG,"%s:  template with %d spikes created. halfwidth(mm/P*df) = %d bins\n",fn, tophat->dof, bins);
+  LogPrintf(LOG_DEBUG,"%s:  template with %d spikes created. halfwidth(dm) = %d bins\n",fn, tophat->dof, exr->dm);
   LogPrintf(LOG_DEBUG,"'%s' successfully completed. Leaving. \n",fn);
   return XLAL_SUCCESS;
 
