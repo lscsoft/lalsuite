@@ -31,6 +31,15 @@ extern "C" {
 
 NRCSID (LALSQTPNWAVEFORMH, "$Id$ LALSQTPNWaveform.h");
 
+#define UNUSED(expr) do { (void)(expr); } while (0)
+
+/**		The macro function returns the square of the argument.
+ * Do not use with incrementing or decrementing operators!
+ * @param[in] a	 : the number
+ * @return the square of the number
+ */
+#define SQR(a) ((a)*(a))
+
 typedef struct tagLALSQTPNWave{
 	CoherentGW *waveform;
 	REAL4Vector *h;
@@ -141,7 +150,7 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  *			SO_{\omega}=\sum_{i\ne j}-\frac{1}{12}\frac{\chi_im_i^2}{M^2}\left(113+75\frac{m_j}{m_i}\right)\SPU{L_N}{\chi_i},\\
  *			SS_{\omega}=\frac{\eta\chi_1\chi_2}{48}\left[721\SPU{L_N}{\chi_1}\SPU{L_N}{\chi_2}-247\SPU{\chi_1}{\chi_2}\right],\\
  *			SSself_{\omega}=\sum_{i}\frac{1}{96}\frac{\chi_im_i}{M^2}\chi_i\left[7-\SPU{L_N}{\chi_i}^2\right],\\
- *			QM_{\omega}=\sum_{i}\frac{5}{2}\frac{\chi_im_i^2}{M^2}\chi_iw_i\left[3\SPU{L_N}{\chi_i}-1\right],
+ *			QM_{\omega}=\sum_{i}\frac{5}{2}\frac{\chi_im_i^2}{M^2}\chi_iw_i\left[3\SPU{L_N}{\chi_i}^2-1\right],
  *		\end{gathered}\\[15pt]
  *		\begin{gathered}
  *			\begin{split}

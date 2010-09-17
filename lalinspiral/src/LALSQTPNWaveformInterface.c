@@ -12,13 +12,6 @@
 
 NRCSID (LALSQTPNWAVEFORMINTERFACEC, "$Id LALSQTPNWaveformInterface.c$");
 
-/**		The macro function returns the square of the argument.
- * Do not use with incrementing or decrementing operators!
- * @param[in] a	 : the number
- * @return the square of the number
- */
-#define SQR(a) ((a)*(a))
-
 void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, REAL4Vector *signalvec2, InspiralTemplate *params) {
 
 	InspiralInit paramsInit;
@@ -99,7 +92,7 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 	INITSTATUS(status, "LALSQTPNWaveformInterface", LALSQTPNWAVEFORMINTERFACEC);
 	ATTATCHSTATUSPTR(status);
 	// variable declaration and initialization
-	UINT4 count, i;
+	UINT4 i;
 	InspiralInit paramsInit;
 
 	ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -119,11 +112,10 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 	// Allocate the waveform structures.
 	xlalErrno = 0;
 	XLALSQTPNAllocateCoherentGW(waveform, paramsInit.nbins);
-	
+
 	LALSQTPNWave wave;
 	wave.h = NULL;
-	wave.hp = NULL;
-	wave.hc = NULL;
+	wave.hp = wave.hc = NULL;
 	wave.waveform = waveform;
 	LALSQTPNWaveformParams wave_Params;
 
@@ -136,12 +128,11 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 		XLALSQTPNDestroyCoherentGW(waveform);
 	} ENDFAIL(status);
 	params->fFinal = wave_Params.finalFreq;
-	count = wave.length;
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < wave.length; i++) {
 		if (waveform->phi->data->data[i] != 0.) {
 			break;
 		}
-		if (i == count - 1) {
+		if (i == wave.length - 1) {
 			XLALSQTPNDestroyCoherentGW(waveform);
 			DETATCHSTATUSPTR( status );
 			RETURN( status );
@@ -150,8 +141,8 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 
 	{
 		if (waveform->a != NULL) {
-			waveform->f->data->length = waveform->phi->data->length = waveform->shift->data->length = count;
-			waveform->a->data->length = 2 * count;
+			waveform->f->data->length = waveform->phi->data->length = waveform->shift->data->length = wave.length;
+			waveform->a->data->length = 2 * wave.length;
 			for (i = 0; i < wave.length; i++) {
 				// (PPNParamStruct)ppnParams->phi === (InspiralTemplate)params->startPhase === (SimInspiralTable)injparams/this_event->coa_phase it is set to 0 in LALSQTPNWaveformTest.c at line 83.
 				waveform->phi->data->data[i] = waveform->phi->data->data[i] - waveform->phi->data->data[wave.length-1] + ppnParams->phi;
@@ -176,10 +167,10 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 					"STPN inspiral polshift");
 		}
 		// --- fill some output ---
-		ppnParams->tc = (REAL8) (count - 1) / params->tSampling;
-		ppnParams->length = count;
-		ppnParams->dfdt = ((REAL4) (waveform->f->data->data[count - 1]
-				- waveform->f->data->data[count - 2])) * ppnParams->deltaT;
+		ppnParams->tc = (REAL8) (wave.length - 1) / params->tSampling;
+		ppnParams->length = wave.length;
+		ppnParams->dfdt = ((REAL4) (waveform->f->data->data[wave.length - 1]
+				- waveform->f->data->data[wave.length - 2])) * ppnParams->deltaT;
 		ppnParams->fStop = params->fFinal;
 		ppnParams->termCode = GENERATEPPNINSPIRALH_EFSTOP;
 		ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
@@ -290,8 +281,9 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	wave->signalAmp = 4. * wave->totalMass * wave->eta * LAL_MRSUN_SI / wave->distance;
 	wave->order = params->order;
 	wave->spinInteraction = params->spinInteraction;
-	if (wave->spinInteraction != 0)
+	if (wave->spinInteraction) {
 		wave->spinInteraction |= LAL_SOInter;
+	}
 	/*printf("masses: %lg %lg\n", wave->mass[0], wave->mass[1]);
 	printf("chis1: %lg %lg %lg\n", wave->chi[0][0], wave->chi[0][1], wave->chi[0][2]);
 	printf("chis2: %lg %lg %lg\n", wave->chi[1][0], wave->chi[1][1], wave->chi[1][2]);

@@ -11,15 +11,6 @@
 
 NRCSID (LALSQTPNWAVEFORMC, "$Id LALSQTPN_Waveform.c$");
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
-
-/**		The macro function returns the square of the argument.
- * Do not use with incrementing or decrementing operators!
- * @param[in] a	 : the number
- * @return the square of the number
- */
-#define SQR(a) ((a)*(a))
-
 /**		The macro function calculates the scalar product of two vectors.
  * @param[in]  a1	: the left vector
  * @param[in]  a2	: the right vector
@@ -109,6 +100,7 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 							* params->chiAmp[i] * 3. / 2.;
 				}
 				params->coeff.mecoQM = 2. * params->eta;
+//				printf("%lg %lg %lg %lg %lg %lg\n", params->coeff.domegaQM[0], params->coeff.domegaQM[1], params->coeff.domegaQMConst, params->coeff.dchihQM[0], params->coeff.dchihQM[1], params->coeff.mecoQM);fflush(stdout);
 			}
 			params->coeff.meco[LAL_PNORDER_TWO] *= (-81. + 57. * params->eta
 					- etaPow2) / 24.;
@@ -191,11 +183,13 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				for (i = 0; i < 2; i++) {
 					k = (i + 1) % 2; // the opposite index
 					VECTOR_PRODUCT3(chi_p[k], chi_p[i], chih1xchih2[i]);
+					//VECTOR_PRODUCT3(chi_p[!i], chi_p[i], chih1xchih2[i]);
 					for (j = 0; j < 3; j++) {
 						// the 3*index is used, to acces the first spin, if index=0,
 						// otherwise the second spin
 						dvalues[LALSQTPN_CHIH1_1 + 3 * i + j] += params->coeff.dchihSS[i] *
 								(chih1xchih2[i][j] - 3. * LNhchih[k] * LNhxchih[i][j]) * omegaPowi_3[6];
+								//((1.-2.*(!i))chih1xchih2[i][j] - 3. * LNhchih[k] * LNhxchih[i][j]) * omegaPowi_3[6];
 					}
 				}
 			}
@@ -209,7 +203,8 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 			if ((params->spinInteraction & LAL_QMInter) == LAL_QMInter) {
 				QM_Omega = params->coeff.domegaQMConst;
 				for (i = 0; i < 2; i++) {
-					QM_Omega += params->coeff.domegaQM[i] * LNhchih[i];
+					QM_Omega += params->coeff.domegaQM[i] * SQR(LNhchih[i]);
+//					QM_Omega += params->coeff.domegaQM[i] * LNhchih[i];
 					// QM for dchih
 					for (j = 0; j < 3; j++) {
 						// the 3*index is used, to acces the first spin, if index=0,
@@ -220,6 +215,8 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				}
 				// QM for MECO
 				dvalues[LALSQTPN_MECO] += params->coeff.mecoQM * QM_Omega * omegaPowi_3[3];
+//				printf("%lg %lg %lg %lg\n", SS_Omega, SSself_Omega, QM_Omega, LNhchih[0] / (sqrt(SQR(values[LALSQTPN_LNH_1]) + SQR(values[LALSQTPN_LNH_2]) + SQR(values[LALSQTPN_LNH_3])) * sqrt(SQR() + SQR() + SQR())));fflush(stdout);
+//				exit(-1);
 			}
 			dvalues[LALSQTPN_OMEGA] += (QM_Omega + SSself_Omega + SS_Omega)
 					* omegaPowi_3[LAL_PNORDER_TWO];
@@ -307,7 +304,7 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 		alpha = atan2(values[LALSQTPN_LNH_2], values[LALSQTPN_LNH_1]);
 		amp = params->signalAmp * pow(values[LALSQTPN_OMEGA], 2. / 3.);
 
-		// writing the output
+		// calculating the waveform components
 		if (waveform->hp || waveform->hc || waveform->h) {
 			temp1 = -0.5*amp*cos(2.*values[LALSQTPN_PHASE])
 					* (values[LALSQTPN_LNH_3] * values[LALSQTPN_LNH_3] + 1.);
@@ -363,6 +360,7 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 	}
    	if (waveform->waveform->a){
 		params->finalFreq = waveform->waveform->f->data->data[i-1];
+		printf("f_F = %lg\n", params->finalFreq);fflush(stdout);
 	}
 
 	waveform->length = i;
