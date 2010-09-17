@@ -2776,7 +2776,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
   long offsetBytes;
   volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
 
-  INITSTATUS (status, "read_one_sft_from_fp", SFTFILEIOC);
+  INITSTATUS (status, "read_sft_bins_from_fp", SFTFILEIOC);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -2882,7 +2882,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
 
   DETATCHSTATUSPTR ( status );
   RETURN (status);
-} /* read_one_sft_from_fp() */
+} /* read_sft_bins_from_fp() */
 
 
 /* Try to read an SFT-header (of ANY VALID SFT-VERSION) at the given FILE-pointer fp,
