@@ -108,6 +108,7 @@ struct CommandLineArgsTag {
   REAL8 fmismatchmax;         /* maximal mismatch allowed from 1 template to the next */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO/Virgo xml injection file */
+  char *TemplateFile;         /* File with the list of fcutoff for a static template bank */
   char *ChannelName;          /* Name of channel to be read in from frames */
   char *outputFileName;       /* Name of xml output filename */
   LIGOTimeGPS GPSStart;       /* GPS start time of segment to be analysed */
@@ -157,6 +158,9 @@ static double cluster_window;	/* seconds */
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint);
 
+/* Reads the template bank file */
+int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *fcutoff_fix);
+
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA);
 
@@ -170,7 +174,7 @@ int DownSample(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht);
 REAL8FrequencySeries *AvgSpectrum(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FFTPlan *fplan);
 
 /* Creates the template bank based on the spectrum  */
-int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan);
+int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8 *fcutoff_fix, int NTemplates_fix, REAL8FFTPlan *rplan);
 
 /* Creates the frequency domain string cusp or kink filters  */
 int CreateStringFilters(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int NTemplates, REAL8FFTPlan *fplan, REAL8FFTPlan *rplan);
@@ -199,6 +203,8 @@ int main(int argc,char *argv[])
   unsigned seg_length;
   StringTemplate strtemplate[MAXTEMPLATES];
   int NTemplates;
+  int NTemplates_fix; /* number of template given by the template bank file */
+  REAL8 fcutoff_fix[MAXTEMPLATES]; /* high frequency cutoffs given by the template bank file */
   SnglBurst *events=NULL;
   MetadataTable  process;
   MetadataTable  procparams;
@@ -222,6 +228,12 @@ int main(int argc,char *argv[])
   XLALPrintInfo("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   /* set the trigger cluster window global variable */
   cluster_window = CommandLineArgs.cluster;
+
+  /****** ReadTemplatefile ******/
+  if (CommandLineArgs.TemplateFile != NULL) {
+    XLALPrintInfo("ReadTemplateFile()\n");
+    if (ReadTemplateFile(CommandLineArgs,&NTemplates_fix,fcutoff_fix)) return 3;
+  }
 
   /****** ReadData ******/
   XLALPrintInfo("ReadData()\n");
@@ -270,7 +282,7 @@ int main(int argc,char *argv[])
 
   /****** CreateTemplateBank ******/
   XLALPrintInfo("CreateTemplateBank()\n");
-  if (CreateTemplateBank(CommandLineArgs, seg_length, Spec, strtemplate, &NTemplates, rplan)) return 10;
+  if (CreateTemplateBank(CommandLineArgs, seg_length, Spec, strtemplate, &NTemplates, fcutoff_fix, NTemplates_fix, rplan)) return 10;
 
   /****** CreateStringFilters ******/
   XLALPrintInfo("CreateStringFilters()\n");
@@ -741,7 +753,7 @@ static double next_f_cut(double desired_epsilon, double string_spectrum_power, c
   return (fhi + flo) / 2;
 }
 
-int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8FFTPlan *rplan){
+int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8FrequencySeries *Spec, StringTemplate *strtemplate, int *NTemplates, REAL8 *fcutoff_fix, int NTemplates_fix, REAL8FFTPlan *rplan){
   REAL8 f_cut, t1t1, t2t2, t1t2, norm, slope0, slope1;
   int m, f_low_cutoff_index, extr_ctr;
   unsigned p;
@@ -760,41 +772,67 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA, unsigned seg_length, REAL8
       integral->data[p] += integral->data[p - 1];
   }
 
-  /* first template : f_cut = fbankhighfcutofflow */
-  f_cut = CLA.fbankhighfcutofflow;
+  /* Use static template bank or...*/
+  if(CLA.TemplateFile){
+    compute_t2t2_and_t1t2(CLA.power, Spec, integral, CLA.fbankstart, fcutoff_fix[0], &t1t1, &t1t2);
+    
+    strtemplate[0].findex = round((fcutoff_fix[0] - Spec->f0) / Spec->deltaF);
+    strtemplate[0].f = fcutoff_fix[0];
+    strtemplate[0].mismatch = 0.0;
+    strtemplate[0].norm = sqrt(t1t1);
+    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
+    XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",0,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+    *NTemplates = NTemplates_fix;
 
-  /* compute (t1|t1) for fist template.  we can do this by re-using the
-   * (t2|t2),(t1|t2) function with the correct inputs.  t1t2 result is
-   * meaningless and not used */
-  compute_t2t2_and_t1t2(CLA.power, Spec, integral, CLA.fbankstart, f_cut, &t1t1, &t1t2);
-
-  strtemplate[0].findex = round((f_cut - Spec->f0) / Spec->deltaF);
-  strtemplate[0].f = f_cut;
-  strtemplate[0].mismatch = 0.0;
-  strtemplate[0].norm = sqrt(t1t1);
-  XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
-  XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
-  *NTemplates = 1;
-  
-  /* find the next cutoffs given the maximal mismatch, until we hit the
-   * highest frequency.  note that the algorithm will hit that frequency
-   * bin by construction */
-  while(strtemplate[*NTemplates - 1].findex < (int) Spec->data->length - 1) {
-    f_cut = next_f_cut(CLA.fmismatchmax, CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, strtemplate[*NTemplates-1].norm);
-
-    compute_t2t2_and_t1t2(CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, f_cut, &t2t2, &t1t2);
-
-    strtemplate[*NTemplates].findex = round((f_cut - Spec->f0) / Spec->deltaF);
-    strtemplate[*NTemplates].f = f_cut;
-    strtemplate[*NTemplates].norm = sqrt(t2t2);
-    strtemplate[*NTemplates].mismatch = 1 - t1t2 / sqrt(t1t1 * t2t2);
-    XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n", *NTemplates, strtemplate[*NTemplates].f, strtemplate[*NTemplates].norm, strtemplate[*NTemplates].mismatch);
-    (*NTemplates)++;
-    if(*NTemplates == MAXTEMPLATES){
-      XLALPrintError("Too many templates for code... Exiting\n");
-      return 1;
+    for (m = 1; m < NTemplates_fix; m++){
+      compute_t2t2_and_t1t2(CLA.power, Spec, integral, fcutoff_fix[m-1], fcutoff_fix[m], &t2t2, &t1t2);
+      
+      strtemplate[m].findex = round((fcutoff_fix[m] - Spec->f0) / Spec->deltaF);
+      strtemplate[m].f = fcutoff_fix[m];
+      strtemplate[m].norm = sqrt(t2t2);
+      strtemplate[m].mismatch = 1 - t1t2 / sqrt(t1t1 * t2t2);
+      XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n", m, strtemplate[m].f, strtemplate[m].norm, strtemplate[m].mismatch);
+      t1t1 = t2t2;
     }
-    t1t1 = t2t2;
+  }
+
+  /* ... or compute an "adapted" bank */
+  else{
+    f_cut = CLA.fbankhighfcutofflow;
+
+    /* compute (t1|t1) for fist template.  we can do this by re-using the
+     * (t2|t2),(t1|t2) function with the correct inputs.  t1t2 result is
+     * meaningless and not used */
+    compute_t2t2_and_t1t2(CLA.power, Spec, integral, CLA.fbankstart, f_cut, &t1t1, &t1t2);
+
+    strtemplate[0].findex = round((f_cut - Spec->f0) / Spec->deltaF);
+    strtemplate[0].f = f_cut;
+    strtemplate[0].mismatch = 0.0;
+    strtemplate[0].norm = sqrt(t1t1);
+    XLALPrintInfo("%% Templ. frequency      sigma      mismatch\n");  
+    XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n",*NTemplates,strtemplate[0].f,strtemplate[0].norm, strtemplate[0].mismatch);
+    *NTemplates = 1;
+    
+    /* find the next cutoffs given the maximal mismatch, until we hit the
+     * highest frequency.  note that the algorithm will hit that frequency
+     * bin by construction */
+    while(strtemplate[*NTemplates - 1].findex < (int) Spec->data->length - 1) {
+      f_cut = next_f_cut(CLA.fmismatchmax, CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, strtemplate[*NTemplates-1].norm);
+      
+      compute_t2t2_and_t1t2(CLA.power, Spec, integral, strtemplate[*NTemplates-1].f, f_cut, &t2t2, &t1t2);
+      
+      strtemplate[*NTemplates].findex = round((f_cut - Spec->f0) / Spec->deltaF);
+      strtemplate[*NTemplates].f = f_cut;
+      strtemplate[*NTemplates].norm = sqrt(t2t2);
+      strtemplate[*NTemplates].mismatch = 1 - t1t2 / sqrt(t1t1 * t2t2);
+      XLALPrintInfo("%% %d      %1.3e    %1.3e    %1.3e\n", *NTemplates, strtemplate[*NTemplates].f, strtemplate[*NTemplates].norm, strtemplate[*NTemplates].mismatch);
+      (*NTemplates)++;
+      if(*NTemplates == MAXTEMPLATES){
+	XLALPrintError("Too many templates for code... Exiting\n");
+	return 1;
+      }
+      t1t1 = t2t2;
+    }
   }
 
   XLALDestroyREAL8Vector( integral );
@@ -1008,6 +1046,51 @@ REAL8TimeSeries *ReadData(struct CommandLineArgsTag CLA){
 
 /*******************************************************************************/
 
+int ReadTemplateFile(struct CommandLineArgsTag CLA, int *NTemplates_fix, REAL8 *fcutoff_fix){
+
+  SnglBurst *templates=NULL, *templates_root=NULL;
+  int i;
+  
+  /* Initialize */
+  *NTemplates_fix=0;
+  
+  /* Get templates from burst table */
+  templates_root = XLALSnglBurstTableFromLIGOLw(CLA.TemplateFile);
+  
+  for(templates = templates_root; templates != NULL; templates = templates->next){ 
+    fcutoff_fix[*NTemplates_fix]=templates->central_freq + (templates->bandwidth)/2;
+    *NTemplates_fix=*NTemplates_fix+1;
+    if(*NTemplates_fix==MAXTEMPLATES){
+      XLALPrintError("Too many templates (> %d)\n",MAXTEMPLATES);
+      return 1;
+    }
+  }
+  
+  /* Check that the bank has at least one template */
+  if(*NTemplates_fix<=0){
+    XLALPrintError("Empty template bank\n");
+    return 1;
+  }
+  
+  /* Check that the frequencies are well ordered */
+  for(i=0; i<*NTemplates_fix-1; i++){
+    if(fcutoff_fix[i]>fcutoff_fix[i+1]){
+      XLALPrintError("The templates frequencies are not sorted by frequencies\n");
+      return 1;
+    }
+  }
+  
+  /* check that  the highest frequency is below the Nyquist frequency */
+  if(fcutoff_fix[*NTemplates_fix-1]>CLA.samplerate/2){
+    XLALPrintError("The templates frequencies go beyond the Nyquist frequency\n");
+    return 1;
+  }
+  
+  return 0;
+}
+
+/*******************************************************************************/
+
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const ProcessTable *process, ProcessParamsTable **paramaddpoint){
   static char default_comment[] = "";
   INT4 errflg = 0;
@@ -1030,6 +1113,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     {"chi2par0",                  required_argument,	NULL,	'A'},
     {"chi2par1",                  required_argument,	NULL,	'B'},
     {"chi2par2",                  required_argument,	NULL,	'G'},
+    {"template-bank",             required_argument,	NULL,	'K'},
     {"cusp-search",               no_argument,	NULL,	'c'},
     {"kink-search",               no_argument,	NULL,	'k'},
     {"test-gaussian-data",        no_argument,	NULL,	'n'},
@@ -1045,7 +1129,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     {"help",                      no_argument,	NULL,	'h'},
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:";
+  char args[] = "hnckwabrxyzlj:f:L:M:D:H:t:F:C:E:S:i:v:d:T:s:g:o:p:A:B:G:K:";
 
   optarg = NULL;
 
@@ -1055,6 +1139,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
   CLA->fmismatchmax=0.05;
   CLA->FrCacheFile=NULL;
   CLA->InjectionFile=NULL;
+  CLA->TemplateFile=NULL;
   CLA->ChannelName=NULL;
   CLA->outputFileName=NULL;
   XLALINT8NSToGPS(&CLA->GPSStart, 0);
@@ -1131,6 +1216,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
     case 'i':
       /* name of xml injection file */
       CLA->InjectionFile=optarg;
+      ADD_PROCESS_PARAM(process, "string");
+      break;
+    case 'K':
+      /* name of txt template file */
+      CLA->TemplateFile=optarg;
       ADD_PROCESS_PARAM(process, "string");
       break;
     case 'o':
@@ -1263,6 +1353,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
+      fprintf(stdout,"\t--template-bank (-K)\t\tSTRING\t Name of txt template file.\n");
       fprintf(stdout,"\t--output (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
@@ -1303,7 +1394,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA, const 
       fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
-  if(CLA->fbankhighfcutofflow == 0.0)
+  if(! CLA->TemplateFile && CLA->fbankhighfcutofflow == 0.0)
     {
       fprintf(stderr,"No template bank lowest high frequency cutoff specified.\n");
       fprintf(stderr,"Try %s -h \n",argv[0]);

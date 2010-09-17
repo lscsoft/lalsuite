@@ -100,6 +100,7 @@ typedef struct {
 typedef struct { 
   BOOLEAN help;		            	/**< trigger to output help string */
   BOOLEAN version;			/**< output version information */
+  BOOLEAN tophat;			/**< tophat template flag */
   CHAR *inputFstat;			/**< filename of Fstat input data file to use */
   CHAR *outputCstat;			/**< filename to output Cstatistic */
   REAL8 Freq;				/**< user defined start frequency */
@@ -133,6 +134,7 @@ int initUserVars(int argc, char *argv[], UserInput_t *uvar);
 int checkUserInputConsistency (const UserInput_t *uvar);
 int ReadInput(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, ExRegion *exr);
 int createComb(ParamStruct *userParams, VectorStruct *comb, ExRegion *exr);
+int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr);
 int ComputeCstat(VectorStruct *template, VectorStruct *Fstat, VectorStruct *Cstat, ExRegion *exr);
 int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, VectorStruct *Cstat, ExRegion *exr);
 
@@ -197,10 +199,20 @@ int main(int argc,char *argv[])
   }
   LogPrintf(LOG_DEBUG,"userParams and Fstat retrieved from input \n");
 
-  /* call function to create comb template */
-  if (createComb(&userParams, &template, &exr)) {
-    LogPrintf(LOG_CRITICAL,"%s : createComb failed with error = %d\n",fn,xlalErrno);
-    return XLAL_EFAULT;
+  /* check if tophat flag was raised */
+  if (uvar.tophat) {
+    /* call function to create tophat template */
+    if (createTopHat(&userParams, &template, &exr)) {
+      LogPrintf(LOG_CRITICAL,"%s : createTemplate failed with error = %d\n",fn,xlalErrno);
+      return XLAL_EFAULT;
+    }
+  }
+  else { 
+    /* call function to create comb template */
+    if (createComb(&userParams, &template, &exr)) {
+      LogPrintf(LOG_CRITICAL,"%s : createComb failed with error = %d\n",fn,xlalErrno);
+      return XLAL_EFAULT;
+    }
   } 
   LogPrintf(LOG_DEBUG,"template created \n"); 
 
@@ -274,6 +286,7 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
   XLALregREALUserStruct(orbitasini, 	'A', UVAR_REQUIRED, "Light travel time of orbital projected semi-major axis, in seconds");
   XLALregSTRINGUserStruct(inputFstat, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
   XLALregSTRINGUserStruct(outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
+  XLALregBOOLUserStruct(tophat,		't', UVAR_OPTIONAL, "Perform search with tophat template");
   XLALregBOOLUserStruct(version,	'V', UVAR_SPECIAL,  "Output version information");
   
   /* do ALL cmdline and cfgfile handling */
@@ -453,16 +466,19 @@ int ReadInput(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, E
   }
   LogPrintf(LOG_DEBUG,"Calculated exlusion region - within data limits. Good. \n"); 
   
-  /* fill out rest of userParam struct */
-  userParams->f0 		= f0;				/* guess frequency of search, taken as centre of user input search frequency band */
-  userParams->unitspikes 	= 2*mm+1;			/* number of unit amplitude spikes in template */
-
   /* fill in exRegion struct exr */
   exr->mm			= mm;				/* sidebands either side of central spike - defines width of exlusion region */
   exr->dm			= dm;				/* number of bins in exclusion region */
   exr->fbins			= fbins;			/* number of bins required in Fstat */
   exr->cbins			= ufband;			/* number of bins to output Cstat */
   exr->df			= df;				/* frequency resolution */
+
+  /* fill out rest of userParam struct */
+  userParams->f0 		= f0;				/* guess frequency of search, taken as centre of user input search frequency band */
+  if (uvar->tophat) {
+    userParams->unitspikes	= floor(0.5+(2*mm+1)/(Porb*df)); 		/* number of unit amplitude spikes if tophat template flag is raised */
+  }
+  else userParams->unitspikes 	= 2*mm+1;			/* number of unit amplitude spikes in comb template (default) */
 
 
   /* Allocate some memory according to number of Fstat frequency bins required to complete search */  
@@ -526,7 +542,7 @@ int createComb(ParamStruct *userParams, VectorStruct *comb, ExRegion *exr)
     comb->fvect->data[ind]=1;						
   }
  
-  /* allocate rest of comb structure */
+  /* allocate rest of comb template structure */
   comb->df 		= exr->df;
   comb->dof 		= userParams->unitspikes;
   
@@ -535,6 +551,55 @@ int createComb(ParamStruct *userParams, VectorStruct *comb, ExRegion *exr)
   return XLAL_SUCCESS;
 
 } /* createComb */
+
+
+/*--------------------------------------------------------------- */
+/** createTopHat function 
+ * use userParams to create tophat template if tophat flag is raised
+ *
+ * function creates template of unit amplitude spikes for a band mm/P on either side of the central zero spike 
+ */
+/*----------------------------------------------------------------*/
+int createTopHat(ParamStruct *userParams, VectorStruct *tophat, ExRegion *exr)
+{
+  static const char *fn = __func__;             /* store function name for log output */
+
+  INT4 i=0, ind=0;				/* declare and initialise counters*/
+  
+  /* Allocate some memory for tophat template vector */  
+  if ( (tophat->fvect=XLALCreateREAL8Vector(exr->fbins)) == NULL ){
+    LogPrintf (LOG_CRITICAL, "%s: Error allocating memory to tophat->fvect. Error %d\n",fn,xlalErrno);
+    return XLAL_ENOMEM;
+  }
+
+  /* zero all values first */
+  for (i=0;i<exr->fbins;i++) { 
+    tophat->fvect->data[i]=0;						
+  }
+  
+  /* Assign unity at spacings for 1 zero spike + dm = mm/P*df positive frequency spikes */
+  for (i=0;i<=exr->dm;i++)	{
+    tophat->fvect->data[i]=1;						
+  }
+  
+  /*  assign unity for dm = mm/P*df negative frequency spikes */
+  for (i=1;i<=exr->dm;i++)	{
+    ind=(exr->fbins -i);
+    tophat->fvect->data[ind]=1;						
+  }
+ 
+  /* allocate rest of tophat template structure */
+  tophat->df 		= exr->df;
+  tophat->dof		= userParams->unitspikes;
+  
+   
+  LogPrintf(LOG_DEBUG,"%s:  template with %d spikes created. halfwidth(dm) = %d bins\n",fn, tophat->dof, exr->dm);
+  LogPrintf(LOG_DEBUG,"'%s' successfully completed. Leaving. \n",fn);
+  return XLAL_SUCCESS;
+
+} /* createTopHat */
+
+
 
 
 /*--------------------------------------------------------------- */
@@ -657,5 +722,4 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
   return XLAL_SUCCESS;
   
 } /* OutputCstats */
-
 

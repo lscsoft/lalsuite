@@ -876,91 +876,107 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
   configs = {}
   images_dirs = {}
 
-  section= 'upperlimit'
+  section= 'upperlimitTotalMassRangeplots'
   sections.append(section)
-  titles[section] = "Upper limits as a function of m1 and m2."
-  tags[section] = '*lalapps_cbc_sink*'+ifartag[0]+'*CAT_4_VETO*'
+  titles[section] = "Sensitive Distance as a Function of Total Mass"
+  tags[section] = '*lalapps_cbc_sink_by_total_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  imagetags[section] = ['distance']
+  captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of total mass. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section= 'upperlimitChirpMassRangeplots'
+  sections.append(section)
+  titles[section] = "Sensitive Distance as a Function of Chirp Mass"
+  tags[section] = '*lalapps_cbc_sink_by_chirp_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  imagetags[section] = ['distance']
+  captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of chirp mass. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section= 'upperlimitM1M2Rangeplots'
+  sections.append(section)
+  titles[section] = "Sensitive Distance as a Function of Component Masses."
+  tags[section] = '*lalapps_cbc_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
+  imagetags[section] = ['distance','fractional_error']
+  captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of the component masses. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. The corresponding fractional error plot gives a measure of the relative uncertainty in the measured sensitive distance arising from uncertainty in calibration and a finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  comments[section] = None
+  configs[section] = None
+  images_dirs[section] = PDdir
+
+  section= 'upperlimitVmtotal'
+  sections.append(section)
+  htmlAndPlot.append(section)
+  titles[section] = "Upper Limits as a Function of Total Mass."
+  tags[section] = '*lalapps_cbc_sink_by_total_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_total_mass_range_summary*'
   imagetags[section] = ['upper_limit_plot']
-  captions[section] = """Uncombined upper limits as a function of m1 and m2. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of total mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section= 'combinedupperlimit'
+  section= 'upperlimitVmchirp'
   sections.append(section)
-  allIfosFlag.append(section)
-  titles[section] = "Combined upper limits as a function of m1 and m2."
-  tags[section] = '*lalapps_cbc_combined_sink*'+ifartag[0]+'*CAT_4_VETO*'
-  imagetags[section] = ['combined_upper_limit']
-  captions[section] = """Combined upper limits as a function of m1 and m2. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  htmlAndPlot.append(section)
+  titles[section] = "Upper Limits as a Function of Chirp Mass."
+  tags[section] = '*lalapps_cbc_sink_by_chirp_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_chirp_mass_range_summary*'
+  imagetags[section] = ['upper_limit_plot']
+  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of chirp mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'upperlimittablem1m2'
+  section= 'upperlimitVm1m2'
   sections.append(section)
-  htmlOnly.append(section)
-  titles[section] = "Supplementary upper limit tables - as a function of m1 and m2."  
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_M1M2_range_summary*'
-  captions[section] = """Uncombined upper limits as a function of m1 and m2. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  htmlAndPlot.append(section)
+  titles[section] = "Upper Limits as a Function of Component Masses."
+  tags[section] = '*lalapps_cbc_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_range_summary*'
+  imagetags[section] = ['upper_limit_plot']
+  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of the component masses. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'upperlimittablemchirp'
+  section= 'combupperlimitVmtotal'
   sections.append(section)
-  htmlOnly.append(section)
-  titles[section] = "Supplementary upper limit tables - as a function of mchirp."
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_MCHIRP_range_summary*'
-  captions[section] = """Uncombined upper limits as a function of mchirp. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  htmlAndPlot.append(section)
+  titles[section] = "Combined Upper Limits as a Function of Total Mass."
+  tags[section] = '*lalapps_cbc_combined_sink_by_total_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_total_mass_combined_upper_limit*'
+  imagetags[section] = ['upper_limit_plot']
+  captions[section] = """Combined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of total mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section = 'upperlimittablemtotal'
+  section= 'combupperlimitVmchirp'
   sections.append(section)
-  htmlOnly.append(section)
-  titles[section] = "Supplementary upper limit tables - as a function of mtotal."
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_MTOTAL_range_summary*'
-  captions[section] = """Uncombined upper limits as a function of mtotal. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  htmlAndPlot.append(section)
+  titles[section] = "Combined Upper Limits as a Function of Chirp Mass."
+  tags[section] = '*lalapps_cbc_combined_sink_by_chirp_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_chirp_mass_combined_upper_limit*'
+  imagetags[section] = ['upper_limit_plot']
+  captions[section] = """Combined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of chirp mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-
-  section = 'combupperlimittablem1m2'
+  section= 'combupperlimitVm1m2'
   sections.append(section)
-  htmlOnly.append(section)
-  allIfosFlag.append(section)
-  titles[section] = "Supplementary combined upper limit table - as a function of m1 and m2."
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_M1M2_combined_upper_limit*'
-  captions[section] = """Combined upper limits as a function of m1 and m2. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  htmlAndPlot.append(section)
+  titles[section] = "Combined Upper Limits as a Function of Component Masses."
+  tags[section] = '*lalapps_cbc_combined_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_combined_upper_limit*'
+  imagetags[section] = ['upper_limit_plot']
+  captions[section] = """Combined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of the component masses. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
-
-  section = 'combupperlimittablemchirp'
-  sections.append(section)
-  htmlOnly.append(section)
-  allIfosFlag.append(section)
-  titles[section] = "Supplementary combined upper limit table - as a function of mchirp."
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_MCHIRP_combined_upper_limit*'
-  captions[section] = """Combined upper limits as a function of mchirp. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
-  section = 'combupperlimittablemtotal'
-  sections.append(section)
-  htmlOnly.append(section)
-  allIfosFlag.append(section)
-  titles[section] = "Supplementary combined upper limit table - as a function of mtotal."
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_MTOTAL_combined_upper_limit*'
-  captions[section] = """Combined upper limits as a function of mtotal. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
 
   page = create_sections(page,opts,sections,tags,captions,imagetags,\
                     images_dirs,titles,comments,configs,htmltags,htmlOnly,\
@@ -969,6 +985,7 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
   return page
 
 #***************************************************************************
+
 
 def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
   """
