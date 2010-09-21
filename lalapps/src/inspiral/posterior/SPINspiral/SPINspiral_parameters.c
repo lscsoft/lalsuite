@@ -32,9 +32,11 @@
 
 #include <SPINspiral.h>
 
-
-
-
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /**
  * \file SPINspiral_parameters.c
@@ -345,7 +347,7 @@ void readMainInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
-  char *str;
+  char UNUSED *str;
   
   if((fin = fopen(run->mainFilename,"r")) == NULL) {
     fprintf(stderr, "   No main input file: %s, using default values.\n",run->mainFilename);
@@ -416,8 +418,8 @@ void readMCMCinputfile(struct runPar *run)
   double tmpdbl;
   char tmpStr[500];
   FILE *fin;
-  char *str;
-  int rc;
+  char UNUSED *str;
+  int UNUSED rc;
   
   if((fin = fopen(run->mcmcFilename,"r")) == NULL) {
     fprintf(stderr, "   No MCMC input file: %s, using default values.\n",run->mcmcFilename);
@@ -557,8 +559,8 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
   char tmpStr[500], subdir[500];
   FILE *fin;
   int dump = 0;
-  char *str;
-  int rc;
+  char UNUSED *str;
+  int UNUSED rc;
   
   if((fin = fopen(run->dataFilename,"r")) == NULL) {
     fprintf(stderr, "   No data file: %s, using default values.\n",run->dataFilename);
@@ -800,8 +802,8 @@ void readInjectionInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
-  char *str;
-  int rc;
+  char UNUSED *str;
+  int UNUSED rc;
   
   // Open injection input file:
   if((fin = fopen(run->injectionFilename,"r")) == NULL) {
@@ -1005,8 +1007,8 @@ void readParameterInputfile(struct runPar *run)
   int i,iInj;
   char tmpStr[500];
   FILE *fin;
-  char *str;
-  int rc;
+  char UNUSED *str;
+  int UNUSED rc;
   int warnings = 0;
 	
   if((fin = fopen(run->parameterFilename,"r")) == NULL) {
@@ -1448,8 +1450,8 @@ void readSystemInputfile(struct runPar *run)
   int i;
   char tmpStr[500];
   FILE *fin;
-  char *str;
-  int rc;
+  char UNUSED *str;
+  int UNUSED rc;
   
   if((fin = fopen(run->systemFilename,"r")) == NULL) {
     fprintf(stderr, "   No system file: %s.\n",run->systemFilename);
@@ -1607,7 +1609,7 @@ void readCachefile(struct runPar *run, int ifonr)
   int line=0;
   char tmpStr[2048];
   FILE *fin;
-  char *str;
+  char UNUSED *str;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening cache file: %s, aborting.\n\n\n",run->cacheFilename[ifonr]);

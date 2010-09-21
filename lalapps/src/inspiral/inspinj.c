@@ -66,6 +66,11 @@ snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* 
  *  *********************************
@@ -313,7 +318,7 @@ void adjust_snr(SimInspiralTable *inj, REAL8 target_snr, const char *ifo_list)
 {
   /* Vars for calculating SNRs */
   REAL8 this_snr;
-  REAL8 low_snr,high_snr;
+  REAL8 UNUSED low_snr, UNUSED high_snr;
   REAL8 low_dist,high_dist;
 
   this_snr = network_snr(ifo_list, inj);
@@ -751,7 +756,7 @@ FILE *fp; /* File for output of corrected galaxy catalog */
 REAL8 pow1 = 0.0; /* Used to calculate Schechter function */
 REAL8 pow2 = 0.0; /* Used to calculate Schechter function */
 
-REAL8 shellLum = 0.0;
+REAL8 UNUSED shellLum = 0.0;
 
 /* Parameters for generating random sky positions */
 SimInspiralTable *randPositionTable;
