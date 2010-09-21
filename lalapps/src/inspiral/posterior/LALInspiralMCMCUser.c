@@ -755,7 +755,7 @@ in the frequency domain */
 			/* imag(H+ + Hx) = F+(imag(model_prime)) + Fx(real(model_prime)) : No negative sign */
 
 			resp_r = det_resp.plus*model_re_prime - det_resp.cross*model_im_prime;
-			resp_i = det_resp.plus*model_im_prime + det_resp.plus*model_re_prime;
+			resp_i = det_resp.plus*model_im_prime + det_resp.cross*model_re_prime;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
