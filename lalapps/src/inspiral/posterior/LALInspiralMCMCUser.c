@@ -749,14 +749,18 @@ in the frequency domain */
 			/* This is the time delayed waveforms as it appears at the detector */
 			/* data[idx] is real and data[Nmodel-idx] is imaginary part of the waveform at index idx */
 			/* H+ = hc + i*hs, and Hx=iH+, ONLY WHERE H+=cos(phi) and Hx=sin(phi) in the time domain (SPA, non-spinning, no-HH) */
-			hc = (REAL8)model->data[idx]*time_cos - (REAL8)model->data[Nmodel-idx]*time_sin;
-			hs = (REAL8)model->data[Nmodel-idx]*time_cos + (REAL8)model->data[idx]*time_sin;
 			
-			/* Compute detector response in the real and imaginary parts */
-			/* resp_r =   F+ * Re(H+)   -  Fx * Im(H+) */
-			resp_r = det_resp.plus * hc - det_resp.cross * hs;
-			/* resp_im =  Fx * Re(H+)   +  F+ * Im(H+) */
-			resp_i = det_resp.cross * hc + det_resp.plus * hs;
+			/* Model contains h(f)exp(-psi(f)), want h'(f)=h(f)exp(-2pi*i*deltaT)  */
+			/* model_re_prime and model_im_prime contain the time delayed part */
+			REAL8 model_re_prime = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin; /* Plus sign from -i*sin(phi)*i */
+			REAL8 model_im_prime = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin; /* Minus sign from -i*sin(phi) */
+
+			/* Now, h+=model_prime and hx=i*model_prime */
+			/* real(H+ + Hx) = F+(real(model_prime)) + Fx( -imag(model_prime)) : negative sign from multiplication by i*i */
+			/* imag(H+ + Hx) = F+(imag(model_prime)) + Fx(real(model_prime)) : No negative sign */
+
+			resp_r = det_resp.plus*model_re_prime - det_resp.cross*model_im_prime;
+			resp_i = det_resp.plus*model_im_prime + det_resp.plus*model_re_prime;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
