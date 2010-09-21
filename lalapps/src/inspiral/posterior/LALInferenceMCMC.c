@@ -70,9 +70,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);
-
-	nullLikelihood = NullLogLikelihood(runState->data);
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);	
+	
+	//nullLikelihood = NullLogLikelihood(runState->data);
+	nullLikelihood = 0.0;
 	
 	printf(" PTMCMCAlgorithm(); starting parameter values:\n");
 	printVariables(runState->currentParams);
@@ -84,7 +85,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printf("0\n");
 	
 	// iterate:
-	for(i=0; i<1000000; i++) {
+	for(i=0; i<100000; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		for(t=0; t<nChain; t++) { //loop over temperatures
 			copyVariables(&(TcurrentParams[t]),runState->currentParams);
@@ -98,7 +99,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			copyVariables(runState->currentParams,&(TcurrentParams[t]));
 			TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 			
-			fprintf(chainoutput[t], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+	/*		fprintf(chainoutput[t], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 			
 			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
 			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
@@ -111,7 +112,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));
 			
 			fprintf(chainoutput[t],"\n");
-			fflush(chainoutput[t]);
+			fflush(chainoutput[t]);*/
+			
+			
+			fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+			
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"x0"));
+			
+		/*	fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"inclination"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"phase"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"time"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"rightascension"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"declination"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"polarisation"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));*/
+			
+			fprintf(stdout,"\n");
+			
 			
 		} //for(t=0; t<nChain; t++)
 		//printVariables(&(TcurrentParams[0]));
@@ -175,6 +194,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent) 
 	+ (logPriorProposed - logPriorCurrent)
 	+ logProposalRatio;
+	
+//	fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
 	
 	// accept/reject:
 	if ((logAcceptanceProbability > 0) 
@@ -292,6 +313,79 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 }
 
 
+REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
+{
+	
+	double result=0.0;
+	double sumsq=0.0;
+	//double norm=0.0;
+	//int i=0;
+	double x[20];
+	double xmax=0.0;
+	double deltax=0.01;
+	
+	x[0]=*(REAL8 *)getVariable(currentParams,"x0");
+	//for(i=0;i<run.nMCMCpar;i++){
+	//	x[i]= par->par[run.parRevID[185+i]];
+	//}
+	
+//	for(i=0;i<run.nMCMCpar;i++){
+	//	sumsq+=(x[i]-xmax)*(x[i]-xmax)/(2*deltax);
+		//norm+=-0.91893853320468-log(sqrt(deltax));
+//	}
+	sumsq=(x[0]-xmax)*(x[0]-xmax)/(2*deltax);
+    //result=log(100*exp(-sumsq));
+	//result=15/(2*deltax)-sumsq;
+	result=1.0/(2.0*deltax)-sumsq;
+	return result;
 
+}
 
+REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params)
+{
 
+	REAL8 x0;	
+	REAL8 logdensity;
+	
+	x0   = *(REAL8*) getVariable(params, "x0");
+
+	if(x0>=-1.0 && x0<=1.0)	
+		logdensity = 0.0;
+	else
+		logdensity = -HUGE_VAL;
+	//TODO: should be properly normalized; pass in range via priorArgs?	
+	
+	return(logdensity);
+	
+}
+
+void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+{
+	
+	REAL8 x0;
+	REAL8 x0_proposed;
+	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariables * currentParams = runState->currentParams;
+	REAL8 sigma = 0.1;
+	
+	x0   = *(REAL8*) getVariable(currentParams, "x0");
+
+	x0_proposed   = x0 + gsl_ran_ugaussian(GSLrandom)*sigma;
+	//logProposalRatio *= x0_proposed / x0;   // (proposal ratio for above "scaled log-normal" proposal)
+
+	
+	copyVariables(currentParams, proposedParams);
+	setVariable(proposedParams, "x0",      &(x0_proposed));		
+
+	
+	// return ratio of proposal densities (for back & forth jumps) 
+	// in "runState->proposalArgs" vector:
+	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
+		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+	else
+		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+	
+	
+	
+}

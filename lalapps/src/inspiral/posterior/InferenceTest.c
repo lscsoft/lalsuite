@@ -1177,12 +1177,15 @@ void PTMCMCTest(void)
 	fprintf(stdout, "PTMCMC test\n");
 	runstate->algorithm=PTMCMCAlgorithm;
 	runstate->evolve=PTMCMCOneStep;
-	runstate->prior=PTUniformLALPrior;
-	runstate->proposal=PTMCMCLALProposal;
+	//runstate->prior=PTUniformLALPrior;
+	runstate->prior=PTUniformGaussianPrior;
+	//runstate->proposal=PTMCMCLALProposal;
+	runstate->proposal=PTMCMCGaussianProposal;
 	runstate->proposalArgs = malloc(sizeof(LALVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
-	runstate->likelihood=FreqDomainLogLikelihood;
+	//runstate->likelihood=FreqDomainLogLikelihood;
+	runstate->likelihood=GaussianLikelihood;
 	runstate->template=templateLAL;
 	
 	
@@ -1200,7 +1203,7 @@ void PTMCMCTest(void)
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
 	
-    numberI4 = TaylorT2;
+    numberI4 = TaylorF2;
     addVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_LINEAR);
     numberI4 = LAL_PNORDER_TWO;
     addVariable(&currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_LINEAR);
@@ -1216,7 +1219,8 @@ void PTMCMCTest(void)
     addVariable(&currentParams, "distance",        &distMpc_current, REAL8_t, PARAM_LINEAR);
 	
 	
-	
+	REAL8 x0 = 0.9;
+	addVariable(&currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
 	
 	
 	
