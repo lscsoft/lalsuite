@@ -35,90 +35,114 @@
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,tempi,tempj;
-	int nChain = 5;		//number of parallel chains
+	int tempSwapCount=0;
 	REAL8 tempMax = 40.0;   //max temperature in the temperature ladder
 	REAL8 tempDelta;
+	int nChain;
 	int count = 0;		//temporary counters to monitor the number of swaps between chains
+	int MPIrank, MPIsize;
 	LALStatus status;
 	memset(&status,0,sizeof(status));
-	REAL8 dummyR8,temperature = 1.0;
+	//REAL8 dummyR8 = 1.0;
+	REAL8 temperature = 1.0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
-	REAL8 *tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
-	REAL8 *TcurrentLikelihood = malloc(nChain * sizeof(REAL8)); //the current likelihood for each chain
-	LALVariables* TcurrentParams = malloc(nChain * sizeof(LALVariables));	//the current parameters for each chains
-	LALVariables dummyLALVariable;
-	
-	
-	FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
-	char outfileName[99];
-	
+	int tempIndex;
+	int *tempIndexVec = NULL;
+	int dummyTemp;
+	REAL8 *tempLadder = NULL;			//the temperature ladder
+	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
+	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
+	//LALVariables dummyLALVariable;
+	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+
+	nChain = MPIsize;		//number of parallel chain
+	tempIndex = MPIrank;		//set initial temp indices
 
 	tempDelta = log(tempMax)/(REAL8)(nChain - 1);
+	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
+	for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
 	
-	for(t=0; t<nChain; t++) {
-		TcurrentParams[t].head=NULL;
-		TcurrentParams[t].dimension=0;
-		copyVariables(runState->currentParams,&(TcurrentParams[t]));  //initiallize all chains
-		tempLadder[t]=exp(t*tempDelta);  // set up temperature ladder
-		printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
-		sprintf(outfileName,"PTMCMC.output.%2.2d",t);
-		chainoutput[t] = fopen(outfileName,"w");
-	}
+	if (MPIrank == 0) {
+		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//itialize temp index
+		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
+		FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
+		char outfileName[99];
+
+
+		for (t=0; t<nChain; ++t) {
+			tempIndexVec[t] = t;
+			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
+			sprintf(outfileName,"PTMCMC.output.%2.2d",t);
+			chainoutput[t] = fopen(outfileName,"w");
+		}
+	} 
 	
+
+	/*
+	TcurrentParams.head=NULL;
+	TcurrentParams.dimension=0;
+	copyVariables(runState->currentParams,&(TcurrentParams));  //initiallize all chains
+	*/
+	
+	/*
 	dummyLALVariable.head=NULL;
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
-	
+	*/
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);	
 	
 	//nullLikelihood = NullLogLikelihood(runState->data);
 	nullLikelihood = 0.0;
 	
-	printf(" PTMCMCAlgorithm(); starting parameter values:\n");
-	printVariables(runState->currentParams);
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
-	for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; } // initialize the liklelihood for all chains
-	printf(" MCMC iteration: 0\t");
-	for(t=0; t<nChain; t++) { printf("%f\t", TcurrentLikelihood[t] - nullLikelihood); }
-	printf("0\n");
+	
+	//for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; } // initialize the liklelihood for all chains
+	
+	if (MPIrank == 0) {
+		printf(" PTMCMCAlgorithm(); starting parameter values:\n");
+		printVariables(runState->currentParams);
+		printf(" MCMC iteration: 0\t");
+		printf("%f\t", runState->currentLikelihood - nullLikelihood); 
+		printf("0\n");
+	}
 	
 	// iterate:
-	for(i=0; i<100000; i++) {
+	for (i=0; i<10000; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
-		for(t=0; t<nChain; t++) { //loop over temperatures
-			copyVariables(&(TcurrentParams[t]),runState->currentParams);
-			setVariable(runState->proposalArgs, "temperature", &(tempLadder[t]));  //update temperature of the chain
-			//dummyR8 = runState->currentLikelihood;
-			runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
-			//	if (runState->currentLikelihood != dummyR8) {
-			//		printf(" accepted! new parameter values:\n");
-			//		printVariables(runState->currentParams);
-			//	}
-			copyVariables(runState->currentParams,&(TcurrentParams[t]));
-			TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
-			
-	/*		fprintf(chainoutput[t], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-			
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"inclination"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"phase"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"time"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"rightascension"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"declination"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"polarisation"));
-			fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));
-			
-			fprintf(chainoutput[t],"\n");
-			fflush(chainoutput[t]);*/
-			
-			
+		//copyVariables(&(TcurrentParams),runState->currentParams);
+		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
+		//dummyR8 = runState->currentLikelihood;
+		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
+		//	if (runState->currentLikelihood != dummyR8) {
+		//		printf(" accepted! new parameter values:\n");
+		//		printVariables(runState->currentParams);
+		//	}
+		//copyVariables(runState->currentParams,&(TcurrentParams));
+		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
+		
+/*		fprintf(chainoutput[t], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+		
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"inclination"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"phase"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"time"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"rightascension"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"declination"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"polarisation"));
+		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));
+		
+		fprintf(chainoutput[t],"\n");
+		fflush(chainoutput[t]);*/
+		
+		if (tempIndex == 0) {
 			fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 			
-			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"x0"));
-			
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
+
 		/*	fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"inclination"));
@@ -130,33 +154,47 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));*/
 			
 			fprintf(stdout,"\n");
+		}
+		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			
 			
-		} //for(t=0; t<nChain; t++)
 		//printVariables(&(TcurrentParams[0]));
-		for(tempi=0;tempi<nChain-1;tempi++) { //swap parameters and likelihood between chains
-			for(tempj=tempi+1;tempj<nChain;tempj++) {
-				
-				logChainSwap = (1.0/tempLadder[tempi]-1.0/tempLadder[tempj]) * (TcurrentLikelihood[tempj]-TcurrentLikelihood[tempi]);
-				
-				if ((logChainSwap > 0)
-					|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
-
-					copyVariables(&(TcurrentParams[tempj]),&(dummyLALVariable));
-					copyVariables(&(TcurrentParams[tempi]),&(TcurrentParams[tempj]));
-					copyVariables(&(dummyLALVariable),&(TcurrentParams[tempi]));
+		if (MPIrank == 0) {
+			for(tempi=0;tempi<nChain-1;tempi++) { //swap parameters and likelihood between chains
+				for(tempj=tempi+1;tempj<nChain;tempj++) {
 					
-					dummyR8 = TcurrentLikelihood[tempj];
-					TcurrentLikelihood[tempj] = TcurrentLikelihood[tempi];
-					TcurrentLikelihood[tempi] = dummyR8;
-					count++;
-				}
-			} //tempj
-		} //tempi
-		
+					logChainSwap = (1.0/tempLadder[tempi]-1.0/tempLadder[tempj]) * (TcurrentLikelihood[tempj]-TcurrentLikelihood[tempi]);
+					
+					if ((logChainSwap > 0)
+						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
+
+						/*
+						copyVariables(&(TcurrentParams[tempj]),&(dummyLALVariable));
+						copyVariables(&(TcurrentParams[tempi]),&(TcurrentParams[tempj]));
+						copyVariables(&(dummyLALVariable),&(TcurrentParams[tempi]));
+						*/
+						
+						dummyTemp = tempIndexVec[tempj];
+						tempIndexVec[tempj] = tempIndexVec[tempi];
+						tempIndexVec[tempi] = dummyTemp;
+						++tempSwapCount;
+						/*
+						dummyR8 = TcurrentLikelihood[tempj];
+						TcurrentLikelihood[tempj] = TcurrentLikelihood[tempi];
+						TcurrentLikelihood[tempi] = dummyR8;
+						count++;
+						*/
+					}
+				} //tempj
+			} //tempi
+		} //MPIrank==0
+
+		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		//printf("%d\n",count);
 		count = 0;
-	}// for(i=0; i<100; i++)	
+	}// for(i=0; i<100; i++)
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (MPIrank == 0) printf("Temp swaps %d times\n", tempSwapCount);
 }
 
 
