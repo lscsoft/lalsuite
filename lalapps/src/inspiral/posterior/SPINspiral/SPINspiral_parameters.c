@@ -618,11 +618,11 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 	  if(run->commandSettingsFlag[3] == 0) run->selectifos[0]=1;
 
 	  //Data handling:
-	  if(run->commandSettingsFlag[6] == 0) run->downsampleFactor = 4;
-	  if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 6.0;
+	  if(run->commandSettingsFlag[6] == 0) run->downsampleFactor = 8;
+	  if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 7.0;
 	  if(run->commandSettingsFlag[8] == 0) run->dataAfterTc = 1.0;
 	  if(run->commandSettingsFlag[9] == 0) run->lowFrequencyCut = 40.0;
-	  if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 350.0;
+	  if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 600.0;
 	  run->tukeyWin = 0.15;
 	  
 	  
