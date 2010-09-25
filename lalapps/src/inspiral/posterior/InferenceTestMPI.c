@@ -273,6 +273,7 @@ int main(int argc, char *argv[]){
 	/* PTMCMC test */
 
 	printf(" ==== This is thread %d of %d ====\n ", MPIrank, MPIsize);
+	MPI_Barrier(MPI_COMM_WORLD);
 	PTMCMCTest();
 
 	  
