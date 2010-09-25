@@ -35,7 +35,7 @@
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,tempi,tempj;
-	int nChain = 5;		//number of parallel chains
+	int nChain = 2;		//number of parallel chains
 	REAL8 tempMax = 40.0;   //max temperature in the temperature ladder
 	REAL8 tempDelta;
 	int count = 0;		//temporary counters to monitor the number of swaps between chains
@@ -70,7 +70,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);	
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
 	
 	//nullLikelihood = NullLogLikelihood(runState->data);
 	nullLikelihood = 0.0;
@@ -85,7 +85,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printf("0\n");
 	
 	// iterate:
-	for(i=0; i<100000; i++) {
+	for(i=0; i<1000000; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		for(t=0; t<nChain; t++) { //loop over temperatures
 			copyVariables(&(TcurrentParams[t]),runState->currentParams);
