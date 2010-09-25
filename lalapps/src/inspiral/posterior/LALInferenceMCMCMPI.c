@@ -67,16 +67,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	if (MPIrank == 0) {
 		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//itialize temp index
 		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
-		FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
-		char outfileName[99];
-
 
 		for (t=0; t<nChain; ++t) {
 			tempIndexVec[t] = t;
 			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
-			sprintf(outfileName,"PTMCMC.output.%2.2d",t);
-			chainoutput[t] = fopen(outfileName,"w");
 		}
+	}
+	
+	FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
+	char outfileName[99];
+
+
+	for (t=0; t<nChain; ++t) {
+		sprintf(outfileName,"PTMCMC.output.%2.2d",t);
+		chainoutput[t] = fopen(outfileName,"w");
+		
 	} 
 	
 
@@ -110,7 +115,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	// iterate:
-	for (i=0; i<10000; i++) {
+	for (i=0; i<1000000; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
@@ -123,25 +128,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 		
-/*		fprintf(chainoutput[t], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+		fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 		
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"inclination"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"phase"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"time"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"rightascension"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"declination"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"polarisation"));
-		fprintf(chainoutput[t]," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"inclination"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"phase"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"rightascension"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"declination"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"distance"));
 		
-		fprintf(chainoutput[t],"\n");
-		fflush(chainoutput[t]);*/
+		fprintf(chainoutput[tempIndex],"\n");
+		fflush(chainoutput[tempIndex]);
 		
-		if (tempIndex == 0) {
-			fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+		//if (tempIndex == 0) {
+		/*	fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 			
-			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
+			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));*/
 
 		/*	fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"chirpmass"));
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"massratio"));
@@ -153,10 +158,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"polarisation"));
 			fprintf(stdout," %9.5f",*(REAL8 *)getVariable(&(TcurrentParams[t]),"distance"));*/
 			
-			fprintf(stdout,"\n");
-		}
+		//	fprintf(stdout,"\n");
+		//}
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-			
+		MPI_Barrier(MPI_COMM_WORLD);	
 			
 		//printVariables(&(TcurrentParams[0]));
 		if (MPIrank == 0) {
@@ -166,7 +171,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					logChainSwap = (1.0/tempLadder[tempi]-1.0/tempLadder[tempj]) * (TcurrentLikelihood[tempj]-TcurrentLikelihood[tempi]);
 					
 					if ((logChainSwap > 0)
-						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap...
+						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
 
 						/*
 						copyVariables(&(TcurrentParams[tempj]),&(dummyLALVariable));
@@ -188,8 +193,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				} //tempj
 			} //tempi
 		} //MPIrank==0
-
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
 		//printf("%d\n",count);
 		count = 0;
 	}// for(i=0; i<100; i++)
