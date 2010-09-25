@@ -96,7 +96,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	*/
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_FIXED);	
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
 	
 	//nullLikelihood = NullLogLikelihood(runState->data);
 	nullLikelihood = 0.0;
