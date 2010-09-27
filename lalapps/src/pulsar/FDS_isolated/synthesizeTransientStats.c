@@ -95,7 +95,7 @@ typedef struct {
   /* amplitude parameters + ranges */
   REAL8 h0Nat;		/**< GW amplitude: h0/sqrt(Sn) */
   REAL8 h0NatBand;	/**< Band to draw GW amplitude [h0Nat, h0Nat + h0NatBand ] */
-  REAL8 fixedSNR;	/**< Alternative: fixe the optimal SNR of the injected signals */
+  REAL8 fixedSNR;	/**< Alternative: fix the optimal SNR of the injected signals */
 
   REAL8 cosi;		/**< cos(inclination angle). If not set: randomize within [-1,1] */
   REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
@@ -475,7 +475,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->computeFtotal = 0;
   uvar->useFReg = 0;
 
-  uvar->h0Nat = 1;
+  uvar->h0Nat = 0;
   uvar->h0NatBand = 0;
 
 #define DEFAULT_IFO "H1"
@@ -514,7 +514,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   /* signal amplitude parameters */
   XLALregREALUserStruct ( h0Nat,		 0, UVAR_OPTIONAL, "GW amplitude h0 measured in units of noise-PSD sqrt(Sn)");
   XLALregREALUserStruct ( h0NatBand,		 0, UVAR_OPTIONAL, "Draw GW 'amplitude' randomly from [h0Nat, h0Nat+h0NatBand]");
-  XLALregREALUserStruct ( fixedSNR,		 0, UVAR_OPTIONAL, "Alternative: fixe the optimal SNR of the injected signals");
+  XLALregREALUserStruct ( fixedSNR,		 0, UVAR_OPTIONAL, "Alternative: fix the optimal SNR of the injected signals");
 
   XLALregREALUserStruct ( cosi,			'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
   XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
@@ -614,6 +614,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   cfg->AmpPrior.pdf_h0Nat.xBand = uvar->h0NatBand;
+
+  if ( (uvar->fixedSNR > 0 )  && ( uvar->h0Nat > 0 ) ) {
+    XLALPrintError ("%s: only set ONE of either 'fixedSNR' or 'h0Nat'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( uvar->fixedSNR > 0 )
+    cfg->AmpPrior.fixedSNR = uvar->fixedSNR;
 
   /* implict ranges on cosi, psi and phi0 if not specified by user */
   if ( XLALUserVarWasSet ( &uvar->cosi ) ) {
@@ -1411,6 +1418,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
+  /* if fixedSNR signal is requested: rescale everything to the desired SNR now */
   if ( cfg->AmpPrior.fixedSNR > 0 )
     {
       REAL8 rescale = cfg->AmpPrior.fixedSNR / sqrt(rho2);	/* rescale atoms by this factor, s.t. SNR = cfg->AmpPrior.SNR */
@@ -1422,7 +1430,9 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       /* rescale amplitude-params for consistency */
       Amp.h0 *= rescale;
       UINT4 i; for (i=0; i < 4; i ++) A_Mu[i] *= rescale;
-    } /* if fixed SNR given */
+      /* finally: rescale SNR */
+      rho2 *= SQ(rescale);
+    } /* if fixed SNR requested */
 
   /* add noise to the Fstat atoms, unless --SignalOnly was specified */
   if ( !cfg->SignalOnly )
@@ -1439,6 +1449,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       UINT4 i; for (i=0; i < 4; i ++) injParams->ampVect[i] = A_Mu[i];
       injParams->M_mu_nu = M_mu_nu;
       injParams->transientWindow = injectWindow;
+      injParams->SNR = sqrt(rho2);
     } /* if injParams */
 
 
