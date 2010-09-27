@@ -60,9 +60,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	nChain = MPIsize;		//number of parallel chain
 	tempIndex = MPIrank;		//set initial temp indices
 
-	tempDelta = log(tempMax)/(REAL8)(nChain-1);
+
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
-	for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
+	
+	if (nChain==1) tempLadder[0]=1.0;
+	else {
+		tempDelta = log(tempMax)/(REAL8)(nChain-1);
+		for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
+		}
 	
 	if (MPIrank == 0) {
 		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//itialize temp index
@@ -118,7 +123,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	// iterate:
-	for (i=0; i<500000; i++) {
+	for (i=0; i<100; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
