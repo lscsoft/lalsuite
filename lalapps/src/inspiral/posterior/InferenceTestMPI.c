@@ -627,7 +627,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALVariables 
     if (i==0) 
       die(" ERROR in NelderMeadAlgorithm(): empty \"runstate->currentParams\" vector provided.\n");
     for (j=1; j<=i; ++j) {  // check "currentParams" entries and copy all REAL( values:
-      if (getVariableType(runstate->currentParams, j) == REAL8_t){
+      if (getVariableTypeByIndex(runstate->currentParams, j) == REAL8_t){
 	strcpy(str, getVariableName(runstate->currentParams, j));
         addVariable(&param, str, getVariable(runstate->currentParams, str), REAL8_t, PARAM_LINEAR);
       }
