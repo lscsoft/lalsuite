@@ -107,6 +107,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	unsigned long int randomseed;
 	struct timeval tv;
 	FILE *devrandom;
+	int MPIrank;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	
 	irs = calloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
@@ -186,14 +189,21 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		randomseed = atoi(ppt->value);
 	else { /* otherwise generate "random" random seed: */
 		if ((devrandom = fopen("/dev/random","r")) == NULL) {
-			gettimeofday(&tv, 0);
-			randomseed = tv.tv_sec + tv.tv_usec;
+			if (MPIrank == 0) {
+				gettimeofday(&tv, 0);
+				randomseed = tv.tv_sec + tv.tv_usec;
+			}
+			MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 		} 
 		else {
-			fread(&randomseed, sizeof(randomseed), 1, devrandom);
-			fclose(devrandom);
+			if (MPIrank == 0) {
+				fread(&randomseed, sizeof(randomseed), 1, devrandom);
+				fclose(devrandom);
+			}
+			MPI_Bcast(&randomseed, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 		}
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(irs->GSLrandom, randomseed);
 	
@@ -1192,15 +1202,15 @@ void PTMCMCTest(void)
 
 	runstate->algorithm=PTMCMCAlgorithm;
 	runstate->evolve=PTMCMCOneStep;
-	//runstate->prior=PTUniformLALPrior;
-	runstate->prior=PTUniformGaussianPrior;
-	//runstate->proposal=PTMCMCLALProposal;
-	runstate->proposal=PTMCMCGaussianProposal;
+	runstate->prior=PTUniformLALPrior;
+	//runstate->prior=PTUniformGaussianPrior;
+	runstate->proposal=PTMCMCLALProposal;
+	//runstate->proposal=PTMCMCGaussianProposal;
 	runstate->proposalArgs = malloc(sizeof(LALVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
-	//runstate->likelihood=FreqDomainLogLikelihood;
-	runstate->likelihood=GaussianLikelihood;
+	runstate->likelihood=FreqDomainLogLikelihood;
+	//runstate->likelihood=GaussianLikelihood;
 	runstate->template=templateLAL;
 	
 	

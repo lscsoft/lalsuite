@@ -1177,15 +1177,15 @@ void PTMCMCTest(void)
 	fprintf(stdout, "PTMCMC test\n");
 	runstate->algorithm=PTMCMCAlgorithm;
 	runstate->evolve=PTMCMCOneStep;
-	//runstate->prior=PTUniformLALPrior;
-	runstate->prior=PTUniformGaussianPrior;
-	//runstate->proposal=PTMCMCLALProposal;
-	runstate->proposal=PTMCMCGaussianProposal;
+	runstate->prior=PTUniformLALPrior;
+	//runstate->prior=PTUniformGaussianPrior;
+	runstate->proposal=PTMCMCLALProposal;
+	//runstate->proposal=PTMCMCGaussianProposal;
 	runstate->proposalArgs = malloc(sizeof(LALVariables));
 	runstate->proposalArgs->head=NULL;
 	runstate->proposalArgs->dimension=0;
-	//runstate->likelihood=FreqDomainLogLikelihood;
-	runstate->likelihood=GaussianLikelihood;
+	runstate->likelihood=FreqDomainLogLikelihood;
+	//runstate->likelihood=GaussianLikelihood;
 	runstate->template=templateLAL;
 	
 	

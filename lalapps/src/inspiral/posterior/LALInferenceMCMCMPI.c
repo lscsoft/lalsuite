@@ -60,7 +60,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	nChain = MPIsize;		//number of parallel chain
 	tempIndex = MPIrank;		//set initial temp indices
 
-	tempDelta = log(tempMax)/(REAL8)(nChain - 1);
+	tempDelta = log(tempMax)/(REAL8)(nChain-1);
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
 	for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
 	
@@ -75,13 +75,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
-	char outfileName[99];
+	//char outfileName[99];
 
-
+	char **outfileName = (char**)calloc(nChain,sizeof(char*));
+	
 	for (t=0; t<nChain; ++t) {
-		sprintf(outfileName,"PTMCMC.output.%2.2d",t);
-		chainoutput[t] = fopen(outfileName,"w");
-		
+		outfileName[t] = (char*)calloc(99,sizeof(char*));
+		sprintf(outfileName[t],"PTMCMC.output.%2.2d",t);
+		chainoutput[t] = fopen(outfileName[t],"w");
+		fprintf(chainoutput[t],"This is temperature chain %d of %d. \n", t, nChain);
+		fclose(chainoutput[t]);
 	} 
 	
 
@@ -115,7 +118,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	// iterate:
-	for (i=0; i<1000000; i++) {
+	for (i=0; i<500000; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
@@ -127,7 +130,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	}
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
-		
+		chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 		fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 		
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
@@ -142,7 +145,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		
 		fprintf(chainoutput[tempIndex],"\n");
 		fflush(chainoutput[tempIndex]);
-		
+		fclose(chainoutput[tempIndex]);
+
 		//if (tempIndex == 0) {
 		/*	fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 			
@@ -200,6 +204,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}// for(i=0; i<100; i++)
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (MPIrank == 0) printf("Temp swaps %d times\n", tempSwapCount);
+
+	free(chainoutput);
+
+	for (t=0; t<nChain; ++t) {
+		free(outfileName[t]);
+	}
+	
+	free(outfileName);
+
+	free(tempLadder);
+
+	if (MPIrank == 0) {
+		free(tempIndexVec);
+		free(TcurrentLikelihood);
+	}
 }
 
 
