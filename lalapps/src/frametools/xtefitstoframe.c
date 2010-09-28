@@ -59,7 +59,7 @@
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NAPID 6                       /* the number of valid APIDs we can currently read */
 #define NUSELESSDATAMODE 5            /* the number of useless data modes we know of */
-#define MINFRAMELENGTH 1              /* the minimum duration of output frame file in seconds */
+#define MINFRAMELENGTH 10             /* the minimum duration of output frame file in seconds */
 #define ARRAY 0                       /* data type codes */
 #define EVENT 1                       /* data type codes */
 #define NPCU 5                        /* the number of PCUs on XTE */
@@ -2250,7 +2250,7 @@ int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
       /* the index in the output timeseries of the fits data in the j'th element in the i'th row */
       long int idxout = floor((stamps->dettime[i] - stamps->dettime[0] + j*array->deltat)/(*ts)->deltat);
       
-      if ((idxin>=array->length) || (idxout>=(*ts)->length)) printf("idxin = %ld (%ld) idxout = %ld (%ld)\n",idxin,array->length,idxout,(*ts)->length);
+      if ((idxin>=array->length) || (idxout>=(*ts)->length)) printf("idxin = %ld (%ld) idxout = %ld (%ld)\n",idxin,(long int)array->length,idxout,(long int)(*ts)->length);
       
       /* add corresponding data to correct time output bin */
       (*ts)->data[idxout] += array->data[idxin];
@@ -2900,6 +2900,32 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
     }
   }
  
+  /* test for sections of data too short for analysis */
+  for (i=0;i<ts->length;i++) {
+
+    j = 0;
+    UINT4 goodcount = 0;
+    
+    /* loop over samples within the timeseries */
+    while (j<ts->ts[i]->length) {
+      
+      /* identify a stretch of good data */
+      if (temp_undefined[j] == 0) goodcount++;
+
+      /* if the length of the data is too short then set the data undefined */
+      else if (temp_undefined[j] != 0) { 
+	
+	if (goodcount*ts->ts[i]->deltat<MINFRAMELENGTH) {
+	  UINT4 k;
+	  for (k=j-goodcount;k<j;k++) temp_undefined[k] += 1;	  
+	}
+	goodcount = 0;
+  
+      }
+      j++;
+    }
+  }
+
   /* compute the number of GTIs */  
   {
     BOOLEAN flag = FALSE;

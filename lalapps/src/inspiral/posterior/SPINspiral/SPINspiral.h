@@ -72,7 +72,7 @@
 
 
 #define USAGE "\n\n\
-   Usage:  SPINspiral \n\
+   Usage:  lalapps_spinspiral \n\
                 -i <main input file> \n\
                 --injXMLfile <injection XML file name> --injXMLnr <injection number in XML file (0-...)> \n\
                 --mChirp <chirp mass in solar mass> \n\
@@ -81,6 +81,7 @@
                 --dist <distance in Mpc> \n\
                 --nIter <number of iterations> \n\
                 --nSkip <number of skipped steps between stored steps> \n\
+                --rseed <6 number random seed, e.g. 12345. Use 0 for random random seed ...> \n\
                 --network <network configuration, e.g. H1=[1], H1L1=[1,2], H1L1V1=[1,2,3], V1H1=[3,1]> \n\
                 --downsample <downsample factor> \n\
                 --beforetc <data before t_c being analysed in seconds> \n\
@@ -93,7 +94,8 @@
                 --cache <list of cache files, e.g. [cache1,cache2]> \n\
                 --channel <list of channels, e.g. [H1:LSC-STRAIN,L1:LSC-STRAIN]> \n\
                 --PSDstart <GPS time for the start of the PSD. default begining of cache file> \n\
-example: ./SPINspiral -i ./pipeline/SPINspiral.input --mChirp 1.7 --eta 0.12 --tc 873739311.00000 --dist 15 --nIter 5 --nSkip 1 --downsample 1 --beforetc 5 --aftertc 2 --Flow 45 --Fhigh 1600.0 --nPSDsegment 32 --lPSDsegment 4 --network [1,2] --outputPath ./pipeline/ --cache [./pipeline/H-H1_RDS_C03_L2-873739103-873740831.cache,./pipeline/L-L1_RDS_C03_L2-873739055-873740847.cache] --channel [H1:LSC-STRAIN,L1:LSC-STRAIN] --PSDstart 873740000\n\
+                --template <waveform template, 3 for spin, 4 for no spin> \n\
+example: ./lalapps_spinspiral -i ./pipeline/SPINspiral.input --mChirp 1.7 --eta 0.12 --tc 873739311.00000 --dist 15 --nIter 5 --nSkip 1 --rseed 123456 --downsample 1 --beforetc 5 --aftertc 2 --Flow 45 --Fhigh 1600.0 --nPSDsegment 32 --lPSDsegment 4 --network [1,2] --outputPath ./pipeline/ --cache [./pipeline/H-H1_RDS_C03_L2-873739103-873740831.cache,./pipeline/L-L1_RDS_C03_L2-873739055-873740847.cache] --channel [H1:LSC-STRAIN,L1:LSC-STRAIN] --PSDstart 873740000 --template 3\n\
 \n\n"
 
 

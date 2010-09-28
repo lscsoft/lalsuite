@@ -30,18 +30,18 @@
 
 
 inputParamsStruct * new_inputParams(void);
-void free_inputParams(inputParamsStruct *inputParams);
+void free_inputParams(inputParamsStruct *input);
 
-ffdataStruct * new_ffdata(inputParamsStruct *inputParams);
+ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
-REAL8Vector * readInSFTs(inputParamsStruct *inputParams, REAL8 *normalization);
+REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
 
-void slideTFdata(REAL8Vector *out, inputParamsStruct *inputParams, REAL8Vector *tfdata, INT4Vector *binshifts);
-void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *inputParams);
+void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata, INT4Vector *binshifts);
+void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *input);
 void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, inputParamsStruct *inputParams, REAL8FFTPlan *plan);
-void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *inputParams, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization);
+void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, inputParamsStruct *input, REAL8FFTPlan *plan);
+void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *input, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization);
 
 REAL8 calculateR(REAL8Vector *ffdata, templateStruct *templatestruct, REAL8Vector *noise, REAL8Vector *fbinaveratios);
 REAL8 avgTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
