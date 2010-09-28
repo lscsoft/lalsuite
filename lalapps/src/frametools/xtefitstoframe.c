@@ -2722,31 +2722,32 @@ int XLALCreateGTIData(GTIData **gti,      /**< [out] a null timeseries */
   /* check input */
   if (N<1) {
     LogPrintf(LOG_CRITICAL,"%s : tried to allocate GTI data with non-positive size.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+    XLAL_ERROR(fn,XLAL_EINVAL);
   }
   if ((*gti) != NULL) {
     LogPrintf(LOG_CRITICAL,"%s : input timestamps structure does not have null pointer.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+    XLAL_ERROR(fn,XLAL_EINVAL);
   }
-
+  
   if (((*gti) = (GTIData *)LALCalloc(1,sizeof(GTIData))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI structure.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   if (((*gti)->start = (double *)LALCalloc(N,sizeof(double))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI start vector.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   if (((*gti)->end = (double *)LALCalloc(N,sizeof(double))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI end vector.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   (*gti)->length = N;
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
   
 }
+
 /** Frees memory for a GTI structure.
  *
  */
@@ -2870,7 +2871,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
   /* initialise master list and then loop over each timeseries and make a master list of undefined samples */
   for (j=0;j<tempts->length;j++) temp_undefined[j] = 0;
   for (i=0;i<ts->length;i++) {
-    for (j=0;j<ts->ts[i]->length;j++) temp_undefined[j] += ts->ts[i]->undefined[j];
+    for (j=0;j<ts->ts[i]->length;j++) if (ts->ts[i]->undefined[j]) temp_undefined[j] = 1;
   }
 
   /* test for extended zero data - this is only really applicable to sources with high expected counts */
@@ -2891,7 +2892,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
 	
 	if (zerocount>MAXZEROCOUNT) {
 	  UINT4 k;
-	  for (k=j-zerocount;k<j;k++) temp_undefined[k] += 1;	  
+	  for (k=j-zerocount;k<j;k++) temp_undefined[k] = 1;	  
 	}
 	zerocount = 0;
   
@@ -2908,7 +2909,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
     
     /* loop over samples within the timeseries */
     while (j<ts->ts[i]->length) {
-      
+      /* fprintf(stdout,"index = (%ld/%ld) undefined = %d ->",(long int)j,(long int)ts->ts[i]->length,temp_undefined[j]); */
       /* identify a stretch of good data */
       if (temp_undefined[j] == 0) goodcount++;
 
@@ -2917,11 +2918,13 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
 	
 	if (goodcount*ts->ts[i]->deltat<MINFRAMELENGTH) {
 	  UINT4 k;
-	  for (k=j-goodcount;k<j;k++) temp_undefined[k] += 1;	  
+	  
+	  for (k=j-goodcount;k<j;k++) temp_undefined[k] = 1;	  
 	}
 	goodcount = 0;
   
       }
+      /* fprintf(stdout," %d\n",temp_undefined[j]); */
       j++;
     }
   }
@@ -2974,13 +2977,14 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
   }
   else {
     LogPrintf(LOG_NORMAL,"%s : no GTIs found for the current timeseries array.\n",fn);
+    (*gti) = NULL;
   }
 
   /* free memory */
   XLALFree(temp_undefined);
-
+  
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 }
 
@@ -3026,6 +3030,10 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
   if (XLALXTEUINT4TimeSeriesArrayToGTI(&gti,ts)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALXTEUINT4TimeSeriesToTGI() failed with error = %d\n",fn,xlalErrno);
     return 1;
+  }
+  else if (gti == NULL) {
+    LogPrintf(LOG_NORMAL,"%s : No GTI entries found after processing.  Exiting.\n",fn);
+    exit(0);
   }
   LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
 
@@ -3179,6 +3187,10 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
   if (XLALXTEUINT4TimeSeriesArrayToGTI(&gti,(*ts))) {
     LogPrintf(LOG_CRITICAL,"%s : XLALXTEUINT4TimeSeriesToTGI() failed with error = %d\n",fn,xlalErrno);
     return 1;
+  }
+  else if (gti == NULL) {
+    LogPrintf(LOG_NORMAL,"%s : No GTI entries found after processing.  Exiting.\n",fn);
+    exit(0);
   }
   LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
   
