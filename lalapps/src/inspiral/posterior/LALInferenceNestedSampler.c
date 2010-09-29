@@ -130,7 +130,7 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 
 
 /* NestedSamplingAlgorithm implements the nested sampling algorithm,
- see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition.
+ see e.g. Sivia & Skilling "Data Analysis: A Bayesian Tutorial, 2nd edition.
  REQUIREMENTS:
 	Calling routine must have set up runState->livePoints already to
 	contain samples from the prior distribution.
@@ -154,7 +154,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
 	
-	logLikelihoods=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods");
+	logLikelihoods=(REAL8 *)((REAL8Vector *)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
 	verbose=checkVariable(runState->algorithmParams,"verbose");
 	
@@ -174,7 +174,12 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 	
 	/* Open output file */
-	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
+	ProcessParamsTable *ppt=getProcParamVal(runState->commandLine,"--outfile");
+	if(!ppt){
+		fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+		exit(1);
+	}
+	char *outfile=ppt->value;
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 
@@ -298,7 +303,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 void NestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALVariables *newParams=NULL;
-	UINT4 mcmc_iter=0,accept=0,Naccepted=0;
+	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
