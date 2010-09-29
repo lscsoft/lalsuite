@@ -344,10 +344,10 @@ void printVariables(LALVariables *var)
           fprintf(stdout, "%lld", *(INT8 *) ptr->value);
           break;
         case REAL4_t:
-          fprintf(stdout, "%e", *(REAL4 *) ptr->value);
+          fprintf(stdout, "%.15lf", *(REAL4 *) ptr->value);
           break;
         case REAL8_t:
-          fprintf(stdout, "%e", *(REAL8 *) ptr->value);
+          fprintf(stdout, "%.15lf", *(REAL8 *) ptr->value);
           break;
         case COMPLEX8_t:
           fprintf(stdout, "%e + i*%e", 
