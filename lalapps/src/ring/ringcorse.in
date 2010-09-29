@@ -52,6 +52,7 @@ from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 from glue.ligolw import table
 from pylal import llwapp
 from pylal import farutils
+from glue.lal import Cache, CacheEntry
 
 lsctables.LIGOTimeGPS = LIGOTimeGPS
 
@@ -82,8 +83,10 @@ def parse_command_line():
 	parser.add_option("--rank-by", metavar = "{\"snr\",\"uncombined-ifar\",\"likelihood\"}", default="snr", help = "Select the event ranking method.  Default is snr")
 	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
 	parser.add_option("-n","--extrapolation-num",action="store",type="int",default=0, metavar="num",help="number of time-slide points to use in FAR extrapolation" )
+	parser.add_option("-g", "--input-cache", help="cache of sqlite files")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
+	if options.input_cache is not None: filenames.extend([CacheEntry(c).path() for c in open(options.input_cache)])
 
 	#
 	# categories and ranking

@@ -91,7 +91,6 @@ typedef struct LALSTPNstructparams {
 
 void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams) {
 
-    REAL8 s;
     REAL8 omega;
     REAL8 LNhx,LNhy,LNhz,LNhxy,LNmag;
     REAL8 S1x,S1y,S1z;
@@ -112,7 +111,6 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     REAL8 v, v2, v3, v4, v7, v11;
 
     /* --- computation start here --- */
-    s     = values->data[0];
     omega = values->data[1];
 
     LNhx  = values->data[2];
@@ -683,7 +681,6 @@ LALSTPNWaveformEngine (
   rk4GSLIntegrator *integrator;
 
   expnCoeffs 	ak;
-  expnFunc 	func;
 
 
   REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -794,7 +791,6 @@ LALSTPNWaveformEngine (
       DETATCHSTATUSPTR(status);
       RETURN (status);
     }
-  func = paramsInit->func;
   ak   = paramsInit->ak;
 
 

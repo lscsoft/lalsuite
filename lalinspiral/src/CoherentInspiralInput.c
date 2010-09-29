@@ -64,8 +64,11 @@
 
 NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 
-#define rint(x) (floor((x)+0.5))
-double modf( double value, double *integerPart );
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 void
 LALFindChirpCreateCoherentInput(
@@ -79,7 +82,7 @@ LALFindChirpCreateCoherentInput(
 {
   COMPLEX8TimeSeries      *cohInputData = NULL;
   LIGOTimeGPS              end_time;
-  UINT8                    eventID = 0;
+  UINT8                    UNUSED eventID = 0;
   INT4                     numPoints = 0;
   REAL4                    cohSegLength = 0.0;
   INT4                     inputEpochSeconds = 0;
@@ -89,7 +92,7 @@ LALFindChirpCreateCoherentInput(
   REAL8                    fracpart = 0.0;
   REAL8                    tempTime = 0.0;
   INT4                     crupDataLength = 0;
-  INT4                     cohSegEnd = 0;
+  INT4                     UNUSED cohSegEnd = 0;
   INT4                     cohSegStart = 0;
   INT4                     nonCorruptEnd = 0;
   INT4                     nonCorruptStart = 0;

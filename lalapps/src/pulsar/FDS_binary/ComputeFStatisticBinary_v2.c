@@ -267,7 +267,7 @@ int main(int argc,char *argv[])
     exit (0);  
   
   if ( !uvar_binary ) {
-    LALPrintError ("\nSorry, this code is not functional in the NON-binary case\n\n");
+    XLALPrintError ("\nSorry, this code is not functional in the NON-binary case\n\n");
     exit (COMPUTEFSTATC_EINPUT);
   }
 
@@ -342,16 +342,16 @@ int main(int argc,char *argv[])
   
 
 
-    if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+    if (lalDebugLevel) XLALPrintError ("\nSetting up template grid ...");
 
     LAL_CALL ( InitDopplerSkyScan ( &status, &thisScan, &scanInit), &status); 
 
     /*----------------------------------------------------------------------*/
-    if (lalDebugLevel) LALPrintError ("done.\n");
+    if (lalDebugLevel) XLALPrintError ("done.\n");
     if ( uvar_outputSkyGrid ) {
-      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      XLALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
       LAL_CALL (writeSkyGridFile ( &status, thisScan.skyGrid, uvar_outputSkyGrid ), &status);
-      LALPrintError (" done.\n\n");
+      XLALPrintError (" done.\n\n");
     }
 
   
@@ -360,7 +360,7 @@ int main(int argc,char *argv[])
     {
       if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  exit(-1);
 	}
       if ( uvar_openDX )	/* prepend openDX header */
@@ -412,12 +412,12 @@ int main(int argc,char *argv[])
     {
       if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  exit(-1);
 	}      
     } 
 
-  if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
+  if (lalDebugLevel) XLALPrintError ("\nStarting main search-loop.. \n");
 
   counter = 0;
   while (1)
@@ -534,7 +534,7 @@ int main(int argc,char *argv[])
 	  }
 	 
 	    if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
+	    XLALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 	 
 
 	  if (highFLines != NULL && highFLines->Nclusters > 0){
@@ -548,7 +548,7 @@ int main(int argc,char *argv[])
 	} /* For GV.spinImax */
 
       counter ++;
-      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
+      if (lalDebugLevel) XLALPrintError ("Search progress: %5.1f%%", 
 					(100.0* counter / thisScan.numSkyGridPoints));
       
     } /*  while SkyPos */
@@ -556,7 +556,7 @@ int main(int argc,char *argv[])
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
 
-  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
+  if (lalDebugLevel) XLALPrintError ("\nSearch finished.\n");
 
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -1534,7 +1534,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* do some sanity checks on the user-input before we proceed */
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
-      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
+      XLALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
 		      "Try ./ComputeFStatistic -h \n\n");
@@ -1543,21 +1543,21 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
-      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
+      XLALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
 		      "Try ./ComputeFStatistic -h \n\n" );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   if (uvar_EphemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
+      XLALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
-      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
+      XLALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -1657,7 +1657,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     
     if(globbuf.gl_pathc==0)
       {
-	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
+	XLALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
@@ -1667,7 +1667,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 	filenum++;
 	if (filenum > MAXFILES)
 	  {
-	    LALPrintError ("\nToo many files in directory! Exiting... \n\n");
+	    XLALPrintError ("\nToo many files in directory! Exiting... \n\n");
 	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
 	  }
       }
@@ -1695,7 +1695,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      XLALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -1706,7 +1706,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
+	XLALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
@@ -1820,17 +1820,17 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       /* some consistency checks on input to help catch errors */
       if ( !needGridFile && !(haveSkyRegion || haveAlphaDelta) )
 	{
-	  LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
+	  XLALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
       if ( !needGridFile && haveSkyRegion && haveAlphaDelta )
 	{
-	  LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+	  XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
 	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
       if ( needGridFile && !haveGridFile )
 	{
-	  LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+	  XLALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
 	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
 	}
       if ( !needGridFile && haveGridFile )
@@ -1847,7 +1847,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 	}
       if (needMetric && !haveMetric) 
 	{
-	  LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+	  XLALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
 	  ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
 	}
       

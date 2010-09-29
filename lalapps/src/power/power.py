@@ -173,7 +173,7 @@ def make_cache_entry(input_cache, description, path):
 
 def collect_output_caches(parents):
 	cache = [(cache_entry, parent) for parent in parents for cache_entry in parent.get_output_cache()]
-	cache.sort(lambda (a, ap), (b, bp): cmp(a.segment, b.segment))
+	cache.sort(key = lambda (cache_entry, parent): cache_entry.segment)
 	return cache
 
 
@@ -239,6 +239,7 @@ class RMJob(pipeline.CondorDAGJob):
 		pipeline.CondorDAGJob.__init__(self, "local", "/bin/rm")
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "rm-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.add_opt("force", "")
 		self.set_sub_file("rm.sub")
 
@@ -248,6 +249,7 @@ class RMNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, job)
 		self.input_cache = set()
 		self.output_cache = set()
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache |= cache
@@ -280,11 +282,15 @@ class BurstInjJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 			self.injection_bands = None
 
 		self.add_ini_opts(config_parser, "lalapps_binj")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binj-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.set_sub_file("lalapps_binj.sub")
 
 		self.output_dir = "."
+
+		# one injection every time-step seconds
+		self.time_step = config_parser.getfloat("lalapps_binj", "time-step")
 
 
 class BurstInjNode(pipeline.AnalysisNode):
@@ -294,6 +300,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		self.__usertag = None
 		self.output_cache = []
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_user_tag(self, tag):
 		self.__usertag = tag
@@ -361,6 +368,7 @@ class PowerJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 		self.add_ini_opts(config_parser, "lalapps_power")
 		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).out"))
 		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_power-$(cluster)-$(process).err"))
+		self.add_condor_cmd("getenv", "True")
 		self.set_sub_file("lalapps_power.sub")
 
 		self.output_dir = "."
@@ -373,6 +381,7 @@ class PowerNode(pipeline.AnalysisNode):
 		self.__usertag = None
 		self.output_cache = []
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_ifo(self, instrument):
 		"""
@@ -440,6 +449,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), ".")	# "." == self.job().output_dir except the job class doesn't yet have this info
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 		self.remove_input = bool(remove_input)
 		if self.remove_input:
 			self.add_var_arg("--remove-input")
@@ -510,6 +520,7 @@ class BucutNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -557,6 +568,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 		self.input_cache = []
 		self.output_cache = self.input_cache
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -607,6 +619,7 @@ class BinjfindNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -663,6 +676,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		self.input_cache.extend(cache)
@@ -670,7 +684,7 @@ class BurcaNode(pipeline.CondorDAGNode):
 			filename = c.path()
 			pipeline.CondorDAGNode.add_file_arg(self, filename)
 			self.add_output_file(filename)
-		longest_duration = max([abs(cache_entry.segment) for cache_entry in self.input_cache])
+		longest_duration = max(abs(cache_entry.segment) for cache_entry in self.input_cache)
 		if longest_duration > 25000:
 			# ask for >= 1300 MB
 			self.add_macro("macrominram", 1300)
@@ -715,6 +729,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = []
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
@@ -768,6 +783,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 		self.output_cache = []
 		self.cache_dir = os.path.join(os.getcwd(), self.job().cache_dir)
 		self.output_dir = os.path.join(os.getcwd(), self.job().output_dir)
+		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
 
 	def set_name(self, *args):
 		pipeline.CondorDAGNode.set_name(self, *args)
@@ -872,7 +888,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 
 	# ligolw_add
 	if "lladd" in job_types:
-		lladdjob = pipeline.LigolwAddJob(get_out_dir(config_parser), config_parser)
+		lladdjob = pipeline.LigolwAddJob(os.path.join(get_out_dir(config_parser)), config_parser)
 		lladdjob.cache_dir = get_cache_dir(config_parser)
 
 	# ligolw_binjfind
@@ -1068,11 +1084,8 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 
 
 def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
-	# one injection every time-step / pi seconds
-	period = float(binjjob.get_opts()["time-step"]) / math.pi
-
 	# adjust start time to be commensurate with injection period
-	start = seg[0] - seg[0] % period + period * offset
+	start = seg[0] - seg[0] % binjjob.time_step + binjjob.time_step * offset
 
 	node = BurstInjNode(binjjob)
 	node.set_start(start)
@@ -1097,7 +1110,7 @@ def make_binjfind_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BinjfindNode(binjfindjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:binjfindjob.files_per_binjfind]])
-		for cache_entry, parent in input_cache[:binjfindjob.files_per_binjfind]:
+		for parent in set(parent for cache_entry, parent in input_cache[:binjfindjob.files_per_binjfind]):
 			node.add_parent(parent)
 		del input_cache[:binjfindjob.files_per_binjfind]
 		seg = cache_span(node.get_input_cache())
@@ -1114,7 +1127,7 @@ def make_bucluster_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BuclusterNode(buclusterjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:buclusterjob.files_per_bucluster]])
-		for cache_entry, parent in input_cache[:buclusterjob.files_per_bucluster]:
+		for parent in set(parent for cache_entry, parent in input_cache[:buclusterjob.files_per_bucluster]):
 			node.add_parent(parent)
 		del input_cache[:buclusterjob.files_per_bucluster]
 		seg = cache_span(node.get_input_cache())
@@ -1132,7 +1145,7 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 	while input_cache:
 		node = BucutNode(bucutjob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:bucutjob.files_per_bucut]])
-		for cache_entry, parent in input_cache[:bucutjob.files_per_bucut]:
+		for parent in set(parent for cache_entry, parent in input_cache[:bucutjob.files_per_bucut]):
 			node.add_parent(parent)
 		del input_cache[:bucutjob.files_per_bucut]
 		seg = cache_span(node.get_input_cache())
@@ -1153,7 +1166,7 @@ def make_burca_fragment(dag, parents, tag, coincidence_segments = None, verbose 
 	while input_cache:
 		node = BurcaNode(burcajob)
 		node.add_input_cache([cache_entry for (cache_entry, parent) in input_cache[:burcajob.files_per_burca]])
-		for cache_entry, parent in input_cache[:burcajob.files_per_burca]:
+		for parent in set(parent for cache_entry, parent in input_cache[:burcajob.files_per_burca]):
 			node.add_parent(parent)
 		del input_cache[:burcajob.files_per_burca]
 		seg = cache_span(node.get_input_cache())

@@ -30,6 +30,11 @@ RCSID( "tracksearch $Id$");
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 void
 LALappsTSACropMap(
@@ -682,7 +687,7 @@ LALappsTSAWritePGM(
 void
 LALappsTSASortCache(LALStatus   *status,
 		    TSAcache    *inputCache,
-		    UINT4        ignoreMissingFiles)
+		    UINT4       UNUSED ignoreMissingFiles)
 {
   TSAMap      *tempMap=NULL;
   UINT4        i=0;

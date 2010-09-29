@@ -31,8 +31,8 @@
 #include <stdarg.h>
 #include "gsl/gsl_interp.h"
 #include <gsl/gsl_errno.h>
-#include "cs_cosmo.h"
-#include "cs_lambda_cosmo.h"
+#include <lal/cs_cosmo.h>
+#include <lal/cs_lambda_cosmo.h>
 #include <lal/LALStdio.h>
 
 #define CUSPS_PER_LOOP 1.0		/* c */
@@ -88,7 +88,7 @@ int main( int argc, char *argv[] )
 	FILE *fp;
 	int i,j,k;
   
-	cs_cosmo_functions_t cosmofns = cs_cosmo_functions_alloc( exp( lnz_min ), dlnz, numz );
+	cs_cosmo_functions_t cosmofns = XLALCSCosmoFunctionsAlloc( exp( lnz_min ), dlnz, numz );
 
 	/* read the command line */
 	if (ReadCommandLine(argc,argv,&CLA)) return 1;
@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
 	free(lnamp);
 	free(eff);
 	free(Deff);
-        cs_cosmo_functions_free( cosmofns );
+        XLALCSCosmoFunctionsFree( cosmofns );
 
 	return 0;
 }

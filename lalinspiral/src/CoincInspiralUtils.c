@@ -986,7 +986,6 @@ XLALCreateCoincSlideTable(
 {
   static const char *func = "XLALCreateCoincSlideTable";
   CoincInspiralSlideTable  *thisSlideTable = NULL;
-  CoincInspiralSlideTable  *prevSlideTable = NULL;
   INT4                      idx = 0;
   INT4                      slideNum = 0;
 
@@ -1003,7 +1002,6 @@ XLALCreateCoincSlideTable(
 
     if ( *slideTableHead )
     {
-      prevSlideTable = thisSlideTable;
       thisSlideTable->next = (CoincInspiralSlideTable*)
           LALCalloc( 1, sizeof(CoincInspiralSlideTable) );
       thisSlideTable = thisSlideTable->next;
@@ -2860,7 +2858,6 @@ XLALRateErrorCalcCoincInspiral (
 {
   static const char *func = "XLALRateErrorCalcCoincInspiral";
 
-  CoincInspiralSlideTable    *headSlideHeads = NULL;
   CoincInspiralSlideTable    *thisSlideHead = NULL;
   CoincInspiralSlideTable    *thisHeadSlideHead = NULL;
   CoincInspiralSlideTable    *tmpSlideHead = NULL;
@@ -2874,7 +2871,6 @@ XLALRateErrorCalcCoincInspiral (
   REAL4  thisRateError = 0.;
   REAL4  loudestRate = -1;
 
-  headSlideHeads = slideHeads;
   XLALCreateCoincSlideTable( &thisHeadSlideHead, numSlides );
   thisSlideHead = thisHeadSlideHead;
 

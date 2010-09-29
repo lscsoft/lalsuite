@@ -112,6 +112,12 @@ These routines use the functions \verb+LALSPolynomialInterpolation()+ and
 #include <lal/Integrate.h>
 #include <lal/Interpolate.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID (INTEGRATEC, "$Id$");
 
 typedef struct
@@ -233,42 +239,37 @@ ThreePow (INT4 n)
 
 
 static REAL4
-SEqualsX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
+SEqualsX (REAL4 x, REAL4 UNUSED a, REAL4 UNUSED b, REAL4 *jac)
 {
-  a = b; /* do nothing with a and b */
   *jac = 1;
   return x;
 }
 
 static REAL4
-SEqualsInvX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
+SEqualsInvX (REAL4 x, REAL4 UNUSED a, REAL4 UNUSED b, REAL4 *jac)
 {
   REAL4 invx = 1/x;
-  a = b; /* do nothing with a and b */
   *jac = invx*invx;
   return invx;
 }
 
 static REAL4
-SEqualsAPlusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
+SEqualsAPlusXSq (REAL4 x, REAL4 a, REAL4 UNUSED b, REAL4 *jac)
 {
-  b = 0; /* do nothing with b */
   *jac = 2*x;
   return a + x*x;
 }
 
 static REAL4
-SEqualsBMinusXSq (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
+SEqualsBMinusXSq (REAL4 x, REAL4 UNUSED a, REAL4 b, REAL4 *jac)
 {
-  a = 0; /* do nothing with a */
   *jac = 2*x;
   return b - x*x;
 }
 
 static REAL4
-SEqualsMinusLogX (REAL4 x, REAL4 a, REAL4 b, REAL4 *jac)
+SEqualsMinusLogX (REAL4 x, REAL4 UNUSED a, REAL4 UNUSED b, REAL4 *jac)
 {
-  a = b; /* do nothing with a and b */
   *jac = 1/x;
   return -log(x);
 }
@@ -373,42 +374,37 @@ SMidpoint (
 
 
 static REAL8
-DEqualsX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
+DEqualsX (REAL8 x, REAL8 UNUSED a, REAL8 UNUSED b, REAL8 *jac)
 {
-  a = b; /* do nothing with a and b */
   *jac = 1;
   return x;
 }
 
 static REAL8
-DEqualsInvX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
+DEqualsInvX (REAL8 x, REAL8 UNUSED a, REAL8 UNUSED b, REAL8 *jac)
 {
   REAL8 invx = 1/x;
-  a = b; /* do nothing with a and b */
   *jac = invx*invx;
   return invx;
 }
 
 static REAL8
-DEqualsAPlusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
+DEqualsAPlusXSq (REAL8 x, REAL8 a, REAL8 UNUSED b, REAL8 *jac)
 {
-  b = 0; /* do nothing with b */
   *jac = 2*x;
   return a + x*x;
 }
 
 static REAL8
-DEqualsBMinusXSq (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
+DEqualsBMinusXSq (REAL8 x, REAL8 UNUSED a, REAL8 b, REAL8 *jac)
 {
-  a = 0; /* do nothing with a */
   *jac = 2*x;
   return b - x*x;
 }
 
 static REAL8
-DEqualsMinusLogX (REAL8 x, REAL8 a, REAL8 b, REAL8 *jac)
+DEqualsMinusLogX (REAL8 x, REAL8 UNUSED a, REAL8 UNUSED b, REAL8 *jac)
 {
-  a = b; /* do nothing with a and b */
   *jac = 1/x;
   return -log(x);
 }

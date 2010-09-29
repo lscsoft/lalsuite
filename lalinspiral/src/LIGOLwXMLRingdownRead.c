@@ -44,6 +44,12 @@ $Id$
 
 NRCSID( LIGOLWXMLRINGDOWNREADC, "$Id$" );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #if 0
 <lalLaTeX>
 \subsection{Module \texttt{LIGOLwXMLRingdownRead.c}}
@@ -98,7 +104,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
   int                            i, j;
   int                            mioStatus = 0;
   INT4                           i4colData;
-  INT8                           i8colData;
+  INT8                           UNUSED i8colData;
   REAL4                          r4colData;
   REAL8                          r8colData;
   SnglRingdownTable             *eventHead = NULL;

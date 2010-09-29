@@ -184,7 +184,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counters */
   INT4 i, j;
   INT4 lInter, lSeg;
+#if 0
   REAL8 nu;
+#endif
   /* results parameters */
   REAL8 y, yOpt;
   REAL8 varTheo, inVarTheoSum ;
@@ -197,12 +199,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* input data segment */
   LIGOTimeGPS gpsStartTime,gpsStartPadTime,gpsMidSegTime;
-  INT4 duration, durationEff, extrasec, intervalDuration;
+  INT4 duration, durationEff, extrasec; /*intervalDuration;*/
   INT4 numIntervals, midSegment;
   INT4 segmentLength1,segmentLength2;
   INT4 segmentPadDuration,segmentPadLength1,segmentPadLength2;
-  INT4 intervalLength,intervalLength1,intervalLength2; 
+#if 0
+  INT4 intervalLength,intervalLength1,intervalLength2;
   INT4 segmentShift;
+#endif
   ResampleTSParams resampleParams1, resampleParams2; 
   REAL8TimeSeries segmentPadD1,segmentPadD2;
   REAL4TimeSeries segmentPad1,segmentPad2,segmentPadMC1,segmentPadMC2,segment1,segment2;
@@ -294,14 +298,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get durations etc...*/
   duration = stopTime - startTime;
+#if 0
   intervalDuration = numSegments * segmentDuration;
+#endif
   midSegment = (INT4)((numSegments-1)/2); 
   numIntervals = (INT4)((duration-2*padData)/segmentDuration)-numSegments+1;
-  
+
+#if 0
   if (overlap_hann_flag)
    segmentShift = segmentDuration / 2;
   else
    segmentShift = segmentDuration;
+#endif
 
   /* recenter */
   if (recenter_flag)
@@ -392,9 +400,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsMidSegTime.gpsNanoSeconds = 0.;
 
   /* set length for data segments */
+#if 0
   intervalLength = (intervalDuration + 2 * padData);
   intervalLength1 = (UINT4)(intervalLength * resampleRate1);
   intervalLength2 = (UINT4)(intervalLength * resampleRate2);
+#endif
   segmentPadDuration = (segmentDuration + 2 * padData);
   segmentPadLength1 = (UINT4)(segmentPadDuration * sampleRate1);
   segmentPadLength2 = (UINT4)(segmentPadDuration * sampleRate2);
@@ -923,7 +933,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* initialize parameters for post analysis */
   yOpt = 0.; inVarTheoSum = 0.;
+#if 0
   nu=0.;
+#endif
   /* open output file */
   snprintf(outputFilename1, LALNameLength,"%s/stat-%s%s-%d-%d.dat",
               outputFilePath, ifo1, ifo2,(INT4)startTime, (INT4)stopTime);

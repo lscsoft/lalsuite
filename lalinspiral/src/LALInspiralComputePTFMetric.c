@@ -111,8 +111,11 @@ LALFree
 #include <lal/MatrixUtils.h>
 #include <lal/FindChirpPTF.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* <lalVerbatim file="XLALInspiralComputePTFIntrinsicMetricCP">  */
 INT4 XLALInspiralComputePTFIntrinsicMetric (
@@ -553,17 +556,12 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 
 /* <lalVerbatim file="XLALInspiralComputePTFFullMetricCP">  */
 INT4 XLALInspiralComputePTFFullMetric (
-    InspiralMetric             *metric,
-    REAL8FrequencySeries       *psd,
-    InspiralTemplate           *params
+    InspiralMetric             UNUSED *metric,
+    REAL8FrequencySeries       UNUSED *psd,
+    InspiralTemplate           UNUSED *params
     )
 /* </lalVerbatim> */
 {
-  /* metric, psd, and params are unused in this function */
-  UNUSED(metric);
-  UNUSED(psd);
-  UNUSED(params);
-
   return XLAL_SUCCESS;
 }
 
@@ -776,7 +774,6 @@ INT4 XLALInspiralComputePTFWDeriv (
   REAL8 reldelta = initdelta;
   REAL8 absdelta = 0;
   REAL8 relderivdiff = 1.0;
-  REAL8 relderivdifflist[20];
   REAL8 invpsd;
   REAL8 powerderiv;
   REAL8 powerderivdiff;
@@ -968,7 +965,6 @@ INT4 XLALInspiralComputePTFWDeriv (
 	powerderivdiff = 4.0 * wavederivdiff_2->data[0];
 
 	relderivdiff = powerderivdiff / powerderiv;
-	relderivdifflist[iter-1] = relderivdiff;
 
 	if (relderivdiff < tolerance)
 	{
@@ -1010,15 +1006,11 @@ INT4 XLALInspiralComputePTFWDeriv (
 
 /* <lalVerbatim file="XLALInspiralComputePTFQDerivCP">  */
 INT4 XLALInspiralComputePTFQDeriv (
-    REAL8VectorSequence		   *Qderiv,
-    InspiralTemplate           *params
+    REAL8VectorSequence        UNUSED *Qderiv,
+    InspiralTemplate           UNUSED *params
     )
 /* </lalVerbatim> */
 {
-  /* Qderiv and params are unused in this function */
-  UNUSED(Qderiv);
-  UNUSED(params);
-
   return XLAL_SUCCESS;
 }
 

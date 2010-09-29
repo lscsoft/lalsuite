@@ -124,7 +124,7 @@ int main(int argc,char *argv[])
   
   /* output timestamps to file */
   if ((fp = fopen(uvar_stampsfile,"w"))==NULL) {
-    LALPrintError("\nError opening file '%s' for writing..\n\n",uvar_stampsfile);
+    XLALPrintError("\nError opening file '%s' for writing..\n\n",uvar_stampsfile);
     return (GETTIMESTAMPSC_ESYS);
   }
   

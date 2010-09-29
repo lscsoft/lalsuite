@@ -53,9 +53,11 @@ $Id$
 
 NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
-/* macro to "use" unused function parameters */
-
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* Some static function prototypes */
 static int compareTemplateByLevel (const void * a, const void * b);
@@ -228,23 +230,19 @@ XLALFindChirpCreateSubBanks(
 REAL4
 XLALComputeFullChisq(
     FindChirpBankVetoData      *bankVetoData,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,
+    FindChirpFilterInput       UNUSED *input,
+    FindChirpFilterParams      UNUSED *params,
     COMPLEX8                   *q,
     UINT4 			i,
     UINT4                       snrIX,
     UINT4                      *dof,
-    REAL4                       norm
+    REAL4                      norm
 )
 
 {
   UINT4 k;
   REAL4 chisqnorm, tmp, C, chisq, angle, snri, snrk;
   UINT4 numsamps = bankVetoData->acorrMatSize;
-
-  /* input, params and norm are unused */
-  UNUSED(input);
-  UNUSED(params);
 
   /* test isn't being done */
   if (!bankVetoData->acorrMat) return 0.0;
@@ -327,8 +325,6 @@ XLALBankVetoCCMat ( FindChirpBankVetoData *bankVetoData,
    /* Absolute value of calibration response function*/
     REAL8 sqResp;
     REAL8 spectralDensity;
-
-    //UNUSED(deltaT);
 
     /* Allocate memory for workspace and the autocorrelation if necessary */
     if ( !bankVetoData->acorr )
@@ -511,9 +507,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
     /* complex cross correlation */
     COMPLEX8 chisq;
 
-    /* normalization factor to make chi-sq distributed */
-    REAL4 bankNorm;
-
     /* Output of function */
     REAL4 chisq_mag = 0;
 
@@ -541,9 +534,6 @@ XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
 
         /* having the crossCorr == 0 means that we are outside the valid range for this subbank */
 	if (crossCorr.re == 0 && crossCorr.im == 0) continue;
-
-	/* this keeps track of the normalization factor to make it \chi^2 distributed */
-	bankNorm = 2.0 - XLALCOMPLEX8Abs2(crossCorr);
 
 	/* FIXME: warning -- this could go off the edge of the SNR time series */
 	/* Look at the col SNR deltaTimeShift/deltaT samples in the past.  The choice of sign

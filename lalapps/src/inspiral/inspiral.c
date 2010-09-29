@@ -123,7 +123,12 @@ snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
 snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment );\
 
-double rint(double x);
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 #ifdef LALAPPS_CONDOR
@@ -406,7 +411,7 @@ int main( int argc, char *argv[] )
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   UINT4 i, j, k;
-  INT4  cDataForFrame = 0;
+  INT4  UNUSED cDataForFrame = 0;
   CHAR  fname[FILENAME_MAX];
   CHAR  cdataStr[LALNameLength];
   REAL8 inputLengthNS;

@@ -40,7 +40,7 @@ int main (int argc, char **argv)
 	double m1, m2, totalMass, eta, flso, lso, fOld, sevenBy3 = 7.L/3.L;
 	double x, pwrSpec;
 	double freq, flow;
-	double rhorms, rmsD, idealD, Crms, integral;  
+	double rhorms, rmsD, Crms, integral;  
 	double MTSUN_SI=4.925e-6, pi=3.14159, PC_SI=3.e19, C_SI=3.e8;
 	double SNRat1Mpc;
 	int ispec;
@@ -95,7 +95,6 @@ int main (int argc, char **argv)
 	}
 
 	rmsD = Crms * sqrt(integral) / PC_SI * C_SI;
-	idealD = 2.5 * rmsD;
 	SNRat1Mpc = 1.e-3 * 2.5 * rmsD*rhorms;
 	fprintf(stdout, "%e %e %e %e %e %e %e\n", totalMass/MTSUN_SI, SNRat1Mpc, flow, rmsD, m1, m2, flso);
 	return 0;

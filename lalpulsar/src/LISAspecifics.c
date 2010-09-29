@@ -117,7 +117,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
       strcpy ( Detector1.frDetector.prefix, "Z9");
       break;
     default:
-      LALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6', '7', '8', '9'}.\n\n", channelNum );
+      XLALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6', '7', '8', '9'}.\n\n", channelNum );
       return -1;
       break;
     } /* switch (detIndex) */
@@ -277,7 +277,7 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
       chan2 = 'X';
       break;
     default:	/* unknown */
-      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+      XLALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
       xlalErrno = XLAL_EINVAL;
       return -1;
       break;
@@ -296,17 +296,17 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 	  SymmTensor3 detT3;
 
 	  if ( XLALgetLISADetectorTensorLWL ( &detT1, detArms, '1' ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALgetLISADetectorTensorLWL ( &detT2, detArms, '2' ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALgetLISADetectorTensorLWL ( &detT3, detArms, '3' ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
@@ -330,7 +330,7 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 	      break;
 	    default:
 	      /* should never get to default */
-	      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+	      XLALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
 	      xlalErrno = XLAL_EINVAL;
 	      return -1;
 	      break;
@@ -339,27 +339,27 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
 	  /* Note that the following in-place operations *are* safe */
 
 	  if ( XLALScaleSymmTensor3 ( &detT1, &detT1, weight1 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT2, &detT2, weight2 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT3, &detT3, weight3 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( &detT2, &detT2, &detT3 ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( detT, &detT1, &detT2 ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
@@ -368,18 +368,18 @@ XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, 		/**< [out]: LISA LWL detecto
   else
     {
       if ( XLALgetLISADetectorTensorLWL ( &detT1, detArms, chan1 ) != 0 ) {
-	LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }
       if ( XLALgetLISADetectorTensorLWL ( &detT2, detArms, chan2 ) != 0 ) {
-	LALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
+	XLALPrintError ("\nXLALgetLISADetectorTensorLWL() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }
 
       if ( XLALSubtractSymmTensor3s ( detT, &detT1, &detT2 ) != 0 ) {
-	LALPrintError ("\nXLALSubtractSymmTensor3s() failed !\n\n");
+	XLALPrintError ("\nXLALSubtractSymmTensor3s() failed !\n\n");
 	xlalErrno = XLAL_EINVAL;
 	return -1;
       }	/* d_X - d_Y etc */
@@ -437,7 +437,7 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
       chan2 = 'X';
       break;
     default:	/* unknown */
-      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+      XLALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
       xlalErrno = XLAL_EINVAL;
       return -1;
       break;
@@ -451,7 +451,7 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 					 &(detArms[armB]), freq_skypos )
 	       != 0 )
 	    {
-	      LALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
+	      XLALPrintError ("\nXLALgetLISAtwoArmRAAIFO() failed !\n\n");
 	      xlalErrno = XLAL_EINVAL;
 	      return -1;
 	    }
@@ -463,19 +463,19 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 
 	  if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, '1',
 					      freq_skypos ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, '2',
 					      freq_skypos ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALgetLISADetectorTensorRAA ( &detT3, detArms, '3',
 					      freq_skypos ) != 0 ) {
-	    LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+	    XLALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
@@ -499,7 +499,7 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 	      break;
 	    default:
 	      /* should never get to default */
-	      LALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
+	      XLALPrintError ("\nInvalid channel-number '%c' for LISA \n\n", channelNum );
 	      xlalErrno = XLAL_EINVAL;
 	      return -1;
 	      break;
@@ -508,64 +508,64 @@ XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, 	/**< [out]: LISA LWL 
 	  /* Note that the following in-place operations *are* safe */
 
 	  if ( XLALScaleSymmTensor3 ( &detT1.re, &detT1.re, weight1 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT1.im, &detT1.im, weight1 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT2.re, &detT2.re, weight2 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT2.im, &detT2.im, weight2 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT3.re, &detT3.re, weight3 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALScaleSymmTensor3 ( &detT3.im, &detT3.im, weight3 ) != 0 ) {
-	    LALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
+	    XLALPrintError ("\nXLALScaleSymmTensor3() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( &detT2.re, &detT2.re, &detT3.re ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( &detT2.im, &detT2.im, &detT3.im ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( &detT->re, &detT1.re, &detT2.re ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	  if ( XLALAddSymmTensor3s ( &detT->im, &detT1.im, &detT2.im ) != 0 ) {
-	    LALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
+	    XLALPrintError ("\nXLALSumSymmTensor3s() failed !\n\n");
 	    xlalErrno = XLAL_EINVAL;
 	    return -1;
 	  }
 	} /* if (chan2 != 0) */
   } else {
     if ( XLALgetLISADetectorTensorRAA ( &detT1, detArms, chan1, freq_skypos ) != 0 ) {
-      LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+      XLALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }
     if ( XLALgetLISADetectorTensorRAA ( &detT2, detArms, chan2, freq_skypos ) != 0 ) {
-      LALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
+      XLALPrintError ("\nXLALgetLISADetectorTensorRAA() failed !\n\n");
       xlalErrno = XLAL_EINVAL;
       return -1;
     }

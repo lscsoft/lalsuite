@@ -17,51 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-/****************************** <lalVerbatim file="LALBarycenterTestCV">
-Author: Cutler, C.
-$Id$
-******************************* </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Program \texttt{LALBarycenterTest.c}}
-\label{ss:LALBarycenterTest.c}
-
-Tests the routine \verb@LALBarycenter()@.  Exercises some of the error
-conditions and makes sure that they work.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-LALBarycenterTest
-\end{verbatim}
-
-\subsubsection*{Description}
-
-This program demonstrates the use of \verb@LALBarycenter.c@.
-The two ephemeris files specified in the \verb@EphemerisFilenames@
-structure (e.g., for data taken in 1998, \verb@sun98.dat@ and \verb@earth98.dat@)
-are assumed to be in the same directory as the program as
-the test program.
-
-\subsubsection*{Exit codes}
-\input{LALBarycenterTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALMalloc()
-LALFree()
-LALBarycenterInit()
-LALBarycenterEarth()
-LALBarycenter()
-LALCheckMemoryLeaks()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALBarycenterTestCV}}
-
-</lalLaTeX> */
+/**
+ * \author Curt Cutler
+ * \date 2001
+ * \file
+ * \ingroup moduleBarycenter
+ * \brief Test functions for Barycenter module.
+ *
+ * Tests the routine LALBarycenter().  Exercises some of the error
+ * conditions and makes sure that they work.
+ *
+ * \par Description
+ *
+ * This program demonstrates the use of LALBarycenter.c.
+ * The two ephemeris files specified in the EphemerisFilenames
+ * structure (e.g., for data taken in 1998, <tt>sun98.dat</tt> and <tt>earth98.dat</tt>)
+ * are assumed to be in the same directory as the program as
+ * the test program.
+ *
+ */
 
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
@@ -70,7 +44,8 @@ LALCheckMemoryLeaks()
 
 NRCSID(LALBARYCENTERTESTC,"$Id$");
 
-/***************************** <lalErrTable file="LALBarycenterTestCE"> */
+/** \name Error codes */
+/*@{*/
 #define LALBARYCENTERTESTC_ENOM 0
 #define LALBARYCENTERTESTC_EOPEN 1
 #define LALBARYCENTERTESTC_EOUTOFRANGEE  4
@@ -84,9 +59,11 @@ NRCSID(LALBARYCENTERTESTC,"$Id$");
 #define LALBARYCENTERTESTC_MSGEOUTOFRANGES "Failed to catch that tgps not in range of sun.dat file"
 #define LALBARYCENTERTESTC_MSGEBADSOURCEPOS "Failed to catch bad source position"
 #define LALBARYCENTERTESTC_MSGEEPHFILE "Failed to catch error reading ephemeris file."
+/*@}*/
 
 
-/***************************** </lalErrTable> */
+/* ----- internal prototype ---------- */
+int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 );
 
 /*
   int lalDebugLevel=0;
@@ -166,8 +143,26 @@ main( void )
   (*edat).ephiles.sunEphemeris = sEphFile;
 
   LALInitBarycenter(&stat, edat);
-  printf("stat.statusCode = %d\n",stat.statusCode);
-  REPORTSTATUS(&stat);
+  if ( stat.statusCode ) {
+    XLALPrintError ("LALInitBarycenter() failed with code %d\n", stat.statusCode);
+    return XLAL_EFAILED;
+  }
+
+
+  /* ===== now test equivalence of new XLALInitBarycenter() function ========== */
+  EphemerisData *edat_xlal;
+  if ( ( edat_xlal = XLALInitBarycenter ( eEphFile, sEphFile )) == NULL ) {
+    XLALPrintError ("Something failed in XLALInitBarycenter(), errno =%d\n", xlalErrno );
+    return XLAL_EFAILED;
+  }
+  if ( compare_ephemeris ( edat, edat_xlal ) != XLAL_SUCCESS ) {
+    XLALPrintError ("Equivalence test failed between XLALInitEphemeris() and LALInitEphemeris()\n" );
+    return XLAL_EFAILED;
+  }
+  XLALDestroyEphemerisData ( edat_xlal );
+
+  /* ========================================================================== */
+
 
  /* The routines using LALBarycenter package, the code above, leading
     up LALInitBarycenter call, should be near top of main. The idea is
@@ -251,7 +246,11 @@ sensible in degrees, but radians)*/
     tGPS.gpsNanoSeconds = 0;
 
     LALBarycenterEarth(&stat, &earth, &tGPS, edat);
-    REPORTSTATUS(&stat);
+    if ( stat.statusCode ) {
+      XLALPrintError ("LALBarycenterEarth() failed with code %d\n", stat.statusCode);
+      return XLAL_EFAILED;
+    }
+
 
 /*Next: inner loop over different sky positions, for each arrival time;
      LALBarycenter called ONCE per sky position (or ONCE per detector) */
@@ -271,8 +270,12 @@ sensible in degrees, but radians)*/
       baryinput.tgps.gpsNanoSeconds = tGPS.gpsNanoSeconds;
 
       LALBarycenter(&stat, &emit, &baryinput, &earth);
-      REPORTSTATUS(&stat);
+      if ( stat.statusCode ) {
+        XLALPrintError ("LALBarycenter() failed with code %d\n", stat.statusCode);
+        return XLAL_EFAILED;
+      }
 
+#if 0
       printf("%d %d %d %25.17e %25.17e\n", k,
 	     tGPS.gpsSeconds,  tGPS.gpsNanoSeconds,
 	     (emit.deltaT + tGPS.gpsSeconds + tGPS.gpsNanoSeconds*1.e-9),
@@ -286,6 +289,8 @@ sensible in degrees, but radians)*/
 
       printf("%25.17e %25.17e %25.17e\n",
 	     emit.vDetector[0],emit.vDetector[1],emit.vDetector[2]);
+#endif
+
     }
   }
   LALFree(edat->ephemE);
@@ -296,5 +301,118 @@ sensible in degrees, but radians)*/
 }
 
 
+/** Function to test equivalence between two loaded ephemeris-data structs.
+ * Note: we compare everything *except* the ephiles fields, which are actually useless.
+ */
+int
+compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
+{
+  const char *fn = __func__;
 
+  if ( !edat1 || !edat2 ) {
+    XLALPrintError ("%s: invalid NULL input edat1=%p, edat2=%p\n", fn, edat1, edat2 );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
+  if ( edat1->nentriesE != edat2->nentriesE ) {
+    XLALPrintError ("%s: different nentriesE (%d != %d)\n", fn, edat1->nentriesE, edat2->nentriesE );
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( edat1->nentriesS != edat2->nentriesS ) {
+    XLALPrintError ("%s: different nentriesS (%d != %d)\n", fn, edat1->nentriesS, edat2->nentriesS );
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( edat1->dtEtable != edat2->dtEtable ) {
+    XLALPrintError ("%s: different dtEtable (%g != %g)\n", fn, edat1->dtEtable, edat2->dtEtable );
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+  if ( edat1->dtStable != edat2->dtStable ) {
+    XLALPrintError ("%s: different dtStable (%g != %g)\n", fn, edat1->dtStable, edat2->dtStable );
+    XLAL_ERROR ( fn, XLAL_EFAILED );
+  }
+
+  /* compare earth ephemeris data */
+  if ( !edat1->ephemE || !edat2->ephemE ) {
+    XLALPrintError ("%s: invalid NULL ephemE pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemE, edat2->ephemE );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  INT4 i;
+  for ( i=0; i < edat1->nentriesE; i ++ )
+    {
+      if ( edat1->ephemE[i].gps != edat2->ephemE[i].gps ||
+
+           edat1->ephemE[i].pos[0] != edat2->ephemE[i].pos[0] ||
+           edat1->ephemE[i].pos[1] != edat2->ephemE[i].pos[1] ||
+           edat1->ephemE[i].pos[2] != edat2->ephemE[i].pos[2] ||
+
+           edat1->ephemE[i].vel[0] != edat2->ephemE[i].vel[0] ||
+           edat1->ephemE[i].vel[1] != edat2->ephemE[i].vel[1] ||
+           edat1->ephemE[i].vel[2] != edat2->ephemE[i].vel[2] ||
+
+           edat1->ephemE[i].acc[0] != edat2->ephemE[i].acc[0] ||
+           edat1->ephemE[i].acc[1] != edat2->ephemE[i].acc[1] ||
+           edat1->ephemE[i].acc[2] != edat2->ephemE[i].acc[2]
+           )
+        {
+          XLALPrintError ("%s: Inconsistent earth-entry %d:\n", fn, i );
+          XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
+                          edat1->ephemE[i].gps,
+                          edat1->ephemE[i].pos[0], edat1->ephemE[i].pos[1], edat1->ephemE[i].pos[2],
+                          edat1->ephemE[i].vel[0], edat1->ephemE[i].vel[1], edat1->ephemE[i].vel[2],
+                          edat1->ephemE[i].acc[0], edat1->ephemE[i].acc[1], edat1->ephemE[i].acc[2]
+                          );
+          XLALPrintError ("    edat2 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
+                          edat2->ephemE[i].gps,
+                          edat2->ephemE[i].pos[0], edat2->ephemE[i].pos[1], edat2->ephemE[i].pos[2],
+                          edat2->ephemE[i].vel[0], edat2->ephemE[i].vel[1], edat2->ephemE[i].vel[2],
+                          edat2->ephemE[i].acc[0], edat2->ephemE[i].acc[1], edat2->ephemE[i].acc[2]
+                          );
+          XLAL_ERROR ( fn, XLAL_EFAILED );
+        } /* if difference in data-set i */
+
+    } /* for i < nentriesE */
+
+  /* compare sun ephemeris data */
+  if ( !edat1->ephemS || !edat2->ephemS ) {
+    XLALPrintError ("%s: invalid NULL ephemS pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemS, edat2->ephemS );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  for ( i=0; i < edat1->nentriesS; i ++ )
+    {
+      if ( edat1->ephemS[i].gps != edat2->ephemS[i].gps ||
+
+           edat1->ephemS[i].pos[0] != edat2->ephemS[i].pos[0] ||
+           edat1->ephemS[i].pos[1] != edat2->ephemS[i].pos[1] ||
+           edat1->ephemS[i].pos[2] != edat2->ephemS[i].pos[2] ||
+
+           edat1->ephemS[i].vel[0] != edat2->ephemS[i].vel[0] ||
+           edat1->ephemS[i].vel[1] != edat2->ephemS[i].vel[1] ||
+           edat1->ephemS[i].vel[2] != edat2->ephemS[i].vel[2] ||
+
+           edat1->ephemS[i].acc[0] != edat2->ephemS[i].acc[0] ||
+           edat1->ephemS[i].acc[1] != edat2->ephemS[i].acc[1] ||
+           edat1->ephemS[i].acc[2] != edat2->ephemS[i].acc[2]
+           )
+        {
+          XLALPrintError ("%s: Inconsistent sun-entry %d:\n", fn, i );
+          XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
+                          edat1->ephemS[i].gps,
+                          edat1->ephemS[i].pos[0], edat1->ephemS[i].pos[1], edat1->ephemS[i].pos[2],
+                          edat1->ephemS[i].vel[0], edat1->ephemS[i].vel[1], edat1->ephemS[i].vel[2],
+                          edat1->ephemS[i].acc[0], edat1->ephemS[i].acc[1], edat1->ephemS[i].acc[2]
+                          );
+          XLALPrintError ("    edat2 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
+                          edat2->ephemS[i].gps,
+                          edat2->ephemS[i].pos[0], edat2->ephemS[i].pos[1], edat2->ephemS[i].pos[2],
+                          edat2->ephemS[i].vel[0], edat2->ephemS[i].vel[1], edat2->ephemS[i].vel[2],
+                          edat2->ephemS[i].acc[0], edat2->ephemS[i].acc[1], edat2->ephemS[i].acc[2]
+                          );
+          XLAL_ERROR ( fn, XLAL_EFAILED );
+        } /* if difference in data-set i */
+
+    } /* for i < nentriesE */
+
+  /* everything seems fine */
+  return XLAL_SUCCESS;
+
+} /* compare_ephemeris() */

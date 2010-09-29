@@ -97,8 +97,11 @@ LALFree()
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
@@ -124,7 +127,6 @@ LALFindChirpInjectSignals (
   PPNParamStruc         ppnParams;
   CoherentGW            waveform;
   INT8                  waveformStartTime;
-  INT8                  chanStartTime;
   REAL4TimeSeries       signalvec;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
@@ -158,9 +160,6 @@ LALFindChirpInjectSignals (
    *
    */
 
-
-
-  chanStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
   /* fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
@@ -829,7 +828,7 @@ LALFindChirpSetAnalyseTemplate (
     REAL8                      deltaF,
     INT4                       sampleRate,
     FindChirpDataParams        *fcDataParams,
-    int                        numTmplts,
+    int                        UNUSED numTmplts,
     InspiralTemplate           *tmpltHead,
     int                        numInjections,
     SimInspiralTable           *injections
@@ -846,9 +845,6 @@ LALFindChirpSetAnalyseTemplate (
   REAL4                 dt0, dt3, metricDist, match;
   CHAR                  myMsg[8192];
   UINT4                 approximant;
-
-  /* numTmplts is unused in this function */
-  UNUSED(numTmplts);
 
   INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );

@@ -235,7 +235,7 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
 #define ERROR( code, msg, statement )                                \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,		\
 		 __LINE__, LALDEMODTESTC, statement ? statement : "",\
 		 (msg) );                                            \
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 	if(LALOpenDataFile(basicInputsFile)==NULL)
 	  {
 	    ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
-	    LALPrintError(USAGE, *argv);
+	    XLALPrintError(USAGE, *argv);
 	    return LALDEMODH_ENOFILE;
 	  }
       }
@@ -406,7 +406,7 @@ int main(int argc, char **argv)
     else if(basicInputsFile!=NULL && arg<argc)
       {
 	ERROR(LALDEMODH_EBADARG, LALDEMODH_MSGEBADARG, 0);
-	LALPrintError(USAGE, *argv);
+	XLALPrintError(USAGE, *argv);
 	arg=argc;
 	return LALDEMODH_EBADARG;
       }

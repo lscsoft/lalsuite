@@ -115,7 +115,6 @@ LALFindChirpInjectIMR (
   PPNParamStruc         ppnParams;
   CoherentGW            waveform, *wfm;
   INT8                  waveformStartTime;
-  INT8                  chanStartTime;
   REAL4TimeSeries       signalvec;
   COMPLEX8Vector       *unity = NULL;
   CHAR                  warnMsg[512];
@@ -150,9 +149,6 @@ LALFindChirpInjectIMR (
    * set up structures and parameters needed
    *
    */
-
-
-  chanStartTime = XLALGPSToINT8NS( &(chan->epoch) );
 
   /* fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );

@@ -89,7 +89,7 @@ INT4 lalDebugLevel=3;
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, CONFIGFILETESTC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -98,7 +98,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               CONFIGFILETESTC, (statement) );                     \
 } while (0)
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
   BOOLEAN wasRead = FALSE;
 
   if ( argc > 1 )
-    LALPrintError ("WARNING: commond-line arguments useless here \n");
+    XLALPrintError ("WARNING: commond-line arguments useless here \n");
 
   SUB (LALParseDataFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
 
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EFLOAT);
   }
   if ( strcmp (string1, "some text. You can also use line-continuation") ) {
-    LALPrintError ("read-in: '%s'\n", string1);
+    XLALPrintError ("read-in: '%s'\n", string1);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
@@ -165,17 +165,17 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EINT);
   }
   if ( strcmp(string2->data, "this is also possible, and # here ") ) {
-    LALPrintError ("read-in: '%s'\n", string2->data);
+    XLALPrintError ("read-in: '%s'\n", string2->data);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string2b, "this is also possible, and # here does nothing ")) {
-    LALPrintError ("read-in: '%s'\n", string2b);
+    XLALPrintError ("read-in: '%s'\n", string2b);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }
   if ( strcmp(string3, "how about #quotes AND line-continuation?") ) {
-    LALPrintError ("read-in: '%s'\n", string3);
+    XLALPrintError ("read-in: '%s'\n", string3);
     ERROR (CONFIGFILETESTC_ESTRING, CONFIGFILETESTC_MSGESTRING, 0);
     return (CONFIGFILETESTC_ESTRING);
   }

@@ -266,7 +266,6 @@ XLALHybridP1Amplitude(
 		      UINT4        n  )
 {
   UINT4 k;
-  REAL8 piM;
   REAL8 cConst;
   REAL8 f, fNorm, fMerg, fRing, fCut, sigma;
   REAL8 softfLow, softfCut, softFact;
@@ -281,8 +280,6 @@ XLALHybridP1Amplitude(
   fCut = params->fCut;
   fRing = params->fRing;
   sigma = params->sigma;
-
-  piM = LAL_PI * M * LAL_MTSUN_SI;
 
   /* Set amplitude of the wave (Ajith et al. Eq. 4.17) */
   cConst = pow(LAL_MTSUN_SI*M, 5./6.)*pow(fMerg,-7./6.)/pow(LAL_PI,2./3.);

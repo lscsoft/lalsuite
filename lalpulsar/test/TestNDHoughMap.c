@@ -174,7 +174,7 @@ INT4 lalDebugLevel=0;
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, TESTNDHOUGHMAPC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -183,7 +183,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               TESTNDHOUGHMAPC, (statement) );                     \
 } while (0)
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]){
         lalDebugLevel = atoi( argv[arg++] );
       } else {
         ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTNDHOUGHMAPC_EARG;
       }
     }
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]){
         fname = argv[arg++];
       } else {
         ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTNDHOUGHMAPC_EARG;
       }
     }
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]){
 	parRes.f0Bin =  f0Bin;
       } else {
         ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTNDHOUGHMAPC_EARG;
       }
     }
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]){
 	delta = atof(argv[arg++]);
       } else {
         ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTNDHOUGHMAPC_EARG;
       }
     }
@@ -323,14 +323,14 @@ int main(int argc, char *argv[]){
         parRes.patchSkySizeY = patchSizeY = atof(argv[arg++]);
       } else {
         ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return TESTNDHOUGHMAPC_EARG;
       }
     }
     /* Unrecognized option. */
     else {
       ERROR( TESTNDHOUGHMAPC_EARG, TESTNDHOUGHMAPC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return TESTNDHOUGHMAPC_EARG;
     }
   } /* End of argument parsing loop. */
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]){
 
   if ( f0 < 0 ) {
     ERROR( TESTNDHOUGHMAPC_EBAD, TESTNDHOUGHMAPC_MSGEBAD, "freq<0:" );
-    LALPrintError( USAGE, *argv  );
+    XLALPrintError( USAGE, *argv  );
     return TESTNDHOUGHMAPC_EBAD;
   }
 
