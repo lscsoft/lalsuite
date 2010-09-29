@@ -1675,7 +1675,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	double qnm223freq;
 
 
-	UINT4 i,NtimeModel, idx;
+	UINT4 NtimeModel, idx;
 
 	/*Containers for EOBNR data */
 	COMPLEX8Vector *modefreqs=NULL;
@@ -1723,7 +1723,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	double distance = LAL_PC_SI*1e6*template->distance;
 	template->distance = distance;
 
-	printf("qnm %lf samp %lf mass1 %lf mass2 %lf",qnm223freq,template->tSampling,template->mass1,template->mass2);
+	/* printf("qnm %lf samp %lf mass1 %lf mass2 %lf",qnm223freq,template->tSampling,template->mass1,template->mass2); */
 
 	/*Generate EOBNR waveform*/
 	LALInspiralWave(status,Tmodel,template);
@@ -1740,6 +1740,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
 
 
+	/*
 	FILE* model_output;
 	model_output=fopen("model_output.dat","w");
 
@@ -1752,8 +1753,9 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 		fprintf(model_output,"%g\n",model->data[i]);
 	}
 	fclose(model_output);
-
+	
 	exit(0);
+	*/
 
 	return;
 
