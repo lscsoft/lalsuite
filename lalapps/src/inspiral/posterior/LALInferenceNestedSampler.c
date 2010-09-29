@@ -145,7 +145,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise;
 	LALVariables *temp;
 	FILE *fpout=NULL;
 	gsl_matrix *cvm=NULL;
@@ -154,7 +154,9 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
 	
-	logLikelihoods=(REAL8 *)((REAL8Vector *)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
+	logZnoise=NullLogLikelihood(runState->data);
+	addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
+	logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
 	verbose=checkVariable(runState->algorithmParams,"verbose");
 	
@@ -189,7 +191,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	Harray = calloc(Nruns,sizeof(REAL8));
 	logwarray = calloc(Nruns,sizeof(REAL8));
 	Wtarray = calloc(Nruns,sizeof(REAL8));
-	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL)
+	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
 		{fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
 
 	logw=log(1.0-exp(-1.0/Nlive));
@@ -203,18 +205,17 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	/* Add the covariance matrix for proposal distribution */
 	calcCVM(cvm,runState->livePoints,Nlive);
-	addVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
-	
+	addVariable(runState->proposalArgs,"LiveCVM",&cvm,gslMatrix_t,PARAM_OUTPUT);
+	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
 		/* Find minimum likelihood sample to replace */
 		minpos=0;
-		for(i=0;i<Nlive;i++){
-			if(((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]
-			   <((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos])
+		for(i=1;i<Nlive;i++){
+			if(logLikelihoods[i]<logLikelihoods[minpos])
 				minpos=i;
 		}
-		logLmin=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos];
+		logLmin=logLikelihoods[minpos];
 
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
@@ -259,7 +260,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		iter++;
 		/* Update the covariance matrix */
 		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
-		setVariable(runState->proposalArgs,"LiveCVM",cvm);
+		setVariable(runState->proposalArgs,"LiveCVM",&cvm);
 
 	}
 	while(iter<Nlive || logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ > TOLERANCE);
@@ -302,7 +303,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
  */
 void NestedSamplingOneStep(LALInferenceRunState *runState)
 {
-	LALVariables *newParams=NULL;
+	LALVariables *newParams=calloc(1,sizeof(LALVariables));
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
@@ -310,7 +311,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 	/* Make a copy of the parameters passed through currentParams */
 	copyVariables(runState->currentParams,newParams);
 	/* Evolve the sample until it is accepted */
-	logPriorOld=runState->prior(runState,newParams);
+	logPriorOld=runState->prior(runState,runState->currentParams);
 	do{
 		mcmc_iter++;
 		runState->proposal(runState,newParams);
@@ -320,6 +321,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
+		printf("logLNew=%f\n",logLnew);
 		if(logLnew>logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
@@ -328,6 +330,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		}
 	} while(runState->currentLikelihood<=logLmin || mcmc_iter<Nmcmc);
 	destroyVariables(newParams);
+	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
 	setVariable(runState->algorithmParams,"accept_rate",&accept_rate);
 	return;
@@ -336,6 +339,8 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
 {
+	LALInferenceProposalDifferentialEvolution(runState,parameter);
+	
 	return;	
 }
 
@@ -387,6 +392,7 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 	REAL8 min,max;
 	for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
 	{
+		if(paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT) continue;
 		getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
 		if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
 		{

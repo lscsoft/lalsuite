@@ -243,11 +243,14 @@ void copyVariables(LALVariables *origin, LALVariables *target)
 	  fprintf(stderr,"Unable to access origin pointer in copyVariables\n");
 	  exit(1);
   }
+
+  /* Make sure the structure is initialised */
+	if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALVariables structure\n");
+
+	
   /* first dispose contents of "target" (if any): */
   destroyVariables(target);
   
-  /* Make sure the structure is initialised */
-  if(!target) target=XLALCalloc(1,sizeof(LALVariables));
 	
   /* then copy over elements of "origin": */
   ptr = origin->head;
@@ -910,7 +913,9 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
 
+#ifdef DEBUG
 FILE* file=fopen("TempSignal.dat", "w");	
+#endif
 	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -927,9 +932,13 @@ FILE* file=fopen("TempSignal.dat", "w");
 
 		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);		
-fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
+#ifdef DEBUG
+		fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
+#endif
 	}
+#ifdef DEBUG
 fclose(file);
+#endif
 	destroyVariables(&intrinsicParams);
 }
 
@@ -1116,8 +1125,8 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
     
-		min=getVariable(priorArgs,minName);
-		max=getVariable(priorArgs,maxName);
+		*(REAL8 *)min=*(REAL8 *)getVariable(priorArgs,minName);
+		*(REAL8 *)max=*(REAL8 *)getVariable(priorArgs,maxName);
 		return;
 		
 }
