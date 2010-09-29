@@ -303,11 +303,12 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
  */
 void NestedSamplingOneStep(LALInferenceRunState *runState)
 {
-	LALVariables *newParams=calloc(1,sizeof(LALVariables));
+	LALVariables *newParams=NULL;
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
+	newParams=calloc(1,sizeof(LALVariables));
 	/* Make a copy of the parameters passed through currentParams */
 	copyVariables(runState->currentParams,newParams);
 	/* Evolve the sample until it is accepted */
@@ -322,6 +323,8 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
 		printf("logLNew=%f\n",logLnew);
+		fprintSample(stderr,runState->currentParams);
+		fprintSample(stderr,newParams);
 		if(logLnew>logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
