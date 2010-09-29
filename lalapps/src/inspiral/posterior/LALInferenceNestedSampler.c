@@ -145,7 +145,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise,dZ=0;
 	LALVariables *temp;
 	FILE *fpout=NULL;
 	gsl_matrix *cvm=NULL;
@@ -200,7 +200,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Find maximum likelihood */
 	for(i=0;i<Nlive;i++)
 	{
-		logLtmp=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i];
+		logLtmp=logLikelihoods[i];
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
 	/* Add the covariance matrix for proposal distribution */
@@ -231,8 +231,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
 
 		/* Write out old sample */
-		fprintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]);
+		fprintSample(fpout,runState->livePoints[minpos]);
+		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
 
 		/* Generate a new live point */
@@ -251,9 +251,10 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
-		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
+		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
+		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")
-									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
+									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
@@ -261,9 +262,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Update the covariance matrix */
 		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
 		setVariable(runState->proposalArgs,"LiveCVM",&cvm);
-
 	}
-	while(iter<Nlive || logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ > TOLERANCE);
+	while(iter<Nlive ||  dZ> TOLERANCE);
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){
@@ -294,7 +294,12 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 
 	/* Write out the evidence */
-
+	fclose(fpout);
+	char bayesfile[FILENAME_MAX];
+	sprintf(bayesfile,"%s_B.txt",outfile);
+	fpout=fopen(bayesfile,"w");
+	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+	fclose(fpout);
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.
@@ -322,9 +327,6 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
-		printf("logLNew=%f\n",logLnew);
-		fprintSample(stderr,runState->currentParams);
-		fprintSample(stderr,newParams);
 		if(logLnew>logLmin){
 			Naccepted++;
 			logPriorOld=logPriorNew;
@@ -373,13 +375,15 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		paraHead=parameter->head;
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
-		same=0;
-		for(;paraHead;paraHead=paraHead->next,paraA=paraA->next,paraB=paraB->next)
+		same=1;
+		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
 		{
-			if(paraHead->vary!=PARAM_LINEAR || paraHead->vary!=PARAM_CIRCULAR) continue;
+			if(paraHead->vary!=PARAM_LINEAR && paraHead->vary!=PARAM_CIRCULAR) continue;
 			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
 			*(REAL8 *)paraHead->value-=*(REAL8 *)paraA->value;
-			//if(*paraHead->value!=*paraA->value && *paraHead->value!=*paraB->value && *paraA->value!=*paraB->value) same=0;
+			if(*(REAL8 *)paraHead->value!=*(REAL8 *)paraA->value &&
+			   *(REAL8 *)paraHead->value!=*(REAL8 *)paraB->value &&
+			   *(REAL8 *)paraA->value!=*(REAL8 *)paraB->value) same=0;
 		}
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
