@@ -244,7 +244,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 			runState->evolve(runState);
 			copyVariables(runState->currentParams,runState->livePoints[minpos]);
 			logLikelihoods[minpos]=runState->currentLikelihood;
-		}while(runState->currentLikelihood<=logLmin);
+		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")==0.0);
 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
