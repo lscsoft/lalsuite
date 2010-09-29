@@ -3595,15 +3595,15 @@ find_files (const CHAR *globdir)
       ptr1 = list->lines->tokens[j];
 
       /* these prefixes are added to file names by e.g. ligo_data_find */
-#define FILE_PREFIX "file://localhost"
+#define FILE_PREFIX "file://localhost/"
       if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
-	ptr1 += strlen(FILE_PREFIX);
+	ptr1 += strlen(FILE_PREFIX) - 1;
       }
 #undef FILE_PREFIX
       else
-#define FILE_PREFIX "file://"
+#define FILE_PREFIX "file:///"
       if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
-	ptr1 += strlen(FILE_PREFIX);
+	ptr1 += strlen(FILE_PREFIX) - 1;
       }
 #undef FILE_PREFIX
 
