@@ -65,6 +65,12 @@ RCSID(LALAPPS_VCS_IDENT_ID);
 /* defines */
 #define HISTORY_COMMENT 512
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* function prototypes */
 static void print_usage( CHAR *program );
 static void output_frame( CHAR *ifo, INT4 gpsStart, INT4 gpsEnd,
@@ -113,7 +119,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
   INT4 gpsStartSec          = -1;
   INT4 gpsEndSec            = -1;
   LIGOTimeGPS gpsStartTime  = {0, 0};
-  LIGOTimeGPS gpsEndTime    = {0, 0};
+  LIGOTimeGPS UNUSED gpsEndTime = {0, 0};
 
   REAL8 freqLowCutoff = -1;
   REAL8 strainLowPassFreq = -1;

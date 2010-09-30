@@ -10,7 +10,8 @@ LALNoiseSpectralDensity.c\
 LALStatsREAL4Vector.c\
 LALTAMAPsd.c\
 LALVIRGOPsd.c\
-LALAdvLIGOPsd.c
+LALAdvLIGOPsd.c\
+LALETBPsd.c
 INCLUDES = -I$(top_builddir)/include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

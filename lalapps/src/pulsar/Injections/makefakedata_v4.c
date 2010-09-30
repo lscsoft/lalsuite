@@ -582,8 +582,17 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     }
 
   /* read in par file parameters if given */
-   if (have_parfile)
+   if (have_parfile){
       XLALReadTEMPOParFile( &pulparams, uvar_parfile);
+      if (pulparams.f0 == 0){
+          printf ( "\nError with .par file! Need f0!\n\n");
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+          }
+      if(pulparams.pepoch == 0 && pulparams.posepoch ==0 ){
+          printf ( "\nNo epoch given in .par file! Need PEPOCH or POSEPOCH!\n\n");
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+          }
+    }
 
   /* if requested, log all user-input and code-versions */
   if ( uvar_logfile ) {
@@ -603,6 +612,32 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     BOOLEAN have_Delta  = LALUserVarWasSet ( &uvar_Delta );
     BOOLEAN have_RA = LALUserVarWasSet ( &uvar_RA );
     BOOLEAN have_Dec = LALUserVarWasSet ( &uvar_Dec );
+
+    /*check .par file for gw parameters*/
+    if (have_parfile){
+      if (pulparams.h0 != 0){
+	uvar_h0 = pulparams.h0;
+	uvar_cosi = pulparams.cosiota;
+	uvar_phi0 = pulparams.phi0;
+	uvar_psi = pulparams.psi;
+	have_h0 = 1; /*Set to TRUE as uvar_h0 not declared on command line -- same for rest*/
+	have_cosi = 1;
+      }
+      else{
+	uvar_aPlus = pulparams.Aplus;
+	uvar_aCross = pulparams.Across;
+	uvar_phi0 = pulparams.phi0;
+	uvar_psi = pulparams.psi;
+	have_aPlus = 1;
+	have_aCross = 1;
+      }
+      uvar_Freq = 2.*pulparams.f0;
+      uvar_Alpha = pulparams.ra;
+      uvar_Delta = pulparams.dec;
+      have_Freq = 1;
+      have_Alpha = 1;
+      have_Delta = 1;
+    }
 
     /* ----- {h0,cosi} or {aPlus,aCross} ----- */
     if ( (have_aPlus || have_aCross) && ( have_h0 || have_cosi ) ) {
@@ -646,9 +681,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify signal-frequency using EITHER --Freq [preferred] OR --f0 [deprecated]!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( have_parfile ) 
-      cfg->pulsar.Doppler.fkdot[0] = 2.*pulparams.f0;
-    else if ( have_Freq )
+    if ( have_Freq )
       cfg->pulsar.Doppler.fkdot[0] = uvar_Freq;
     else if ( have_f0 )
       cfg->pulsar.Doppler.fkdot[0] = uvar_f0;
@@ -672,12 +705,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ( "\nSpecify skyposition: need BOTH --RA and --Dec!\n\n");
       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-    if ( have_parfile) 
-      {
-	cfg->pulsar.Doppler.Alpha = pulparams.ra;
-	cfg->pulsar.Doppler.Delta = pulparams.dec;
-      }
-    else if ( have_Alpha )
+    if ( have_Alpha )
       {
 	cfg->pulsar.Doppler.Alpha = uvar_Alpha;
 	cfg->pulsar.Doppler.Delta = uvar_Delta;
@@ -1196,9 +1224,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if (LALUserVarWasSet (&uvar_parfile)) {
-    REAL8 FloatGPS;
-    FloatGPS = LALTTMJDtoGPS(pulparams.pepoch);
-    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),FloatGPS);
+    uvar_refTime = pulparams.pepoch; /*XLALReadTEMPOParFile already converted pepoch to GPS*/
+    XLALGPSSetREAL8(&(cfg->pulsar.Doppler.refTime),uvar_refTime);
   }
   else if (LALUserVarWasSet(&uvar_refTime) && LALUserVarWasSet(&uvar_refTimeMJD))
     {
