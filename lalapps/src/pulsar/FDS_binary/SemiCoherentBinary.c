@@ -309,7 +309,7 @@ REAL8 XLALLogSumExpLUT(REAL8 logx,REAL8 logy,gsl_interp_accel *log_acc,gsl_splin
 int XLALFreeParameterSpace(ParameterSpace *pspace);
 int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power);
 int XLALFreeBayesianProducts(BayesianProducts *Bayes);
-int XLALOutputBayesResults(CHAR *outputdir,BayesianProducts *Bayes,ParameterSpace *pspace,CHAR *clargs);
+int XLALOutputBayesResults(CHAR *outputdir,BayesianProducts *Bayes,ParameterSpace *pspace,CHAR *clargs,CHAR *obsid_pattern);
 int XLALAddBinarySignalToSFTVector(SFTVector **sftvec,ParameterSpace *pspace,REAL8 inject_amplitude,INT4 seed);
 int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
 int XLALComputePhaseMargLogLRatio(REAL8Vector *logLratio,REAL8 X,LikelihoodParams *Lparams);
@@ -533,7 +533,7 @@ int main( int argc, char *argv[] )  {
   /* OUTPUT RESULTS TO FILE */
   /**********************************************************************************/
 
-  if (XLALOutputBayesResults(uvar.outputdir,Bayes,&pspace,clargs)) {
+  if (XLALOutputBayesResults(uvar.outputdir,Bayes,&pspace,clargs,uvar.obsid_pattern)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",fn,xlalErrno);
     return 1;
   }
@@ -2805,7 +2805,8 @@ int XLALComputePhaseMargLogLRatioVectorLUT(REAL8Vector *logLratio_phase,        
 int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output directory name */
 			   BayesianProducts *Bayes,    /**< [in] the results structure */
 			   ParameterSpace *pspace,     /**< [in] the parameter space */ 
-			   CHAR *clargs                /**< [in] the command line args */
+			   CHAR *clargs,               /**< [in] the command line args */
+			   CHAR *obsid_pattern         /**< [in] the obsid string */
 			   )
 {
   const CHAR *fn = __func__;            /* store function name for log output */
@@ -2838,8 +2839,10 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     UINT4 min_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].min - (REAL8)min_freq_int)*1e3);
     UINT4 max_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].max - (REAL8)max_freq_int)*1e3);
     UINT4 end = (UINT4)ceil(XLALGPSGetREAL8(&(pspace->epoch)) + pspace->span);
-    snprintf(outputfile,LONGSTRINGLENGTH,"%s/BayesianResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-	     outputdir,pspace->source,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); 
+    if (obsid_pattern == NULL) snprintf(outputfile,LONGSTRINGLENGTH,"%s/BayesianResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
+					outputdir,pspace->source,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); 
+    else snprintf(outputfile,LONGSTRINGLENGTH,"%s/BayesianResults-%s-%s-%04d_%03d_%04d_%03d.txt",
+		  outputdir,pspace->source,obsid_pattern,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
   }
   LogPrintf(LOG_DEBUG,"%s : output %s\n",fn,outputfile);
 
