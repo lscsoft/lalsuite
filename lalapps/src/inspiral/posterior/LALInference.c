@@ -111,6 +111,23 @@ INT4 getVariableDimension(LALVariables *vars)
 }
 
 
+INT4 getVariableDimensionNonFixed(LALVariables *vars)
+{
+	INT4 count=0;
+	LALVariableItem *ptr = vars->head;
+	if (ptr==NULL) return count;
+	else {
+		/* loop over entries: */
+		while (ptr != NULL) {
+			/* print name: */
+			if (ptr->vary != PARAM_FIXED) ++count;
+			ptr = ptr->next;
+		}  
+	}
+	return count;
+}
+
+
 VariableType getVariableType(LALVariables *vars, const char *name)
 {
 	return getItem(vars,name)->type;

@@ -128,6 +128,7 @@ tagLALVariables
 
 void *getVariable(LALVariables * vars, const char * name);
 INT4 getVariableDimension(LALVariables *vars);
+INT4 getVariableDimensionNonFixed(LALVariables *vars);
 VariableType getVariableTypeByIndex(LALVariables *vars, int index);
 VariableType getVariableType(LALVariables *vars, const char *name);
 ParamVaryType getVariableVaryType(LALVariables *vars, const char *name);
@@ -274,6 +275,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params);
 void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);

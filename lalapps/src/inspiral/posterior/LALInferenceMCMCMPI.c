@@ -34,7 +34,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,t,tempi,tempj;
+	int i,t,tempi,tempj,p;
 	int tempSwapCount=0;
 	REAL8 tempMax = 40.0;   //max temperature in the temperature ladder
 	REAL8 tempDelta;
@@ -54,6 +54,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
 	//LALVariables dummyLALVariable;
+	
+	int nPar = getVariableDimensionNonFixed(runState->currentParams);
+	
+
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -62,6 +66,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
+	
+	REAL8 **sigma = (REAL8 **)calloc(nChain,sizeof(REAL8 *));//matrix of sigmas per parameter and temperature for adaptation
+	
+	for (t=0; t<nChain; ++t) {
+		sigma[t] = (REAL8 *)calloc(nPar,sizeof(REAL8));
+		for (p=0; p<nPar; ++p) {
+			sigma[t][p]=t*p;
+		}
+	}							 
+	//REAL8 sigma = 0.1;
+	
 	
 	if (nChain==1) tempLadder[0]=1.0;
 	else {
@@ -78,6 +93,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 		}
 	}
+	
+	
+	
+	
+	
 	
 	FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
 	//char outfileName[99];
@@ -104,8 +124,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	*/
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
+
 	
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
+	addVariable(runState->proposalArgs, "sigma", sigma,  REAL8_t, PARAM_FIXED);
 	//nullLikelihood = NullLogLikelihood(runState->data);
 	nullLikelihood = 0.0;
 	
@@ -378,6 +400,87 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	else
 		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
 }
+
+
+void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist (e.g., for TaylorT1):			*/
+/* chirpmass, massratio, inclination,	*/
+/* phase, time, rightascension,			*/
+/* desclination, polarisation, distance.*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian;						*/
+/* need smarter wall bounces in future.	*/
+/****************************************/
+{
+	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
+	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
+	ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariables * currentParams = runState->currentParams;
+	REAL8 sigmat = 0.1;
+	
+	REAL8 **sigma = NULL;
+	
+	sigma = *(REAL8***) getVariable(runState->proposalArgs, "sigma");
+	
+	
+	printf("%f\n",sigma[0][0]);
+	int t,p;
+	for (t=0; t<5; ++t){
+		for (p=0; p<9; ++p){
+		//	printf("sigma[%d][%d]=%f\n",t,p,sigma[t][p]);
+		}
+	}
+	
+	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
+	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
+	iota = *(REAL8*) getVariable(currentParams, "inclination");		/* radian      */
+	tc   = *(REAL8*) getVariable(currentParams, "time");				/* GPS seconds */
+	phi  = *(REAL8*) getVariable(currentParams, "phase");			/* radian      */
+	ra   = *(REAL8*) getVariable(currentParams, "rightascension");	/* radian      */
+	dec  = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
+	psi  = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
+	dist = *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
+	
+	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
+	// (above proposal is not symmetric!)
+	//mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
+	mc_proposed   = mc * exp(gsl_ran_gaussian(GSLrandom,sigmat)*0.001);          /* mc changed by ~0.1% */
+	logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
+	eta_proposed  = eta  + gsl_ran_gaussian(GSLrandom,sigmat)*0.01; /*eta changed by 0.01*/
+	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
+	iota_proposed = iota + gsl_ran_gaussian(GSLrandom,sigmat)*0.1;
+	tc_proposed   = tc   + gsl_ran_gaussian(GSLrandom,sigmat)*0.005; /*time changed by 5 ms*/
+	phi_proposed  = phi  + gsl_ran_gaussian(GSLrandom,sigmat)*0.5;
+	ra_proposed   = ra   + gsl_ran_gaussian(GSLrandom,sigmat)*0.05;
+	dec_proposed  = dec  + gsl_ran_gaussian(GSLrandom,sigmat)*0.05;
+	psi_proposed  = psi  + gsl_ran_gaussian(GSLrandom,sigmat)*0.1;
+	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
+	dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigmat)*0.1); // ~10% change
+	logProposalRatio *= dist_proposed / dist;
+	
+	copyVariables(currentParams, proposedParams);
+	setVariable(proposedParams, "chirpmass",      &mc_proposed);		
+	setVariable(proposedParams, "massratio",      &eta_proposed);
+	setVariable(proposedParams, "inclination",    &iota_proposed);
+	setVariable(proposedParams, "phase",          &phi_proposed);
+	setVariable(proposedParams, "time",           &tc_proposed); 
+	setVariable(proposedParams, "rightascension", &ra_proposed);
+	setVariable(proposedParams, "declination",    &dec_proposed);
+	setVariable(proposedParams, "polarisation",   &psi_proposed);
+	setVariable(proposedParams, "distance",       &dist_proposed);
+	
+	// return ratio of proposal densities (for back & forth jumps) 
+	// in "runState->proposalArgs" vector:
+	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
+		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+	else
+		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+}
+
 
 
 REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
