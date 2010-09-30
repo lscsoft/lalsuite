@@ -253,8 +253,8 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	for (i = 0; i < 3; i++) {
 		wave->chi[0][i] = params->spin1[i];
 		wave->chi[1][i] = params->spin2[i];
-		wave->chiAmp[0] += SQR(wave->chi[0][i]);
-		wave->chiAmp[1] += SQR(wave->chi[1][i]);
+		wave->chiAmp[0] += SQT_SQR(wave->chi[0][i]);
+		wave->chiAmp[1] += SQT_SQR(wave->chi[1][i]);
 	}
 	wave->chiAmp[0] = sqrt(wave->chiAmp[0]);
 	wave->chiAmp[1] = sqrt(wave->chiAmp[1]);
@@ -275,6 +275,7 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	wave->distance = params->distance;
 	wave->inclination = params->inclination;
 	wave->lowerFreq = params->fLower;
+	wave->finalFreq = (params->fFinal < params->fLower ? params->fCutoff : (params->fCutoff < params->fFinal ? params->fCutoff : params->fFinal));
 	wave->samplingFreq = params->tSampling;
 	wave->samplingTime = 1. / wave->samplingFreq;
 	wave->phi = 0.;

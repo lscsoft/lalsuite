@@ -36,13 +36,13 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 	REAL8 spin_MPow2[2];
 	REAL8 m_m[2] = { params->mass[1] / params->mass[0], params->mass[0]
 			/ params->mass[1] };
-	REAL8 piPow2 = SQR(LAL_PI);
-	REAL8 etaPow2 = SQR(params->eta);
+	REAL8 piPow2 = SQT_SQR(LAL_PI);
+	REAL8 etaPow2 = SQT_SQR(params->eta);
 	REAL8 etaPow3 = etaPow2 * params->eta;
 	INT2 i;
 	for (i = 0; i < 2; i++) {
-		spin_MPow2[i] = params->chiAmp[i] * SQR(params->mass[i])
-				/SQR(params->totalMass);
+		spin_MPow2[i] = params->chiAmp[i] * SQT_SQR(params->mass[i])
+				/SQT_SQR(params->totalMass);
 	}
 
 	// calculating the coefficients
@@ -100,7 +100,6 @@ void XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 							* params->chiAmp[i] * 3. / 2.;
 				}
 				params->coeff.mecoQM = 2. * params->eta;
-//				printf("%lg %lg %lg %lg %lg %lg\n", params->coeff.domegaQM[0], params->coeff.domegaQM[1], params->coeff.domegaQMConst, params->coeff.dchihQM[0], params->coeff.dchihQM[1], params->coeff.mecoQM);fflush(stdout);
 			}
 			params->coeff.meco[LAL_PNORDER_TWO] *= (-81. + 57. * params->eta
 					- etaPow2) / 24.;
@@ -197,13 +196,13 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				// SSself for domega
 				SSself_Omega = params->coeff.domegaSSselfConst;
 				for (i = 0; i < 2; i++) {
-					SSself_Omega += params->coeff.domegaSSself[i] * SQR(LNhchih[i]);
+					SSself_Omega += params->coeff.domegaSSself[i] * SQT_SQR(LNhchih[i]);
 				}
 			}
 			if ((params->spinInteraction & LAL_QMInter) == LAL_QMInter) {
 				QM_Omega = params->coeff.domegaQMConst;
 				for (i = 0; i < 2; i++) {
-					QM_Omega += params->coeff.domegaQM[i] * SQR(LNhchih[i]);
+					QM_Omega += params->coeff.domegaQM[i] * SQT_SQR(LNhchih[i]);
 //					QM_Omega += params->coeff.domegaQM[i] * LNhchih[i];
 					// QM for dchih
 					for (j = 0; j < 3; j++) {
@@ -215,8 +214,6 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				}
 				// QM for MECO
 				dvalues[LALSQTPN_MECO] += params->coeff.mecoQM * QM_Omega * omegaPowi_3[3];
-//				printf("%lg %lg %lg %lg\n", SS_Omega, SSself_Omega, QM_Omega, LNhchih[0] / (sqrt(SQR(values[LALSQTPN_LNH_1]) + SQR(values[LALSQTPN_LNH_2]) + SQR(values[LALSQTPN_LNH_3])) * sqrt(SQR() + SQR() + SQR())));fflush(stdout);
-//				exit(-1);
 			}
 			dvalues[LALSQTPN_OMEGA] += (QM_Omega + SSself_Omega + SS_Omega)
 					* omegaPowi_3[LAL_PNORDER_TWO];
@@ -249,7 +246,7 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 			* omegaPowi_3[4];
 	dvalues[LALSQTPN_PHASE] = values[LALSQTPN_OMEGA] + values[LALSQTPN_LNH_3] * (values[LALSQTPN_LNH_2]
 			* dvalues[LALSQTPN_LNH_1] - values[LALSQTPN_LNH_1] * dvalues[LALSQTPN_LNH_2])
-			/ (SQR(values[LALSQTPN_LNH_1]) + SQR(values[LALSQTPN_LNH_2]));
+			/ (SQT_SQR(values[LALSQTPN_LNH_1]) + SQT_SQR(values[LALSQTPN_LNH_2]));
 	return GSL_SUCCESS;
 }
 
@@ -351,16 +348,15 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 			XLALSQTPNIntegratorFree(&integrator);
 			ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 		}
-	} while (dvalues[LALSQTPN_MECO] < 0. && dvalues[LALSQTPN_OMEGA] > 0.0 && SQR(values[LALSQTPN_LNH_3])
+	} while (dvalues[LALSQTPN_MECO] < 0. && dvalues[LALSQTPN_OMEGA] > 0.0 && SQT_SQR(values[LALSQTPN_LNH_3])
 			< 1. - LNhztol && values[LALSQTPN_OMEGA] / freq_Step < params->samplingFreq
-			/ 2.);
+			/ 2. && values[LALSQTPN_OMEGA] / freq_Step < params->finalFreq);
 	if (waveform->hp || waveform->hc){
 		params->finalFreq = values[LALSQTPN_OMEGA] / (LAL_PI * geometrized_m_total);
 		params->coalescenceTime = time;
 	}
    	if (waveform->waveform->a){
 		params->finalFreq = waveform->waveform->f->data->data[i-1];
-		printf("f_F = %lg\n", params->finalFreq);fflush(stdout);
 	}
 
 	waveform->length = i;

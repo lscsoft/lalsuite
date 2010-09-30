@@ -17,3 +17,5 @@ temp
 .cproject
 .project
 Debug
+own
+*.patch

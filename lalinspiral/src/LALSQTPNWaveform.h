@@ -9,7 +9,7 @@
  *	\f$\hat{\chi}_i\f$, \f$M_{in}\f$, \f$\iota\f$, \f$f_L\f$ are defined in
  *	LALSQTPNFillParams() function.<br />
  *	<b>References</b><br />
- *	[1] L. E. Kidder, Phys.Rev. D52, 821 (1995)<br /> 
+ *	[1] L. E. Kidder, Phys.Rev. D52, 821 (1995)<br />
  *	[2] Alessandra Buonanno, Yanbei Chen, and Michele Vallisneri, Phys.Rev. D67 (2003) 104025; Erratum-ibid. D74 (2006) 029904<br />
  *	[3] Balázs Mikóczi, Mátyás Vasúth, László Á. Gergely, Phys.Rev. D71 (2005) 124043
  * @author László Veréb
@@ -38,7 +38,7 @@ NRCSID (LALSQTPNWAVEFORMH, "$Id$ LALSQTPNWaveform.h");
  * @param[in] a	 : the number
  * @return the square of the number
  */
-#define SQR(a) ((a)*(a))
+#define SQT_SQR(a) ((a)*(a))
 
 typedef struct tagLALSQTPNWave{
 	CoherentGW *waveform;
@@ -107,9 +107,9 @@ typedef struct tagLALSQTPNWaveformParams{
 	//@{
 	REAL8 signalAmp; ///< the amplitude of the signal
 	REAL8 lowerFreq; ///< the detectors sensitivityband's lower border in \f$Hz\f$
+	REAL8 finalFreq;	///< the final frequency
 	REAL8 samplingFreq; ///< sampling frequency in \f$Hz\f$
 	REAL8 samplingTime; ///< sampling time in \f$s\f$
-	REAL8 finalFreq;	///< the final frequency
 	REAL8 coalescenceTime;	///< the time at the coalescence
 	LALPNOrder order; ///< the Post_Newtonian order of the GW generation
 	LALSpinInteraction spinInteraction; ///< which spin interaction will be included in the generation
