@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   /* Open the output file */
   if (LALUserVarWasSet(&output_file)) {
     if ((fp = fopen(output_file, "wb")) == NULL) {
-      LALPrintError("Couldn't open output file '%s'\n", output_file);
+      XLALPrintError("Couldn't open output file '%s'\n", output_file);
       return EXIT_FAILURE;
     }
   }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
       LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");
       LAL_CALL(LALSFTdataFind(&status, &catalog, sft_pattern, &constraints), &status);
       if (!catalog || catalog->length == 0) {
-	LALPrintError("Couldn't find SFTs matching '%s'\n", sft_pattern);
+	XLALPrintError("Couldn't find SFTs matching '%s'\n", sft_pattern);
 	return EXIT_FAILURE;
       }
       LogPrintfVerbatim(LOG_DEBUG, "done: %i SFTs starting at GPS %i\n",
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
       /* Allocate memory */
       if ((ephemeris.ephiles.earthEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL ||
 	  (ephemeris.ephiles.sunEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL) {
-	LALPrintError("Couldn't allocate memory\n");
+	XLALPrintError("Couldn't allocate memory\n");
 	return EXIT_FAILURE;
       }
       
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
       LogPrintf(LOG_DEBUG, "Calculating AM coefficients ... ");
       LAL_CALL(LALGetMultiAMCoeffs(&status, &AM_coeffs, detector_states, sky), &status);
       if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-	LALPrintError("XLALWeighMultiAMCoeffs failed\n");
+	XLALPrintError("XLALWeighMultiAMCoeffs failed\n");
 	return EXIT_FAILURE;
       }
       LogPrintfVerbatim(LOG_DEBUG, "done\n");

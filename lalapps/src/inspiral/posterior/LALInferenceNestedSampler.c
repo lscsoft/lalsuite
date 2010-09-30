@@ -56,7 +56,7 @@ REAL8 ang_var(LALVariables **list,const char *pname, int N){
 /* estimateCovarianceMatrix reads the list of live points,
  and works out the covariance matrix of the varying parameters
  with varyType==PARAM_LINEAR */
-void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
+void calcCVM(gsl_matrix **cvm, LALVariables **Live, UINT4 Nlive)
 {
 	UINT4 i,j,k;
 	UINT4 ND=0;
@@ -68,16 +68,16 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 		if(item->vary==PARAM_LINEAR || item->vary==PARAM_CIRCULAR) ND++;
 	
 	/* Set up matrix if necessary */
-	if(cvm==NULL)
-	{if(NULL==(cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}}
+	if(*cvm==NULL)
+	{if(NULL==(*cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}}
 	else {
-		if(cvm->size1!=cvm->size2 || cvm->size1!=ND)
+		if((*cvm)->size1!=(*cvm)->size2 || (*cvm)->size1!=ND)
 		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in calcCVM\n");
 			exit(1);
 		}
 	}
 	/* clear the matrix */
-	for(i=0;i<cvm->size1;i++) for(j=0;j<cvm->size2;j++) gsl_matrix_set(cvm,i,j,0.0);
+	for(i=0;i<(*cvm)->size1;i++) for(j=0;j<(*cvm)->size2;j++) gsl_matrix_set(*cvm,i,j,0.0);
 
 	/* Find the means */
 	if(NULL==(means = malloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
@@ -92,45 +92,47 @@ void calcCVM(gsl_matrix *cvm, LALVariables **Live, UINT4 Nlive)
 		}
 	}
 	for(j=0;j<ND;j++) means[j]/=(REAL8)Nlive;
-	
 	/* Find the (co)-variances */
 	for(i=0;i<Nlive;i++){
 		k_item = j_item = item = Live[i]->head;
+
 		for( j_item=item,j=0; j_item; j_item=j_item->next ){
-			if(j_item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR ) continue; /* Skip params that we don't vary */
-			for( k_item=item,k=0; k<=j; k_item=k_item->next ){
-				if(k_item->vary!=PARAM_LINEAR || k_item->vary!=PARAM_CIRCULAR) continue;
-				/* Only set elements for non-circular parameters */
-				if(k_item->vary==PARAM_LINEAR && j_item->vary==PARAM_LINEAR)
-					gsl_matrix_set(cvm,j,k,gsl_matrix_get(cvm,j,k) +
+			if(j_item->vary!=PARAM_LINEAR && j_item->vary!=PARAM_CIRCULAR) {
+				continue;}
+			
+			for( k_item=item, k=0; k<=j; k_item=k_item->next ){
+				if(k_item->vary!=PARAM_LINEAR && k_item->vary!=PARAM_CIRCULAR) {
+					continue;}
+
+					gsl_matrix_set(*cvm,j,k,gsl_matrix_get(*cvm,j,k) +
 							   (*(REAL8 *)k_item->value - means[k])*
 							   (*(REAL8 *)j_item->value - means[j]));
-				k++;
+					k++;
 			}
 			j++;
 		}
 	}
 
 	/* Normalise */
-	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(cvm,i,j,gsl_matrix_get(cvm,i,j)/((REAL8) Nlive));
+	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(*cvm,i,j,gsl_matrix_get(*cvm,i,j)/((REAL8) Nlive));
 	free(means);
 	/* Fill in variances for circular parameters */
 	for(item=Live[0]->head,j=0;j<ND;j++,item=item->next) {
 		if(item->vary==PARAM_CIRCULAR) {
-			for(k=0;k<j;k++) gsl_matrix_set(cvm,j,k,0.0);
-			gsl_matrix_set(cvm,j,j,ang_var(Live,item->name,Nlive));
-			for(k=j+1;k<ND;k++) gsl_matrix_set(cvm,k,j,0.0);
+			for(k=0;k<j;k++) gsl_matrix_set(*cvm,j,k,0.0);
+			gsl_matrix_set(*cvm,j,j,ang_var(Live,item->name,Nlive));
+			for(k=j+1;k<ND;k++) gsl_matrix_set(*cvm,k,j,0.0);
 		}
 	}
 	
 	/* the other half */
-	for(i=0;i<ND;i++) for(j=0;j<i;j++) gsl_matrix_set(cvm,j,i,gsl_matrix_get(cvm,i,j));
+	for(i=0;i<ND;i++) for(j=0;j<i;j++) gsl_matrix_set(*cvm,j,i,gsl_matrix_get(*cvm,i,j));
 	return;
 }
 
 
 /* NestedSamplingAlgorithm implements the nested sampling algorithm,
- see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition.
+ see e.g. Sivia & Skilling "Data Analysis: A Bayesian Tutorial, 2nd edition.
  REQUIREMENTS:
 	Calling routine must have set up runState->livePoints already to
 	contain samples from the prior distribution.
@@ -145,16 +147,18 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
-	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H;
+	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise,dZ=0;
 	LALVariables *temp;
 	FILE *fpout=NULL;
-	gsl_matrix *cvm=NULL;
+	gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
 	REAL8 dblmax=-DBL_MAX;
 	REAL8 zero=0.0;
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
 	
-	logLikelihoods=(REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods");
+	logZnoise=NullLogLikelihood(runState->data);
+	addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
+	logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
 	verbose=checkVariable(runState->algorithmParams,"verbose");
 	
@@ -172,9 +176,17 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	if(!checkVariable(runState->algorithmParams,"accept_rate"))
 		addVariable(runState->algorithmParams,"accept_rate",&zero,REAL8_t,PARAM_OUTPUT);
 
+	/* Set up the proposal scale factor, for use in the multi-student jump step */
+	REAL8 propScale=0.1;
+	addVariable(runState->proposalArgs,"proposal_scale",&propScale,REAL8_t,PARAM_FIXED);
 	
 	/* Open output file */
-	char *outfile=getProcParamVal(runState->commandLine,"outfile")->value;
+	ProcessParamsTable *ppt=getProcParamVal(runState->commandLine,"--outfile");
+	if(!ppt){
+		fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+		exit(1);
+	}
+	char *outfile=ppt->value;
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
 
@@ -184,7 +196,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	Harray = calloc(Nruns,sizeof(REAL8));
 	logwarray = calloc(Nruns,sizeof(REAL8));
 	Wtarray = calloc(Nruns,sizeof(REAL8));
-	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL)
+	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
 		{fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
 
 	logw=log(1.0-exp(-1.0/Nlive));
@@ -193,23 +205,23 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Find maximum likelihood */
 	for(i=0;i<Nlive;i++)
 	{
-		logLtmp=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i];
+		logLtmp=logLikelihoods[i];
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
 	}
 	/* Add the covariance matrix for proposal distribution */
 	calcCVM(cvm,runState->livePoints,Nlive);
-	addVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
-	
+	fprintf(stderr,"cvm=%d\n",*cvm);
+	addVariable(runState->proposalArgs,"LiveCVM",(void *)cvm,gslMatrix_t,PARAM_OUTPUT);
+	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
 		/* Find minimum likelihood sample to replace */
 		minpos=0;
-		for(i=0;i<Nlive;i++){
-			if(((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]
-			   <((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos])
+		for(i=1;i<Nlive;i++){
+			if(logLikelihoods[i]<logLikelihoods[minpos])
 				minpos=i;
 		}
-		logLmin=((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[minpos];
+		logLmin=logLikelihoods[minpos];
 
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
@@ -225,8 +237,8 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
 
 		/* Write out old sample */
-		fprintSample(fpout,runState->livePoints[i]);
-		fprintf(fpout,"%lf\n",((REAL8 *)getVariable(runState->algorithmParams,"logLikelihoods"))[i]);
+		fprintSample(fpout,runState->livePoints[minpos]);
+		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
 
 		/* Generate a new live point */
@@ -238,26 +250,26 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 			runState->evolve(runState);
 			copyVariables(runState->currentParams,runState->livePoints[minpos]);
 			logLikelihoods[minpos]=runState->currentLikelihood;
-		}while(runState->currentLikelihood<=logLmin);
+		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")==0.0);
 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 
 		for(j=0;j<Nruns;j++) logwarray[j]+=sample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
-		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf Zratio: %lf db\n",
+		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
+		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")
-									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
+									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the covariance matrix */
 		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
-		setVariable(runState->proposalArgs,"LiveCVM",cvm);
-
+		setVariable(runState->proposalArgs,"LiveCVM",(void *)cvm);
 	}
-	while(iter<Nlive || logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ > TOLERANCE);
+	while(iter<Nlive ||  dZ> TOLERANCE);
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){
@@ -288,7 +300,12 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 
 	/* Write out the evidence */
-
+	fclose(fpout);
+	char bayesfile[FILENAME_MAX];
+	sprintf(bayesfile,"%s_B.txt",outfile);
+	fpout=fopen(bayesfile,"w");
+	fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+	fclose(fpout);
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.
@@ -298,14 +315,15 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 void NestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALVariables *newParams=NULL;
-	UINT4 mcmc_iter=0,accept=0,Naccepted=0;
+	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)getVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
+	newParams=calloc(1,sizeof(LALVariables));
 	/* Make a copy of the parameters passed through currentParams */
 	copyVariables(runState->currentParams,newParams);
 	/* Evolve the sample until it is accepted */
-	logPriorOld=runState->prior(runState,newParams);
+	logPriorOld=runState->prior(runState,runState->currentParams);
 	do{
 		mcmc_iter++;
 		runState->proposal(runState,newParams);
@@ -323,6 +341,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		}
 	} while(runState->currentLikelihood<=logLmin || mcmc_iter<Nmcmc);
 	destroyVariables(newParams);
+	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
 	setVariable(runState->algorithmParams,"accept_rate",&accept_rate);
 	return;
@@ -331,11 +350,241 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
 {
+	LALInferenceProposalDifferentialEvolution(runState,parameter);
+	LALInferenceProposalMultiStudentT(runState, parameter);
+	
 	return;	
 }
 
+UINT4 LALInferenceCheckPositiveDefinite( 
+						  gsl_matrix       *matrix,
+						  UINT4            dim
+						  )
+{/* </lalVerbatim> */
+	gsl_matrix  *m     = NULL;
+	gsl_vector  *eigen = NULL;
+	gsl_eigen_symm_workspace *workspace = NULL;
+	UINT4 i;
+	
+	/* copy input matrix */
+	m =  gsl_matrix_alloc( dim,dim ); 
+	gsl_matrix_memcpy( m, matrix);  
+	
+	/* prepare variables */
+	eigen = gsl_vector_alloc ( dim );
+	workspace = gsl_eigen_symm_alloc ( dim );
+	
+	/* compute the eigen values */
+	gsl_eigen_symm ( m,  eigen, workspace );
+	
+	/* test the result */
+	for (i = 0; i < dim; i++)
+    {
+		/* printf("diag: %f | eigen[%d]= %f\n", gsl_matrix_get( matrix,i,i), i, eigen->data[i]);*/
+		if (eigen->data[i]<0) 
+		{
+			printf("NEGATIVE EIGEN VALUE!!! PANIC\n");
+			return 0;
+		}
+	}
+	
+	/* freeing unused stuff */
+	gsl_eigen_symm_free( workspace);
+	gsl_matrix_free(m);
+	gsl_vector_free(eigen);
+	
+	return 1;
+}
+
+/* Reference: http://www.mail-archive.com/help-gsl@gnu.org/msg00631.html*/
+/*  <lalVerbatim file="XLALMultiNormalDeviatesCP"> */
+void
+XLALMultiNormalDeviates( 
+						REAL4Vector *vector, 
+						gsl_matrix *matrix, 
+						UINT4 dim, 
+						RandomParams *randParam
+						)
+{/* </lalVerbatim> */
+	static LALStatus status;
+	
+	UINT4 i=0;
+	gsl_matrix *work=NULL;
+	gsl_vector *result = NULL;
+	
+	static const char *func = "LALMultiNormalDeviates";
+	
+	/* check input arguments */
+	if (!vector || !matrix || !randParam)
+		XLAL_ERROR_VOID( func, XLAL_EFAULT );
+	
+	if (dim<1)
+		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+	
+	/* copy matrix into workspace */
+	work =  gsl_matrix_alloc(dim,dim); 
+	gsl_matrix_memcpy( work, matrix );
+	
+	/* compute the cholesky decomposition */
+	gsl_linalg_cholesky_decomp(work);
+	
+	/* retrieve the normal distributed random numbers (LAL procedure) */
+	LALNormalDeviates( &status, vector, randParam);
+	
+	/* store this into a gsl vector */
+	result = gsl_vector_alloc ( (int)dim );
+	for (i = 0; i < dim; i++)
+	{
+		gsl_vector_set (result, i, vector->data[i]);
+	}
+	
+	/* compute the matrix-vector multiplication */
+	gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, work, result);
+	
+	/* recopy the results */
+	for (i = 0; i < dim; i++)
+	{
+		vector->data[i]=gsl_vector_get (result, i);
+	}
+	
+	/* free unused stuff */
+	gsl_matrix_free(work);
+	gsl_vector_free(result);
+	
+}
+
+
+void
+XLALMultiStudentDeviates( 
+						 REAL4Vector  *vector,
+						 gsl_matrix   *matrix,
+						 UINT4         dim,
+						 UINT4         n,
+						 RandomParams *randParam
+						 )
+{ /* </lalVerbatim> */
+	static const char *func = "LALMultiStudentDeviates";
+	
+	static LALStatus status;
+	
+	REAL4Vector *dummy=NULL;
+	REAL4 chi=0.0, factor;
+	UINT4 i;
+	
+	/* check input arguments */
+	if (!vector || !matrix || !randParam)
+		XLAL_ERROR_VOID( func, XLAL_EFAULT );
+	
+	if (dim<1)
+		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+	
+	if (n<1)
+		XLAL_ERROR_VOID( func, XLAL_EINVAL );
+	
+	
+	/* first draw from MVN */
+	XLALMultiNormalDeviates( vector, matrix, dim, randParam);
+	
+	
+	/* then draw from chi-square with n degrees of freedom;
+     this is the sum d_i*d_i with d_i drawn from a normal 
+     distribution. */
+	LALSCreateVector( &status, &dummy, n);
+	LALNormalDeviates( &status, dummy, randParam);
+	
+	/* calculate the chisquare distributed value */
+	for (i=0; i<n; i++) 
+	{
+		chi+=dummy->data[i]*dummy->data[i];
+	}
+	
+	/* destroy the helping vector */
+	LALSDestroyVector( &status, &dummy );
+	
+	/* now, finally, calculate the distribution value */
+	factor=sqrt(n/chi);
+	for (i=0; i<dim; i++) 
+	{
+		vector->data[i]*=factor;
+	}
+	
+}
+
+
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter)
 {
+	gsl_matrix *covMat=*(gsl_matrix **)getVariable(runState->proposalArgs,"LiveCVM");
+	
+	static LALStatus status;
+	
+	LALVariableItem *paraHead=NULL;
+	REAL4Vector  *step=NULL;
+	gsl_matrix *work=NULL; 
+	REAL8 aii, aij, ajj;
+	INT4 i, j, dim;
+	RandomParams *randParam;
+	INT4 randomseed = *(INT4 *)getVariable(runState->algorithmParams,"random_seed");
+	
+	REAL8 proposal_scale=*(REAL8 *)getVariable(runState->proposalArgs,"proposal_scale");
+	randParam=XLALCreateRandomParams(randomseed);
+	
+	/* set some values */
+	dim=covMat->size1;
+	
+	/* draw the mutinormal deviates */
+	LALSCreateVector( &status, &step, dim);
+	
+	/* copy matrix into workspace and scale it appriopriately */
+	work =  gsl_matrix_alloc(dim,dim); 
+	
+	gsl_matrix_memcpy( work, covMat );
+	gsl_matrix_scale( work, proposal_scale);
+	
+	/* check if the matrix if positive definite */
+	while ( !LALInferenceCheckPositiveDefinite( work, dim) ) {
+		printf("WARNING: Matrix not positive definite!\n");
+		/* downweight the off-axis elements */
+		for (i=0; i<dim; ++i)
+		{
+			for (j=0; j<i; ++j)
+			{
+				aij=gsl_matrix_get( work, i, j);
+				aii=gsl_matrix_get( work, i, i);
+				ajj=gsl_matrix_get( work, j, j);  
+				
+				if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
+				{
+					aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
+				}
+				gsl_matrix_set( work, i, j, aij);
+				gsl_matrix_set( work, j, i, aij);
+				printf(" %f", gsl_matrix_get( work, i, j));
+			}
+			printf("\n");
+		}
+		exit(0);
+	}
+    
+	/* draw multivariate student distribution with n=2 */
+	XLALMultiStudentDeviates( step, work, dim, 2, randParam); 
+	
+	/* loop over all parameters */
+	for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next,i++)
+	{ 
+		/*  if (inputMCMC->verbose)
+		 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
+		 paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
+		
+		if(paraHead->vary!=PARAM_LINEAR) *(REAL8 *)paraHead->value += step->data[i];
+	}
+	
+	LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
+	/* destroy the vectors */
+	LALSDestroyVector(&status, &step);
+	gsl_matrix_free(work);
+	
+	XLALDestroyRandomParams(randParam);
+	
 	return;
 }
 
@@ -360,13 +609,15 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		paraHead=parameter->head;
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
-		same=0;
-		for(;paraHead;paraHead=paraHead->next,paraA=paraA->next,paraB=paraB->next)
+		same=1;
+		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
 		{
-			if(paraHead->vary!=PARAM_LINEAR || paraHead->vary!=PARAM_CIRCULAR) continue;
+			if(paraHead->vary!=PARAM_LINEAR && paraHead->vary!=PARAM_CIRCULAR) continue;
 			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
 			*(REAL8 *)paraHead->value-=*(REAL8 *)paraA->value;
-			//if(*paraHead->value!=*paraA->value && *paraHead->value!=*paraB->value && *paraA->value!=*paraB->value) same=0;
+			if(*(REAL8 *)paraHead->value!=*(REAL8 *)paraA->value &&
+			   *(REAL8 *)paraHead->value!=*(REAL8 *)paraB->value &&
+			   *(REAL8 *)paraA->value!=*(REAL8 *)paraB->value) same=0;
 		}
 		if(same==1) goto drawtwo;
 		/* Bring the sample back into bounds */
@@ -382,6 +633,7 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 	REAL8 min,max;
 	for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
 	{
+		if(paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT) continue;
 		getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
 		if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
 		{

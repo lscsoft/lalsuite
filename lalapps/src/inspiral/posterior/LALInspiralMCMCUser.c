@@ -58,7 +58,6 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
 
-#define rint(x) floor((x)+0.5)
 #define MpcInMeters 3.08568025e22
 
 #define DEBUGMODEL 0
@@ -542,33 +541,35 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin;
+		/* Only compute sum up to maximum frquency of the waveform. PPNparams.fStop is the maximum of the 2*f_orb harmonic */
+		
 		REAL8 fMultiplier = (inputMCMC->ampOrder + 2.0)/2.0; /* The frequency of the highest harmonic as determined by ampOrder */
 		highBin = (UINT4)(PPNparams.fStop * fMultiplier / inputMCMC->stilde[det_i]->deltaF);
-
+		
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1)
-		   highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
+			highBin=inputMCMC->stilde[det_i]->data->length-1;  /* AmpCor waveforms don't set the highest frequency of the highest harmonic */
 		for(idx=lowBin;idx<=highBin;idx++){
+			/* The phase shift angle, determined by the time FROM the geocentre to the Detector, plus the time */
+			/* FROM the start of the segment to the t_c at geocentre */
+			/* Phase shift is exp(-i*ang), but - signs on sin below take the negative into account */
+			/* exp(-i*ang) = cos(ang) - sin(ang) */
 			REAL8 ang = 2.0*LAL_PI*(TimeFromGC+TimeShiftToGC)*inputMCMC->stilde[det_i]->deltaF*idx;
 			/* Calculate rotated parts of the plus and cross */
+			/* Negative signs on sins: see comment above for definition of ang */
 			REAL4 plus_re,plus_im,cross_re,cross_im;
-			plus_re = H_p_t->data->data[idx].re*cos(ang)+H_p_t->data->data[idx].im*sin(ang);
-			plus_im = H_p_t->data->data[idx].im*cos(ang)+H_p_t->data->data[idx].re*sin(ang);
-			cross_re = H_c_t->data->data[idx].re*cos(ang)+H_c_t->data->data[idx].im*sin(ang);
-			cross_im = H_c_t->data->data[idx].im*cos(ang)+H_c_t->data->data[idx].re*sin(ang);
-
+			plus_re = H_p_t->data->data[idx].re*cos(ang) + H_p_t->data->data[idx].im*sin(ang);
+			plus_im = H_p_t->data->data[idx].im*cos(ang) - H_p_t->data->data[idx].re*sin(ang);
+			cross_re = H_c_t->data->data[idx].re*cos(ang) + H_c_t->data->data[idx].im*sin(ang);
+			cross_im = H_c_t->data->data[idx].im*cos(ang) - H_c_t->data->data[idx].re*sin(ang);
 			/* Compute total real and imaginary responses */
-			resp_r = (REAL8)(plus_re*det_resp.plus+cross_re*det_resp.cross);
-			resp_i = (REAL8)(plus_im*det_resp.plus+cross_im*det_resp.cross);
-			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/*/deltaF*/;
-			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/*/deltaF*/;
-
+			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
+			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
+			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r;
+			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i;
+			
 			/* Gaussian version */
-			/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
-			 that LAL uses. Please check this whenever any change is made */
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-
-			/* Student-t version */
-			/*			chisq+=log(real*real+imag*imag); */
+			
 #if DEBUGMODEL !=0
 			fprintf(modelout,"%lf %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",idx*deltaF,resp_r,resp_i,H_p_t->data->data[idx].re,H_p_t->data->data[idx].im,H_c_t->data->data[idx].re,H_c_t->data->data[idx].im);
 #endif
@@ -576,12 +577,13 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 #if DEBUGMODEL !=0
 		fclose(modelout);
 #endif
+		/* Add on the remaining sum, consulting the lookup table */
 		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		else if(highBin<=lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
 		chisq*=2.0*deltaF; /* for 2 sigma^2 on denominator, also in student-t version */
-
+		
 		logL-=chisq;
-
+		
 		/* Destroy the response series */
 		if(coherent_gw.f) XLALDestroyREAL4TimeSeries(coherent_gw.f);
 		if(coherent_gw.phi) XLALDestroyREAL8TimeSeries(coherent_gw.phi);
@@ -723,40 +725,44 @@ in the frequency domain */
 		/* Compute detector amplitude response */
 		det_source.pDetector = (inputMCMC->detector[det_i]); /* select detector */
 		LALComputeDetAMResponse(&status,&det_resp,&det_source,&inputMCMC->epoch); /* Compute det_resp */
-		det_resp.plus*=-0.5*(1.0+ci*ci);
+		det_resp.plus*=0.5*(1.0+ci*ci);
 		det_resp.cross*=-ci;
+		
 		/* Compute the response to the wave in the detector */
 		REAL8 deltaF = inputMCMC->stilde[det_i]->deltaF;
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
-		REAL8 hc,hs;
 
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 
-/* Version derived 19/08/08 */
-			hc = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin;
-			hs = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			/* Version derived 18/08/10 */
+			/* This is the time delayed waveforms as it appears at the detector */
+			/* data[idx] is real and data[Nmodel-idx] is imaginary part of the waveform at index idx */
+			/* H+ = hc + i*hs, and Hx=iH+, ONLY WHERE H+=cos(phi) and Hx=sin(phi) in the time domain (SPA, non-spinning, no-HH) */
+			
+			/* Model contains h(f)exp(-psi(f)), want h'(f)=h(f)exp(-2pi*i*deltaT)  */
+			/* model_re_prime and model_im_prime contain the time delayed part */
+			REAL8 model_re_prime = (REAL8)model->data[idx]*time_cos + (REAL8)model->data[Nmodel-idx]*time_sin; /* Plus sign from -i*sin(phi)*i */
+			REAL8 model_im_prime = (REAL8)model->data[Nmodel-idx]*time_cos - (REAL8)model->data[idx]*time_sin; /* Minus sign from -i*sin(phi) */
+
+			/* Now, h+=model_prime and hx=i*model_prime */
+			/* real(H+ + Hx) = F+(real(model_prime)) + Fx( -imag(model_prime)) : negative sign from multiplication by i*i */
+			/* imag(H+ + Hx) = F+(imag(model_prime)) + Fx(real(model_prime)) : No negative sign */
+
+			resp_r = det_resp.plus*model_re_prime - det_resp.cross*model_im_prime;
+			resp_i = det_resp.plus*model_im_prime + det_resp.cross*model_re_prime;
 
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[idx].im - resp_i/deltaF;
 			chisq+=(real*real + imag*imag)*inputMCMC->invspec[det_i]->data->data[idx];
-		}
 
-/* Gaussian version */
-/* NOTE: The factor deltaF is to make ratio dimensionless, when using the specific definitions of the vectors
-that LAL uses. Please check this whenever any change is made */
-
-/* Student-t version */
-/*			chisq+=log(real*real+imag*imag); */
 			#if DEBUGMODEL !=0
 				fprintf(modelout,"%lf %10.10e %10.10e\n",i*deltaF,resp_r,resp_i);
-			#endif
-
+			#endif		
+		} /* End loop over frequency */
 
 
 		#if DEBUGMODEL !=0
@@ -919,8 +925,8 @@ in the frequency domain */
 /* Version derived 19/08/08 */
 			REAL8 hc = (REAL8)model->data[i]*time_cos + (REAL8)model->data[Nmodel-i]*time_sin;
 			REAL8 hs = (REAL8)model->data[Nmodel-i]*time_cos - (REAL8)model->data[i]*time_sin;
-			resp_r = det_resp.plus * hc + det_resp.cross * hs;
-			resp_i = -det_resp.cross * hc + det_resp.plus * hs;
+			resp_r = det_resp.plus * hc - det_resp.cross * hs;
+			resp_i = det_resp.cross * hc + det_resp.plus * hs;
 
 			real=inputMCMC->stilde[det_i]->data->data[i].re - resp_r/deltaF;
 			imag=inputMCMC->stilde[det_i]->data->data[i].im - resp_i/deltaF;

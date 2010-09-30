@@ -49,6 +49,12 @@
 
 NRCSID (ODETESTC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define TESTSTATUS( ps ) \
   if ( (ps)->statusCode ) { REPORTSTATUS( ps ); exit( 1 ); } else ( (void) 0 )
 
@@ -64,10 +70,10 @@ extern int lalDebugLevel;
  *
  */
 static void Kepler(
-    LALStatus     *s,
+    LALStatus     UNUSED *s,
     REAL4Vector   *xdot,
     REAL4Vector   *x,
-    REAL4ODEIndep *p
+    REAL4ODEIndep UNUSED *p
     )
 {
   REAL4 rsq = x->data[0] * x->data[0] + x->data[1] * x->data[1];
@@ -76,8 +82,6 @@ static void Kepler(
   xdot->data[1] = x->data[3];
   xdot->data[2] = - x->data[0] / rcb;
   xdot->data[3] = - x->data[1] / rcb;
-  s = NULL;
-  p = NULL;
 }
 
 

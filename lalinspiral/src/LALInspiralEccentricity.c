@@ -86,8 +86,11 @@ in Equation (\ref{eq:ode2}).
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /* structure to provide M and eta. */
 typedef struct
@@ -378,8 +381,8 @@ LALInspiralEccentricityEngine(
 		REAL4Vector      *signalvec1,
 		REAL4Vector      *signalvec2,
 		REAL4Vector      *a,
-		REAL4Vector      *ff,
-		REAL8Vector      *phi,
+		REAL4Vector      UNUSED *ff,
+		REAL8Vector      UNUSED *phi,
 		INT4             *countback,
 		InspiralTemplate *params)
 {
@@ -417,10 +420,6 @@ LALInspiralEccentricityEngine(
    REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
-
-   /* ff and phi are unused in this function */
-   UNUSED(ff);
-   UNUSED(phi);
 
    INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
    ATTATCHSTATUSPTR(status);
@@ -687,7 +686,7 @@ LALInspiralEccentricityDerivatives (
  { /* </lalVerbatim> */
 
   ecc_CBC_ODE_Input *par;
-  double M, eta, mu, c1, e0, e2, p0, p2, p3, p4, phi;
+  double M, eta, mu, c1, e0, e2, UNUSED p0, p2, p3, p4, phi;
   par = (ecc_CBC_ODE_Input *) params;
 
   /* affectation */

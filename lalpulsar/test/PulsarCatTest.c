@@ -193,7 +193,7 @@ extern int lalDebugLevel;
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
+  XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
 		 __LINE__, PULSARCATTESTC,                           \
 		 statement ? statement : "", (msg) );                \
@@ -204,7 +204,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
+  XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 PULSARCATTESTC, (statement) );                      \
 }                                                                    \
@@ -214,7 +214,7 @@ while (0)
 do                                                                   \
 if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
-  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
+  XLALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
 		 PULSARCATTESTC, (statement) );                      \
 }                                                                    \
@@ -237,7 +237,7 @@ if ( ( (val) < (lower) ) || ( (val) > (upper) ) )                    \
   ERROR( PULSARCATTESTC_EVAL, PULSARCATTESTC_MSGEVAL,                \
          "Value of " #val " out of range:" );                        \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( #val " = %f, range = [%f,%f]\n", (REAL8)(val),    \
+    XLALPrintError( #val " = %f, range = [%f,%f]\n", (REAL8)(val),    \
                    (REAL8)(lower), (REAL8)(upper) );                 \
   return PULSARCATTESTC_EVAL;                                        \
 }                                                                    \
@@ -309,7 +309,7 @@ main(int argc, char **argv)
 	posGiven = 1;
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
@@ -322,7 +322,7 @@ main(int argc, char **argv)
 	sunfile = argv[arg++];
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
@@ -333,7 +333,7 @@ main(int argc, char **argv)
 	SUB( ParseEpoch( &stat, &epoch, argv[arg++] ), &stat );
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
@@ -344,7 +344,7 @@ main(int argc, char **argv)
 	infile = argv[arg++];
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
@@ -355,7 +355,7 @@ main(int argc, char **argv)
 	outfile = argv[arg++];
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
@@ -366,14 +366,14 @@ main(int argc, char **argv)
 	lalDebugLevel = atoi( argv[arg++] );
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
+        XLALPrintError( USAGE, *argv );
         return PULSARCATTESTC_EARG;
       }
     }
     /* Parse help option. */
     else if ( !strcmp( argv[arg], "-h" ) ) {
       INFO( PULSARCATTESTC_MSGENORM );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return PULSARCATTESTC_ENORM;
     }
     /* Any additional command-line options are timing parameters. */
@@ -387,7 +387,7 @@ main(int argc, char **argv)
     /* Unknown option. */
     else {
       ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
+      XLALPrintError( USAGE, *argv );
       return PULSARCATTESTC_EARG;
     }
   }
@@ -477,7 +477,7 @@ main(int argc, char **argv)
       ERROR( PULSARCATTESTC_EVAL, PULSARCATTESTC_MSGEVAL,
 	     "Unrecognized site:" );
       if ( lalDebugLevel & LALERROR )
-	LALPrintError( "%s", site );
+	XLALPrintError( "%s", site );
       return PULSARCATTESTC_EVAL;
     }
     detectorTime.p_detector =

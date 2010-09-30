@@ -139,6 +139,12 @@ LALSDestroyVector()
 
 #define log2( x )       ( log( x ) / LAL_LN2 )
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID (HARMONICFINDERC, "$Id$");
 
 
@@ -158,7 +164,8 @@ void LALHarmonicFinder (LALStatus  *status,
 
   INT4    i,j;
 
-  REAL4   devF,fL,myfmax;
+  REAL4   devF,fL;
+  REAL4   UNUSED myfmax;
   REAL4   Tobs;
 
   REAL8   sumpx,mean1,std1,mn2,sn2;

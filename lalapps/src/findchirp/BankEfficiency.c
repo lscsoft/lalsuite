@@ -608,13 +608,10 @@ void BankEfficiencyGetResult(
   UserParametersIn  userParam
 )
 {
-  INT4 templateNumber;
   InspiralTemplate trigger;
 
   INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
-
-  templateNumber = bestOverlap.templateNumber;
 
   trigger = *list;
 
@@ -879,7 +876,6 @@ void BankEfficiencyWaveOverlapBCV(
   BankEfficiencyMoments   *moments)
      /*  </lalVerbatim>  */
 {
-  INT4 rhoBinUnconstraint = 0.;
   INT4 rhoBinConstraint = 0.;
 
   REAL4 sampling;
@@ -887,8 +883,6 @@ void BankEfficiencyWaveOverlapBCV(
   REAL4 alphaConstraint = 0.;
   REAL4 phaseConstraint = 0.;
   REAL4 rhoMaxUnconstraint = 0.;
-  REAL4 alphaUnconstraint = 0.;
-  REAL4 phaseUnconstraint = 0.;
   REAL4 rhoConstraint = 0.;
   REAL4 rhoUnconstraint = 0.;
   REAL4 df = 0.;
@@ -896,7 +890,6 @@ void BankEfficiencyWaveOverlapBCV(
   REAL4 thetab = 0.;
   REAL4 alphaMax = 0.;
   REAL4 a11, a22, a21;
-  REAL4 rho = 0;
   REAL4 alphaFU, fm23, fp23;
 
   REAL4Vector templatee;
@@ -1022,7 +1015,6 @@ void BankEfficiencyWaveOverlapBCV(
 
   thetab = (-(a11 * alphaMax)/(a22+a21*alphaMax));
   thetab = atan(thetab);
-  rho    = 0.;
 
   if(userParam.printBestOverlap && userParam.extraFinalPrinting){
     fprintf(stderr,"theta_b = %e a11=%e a21=%e a22=%e alphaMax = %e fCutoff=%e\n",
@@ -1154,10 +1146,6 @@ void BankEfficiencyWaveOverlapBCV(
       /* Keep the position of the max only  */
       {
         rhoMaxUnconstraint  = rhoUnconstraint;
-        rhoBinUnconstraint  = i;
-        phaseUnconstraint   = 0.5*thetav;
-        alphaUnconstraint = -(a22 * tan(phaseUnconstraint))
-        / (a11 + a21 * tan(phaseUnconstraint));
       }
     }
   }
@@ -2046,9 +2034,6 @@ void BankEfficiencyGenerateInputData(
   RandomInspiralSignalIn  *randIn,
   UserParametersIn         userParam)
 {
-  UINT4 trial ;
-  UINT4 success ;
-
   INITSTATUS( status, "BankEfficiencyGenerateInputData", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
 
@@ -2059,9 +2044,6 @@ void BankEfficiencyGenerateInputData(
     randIn->param.nStartPad = (int)( (float)rand() /
         (float)RAND_MAX*signalvec->length/2);
   }
-
-  trial = 0 ;
-  success = 0 ;
 
   /* we might force to compute a non random waveform giving the two
      input parameters m1 and m2 */
@@ -4224,14 +4206,19 @@ void BankEfficiencyWaveOverlap(
   OverlapOutputIn        *overlapOutputThisTemplate,
   INT4                    startPad)
 {
-  InspiralWaveOverlapOut    overlapout,overlapout2;
+  InspiralWaveOverlapOut    overlapout;
+#if 0
+  InspiralWaveOverlapOut    overlapout2;
+#endif
 
   INITSTATUS (status, "BankEfficiencyWaveOverlap", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
 
   /* --- just to be sure a value has been computed --- */
   overlapout.max = -1;
+#if 0
   overlapout2.max = -1;
+#endif
 
   /* --- compute the output correlation between the signal (in overlapin)
    * and the template in overlapin. --- */
@@ -4402,13 +4389,12 @@ void BankEfficiencyInitMyBank(
   SnglInspiralTable      *tmpltCurrent = NULL;
   INT4 i,j;
   INT4 eccentricBins;
-  REAL4 eccentricMin,eccentricMax, eccentricStep;
+  REAL4 eccentricMin, eccentricStep;
   INT4 thisIndex;
 
   /* --- first get the eccentric parameters --- */
   eccentricBins = userParam.eccentricBank.bins;
   eccentricStep = userParam.eccentricBank.step;
-  eccentricMax  = userParam.eccentricBank.max;
   eccentricMin  = userParam.eccentricBank.min;
 
   /* ---  the new bank size equals nbins times the original bank size --- */
@@ -4615,7 +4601,6 @@ void GetClosestValidTemplate(
   {
     UINT4 i;
     REAL4 tau0,tau3;
-    REAL4 eccentricity;
 
     GetTau03FromMasses(randIn, &tau0, &tau3);
 
@@ -4623,7 +4608,6 @@ void GetClosestValidTemplate(
     for (i=0; i<bank.size; i++){
       index_backup[i] = bank.used[i];
     }
-    eccentricity = randIn.param.eccentricity;
 
     for (i=0; i<bank.size; i++)
     {

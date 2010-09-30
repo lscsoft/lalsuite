@@ -84,6 +84,12 @@ LALSCreateVector()              LALSDestroyVector()
 
 NRCSID(FLATMESHTESTC,"$Id$");
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define MISMATCH 0.3
@@ -143,7 +149,7 @@ LALInspiralComputeBCVMetric(
 );
 
 int
-main(int argc, char **argv)
+main(int UNUSED argc, char **argv)
 {
   UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
@@ -156,7 +162,7 @@ main(int argc, char **argv)
 
   static InspiralMetric metric;
   static InspiralTemplate params;
-  UINT4   nlist, numPSDpts=262144;
+  UINT4   numPSDpts=262144;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
   void (*noisemodel)(LALStatus*,REAL8*,REAL8) = LALLIGOIPsd;
@@ -164,13 +170,10 @@ main(int argc, char **argv)
 
   lalDebugLevel = 0;
 
-  argc = 0;
-
 /* Number of templates is nlist */
 
   fp = fopen("BCVTemplatesFlatMesh.out", "w");
   dim = DIM;
-  nlist = 0;
 
   params.OmegaS = 0.;
   params.Theta = 0.;

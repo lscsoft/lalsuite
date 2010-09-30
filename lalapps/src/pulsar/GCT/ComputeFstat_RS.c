@@ -178,7 +178,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
   /* IMPORTANT - use Calloc here so that all pointers within the structure are NULL */
   if ( cfBuffer == NULL ) {
     if ( (cfBuffer = (ComputeFBuffer_RS*)XLALCalloc(1,sizeof(ComputeFBuffer_RS))) == NULL ) {
-      LALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
+      XLALPrintError("\nXLALMalloc() failed with error = %d\n\n", xlalErrno );
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
   }
@@ -206,7 +206,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 
     /* generate a new timeseries from the input SFTs */
     if ( ( multiTimeseries = XLALMultiSFTVectorToCOMPLEX8TimeSeries(multiSFTs)) == NULL ) {
-      LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
    
@@ -220,7 +220,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
       /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */ 
       if (shift != 0.0) {
         if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
-          LALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+          XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
           ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
         }
       }
@@ -296,14 +296,14 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
       
       /* noise-weight Antenna-patterns and compute A,B,C */
       if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
       }
       
       /* Generate a(t) and b(t) weighted heterodyned downsampled timeseries */
       if ( XLALAntennaWeightMultiCOMPLEX8TimeSeries ( &multiFa, &multiFb, cfBuffer->multiTimeseries,
 						      multiAMcoef, multiSFTs) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
       }
       
@@ -311,7 +311,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
       if ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( &multiFa_resampled, &multiFb_resampled, 
 							    multiFa, multiFb, multiSSB, multiSFTs, 
 							    df_out) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALBarycentricResampleMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
       }
       
@@ -347,14 +347,14 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
     Dd_inv = 1.0 / cfBuffer->multiAMcoef->Mmunu.Dd;
   }
   else {
-    LALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
+    XLALPrintError ( "Programming error: 'multiAMcoef' not available!\n");
     ABORT ( status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   }
     
   /* apply spin derivitive correction to resampled timeseries */
   /* this function only applies a correction if there are any non-zero spin derivitives */
   if ( XLALSpinDownCorrectionMultiFaFb(&(cfBuffer->multiFa_resampled),&(cfBuffer->multiFb_resampled),doppler) != XLAL_SUCCESS ) {
-    LALPrintError("\nXLALSpinDownCorrectionMultiFaFb() failed with error = %d\n\n", xlalErrno );
+    XLALPrintError("\nXLALSpinDownCorrectionMultiFaFb() failed with error = %d\n\n", xlalErrno );
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   }
   
@@ -781,7 +781,7 @@ int XLALAntennaWeightMultiCOMPLEX8TimeSeries (
     SFTVector *SFTs = multisfts->data[i]; 
     
     if ( XLALAntennaWeightCOMPLEX8TimeSeries(&((*Faoft)->data[i]),&((*Fboft)->data[i]),timeseries,AMcoef,SFTs) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      XLALPrintError("\nXLALAntennaWeightMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       XLAL_ERROR (fn, XLAL_EFAULT);
     }
        
@@ -845,13 +845,13 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
 
   /* find earliest SSB time */
   if ( (XLALEarliestMultiSSBtime (&earliest,multiSSB,Tsft)) != XLAL_SUCCESS ) {
-    LALPrintError("\nXLALEarliestMultiSSBtime() failed with error = %d\n\n", xlalErrno );
+    XLALPrintError("\nXLALEarliestMultiSSBtime() failed with error = %d\n\n", xlalErrno );
     XLAL_ERROR (fn, XLAL_EFAULT);
   }
 
   /* find latest SSB time */
   if ( (XLALLatestMultiSSBtime (&latest,multiSSB,Tsft)) != XLAL_SUCCESS ) {
-    LALPrintError("\nXLALLatestMultiSSBtime() failed with error = %d\n\n", xlalErrno );
+    XLALPrintError("\nXLALLatestMultiSSBtime() failed with error = %d\n\n", xlalErrno );
     XLAL_ERROR (fn, XLAL_EFAULT);
   }
  
@@ -916,7 +916,7 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
    
     /* perform resampling on current detector timeseries */ 
     if ( XLALBarycentricResampleCOMPLEX8TimeSeries(&((*Faoft_RS)->data[i]),&((*Fboft_RS)->data[i]),Fa,Fb,SSB,SFTs) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALBarycentricResampleCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      XLALPrintError("\nXLALBarycentricResampleCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
       XLAL_ERROR (fn, XLAL_EFAULT);
     }
     
@@ -1031,7 +1031,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
   /* initialise the gsl spline interpolation for each of the 4 timeseries */
   for (i=0;i<FAFB_LENGTH;i++) {
     if ( (XLALGSLInitInterpolateREAL8Vector(&(spline_FaFb[i]),t_DET,FaFb[i])) != XLAL_SUCCESS ) {
-      LALPrintError("\nXLALGSLInitInterpolateREAL8Vector() failed with error = %d\n\n", xlalErrno );
+      XLALPrintError("\nXLALGSLInitInterpolateREAL8Vector() failed with error = %d\n\n", xlalErrno );
       XLAL_ERROR (fn, XLAL_EFAULT);
     }
   }
@@ -1075,7 +1075,7 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
     /* this function allocates memory for the output vectors */
     for (i=0;i<FAFB_LENGTH;i++) {
       if ( XLALGSLInterpolateREAL8Vector(&(out_FaFb[i]),detectortimes,spline_FaFb[i]) != XLAL_SUCCESS ) {
-	LALPrintError("\nXLALInterpolateMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+	XLALPrintError("\nXLALInterpolateMultiCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
 	XLAL_ERROR (fn, XLAL_EFAULT);
       }
     }

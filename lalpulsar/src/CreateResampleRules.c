@@ -353,7 +353,7 @@ LALCreateResampleRules( LALStatus          *stat,
     ;
   tBound--;
 
-  LALPrintError("tStop = %f\n",tRuleStop);
+  XLALPrintError("tStop = %f\n",tRuleStop);
 
   /* Convert the start time into units of dt, relative to the initial
      fitting point. */
@@ -496,7 +496,7 @@ ConstantRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
       /* See if we need to allocate more space for tempRules.  Return
 	 an error if allocation fails. */
       if(!(--j)){
-	LALPrintError("t = %f\n",t*dt+*t0);
+	XLALPrintError("t = %f\n",t*dt+*t0);
 	if((intervals=*(row++)=(INT4 *)
 	    LALMalloc(nSqrt*sizeof(INT4)))&&
 	   (shifts=*(row++)=(INT4 *)
@@ -607,7 +607,7 @@ LinearRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 	/* See if we need to allocate more space for tempRules.
 	   Return an error if allocation fails. */
 	if(!(--j)){
-	  LALPrintError("t = %f\n",t*dt+*t0);
+	  XLALPrintError("t = %f\n",t*dt+*t0);
 	  if((intervals=*(row++)=(INT4 *)
 	      LALMalloc(nSqrt*sizeof(INT4)))&&
 	     (shifts=*(row++)=(INT4 *)
@@ -650,7 +650,7 @@ LinearRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 	    /* See if we need to allocate more space for tempRules.
 	       Return an error if allocation fails. */
 	    if(!(--j)){
-	      LALPrintError("t = %f\n",t*dt+*t0);
+	      XLALPrintError("t = %f\n",t*dt+*t0);
 	      if((intervals=*(row++)=(INT4 *)
 		  LALMalloc(nSqrt*sizeof(INT4)))&&
 		 (shifts=*(row++)=(INT4 *)
@@ -794,7 +794,7 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 	  /* See if we need to allocate more space for tempRules.
 	     Return an error if allocation fails. */
 	  if(!(--j)){
-	    LALPrintError("t = %f\n",t*dt+*t0);
+	    XLALPrintError("t = %f\n",t*dt+*t0);
 	    if((intervals=*(row++)=(INT4 *)
 		LALMalloc(nSqrt*sizeof(INT4)))&&
 	       (shifts=*(row++)=(INT4 *)
@@ -837,7 +837,7 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 	      /* See if we need to allocate more space for tempRules.
 		 Return an error if allocation fails. */
 	      if(!(--j)){
-		LALPrintError("t = %f\n",t*dt+*t0);
+		XLALPrintError("t = %f\n",t*dt+*t0);
 		if((intervals=*(row++)=(INT4 *)
 		    LALMalloc(nSqrt*sizeof(INT4)))&&
 		   (shifts=*(row++)=(INT4 *)
@@ -903,7 +903,7 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 	    /* See if we need to allocate more space for tempRules.
                Return an error if allocation fails. */
 	    if(!(--j)){
-	      LALPrintError("t = %f\n",t*dt+*t0);
+	      XLALPrintError("t = %f\n",t*dt+*t0);
 	      if((intervals=*(row++)=(INT4 *)
 		  LALMalloc(nSqrt*sizeof(INT4)))&&
 		 (shifts=*(row++)=(INT4 *)

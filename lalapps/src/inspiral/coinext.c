@@ -60,6 +60,12 @@ include
   snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
   snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /*******************************
   structures
 ********************************/
@@ -339,7 +345,7 @@ int checkCGNtrigger( void )
   char input2[256];
   struct tm date;
   FILE* fileTrigger;
-  int rc;
+  int UNUSED rc;
 
   /* check if to get some trigger file or not */
   if (!flagTriggerFile) {
@@ -506,7 +512,7 @@ int readCGN( void )
   long gpsNano;
   int status0, status1, status2;
   int dagStatus0, dagStatus1, dagStatus2;
-  int rc;
+  int UNUSED rc;
 
 
   /* open file for reading data */
@@ -589,7 +595,7 @@ void checkInspiralTrigger( void )
   char savename[256];
   FILE* file;
   FILE* out;
-  int rc;
+  int UNUSED rc;
 
   /* loop over IFO's to take into account */
   for ( i=startIFO;i<=endIFO;i++) {
@@ -783,7 +789,7 @@ createInspiralTable:
 int createInspiralTable( int lifo, int dag )
 {
   /* variables */
-  int insp,numTrig, numSum,flag;
+  int insp, numTrig, UNUSED numSum, flag;
   int numberDiscard=0;
   char filename[256]; 
   char comment[256]; 
@@ -1023,7 +1029,7 @@ void startAnalysisJob(ExternalList* eList, int nifo)
   double d=0, sumTime=0, maxSegment=0, minSegment=-1.0;
   char dummy[256];
   time_t rawtime;
-  int rc;
+  int UNUSED rc;
 
   /* discard any times before S4 */
   if (eList->gps<793130413) {
@@ -1280,7 +1286,7 @@ int checkProxy( void )
 {
   char command[256];
   struct stat file;
-  int rc;
+  int UNUSED rc;
 
   sprintf(command, "grid-proxy-info > .proxy 2>.err");
   rc = system(command);
@@ -1392,7 +1398,7 @@ ce_shutdown:
 *******************************/
 int ce_shutdown( void )
 {
-  int rc;
+  int UNUSED rc;
 
   /* store CGN triggers for next time (status is important!!!) */
   writeCGN();
@@ -1495,7 +1501,7 @@ ce_restart:
 void ce_restart(void)
 {
   char command[256];
-  int rc;
+  int UNUSED rc;
   sprintf( command, "rm -f *.cel");
   rc = system( command );
 }
@@ -1509,8 +1515,8 @@ sigint_handler:
 void sigint_handler(int sig)
 {
   /* the next two lines just to avoid warning .... */
-  int dummy;
-  dummy=sig;  
+  int UNUSED dummy;
+  dummy=sig;
 
   /* shutdown */
   ce_shutdown();

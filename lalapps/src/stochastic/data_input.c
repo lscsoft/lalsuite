@@ -39,12 +39,7 @@ REAL4TimeSeries *get_ligo_data(FrStream *stream,
 {
   /* variables */
   REAL4TimeSeries *series;
-  FrChanIn channel_in;
   size_t length;
-
-  /* set channelIn */
-  channel_in.name = channel;
-  channel_in.type = ADCDataChannel;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);
@@ -89,13 +84,8 @@ REAL4TimeSeries *get_geo_data(FrStream *stream,
   PassBandParamStruc high_pass_params;
   REAL4TimeSeries *series;
   REAL8TimeSeries *geo;
-  FrChanIn channel_in;
   size_t length;
   size_t i;
-
-  /* set channelIn */
-  channel_in.name = channel;
-  channel_in.type = ADCDataChannel;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for \"%s\" series...\n", channel);

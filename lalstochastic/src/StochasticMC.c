@@ -365,7 +365,6 @@ void LALStochasticMCDso (LALStatus *status,
   /* various times, frequencies, sample rates */
 	INT4                               caltime;
   UINT4                              starttime;
-  UINT4                              length;
 	INT4                               lengthseg;
   INT4                               numseg;
   UINT4                              caliboffset;
@@ -488,7 +487,6 @@ void LALStochasticMCDso (LALStatus *status,
 
   /*derive other parameters*/
 
-  length = lengthseg * numseg;
   freqlen = lengthseg / 2 + 1;
   caliboffset =  lengthseg / (2 * sRate);
   deltaT = 1.0 / sRate;
@@ -706,7 +704,6 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 	INT4                               caltime;
   UINT4                              starttime;
 	INT4                               lengthseg;
-  UINT4                              length;
 	INT4                               numseg;
 	INT4                               numsegsplice;
 	INT4                               numsegtot;
@@ -830,7 +827,6 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
   /*derive other parameters*/
 
-  length = lengthseg * numseg;
   numsegsplice = numseg - 1;
   numsegtot = numseg + numsegsplice;
   freqlen = lengthseg / 2 + 1;

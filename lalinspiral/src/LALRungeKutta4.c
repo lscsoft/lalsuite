@@ -61,8 +61,11 @@ None.
 
 #include <lal/LALInspiral.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 struct RungeGSLParams {
   rk4In *input;
@@ -222,7 +225,7 @@ void XLALRungeKutta4Free( rk4GSLIntegrator *integrator )
 /* A simple wrapper function to allow GSL to use the LAL
    derivative functions */
 static int derivativeGSLWrapper(
-				REAL8 t,
+				REAL8 UNUSED t,
 				const REAL8 y[],
 				REAL8 dydx[],
 				void *params)
@@ -230,9 +233,6 @@ static int derivativeGSLWrapper(
   struct RungeGSLParams *in = (struct RungeGSLParams *)params;
   REAL8Vector dyVect;
   REAL8Vector *yVect = in->input->yt;
-
-  /* t is unused in this function */
-  UNUSED(t);
 
   memcpy(yVect->data, y, in->input->n * sizeof(REAL8));
 

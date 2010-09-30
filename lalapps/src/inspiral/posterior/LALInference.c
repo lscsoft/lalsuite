@@ -60,6 +60,7 @@ LALVariableItem *getItem(LALVariables *vars,const char *name)
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
 {
+  if(vars==NULL) return NULL;
   LALVariableItem *this = vars->head;
   while (this != NULL) { 
     if (!strcmp(this->name,name)) break;
@@ -185,10 +186,14 @@ void addVariable(LALVariables * vars, const char * name, void *value, VariableTy
   /* Check the name doesn't already exist */
   /* *** If variable already exists, should we just set it?*/
   if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\".\n",name); exit(1);}
+  if(!value) {fprintf(stderr,"Unable to access value through null pointer in addVariable, trying to add %s\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
+
   memset(new,0,sizeof(LALVariableItem));
-  new->value = (void *)malloc(typeSize[type]);
+	if(new) {
+		new->value = (void *)malloc(typeSize[type]);
+	}
   if(new==NULL||new->value==NULL) die(" ERROR in addVariable(): unable to allocate memory for list item.\n");
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
@@ -228,8 +233,6 @@ int checkVariable(LALVariables *vars,const char *name)
   else return 0;
 }
 
-
-
 void destroyVariables(LALVariables *vars)
 /* Free the entire structure */
 {
@@ -248,19 +251,36 @@ void destroyVariables(LALVariables *vars)
   return;
 }
 
-
-
 void copyVariables(LALVariables *origin, LALVariables *target)
 /*  copy contents of "origin" over to "target"  */
 {
   LALVariableItem *ptr;
-  
+  if(!origin)
+  {
+	  fprintf(stderr,"Unable to access origin pointer in copyVariables\n");
+	  exit(1);
+  }
+
+  /* Make sure the structure is initialised */
+	if(!target) fprintf(stderr,"ERROR: Unable to copy to uninitialised LALVariables structure\n");
+
+	
   /* first dispose contents of "target" (if any): */
   destroyVariables(target);
   
+	
   /* then copy over elements of "origin": */
   ptr = origin->head;
+  if(!ptr)
+  {
+	  fprintf(stderr,"Bad LALVariable structure found while trying to copy\n");
+	  exit(1);
+  }
   while (ptr != NULL) {
+	  if(!ptr->value || !ptr->name){
+		  fprintf(stderr,"Badly formed LALVariableItem structure found in copyVariables!\n");
+		  exit(1);
+	  }
     addVariable(target, ptr->name, ptr->value, ptr->type, ptr->vary);
     ptr = ptr->next;
   }
@@ -910,7 +930,9 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	deltaT = dataPtr->timeData->deltaT;
     deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
 
+#ifdef DEBUG
 FILE* file=fopen("TempSignal.dat", "w");	
+#endif
 	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -927,9 +949,13 @@ FILE* file=fopen("TempSignal.dat", "w");
 
 		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);		
-fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
+#ifdef DEBUG
+		fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
+#endif
 	}
+#ifdef DEBUG
 fclose(file);
+#endif
 	destroyVariables(&intrinsicParams);
 }
 
@@ -1116,8 +1142,8 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 		sprintf(minName,"%s_min",name);
 		sprintf(maxName,"%s_max",name);
     
-		min=getVariable(priorArgs,minName);
-		max=getVariable(priorArgs,maxName);
+		*(REAL8 *)min=*(REAL8 *)getVariable(priorArgs,minName);
+		*(REAL8 *)max=*(REAL8 *)getVariable(priorArgs,maxName);
 		return;
 		
 }

@@ -47,12 +47,12 @@
 #include <lal/DetResponse.h>
 #include <lal/CoherentInspiral.h>
 
-/* macro to "use" unused function parameters */
-#define UNUSED(expr) do { (void)(expr); } while(0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
-#define rint(x) (floor((x)+0.5))
-
-double modf( double value, double *integerPart );
 int compare( const void* a, const void* b );
 void XLALAssignEventQuads(INT4 caseID[6], COMPLEX8 quadTemp[6], MultiInspiralTable *thisEvent);
 void XLALSaveStatsInEventTable(REAL4 cohSnrSqLocal,REAL4 autoCorrCohSq,REAL4 crossCorrCohSq,REAL4 autoCorrNullSq,REAL4 crossCorrNullSq,REAL8 ampMetricEigenVal1,REAL8 ampMetricEigenVal2,REAL4 VVPlus[4],REAL4 VVMinus[4],MultiInspiralTable *thisEvent);
@@ -1531,7 +1531,7 @@ void
 LALCoherentInspiralEstimateDistance (
     LALStatus                             *status,
     REAL8                                 *sigmasq,
-    REAL4                                  templateNorm,
+    REAL4                                  UNUSED templateNorm,
     REAL8                                  deltaT,
     INT4                                   segmentLength,  /* time pts */
     REAL4                                  coherentSNR,
@@ -1541,9 +1541,6 @@ LALCoherentInspiralEstimateDistance (
   INITSTATUS( status, "LALCoherentInspiralEstimateDistance",
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
-
-  /* templateNorm is unused in this function */
-  UNUSED(templateNorm);
 
   /* This function computes the effective distance for the H1-H2 pair */
   *distance = sqrt( 0.5 * (sigmasq[0] + sigmasq[1]) * deltaT / segmentLength) / coherentSNR;
@@ -1571,9 +1568,9 @@ XLALCoherentInspiralFilterSegment (
   UINT4                               cohSNROut = 0;
   UINT4                               nullStatOut = 0;
   UINT4                               nullStatH1H2Out = 0;
-  UINT4                               case2a = 0;
-  UINT4                               case2b = 0;
-  UINT4                               case3a = 0;
+  UINT4                               UNUSED case2a = 0;
+  UINT4                               UNUSED case2b = 0;
+  UINT4                               UNUSED case3a = 0;
   UINT4                               case3b = 0;
   UINT4                               case4a = 0;
   INT4                                caseID[6] = {0,0,0,0,0,0};
@@ -1584,7 +1581,7 @@ XLALCoherentInspiralFilterSegment (
   INT4                                eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
   INT4                                slidePoints4D[4] = {0,0,0,0};
-  INT4                                segmentLength = 0;
+  INT4                                UNUSED segmentLength = 0;
   INT4                                sortedSlidePoints3D[3]= {0,0,0};
   INT4                                sortedSlidePoints4D[4]= {0,0,0,0};
   int                                 locIdx;
@@ -1594,7 +1591,7 @@ XLALCoherentInspiralFilterSegment (
   REAL4                               distance[4] = {0,0,0,0};
   REAL4                               chirpTime = 0.0;
   REAL4                               cohSNRThresh = 0.0;
-  REAL4                               cohSNRThreshSq = 0.0;
+  REAL4                               UNUSED cohSNRThreshSq = 0.0;
   double                              inclination = 0.0;
   double                              polarization = 0.0;
   /*REAL4                               distanceEstimate = 0.0;*/
@@ -1621,8 +1618,8 @@ XLALCoherentInspiralFilterSegment (
   REAL8                               tempTime = 0.0;
   REAL8                               fracpart = 0.0;
   REAL8                               intpart = 0.0;
-  double                              decStep = 0.0;
-  double                              raStep = 0.0;
+  double                              UNUSED decStep = 0.0;
+  double                              UNUSED raStep = 0.0;
   double                              theta = 0.0;
   double                              phi = 0.0;
   double                              timeDelay[4]= {0.0,0.0,0.0,0.0};
@@ -1639,9 +1636,9 @@ XLALCoherentInspiralFilterSegment (
   CHAR                                idtag[6][3] = {"G1","H1","H2","L1","T1","V1"};
   CHAR                                caseStr[FILENAME_MAX];
 
-  UINT4          degenerateStat = 0;
+  UINT4          UNUSED degenerateStat = 0;
   INT4           timePt[4] = {0,0,0,0};
-  INT4           timePtTemp[4] = {0,0,0,0};
+  INT4           UNUSED timePtTemp[4] = {0,0,0,0};
   REAL4          AA=0.0;
   REAL4          BB=0.0;
   REAL4          CC=0.0;
@@ -1663,8 +1660,8 @@ XLALCoherentInspiralFilterSegment (
   REAL4          O22=0.0;
   REAL8          gmstInRadians=0.0;
   double         amplitudeConst=1.0,chirpMass=1.0;
-  double         DRe[4]={0.0,0.0,0.0,0.0};
-  double         DIm[4]={0.0,0.0,0.0,0.0};
+  double         UNUSED DRe[4]={0.0,0.0,0.0,0.0};
+  double         UNUSED DIm[4]={0.0,0.0,0.0,0.0};
   double         InvMMAA = 0.0, InvMMBB = 0.0, InvMMCC = 0.0;
   double         determinantMM=1.0;
   double         uSigma[4]={0.0,0.0,0.0,0.0};
@@ -2060,8 +2057,8 @@ XLALCoherentInspiralFilterSegment (
 	  {
             REAL4          snrsq1 = 0.0;
             REAL4          snrsq2 = 0.0;
-            REAL4          chisqFac1 = 1.0;
-            REAL4          chisqFac2 = 1.0;
+            REAL4          UNUSED chisqFac1 = 1.0;
+            REAL4          UNUSED chisqFac2 = 1.0;
             cohSNR = 0.0;
             chisq[2] = chisq_dof[0];
             chisq[3] = chisq_dof[1];
@@ -4424,9 +4421,8 @@ double XLALComputeNonQuadNullStatCase4a(double fplus[4], double fcross[4], REAL8
 
 
 /* Function for computing 3-site-3-ifo coh-statistic at trigger end-time*/
-double XLALComputeIncohStatCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4], REAL4 nullStatistic, REAL4 *crossCorrNullSq, REAL4 chisq[4], REAL4 chisq_dof[4], REAL4 eff_snr_denom_fac) {
+double XLALComputeIncohStatCase4a(INT4 UNUSED caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, INT4 timeP, INT4 slidePoints4D[4], COMPLEX8TimeSeries *cData[4], REAL4 nullStatistic, REAL4 *crossCorrNullSq, REAL4 chisq[4], REAL4 chisq_dof[4], REAL4 eff_snr_denom_fac) {
   /* caseID is unused in this function */
-  UNUSED(caseID);
 
   /* This trigger is from either H1 or H2 but not both */
   double nullNorm8 = 0.0;
@@ -4530,16 +4526,13 @@ double XLALComputeNullStatCase4a(double fplus[4], double fcross[4], REAL8 *sigma
     return nullStatistic;
 }
 
-double XLALComputeNullTimeSeriesCase4a(INT4 caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
+double XLALComputeNullTimeSeriesCase4a(INT4 UNUSED caseID[6], double fplus[4], double fcross[4], REAL8 *sigmasq, COMPLEX8 quadTemp[6]) {
     /* This trigger is from both H1 and H2;
      but using H1 and not H2 for now*/
     double nullNorm8 = 0.0;
     double nullNumerRe8 = 0.0;
     double nullNumerIm8 = 0.0;
     double nullStatistic = 0.0;
-
-    /* caseID is unused in this function */
-    UNUSED(caseID);
 
     /* Prepare norm for null statistic */
     nullNorm8 = pow(fplus[1]*fcross[2]-fplus[2]*fcross[1],2)/ sigmasq[1] +
@@ -4856,14 +4849,12 @@ void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq[4], REAL4 chi
   }
 }
 
-double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b,INT4 caseID[6] ) {
+double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double UNUSED chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b,INT4 caseID[6] ) {
 
   double lum_dist_est,f_a,f_a_sq,g_a,h_a,sine_psi=0.0,sine_coa_phase=0.0,p=0.0;
   UINT4 det1Found = 0;
   UINT4 det2Found = 0;
 
-  /* chirpTime is unused in this function */
-  UNUSED(chirpTime);
   thisEvent->eff_dist_g = -1;
   thisEvent->eff_dist_h1 = -1;
   thisEvent->eff_dist_h2 = -1;
