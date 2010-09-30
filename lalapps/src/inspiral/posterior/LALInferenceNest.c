@@ -239,6 +239,7 @@ void initializeNS(LALInferenceRunState *runState)
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
+	addVariable(runState->algorithmParams,"random_seed",&randomseed, INT4_t,PARAM_FIXED);
 	gsl_rng_set(runState->GSLrandom, randomseed);
 	
 	return;
@@ -252,8 +253,6 @@ void setupLivePointsArray(LALInferenceRunState *runState){
 	UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
 	UINT4 i;
 	REAL8Vector *logLs;
-	gsl_matrix *cvm=NULL;
-
 	
 	LALVariableItem *current;
 		
