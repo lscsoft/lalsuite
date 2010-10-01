@@ -1373,7 +1373,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
   LogPrintf(LOG_DEBUG,"%s : allocated memory for %d channels\n",fn,tddes->nchannels);
  
   /* define number of elements to read in - this is the total number of expected data values */
-  totallength = (INT8)(header->rowlength[colidx]*header->nrows);
+  totallength = (INT8)(header->rowlength[colidx]*header->nrows*tddes->nchannels);
   LogPrintf(LOG_DEBUG,"%s : computed total number of expected data samples as %ld\n",fn,totallength);
   
   /* allocate mem for temporary data storage of data and data undefined flag */
@@ -1419,7 +1419,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
 
     /* define number of elements to read in - this is the total number of expected data values for this channel */
     (*array)->channeldata[i].length = (INT8)(tddes->nsamples*header->nrows);
-    LogPrintf(LOG_DEBUG,"%s : computed total number of expected data samples as %ld\n",fn,tddes->nsamples*header->nrows);
+    LogPrintf(LOG_DEBUG,"%s : channel %d number of expected data samples as %ld\n",fn,i,tddes->nsamples*header->nrows);
     
     /* allocate mem for data and data undefined flag for the current channel */
     if (((*array)->channeldata[i].data = (UINT4 *)LALCalloc((*array)->channeldata[i].length,sizeof(UINT4))) == NULL) {
@@ -1436,7 +1436,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
     for (j=0;j<header->nrows;j++) {
 
       /* for each row extract the correct set of data for the current channel */
-      INT8 sidx = j*tddes->nsamples;
+      INT8 sidx = (2*j+i)*tddes->nsamples;
       INT8 k;
 
       for (k=sidx;k<sidx+tddes->nsamples;k++) {
