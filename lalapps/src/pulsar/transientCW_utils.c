@@ -46,6 +46,21 @@
 /* ---------- internal prototypes ---------- */
 int compareAtoms(const void *in1, const void *in2);
 
+/** Lookup-table for exponentials e^(-x)
+ * Holds an array 'data' of 'length' for values e^(-x)
+ * for x in the range [0, xmax]
+ */
+typedef struct {
+  REAL8 xmax;
+  UINT4 length;
+  REAL8 *data;
+} expLUT_t;
+
+REAL8 XLALFastNegExp ( REAL8 mx, const expLUT_t *lut );
+expLUT_t *XLALCreateExpLUT ( REAL8 xmax, UINT4 length );
+void XLALDestroyExpLUT ( expLUT_t *lut );
+
+
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
 const transientWindow_t empty_transientWindow;
@@ -386,7 +401,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
    * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} e^{Fmn - Fmax} )
-   * which is logB = Fmax + log( sum_{mn} e^DeltaF ), where DeltaF = Fmn - Fmax.
+   * which is logB = Fmax + log( sum_{mn} e^(-DeltaF) ), where DeltaF = Fmax - Fmn.
    * This avoids numerical problems.
    *
    * As we don't know Fmax before having computed the full matrix F_mn, we keep the full array of
@@ -426,6 +441,11 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   transientWindow_t window;
   window.type = windowRange.type;
+
+  expLUT_t *expLUT;
+  if ( (expLUT = XLALCreateExpLUT ( 20.0, 2000 )) == NULL ) {
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
@@ -572,9 +592,10 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     {
       for ( n=0; n < N_tauRange; n ++ )
         {
-          REAL8 DeltaF = gsl_matrix_get ( F_mn, m, n ) - maxF;
+          REAL8 DeltaF = maxF - gsl_matrix_get ( F_mn, m, n );	// always <= 0, exactly ==0 at {m,n}_max
 
-          sum_eB += exp ( DeltaF );
+          //sum_eB += exp ( - DeltaF );
+          sum_eB += XLALFastNegExp ( DeltaF, expLUT );
 
         } /* for n < N_tauRange */
 
@@ -592,6 +613,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
+  XLALDestroyExpLUT ( expLUT );
   gsl_matrix_free ( F_mn );
 
   /* return */
@@ -836,3 +858,108 @@ XLALFillExpWindowBuffer ( transientWindowRange_t *windowRange )	/**< [in/out] wi
   return XLAL_SUCCESS;
 
 } /* XLALcomputeExpWindowBuffer() */
+
+/** Generate an exponential lookup-table expLUT for e^(-x)
+ * over the interval x in [0, xmax], using 'length' points.
+ */
+expLUT_t *
+XLALCreateExpLUT ( REAL8 xmax, UINT4 length )
+{
+  const char *fn = __func__;
+
+  /* check input */
+  if ( xmax <= 0 ) {
+    XLALPrintError ("%s: xmax must be > 0\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+  if ( length == 0 ) {
+    XLALPrintError ("%s: length must be > 0\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+
+  /* create empty output LUT */
+  expLUT_t *ret;
+  UINT4 len = sizeof(*ret);
+  if ( (ret = XLALMalloc ( len  )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALMalloc(%d)\n", fn, len );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  len = length * sizeof(*ret->data);
+  if ( ( ret->data = XLALMalloc ( len ) ) == NULL ) {
+    XLALPrintError ("%s: failed to XLALMalloc(%d)\n", fn, len );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* fill output LUT */
+  ret->xmax = xmax;
+  ret->length = length;
+
+  REAL8 dx = xmax / length;
+  UINT4 i;
+  for ( i=0; i < length; i ++ )
+    {
+      REAL8 xi = i * dx;
+
+      ret->data[i] = exp( - xi );
+
+    } /* for i < length() */
+
+  return ret;
+
+} /* XLALCreateExpLUT() */
+
+/** Destructor function for expLUT_t lookup table
+ */
+void
+XLALDestroyExpLUT ( expLUT_t *lut )
+{
+  if ( !lut )
+    return;
+
+  if ( lut->data )
+    XLALFree ( lut->data );
+
+  XLALFree ( lut );
+
+  return;
+
+} /* XLALDestroyExpLUT() */
+
+/** Fast exponential function e^-x using lookup-table (LUT).
+ * We need to compute exp(-x) for x >= 0, typically in a B-stat
+ * integral of the form int e^-x dx: this means that small values e^(-x)
+ * will not contribute much to the integral and are less important than
+ * values close to 1. Therefore we pre-compute a LUT of e^(-x) for x in [0, xmax],
+ * in Npoints points, and set e^(-x) = 0 for x < xmax.
+ */
+REAL8
+XLALFastNegExp ( REAL8 mx, const expLUT_t *lut )
+{
+  const char *fn = __func__;
+
+  if ( lalDebugLevel > 0 )
+    {
+      /* check input */
+      if ( !lut ) {
+        XLALPrintError ("%s: invalid NULL input 'lut', use XLALCreateExpLUT()\n", fn );
+        XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+      }
+      if ( mx < 0 ) {
+        XLALPrintError ( "%s: input argument 'mx'=%f must be >= 0: we compute e^(-mx)\n", fn, mx );
+        XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
+      }
+    } /* if lalDebugLevel */
+
+  if ( mx > lut->xmax )	/* for values smaller than e^(-xmax) we truncate to 0 */
+    return 0.0;
+
+  REAL8 dxInv = lut->length / lut->xmax;
+
+  /* find index of closest point xp in LUT to xm */
+  UINT4 i0 = (UINT4) ( mx * dxInv + 0.5 );
+
+  return lut->data[i0];
+
+} /* XLALFastNegExp() */
+
