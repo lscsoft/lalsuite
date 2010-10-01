@@ -378,6 +378,34 @@ void mc2masses(double mc, double eta, double *m1, double *m2)
   return;
 }
 
+double mc2mt(double mc, double eta);
+
+double mc2mt(double mc, double eta)
+/* total mass (mt) for given mass ratio & chirp mass */
+{
+	double root = sqrt(0.25-eta);
+	double fraction = (0.5+root) / (0.5-root);
+	double inversefraction = (0.5-root) / (0.5+root);
+	return mc * ((pow(1+fraction,0.2) / pow(fraction,0.6))
+				 + (pow(1+inversefraction,0.2) / pow(inversefraction,0.6)));
+}
+
+double m2eta(double m1, double m2);
+
+double m2eta(double m1, double m2)
+/* component masses to eta */
+{
+	return(m1*m2/((m1+m2)*(m1+m2)));
+}
+
+double m2mc(double m1, double m2);
+
+double m2mc(double m1, double m2)
+/* component masses to chirp mass */
+{
+	return(pow(m2eta(m1,m2),0.6)*(m1+m2));
+}
+
 
 
 void templateLAL(LALIFOData *IFOdata)
@@ -453,6 +481,7 @@ void templateLAL(LALIFOData *IFOdata)
   deltaT = IFOdata->timeData->deltaT;
 
   mc2masses(mc, eta, &m1, &m2);
+  
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
   /* params.Zeta2    = 0.0; */  /* (?) */

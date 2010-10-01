@@ -68,11 +68,6 @@
 #include "mpi.h"
 
 
-
-#define pi 3.141592653589793
-//TODO: use M_PI from math library?
-
-
 //...other includes
 
 struct tagLALInferenceRunState;
