@@ -575,7 +575,7 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 		 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
 		 paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
 		
-		if(paraHead->vary!=PARAM_LINEAR) *(REAL8 *)paraHead->value += step->data[i];
+		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR) *(REAL8 *)paraHead->value += step->data[i];
 	}
 	
 	LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
@@ -584,7 +584,9 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	gsl_matrix_free(work);
 	
 	XLALDestroyRandomParams(randParam);
-	
+	/* Check boundary condition */
+	LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
+
 	return;
 }
 

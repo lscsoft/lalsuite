@@ -28,8 +28,17 @@
 #include <lal/VectorOps.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/LALStatusMacros.h>
 #include "LALInference.h"
+#include <lalapps.h>
 
+RCSID("$Id$");
+#define PROGRAM_NAME "LALInferenceTemplate.c"
+#define CVS_ID_STRING "$Id$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define CVS_NAME_STRING "$Name$"
 
 void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
@@ -400,6 +409,7 @@ void templateLAL(LALIFOData *IFOdata)
 {
   static LALStatus status;
   memset(&status,0,sizeof(status));
+
   static InspiralTemplate params;
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
@@ -412,7 +422,7 @@ void templateLAL(LALIFOData *IFOdata)
   double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
   double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
-  int approximant, order;
+  int approximant=0, order=0;
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
   double m1, m2, chirptime, deltaT;
   double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
@@ -498,15 +508,15 @@ void templateLAL(LALIFOData *IFOdata)
   /* shift the start time to match the coalescence time,            */
   /* and eventually re-do parameter calculations:                   */
 
-  LALInspiralParameterCalc(&status, &params);
+  LAL_CALL(LALInspiralParameterCalc(&status, &params),&status);
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
-    LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
+    LAL_CALL(LALInspiralParameterCalc(&status, &params),&status); /* (re-calculation necessary? probably not...) */
   }
 
   /* compute "params.signalAmplitude" slot: */
-  LALInspiralRestrictedAmplitude(&status, &params);
+  LAL_CALL(LALInspiralRestrictedAmplitude(&status, &params),&status);
 
   /* figure out inspiral length & set `n': */
   /* LALInspiralWaveLength(&status, &n, params); */
@@ -524,7 +534,8 @@ void templateLAL(LALIFOData *IFOdata)
   }
 
   /* allocate (temporary) waveform vector: */
-  LALCreateVector(&status, &LALSignal, n);
+  LAL_CALL(LALCreateVector(&status, &LALSignal, n),&status);
+  
   for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
 
 
@@ -538,7 +549,8 @@ void templateLAL(LALIFOData *IFOdata)
     exit(1);
   }
   /* REPORTSTATUS(&status); */
-  LALInspiralWave(&status, LALSignal, &params);
+  LAL_CALL(LALInspiralWave(&status, LALSignal, &params),&status);
+
   /* REPORTSTATUS(&status); */
   if (status.statusCode != 0) {
     fprintf(stderr, "\n ERROR in templateLAL(): \"LALInspiralWave()\" call returned with non-zero status.\n");
@@ -555,7 +567,7 @@ void templateLAL(LALIFOData *IFOdata)
       IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
       IFOdata->timeModelhCross->data->data[i] = 0.0;  /* (no cross waveform) */
     }
-    LALDestroyVector(&status, &LALSignal);
+    LAL_CALL(LALDestroyVector(&status, &LALSignal),&status);
     /* apply window & execute FT of plus component: */
     if (IFOdata->window==NULL) 
       die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
@@ -575,7 +587,7 @@ void templateLAL(LALIFOData *IFOdata)
     }
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
-    LALDestroyVector(&status, &LALSignal);
+    LAL_CALL(LALDestroyVector(&status, &LALSignal),&status);
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
     for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
       IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
