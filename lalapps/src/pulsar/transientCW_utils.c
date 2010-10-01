@@ -126,9 +126,9 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
     return XLAL_SUCCESS;
 
   /* deal with non-trivial windows */
-  REAL8 ts_t0 = XLALGPSGetREAL8 ( &series->epoch );
-  REAL8 ts_dt = series->deltaT;
+  UINT4 ts_t0 = series->epoch.gpsSeconds;
   UINT4 ts_length = series->data->length;
+  REAL8 ts_dt = series->deltaT;
 
   UINT4 t0, t1;
   if ( XLALGetTransientWindowTimespan ( &t0, &t1, transientWindow ) != XLAL_SUCCESS ) {
@@ -142,7 +142,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
     case TRANSIENT_RECTANGULAR:
       for ( i = 0; i < ts_length; i ++ )
         {
-          UINT4 ti = (UINT4) round ( ts_t0 + i * ts_dt );
+          UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );	// integer round: floor(x+0.5)
           REAL8 win = XLALGetRectangularTransientWindowValue ( ti, t0, t1 );
           series->data->data[i] *= win;
         } /* for i < length */
@@ -151,7 +151,7 @@ XLALApplyTransientWindow ( REAL4TimeSeries *series,		/**< input timeseries to ap
     case TRANSIENT_EXPONENTIAL:
       for ( i = 0; i < ts_length; i ++ )
         {
-          UINT4 ti = (UINT4) round ( ts_t0 + i * ts_dt );
+          UINT4 ti = (UINT4) ( ts_t0 + i * ts_dt + 0.5 );
           REAL8 win = XLALGetExponentialTransientWindowValue ( ti, t0, t1, transientWindow.tau );
           series->data->data[i] *= win;
         } /* for i < length */
@@ -332,7 +332,7 @@ int
 XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
                             const MultiFstatAtomVector *multiFstatAtoms,/**< [in] multi-IFO F-statistic atoms */
                             transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range to search */
-                            BOOLEAN useFReg				/**< [in] experimental switch: marginalize e^F if FALSE, or (1/D)*e^F if TRUE */
+                            BOOLEAN useFReg				/**< [in] experimental switch: instead of e^F marginalize (1/D)e^F if TRUE */
                             )
 {
   const char *fn = __func__;
@@ -361,6 +361,8 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
   FstatAtomVector *atoms;
   UINT4 TAtom = multiFstatAtoms->data[0]->TAtom;
+  UINT4 TAtomHalf = TAtom/2;
+
   if ( (atoms = XLALmergeMultiFstatAtomsBinned ( multiFstatAtoms, TAtom )) == NULL ) {
     XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", fn, xlalErrno );
     XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -383,12 +385,12 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     }
 
   /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
-   * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} 1/D_mn * e^{Fmn - Fmax} )
-   * which is logB = Fmax + log( sum_{mn} e^FReg_mn ), where FReg_mn = -log(D_mn) + Fmn - Fmax.
+   * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} e^{Fmn - Fmax} )
+   * which is logB = Fmax + log( sum_{mn} e^DeltaF ), where DeltaF = Fmn - Fmax.
    * This avoids numerical problems.
    *
    * As we don't know Fmax before having computed the full matrix F_mn, we keep the full array of
-   * 'regularized' F-stats FReg_mn over the field of {t0, tau} values in steps of dt0 x dtau.
+   * F-stats F_mn over the field of {t0, tau} values in steps of dt0 x dtau.
    *
    * NOTE2: indices {i,j} enumerate *actual* atoms and their timestamps t_i, while the
    * indices {m,n} enumerate the full grid of values in [t0_min, t0_max]x[Tcoh_min, Tcoh_max] in
@@ -413,13 +415,13 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 N_t0Range  = (UINT4) floor ( windowRange.t0Band / windowRange.dt0 ) + 1;
   UINT4 N_tauRange = (UINT4) floor ( windowRange.tauBand / windowRange.dtau ) + 1;
 
-  gsl_matrix *FReg_mn;	/* 2D matrix {m x n} of FReg values, will be initialized to zeros ! */
-  if ( ( FReg_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
+  gsl_matrix *F_mn;	/* 2D matrix {m x n} of F-values, will be initialized to zeros ! */
+  if ( ( F_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
     XLALPrintError ("%s: failed gsl_matrix_calloc ( %d, %s )\n", fn, N_tauRange, N_t0Range );
     XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
-  ret.maxTwoF = 0;	// keep track of loudest 2F-value over t0Band x tauBand space
+  REAL8 maxF = 0;	// keep track of loudest F-value over t0Band x tauBand space
   UINT4 m, n;
 
   transientWindow_t window;
@@ -430,7 +432,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     {
       /* compute Fstat-atom index i_t0 in [0, numAtoms) */
       window.t0 = windowRange.t0 + m * windowRange.dt0;
-      INT4 i_tmp = (INT4)round ( 1.0 * ( window.t0 - t0_data ) / TAtom );
+      INT4 i_tmp = ( window.t0 - t0_data + TAtomHalf ) / TAtom;	// integer round: floor(x+0.5)
       if ( i_tmp < 0 ) i_tmp = 0;
       UINT4 i_t0 = (UINT4)i_tmp;
       if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
@@ -454,7 +456,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           }
 
           /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms) */
-          i_tmp = (INT4) round ( 1.0 * ( t1 - t0_data ) / TAtom ) - 1;
+          i_tmp = ( t1 - t0_data + TAtomHalf ) / TAtom  - 1;	// integer round: floor(x+0.5)
           if ( i_tmp < 0 ) i_tmp = 0;
           UINT4 i_t1 = (UINT4)i_tmp;
           if ( i_t1 >= numAtoms ) i_t1 = numAtoms - 1;
@@ -467,8 +469,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
             XLALPrintError ("The most likely cause is that your t0-range covered all of your data: t0 must stay away *at least* 2*TAtom from the end of the data!\n");
             XLAL_ERROR ( fn, XLAL_EDOM );
           }
-
-          REAL8 Dd, twoF;
 
           /* now we have two valid atoms-indices [i_t0, i_t1] spanning our Fstat-window to sum over,
            * using weights according to the window-type
@@ -540,44 +540,41 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
-          Dd = Ad * Bd - Cd * Cd;
-
-          twoF = (2.0 / Dd) * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
-                                - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
-                                );
+          REAL8 DdInv = 1.0 / ( Ad * Bd - Cd * Cd );
+          REAL8 F = DdInv * ( Bd * (SQ(Fa_re) + SQ(Fa_im) ) + Ad * ( SQ(Fb_re) + SQ(Fb_im) )
+                              - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
+                              );
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
-          if ( twoF > ret.maxTwoF )
+          if ( F > maxF )
             {
-              ret.maxTwoF = twoF;
+              maxF = F;
               ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
               ret.tau_maxF = window.tau;
             }
 
-          REAL8 FReg;
+          /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
           if ( useFReg )
-            /* compute 'regularized' F-stat: log ( 1/D * e^F ) = -logD + F */
-            FReg = - log( Dd ) + 0.5 * twoF;
-          else /* or standard F-stat otherwise */
-            FReg = 0.5 * twoF;
+            F += log( DdInv );
 
           /* and store this in Fstat-matrix as element {m,n} */
-          gsl_matrix_set ( FReg_mn, m, n, FReg );
+          gsl_matrix_set ( F_mn, m, n, F );
 
         } /* for n in n[tau] : n[tau+tauBand] */
 
     } /* for m in m[t0] : m[t0+t0Band] */
 
-  /* now step through FReg_mn array subtract maxTwoF and sum e^{FReg - Fmax}*/
+  ret.maxTwoF = 2.0 * maxF;	/* report final loudest 2F value */
+
+  /* now step through F_mn array subtract maxF and sum e^{F_mn - maxF}*/
   REAL8 sum_eB = 0;
-  REAL8 maxF = 0.5 * ret.maxTwoF;
   for ( m=0; m < N_t0Range; m ++ )
     {
       for ( n=0; n < N_tauRange; n ++ )
         {
-          REAL8 FReg = gsl_matrix_get ( FReg_mn, m, n );
+          REAL8 DeltaF = gsl_matrix_get ( F_mn, m, n ) - maxF;
 
-          sum_eB += exp ( FReg - maxF );
+          sum_eB += exp ( DeltaF );
 
         } /* for n < N_tauRange */
 
@@ -585,7 +582,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* combine this to final log(Bstat) result with proper normalization (assuming hmaxhat=1) : */
 
-  REAL8 logBhat = 0.5 * ret.maxTwoF + log ( sum_eB );	/* unnormalized Bhat */
+  REAL8 logBhat = maxF + log ( sum_eB );	/* unnormalized Bhat */
   /* final normalized Bayes factor, assuming hmaxhat=1 */
   /* NOTE: correct for different hmaxhat by adding "- 4 * log(hmaxhat)" to this */
 
@@ -595,7 +592,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
-  gsl_matrix_free ( FReg_mn );
+  gsl_matrix_free ( F_mn );
 
   /* return */
   (*cand) = ret;
