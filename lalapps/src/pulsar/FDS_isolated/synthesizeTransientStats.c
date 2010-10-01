@@ -1214,13 +1214,22 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
 
     } /* for alpha < numAtoms */
 
-  /* compute optimal SNR^2 expected for this signal */
+  /* compute optimal SNR^2 expected for this signal,
+   * using rho2 = A^mu M_mu_nu A^nu = T/Sn( A [A1^2+A3^2] + 2C [A1A2 +A3A4] + B [A2^2+A4^2])
+   */
   REAL8 A1 = A_Mu[0];
   REAL8 A2 = A_Mu[1];
   REAL8 A3 = A_Mu[2];
   REAL8 A4 = A_Mu[3];
 
   REAL8 rho2 = TAtom  * ( Ad * ( SQ(A1) + SQ(A3) ) + 2.0*Cd * ( A1*A2 + A3*A4 ) + Bd * ( SQ(A2) + SQ(A4) ) );
+
+  /* return (effective transient) antenna-pattern matrix */
+  M_mu_nu->Sinv_Tsft = TAtom;	/* everything here in units of Sn, so effectively Sn=1 */
+  M_mu_nu->Ad = Ad;
+  M_mu_nu->Bd = Bd;
+  M_mu_nu->Cd = Cd;
+  M_mu_nu->Dd = Ad * Bd - Cd * Cd;
 
   /* free memory */
   gsl_matrix_free ( Mh_mu_nu );
@@ -1684,7 +1693,7 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
   int ret;
   /* if requested, write header-comment line */
   if ( par == NULL ) {
-    ret = fprintf ( fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0          A1       A2       A3       A4       Ad     Bd     Cd     Dd           t0       tau  type\n");
+    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0       tau  type\n");
     if ( ret < 0 ) {
       XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
       XLAL_ERROR ( fn, XLAL_EIO );
@@ -1695,7 +1704,7 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
   } /* if par == NULL */
 
   /* if injParams given, output them to the file */
-  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %6.3f %6.3f %6.3f %6.3f    %8d  %8d    %1d\n",
+  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8d  %8d    %1d\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
                   par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/
