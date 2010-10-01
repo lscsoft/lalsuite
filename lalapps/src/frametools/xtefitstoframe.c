@@ -1436,7 +1436,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
     for (j=0;j<header->nrows;j++) {
 
       /* for each row extract the correct set of data for the current channel */
-      INT8 sidx = (2*j+i)*tddes->nsamples;
+      INT8 sidx = (tddes->nchannels*j+i)*tddes->nsamples;
       INT8 k;
 
       for (k=sidx;k<sidx+tddes->nsamples;k++) {
