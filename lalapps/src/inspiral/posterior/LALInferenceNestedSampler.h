@@ -32,6 +32,18 @@ REAL8 ang_var(LALVariables **list,const char *pname, int N);
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter);
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter);
 void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs);
+INT4 LALInferenceReflectDetPlane(
+							 LALInferenceRunState *state,
+							 LALVariables *parameter
+								 );
+void LALInferenceRotateSky(
+						   LALInferenceRunState *state,
+						   LALVariables *parameter
+						   );
+void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
+void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
+
 
 
 /* Returns a REAL4vector drawn from the multivariate normal distribution

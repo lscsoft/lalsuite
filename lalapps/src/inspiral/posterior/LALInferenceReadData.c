@@ -25,12 +25,10 @@
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/Units.h>
 
 #include <lal/LALInspiral.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
-#include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALDetectors.h>
 #include <lal/AVFactories.h>
@@ -196,6 +194,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	
 	/* Read the PSD data */
 	for(i=0;i<Nifo;i++) {
+		memcpy(&(IFOdata[i].epoch),&segStart,sizeof(LIGOTimeGPS));
 		/* Check if fake data is requested */
 		if(!(strcmp(caches[i],"LALLIGO") && strcmp(caches[i],"LALVirgo") && strcmp(caches[i],"LALGEO") && strcmp(caches[i],"LALEGO")
 			 && strcmp(caches[i],"LALAdLIGO")))

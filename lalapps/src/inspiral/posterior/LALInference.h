@@ -52,6 +52,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/BinaryPulsarTiming.h>
 
+
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
@@ -224,6 +225,8 @@ tagLALIFOData
   LALDetector               *detector;
   BarycenterInput           *bary;
   EphemerisData             *ephem;
+  LIGOTimeGPS				epoch;
+
   struct tagLALIFOData      *next;
 } LALIFOData;
 
