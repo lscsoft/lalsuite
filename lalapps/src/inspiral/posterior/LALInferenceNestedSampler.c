@@ -352,9 +352,35 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
 {
-	LALInferenceProposalDifferentialEvolution(runState,parameter);
-	LALInferenceProposalMultiStudentT(runState, parameter);
 	
+	UINT4 nIFO=0;
+	LALIFOData *ifo=runState->data;
+	REAL8 randnum;
+	REAL8 STUDENTTFRAC=0.8,
+	      DIFFEVFRAC=0.1,
+	      SKYFRAC=0.1;
+	top:
+	randnum=gsl_rng_uniform(runState->GSLrandom);
+	/* Choose a random type of jump to propose */
+	if(randnum<STUDENTTFRAC)
+		LALInferenceProposalMultiStudentT(runState, parameter);
+	else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
+		LALInferenceProposalDifferentialEvolution(runState,parameter);
+	else if(randnum<STUDENTTFRAC + DIFFEVFRAC + SKYFRAC){
+		/* Check number of detectors */
+		while(ifo){ifo=ifo->next; nIFO++;}
+		
+		if(nIFO<2) goto top;
+		if(nIFO<3) 
+			LALInferenceRotateSky(runState, parameter);
+		else {
+			/* Choose to rotate or reflect */
+			if(randnum- (STUDENTTFRAC + DIFFEVFRAC)>SKYFRAC/2.0)
+				LALInferenceRotateSky(runState, parameter);
+			else
+				LALInferenceReflectDetPlane(runState, parameter);
+		}
+	}
 	return;	
 }
 
