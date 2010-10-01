@@ -40,6 +40,7 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+
 void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	static LALStatus status;								/* status structure */	
@@ -47,7 +48,7 @@ void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
 	IFOdata->modelDomain = timeDomain;
 	
-	INT4 i;                      /* index */
+	UINT4 i;                      /* index */
 	PPNParamStruc params;         /* input parameters */
 	CoherentGW waveform;          /* output waveform */	
 
@@ -159,7 +160,7 @@ fprintf(file, "%lg \t %lg\n", phiData[i], aData[i]);
 		//printf("i %d integerLeftShift %d (waveform.phi->data->length) %d i+integerLeftShift %d\n", 
 			//i, integerLeftShift, (waveform.phi->data->length), i+integerLeftShift);
 		if(IFOdata->timeData->deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1)
-			|| (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
+			|| ((INT4)i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
 			IFOdata->timeModelhPlus->data->data[i] = 0;
 			IFOdata->timeModelhCross->data->data[i] = 0;		
 		}
@@ -260,7 +261,7 @@ void templateStatPhase(LALIFOData *IFOdata)
   double dataStart, NDeltaT, phaseArg;
   double f, f01, f02, f04, f06, f07, f10, Psi, twopitc;
   double plusRe, plusIm, crossRe, crossIm;
-  int i, lower, upper;
+  UINT4 i, lower, upper;
  
   if (IFOdata->timeData==NULL)
     die(" ERROR in templateStatPhase(): encountered unallocated 'timeData'.\n");
@@ -327,7 +328,7 @@ void templateNullFreqdomain(LALIFOData *IFOdata)
 /* (all zeroes, implying no signal present).  */
 /**********************************************/
 {
-  int i;
+  UINT4 i;
   if ((IFOdata->freqModelhPlus==NULL) || (IFOdata->freqModelhCross==NULL)) 
     die(" ERROR in templateNullFreqdomain(): encountered unallocated 'freqModelhPlus/-Cross'.\n");
   for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i){
@@ -348,7 +349,7 @@ void templateNullTimedomain(LALIFOData *IFOdata)
 /* (all zeroes, implying no signal present). */
 /*********************************************/
 {
-  int i;
+  UINT4 i;
   if ((IFOdata->timeModelhPlus==NULL) || (IFOdata->timeModelhCross==NULL)) 
     die(" ERROR in templateNullTimedomain(): encountered unallocated 'timeModelhPlus/-Cross'.\n");
   for (i=0; i<IFOdata->timeModelhPlus->data->length; ++i){
@@ -414,7 +415,7 @@ void templateLAL(LALIFOData *IFOdata)
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
   long i; 
-  long j, jmax;
+  long j, jmax=0;
   double pj, pmax, pleft, pright;
 
   double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
@@ -846,7 +847,8 @@ void template3525TD(LALIFOData *IFOdata)
                     + (154565.0/1835008.0)*eta2 - (1179625/1769472)*eta3;
   double phicoef5 =  (188516689.0/173408256.0)*LAL_PI  +  (488825.0/516096.0)*LAL_PI*eta - (141769.0/516096.0)*LAL_PI*eta2;
   double x_isco = 1.0/6.0; /* pow( (pi * f_isco)/omegacoef , 2.0/3.0); */
-  int i, terminate=0;
+  int terminate=0;
+  UINT4 i;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
 
   /* fill `timeModelhPlus' & `timeModelhCross' with time-domain template: */
@@ -953,7 +955,7 @@ void templateSineGaussian(LALIFOData *IFOdata)
 /*   - "amplitude"  (amplitude, REAL8)                                                  */
 /****************************************************************************************/
 {
-  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double endtime  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
   double sigma = *(REAL8*) getVariable(IFOdata->modelParams, "sigma");      /* width parameter, seconds         */
   double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
   double phi   = *(REAL8*) getVariable(IFOdata->modelParams, "phase");      /* phase, rad                       */
@@ -970,7 +972,7 @@ void templateSineGaussian(LALIFOData *IFOdata)
   if (a < 0.0)
     fprintf(stderr, " WARNING in templateSineGaussian(): negative \"amplitude\" parameter (a=%e).\n", a);
   for (i=0; i<IFOdata->timeData->data->length; ++i){
-    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu         */
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-endtime);  /* t-mu         */
     tsigma = t/sigma;                                             /* (t-mu)/sigma */
     if (fabs(tsigma) < 5.0)   /*  (only do computations within a 10 sigma range)  */
       IFOdata->timeModelhPlus->data->data[i] = a * exp(-0.5*tsigma*tsigma) * sin(twopif*t+phi);
@@ -1003,7 +1005,7 @@ void templateDampedSinusoid(LALIFOData *IFOdata)
 /*   - "amplitude"  (amplitude, REAL8)                                        */
 /******************************************************************************/
 {
-  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double endtime  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
   double tau   = *(REAL8*) getVariable(IFOdata->modelParams, "tau");        /* width parameter, seconds         */
   double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
   double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
@@ -1017,7 +1019,7 @@ void templateDampedSinusoid(LALIFOData *IFOdata)
   if (f < 0.0)
     fprintf(stderr, " WARNING in templateDampedSinusoid(): negative \"frequency\" parameter (f=%e).\n", f);
   for (i=0; i<IFOdata->timeData->data->length; ++i){
-    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu       */
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-endtime);  /* t-mu       */
     if ((t>0.0) && ((ttau=t/tau) < 10.0)) /*  (only do computations within a 10 tau range)  */
       IFOdata->timeModelhPlus->data->data[i] = a * exp(-ttau) * sin(twopif*t);
     else 
@@ -1049,7 +1051,7 @@ void templateSinc(LALIFOData *IFOdata)
 /*   - "amplitude"  (amplitude, REAL8)                                       */
 /*****************************************************************************/
 {
-  double time  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
+  double endtime  = *(REAL8*) getVariable(IFOdata->modelParams, "time");       /* time parameter ("mu"), GPS sec.  */
   double f     = *(REAL8*) getVariable(IFOdata->modelParams, "frequency");  /* frequency, Hz                    */
   double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
   double t, sinArg, sinc, twopif = LAL_TWOPI*f;
@@ -1058,7 +1060,7 @@ void templateSinc(LALIFOData *IFOdata)
   if (f < 0.0)
     fprintf(stderr, " WARNING in templateSinc(): negative \"frequency\" parameter (f=%e).\n", f);
   for (i=0; i<IFOdata->timeData->data->length; ++i){
-    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-time);  /* t-mu       */
+    t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS-endtime);  /* t-mu       */
     sinArg = twopif*t;
     sinc = (sinArg==0.0) ? 1.0 : sin(sinArg)/sinArg;    
     IFOdata->timeModelhPlus->data->data[i] = a * sinc;

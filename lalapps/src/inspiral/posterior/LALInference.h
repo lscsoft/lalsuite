@@ -230,7 +230,7 @@ tagLALIFOData
 /* Returns the element of the process params table with "name" */
 ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-void parseCharacterOptionString(char *input, char **strings[], int *n);
+void parseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
@@ -254,7 +254,7 @@ void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data,
 void executeFT(LALIFOData *IFOdata);
 void executeInvFT(LALIFOData *IFOdata);
 
-void die(char *message);
+void die(const char *message);
 void LALTemplateGeneratePPN(LALIFOData *IFOdata);
 void templateStatPhase(LALIFOData *IFOdata);
 void templateNullFreqdomain(LALIFOData *IFOdata);
@@ -265,6 +265,7 @@ void templateSineGaussian(LALIFOData *IFOdata);
 void templateDampedSinusoid(LALIFOData *IFOdata);
 void templateSinc(LALIFOData *IFOdata);
 void templateLALSTPN(LALIFOData *IFOdata);
+void templateASinOmegaT(LALIFOData *IFOdata);
 
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
@@ -284,6 +285,7 @@ LALVariableItem *getItem(LALVariables *vars,const char *name);
 LALVariableItem *getItemNr(LALVariables *vars, int index);
 void fprintSample(FILE *fp,LALVariables *sample);
 
+void mc2masses(double mc, double eta, double *m1, double *m2);
 
 
 #endif

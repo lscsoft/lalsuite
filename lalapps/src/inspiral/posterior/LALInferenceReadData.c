@@ -53,6 +53,9 @@
 
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
+REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
+
+
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length)
 {
 	LALStatus status;
@@ -99,8 +102,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
 	REAL8 padding=1.0;
-	int Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
-	int i,j;
+	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
+	UINT4 i,j;
 	int FakeFlag=0;
 	char strainname[]="LSC-STRAIN";
 	
@@ -284,9 +287,9 @@ void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
-	INT4 Ninj=0;
-	INT4 event=0;
-	int i=0,j=0;
+	UINT4 Ninj=0;
+	UINT4 event=0;
+	UINT4 i=0,j=0;
 	//CoherentGW InjectGW;
 	//PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;

@@ -44,7 +44,7 @@ size_t typeSize[] = {sizeof(INT4),
                      sizeof(CHAR *)};
 
 
-void die(char *message)
+void die(const char message[])
 {
   fprintf(stderr, "%s", message);
   exit(1);
@@ -477,7 +477,7 @@ ProcessParamsTable *getProcParamVal(ProcessParamsTable *procparams,const char *n
 
 
 
-void parseCharacterOptionString(char *input, char **strings[], int *n)
+void parseCharacterOptionString(char *input, char **strings[], UINT4 *n)
 /* parses a character string (passed as one of the options) and decomposes   */
 /* it into individual parameter character strings. Input is of the form      */
 /*   input   :  "[one,two,three]"                                            */
@@ -487,7 +487,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
 /* (should 'theoretically' (untested) be able to digest white space as well. */
 /* Irrelevant for command line options, though.)                             */
 {
-  int i,j,k,l;
+  UINT4 i,j,k,l;
   /* perform a very basic well-formedness-check and count number of parameters: */
   i=0; j=0;
   *n = 0;

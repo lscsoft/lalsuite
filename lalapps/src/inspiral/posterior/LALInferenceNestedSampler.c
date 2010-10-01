@@ -210,8 +210,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	/* Add the covariance matrix for proposal distribution */
 	calcCVM(cvm,runState->livePoints,Nlive);
-	fprintf(stderr,"cvm=%d\n",*cvm);
-	addVariable(runState->proposalArgs,"LiveCVM",(void *)cvm,gslMatrix_t,PARAM_OUTPUT);
+	addVariable(runState->proposalArgs,"LiveCVM",cvm,gslMatrix_t,PARAM_OUTPUT);
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
@@ -240,7 +239,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		fprintSample(fpout,runState->livePoints[minpos]);
 		fprintf(fpout,"%lf\n",logLikelihoods[minpos]);
 
-
+		UINT4 itercounter=0;
 		/* Generate a new live point */
 		do{ /* This loop is here in case it is necessary to find a different sample */
 			/* Clone an old live point and evolve it */
@@ -250,6 +249,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 			runState->evolve(runState);
 			copyVariables(runState->currentParams,runState->livePoints[minpos]);
 			logLikelihoods[minpos]=runState->currentLikelihood;
+			itercounter++;
 		}while(runState->currentLikelihood<=logLmin || *(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")==0.0);
 
 		if (runState->currentLikelihood>logLmax)
@@ -259,7 +259,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logw=mean(logwarray,Nruns);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(verbose) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
-									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")
+									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)getVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
 									   ,H,H/log(2.0),logLmin,runState->currentLikelihood,logZ,dZ,10.0*log10(exp(1.0))*(logZ-*(REAL8 *)getVariable(runState->algorithmParams,"logZnoise")));
 
 		/* Flush output file */
@@ -569,13 +569,16 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	XLALMultiStudentDeviates( step, work, dim, 2, randParam); 
 	
 	/* loop over all parameters */
-	for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next,i++)
+	for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next)
 	{ 
 		/*  if (inputMCMC->verbose)
 		 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
 		 paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
-		
-		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR) *(REAL8 *)paraHead->value += step->data[i];
+		/* only increment the varying parameters, and only increment the data pointer if it's been done*/
+		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR){
+			*(REAL8 *)paraHead->value += step->data[i];
+			i++;
+		}
 	}
 	
 	LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
@@ -647,8 +650,11 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 		}
 		else if(paraHead->vary==PARAM_LINEAR) /* Use reflective boundaries */
 		{
-			if(max < *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value-=2.0*(*(REAL8 *)paraHead->value - max);
-			if(min > *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
+			while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
+			/*	printf("%s: max=%lf, min=%lf, val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
+				if(max < *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value-=2.0*(*(REAL8 *)paraHead->value - max);
+				if(min > *(REAL8 *)paraHead->value) *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
+			}
 		}
 	}	
 	return;
