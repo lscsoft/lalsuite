@@ -1151,7 +1151,9 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   REAL8 TAtom = atoms->TAtom;
   UINT4 numAtoms = atoms->length;
   UINT4 alpha;
-  REAL8 Ad = 0, Bd = 0, Cd = 0;
+  REAL8 Ad = 0, Bd = 0, Cd = 0;		// usual non-transient antenna-pattern functions
+  REAL8 Ap = 0, Bp = 0, Cp = 0;		// "effective" transient-CW antenna-pattern matrix M'_mu_nu
+
   for ( alpha=0; alpha < numAtoms; alpha ++ )
     {
       UINT4 ti = atoms->data[alpha].timestamp;
@@ -1164,14 +1166,21 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
        * the per-atom block matrix [a^2,  ab; ab, b^2 ]
        * where Sn=1, so gamma = Sinv*TAtom = TAtom
        */
-      REAL8 norm = win * win;
-      REAL8 a2 = norm * atoms->data[alpha].a2_alpha;
-      REAL8 b2 = norm * atoms->data[alpha].b2_alpha;
-      REAL8 ab = norm * atoms->data[alpha].ab_alpha;
+
+      // NOTE: for s_mu: only LINEAR in window-function, NOT quadratic! -> see notes
+      REAL8 a2 = win * atoms->data[alpha].a2_alpha;
+      REAL8 b2 = win * atoms->data[alpha].b2_alpha;
+      REAL8 ab = win * atoms->data[alpha].ab_alpha;
 
       Ad += a2;
       Bd += b2;
       Cd += ab;
+
+      // we also compute M'_mu_nu, which will be used to estimate optimal SNR
+      // NOTE: for M'_mu_nu: QUADRATIC in window-function!, so we multiply by win again
+      Ap += win * a2;
+      Bp += win * b2;
+      Cp += win * ab;
 
       /* upper-left block */
       gsl_matrix_set ( Mh_mu_nu, 0, 0, a2 );
@@ -1215,21 +1224,22 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
     } /* for alpha < numAtoms */
 
   /* compute optimal SNR^2 expected for this signal,
-   * using rho2 = A^mu M_mu_nu A^nu = T/Sn( A [A1^2+A3^2] + 2C [A1A2 +A3A4] + B [A2^2+A4^2])
+   * using rho2 = A^mu M'_mu_nu A^nu = T/Sn( A' [A1^2+A3^2] + 2C' [A1A2 +A3A4] + B' [A2^2+A4^2])
+   * NOTE: here we use the "effective" transient-CW antenna-pattern matrix M'_mu_nu
    */
   REAL8 A1 = A_Mu[0];
   REAL8 A2 = A_Mu[1];
   REAL8 A3 = A_Mu[2];
   REAL8 A4 = A_Mu[3];
 
-  REAL8 rho2 = TAtom  * ( Ad * ( SQ(A1) + SQ(A3) ) + 2.0*Cd * ( A1*A2 + A3*A4 ) + Bd * ( SQ(A2) + SQ(A4) ) );
+  REAL8 rho2 = TAtom  * ( Ap * ( SQ(A1) + SQ(A3) ) + 2.0*Cp * ( A1*A2 + A3*A4 ) + Bp * ( SQ(A2) + SQ(A4) ) );
 
-  /* return (effective transient) antenna-pattern matrix */
+  /* return "effective" transient antenna-pattern matrix */
   M_mu_nu->Sinv_Tsft = TAtom;	/* everything here in units of Sn, so effectively Sn=1 */
-  M_mu_nu->Ad = Ad;
-  M_mu_nu->Bd = Bd;
-  M_mu_nu->Cd = Cd;
-  M_mu_nu->Dd = Ad * Bd - Cd * Cd;
+  M_mu_nu->Ad = Ap;
+  M_mu_nu->Bd = Bp;
+  M_mu_nu->Cd = Cp;
+  M_mu_nu->Dd = Ap * Bp - Cp * Cp;
 
   /* free memory */
   gsl_matrix_free ( Mh_mu_nu );
