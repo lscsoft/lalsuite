@@ -56,8 +56,10 @@ env | grep ^_NMI_
 ### build each given git tag
 
 cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
-./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.a.out
-./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
+#./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.a.out
+#./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
+./genbuild.py --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
+./genbuild.py --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
 
 # needed by subsequent tests
 export BUILD_A_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.a.out)
