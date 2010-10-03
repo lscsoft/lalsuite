@@ -36,6 +36,12 @@ $Id$
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct tagzetaInitIn {
   REAL8 eta, omega, e0;
 } zetaInitIn;
@@ -104,23 +110,19 @@ NRCSID (LALTAYLORETWAVEFORMC,
 "$Id$");
 
 static void LALzetaInit4PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
 {
    zetaInitIn *in;
-   REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
+   REAL8 zeta2, zeta32, eta, eta2;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
-   eta3 = eta2*eta;
    zeta2 = zeta*zeta;
-   zeta3 = zeta2*zeta;
    zeta32 = pow(zeta, 1.5);
-   pisq = LAL_PI*LAL_PI;
 
    *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
@@ -128,23 +130,19 @@ static void LALzetaInit4PN(
 }
 
 static void LALzetaInit5PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
 {
    zetaInitIn *in;
-   REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
+   REAL8 zeta2, zeta32, eta, eta2;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
-   eta3 = eta2*eta;
    zeta2 = zeta*zeta;
-   zeta3 = zeta2*zeta;
    zeta32 = pow(zeta, 1.5);
-   pisq = LAL_PI*LAL_PI;
 
    *x = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
      + (891./128. - 201./64.*eta + 11/128.*eta2) * zeta2 );
@@ -152,7 +150,7 @@ static void LALzetaInit5PN(
 }
 
 static void LALzetaInit6PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -160,7 +158,6 @@ static void LALzetaInit6PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -178,7 +175,7 @@ static void LALzetaInit6PN(
 }
 
 static void LALzetaInit7PN(
-   LALStatus *status,
+   LALStatus UNUSED *status,
    REAL8     *x,
    REAL8      zeta,
    void      *params)
@@ -186,7 +183,6 @@ static void LALzetaInit7PN(
    zetaInitIn *in;
    REAL8 zeta2, zeta3, zeta32, eta, eta2, eta3, pisq;
 
-   status = NULL;
    in = (zetaInitIn *) params;
    eta = in->eta;
    eta2 = eta*eta;
@@ -210,21 +206,17 @@ void LALTaylorEtDerivatives4PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, eta, eta2, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    zeta = values->data[1];
    eta2 = eta * eta;
-   eta3 = eta2 * eta;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
    zeta32 = pow(zeta, 1.5);
-   zeta52 = pow(zeta, 2.5);
-   zeta72 = pow(zeta, 3.5);
-   pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
    dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
@@ -244,21 +236,18 @@ void LALTaylorEtDerivatives5PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, eta, eta2, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
 
    zeta = values->data[1];
    eta2 = eta * eta;
-   eta3 = eta2 * eta;
    zeta2 = zeta*zeta;
    zeta3 = zeta2*zeta;
    zeta5 = zeta2*zeta3;
    zeta32 = pow(zeta, 1.5);
    zeta52 = pow(zeta, 2.5);
-   zeta72 = pow(zeta, 3.5);
-   pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 
    dvalues->data[0] = zeta32 * ( 1. + 0.125 * (9.+eta)*zeta
@@ -279,7 +268,7 @@ void LALTaylorEtDerivatives6PN(
 )
 {
    InspiralDerivativesIn *ak;
-   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, zeta72, eta, eta2, eta3, pisq, fourpi;
+   REAL8 zeta, zeta2, zeta3, zeta5, zeta32, zeta52, eta, eta2, eta3, pisq, fourpi;
 
    ak = (InspiralDerivativesIn *) funcParams;
    eta = ak->coeffs->eta;
@@ -292,7 +281,6 @@ void LALTaylorEtDerivatives6PN(
    zeta5 = zeta2*zeta3;
    zeta32 = pow(zeta, 1.5);
    zeta52 = pow(zeta, 2.5);
-   zeta72 = pow(zeta, 3.5);
    pisq = LAL_PI*LAL_PI;
    fourpi = 4.*LAL_PI;
 

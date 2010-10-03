@@ -55,18 +55,18 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 
     ll=(FstatOutputEntry*)malloc(m*sizeof(FstatOutputEntry));
     if(ll == NULL) {
-	LALPrintError("Couldn't create list ll\n");
+	XLALPrintError("Couldn't create list ll\n");
 	return(-1);
     }
 
     fprintf(stderr,"creating first toplist...\n");
     if(create_fstat_toplist(&tl,n)) {
-	LALPrintError("Couldn't create toplist tl\n");
+	XLALPrintError("Couldn't create toplist tl\n");
 	return(-1);
     }
     fprintf(stderr,"creating second toplist...\n");
     if(create_fstat_toplist(&tl2,n)) {
-	LALPrintError("Couldn't create toplist tl2\n");
+	XLALPrintError("Couldn't create toplist tl2\n");
 	free_fstat_toplist(&tl);
 	return(-1);
     }
@@ -74,7 +74,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     fprintf(stderr,"open file %s for writing...\n",filename);
     fp=fopen(filename,"w");
     if(!fp) {
-	LALPrintError("Couldn't open file %s for writing\n",filename);
+	XLALPrintError("Couldn't open file %s for writing\n",filename);
 	free_fstat_toplist(&tl);
 	free_fstat_toplist(&tl2);
 	return(-2);
@@ -132,7 +132,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 	 (((FstatOutputEntry*)toplist_elem(tl,i))->Fstat -
 	  ll[i].Fstat > epsilon)) {
 	
-	LALPrintError("line %d differs\n",i);
+	XLALPrintError("line %d differs\n",i);
 	    fprintf(stderr,"%e %e %e %e %e\n",
 		    ((FstatOutputEntry*)toplist_elem(tl,i))->Freq,
 		    ((FstatOutputEntry*)toplist_elem(tl,i))->f1dot,
@@ -152,7 +152,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     fprintf(stderr,"open file %s for reading...\n",filename);
     fp=fopen(filename,"r");
     if(!fp) {
-	LALPrintError("Couldn't open file %s for reading\n",filename);
+	XLALPrintError("Couldn't open file %s for reading\n",filename);
 	free_fstat_toplist(&tl);
 	free_fstat_toplist(&tl2);
 	return(-2);
@@ -170,7 +170,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     fprintf(stderr,"open file %s for writing...\n",filename);
     fp=fopen(filename,"w");
     if(!fp) {
-	LALPrintError("Couldn't open file %s for writing\n",filename);
+	XLALPrintError("Couldn't open file %s for writing\n",filename);
 	free_fstat_toplist(&tl);
 	free_fstat_toplist(&tl2);
 	return(-2);
@@ -178,7 +178,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
     
     fprintf(stderr,"writing...\n");
     if(write_fstat_toplist_to_fp(tl, fp, &checksum)<0) {
-	LALPrintError("Couldn't write toplist\n",filename);
+	XLALPrintError("Couldn't write toplist\n",filename);
 	fclose(fp);
 	free_fstat_toplist(&tl);
 	free_fstat_toplist(&tl2);
@@ -204,7 +204,7 @@ int test_fstat_toplist(UINT8 n, UINT8 m, char*filename) {
 	 (((FstatOutputEntry*)toplist_elem(tl,i))->Fstat -
 	  ((FstatOutputEntry*)toplist_elem(tl2,i))->Fstat > epsilon)) {
 	
-	LALPrintError("line %d differs\n",i);
+	XLALPrintError("line %d differs\n",i);
 	    fprintf(stderr,"%e %e %e %e %e\n",
 		    ((FstatOutputEntry*)toplist_elem(tl,i))->Freq,
 		    ((FstatOutputEntry*)toplist_elem(tl,i))->f1dot,

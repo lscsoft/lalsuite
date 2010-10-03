@@ -125,7 +125,12 @@ snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo );\
 snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment );\
 
-double rint(double x);
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 int arg_parse_check(int argc, char *argv[], MetadataTable procparams);
 
 #ifdef LALAPPS_CONDOR
@@ -346,7 +351,6 @@ int main(int argc, char *argv[])
 
     /* structures for preconditioning */
     ResampleTSParams resampleParams;
-    LALWindowParams wpars;
     AverageSpectrumParams avgSpecParams;
 
     /* findchirp data structures */
@@ -388,8 +392,8 @@ int main(int argc, char *argv[])
     MetadataTable procparams;
     MetadataTable searchsumm;
     MetadataTable searchsummvars;
-    MetadataTable siminspiral;
-    MetadataTable siminstparams;
+    MetadataTable UNUSED siminspiral;
+    MetadataTable UNUSED siminstparams;
     MetadataTable summvalue;
     MetadataTable filtertable;
     SearchSummvarsTable *this_search_summvar = NULL;
@@ -416,7 +420,7 @@ int main(int argc, char *argv[])
     REAL8 dynRange = 1.0;
 
     /* template bank simulation variables */
-    INT4 bankSimCount = 0;
+    INT4 UNUSED bankSimCount = 0;
 
     /* injection information */
     SimInspiralTable *injections = NULL;
@@ -1220,8 +1224,6 @@ int main(int argc, char *argv[])
     /* use the fft plan created by findchirp */
     avgSpecParams.plan = fcDataParams->fwdPlan;
 
-    wpars.type = Hann;
-    wpars.length = numPoints;
     if (badMeanPsd) {
         avgSpecParams.overlap = 0;
         if (vrbflg)
@@ -1232,8 +1234,7 @@ int main(int argc, char *argv[])
             fprintf(stdout, " with overlap %d\n", avgSpecParams.overlap);
     }
 
-    LAL_CALL(LALCreateREAL4Window(&status, &(avgSpecParams.window),
-                                  &wpars), &status);
+    avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
     LAL_CALL(LALREAL4AverageSpectrum
              (&status, &spec, &chan, &avgSpecParams), &status);
     XLALDestroyREAL4Window(avgSpecParams.window);

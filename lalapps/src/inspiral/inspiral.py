@@ -223,6 +223,37 @@ class InspiralJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
+class PTFInspiralJob(InspiralAnalysisJob):
+  """
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
+  are read from the sections [data] and [inspiral] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specfied in the ini file. The path to the executable
+  is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'coh_PTF_inspiral'
+    sections = ['coh_PTF_inspiral']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('Requirements','Memory >= 1390')
+
+class PTFSpinCheckerJob(InspiralAnalysisJob):
+  """
+  A coh_PTF spin checker job
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'coh_PTF_spin_checker'
+    sections = ['coh_PTF_spin_checker']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('Requirements','Memory >= 1390')
 
 class TrigbankJob(InspiralAnalysisJob):
   """
@@ -857,6 +888,66 @@ class InspiralNode(InspiralAnalysisNode):
     """
     return self.__injections
 
+class PTFInspiralNode(InspiralAnalysisNode):
+  """
+  An InspiralNode runs an instance of the inspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__injections = None
+
+  def set_spin_bank(self,bank):
+    self.add_var_opt('spin-bank', bank)
+    self.add_input_file(bank)
+
+  def set_no_spin_bank(self,bank):
+    self.add_var_opt('non-spin-bank',bank)
+    self.add_input_file(bank)
+
+  def set_output(self):
+    self.add_var_opt('output-file',self.get_output_base()+ '.xml.gz')
+
+  def set_injections(self, injections):
+    """
+    Set the injection file for this node
+    """
+    self.__injections = injections
+    self.add_var_opt('injection-file', injections)
+    self.add_input_file(injections)
+
+  def get_injections(self):
+    """
+    Returns the injection file
+    """
+    return self.__injections
+
+  def set_seed(self,seed):
+    self.add_var_opt('random-seed',seed)
+    
+
+class PTFSpinCheckerNode(InspiralAnalysisNode):
+  """
+  An InspiralNode runs an instance of the inspiral code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__injections = None
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+
+  def set_spin_output(self,spinBank):
+    self.add_var_opt('spin-bank',spinBank)
+
+  def set_nospin_output(self,noSpinBank):
+    self.add_var_opt('non-spin-bank',noSpinBank)
 
 class TrigbankNode(InspiralAnalysisNode):
   """
@@ -2340,7 +2431,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'minifollowups'
-    sections = ['minifollowups']
+    sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
 
@@ -3215,14 +3306,14 @@ class SearchVolumeJob(pipeline.SqliteJob):
     @cp: ConfigParser object from which options are read.
     """
     exec_name = 'search_volume'
-    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['search-volume'], exec_name, dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchVolumeNode(pipeline.SqliteNode):
   """
   A search volume node.
   """
-  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False):
+  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False, bintype = "TOTAL_MASS"):
     """
     @database: the pipedown database containing the injection triggers
     @ouptut_cache: name prefix for cache file to be written out by program
@@ -3239,8 +3330,13 @@ class SearchVolumeNode(pipeline.SqliteNode):
     if output_tag:
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
-      self.add_var_opt("use-expected-loudest-event",'')
-
+      self.add_var_arg("--use-expected-loudest-event")
+    if bintype == "TOTAL_MASS":
+      self.add_var_arg("--bin-by-total-mass")
+    if bintype == "CHIRP_MASS":
+      self.add_var_arg("--bin-by-chirp-mass")
+    if bintype == "MASS1_MASS2":
+      self.add_var_arg("--bin-by-m1m2")
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
   """
@@ -3266,4 +3362,13 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
     """
     pipeline.SqliteNode.__init__(self, job)
     self.add_var_opt("input-cache", input_cache)
+    self.open_box = False
+
+  def set_open_box(self):
+    '''
+    Set the open box flag.
+    '''
+    if not self.open_box:
+      self.open_box = True
+      self.add_var_arg("--open-box")
 

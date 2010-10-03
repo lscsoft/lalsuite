@@ -53,6 +53,11 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define MAX_PATH 4096
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*
  *
@@ -189,7 +194,7 @@ int main( int argc, char *argv[] )
 
   LIGOLwXMLStream       xmlStream;
   MetadataTable         outputTable;
-  MetadataTable         savedEvents;
+  MetadataTable         UNUSED savedEvents;
   MetadataTable         searchSummvarsTable;
 
   /*

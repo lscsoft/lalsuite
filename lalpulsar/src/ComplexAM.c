@@ -18,7 +18,7 @@
  */
 
 /** \author J. T. Whelan, Reinhard Prix
- * \ingroup pulsar
+ * \ingroup pulsarAntenna
  * \file
  * \brief
  * Functions related to F-statistic calculation when the AM coefficients are complex.
@@ -111,7 +111,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,
       CmplxDetectorTensor d;
 
       if ( XLALgetLISADetectorTensorRAA (&d, DetectorStates->data[i].detArms, channelNum, freq_skypos ) != 0 ) {
-	LALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
+	XLALPrintError ( "\nXLALgetCmplxLISADetectorTensor() failed ... errno = %d\n\n", xlalErrno );
 	ABORT ( status, COMPLEXAMC_EXLAL, COMPLEXAMC_MSGEXLAL );
       }
 
@@ -208,7 +208,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
       amcoeX = ret->data[X];
       amcoeX->a = XLALCreateCOMPLEX8Vector ( numStepsX );
       if ( (amcoeX->b = XLALCreateCOMPLEX8Vector ( numStepsX )) == NULL ) {
-	LALPrintError ("\nOut of memory!\n\n");
+	XLALPrintError ("\nOut of memory!\n\n");
 	goto failed;
       }
 
@@ -217,7 +217,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,
       LALGetCmplxAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], &freq_skypos );
       if ( status->statusPtr->statusCode )
 	{
-	  LALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
+	  XLALPrintError ( "\nCall to LALGetCmplxAMCoeffs() has failed ... \n\n");
 	  REPORTSTATUS ( status->statusPtr );
 	  goto failed;
 	}
@@ -300,7 +300,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 
   if ( multiWeights && ( multiWeights->length != numDetectors ) )
     {
-      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
       XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
     }
 
@@ -317,7 +317,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	  REAL8Vector *weightsX = multiWeights->data[X];;
 	  if ( weightsX->length != numSteps )
 	    {
-	      LALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
+	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
 	      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
 	    }
 

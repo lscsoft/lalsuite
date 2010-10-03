@@ -260,6 +260,8 @@ int XLALFileIsCompressed( const char *path )
 	if ( ! ( fp = LALFopen( path, "rb" ) ) )
 		XLAL_ERROR( func, XLAL_EIO );
 	c = fread( magic, sizeof(*magic), sizeof(magic)/sizeof(*magic), fp );
+  if (c == 0)
+    XLAL_ERROR( func, XLAL_EIO );
 	fclose( fp );
 	return magic[0] == 0x1f && magic[1] == 0x8b;
 }

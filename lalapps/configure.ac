@@ -42,6 +42,7 @@ AC_CONFIG_FILES([\
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/SFTReferenceLibrary/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
 ])

@@ -49,6 +49,12 @@ Author: Craig Robinson
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
 
 #if 0
@@ -158,7 +164,7 @@ LALCreateTwoIFOCoincListEllipsoid(
   INT4                          numEvents = 0;
   INT8                          maxTimeDiff = 0;
   TriggerErrorList             *errorListHead = NULL;
-  TriggerErrorList             *thisErrorList = NULL;
+  TriggerErrorList             UNUSED *thisErrorList = NULL;
   TriggerErrorList             *currentError[2];
   fContactWorkSpace            *workSpace;
   REAL8                        timeError = 0.0;

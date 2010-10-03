@@ -69,14 +69,12 @@ int main( int argc, char *argv[] )
 
   while ( --argc > 0 )
   {
-    struct FrStatData *sdata;
     struct FrFile *frfile;
     struct FrameH *frame;
     char *fname = *++argv;
     if ( ! ( frfile = FrFileINew( fname ) ) )
       return fprintf( stderr, "file %s not found!\n", fname ), 1;
     fprintf( stdout, "\n>>> Info for frame file %s:\n", fname );
-    sdata = frfile->sDataCur;
     while ( ( frame = FrameRead( frfile ) ) )
     {
       fprintf( stdout, "\n>> %s, run %u, frame %u:\n", frame->name, frame->run,

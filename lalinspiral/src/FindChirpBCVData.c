@@ -52,6 +52,11 @@ $Id$
 #include <lal/FindChirpSP.h>
 #include <lal/FindChirpBCV.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 NRCSID (FINDCHIRPBCVDATAC, "$Id$");
 
@@ -83,9 +88,9 @@ LALFindChirpBCVData (
   COMPLEX8             *outputData;
   COMPLEX8             *outputDataBCV;
 
-  UINT4                *chisqBin    = NULL;
-  UINT4                *chisqBinBCV = NULL;
-  UINT4                 numChisqBins;
+  UINT4                UNUSED *chisqBin    = NULL;
+  UINT4                UNUSED *chisqBinBCV = NULL;
+  UINT4                UNUSED numChisqBins;
 #if 0
   UINT4                 chisqPt;
   REAL4                 increment;

@@ -291,7 +291,7 @@ int main(int argc,char *argv[])
     printf("DET = H2\n");
   }
   else {
-    LALPrintError ("\nUnknown detector (use either G1,L1,H1,H2)!\n\n");
+    XLALPrintError ("\nUnknown detector (use either G1,L1,H1,H2)!\n\n");
   }
   
   /* Detector location */
@@ -465,7 +465,7 @@ int main(int argc,char *argv[])
   
   /* check if output file is OK */
   if ((fp = fopen(uvar_output,"w"))==NULL) {
-    LALPrintError("\nError opening file '%s' for writing..\n\n",uvar_output);
+    XLALPrintError("\nError opening file '%s' for writing..\n\n",uvar_output);
     return (SIDEBANDMCMCC_ESYS);
   }
   
@@ -585,17 +585,17 @@ checkUserInputConsistency (LALStatus *status)
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
   /* don't allow unspecified output file */
   if (uvar_output == NULL) {
-    LALPrintError ("\nOutput file must be specified (option 'output')\n\n");
+    XLALPrintError ("\nOutput file must be specified (option 'output')\n\n");
     ABORT (status, SIDEBANDMCMCC_EINPUT, SIDEBANDMCMCC_MSGEINPUT);
   }
   /* don't allow right ascension out of range */
   if ((uvar_alpha < 0)||(uvar_alpha >= LAL_TWOPI)) {
-    LALPrintError ("\nRight ascension must be in range [0,2PI)!\n\n");
+    XLALPrintError ("\nRight ascension must be in range [0,2PI)!\n\n");
     ABORT (status, SIDEBANDMCMCC_EINPUT, SIDEBANDMCMCC_MSGEINPUT);
   }
   /* don't allow declination out of range */
   if ((uvar_delta < ((-1.0)*LAL_PI/2.0))||(uvar_delta > (LAL_PI/2.0))) {
-    LALPrintError ("\nDeclination must be in range [-PI/2,PI/2]!\n\n");
+    XLALPrintError ("\nDeclination must be in range [-PI/2,PI/2]!\n\n");
     ABORT (status, SIDEBANDMCMCC_EINPUT, SIDEBANDMCMCC_MSGEINPUT);
   }
     

@@ -359,7 +359,7 @@ int main(int argc,char *argv[])
   LogSetLevel ( lalDebugLevel );
   if (LALUserVarWasSet(&uvar.outputLogPrintf)) {
     if ((fpLogPrintf = fopen(uvar.outputLogPrintf, "wb")) == NULL) {
-      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLogPrintf);
+      XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLogPrintf);
       return (COMPUTEFSTATISTIC_ESYS);
     }
     LogSetFile(fpLogPrintf);
@@ -387,7 +387,7 @@ int main(int argc,char *argv[])
     {
       if ( (fpFstat = fopen (uvar.outputFstat, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
 	  return (COMPUTEFSTATISTIC_ESYS);
 	}
 
@@ -397,7 +397,7 @@ int main(int argc,char *argv[])
   /* start Fstatistic histogram with a single empty bin */
   if (uvar.outputFstatHist) {
     if ((Fstat_histogram = gsl_vector_int_alloc(1)) == NULL) {
-      LALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
+      XLALPrintError("\nCouldn't allocate 'Fstat_histogram'\n");
       return COMPUTEFSTATISTIC_EMEM;
     }
     gsl_vector_int_set_zero(Fstat_histogram);
@@ -599,7 +599,7 @@ int main(int argc,char *argv[])
 	/* resize histogram vector if needed */
 	if (!Fstat_histogram || bin >= Fstat_histogram->size)
 	  if (NULL == (Fstat_histogram = XLALResizeGSLVectorInt(Fstat_histogram, bin + 1, 0))) {
-	    LALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
+	    XLALPrintError("\nCouldn't (re)allocate 'Fstat_histogram'\n");
 	    return COMPUTEFSTATISTIC_EMEM;
 	  }
 
@@ -633,7 +633,7 @@ int main(int argc,char *argv[])
 
 	  if ( (fpFstatAtoms = fopen (fnameAtoms, "wb")) == NULL)
 	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", fnameAtoms );
+	      XLALPrintError ("\nError opening file '%s' for writing..\n\n", fnameAtoms );
 	      return (COMPUTEFSTATISTIC_ESYS);
 	    }
 	  LALFree ( fnameAtoms );
@@ -695,7 +695,7 @@ int main(int argc,char *argv[])
 
       if ( (fpLoudest = fopen (uvar.outputLoudest, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLoudest);
+	  XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputLoudest);
 	  return COMPUTEFSTATISTIC_ESYS;
 	}
 
@@ -724,7 +724,7 @@ int main(int argc,char *argv[])
     FILE *fpFstatHist = fopen(uvar.outputFstatHist, "wb");
 
     if (fpFstatHist == NULL) {
-      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
+      XLALPrintError ("\nError opening file '%s' for writing..\n\n", uvar.outputFstat);
       return (COMPUTEFSTATISTIC_ESYS);
     }
     fprintf(fpFstatHist, "%s", GV.logstring);
@@ -748,15 +748,13 @@ int main(int argc,char *argv[])
   XLALEmptyComputeFBuffer ( &cfBuffer );
   XLALEmptyComputeFBufferREAL4 ( &cfBuffer4 );
 
+  /* free memory allocated for binary parameters */
+  if (orbitalParams) LALFree(orbitalParams);
+  
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
     gsl_vector_int_free(Fstat_histogram);
-
-  /* free memory allocated for binary parameters */
-  if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) ) {
-    LALFree(orbitalParams);
-  }
   
   /* close log-file */
   if (fpLogPrintf) {
@@ -1068,7 +1066,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   if ( !catalog || catalog->length == 0 )
     {
-      LALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar->DataFiles );
+      XLALPrintError ("\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar->DataFiles );
       ABORT ( status,  COMPUTEFSTATISTIC_EINPUT,  COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -1532,86 +1530,86 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
   if (uvar->ephemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
+      XLALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
   /* check that only alpha OR RA has been set */
   if ( LALUserVarWasSet(&uvar->Alpha) && (LALUserVarWasSet(&uvar->RA)) )
     {
-      LALPrintError ("\nInput either Alpha OR RA, not both!\n\n");
+      XLALPrintError ("\nInput either Alpha OR RA, not both!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   /* check that only delta OR Dec has been set */
   if ( LALUserVarWasSet(&uvar->Delta) && (LALUserVarWasSet(&uvar->Dec)) )
     {
-      LALPrintError ("\nInput either Delta OR Dec, not both!\n\n");
+      XLALPrintError ("\nInput either Delta OR Dec, not both!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( LALUserVarWasSet(&uvar->dAlpha) && (uvar->dAlpha < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->dDelta) && (uvar->dDelta < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->dFreq) && (uvar->dFreq < 0) )
     {
-      LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
+      XLALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
   /* check that reference time has not been set twice */
   if ( LALUserVarWasSet(&uvar->refTime) && LALUserVarWasSet(&uvar->refTimeMJD) )
     {
-      LALPrintError ("\nSet only uvar->refTime OR uvar->refTimeMJD OR leave empty to use SSB start time as Tref!\n\n");
+      XLALPrintError ("\nSet only uvar->refTime OR uvar->refTimeMJD OR leave empty to use SSB start time as Tref!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
   /* binary parameter checks */
   if ( LALUserVarWasSet(&uvar->orbitPeriod) && (uvar->orbitPeriod <= 0) )
     {
-      LALPrintError ("\nNegative or zero value of orbital period not allowed!\n\n");
+      XLALPrintError ("\nNegative or zero value of orbital period not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitasini) && (uvar->orbitasini < 0) )
     {
-      LALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
+      XLALPrintError ("\nNegative value of projected orbital semi-major axis not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
    if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (LALUserVarWasSet(&uvar->orbitTpSSBsec) || LALUserVarWasSet(&uvar->orbitTpSSBnan)))
     {
-      LALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
+      XLALPrintError ("\nSet only uvar->orbitTpSSBMJD OR uvar->orbitTpSSBsec/nan to specify periapse passage time!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
    if ( LALUserVarWasSet(&uvar->orbitTpSSBMJD) && (uvar->orbitTpSSBMJD < 0) )
     {
-      LALPrintError ("\nNegative value of the true time of orbital periapsis not allowed!\n\n");
+      XLALPrintError ("\nNegative value of the true time of orbital periapsis not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitTpSSBsec) && (uvar->orbitTpSSBsec < 0) )
     {
-      LALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
+      XLALPrintError ("\nNegative value of seconds part of the true time of orbital periapsis not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitTpSSBnan) && ((uvar->orbitTpSSBnan < 0) || (uvar->orbitTpSSBnan >= 1e9)) )
     {
-      LALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
+      XLALPrintError ("\nTime of nanoseconds part the true time of orbital periapsis must lie in range (0, 1e9]!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitArgp) && ((uvar->orbitArgp < 0) || (uvar->orbitArgp >= LAL_TWOPI)) )
     {
-      LALPrintError ("\nOrbital argument of periapse must lie in range [0 2*PI)!\n\n");
+      XLALPrintError ("\nOrbital argument of periapse must lie in range [0 2*PI)!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
   if ( LALUserVarWasSet(&uvar->orbitEcc) && (uvar->orbitEcc < 0) )
     {
-      LALPrintError ("\nNegative value of orbital eccentricity not allowed!\n\n");
+      XLALPrintError ("\nNegative value of orbital eccentricity not allowed!\n\n");
       ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
     }
 
@@ -1636,24 +1634,24 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       }
     if ( useSkyGridFile && !haveGridFile )
       {
-        LALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
+        XLALPrintError ("\nERROR: gridType=SKY-FILE, but no --gridFile specified!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( useFullGridFile && !haveGridFile )
       {
-	LALPrintError ("\nERROR: gridType=GRID-FILE, but no --gridFile specified!\n\n");
+	XLALPrintError ("\nERROR: gridType=GRID-FILE, but no --gridFile specified!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
     if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
       {
-	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
+	XLALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
     if ( haveSkyRegion && haveAlphaDelta )
       {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+        XLALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( !useMetric && haveMetric)
@@ -1662,7 +1660,7 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
       }
     if ( useMetric && !haveMetric)
       {
-        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+        XLALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
@@ -1671,13 +1669,13 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
       /* Check that no third spindown range were given */
       if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
-        LALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType={8,9}\n\n");
+        XLALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType={8,9}\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
       /* Check that no grid spacings were given */
       if (uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0) {
-        LALPrintError ("\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n");
+        XLALPrintError ("\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
@@ -1688,29 +1686,29 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
       /* Check age and braking indices */
       if (uvar->spindownAge <= 0.0) {
-        LALPrintError ("\nERROR: spindownAge must be strictly positive with gridType=9\n\n");
+        XLALPrintError ("\nERROR: spindownAge must be strictly positive with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
       if (uvar->minBraking <= 0.0) {
-        LALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
+        XLALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
       if (uvar->maxBraking <= 0.0) {
-        LALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
+        XLALPrintError ("\nERROR: minBraking must be strictly positive with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
       if (uvar->minBraking >= uvar->maxBraking) {
-        LALPrintError ("\nERROR: minBraking must be strictly less than maxBraking with gridType=9\n\n");
+        XLALPrintError ("\nERROR: minBraking must be strictly less than maxBraking with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
       /* Check that no first and second spindown ranges were given */
       if (uvar->f1dot != 0.0 || uvar->f1dotBand != 0.0) {
-        LALPrintError ("\nERROR: f1dot and f1dotBand cannot be used with gridType=9\n\n");
+        XLALPrintError ("\nERROR: f1dot and f1dotBand cannot be used with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
       if (uvar->f2dot != 0.0 || uvar->f2dotBand != 0.0) {
-        LALPrintError ("\nERROR: f2dot and f2dotBand cannot be used with gridType=9\n\n");
+        XLALPrintError ("\nERROR: f2dot and f2dotBand cannot be used with gridType=9\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
 
@@ -1720,11 +1718,11 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
   /* check NumCandidatesToKeep and FracCandidatesToKeep */
   if (LALUserVarWasSet(&uvar->NumCandidatesToKeep) && LALUserVarWasSet(&uvar->FracCandidatesToKeep)) {
-    LALPrintError ("\nERROR: NumCandidatesToKeep and FracCandidatesToKeep are mutually exclusive\n\n");
+    XLALPrintError ("\nERROR: NumCandidatesToKeep and FracCandidatesToKeep are mutually exclusive\n\n");
     ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
   }
   if (LALUserVarWasSet(&uvar->FracCandidatesToKeep) && (uvar->FracCandidatesToKeep <= 0.0 || 1.0 < uvar->FracCandidatesToKeep)) {
-    LALPrintError ("\nERROR: FracCandidatesToKeep must be greater than 0.0 and less than or equal to 1.0\n\n");
+    XLALPrintError ("\nERROR: FracCandidatesToKeep must be greater than 0.0 and less than or equal to 1.0\n\n");
     ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
   }
 

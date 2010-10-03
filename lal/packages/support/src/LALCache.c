@@ -48,6 +48,12 @@
 
 NRCSID( LALCACHEC, "$Id$" );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 static int XLALCacheFileReadRow( char *s, size_t len, LALFILE *fp, int *line )
 {
 	static const char *func = "XLALCacheFileReadRow";
@@ -275,8 +281,10 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 		entry->url = XLALStringAppend( entry->url, path );
 	} else { /* relative path */
 		char cwd[FILENAME_MAX];
+#if 0
 		char *ptr;
 		ptr = getcwd( cwd, sizeof(cwd) - 1 );
+#endif
 		XLALStringConcatenate( cwd, "/", sizeof(cwd) );
 		XLALStringConcatenate( cwd, path, sizeof(cwd) );
 		entry->url = XLALStringAppend( entry->url, cwd );
@@ -388,39 +396,34 @@ int XLALCacheFileWrite( LALFILE *fp, LALCache *cache )
 }
 
 
-static int XLALCacheCompareSource( void *p, const void *p1, const void *p2 )
+static int XLALCacheCompareSource( void UNUSED *p, const void *p1, const void *p2 )
 {
 	const char *s1 = ((const struct tagLALCacheEntry *)p1)->src;
 	const char *s2 = ((const struct tagLALCacheEntry *)p2)->src;
-	p = NULL;
 	return strcmp(s1 ? s1 : "",s2 ? s2 : "");
 }
-static int XLALCacheCompareDescription( void *p, const void *p1, const void *p2 )
+static int XLALCacheCompareDescription( void UNUSED *p, const void *p1, const void *p2 )
 {
 	const char *s1 = ((const struct tagLALCacheEntry *)p1)->dsc;
 	const char *s2 = ((const struct tagLALCacheEntry *)p2)->dsc;
-	p = NULL;
 	return strcmp(s1 ? s1 : "",s2 ? s2 : "");
 }
-static int XLALCacheCompareStartTime( void *p, const void *p1, const void *p2 )
+static int XLALCacheCompareStartTime( void UNUSED *p, const void *p1, const void *p2 )
 {
 	double t1 = ((const struct tagLALCacheEntry *)p1)->t0;
 	double t2 = ((const struct tagLALCacheEntry *)p2)->t0;
-	p = NULL;
 	return (t1 > t2) - (t1 < t2);
 }
-static int XLALCacheCompareDuration( void *p, const void *p1, const void *p2 )
+static int XLALCacheCompareDuration( void UNUSED *p, const void *p1, const void *p2 )
 {
 	double t1 = ((const struct tagLALCacheEntry *)p1)->dt;
 	double t2 = ((const struct tagLALCacheEntry *)p2)->dt;
-	p = NULL;
 	return (t1 > t2) - (t1 < t2);
 }
-static int XLALCacheCompareURL( void *p, const void *p1, const void *p2 )
+static int XLALCacheCompareURL( void UNUSED *p, const void *p1, const void *p2 )
 {
 	const char *s1 = ((const struct tagLALCacheEntry *)p1)->url;
 	const char *s2 = ((const struct tagLALCacheEntry *)p2)->url;
-	p = NULL;
 	return strcmp(s1 ? s1 : "",s2 ? s2 : "");
 }
 static int XLALCacheCompareEntries( void *p, const void *p1, const void *p2 )

@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 
   if ( !fpMatch1 || !fpMatch2 || !fpSkip1 || !fpSkip2 )
     {
-      LALPrintError("\nFailed to open of of ('%s','%s','%s','%s' for writing\n\n",
+      XLALPrintError("\nFailed to open of of ('%s','%s','%s','%s' for writing\n\n",
 		    fnMatch1, fnMatch2, fnSkip1, fnSkip2);
       return 1;
     }
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
       /* case two: 1-neighbor match */ 
       else if ( node1->next && (modERR(node1->next, node2) < uvar_tolerance ) )
 	{
-	  LALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
+	  XLALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
 			  l1, uvar_grid1, node1->Alpha, node1->Delta);
 	  fprintf (fpSkip1, "%d %f %f\n", l1, node1->Alpha, node1->Delta );
 	  node1 = node1->next;
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	}
       else if ( node2->next && (modERR(node1, node2->next) < uvar_tolerance) )
 	{
-	  LALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
+	  XLALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
 			  l2, uvar_grid2, node2->Alpha, node2->Delta);
 	  fprintf (fpSkip2, "%d %f %f\n", l2, node2->Alpha, node2->Delta );
 	  node2 = node2->next;
@@ -192,9 +192,9 @@ int main(int argc, char *argv[])
       /* case three: no neighbor-match found */
       else
 	{
-	  LALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
+	  XLALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
 			  l1, uvar_grid1, node1->Alpha, node1->Delta);
-	  LALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
+	  XLALPrintError ( "Skipped index=%d in '%s': [ %f, %f ]\n", 
 			  l2, uvar_grid2, node2->Alpha, node2->Delta);
 
 
@@ -222,10 +222,10 @@ int main(int argc, char *argv[])
 
   if ( node1 )
     {
-      LALPrintError("\nHave %d leftover-nodes in '%s':\n", len1 - l1, uvar_grid1);
+      XLALPrintError("\nHave %d leftover-nodes in '%s':\n", len1 - l1, uvar_grid1);
       while ( node1 )
 	{
-	  LALPrintError ( "%d: [%f %f]\n", l1, node1->Alpha, node1->Delta );
+	  XLALPrintError ( "%d: [%f %f]\n", l1, node1->Alpha, node1->Delta );
 	  fprintf (fpSkip1, "%d %f %f\n", l1, node1->Alpha, node1->Delta );
 	  node1 = node1->next;
 	  l1 ++;
@@ -234,10 +234,10 @@ int main(int argc, char *argv[])
 
   if ( node2 )
     {
-      LALPrintError("\nHave %d leftover-nodes in '%s':\n", len2 - l2, uvar_grid2);
+      XLALPrintError("\nHave %d leftover-nodes in '%s':\n", len2 - l2, uvar_grid2);
       while ( node2 )
 	{
-	  LALPrintError ( "%d: [%f %f]\n", l2, node2->Alpha, node2->Delta );
+	  XLALPrintError ( "%d: [%f %f]\n", l2, node2->Alpha, node2->Delta );
 	  fprintf (fpSkip2, "%d %f %f\n", l2, node2->Alpha, node2->Delta );
 	  node2 = node2->next;
 	  l2 ++;

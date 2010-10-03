@@ -117,8 +117,13 @@ snprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
 snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
           "%s", sv_comment );                                         \
 
-#define rint(x) (floor((x)+0.5))
 #define ALLSKYSTR "allsky"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /*
  * utility function to wrap a time t into the interval [start,
@@ -265,10 +270,10 @@ int main( int argc, char *argv[] )
   UINT4   j,k,l;
   UINT4   kmax = 0;
   UINT4  numDetectors     = 0;
-  REAL8  tempTime[4]      = {0.0,0.0,0.0,0.0};
+  REAL8  UNUSED tempTime[4]      = {0.0,0.0,0.0,0.0};
   INT4   timeptDiff[3]    = {0,0,0};
   INT4   numTriggers      = 0;
-  INT4   numChiaTriggers  = 0;
+  INT4   UNUSED numChiaTriggers  = 0;
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
   UINT4  cohFileID        = 1;
@@ -296,7 +301,7 @@ int main( int argc, char *argv[] )
   CoherentInspiralFilterParams *cohInspFilterParams = NULL;
   CoherentInspiralFilterInput  *cohInspFilterInput = NULL;
   CoherentInspiralCVector      *cohInspCVec = NULL;
-  CoherentInspiralBeamVector   *cohInspBeamVec = NULL;
+  CoherentInspiralBeamVector   UNUSED *cohInspBeamVec = NULL;
   MultiInspiralTable           *thisEvent = NULL;
   MultiInspiralTable           *tempTable = NULL;
   MetadataTable                 savedEvents;
@@ -459,7 +464,7 @@ int main( int argc, char *argv[] )
         REAL4  chisq[4]         = {1.0,1.0,1.0,1.0};
         REAL4  chisq_dof[4]     = {1.0,1.0,1.0,1.0};
         REAL4  sigmasq[4]         = {1.0,1.0,1.0,1.0};
-        REAL8  snrsqArray[4]    = {1.0,1.0,1.0,1.0};
+        REAL8  UNUSED snrsqArray[4]    = {1.0,1.0,1.0,1.0};
 
         numDetectors = thisCoinc->numIfos;
        

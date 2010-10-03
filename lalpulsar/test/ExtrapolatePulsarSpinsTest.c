@@ -54,7 +54,7 @@ NRCSID (PULSARSPINTESTC, "$Id$");
 #define ERROR( code, msg, statement )                                \
 do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
-    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
               __LINE__, PULSARSPINTESTC, statement ? statement :  \
                    "", (msg) );                                      \
@@ -63,7 +63,7 @@ do {                                                                 \
 #define INFO( statement )                                            \
 do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
-    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
               PULSARSPINTESTC, (statement) );                     \
 } while (0)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
        (RELERROR(fkdot1[2], result[2]) > tolerance) ||
        (RELERROR(fkdot1[3], result[3]) > tolerance) )
     {
-      LALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
+      XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
       return -1;
     }
   else
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerancePhi )
       {
-	LALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
+	XLALPrintError ( "\nRelative error of LALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
 	return -1;
       }
     else
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   if ( (range2.refTime.gpsSeconds != rangeResult.refTime.gpsSeconds)
        || ( range2.refTime.gpsNanoSeconds != rangeResult.refTime.gpsNanoSeconds ) )
     {
-      LALPrintError ("\nOutput-range has wrong epoch\n");
+      XLALPrintError ("\nOutput-range has wrong epoch\n");
       return -1;
     }
 
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
        (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance)
        )
     {
-      LALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
+      XLALPrintError ( "\nRelative error of LALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
       return -1;
     }
   else

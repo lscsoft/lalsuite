@@ -89,7 +89,7 @@ void ReadTimeStamps(LALStatus *status,
   
   /* open and read parameter range file */
   if ((fp = fopen(timestampsfile,"r"))==NULL) {
-    LALPrintError("\nError opening file '%s' for reading..\n\n",timestampsfile);
+    XLALPrintError("\nError opening file '%s' for reading..\n\n",timestampsfile);
     /* return (READTIMESTAMPSC_ESYS); */
   }
   
@@ -179,7 +179,7 @@ void ComputeSideBandWindow(LALStatus *status,
   ASSERT (*TParams, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
  
   if ((fp = fopen(outfile,"w"))==NULL) {
-    LALPrintError("\nError opening file '%s' for writing..\n\n",outfile);
+    XLALPrintError("\nError opening file '%s' for writing..\n\n",outfile);
     /* return (SIDEBANDUTILSC_ESYS); */
   }
   
@@ -466,7 +466,7 @@ void ReadSideBandPriors(LALStatus *status,
   
   /* open and read parameter range file */
   if ((fprange = fopen(rangefile,"r"))==NULL) {
-    LALPrintError("\nError opening file '%s' for reading..\n\n",rangefile);
+    XLALPrintError("\nError opening file '%s' for reading..\n\n",rangefile);
   }
 
   while (fgets(line,512,fprange)!=NULL) {
@@ -739,7 +739,7 @@ void ReadSideBandData (LALStatus * status,
 
   /* open and read file */
   if ((fp = fopen(params->file,"r"))==NULL) {
-    LALPrintError("\nError opening file '%s' for reading..\n\n",params->file);
+    XLALPrintError("\nError opening file '%s' for reading..\n\n",params->file);
     /* return (SIDEBANDUTILSC_ESYS); */
   }
 
