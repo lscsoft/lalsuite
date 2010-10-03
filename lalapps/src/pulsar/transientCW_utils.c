@@ -565,6 +565,10 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                               - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
                               );
 
+          /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
+          if ( useFReg )
+            F += log( DdInv );
+
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > maxF )
             {
@@ -572,10 +576,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
               ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
               ret.tau_maxF = window.tau;
             }
-
-          /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
-          if ( useFReg )
-            F += log( DdInv );
 
           /* and store this in Fstat-matrix as element {m,n} */
           gsl_matrix_set ( F_mn, m, n, F );
@@ -592,7 +592,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     {
       for ( n=0; n < N_tauRange; n ++ )
         {
-          REAL8 DeltaF = maxF - gsl_matrix_get ( F_mn, m, n );	// always <= 0, exactly ==0 at {m,n}_max
+          REAL8 DeltaF = maxF - gsl_matrix_get ( F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
 
           //sum_eB += exp ( - DeltaF );
           sum_eB += XLALFastNegExp ( DeltaF, expLUT );
