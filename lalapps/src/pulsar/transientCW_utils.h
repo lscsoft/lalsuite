@@ -96,7 +96,6 @@ typedef struct
   UINT4 tau;			/**< shortest transient timescale tau in seconds */
   UINT4 tauBand;		/**< range of transient timescales tau to search, in seconds */
   UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
-  gsl_matrix *exp_buffer;	/**< buffer matrix storing exp(-(t0-ti)/tau) values for this window-range (optional) */
 } transientWindowRange_t;
 
 /** Struct holding a transient CW candidate */
@@ -125,8 +124,14 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
-int XLALFillExpWindowBuffer ( transientWindowRange_t *windowRange );
 int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange, BOOLEAN useFReg );
+
+/* these functions operate on module-global lookup-table for negative-exponentials,
+ * which will dynamically be generated on first use of XLALFastNegExp(), and can
+ * be destroyed at any time using XLALDestroyExpLUT()
+ */
+REAL8 XLALFastNegExp ( REAL8 mx );
+void XLALDestroyExpLUT( void );
 
 
 /* ---------- Fstat-atoms related functions ----------*/
@@ -166,10 +171,17 @@ XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
                                          UINT4 tau		/**< characteristic time of the exponential window */
                                          )
 {
+  REAL8 ret;
+
   if ( timestamp < t0 || timestamp > t1 )
-    return 0.0;
+    ret = 0.0;
   else
-    return exp ( - 1.0 * ( timestamp - t0 ) / tau );
+    {
+      REAL8 x = 1.0 * ( timestamp - t0 ) / tau;
+      ret = XLALFastNegExp ( x );	// computes e^(-x)
+    }
+
+  return ret;
 
 } /* XLALGetExponentialTransientWindowValue() */
 
@@ -182,7 +194,7 @@ XLALGetTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compu
                               UINT4 t0, 	/**< start-time of window */
                               UINT4 t1, 	/**< end-time of window */
                               UINT4 tau,	/**< characteristic time of window */
-                              transientWindowType_t type	/**< window type */
+                              transientWindowType_t type /**< window type */
                               )
 {
   REAL8 val;
