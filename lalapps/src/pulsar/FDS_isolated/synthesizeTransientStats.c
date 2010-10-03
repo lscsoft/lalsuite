@@ -429,8 +429,7 @@ int main(int argc,char *argv[])
   XLALDestroyMultiDetectorStateSeries ( cfg.multiDetStates );
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
-  if ( cfg.transientSearchRange.exp_buffer )
-    gsl_matrix_free ( cfg.transientSearchRange.exp_buffer );
+  XLALDestroyExpLUT();
 
   if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
@@ -811,13 +810,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     SearchRange.dtau = uvar->searchWindow_dtau;
   else
     SearchRange.dtau = uvar->TAtom;
-
-  /* if exponential window --> prebuffer the window-values */
-  if ( SearchRange.type == TRANSIENT_EXPONENTIAL )
-    if ( XLALFillExpWindowBuffer ( &SearchRange ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: XLALFillExpWindowBuffer() failed.\n", fn );
-      XLAL_ERROR ( fn, XLAL_EFUNC );
-    }
 
   cfg->transientSearchRange = SearchRange;
 

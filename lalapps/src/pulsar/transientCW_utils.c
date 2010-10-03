@@ -44,27 +44,23 @@
 #define LAL_INT4_MAX 2147483647
 
 /* ---------- internal prototypes ---------- */
-int compareAtoms(const void *in1, const void *in2);
-
-/** Lookup-table for exponentials e^(-x)
- * Holds an array 'data' of 'length' for values e^(-x)
- * for x in the range [0, xmax]
- */
-typedef struct {
-  REAL8 xmax;
-  UINT4 length;
-  REAL8 *data;
-} expLUT_t;
-
-REAL8 XLALFastNegExp ( REAL8 mx, const expLUT_t *lut );
-expLUT_t *XLALCreateExpLUT ( REAL8 xmax, UINT4 length );
-void XLALDestroyExpLUT ( expLUT_t *lut );
-
-
 /* empty struct initializers */
 const TransientCandidate_t empty_TransientCandidate;
 const transientWindow_t empty_transientWindow;
 const transientWindowRange_t empty_transientWindowRange;
+
+/* ----- module-global lookup-table handling for negative exponentials ----- */
+
+/** Lookup-table for negative exponentials e^(-x)
+ * Holds an array 'data' of 'length' for values e^(-x) for x in the range [0, xmax]
+ */
+#define EXPLUT_XMAX 	20.0	// LUT down to e^(-20) = 2.0612e-09
+#define EXPLUT_LENGTH 	2000	// number of LUT values to pre-compute
+static gsl_vector *expLUT = NULL; 	/**< module-global lookup-table for negative exponentials e^(-x) */
+#define EXPLUT_DXINV  ((EXPLUT_LENGTH)/(EXPLUT_XMAX))	// 1/dx with dx = xmax/length
+
+static int XLALCreateExpLUT ( void );	/* only used internally, destructor is in exported API */
+
 
 /* ==================== function definitions ==================== */
 
@@ -442,11 +438,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   transientWindow_t window;
   window.type = windowRange.type;
 
-  expLUT_t *expLUT;
-  if ( (expLUT = XLALCreateExpLUT ( 20.0, 2000 )) == NULL ) {
-    XLAL_ERROR ( fn, XLAL_EFUNC );
-  }
-
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
     {
@@ -530,10 +521,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                   UINT4 t_i = thisAtom_i->timestamp;
 
                   REAL8 win_i;
-                  if ( windowRange.exp_buffer )
-                    win_i = gsl_matrix_get ( windowRange.exp_buffer, n, i );
-                  else
-                    win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
+                  win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
 
                   REAL8 win2_i = win_i * win_i;
 
@@ -565,10 +553,6 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                               - 2.0 * Cd *( Fa_re * Fb_re + Fa_im * Fb_im )
                               );
 
-          /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
-          if ( useFReg )
-            F += log( DdInv );
-
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > maxF )
             {
@@ -576,6 +560,10 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
               ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
               ret.tau_maxF = window.tau;
             }
+
+          /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
+          if ( useFReg )
+            F += log( DdInv );
 
           /* and store this in Fstat-matrix as element {m,n} */
           gsl_matrix_set ( F_mn, m, n, F );
@@ -595,7 +583,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           REAL8 DeltaF = maxF - gsl_matrix_get ( F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
 
           //sum_eB += exp ( - DeltaF );
-          sum_eB += XLALFastNegExp ( DeltaF, expLUT );
+          sum_eB += XLALFastNegExp ( DeltaF );
 
         } /* for n < N_tauRange */
 
@@ -613,7 +601,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
 
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
-  XLALDestroyExpLUT ( expLUT );
+  XLALDestroyExpLUT();
   gsl_matrix_free ( F_mn );
 
   /* return */
@@ -715,22 +703,6 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
 
 } /* XLALmergeMultiFstatAtomsBinned() */
 
-/* comparison function for atoms: sort by GPS time */
-int
-compareAtoms(const void *in1, const void *in2)
-{
-  const FstatAtom *atom1 = (const FstatAtom*)in1;
-  const FstatAtom *atom2 = (const FstatAtom*)in2;
-
-  if ( atom1->timestamp < atom2->timestamp )
-    return -1;
-  else if ( atom1->timestamp == atom2->timestamp )
-    return 0;
-  else
-    return 1;
-
-} /* compareAtoms() */
-
 /** Write one line for given transient CW candidate into output file.
  * Note: if input candidate == NULL, write a header comment-line explaining fields
  */
@@ -796,131 +768,50 @@ write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms )
 } /* write_MultiFstatAtoms_to_fp() */
 
 
-/** Precompute the buffer-array storing values for an exponential-window of given window-ranges.
- *
- * If the windowRange contains a non-NULL buffer already, return an error.
- */
-int
-XLALFillExpWindowBuffer ( transientWindowRange_t *windowRange )	/**< [in/out] window-range to buffer exponential window-values for */
-{
-  const char *fn = __func__;
-
-  /* check input */
-  if ( !windowRange ) {
-    XLALPrintError ("%s: invalid NULL input 'windowRange'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( windowRange->type != TRANSIENT_EXPONENTIAL ) {
-    XLALPrintError ("%s: expected an exponential transient-window range (%d), instead got %d\n", fn,  TRANSIENT_EXPONENTIAL, windowRange->type);
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( windowRange->exp_buffer != NULL ) {
-    XLALPrintError ("%s: non-NULL exponential-window buffer !\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-
-  UINT4 tauMax = windowRange->tau + windowRange->tauBand;
-  /* compute maximal offset (t0 - ti) for tauMax */
-  transientWindow_t window;
-  window.type = TRANSIENT_EXPONENTIAL;
-  window.t0 = 0;
-  window.tau = tauMax;
-  UINT4 t0, t1;
-  if ( XLALGetTransientWindowTimespan ( &t0, &t1, window ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
-  }
-
-  UINT4 N_ti  = (UINT4)ceil ( 1.0 * t1 / windowRange->dt0 );	/* round up for safety */
-  UINT4 N_tau = (UINT4)ceil ( 1.0 * tauMax / windowRange->dtau );
-
-  if ( (windowRange->exp_buffer = gsl_matrix_calloc (N_tau, N_ti)) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_calloc( %d, %d )\n", fn, N_tau, N_ti );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
-  }
-
-  /* loop over matrix and fill with exp values */
-  UINT4 i, n;
-  for ( n=0; n < N_tau; n ++ )
-    {
-      for ( i = 0; i < N_ti; i ++ )
-        {
-          UINT4 t_i = t0 + i * windowRange->dt0;
-          UINT4 tau_n = windowRange->tau + n * windowRange->dtau;
-          REAL8 win_n_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, tau_n );
-
-          gsl_matrix_set ( windowRange->exp_buffer, n, i, win_n_i );
-
-        } /* for i < N_ti */
-
-    } /* for m < N_tau */
-
-  return XLAL_SUCCESS;
-
-} /* XLALcomputeExpWindowBuffer() */
-
 /** Generate an exponential lookup-table expLUT for e^(-x)
  * over the interval x in [0, xmax], using 'length' points.
  */
-expLUT_t *
-XLALCreateExpLUT ( REAL8 xmax, UINT4 length )
+int
+XLALCreateExpLUT ( void )
 {
   const char *fn = __func__;
 
-  /* check input */
-  if ( xmax <= 0 ) {
-    XLALPrintError ("%s: xmax must be > 0\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
-  }
-  if ( length == 0 ) {
-    XLALPrintError ("%s: length must be > 0\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
-  }
-
   /* create empty output LUT */
-  expLUT_t *ret;
-  UINT4 len = sizeof(*ret);
-  if ( (ret = XLALMalloc ( len  )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALMalloc(%d)\n", fn, len );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  len = length * sizeof(*ret->data);
-  if ( ( ret->data = XLALMalloc ( len ) ) == NULL ) {
-    XLALPrintError ("%s: failed to XLALMalloc(%d)\n", fn, len );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  gsl_vector *ret;
+  if ( ( ret = gsl_vector_alloc ( EXPLUT_LENGTH )) == NULL ) {
+    XLALPrintError ("%s: failed to gsl_vector_alloc (%s)\n", fn, EXPLUT_LENGTH );
+    XLAL_ERROR ( fn, XLAL_ENOMEM );
   }
 
   /* fill output LUT */
-  ret->xmax = xmax;
-  ret->length = length;
-
-  REAL8 dx = xmax / length;
+  REAL8 dx = EXPLUT_XMAX / EXPLUT_LENGTH;
   UINT4 i;
-  for ( i=0; i < length; i ++ )
+  for ( i=0; i < EXPLUT_LENGTH; i ++ )
     {
       REAL8 xi = i * dx;
 
-      ret->data[i] = exp( - xi );
+      gsl_vector_set ( ret, i, exp( - xi ) );
 
     } /* for i < length() */
 
-  return ret;
+  /* 'return' this by setting the global vector */
+  expLUT = ret;
+
+  return XLAL_SUCCESS;
 
 } /* XLALCreateExpLUT() */
 
 /** Destructor function for expLUT_t lookup table
  */
 void
-XLALDestroyExpLUT ( expLUT_t *lut )
+XLALDestroyExpLUT ( void )
 {
-  if ( !lut )
+  if ( !expLUT )
     return;
 
-  if ( lut->data )
-    XLALFree ( lut->data );
+  gsl_vector_free ( expLUT );
 
-  XLALFree ( lut );
+  expLUT = NULL;
 
   return;
 
@@ -932,34 +823,30 @@ XLALDestroyExpLUT ( expLUT_t *lut )
  * will not contribute much to the integral and are less important than
  * values close to 1. Therefore we pre-compute a LUT of e^(-x) for x in [0, xmax],
  * in Npoints points, and set e^(-x) = 0 for x < xmax.
+ *
+ * NOTE: if module-global expLUT=NULL, we create it here
+ * NOTE: if argument is negative, we use math-lib exp(-x) instead of LUT
  */
 REAL8
-XLALFastNegExp ( REAL8 mx, const expLUT_t *lut )
+XLALFastNegExp ( REAL8 mx )
 {
   const char *fn = __func__;
 
-  if ( lalDebugLevel > 0 )
-    {
-      /* check input */
-      if ( !lut ) {
-        XLALPrintError ("%s: invalid NULL input 'lut', use XLALCreateExpLUT()\n", fn );
-        XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
-      }
-      if ( mx < 0 ) {
-        XLALPrintError ( "%s: input argument 'mx'=%f must be >= 0: we compute e^(-mx)\n", fn, mx );
-        XLAL_ERROR_REAL8 ( fn, XLAL_EDOM );
-      }
-    } /* if lalDebugLevel */
-
-  if ( mx > lut->xmax )	/* for values smaller than e^(-xmax) we truncate to 0 */
+  if ( mx > EXPLUT_XMAX )	/* for values smaller than e^(-xmax) we truncate to 0 */
     return 0.0;
 
-  REAL8 dxInv = lut->length / lut->xmax;
+  if ( mx < 0 )
+    return exp ( - mx  );
+
+  /* if lookup table doesn't exist yet: generate it now */
+  if ( !expLUT && ( XLALCreateExpLUT() != XLAL_SUCCESS) ) {
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
 
   /* find index of closest point xp in LUT to xm */
-  UINT4 i0 = (UINT4) ( mx * dxInv + 0.5 );
+  UINT4 i0 = (UINT4) ( mx * EXPLUT_DXINV + 0.5 );
 
-  return lut->data[i0];
+  return gsl_vector_get ( expLUT, i0 );
 
 } /* XLALFastNegExp() */
 
