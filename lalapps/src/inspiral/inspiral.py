@@ -3338,7 +3338,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
   """
   A search volume node.
   """
-  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False):
+  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False, bintype = "TOTAL_MASS"):
     """
     @database: the pipedown database containing the injection triggers
     @ouptut_cache: name prefix for cache file to be written out by program
@@ -3356,7 +3356,12 @@ class SearchVolumeNode(pipeline.SqliteNode):
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
       self.add_var_arg("--use-expected-loudest-event")
-
+    if bintype == "TOTAL_MASS":
+      self.add_var_arg("--bin-by-total-mass")
+    if bintype == "CHIRP_MASS":
+      self.add_var_arg("--bin-by-chirp-mass")
+    if bintype == "MASS1_MASS2":
+      self.add_var_arg("--bin-by-m1m2")
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
   """
