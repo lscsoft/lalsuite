@@ -350,10 +350,11 @@ void initVariables(LALInferenceRunState *state)
 	INT4 AmpOrder=0;
 	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
 	Approximant approx=TaylorF2;
-	REAL8 Dmin=1.0;
-	REAL8 Dmax=100.0;
+	REAL8 logDmin=log(1.0);
+	REAL8 logDmax=log(100.0);
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=12.5;
+	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -369,7 +370,9 @@ void initVariables(LALInferenceRunState *state)
 	[--end_time time]\tTrigger time to use\
 	[--Dmin dist]\tMinimum distance in Mpc (1)\
 	[--Dmax dist]\tMaximum distance in Mpc (100)\
-	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)";
+	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
+	[--mincomp min]\tMinimum component mass (1.0)\
+	[--maxcomp max]\tMaximum component mass (30.0)";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
@@ -407,32 +410,54 @@ void initVariables(LALInferenceRunState *state)
 		endtime=atof(ppt->value);
 	}
 	
-	/* Over-ride timem prior if specified */
+	/* Over-ride time prior if specified */
 	ppt=getProcParamVal(commandLine,"--dt");
 	if(ppt){
 		dt=atof(ppt->value);
 	}
 	
-	/* Over-ride timem prior if specified */
+	/* Over-ride Distance min if specified */
 	ppt=getProcParamVal(commandLine,"--Dmin");
 	if(ppt){
-		Dmin=atof(ppt->value);
+		logDmin=log(atof(ppt->value));
 	}
 	
-	/* Over-ride timem prior if specified */
+	/* Over-ride Distance max if specified */
 	ppt=getProcParamVal(commandLine,"--Dmax");
 	if(ppt){
-		Dmax=atof(ppt->value);
+		logDmax=log(atof(ppt->value));
 	}
+	
+	/* Over-ride Mass prior if specified */
+	ppt=getProcParamVal(commandLine,"--Mmin");
+	if(ppt){
+		mcMin=atof(ppt->value);
+	}
+	ppt=getProcParamVal(commandLine,"--Mmax");
+	if(ppt)	mcMax=atof(ppt->value);
+	
+	/* Over-ride component masses */
+	ppt=getProcParamVal(commandLine,"--compmin");
+	if(ppt)	mMin=atof(ppt->value);
+	addVariable(priorArgs,"component_min",&mMin,REAL8_t,PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--compmax");
+	if(ppt)	mMax=atof(ppt->value);
+	addVariable(priorArgs,"component_min",&mMax,REAL8_t,PARAM_FIXED);
+	
+	
 	printf("Read end time %f\n",endtime);
 	
 	addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
     addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
-	tmpVal=3.0;
-	addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
-    addMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t);
+	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
+	/*addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
+    addMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t); */
+	addVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
+	logmcMin=log(mcMin); logmcMax=log(mcMax);
+	addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
+
 	tmpVal=0.24;
 	addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
@@ -446,9 +471,9 @@ void initVariables(LALInferenceRunState *state)
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpVal=10.0;
-	addVariable(currentParams, "distance",        &tmpVal, REAL8_t, PARAM_LINEAR);
-	addMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   REAL8_t);
+	tmpVal=logDmin+(logDmax-logDmin)/2.0;
+	addVariable(currentParams,"logdistance", &tmpVal, REAL8_t, PARAM_LINEAR);
+	addMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   REAL8_t);
 	
 	tmpVal=1.0;
 	addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);

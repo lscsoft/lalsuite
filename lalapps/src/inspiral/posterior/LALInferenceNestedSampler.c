@@ -148,7 +148,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 Nlive=*(UINT4 *)getVariable(runState->algorithmParams,"Nlive");
 	UINT4 Nruns=1;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
-	REAL8 TOLERANCE=0.1;
+	REAL8 TOLERANCE=0.5;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,deltaZ,H,logZnoise,dZ=0;
 	LALVariables *temp;
 	FILE *fpout=NULL;
@@ -377,8 +377,11 @@ void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parame
 			/* Choose to rotate or reflect */
 			if(randnum- (STUDENTTFRAC + DIFFEVFRAC)>SKYFRAC/2.0)
 				LALInferenceRotateSky(runState, parameter);
-			else
+			else{
+				/* Have to call the diff ev too, in case the reflection happens twice */
 				LALInferenceReflectDetPlane(runState, parameter);
+				LALInferenceProposalDifferentialEvolution(runState,parameter);
+			}
 		}
 	}
 	return;	

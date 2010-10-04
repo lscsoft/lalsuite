@@ -32,6 +32,8 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 	LALVariableItem *item=params->head;
 	LALVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
+	REAL8 logmc=0.0;
+	REAL8 m1,m2,eta=0.0;
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -53,6 +55,29 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 	if(checkVariable(params,"declination"))
 		logPrior+=log(fabs(*(REAL8 *)getVariable(params,"declination")));
 	
+	if(checkVariable(params,"logmc"))
+		logmc=*(REAL8 *)getVariable(params,"logmc");
+	else if(checkVariable(params,"chirpmass"))
+		logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
+	
+	logPrior+=-(5./6.)*logmc;
+	
+	if(checkVariable(params,"massratio"))
+	{
+		eta=*(REAL8 *)getVariable(params,"massratio");
+		mc2masses(exp(logmc),eta,&m1,&m2);
+	}
+	
+	/* Check for component masses in range, if specified */
+	if(checkVariable(priorParams,"component_min"))
+		if(*(REAL8 *)getVariable(priorParams,"component_min") > m1
+		   || *(REAL8 *)getVariable(priorParams,"component_min") > m2)
+			return -DBL_MAX;
+	
+	if(checkVariable(priorParams,"component_max"))
+		if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
+		   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
+			return -DBL_MAX;
 	
 	return(logPrior);
 }

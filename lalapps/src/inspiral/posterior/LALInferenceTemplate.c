@@ -445,7 +445,7 @@ void templateLAL(LALIFOData *IFOdata)
   long i; 
   long j, jmax=0;
   double pj, pmax, pleft, pright;
-
+	
   double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
   double eta      = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
   double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */

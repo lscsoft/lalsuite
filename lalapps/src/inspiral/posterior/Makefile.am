@@ -6,11 +6,12 @@ if LALINSPIRAL
 if LALFRAME
 
 if LALMETAIO
-metaio_progs = lalapps_inspnest lalinference_test lalinference_nest
+metaio_progs = lalapps_inspnest lalinference_test lalinference_nest lalinference_test_mpi
 lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nest_calc.c nest_calc.h LALInspiralMCMC.h LALInspiralMCMCUser.h
 endif
 lalinference_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c LALInferenceMCMC.c
 lalinference_nest_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c LALInferenceNestedSampler.c LALInferencePrior.c
+lalinference_test_mpi_SOURCES = LALInference.c InferenceTestMPI.c LALInferenceTemplate.c LALInferenceReadData.c LALInferenceMCMCMPI.c
 
 frame_progs = lalapps_followupMcmc
 lalapps_followupMcmc_SOURCES = followupMcmc.c

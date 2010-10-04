@@ -182,10 +182,18 @@ void setVariable(LALVariables * vars, const char * name, void *value)
 
 void addVariable(LALVariables * vars, const char * name, void *value, VariableType type, ParamVaryType vary)
 /* Add the variable name with type type and value value to vars */
+/* If variable already exists, it will over-write the current value if type compatible*/
 {
+  LALVariableItem *old=NULL;
   /* Check the name doesn't already exist */
-  /* *** If variable already exists, should we just set it?*/
-  if(checkVariable(vars,name)) {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\".\n",name); exit(1);}
+  if(checkVariable(vars,name)) {
+	  old=getItem(vars,name);
+	  if(old->type != type)
+	  {fprintf(stderr," ERROR in addVariable(): Cannot re-add \"%s\" as previous definition has wrong type.\n",name); exit(1);}
+	  setVariable(vars,name,value);
+	  return;
+  }
+	
   if(!value) {fprintf(stderr,"Unable to access value through null pointer in addVariable, trying to add %s\n",name); exit(1);}
 
   LALVariableItem *new=malloc(sizeof(LALVariableItem));
@@ -843,7 +851,20 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	double FplusScaled, FcrossScaled;
 	REAL8 plainTemplateReal, plainTemplateImag;
 	UINT4 i;
+	REAL8 mc;
+	
+	/* Fill in derived parameters if necessary */
+	if(checkVariable(currentParams,"logdistance")){
+		distMpc=exp(*(REAL8 *) getVariable(currentParams,"logdistance"));
+		addVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+	}
 
+	if(checkVariable(currentParams,"logmc")){
+		mc=exp(*(REAL8 *)getVariable(currentParams,"logmc"));
+		addVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+	}
+		
+	
 	/* determine source's sky location & orientation parameters: */
 	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
 	dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
