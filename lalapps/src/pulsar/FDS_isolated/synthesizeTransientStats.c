@@ -80,22 +80,21 @@
 
 /** Enumeration of allowed amplitude-prior types
  */
-typedef enum
-  {
-    AMP_PRIOR_PHYSICAL = 0,	/**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
-    AMP_PRIOR_CANONICAL,	/**< 'canonical' priors: uniform in A^mu up to h_max */
-    AMP_PRIOR_LAST
-  } AmpPriorType_t;
-
+typedef enum {
+  AMP_PRIOR_TYPE_PHYSICAL = 0,	/**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
+  AMP_PRIOR_TYPE_CANONICAL,	/**< 'canonical' priors: uniform in A^mu up to h_max */
+  AMP_PRIOR_TYPE_LAST
+} AmpPriorType_t;
 
 /** User-variables: can be set from config-file or command-line */
 typedef struct {
   BOOLEAN help;		/**< trigger output of help string */
 
-  /* amplitude parameters + ranges */
-  REAL8 h0Nat;		/**< GW amplitude: h0/sqrt(Sn) */
-  REAL8 h0NatBand;	/**< Band to draw GW amplitude [h0Nat, h0Nat + h0NatBand ] */
-  REAL8 fixedSNR;	/**< Alternative: fix the optimal SNR of the injected signals */
+  /* amplitude parameters + ranges: 4 alternative ways to specify the h0-prior (set to < 0 to deactivate all but one!) */
+  REAL8 fixedh0Nat;	/**< Alternative 1: if >=0 ==> fix the GW amplitude: h0/sqrt(Sn) */
+  REAL8 fixedSNR;	/**< Alternative 2: if >=0 ==> fix the optimal SNR of the injected signals */
+  REAL8 fixedh0NatMax;	/**< Alternative 3: if >=0 ==> draw GW amplitude h0 in [0, h0NatMax ]: <==> 'regularized' F-stat prior (obsolete) */
+  REAL8 fixedRhohMax;	/**< Alternative 4: if >=0 ==> draw rhoh=h0*(detM)^(1/8) in [0, rhohMax]: <==> canonical F-stat prior */
 
   REAL8 cosi;		/**< cos(inclination angle). If not set: randomize within [-1,1] */
   REAL8 psi;		/**< polarization angle psi. If not set: randomize within [-pi/4,pi/4] */
@@ -160,7 +159,6 @@ typedef struct
  */
 typedef struct {
   pdf1D_t pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
-  REAL8 fixedSNR;	/**< alternative: if > 0 => fix SNR of injected signals */
   pdf1D_t pdf_cosi;	/**< pdf(cosi) */
   pdf1D_t pdf_psi;	/**< pdf(psi) */
   pdf1D_t pdf_phi0;	/**< pdf(phi0) */
@@ -171,6 +169,9 @@ typedef struct {
  */
 typedef struct {
   AmplitudePrior_t AmpPrior;	/**< amplitude-parameter priors to draw signals from */
+  REAL8 fixedSNR;		/**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
+  BOOLEAN fixedRhohMax;		/**< alternative 2: draw h0 with fixed rhohMax = h0Max * (detM)^(1/8) <==> canonical Fstat prior */
+
   SkyPosition skypos;		/**< (Alpha,Delta,system). Use Alpha < 0 to signal 'allsky' */
   BOOLEAN SignalOnly;		/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
@@ -355,12 +356,15 @@ int main(int argc,char *argv[])
         XLAL_ERROR ( fn, XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
-      /* compute transient-Bstat search statistic on these atoms */
       TransientCandidate_t cand = empty_TransientCandidate;
-      if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
-        LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
-        XLAL_ERROR ( fn, XLAL_EFUNC );
-      }
+      /* if requested: compute transient-Bstat search statistic on these atoms */
+      if ( fpTransientStats )
+        {
+          if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
+            LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+        }
 
       /* if requested, compute Ftotal over full data-span */
       if ( uvar.computeFtotal )
@@ -474,8 +478,10 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->computeFtotal = 0;
   uvar->useFReg = 0;
 
-  uvar->h0Nat = 0;
-  uvar->h0NatBand = 0;
+  uvar->fixedh0Nat = -1;
+  uvar->fixedSNR = -1;
+  uvar->fixedh0NatMax = -1;
+  uvar->fixedRhohMax = -1;
 
 #define DEFAULT_IFO "H1"
   uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
@@ -511,9 +517,10 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregREALUserStruct ( Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default: allsky]");
 
   /* signal amplitude parameters */
-  XLALregREALUserStruct ( h0Nat,		 0, UVAR_OPTIONAL, "GW amplitude h0 measured in units of noise-PSD sqrt(Sn)");
-  XLALregREALUserStruct ( h0NatBand,		 0, UVAR_OPTIONAL, "Draw GW 'amplitude' randomly from [h0Nat, h0Nat+h0NatBand]");
-  XLALregREALUserStruct ( fixedSNR,		 0, UVAR_OPTIONAL, "Alternative: fix the optimal SNR of the injected signals");
+  XLALregREALUserStruct ( fixedh0Nat,		 0, UVAR_OPTIONAL, "Alternative 1: if >=0 fix the GW amplitude: h0/sqrt(Sn)");
+  XLALregREALUserStruct ( fixedSNR, 		 0, UVAR_OPTIONAL, "Alternative 2: if >=0 fix the optimal SNR of the injected signals");
+  XLALregREALUserStruct ( fixedh0NatMax,	 0, UVAR_OPTIONAL, "Alternative 3: if >=0 draw GW amplitude h0 in [0, h0NatMax ] (FReg prior)");
+  XLALregREALUserStruct ( fixedRhohMax, 	 0, UVAR_OPTIONAL, "Alternative 4: if >=0 draw rhoh=h0*(detM)^(1/8) in [0, rhohMax] (canonical F-stat prior)");
 
   XLALregREALUserStruct ( cosi,			'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
   XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
@@ -607,21 +614,42 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->skypos.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* amplitude-params: setup pdf ranges, then initialize the priors */
-  cfg->AmpPrior.pdf_h0Nat.xMin = uvar->h0Nat;
-  if ( uvar->h0NatBand < 0 ) {
-    XLALPrintError ("%s: only non-negatives values >= 0 for 'h0NatBand' allowed, got '%g'\n", fn, uvar->h0NatBand );
+
+  /* first check that user only provided *one* method of determining the amplitude-prior range */
+  UINT4 numSets = 0;
+  if ( uvar->fixedh0Nat >= 0 ) numSets ++;
+  if ( uvar->fixedSNR >= 0 ) numSets ++;
+  if ( uvar->fixedh0NatMax >= 0 ) numSets ++ ;
+  if ( uvar->fixedRhohMax >= 0 ) numSets ++;
+  if ( numSets != 1 ) {
+    XLALPrintError ("%s: Specify (>=0) exactly *ONE* amplitude-prior range of {fixedh0Nat, fixedSNR, fixedh0NatMax, fixedRhohMax}\n", fn);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  cfg->AmpPrior.pdf_h0Nat.xBand = uvar->h0NatBand;
+  /* ----- setup amplitude prior range */
+  if ( uvar->fixedh0Nat >= 0 )	/* fix h0Nat */
+    {
+      cfg->AmpPrior.pdf_h0Nat.xMin  = uvar->fixedh0Nat;
+      cfg->AmpPrior.pdf_h0Nat.xBand = 0;
+    }
+  if (  uvar->fixedh0NatMax >= 0 ) /* draw h0Nat from [0, h0Natmax] */
+    {
+      cfg->AmpPrior.pdf_h0Nat.xMin  = 0;
+      cfg->AmpPrior.pdf_h0Nat.xBand = uvar->fixedh0NatMax;
+    }
+  if ( uvar->fixedSNR >= 0 )   /* fix optimal SNR */
+    {
+      cfg->AmpPrior.pdf_h0Nat.xMin  = 0;	/* dummy values: signal will be rescaled to fixedSNR at the end */
+      cfg->AmpPrior.pdf_h0Nat.xBand = 0;
+      cfg->fixedSNR = uvar->fixedSNR;
+    }
+  if ( uvar->fixedRhohMax >= 0 ) /* draw h0 from [0, rhohMax/(detM)^(1/8)] */
+    {
+      cfg->AmpPrior.pdf_h0Nat.xMin  = 0;
+      cfg->AmpPrior.pdf_h0Nat.xBand = uvar->fixedRhohMax;	/* set as if hmax=rhohMax here, later we rescale the signal */
+      cfg->fixedRhohMax = true;
+    }
 
-  if ( (uvar->fixedSNR > 0 )  && ( uvar->h0Nat > 0 ) ) {
-    XLALPrintError ("%s: only set ONE of either 'fixedSNR' or 'h0Nat'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( uvar->fixedSNR > 0 )
-    cfg->AmpPrior.fixedSNR = uvar->fixedSNR;
-
-  /* implict ranges on cosi, psi and phi0 if not specified by user */
+  /* ----- implict ranges on cosi, psi and phi0 if not specified by user */
   if ( XLALUserVarWasSet ( &uvar->cosi ) ) {
     cfg->AmpPrior.pdf_cosi.xMin  = uvar->cosi;
     cfg->AmpPrior.pdf_cosi.xBand = 0;
@@ -1154,12 +1182,11 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       if ( win == 0 )
         continue;
 
-      /* compute sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu, where Mh_mu_nu is now just
+      /* compute sh_mu = sqrt(gamma/2) * Mh_mu_nu A^nu * win, where Mh_mu_nu is now just
        * the per-atom block matrix [a^2,  ab; ab, b^2 ]
        * where Sn=1, so gamma = Sinv*TAtom = TAtom
        */
-
-      // NOTE: for s_mu: only LINEAR in window-function, NOT quadratic! -> see notes
+      // NOTE: for sh_mu: only LINEAR in window-function, NOT quadratic! -> see notes
       REAL8 a2 = win * atoms->data[alpha].a2_alpha;
       REAL8 b2 = win * atoms->data[alpha].b2_alpha;
       REAL8 ab = win * atoms->data[alpha].ab_alpha;
@@ -1169,7 +1196,7 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       Cd += ab;
 
       // we also compute M'_mu_nu, which will be used to estimate optimal SNR
-      // NOTE: for M'_mu_nu: QUADRATIC in window-function!, so we multiply by win again
+      // NOTE: M'_mu_nu is QUADRATIC in window-function!, so we multiply by win again
       Ap += win * a2;
       Bp += win * b2;
       Cp += win * ab;
@@ -1356,7 +1383,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
 
   SkyPosition skypos;
 
-  /* if Alpha < 0 ==> draw skyposition isotropically from all-sky */
+  /* -----  if Alpha < 0 ==> draw skyposition isotropically from all-sky */
   if ( cfg->skypos.longitude < 0 )
     {
       skypos.longitude = gsl_ran_flat ( cfg->rng, 0, LAL_TWOPI );	/* alpha uniform in [ 0, 2pi ] */
@@ -1379,7 +1406,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       skypos = cfg->skypos;
     } /* if single skypos given */
 
-  /* generate antenna-pattern functions for this sky-position */
+  /* ----- generate antenna-pattern functions for this sky-position */
   const MultiNoiseWeights *weights = NULL;	/* NULL = unit weights */
   if ( !multiAMBuffer->multiAM && (multiAMBuffer->multiAM = XLALComputeMultiAMCoeffs ( cfg->multiDetStates, weights, skypos )) == NULL ) {
     XLALPrintError ( "%s: XLALComputeMultiAMCoeffs() failed with xlalErrno = %d\n", fn, xlalErrno );
@@ -1387,16 +1414,16 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   }
   multiAMBuffer->skypos = skypos; /* store buffered skyposition */
 
-  /* generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
+  /* ----- generate a pre-initialized F-stat atom vector containing only the antenna-pattern coefficients */
   MultiFstatAtomVector *multiAtoms;
   if ( (multiAtoms = XLALGenerateMultiFstatAtomVector ( cfg->multiTS, multiAMBuffer->multiAM )) == NULL ) {
     XLALPrintError ( "%s: XLALGenerateMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  /* draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
+  /* ----- draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
   PulsarAmplitudeParams Amp;
-  if ( cfg->AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
+  if ( cfg->fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
     Amp.h0 = 1.0;
   else
     Amp.h0   = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_h0Nat, cfg->rng );
@@ -1412,7 +1439,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  /* draw transient-window parameters from given ranges using flat priors */
+  /* ----- draw transient-window parameters from given ranges using flat priors */
   transientWindow_t injectWindow = empty_transientWindow;
   injectWindow.type = cfg->transientInjectRange.type;
   if ( injectWindow.type != TRANSIENT_NONE )	/* nothing to be done if no window */
@@ -1421,38 +1448,56 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       injectWindow.tau = (UINT4) gsl_ran_flat ( cfg->rng, cfg->transientInjectRange.tau, cfg->transientInjectRange.tau + cfg->transientInjectRange.tauBand );
     }
 
-  /* add transient signal to the Fstat atoms */
+  /* ----- add transient signal to the Fstat atoms */
   AntennaPatternMatrix M_mu_nu;
   REAL8 rho2 = XLALAddSignalToMultiFstatAtomVector ( multiAtoms, &M_mu_nu, A_Mu, injectWindow );
   if ( xlalErrno ) {
-    XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVectorn() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLALPrintError ( "%s: XLALAddSignalToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
 
-  /* if fixedSNR signal is requested: rescale everything to the desired SNR now */
-  if ( cfg->AmpPrior.fixedSNR > 0 )
+  /* ----- special signal rescaling if 1) fixedSNR OR 2) fixed rhohMax */
+
+  /* 1) if fixedSNR signal is requested: rescale everything to the desired SNR now */
+  if ( (cfg->fixedSNR > 0) || cfg->fixedRhohMax )
     {
-      REAL8 rescale = cfg->AmpPrior.fixedSNR / sqrt(rho2);	/* rescale atoms by this factor, s.t. SNR = cfg->AmpPrior.SNR */
-      /* rescale atoms */
-      if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {
+      if ( (cfg->fixedSNR > 0) && cfg->fixedRhohMax ) { /* double-check consistency: only one allowed */
+        XLALPrintError ("%s: Something went wrong: both [cfg->fixedSNR = %f > 0] and [cfg->fixedRhohMax==true] are not allowed!\n", fn, cfg->fixedSNR );
+        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
+
+      REAL8 rescale;
+
+      if ( cfg->fixedSNR > 0 )
+        {
+          rescale = cfg->fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = cfg->fixedSNR
+        }
+      if ( cfg->fixedRhohMax )
+        {
+          REAL8 detM1o8 = sqrt ( M_mu_nu.Sinv_Tsft ) * pow ( M_mu_nu.Dd, 0.25 );	// (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4)
+          rescale = 1.0 / detM1o8;	// we drew h0 in [0, rhohMax], so we now need to rescale as h0Max = rhohMax/(detM)^(1/8)
+        }
+
+      if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {	      /* rescale atoms */
         XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
         XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
       }
-      /* rescale amplitude-params for consistency */
-      Amp.h0 *= rescale;
-      UINT4 i; for (i=0; i < 4; i ++) A_Mu[i] *= rescale;
-      /* finally: rescale SNR */
-      rho2 *= SQ(rescale);
-    } /* if fixed SNR requested */
 
-  /* add noise to the Fstat atoms, unless --SignalOnly was specified */
+      Amp.h0 *= rescale;	      /* rescale amplitude-params for consistency */
+      UINT4 i; for (i=0; i < 4; i ++) A_Mu[i] *= rescale;
+
+      rho2 *= SQ(rescale);	      /* rescale reported optimal SNR */
+
+    } /* if fixedSNR > 0 OR fixedRhohMax */
+
+  /* ----- add noise to the Fstat atoms, unless --SignalOnly was specified */
   if ( !cfg->SignalOnly )
     if ( XLALAddNoiseToMultiFstatAtomVector ( multiAtoms, cfg->rng ) != XLAL_SUCCESS ) {
       XLALPrintError ("%s: XLALAddNoiseToMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
       XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
     }
 
-  /* if requested: return all inject signal parameters */
+  /* ----- if requested: return all inject signal parameters */
   if ( injParams )
     {
       injParams->skypos = skypos;
@@ -1535,8 +1580,8 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
     XLALPrintError ("%s: non-NULL 'sampling' pointer found in AmpPrior struct. All need to be NULL initialized!\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  if ( priorType >= AMP_PRIOR_LAST ) {
-    XLALPrintError ("%s: Unknown amplitude-prior type '%d' specified, must be within [0,%d]\n", fn, priorType, AMP_PRIOR_LAST - 1 );
+  if ( priorType >= AMP_PRIOR_TYPE_LAST ) {
+    XLALPrintError ("%s: Unknown amplitude-prior type '%d' specified, must be within [0,%d]\n", fn, priorType, AMP_PRIOR_TYPE_LAST - 1 );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   if ( AmpPrior->pdf_h0Nat.xBand < 0 || AmpPrior->pdf_cosi.xBand < 0 || AmpPrior->pdf_psi.xBand < 0 || AmpPrior->pdf_phi0.xBand < 0 ) {
@@ -1549,7 +1594,7 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
 
   switch ( priorType )
     {
-    case AMP_PRIOR_PHYSICAL:
+    case AMP_PRIOR_TYPE_PHYSICAL:
 
       /* flat prior for h0(or SNR) */
       AmpPrior->pdf_h0Nat.prob = NULL;
@@ -1562,7 +1607,7 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior,	/**< [in/out] prior value r
 
       break;
 
-    case AMP_PRIOR_CANONICAL:
+    case AMP_PRIOR_TYPE_CANONICAL:
 
       /* ----- pdf(h0) ~ h0^3 amplitude prior ----- */
       thisPDF = &AmpPrior->pdf_h0Nat;
