@@ -69,6 +69,9 @@ LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
+
+LALAPPS_ENABLE_MPI
+
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
@@ -121,6 +124,12 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
 # boinc requires a c++ compiler
 AC_PROG_CXX
+
+# check for MPI compiler
+if test "x$mpi" = "xtrue"; then
+  AX_MPI([mpi=true],[mpi=false])
+fi
+LALSUITE_ENABLE_MODULE([MPI],[mpi])
 
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
@@ -422,6 +431,7 @@ echo "
                 PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
+                MPI support is $MPI_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps

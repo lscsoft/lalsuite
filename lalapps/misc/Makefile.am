@@ -1,4 +1,5 @@
 EXTRA_DIST = \
+	ax_mpi.m4 \
 	compile \
 	config.guess \
 	config.sub \
