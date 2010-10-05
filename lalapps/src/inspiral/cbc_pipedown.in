@@ -235,7 +235,7 @@ minifup_cm_job = inspiral.MiniFollowupsJob(cp)
 # the number of and options given to plotfm job is optional and is set by the ini file
 # to handle this, we do a similar thing as is done in ihope with inspinj: the 'plot_found/missed'
 # section in the ini file gives the names of sections to read for plotfm jobs; these sections are cycled over
-# and temprarily re-named to 'plotfm' then passed to the PlotFMJob class to create the job
+# and temporarily re-named to 'plotfm' then passed to the PlotFMJob class to create the job
 plotfm_jobs = []
 if cp.has_section('plotfm'):
   for plotfm_tag in cp.options('plotfm'):
@@ -253,6 +253,7 @@ dbsimplify_job = inspiral.DBSimplifyJob(cp)
 dbaddinj_job = inspiral.DBAddInjJob(cp)
 inspinjfind_job = inspiral.InspInjFindJob(cp)
 comp_durs_job = inspiral.ComputeDurationsJob(cp)
+repop_coinc_job = inspiral.RepopCoincJob(cp)
 cluster_job = inspiral.ClusterCoincsJob(cp)
 ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
 ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
@@ -278,6 +279,7 @@ dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', 'sub' ]) )
 dbaddinj_job.set_sub_file( '.'.join([ basename, 'dbaddinj', 'sub' ]) )
 inspinjfind_job.set_sub_file( '.'.join([ basename, 'inspinjfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
+repop_coinc_job.set_sub_file( '.'.join([ basename, 'repop_coinc', 'sub' ]) )
 cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
 mvsc_get_doubles_job.set_sub_file( '.'.join([ basename, 'mvsc_get_doubles', 'sub' ]) )
 mvsc_train_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_train_forest', 'sub' ]) )
@@ -346,7 +348,7 @@ for tag in user_tags:
 
 
   ############################################################################
-  # Step 1: Setup thinca_to_coinc nodes
+  # Setup thinca_to_coinc nodes
 
   print "\tsetting up thinca_to_coinc nodes..."
 
@@ -449,8 +451,7 @@ for tag in user_tags:
   fp.close()
 
   ############################################################################
-  # Step 2: Setup a LigolwSqliteNode for putting thinca_to_coincs 
-  # into a sql db
+  # Setup a LigolwSqliteNode for putting thinca_to_coincs into a sql db
 
   print "\tsetting up node to put thinca_to_coinc files into a SQLite database..."
   
@@ -478,7 +479,7 @@ for tag in user_tags:
   dag.add_node( t2c2sql_node )
   
   ############################################################################
-  # Step 3: Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
+  # Setup a DBSimplifyNode to clean up the output of the t2c2sql_node 
   
   print "\tsetting up dbsimplify node to clean the database..."
   
@@ -492,9 +493,26 @@ for tag in user_tags:
   dbsimplify_node.add_parent( t2c2sql_node )
   
   dag.add_node( dbsimplify_node )
- 
+
   ############################################################################
-  # Step 4: Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
+  # Make the detection statistic nicer and Kipp and Duncan happier
+ 
+  print "\tsetting up repop_coinc node to recalculate detection statistic..."
+
+  # set node options
+  repop_coinc_node = inspiral.RepopCoincNode( repop_coinc_job )
+  repop_coinc_node.set_category('repop_coinc')
+  repop_coinc_node.set_tmp_space( tmp_space )
+  repop_coinc_node.set_input( raw_result_db )
+  repop_coinc_node.set_output( raw_result_db )
+
+  # set parent node
+  repop_coinc_node.add_parent( dbsimplify_node )
+
+  dag.add_node( repop_coinc_node )
+
+  #############################################################################
+  # Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
   print "\tsetting up cluster node to cluster coincs in the database..."
   
@@ -512,7 +530,7 @@ for tag in user_tags:
   cluster_node.set_output(result_db)
   
   # set parent node
-  cluster_node.add_parent( dbsimplify_node )
+  cluster_node.add_parent( repop_coinc_node )
   
   dag.add_node( cluster_node )
 
@@ -520,7 +538,7 @@ for tag in user_tags:
   cluster_nodes[tag] = cluster_node
   
   ############################################################################
-  # Step 5: Do additional jobs for injection tags
+  # Do additional jobs for injection tags
 
   if simulation:
     # add dbaddinj node
@@ -665,7 +683,7 @@ for result_db in result_dbs_cache:
   dag.add_node( veto2sql_node )
   
   ############################################################################
-  # Step 3b: Compute durations in the database
+  # Compute durations in the database
 
   print "\tsetting up compute_durations node..."
 
@@ -681,7 +699,7 @@ for result_db in result_dbs_cache:
   dag.add_node(comp_durs_node)
   
   ############################################################################
-  # Step 4: MVSC Calculation
+  # MVSC Calculation
 
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
     print "\tsetting up MVSC nodes..."
@@ -752,7 +770,7 @@ for result_db in result_dbs_cache:
     dag.add_node( mvsc_update_sql_node )
 
   ############################################################################
-  # Step 5a: Setup a CfarNode to compute the uncombined false alarm rates
+  # Compute the uncombined false alarm rates
   
   print "\tsetting up cfar nodes:"
   print "\t\tfor uncombined false alarm rates..."
@@ -772,7 +790,7 @@ for result_db in result_dbs_cache:
   dag.add_node( ucfar_node )
   
   ############################################################################
-  # Step 5b: Setup a CfarNode to compute the combined false alarm rates
+  # Compute the combined false alarm rates
   
   print "\t\tfor combined false alarm rates..."
   

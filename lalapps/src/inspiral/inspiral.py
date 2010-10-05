@@ -2658,6 +2658,31 @@ class DBAddInjNode(pipeline.SqliteNode):
     return self._injection_file
 
 
+class RepopCoincJob(pipeline.SqliteJob):
+  """
+  A repop_coinc job. The static options are read from the section
+  [repop_coinc] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """  
+    exec_name = 'repop_coinc'
+    sections = ['repop_coinc']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class RepopCoincNode(pipeline.SqliteNode):
+  """
+  A repop_coinc node.
+  """
+  def __init__(self, job):
+    """
+    @job: a RepopCoincJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
 class ClusterCoincsJob(pipeline.SqliteJob):
   """
   A cluster coincs job. The static options are read from the section
