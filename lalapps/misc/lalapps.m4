@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 6
+# serial 7
 
 AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -96,6 +96,18 @@ fi
 if test "$boinc" = "true"; then
   static_binaries=false
 fi
+])
+
+AC_DEFUN([LALAPPS_ENABLE_MPI],
+[AC_ARG_ENABLE(
+  [mpi],
+  AC_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
+  [ case "${enableval}" in
+      yes) mpi=true;;
+      no)  mpi=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
+    esac
+  ], [ mpi=false ] )
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_FRAME],
