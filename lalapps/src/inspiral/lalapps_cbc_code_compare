@@ -2,14 +2,32 @@
 #
 # cbc_code_compare
 #
-# usage: cbc_code_compare branch1:tag1 branch2:tag2
+# usage: cbc_code_compare branch1:tag1 branch2:tag2 harness_repo:harness_tag
 # example:
 #   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
 #                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
 
+if [ "x$LSCSOFT_SRCDIR" == "x" ]; then
+    echo "error: \$LSCSOFT_SRCDIR must be defined in your environment"
+    echo
+    echo "Please set \$LSCSOFT_SRCDIR to the parent dir of a lalsuite/ checkout containing the build & test harness code you wish to use."
+    echo
+    echo "(Yes this is ugly, but fear not: it will go away soon with the new .ini file approach.)"
+    exit 3
+fi
+
+if ! which nmi_submit > /dev/null 2>&1; then
+    NMI_ROOT=/usr/local/nmi/cur
+    export PATH=$PATH:$NMI_ROOT/sbin:$NMI_ROOT/bin
+    export NMI_CONF=$NMI_ROOT/etc/nmi.conf
+fi
+if [ "x$NMI_CONF" == "x" ]; then
+    NMI_CONF="$(dirname $(dirname $(which nmi_submit)))/etc/nmi.conf"
+fi
+
 # Metronome
-PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
-export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
+#PATH=$PATH:/usr/local/nmi/cur/sbin:/usr/local/nmi/cur/bin
+#export NMI_CONF=/usr/local/nmi/cur/etc/nmi.conf
 
 # where to find the "reference" XML data products for the unit tests
 # TODO: these should be moved out of my home dir (e.g., to /usr/local/...)
@@ -58,8 +76,10 @@ env | grep ^_NMI_
 cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/builds
 #./genbuild.sh $_NMI_GIT_ID_A $_NMI_GIT_BRANCH_A $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.a.out
 #./genbuild.sh $_NMI_GIT_ID_B $_NMI_GIT_BRANCH_B $_NMI_GIT_URL | tee $SUBMIT_DIR/genbuild.b.out
-./genbuild.py --harness-git-id=3918fabb4aac03cea487d3b2b0ad83e3bf2b064e --harness-git-branch=nmi --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
-./genbuild.py --harness-git-id=3918fabb4aac03cea487d3b2b0ad83e3bf2b064e --harness-git-branch=nmi --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
+
+LATEST_MASTER_ID=$(git ls-remote $_NMI_GIT_URL heads/master | awk '{print $1}')
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_A --git-branch=$_NMI_GIT_BRANCH_A | tee $SUBMIT_DIR/genbuild.a.out
+./genbuild.py --harness-git-id=$LATEST_MASTER_ID --harness-git-branch=master --git-repo=$_NMI_GIT_URL --git-id=$_NMI_GIT_ID_B --git-branch=$_NMI_GIT_BRANCH_B | tee $SUBMIT_DIR/genbuild.b.out
 
 # needed by subsequent tests
 export BUILD_A_GID=$(awk '/Global ID:/{print $3}' $SUBMIT_DIR/genbuild.a.out)
@@ -105,11 +125,14 @@ for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
 
     cd $LSCSOFT_SRCDIR/lalsuite/glue/src/nmi/diff
 
-    # workaround for nmi-support #6668
-#    sleep 30
+    # workaround for nmi-support #6668 and/or #7071
+    condor_reschedule
+    sleep 30
 
     # given two unit test ids, submit the diff test for this XML data product
     # this Metronome job will block until the unit tests are complete (or 24h)
+    export _NMI_HARNESS_GIT_REPO=$NMI_GIT_URL
+    export _NMI_HARNESS_GIT_BRANCH=$LATEST_MASTER_ID
     ./gendiff.sh $UNIT_A_GID $UNIT_B_GID
 done
 
