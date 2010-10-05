@@ -204,6 +204,7 @@ typedef struct
   AntennaPatternMatrix M_mu_nu;
   transientWindow_t transientWindow;
   REAL8 SNR;
+  REAL8 detM1o8;	// (detMp)^(1/8): rescale param between h0, and rhoh = h0 * (detMp)^(1/8)
 } InjParams_t;
 
 
@@ -1426,7 +1427,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   if ( cfg->fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
     Amp.h0 = 1.0;
   else
-    Amp.h0   = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_h0Nat, cfg->rng );
+    Amp.h0 = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_h0Nat, cfg->rng );
 
   Amp.cosi = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_cosi, cfg->rng );
   Amp.psi  = XLALDrawFromPDF ( &cfg->AmpPrior.pdf_psi,  cfg->rng );
@@ -1457,6 +1458,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   }
 
   /* ----- special signal rescaling if 1) fixedSNR OR 2) fixed rhohMax */
+  REAL8 detM1o8 = sqrt ( M_mu_nu.Sinv_Tsft ) * pow ( M_mu_nu.Dd, 0.25 );	// (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4)
 
   /* 1) if fixedSNR signal is requested: rescale everything to the desired SNR now */
   if ( (cfg->fixedSNR > 0) || cfg->fixedRhohMax )
@@ -1469,14 +1471,9 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       REAL8 rescale;
 
       if ( cfg->fixedSNR > 0 )
-        {
-          rescale = cfg->fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = cfg->fixedSNR
-        }
+        rescale = cfg->fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = cfg->fixedSNR
       if ( cfg->fixedRhohMax )
-        {
-          REAL8 detM1o8 = sqrt ( M_mu_nu.Sinv_Tsft ) * pow ( M_mu_nu.Dd, 0.25 );	// (detM)^(1/8) = sqrt(Tsft/Sn) * (Dp)^(1/4)
-          rescale = 1.0 / detM1o8;	// we drew h0 in [0, rhohMax], so we now need to rescale as h0Max = rhohMax/(detM)^(1/8)
-        }
+        rescale = 1.0 / detM1o8;	// we drew h0 in [0, rhohMax], so we now need to rescale as h0Max = rhohMax/(detM)^(1/8)
 
       if ( XLALRescaleMultiFstatAtomVector ( multiAtoms, rescale ) != XLAL_SUCCESS ) {	      /* rescale atoms */
         XLALPrintError ( "%s: XLALRescaleMultiFstatAtomVector() failed with xlalErrno = %d\n", fn, xlalErrno );
@@ -1506,6 +1503,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
       injParams->M_mu_nu = M_mu_nu;
       injParams->transientWindow = injectWindow;
       injParams->SNR = sqrt(rho2);
+      injParams->detM1o8 = detM1o8;
     } /* if injParams */
 
 
@@ -1740,7 +1738,7 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
   int ret;
   /* if requested, write header-comment line */
   if ( par == NULL ) {
-    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0       tau  type\n");
+    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0       tau  type (detMp)^(1/8)\n");
     if ( ret < 0 ) {
       XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
       XLAL_ERROR ( fn, XLAL_EIO );
@@ -1751,13 +1749,14 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
   } /* if par == NULL */
 
   /* if injParams given, output them to the file */
-  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8d  %8d    %1d\n",
+  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8d  %8d    %1d   %8.3g\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
                   par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/
                   par->ampVect[0], par->ampVect[1], par->ampVect[2], par->ampVect[3],			/* ampltiude vector A^mu */
                   par->M_mu_nu.Ad, par->M_mu_nu.Bd, par->M_mu_nu.Cd, par->M_mu_nu.Dd,			/* antenna-pattern matrix components */
-                  par->transientWindow.t0, par->transientWindow.tau, par->transientWindow.type		/* transient-window params */
+                  par->transientWindow.t0, par->transientWindow.tau, par->transientWindow.type,		/* transient-window params */
+                  par->detM1o8										/* rescale parameter (detMp)^(1/8) */
                   );
   if ( ret < 0 ) {
     XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
