@@ -444,6 +444,11 @@ int main(int argc,char *argv[])
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
   XLALDestroyExpLUT();
+  /* free amplitude prior pdfs */
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_h0Nat );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_cosi );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_psi );
+  XLALDestroyPDF1D ( cfg.AmpPrior.pdf_phi0 );
 
   if ( cfg.logString ) XLALFree ( cfg.logString );
   gsl_rng_free ( cfg.rng );
@@ -1868,7 +1873,6 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
               REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
               pdf->prob->data[i] = CUBE( xMid );	// pdf(h0) ~ h0^3
             }
-
           AmpPrior->pdf_h0Nat = pdf;
         }
       /* ----- pdf(cosi) ~ ( 1 - cosi^2)^3 ----- */
@@ -1885,6 +1889,7 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
               REAL8 y = 1.0 - SQ(xMid);
               pdf->prob->data[i] = CUBE( y );
             }
+          AmpPrior->pdf_cosi = pdf;
         }
       /* ----- psi ----- */
       if ( AmpPrior->pdf_psi == NULL )
