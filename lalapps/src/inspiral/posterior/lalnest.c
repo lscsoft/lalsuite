@@ -68,8 +68,8 @@ Optional OPTIONS:\n \
 [--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
 [--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor)]\n \
-[--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
-[--phaseOrder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\
+[--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
+[--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
@@ -214,8 +214,8 @@ void initialise(int argc, char *argv[]){
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
-		{"ampOrder",required_argument,0,17},
-		{"phaseOrder",required_argument,0,20},
+		{"amporder",required_argument,0,17},
+		{"phaseorder",required_argument,0,20},
 		{"Dmin",required_argument,0,18},
 		{"Dmax",required_argument,0,19},
 		{"version",no_argument,0,'V'},
