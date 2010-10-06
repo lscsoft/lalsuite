@@ -32,6 +32,16 @@
 /* ---------- Includes -------------------- */
 #include "HierarchSearchGCT.h"
 
+#if defined(__SSE2__)
+#define GC_SSE2_OPT 1
+#endif
+
+#ifdef GC_SSE2_OPT
+#include <gc_hotloop_sse2.h>
+#else
+#define ALRealloc LALRealloc
+#endif
+
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
@@ -145,7 +155,6 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                               REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                               UsefulStageVariables *usefulparams );
 static inline INT4 ComputeU1idx( REAL8 freq_event, REAL8 f1dot_eventB1, REAL8 A1, REAL8 U1start, REAL8 U1winInv );
-static inline void hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
 void ComputeU2idx( REAL8 freq_event, REAL8 f1dot_event, REAL8 A2, REAL8 B2, REAL8 U2start, REAL8 U2winInv,
                   INT4 *U2idx);
 int compareCoarseGridUindex( const void *a, const void *b );
@@ -427,7 +436,7 @@ int MAIN( int argc, char *argv[]) {
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-	/* set log-level */
+  /* set log-level */
 #ifdef EAH_LOGLEVEL
   LogSetLevel ( EAH_LOGLEVEL );
 #else
@@ -937,8 +946,8 @@ int MAIN( int argc, char *argv[]) {
         coarsegrid.length = (UINT4) (binsFstat1);
 
         /* allocate memory for coarsegrid */
-        coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-        coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
+        coarsegrid.TwoF = (REAL4 *)ALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
+        coarsegrid.Uindex = (UINT4 *)ALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
 
 	if ( coarsegrid.TwoF == NULL || coarsegrid.Uindex == NULL) {
           fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1008,8 +1017,8 @@ int MAIN( int argc, char *argv[]) {
           Windows ==>???
 */
 
-        finegrid.nc = (UCHAR *)LALRealloc( finegrid.nc, finegrid.length * sizeof(UCHAR));
-        finegrid.sumTwoF = (REAL4 *)LALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
+        finegrid.nc = (UCHAR *)ALRealloc( finegrid.nc, finegrid.length * sizeof(UCHAR));
+        finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
 
         if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
           fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1232,19 +1241,28 @@ int MAIN( int argc, char *argv[]) {
               return(HIERARCHICALSEARCH_ECG);
             }
 
-
             REAL4 * cgrid2F = coarsegrid.TwoF + U1idx;
             REAL4 * fgrid2F = finegrid.sumTwoF + ifine;
             UCHAR * fgridnc = finegrid.nc+ifine;
 
-            hotloop (fgrid2F,cgrid2F,fgridnc,TwoFthreshold,finegrid.freqlength );
+#ifdef GC_SSE2_OPT
+            gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
+#else
+	    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+	      fgrid2F[0] += cgrid2F[0];
+	      fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
+	      fgrid2F++;
+	      cgrid2F++;
+	      fgridnc++;
+	    }
+#endif
 
             ifine+=finegrid.freqlength; /* increment fine-grid index */
 
           } /* for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) { */
 
-/* FIXME the following diagnostic output was broken by the SSE2 code */
-#if 0
+#ifndef GC_SSE2_OPT
+	  /* FIXME the following diagnostic output was broken by the SSE2 code */
 #ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1));
 #endif
@@ -2326,161 +2344,4 @@ int compareCoarseGridUindex(const void *a,const void *b) {
     return(1);
   else
     return(0);
-}
-
-/* FIXME: pick a better name */
-void hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  )  {
-  UINT4 ifreq_fg;
-
-/* TODO : extend to LINUX and Windows (solve alignment requirements) */
-#if defined(__APPLE__) && defined(__SSE2__)
-
-  REAL4 VTTTT[4] __attribute__ ((aligned (16))) = { TwoFthreshold,TwoFthreshold,TwoFthreshold,TwoFthreshold };
-
-  /* ensure alignment on fine grid. note fgridnc is UCHAR*
-     while fgrid2F is UINT4*  */
-
-  int offset = ((UINT4)fgridnc & 0xf) ;
-
-  if(offset != 0) offset = 16-offset;
-
-  for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
-
-	    fgrid2F[0] += cgrid2F[0] ;
-	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
-	    fgrid2F++;
-	    cgrid2F++;
-	    fgridnc++;
-
-  } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
-
-
-for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
-    /* unrolled loop (16 iterations of original loop) */
-
-    __asm __volatile (
-         "MOVUPS  (%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
-         "MOVAPS  (%[fg2F]),%%xmm3 \n\t"
-         "MOVAPS %[Vthresh2F],%%xmm7 \n\t"
-         "MOVUPS  0x10(%[cg2F]),%%xmm4 \n\t"
-         "MOVUPS  0x20(%[cg2F]),%%xmm5 \n\t"
-         "MOVUPS  0x30(%[cg2F]),%%xmm6 \n\t"
-
-         /* Loop iterations 1...4 */
-
-         "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
-         "MOVAPS  (%[fgnc]),%%xmm1 \n\t"  /* vector of 16 (!) number count values (unsigned bytes) */
-         "MOVAPS  %%xmm3,(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
-         "MOVAPS %%xmm7,%%xmm3 \n\t"
-         "CMPLEPS %%xmm2,%%xmm3   \n\t"   /* compare the four coarse grid 2F values to four */
-                                          /* copies of threshold value in parallel          */
-                                          /* result is a vector of 4 integer values:        */
-                                          /*        -1 if TwoFthreshold < cgrid2F[i]        */
-                                          /*         0 otherwise                            */
-	 				  /* (saved in xmm3 for later processing)           */
-
-         /* Loop iterations 5...8  (same as above) */
-
-         "MOVAPS  0x10(%[fg2F]),%%xmm2 \n\t"
-         "ADDPS   %%xmm4,%%xmm2 \n\t"
-         "MOVAPS  %%xmm2,0x10(%[fg2F]) \n\t"
-         "MOVAPS %%xmm7,%%xmm0 \n\t"
-         "CMPLEPS %%xmm4,%%xmm0   \n\t"
-
-         "PACKSSDW %%xmm0,%%xmm3 \n\t" /* combine two vectors of 4 double words (0/-1) */
-				       /* to a vector of 8 words of 0/-1 in %%xmm3 */
-
-         /* Loop iterations 9...12  (same as above) */
-
-         "MOVAPS  0x20(%[fg2F]),%%xmm4 \n\t"
-         "ADDPS   %%xmm5,%%xmm4 \n\t"
-         "MOVAPS  %%xmm4,0x20(%[fg2F]) \n\t"
-         "MOVAPS %%xmm7,%%xmm4 \n\t"
-         "CMPLEPS %%xmm5,%%xmm4   \n\t"
-
-
-         /* Loop iterations 13...16  (same as above) */
-
-         "MOVAPS  0x30(%[fg2F]),%%xmm2 \n\t"
-         "ADDPS   %%xmm6,%%xmm2 \n\t"
-         "MOVAPS  %%xmm2,0x30(%[fg2F]) \n\t"
-         "MOVAPS %%xmm7,%%xmm0 \n\t"
-         "CMPLEPS %%xmm6,%%xmm0   \n\t"
-
-         "PACKSSDW %%xmm0,%%xmm4 \n\t" /* 8 words of 0/-1 in %%xmm4 */
-
-         "PACKSSWB %%xmm4,%%xmm3 \n\t" /* 16 unsigned bytes of 0/-1 in %%xmm3 */
-
-         "PSUBB %%xmm3, %%xmm1   \n\t"   /* subtracting vector from number count vector */
-         "MOVAPS  %%xmm1,(%[fgnc]) \n\t" /* to increment number count if threshold reached */
-
-/*  ---------------------------------------------------*/
-:
-      /* output */
-
-      :
-      /* input */
-      [cg2F]       "r"  (cgrid2F),
-      [fg2F]       "r"  (fgrid2F),
-      [fgnc]       "r"  (fgridnc),
-      [Vthresh2F]   "m"  (VTTTT[0])
-
-      : /* clobbered */
-      "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","memory"
-
-    ) ;
-    fgrid2F+=16;
-    cgrid2F+=16;
-    fgridnc+=16;
-
-  }
-  /* take care of remaining iterations, length  modulo 16 */
-  for( ; ifreq_fg < length; ifreq_fg++ ) {
-	    fgrid2F[0] += cgrid2F[0] ;
-	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
-	    fgrid2F++;
-	    cgrid2F++;
-	    fgridnc++;
-  } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
-
-#else
-
-  for(ifreq_fg=0 ; ifreq_fg < length; ifreq_fg++ ) {
-            fgrid2F[0] += cgrid2F[0] ;
-            fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
-            fgrid2F++;
-            cgrid2F++;
-            fgridnc++;
-  }
-#endif
-
-}
-
-
-/* aligned malloc, see http://www.gidforums.com/t-8543.html */
-
-/* align_size has to be a power of two !! */
-void *aligned_malloc(size_t size, size_t align_size) {
-
-  char *ptr,*ptr2,*aligned_ptr;
-  int align_mask = align_size - 1;
-
-  ptr=(char *)malloc(size + align_size + sizeof(int));
-  if(ptr==NULL) return(NULL);
-
-  ptr2 = ptr + sizeof(int);
-  aligned_ptr = ptr2 + (align_size - ((size_t)ptr2 & align_mask));
-
-
-  ptr2 = aligned_ptr - sizeof(int);
-  *((int *)ptr2)=(int)(aligned_ptr - ptr);
-
-  return(aligned_ptr);
-}
-
-void aligned_free(void *ptr) {
-
-  int *ptr2=(int *)ptr - 1;
-  ptr -= *ptr2;
-  free(ptr);
 }
