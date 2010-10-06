@@ -71,8 +71,8 @@ Optional OPTIONS:\n \
 [--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
-[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
-[ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
+[--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
+[--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
 [--distMax FLOAT (100)\t:\tMaximum distance to use]\n \
 [--deta FLOAT\t:\twidth of eta window]\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
@@ -191,7 +191,7 @@ void initialise(int argc, char *argv[]){
 		{"XMLfile",required_argument,0,'X'},
 		{"Nmcmc",required_argument,0,'M'},
 		{"Nruns",required_argument,0,'r'},
-		{"GRB",no_argument,0,'b'},
+		{"grb",no_argument,0,'b'},
 		{"out",required_argument,0,'o'},
 		{"inj",required_argument,0,'j'},
 		{"fake",no_argument,0,'F'},
@@ -207,7 +207,7 @@ void initialise(int argc, char *argv[]){
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
 		{"studentt",no_argument,0,'l'},
-		{"RA",required_argument,0,'O'},
+		{"ra",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 		{"SNRfac",required_argument,0,14},
 		{"skyloc",no_argument,0,13},
