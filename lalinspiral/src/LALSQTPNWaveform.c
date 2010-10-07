@@ -182,7 +182,6 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				for (i = 0; i < 2; i++) {
 					k = (i + 1) % 2; // the opposite index
 					VECTOR_PRODUCT3(chi_p[k], chi_p[i], chih1xchih2[i]);
-					//VECTOR_PRODUCT3(chi_p[!i], chi_p[i], chih1xchih2[i]);
 					for (j = 0; j < 3; j++) {
 						// the 3*index is used, to acces the first spin, if index=0,
 						// otherwise the second spin
@@ -203,7 +202,6 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], void * par
 				QM_Omega = params->coeff.domegaQMConst;
 				for (i = 0; i < 2; i++) {
 					QM_Omega += params->coeff.domegaQM[i] * SQT_SQR(LNhchih[i]);
-//					QM_Omega += params->coeff.domegaQM[i] * LNhchih[i];
 					// QM for dchih
 					for (j = 0; j < 3; j++) {
 						// the 3*index is used, to acces the first spin, if index=0,
@@ -279,9 +277,9 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 	// initializing the dynamic variables
 	values[LALSQTPN_PHASE] = params->phi;
 	values[LALSQTPN_OMEGA] = params->lowerFreq * freq_Step;
-	values[LALSQTPN_LNH_1] = sin(params->inclination);
-	values[LALSQTPN_LNH_2] = 0.;
-	values[LALSQTPN_LNH_3] = cos(params->inclination);
+	values[LALSQTPN_LNH_1] = sin(params->inclination);	///< \f$\hat{L_N}=\sin\iota\f$
+	values[LALSQTPN_LNH_2] = 0.;	///< \f$\hat{L_N}=0\f$
+	values[LALSQTPN_LNH_3] = cos(params->inclination);	///< \f$\hat{L_N}=\cos\iota\f$
 	values[LALSQTPN_MECO] = 0.;
 	for (i = 0; i < 3; i++) {
 		values[LALSQTPN_CHIH1_1 + i] = params->chih[0][i];
@@ -350,7 +348,7 @@ void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform, LALSQTPNWavefo
 		}
 	} while (dvalues[LALSQTPN_MECO] < 0. && dvalues[LALSQTPN_OMEGA] > 0.0 && SQT_SQR(values[LALSQTPN_LNH_3])
 			< 1. - LNhztol && values[LALSQTPN_OMEGA] / freq_Step < params->samplingFreq
-			/ 2. && values[LALSQTPN_OMEGA] / freq_Step < params->finalFreq);
+			/ 2./* && values[LALSQTPN_OMEGA] / freq_Step < params->finalFreq*/);
 	if (waveform->hp || waveform->hc){
 		params->finalFreq = values[LALSQTPN_OMEGA] / (LAL_PI * geometrized_m_total);
 		params->coalescenceTime = time;

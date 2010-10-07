@@ -16,7 +16,7 @@
  *<em>Program parameters:</em>
  *	<ul>
  *	<li>the name of the output file (default out.dat)</li>
- *	<li>the PN order (newtonian, oneHalfPN, onePN, onePointFivePN, twoPN(default), twoPointFivePN, threePN, threePointFivePN)</li>
+ *	<li>the PN order (newtonian, oneHalfPN, onePN, onePointFivePN, twoPN, twoPointFivePN, threePN, threePointFivePN(default))</li>
  *	<li>level of accuracy in including spin and quadrupole contributions
  *	(NO, SO, SS, SELF, QM, ALL(default))</li>
  *	</ul>
@@ -32,7 +32,7 @@
  *	<b>References</b><br />
  *	[1] E. Poisson, Phys.Rev. D57 5287 (1998)<br />
  *	[2] K. S. Thorne, Rev.Mod.Phys. 52 299 (1980)<br />
- *	[3] L. E. Kidder, Phys.Rev.D 52, 821 (1995)<br /> 
+ *	[3] L. E. Kidder, Phys.Rev.D 52, 821 (1995)<br />
  * @author László Veréb
  * @date 2010.06.27.
  */
@@ -69,10 +69,10 @@ int main(int argc, char *argv[]) {
 		sprintf(PNString, "SpinQuadTaylor%sALL", argv[15]);
 		filename = argv[14];
 	} else if (argc == 15) {
-		sprintf(PNString, "SpinQuadTaylorTwoPNALL");
+		sprintf(PNString, "SpinQuadTaylorthreePointFivePNALL");
 		filename = argv[14];
 	} else if (argc == 14) {
-		sprintf(PNString, "SpinQuadTaylorTwoPNALL");
+		sprintf(PNString, "SpinQuadTaylorthreePointFivePNALL");
 		filename = "out.dat";
 	} else if (argc != 14) {
 		printf(
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 				"Correct parameter order: m1 m2 S1x S1y S1z S2x S2y S2z incl f_lower f_final distance dt output PNorder SpinInter\n");
 		return (1);
 	}
-	
+
 	memset(&mystatus, 0, sizeof(LALStatus));
 	memset(&thewaveform, 0, sizeof(CoherentGW));
 	memset(&injParams, 0, sizeof(SimInspiralTable));
