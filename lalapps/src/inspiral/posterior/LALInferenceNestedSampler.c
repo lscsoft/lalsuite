@@ -629,7 +629,6 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 	{
 		LALVariables **Live=runState->livePoints;
 		int i=0,j=0,dim=0,same=1;
-		REAL4 randnum;
 		INT4 Nlive = *(INT4 *)getVariable(runState->algorithmParams,"Nlive");
 		LALVariableItem *paraHead=NULL;
 		LALVariableItem *paraA=NULL;
@@ -637,11 +636,10 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		
 		dim = parameter->dimension;
 		/* Select two other samples A and B*/
-		randnum=gsl_rng_uniform(runState->GSLrandom);
-		i=(int)(Nlive*randnum);
+		i=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
 		/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
 	drawtwo:
-		do {randnum=gsl_rng_uniform(runState->GSLrandom); j=(int)(Nlive*randnum);} while(j==i);
+		do {j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);} while(j==i);
 		paraHead=parameter->head;
 		paraA=Live[i]->head; paraB=Live[j]->head;
 		/* Add the vector B-A */
