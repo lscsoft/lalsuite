@@ -237,11 +237,11 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     tmpz = S1y*S2x - S1x*S2y;
 
     dS1x += params->Sdot20 * omega2 *
-	(tmpx - 3.0 * dotLNS2 * crossx);
+       (tmpx - 3.0 * dotLNS2 * crossx);
     dS1y += params->Sdot20 * omega2 *
-	(tmpy - 3.0 * dotLNS2 * crossy);
+       (tmpy - 3.0 * dotLNS2 * crossy);
     dS1z += params->Sdot20 * omega2 *
-	(tmpz - 3.0 * dotLNS2 * crossz);
+       (tmpz - 3.0 * dotLNS2 * crossz);
 
     /* dS2, 1.5PN*/
 
@@ -1144,7 +1144,7 @@ LALSTPNWaveformEngine (
 
   }
  /* Test that omega/unitHz < NYQUIST */
- while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
+ while(test < 0.0 && omegadot > 0 && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
 
  /* if code stopped since evolving quantities became nan write an error message */
  if (isnan(omega)){
@@ -1165,7 +1165,7 @@ LALSTPNWaveformEngine (
       params->inclination);
  }
  /* if code stopped due to co-ord singularity write an error message */
- else if (!(LNhz*LNhz < 1.0 - LNhztol)){
+ else if ((LNhx*LNhx+LNhy*LNhy+LNhz*LNhz < 1.0 - LNhztol)){
      fprintf( stderr,
      "WARNING: Injection terminated, co-ord singularity. "
      "m1: %e, "

@@ -500,12 +500,9 @@ typedef enum {
  } InputMasses;
 /* </lalVerbatim>  */
 
-
-
 /* <lalLaTeX>
 \idx[Type]{InputMasses}
 </lalLaTeX>  */
-
 
 /* <lalVerbatim file="LALInspiralTemplateH">  */
 typedef struct
@@ -613,6 +610,8 @@ tagInspiralTemplate
    * For spinBCV searches, (in 4 dimensions) Gamma[0,...,9] would be required.
    */
   REAL4  Gamma[10];
+
+  InputAxis axisChoice;
 
   struct tagInspiralTemplate *next;
   struct tagInspiralTemplate *fine;

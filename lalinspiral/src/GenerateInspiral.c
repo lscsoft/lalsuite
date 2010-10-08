@@ -514,10 +514,10 @@ LALGenerateInspiralPopulateInspiral(
 
   /* inclination of the binary */
   /* inclination cannot be equal to zero for SpinTaylor injections */
-  if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
+  /*if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
   {
     ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
-  }
+    }*/
   inspiralParams->inclination =  thisEvent->inclination;
 
   inspiralParams->ieta	    =  1;
@@ -527,6 +527,7 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
+  inspiralParams->axisChoice  = ppnParams->axisChoice;
 
   /* spin parameters */
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;

@@ -74,7 +74,7 @@ int main() {
     REAL8       a1, a2, om;
     
     const REAL8 omf=0.058;
-    const REAL8 fi =80.;
+    const REAL8 fi =40.;
     REAL8 omi,ff;
 
     CHAR message[256];
@@ -86,13 +86,13 @@ int main() {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 10.;
-    injParams.mass2 = 10.;
+    injParams.mass1 = 6.73;
+    injParams.mass2 = 4.18;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"PhenSpinTaylorRDthreePointFivePN");
 
     /* this is given in Mpc */
-    injParams.distance = 1.;
+    injParams.distance = 41.;
 
     /* this is given in Hz*/
     injParams.f_lower  = fi;
@@ -101,23 +101,37 @@ int main() {
     //injParams.f_final  = ff;
     omi=injParams.f_lower*(injParams.mass1+injParams.mass2)*LAL_MTSUN_SI*LAL_PI;
 
-    //Inclination sets the angle between the line of site and initial J
-    injParams.inclination  = 0.;
-    /* Polar angles of the source arrival direction and the usual polarization 
-       angle enters the pattern functions, they do not matter for waveform 
-       construction, so they won't be st here.*/ 
+    /*Inclination sets the angle between the line of sight and initial L, 
+       according to spinTaylor code convention*/
+    injParams.inclination  = 72.9/180.*LAL_PI;
+    /* Neither psi nor the polarization are used by the LALPSpinInspiralRD 
+       code, they will enter the pattern function along with the angles
+       marking the sky position of the source*/
+    ppnParams.psi          = -33.4/180.*LAL_PI;
+    injParams.polarization = ppnParams.psi;
+    /* Polar angles of the source arrival direction enter the pattern 
+       functions, they do not matter for waveform construction and 
+       they won't be set here.*/ 
 
-    injParams.spin1x = 0.;
-    injParams.spin1y = 0.;
-    injParams.spin1z = 0.6;
+    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI);
+    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI);
+    injParams.spin1z = 0.74*cos(66./180.*LAL_PI);
 
-    injParams.spin2x = 0.;
-    injParams.spin2y = 0.;
-    injParams.spin2z = 0.6;
+    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI);
+    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI);
+    injParams.spin2z = 0.65*cos(94./180.*LAL_PI);
 
-    /*Spin units are such that multiplying spini by m_i^2 one obtains the physical spin */
+    /* The above spin components are assumed to be in the frame where the 
+       viewing direction is along the z-axis, this is to comply with the 
+       spin-Taylor. To insert their values   */
 
-    ppnParams.deltaT = 1.0 / 4096.0 /2.;
+    /*Spin units are such that multiplying the above spins by m_i^2 one 
+      obtains the physical spins */
+
+    ppnParams.axisChoice=View;
+
+    /* Inverse rate*/
+    ppnParams.deltaT = 1.0 / 4096.0;
     /* fStop is set for debugging purposes. The working version of 
        LALPSpinInspiralRD simply ignores its value */
     ppnParams.fStop  = ff;

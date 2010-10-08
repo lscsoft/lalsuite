@@ -300,6 +300,19 @@ description (above).
 
 ******************************************************* </lalLaTeX> */
 
+/* <lalVerbatim file="LALInputAxisH">  */
+typedef enum {
+  OrbitalL,
+  TotalJ,
+  View
+ } InputAxis;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InputAxis}
+</lalLaTeX>  */
+
+
 typedef struct tagPPNParamStruc {
   /* Passed parameters. */
   SkyPosition position; /* location of source on sky */
@@ -326,6 +339,7 @@ typedef struct tagPPNParamStruc {
   REAL4 fStop;      /* actual stop frequency (Hz) */
   UINT4 length;     /* length of signal generated */
   INT4 termCode;    /* termination code */
+  InputAxis axisChoice; /* z axis of the reference frame*/
   const CHAR *termDescription; /* description of termination code */
 } PPNParamStruc;
 
