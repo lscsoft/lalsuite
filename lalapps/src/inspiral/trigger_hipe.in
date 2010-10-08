@@ -459,6 +459,7 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
 
   if ligolw_job is None:
     ligolw_job = pipeline.LigolwAddJob(logdir, cp)
+    ligolw_job.set_universe("local")
 
   node = pipeline.LigolwAddNode(ligolw_job)
   node.add_output_file(outfile)
@@ -643,8 +644,6 @@ if opts.user_tag:
   tag += '_'+opts.user_tag
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
-ligolwdag = pipeline.CondorDAG("%s/%s_ligolwdag.log" % (opts.log_path, tag))
-ligolwdag.set_dag_file("%s_ligolwdag" % tag)
 
 ##############################################################################
 # loop over the GRBs and construct their required sub-DAGs
@@ -819,7 +818,7 @@ for grb in ext_trigs:
                                        "COIRE_*_FOUND_SECOND", found_filename,
                                        opts.log_path, cp)
         ligolw_add_1.add_parent(injection_node)
-        ligolwdag.add_node(ligolw_add_1)
+        uberdag.add_node(ligolw_add_1)
 
         # add a ligolw_add command to concatenate all the missed injections
         missed_filename = found_filename.replace("FOUND", "MISSED")
@@ -831,7 +830,7 @@ for grb in ext_trigs:
         # Create a temporay cache-file containing two files (F/M)
         # which will be created by the ligolw_add step
         new_cache.tofile(open(ligolw_added_cache_filename, "w"))
-        ligolwdag.add_node(ligolw_add_2)
+        uberdag.add_node(ligolw_add_2)
 
         # add these two files to the regular main cache
         hipe_caches.append(ligolw_added_cache_filename)
@@ -846,9 +845,6 @@ for grb in ext_trigs:
 if opts.verbose: print "Writing sub files and uber-DAG..."
 uberdag.write_sub_files()
 uberdag.write_dag()
-ligolwdag.write_sub_files()
-ligolwdag.write_dag()
-ligolwdag.write_script()
 
 concatenate_files(grb_caches, tag + ".cache")
 
