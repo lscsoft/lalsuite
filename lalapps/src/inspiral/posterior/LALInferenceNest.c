@@ -276,12 +276,12 @@ void setupLivePointsArray(LALInferenceRunState *runState){
 		copyVariables(runState->currentParams,runState->livePoints[i]);
 		
 		/* Sprinkle the varying points among prior */
-		
-		for(current=runState->livePoints[i]->head ;current!=NULL;
-			current=current->next){
-			if(current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR)
-			{
-				switch (current->type){
+		do{
+			for(current=runState->livePoints[i]->head ;current!=NULL;
+				current=current->next){
+				if(current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR)
+				{
+					switch (current->type){
 					case REAL4_t:
 					{
 						REAL4 tmp;
@@ -325,9 +325,10 @@ void setupLivePointsArray(LALInferenceRunState *runState){
 					}
 					default:
 						fprintf(stderr,"Trying to randomise a non-numeric parameter!");
+					}
 				}
 			}
-		}
+		}while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
 		/* Populate log likelihood */
 		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
 	}
@@ -402,6 +403,7 @@ void initVariables(LALInferenceRunState *state)
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
+		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	}
 	
 	/* Over-ride end time if specified */
@@ -442,7 +444,7 @@ void initVariables(LALInferenceRunState *state)
 	addVariable(priorArgs,"component_min",&mMin,REAL8_t,PARAM_FIXED);
 	ppt=getProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
-	addVariable(priorArgs,"component_min",&mMax,REAL8_t,PARAM_FIXED);
+	addVariable(priorArgs,"component_max",&mMax,REAL8_t,PARAM_FIXED);
 	
 	
 	printf("Read end time %f\n",endtime);

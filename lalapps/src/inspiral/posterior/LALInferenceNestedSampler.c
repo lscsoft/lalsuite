@@ -341,7 +341,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 			copyVariables(newParams,runState->currentParams);
 			runState->currentLikelihood=logLnew;
 		}
-	} while(runState->currentLikelihood<=logLmin || mcmc_iter<Nmcmc);
+	} while(mcmc_iter<Nmcmc);
 	destroyVariables(newParams);
 	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
