@@ -40,6 +40,7 @@
 #include <gc_hotloop_sse2.h>
 #else
 #define ALRealloc LALRealloc
+#define ALFree LALFree
 #endif
 
 RCSID( "$Id$");
@@ -1561,18 +1562,17 @@ int MAIN( int argc, char *argv[]) {
 
   /* free fine grid and coarse grid */
   if (finegrid.nc) {
-    LALFree(finegrid.nc);
+    ALFree(finegrid.nc);
   }
   if (finegrid.sumTwoF) {
-    LALFree(finegrid.sumTwoF);
+    ALFree(finegrid.sumTwoF);
   }
 
   if (coarsegrid.TwoF) {
-    LALFree(coarsegrid.TwoF);
+    ALFree(coarsegrid.TwoF);
   }
-
   if (coarsegrid.Uindex) {
-    LALFree(coarsegrid.Uindex);
+    ALFree(coarsegrid.Uindex);
   }
 
 
