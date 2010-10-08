@@ -2658,6 +2658,31 @@ class DBAddInjNode(pipeline.SqliteNode):
     return self._injection_file
 
 
+class RepopCoincJob(pipeline.SqliteJob):
+  """
+  A repop_coinc job. The static options are read from the section
+  [repop_coinc] in the ini file.
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """  
+    exec_name = 'repop_coinc'
+    sections = ['repop_coinc']
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+
+
+class RepopCoincNode(pipeline.SqliteNode):
+  """
+  A repop_coinc node.
+  """
+  def __init__(self, job):
+    """
+    @job: a RepopCoincJob
+    """
+    pipeline.SqliteNode.__init__(self, job)
+
+
 class ClusterCoincsJob(pipeline.SqliteJob):
   """
   A cluster coincs job. The static options are read from the section
@@ -3313,7 +3338,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
   """
   A search volume node.
   """
-  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False):
+  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False, bintype = "TOTAL_MASS"):
     """
     @database: the pipedown database containing the injection triggers
     @ouptut_cache: name prefix for cache file to be written out by program
@@ -3331,7 +3356,12 @@ class SearchVolumeNode(pipeline.SqliteNode):
       self.add_var_opt("output-name-tag",output_tag)
     if use_expected_loudest_event:
       self.add_var_arg("--use-expected-loudest-event")
-
+    if bintype == "TOTAL_MASS":
+      self.add_var_arg("--bin-by-total-mass")
+    if bintype == "CHIRP_MASS":
+      self.add_var_arg("--bin-by-chirp-mass")
+    if bintype == "MASS1_MASS2":
+      self.add_var_arg("--bin-by-m1m2")
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
   """

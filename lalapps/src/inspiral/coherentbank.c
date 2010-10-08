@@ -67,6 +67,12 @@ snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 extern int vrbflg;
 int allIFO = -1;
 
@@ -115,7 +121,7 @@ int main( int argc, char *argv[] )
   INT4 numTriggers = 0;
   INT4 numCoincs = 0;
   INT4 numTmplts = 0;
-  INT4 numCoincSegCutTrigs = 0;
+  INT4 UNUSED numCoincSegCutTrigs = 0;
   CoincInspiralStatistic coincstat = no_stat;
   SnglInspiralClusterChoice clusterchoice = none;
   CohbankRunType runType = cohbank;
@@ -128,8 +134,8 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS startTimeGPS = {0,0};
   INT4        endTime = -1;
   LIGOTimeGPS endTimeGPS = {0,0};
-  INT8        startTimeNS = 0;
-  INT8        endTimeNS = 0;
+  INT8        UNUSED startTimeNS = 0;
+  INT8        UNUSED endTimeNS = 0;
   CHAR  ifos[LIGOMETA_IFOS_MAX];
 
   CHAR  comment[LIGOMETA_COMMENT_MAX];

@@ -534,7 +534,7 @@ int main(int argc, char *argv[]){
 
 
   {
-    /* block for calculating frequency range to reag from SFTs */
+    /* block for calculating frequency range to read from SFTs */
     /* user specifies freq and fdot range at reftime
        we translate this range of fdots to start and endtime and find
        the largest frequency band required to cover the 
@@ -572,9 +572,11 @@ int main(int argc, char *argv[]){
       LAL_CALL (CalculateFdots (&status, fdotsMin, uvar_f0, uvar_q1, 
 				uvar_q2, uvar_brakingindex), &status);
 
-      LAL_CALL (CalculateFdots (&status, fdotsMax, uvar_f0 + uvar_fBand, 
-				uvar_q1 + uvar_q1Band, uvar_q2 + uvar_q2Band, 
-				uvar_brakingindex + uvar_brakingindexBand), &status); 
+      /* need to add uvar_xxResolution to account for the fact that we do an extra loop in q1, q2 and n
+       * when uvar_xxBand is greater than 0     */
+      LAL_CALL (CalculateFdots (&status, fdotsMax, uvar_f0 + uvar_fBand+uvar_fResolution, 
+				uvar_q1 + uvar_q1Band+uvar_q1Resolution, uvar_q2 + uvar_q2Band+uvar_q2Resolution, 
+				uvar_brakingindex + uvar_brakingindexBand + uvar_brakingindexResolution), &status); 
 
       for (k = 1; k < fdotsMin->length; k++) {
 	spinRange_refTime.fkdot[k] = fdotsMin->data[k-1];
@@ -605,7 +607,7 @@ int main(int argc, char *argv[]){
     /* add wings for Doppler modulation and running median block size */
     /* remove fBand from doppWings because we are going bin-by-bin (?) */
     
-    doppWings = freqHi * VTOT;
+    doppWings = freqHi * VTOT ;
     fMin = freqLo - doppWings - uvar_blocksRngMed * deltaF_SFT;
     fMax = freqHi + doppWings + uvar_blocksRngMed * deltaF_SFT;
 
@@ -825,7 +827,6 @@ int main(int argc, char *argv[]){
       	     sigmasq = XLALResizeREAL8Vector(sigmasq, 1 + ualphacounter);
 	     gplus =  XLALResizeCOMPLEX16Vector(gplus, 1 + ualphacounter);
 	     gcross =  XLALResizeCOMPLEX16Vector(gcross, 1 + ualphacounter);
-
 
     	     LAL_CALL( LALCorrelateSingleSFTPair( &status, &(yalpha->data[ualphacounter]),
 						     sft1, sft2, psd1, psd2, freq1, freq2),

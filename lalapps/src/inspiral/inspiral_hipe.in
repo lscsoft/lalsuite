@@ -165,14 +165,17 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     if GeoBank: print "For G1 we use bank ", GeoBank
   elif ifo_name == 'V1':
     data_opts = 'virgo-data'
-    try: type = cp.get('input','virgo-type')
+    try: 
+      type = cp.get('input','virgo-type')
+      if ('NINJA' in type):
+        type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','virgo-channel')
   else:
     data_opts = 'ligo-data'
     try: 
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type):
         type = ifo_name + '_' + type
     except: type = None
     channel = cp.get('input','ligo-channel')
