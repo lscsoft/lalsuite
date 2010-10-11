@@ -82,27 +82,27 @@ typedef struct {
   UINT4 ndim;
   REAL8 Bayes;
   REAL8 Bayes_fixed;
-  REAL8 min_amp;
-  REAL8 max_amp;
-  REAL8 sig_amp;
-  REAL8 start_amp;
-  REAL8 delta_amp;
-  UINT4 length_amp;
-  CHAR prior_amp[STRINGLENGTH];
-  REAL8Vector *logposterior_fixed_amp;
+  /* REAL8 min_amp; */
+/*   REAL8 max_amp; */
+/*   REAL8 sig_amp; */
+/*   REAL8 start_amp; */
+/*   REAL8 delta_amp; */
+/*   UINT4 length_amp; */
+/*   CHAR prior_amp[STRINGLENGTH]; */
+/*   REAL8Vector *logposterior_fixed_amp; */
   REAL8Vector *Bayes_perseg;
   UINT4Vector *Bayes_start;
   UINT4Vector *Bayes_end;
   CHAR **name;
-  REAL8 min[NBINMAX];
-  REAL8 max[NBINMAX];
-  REAL8 sig[NBINMAX];
-  REAL8 start[NBINMAX];
-  REAL8 delta[NBINMAX];
-  UINT4 length[NBINMAX];
+  REAL8 min[NBINMAX+1];
+  REAL8 max[NBINMAX+1];
+  REAL8 sig[NBINMAX+1];
+  REAL8 start[NBINMAX+1];
+  REAL8 delta[NBINMAX+1];
+  UINT4 length[NBINMAX+1];
   CHAR **prior;
-  REAL8Vector *logposterior[NBINMAX];
-  REAL8Vector *logposterior_fixed[NBINMAX];
+  REAL8Vector *logposterior[NBINMAX+1];
+  REAL8Vector *logposterior_fixed[NBINMAX+1];
 } BayesianResultsFile;
 
 /** A structure that stores information about a collection of Bayesian results files
@@ -204,11 +204,10 @@ int main( int argc, char *argv[] )  {
 
   /* free filelist params */
   for (i=0;i<resultsfiles->length;i++) {
-    XLALDestroyREAL8Vector(resultsfiles->file[i].logposterior_fixed_amp);
     XLALDestroyREAL8Vector(resultsfiles->file[i].Bayes_perseg);
     XLALDestroyUINT4Vector(resultsfiles->file[i].Bayes_start);
     XLALDestroyUINT4Vector(resultsfiles->file[i].Bayes_end);
-    for (j=0;j<NBINMAX;j++) {
+    for (j=0;j<NBINMAX+1;j++) {
       XLALFree(resultsfiles->file[i].name[j]);
       XLALFree(resultsfiles->file[i].prior[j]);
       XLALDestroyREAL8Vector(resultsfiles->file[i].logposterior[j]);
@@ -224,7 +223,6 @@ int main( int argc, char *argv[] )  {
   XLALDestroyREAL8Vector(combinedresult->Bayes_perseg);
   XLALDestroyUINT4Vector(combinedresult->Bayes_start);
   XLALDestroyUINT4Vector(combinedresult->Bayes_end);
-  XLALDestroyREAL8Vector(combinedresult->logposterior_fixed_amp);
   XLALFree(combinedresult);
 
   /* Free config-Variables and userInput stuff */
@@ -380,15 +378,15 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     LogPrintf(LOG_DEBUG,"%s : opened file %s.\n",fn,pglob.gl_pathv[i]);
       
     /* allocate memory for the parameter name and prior type */
-    if (((*resultsfiles)->file[i].name = (CHAR **)XLALCalloc(NBINMAX,sizeof(CHAR*))) == NULL) {
+    if (((*resultsfiles)->file[i].name = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
-    if (((*resultsfiles)->file[i].prior = (CHAR **)XLALCalloc(NBINMAX,sizeof(CHAR*))) == NULL) {
+    if (((*resultsfiles)->file[i].prior = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
       XLAL_ERROR(fn,XLAL_ENOMEM);
     }
-    for (j=0;j<NBINMAX;j++) {
+    for (j=0;j<NBINMAX+1;j++) {
       if (((*resultsfiles)->file[i].name[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
 	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
 	XLAL_ERROR(fn,XLAL_ENOMEM);
@@ -441,36 +439,36 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 
       }
 
-      else if ((c = strstr(line,"min_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].min_amp));
-      else if ((c = strstr(line,"max_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].max_amp));
-      else if ((c = strstr(line,"sig_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].sig_amp));
-      else if ((c = strstr(line,"start_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].start_amp));
-      else if ((c = strstr(line,"delta_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].delta_amp));
-      else if ((c = strstr(line,"length_amp"))) {
-	sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].length_amp));
+     /*  else if ((c = strstr(line,"min_"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].min_amp)); */
+/*       else if ((c = strstr(line,"max_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].max_amp)); */
+/*       else if ((c = strstr(line,"sig_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].sig_amp)); */
+/*       else if ((c = strstr(line,"start_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].start_amp)); */
+/*       else if ((c = strstr(line,"delta_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].delta_amp)); */
+/*       else if ((c = strstr(line,"length_amp"))) { */
+/* 	sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].length_amp)); */
 	
-	/* allocate mem for the pdfs */
-	if (((*resultsfiles)->file[i].logposterior_fixed_amp = XLALCreateREAL8Vector((*resultsfiles)->file[i].length_amp)) == NULL) {
-	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn);
-	  XLAL_ERROR(fn,XLAL_ENOMEM);
-	}
+/* 	/\* allocate mem for the pdfs *\/ */
+/* 	if (((*resultsfiles)->file[i].logposterior_fixed_amp = XLALCreateREAL8Vector((*resultsfiles)->file[i].length_amp)) == NULL) { */
+/* 	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn); */
+/* 	  XLAL_ERROR(fn,XLAL_ENOMEM); */
+/* 	} */
 	
-      }
-      else if ((c = strstr(line,"prior_amp"))) {
-	sscanf(strstr(c,"=")+2,"%s",((*resultsfiles)->file[i].prior_amp));
+/*       } */
+/*       else if ((c = strstr(line,"prior_amp"))) { */
+/* 	sscanf(strstr(c,"=")+2,"%s",((*resultsfiles)->file[i].prior_amp)); */
 	
-	/* if we've found the prior information line then the actual pdf is 3 lines later */
-	for (k=0;k<3;k++) fgets(line,sizeof(line),fp);
-	for (k=0;k<(INT4)((*resultsfiles)->file[i].length_amp);k++) {
-	  fgets(line,sizeof(line),fp);
-	  sscanf(line,"%*e %le %*e %*e %*e %*e",&((*resultsfiles)->file[i].logposterior_fixed_amp->data[k]));
-	  printf("read log posteriors as %lf\n",((*resultsfiles)->file[i].logposterior_fixed_amp->data[k]));
-	}
-	printf("***\n");
-      }
+/* 	/\* if we've found the prior information line then the actual pdf is 3 lines later *\/ */
+/* 	for (k=0;k<3;k++) fgets(line,sizeof(line),fp); */
+/* 	for (k=0;k<(INT4)((*resultsfiles)->file[i].length_amp);k++) { */
+/* 	  fgets(line,sizeof(line),fp); */
+/* 	  sscanf(line,"%*e %le %*e %*e %*e %*e",&((*resultsfiles)->file[i].logposterior_fixed_amp->data[k])); */
+/* 	  printf("read log posteriors as %lf\n",((*resultsfiles)->file[i].logposterior_fixed_amp->data[k])); */
+/* 	} */
+/* 	printf("***\n"); */
+/*       } */
 	
       /* loop over search parameters */
-      for (j=0;j<NBINMAX;j++) {
+      for (j=0;j<NBINMAX+1;j++) {
 
 	CHAR name_string[STRINGLENGTH];
 	CHAR min_string[STRINGLENGTH];
@@ -522,10 +520,11 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  }
 	  /* printf("***\n"); */
 	}
+	
       } /* end loop over parameters */
-
+      
     } /* end loop over lines */
-    
+ 
     /* fill in extra info */
     snprintf((*resultsfiles)->file[i].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
 
@@ -538,15 +537,15 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",fn,((*resultsfiles)->file[i].Bayes));
     LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",fn,((*resultsfiles)->file[i].Bayes_fixed));
   
-    LogPrintf(LOG_DEBUG,"%s : read amp min as %f\n",fn,((*resultsfiles)->file[i].min_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp max as %f\n",fn,((*resultsfiles)->file[i].max_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp sig as %f\n",fn,((*resultsfiles)->file[i].sig_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp start as %f\n",fn,((*resultsfiles)->file[i].start_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp delta as %f\n",fn,((*resultsfiles)->file[i].delta_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp length as %d\n",fn,((*resultsfiles)->file[i].length_amp));
-    LogPrintf(LOG_DEBUG,"%s : read amp prior as %s\n",fn,((*resultsfiles)->file[i].prior_amp));
+   /*  LogPrintf(LOG_DEBUG,"%s : read amp min as %f\n",fn,((*resultsfiles)->file[i].min_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp max as %f\n",fn,((*resultsfiles)->file[i].max_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp sig as %f\n",fn,((*resultsfiles)->file[i].sig_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp start as %f\n",fn,((*resultsfiles)->file[i].start_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp delta as %f\n",fn,((*resultsfiles)->file[i].delta_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp length as %d\n",fn,((*resultsfiles)->file[i].length_amp)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read amp prior as %s\n",fn,((*resultsfiles)->file[i].prior_amp)); */
     
-    for (j=0;j<NBINMAX;j++) {
+    for (j=0;j<NBINMAX+1;j++) {
       LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",fn,j,((*resultsfiles)->file[i].name[j]));
       LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",fn,j,((*resultsfiles)->file[i].min[j]));
       LogPrintf(LOG_DEBUG,"%s : read max[%d] as %f\n",fn,j,((*resultsfiles)->file[i].max[j]));
@@ -593,10 +592,10 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     }
 
     /* check parameter space consistency */
-    for (j=0;j<NBINMAX;j++) {
+    for (j=0;j<NBINMAX+1;j++) {
       
       /* if not the frequency parameter */
-      if (strcmp((*resultsfiles)->file[0].name[j],"nu")) {
+      if (strcmp((*resultsfiles)->file[i].name[j],"nu")) {
 
 	if ((*resultsfiles)->file[i].min[j] != (*resultsfiles)->file[0].min[j]) {
 	  LogPrintf(LOG_CRITICAL,"%s : inconsistent min values for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
@@ -624,7 +623,7 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
   globfree(&pglob);
  
   /* read in the posteriors */
-  
+  exit(0);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
@@ -734,31 +733,35 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
   }
   LogPrintf(LOG_DEBUG,"%s : combined Bayes factors %lf %lf\n",fn,(*combinedresult)->Bayes,(*combinedresult)->Bayes_fixed);
 
-  /* combine amplitude posteriors */
-  /* first find out the pdf with the most samples */
-  {
-    UINT4 maxlen = 0;
-    for (i=0;i<resultsfiles->length;i++) {
-      if (resultsfiles->file[i].logposterior_fixed_amp->length>maxlen) maxlen = resultsfiles->file[i].logposterior_fixed_amp->length;
-    }
-    printf("maxlen = %d\n",maxlen);
+  /************************************************/
+  /* combine posteriors */
+
+  /* loop over the number of dimensions */
+
+ /*  /\* first find out the pdf with the most samples *\/ */
+/*   { */
+/*     UINT4 maxlen = 0; */
+/*     for (i=0;i<resultsfiles->length;i++) { */
+/*       if (resultsfiles->file[i].logposterior_fixed_amp->length>maxlen) maxlen = resultsfiles->file[i].logposterior_fixed_amp->length; */
+/*     } */
+/*     printf("maxlen = %d\n",maxlen); */
     
-    /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
-    if (((*combinedresult)->logposterior_fixed_amp = XLALCreateREAL8Vector((UINT4)(0.5 + OVERRES*maxlen))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
+/*     /\* we define an over-resolved interpolation scheme with OVERRES more points than the max value *\/ */
+/*     if (((*combinedresult)->logposterior_fixed_amp = XLALCreateREAL8Vector((UINT4)(0.5 + OVERRES*maxlen))) == NULL) { */
+/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn); */
+/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
+/*     } */
 
-    /* initialise results */
-    for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) (*combinedresult)->logposterior_fixed_amp->data[j] = -1e200;
+/*     /\* initialise results *\/ */
+/*     for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) (*combinedresult)->logposterior_fixed_amp->data[j] = -1e200; */
 
-    /* fill in some header info */
-    (*combinedresult)->start_amp = resultsfiles->file[0].start_amp;
-    (*combinedresult)->length_amp = (*combinedresult)->logposterior_fixed_amp->length;
-    (*combinedresult)->delta_amp = ((resultsfiles->file[0].length_amp-1)*resultsfiles->file[0].delta_amp)/((*combinedresult)->length_amp - 1);
-    (*combinedresult)->ndim = resultsfiles->file[0].ndim;
-    (*combinedresult)->nseg = resultsfiles->file[0].nseg;
-    (*combinedresult)->band = totalband;
+/*     /\* fill in some header info *\/ */
+/*     (*combinedresult)->start_amp = resultsfiles->file[0].start_amp; */
+/*     (*combinedresult)->length_amp = (*combinedresult)->logposterior_fixed_amp->length; */
+/*     (*combinedresult)->delta_amp = ((resultsfiles->file[0].length_amp-1)*resultsfiles->file[0].delta_amp)/((*combinedresult)->length_amp - 1); */
+/*     (*combinedresult)->ndim = resultsfiles->file[0].ndim; */
+/*     (*combinedresult)->nseg = resultsfiles->file[0].nseg; */
+/*     (*combinedresult)->band = totalband; */
     
 
    /*   CHAR filename[STRINGLENGTH];      /\**< the name of the file *\/ */
@@ -795,56 +798,56 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 /*   REAL8Vector *logposterior_fixed[NBINMAX]; */
 
 
-  }
+/*   } */
 
   /* perform interpolation on each amplitude posterior */
-  for (i=0;i<resultsfiles->length;i++) {
+ /*  for (i=0;i<resultsfiles->length;i++) { */
 
-    UINT4 N = resultsfiles->file[i].length_amp;
-    gsl_interp_accel *acc = gsl_interp_accel_alloc();        /* gsl interpolation structures */
-    gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
-    REAL8 *x = NULL;
-    REAL8 *y = NULL;
+/*     UINT4 N = resultsfiles->file[i].length_amp; */
+/*     gsl_interp_accel *acc = gsl_interp_accel_alloc();        /\* gsl interpolation structures *\/ */
+/*     gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N); */
+/*     REAL8 *x = NULL; */
+/*     REAL8 *y = NULL; */
     
-    /* allocate memory for the temporary data */
-    if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
-    if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
+/*     /\* allocate memory for the temporary data *\/ */
+/*     if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) { */
+/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn); */
+/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
+/*     } */
+/*     if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) { */
+/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn); */
+/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
+/*     } */
 
-    /* fill in gsl interpolation input data */
-    for (j=0;j<N;j++) {
-      x[j] = resultsfiles->file[i].start_amp + j*resultsfiles->file[i].delta_amp;
-      y[j] = resultsfiles->file[i].logposterior_fixed_amp->data[j];
-      printf("x = %f y = %f\n",x[j],y[j]);
-    }
-    gsl_spline_init(spline,x,y,N);
+/*     /\* fill in gsl interpolation input data *\/ */
+/*     for (j=0;j<N;j++) { */
+/*       x[j] = resultsfiles->file[i].start_amp + j*resultsfiles->file[i].delta_amp; */
+/*       y[j] = resultsfiles->file[i].logposterior_fixed_amp->data[j]; */
+/*       printf("x = %f y = %f\n",x[j],y[j]); */
+/*     } */
+/*     gsl_spline_init(spline,x,y,N); */
 
-    /* interpolate and add to result */
-    for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) {
-      REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp;
-      REAL8 temp1 = (*combinedresult)->logposterior_fixed_amp->data[j];
-      REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband);
-      (*combinedresult)->logposterior_fixed_amp->data[j] = XLALLogSumExp(temp1,temp2);
-    }
+/*     /\* interpolate and add to result *\/ */
+/*     for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) { */
+/*       REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp; */
+/*       REAL8 temp1 = (*combinedresult)->logposterior_fixed_amp->data[j]; */
+/*       REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband); */
+/*       (*combinedresult)->logposterior_fixed_amp->data[j] = XLALLogSumExp(temp1,temp2); */
+/*     } */
 
-    /* free memory */
-    XLALFree(x);
-    XLALFree(y);
-    gsl_interp_accel_free(acc);
-    gsl_spline_free(spline);
+/*     /\* free memory *\/ */
+/*     XLALFree(x); */
+/*     XLALFree(y); */
+/*     gsl_interp_accel_free(acc); */
+/*     gsl_spline_free(spline); */
 
-  }
+/*   } */
 
   /* output results to screen */
-  for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) {
-    REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp;
-    LogPrintf(LOG_DEBUG,"%s : combined amplitude posterior %f %f\n",fn,z,(*combinedresult)->logposterior_fixed_amp->data[j]);
-  }
+/*   for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) { */
+/*     REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp; */
+/*     LogPrintf(LOG_DEBUG,"%s : combined amplitude posterior %f %f\n",fn,z,(*combinedresult)->logposterior_fixed_amp->data[j]); */
+/*   } */
 
   /* loop over each search parameter */
   for (k=0;k<(*combinedresult)->ndim;k++) {
@@ -866,7 +869,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
     }
     
     /* initialise results */
-    for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) {
+    for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
       (*combinedresult)->logposterior[k]->data[j] = -1e200;
       (*combinedresult)->logposterior_fixed[k]->data[j] = -1e200;
     }
@@ -913,8 +916,8 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       gsl_spline_init(spline_fixed,x,y_fixed,N);
       
       /* interpolate and add to result */
-      for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) {
-	REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp;
+      for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
+	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
 	REAL8 temp1 = (*combinedresult)->logposterior[k]->data[j];
 	REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband);
 	REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[j];
