@@ -371,10 +371,10 @@ if opts.coherence_test:
 		coherence_inspnest_nodes[time]={}
 		for ifo in segments_by_time[time].keys():
 			combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
-			coherence_test_posfiles[time][ifo]=os.path.join(combine_dir,'posfile_%.3f_%s.dat'%(time,ifo),file_is_output_file=True)
+			coherence_test_posfiles[time][ifo]=os.path.join(combine_dir,'posfile_%.3f_%s.dat'%(time,ifo))
 			coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
 			combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
-			combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo])
+			combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
 			
 			if nparallel>1:
 				(merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo])
