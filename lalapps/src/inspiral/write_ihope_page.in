@@ -2694,7 +2694,7 @@ except:
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # note the / at the end
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
-opts.daydur = int(opts.duration) / 86400
+opts.daydur = float(opts.duration) / 86400
 opts.webdir = './'
 opts.datadir = opts.ihope_directory + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
