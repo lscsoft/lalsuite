@@ -2873,14 +2873,16 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   /* output header information */
   fprintf(fp,"%s \n",version_string);
   fprintf(fp,"%%%% command line args\t\t= %s\n",clargs);
-  fprintf(fp,"%%%% filename\t\t\t= %s\n",outputfile);
-  fprintf(fp,"%%%% date\t\t\t\t= %s\n",time_string);
+  fprintf(fp,"%%%% filename\t\t\t\t= %s\n",outputfile);
+  fprintf(fp,"%%%% date\t\t\t\t\t= %s\n",time_string);
   fprintf(fp,"%%%% start time (GPS sec)\t\t= %d\n",pspace->epoch.gpsSeconds);
   fprintf(fp,"%%%% observation span (sec)\t= %d\n",(UINT4)pspace->span);
   fprintf(fp,"%%%% coherent time (sec)\t\t= %d\n",(UINT4)pspace->tseg);
   fprintf(fp,"%%%% number of segments\t\t= %d\n",Bayes->nsegments);
-  fprintf(fp,"%%%% number of dimensions\t\t= %d\n",Bayes->gridparams->ndim);
-  fprintf(fp,"%%%% mismatch\t\t\t= %6.12f\n",Bayes->gridparams->mismatch);
+  fprintf(fp,"%%%% number of dimensions\t= %d\n",Bayes->gridparams->ndim);
+  if (pspace->ampspace) fprintf(fp,"%%%% amplitude dimension\t\t\t= 1\n");
+  else fprintf(fp,"%%%% amplitude dimension\t\t\t= 0\n");
+  fprintf(fp,"%%%% mismatch\t\t\t\t= %6.12f\n",Bayes->gridparams->mismatch);
   fprintf(fp,"%%%%\n");
 
   /* if an injection has been performed we output the injection parameters */
@@ -2899,7 +2901,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   fprintf(fp,"%%%% log Bayes Factor (phase and amplitude marginalised per segment)\t= %6.12e\n",Bayes->logBayesFactor_phaseamp);
   fprintf(fp,"%%%% log Bayes Factor (phase marginalised per segment)\t\t\t= %6.12e\n",Bayes->logBayesFactor_phase);
   fprintf(fp,"%%%%\n");
-  fprintf(fp,"%%%% log Bayes Factor (phase and amplitude marginalised per segment)\n");
+  fprintf(fp,"%%%% GPS start\tGPS end\tlog Bayes Factor\n");
   fprintf(fp,"%%%%\n");
 
   /* output the Bayes factor for each segment */
