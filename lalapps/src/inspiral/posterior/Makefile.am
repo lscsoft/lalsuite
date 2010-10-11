@@ -22,6 +22,13 @@ bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nest
 pkgpython_DATA = nest_utils.py
 endif
 
+EXTRA_DIST = \
+	combine_evidence.in \
+	coherence_test.in \
+	merge_nested_sampling_runs.in \
+	nest_pipe.in \
+	nest_utils.py
+
 python_config.sed: Makefile
 	-rm -f python_config.sed
 	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
