@@ -233,7 +233,11 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   return(snprintf(buf, buflen,
+#ifdef EAH_BOINC /* use obsolete output format for compatibility with current E@H Apps */
+                     "%.14f %.13f %.13f %.7g %d %.6f\n",
+#else
                      "%.14g %.13g %.13g %.13g %d %.6f\n",
+#endif
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
