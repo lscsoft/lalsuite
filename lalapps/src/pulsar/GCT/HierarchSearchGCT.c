@@ -947,8 +947,8 @@ int MAIN( int argc, char *argv[]) {
         coarsegrid.length = (UINT4) (binsFstat1);
 
         /* allocate memory for coarsegrid */
-        coarsegrid.TwoF = (REAL4 *)ALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-        coarsegrid.Uindex = (UINT4 *)ALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
+        coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
+        coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
 
 	if ( coarsegrid.TwoF == NULL || coarsegrid.Uindex == NULL) {
           fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
@@ -1569,10 +1569,10 @@ int MAIN( int argc, char *argv[]) {
   }
 
   if (coarsegrid.TwoF) {
-    ALFree(coarsegrid.TwoF);
+    LALFree(coarsegrid.TwoF);
   }
   if (coarsegrid.Uindex) {
-    ALFree(coarsegrid.Uindex);
+    LALFree(coarsegrid.Uindex);
   }
 
 
