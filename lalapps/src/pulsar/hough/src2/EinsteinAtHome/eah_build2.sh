@@ -60,6 +60,7 @@ for i; do
 	    rebuild_lal=true
 	    rebuild=true
 	    release=true
+	    CFLAGS="-O3 $CFLAGS"
 	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    SHARED="--disable-shared"  ;;
 	--norebuild) # dangerous, for testing only!
