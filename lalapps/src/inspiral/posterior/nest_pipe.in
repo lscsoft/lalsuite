@@ -61,9 +61,6 @@ parser.add_option("--enable-G1",action="store_true",default=False,help="Enable G
 
 (opts,args)=parser.parse_args()
 
-if len(opts)==0:
-	parser.error(usage)
-
 for ifo in ifos:
 	if getattr(opts,'disable_'+ifo):
 		ifos.remove(ifo)
