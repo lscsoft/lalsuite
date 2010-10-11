@@ -2961,8 +2961,8 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     fprintf(fp,"%%%% start_%d\t= %6.12e\n",idx,Bayes->gridparams->grid[i].min);
     fprintf(fp,"%%%% delta_%d\t= %6.12e\n",idx,Bayes->gridparams->grid[i].delta);
     fprintf(fp,"%%%% length_%d\t= %d\n",idx,Bayes->gridparams->grid[i].length);
-    if (pspace->priors->data[i].gaussian) fprintf(fp,"%%%% prior_%d\t= GAUSSIAN\n",i);
-    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",i); 
+    if (pspace->priors->data[i].gaussian) fprintf(fp,"%%%% prior_%d\t= GAUSSIAN\n",idx);
+    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",idx); 
     fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
 	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,
 	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,
