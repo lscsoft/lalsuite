@@ -456,8 +456,12 @@ if opts.disable_pages is False:
 for seg in times_by_seg.keys():
 	combine_node=OddsPipeline.CombineZNode(combine_job)
 	posfile=os.path.join(combine_dir,'posterior_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
-	combine_node.add_file_opt('outpos',posfile)
 	bffile=os.path.join(combine_dir,'bayesfactor_%.3f-%.3f.txt'%(seg[0],seg[1]))
+	combine_node.add_file_opt('outpos',posfile)
+	combine_node.add_file_opt('bayesfactor',bffile)
+	outsamp=os.path.join(combine_dir,'nested_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
+	combine_node.add_file_opt('outsamp',outsamp)
+	map(combine_node.add_var_arg,nestfiles_by_seg[seg])
 	map(combine_node.add_parent,inspnest_by_seg[seg])
 	dag.add_node(combine_node)
 	combine_nodes[seg]=combine_node
