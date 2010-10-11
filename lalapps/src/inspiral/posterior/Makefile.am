@@ -22,7 +22,7 @@ BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs
+bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs lalapps_nest_pipe
 pkgpython_DATA = nest_utils.py
 endif
 
