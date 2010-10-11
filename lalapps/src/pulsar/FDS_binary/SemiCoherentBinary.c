@@ -2921,7 +2921,8 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
     fprintf(fp,"%%%% length_0\t= %d\n",Bayes->ampgrid->length);
     if (pspace->amppriors->gaussian) fprintf(fp,"%%%% prior_0\t= GAUSSIAN\n");
     else fprintf(fp,"%%%% prior_0\t= FLAT\n"); 
-    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tnorm_prior(%s)\n%%%%\n",
+    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
+	    Bayes->ampgrid->name,Bayes->ampgrid->name,
 	    Bayes->ampgrid->name,Bayes->ampgrid->name,
 	    Bayes->ampgrid->name,Bayes->ampgrid->name);
   
@@ -2942,7 +2943,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 	REAL8 log_post = Bayes->logposterior_amp->data[j];
 	REAL8 norm_post = exp(Bayes->logposterior_amp->data[j]-mx)/sum;
 	REAL8 norm_prior = exp(pspace->amppriors->logpriors->data[j]);
-	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,norm_prior);
+	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t0.0\t0.0\t%6.12e\n",x,log_post,norm_post,norm_prior);
       }
   
     }
