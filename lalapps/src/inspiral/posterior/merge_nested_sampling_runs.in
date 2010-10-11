@@ -124,7 +124,7 @@ if opts.pos is not None:
 	posfile=open(opts.pos,'w')
 	for row in pos:
         	for i in row:
-                	posfile.write('%f\t'%(i))
-        	posfile.write('\n')
+			posfile.write('%f\t'%(i))
+		posfile.write('\n')
 	posfile.close()
 

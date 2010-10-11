@@ -161,8 +161,8 @@ if opts.outpos is not None:
 	posfile.write('mchirp \t eta \t time \t phi0 \t dist \t RA \t dec \t psi \t iota \t likelihood \n')
 	for row in pos:
     		for i in row:
-        		posfile.write('%f\t' %(i))
-    		posfile.write('\n')
+			posfile.write('%f\t' %(i))
+		posfile.write('\n')
 	posfile.close()
 
 d_idx=argsort(d_all[:,-1])
