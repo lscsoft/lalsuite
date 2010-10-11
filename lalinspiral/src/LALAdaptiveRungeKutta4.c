@@ -146,7 +146,7 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 	/* needed for the final interpolation */
   gsl_spline *interp = NULL;  
   gsl_interp_accel *accel = NULL;
-  int outputlen;
+  int outputlen = 0;
 	REAL8Array *output = NULL;
   REAL8 *times, *vector;	/* aliases */
   
