@@ -28,6 +28,7 @@
 #include <lal/VectorOps.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
+#include <mpi.h>
 #include "LALInference.h"
 
 
