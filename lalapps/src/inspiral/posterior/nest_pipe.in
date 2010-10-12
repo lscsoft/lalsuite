@@ -355,7 +355,7 @@ if opts.coherence_test:
 	coherence_test_files={}
 	coherence_test_outfiles={}
 	coherence_test_bfiles={}
-	combine_nodes_by_time_ifo={}
+	combine_nodes_by_time={}
 	coherence_test_dir=os.path.join(opts.run_path,'coherencetest')
 	checkDir(coherence_test_dir)
 	# Loop over all the times
@@ -537,7 +537,7 @@ if opts.enable_pages_alltimes is True:
                         for ifo in coherence_inspnest_nodes[time].keys():
                                 results_node=OddsPipeline.ResultsPageNode(results_page_job)
                                 results_node.add_file_opt('data',coherence_test_posfiles[time][ifo])
-                                results_node.add_parent(combine_nodes_by_time_ifo[time][ifo])
+                                results_node.add_parent(combine_nodes_by_time[time][ifo])
                                 ifo_results_path=os.path.join(results_dir,ifo)
                                 results_node.add_var_opt('outpath',ifo_results_path)
                                 results_node.add_var_opt('bsn',coherence_test_bfiles[time][ifo])
