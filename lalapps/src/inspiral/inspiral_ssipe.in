@@ -263,7 +263,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
             insp.set_category('inspiral1')
           if not opts.disable_dag_priorities:
             insp.set_priority(2)
-          insp.set_user_tag(usertag)
           insp.set_start(chunk.start())
           insp.set_end(chunk.end())
           insp.set_trig_start(chunk.trig_start())
@@ -1108,11 +1107,11 @@ if opts.coincidence:
   if inj_file:
     lladd_job.add_input_file(inj_file)
     lladd_job.add_file_arg(inj_file)
+  thinca_job.add_ini_opts(cp, 'thinca')
   if cp.has_section("vetoes"):
     lladd_job.add_input_file(cp.get("vetoes","vetoes-file"))
     lladd_job.add_file_arg(cp.get("vetoes","vetoes-file"))
-    lladd_job.add_opt("vetoes-name",cp.get("vetoes","vetoes-name"))
-  thinca_job.add_ini_opts(cp, 'thinca')
+    thinca_job.add_opt("vetoes-name",cp.get("vetoes","vetoes-name"))
 
   coinc_nodes = thinca_coinc(ifo_list, chunks_analyzed, cafe_caches,
       lladd_job, thinca_job, dag, opts.coincidence, opts.inspiral,
