@@ -29,7 +29,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
 #include "LALInference.h"
-
+#include "mpi.h"
 
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)

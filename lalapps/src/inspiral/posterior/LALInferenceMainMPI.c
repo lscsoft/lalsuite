@@ -33,6 +33,7 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
+#include "mpi.h"
 
 LALVariables variables;
 LALVariables variables2;
