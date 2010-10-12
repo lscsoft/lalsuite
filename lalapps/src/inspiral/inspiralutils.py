@@ -75,7 +75,7 @@ def hipe_cache(ifos, usertag, gps_start_time, gps_end_time):
   return hipeCache
 
 ##############################################################################
-def hipe_pfn_cache(cachename,globpat):
+def hipe_pfn_glob_cache(cachename,globpat):
   """
   create and return the name of a pfn cache containing files that match
   globpat. This is needed to manage the .input files that hipe creates.
@@ -90,6 +90,24 @@ def hipe_pfn_cache(cachename,globpat):
     print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
   cache_fh.close()
   return cachename
+
+##############################################################################
+def hipe_pfn_list_cache(cachename,files):
+  """
+  create and return the name of a pfn cache containing files in files.
+  This is needed to manage the .input files that hipe creates.
+  
+  cachename = the name of the pfn cache file
+  files = a list of files
+  """
+  cache_fh = open(cachename,"w")
+  for file in files:
+    lfn = os.path.basename(file)
+    pfn = "file://" + os.path.abspath(file)
+    print >> cache_fh, ' '.join([lfn,pfn,' pool="local"'])
+  cache_fh.close()
+  return cachename
+
 
 ##############################################################################
 def tmpltbank_cache(datafind_filename):
@@ -557,32 +575,35 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   # create the hipe config parser, keep only relevant info
   hipecp = copy.deepcopy(config)
   if dataFind or tmpltBank: # Template generation and datafind share a number of options
-    hipeSections = ["condor", "pipeline", "input", "datafind","data",\
-        "ligo-data","inspiral","virgo-data", "condor-max-jobs", "calibration"]
+    hipeSections = ["condor", "pipeline", "input", "datafind","data", \
+        "ligo-data","inspiral","virgo-data", "condor-max-jobs", \
+        "ligolw_add", "calibration"]
     if tmpltBank: # Template generation needs some extra options that datafind doesn't
-      hipeSections.extend(["calibration", "geo-data", "tmpltbank", \
+      hipeSections.extend(["geo-data", "tmpltbank", \
           "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
           "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank"])
   elif vetoCat:
-    hipeSections = ["condor", "pipeline", "input", "data", "ligo-data", \
-        "tmpltbank", "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
-        "l1-inspiral", "g1-inspiral", "v1-inspiral", \
-        "thinca", "thinca-2", "datafind", "virgo-data", \
-        "thinca-slide", "coire", "coire-1", "coire-2","coire-inj", "sire", \
-        "sire-inj", "condor-max-jobs", "calibration", \
-        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
-        "cohinspbank", "chia-inj", "cohire", "cohire-inj"]
+    hipeSections = ["condor", "pipeline", "input", "data", "datafind", \
+        "ligo-data", "virgo-data", "geo-data", "calibration", "tmpltbank", \
+        "inspiral", "veto-inspiral", "g1-inspiral", "h1-inspiral", \
+        "h2-inspiral", "l1-inspiral", "v1-inspiral", "ligolw_add", \
+        "ligolw_cafe", "thinca", "thinca-2", "thinca-slide", "coire", \
+        "coire-1", "coire-2", "coire-inj", "sire", "sire-inj", "cohbank", \
+        "trigbank-coherent", "chia", "inspiral-coherent", "cohinspbank", \
+        "chia-inj", "cohire", "cohire-inj", "condor-max-jobs"]
   else:
-    hipeSections = ["condor", "pipeline", "input", "calibration", "datafind",\
-        "ligo-data", "virgo-data", "geo-data", "data", "tmpltbank", \
+    hipeSections = ["condor", "pipeline", "input", "data", "datafind",\
+        "ligo-data", "virgo-data", "geo-data", "calibration", "tmpltbank", \
         "tmpltbank-1", "tmpltbank-2", "h1-tmpltbank", "h2-tmpltbank", \
         "l1-tmpltbank", "v1-tmpltbank", "g1-tmpltbank", "no-veto-inspiral", \
         "veto-inspiral", "inspiral", "h1-inspiral", "h2-inspiral", \
-        "l1-inspiral", "g1-inspiral", "v1-inspiral", "thinca", "thinca-1", \
-        "thinca-2", "thinca-slide", "trigbank", "sire",  \
-        "sire-inj", "coire", "coire-1", "coire-2", "coire-inj", \
-        "cohbank", "trigbank-coherent", "chia", "inspiral-coherent", \
-        "cohinspbank", "chia-inj", "cohire", "cohire-inj", "condor-max-jobs"]
+        "l1-inspiral", "g1-inspiral", "v1-inspiral", "ligolw_add", \
+        "ligolw_cafe", "thinca", "thinca-1", "thinca-2", "thinca-slide", \
+        "trigbank", "sire", "sire-inj", "coire", "coire-1", "coire-2", \
+        "coire-inj", "cohbank", "trigbank-coherent", "chia", \
+        "inspiral-coherent", "cohinspbank", "chia-inj", "cohire", \
+        "cohire-inj", "condor-max-jobs"]
+
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
 
@@ -629,9 +650,16 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
           hipecp.set("coire-2",opt,arg)
 
     # add the veto files in the thinca section
-    for ifo in ifos:
-      hipecp.set("thinca", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
-    hipecp.set("thinca", "do-veto", "")
+    if hipecp.has_section("thinca-2"):
+      # add the veto files in the thinca section
+      for ifo in ifos:
+        hipecp.set("thinca-2", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
+      hipecp.set("thinca-2", "do-veto", "")
+    else:
+      # add a vetoes section
+      hipecp.add_section("vetoes")
+      hipecp.set("vetoes", "vetoes-file", vetoFiles["combined-veto-file"][vetoCat])
+      hipecp.set("vetoes", "vetoes-name", "VETO_CAT%i_CUMULATIVE"%(vetoCat))
 
   # set the usertag
   if hipeDir == "datafind":
@@ -653,7 +681,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         hipecp.set("condor","inspinj",executable)
     hipecp.remove_section(hipeDir)
     hipecp.set("input","injection-seed",injSeed)
-    hipecp.set("input", "num-slides", "")
+    hipecp.set("input", "num-slides", 0)
     # set any extra inspiral arguments for the injection
     try:
       for item in config.items('-'.join([hipeDir,"inspiral"])):
@@ -709,12 +737,14 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     if config.has_option("hipe-arguments","ringdown"):
       hipe_args = ["coincidence", "ringdown","coire-coincidence",
         "summary-first-coinc-triggers","write-script"]
-    else:
+    elif config.has_option("hipe-arguments","second-coinc"):
       hipe_args = ["second-coinc", "coire-second-coinc", 
         "summary-coinc-triggers", "sire-second-coinc", 
         "summary-single-ifo-triggers","write-script",
         "coherent-bank","coherent-inspiral","cohire",
         "summary-coherent-inspiral-triggers"]
+    else:
+      hipe_args = ["coincidence","write-script"]
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
@@ -767,7 +797,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   if hipeDir == "datafind":
     # grab the segment files managed by hipe and put them in the df cache
     # since it is inherited by all the other sub-workflows
-    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_cache(
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
       'segment_files.cache', '../segments/*txt' )))
     hipeNode.add_output_file( hipe_cache(ifos, None, \
         hipecp.getint("input", "gps-start-time"), \
@@ -777,6 +807,12 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     hipeNode.add_output_file( hipe_cache(ifos, usertag, \
         hipecp.getint("input", "gps-start-time"), \
         hipecp.getint("input", "gps-end-time")) )
+    if hipecp.has_section("ligolw_cafe"):
+      hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
+        'slide_files.cache', [hipecp.get("ligolw_cafe","background-slides"),
+          hipecp.get("ligolw_cafe", "zero-lag-slides")] )))
+      hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
+        'cafe_files.cache', '*CAFE*.cache' )))
 
   # return to the original directory
   os.chdir("..")
