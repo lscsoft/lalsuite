@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <lal/Date.h>
+#include <mpi.h>
 #include "LALInference.h"
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
