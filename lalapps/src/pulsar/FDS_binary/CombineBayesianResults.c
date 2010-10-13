@@ -80,16 +80,9 @@ typedef struct {
   REAL8 mm;                         /**< the mismatch */
   UINT4 nseg;
   UINT4 ndim;
+  UINT4 ampdim;
   REAL8 Bayes;
   REAL8 Bayes_fixed;
-  /* REAL8 min_amp; */
-/*   REAL8 max_amp; */
-/*   REAL8 sig_amp; */
-/*   REAL8 start_amp; */
-/*   REAL8 delta_amp; */
-/*   UINT4 length_amp; */
-/*   CHAR prior_amp[STRINGLENGTH]; */
-/*   REAL8Vector *logposterior_fixed_amp; */
   REAL8Vector *Bayes_perseg;
   UINT4Vector *Bayes_start;
   UINT4Vector *Bayes_end;
@@ -101,6 +94,7 @@ typedef struct {
   REAL8 delta[NBINMAX+1];
   UINT4 length[NBINMAX+1];
   CHAR **prior;
+  REAL8Vector *logprior[NBINMAX+1];
   REAL8Vector *logposterior[NBINMAX+1];
   REAL8Vector *logposterior_fixed[NBINMAX+1];
 } BayesianResultsFile;
@@ -136,6 +130,7 @@ int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
 int XLALReadResultsDir(BayesianResultsFileList **resultsfiles, CHAR *inputdir, CHAR *pattern);
 int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,BayesianResultsFileList *resultsfiles);
 REAL8 XLALLogSumExp(REAL8 logx,REAL8 logy);
+int XLALOutputCombinedBayesResults(CHAR *outputdir,BayesianResultsFile *results,CHAR *clargs,CHAR *obsid_pattern,CHAR *source);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -196,8 +191,13 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* OUTPUT RESULTS TO FILE */
   /**********************************************************************************/
+  
+  /* output combined results to file */
+  if (XLALOutputCombinedBayesResults(uvar.outputdir,combinedresult,clargs,uvar.obsid_pattern,uvar.source)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALOutputCombinedBayesResults() failed with error = %d\n",fn,xlalErrno);
+    return 1;
+  }
 
- 
   /**********************************************************************************/
   /* CLEAN UP */
   /**********************************************************************************/
@@ -210,6 +210,7 @@ int main( int argc, char *argv[] )  {
     for (j=0;j<NBINMAX+1;j++) {
       XLALFree(resultsfiles->file[i].name[j]);
       XLALFree(resultsfiles->file[i].prior[j]);
+      XLALDestroyREAL8Vector(resultsfiles->file[i].logprior[j]);
       XLALDestroyREAL8Vector(resultsfiles->file[i].logposterior[j]);
       XLALDestroyREAL8Vector(resultsfiles->file[i].logposterior_fixed[j]);
     }
@@ -223,6 +224,15 @@ int main( int argc, char *argv[] )  {
   XLALDestroyREAL8Vector(combinedresult->Bayes_perseg);
   XLALDestroyUINT4Vector(combinedresult->Bayes_start);
   XLALDestroyUINT4Vector(combinedresult->Bayes_end);
+  for (j=0;j<NBINMAX+1;j++) {
+    XLALFree(combinedresult->name[j]);
+    XLALFree(combinedresult->prior[j]);
+    XLALDestroyREAL8Vector(combinedresult->logprior[j]);
+    XLALDestroyREAL8Vector(combinedresult->logposterior[j]);
+    XLALDestroyREAL8Vector(combinedresult->logposterior_fixed[j]);
+  }
+  XLALFree(combinedresult->name);
+  XLALFree(combinedresult->prior);
   XLALFree(combinedresult);
 
   /* Free config-Variables and userInput stuff */
@@ -405,6 +415,7 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
       else if ((c = strstr(line,"coherent time (sec)"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].tobs));
       else if ((c = strstr(line,"number of segments"))) sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].nseg));
       else if ((c = strstr(line,"number of dimensions"))) sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].ndim));
+      else if ((c = strstr(line,"amplitude dimension"))) sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].ampdim));
       else if ((c = strstr(line,"mismatch"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].mm));
       else if ((c = strstr(line,"log Bayes Factor (phase and amplitude marginalised per segment)	="))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].Bayes));
       else if ((c = strstr(line,"log Bayes Factor (phase marginalised per segment)"))) {
@@ -438,34 +449,6 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	printf("***\n");
 
       }
-
-     /*  else if ((c = strstr(line,"min_"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].min_amp)); */
-/*       else if ((c = strstr(line,"max_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].max_amp)); */
-/*       else if ((c = strstr(line,"sig_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].sig_amp)); */
-/*       else if ((c = strstr(line,"start_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].start_amp)); */
-/*       else if ((c = strstr(line,"delta_amp"))) sscanf(strstr(c,"=")+2,"%lf",&((*resultsfiles)->file[i].delta_amp)); */
-/*       else if ((c = strstr(line,"length_amp"))) { */
-/* 	sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].length_amp)); */
-	
-/* 	/\* allocate mem for the pdfs *\/ */
-/* 	if (((*resultsfiles)->file[i].logposterior_fixed_amp = XLALCreateREAL8Vector((*resultsfiles)->file[i].length_amp)) == NULL) { */
-/* 	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn); */
-/* 	  XLAL_ERROR(fn,XLAL_ENOMEM); */
-/* 	} */
-	
-/*       } */
-/*       else if ((c = strstr(line,"prior_amp"))) { */
-/* 	sscanf(strstr(c,"=")+2,"%s",((*resultsfiles)->file[i].prior_amp)); */
-	
-/* 	/\* if we've found the prior information line then the actual pdf is 3 lines later *\/ */
-/* 	for (k=0;k<3;k++) fgets(line,sizeof(line),fp); */
-/* 	for (k=0;k<(INT4)((*resultsfiles)->file[i].length_amp);k++) { */
-/* 	  fgets(line,sizeof(line),fp); */
-/* 	  sscanf(line,"%*e %le %*e %*e %*e %*e",&((*resultsfiles)->file[i].logposterior_fixed_amp->data[k])); */
-/* 	  printf("read log posteriors as %lf\n",((*resultsfiles)->file[i].logposterior_fixed_amp->data[k])); */
-/* 	} */
-/* 	printf("***\n"); */
-/*       } */
 	
       /* loop over search parameters */
       for (j=0;j<NBINMAX+1;j++) {
@@ -498,6 +481,10 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  sscanf(strstr(c,"=")+2,"%d",&((*resultsfiles)->file[i].length[j]));
 	  
 	  /* allocate mem for the pdfs */
+	  if (((*resultsfiles)->file[i].logprior[j] = XLALCreateREAL8Vector((*resultsfiles)->file[i].length[j])) == NULL) {
+	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for prior vector.\n",fn);
+	    XLAL_ERROR(fn,XLAL_ENOMEM);
+	  }
 	  if (((*resultsfiles)->file[i].logposterior[j] = XLALCreateREAL8Vector((*resultsfiles)->file[i].length[j])) == NULL) {
 	    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for posterior vector.\n",fn);
 	    XLAL_ERROR(fn,XLAL_ENOMEM);
@@ -515,16 +502,23 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  for (k=0;k<3;k++) fgets(line,sizeof(line),fp);
 	  for (k=0;k<(INT4)((*resultsfiles)->file[i].length[j]);k++) {
 	    fgets(line,sizeof(line),fp);
-	    sscanf(line,"%*e %le %*e %le %*e %*e",&((*resultsfiles)->file[i].logposterior[j]->data[k]),&((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]));
-	    /* printf("read log posteriors as %lf %lf\n",((*resultsfiles)->file[i].logposterior[j]->data[k]),((*resultsfiles)->file[i].logposterior_fixed[j]->data[k])); */
+	    sscanf(line,"%*e %le %*e %le %*e %le",&((*resultsfiles)->file[i].logposterior[j]->data[k]),
+		   &((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]),
+		   &((*resultsfiles)->file[i].logprior[j]->data[k]));
+	    /* log the prior for smother later interpolation */
+	    (*resultsfiles)->file[i].logprior[j]->data[k] = log((*resultsfiles)->file[i].logprior[j]->data[k]);
+	    printf("read input as %lf %lf %lf\n",((*resultsfiles)->file[i].logposterior[j]->data[k]),
+		   ((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]),
+		   ((*resultsfiles)->file[i].logprior[j]->data[k]));
+	    
 	  }
-	  /* printf("***\n"); */
+	  printf("***\n");
 	}
 	
       } /* end loop over parameters */
       
     } /* end loop over lines */
- 
+    
     /* fill in extra info */
     snprintf((*resultsfiles)->file[i].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
 
@@ -533,18 +527,11 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     LogPrintf(LOG_DEBUG,"%s : read tobs as %f\n",fn,((*resultsfiles)->file[i].tobs));
     LogPrintf(LOG_DEBUG,"%s : read nseg as %d\n",fn,((*resultsfiles)->file[i].nseg));
     LogPrintf(LOG_DEBUG,"%s : read ndim as %d\n",fn,((*resultsfiles)->file[i].ndim));
+    LogPrintf(LOG_DEBUG,"%s : read ampdim as %d\n",fn,((*resultsfiles)->file[i].ampdim));
     LogPrintf(LOG_DEBUG,"%s : read mismatch as %f\n",fn,((*resultsfiles)->file[i].mm));
     LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",fn,((*resultsfiles)->file[i].Bayes));
     LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",fn,((*resultsfiles)->file[i].Bayes_fixed));
   
-   /*  LogPrintf(LOG_DEBUG,"%s : read amp min as %f\n",fn,((*resultsfiles)->file[i].min_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp max as %f\n",fn,((*resultsfiles)->file[i].max_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp sig as %f\n",fn,((*resultsfiles)->file[i].sig_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp start as %f\n",fn,((*resultsfiles)->file[i].start_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp delta as %f\n",fn,((*resultsfiles)->file[i].delta_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp length as %d\n",fn,((*resultsfiles)->file[i].length_amp)); */
-/*     LogPrintf(LOG_DEBUG,"%s : read amp prior as %s\n",fn,((*resultsfiles)->file[i].prior_amp)); */
-    
     for (j=0;j<NBINMAX+1;j++) {
       LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",fn,j,((*resultsfiles)->file[i].name[j]));
       LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",fn,j,((*resultsfiles)->file[i].min[j]));
@@ -586,6 +573,10 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
       LogPrintf(LOG_CRITICAL,"%s : inconsistent number of search dimensions for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
       XLAL_ERROR(fn,XLAL_EINVAL);
     }
+    if ((*resultsfiles)->file[i].ampdim != (*resultsfiles)->file[0].ampdim) {
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of amplitude dimensions for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
+      XLAL_ERROR(fn,XLAL_EINVAL);
+    }
     if ((*resultsfiles)->file[i].mm != (*resultsfiles)->file[0].mm) {
       LogPrintf(LOG_CRITICAL,"%s : inconsistent mismatches for files %s and %s.\n",fn,(*resultsfiles)->file[0].filename,(*resultsfiles)->file[i].filename);
       XLAL_ERROR(fn,XLAL_EINVAL);
@@ -621,9 +612,6 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 
   /* free original filelist */
   globfree(&pglob);
- 
-  /* read in the posteriors */
-  exit(0);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
@@ -658,10 +646,15 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output Bayesian results.\n",fn);
     XLAL_ERROR(fn,XLAL_ENOMEM);
   }
-
-  /* first deal with header info */
-  (*combinedresult)->nseg = 0;
-  for (i=0;i<resultsfiles->length;i++) (*combinedresult)->nseg += resultsfiles->file[i].nseg;
+  
+  /* fill in some parameters */
+  (*combinedresult)->tstart = resultsfiles->file[0].tstart;
+  (*combinedresult)->tspan = resultsfiles->file[0].tspan;
+  (*combinedresult)->tobs = resultsfiles->file[0].tobs;
+  (*combinedresult)->mm = resultsfiles->file[0].mm;
+  (*combinedresult)->nseg = resultsfiles->file[0].nseg;
+  (*combinedresult)->ndim = resultsfiles->file[0].ndim;
+  (*combinedresult)->ampdim = resultsfiles->file[0].ampdim;
 
   /* allocate mem for bandwidths */
   if ((deltaband = (REAL8 *)XLALCalloc(resultsfiles->length,sizeof(REAL8))) == NULL) {
@@ -736,214 +729,314 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
   /************************************************/
   /* combine posteriors */
 
-  /* loop over the number of dimensions */
+  (*combinedresult)->ndim = resultsfiles->file[0].ndim;
+  (*combinedresult)->ampdim = resultsfiles->file[0].ampdim;
 
- /*  /\* first find out the pdf with the most samples *\/ */
-/*   { */
-/*     UINT4 maxlen = 0; */
-/*     for (i=0;i<resultsfiles->length;i++) { */
-/*       if (resultsfiles->file[i].logposterior_fixed_amp->length>maxlen) maxlen = resultsfiles->file[i].logposterior_fixed_amp->length; */
-/*     } */
-/*     printf("maxlen = %d\n",maxlen); */
-    
-/*     /\* we define an over-resolved interpolation scheme with OVERRES more points than the max value *\/ */
-/*     if (((*combinedresult)->logposterior_fixed_amp = XLALCreateREAL8Vector((UINT4)(0.5 + OVERRES*maxlen))) == NULL) { */
-/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn); */
-/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
-/*     } */
-
-/*     /\* initialise results *\/ */
-/*     for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) (*combinedresult)->logposterior_fixed_amp->data[j] = -1e200; */
-
-/*     /\* fill in some header info *\/ */
-/*     (*combinedresult)->start_amp = resultsfiles->file[0].start_amp; */
-/*     (*combinedresult)->length_amp = (*combinedresult)->logposterior_fixed_amp->length; */
-/*     (*combinedresult)->delta_amp = ((resultsfiles->file[0].length_amp-1)*resultsfiles->file[0].delta_amp)/((*combinedresult)->length_amp - 1); */
-/*     (*combinedresult)->ndim = resultsfiles->file[0].ndim; */
-/*     (*combinedresult)->nseg = resultsfiles->file[0].nseg; */
-/*     (*combinedresult)->band = totalband; */
-    
-
-   /*   CHAR filename[STRINGLENGTH];      /\**< the name of the file *\/ */
-/*   UINT4 tstart;                     /\**< file start time *\/ */
-/*   REAL8 tspan;                      /\**< file time span *\/ */
-/*   REAL8 tobs;                       /\**< file observationm time *\/ */
-/*   REAL8 minfreq;                    /\**< the minimum frequency *\/ */
-/*   REAL8 band;                       /\**< the frequency band *\/ */
-/*   REAL8 mm;                         /\**< the mismatch *\/ */
-/*   UINT4 nseg; */
-/*   UINT4 ndim; */
-/*   REAL8 Bayes; */
-/*   REAL8 Bayes_fixed; */
-/*   REAL8 min_amp; */
-/*   REAL8 max_amp; */
-/*   REAL8 sig_amp; */
-/*   REAL8 start_amp; */
-/*   REAL8 delta_amp; */
-/*   UINT4 length_amp; */
-/*   CHAR prior_amp[STRINGLENGTH]; */
-/*   REAL8Vector *logposterior_fixed_amp; */
-/*   REAL8Vector *Bayes_perseg; */
-/*   UINT4Vector *Bayes_start; */
-/*   UINT4Vector *Bayes_end; */
-/*   CHAR **name; */
-/*   REAL8 min[NBINMAX]; */
-/*   REAL8 max[NBINMAX]; */
-/*   REAL8 sig[NBINMAX]; */
-/*   REAL8 start[NBINMAX]; */
-/*   REAL8 delta[NBINMAX]; */
-/*   UINT4 length[NBINMAX]; */
-/*   CHAR **prior; */
-/*   REAL8Vector *logposterior[NBINMAX]; */
-/*   REAL8Vector *logposterior_fixed[NBINMAX]; */
-
-
-/*   } */
-
-  /* perform interpolation on each amplitude posterior */
- /*  for (i=0;i<resultsfiles->length;i++) { */
-
-/*     UINT4 N = resultsfiles->file[i].length_amp; */
-/*     gsl_interp_accel *acc = gsl_interp_accel_alloc();        /\* gsl interpolation structures *\/ */
-/*     gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N); */
-/*     REAL8 *x = NULL; */
-/*     REAL8 *y = NULL; */
-    
-/*     /\* allocate memory for the temporary data *\/ */
-/*     if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) { */
-/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn); */
-/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
-/*     } */
-/*     if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) { */
-/*       LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn); */
-/*       XLAL_ERROR(fn,XLAL_ENOMEM); */
-/*     } */
-
-/*     /\* fill in gsl interpolation input data *\/ */
-/*     for (j=0;j<N;j++) { */
-/*       x[j] = resultsfiles->file[i].start_amp + j*resultsfiles->file[i].delta_amp; */
-/*       y[j] = resultsfiles->file[i].logposterior_fixed_amp->data[j]; */
-/*       printf("x = %f y = %f\n",x[j],y[j]); */
-/*     } */
-/*     gsl_spline_init(spline,x,y,N); */
-
-/*     /\* interpolate and add to result *\/ */
-/*     for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) { */
-/*       REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp; */
-/*       REAL8 temp1 = (*combinedresult)->logposterior_fixed_amp->data[j]; */
-/*       REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband); */
-/*       (*combinedresult)->logposterior_fixed_amp->data[j] = XLALLogSumExp(temp1,temp2); */
-/*     } */
-
-/*     /\* free memory *\/ */
-/*     XLALFree(x); */
-/*     XLALFree(y); */
-/*     gsl_interp_accel_free(acc); */
-/*     gsl_spline_free(spline); */
-
-/*   } */
-
-  /* output results to screen */
-/*   for (j=0;j<(*combinedresult)->logposterior_fixed_amp->length;j++) { */
-/*     REAL8 z = (*combinedresult)->start_amp + j*(*combinedresult)->delta_amp; */
-/*     LogPrintf(LOG_DEBUG,"%s : combined amplitude posterior %f %f\n",fn,z,(*combinedresult)->logposterior_fixed_amp->data[j]); */
-/*   } */
-
-  /* loop over each search parameter */
-  for (k=0;k<(*combinedresult)->ndim;k++) {
-    
-    UINT4 maxlen = 0;
-    for (i=0;i<resultsfiles->length;i++) {
-      if (resultsfiles->file[i].logposterior_fixed[k]->length>maxlen) maxlen = resultsfiles->file[i].logposterior_fixed[k]->length;
-    }
-    printf("maxlen = %d\n",maxlen);
-    
-    /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
-    if (((*combinedresult)->logposterior[k] = XLALCreateREAL8Vector((UINT4)(0.5 + OVERRES*maxlen))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
-    if (((*combinedresult)->logposterior_fixed[k] = XLALCreateREAL8Vector((UINT4)(0.5 + OVERRES*maxlen))) == NULL) {
-      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
-      XLAL_ERROR(fn,XLAL_ENOMEM);
-    }
-    
-    /* initialise results */
-    for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
-      (*combinedresult)->logposterior[k]->data[j] = -1e200;
-      (*combinedresult)->logposterior_fixed[k]->data[j] = -1e200;
-    }
-    
-    /* fill in some header info */
-    (*combinedresult)->start[k] = resultsfiles->file[0].start[k];
-    (*combinedresult)->length[k] = (*combinedresult)->logposterior[k]->length;
-    (*combinedresult)->delta[k] = ((resultsfiles->file[0].length[k]-1)*resultsfiles->file[0].delta[k])/((*combinedresult)->length[k] - 1);
-    
-    /* perform interpolation on each file for this parameter posterior */
-    for (i=0;i<resultsfiles->length;i++) {
-      
-      UINT4 N = resultsfiles->file[i].length[k];
-      gsl_interp_accel *acc = gsl_interp_accel_alloc();        /* gsl interpolation structures */
-      gsl_interp_accel *acc_fixed = gsl_interp_accel_alloc();
-      gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
-      gsl_spline *spline_fixed = gsl_spline_alloc(gsl_interp_cspline,N);
-      REAL8 *x = NULL;
-      REAL8 *y = NULL;
-      REAL8 *y_fixed = NULL;
-      
-      /* allocate memory for the temporary data */
-      if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
-      }
-      if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
-      }
-      if ((y_fixed = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
-	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
-	XLAL_ERROR(fn,XLAL_ENOMEM);
-      }
-      
-      /* fill in gsl interpolation input data */
-      for (j=0;j<N;j++) {
-	x[j] = resultsfiles->file[i].start[k] + j*resultsfiles->file[i].delta[k];
-	y[j] = resultsfiles->file[i].logposterior[k]->data[j];
-	y_fixed[j] = resultsfiles->file[i].logposterior_fixed[k]->data[j];
-	printf("x = %f y = %f y_fixed = %f\n",x[j],y[j],y_fixed[j]);
-      }
-      gsl_spline_init(spline,x,y,N);
-      gsl_spline_init(spline_fixed,x,y_fixed,N);
-      
-      /* interpolate and add to result */
-      for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
-	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
-	REAL8 temp1 = (*combinedresult)->logposterior[k]->data[j];
-	REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband);
-	REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[j];
-	REAL8 temp4 = gsl_spline_eval(spline_fixed,z,acc_fixed) + log(deltaband[i]) - log(totalband);
-	(*combinedresult)->logposterior[k]->data[j] = XLALLogSumExp(temp1,temp2);
-	(*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
-      }
-      
-      /* free memory */
-      XLALFree(x);
-      XLALFree(y);
-      XLALFree(y_fixed);
-      gsl_interp_accel_free(acc);
-      gsl_interp_accel_free(acc_fixed);
-      gsl_spline_free(spline);
-      gsl_spline_free(spline_fixed);
-      
-    }
-   
-    /* output results to screen */
-    for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
-      REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
-      LogPrintf(LOG_DEBUG,"%s : combined posterior %f %f %f\n",fn,z,(*combinedresult)->logposterior[k]->data[j],(*combinedresult)->logposterior_fixed[k]->data[j]);
-    }
-    exit(0);
+  /* allocate memory for the parameter name and prior type */
+  if (((*combinedresult)->name = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
+  if (((*combinedresult)->prior = (CHAR **)XLALCalloc(NBINMAX+1,sizeof(CHAR*))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
+  }
+  for (j=0;j<NBINMAX+1;j++) {
+    if (((*combinedresult)->name[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for name of parameter.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+    if (((*combinedresult)->prior[j] = (CHAR *)XLALCalloc(STRINGLENGTH,sizeof(CHAR))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for type of prior.\n",fn);
+      XLAL_ERROR(fn,XLAL_ENOMEM);
+    }
+  }
+  
+  /* loop over each search parameter */
+  for (k=0;k<(*combinedresult)->ndim+(*combinedresult)->ampdim;k++) {
+    
+    /* check for nu parameter since we add that differently */
+    if (strcmp(resultsfiles->file[0].name[k],"nu")) {
+      
+      LogPrintf(LOG_DEBUG,"%s : working on parameter %s\n",fn,resultsfiles->file[0].name[k]);
+      UINT4 maxlen = 0;
+      UINT4 newlen = 0;
+      for (i=0;i<resultsfiles->length;i++) {
+	if (resultsfiles->file[i].logposterior_fixed[k]->length>maxlen) maxlen = resultsfiles->file[i].logposterior_fixed[k]->length;
+      }
+      
+      /* define over-res length (only if we have more than one point) */
+      if (maxlen>1) newlen = (UINT4)(0.5 + OVERRES*maxlen);
+      else newlen = maxlen;
+      LogPrintf(LOG_DEBUG,"%s : determined max pdf length and over-res length as %d %d\n",fn,maxlen,newlen);
+
+      /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
+      if (((*combinedresult)->logprior[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      if (((*combinedresult)->logposterior[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      if (((*combinedresult)->logposterior_fixed[k] = XLALCreateREAL8Vector(newlen)) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      (*combinedresult)->length[k] = newlen;
+      
+      /* initialise results */
+      for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
+	(*combinedresult)->logprior[k]->data[j] = -1e200;
+	(*combinedresult)->logposterior[k]->data[j] = -1e200;
+	(*combinedresult)->logposterior_fixed[k]->data[j] = -1e200;
+      }
+      
+      /* fill in some header info */
+      snprintf((*combinedresult)->name[k],STRINGLENGTH,"%s",resultsfiles->file[0].name[k]);
+      snprintf((*combinedresult)->prior[k],STRINGLENGTH,"%s",resultsfiles->file[0].prior[k]);
+      (*combinedresult)->start[k] = resultsfiles->file[0].start[k];
+      (*combinedresult)->length[k] = (*combinedresult)->logposterior[k]->length;
+      if ((*combinedresult)->length[k] > 1) {
+	(*combinedresult)->delta[k] = ((resultsfiles->file[0].length[k]-1)*resultsfiles->file[0].delta[k])/((*combinedresult)->length[k] - 1);
+      }
+      else (*combinedresult)->delta[k] = resultsfiles->file[0].delta[k];
+      (*combinedresult)->min[k] = resultsfiles->file[0].min[k];
+      (*combinedresult)->max[k] = resultsfiles->file[0].max[k];
+      (*combinedresult)->sig[k] = resultsfiles->file[0].sig[k];
+
+      /* perform interpolation on each file for this parameter posterior */
+      for (i=0;i<resultsfiles->length;i++) {
+	
+	UINT4 N = resultsfiles->file[i].length[k];
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();        /* gsl interpolation structures */
+	gsl_interp_accel *acc_fixed = gsl_interp_accel_alloc();
+	gsl_interp_accel *acc_prior = gsl_interp_accel_alloc();
+	gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
+	gsl_spline *spline_fixed = gsl_spline_alloc(gsl_interp_cspline,N);
+	gsl_spline *spline_prior = gsl_spline_alloc(gsl_interp_cspline,N);
+	REAL8 *x = NULL;
+	REAL8 *y = NULL;
+	REAL8 *y_fixed = NULL;
+	REAL8 *y_prior = NULL;
+	
+	/* allocate memory for the temporary data */
+	if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y_fixed = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y_prior = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+
+	/* fill in gsl interpolation input data */
+	for (j=0;j<N;j++) {
+	  x[j] = resultsfiles->file[i].start[k] + j*resultsfiles->file[i].delta[k];
+	  y[j] = resultsfiles->file[i].logposterior[k]->data[j];
+	  y_fixed[j] = resultsfiles->file[i].logposterior_fixed[k]->data[j];
+	  y_prior[j] = resultsfiles->file[i].logprior[k]->data[j];
+	  /* printf("x = %f y = %f y_fixed = %f\n",x[j],y[j],y_fixed[j]); */
+	}
+	
+	if (N>1) {
+	  gsl_spline_init(spline,x,y,N);
+	  gsl_spline_init(spline_fixed,x,y_fixed,N);
+	  gsl_spline_init(spline_prior,x,y_prior,N);
+
+	  /* interpolate and add to result */
+	  for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
+	    REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	    REAL8 temp1 = (*combinedresult)->logposterior[k]->data[j];
+	    REAL8 temp2 = gsl_spline_eval(spline,z,acc) + log(deltaband[i]) - log(totalband);
+	    REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[j];
+	    REAL8 temp4 = gsl_spline_eval(spline_fixed,z,acc_fixed) + log(deltaband[i]) - log(totalband);
+	    REAL8 temp5 = (*combinedresult)->logprior[k]->data[j];
+	    REAL8 temp6 = gsl_spline_eval(spline_prior,z,acc_prior) + log(deltaband[i]) - log(totalband);
+
+	    (*combinedresult)->logposterior[k]->data[j] = XLALLogSumExp(temp1,temp2);
+	    (*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
+	    (*combinedresult)->logprior[k]->data[j] = XLALLogSumExp(temp5,temp6);
+	  }
+
+	}
+	else {
+	  REAL8 temp1 = (*combinedresult)->logposterior[k]->data[0];
+	  REAL8 temp2 = resultsfiles->file[i].logposterior[k]->data[0] + log(deltaband[i]) - log(totalband);
+	  REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[0];
+	  REAL8 temp4 = resultsfiles->file[i].logposterior_fixed[k]->data[0] + log(deltaband[i]) - log(totalband);
+	  REAL8 temp5 = (*combinedresult)->logprior[k]->data[0];
+	  REAL8 temp6 = resultsfiles->file[i].logprior[k]->data[0] + log(deltaband[i]) - log(totalband);
+
+	  (*combinedresult)->logposterior[k]->data[0] = XLALLogSumExp(temp1,temp2);
+	  (*combinedresult)->logposterior_fixed[k]->data[0] = XLALLogSumExp(temp3,temp4);
+	  (*combinedresult)->logprior[k]->data[0] = XLALLogSumExp(temp5,temp6);
+	}
+	
+	/* free memory */
+	XLALFree(x);
+	XLALFree(y);
+	XLALFree(y_fixed);
+	XLALFree(y_prior);
+	gsl_interp_accel_free(acc);
+	gsl_interp_accel_free(acc_fixed);
+	gsl_interp_accel_free(acc_prior);
+	if (N>1) {
+	  gsl_spline_free(spline);
+	  gsl_spline_free(spline_fixed);
+	  gsl_spline_free(spline_prior);
+	}
+	
+      }  /* end the loop over files */
+      
+      /* output results to screen */
+      for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
+	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",fn,
+		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[j],
+		  (*combinedresult)->logposterior_fixed[k]->data[j],(*combinedresult)->logprior[k]->data[j]);
+      }
+      
+    }  /* end if statement on whether we are combining nu data */
+    else {
+
+      /* find the ranges and resolutions of the entire combined result */
+      REAL8 numin = resultsfiles->file[0].min[k];
+      REAL8 numax = resultsfiles->file[0].max[k];
+      REAL8 deltamin = resultsfiles->file[0].delta[k];
+      UINT4 N = resultsfiles->file[0].length[k];
+      for (i=1;i<resultsfiles->length;i++) {
+	if (resultsfiles->file[i].min[k]<numin) numin = resultsfiles->file[i].min[k];
+	if (resultsfiles->file[i].max[k]>numax) numax = resultsfiles->file[i].max[k];
+	if (resultsfiles->file[i].delta[k]<deltamin) deltamin = resultsfiles->file[i].delta[k];
+	N += resultsfiles->file[i].length[k];
+      }
+      
+      /* define the new over-resolved delta */
+      snprintf((*combinedresult)->name[k],STRINGLENGTH,"%s",resultsfiles->file[0].name[k]);
+      snprintf((*combinedresult)->prior[k],STRINGLENGTH,"%s",resultsfiles->file[0].prior[k]);
+      (*combinedresult)->start[k] = numin;     
+      (*combinedresult)->delta[k] = deltamin/(REAL8)OVERRES;
+      (*combinedresult)->length[k] = ceil((numax - numin)/(*combinedresult)->delta[k]);
+      (*combinedresult)->delta[k] = (numax - numin)/((*combinedresult)->length[k] - 1);
+      (*combinedresult)->min[k] = numin;
+      (*combinedresult)->max[k] = numax;
+      (*combinedresult)->minfreq = numin;
+      (*combinedresult)->band = numax - numin;
+      
+      LogPrintf(LOG_DEBUG,"%s : setting nu start as %f\n",fn,(*combinedresult)->start[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu delta as %f\n",fn,(*combinedresult)->delta[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu length as %d\n",fn,(*combinedresult)->length[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu min as %f\n",fn,(*combinedresult)->min[k]);
+      LogPrintf(LOG_DEBUG,"%s : setting nu max as %f\n",fn,(*combinedresult)->max[k]);
+      
+      /* we define an over-resolved interpolation scheme with OVERRES more points than the max value */
+      if (((*combinedresult)->logprior[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude prior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      if (((*combinedresult)->logposterior[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+      if (((*combinedresult)->logposterior_fixed[k] = XLALCreateREAL8Vector((*combinedresult)->length[k])) == NULL) {
+	LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for the output amplitude posterior results.\n",fn);
+	XLAL_ERROR(fn,XLAL_ENOMEM);
+      }
+
+      /* setup interpolation on nu */
+      {
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();        /* gsl interpolation structures */
+	gsl_interp_accel *acc_fixed = gsl_interp_accel_alloc();
+	gsl_interp_accel *acc_prior = gsl_interp_accel_alloc();
+	gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
+	gsl_spline *spline_fixed = gsl_spline_alloc(gsl_interp_cspline,N);
+	gsl_spline *spline_prior = gsl_spline_alloc(gsl_interp_cspline,N);
+	REAL8 *x = NULL;
+	REAL8 *y = NULL;
+	REAL8 *y_fixed = NULL;
+	REAL8 *y_prior = NULL;
+	UINT4 idx = 0;
+	
+	/* allocate memory for the temporary data */
+	if ((x = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y_fixed = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+	if ((y_prior = (REAL8 *)XLALCalloc(N,sizeof(REAL8))) == NULL) {
+	  LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for temporary gsl input.\n",fn);
+	  XLAL_ERROR(fn,XLAL_ENOMEM);
+	}
+
+	/* loop over results files and read */
+	for (i=0;i<resultsfiles->length;i++) {
+	
+	  /* fill in gsl interpolation input data */
+	  for (j=0;j<resultsfiles->file[i].length[k];j++) {
+	    x[idx] = resultsfiles->file[i].start[k] + j*resultsfiles->file[i].delta[k];
+	    y[idx] = resultsfiles->file[i].logposterior[k]->data[j] + log(deltaband[i]) - log(totalband);
+	    y_fixed[idx] = resultsfiles->file[i].logposterior_fixed[k]->data[j] + log(deltaband[i]) - log(totalband);
+	    y_prior[idx] = resultsfiles->file[i].logprior[k]->data[j] + log(deltaband[i]) - log(totalband);
+	    /* printf("x = %f y = %f y_fixed = %f\n",x[idx],y[idx],y_fixed[idx]); */
+	    idx++;
+	  }
+	  
+	}
+	
+	gsl_spline_init(spline,x,y,N);
+	gsl_spline_init(spline_fixed,x,y_fixed,N);
+	gsl_spline_init(spline_prior,x,y_prior,N);
+	
+	/* interpolate and add to result */
+	for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
+	  REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	  (*combinedresult)->logposterior[k]->data[j] = gsl_spline_eval(spline,z,acc);
+	  (*combinedresult)->logposterior_fixed[k]->data[j] = gsl_spline_eval(spline_fixed,z,acc_fixed);
+	  (*combinedresult)->logprior[k]->data[j] = gsl_spline_eval(spline_prior,z,acc_prior);
+	}
+	
+	/* free memory */
+	XLALFree(x);
+	XLALFree(y);
+	XLALFree(y_fixed);
+	XLALFree(y_prior);
+	gsl_interp_accel_free(acc);
+	gsl_interp_accel_free(acc_fixed);
+	gsl_interp_accel_free(acc_prior);
+	gsl_spline_free(spline);
+	gsl_spline_free(spline_fixed);
+	gsl_spline_free(spline_prior);
+
+      } /* end interpolation */
+       
+      /* output results to screen */
+      for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
+	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
+		  z,(*combinedresult)->logposterior[k]->data[j],
+		  (*combinedresult)->logposterior_fixed[k]->data[j],
+		  (*combinedresult)->logprior[k]->data[j]);
+      }
+
+    } /* end if statement on nu */
+
+  }  /* end the loop over parameters */
 
   /* free memory*/
   XLALFree(deltaband);
@@ -976,4 +1069,175 @@ REAL8 XLALLogSumExp(REAL8 logx,      /**< [in] the log of x */
     return logx + log(1.0 + exp(logy - logx));
   }
   
+}
+
+/** Output the results to file 
+ *
+ * We choose to output all results from a specific analysis to a single file 
+ *
+ */
+int XLALOutputCombinedBayesResults(CHAR *outputdir,                 /**< [in] the output directory name */
+				   BayesianResultsFile *results,    /**< [in] the combined results */
+				   CHAR *clargs,                    /**< [in] the command line args */
+				   CHAR *obsid_pattern,             /**< [in] the obsid string */
+				   CHAR *source                     /**< [in] the source */
+				   )
+{
+  const CHAR *fn = __func__;            /* store function name for log output */
+  CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
+  time_t curtime = time(NULL);          /* get the current time */
+  CHAR *time_string = NULL;             /* stores the current time */
+  CHAR *version_string = NULL;           /* pointer to a string containing the git version information */
+  FILE *fp = NULL;                      /* pointer to the output file */
+  UINT4 i,j;                            /* counters */
+  INT4 nuidx = -1;
+
+  /* validate input */
+  if (outputdir == NULL) { 
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, output directory string == NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  if (results == NULL) { 
+    LogPrintf(LOG_CRITICAL,"%s: Invalid input, Bayesian results structure == NULL.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  
+  /* find nu index */
+  for (i=0;i<NBINMAX+1;i++) if (!strcmp(results->name[i],"nu")) nuidx = i;
+  if (nuidx<0) {
+    LogPrintf(LOG_CRITICAL,"%s: Cannot find index corresponding to the nu parameter.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  
+  /* define the output filename */
+  /* the format we adopt is the following BayesianResults-<SOURCE>-<START>_<END>-<MIN_FREQ_INT>_<MIN_FREQ_mHZ>_ <MAX_FREQ_INT>_<MAX_FREQ_mHZ>.txt */
+  {
+    UINT4 min_freq_int = floor(results->min[nuidx]);
+    UINT4 max_freq_int = floor(results->max[nuidx]);
+    UINT4 min_freq_mhz = (UINT4)floor(0.5 + (results->min[nuidx] - (REAL8)min_freq_int)*1e3);
+    UINT4 max_freq_mhz = (UINT4)floor(0.5 + (results->max[nuidx] - (REAL8)max_freq_int)*1e3);
+    UINT4 end = (UINT4)ceil(results->tstart + results->tspan);
+    if (obsid_pattern == NULL) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CombinedBayesianResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
+					outputdir,source,(UINT4)results->tstart,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); 
+    else snprintf(outputfile,LONGSTRINGLENGTH,"%s/CombinedBayesianResults-%s-%s-%04d_%03d_%04d_%03d.txt",
+		  outputdir,source,obsid_pattern,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+  }
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",fn,outputfile);
+
+  /* open the output file */
+  if ((fp = fopen(outputfile,"w")) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",fn,outputfile);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  
+  /* Convert time to local time representation */
+  {
+    struct tm *loctime = localtime(&curtime);
+    CHAR *temp_time = asctime(loctime);    
+    UINT4 n = strlen(temp_time);
+    time_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(time_string,n-1,"%s",temp_time);
+  }
+  
+  /* get GIT version information */
+  {
+    CHAR *temp_version = XLALGetVersionString(0); 
+    UINT4 n = strlen(temp_version);
+    version_string = XLALCalloc(n,sizeof(CHAR));
+    snprintf(version_string,n-1,"%s",temp_version);
+    XLALFree(temp_version);
+  }
+
+  /* output header information */
+  fprintf(fp,"%s \n",version_string);
+  fprintf(fp,"%%%% command line args\t\t= %s\n",clargs);
+  fprintf(fp,"%%%% filename\t\t\t= %s\n",outputfile);
+  fprintf(fp,"%%%% date\t\t\t\t= %s\n",time_string);
+  fprintf(fp,"%%%% start time (GPS sec)\t\t= %d\n",(UINT4)results->tstart);
+  fprintf(fp,"%%%% observation span (sec)\t= %d\n",(UINT4)results->tspan);
+  fprintf(fp,"%%%% coherent time (sec)\t\t= %d\n",(UINT4)results->tobs);
+  fprintf(fp,"%%%% number of segments\t\t= %d\n",results->nseg);
+  fprintf(fp,"%%%% number of dimensions\t\t= %d\n",results->ndim);
+  if (results->ampdim) fprintf(fp,"%%%% amplitude dimension\t\t= 1\n");
+  else fprintf(fp,"%%%% amplitude dimension\t\t= 0\n");
+  fprintf(fp,"%%%% mismatch\t\t\t= %6.12f\n",results->mm);
+  fprintf(fp,"%%%%\n");
+
+  /* output the main Bayes factor results */
+  fprintf(fp,"%%%% log Bayes Factor (phase and amplitude marginalised per segment)\t= %6.12e\n",results->Bayes);
+  fprintf(fp,"%%%% log Bayes Factor (phase marginalised per segment)\t\t\t= %6.12e\n",results->Bayes_fixed);
+  fprintf(fp,"%%%%\n");
+  fprintf(fp,"%%%% GPS start\tGPS end\tlog Bayes Factor\n");
+  fprintf(fp,"%%%%\n");
+
+  /* output the Bayes factor for each segment */
+  for (i=0;i<results->nseg;i++) fprintf(fp,"%d\t%d\t%6.12e\n",results->Bayes_start->data[i],
+					results->Bayes_end->data[i],
+					results->Bayes_perseg->data[i]);
+  
+  fprintf(fp,"%%%%\n");
+
+  /* loop over each search dimension and output the grid parameters and posteriors */
+  for (i=0;i<results->ndim+results->ampdim;i++) {
+
+    fprintf(fp,"%%%% -------------------------------------------------------------------------------------------------------\n%%%%\n");
+    fprintf(fp,"%%%% name_%d\t= %s\n",i,results->name[i]);
+    fprintf(fp,"%%%% min_%d\t= %6.12e\n",i,results->min[i]);
+    fprintf(fp,"%%%% max_%d\t= %6.12e\n",i,results->max[i]);
+    fprintf(fp,"%%%% sig_%d\t= %6.12e\n",i,results->sig[i]);
+    fprintf(fp,"%%%% start_%d\t= %6.12e\n",i,results->start[i]);
+    fprintf(fp,"%%%% delta_%d\t= %6.12e\n",i,results->delta[i]);
+    fprintf(fp,"%%%% length_%d\t= %d\n",i,results->length[i]);
+    fprintf(fp,"%%%% prior_%d\t= %s\n",i,results->prior[i]);
+    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
+	    results->name[i],results->name[i],results->name[i],
+	    results->name[i],results->name[i],results->name[i]);
+
+    /* output posteriors - we output un-normalised and normalised posteriors plus priors */
+    {
+      REAL8 sum = 0.0;
+      REAL8 sum_phase = 0.0;
+      REAL8 sum_prior = 0.0;
+      REAL8 mx = results->logposterior[i]->data[0];
+      REAL8 mx_phase = results->logposterior_fixed[i]->data[0];
+      REAL8 mx_prior = results->logprior[i]->data[0];
+      for (j=1;j<results->logposterior[i]->length;j++) {
+	if (results->logposterior[i]->data[j] > mx) mx = results->logposterior[i]->data[j];
+	if (results->logposterior_fixed[i]->data[j] > mx_phase) mx_phase = results->logposterior_fixed[i]->data[j];
+	if (results->logprior[i]->data[j] > mx_prior) mx_prior = results->logprior[i]->data[j];
+      }
+      
+      /* compute normalising constant for the variable amplitude posteriors */
+      for (j=0;j<results->logposterior[i]->length;j++) {
+	sum += exp(results->logposterior[i]->data[j]-mx)*results->delta[i];
+      	sum_phase += exp(results->logposterior_fixed[i]->data[j]-mx_phase)*results->delta[i];
+	sum_prior += exp(results->logprior[i]->data[j]-mx_prior)*results->delta[i];  
+      }
+
+      /* output posteriors and priors to file */
+      for (j=0;j<results->logposterior[i]->length;j++) {
+	REAL8 x = results->start[i] + j*results->delta[i];
+	REAL8 log_post = results->logposterior[i]->data[j];
+	REAL8 norm_post = exp(results->logposterior[i]->data[j]-mx)/sum;
+	REAL8 norm_prior = exp(results->logprior[i]->data[j]-mx_prior)/sum_prior;
+	REAL8 log_post_phase =  results->logposterior_fixed[i]->data[j];
+	REAL8 norm_post_phase = exp(results->logposterior_fixed[i]->data[j]-mx_phase)/sum_phase;
+	if (strcmp(results->name[i],"alpha")) fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,log_post_phase,norm_post_phase,norm_prior);
+	else fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t0.0\t0.0\t%6.12e\n",x,log_post,norm_post,norm_prior);
+      }
+ 
+    }
+  
+  }
+
+  /* close the file */
+  fclose(fp);
+
+  /* free memory */
+  XLALFree(time_string);
+  XLALFree(version_string);
+
+  LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
+  return XLAL_SUCCESS;
+
 }
