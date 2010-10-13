@@ -60,7 +60,7 @@ the injecttion  package (return a CoherentGW structure).
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
-
+#include "LALSTPNWaveform2.h"
 
 NRCSID (LALSTPNWAVEFORMC, "$Id$");
 
@@ -482,11 +482,11 @@ LALSTPNWaveformForInjection (
 	if(newswitch==0) {
     LALSTPNWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
 	} else {
-    void LALSTPNAdaptiveWaveformEngine(LALStatus *status,
-                                       REAL4Vector *signalvec1,REAL4Vector *signalvec2,
-                    							     REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
-                    							     UINT4 *countback,
-                    							     InspiralTemplate *params,InspiralInit *paramsInit);
+  // void LALSTPNAdaptiveWaveformEngine(LALStatus *status,
+  //                                     REAL4Vector *signalvec1,REAL4Vector *signalvec2,
+  //                  							     REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
+  //                  							     UINT4 *countback,
+  //                  							     InspiralTemplate *params,InspiralInit *paramsInit);
                     						 
     fprintf(stderr,"Using new engine.\n");
     LALSTPNAdaptiveWaveformEngine(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);

@@ -384,7 +384,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 		if (signalvec1) {
 			fprintf(stderr,"LALSTPNWaveform2: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
 		} else if (ff) {
-			fprintf(stderr,"LALSTPNWaveform2: no space to write in ff: %d vs. %d\n",ff,ff->length);
+			fprintf(stderr,"LALSTPNWaveform2: no space to write in ff: %d vs. %d\n",len,ff->length);
 		} else {
 			fprintf(stderr,"LALSTPNWaveform2: no space to write anywhere!\n");
 		}
@@ -393,6 +393,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 		/* set up some aliases for the returned arrays; note vector 0 is time */
 	
     REAL8 *thet = yout->data;
+	  *thet = *thet;
 		REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
 		REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len];	REAL8 *LNhz  = &yout->data[5*len];
 
