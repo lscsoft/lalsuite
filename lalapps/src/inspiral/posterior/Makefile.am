@@ -1,4 +1,4 @@
-SUBDIRS = SPINspiral
+SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
