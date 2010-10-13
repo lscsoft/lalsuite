@@ -171,8 +171,8 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     UINT4 length;           /**< maximum allowed length of vectors */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
-    REAL4 * sumTwoF;      /**< sum of 2F-values */
-    UCHAR * nc;           /**< number count */
+    REAL4 * sumTwoF;        /**< sum of 2F-values */
+    UCHAR * nc;             /**< number count */
   } FineGrid;
   
 

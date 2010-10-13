@@ -206,7 +206,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8VectorSequence *velStack = NULL;
   REAL8VectorSequence *accStack = NULL;
 
-	/* duration of each segment */
+  /* duration of each segment */
   REAL8 tStack;
 
   /* number of segments */
@@ -467,6 +467,11 @@ int MAIN( int argc, char *argv[]) {
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {
     fprintf(stderr, "Invalid number of segments!\n");
+    return( HIERARCHICALSEARCH_EBAD );
+  }
+
+  if ( uvar_nStacksMax > 255) {
+    fprintf(stderr, "Number of segments exceeds 255!\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
 
