@@ -392,8 +392,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   } else {		
 		/* set up some aliases for the returned arrays; note vector 0 is time */
 	
-    REAL8 *thet = yout->data;
-	  *thet = *thet;
+  //  REAL8 *thet = yout->data;
 		REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
 		REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len];	REAL8 *LNhz  = &yout->data[5*len];
 
