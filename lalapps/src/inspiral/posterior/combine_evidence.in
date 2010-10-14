@@ -12,8 +12,16 @@ import numpy
 from numpy import *
 sys.path.append('@PYTHONLIBDIR@')
 
-parser=OptionParser()
-#parser.add_option("-d","--data", dest="data",action="append",help="an input datafile",metavar="insp_out.dat")
+usage='''%prog [options] datafile1.dat [datafile2.dat ...]
+%prog takes at least one nested sampling output file and outputs posterior samples,
+nested samples, and a Bayes factor summary file. If more than one input files is
+specified, the files are merged as if they have equal prior volume. The resulting
+Bayes Factor is the mean of the individual bayes factors of the runs.
+The output samples have their likelihoods reweighted so samples from different
+input files can be treated equally.
+'''
+
+parser=OptionParser(usage)
 parser.add_option("-o","--outsamp",help="location of output file with nested samples", metavar="OUTFILE",default=None,type="string")
 parser.add_option("-p","--outpos",help="location of output file of posterior samples",metavar="POSFILE",default=None,type="string")
 parser.add_option("-B","--bayesfactor",help="Location of file to store global bayes factor",default=None,type="string")
