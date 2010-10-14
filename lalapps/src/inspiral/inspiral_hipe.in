@@ -2809,5 +2809,3 @@ for ifos in ifo_coincs:
         seg.dur()))
     f.close()
 
-sys.exit(0)
-
