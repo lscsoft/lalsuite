@@ -159,7 +159,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   doc = utils.load_filename(new_injFile)
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
-  return sims, injInterval, numberInjections
+  return sims, injInterval, numberInjections, new_injFile
 
 def fix_numrel_columns(sims):
    """
@@ -199,7 +199,7 @@ class hipe_run(object):
 
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
-      "--config-file=%s", "--write-script", "--noop-inspinj"]
+      "--config-file=%s", "--write-script"]
     if do_coh_PTF:
       self._hipe_args.append("--ringdown")
 
@@ -278,6 +278,7 @@ class hipe_run(object):
     self._cp.set('pipeline', 'exttrig-inj-start', 1)
     self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
     self._cp.set("condor", "inspinj", "/bin/true")
+    self._hipe_args.append("--noop-inspinj")
 
   def write_dag(self):
     """
@@ -777,9 +778,10 @@ for grb in ext_trigs:
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
-      sims, injInterval, numberInjections = createInjectionFile(hipe_dir, cp,
+      sims, injInterval, numberInjections, injFile = createInjectionFile(hipe_dir, cp,
         cpinj, injrun, offSourceSegment.contract(opts.padding_time),
         source_file, usertag, opts.verbose)
+      new_injfiles = [injFile]
 
       # XXX: hack since glue is having trouble with empty columns
       fix_numrel_columns(sims)
@@ -794,6 +796,7 @@ for grb in ext_trigs:
                abs(offSourceSegment))
           sims_chunk = sims[i:numberInjections:deltaIndex]
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
+          new_injfiles.append(inj_file_name)
 
       # set the needed parameters
       if opts.verbose: print "  Writing DAG..."
@@ -829,6 +832,7 @@ for grb in ext_trigs:
 
         # Create a temporay cache-file containing two files (F/M)
         # which will be created by the ligolw_add step
+        new_cache.extend(lal.Cache.from_urls(new_injfiles, coltype=int))
         new_cache.tofile(open(ligolw_added_cache_filename, "w"))
         uberdag.add_node(ligolw_add_2)
 
