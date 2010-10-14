@@ -2873,14 +2873,16 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   /* output header information */
   fprintf(fp,"%s \n",version_string);
   fprintf(fp,"%%%% command line args\t\t= %s\n",clargs);
-  fprintf(fp,"%%%% filename\t\t\t= %s\n",outputfile);
-  fprintf(fp,"%%%% date\t\t\t\t= %s\n",time_string);
+  fprintf(fp,"%%%% filename\t\t\t\t= %s\n",outputfile);
+  fprintf(fp,"%%%% date\t\t\t\t\t= %s\n",time_string);
   fprintf(fp,"%%%% start time (GPS sec)\t\t= %d\n",pspace->epoch.gpsSeconds);
   fprintf(fp,"%%%% observation span (sec)\t= %d\n",(UINT4)pspace->span);
   fprintf(fp,"%%%% coherent time (sec)\t\t= %d\n",(UINT4)pspace->tseg);
   fprintf(fp,"%%%% number of segments\t\t= %d\n",Bayes->nsegments);
-  fprintf(fp,"%%%% number of dimensions\t\t= %d\n",Bayes->gridparams->ndim);
-  fprintf(fp,"%%%% mismatch\t\t\t= %6.12f\n",Bayes->gridparams->mismatch);
+  fprintf(fp,"%%%% number of dimensions\t= %d\n",Bayes->gridparams->ndim);
+  if (pspace->ampspace) fprintf(fp,"%%%% amplitude dimension\t\t\t= 1\n");
+  else fprintf(fp,"%%%% amplitude dimension\t\t\t= 0\n");
+  fprintf(fp,"%%%% mismatch\t\t\t\t= %6.12f\n",Bayes->gridparams->mismatch);
   fprintf(fp,"%%%%\n");
 
   /* if an injection has been performed we output the injection parameters */
@@ -2899,7 +2901,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   fprintf(fp,"%%%% log Bayes Factor (phase and amplitude marginalised per segment)\t= %6.12e\n",Bayes->logBayesFactor_phaseamp);
   fprintf(fp,"%%%% log Bayes Factor (phase marginalised per segment)\t\t\t= %6.12e\n",Bayes->logBayesFactor_phase);
   fprintf(fp,"%%%%\n");
-  fprintf(fp,"%%%% log Bayes Factor (phase and amplitude marginalised per segment)\n");
+  fprintf(fp,"%%%% GPS start\tGPS end\tlog Bayes Factor\n");
   fprintf(fp,"%%%%\n");
 
   /* output the Bayes factor for each segment */
@@ -2912,16 +2914,17 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
   /* output the amplitude posterior */
   if (pspace->ampspace) {
     fprintf(fp,"%%%% -------------------------------------------------------------------------------------------------------\n%%%%\n");
-    fprintf(fp,"%%%% name_amp\t= %s\n",Bayes->ampgrid->name);
-    fprintf(fp,"%%%% min_amp\t= %6.12e\n",pspace->ampspace->min);
-    fprintf(fp,"%%%% max_amp\t= %6.12e\n",pspace->ampspace->max);
-    fprintf(fp,"%%%% sig_amp\t= %6.12e\n",pspace->ampspace->sig);
-    fprintf(fp,"%%%% start_amp\t= %6.12e\n",Bayes->ampgrid->min);
-    fprintf(fp,"%%%% delta_amp\t= %6.12e\n",Bayes->ampgrid->delta);
-    fprintf(fp,"%%%% length_amp\t= %d\n",Bayes->ampgrid->length);
-    if (pspace->amppriors->gaussian) fprintf(fp,"%%%%a prior_amp\t= GAUSSIAN\n");
-    else fprintf(fp,"%%%% prior_amp\t= FLAT\n"); 
-    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tnorm_prior(%s)\n%%%%\n",
+    fprintf(fp,"%%%% name_0\t= %s\n",Bayes->ampgrid->name);
+    fprintf(fp,"%%%% min_0\t= %6.12e\n",pspace->ampspace->min);
+    fprintf(fp,"%%%% max_0\t= %6.12e\n",pspace->ampspace->max);
+    fprintf(fp,"%%%% sig_0\t= %6.12e\n",pspace->ampspace->sig);
+    fprintf(fp,"%%%% start_0\t= %6.12e\n",Bayes->ampgrid->min);
+    fprintf(fp,"%%%% delta_0\t= %6.12e\n",Bayes->ampgrid->delta);
+    fprintf(fp,"%%%% length_0\t= %d\n",Bayes->ampgrid->length);
+    if (pspace->amppriors->gaussian) fprintf(fp,"%%%% prior_0\t= GAUSSIAN\n");
+    else fprintf(fp,"%%%% prior_0\t= FLAT\n"); 
+    fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
+	    Bayes->ampgrid->name,Bayes->ampgrid->name,
 	    Bayes->ampgrid->name,Bayes->ampgrid->name,
 	    Bayes->ampgrid->name,Bayes->ampgrid->name);
   
@@ -2942,7 +2945,7 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 	REAL8 log_post = Bayes->logposterior_amp->data[j];
 	REAL8 norm_post = exp(Bayes->logposterior_amp->data[j]-mx)/sum;
 	REAL8 norm_prior = exp(pspace->amppriors->logpriors->data[j]);
-	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t%6.12e\n",x,log_post,norm_post,norm_prior);
+	fprintf(fp,"%6.12e\t%6.12e\t%6.12e\t0.0\t0.0\t%6.12e\n",x,log_post,norm_post,norm_prior);
       }
   
     }
@@ -2951,16 +2954,18 @@ int XLALOutputBayesResults(CHAR *outputdir,            /**< [in] the output dire
 
   /* loop over each search dimension and output the grid parameters and posteriors */
   for (i=0;i<Bayes->gridparams->ndim;i++) {
+    UINT4 idx = i;
+    if (pspace->ampspace) idx = i+1;
     fprintf(fp,"%%%% -------------------------------------------------------------------------------------------------------\n%%%%\n");
-    fprintf(fp,"%%%% name_%d\t= %s\n",i,Bayes->gridparams->grid[i].name);
-    fprintf(fp,"%%%% min_%d\t= %6.12e\n",i,pspace->space->data[i].min);
-    fprintf(fp,"%%%% max_%d\t= %6.12e\n",i,pspace->space->data[i].max);
-    fprintf(fp,"%%%% sig_%d\t= %6.12e\n",i,pspace->space->data[i].sig);
-    fprintf(fp,"%%%% start_%d\t= %6.12e\n",i,Bayes->gridparams->grid[i].min);
-    fprintf(fp,"%%%% delta_%d\t= %6.12e\n",i,Bayes->gridparams->grid[i].delta);
-    fprintf(fp,"%%%% length_%d\t= %d\n",i,Bayes->gridparams->grid[i].length);
-    if (pspace->priors->data[i].gaussian) fprintf(fp,"%%%% prior_%d\t= GAUSSIAN\n",i);
-    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",i); 
+    fprintf(fp,"%%%% name_%d\t= %s\n",idx,Bayes->gridparams->grid[i].name);
+    fprintf(fp,"%%%% min_%d\t= %6.12e\n",idx,pspace->space->data[i].min);
+    fprintf(fp,"%%%% max_%d\t= %6.12e\n",idx,pspace->space->data[i].max);
+    fprintf(fp,"%%%% sig_%d\t= %6.12e\n",idx,pspace->space->data[i].sig);
+    fprintf(fp,"%%%% start_%d\t= %6.12e\n",idx,Bayes->gridparams->grid[i].min);
+    fprintf(fp,"%%%% delta_%d\t= %6.12e\n",idx,Bayes->gridparams->grid[i].delta);
+    fprintf(fp,"%%%% length_%d\t= %d\n",idx,Bayes->gridparams->grid[i].length);
+    if (pspace->priors->data[i].gaussian) fprintf(fp,"%%%% prior_%d\t= GAUSSIAN\n",idx);
+    else fprintf(fp,"%%%% prior_%d\t= FLAT\n",idx); 
     fprintf(fp,"%%%%\n%%%%\t%s\t\tlog_post(%s)\t\tnorm_post(%s)\tlog_post_fixedamp(%s)\t\tnorm_post_fixedamp(%s)\tnorm_prior(%s)\n%%%%\n",
 	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,
 	    Bayes->gridparams->grid[i].name,Bayes->gridparams->grid[i].name,

@@ -19,8 +19,7 @@ EXTRA_DIST = \
 	lt~obsolete.m4 \
 	main.tex.in \
 	missing \
-	mkinstalldirs \
-	pkg.m4
+	mkinstalldirs
 
 CLEANFILES = lal-user-env.sh lal-user-env.csh
 
