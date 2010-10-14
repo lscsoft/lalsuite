@@ -41,6 +41,9 @@ download() {
 
 HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
+boinc_rev=-r22503
+#previous: -r22363 -r21777 -r'{2008-12-01}'
+
 for i; do
     case "$i" in
 	--win32)
@@ -111,8 +114,9 @@ for i; do
 	--check-app=*)
 	    check=true
 	    check_only=true
-	    check_app=`echo $PWD/$i | sed 's/--check-app=//;s%.*//%/%'`
-	    shift ;;
+	    check_app=`echo $PWD/$i | sed 's/--check-app=//;s%.*//%/%'`;;
+	--boinc-rev=*)
+	    boinc_rev="`echo $i | sed s/^--boinc-rev=//`";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -271,7 +275,7 @@ if test -z "$rebuild_boinc" && test -d "$SOURCE/boinc" ; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
-    log_and_do svn co -r21777 http://boinc.berkeley.edu/svn/trunk/boinc #-r'{2008-12-01}'
+    log_and_do svn co "$boinc_rev" http://boinc.berkeley.edu/svn/trunk/boinc
 fi
 
 if test \! -d lalsuite/.git ; then
