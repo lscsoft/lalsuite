@@ -266,19 +266,19 @@ int main( int argc, char *argv[] )
       CHAR dimensionless[] = "";
 #endif
       REAL4TimeSeries *alpha = NULL;
-      REAL4TimeSeries *gamma = NULL;
+      REAL4TimeSeries *lal_gamma = NULL;
 #if 0
       INT4TimeSeries *factorStatus = NULL;
       FrProcData *proc;
       FrVect *vect;
       UINT4 i;
 #endif
-      XLALASCIIFileReadCalFac( &alpha, &gamma, filename );
+      XLALASCIIFileReadCalFac( &alpha, &lal_gamma, filename );
 #if 0
       memcpy( factorStatusName, ifo, 2 );
       factorStatus = XLALCreateINT4TimeSeries( factorStatusName, &alpha->epoch, alpha->f0, alpha->deltaT, &lalDimensionlessUnit, alpha->data->length );
       for ( i = 0; i < alpha->data->length; ++i )
-        if ( alpha->data->data[i] == 0.0 && gamma->data->data[i] == 0.0 )
+        if ( alpha->data->data[i] == 0.0 && lal_gamma->data->data[i] == 0.0 )
           factorStatus->data->data[i] = -1; /* indicates invalid calibration */
         else
           factorStatus->data->data[i] = 0;
@@ -289,22 +289,22 @@ int main( int argc, char *argv[] )
         origLength = alpha->data->length;
         newLength = floor( (REAL8)OPEN_ENDED_DURATION / alpha->deltaT );
         XLALResizeREAL4TimeSeries( alpha, 0, newLength );
-        XLALResizeREAL4TimeSeries( gamma, 0, newLength );
+        XLALResizeREAL4TimeSeries( lal_gamma, 0, newLength );
         XLALResizeINT4TimeSeries( factorStatus, 0, newLength );
         for ( i = origLength; i < newLength; ++i )
         {
           alpha->data->data[i] = 1.0;
-          gamma->data->data[i] = 1.0;
+          lal_gamma->data->data[i] = 1.0;
           factorStatus->data->data[i] = 1; /* indicates unity factor */
         }
       }
 #endif
       /*
       XLALFrameAddCalFac( frame, alpha );
-      XLALFrameAddCalFac( frame, gamma );
+      XLALFrameAddCalFac( frame, lal_gamma );
       */
       XLALFrameAddCalFac( frame, alpha, version );
-      XLALFrameAddCalFac( frame, gamma, version );
+      XLALFrameAddCalFac( frame, lal_gamma, version );
       if ( open_ended_reference || ! open_ended_factors ) /* add stat data with unity factors */
       {
         LIGOTimeGPS unityEpoch;
@@ -315,7 +315,7 @@ int main( int argc, char *argv[] )
         unityEpoch.gpsSeconds = tstartunity;
         unityEpoch.gpsNanoSeconds = 0;
         unityAlpha = XLALCreateREAL4TimeSeries( alpha->name, &unityEpoch, alpha->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
-        unityGamma = XLALCreateREAL4TimeSeries( gamma->name, &unityEpoch, gamma->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
+        unityGamma = XLALCreateREAL4TimeSeries( lal_gamma->name, &unityEpoch, lal_gamma->f0, OPEN_ENDED_DELTA_T, &lalDimensionlessUnit, NUM_OPEN_ENDED_POINTS );
         for ( i = 0; i < NUM_OPEN_ENDED_POINTS; ++i )
           unityAlpha->data->data[i] = unityGamma->data->data[i] = 1.0;
         /*
@@ -343,7 +343,7 @@ int main( int argc, char *argv[] )
       proc->BW         = 0.0;
       XLALDestroyINT4TimeSeries( factorStatus );
 #endif
-      XLALDestroyREAL4TimeSeries( gamma );
+      XLALDestroyREAL4TimeSeries( lal_gamma );
       XLALDestroyREAL4TimeSeries( alpha );
     }
     else if ( strstr( fields[arg].description, "CAL_REF" ) ) /* reference function file */

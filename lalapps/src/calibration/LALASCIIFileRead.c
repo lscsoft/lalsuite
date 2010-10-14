@@ -378,7 +378,7 @@ REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
 
 #define ELEM(data,row,col) ((data)->data[(row)*(data)->vectorLength+(col)])
 
-int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, const char *fname )
+int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **lal_gamma, const char *fname )
 {
   static const char *func = "XLALASCIIFileReadCalFac";
   const REAL8 fuzzfactor = 1e-3; /* fraction of a sample of fuzziness */
@@ -397,9 +397,9 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
   int row;
   int dat;
 
-  if ( ! alpha || ! gamma )
+  if ( ! alpha || ! lal_gamma )
     XLAL_ERROR( func, XLAL_EFAULT );
-  if ( *alpha || *gamma )
+  if ( *alpha || *lal_gamma )
     XLAL_ERROR( func, XLAL_EINVAL );
 
   if ( XLALDataFileNameParse( &fileFields, fname ) < 0 )
@@ -463,10 +463,10 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
   XLALGPSSetREAL8( &epoch, tstart );
 
   *alpha = XLALCreateREAL4TimeSeries( alphaName, &epoch, 0.0, deltaT, &lalDimensionlessUnit, ndat );
-  *gamma = XLALCreateREAL4TimeSeries( gammaName, &epoch, 0.0, deltaT, &lalDimensionlessUnit, ndat );
-  if ( ! *alpha || ! *gamma )
+  *lal_gamma = XLALCreateREAL4TimeSeries( gammaName, &epoch, 0.0, deltaT, &lalDimensionlessUnit, ndat );
+  if ( ! *alpha || ! *lal_gamma )
   {
-    XLALDestroyREAL4TimeSeries( *gamma );
+    XLALDestroyREAL4TimeSeries( *lal_gamma );
     XLALDestroyREAL4TimeSeries( *alpha );
     XLALDestroyREAL8VectorSequence( data );
     XLAL_ERROR( func, XLAL_EFUNC );
@@ -474,7 +474,7 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
 
   /* clear the data memory */
   memset( (*alpha)->data->data, 0, (*alpha)->data->length * sizeof( *(*alpha)->data->data ) );
-  memset( (*gamma)->data->data, 0, (*gamma)->data->length * sizeof( *(*gamma)->data->data ) );
+  memset( (*lal_gamma)->data->data, 0, (*lal_gamma)->data->length * sizeof( *(*lal_gamma)->data->data ) );
 
   /* IMPORTANT: SPECIFICATION SAYS THAT ALPHA IS COL 2 AND GAMMA IS COL 3 */
   fuzz = fuzzfactor * deltaT;
@@ -489,7 +489,7 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
     if ( thisdat <= dat ) /* rows must be monotonically increasing in time */
     {
       XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\trows must be monotonically increasing in time\n", func, line, fname );
-      XLALDestroyREAL4TimeSeries( *gamma );
+      XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
       XLAL_ERROR( func, XLAL_EDATA );
@@ -498,7 +498,7 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
     if ( fabs( (tstart + dat * deltaT) - trow ) > fuzz ) /* time between rows must be an integral multiple of deltaT */
     {
       XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttimes must be integral multiples of deltaT\n", func, line, fname );
-      XLALDestroyREAL4TimeSeries( *gamma );
+      XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
       XLAL_ERROR( func, XLAL_EDATA );
@@ -507,13 +507,13 @@ int XLALASCIIFileReadCalFac( REAL4TimeSeries **alpha, REAL4TimeSeries **gamma, c
     {
       printf( "%d\t%d\n", dat, ndat );
       XLALPrintError( "XLAL Error - %s: error on line %d of file %s\n\ttime beyond end time\n", func, line, fname );
-      XLALDestroyREAL4TimeSeries( *gamma );
+      XLALDestroyREAL4TimeSeries( *lal_gamma );
       XLALDestroyREAL4TimeSeries( *alpha );
       XLALDestroyREAL8VectorSequence( data );
       XLAL_ERROR( func, XLAL_EDATA );
     }
     (*alpha)->data->data[dat] = alphaval;
-    (*gamma)->data->data[dat] = gammaval;
+    (*lal_gamma)->data->data[dat] = gammaval;
   }
 
   XLALDestroyREAL8VectorSequence( data );
