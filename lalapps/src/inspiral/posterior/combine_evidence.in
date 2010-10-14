@@ -187,6 +187,6 @@ if opts.outsamp is not None:
 	outfilenew.close()
 	outfileB=open(outfilename+'_B.txt','w')
 	# Write out B Zsig Znoise maxL
-	print >>outfileB,"%f %f %f %f\n"%(totalBayes, totalBayes+ZnoiseTotal, ZnoiseTotal, pos[-1,-1])
+	print >>outfileB,"%f %f %f %f\n"%(totalBayes, totalBayes+ZnoiseTotal, ZnoiseTotal, pos[-1,-1]-ZnoiseTotal)
 	outfileB.close()
 
