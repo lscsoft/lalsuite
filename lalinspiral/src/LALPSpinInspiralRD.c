@@ -1566,6 +1566,8 @@ void LALPSpinInspiralRDEngine (
     rett=1;
   }
 
+  //  printf("t fine insiral %8.3f\n",t);
+
   t0=t-dt;
   tAs=t0+2.*omegadot/omegaddot*m;
   om1=omegadot*tAs/m*(1.-t0/tAs)*(1.-t0/tAs);

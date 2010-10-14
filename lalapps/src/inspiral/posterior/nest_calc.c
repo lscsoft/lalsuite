@@ -145,7 +145,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-		
+	
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
 	MCMCinput->Live=Live;
@@ -186,100 +186,16 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	logZnoise*=-2.0*MCMCinput->deltaF;
 	
 	fprintf(stdout,"Noise evidence: %lf\n",logZnoise);
-
-    if(MCMCinput->injectionTable!=NULL) {
-        LALMCMCParameter *test_parameters=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-        MCMCinput->funcInit(test_parameters,(void *)MCMCinput->injectionTable);
-        XLALMCMCSetParameter(test_parameters,"logMc",log(MCMCinput->injectionTable->mchirp));
-        XLALMCMCSetParameter(test_parameters,"eta",MCMCinput->injectionTable->eta);
-        XLALMCMCSetParameter(test_parameters,"distMpc",MCMCinput->injectionTable->distance);
-        XLALMCMCSetParameter(test_parameters,"time",MCMCinput->injectionTable->geocent_end_time.gpsSeconds + 1e-9*MCMCinput->injectionTable->geocent_end_time.gpsNanoSeconds);
-        XLALMCMCSetParameter(test_parameters,"long",MCMCinput->injectionTable->longitude);
-        XLALMCMCSetParameter(test_parameters,"lat",MCMCinput->injectionTable->latitude);
-        XLALMCMCSetParameter(test_parameters,"iota",MCMCinput->injectionTable->inclination);
-        XLALMCMCSetParameter(test_parameters,"phi",MCMCinput->injectionTable->phi0);
-        XLALMCMCSetParameter(test_parameters,"psi",MCMCinput->injectionTable->polarization);
-
-        if(XLALMCMCCheckParameter(test_parameters,"spin1x")){
-            XLALMCMCSetParameter(test_parameters,"spin1x",MCMCinput->injectionTable->spin1x);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"spin1y")){
-            XLALMCMCSetParameter(test_parameters,"spin1y",MCMCinput->injectionTable->spin1y);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"spin1z")){
-            XLALMCMCSetParameter(test_parameters,"spin1z",MCMCinput->injectionTable->spin1z);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"spin2x")){
-            XLALMCMCSetParameter(test_parameters,"spin2x",MCMCinput->injectionTable->spin2x);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"spin2y")){
-            XLALMCMCSetParameter(test_parameters,"spin2y",MCMCinput->injectionTable->spin2y);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"spin2z")){
-            XLALMCMCSetParameter(test_parameters,"spin2z",MCMCinput->injectionTable->spin2z);
-        }
-
-        double spin1=sqrt(MCMCinput->injectionTable->spin1x*MCMCinput->injectionTable->spin1x+MCMCinput->injectionTable->spin1y*MCMCinput->injectionTable->spin1y+MCMCinput->injectionTable->spin1z*MCMCinput->injectionTable->spin1z);
-        double spin2=sqrt(MCMCinput->injectionTable->spin2x*MCMCinput->injectionTable->spin2x+MCMCinput->injectionTable->spin2y*MCMCinput->injectionTable->spin2y+MCMCinput->injectionTable->spin2z*MCMCinput->injectionTable->spin2z);
-        //PhenSpin test
-        if(XLALMCMCCheckParameter(test_parameters,"Spin1")){
-            
-            XLALMCMCSetParameter(test_parameters,"Spin1",spin1);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"Spin1theta")){
-            
-            double s1theta=acos(MCMCinput->injectionTable->spin1z/spin1);
-  
-            XLALMCMCSetParameter(test_parameters,"Spin1theta",s1theta);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"Spin1phi")){
-            
-            double s1phi=atan2(MCMCinput->injectionTable->spin1y,MCMCinput->injectionTable->spin1x);
-  
-            XLALMCMCSetParameter(test_parameters,"Spin1phi",s1phi);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"Spin2")){
-
-            XLALMCMCSetParameter(test_parameters,"Spin2",spin2);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"Spin2theta")){
-
-            double s2theta=acos(MCMCinput->injectionTable->spin2z/spin2);
-
-            XLALMCMCSetParameter(test_parameters,"Spin2theta",s2theta);
-        }
-        if(XLALMCMCCheckParameter(test_parameters,"Spin2phi")){
-
-            double s2phi=atan2(MCMCinput->injectionTable->spin2y,MCMCinput->injectionTable->spin2x);
-            XLALMCMCSetParameter(test_parameters,"Spin2phi",s2phi);
-        }
-
-        
-       double testlogL_INJ;
-        testlogL_INJ=MCMCLikelihoodMultiCoherentF_test(MCMCinput,test_parameters,"template");
-	printf("logL using template with injection parameters in test fn  : %lf \n",testlogL_INJ);
-    }
-	fprintf(stderr,"Sprinkling initial points, may take a while...\n");
+	fprintf(stderr,"Sprinkling initial points, may take a while");
 	/* Set up the parameters for the live points */
-	int accept_pr=0;
 	for(i=0;i<Nlive;i++) {
-	  //fprintf(stdout,"** nestZ **: Nlive=%d/%d\n",i+1,Nlive);
-		accept_pr=1;
 		do{
-		  if(MCMCinput->injectionTable!=NULL) {
-		    MCMCinput->funcInit(Live[i],(void *)MCMCinput->injectionTable);
-		  }
-		  else {
-		    MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
-		  }
-		  MCMCinput->dim=Live[i]->dimension;
-		  MCMCinput->funcPrior(MCMCinput,Live[i]);
-		  if(Live[i]->logPrior==-DBL_MAX) {
-		    XLALMCMCFreePara(Live[i]); 
-		    accept_pr=0;
-		  }
-		  else accept_pr=1;
-		} while(accept_pr==0);
+			if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(Live[i],(void *)MCMCinput->injectionTable);
+			else MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
+			MCMCinput->dim=Live[i]->dimension;
+			MCMCinput->funcPrior(MCMCinput,Live[i]);
+			if(Live[i]->logPrior==-DBL_MAX) XLALMCMCFreePara(Live[i]);
+		} while(Live[i]->logPrior==-DBL_MAX);
 		MCMCinput->funcLikelihood(MCMCinput,Live[i]);
 	}
 	/* Set up covariance matrix */
@@ -288,6 +204,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	
 	for(i=0;i<Nlive;i++) {
 		accept=MCMCSampleLimitedPrior(Live[i],temp,MCMCinput,-DBL_MAX,cov_mat,MCMCinput->numberDraw);
+		if(i%50==0)fprintf(stderr,".");
 	}
 	if(MCMCinput->verbose) fprintf(stderr,"Set up %i live points\n",Nlive);
 	
@@ -390,16 +307,12 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	fprintf(stdout,"Z-score = %lf\n",zscore);
 	
 	fclose(fpout);
-	sprintf(outEnd,"%s.evidence",outfile);
+	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");
 	fprintf(fpout,"%lf %lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,Live[Nlive-1]->logLikelihood-logZnoise,zscore);
 	fclose(fpout);
 	free(Harray); free(logwarray); free(Wtarray); free(oldZarray); free(logZarray);
 	fprintf(stdout,"lodds ratio %lf\n",logZ-logZnoise);
-
-    //Generate the response of each detector corresponding to the maximum likelihood template and output to file 
-	 MCMCLikelihoodMultiCoherentF_test(MCMCinput,Live[Nlive-1],"maxLtemplate");
-
 	return logZ;
 	
 }
@@ -413,7 +326,6 @@ REAL8 mean(REAL8 *array,int N){
 
 REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, LALMCMCInput *MCMCInput,REAL8 minL,gsl_matrix *covM,INT4 N)
 {
-
 	/* Sample from prior using MCMC to evolve the existing value of sample subject to the new likelihood being >minL*/
 	/* Returns acceptance ratio */
 #define ROTATEFRAC 0.1

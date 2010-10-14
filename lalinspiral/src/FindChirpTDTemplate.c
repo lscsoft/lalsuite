@@ -277,7 +277,7 @@ LALFindChirpTDTemplate (
     }
 
     /* generate the chirp in the time domain */
-    //fprintf(stdout,"                          : distance=%11.4e\n",tmplt->distance);
+    //fprintf(stdout,"                          : distance=%11.4e  ampl=%11.4e\n",tmplt->distance,tmplt->signalAmplitude);
     //if (tmplt->distance<=0.) tmplt->distance=1.;
     /*fprintf(stdout,"** FindChirpTDTemplate.c**: m1=%11.3e m2=%11.3e\n",tmplt->mass1,tmplt->mass2);
     fprintf(stdout,"                          : s1=(%8.3f %8.3f %8.3f)\n",tmplt->spin1[0],tmplt->spin1[1],tmplt->spin1[2]);
