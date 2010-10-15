@@ -831,6 +831,10 @@ INT4 LALInferenceReflectDetPlane(
 	}
 	
 	LALIFOData **IFOs=calloc(nIFO,sizeof(LALIFOData *));
+	if(!IFOs) {
+		printf("Unable to allocate memory for %i LALIFOData *s\n",nIFO);
+		exit(1);
+	}
 	for(i=0,ifodata1=state->data;i<nIFO;i++){
 		IFOs[i]=ifodata1;
 		ifodata1=ifodata1->next;
@@ -869,7 +873,7 @@ INT4 LALInferenceReflectDetPlane(
 	equatorial.latitude=lat;
 	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
 	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(ifodata1->epoch));
+	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
 	deltalong=geodetic.longitude-equatorial.longitude;
 	
 	/* Add offset to RA to convert to earth-fixed */
