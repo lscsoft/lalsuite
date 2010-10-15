@@ -58,7 +58,10 @@ for i; do
 	    rebuild_lal=true ;;
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
+	--rebuild-binutils)
+	    rebuild_binutils=true ;;
 	--release)
+	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
 	    rebuild=true
@@ -264,14 +267,15 @@ else
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
-if test -n "$build_binutils"; then
+if test -n "$build_binutils" -o "$rebuild_binutils"; then
     log_and_show "retrieving $binutils"
 #    download http://www.aei.mpg.de/~repr/EaH_packages $binutils.tar.gz
     download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
+    log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
 fi
 
-if test -z "$rebuild_boinc" && test -d "$SOURCE/boinc" ; then
+if test -z "$rebuild_boinc" -a -d "$SOURCE/boinc" ; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
@@ -310,6 +314,9 @@ else
 fi
 
 if test -n "$build_binutils"; then
+  if test -z "$rebuild_binutils"; then
+    log_and_show "using existing gsl"
+  else
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
     log_and_do cd "$BUILD/$binutils"
@@ -372,6 +379,7 @@ Only in include: libcoff.h~
 EOF
 )
     fi
+  fi
 fi
 
 if test -z "$rebuild_boinc" && test -r "$INSTALL/lib/libboinc_api.a" ; then
