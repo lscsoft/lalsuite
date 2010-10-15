@@ -729,8 +729,8 @@ void LALInferenceRotateSky(
 	if(nIFO<2) return;
 	if(nIFO==2 && IFOs[0]==IFOs[1]) return;
 	
-	longi = *(REAL8 *)getVariable(parameter,"long");
-	lat = *(REAL8 *)getVariable(parameter,"lat");
+	longi = *(REAL8 *)getVariable(parameter,"rightascension");
+	lat = *(REAL8 *)getVariable(parameter,"declination");
 	
 	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
 	SkyPosition geodetic,equatorial;
@@ -794,8 +794,8 @@ void LALInferenceRotateSky(
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=*(REAL8 *)getVariable(parameter,"time");
 	setVariable(parameter,"time",&deltat);	
-	setVariable(parameter,"lat",&newlat);
-	setVariable(parameter,"long",&newlong);
+	setVariable(parameter,"declination",&newlat);
+	setVariable(parameter,"rightascension",&newlong);
 	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
 	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
 	free(IFOs);
