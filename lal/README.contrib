@@ -26,11 +26,8 @@ The following rules will assist in maintaining a stable LAL:
    make any change to files above the package subdirectory without
    consulting the LAL librarian.
 
-2. Before commiting any changes to the Git repository, you should run
-   the testscript.sh and make sure it completes successfully.  This test
-   script checks for esoteric errors that you may not notice doing a
-   vanilla install, so it is important to run it before committing.
-
+2. Before committing any changes to the Git repository, you should run
+   a complete build and make sure it completes successfully.
 
 *******************************************************************************
 

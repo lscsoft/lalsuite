@@ -763,9 +763,12 @@ void calculate_standard_chisq_freq_ranges(
 )
 {
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 v1,v2,v3,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
+  REAL4 a2[LAL_NUM_IFO];
+  REAL4 b2[LAL_NUM_IFO];
+//  FILE *outfile;
 
   PTFQtilde = fcTmplt->PTFQtilde->data;  
   len = 0;
@@ -791,6 +794,7 @@ void calculate_standard_chisq_freq_ranges(
 
   v1 = 0;
   v2 = 0;
+  v3 = 0;
 
   for( k = 0; k < LAL_NUM_IFO; k++)
   {
@@ -798,16 +802,37 @@ void calculate_standard_chisq_freq_ranges(
     {
       v1 += a[k]*a[k]*PTFM[k]->data[0];
       v2 += b[k]*b[k]*PTFM[k]->data[0];
+      v3 += a[k]*b[k]*PTFM[k]->data[0];
 //      SNRmax = v1*v1 + v2*v2;
 //      SNRmax = v1 + v2;
     }
   }
-  u1 = gsl_matrix_get(eigenvecs,0,0)*v1+gsl_matrix_get(eigenvecs,1,0)*v2;
-  u2 = gsl_matrix_get(eigenvecs,0,1)*v1+gsl_matrix_get(eigenvecs,1,1)*v2;
+//  fprintf(stderr,"%e %e %e\n",v1,v2,v3);
+
+  v1 = 0;
+  v2 = 0;
+  v3 = 0;
+  for( k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if ( params->haveTrig[k] )
+    {
+      a2[k] = a[k]*gsl_matrix_get(eigenvecs,0,0) + b[k]*gsl_matrix_get(eigenvecs,1,0);
+      b2[k] = a[k]*gsl_matrix_get(eigenvecs,0,1) + b[k]*gsl_matrix_get(eigenvecs,1,1);
+      v1 += a2[k]*a2[k]*PTFM[k]->data[0];
+      v2 += b2[k]*b2[k]*PTFM[k]->data[0];
+      v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+    }
+  }
+//  fprintf(stderr,"%e %e %e\n",v1,v2,v3);
+
+  u1 = v1;
+  u2 = v2;
   SNRmaxPlus = u1;
   if (SNRmaxPlus < 0) SNRmaxPlus = -SNRmaxPlus;
   SNRmaxCross = u2;
   if (SNRmaxCross < 0) SNRmaxCross = -SNRmaxCross;
+
+//  fprintf(stderr,"%e %e \n",SNRmaxPlus,SNRmaxCross);
 
   v1 = 0;
   v2 = 0;
@@ -816,6 +841,7 @@ void calculate_standard_chisq_freq_ranges(
   freqBinCross = 1;
   SNRtempPlus = 0;
   SNRtempCross = 0;
+//  outfile = fopen("temp.dat","w");
   for ( i = kmin; i < kmax ; ++i )
   {
     for( k = 0; k < LAL_NUM_IFO; k++)
@@ -824,19 +850,20 @@ void calculate_standard_chisq_freq_ranges(
       {
         overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
                PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
-        v1 += a[k] * a[k] * overlapCont * 4 * deltaF;
-        v2 += b[k] * b[k] * overlapCont * 4 * deltaF;
+        v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
+        v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
       }
     }
     /* Calculate SNR */
 //    SNRtemp = v1*v1 + v2*v2;
-    u1 = gsl_matrix_get(eigenvecs,0,0)*v1+gsl_matrix_get(eigenvecs,1,0)*v2;
-    u2 = gsl_matrix_get(eigenvecs,0,1)*v1+gsl_matrix_get(eigenvecs,1,1)*v2;
+    u1 = v1;
+    u2 = v2;
     SNRtempPlus = u1;
     if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
     SNRtempCross = u2;
     if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
     /* Compare to max SNR */
+//    fprintf(outfile,"%e %e %e %e\n",SNRtempPlus,SNRtempCross,v1,v2);
     if (SNRtempPlus > SNRmaxPlus * ((REAL4)freqBinPlus/(REAL4)numFreqBins))
     {
       if (freqBinPlus < numFreqBins)
@@ -858,6 +885,7 @@ void calculate_standard_chisq_freq_ranges(
       }
     }
   }
+//  fclose(outfile);
 //  fprintf(stderr,"%e %e \n", SNRtemp,SNRmax);
 }
         

@@ -120,7 +120,7 @@ extern "C" {
 #define MAXSTRLENGTH 256 /* maximum number of characters in a frame filename */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
 
-#define ALPHAMIN 0.25 /* minimum acceptable value of alpha calib coefficient */
+#define ALPHAMIN 0.0 /* minimum acceptable value of alpha calib coefficient */
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
 
 #define FILTERFFTTIME 200

@@ -294,7 +294,9 @@ class hipe_run(object):
     arguments += " " + " ".join(["--" + stage for stage in self._stages])
     
     # run inspiral_hipe
-    inspiralutils.make_external_call("../../lalapps_inspiral_hipe %s" % (arguments % ini_file_name),
+    inspiralutils.make_external_call(\
+      " ".join((self._cp.get("condor", "inspiral_hipe"),
+               arguments % ini_file_name)),
       show_stdout=False, show_command=self._verbose)
     
     # create link to datafind directory's cache directory

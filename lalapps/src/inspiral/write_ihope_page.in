@@ -878,8 +878,10 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
 
   section= 'upperlimitTotalMassRangeplots'
   sections.append(section)
+  htmlAndPlot.append(section)
   titles[section] = "Sensitive Distance as a Function of Total Mass"
   tags[section] = '*lalapps_cbc_sink_by_total_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_total_mass_range_summary*'
   imagetags[section] = ['distance']
   captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of total mass. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -888,8 +890,10 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
 
   section= 'upperlimitChirpMassRangeplots'
   sections.append(section)
+  htmlAndPlot.append(section)
   titles[section] = "Sensitive Distance as a Function of Chirp Mass"
   tags[section] = '*lalapps_cbc_sink_by_chirp_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_chirp_mass_range_summary*'
   imagetags[section] = ['distance']
   captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of chirp mass. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -898,8 +902,10 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
 
   section= 'upperlimitM1M2Rangeplots'
   sections.append(section)
+  htmlAndPlot.append(section)
   titles[section] = "Sensitive Distance as a Function of Component Masses."
   tags[section] = '*lalapps_cbc_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_range_summary*'
   imagetags[section] = ['distance','fractional_error']
   captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of the component masses. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. The corresponding fractional error plot gives a measure of the relative uncertainty in the measured sensitive distance arising from uncertainty in calibration and a finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -2688,7 +2694,7 @@ except:
 #sub-products of the ini file parsing
 opts.gpsdir =  '/'+str(opts.gps_start_time)+'-'+str(opts.gps_end_time)+'/'   # note the / at the end
 opts.duration = str(int(opts.gps_end_time) - int(opts.gps_start_time))
-opts.daydur = int(opts.duration) / 86400
+opts.daydur = float(opts.duration) / 86400
 opts.webdir = './'
 opts.datadir = opts.ihope_directory + opts.gpsdir 
 opts.physdir = opts.html_directory + opts.gpsdir
