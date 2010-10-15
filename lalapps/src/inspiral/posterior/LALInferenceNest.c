@@ -368,7 +368,7 @@ void initVariables(LALInferenceRunState *state)
 	[--Mmin mchirp]\tMinimum chirp mass\
 	[--Mmax mchirp]\tMaximum chirp mass\
 	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\
-	[--end_time time]\tTrigger time to use\
+	[--trigtime time]\tTrigger time to use\
 	[--Dmin dist]\tMinimum distance in Mpc (1)\
 	[--Dmax dist]\tMaximum distance in Mpc (100)\
 	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
@@ -407,7 +407,7 @@ void initVariables(LALInferenceRunState *state)
 	}
 	
 	/* Over-ride end time if specified */
-	ppt=getProcParamVal(commandLine,"--end_time");
+	ppt=getProcParamVal(commandLine,"--trigtime");
 	if(ppt){
 		endtime=atof(ppt->value);
 	}
