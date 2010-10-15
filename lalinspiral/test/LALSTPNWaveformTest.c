@@ -88,16 +88,16 @@ int main(void) {
     //injParams.theta0 = 0.0;
     injParams.phi0   = 0.;//-28.3/180.*LAL_PI;
 
-    injParams.inclination = 72.9/180.*LAL_PI;
-    injParams.polarization   = -33.4/180.*LAL_PI;
+    injParams.inclination = 72.9/180.*LAL_PI*0.+0.0001;
+    injParams.polarization   = -33.4/180.*LAL_PI*0.;
 
-    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI);
-    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI);
-    injParams.spin1z = 0.74*cos(66./180.*LAL_PI);
+    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI)*0.;
+    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI)*0.;
+    injParams.spin1z = 0.74*cos(66./180.*LAL_PI)*0.;
 
-    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI);
-    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI);
-    injParams.spin2z = 0.65*cos(94./180.*LAL_PI);
+    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI)*0.;
+    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI)*0.;
+    injParams.spin2z = 0.65*cos(94./180.*LAL_PI)*0.;
 
     ppnParams.deltaT = 1.0 / 4096.0;
 
