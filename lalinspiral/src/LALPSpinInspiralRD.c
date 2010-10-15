@@ -1369,7 +1369,7 @@ void LALPSpinInspiralRDEngine (
   params->ampOrder=LAL_PNORDER_ONE_POINT_FIVE;
 
   if (params->distance > 0.) amp22ini= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
-  else amp22ini  = sqrt( 2.* LAL_PI / 5.0) * params->signalAmplitude;
+  else amp22ini  = 2. * sqrt( LAL_PI / 5.0) * params->signalAmplitude;
 
   do {
 
