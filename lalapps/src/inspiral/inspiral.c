@@ -3044,7 +3044,7 @@ int main( int argc, char *argv[] )
     }
 
     /* Construct the output directory on the compute node  */
-    if ( outputPath[0] && username )
+    if ( outputPath[0] && username[0] )
     {
       strcpy( full_cdata_path, outputPath );
       strcat( full_cdata_path, "/" );
@@ -3344,7 +3344,12 @@ int main( int argc, char *argv[] )
     remove(runpath);
     unlink(runpath);
     if ( outputPath[0] && username[0] ) {
-      symlink(fname,runpath);
+      int cdata_rc = 0;
+      if ( (cdata_rc = symlink(fname,runpath)) )
+      {
+         perror( "Error creating symlink for output cdata frame" );
+         exit( 1 );
+      }
     }
   }
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
