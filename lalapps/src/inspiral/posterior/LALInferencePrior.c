@@ -44,11 +44,10 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 		}
 	}
-	
-	if(checkVariable(params,"distance"))
-		logPrior+=2.0*log(*(REAL8 *)getVariable(params,"distance"));
-	else if(checkVariable(params,"logdistance"))
+	if(checkVariable(params,"logdistance"))
 		logPrior+=3.0* *(REAL8 *)getVariable(params,"logdistance");
+	else if(checkVariable(params,"distance"))
+		logPrior+=2.0*log(*(REAL8 *)getVariable(params,"distance"));
 	
 	if(checkVariable(params,"inclination"))
 		logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"inclination"))));
