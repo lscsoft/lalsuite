@@ -273,6 +273,8 @@ if test -n "$build_binutils" -o "$rebuild_binutils"; then
     download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
     log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
+#    log_and_do sh -c "grep -v '^ *SUBDIRS *=' $binutils/bfd/Makefile.am > $binutils/bfd/Makefile.tmp"
+#    log_and_do mv $binutils/bfd/Makefile.tmp $binutils/bfd/Makefile.am
 fi
 
 if test -z "$rebuild_boinc" -a -d "$SOURCE/boinc" ; then
@@ -322,8 +324,8 @@ if test -n "$build_binutils"; then
     log_and_do cd "$BUILD/$binutils"
     log_and_do "$SOURCE/$binutils/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
-    log_and_do make
-    log_and_do make install
+    log_and_dont_fail make -k
+    log_and_dont_fail make -k install
     # some post-build installation due to targets missing in the library
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
