@@ -162,7 +162,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		printf("%f\t", runState->currentLikelihood - nullLikelihood); 
 		printf("0\n");
 	}
-	
+	MPI_Barrier(MPI_COMM_WORLD);
 	// iterate:
 	for (i=0; i<Niter; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
@@ -191,7 +191,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
 		
 		fprintf(chainoutput[tempIndex],"\n");
-		fflush(chainoutput[tempIndex]);
+		//fflush(chainoutput[tempIndex]);
 		fclose(chainoutput[tempIndex]);
 
 		//if (tempIndex == 0) {
