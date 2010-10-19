@@ -119,12 +119,14 @@ void calcCVM(gsl_matrix **cvm, LALVariables **Live, UINT4 Nlive)
 	for(i=0;i<ND;i++) for(j=0;j<ND;j++) gsl_matrix_set(*cvm,i,j,gsl_matrix_get(*cvm,i,j)/((REAL8) Nlive));
 	free(means);
 	/* Fill in variances for circular parameters */
-	for(item=Live[0]->head,j=0;j<ND;j++,item=item->next) {
+	for(item=Live[0]->head,j=0;item;item=item->next) {
+		if(item->vary!=PARAM_CIRCULAR && item->vary!=PARAM_LINEAR) continue;
 		if(item->vary==PARAM_CIRCULAR) {
 			for(k=0;k<j;k++) gsl_matrix_set(*cvm,j,k,0.0);
 			gsl_matrix_set(*cvm,j,j,ang_var(Live,item->name,Nlive));
 			for(k=j+1;k<ND;k++) gsl_matrix_set(*cvm,k,j,0.0);
 		}
+		j++;
 	}
 	
 	/* the other half */
