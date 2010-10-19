@@ -37,7 +37,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
 	int i,t,tempi,tempj,p;
 	int tempSwapCount=0;
-	REAL8 tempMax = 40.0;   //max temperature in the temperature ladder
 	REAL8 tempDelta;
 	int nChain;
 	int count = 0;		//temporary counters to monitor the number of swaps between chains
@@ -58,6 +57,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) getVariable(runState->algorithmParams, "Niter");
+	REAL8 tempMax = *(REAL8*) getVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
 
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);

@@ -147,10 +147,12 @@ void initializeMCMC(LALInferenceRunState *runState)
 {
 	char help[]="\
 	--Niter N\tNumber of iteration\n\
+	[--tempMax T]\tHighest temperature for parallel tempering(40.0)\n\
 	[--randomseed seed]\tRandom seed of sampling distribution\n";
 	
 	INT4 verbose=0,tmpi=0;
 	unsigned long int randomseed=0;
+	REAL8 tempMax = 40.0;
 	//REAL8 tmp=0;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	ProcessParamsTable *ppt=NULL;
@@ -198,7 +200,15 @@ void initializeMCMC(LALInferenceRunState *runState)
 		exit(1);
 	}
 	addVariable(runState->algorithmParams,"Niter",&tmpi, INT4_t,PARAM_FIXED);
-		
+	
+	printf("set highest temperature.\n");
+	/* Tolerance of the Nested sampling integrator */
+	ppt=getProcParamVal(commandLine,"--tempMax");
+	if(ppt){
+		tempMax=strtod(ppt->value,(char **)NULL);
+	}	
+	addVariable(runState->algorithmParams,"tempMax",&tempMax, REAL8_t,PARAM_LINEAR);
+	
 	printf("set random seed.\n");
 	/* set up GSL random number generator: */
 	gsl_rng_env_setup();
