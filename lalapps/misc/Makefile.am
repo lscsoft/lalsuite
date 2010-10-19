@@ -16,7 +16,6 @@ EXTRA_DIST = \
 	lt~obsolete.m4 \
 	missing \
 	mkinstalldirs \
-	pkg.m4 \
 	py-compile \
 	vcsID.common
 

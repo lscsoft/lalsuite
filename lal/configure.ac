@@ -83,7 +83,6 @@ AC_CONFIG_FILES([ \
   packages/support/src/Makefile \
   packages/support/test/Makefile
 ])
-AC_CONFIG_FILES([lal-config],[chmod +x lal-config])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
