@@ -59,7 +59,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	LALIFOData *ifoPtr, *ifoListStart;
 	//ProcessParamsTable *ppt=NULL;
 
-	int MPIrank;
+	//int MPIrank;
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	
@@ -176,11 +176,16 @@ void initializeMCMC(LALInferenceRunState *runState)
 	runState->algorithm=PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
 	runState->proposal=PTMCMCLALProposal;
+	//runState->proposal=PTMCMCGaussianProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
 	runState->template=templateLAL;
 	runState->likelihood=FreqDomainLogLikelihood;
+	//runState->likelihood=GaussianLikelihood;
 	runState->prior=PTUniformLALPrior;//LALInferenceInspiralPriorNonSpinning;
+	//runState->prior=PTUniformGaussianPrior;
+
+	
 	
 	ppt=getProcParamVal(commandLine,"--verbose");
 	if(ppt) {
@@ -207,7 +212,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	if(ppt){
 		tempMax=strtod(ppt->value,(char **)NULL);
 	}	
-	addVariable(runState->algorithmParams,"tempMax",&tempMax, REAL8_t,PARAM_LINEAR);
+	addVariable(runState->algorithmParams,"tempMax",&tempMax, REAL8_t,PARAM_FIXED);
 	
 	printf("set random seed.\n");
 	/* set up GSL random number generator: */
@@ -409,6 +414,11 @@ void initVariables(LALInferenceRunState *state)
  	addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	
+//	REAL8 x0 = 0.9;
+//	addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
+
 	
 	return;
 }
