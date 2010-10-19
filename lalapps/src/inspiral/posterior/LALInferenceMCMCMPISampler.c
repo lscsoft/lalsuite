@@ -56,8 +56,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
 	//LALVariables dummyLALVariable;
 	
-	int nPar = getVariableDimensionNonFixed(runState->currentParams);
-	
+	INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
+	INT4 Niter = *(INT4*) getVariable(runState->algorithmParams, "Niter");
 
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -125,13 +125,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	dummyLALVariable.dimension=0;
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	*/
-
 	
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
 	addVariable(runState->proposalArgs, "sigma", sigma,  REAL8_t, PARAM_FIXED);
 	//nullLikelihood = NullLogLikelihood(runState->data);
 	nullLikelihood = 0.0;
-	
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	
@@ -146,7 +144,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	// iterate:
-	for (i=0; i<100; i++) {
+	for (i=0; i<Niter; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
