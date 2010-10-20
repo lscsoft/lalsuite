@@ -70,6 +70,7 @@ for i; do
 	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    SHARED="--disable-shared"  ;;
 	--norebuild) # dangerous, for testing only!
+	    rebuild_binutils=""
 	    rebuild_boinc=""
 	    rebuild_lal=""
 	    rebuild="" ;;
@@ -268,7 +269,7 @@ else
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
-if test -n "$build_binutils" -o "$rebuild_binutils"; then
+if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
     log_and_show "retrieving $binutils"
 #    download http://www.aei.mpg.de/~repr/EaH_packages $binutils.tar.gz
     download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
