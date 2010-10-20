@@ -435,7 +435,6 @@ LALWriteLIGOLwXMLTable (
     )
 /* </lalVerbatim> */
 {
-
   /* print contents of the database struct into the xml table */
   INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );

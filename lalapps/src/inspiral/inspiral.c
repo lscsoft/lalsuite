@@ -2217,8 +2217,6 @@ int main( int argc, char *argv[] )
       {
         /* set fcFilterInput to the correct one */
         fcFilterInput = bankVetoData.fcInputArray[subBankIndex];
-	//fprintf(stdout,"** inspiral.c **: fcFilterInput  m1=%11.3e  s1z=%9.3f\n",fcFilterInput->fcTmplt->tmplt.mass1,fcFilterInput->fcTmplt->tmplt.spin1[2]);
-	//fprintf(stdout,"** inspiral.c **: bankCurrent    m1=%11.3e  s1z=%9.3f\n",bankCurrent->mass1,bankCurrent->spin1[2]);
         if ( vrbflg ) fprintf( stdout,
             "Creating template in fcInputArray[%d] at %p\n", subBankIndex,
             (void *)fcFilterInput );

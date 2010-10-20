@@ -153,8 +153,6 @@ LALInspiralWave(
    ASSERT((UINT4)params->order < (UINT4)LAL_PNORDER_NUM_ORDER,
             status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
-   //REAL8 norm=0.;
-
    switch (params->approximant)
    {
       case TaylorT1:
@@ -218,10 +216,7 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case PhenSpinTaylorRD:
-	//fprintf(stdout,"** LALInspiralWave ** phenspin chiamata da LALInspiralWave \n");
            LALPSpinInspiralRD(status->statusPtr, signalvec, params);
-	   // for (int count=0;count<signalvec->length;count++) norm+=signalvec->data[count]*signalvec->data[count];
-           //fprintf(stdout,"                      norm=%11.3e\n",norm);
            CHECKSTATUSPTR(status);
 	   break;
       case PhenSpinTaylorRDF:

@@ -74,30 +74,31 @@ int main(void) {
 
     /* --- first we fill the SimInspiral structure --- */
 
-    injParams.mass1 = 6.73;
-    injParams.mass2 = 4.18;
+    injParams.mass1 = 10.;
+    injParams.mass2 = 10.;
 
     /* MV-20060224: I believe this is not used in the SpinTaylor code! */
-    injParams.f_final = 2048.0;
-    injParams.f_lower = 40.;
+    injParams.f_final = 500.0;
+    injParams.f_lower = 40.;;
 
     snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
 
     /* this is given in Mpc */
-    injParams.distance = 41.;
-    //injParams.theta0 = 0.0;
-    injParams.phi0   = 0.;//-28.3/180.*LAL_PI;
+    injParams.distance = 100.;
+    /* this should not be zero*/
+    injParams.theta0 = 0.01;
+    injParams.phi0   = 0.5;
 
-    injParams.inclination = 72.9/180.*LAL_PI*0.+0.0001;
-    injParams.polarization   = -33.4/180.*LAL_PI*0.;
+    injParams.inclination = 0.8;
+    injParams.polarization   = 0.9;
 
-    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI)*0.;
-    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI)*0.;
-    injParams.spin1z = 0.74*cos(66./180.*LAL_PI)*0.;
+    injParams.spin1x = 0.1;
+    injParams.spin1y = 0.2;
+    injParams.spin1z = 0.3;
 
-    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI)*0.;
-    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI)*0.;
-    injParams.spin2z = 0.65*cos(94./180.*LAL_PI)*0.;
+    injParams.spin2x = 0.4;
+    injParams.spin2y = 0.5;
+    injParams.spin2z = 0.6;
 
     ppnParams.deltaT = 1.0 / 4096.0;
 
@@ -133,6 +134,6 @@ int main(void) {
     }
 
     fclose(outputfile);
-    fprintf(stderr,"waveform saved in wave1.dat\n" );
+    fprintf(stdout,"waveform saved in wave1.dat\n" );
     return 0;
 }

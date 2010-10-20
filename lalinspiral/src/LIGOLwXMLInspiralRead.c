@@ -155,8 +155,6 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
       {
         thisEvent->eff_dist_h1h2 = r4colData;
       }
-
-
       else if ( tableDir[j].idx == 16 )
       {
         thisEvent->chi = r4colData;

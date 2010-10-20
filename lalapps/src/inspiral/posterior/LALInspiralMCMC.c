@@ -185,8 +185,6 @@ However, you need to point to a function that initializes the parameter structur
 #define UNUSED
 #endif
 
-#define rint(x) floor((x)+0.5)
-
 NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $"); 
 
 /* *****************************
@@ -1045,13 +1043,13 @@ int XLALMCMC1PNMasseta(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter)
 	int logflag=0;
 	static LALStatus status;
 	eta1=XLALMCMCGetParameter(parameter,"eta");
-	if(XLALMCMCCheckParameter(parameter,"logMc")) {mc1=exp(XLALMCMCGetParameter(parameter,"logMc")); logflag=1;}
+	if(XLALMCMCCheckParameter(parameter,"logM")) {mc1=exp(XLALMCMCGetParameter(parameter,"logM")); logflag=1;}
 	else mc1=XLALMCMCGetParameter(parameter,"mchirp");
 	LALUniformDeviate(&status,&randnum,inputMCMC->randParams);
 	eta2=0.25*(REAL8)randnum;
 	mc2 = pow(eta2/eta1,3./5.)*mc1;
 	XLALMCMCSetParameter(parameter,"eta",eta2);
-	if(logflag) XLALMCMCSetParameter(parameter,"logMc",log(mc2));
+	if(logflag) XLALMCMCSetParameter(parameter,"logM",log(mc2));
 	else XLALMCMCSetParameter(parameter,"mchirp",mc2);
 	
 	return(0);
