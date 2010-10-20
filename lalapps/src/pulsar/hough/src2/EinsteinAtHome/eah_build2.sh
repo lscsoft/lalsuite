@@ -41,8 +41,8 @@ download() {
 
 HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
-boinc_rev=-r22503
-#previous: -r22363 -r21777 -r'{2008-12-01}'
+boinc_rev=-r22561
+#previous:-r22503 -r22363 -r21777 -r'{2008-12-01}'
 
 for i; do
     case "$i" in
@@ -134,11 +134,13 @@ for i; do
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
+	    echo "  --boinc-rev=<rev> specify a BOINC SVN trunk revision to use"
 	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
-	    echo "  --release         use some dark magic to make the App most compatible and adds remote debugging. Implies --static and --rebuild"
+	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
+	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
