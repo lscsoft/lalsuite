@@ -850,18 +850,17 @@ INT4 LALInferenceReflectDetPlane(
 	if(nIFO-DetCollision<3) return(-1); /* Not enough independent IFOs */
 	
 	/* Select IFOs to use */
+	IFO1=gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	do {
+		IFO2=gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	}while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]);
 	randnum=gsl_rng_uniform(state->GSLrandom);
-	IFO1 = (INT4)floor(nIFO*randnum);
-	randnum=gsl_rng_uniform(state->GSLrandom);
-	IFO2 = (INT4)floor((nIFO-1)*randnum);
-	while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]) IFO2=(IFO2+1) % nIFO;
-	randnum=gsl_rng_uniform(state->GSLrandom);
-	IFO3 = (INT4)floor(nIFO*randnum);
-	while(IFO3==IFO1
+	do {
+		IFO3 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	}while(IFO3==IFO1
 		  || IFO3==IFO2
 		  || IFOs[IFO3]==IFOs[IFO1]
-		  || IFOs[IFO3]==IFOs[IFO2])
-		IFO3=(IFO3+1) % nIFO;
+		  || IFOs[IFO3]==IFOs[IFO2]);
 	/*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
 	
 	longi = *(REAL8 *)getVariable(parameter,"rightascension");
@@ -875,7 +874,7 @@ INT4 LALInferenceReflectDetPlane(
 	equatorial.latitude=lat;
 	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
 	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
+	LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
 	deltalong=geodetic.longitude-equatorial.longitude;
 	
 	/* Add offset to RA to convert to earth-fixed */
