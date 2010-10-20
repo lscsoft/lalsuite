@@ -186,6 +186,7 @@ else
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
 		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty"
 		build_binutils=true
+		enable_linux_compatibility_workarounds=true
 	    fi ;;
     esac
 fi
@@ -324,8 +325,13 @@ if test -n "$build_binutils"; then
     log_and_do cd "$BUILD/$binutils"
     log_and_do "$SOURCE/$binutils/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
-    log_and_dont_fail make -k
-    log_and_dont_fail make -k install
+    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
+        log_and_dont_fail make -k
+        log_and_dont_fail make -k install
+    else
+        log_and_do make
+        log_and_do make install
+    fi
     # some post-build installation due to targets missing in the library
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
@@ -415,8 +421,13 @@ if test -z "$rebuild_lal" && pkg-config --exists lal; then
 else
     log_and_show "compiling LAL"
     log_and_do cd "$SOURCE/lalsuite/lal"
-    test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" &&
-    log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    fi
+    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
+        log_and_do cp configure.ac configure.ac~
+        log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
+    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lal"
     log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -430,8 +441,13 @@ if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then
 else
     log_and_show "compiling LALPulsar"
     log_and_do cd "$SOURCE/lalsuite/lalpulsar"
-    test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" &&
-    log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    fi
+    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
+        log_and_do cp configure.ac configure.ac~
+        log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
+    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lalpulsar"
     log_and_do "$SOURCE/lalsuite/lalpulsar/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -467,9 +483,14 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     fi
 fi
 
+if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
+    log_and_do cp configure.ac configure.ac~
+    log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
+fi
+
 log_and_do ./00boot
 if [ ."$build_win32" = ."true" ] ; then
-  sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
+    sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
 fi
 log_and_do cd "$BUILD/lalapps"
 log_and_do "$SOURCE/lalsuite/lalapps/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
