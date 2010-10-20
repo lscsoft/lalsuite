@@ -7,8 +7,17 @@
 #include <stdlib.h>
 #include <float.h>
 #include <lal/TimeDelay.h>
+#include <lalapps.h>
 
 #include <lal/LALStdlib.h>
+
+RCSID("$Id$");
+#define PROGRAM_NAME "LALInferenceNestedSampler.c"
+#define CVS_ID_STRING "$Id$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define CVS_NAME_STRING "$Name$"
 
 double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
