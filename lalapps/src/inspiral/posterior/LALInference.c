@@ -409,6 +409,47 @@ void fprintSample(FILE *fp,LALVariables *sample){
 	return;
 }
 
+void fprintSampleNonFixed(FILE *fp,LALVariables *sample){
+	if(sample==NULL) return;
+	LALVariableItem *ptr=sample->head;
+	if(fp==NULL) return;
+	while(ptr!=NULL) {
+		if (ptr->vary != PARAM_FIXED) {
+			switch (ptr->type) {
+				case INT4_t:
+					fprintf(fp, "%d", *(INT4 *) ptr->value);
+					break;
+				case INT8_t:
+					fprintf(fp, "%lld", *(INT8 *) ptr->value);
+					break;
+				case REAL4_t:
+					fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
+					break;
+				case REAL8_t:
+					fprintf(fp, "%9.5f", *(REAL8 *) ptr->value);
+					break;
+				case COMPLEX8_t:
+					fprintf(fp, "%e + i*%e",
+							(REAL4) ((COMPLEX8 *) ptr->value)->re, (REAL4) ((COMPLEX8 *) ptr->value)->im);
+					break;
+				case COMPLEX16_t:
+					fprintf(fp, "%e + i*%e",
+							(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
+					break;
+				case gslMatrix_t:
+					fprintf(stdout, "<can't print matrix>");
+					break;
+				default:
+					fprintf(stdout, "<can't print>");
+			}
+		fprintf(fp,"\t");
+		}
+		ptr=ptr->next;
+	}
+	return;
+}
+
+
 int compareVariables(LALVariables *var1, LALVariables *var2)
 /*  Compare contents of "var1" and "var2".                       */
 /*  Returns zero for equal entries, and one if difference found. */

@@ -96,7 +96,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-	
+	nullLikelihood = NullLogLikelihood(runState->data);
+	//nullLikelihood = 0.0;
 	
 	
 	
@@ -114,7 +115,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 				"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 		fprintf(chainoutput[t], "%10d  %10d  %6d  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-				Niter,10,100000,0.0,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
+				Niter,10,100000,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
 		fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
 				"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
 		for(i=0;i<1;i++) {
@@ -123,10 +124,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					864162757.00000,8.00,1024,9152,4577);
 		}
 		fprintf(chainoutput[t], "\n\n%31s","");
-		fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",61,62,11,22,31,32,51,41,52);
+		fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",51,52,32,31,22,41,11,62,61);
+		//fprintf(chainoutput[t], " %9i",185);
 		fprintf(chainoutput[t],"\n");
 		fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
-		fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","Mc","eta","t_c","log(d)","R.A.","sin(dec)","cos(i)","phi_orb","psi");
+		fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","cos(i)","psi","sin(dec)","R.A.","log(d)","phi_orb","t_c","eta","Mc");
+		//fprintf(chainoutput[t], " %9s","x1");
 		fprintf(chainoutput[t],"\n");
 		
 		//fprintf(chainoutput[t],"This is temperature chain %d of %d.\n", t, nChain);
@@ -148,8 +151,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
 	addVariable(runState->proposalArgs, "sigma", sigma,  REAL8_t, PARAM_FIXED);
-	nullLikelihood = NullLogLikelihood(runState->data);
-	//nullLikelihood = 0.0;
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	
@@ -177,9 +178,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 		chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
-		fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-		
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
+		//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+		fprintf(chainoutput[tempIndex], "%d\t%e\t%e\t", i,runState->currentLikelihood - nullLikelihood,1.0);
+		/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"distance"));
@@ -187,9 +188,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"declination"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"inclination"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"phase"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));
+		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));*/
 		//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
 		
+		fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
 		fprintf(chainoutput[tempIndex],"\n");
 		//fflush(chainoutput[tempIndex]);
 		fclose(chainoutput[tempIndex]);
@@ -304,14 +306,16 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	+ (logPriorProposed - logPriorCurrent)
 	+ logProposalRatio;
 	
-//	fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-	
+	//fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
+	double temp = log(gsl_rng_uniform(runState->GSLrandom));
 	// accept/reject:
 	if ((logAcceptanceProbability > 0) 
-		|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+		//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+		|| (temp < logAcceptanceProbability)) {   //accept
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
 	}
+	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
 	
 	destroyVariables(&proposedParams);	
 }

@@ -280,6 +280,7 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 LALVariableItem *getItem(LALVariables *vars,const char *name);
 LALVariableItem *getItemNr(LALVariables *vars, int index);
 void fprintSample(FILE *fp,LALVariables *sample);
+void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 
 void mc2masses(double mc, double eta, double *m1, double *m2);
 

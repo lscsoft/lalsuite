@@ -416,8 +416,8 @@ void initVariables(LALInferenceRunState *state)
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	
-//	REAL8 x0 = 0.9;
-//	addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
+	//REAL8 x0 = 0.9;
+	//addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
 
 	
 	return;
