@@ -32,10 +32,6 @@
 /* ---------- Includes -------------------- */
 #include "HierarchSearchGCT.h"
 
-#if defined(__SSE2__)
-#define GC_SSE2_OPT 1
-#endif
-
 #ifdef GC_SSE2_OPT
 #include <gc_hotloop_sse2.h>
 #else
@@ -470,10 +466,12 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
 
+#ifdef GC_SSE2_OPT
   if ( uvar_nStacksMax > 255) {
     fprintf(stderr, "Number of segments exceeds 255!\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
+#endif
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");

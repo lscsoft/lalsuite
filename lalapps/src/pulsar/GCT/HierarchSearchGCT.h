@@ -24,6 +24,10 @@
 #ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
 #define _HIERARCHSEARCHGCTH
 
+#if defined(__SSE2__) && defined(EAH_BOINC)
+#define GC_SSE2_OPT 1
+#endif
+
 /* standard includes */
 #include <unistd.h>
 #include <sys/types.h>
@@ -172,9 +176,13 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
     REAL4 * sumTwoF;        /**< sum of 2F-values */
+#ifdef GC_SSE2_OPT
     UCHAR * nc;             /**< number count */
+#else
+    UINT4 * nc;             /**< number count */
+#endif
   } FineGrid;
-  
+
 
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
@@ -189,7 +197,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     UINT4 * Uindex;      /**< U index */
     REAL4 * TwoF;       /**< 2F-value */
   } CoarseGrid;
-  
+
  /* ------------------------------------------------------------------------- */
 
  /* function prototypes */
