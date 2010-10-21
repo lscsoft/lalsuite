@@ -565,8 +565,9 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	REAL8 aii, aij, ajj;
 	INT4 i, j, dim;
 	RandomParams *randParam;
-	INT4 randomseed = *(INT4 *)getVariable(runState->algorithmParams,"random_seed");
+	UINT4 randomseed = gsl_rng_get(runState->GSLrandom);
 	
+
 	REAL8 proposal_scale=*(REAL8 *)getVariable(runState->proposalArgs,"proposal_scale");
 	randParam=XLALCreateRandomParams(randomseed);
 	
