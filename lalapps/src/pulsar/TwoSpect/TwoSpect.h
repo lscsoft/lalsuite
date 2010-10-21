@@ -35,24 +35,26 @@ void free_inputParams(inputParamsStruct *input);
 ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
-REAL8Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization);
 
-void slideTFdata(REAL8Vector *out, inputParamsStruct *input, REAL8Vector *tfdata, INT4Vector *binshifts);
-void tfWeightMeanSubtract(REAL8Vector *out, REAL8Vector *tfdata, REAL8Vector *rngMeans, REAL8Vector *antPatternWeights, inputParamsStruct *input);
-void tfRngMeans(REAL8Vector *out, REAL8Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-void makeSecondFFT(REAL8Vector *out, REAL8 normalization, REAL8Vector *tfdata, inputParamsStruct *input, REAL8FFTPlan *plan);
-void ffPlaneNoise(REAL8Vector *aveNoise, inputParamsStruct *input, REAL8Vector *backgrnd, REAL8Vector *antweights, REAL8 *normalization);
+void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
+void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
+void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
+void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan);
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4 *normalization);
 
-REAL8 calculateR(REAL8Vector *ffdata, templateStruct *templatestruct, REAL8Vector *noise, REAL8Vector *fbinaveratios);
-REAL8 avgTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
-REAL8 rmsTFdataBand(REAL8Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
 REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime);
-REAL8 calcMean(REAL8Vector *vector);
-REAL8 calcStddev(REAL8Vector *vector);
-REAL8 calcRms(REAL8Vector *vector);
+REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios);
+REAL8 calcMeanD(REAL8Vector *vector);
+REAL8 calcStddevD(REAL8Vector *vector);
 
+REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
+REAL4 calcMean(REAL4Vector *vector);
+REAL4 calcStddev(REAL4Vector *vector);
+REAL4 calcRms(REAL4Vector *vector);
 
 #endif
 
