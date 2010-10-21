@@ -757,11 +757,9 @@ void LALInferenceRotateSky(
 	cur[1]=cos(lat)*sin(longi);
 	cur[2]=sin(lat);
 	
-	randnum=gsl_rng_uniform(state->GSLrandom);
-	IFO1 = (INT4)floor(nIFO*randnum);
+	IFO1 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	do{ /* Pick random interferometer other than the first one */
-		randnum=gsl_rng_uniform(state->GSLrandom);
-		IFO2 = (INT4)floor(nIFO*randnum);
+		IFO2 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
 	}while(IFO2==IFO1 || IFOs[IFO1]->detector==IFOs[IFO2]->detector);
 	
 	/*	fprintf(stderr,"Rotating around %s-%s vector\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2]);*/
