@@ -132,6 +132,12 @@ int main(int argc, char *argv[])
    //Blocksize should be an odd number
    if (inputParams->blksize % 2 != 1) inputParams->blksize += 1;
    
+   //
+   if (args_info.antennaOff_given) {
+      fprintf(LOG,"NOTE: Antenna pattern weights are all being set to 1.0\n");
+      fprintf(stderr,"NOTE: Antenna pattern weights are all being set to 1.0\n");
+   }
+   
    //Adjust parameter space search values, if necessary
    if (inputParams->Pmax < inputParams->Pmin) {
       REAL4 tempP = inputParams->Pmax;
@@ -324,10 +330,12 @@ int main(int argc, char *argv[])
       //Compute the bin shifts for each SFT
       CompBinShifts(binshifts, inputParams->fmin+inputParams->fspan*0.5, detectorVelocities, inputParams->Tcoh, inputParams->dopplerMultiplier);
       
-      //Compute antenna pattern weights
+      //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
       REAL4Vector *antweights = XLALCreateREAL4Vector((UINT4)numffts);
       CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, det);
-      //for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0; //TEST: Remove this!
+      if (args_info.antennaOff_given) {
+         for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0;
+      }
       REAL4 currentAntWeightsRMS = calcRms(antweights);
       
       //Slide SFTs here -- need to slide the data and the estimated background
