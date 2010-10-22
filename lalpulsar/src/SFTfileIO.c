@@ -66,7 +66,7 @@ NRCSID (SFTFILEIOC, "$Id$");
 /** blocksize used in SFT-reading for the CRC-checksum computation (has to be multiple of 8 !!) */
 #define BLOCKSIZE 8192 * 8
 
-/** size of blocks allocated for SFT data. For Einstein@home SFTs this should be set to 8000 (externally) */
+/** size of blocks allocated for SFT data. For Einstein\@home SFTs this should be set to 8000 (externally) */
 #ifndef SFTFILEIO_REALLOC_BLOCKSIZE
 #define SFTFILEIO_REALLOC_BLOCKSIZE 100
 #endif
@@ -177,7 +177,7 @@ void _LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, RE
  *
  */
 void
-LALSFTdataFind (LALStatus *status,
+LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 		SFTCatalog **catalog,		/**< [out] SFT-catalogue of matching SFTs */
 		const CHAR *file_pattern,	/**< which SFT-files */
 		SFTConstraints *constraints	/**< additional constraints for SFT-selection */
@@ -493,7 +493,7 @@ LALSFTdataFind (LALStatus *status,
  *
  */
 void
-LALSFTtimestampsFromCatalog (LALStatus *status,
+LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus structure */
 			     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 			     const SFTCatalog *catalog )	/**< input SFT-catalogue */
 {
@@ -555,7 +555,7 @@ LALSFTtimestampsFromCatalog (LALStatus *status,
  * in the SFT-file.
  */
 void
-_LALLoadSFTs ( LALStatus *status,
+_LALLoadSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
 	       SFTVector **sfts,			/**< [out] vector of read-in SFTs */
 	       const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
 	       REAL8 fMin,		  /**< minumum requested frequency (-1 = read from lowest) */
@@ -633,7 +633,7 @@ _LALLoadSFTs ( LALStatus *status,
    While developing it is kept as a separate function
 */
 void
-LALLoadSFTs ( LALStatus *status,
+LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
 	      const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
 	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
@@ -892,7 +892,7 @@ LALLoadSFTs ( LALStatus *status,
     * output SFTvectors are sorted alphabetically by detector-name
     *
  */
-void LALLoadMultiSFTs ( LALStatus *status,
+void LALLoadMultiSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
 			MultiSFTVector **out,             /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
 			const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
 			REAL8 fMin,		          /**< minumum requested frequency (-1 = read from lowest) */
@@ -1107,7 +1107,7 @@ void LALLoadMultiSFTs ( LALStatus *status,
  *
  */
 void
-LALCheckSFTs ( LALStatus *status,
+LALCheckSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
 	       INT4 *check_result, 	     /**< LAL-status of SFT-operations */
 	       const CHAR *file_pattern,     /**< where to find the SFTs: normally a path+file-pattern */
 	       SFTConstraints *constraints   /**< additional constraints for SFT-selection */
@@ -1150,7 +1150,7 @@ LALCheckSFTs ( LALStatus *status,
 
 /* checks the SFTs in a given SFTcatalog */
 void
-LALCheckSFTCatalog ( LALStatus *status,
+LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 		     INT4 *check_result,  /**< LAL-status of SFT-operations */
 		     SFTCatalog *catalog  /**< catalog of SFTs to check */
 		     )
@@ -1420,7 +1420,7 @@ XLALWriteSFT2file(
 } /* XLALWriteSFT2file() */
 
 void
-LALWriteSFT2file (LALStatus *status,
+LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 		  const SFTtype *sft,		/**< SFT to write to disk */
 		  const CHAR *fname,		/**< filename */
 		  const CHAR *comment)		/**< optional comment (for v2 only) */
@@ -1537,7 +1537,7 @@ XLALWriteSFTVector2Dir(
 } /* XLALWriteSFTVector2Dir() */
 
 void
-LALWriteSFTVector2Dir (LALStatus *status,
+LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure */
 		       const SFTVector *sftVect,	/**< SFT vector to write to disk */
 		       const CHAR *dirname,		/**< base filename (including directory path)*/
 		       const CHAR *comment,		/**< optional comment (for v2 only) */
@@ -1619,7 +1619,7 @@ XLALWriteSFTVector2File(
  *      frequency-band contained in the SFTtype.
  */
 void
-LALWrite_v2SFT_to_v1file (LALStatus *status,
+LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structure */
 			  const SFTtype *sft,		/**< SFT to write to disk */
 			  const CHAR *fname)		/**< filename */
 {
@@ -1677,7 +1677,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,
  *
  */
 void
-LALWriteSFTfile (LALStatus  *status,
+LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
 		 const SFTtype *sft,		/**< SFT to write to disk */
 		 const CHAR *outfname)		/**< filename */
 {
@@ -1781,7 +1781,7 @@ LALWriteSFTfile (LALStatus  *status,
 
 /** Free an 'SFT-catalogue' */
 void
-LALDestroySFTCatalog ( LALStatus *status,
+LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 		       SFTCatalog **catalog )	/**< the 'catalogue' to free */
 {
   INITSTATUS (status, "LALDestroySFTcatalog", SFTFILEIOC);
@@ -1904,7 +1904,7 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
  * \note We return the headers as an SFTVector, but with empty data-fields.
  */
 void
-LALGetSFTheaders (LALStatus *status,
+LALGetSFTheaders (LALStatus *status,			/**< pointer to LALStatus structure */
 		  SFTVector **headers,		/**< [out] Vector of SFT-headers */
 		  const CHAR *fpattern,		/**< path/filepattern */
 		  const LIGOTimeGPS *startTime,	/**< include only SFTs after this time (can be NULL) */
@@ -2014,7 +2014,7 @@ LALGetSFTheaders (LALStatus *status,
  *
  */
 void
-LALReadSFTfile (LALStatus *status,
+LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
 		SFTtype **sft, 		/**< [out] output SFT */
 		REAL8 fMin, 		/**< lower frequency-limit */
 		REAL8 fMax,		/**< upper frequency-limit */
@@ -2113,7 +2113,7 @@ LALReadSFTfile (LALStatus *status,
  *
  */
 void
-LALReadSFTfiles (LALStatus *status,
+LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
 		 SFTVector **sftvect,	/**< [out] output SFT vector */
 		 REAL8 fMin,	       	/**< lower frequency-limit */
 		 REAL8 fMax,		/**< upper frequency-limit */
@@ -2324,7 +2324,7 @@ has_valid_v2_crc64 ( FILE *fp )
  * backwards-compatibility with Hough-codes.
  */
 void
-LALReadSFTheader (LALStatus  *status,
+LALReadSFTheader (LALStatus  *status,			/**< pointer to LALStatus structure */
 		  SFTHeader   *header,	/**< [out] returned header */
 		  const CHAR  *fname)	/**< path+filename */
 {
@@ -2458,7 +2458,7 @@ LALReadSFTheader (LALStatus  *status,
  *
  */
 void
-LALReadSFTdata(LALStatus *status,
+LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
 	       SFTtype    *sft,    /**< [out] output-SFT: assuming memory is allocated  */
 	       const CHAR *fname,  /**< path+filename */
 	       INT4 fminBinIndex)  /**< minimun frequency-index to read */

@@ -1125,7 +1125,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 /** Set up location of skypatch centers and sizes
     If user specified skyRegion then use DopplerScan function
     to construct an isotropic grid. Otherwise use skypatch file. */
-void SetUpRadiometerSkyPatches(LALStatus           *status,
+void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALStatus structure */
 			       SkyPatchesInfo      *out,   /**< output skypatches info */
 			       CHAR                *skyFileName, /**< name of skypatch file */
 			       CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */

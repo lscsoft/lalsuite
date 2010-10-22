@@ -76,7 +76,7 @@ NRCSID( COMPLEXAMC, "$Id$");
  *
  */
 void
-LALGetCmplxAMCoeffs(LALStatus *status,
+LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
 		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 		    const FreqSkypos_t *freq_skypos		/**< Frequency and skyposition information */
@@ -137,10 +137,10 @@ LALGetCmplxAMCoeffs(LALStatus *status,
  * use XLALDestroyMultiCmplxAMCoeffs() to free this.
  */
 void
-LALGetMultiCmplxAMCoeffs (LALStatus *status,
-		     MultiCmplxAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
-		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-		     PulsarDopplerParams doppler		     /**< source sky-position [in equatorial coords!], freq etc. */
+LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus structure */
+		     MultiCmplxAMCoeffs **multiAMcoef,			/**< [out] AM-coefficients for all input detector-state series */
+		     const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
+		     PulsarDopplerParams doppler		     	/**< source sky-position [in equatorial coords!], freq etc. */
 		     )
 {
   UINT4 X, numDetectors;
