@@ -27,9 +27,7 @@
 #include <lal/Sequence.h>
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
-#include <lal/LALRunningMedian.h>
-#include <lal/RngMedBias.h>
-#include <lal/Date.h>
+#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/DopplerScan.h>
 
