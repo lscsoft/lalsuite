@@ -102,7 +102,7 @@
 
    - Get timings and optimize the pipeline parameters
 
-   - Checkpointing for running on Einstein@Home
+   - Checkpointing for running on Einstein\@Home
 
    - Incorporate stack slide as an alternative to Hough in the semi-coherent stages
 
@@ -124,7 +124,7 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* Hooks for Einstein@Home / BOINC
+/* Hooks for Einstein\@Home / BOINC
    These are defined to do nothing special in the standalone case
    and will be set in boinc_extras.h if EAH_BOINC is set
  */
@@ -1294,7 +1294,7 @@ int MAIN( int argc, char *argv[]) {
 
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate 
     detector-state */
-void SetUpSFTs( LALStatus *status,
+void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
 		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
@@ -2054,19 +2054,16 @@ void ComputeFstatHoughMap(LALStatus *status,
 }
 
 /** \brief Function for selecting frequency bins from a set of Fstatistic vectors
-    \param FstatVect : sequence of Fstatistic vectors
-    \param thr is a REAL8 threshold for selecting frequency bins
-    \return pgV : a vector of peakgrams 
 
     Input is a vector of Fstatistic vectors.  It allocates memory 
     for the peakgrams based on the frequency span of the Fstatistic vectors
     and fills tyem up by setting a threshold on the Fstatistic.  Peakgram must be 
     deallocated outside the function.
 */
-void FstatVectToPeakGram (LALStatus *status,
-			  HOUGHPeakGramVector *pgV,
-			  REAL8FrequencySeriesVector *FstatVect,
-			  REAL8  thr)
+void FstatVectToPeakGram (LALStatus *status,			/**< pointer to LALStatus structure */
+			  HOUGHPeakGramVector *pgV,		/**< a vector of peakgrams  */
+			  REAL8FrequencySeriesVector *FstatVect,/**< sequence of Fstatistic vectors */
+			  REAL8  thr)				/**< a REAL8 threshold for selecting frequency bins */
 {
   INT4 j, k;
   INT4 nStacks, nSearchBins, nPeaks;
@@ -2160,7 +2157,7 @@ void FstatVectToPeakGram (LALStatus *status,
     there are long gaps in the data, then some of the catalogs in the
     output catalog sequence may be of zero length. 
 */
-void SetUpStacks(LALStatus *status, 
+void SetUpStacks(LALStatus *status, 	   /**< pointer to LALStatus structure */
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
 		 REAL8 tStack,             /**< Output duration of each stack */
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/

@@ -222,7 +222,6 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries  badFilter;
   COMPLEX8FrequencySeries  badOutput;
 
-  COMPLEX8                *tempPtr;
   LIGOTimeGPS              epoch0 = {0,0};
   LIGOTimeGPS              epoch1 = {630720000,123456789};
   LIGOTimeGPS              epoch2 = {630720000,987654321};
@@ -436,6 +435,7 @@ int main( int argc, char *argv[] )
     {
       return code;
     }
+    COMPLEX8                *tempPtr;
     tempPtr = badFilter.data->data;
     badFilter.data->data = NULL;
     badOutput.data = badData1.data = badData2.data = badFilter.data;

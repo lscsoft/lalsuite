@@ -233,7 +233,7 @@ typedef struct {
  */
 typedef struct {
   CHAR objectname[STRINGLENGTH];   /**< the source name */
-  CHAR obsid[STRINGLENGTH];        /**< the XTE observation ID <proposal>-<target>-<viewing>-<seq no><type> */
+  CHAR obsid[STRINGLENGTH];        /**< the XTE observation ID \<proposal\>-\<target\>-\<viewing\>-\<seq no\>\<type\> */
   CHAR apid[APIDLENGTH];           /**< the APID */
   CHAR mode[STRINGLENGTH];         /**< the operation mode as a string */
   INT4 bary;                       /**< barycentered flag */

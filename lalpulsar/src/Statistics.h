@@ -167,14 +167,14 @@ typedef struct tagHoughStats {
  *  Functions Declarations (i.e., prototypes).
  */
 /** Calculates max, min, average and standard deviation of Hough number counts */
-void LALHoughStatistics(LALStatus      *status,
+void LALHoughStatistics(LALStatus      *status,			/**< pointer to LALStatus structure */
 		        HoughStats     *out, /**< output containing statistics */
-		        HOUGHMapTotal  *in); /**< hough map */
+		        HOUGHMapTotal  *in /**< hough map */);
 
 /** Calculates number count histogram */
-void LALHoughHistogram(LALStatus       *status,
+void LALHoughHistogram(LALStatus       *status,			/**< pointer to LALStatus structure */
 		       UINT8Vector     *out,  /**< histogram */
-		       HOUGHMapTotal   *in);  /**< hough map*/
+		       HOUGHMapTotal   *in  /**< hough map*/ );
 
 void LALHoughmapMeanVariance( LALStatus     *status,
 			      REAL8         *mean,
