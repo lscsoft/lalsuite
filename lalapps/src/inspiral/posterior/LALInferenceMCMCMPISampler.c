@@ -35,7 +35,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,t,tempi,tempj,p;
+	int i,j,t,tempi,tempj,p;
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -68,15 +68,23 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
 	
-	REAL8 **sigma = (REAL8 **)calloc(nChain,sizeof(REAL8 *));//matrix of sigmas per parameter and temperature for adaptation
+//	REAL8 **sigma = (REAL8 **)calloc(nChain,sizeof(REAL8 *));//matrix of sigmas per parameter and temperature for adaptation
 	
-	for (t=0; t<nChain; ++t) {
-		sigma[t] = (REAL8 *)calloc(nPar,sizeof(REAL8));
-		for (p=0; p<nPar; ++p) {
-			sigma[t][p]=t*p;
-		}
-	}							 
+//	for (t=0; t<nChain; ++t) {
+//		sigma[t] = (REAL8 *)calloc(nPar,sizeof(REAL8));
+//		for (p=0; p<nPar; ++p) {
+//			sigma[t][p]=t*p;
+//		}
+//	}							 
 	//REAL8 sigma = 0.1;
+    gsl_matrix **sigma=calloc(1,sizeof(gsl_matrix *));
+	//gsl_matrix * sigma = gsl_matrix_calloc(nChain,nPar);
+	if(NULL==(*sigma=gsl_matrix_alloc(nChain,nPar))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}
+	for (i = 0; i < nChain; i++){
+		for (j = 0; j < nPar; j++){
+			gsl_matrix_set (*sigma, i, j, i*j);
+		}
+	}
 	
 	
 	if (nChain==1) tempLadder[0]=1.0;
@@ -150,7 +158,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	*/
 	
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
-	addVariable(runState->proposalArgs, "sigma", sigma,  REAL8_t, PARAM_FIXED);
+	addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
+	addVariable(runState->algorithmParams, "nChain", &nChain,  INT4_t, PARAM_FIXED);
+	addVariable(runState->algorithmParams, "nPar", &nPar,  INT4_t, PARAM_FIXED);
+	addVariable(runState->proposalArgs, "tempIndex", &tempIndex,  INT4_t, PARAM_LINEAR);
+	
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	
@@ -169,8 +181,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
+		setVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
 		//dummyR8 = runState->currentLikelihood;
-		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 		//	if (runState->currentLikelihood != dummyR8) {
 		//		printf(" accepted! new parameter values:\n");
 		//		printVariables(runState->currentParams);
@@ -179,7 +191,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 		chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 		//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-		fprintf(chainoutput[tempIndex], "%d\t%e\t%e\t", i,runState->currentLikelihood - nullLikelihood,1.0);
+		fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,runState->currentLikelihood - nullLikelihood,1.0);
 		/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
 		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
@@ -192,9 +204,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
 		
 		fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
+		fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
+		fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
 		fprintf(chainoutput[tempIndex],"\n");
 		//fflush(chainoutput[tempIndex]);
 		fclose(chainoutput[tempIndex]);
+		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 
 		//if (tempIndex == 0) {
 		/*	fprintf(stdout, "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
@@ -445,19 +460,30 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
 	REAL8 sigmat = 0.1;
+	//INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
+	INT4 i,j;
 	
-	REAL8 **sigma = NULL;
+	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
+
+	INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
+
+
+	gsl_matrix *sigma = *(gsl_matrix **)getVariable(runState->proposalArgs, "sigma");
 	
-	sigma = *(REAL8***) getVariable(runState->proposalArgs, "sigma");
+	//printf ("m(%d,%d) = %g\n", 1, 1, gsl_matrix_get (sigma, 1, 1));
 	
-	
-	printf("%f\n",sigma[0][0]);
-	int t,p;
-	for (t=0; t<5; ++t){
-		for (p=0; p<9; ++p){
+//	for (i = 0; i < nChain; i++){
+//		for (j = 0; j < nPar; j++){
+//			printf ("m(%d,%d) = %g\n", i, j, gsl_matrix_get (sigma, i, j));
+//		}
+//	}
+//	printf("%f\n",sigma[0][0]);
+//	int t,p;
+//	for (t=0; t<5; ++t){
+//		for (p=0; p<9; ++p){
 		//	printf("sigma[%d][%d]=%f\n",t,p,sigma[t][p]);
-		}
-	}
+//		}
+//	}
 	
 	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
 	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
