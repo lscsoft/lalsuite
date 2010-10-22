@@ -1688,18 +1688,16 @@ REAL4 calcRms(REAL4Vector *vector)
 {
 
    INT4 ii;
-   /* REAL4 rms = 0;
-   REAL4Vector *sqvector = XLALCreateREAL4Vector(vector->length);
-   for (ii=0; ii<(INT4)vector->length; ii++) sqvector->data[ii] = (vector->data[ii]*vector->data[ii]);
-   rms = calcMean(sqvector);
-   rms = sqrt(rms); */
+   REAL8Vector *sqvector = XLALCreateREAL8Vector(vector->length);
+   for (ii=0; ii<(INT4)vector->length; ii++) sqvector->data[ii] = (REAL8)(vector->data[ii]*vector->data[ii]);
+   REAL4 rms = (REAL4)sqrt(calcMeanD(sqvector));
    
-   double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
+   /* double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
-   REAL4 rms = (REAL4)sqrt(gsl_stats_tss_m(gslarray, 1, vector->length, 0.0)/vector->length);
+   REAL4 rms = (REAL4)sqrt(gsl_stats_tss_m(gslarray, 1, vector->length, 0.0)/vector->length); */
    
-   //XLALDestroyREAL4Vector(sqvector);
-   XLALFree((double*)gslarray);
+   XLALDestroyREAL8Vector(sqvector);
+   //XLALFree((double*)gslarray);
    
    return rms;
 
