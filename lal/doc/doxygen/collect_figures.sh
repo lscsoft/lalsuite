@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
 cwd=`pwd`;
-pkgdir="$cwd/../../packages";
+topdir="${cwd}/../../..";
+doxydir="${topdir}/lal/doc/doxygen"
+cmdline="find $topdir -path $doxydir -prune -o \( -regex '.*[.]eps$' -print -o -regex '.*[.]png$' -print -o -regex '.*[.]pdf$' -print \)"
+allfigs=`eval $cmdline`;
 
-epsfigures=`find $pkgdir -name "*.eps" -print | grep -e"[^.].*[.]eps$"`;
-pngfigures=`find $pkgdir -name "*.png" -print`;
 figdir="./figures";
 latexdir="./latex";
 
@@ -12,18 +13,12 @@ if [ ! -d "$latexdir" ]; then
     mkdir -p $latexdir;
 fi
 
-if [ ! -d "$figdir" ]; then
-    rm -f $figdir;
-    mkdir -p $figdir;
+if [ -d "$figdir" ]; then
+    rm -rf $figdir;
 fi
+mkdir -p $figdir;
 
-for i in $epsfigures $cwd/*.eps; do
-    ln -sf $i $figdir &> /dev/null;
-    # hack to get around doxygen missing some eps-figures for latex
-    ln -sf $i $latexdir &> /dev/null;
+for i in $allfigs; do
+    ln -s $i $figdir &> /dev/null;
 done
 
-for i in $pngfigures $cwd/*.png; do
-    ln -sf $i $figdir &> /dev/null;
-done
-echo
