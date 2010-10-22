@@ -682,12 +682,6 @@ tagInspiralCoarseBankIn
   REAL8                         kappaMax;
   INT4                          nPointsChi;
   INT4                          nPointsKappa;
-  REAL8                         s1zMin;
-  REAL8                         s1zMax;
-  REAL8                         s2zMin;
-  REAL8                         s2zMax;
-  INT4                          nPointss1z;
-  INT4                          nPointss2z;
   REAL8FrequencySeries          shf;
   /* Maximum size of the power spectral density array for use in
    * the computation of the metric in SBBH; typical values that

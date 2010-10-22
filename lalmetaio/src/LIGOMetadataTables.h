@@ -403,8 +403,6 @@ tagSnglInspiralTable
   REAL4         eta;
   REAL4         kappa;
   REAL4         chi;
-  REAL4         s1z;
-  REAL4         s2z;
   REAL4         tau0;
   REAL4         tau2;
   REAL4         tau3;
@@ -541,8 +539,6 @@ tagMultiInspiralTable
   REAL4         eta;
   REAL4         chi;
   REAL4         kappa;
-  REAL4         s1z;
-  REAL4         s2z;
   REAL4         tau0;
   REAL4         tau2;
   REAL4         tau3;

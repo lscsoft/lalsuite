@@ -191,8 +191,6 @@ by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a f
 \item \texttt{FrameFile} The waveform contains arbitrary data read from a frame file.
 
 
-
-
 \end{itemize}
 \input{LALInputMassesH}
 \texttt{InputMasses:}

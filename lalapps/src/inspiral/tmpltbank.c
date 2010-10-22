@@ -165,13 +165,6 @@ REAL4   kappaMin        = -1.0;         /* minimum value of kappa for PTF */
 REAL4   kappaMax        = 1.0;          /* maximum value of kappa for PTF */
 INT4    nPointsChi      = 3;            /* PTF template bank density    */
 INT4    nPointsKappa    = 5;            /* PTF templated bank density   */
-REAL4   s1zMin          = -1.0;         /* minimum value of s1z for phenspin */
-REAL4   s1zMax          = 1.0;          /* maximum value of s1z for phenspin */
-REAL4   s2zMin          = -1.0;         /* minimum value of s2z for phenspin */
-REAL4   s2zMax          = 1.0;          /* maximum value of s2z for phenspin */
-INT4    nPointss1z      = 4;            /* phenspin template bank density  */
-INT4    nPointss2z      = 4;            /* phenspin templated bank density */
-
 LALPNOrder order;                       /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
@@ -725,7 +718,6 @@ int main ( int argc, char *argv[] )
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
   avgSpecParams.plan = NULL;
-
   LAL_CALL( LALCreateForwardRealFFTPlan( &status,
         &(avgSpecParams.plan), numPoints, 0 ), &status );
   switch ( specType )
@@ -1024,12 +1016,6 @@ int main ( int argc, char *argv[] )
   bankIn.kappaMax         = (REAL8) kappaMax;
   bankIn.nPointsChi       = nPointsChi;
   bankIn.nPointsKappa     = nPointsKappa;
-  bankIn.s1zMin           = (REAL8) s1zMin;
-  bankIn.s1zMax           = (REAL8) s1zMax;
-  bankIn.s2zMin           = (REAL8) s2zMin;
-  bankIn.s2zMax           = (REAL8) s2zMax;
-  bankIn.nPointss1z       = nPointss1z;
-  bankIn.nPointss2z       = nPointss2z;
   bankIn.mmCoarse         = (REAL8) minMatch;
   bankIn.mmFine           = 0.99; /* doesn't matter since no fine bank yet */
   bankIn.fLower           = (REAL8) fLow;
@@ -1374,13 +1360,6 @@ fprintf(a, "  --maximum-kappa1 KAPPA1_MAX  set maximum value of kappa for PTF to
 fprintf(a, "  --npoints-chi N-CHI          set number of points in the Chi direction for PTF template bank to N-CHI (3)\n");\
 fprintf(a, "  --npoints-kappa N-KAPPA      set number of points in the Kappa direction for PTF template bank to N-KAPPA (5)\n");\
 fprintf(a, "\n");\
-fprintf(a, "  --minimum-s1z s1z_MIN    set minimum value of s1z for phenspin to s1z_MIN (-1.0)\n");\
-fprintf(a, "  --maximum-s1z s1z_MAX    set maximum value of s1z for phenspin to s1z_MAX (1.0)\n");\
-fprintf(a, "  --minimum-s2z s2z_MIN    set minimum value of s2z for phenspin to s2z_MIN (-1.0)\n");\
-fprintf(a, "  --maximum-s2z s2z_MAX    set maximum value of s2z for phenspin to s2z_MAX (1.0)\n");\
-fprintf(a, "  --npoints-s1z N-s1z      set number of points in the s1z direction for phenspin template bank to N-s1z (4)\n");\
-fprintf(a, "  --npoints-s2z N-s2z      set number of points in the s2z direction for phenspin template bank to N-s2z (4)\n");\
-fprintf(a, "\n");\
 fprintf(a, "  --minimal-match M            generate bank with minimal match M\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --order ORDER                set post-Newtonian order of the waveform to ORDER\n");\
@@ -1463,12 +1442,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"maximum-kappa1",          required_argument, 0,                '7'},
     {"npoints-chi",             required_argument, 0,                '8'},
     {"npoints-kappa",           required_argument, 0,                '9'},
-    {"minimum-s1z",             required_argument, 0,                '$'},
-    {"maximum-s1z",             required_argument, 0,                '%'},
-    {"minimum-s2z",             required_argument, 0,                '&'},
-    {"maximum-s2z",             required_argument, 0,                '/'},
-    {"npoints-s1z",             required_argument, 0,                '('},
-    {"npoints-s2z",             required_argument, 0,                ')'},
     {"minimal-match",           required_argument, 0,                'C'},
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
@@ -1526,9 +1499,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv,
-			  "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:$:%:&:/:(:):"
-			  "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
-			  long_options, &option_index );
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
+        long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -2168,17 +2141,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = FindChirpPTF;
         }
-	else if ( ! strcmp( "PhenSpinTaylorRD", optarg ) )
-	{
-	  approximant = PhenSpinTaylorRD;
-	}
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown approximant specified: "
+              "unknown order specified: "
               "%s (must be one of: TaylorT1, TaylorT2, TaylorT3, TaylorF1,\n"
-              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, BCVSpin,)\n"
-              "FindChirpPTF or PhenSpinTaylorRD)\n", long_options[option_index].name, optarg );
+              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, BCVSpin)\n"
+              "or FindChirpPTF)\n", long_options[option_index].name, optarg );
           exit( 1 );
         }
         haveApprox = 1;
@@ -2546,76 +2515,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", nPointsKappa );
         break;
 
-      case '$':
-	s1zMin = atof( optarg );
-	if ( s1zMin < -1. ) {
-	  fprintf( stdout, "invalid argument to --%s:\n"
-		   "s1zMin can only take values between -1 and 1 : "
-		   "(%f specified)\n", long_options[option_index].name, chiMin );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%e", s1zMin );
-	break;
-	  
-      case '%':
-	s1zMax = atof( optarg );
-	if ( s1zMax > 1. ) {
-	  fprintf( stdout, "invalid argument to --%s:\n"
-		   "s1zMax can only take values between -1 and 1 : "
-		   "(%f specified)\n", long_options[option_index].name, s1zMax );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%e", s1zMax );
-	break;
-   
-      case '&':
-	s2zMin = atof( optarg );
-	if ( s2zMin < -1. ) {
-	  fprintf( stdout, "invalid argument to --%s:\n"
-		   "s2zMin can only take values between -1 and 1 : "
-		   "(%f specified)\n",
-		   long_options[option_index].name, s2zMin );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%e", s2zMin );
-	break;
-	
-       case '/':
-	 s2zMax = atof( optarg );
-	 if ( s2zMax > 1. ) {
-           fprintf( stdout, "invalid argument to --%s:\n"
-		    "s2zMax can only take values between -1 and 1 : "
-		    "(%f specified)\n",
-		    long_options[option_index].name, s2zMax );
-	   exit( 1 );
-	 }
-	 ADD_PROCESS_PARAM( "float", "%e", s2zMax );
-	 break;
-		
-       case '(':
-	 nPointss1z = atof( optarg );
-	 if ( nPointss1z < 1 ) {
-           fprintf( stdout, "invalid argument to --%s:\n"
-		    "Number of points in the s1z direction must be greater than 0 : "
-                    "(%d specified)\n", long_options[option_index].name, nPointss1z );
-	   exit( 1 );
-	 }
-	 ADD_PROCESS_PARAM( "int", "%d", nPointss1z );
-	 break;
-
-	case ')':
-	  nPointss2z = atof( optarg );
-	  if ( nPointss2z < 1 )  {
-	    fprintf( stdout, "invalid argument to --%s:\n"
-		     "Number of points in the s2z direction must be greater than 0 : "
-		     "(%d specified)\n",
-		     long_options[option_index].name, nPointss2z );
-	    exit( 1 );
-	  }
-	  ADD_PROCESS_PARAM( "int", "%d", nPointss2z );
-	  break;
-
-    default:
+      default:
         fprintf( stderr, "unknown error while parsing options\n" );
         USAGE( stderr );
         exit( 1 );
@@ -3179,21 +3079,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if (s1zMin > s1zMax)
-  {
-    fprintf( stderr,
-	     "Error: argument to --minimum-s1z must be less than --maximum-s1z .\n" );
-    exit(1);
-  }
-
-  if (s2zMin > s2zMax)
-  {
-    fprintf( stderr,
-	     "Error: argument to --minimum-s2z must be less than --maximum-s2z .\n" );
-    exit(1);
-  }
-  
   return 0;
 }
 
 #undef ADD_PROCESS_PARAM
+

@@ -153,7 +153,6 @@ LALFindChirpTDTemplate (
     case PadeT1:
     case EOB:
     case EOBNR:
-    case PhenSpinTaylorRD:
       break;
 
     default:
@@ -475,7 +474,6 @@ LALFindChirpTDNormalize(
     case PadeT1:
     case EOB:
     case EOBNR:
-    case PhenSpinTaylorRD:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );

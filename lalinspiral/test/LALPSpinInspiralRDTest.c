@@ -103,7 +103,7 @@ int main() {
 
     /*Inclination sets the angle between the line of sight and initial L, 
        according to spinTaylor code convention*/
-    injParams.inclination  = 72.9/180.*LAL_PI*0.;
+    injParams.inclination  = 72.9/180.*LAL_PI;
     /* Neither psi nor the polarization are used by the LALPSpinInspiralRD 
        code, they will enter the pattern function along with the angles
        marking the sky position of the source*/
@@ -113,13 +113,13 @@ int main() {
        functions, they do not matter for waveform construction and 
        they won't be set here.*/ 
 
-    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI)*0.;
-    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI)*0.;
-    injParams.spin1z = 0.74*cos(66./180.*LAL_PI)*0.;
+    injParams.spin1x = 0.74*sin(66./180.*LAL_PI)*cos(168./180.*LAL_PI);
+    injParams.spin1y = 0.74*sin(66./180.*LAL_PI)*sin(168./180.*LAL_PI);
+    injParams.spin1z = 0.74*cos(66./180.*LAL_PI);
 
-    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI)*0.;
-    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI)*0.;
-    injParams.spin2z = 0.65*cos(94./180.*LAL_PI)*0.;
+    injParams.spin2x = 0.65*sin(94./180.*LAL_PI)*cos(-83./180.*LAL_PI);
+    injParams.spin2y = 0.65*sin(94./180.*LAL_PI)*sin(-83./180.*LAL_PI);
+    injParams.spin2z = 0.65*cos(94./180.*LAL_PI);
 
     /* The above spin components are assumed to be in the frame where the 
        viewing direction is along the z-axis, this is to comply with the 
