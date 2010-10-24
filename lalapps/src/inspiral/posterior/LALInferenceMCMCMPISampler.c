@@ -35,7 +35,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,j,t,tempi,tempj,p;
+	int i,j,t,colder,hotter;
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -117,8 +117,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
 		sprintf(outfileName[t],"PTMCMC.output.%2.2d",t);
+		if (MPIrank == 0) {
 		chainoutput[t] = fopen(outfileName[t],"w");
-		
 		fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
 		fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 				"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
@@ -139,9 +139,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","cos(i)","psi","sin(dec)","R.A.","log(d)","phi_orb","t_c","eta","Mc");
 		//fprintf(chainoutput[t], " %9s","x1");
 		fprintf(chainoutput[t],"\n");
-		
+			fclose(chainoutput[t]);
+		}	
 		//fprintf(chainoutput[t],"This is temperature chain %d of %d.\n", t, nChain);
-		fclose(chainoutput[t]);
+		//fclose(chainoutput[t]);
+		chainoutput[t] = fopen(outfileName[t],"a");
 	} 
 	
 
@@ -189,7 +191,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	}
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
-		chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
+		//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 		//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
 		fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,runState->currentLikelihood - nullLikelihood,1.0);
 		/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
@@ -207,8 +209,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
 		fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
 		fprintf(chainoutput[tempIndex],"\n");
-		//fflush(chainoutput[tempIndex]);
-		fclose(chainoutput[tempIndex]);
+		fflush(chainoutput[tempIndex]);
+		//fclose(chainoutput[tempIndex]);
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 
 		//if (tempIndex == 0) {
@@ -233,10 +235,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			
 		//printVariables(&(TcurrentParams[0]));
 		if (MPIrank == 0) {
-			for(tempi=0;tempi<nChain-1;tempi++) { //swap parameters and likelihood between chains
-				for(tempj=tempi+1;tempj<nChain;tempj++) {
+			for(colder=0;colder<nChain-1;colder++) { //swap parameters and likelihood between chains
+				for(hotter=colder+1;hotter<nChain;hotter++) {
 					
-					logChainSwap = (1.0/tempLadder[tempi]-1.0/tempLadder[tempj]) * (TcurrentLikelihood[tempj]-TcurrentLikelihood[tempi]);
+					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[hotter]-TcurrentLikelihood[colder]);
 					
 					if ((logChainSwap > 0)
 						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
@@ -247,9 +249,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						copyVariables(&(dummyLALVariable),&(TcurrentParams[tempi]));
 						*/
 						
-						dummyTemp = tempIndexVec[tempj];
-						tempIndexVec[tempj] = tempIndexVec[tempi];
-						tempIndexVec[tempi] = dummyTemp;
+						dummyTemp = tempIndexVec[hotter];
+						tempIndexVec[hotter] = tempIndexVec[colder];
+						tempIndexVec[colder] = dummyTemp;
 						++tempSwapCount;
 						/*
 						dummyR8 = TcurrentLikelihood[tempj];
@@ -269,6 +271,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (MPIrank == 0) printf("Temp swaps %d times\n", tempSwapCount);
 
+	for (t=0; t<nChain; ++t) {
+		fclose(chainoutput[t]);
+	}
+	
 	free(chainoutput);
 
 	for (t=0; t<nChain; ++t) {
@@ -392,7 +398,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
-	REAL8 sigma = 0.1;
+	REAL8 sigma = 1.0;
 	
 	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
 	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
@@ -406,16 +412,16 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	
 	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 	// (above proposal is not symmetric!)
-	//mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
-	mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.001);          /* mc changed by ~0.1% */
-	logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*sigma*0.01; /*eta changed by 0.01*/
+	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;	/*mc changed by 0.0001 */
+	//mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.01);          /* mc changed by ~0.1% */
+	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
+	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*sigma*0.001; /*eta changed by 0.01*/
 	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*sigma*0.1;
-	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*sigma*0.005; /*time changed by 5 ms*/
-	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*sigma*0.5;
-	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*sigma*0.05;
-	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*sigma*0.05;
+	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*sigma*0.5;
+	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*sigma*0.001; /*time changed by 5 ms*/
+	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*sigma*0.1;
+	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;
+	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;
 	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*sigma*0.1;
 	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
@@ -464,9 +470,8 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	INT4 i,j;
 	
 	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
-
 	INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
-
+	INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
 
 	gsl_matrix *sigma = *(gsl_matrix **)getVariable(runState->proposalArgs, "sigma");
 	
