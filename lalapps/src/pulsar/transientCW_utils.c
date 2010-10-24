@@ -341,6 +341,7 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
  */
 int
 XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
+                            gsl_matrix **Fstat_m_n,			/**< [out] optional (if !NULL): output of Fstat-map over t0_m x tau_n */
                             const MultiFstatAtomVector *multiFstatAtoms,/**< [in] multi-IFO F-statistic atoms */
                             transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range to search */
                             BOOLEAN useFReg				/**< [in] experimental switch: instead of e^F marginalize (1/D)e^F if TRUE */
@@ -363,9 +364,12 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
     XLALPrintError ("%s: invalid NULL input.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-
   if ( windowRange.type >= TRANSIENT_LAST ) {
     XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( (Fstat_m_n != NULL) && (*Fstat_m_n != NULL ) ) {
+    XLALPrintError ("%s: *Fstat_m_n pointer must be initialized to NULL.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
@@ -602,9 +606,14 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   /* free mem */
   XLALDestroyFstatAtomVector ( atoms );
   XLALDestroyExpLUT();
-  gsl_matrix_free ( F_mn );
 
-  /* return */
+  /* ----- return ----- */
+
+  if ( Fstat_m_n )	/* return Fstat matrix over {t0 x tau} if requested */
+    (*Fstat_m_n ) = F_mn;
+  else			/* free it otherwise */
+    gsl_matrix_free ( F_mn );
+
   (*cand) = ret;
   return XLAL_SUCCESS;
 

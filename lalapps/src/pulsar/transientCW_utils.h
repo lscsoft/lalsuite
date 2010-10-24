@@ -124,7 +124,11 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
 
 int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
 
-int XLALComputeTransientBstat ( TransientCandidate_t *transientCand, const MultiFstatAtomVector *multiFstatAtoms, transientWindowRange_t windowRange, BOOLEAN useFReg );
+int XLALComputeTransientBstat ( TransientCandidate_t *transientCand,
+                                gsl_matrix **Fstat_m_n,
+                                const MultiFstatAtomVector *multiFstatAtoms,
+                                transientWindowRange_t windowRange,
+                                BOOLEAN useFReg );
 
 /* these functions operate on module-global lookup-table for negative-exponentials,
  * which will dynamically be generated on first use of XLALFastNegExp(), and can
