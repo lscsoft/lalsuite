@@ -131,6 +131,7 @@ typedef struct {
 
   CHAR *outputStats;	/**< output file to write numDraw resulting statistics into */
   CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
+  CHAR *outputFstatMap;	/**< output F-statistic over 2D parameter space {t0, tau} into file with this basename */
   CHAR *outputInjParams;/**< output injection parameters into this file */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
@@ -367,10 +368,11 @@ int main(int argc,char *argv[])
       } /* if fpInjParams & failure*/
 
       TransientCandidate_t cand = empty_TransientCandidate;
+      gsl_matrix *Fstat_m_n = NULL;
       /* if requested: compute transient-Bstat search statistic on these atoms */
-      if ( fpTransientStats )
+      if ( fpTransientStats || uvar.outputFstatMap )
         {
-          if ( XLALComputeTransientBstat ( &cand, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
+          if ( XLALComputeTransientBstat ( &cand, &Fstat_m_n, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
             LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
@@ -382,7 +384,7 @@ int main(int argc,char *argv[])
           TransientCandidate_t candTotal;
           transientWindowRange_t winRangeAll = empty_transientWindowRange;
           winRangeAll.type = TRANSIENT_NONE;	/* window 'none' will simply cover all the data with 1 F-stat calculation */
-          if ( XLALComputeTransientBstat ( &candTotal, multiAtoms,  winRangeAll, uvar.useFReg ) != XLAL_SUCCESS ) {
+          if ( XLALComputeTransientBstat ( &candTotal, NULL, multiAtoms,  winRangeAll, uvar.useFReg ) != XLAL_SUCCESS ) {
             LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed for totalFstat (winRangeAll) with xlalErrno = %d\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
@@ -417,6 +419,37 @@ int main(int argc,char *argv[])
 	  fclose (fpAtoms);
         } /* if outputAtoms */
 
+      /* if requested, output Fstat-map over {t0, tau} */
+      if ( uvar.outputFstatMap )
+        {
+          FILE *fpFstatMap;
+          char *fnameFstatMap;
+          UINT4 len = strlen ( uvar.outputFstatMap ) + 20;
+          if ( (fnameFstatMap = XLALCalloc ( 1, len )) == NULL ) {
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          sprintf ( fnameFstatMap, "%s_%04d_of_%04d.dat", uvar.outputFstatMap, i + 1, uvar.numDraws );
+
+          if ( ( fpFstatMap = fopen ( fnameFstatMap, "wb" )) == NULL ) {
+            XLALPrintError ("%s: failed to open Fstat-map output file '%s' for writing.\n", fn, fnameFstatMap );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+	  fprintf ( fpFstatMap, "%s", cfg.logString );	/* output header info */
+
+          fprintf (fpFstatMap, "\nFstat_m_n = \\\n" );
+          if ( XLALfprintfGSLmatrix ( fpFstatMap, "%.9g", Fstat_m_n ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: XLALfprintfGSLmatrix() failed.\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          XLALFree ( fnameFstatMap );
+	  fclose (fpFstatMap);
+
+        } /* if outputFstatMap */
+
+      /* free Fstat-map */
+      if ( Fstat_m_n ) gsl_matrix_free ( Fstat_m_n );
 
       /* free atoms */
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
@@ -569,7 +602,9 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
-  XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL,  "Output F-statistic atoms into a file with this basename");
+  XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL, "Output F-statistic atoms into a file with this basename");
+  XLALregSTRINGUserStruct ( outputFstatMap,	 0,  UVAR_OPTIONAL, "Output F-statistic over 2D parameter space {t0, tau} into file with this basename");
+
   XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
 
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
@@ -635,7 +670,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- initialize random-number generator ----- */
   /* read out environment variables GSL_RNG_xxx
-   * GSL_RNG_SEED: use to set random seed: defult = 0
+   * GSL_RNG_SEED: use to set random seed: default = 0
    * GSL_RNG_TYPE: type of random-number generator to use: default = 'mt19937'
    */
   gsl_rng_env_setup ();

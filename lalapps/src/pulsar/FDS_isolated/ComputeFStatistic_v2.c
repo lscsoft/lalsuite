@@ -675,7 +675,7 @@ int main(int argc,char *argv[])
         {
           TransientCandidate_t transientCand;
           BOOLEAN useFReg = TRUE;
-          if ( XLALComputeTransientBstat ( &transientCand, Fstat.multiFstatAtoms, GV.transientWindowRange, useFReg ) != XLAL_SUCCESS ) {
+          if ( XLALComputeTransientBstat ( &transientCand, NULL, Fstat.multiFstatAtoms, GV.transientWindowRange, useFReg ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno);
             return COMPUTEFSTATISTIC_EXLAL;
           }
