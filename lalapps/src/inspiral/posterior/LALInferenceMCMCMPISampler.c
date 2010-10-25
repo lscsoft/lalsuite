@@ -35,7 +35,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,j,t,k,colder,hotter;
+	int i,j,t,k,lowerRank,upperRank;
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -49,7 +49,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	REAL8 logChainSwap = 0.0;
 	int tempIndex;
 	int *tempIndexVec = NULL;
-	int *inverse_tempIndexVec = NULL;
 	int dummyTemp;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
@@ -95,12 +94,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		}
 	
 	if (MPIrank == 0) {
-		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//initialize temp index
-		inverse_tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);  //initialize inverse temp indext
+		tempIndexVec = (int*) malloc(sizeof(int)*nChain);	//initialize temp index
 		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
 
 		for (t=0; t<nChain; ++t) {
-			inverse_tempIndexVec[t] = t;
 			tempIndexVec[t] = t;
 			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 		}
@@ -121,27 +118,27 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
 		sprintf(outfileName[t],"PTMCMC.output.%2.2d",t);
 		if (MPIrank == 0) {
-		chainoutput[t] = fopen(outfileName[t],"w");
-		fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
-		fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
-				"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
-		fprintf(chainoutput[t], "%10d  %10d  %6d  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-				Niter,10,100000,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
-		fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
-				"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
-		for(i=0;i<1;i++) {
-			fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
-					"Hanford",50.0,40.0,350.0,6.00,1.00,
-					864162757.00000,8.00,1024,9152,4577);
-		}
-		fprintf(chainoutput[t], "\n\n%31s","");
-		fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",51,52,32,31,22,41,11,62,61);
-		//fprintf(chainoutput[t], " %9i",185);
-		fprintf(chainoutput[t],"\n");
-		fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
-		fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","cos(i)","psi","sin(dec)","R.A.","log(d)","phi_orb","t_c","eta","Mc");
-		//fprintf(chainoutput[t], " %9s","x1");
-		fprintf(chainoutput[t],"\n");
+			chainoutput[t] = fopen(outfileName[t],"w");
+			fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
+			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
+					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
+			fprintf(chainoutput[t], "%10d  %10d  %6d  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
+					Niter,10,100000,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
+			fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
+					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
+			for(i=0;i<1;i++) {
+					fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
+							"Hanford",50.0,40.0,350.0,6.00,1.00,
+							864162757.00000,8.00,1024,9152,4577);
+			}
+			fprintf(chainoutput[t], "\n\n%31s","");
+			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",51,52,32,31,22,41,11,62,61);
+			//fprintf(chainoutput[t], " %9i",185);
+			fprintf(chainoutput[t],"\n");
+			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
+			fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","cos(i)","psi","sin(dec)","R.A.","log(d)","phi_orb","t_c","eta","Mc");
+			//fprintf(chainoutput[t], " %9s","x1");
+			fprintf(chainoutput[t],"\n");
 			fclose(chainoutput[t]);
 		}	
 		//fprintf(chainoutput[t],"This is temperature chain %d of %d.\n", t, nChain);
@@ -239,24 +236,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			
 		//printVariables(&(TcurrentParams[0]));
 		if (MPIrank == 0) {
-			
-			// inverse temIndexVec to get the desired likelihoods
-			for(k=0;k<nChain;k++){
-				t=0;
-				while(tempIndexVec[t] != k){
-					t++;
-				}
-				inverse_tempIndexVec[k]=t;
-				//printf("%d\t%d\t%d\t%d\n",k,tempIndexVec[k],inverse_tempIndexVec[k],t);
-			}
-			//printf("-----------------\n");
-			// Still need memory checks.
-			
-			
-			for(colder=0;colder<nChain-1;colder++) { //swap parameters and likelihood between chains
-				for(hotter=colder+1;hotter<nChain;hotter++) {
+			for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
+				for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
 					
-					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[inverse_tempIndexVec[hotter]]-TcurrentLikelihood[inverse_tempIndexVec[colder]]);
+					logChainSwap = (1.0/tempLadder[tempIndexVec[lowerRank]]-1.0/tempLadder[tempIndexVec[upperRank]]) * (TcurrentLikelihood[upperRank]-TcurrentLikelihood[lowerRank]);
 					
 					if ((logChainSwap > 0)
 						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
@@ -267,9 +250,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						copyVariables(&(dummyLALVariable),&(TcurrentParams[tempi]));
 						*/
 						
-						dummyTemp = tempIndexVec[hotter];
-						tempIndexVec[hotter] = tempIndexVec[colder];
-						tempIndexVec[colder] = dummyTemp;
+						dummyTemp = tempIndexVec[upperRank];
+						tempIndexVec[upperRank] = tempIndexVec[lowerRank];
+						tempIndexVec[lowerRank] = dummyTemp;
 						++tempSwapCount;
 						/*
 						dummyR8 = TcurrentLikelihood[tempj];
@@ -278,8 +261,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						count++;
 						*/
 					}
-				} //hotter
-			} //colder
+				} //upperRank
+			} //lowerRank
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -419,7 +402,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
-	REAL8 sigma = 1.0;
+	REAL8 sigma = 0.1;
 
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
