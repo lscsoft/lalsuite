@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 6
+# serial 7
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -95,7 +95,12 @@ AC_DEFUN([LAL_WITH_CUDA],
       else
         AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
         cuda=true
-        CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
+        if test "x$build_cpu" = "xx86_64"; then
+          CLIBS="lib64"
+        else
+          CLIBS="lib"
+        fi
+        CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
         CUDA_CFLAGS="-I/opt/cuda/include"
         LIBS="$LIBS $CUDA_LIBS"
         CFLAGS="$CFLAGS $CUDA_CFLAGS"
@@ -106,7 +111,12 @@ AC_DEFUN([LAL_WITH_CUDA],
     *)
       AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
       cuda=true
-      CUDA_LIBS="-L${with_cuda}/lib -lcufft -lcudart"
+      if test "x$build_cpu" = "xx86_64"; then
+        CLIBS="lib64"
+      else
+        CLIBS="lib"
+      fi
+      CUDA_LIBS="-L${with_cuda}/$CLIBS -lcufft -lcudart"
       CUDA_CFLAGS="-I${with_cuda}/include"
       LIBS="$LIBS $CUDA_LIBS"
       CFLAGS="$CFLAGS $CUDA_CFLAGS"
