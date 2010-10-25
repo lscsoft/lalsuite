@@ -35,7 +35,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,j,t,colder,hotter;
+	int i,j,t,k,colder,hotter;
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -49,6 +49,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	REAL8 logChainSwap = 0.0;
 	int tempIndex;
 	int *tempIndexVec = NULL;
+	int *inverse_tempIndexVec = NULL;
 	int dummyTemp;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
@@ -94,10 +95,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		}
 	
 	if (MPIrank == 0) {
-		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//itialize temp index
+		tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);	//initialize temp index
+		inverse_tempIndexVec = (int*) malloc(sizeof(int)*MPIsize);  //initialize inverse temp indext
 		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
 
 		for (t=0; t<nChain; ++t) {
+			inverse_tempIndexVec[t] = t;
 			tempIndexVec[t] = t;
 			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 		}
@@ -236,10 +239,24 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			
 		//printVariables(&(TcurrentParams[0]));
 		if (MPIrank == 0) {
+			
+			// inverse temIndexVec to get the desired likelihoods
+			for(k=0;k<nChain;k++){
+				t=0;
+				while(tempIndexVec[t] != k){
+					t++;
+				}
+				inverse_tempIndexVec[k]=t;
+				//printf("%d\t%d\t%d\t%d\n",k,tempIndexVec[k],inverse_tempIndexVec[k],t);
+			}
+			//printf("-----------------\n");
+			// Still need memory checks.
+			
+			
 			for(colder=0;colder<nChain-1;colder++) { //swap parameters and likelihood between chains
 				for(hotter=colder+1;hotter<nChain;hotter++) {
 					
-					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[tempIndexVec[hotter]]-TcurrentLikelihood[tempIndexVec[colder]]);
+					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[inverse_tempIndexVec[hotter]]-TcurrentLikelihood[inverse_tempIndexVec[colder]]);
 					
 					if ((logChainSwap > 0)
 						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
