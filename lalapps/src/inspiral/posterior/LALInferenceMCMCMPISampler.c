@@ -164,6 +164,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	addVariable(runState->algorithmParams, "nChain", &nChain,  INT4_t, PARAM_FIXED);
 	addVariable(runState->algorithmParams, "nPar", &nPar,  INT4_t, PARAM_FIXED);
 	addVariable(runState->proposalArgs, "tempIndex", &tempIndex,  INT4_t, PARAM_LINEAR);
+	addVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, REAL8_t, PARAM_FIXED);
 	
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
@@ -238,7 +239,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			for(colder=0;colder<nChain-1;colder++) { //swap parameters and likelihood between chains
 				for(hotter=colder+1;hotter<nChain;hotter++) {
 					
-					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[hotter]-TcurrentLikelihood[colder]);
+					logChainSwap = (1.0/tempLadder[colder]-1.0/tempLadder[hotter]) * (TcurrentLikelihood[tempIndexVec[hotter]]-TcurrentLikelihood[tempIndexVec[colder]]);
 					
 					if ((logChainSwap > 0)
 						|| (log(gsl_rng_uniform(runState->GSLrandom)) < logChainSwap )) { //Then swap... 
@@ -260,8 +261,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						count++;
 						*/
 					}
-				} //tempj
-			} //tempi
+				} //hotter
+			} //colder
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -307,6 +308,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	logPriorCurrent      = runState->prior(runState, runState->currentParams);
 	logLikelihoodCurrent = runState->currentLikelihood;
 	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
+	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
 	
 	// generate proposal:
 	proposedParams.head = NULL;
@@ -333,8 +335,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	if ((logAcceptanceProbability > 0) 
 		//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
 		|| (temp < logAcceptanceProbability)) {   //accept
+		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
+		//}
 	}
 	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
 	
@@ -399,6 +403,10 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
 	REAL8 sigma = 1.0;
+
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
+	
 	
 	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
 	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
