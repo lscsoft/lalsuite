@@ -1327,7 +1327,7 @@ fprintf(a, "\n");\
 fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FILE\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --standard-candle            compute a standard candle from the PSD\n");\
-fprintf(a, "  --candle-snr SNR             signal-to-noise ration of standard candle\n");\
+fprintf(a, "  --candle-snr SNR             signal-to-noise ratio of standard candle\n");\
 fprintf(a, "  --candle-mass1 M             mass of first component in candle binary\n");\
 fprintf(a, "  --candle-mass2 M             mass of second component in candle binary\n");\
 fprintf(a, "\n");\

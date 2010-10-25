@@ -17,8 +17,9 @@ from lalapps import inspiralutils
 import scipy
 sys.path.append('@PYTHONLIBDIR@')
 
-
+#Presets
 ifos=['H1','L1','V1']
+fakeTypes=["LALVirgo","LALLIGO"]
 
 # Read command line options
 usage=""" %prog [options]
@@ -54,23 +55,14 @@ parser.add_option("--enable-pages-alltimes",action="store_true",default=False,he
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
 parser.add_option("--ignore-science-mode",action="store_true",default=False,help="Skip the segment database step and try and find data for all specified times.")
 parser.add_option("--notify",action="store",default=None,help="Optional e-mail address to notify upon completion",metavar="you@yourdomain.edu")
-parser.add_option("--disable-H1",action="store_true",default=False,help="Disable H1")
-parser.add_option("--disable-L1",action="store_true",default=False,help="Disable L1")
-parser.add_option("--disable-V1",action="store_true",default=False,help="Disable V1")
-parser.add_option("--enable-G1",action="store_true",default=False,help="Enable G1")
 
 (opts,args)=parser.parse_args()
 
-for ifo in ifos:
-	if getattr(opts,'disable_'+ifo):
-		ifos.remove(ifo)
+cp=ConfigParser.ConfigParser()
+cp.read(opts.ini_file)
+#Get ifos from string list
+ifos=eval(cp.get('analysis','ifos'))
 
-if opts.enable_G1:
-	ifos.append('G1')
-
-
-if opts.enable_G1:
-	ifos.append('G1')
 
 print 'Setting up pipeline with ifos'+' '.join(map(str,ifos))
 
@@ -108,37 +100,91 @@ dt=float(cp.get('inspnest','dt'))
 
 # Simple function because lambda form doesn't work in python 2.4
 def istoint(a):
-	if a is not None:
-		return 1
-	else:
-		return 0
+    if a is not None:
+        return 1
+    else:
+        return 0
 
 if(sum(map(istoint, [getattr(opts,a) for a in ['single_triggers','coinc_triggers','inj','gps_time_file']]))>1):
-	parser.error('You can only specify one of --inj, --single-triggers, --coinc-triggers, or --gps-time-file\n')
+    parser.error('You can only specify one of --inj, --single-triggers, --coinc-triggers, or --gps-time-file\n')
 
-if opts.inj:
-        from pylal import SimInspiralUtils
-        injTable=SimInspiralUtils.ReadSimInspiralFromFiles([opts.inj])
-	times=[inj.get_end() for inj in injTable]
-	starttime=min(times)
-	endtime=max(times)
+types_list=eval(cp.get('data','types'))
+channels_list=eval(cp.get('data','channels'))
+
+
+#Create types and channels dictionaries
+types={}
+channels={}
+for ifo,type,channel in zip(ifos,types_list,channels_list):
+    types[ifo]=type
+    channels[ifo]=channel
+
+for ifo,channel in channels.items():
+	cp.set('data',ifo.lower()+'-channel',channel)
+
+    
+time_event=None
+if opts.inj and cp.has_option('analysis','events'):
+    time_event={}
+    events=[]
+    times=[]
+    raw_events=cp.get('analysis','events').replace('[','').replace(']','').split(',')
+
+    from pylal import SimInspiralUtils
+    injTable=SimInspiralUtils.ReadSimInspiralFromFiles([opts.inj])
+
+    if 'all' is raw_events or 'all' in raw_events:
+        events=range(len(injTable))
+
+    else:
+        for raw_event in raw_events:
+            if ':' in raw_event:
+                limits=raw_event.split(':')
+                if len(limits) != 2:
+                    print "Error: in event config option; ':' must separate two numbers."
+                    exit(0)
+                low=int(limits[0])
+                high=int(limits[1])
+                if low>high:
+                    events.extend(range(int(high),int(low)))
+                elif high>low:
+                    events.extend(range(int(low),int(high)))
+            else:
+                events.append(int(raw_event))
+
+    for event in events:
+        times.append(injTable[event].get_end())
+        time_event[times[-1]]=event
+        
+
+    starttime=min(times)-1.0
+    endtime=max(times)+1.0
+
+    cp.set('results','injXML',opts.inj)
+
+elif opts.inj:
+    from pylal import SimInspiralUtils
+    injTable=SimInspiralUtils.ReadSimInspiralFromFiles([opts.inj])
+    times=[inj.get_end() for inj in injTable]
+    starttime=min(times)
+    endtime=max(times)
 
 if opts.gps_time_file:
-	import re
-	p=re.compile('[\d.]+')
-	times=[]
-	timefile=open(opts.gps_time_file,'r')
-	for time in timefile:
-		if not p.match(time):
-			continue
-		if float(time) in times:
-			print 'Skipping duplicate time %s'%(time)
-			continue
-		print 'Read time %s'%(time)
-		times.append(float(time))
-	timefile.close()
-	starttime=min(times)
-	endtime=max(times)
+    import re
+    p=re.compile('[\d.]+')
+    times=[]
+    timefile=open(opts.gps_time_file,'r')
+    for time in timefile:
+        if not p.match(time):
+            continue
+        if float(time) in times:
+            print 'Skipping duplicate time %s'%(time)
+            continue
+        print 'Read time %s'%(time)
+        times.append(float(time))
+    timefile.close()
+    starttime=min(times)
+    endtime=max(times)
 
 if opts.single_triggers:
     from pylal import SnglInspiralUtils
@@ -169,31 +215,31 @@ if opts.coinc_triggers:
     endtime=max(times)
 
 if opts.gps_start_time is not None:
-	mystarttime=float(opts.gps_start_time)
-	if opts.inj:
-		starttime=max([starttime,mystarttime])
-		times=[time for time in times if time>starttime]
-	else:
-		starttime=mystarttime
-	cp.set('analysis','gps-start-time',str(starttime))
+    mystarttime=float(opts.gps_start_time)
+    if opts.inj:
+        starttime=max([starttime,mystarttime])
+        times=[time for time in times if time>starttime]
+    else:
+        starttime=mystarttime
+    cp.set('analysis','gps-start-time',str(starttime))
 
 
 if opts.gps_end_time is not None:
-	myendtime=float(opts.gps_end_time)
-	if opts.inj:
-		endtime=min([endtime,myendtime])
-		times=[time for time in times if time<endtime]
-	else:
-		endtime=myendtime
-	cp.set('analysis','gps-end-time',str(endtime))
+    myendtime=float(opts.gps_end_time)
+    if opts.inj:
+        endtime=min([endtime,myendtime])
+        times=[time for time in times if time<endtime]
+    else:
+        endtime=myendtime
+    cp.set('analysis','gps-end-time',str(endtime))
 
 if not opts.inj and not opts.coinc_triggers and not opts.gps_time_file and not opts.single_triggers:
-	if opts.gps_start_time is None and opts.gps_end_time is None:
+    if opts.gps_start_time is None and opts.gps_end_time is None:
 
-		raise OptionValueError('Must specify both a start and end time if not using injection file or coinc file.\n')
+        raise OptionValueError('Must specify both a start and end time if not using injection file or coinc file.\n')
 
 
-	times=scipy.linspace(float(starttime)+dt/2.0,float(endtime)-dt/2.0,(float(endtime)-float(starttime))/dt)
+    times=scipy.linspace(float(starttime)+dt/2.0,float(endtime)-dt/2.0,(float(endtime)-float(starttime))/dt)
 
 padding=float(cp.get('analysis','padding'))
 length=float(endtime)-float(starttime)+2*padding
@@ -231,34 +277,36 @@ datafind_job = pipeline.LSCDataFindJob(cache_dir,opts.log_path,cp)
 datafind_job.add_opt('url-type','file')
 datafind_job.set_sub_file(os.path.join(opts.run_path,'datafind.sub'))
 
-
 # Build list of science segments
 # Covers entire time range. Not necessarily all used
 for ifo in ifos:
-	if not opts.ignore_science_mode:
-		seg_files[ifo]=inspiralutils.science_segments(ifo,cp)
-		segfile=open(seg_files[ifo])
-		#segs[ifo]=segmentsUtils.fromfilenames([seg_files[ifo]])
-		segs[ifo]=segmentsUtils.fromsegwizard(segfile)
-		segs[ifo].coalesce()
-		segfile.close()
-	else:   # If we skip the segdb step, just construct a large segment
-		print 'Faking segment from %i to %i\n'%(datastart,dataend)
-		segs[ifo]=segments.segmentlist([segments.segment(int(datastart),int(dataend))])
+    if not opts.ignore_science_mode and types[ifo] not in fakeTypes:
+        seg_files[ifo]=inspiralutils.science_segments(ifo,cp)
+        segfile=open(seg_files[ifo])
+        #segs[ifo]=segmentsUtils.fromfilenames([seg_files[ifo]])
+        segs[ifo]=segmentsUtils.fromsegwizard(segfile)
+        segs[ifo].coalesce()
+        segfile.close()
+    else:   # If we skip the segdb step, just construct a large segment
+        print 'Faking segment from %i to %i\n'%(datastart,dataend)
+        segs[ifo]=segments.segmentlist([segments.segment(int(datastart),int(dataend))])
 
 
 for ifo in ifos:
-	science_segs[ifo]=[]
-	# Setup find data jobs
-	for seg in segs[ifo]:
-		sciseg=pipeline.ScienceSegment((segs[ifo].index(seg),seg[0],seg[1],seg[1]-seg[0]))
-		science_segs[ifo].append(sciseg)
-		df_node=pipeline.LSCDataFindNode(datafind_job)
-		df_node.set_start(int(sciseg.start()))
-		df_node.set_end(int(sciseg.end()))
-		df_node.set_observatory(ifo[0])
-		df_node.set_type(cp.get('data',ifo+'-type'))
-		sciseg.set_df_node(df_node)
+    science_segs[ifo]=[]
+    if types[ifo] in fakeTypes:
+        science_segs[ifo].append(None)
+    else:
+        # Setup find data jobs
+        for seg in segs[ifo]:
+            sciseg=pipeline.ScienceSegment((segs[ifo].index(seg),seg[0],seg[1],seg[1]-seg[0]))
+            science_segs[ifo].append(sciseg)
+            df_node=pipeline.LSCDataFindNode(datafind_job)
+            df_node.set_start(int(sciseg.start()))
+            df_node.set_end(int(sciseg.end()))
+            df_node.set_observatory(ifo[0])
+            df_node.set_type(cp.get('data',ifo+'-type'))
+            sciseg.set_df_node(df_node)
 
 os.chdir('../../')
 
@@ -272,33 +320,38 @@ df_nodes_by_time={}
 ifos_by_time={}
 segments_by_time={}
 for time in times:
-	ifos_by_time[time]=[]
-	segments_by_time[time]={}
-	for ifo in ifos:
-		for (seg,sciseg) in zip(segs[ifo],science_segs[ifo]):
-			if time in seg:
-				segments_by_time[time][ifo]=(seg,sciseg)
-			#else:
-			#	segments_by_time[time][ifo]=None
-		#if segments_by_time[time][ifo] is None:
-		#	continue
-				ifos_by_time[time].append(ifo)
-				node=segments_by_time[time][ifo][1].get_df_node()
-				if node not in dag.get_nodes():
-					dag.add_node(node)
+    ifos_by_time[time]=[]
+    segments_by_time[time]={}
+    for ifo in ifos:
+        for (seg,sciseg) in zip(segs[ifo],science_segs[ifo]):
+            if time in seg:
+                segments_by_time[time][ifo]=(seg,sciseg)
+            #else:
+            #   segments_by_time[time][ifo]=None
+        #if segments_by_time[time][ifo] is None:
+        #   continue
+                ifos_by_time[time].append(ifo)
+                if segments_by_time[time][ifo][1] is not None:
+                    node=segments_by_time[time][ifo][1].get_df_node()
+                    if node not in dag.get_nodes():
+                        dag.add_node(node)
 
 # Filter out times with no data
 #times=[time for time in times if len(segments_by_time[time].keys())>0 ]
 print 'Found data for %i times\n'%(len(times))
 
 if len(times)==0:
-	print 'Unable to find any science data for times specified. Aborting!'
-	sys.exit(1)
+    print 'Unable to find any science data for times specified. Aborting!'
+    sys.exit(1)
 
 inspnest_subfile=os.path.join(opts.run_path,'inspnest.sub')
 inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.log_path)
 inspnest_job.add_opt('Nlive',cp.get('analysis','nlive'))
 inspnest_job.add_opt('Nmcmc',cp.get('analysis','nmcmc'))
+
+if opts.inj:
+    inspnest_job.add_opt('inj',opts.inj)
+
 nest_path=os.path.join(opts.run_path,'nest')
 checkDir(nest_path)
 
@@ -315,93 +368,94 @@ nparallel=int(cp.get('analysis','nparallel'))
 posfiles_by_time={}
 bayesfiles_by_time={}
 for time in times:
-	        posfile=os.path.join(combine_dir,'posterior_samples_%.3f'%(time))
-		posfiles_by_time[time]=posfile
-		combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
-		combine_node.add_file_opt('outpos',posfile,file_is_output_file=True)
-		bayesfiles_by_time[time]=os.path.join(combine_dir,'bayesfactor_%.3f.txt'%(time))
-		combine_node.add_file_opt('bayesfactor',bayesfiles_by_time[time])
-		combine_each_time_nodes[time]=combine_node
+    posfile=os.path.join(combine_dir,'posterior_samples_%.3f'%(time))
+    posfiles_by_time[time]=posfile
+    combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
+    combine_node.add_file_opt('outpos',posfile,file_is_output_file=True)
+    bayesfiles_by_time[time]=os.path.join(combine_dir,'bayesfactor_%.3f.txt'%(time))
+    combine_node.add_file_opt('bayesfactor',bayesfiles_by_time[time])
+    combine_each_time_nodes[time]=combine_node
 # Set up inspnest jobs, using parallel if needed
 if nparallel==1:
-	for time in times:
-		inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys())
-		inspnest_nodes_by_time[time]=inspnest_node
-		dag.add_node(inspnest_node)
-		combine_each_time_nodes[time].add_parent(inspnest_node)
-		nest_files[time]=inspnest_node.get_output_files()[0]
+    for time in times:
+        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=time_event[time])
+        inspnest_nodes_by_time[time]=inspnest_node
+        dag.add_node(inspnest_node)
+        combine_each_time_nodes[time].add_parent(inspnest_node)
+        nest_files[time]=inspnest_node.get_output_files()[0]
 else:
-        merge_sub_file=os.path.join(opts.run_path,'merge.sub')
-        merge_job=OddsPipeline.MergeJob(cp,merge_sub_file,opts.log_path)
-	for time in times:
-		(merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys())
-		dag.add_node(merge_node)
-		map(dag.add_node,inspnest_nodes)
-		nest_files[time]=merge_node.get_output_files()[0]
-		combine_each_time_nodes[time].add_parent(merge_node)
-		inspnest_nodes_by_time[time]=merge_node
+    merge_sub_file=os.path.join(opts.run_path,'merge.sub')
+    merge_job=OddsPipeline.MergeJob(cp,merge_sub_file,opts.log_path)
+    for time in times:
+    	
+        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=time_event[time])
+        dag.add_node(merge_node)
+        map(dag.add_node,inspnest_nodes)
+        nest_files[time]=merge_node.get_output_files()[0]
+        combine_each_time_nodes[time].add_parent(merge_node)
+        inspnest_nodes_by_time[time]=merge_node
 
 for time in times:
-	dag.add_node(combine_each_time_nodes[time])
-	combine_each_time_nodes[time].add_var_arg(nest_files[time])
+    dag.add_node(combine_each_time_nodes[time])
+    combine_each_time_nodes[time].add_var_arg(nest_files[time])
 
 # Set up coherence test jobs if required
 if opts.coherence_test:
-	coherence_test_sub_file=os.path.join(opts.run_path,'coherence_test.sub')
-	coherence_test_job=OddsPipeline.CoherenceTestJob(cp,coherence_test_sub_file,opts.log_path)
-	coherence_inspnest_nodes={}
-	coherence_test_posfiles={}
-	coherence_test_nodes={}
-	coherence_test_files={}
-	coherence_test_outfiles={}
-	coherence_test_bfiles={}
-	combine_nodes_by_time={}
-	coherence_test_dir=os.path.join(opts.run_path,'coherencetest')
-	checkDir(coherence_test_dir)
-	# Loop over all the times
-	for time in times:
-		ifos=segments_by_time[time].keys()
-		if len(ifos)<2:
-			print 'Unable to setup coherence test for time %.3f, only %s data available.\n'%(time,ifos[0])
-			continue
-		coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
-		coherence_test_node.add_var_arg(nest_files[time])
-		coherence_test_files[time]={}
-		coherence_test_posfiles[time]={}
-		coherence_test_bfiles[time]={}
-		coherence_inspnest_nodes[time]={}
-		combine_nodes_by_time[time]={}
-		for ifo in segments_by_time[time].keys():
-			combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
-			combine_nodes_by_time[time][ifo]=combine_node
-			coherence_test_posfiles[time][ifo]=os.path.join(combine_dir,'posfile_%.3f_%s.dat'%(time,ifo))
-			coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
-			combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
-			combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
-			
-			if nparallel>1:
-				(merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo])
-				dag.add_node(merge_node)
-				coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
-				combine_node.add_parent(merge_node)
-				coherence_test_node.add_parent(merge_node)
-				coherence_inspnest_nodes[time][ifo]=merge_node
-			else:
-				inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo])
-				inspnest_nodes=[inspnest_node]
-				coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
-				combine_node.add_parent(inspnest_node)
-				coherence_inspnest_nodes[time][ifo]=inspnest_node
-			combine_node.add_var_arg(coherence_test_files[time][ifo])
-			coherence_test_node.add_var_arg(coherence_test_files[time][ifo])
-			map(coherence_test_node.add_parent, inspnest_nodes)
-			map(dag.add_node,inspnest_nodes)
-			dag.add_node(combine_node)
-		coherence_test_outfiles[time]=os.path.join(coherence_test_dir,'coherence_test_%.3f.txt'%(time))
-		coherence_test_node.add_file_opt('outfile',coherence_test_outfiles[time],file_is_output_file=True)
-		coherence_test_node.add_parent(inspnest_nodes_by_time[time])
-		coherence_test_nodes[time]=coherence_test_node
-		dag.add_node(coherence_test_node)
+    coherence_test_sub_file=os.path.join(opts.run_path,'coherence_test.sub')
+    coherence_test_job=OddsPipeline.CoherenceTestJob(cp,coherence_test_sub_file,opts.log_path)
+    coherence_inspnest_nodes={}
+    coherence_test_posfiles={}
+    coherence_test_nodes={}
+    coherence_test_files={}
+    coherence_test_outfiles={}
+    coherence_test_bfiles={}
+    combine_nodes_by_time={}
+    coherence_test_dir=os.path.join(opts.run_path,'coherencetest')
+    checkDir(coherence_test_dir)
+    # Loop over all the times
+    for time in times:
+        ifos=segments_by_time[time].keys()
+        if len(ifos)<2:
+            print 'Unable to setup coherence test for time %.3f, only %s data available.\n'%(time,ifos[0])
+            continue
+        coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
+        coherence_test_node.add_var_arg(nest_files[time])
+        coherence_test_files[time]={}
+        coherence_test_posfiles[time]={}
+        coherence_test_bfiles[time]={}
+        coherence_inspnest_nodes[time]={}
+        combine_nodes_by_time[time]={}
+        for ifo in segments_by_time[time].keys():
+            combine_node=OddsPipeline.CombineZNode(combine_each_time_job)
+            combine_nodes_by_time[time][ifo]=combine_node
+            coherence_test_posfiles[time][ifo]=os.path.join(combine_dir,'posfile_%.3f_%s.dat'%(time,ifo))
+            coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
+            combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
+            combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
+            
+            if nparallel>1:
+                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=time_event[time])
+                dag.add_node(merge_node)
+                coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
+                combine_node.add_parent(merge_node)
+                coherence_test_node.add_parent(merge_node)
+                coherence_inspnest_nodes[time][ifo]=merge_node
+            else:
+                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=time_event[time])
+                inspnest_nodes=[inspnest_node]
+                coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
+                combine_node.add_parent(inspnest_node)
+                coherence_inspnest_nodes[time][ifo]=inspnest_node
+            combine_node.add_var_arg(coherence_test_files[time][ifo])
+            coherence_test_node.add_var_arg(coherence_test_files[time][ifo])
+            map(coherence_test_node.add_parent, inspnest_nodes)
+            map(dag.add_node,inspnest_nodes)
+            dag.add_node(combine_node)
+        coherence_test_outfiles[time]=os.path.join(coherence_test_dir,'coherence_test_%.3f.txt'%(time))
+        coherence_test_node.add_file_opt('outfile',coherence_test_outfiles[time],file_is_output_file=True)
+        coherence_test_node.add_parent(inspnest_nodes_by_time[time])
+        coherence_test_nodes[time]=coherence_test_node
+        dag.add_node(coherence_test_node)
 
 
 times_by_seg={}
@@ -412,27 +466,27 @@ co_nests_by_seg={}
 co_nestfiles_by_seg={}
 # Also want to combine all jobs within each segment
 for time in times:
-	ifos=segments_by_time[time].keys()
-	smallest_segment=segments.segment(max([segments_by_time[time][ifo][0][0] for ifo in ifos]), min([segments_by_time[time][ifo][0][1] for ifo in ifos]))
-#	smallest_segment=reduce(lambda a,b:a and b, [segments_by_time[time][ifo][0] for ifo in segments_by_time[time].keys()])
-	if smallest_segment not in times_by_seg.keys():
-		times_by_seg[smallest_segment]=[]
-		inspnest_by_seg[smallest_segment]=[]
-		nestfiles_by_seg[smallest_segment]=[]
-		co_nests_by_seg[smallest_segment]={}
-		co_nestfiles_by_seg[smallest_segment]={}
-		if len(segments_by_time[time].keys())>1:
-			for ifo in segments_by_time[time].keys():
-				co_nests_by_seg[smallest_segment][ifo]=[]
-				co_nestfiles_by_seg[smallest_segment][ifo]=[]
-	times_by_seg[smallest_segment].append(time)
-	inspnest_by_seg[smallest_segment].append(inspnest_nodes_by_time[time])
-	nestfiles_by_seg[smallest_segment].append(nest_files[time])
-	# Append the coherence test files
-	if opts.coherence_test and len(segments_by_time[time].keys())>1:
-		for ifo in segments_by_time[time].keys():
-			co_nests_by_seg[smallest_segment][ifo].append(coherence_inspnest_nodes[time][ifo])
-			co_nestfiles_by_seg[smallest_segment][ifo].append(coherence_test_files[time][ifo])
+    ifos=segments_by_time[time].keys()
+    smallest_segment=segments.segment(max([segments_by_time[time][ifo][0][0] for ifo in ifos]), min([segments_by_time[time][ifo][0][1] for ifo in ifos]))
+#   smallest_segment=reduce(lambda a,b:a and b, [segments_by_time[time][ifo][0] for ifo in segments_by_time[time].keys()])
+    if smallest_segment not in times_by_seg.keys():
+        times_by_seg[smallest_segment]=[]
+        inspnest_by_seg[smallest_segment]=[]
+        nestfiles_by_seg[smallest_segment]=[]
+        co_nests_by_seg[smallest_segment]={}
+        co_nestfiles_by_seg[smallest_segment]={}
+        if len(segments_by_time[time].keys())>1:
+            for ifo in segments_by_time[time].keys():
+                co_nests_by_seg[smallest_segment][ifo]=[]
+                co_nestfiles_by_seg[smallest_segment][ifo]=[]
+    times_by_seg[smallest_segment].append(time)
+    inspnest_by_seg[smallest_segment].append(inspnest_nodes_by_time[time])
+    nestfiles_by_seg[smallest_segment].append(nest_files[time])
+    # Append the coherence test files
+    if opts.coherence_test and len(segments_by_time[time].keys())>1:
+        for ifo in segments_by_time[time].keys():
+            co_nests_by_seg[smallest_segment][ifo].append(coherence_inspnest_nodes[time][ifo])
+            co_nestfiles_by_seg[smallest_segment][ifo].append(coherence_test_files[time][ifo])
 
 print 'Broke into %i chunks for recombination'%(len(times_by_seg))
 
@@ -443,105 +497,115 @@ combine_dir=os.path.join(opts.run_path,'combine')
 checkDir(combine_dir)
 
 if opts.disable_pages is False:
-	# Set up web page producing nodes
-	results_page_sub_file=os.path.join(opts.run_path,'results_page.sub')
-	results_page_job=OddsPipeline.ResultsPageJob(cp,results_page_sub_file,opts.log_path)
-	if(len(times)==1):
-		results_path=os.path.join(cp.get('results','basedir'),str(time))
-	else:
-		results_path=os.path.join(cp.get('results','basedir'),'%.3f-%.3f'%(min(times),max(times)))
-	if(opts.notify is not None):
-		results_page_job.set_notification('Complete')
-		results_page_job.add_condor_cmd('notify_user',opts.notify)
+    # Set up web page producing nodes
+    results_page_sub_file=os.path.join(opts.run_path,'results_page.sub')
+    results_page_job=OddsPipeline.ResultsPageJob(cp,results_page_sub_file,opts.log_path)
+    if(len(times)==1):
+        results_path=os.path.join(cp.get('results','basedir'),str(time))
+    else:
+        results_path=os.path.join(cp.get('results','basedir'),'%.3f-%.3f'%(min(times),max(times)))
+    if(opts.notify is not None):
+        results_page_job.set_notification('Complete')
+        results_page_job.add_condor_cmd('notify_user',opts.notify)
 
 # Analyse each segment
 
 for seg in times_by_seg.keys():
-	combine_node=OddsPipeline.CombineZNode(combine_job)
-	posfile=os.path.join(combine_dir,'posterior_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
-	bffile=os.path.join(combine_dir,'bayesfactor_%.3f-%.3f.txt'%(seg[0],seg[1]))
-	combine_node.add_file_opt('outpos',posfile)
-	combine_node.add_file_opt('bayesfactor',bffile)
-	outsamp=os.path.join(combine_dir,'nested_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
-	combine_node.add_file_opt('outsamp',outsamp)
-	map(combine_node.add_var_arg,nestfiles_by_seg[seg])
-	map(combine_node.add_parent,inspnest_by_seg[seg])
-	dag.add_node(combine_node)
-	combine_nodes[seg]=combine_node
-	
-	if opts.coherence_test and len(co_nests_by_seg[seg].keys())>1:
-		co_combine_node={}
-		co_pos_file={}
-		co_bf_file={}
-		co_outsamp={}
-		for ifo in co_nests_by_seg[seg].keys():
-			co_combine_node[ifo]=OddsPipeline.CombineZNode(combine_job)
-			co_pos_file[ifo]=posfile.replace('.dat','_'+ifo+'.dat')
-			co_bf_file[ifo]=bffile.replace('.txt','_'+ifo+'.txt')
-			co_outsamp[ifo]=outsamp.replace('.dat','_'+ifo+'.dat')
-			co_combine_node[ifo].add_file_opt('outpos',co_pos_file[ifo],file_is_output_file=True)
-			co_combine_node[ifo].add_file_opt('bayesfactor',co_bf_file[ifo],file_is_output_file=True)
-			co_combine_node[ifo].add_file_opt('outsamp',co_outsamp[ifo],file_is_output_file=True)
-			map(co_combine_node[ifo].add_parent,co_nests_by_seg[seg][ifo])
-			map(co_combine_node[ifo].add_var_arg,co_nestfiles_by_seg[seg][ifo])
-			dag.add_node(co_combine_node[ifo])
-		coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
-		cotest_outfile_seg=os.path.join(coherence_test_dir,'coherence_test_%.3f-%.3f.txt'%(seg[0],seg[1]))
-		coherence_test_node.add_var_opt('outfile',cotest_outfile_seg)
-		coherence_test_node.add_var_arg(outsamp)
-		map(coherence_test_node.add_var_arg, co_outsamp.values())
-		map(coherence_test_node.add_parent, co_combine_node.values())
-		coherence_test_node.add_parent(combine_node)
-		dag.add_node(coherence_test_node)
-		# Generate results page for each IFO too
-		if opts.disable_pages is False:
-			for ifo in co_nests_by_seg[seg].keys():
-				results_node=OddsPipeline.ResultsPageNode(results_page_job)
-				results_node.add_file_opt('data',co_pos_file[ifo])
-				results_node.add_parent(co_combine_node[ifo])
-				seg_results_path=os.path.join(results_path,'%.3f-%.3f'%(seg[0],seg[1]),ifo)
-				results_node.add_var_opt('outpath',seg_results_path)
-				results_node.add_var_opt('bsn',co_bf_file[ifo])
-				dag.add_node(results_node)
+    combine_node=OddsPipeline.CombineZNode(combine_job)
+    posfile=os.path.join(combine_dir,'posterior_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
+    bffile=os.path.join(combine_dir,'bayesfactor_%.3f-%.3f.txt'%(seg[0],seg[1]))
+    combine_node.add_file_opt('outpos',posfile)
+    combine_node.add_file_opt('bayesfactor',bffile)
+    outsamp=os.path.join(combine_dir,'nested_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
+    combine_node.add_file_opt('outsamp',outsamp)
+    map(combine_node.add_var_arg,nestfiles_by_seg[seg])
+    map(combine_node.add_parent,inspnest_by_seg[seg])
+    dag.add_node(combine_node)
+    combine_nodes[seg]=combine_node
+    
+    if opts.coherence_test and len(co_nests_by_seg[seg].keys())>1:
+        co_combine_node={}
+        co_pos_file={}
+        co_bf_file={}
+        co_outsamp={}
+        for ifo in co_nests_by_seg[seg].keys():
+            co_combine_node[ifo]=OddsPipeline.CombineZNode(combine_job)
+            co_pos_file[ifo]=posfile.replace('.dat','_'+ifo+'.dat')
+            co_bf_file[ifo]=bffile.replace('.txt','_'+ifo+'.txt')
+            co_outsamp[ifo]=outsamp.replace('.dat','_'+ifo+'.dat')
+            co_combine_node[ifo].add_file_opt('outpos',co_pos_file[ifo],file_is_output_file=True)
+            co_combine_node[ifo].add_file_opt('bayesfactor',co_bf_file[ifo],file_is_output_file=True)
+            co_combine_node[ifo].add_file_opt('outsamp',co_outsamp[ifo],file_is_output_file=True)
+            map(co_combine_node[ifo].add_parent,co_nests_by_seg[seg][ifo])
+            map(co_combine_node[ifo].add_var_arg,co_nestfiles_by_seg[seg][ifo])
+            dag.add_node(co_combine_node[ifo])
+        coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
+        cotest_outfile_seg=os.path.join(coherence_test_dir,'coherence_test_%.3f-%.3f.txt'%(seg[0],seg[1]))
+        coherence_test_node.add_var_opt('outfile',cotest_outfile_seg)
+        coherence_test_node.add_var_arg(outsamp)
+        map(coherence_test_node.add_var_arg, co_outsamp.values())
+        map(coherence_test_node.add_parent, co_combine_node.values())
+        coherence_test_node.add_parent(combine_node)
+        dag.add_node(coherence_test_node)
+        # Generate results page for each IFO too
+        if opts.disable_pages is False:
+            for ifo in co_nests_by_seg[seg].keys():
+                results_node=OddsPipeline.ResultsPageNode(results_page_job)
+                results_node.add_file_opt('data',co_pos_file[ifo])
+                results_node.add_parent(co_combine_node[ifo])
+                seg_results_path=os.path.join(results_path,'%.3f-%.3f'%(seg[0],seg[1]),ifo)
+                results_node.add_var_opt('outpath',seg_results_path)
+                results_node.add_var_opt('bsn',co_bf_file[ifo])
+                dag.add_node(results_node)
 
 
-	if opts.disable_pages is False:
-		# Produce web page output for each segment
-		results_node=OddsPipeline.ResultsPageNode(results_page_job)
-		results_node.add_file_opt('data',posfile)
-		seg_results_path=os.path.join(results_path,'%.3f-%.3f'%(seg[0],seg[1]))
-		checkDir(seg_results_path)
-		results_node.add_var_opt('outpath',seg_results_path)
-		results_node.add_var_opt('bsn',bffile)
-		if opts.coherence_test and len(co_nests_by_seg[seg].keys())>1:
-			results_node.add_parent(coherence_test_node)
-			results_node.add_var_arg('--bci '+cotest_outfile_seg)
-		results_node.add_parent(combine_node)
-		dag.add_node(results_node)
+    if opts.disable_pages is False:
+        # Produce web page output for each segment
+        results_node=OddsPipeline.ResultsPageNode(results_page_job)
+        results_node.add_file_opt('data',posfile)
+        seg_results_path=os.path.join(results_path,'%.3f-%.3f'%(seg[0],seg[1]))
+        checkDir(seg_results_path)
+        results_node.add_var_opt('outpath',seg_results_path)
+        results_node.add_var_opt('bsn',bffile)
+        if opts.coherence_test and len(co_nests_by_seg[seg].keys())>1:
+            results_node.add_parent(coherence_test_node)
+            results_node.add_var_arg('--bci '+cotest_outfile_seg)
+        results_node.add_parent(combine_node)
+        dag.add_node(results_node)
 
 if opts.enable_pages_alltimes is True:
-	# Also produce plots for each time chunk
-	for time in times:
-	        results_page_node=OddsPipeline.ResultsPageNode(results_page_job)
-	        results_page_node.add_file_opt('data',posfiles_by_time[time])
-	        results_dir=os.path.join(results_path,'timebins',str(time))
-	        checkDir(results_dir)
-	        results_page_node.add_var_opt('outpath',results_dir)
-	        results_page_node.add_parent(combine_each_time_nodes[time])
-		results_page_node.add_var_opt('bsn',bayesfiles_by_time[time])
-		if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
-			results_page_node.add_var_arg('--bci '+coherence_test_outfiles[time])
-			results_page_node.add_parent(coherence_test_nodes[time])
-	        dag.add_node(results_page_node)
-                if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
-                        for ifo in coherence_inspnest_nodes[time].keys():
-                                results_node=OddsPipeline.ResultsPageNode(results_page_job)
-                                results_node.add_file_opt('data',coherence_test_posfiles[time][ifo])
-                                results_node.add_parent(combine_nodes_by_time[time][ifo])
-                                ifo_results_path=os.path.join(results_dir,ifo)
-                                results_node.add_var_opt('outpath',ifo_results_path)
-                                results_node.add_var_opt('bsn',coherence_test_bfiles[time][ifo])
-                                dag.add_node(results_node)
+    # Also produce plots for each time chunk
+    for time in times:
+        results_page_node=OddsPipeline.ResultsPageNode(results_page_job)
+        results_page_node.add_file_opt('data',posfiles_by_time[time])
+        results_dir=os.path.join(results_path,'timebins',str(time))
+        checkDir(results_dir)
+        results_page_node.add_var_opt('outpath',results_dir)
+        if time_event is not None:   
+            if time_event[time] is not None:
+                results_page_node.set_event_number(time_event[time])
+                results_page_node.add_var_opt('inj',opts.inj)
+        results_page_node.add_parent(combine_each_time_nodes[time])
+        results_page_node.add_var_opt('bsn',bayesfiles_by_time[time])
+
+        if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
+            results_page_node.add_var_arg('--bci '+coherence_test_outfiles[time])
+            results_page_node.add_parent(coherence_test_nodes[time])
+            dag.add_node(results_page_node)
+            if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
+                for ifo in coherence_inspnest_nodes[time].keys():
+                    results_node=OddsPipeline.ResultsPageNode(results_page_job)
+                    results_node.add_file_opt('data',coherence_test_posfiles[time][ifo])
+                    if time_event is not None:   
+                        if time_event[time] is not None:
+                            results_node.set_event_number(time_event[time])
+                            results_node.add_var_opt('inj',opts.inj)
+                    results_node.add_parent(combine_nodes_by_time[time][ifo])
+                    ifo_results_path=os.path.join(results_dir,ifo)
+                    results_node.add_var_opt('outpath',ifo_results_path)
+                    results_node.add_var_opt('bsn',coherence_test_bfiles[time][ifo])
+                
+                    dag.add_node(results_node)
 
 
 # Write the DAG file
@@ -554,13 +618,13 @@ print 'Successfully created DAG file.'
 print 'Now run condor_submit_dag %s\n'%(dag.get_dag_file())
 
 if opts.condor_submit:
-	import subprocess
-	from subprocess import Popen
-	
-	x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
-	x.wait()
-	if x.returncode==0:
-		print 'Submitted DAG file'
-	else:
-		print 'Unable to submit DAG file'
+    import subprocess
+    from subprocess import Popen
+    
+    x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
+    x.wait()
+    if x.returncode==0:
+        print 'Submitted DAG file'
+    else:
+        print 'Unable to submit DAG file'
 

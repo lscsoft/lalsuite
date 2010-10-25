@@ -8,11 +8,14 @@ use Pod::Usage;
 my $diffcmd = "diff -y -W 160";
 
 # parse command line
-my ($fname, $action, $noclean, $nolatex);
+my ($fname, $action, $noclean, $nolatex, $printfn);
 while (my $arg = shift @ARGV) {
     if ($arg =~ /^--/p) {
 	my $opt = ${^POSTMATCH};
 	switch ($opt) {
+	    case "print" {
+		$printfn = 1;
+	    }
 	    case "noclean" {
 		$noclean = 1;
 	    }
@@ -37,6 +40,7 @@ my $tmp1 = mktemp("$fname.LSD2doxygen.XXXXX");
 my $tmp2 = mktemp("$fname.LSD2doxygen.XXXXX");
 
 # slurp the original file
+print "$fname\n" if $printfn;
 die "'$fname' is not a file!" if !(-f $fname);
 my $origfile = "";
 open FILE, "<$fname" or die "Could not open '$fname'!: $!";
@@ -250,55 +254,124 @@ sub cleanupLSD {
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
 	
-	# regexes for balanced braces / brackets
+	# regexes for:
+	# non-line-breaking whitespace
+	my $n = "[^\\S\n]";
+	# balanced braces
 	my $bbr  = qr!({(?:[^{}]++|(?-1))*})!;
-	my $wbbr = qr!{([^{}]*$bbr*[^{}]*)}!;
+	my $wbbr = qr!{((?:[^{}]*$bbr)*[^{}]*)}!;
+	# balanced brackets
 	my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
-	
-	# convert formulae
-	$text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
-	$text =~ s!\$(.+?)\$!\\f\$$1\\f\$!mg;
-	$text =~ s!\\begin{equation}!\\f[!mg;
-	$text =~ s!\\end{equation}!\\f]!mg;
-	$text =~ s!\\begin{eqnarray}!\\f{eqnarray}{!mg;
-	$text =~ s!\\end{eqnarray}!\\f}!mg;
-	
-	# convert lists
-	$text =~ s!\\(?:begin|end){itemize}!!mg;
-	$text =~ s!\\item!\\li!mg;
+	my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
-	# convert verbatim
-	$text =~ s!\\begin{verbatim}!\\code!mg;
-	$text =~ s!\\end{verbatim}!\\endcode!mg;
-
-	# replace \verb with \c, <tt>
-	$text =~ s!\\verb(.)(\w+?)\1!\\c $2!mg;
-	$text =~ s!\\verb(.)(.+?)\1!<tt>$2</tt>!mg;
-
-	# replace formatting commands
-	$text =~ s!\\texttt{([^\s\}]+)}!\\c $1!mg;
-	$text =~ s!\\texttt{([^\}]+)}!<tt>$1</tt>!mg;
-	$text =~ s!{\\tt[^\S\n]*([^\}]+)}!<tt>$1</tt>!mg;
-
-	# replace subsection commands
-	$text =~ s!\\(?:sub)*section\*?$wbbr!\\par $1!mg;
-
-	# replace references
-	$text =~ s!\\cite$wbbr!$_ = $1; s/://g; "\\ref " . $_!mge;
-
-	# remove these LaTeX commands
-	foreach (qw|providecommand|) {
+	# remove these LaTeX commands:
+	# environments
+	foreach (qw(center document figure obeylines table wrapfigure)) {
+	    $text =~ s!\\(?:begin|end)$n*{$_}!!mg;
+	}
+	# two arguments
+	foreach (qw(providecommand)) {
 	    $text =~ s!\\$_$bbr$bbr!!mg;
 	}
-	foreach (qw|idx|) {
+	# two arguments, first optional
+	foreach (qw(idx)) {
 	    $text =~ s!\\$_$bbk?$bbr!!mg;
 	}
-	foreach (qw|input label vfill vspace|) {
+	# one argument
+	foreach (qw(index input label vfill vspace)) {
 	    $text =~ s!\\$_$bbr!!mg;
 	}
-	foreach (qw|noindent footnotesize newpage|) {
+	# no arguments
+	foreach (qw(footnotesize medskip newpage noindent)) {
 	    $text =~ s!\\$_ *!!mg;
 	}
+
+	# convert formulae
+	$text =~ s{(\$\$?)(.+?)\1}{
+	    $_ = $2;
+	    $_ =~ /\n/ ? '\f[' . $_ . '\f]' : '\f$' . $_ . '\f$'
+	}sge;
+	$text =~ s!\\begin$n*{(?:equation|displaymath)}!\\f[!mg;
+	$text =~ s!\\end$n*{(?:equation|displaymath)}!\\f]!mg;
+	$text =~ s!\\begin$n*{eqnarray\*?}!\\f{eqnarray*}{!mg;
+	$text =~ s!\\end$n*{eqnarray\*?}!\\f}!mg;
+
+	# convert descriptions
+	sub desc {
+	    my ($text) = @_;
+	    $text =~ s{\\begin$n*{description}(?<LIST>.*?)\\end$n*{description}}{
+		$_ = $+{LIST};
+		while (/\\item\[/) {
+		    s!\\item$wbbk(?<TEXT>.*?)(?<END>\n*\\item\[|\Z)!<dt>$1</dt><dd>$+{TEXT}</dd>$+{END}!sx;
+                }
+		'<dl>' . desc($_) . '</dl>'
+	    }sge;
+	    return $text;
+	}
+	$text = desc($text);
+
+	# convert numbered and unnumbered lists
+	sub list {
+	    my ($text) = @_;
+	    $text =~ s{\\begin$n*{(?<ENV>enumerate|itemize)}(?<LIST>.*?)\\end$n*{\k<ENV>}}{
+		my $e = $+{ENV};
+		$_ = $+{LIST};
+		$e =~ s!enumerate!ol!;
+		$e =~ s!itemize!ul!;
+		while (/\\item/) {
+		    s!\\item(?<TEXT>.*?)(?<END>\n*\\item|\Z)!<li>$+{TEXT}</li>$+{END}!sx;
+                }
+		"<$e>" . list($_) . "</$e>"
+	    }sge;
+	    return $text;
+	}
+	$text = list($text);
+
+	# convert tables
+	$text =~ s{\\begin$n*{tabular}$bbr?(?<TABLE>.*?)\\end$n*{tabular}}{
+	    $_ = $+{TABLE};
+	    $_ =~ s!\\hline!!sg;
+	    $_ =~ s!$n*\\\\$n*\n!</td></tr>\n<tr><td>!sg;
+	    $_ =~ s|$n*(?<!\\)&$n*|</td><td>|sg;
+	    '<table><tr><td>' . $_ . '</td></tr></table>'
+	}sge;	
+
+	# convert verbatim
+	$text =~ s!\\begin$n*{(?:verbatim|quote)}!\\code!mg;
+	$text =~ s!\\end$n*{(?:verbatim|quote)}!\\endcode!mg;
+
+	# can't convert pictures, but save the code
+	$text =~ s!\\begin$n*{picture}!\\verbatim!mg;
+	$text =~ s!\\end$n*{picture}!\\endverbatim!mg;
+
+	# replace formatting commands
+	$text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
+	$text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
+	$text =~ s!\\emph!\\textit!sg;
+	$text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
+	$text =~ s{\\text(tt|it)$wbbr}{
+	    my $e = $1;
+	    $_ = $2;
+	    s/\\_/_/g;
+	    /^[\w_:]+$/ ?
+		($e eq 'tt' ? "\\c $_"      : "\\e $_"      ) :
+		($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
+	}sge;
+	
+	# replace subsection commands
+	$text =~ s!\\(?:sub)*section\*?$wbbr!\\par $1!mg;
+	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
+
+	# replace citations
+	$text =~ s{\\(?:cite|ref)$wbbr}{
+	    $_ = $1;
+	    s/://g;
+	    '\ref ' . $_
+	}mge;
+
+	# miscellaneous
+	$text =~ s!\\lq!`!g;
+	$text =~ s|(?<!\\)@|\\@|g;
 
     }
 
@@ -361,6 +434,10 @@ Disable LSD to doxygen conversion (i.e. no changes should be made).
 =item --nolatex
 
 Do not convert any LaTeX commands to doxygen.
+
+=item --print
+
+Print file name before starting.
 
 =back
 
