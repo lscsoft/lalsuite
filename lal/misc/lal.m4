@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 5
+# serial 6
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -90,14 +90,18 @@ AC_DEFUN([LAL_WITH_CUDA],
       cuda=false
       ;;
     yes)
-      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-      cuda=true
-      CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
-      CUDA_CFLAGS="-I/opt/cuda/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
+      if test "x$build_os" != "xlinux"; then
+        AC_MSG_ERROR([CUDA not supported on this platform])
+      else
+        AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
+        cuda=true
+        CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
+        CUDA_CFLAGS="-I/opt/cuda/include"
+        LIBS="$LIBS $CUDA_LIBS"
+        CFLAGS="$CFLAGS $CUDA_CFLAGS"
+        AC_SUBST(CUDA_LIBS)
+        AC_SUBST(CUDA_CFLAGS)
+      fi
       ;;
     *)
       AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
