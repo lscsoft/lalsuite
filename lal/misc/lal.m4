@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 4
+# serial 5
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -108,6 +108,7 @@ AC_DEFUN([LAL_WITH_CUDA],
       CFLAGS="$CFLAGS $CUDA_CFLAGS"
       AC_SUBST(CUDA_LIBS)
       AC_SUBST(CUDA_CFLAGS)
+      ;;
     esac
   ], [ cuda=false ])
 ])
