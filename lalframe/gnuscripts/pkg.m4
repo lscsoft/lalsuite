@@ -1,1 +1,0 @@
-../../gnuscripts/pkg.m4

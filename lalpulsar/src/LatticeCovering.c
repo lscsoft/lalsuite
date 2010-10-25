@@ -100,13 +100,14 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
  *
  */
 void
-LALLatticeCovering (LALStatus *status,
+LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
 		    REAL8VectorList **covering,		/**< [out] final covering-grid */
 		    REAL8 coveringRadius,		/**< [in] covering radius */
 		    const gsl_matrix *metric,		/**< [in] constant metric */
 		    const REAL8Vector *startPoint,	/**< [in] start-point in the covering-region */
 		    BOOLEAN (*isInside)(const REAL8Vector *point), /**< [in] boundary-condition */
-		    LatticeType latticeType )
+		    LatticeType latticeType 		/**< [in] type of lattice to construct */
+                    )
 {
   UINT4 dim;	/* dimension of parameter-space */
   gsl_matrix *generator = NULL;
@@ -164,7 +165,7 @@ LALLatticeCovering (LALStatus *status,
  *
  */
 void
-LALLatticeFill (LALStatus *status,
+LALLatticeFill (LALStatus *status,		/**< pointer to LALStatus structure */
 		REAL8VectorList **fillGrid,	/**< [out] fillGrid final fill-grid (physical points) */
 		const gsl_matrix  *generator,	/**< [in] SQUARE generating matrix for lattice*/
 		const REAL8Vector *startPoint, 	/**< [in] physical startpoint for filling */

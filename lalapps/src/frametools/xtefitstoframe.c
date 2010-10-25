@@ -59,7 +59,7 @@
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NAPID 6                       /* the number of valid APIDs we can currently read */
 #define NUSELESSDATAMODE 5            /* the number of useless data modes we know of */
-#define MINFRAMELENGTH 1              /* the minimum duration of output frame file in seconds */
+#define MINFRAMELENGTH 10             /* the minimum duration of output frame file in seconds */
 #define ARRAY 0                       /* data type codes */
 #define EVENT 1                       /* data type codes */
 #define NPCU 5                        /* the number of PCUs on XTE */
@@ -233,7 +233,7 @@ typedef struct {
  */
 typedef struct {
   CHAR objectname[STRINGLENGTH];   /**< the source name */
-  CHAR obsid[STRINGLENGTH];        /**< the XTE observation ID <proposal>-<target>-<viewing>-<seq no><type> */
+  CHAR obsid[STRINGLENGTH];        /**< the XTE observation ID \<proposal\>-\<target\>-\<viewing\>-\<seq no\>\<type\> */
   CHAR apid[APIDLENGTH];           /**< the APID */
   CHAR mode[STRINGLENGTH];         /**< the operation mode as a string */
   INT4 bary;                       /**< barycentered flag */
@@ -1373,7 +1373,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
   LogPrintf(LOG_DEBUG,"%s : allocated memory for %d channels\n",fn,tddes->nchannels);
  
   /* define number of elements to read in - this is the total number of expected data values */
-  totallength = (INT8)(header->rowlength[colidx]*header->nrows);
+  totallength = (INT8)(header->rowlength[colidx]*header->nrows*tddes->nchannels);
   LogPrintf(LOG_DEBUG,"%s : computed total number of expected data samples as %ld\n",fn,totallength);
   
   /* allocate mem for temporary data storage of data and data undefined flag */
@@ -1419,7 +1419,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
 
     /* define number of elements to read in - this is the total number of expected data values for this channel */
     (*array)->channeldata[i].length = (INT8)(tddes->nsamples*header->nrows);
-    LogPrintf(LOG_DEBUG,"%s : computed total number of expected data samples as %ld\n",fn,tddes->nsamples*header->nrows);
+    LogPrintf(LOG_DEBUG,"%s : channel %d number of expected data samples as %ld\n",fn,i,tddes->nsamples*header->nrows);
     
     /* allocate mem for data and data undefined flag for the current channel */
     if (((*array)->channeldata[i].data = (UINT4 *)LALCalloc((*array)->channeldata[i].length,sizeof(UINT4))) == NULL) {
@@ -1436,7 +1436,7 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
     for (j=0;j<header->nrows;j++) {
 
       /* for each row extract the correct set of data for the current channel */
-      INT8 sidx = j*tddes->nsamples;
+      INT8 sidx = (tddes->nchannels*j+i)*tddes->nsamples;
       INT8 k;
 
       for (k=sidx;k<sidx+tddes->nsamples;k++) {
@@ -2250,7 +2250,7 @@ int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
       /* the index in the output timeseries of the fits data in the j'th element in the i'th row */
       long int idxout = floor((stamps->dettime[i] - stamps->dettime[0] + j*array->deltat)/(*ts)->deltat);
       
-      if ((idxin>=array->length) || (idxout>=(*ts)->length)) printf("idxin = %ld (%ld) idxout = %ld (%ld)\n",idxin,array->length,idxout,(*ts)->length);
+      if ((idxin>=array->length) || (idxout>=(*ts)->length)) printf("idxin = %ld (%ld) idxout = %ld (%ld)\n",idxin,(long int)array->length,idxout,(long int)(*ts)->length);
       
       /* add corresponding data to correct time output bin */
       (*ts)->data[idxout] += array->data[idxin];
@@ -2722,31 +2722,32 @@ int XLALCreateGTIData(GTIData **gti,      /**< [out] a null timeseries */
   /* check input */
   if (N<1) {
     LogPrintf(LOG_CRITICAL,"%s : tried to allocate GTI data with non-positive size.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+    XLAL_ERROR(fn,XLAL_EINVAL);
   }
   if ((*gti) != NULL) {
     LogPrintf(LOG_CRITICAL,"%s : input timestamps structure does not have null pointer.\n",fn);
-     XLAL_ERROR(fn,XLAL_EINVAL);
+    XLAL_ERROR(fn,XLAL_EINVAL);
   }
-
+  
   if (((*gti) = (GTIData *)LALCalloc(1,sizeof(GTIData))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI structure.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   if (((*gti)->start = (double *)LALCalloc(N,sizeof(double))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI start vector.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   if (((*gti)->end = (double *)LALCalloc(N,sizeof(double))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for GTI end vector.\n",fn);
-     XLAL_ERROR(fn,XLAL_ENOMEM);
+    XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   (*gti)->length = N;
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
   
 }
+
 /** Frees memory for a GTI structure.
  *
  */
@@ -2870,7 +2871,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
   /* initialise master list and then loop over each timeseries and make a master list of undefined samples */
   for (j=0;j<tempts->length;j++) temp_undefined[j] = 0;
   for (i=0;i<ts->length;i++) {
-    for (j=0;j<ts->ts[i]->length;j++) temp_undefined[j] += ts->ts[i]->undefined[j];
+    for (j=0;j<ts->ts[i]->length;j++) if (ts->ts[i]->undefined[j]) temp_undefined[j] = 1;
   }
 
   /* test for extended zero data - this is only really applicable to sources with high expected counts */
@@ -2891,7 +2892,7 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
 	
 	if (zerocount>MAXZEROCOUNT) {
 	  UINT4 k;
-	  for (k=j-zerocount;k<j;k++) temp_undefined[k] += 1;	  
+	  for (k=j-zerocount;k<j;k++) temp_undefined[k] = 1;	  
 	}
 	zerocount = 0;
   
@@ -2900,6 +2901,34 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
     }
   }
  
+  /* test for sections of data too short for analysis */
+  for (i=0;i<ts->length;i++) {
+
+    j = 0;
+    UINT4 goodcount = 0;
+    
+    /* loop over samples within the timeseries */
+    while (j<ts->ts[i]->length) {
+      /* fprintf(stdout,"index = (%ld/%ld) undefined = %d ->",(long int)j,(long int)ts->ts[i]->length,temp_undefined[j]); */
+      /* identify a stretch of good data */
+      if (temp_undefined[j] == 0) goodcount++;
+
+      /* if the length of the data is too short then set the data undefined */
+      else if (temp_undefined[j] != 0) { 
+	
+	if (goodcount*ts->ts[i]->deltat<MINFRAMELENGTH) {
+	  UINT4 k;
+	  
+	  for (k=j-goodcount;k<j;k++) temp_undefined[k] = 1;	  
+	}
+	goodcount = 0;
+  
+      }
+      /* fprintf(stdout," %d\n",temp_undefined[j]); */
+      j++;
+    }
+  }
+
   /* compute the number of GTIs */  
   {
     BOOLEAN flag = FALSE;
@@ -2948,13 +2977,14 @@ int XLALXTEUINT4TimeSeriesArrayToGTI(GTIData **gti,                 /**< [out] t
   }
   else {
     LogPrintf(LOG_NORMAL,"%s : no GTIs found for the current timeseries array.\n",fn);
+    (*gti) = NULL;
   }
 
   /* free memory */
   XLALFree(temp_undefined);
-
+  
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 }
 
@@ -3000,6 +3030,10 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
   if (XLALXTEUINT4TimeSeriesArrayToGTI(&gti,ts)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALXTEUINT4TimeSeriesToTGI() failed with error = %d\n",fn,xlalErrno);
     return 1;
+  }
+  else if (gti == NULL) {
+    LogPrintf(LOG_NORMAL,"%s : No GTI entries found after processing.  Exiting.\n",fn);
+    exit(0);
   }
   LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
 
@@ -3153,6 +3187,10 @@ int XLALBarycenterXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,       /*
   if (XLALXTEUINT4TimeSeriesArrayToGTI(&gti,(*ts))) {
     LogPrintf(LOG_CRITICAL,"%s : XLALXTEUINT4TimeSeriesToTGI() failed with error = %d\n",fn,xlalErrno);
     return 1;
+  }
+  else if (gti == NULL) {
+    LogPrintf(LOG_NORMAL,"%s : No GTI entries found after processing.  Exiting.\n",fn);
+    exit(0);
   }
   LogPrintf(LOG_DEBUG,"%s : generated a master GTI table\n",fn);
   

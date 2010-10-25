@@ -31,6 +31,7 @@ src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrainDriver
 src/calibration/lalapps_NoiseComparison
+src/calibration/lalapps_makecalframe
 src/calibration/lalapps_noise_comp_pipe
 src/calibration/lalapps_strain_pipe
 src/config.h
@@ -89,6 +90,7 @@ src/inspiral/lalapps_inspiral_hipe
 src/inspiral/lalapps_inspiral_online_pipe
 src/inspiral/lalapps_inspiral_online_pipe_inject
 src/inspiral/lalapps_inspiral_pipe
+src/inspiral/lalapps_inspiral_ssipe
 src/inspiral/lalapps_link_old_ihope
 src/inspiral/lalapps_mdc_ninja
 src/inspiral/lalapps_minj
@@ -110,8 +112,13 @@ src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
 src/inspiral/posterior/SPINspiral/lalapps_spinspiral
+src/inspiral/posterior/lalapps_coherence_test
+src/inspiral/posterior/lalapps_combine_evidence
 src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
+src/inspiral/posterior/lalapps_merge_nested_sampling_runs
+src/inspiral/posterior/lalapps_nest_pipe
+src/inspiral/posterior/python_config.sed
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/defaults.py
 src/lalapps/lalapps_cache
@@ -123,6 +130,7 @@ src/power/lalapps_power
 src/power/sense_compare
 src/pulsar/CombSearch/lalapps_CombSearch
 src/pulsar/FDS_binary/lalapps_CalculateSensitivity
+src/pulsar/FDS_binary/lalapps_CombineBayesianResults
 src/pulsar/FDS_binary/lalapps_ComputeFStatisticBinary
 src/pulsar/FDS_binary/lalapps_ComputeUL
 src/pulsar/FDS_binary/lalapps_FindCoincidence
@@ -130,7 +138,9 @@ src/pulsar/FDS_binary/lalapps_GenerateBinaryInput
 src/pulsar/FDS_binary/lalapps_GenerateBinaryMesh
 src/pulsar/FDS_binary/lalapps_GenerateRandomBinaryInput
 src/pulsar/FDS_binary/lalapps_GenerateSearchInput
+src/pulsar/FDS_binary/lalapps_HJDtoGPSSSB
 src/pulsar/FDS_binary/lalapps_MakeSubMesh
+src/pulsar/FDS_binary/lalapps_SemiCoherentBinary
 src/pulsar/FDS_isolated/ResamplingFstat/lalapps_ComputeFStatistic_resamp
 src/pulsar/FDS_isolated/lalapps_ComputeFStatAnalyticMonteCarloUpperLimit
 src/pulsar/FDS_isolated/lalapps_ComputeFStatistic

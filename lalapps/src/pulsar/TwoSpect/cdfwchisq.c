@@ -25,8 +25,10 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <lal/LALConstants.h>
+#include <lal/Sort.h>
 
 #include <gsl/gsl_sf_log.h>
 
@@ -84,10 +86,10 @@ REAL8 log1(REAL8 x, INT4 first)
 void order(qfvars *vars)
 {
    
-   INT4 ii, jj; 
+   //INT4 ii, jj;
    
    //Determine which values are largest to and place element numbers in th[]
-   for (ii=0; ii<(INT4)vars->weights->length; ii++) {
+   /* for (ii=0; ii<(INT4)vars->weights->length; ii++) {
       INT4 insertionpoint = ii;
       if (ii==0) {
          vars->sorting->data[insertionpoint] = 0;
@@ -99,9 +101,31 @@ void order(qfvars *vars)
          }
          vars->sorting->data[insertionpoint] = ii;
       }
-   }
+   } */
+   
+   INT4 ascend = 0;     //To sort descending, set ascend to zero
+   XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar);
    
    vars->ndtsrt = 0; //Signify that we have done the sorting
+   
+}
+
+//Comparison routine for sorting algorithm (NOTE: Ascending order p=1, descending p=0)
+int compar(void *p, const void *a, const void *b)
+{
+   REAL8 x = *((const REAL8 *)a);
+   REAL8 y = *((const REAL8 *)b);
+   int ascend = *(int *)p;
+   
+   if (ascend) {
+      if (x < y) return -1;
+      if (x > y) return 1;
+      return 0;
+   }
+   
+   if (x > y) return -1;
+   if (x < y) return 1;
+   return 0;
    
 }
 

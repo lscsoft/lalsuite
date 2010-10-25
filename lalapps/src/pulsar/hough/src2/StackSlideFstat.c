@@ -60,16 +60,12 @@ static int smallerStackSlide(const void *a,const void *b) {
     return(0);
 }
 
-/** \brief Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
-    \param out SemiCohCandidateList is a list of candidates
-    \param vecF is a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
-    \param params is a pointer to SemiCoherentParams
-    \out SemiCohCandidateList is a list of candidates
+/** Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
 */
-void StackSlideVecF(LALStatus *status,
-                    SemiCohCandidateList  *out,        /* output candidates */
-                    REAL4FrequencySeriesVector *vecF,  /* vector with Fstat values or any REAL8FrequencySeriesVector */
-                    SemiCoherentParams *params)        /* input parameters  */
+void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
+                    SemiCohCandidateList  *out,        /**< output candidates */
+                    REAL4FrequencySeriesVector *vecF,  /**< vector with Fstat values or any REAL8FrequencySeriesVector */
+                    SemiCoherentParams *params)        /**< input parameters  */
 {
   REAL8FrequencySeries stackslideSum;  /* The output of StackSliding the vecF values */
   
@@ -357,15 +353,11 @@ void StackSlideVecF(LALStatus *status,
 
 
 
-/** \brief Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
-           This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as 
-	   similar to Hough as possible but without using the hough look-up-tables.
-    \param out SemiCohCandidateList is a list of candidates
-    \param vecF is a vector of Fstat frequency series or any REAL4FrequencySeriesVector.
-    \param params is a pointer to SemiCoherentParams
-    \out SemiCohCandidateList is a list of candidates
-*/
-void StackSlideVecF_HoughMode(LALStatus *status,
+/** Function StackSlides a vector of Fstat frequency series or any REAL8FrequencySeriesVector.
+ * This is similar to StackSlideVecF but adapted to calculate the hough number count and to be as 
+ * similar to Hough as possible but without using the hough look-up-tables.
+ */
+void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus structure */
 			      SemiCohCandidateList  *out,        /**< output candidates */
 			      REAL4FrequencySeriesVector *vecF,  /**< vector with Fstat values or any REAL8FrequencySeriesVector */
 			      SemiCoherentParams *params)        /**< input parameters  */
@@ -709,12 +701,12 @@ void StackSlideVecF_HoughMode(LALStatus *status,
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
-void LALappsFindFreqFromMasterEquation(LALStatus *status, 
-                                       PulsarDopplerParams *outputPoint,  /* outputs f(t) for output sky position and spindown values                       */
-                                       PulsarDopplerParams *inputPoint,   /* input demodulation f0, sky position, and spindown values                       */
-                                       REAL8 *vel,                        /* vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
-                                       REAL8 deltaT,                      /* time since the reference time                                                  */
-                                       UINT2 numSpindown)                 /* Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
+void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LALStatus structure */
+                                       PulsarDopplerParams *outputPoint,  /**< outputs f(t) for output sky position and spindown values                       */
+                                       PulsarDopplerParams *inputPoint,   /**< input demodulation f0, sky position, and spindown values                       */
+                                       REAL8 *vel,                        /**< vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
+                                       REAL8 deltaT,                      /**< time since the reference time                                                  */
+                                       UINT2 numSpindown)                 /**< Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
 {
                   UINT2 k;
                   REAL8 f0, F0, F0zeta, alpha, delta, cosAlpha, cosDelta, sinAlpha, sinDelta;
@@ -797,12 +789,12 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status,
 } /* END LALappsFindFreqFromMasterEquation */
 
 /* Get StackSlide candidates using a fixed threshold */
-void GetStackSlideCandidates_threshold(LALStatus *status,
-                                       SemiCohCandidateList *out,            /* output list of candidates */
-                                       REAL8FrequencySeries *stackslideSum,  /* input stackslide sum of F stat values */
-                                       PulsarDopplerParams *outputPoint,     /* parameter space point for which to output candidate */
-                                       PulsarDopplerParams *outputPointUnc,  /* uncertainties in parameter space point for which to output candidate */
-                                       REAL8 threshold)                      /* threshold on significance */
+void GetStackSlideCandidates_threshold(LALStatus *status,			/**< pointer to LALStatus structure */
+                                       SemiCohCandidateList *out,            /**< output list of candidates */
+                                       REAL8FrequencySeries *stackslideSum,  /**< input stackslide sum of F stat values */
+                                       PulsarDopplerParams *outputPoint,     /**< parameter space point for which to output candidate */
+                                       PulsarDopplerParams *outputPointUnc,  /**< uncertainties in parameter space point for which to output candidate */
+                                       REAL8 threshold)                      /**< threshold on significance */
 {
   REAL8 deltaF, f0, freq;
   INT4 j, jminus1, jplus1, nSearchBins, nSearchBinsm1, numCandidates;

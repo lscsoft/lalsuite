@@ -393,7 +393,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
 /** Load Ephemeris from ephemeris data-files  */
 /***********************************************************************************/
 /***********************************************************************************/
-void InitEphemeris (LALStatus * status,   
+void InitEphemeris (LALStatus * status,   	/**< pointer to LALStatus structure */
 		    EphemerisData *edat,	/**< [out] the ephemeris-data */
 		    const CHAR *ephemDir,	/**< directory containing ephems */
 		    const CHAR *ephemYear	/**< which years do we need? */
@@ -912,7 +912,7 @@ void EstimateSideBandNoise (LALStatus * status,
 /* Compute the signal waveform at requested frequencies */
 /***********************************************************************************/
 /***********************************************************************************/
-void GenerateSideBandTemplate (LALStatus *status,   
+void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus structure */
 			       BinarySourceParams *BSParams,	/**< Structure containing Binary source parameters */
 			       SideBandTemplateParams *TParams,	/**< structure containing template parameters */
 			       SideBandTemplate **Template	        /**< Output frequency domain template */
@@ -1264,7 +1264,7 @@ REAL4 bessj1(REAL4 x)
 /***********************************************************************************/
 /***********************************************************************************/
 void
-ComputeABCcoefficients (LALStatus *status,   
+ComputeABCcoefficients (LALStatus *status,   			/**< pointer to LALStatus structure */
 			ABCcoParams *abcparams,     	/**< structure containing the GPS observation start time and the sky position */
 			LALDetector *detector,	        /**< structure containing the detector location and orientation parameters */
 			ABCcoefficients **abcco	        /**< ABC expansion coefficients */

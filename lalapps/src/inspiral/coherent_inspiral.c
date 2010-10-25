@@ -488,32 +488,37 @@ int main( int argc, char *argv[] )
                 chisq_dof[l] = thisCoinc->snglInspiral[k]->chisq_dof;
                 sigmasq[l] = thisCoinc->snglInspiral[k]->sigmasq;
                 snrsqArray[l] = pow( (REAL8) thisCoinc->snglInspiral[k]->snr,2);
-                /* Parse eventID to get the slide number */
-                triggerNumber = eventID % 100000;
-                slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
-                /* Strictly, the following must be divided by 100,000 
-                   to get slideSign = 5000 for negative slides */
-                slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
 
-                if( vrbflg )
-                  fprintf( stdout, "eventID = %" LAL_UINT8_FORMAT ", slideNumber = %" \
+                if ( !followup ) {
+                  /* Parse eventID to get the slide number */
+                  triggerNumber = eventID % 100000;
+                  slideNumber = ((eventID % 100000000) - triggerNumber)/100000;
+                  /* Strictly, the following must be divided by 100,000 
+                     to get slideSign = 5000 for negative slides */
+                  slideSign = (eventID % 1000000000) - slideNumber*100000 - triggerNumber;
+
+                  if( vrbflg )
+                    fprintf( stdout, "eventID = %" LAL_UINT8_FORMAT ", slideNumber = %" \
                       LAL_UINT8_FORMAT ", slideSign = %" LAL_UINT8_FORMAT ", triggerNumber = %" \
                       LAL_UINT8_FORMAT "\n", eventID, slideNumber, slideSign, triggerNumber);
+
+                  /* slideSign=0 is the same as a positive time slide */
+                  ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
+                  if(slideSign != 0)
+                  {
+                    slideNS[l] = -1000000000*slideStep[ifoNumber]*slideNumber;
+                  }
+                  else
+                  {
+                    slideNS[l] = 1000000000*slideStep[ifoNumber]*slideNumber;
+                  }
+                }
+
                 /* Store CData frame name now for reading its frame-file 
                    later, within thisCoinc-ident loop
                 */
                 snprintf( nameArrayCData[k], LALNameLength, "%s:CBC-CData_%" LAL_UINT8_FORMAT, caseIDChars[k], eventID );
 
-                /* slideSign=0 is the same as a positive time slide */
-                ifoNumber = XLALIFONumber(thisCoinc->snglInspiral[k]->ifo);
-                if(slideSign != 0)
-                  {
-                    slideNS[l] = -1000000000*slideStep[ifoNumber]*slideNumber;
-                  }
-                else
-                  {
-                    slideNS[l] = 1000000000*slideStep[ifoNumber]*slideNumber;
-                  }
                 l++;
               }
           }/* Closes loop for k; finished noting the participating ifos 

@@ -193,4 +193,4 @@ WHERE
 -- shrink the file
 --
 
--- VACUUM;
+VACUUM;

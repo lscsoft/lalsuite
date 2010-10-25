@@ -326,7 +326,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
  *
  */
 void
-LALFlatPulsarMetric ( LALStatus *status,
+LALFlatPulsarMetric ( LALStatus *status,	/**< pointer to LALStatus structure */
 		      REAL8Vector **metric,	/**< [out] constant pulsar-metric */
 		      LIGOTimeGPS startTime,	/**< start time of observation */
 		      REAL8 duration,		/**< duration of observation in seconds */

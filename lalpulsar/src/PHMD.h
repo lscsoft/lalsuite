@@ -37,15 +37,15 @@ partial Hough maps constructed using just one periodogram, or equivalently, as
 the sum of partial Hough map derivatives phmd and then integrating the
 result.
 
-A phmd can be represented by a set of borders, here called \it
-left and right. They indicate the beginning and the end of the annuli.
-The position of the so-called left borders should be marked with $+1$,
+A phmd can be represented by a set of borders, here called <i>left</i> and <i>right</i>.
+They indicate the beginning and the end of the annuli.
+The position of the so-called left borders should be marked with \f$+1\f$,
 and
-the position of the right borders should be marked with $-1$ in the {\sc phmd}.
-To obtain a partial Hough map, one needs to integrate each row of the {\sc phmd}
+the position of the right borders should be marked with \f$-1\f$ in the \c phmd.
+To obtain a partial Hough map, one needs to integrate each row of the \c phmd
 from left to right.
 
-The representation of a {\sc phmd} is simplified by considering
+The representation of a \c phmd is simplified by considering
 pointers to the borders in a pre-calculated look-up-table, plus some
 extra information about
 their character and edge effects when clipping on a finite patch.

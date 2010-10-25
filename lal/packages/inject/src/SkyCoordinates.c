@@ -278,7 +278,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 /** LAL interface to XLALNormalizeSkyPosition()
  */
 void
-LALNormalizeSkyPosition (LALStatus *stat,
+LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure */
 			 SkyPosition *posOut, 		/**< [out] normalized sky-position */
 			 const SkyPosition *posIn)	/**< [in] general sky-position */
 {

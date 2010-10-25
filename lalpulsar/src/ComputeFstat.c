@@ -118,7 +118,7 @@ int finite(double x);
     to be calculated are read from fstatVector.  The other parameters are not checked and
     they must be correctly set outside this function.
 */
-void ComputeFStatFreqBand ( LALStatus *status,
+void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus structure */
 			    REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			    const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			    const MultiSFTVector *multiSFTs, 		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -195,7 +195,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::psPoint,
+/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
  *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
  *  and detector state-series
  *
@@ -209,7 +209,7 @@ void ComputeFStatFreqBand ( LALStatus *status,
  *
  */
 void
-ComputeFStat ( LALStatus *status,
+ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	       Fcomponents *Fstat,                 		/**< [out] Fstatistic + Fa, Fb */
 	       const PulsarDopplerParams *doppler, 		/**< parameter-space point to compute F for */
 	       const MultiSFTVector *multiSFTs,    		/**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -475,12 +475,12 @@ ComputeFStat ( LALStatus *status,
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 int
-XLALComputeFaFb ( Fcomponents *FaFb,
-		  const SFTVector *sfts,
-		  const PulsarSpins fkdot,
-		  const SSBtimes *tSSB,
-		  const AMCoeffs *amcoe,
-		  const ComputeFParams *params)       /**< addition computational params */
+XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atoms) returned */
+		  const SFTVector *sfts,		/**< [in] input SFTs */
+		  const PulsarSpins fkdot,		/**< [in] frequency and derivatives fkdot = d^kf/dt^k */
+		  const SSBtimes *tSSB,			/**< [in] SSB timing series for particular sky-direction */
+		  const AMCoeffs *amcoe,		/**< [in] antenna-pattern coefficients for this sky-direction */
+		  const ComputeFParams *params )       	/**< addition computational params */
 {
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -767,12 +767,12 @@ XLALComputeFaFb ( Fcomponents *FaFb,
  * calculating the F-statistic.
  */
 int
-XLALComputeFaFbCmplx ( Fcomponents *FaFb,
-		  const SFTVector *sfts,
-		  const PulsarSpins fkdot,
-		  const SSBtimes *tSSB,
-		  const CmplxAMCoeffs *amcoe,
-		  const ComputeFParams *params)       /**< addition computational params */
+XLALComputeFaFbCmplx ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms) returned */
+		  const SFTVector *sfts,               	/**< [in] input SFTs */
+		  const PulsarSpins fkdot,             	/**< [in] frequency and derivatives fkdot = d^kf/dt^k */
+		  const SSBtimes *tSSB,                	/**< [in] SSB timing series for particular sky-direction */
+		  const CmplxAMCoeffs *amcoe,          	/**< [in] antenna-pattern coefficients for this sky-direction */
+		  const ComputeFParams *params)      	/**< addition computational params */
 {
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -1019,17 +1019,18 @@ XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 } /* XLALComputeFaFbCmplx() */
 
 
-/** Modified version of ComputeFaFb() based on Xavie's trick:
+/** Modified version of ComputeFaFb() based on Xavies trick:
  * need sufficiently oversampled SFTs and uses ZERO Dterms.
  * Compute JKS's Fa and Fb, which are ingredients for calculating the F-statistic.
  */
 int
-XLALComputeFaFbXavie ( Fcomponents *FaFb,
-		       const SFTVector *sfts,
-		       const PulsarSpins fkdot,
-		       const SSBtimes *tSSB,
-		       const AMCoeffs *amcoe,
-		       const ComputeFParams *params)       /**< addition computational params */
+XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms) returned */
+		       const SFTVector *sfts,          	/**< [in] input SFTs */
+		       const PulsarSpins fkdot,        	/**< [in] frequency and derivatives fkdot = d^kf/dt^k */
+		       const SSBtimes *tSSB,           	/**< [in] SSB timing series for particular sky-direction */
+		       const AMCoeffs *amcoe,          	/**< [in] antenna-pattern coefficients for this sky-direction */
+		       const ComputeFParams *params    	/**< additional computational params */
+                       )
 {
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -1227,7 +1228,7 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,
  * in the most economical way possible.
  */
 void
-LALGetAMCoeffs(LALStatus *status,
+LALGetAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 	       AMCoeffs *coeffs,				/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
 	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 	       SkyPosition skypos				/**< {alpha,delta} of the source */
@@ -1389,9 +1390,9 @@ LALGetAMCoeffs(LALStatus *status,
  * needed.)
  */
 void
-LALNewGetAMCoeffs(LALStatus *status,
+LALNewGetAMCoeffs(LALStatus *status,			/**< pointer to LALStatus structure */
 	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
-	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
+	       const DetectorStateSeries *DetectorStates,/**< timeseries of detector states */
 	       SkyPosition skypos			/**< {alpha,delta} of the source */
 	       )
 {
@@ -1600,7 +1601,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
  *
  */
 void
-LALGetBinarytimes (LALStatus *status,
+LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
 		   SSBtimes *tBinary,				/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		   const SSBtimes *tSSB,			/**< [in] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		   const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
@@ -1651,7 +1652,7 @@ LALGetBinarytimes (LALStatus *status,
   p = (LAL_TWOPI/Porb)*cosw*asini*sqrt(1.0-e*e);
   q = (LAL_TWOPI/Porb)*sinw*asini;
   r = (LAL_TWOPI/Porb)*sinw*asini*ome;
- 
+
   /* Calculate the required accuracy for the root finding procedure in the main loop */
   acc = LAL_TWOPI*(REAL8)EA_ACC/Porb;   /* EA_ACC is defined above and represents the required timing precision in seconds (roughly) */
 
@@ -1661,9 +1662,9 @@ LALGetBinarytimes (LALStatus *status,
 
       /* define SSB time for the current SFT midpoint */
       tSSB_now = refTimeREAL8 + (tSSB->DeltaT->data[i]);
-      
+
       /* define fractional orbit in SSB frame since periapsis (enforce result 0->1) */
-      /* the result of fmod uses the dividend sign hence the second procedure */ 
+      /* the result of fmod uses the dividend sign hence the second procedure */
       {
 	REAL8 temp = fmod((tSSB_now - GPS2REAL8(binaryparams->tp)),Porb)/(REAL8)Porb;
 	fracorb = temp - (REAL8)floor(temp);
@@ -1686,10 +1687,10 @@ LALGetBinarytimes (LALStatus *status,
 
       /* combine with Tdot (dtSSB_by_dtdet) -> dtbin_by_dtdet */
       tBinary->Tdot->data[i] = tSSB->Tdot->data[i] * ( (1.0 - e*cos(E))/(1.0 + p*cos(E) - q*sin(E)) );
-      
+
     } /* for i < numSteps */
- 
-  
+
+
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
@@ -1718,7 +1719,7 @@ static void EccentricAnomoly(LALStatus *status,
  *
  */
 void
-LALGetMultiBinarytimes (LALStatus *status,
+LALGetMultiBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
 			MultiSSBtimes **multiBinary,			/**< [out] SSB-timings for all input detector-state series */
 			const MultiSSBtimes *multiSSB,			/**< [in] SSB-timings for all input detector-state series */
 			const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
@@ -1797,7 +1798,7 @@ LALGetMultiBinarytimes (LALStatus *status,
  *
  */
 void
-LALGetSSBtimes (LALStatus *status,
+LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 		SSBtimes *tSSB,			/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
@@ -1905,7 +1906,7 @@ LALGetSSBtimes (LALStatus *status,
  * use XLALDestroyMultiSSBtimes() to free this.
  */
 void
-LALGetMultiSSBtimes (LALStatus *status,
+LALGetMultiSSBtimes (LALStatus *status,			/**< pointer to LALStatus structure */
 		     MultiSSBtimes **multiSSB,		/**< [out] SSB-timings for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
@@ -1981,7 +1982,7 @@ LALGetMultiSSBtimes (LALStatus *status,
  * use XLALDestroyMultiAMCoeffs() to free this.
  */
 void
-LALGetMultiAMCoeffs (LALStatus *status,
+LALGetMultiAMCoeffs (LALStatus *status,			/**< pointer to LALStatus structure */
 		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
 		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
 		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
@@ -2334,7 +2335,7 @@ sin_cos_2PI_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
  * extended for error-estimation.
  */
 void
-LALEstimatePulsarAmplitudeParams (LALStatus * status,
+LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatus structure */
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
 				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */

@@ -44,7 +44,7 @@ NRCSID(LALBARYCENTERC, "$Id$");
  * sky (and/or changes detector) at that time.
  */
 void
-LALBarycenterEarth(LALStatus *stat,
+LALBarycenterEarth(LALStatus *stat,		/**< pointer to LALStatus structure */
 		   EarthState *earth, 		/**< [out] the earth's state at time tGPS */
 		   const LIGOTimeGPS *tGPS, 	/**< [in] GPS time tgps */
 		   const EphemerisData *edat) 	/**< [in] ephemeris-files */
@@ -457,7 +457,7 @@ LALBarycenterEarth(LALStatus *stat,
  * while the other two quantities are REAL8's.
  */
 void
-LALBarycenter(LALStatus *stat,
+LALBarycenter(LALStatus *stat,			/**< pointer to LALStatus structure */
 	      EmissionTime *emit, 		/**< [out] emission-time information */
 	      const BarycenterInput *baryinput, /**< [in] info about detector and source-location */
 	      const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */

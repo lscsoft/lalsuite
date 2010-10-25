@@ -4031,12 +4031,12 @@ void sighandler(int sig){
  *  The name of the checkpoint-file is FNAME.ckp
  */
 void
-getCheckpointCounters(LALStatus *stat,
+getCheckpointCounters(LALStatus *stat,		/**< pointer to LALStatus structure */
                       UINT4 *loopcounter,	/**< [out] number of completed loops (refers to main-loop in main()) */
                       UINT4 *checksum,		/**< [out] checksum of file (up the bytecounter bytes) */
                       long *bytecounter,	/**< [out] bytes nominally written to fstats file (for consistency-check) */
                       const CHAR *fstat_fname,	/**< [in] Name of Fstats-file */
-                      const CHAR *ckpfn)
+                      const CHAR *ckpfn)	/**< [in] check-point file name */
 {
   FILE *fp;
   UINT4 lcount;         /* loopcounter */

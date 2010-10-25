@@ -579,6 +579,8 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 
 #define UVAR_MAXHELPLINE  512	/* max length of one help-line */
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
+#define UVAR_MAXFMTLEN    128   /* max length of help-line format-string */
+
 /** Assemble all help-info from uvars into a help-string.
  */
 CHAR *
@@ -588,6 +590,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[UVAR_MAXDEFSTR]; 	/* for display of default-value */
+  CHAR fmtStr[UVAR_MAXFMTLEN];		/* for building a dynamic format-string */
   CHAR optstr[10];			/* display of opt-char */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
   const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING", "LIST"};
@@ -597,7 +600,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   size_t newlen = 0;
   BOOLEAN haveDevOpt = 0;	/* have we got any 'developer'-options */
 
-
+  /* check input consistency */
   if ( !UVAR_vars.next ) {
     XLALPrintError ("%s: Internal error, no UVAR memory allocated. Did you register any user-variables?", fn );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
@@ -613,13 +616,29 @@ XLALUserVarHelpString ( const CHAR *progname )
   strcpy (helpstr, strbuf);
   newlen += strlen (strbuf) + 1;
 
+  /* ZEROTH PASS: find longest long-option name, for proper output formatting */
+  ptr = &UVAR_vars;
+  UINT4 nameFieldLen = 0;
+  while ( (ptr=ptr->next) != NULL)
+    {
+      if ( (lalDebugLevel == 0) && (ptr->state & UVAR_DEVELOPER) )
+	continue;	/* skip developer-options if debugLevel = 0 */
+      if ( ptr->name )
+        {
+          UINT4 len = strlen ( ptr->name );
+          if ( len > nameFieldLen ) nameFieldLen = len;
+        } /* if name */
+    } /* while options */
+
   /* put together the help-string. Allocate memory on-the-fly... */
   ptr = &UVAR_vars;
-
   /* special treatment of debug-option in the head (if present) */
   if ( ptr->help && ptr->optchar )
     {
-      sprintf (strbuf, "  -%c    %-15s %-6s   %s [%d] \n", ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
+      snprintf ( fmtStr, UVAR_MAXFMTLEN, "  -%%c    %%-%ds   %%-6s   %%s [%%d]\n",  nameFieldLen );
+      fmtStr[UVAR_MAXFMTLEN-1]=0;
+
+      sprintf (strbuf, fmtStr, ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
       newlen += strlen (strbuf);
       if ( (helpstr = XLALRealloc (helpstr, newlen)) == NULL ) {
         XLALPrintError ("%s: failed to XLALRealloc (helpstr, %d)\n", fn, newlen );
@@ -628,6 +647,9 @@ XLALUserVarHelpString ( const CHAR *progname )
 
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
     }
+
+  snprintf ( fmtStr, UVAR_MAXFMTLEN, "  %%s --%%-%ds   %%-6s   %%s [%%s]\n", nameFieldLen );
+  fmtStr[UVAR_MAXFMTLEN-1]=0;
 
   /* FIRST PASS: treat all "normal" entries excluding DEVELOPER-options */
   while ( (ptr=ptr->next) != NULL)
@@ -659,7 +681,7 @@ XLALUserVarHelpString ( const CHAR *progname )
       else
 	strcpy (optstr, "   ");
 
-      snprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
+      snprintf (strbuf, UVAR_MAXHELPLINE,  fmtStr,
 		   optstr,
 		   ptr->name ? ptr->name : "-NONE-",
 		   typestr[ptr->type],
@@ -733,7 +755,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	  else
 	    strcpy (optstr, "   ");
 
-	  snprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n",
+	  snprintf (strbuf, UVAR_MAXHELPLINE,  fmtStr,
 		       optstr,
 		       ptr->name ? ptr->name : "-NONE-",
 		       typestr[ptr->type],
@@ -999,11 +1021,10 @@ XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
 /** Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
- * \param[out] **outstr	the string containing the user-input record.
- * \param[in] format	return as config-file or command-line
  */
 CHAR *
-XLALUserVarGetLog ( UserVarLogFormat format )
+XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as config-file or command-line */
+                    )
 {
   const char *fn = __func__;
 
