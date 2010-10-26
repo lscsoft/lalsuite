@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 9
+# serial 10
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -300,4 +300,5 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
       ;;
     esac
   ], [ cuda=false ])
+  LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])

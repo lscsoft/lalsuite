@@ -375,7 +375,6 @@ AC_SUBST([pkgdocdir])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
-AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
 AM_CONDITIONAL([BOINC],[test x$boinc = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
@@ -401,14 +400,13 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 boincenabled="`test x${boinc} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
-                CUDA support is $cudaenabled
+                CUDA support is $CUDA_ENABLE_VAL
                 BOINC support is $boincenabled
 
         Now run 'make' to build LAL
