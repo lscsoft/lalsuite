@@ -279,7 +279,7 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the covariance matrix */
-		if(iter%(Nlive/4)) 	calcCVM(cvm,runState->livePoints,Nlive);
+		if(!(iter%(Nlive/4))) 	calcCVM(cvm,runState->livePoints,Nlive);
 		setVariable(runState->proposalArgs,"LiveCVM",(void *)cvm);
 	}
 	while(iter<Nlive ||  dZ> TOLERANCE);
@@ -342,7 +342,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		runState->proposal(runState,newParams);
 		logPriorNew=runState->prior(runState,newParams);
 		/* If rejected, continue to next iteration */
-		if(log(gsl_rng_uniform(runState->GSLrandom))>logPriorNew-logPriorOld)
+		if(log(gsl_rng_uniform(runState->GSLrandom))<logPriorNew-logPriorOld)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
