@@ -342,7 +342,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 		runState->proposal(runState,newParams);
 		logPriorNew=runState->prior(runState,newParams);
 		/* If rejected, continue to next iteration */
-		if(log(gsl_rng_uniform(runState->GSLrandom))<logPriorNew-logPriorOld)
+		if(log(gsl_rng_uniform(runState->GSLrandom))>logPriorNew-logPriorOld)
 			continue;
 		/* Otherwise, check that logL is OK */
 		logLnew=runState->likelihood(newParams,runState->data,runState->template);
