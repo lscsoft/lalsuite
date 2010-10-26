@@ -336,6 +336,7 @@ if test "${boinc}" = "true" ; then
     AC_LANG_POP([C++])
   fi
 fi
+LALSUITE_ENABLE_MODULE([BOINC],[boinc])
 
 # define what is being enabled
 if test "${cuda}" = "true"; then
@@ -375,7 +376,6 @@ AC_SUBST([pkgdocdir])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
-AM_CONDITIONAL([BOINC],[test x$boinc = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
@@ -400,14 +400,13 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-boincenabled="`test x${boinc} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
                 CUDA support is $CUDA_ENABLE_VAL
-                BOINC support is $boincenabled
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL
