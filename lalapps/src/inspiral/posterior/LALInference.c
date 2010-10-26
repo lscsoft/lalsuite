@@ -383,10 +383,10 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%lld", *(INT8 *) ptr->value);
 				break;
 			case REAL4_t:
-				fprintf(fp, "%e", *(REAL4 *) ptr->value);
+				fprintf(fp, "%9.5e", *(REAL4 *) ptr->value);
 				break;
 			case REAL8_t:
-				fprintf(fp, "%e", *(REAL8 *) ptr->value);
+				fprintf(fp, "%9.5e", *(REAL8 *) ptr->value);
 				break;
 			case COMPLEX8_t:
 				fprintf(fp, "%e + i*%e",
@@ -752,7 +752,6 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
@@ -976,7 +975,6 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
-
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
