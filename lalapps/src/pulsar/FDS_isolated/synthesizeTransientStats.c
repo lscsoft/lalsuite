@@ -140,6 +140,7 @@ typedef struct {
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
 
   BOOLEAN version;	/**< output version-info */
+  INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
 
 /** Encode a pdf(x) as a discretized probability distribution P[i] = prob(x in xBin[i]) with user-specified bins xBin[i].
@@ -599,7 +600,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   /* misc params */
   XLALregBOOLUserStruct ( computeFtotal,	 0, UVAR_OPTIONAL, "Also compute 'total' F-statistic over the full data-span" );
 
-  XLALregINTUserStruct ( numDraws,		'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate");
+  XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
+  XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
 
   XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
   XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL, "Output F-statistic atoms into a file with this basename");
@@ -670,10 +672,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- initialize random-number generator ----- */
   /* read out environment variables GSL_RNG_xxx
-   * GSL_RNG_SEED: use to set random seed: default = 0
+   * GSL_RNG_SEED: use to set random seed: default = 0, override by using --randSeed on cmdline
    * GSL_RNG_TYPE: type of random-number generator to use: default = 'mt19937'
    */
   gsl_rng_env_setup ();
+  /* allow overriding the random-seed per command-line */
+  if ( XLALUserVarWasSet ( &uvar->randSeed ) )
+    gsl_rng_default_seed = uvar->randSeed;
   cfg->rng = gsl_rng_alloc (gsl_rng_default);
 
   LogPrintf ( LOG_DEBUG, "random-number generator type: %s\n", gsl_rng_name (cfg->rng));
