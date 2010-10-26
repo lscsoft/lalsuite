@@ -631,7 +631,6 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	
 	XLALDestroyRandomParams(randParam);
 	/* Check boundary condition */
-	LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
 
 	return;
 }
