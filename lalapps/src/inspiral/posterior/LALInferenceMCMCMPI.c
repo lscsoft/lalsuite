@@ -376,7 +376,7 @@ void initVariables(LALInferenceRunState *state)
 	addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
-	tmpVal=7.0;//log(mcMin+(mcMax-mcMin)/2.0);
+	tmpVal=4.82;//log(mcMin+(mcMax-mcMin)/2.0);
 	//tmpVal=7.86508;
 	addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_LINEAR);
 	//addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_FIXED);
@@ -385,7 +385,7 @@ void initVariables(LALInferenceRunState *state)
 	//logmcMin=log(mcMin); logmcMax=log(mcMax);
 	//addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
 	
-	tmpVal=0.2451;
+	tmpVal=0.244;
 	//tmpVal=0.18957;
 	addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_LINEAR);
 	//addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_FIXED);
@@ -395,41 +395,41 @@ void initVariables(LALInferenceRunState *state)
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
 	
-	tmpVal=3.974985;
+	tmpVal=1.5;
 	//tmpVal=3.89954;
     addVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_FIXED);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpVal=30.00;//Dmin+(Dmax-Dmin)/2.0;
+	tmpVal=5.8287;//Dmin+(Dmax-Dmin)/2.0;
 	//tmpVal=46.92314;
 	addVariable(currentParams,"distance", &tmpVal, REAL8_t, PARAM_LINEAR);
 	//addVariable(currentParams,"distance", &tmpVal, REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   REAL8_t);
 	
-	tmpVal=3.001677;//1.0;
+	tmpVal=4.5500;//1.0;
 	//tmpVal=3.34650;
 	addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_FIXED);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	addMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpVal=-1.2;
+	tmpVal=1.0759;
 	//tmpVal=-0.90547;
 	addVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_FIXED);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	addMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
     
-	tmpVal=5.558779;
+	tmpVal=0.2000;
 	//tmpVal=0.64546;
 	addVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_FIXED);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	addMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpVal=0.2;
+	tmpVal=0.9207;
 	//tmpVal=2.86094;
  	addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_FIXED);

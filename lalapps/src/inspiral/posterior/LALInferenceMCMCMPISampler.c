@@ -372,8 +372,9 @@ REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 	psi  = *(REAL8*) getVariable(params, "polarisation"); 	/* radian      */
 	dist = *(REAL8*) getVariable(params, "distance");		/* Mpc         */
 	
-	if(mc>0.0 && mc<=30.0 && eta>0.03 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
-	   && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_TWOPI && dist>0.0 && dist<=100.0)	
+	if(mc>2.41 && mc<=9.64 && eta>0.03 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
+	   && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI && dist>0.0 && dist<=100.0
+	   && tc>=968654557.90 && tc<=968654558.20)	
 		logdensity = 0.0;
 	else
 		logdensity = -HUGE_VAL;
