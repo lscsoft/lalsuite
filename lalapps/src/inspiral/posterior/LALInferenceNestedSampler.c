@@ -618,7 +618,7 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 		 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
 		 paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
 		/* only increment the varying parameters, and only increment the data pointer if it's been done*/
-		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR){
+		if((paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR) && strcmp(paraHead->name,"rightascension") && strcmp(paraHead->name,"declination") && strcmp(paraHead->name,"time") ){
 			*(REAL8 *)paraHead->value += step->data[i];
 			i++;
 		}

@@ -752,7 +752,6 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
     timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
                                              ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
-
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
@@ -976,7 +975,6 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * timeshift;
-
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
