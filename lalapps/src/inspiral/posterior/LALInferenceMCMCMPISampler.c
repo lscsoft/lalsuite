@@ -58,6 +58,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) getVariable(runState->algorithmParams, "Niter");
 	REAL8 tempMax = *(REAL8*) getVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
+	INT4 randomseed = *(INT4*) getVariable(runState->algorithmParams,"random_seed");
 
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -116,7 +117,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
-		sprintf(outfileName[t],"PTMCMC.output.%2.2d",t);
+		sprintf(outfileName[t],"PTMCMC.output.%d.%2.2d",randomseed,t);
 		if (MPIrank == 0) {
 			chainoutput[t] = fopen(outfileName[t],"w");
 			fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
