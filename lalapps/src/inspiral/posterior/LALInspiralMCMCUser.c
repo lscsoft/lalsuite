@@ -418,7 +418,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	CoherentGW coherent_gw;
 	PPNParamStruc PPNparams;
 	LALDetAMResponse det_resp;
-	REAL4TimeSeries *h_p_t,*h_c_t=NULL;
+	REAL4TimeSeries *h_p_t=NULL,*h_c_t=NULL;
 	COMPLEX8FrequencySeries *H_p_t=NULL, *H_c_t=NULL;
 	size_t NFD = 0;
 	memset(&PPNparams,0,sizeof(PPNparams));
@@ -469,6 +469,11 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	h_c_t = XLALCreateREAL4TimeSeries("hcross",&inputMCMC->epoch,
 										 inputMCMC->fLow,inputMCMC->deltaT,
 										 &lalADCCountUnit,NtimeDomain);
+	if(!(h_p_t && h_c_t)){
+		fprintf(stderr,"Unable to allocate signal buffer\n");
+		exit(1);
+	}
+
 	/* Separate the + and x parts */
 	for(i=0;i< (NtimeDomain<coherent_gw.h->data->length?NtimeDomain:coherent_gw.h->data->length) ;i++){
 		h_p_t->data->data[i]=coherent_gw.h->data->data[2*i];
@@ -483,6 +488,11 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	NFD=inputMCMC->stilde[det_i]->data->length;
 	H_p_t = XLALCreateCOMPLEX8FrequencySeries("Hplus",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
 	H_c_t = XLALCreateCOMPLEX8FrequencySeries("Hcross",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
+
+	if(!(H_p_t && H_c_t)){
+		fprintf(stderr,"Unable to allocate F-domain signal buffer\n");
+		exit(1);
+	}
 
 	if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,
 																	  NtimeDomain,
