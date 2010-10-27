@@ -477,3 +477,14 @@ if test "x${osx_version_check}" = "xtrue"; then
   fi
 fi
 ])
+
+AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
+[AC_ARG_WITH(
+  [nvcc_cflags],
+  AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+  [ if test -n "${with_nvcc_cflags}"
+    then
+      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}";
+    fi
+  ],)
+])
