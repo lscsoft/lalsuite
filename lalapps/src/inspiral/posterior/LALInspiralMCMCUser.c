@@ -604,6 +604,7 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		if(coherent_gw.a) {XLALDestroyREAL4VectorSequence(coherent_gw.a->data); LALFree(coherent_gw.a);}
 		XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
 		XLALDestroyCOMPLEX8FrequencySeries(H_c_t);
+		memset(&coherent_gw,0,sizeof(coherent_gw));
 	}
 noWaveform:
 	/* return logL */
