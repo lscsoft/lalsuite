@@ -596,16 +596,16 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 		
 		logL-=chisq;
 		
-		/* Destroy the response series */
-		if(coherent_gw.f) XLALDestroyREAL4TimeSeries(coherent_gw.f);
-		if(coherent_gw.phi) XLALDestroyREAL8TimeSeries(coherent_gw.phi);
-		if(coherent_gw.shift) XLALDestroyREAL4TimeSeries(coherent_gw.shift);
-		if(coherent_gw.h) {XLALDestroyREAL4VectorSequence(coherent_gw.h->data); LALFree(coherent_gw.h);}
-		if(coherent_gw.a) {XLALDestroyREAL4VectorSequence(coherent_gw.a->data); LALFree(coherent_gw.a);}
-		XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
-		XLALDestroyCOMPLEX8FrequencySeries(H_c_t);
-		memset(&coherent_gw,0,sizeof(coherent_gw));
 	}
+	/* Destroy the response series */
+	if(coherent_gw.f) XLALDestroyREAL4TimeSeries(coherent_gw.f);
+	if(coherent_gw.phi) XLALDestroyREAL8TimeSeries(coherent_gw.phi);
+	if(coherent_gw.shift) XLALDestroyREAL4TimeSeries(coherent_gw.shift);
+	if(coherent_gw.h) {XLALDestroyREAL4VectorSequence(coherent_gw.h->data); LALFree(coherent_gw.h);}
+	if(coherent_gw.a) {XLALDestroyREAL4VectorSequence(coherent_gw.a->data); LALFree(coherent_gw.a);}
+	XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
+	XLALDestroyCOMPLEX8FrequencySeries(H_c_t);
+	
 noWaveform:
 	/* return logL */
 	parameter->logLikelihood=logL;
