@@ -35,5 +35,5 @@ DISTCLEANFILES =
 if CUDA
 SUFFIXES = .cu .cpp
 .cu.cpp:
-	nvcc --cuda $(INCLUDES) $(CPPFLAGS) --output-file $@ $<
+	nvcc --cuda $(INCLUDES) $(CPPFLAGS) $(NVCC_CFLAGS) --output-file $@ $<
 endif
