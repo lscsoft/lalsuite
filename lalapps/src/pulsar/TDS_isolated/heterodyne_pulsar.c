@@ -298,7 +298,7 @@ heterodyne.\n");  }
       INT4 duration;
       REAL8TimeSeries *datareal=NULL;
       CHAR *smalllist=NULL; /* list of frame files for a science segment */ 
-      LIGOTimeGPS epochdummy; 
+      LIGOTimeGPS epochdummy;       
 
       epochdummy.gpsSeconds = 0;
       epochdummy.gpsNanoSeconds = 0;
@@ -377,7 +377,8 @@ heterodyne.\n");  }
 
       XLALDestroyREAL8TimeSeries( datareal );
 
-      XLALFree( smalllist );
+      XLALFree( smalllist );    
+
       count++;
     }
     else if( inputParams.heterodyneflag == 1 || 
@@ -1673,9 +1674,9 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
   INT4 check=0;
   CHAR *smalllist=NULL;
 
-  if( (smalllist = XLALMalloc(MAXLISTLENGTH*sizeof(CHAR))) == NULL )
+  if( (smalllist = (CHAR*)XLALCalloc(MAXLISTLENGTH, sizeof(CHAR))) == NULL )
     {  XLALPrintError("Error allocating memory for small frame list.\n");  }
-  
+
   durlock = *stops - *starts;
   tempstart = *starts;
   tempstop = *stops;
@@ -1685,19 +1686,25 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
     tempstop = tempstart + MAXDATALENGTH;
 
   for( i=0;i<numFrames;i++ ){
+    CHAR tempstr[512];
+
     if(tempstart >= cache.starttime[i] && tempstart <
       cache.starttime[i]+cache.duration[i] &&
       cache.starttime[i] < tempstop){
-      if( check == 0 ){
-        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %d %d",
-          cache.framelist[i], cache.starttime[i], cache.duration[i]);
-        check++;
-      }
-      else{
-        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %s %d %d ",
-          smalllist, cache.framelist[i], cache.starttime[i], cache.duration[i]);
-      }
+      CHAR tempstr[512];      
+      INT4 errcheck=0;
+
+      errcheck = sprintf(tempstr, "%s %d %d ", cache.framelist[i], cache.starttime[i], 
+        cache.duration[i]);
+      if ( errcheck < 0 || errcheck > 512 ){
+        fprintf(stderr, "Error... something wrong creating file list!\n");
+        exit(1);
+      }    
+
+      XLALStringAppend(smalllist, tempstr);
+      
       tempstart += cache.duration[i];
+      check++;
     }
     /* break out the loop when we have all the files for the segment */
     else if( cache.starttime[i] > tempstop )
