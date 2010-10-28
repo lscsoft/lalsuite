@@ -364,16 +364,16 @@ void initVariables(LALInferenceRunState *state)
 	memset(currentParams,0,sizeof(LALVariables));
 	
 	char help[]="\
-	[--injXML injections.xml]\tInjection XML file to use\
-	[--Mmin mchirp]\tMinimum chirp mass\
-	[--Mmax mchirp]\tMaximum chirp mass\
-	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\
-	[--trigtime time]\tTrigger time to use\
-	[--Dmin dist]\tMinimum distance in Mpc (1)\
-	[--Dmax dist]\tMaximum distance in Mpc (100)\
-	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
-	[--mincomp min]\tMinimum component mass (1.0)\
-	[--maxcomp max]\tMaximum component mass (30.0)";
+	[--injXML injections.xml]\tInjection XML file to use\n\
+	[--Mmin mchirp]\tMinimum chirp mass\n\
+	[--Mmax mchirp]\tMaximum chirp mass\n\
+	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\n\
+	[--trigtime time]\tTrigger time to use\n\
+	[--Dmin dist]\tMinimum distance in Mpc (1)\n\
+	[--Dmax dist]\tMaximum distance in Mpc (100)\n\
+	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
+	[--mincomp min]\tMinimum component mass (1.0)\n\
+	[--maxcomp max]\tMaximum component mass (30.0)\n";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
