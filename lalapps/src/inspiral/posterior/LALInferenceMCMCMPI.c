@@ -34,7 +34,7 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-//#include "LALInferenceMCMCMPISampler.h"
+#include "LALInferenceMCMCMPISampler.h"
 #include "LALInferencePrior.h"
 
 #include <mpi.h>
@@ -146,7 +146,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
 	char help[]="\
-	--Niter N\tNumber of iteration\n\
+	[--Niter] N\tNumber of iterations(2*10^6)\n\
+	[--Nskip] n\tNumber of iterations between disk save(100)\n\
 	[--tempMax T]\tHighest temperature for parallel tempering(40.0)\n\
 	[--randomseed seed]\tRandom seed of sampling distribution\n";
 	
@@ -175,6 +176,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* Set up the appropriate functions for the MCMC algorithm */
 	runState->algorithm=PTMCMCAlgorithm;
 	runState->evolve=PTMCMCOneStep;
+	//runState->evolve=PTMCMCAdaptationOneStep;
 	runState->proposal=PTMCMCLALProposal;
 	//runState->proposal=PTMCMCLALAdaptationProposal;
 	//runState->proposal=PTMCMCGaussianProposal;
@@ -201,11 +203,25 @@ void initializeMCMC(LALInferenceRunState *runState)
 	if(ppt)
 		tmpi=atoi(ppt->value);
 	else {
-		fprintf(stderr,"Error, must specify iteration number\n");
-		MPI_Finalize();
-		exit(1);
+		//fprintf(stderr,"Error, must specify iteration number\n");
+		//MPI_Finalize();
+		//exit(1);
+		tmpi=2000000;
 	}
 	addVariable(runState->algorithmParams,"Niter",&tmpi, INT4_t,PARAM_FIXED);
+	
+	printf("set iteration number between disk save.\n");
+	/* Number of live points */
+	ppt=getProcParamVal(commandLine,"--Nskip");
+	if(ppt)
+		tmpi=atoi(ppt->value);
+	else {
+		//fprintf(stderr,"Error, must specify iteration number\n");
+		//MPI_Finalize();
+		//exit(1);
+		tmpi=100;
+	}
+	addVariable(runState->algorithmParams,"Nskip",&tmpi, INT4_t,PARAM_FIXED);
 	
 	printf("set highest temperature.\n");
 	/* Tolerance of the Nested sampling integrator */

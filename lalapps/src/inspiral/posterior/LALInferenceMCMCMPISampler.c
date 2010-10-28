@@ -31,11 +31,12 @@
 #include <mpi.h>
 #include "LALInference.h"
 #include "mpi.h"
+#include "LALInferenceMCMCMPISampler.h"
 
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,j,t,k,lowerRank,upperRank;
+	int i,j,t,k,p,lowerRank,upperRank;
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -43,7 +44,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	int MPIrank, MPIsize;
 	LALStatus status;
 	memset(&status,0,sizeof(status));
-	//REAL8 dummyR8 = 1.0;
+	REAL8 dummyR8 = 0.0;
 	REAL8 temperature = 1.0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
@@ -52,11 +53,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	int dummyTemp;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
+	REAL8 *sigmaVec = NULL;
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
 	//LALVariables dummyLALVariable;
 	
 	INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
 	INT4 Niter = *(INT4*) getVariable(runState->algorithmParams, "Niter");
+	INT4 Nskip = *(INT4*) getVariable(runState->algorithmParams, "Nskip");
 	REAL8 tempMax = *(REAL8*) getVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
 	INT4 randomseed = *(INT4*) getVariable(runState->algorithmParams,"random_seed");
 
@@ -68,24 +71,37 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
-	
-//	REAL8 **sigma = (REAL8 **)calloc(nChain,sizeof(REAL8 *));//matrix of sigmas per parameter and temperature for adaptation
-	
-//	for (t=0; t<nChain; ++t) {
-//		sigma[t] = (REAL8 *)calloc(nPar,sizeof(REAL8));
-//		for (p=0; p<nPar; ++p) {
-//			sigma[t][p]=t*p;
-//		}
-//	}							 
-	//REAL8 sigma = 0.1;
-    gsl_matrix **sigma=calloc(1,sizeof(gsl_matrix *));
-	//gsl_matrix * sigma = gsl_matrix_calloc(nChain,nPar);
-	if(NULL==(*sigma=gsl_matrix_alloc(nChain,nPar))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}
-	for (i = 0; i < nChain; i++){
-		for (j = 0; j < nPar; j++){
-			gsl_matrix_set (*sigma, i, j, i*j);
+	if(MPIrank == 0){	
+//		REAL8Vector **sigmaVec = (REAL8Vector *)calloc(nChain,sizeof(REAL8Vector));//matrix of sigmas per parameter and temperature for adaptation
+		sigmaVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));//matrix of sigmas per parameter and temperature for adaptatio
+		
+		for (p=0;p<(nChain*nPar);++p){
+			sigmaVec[p]=1.0;
 		}
+//		for (t=0; t<nChain; ++t) {
+//			(sigmaVec[t]) = XLALCreateREAL8Vector(nPar);
+//			for (p=0; p<nPar; ++p) {
+//				(sigmaVec[t])->data[p]=1.0;
+//			}
+//		}				
 	}
+	//REAL8 *sigma = (REAL8*)calloc(nPar,sizeof(REAL8));
+	REAL8 gamma = 1.0;
+	REAL8Vector *sigma = XLALCreateREAL8Vector(nPar);
+		for (p=0; p<nPar; ++p) {
+			//sigma->data[p]=1.0;
+			sigma->data[p]=0.1;
+		}
+	
+	//REAL8 sigma = 0.1;
+  //  gsl_matrix **sigma=calloc(1,sizeof(gsl_matrix *));
+	//gsl_matrix * sigma = gsl_matrix_calloc(nChain,nPar);
+//	if(NULL==(*sigma=gsl_matrix_alloc(nChain,nPar))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}
+//	for (i = 0; i < nChain; i++){
+//		for (j = 0; j < nPar; j++){
+//			gsl_matrix_set (*sigma, i, j, i*j);
+//		}
+//	}
 	
 	
 	if (nChain==1) tempLadder[0]=1.0;
@@ -161,7 +177,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	*/
 	
 	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
-	addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
+	//addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
+	addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8Vector_t, PARAM_LINEAR);
+	addVariable(runState->proposalArgs, "gamma", &gamma, REAL8_t, PARAM_LINEAR);
 	addVariable(runState->algorithmParams, "nChain", &nChain,  INT4_t, PARAM_FIXED);
 	addVariable(runState->algorithmParams, "nPar", &nPar,  INT4_t, PARAM_FIXED);
 	addVariable(runState->proposalArgs, "tempIndex", &tempIndex,  INT4_t, PARAM_LINEAR);
@@ -181,11 +199,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	// iterate:
-	for (i=0; i<Niter; i++) {
+	for (i=0; i<=Niter; i++) {
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
 		setVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
+		gamma=10.0*exp(-(1.0/6.0)*log((double)i+1.0));
+		setVariable(runState->proposalArgs, "gamma", &(gamma));
+		//setVariable(runState->proposalArgs, "sigma", sigmaVec[tempIndex]);
 		//dummyR8 = runState->currentLikelihood;
 		//	if (runState->currentLikelihood != dummyR8) {
 		//		printf(" accepted! new parameter values:\n");
@@ -193,26 +214,27 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	}
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
-		//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
-		//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-		fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,runState->currentLikelihood - nullLikelihood,1.0);
-		/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"distance"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"rightascension"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"declination"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"inclination"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"phase"));
-		fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));*/
-		//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
-		
-		fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
-		fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
-		fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
-		fprintf(chainoutput[tempIndex],"\n");
-		fflush(chainoutput[tempIndex]);
-		//fclose(chainoutput[tempIndex]);
+		if ((i % Nskip) == 0){
+			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
+			//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
+			fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,runState->currentLikelihood - nullLikelihood,1.0);
+			/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"distance"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"rightascension"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"declination"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"inclination"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"phase"));
+			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));*/
+			//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
+			fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
+			fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
+			fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
+			fprintf(chainoutput[tempIndex],"\n");
+			fflush(chainoutput[tempIndex]);
+			//fclose(chainoutput[tempIndex]);
+			}
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 
 		//if (tempIndex == 0) {
@@ -233,6 +255,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	fprintf(stdout,"\n");
 		//}
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Gather(sigma->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);	
 			
 		//printVariables(&(TcurrentParams[0]));
@@ -261,11 +284,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						TcurrentLikelihood[tempi] = dummyR8;
 						count++;
 						*/
+						for (p=0; p<(nPar); ++p){
+							dummyR8=sigmaVec[p+nPar*upperRank];
+							sigmaVec[p+nPar*upperRank]=sigmaVec[p+nPar*lowerRank];
+							sigmaVec[p+nPar*lowerRank]=dummyR8;
+						}
 					}
 				} //upperRank
 			} //lowerRank
+			for (p=0; p<(nPar*nChain); ++p){
+				if(p % nPar==0){printf("\n");}
+				printf("%f\t",sigmaVec[p]);
+			}
+			printf("\n");
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
 		//printf("%d\n",count);
 		count = 0;
@@ -346,6 +380,74 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	destroyVariables(&proposedParams);	
 }
 
+//Test LALEvolveOneStepFunction
+void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
+// Metropolis-Hastings sampler.
+{
+	INT4 p=0;
+	REAL8 logPriorCurrent, logPriorProposed;
+	REAL8 logLikelihoodCurrent, logLikelihoodProposed;
+	LALVariables proposedParams;
+	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+	REAL8 logAcceptanceProbability;
+	REAL8 temperature;
+	REAL8 *sigma=NULL;
+	sigma=(REAL8 *)(*(REAL8Vector **)getVariable(runState->proposalArgs,"sigma"))->data;
+	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
+	REAL8 gamma = *(REAL8*) getVariable(runState->proposalArgs, "gamma");
+
+	// current values:
+	logPriorCurrent      = runState->prior(runState, runState->currentParams);
+	logLikelihoodCurrent = runState->currentLikelihood;
+	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
+	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
+	
+	// generate proposal:
+	proposedParams.head = NULL;
+	proposedParams.dimension = 0;
+	runState->proposal(runState, &proposedParams);
+	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
+		logProposalRatio = *(REAL8*) getVariable(runState->proposalArgs, "logProposalRatio");
+	
+	// compute prior & likelihood:
+	logPriorProposed = runState->prior(runState, &proposedParams);
+	if (logPriorProposed > -HUGE_VAL)
+		logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
+	else
+		logLikelihoodProposed = -HUGE_VAL;
+	
+	// determine acceptance probability:
+	logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent) 
+	+ (logPriorProposed - logPriorCurrent)
+	+ logProposalRatio;
+	
+	//fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
+	double temp = log(gsl_rng_uniform(runState->GSLrandom));
+	// accept/reject:
+	if ((logAcceptanceProbability > 0) 
+		//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+		|| (temp < logAcceptanceProbability)) {   //accept
+		//if(logLikelihoodProposed>nullLikelihood){
+		copyVariables(&proposedParams, runState->currentParams);
+		runState->currentLikelihood = logLikelihoodProposed;
+		for (p=0; p<(nPar); ++p){
+			sigma[p]=sigma[p]+gamma*(1.0-0.234);
+		}
+		//}
+	}else{
+		for (p=0; p<(nPar); ++p){
+			sigma[p]=sigma[p]-gamma*(0.234);
+			if(sigma[p]<0.0){sigma[p]=0.1;}
+		}
+	}
+	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
+	//setVariable(runState->proposalArgs, "sigma", &sigma);
+	
+	destroyVariables(&proposedParams);	
+}
+
+
+
 //Test LALPriorFunction
 REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 /****************************************/
@@ -405,9 +507,10 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
 	REAL8 sigma = 0.1;
-
-	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
-	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
+	REAL8 big_sigma = 1.0;
+	
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
 	
 	
 	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
@@ -422,17 +525,17 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	
 	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 	// (above proposal is not symmetric!)
-	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;	/*mc changed by 0.0001 */
+	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;	/*mc changed by 0.0001 */
 	//mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.01);          /* mc changed by ~0.1% */
 	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*sigma*0.001; /*eta changed by 0.01*/
+	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*eta changed by 0.01*/
 	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*sigma*0.5;
-	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*sigma*0.001; /*time changed by 5 ms*/
-	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*sigma*0.1;
-	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;
-	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*sigma*0.01;
-	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*sigma*0.1;
+	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.5;
+	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*time changed by 5 ms*/
+	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
 	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
 	logProposalRatio *= dist_proposed / dist;
@@ -482,8 +585,16 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
 	INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
 	INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
+	REAL8 big_sigma = 1.0;
+	
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
 
-	gsl_matrix *sigma = *(gsl_matrix **)getVariable(runState->proposalArgs, "sigma");
+
+	REAL8 *sigma=NULL;
+	sigma=(REAL8 *)(*(REAL8Vector **)getVariable(runState->proposalArgs,"sigma"))->data;
+	
+	//gsl_matrix *sigma = *(gsl_matrix **)getVariable(runState->proposalArgs, "sigma");
 	
 	//printf ("m(%d,%d) = %g\n", 1, 1, gsl_matrix_get (sigma, 1, 1));
 	
@@ -513,18 +624,18 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 	// (above proposal is not symmetric!)
 	//mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
-	mc_proposed   = mc * exp(gsl_ran_gaussian(GSLrandom,sigmat)*0.001);          /* mc changed by ~0.1% */
+	mc_proposed   = mc * exp(gsl_ran_gaussian(GSLrandom,sigma[0])*big_sigma*0.001);          /* mc changed by ~0.1% */
 	logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-	eta_proposed  = eta  + gsl_ran_gaussian(GSLrandom,sigmat)*0.01; /*eta changed by 0.01*/
+	eta_proposed  = eta  + gsl_ran_gaussian(GSLrandom,sigma[1])*big_sigma*0.01; /*eta changed by 0.01*/
 	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-	iota_proposed = iota + gsl_ran_gaussian(GSLrandom,sigmat)*0.1;
-	tc_proposed   = tc   + gsl_ran_gaussian(GSLrandom,sigmat)*0.005; /*time changed by 5 ms*/
-	phi_proposed  = phi  + gsl_ran_gaussian(GSLrandom,sigmat)*0.5;
-	ra_proposed   = ra   + gsl_ran_gaussian(GSLrandom,sigmat)*0.05;
-	dec_proposed  = dec  + gsl_ran_gaussian(GSLrandom,sigmat)*0.05;
-	psi_proposed  = psi  + gsl_ran_gaussian(GSLrandom,sigmat)*0.1;
+	iota_proposed = iota + gsl_ran_gaussian(GSLrandom,sigma[2])*big_sigma*0.1;
+	tc_proposed   = tc   + gsl_ran_gaussian(GSLrandom,sigma[3])*big_sigma*0.005; /*time changed by 5 ms*/
+	phi_proposed  = phi  + gsl_ran_gaussian(GSLrandom,sigma[4])*big_sigma*0.5;
+	ra_proposed   = ra   + gsl_ran_gaussian(GSLrandom,sigma[5])*big_sigma*0.05;
+	dec_proposed  = dec  + gsl_ran_gaussian(GSLrandom,sigma[6])*big_sigma*0.05;
+	psi_proposed  = psi  + gsl_ran_gaussian(GSLrandom,sigma[7])*big_sigma*0.1;
 	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
-	dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigmat)*0.1); // ~10% change
+	dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigma[8])*big_sigma*0.1); // ~10% change
 	logProposalRatio *= dist_proposed / dist;
 	
 	copyVariables(currentParams, proposedParams);

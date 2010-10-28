@@ -263,17 +263,6 @@ void templateSinc(LALIFOData *IFOdata);
 void templateLALSTPN(LALIFOData *IFOdata);
 void templateASinOmegaT(LALIFOData *IFOdata);
 
-
-void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
-void PTMCMCOneStep(LALInferenceRunState *runState);
-REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
-void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
-
-REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
-REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params);
-void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
-void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
-
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
 
