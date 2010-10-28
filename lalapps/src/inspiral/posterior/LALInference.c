@@ -383,10 +383,10 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%lld", *(INT8 *) ptr->value);
 				break;
 			case REAL4_t:
-				fprintf(fp, "%9.5e", *(REAL4 *) ptr->value);
+				fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
 				break;
 			case REAL8_t:
-				fprintf(fp, "%9.5e", *(REAL8 *) ptr->value);
+				fprintf(fp, "%9.5lf", *(REAL8 *) ptr->value);
 				break;
 			case COMPLEX8_t:
 				fprintf(fp, "%e + i*%e",
