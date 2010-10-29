@@ -175,10 +175,10 @@ void initializeMCMC(LALInferenceRunState *runState)
 	
 	/* Set up the appropriate functions for the MCMC algorithm */
 	runState->algorithm=PTMCMCAlgorithm;
-	runState->evolve=PTMCMCOneStep;
-	//runState->evolve=PTMCMCAdaptationOneStep;
-	runState->proposal=PTMCMCLALProposal;
-	//runState->proposal=PTMCMCLALAdaptationProposal;
+	//runState->evolve=PTMCMCOneStep;
+	runState->evolve=PTMCMCAdaptationOneStep;
+	//runState->proposal=PTMCMCLALProposal;
+	runState->proposal=PTMCMCLALAdaptationProposal;
 	//runState->proposal=PTMCMCGaussianProposal;
 	
 	/* This is the LAL template generator for inspiral signals */

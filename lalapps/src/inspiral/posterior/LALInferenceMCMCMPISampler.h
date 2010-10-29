@@ -17,3 +17,4 @@ REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemp
 REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params);
 void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
