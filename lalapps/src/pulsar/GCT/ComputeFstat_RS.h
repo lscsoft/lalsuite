@@ -177,7 +177,7 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
 
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,            /**< output interpolated timeseries */
 				    REAL8Vector *xi,              /**< input interpolation points */
-				    gsl_spline *spline
+				    gsl_spline *spline		/**< [in] pre-computed spline data */
 				    );
     
 int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline, 

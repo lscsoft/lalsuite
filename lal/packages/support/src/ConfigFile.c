@@ -963,7 +963,7 @@ cleanConfig (CHARSequence *text)
  *
  */
 void
-LALParseDataFile (LALStatus *status,
+LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 		  LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed data-file lines */
 		  const CHAR *fname)		/**< [in] name of config-file to be read */
 {
@@ -984,7 +984,7 @@ LALParseDataFile (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALDestroyParsedDataFile()
  */
 void
-LALDestroyParsedDataFile (LALStatus *status,
+LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
   const char *fn = __func__;
@@ -1005,7 +1005,7 @@ LALDestroyParsedDataFile (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALReadConfigVariable()
  */
 void
-LALReadConfigVariable (LALStatus *status,
+LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure */
 		       void *varp, 			/**< [out] result gets written here! */
 		       const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
 		       const LALConfigVar *param,	/**< [in]  var-name, fmt-string, strictness */
@@ -1028,7 +1028,7 @@ LALReadConfigVariable (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALReadConfigBOOLVariable()
  */
 void
-LALReadConfigBOOLVariable (LALStatus *status,
+LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structure */
 			   BOOLEAN *varp, 		 /**< [out] variable to store result */
 			   const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
 			   const CHAR *varName,		 /**< [in] variable-name to read */
@@ -1094,7 +1094,7 @@ LALReadConfigREAL8Variable (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALReadConfigSTRINGVariable()
  */
 void
-LALReadConfigSTRINGVariable (LALStatus *status,
+LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus structure */
 			     CHAR **varp, 		/**< [out] string, allocated here! */
 			     const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
 			     const CHAR *varName,	/**< [in] variable-name to be read */
@@ -1117,7 +1117,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALReadConfigSTRINGNVariable()
  */
 void
-LALReadConfigSTRINGNVariable (LALStatus *status,
+LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus structure */
 			      CHARVector *varp, 	/**< [out] must be allocated! */
 			      const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
 			      const CHAR *varName,	/**< [in] variable-name */
@@ -1139,9 +1139,9 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 /** Deprecated LAL interface wrapper to XLALCheckConfigReadComplete()
  */
 void
-LALCheckConfigReadComplete (LALStatus *status,
-			    const LALParsedDataFile *cfgdata, /**< [in] config-file data */
-			    ConfigStrictness strict)  	/**< [in] what to do if unparsed lines */
+LALCheckConfigReadComplete (LALStatus *status,			/**< pointer to LALStatus structure */
+			    const LALParsedDataFile *cfgdata, 	/**< [in] config-file data */
+			    ConfigStrictness strict)  		/**< [in] what to do if unparsed lines */
 {
   const char *fn = __func__;
 

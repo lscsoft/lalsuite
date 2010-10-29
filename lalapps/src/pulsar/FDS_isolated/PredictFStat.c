@@ -328,7 +328,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
 /** Load Ephemeris from ephemeris data-files  */
 void
-InitEphemeris (LALStatus * status,
+InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear	/**< which years do we need? */

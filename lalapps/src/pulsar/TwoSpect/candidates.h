@@ -25,12 +25,8 @@
 
 candidate * new_candidate(void);
 void free_candidate(candidate *cand);
-void loadCandidateData(candidate *out, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization);
-void clusterCandidates(candidate *out[], candidate *in[], ffdataStruct *ffdata, inputParamsStruct *params, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, INT4 numofcandidates, INT4 option);
-
-
-
-
+void loadCandidateData(candidate *output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization);
+void clusterCandidates(candidate *output[], candidate *input[], ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 numofcandidates, INT4 option);
 
 #endif
 
