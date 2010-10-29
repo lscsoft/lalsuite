@@ -449,7 +449,7 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 	}else{
 		for (p=0; p<(nPar); ++p){
 			sigma[p]=sigma[p]-s_gamma*(0.234);
-			if(sigma[p]<0.0){sigma[p]=0.1;}
+			if(sigma[p]<0.0){sigma[p]=0.0;}
 		}
 	}
 	
@@ -487,7 +487,7 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 			//}
 		}else{
 				sigma[p]=sigma[p]-s_gamma*(0.234);
-				if(sigma[p]<0.0){sigma[p]=0.1;}
+				if(sigma[p]<0.0){sigma[p]=0.0;}
 			}
 		}
 		
