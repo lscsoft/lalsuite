@@ -201,6 +201,11 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
+/*
+printf("psd1 psd2 %1.15g %1.15g\n", psd1->data->data[bin1], psd2->data->data[bin2]);
+printf("sft1.re sft1.im %1.15g %1.15g\n", re1*sqrt(psd1->data->data[bin1]), im1*sqrt(psd1->data->data[bin1]));
+printf("sft2.re sft2.im %1.15g %1.15g\n\n", re2*sqrt(psd2->data->data[bin2]), im2*sqrt(psd2->data->data[bin2]));
+*/
   DETATCHSTATUSPTR (status);
 
   /* normal exit */
