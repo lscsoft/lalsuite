@@ -27,9 +27,7 @@
 #include <lal/Sequence.h>
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
-#include <lal/LALRunningMedian.h>
-#include <lal/RngMedBias.h>
-#include <lal/Date.h>
+#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/DopplerScan.h>
 
@@ -1203,19 +1201,16 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization)
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
    REAL4Vector *tfdata = XLALCreateREAL4Vector((UINT4)(numffts*sftlength));
-   REAL8 sqrtnorm = sqrt(*(normalization));
+   REAL4 sqrtnorm = sqrtf(*(normalization));
    for (ii=0; ii<numffts; ii++) {
       
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
       if (sftdescription->header.epoch.gpsSeconds == (INT4)(ii*(input->Tcoh-input->SFToverlap)+input->searchstarttime)) {
-         
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          for (jj=0; jj<sftlength; jj++) {
             COMPLEX8 sftcoeff = sft->data->data[jj];
-            //tfdata->data[ii*sftlength + jj] = *(normalization)*(sftcoeff.re*sftcoeff.re + sftcoeff.im*sftcoeff.im);  //power
-            tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*sftcoeff.re)*(sqrtnorm*sftcoeff.re) + (sqrtnorm*sftcoeff.im)*(sqrtnorm*sftcoeff.im));  //power
+            tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*sftcoeff.re)*(sqrtnorm*sftcoeff.re) + (sqrtnorm*sftcoeff.im)*(sqrtnorm*sftcoeff.im));  //power, normalized
          }
-         
       } else {
          for (jj=0; jj<sftlength; jj++) tfdata->data[ii*sftlength + jj] = 0.0;   //Set values to be zero
          nonexistantsft++;    //increment the nonexistantsft counter
@@ -1271,13 +1266,14 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    else bias = LAL_LN2;
    REAL8 invbias = 1.0/bias;
    
-   REAL4Sequence *inpsd = XLALCreateREAL4Sequence((UINT4)(numfbins+blksize-1));
-   REAL4Sequence *mediansout = XLALCreateREAL4Sequence((UINT4)numfbins);
+   REAL4Vector *inpsd = XLALCreateREAL4Vector((UINT4)(numfbins+blksize-1));
+   REAL4Vector *mediansout = XLALCreateREAL4Vector((UINT4)numfbins);
    for (ii=0; ii<numffts; ii++) {
       //If the SFT values were not zero, then compute the running median
       if (tfdata->data[ii*(numfbins+blksize-1)]!=0.0) {
          //Determine running median value, convert to mean value
-         for (jj=0; jj<(INT4)inpsd->length; jj++) inpsd->data[jj] = tfdata->data[ii*(numfbins+blksize-1) + jj];
+         //for (jj=0; jj<(INT4)inpsd->length; jj++) inpsd->data[jj] = tfdata->data[ii*(numfbins+blksize-1) + jj];
+         memcpy(inpsd->data, &(tfdata->data[ii*(numfbins+blksize-1)]), sizeof(REAL4)*inpsd->length);
          
          //calculate running median
          LALSRunningMedian2(&status, mediansout, inpsd, block);
@@ -1292,8 +1288,8 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    
    fprintf(stderr,"Mean of running means = %g\n",calcMean(output));
    
-   XLALDestroyREAL4Sequence(inpsd);
-   XLALDestroyREAL4Sequence(mediansout);
+   XLALDestroyREAL4Vector(inpsd);
+   XLALDestroyREAL4Vector(mediansout);
 
 }
 
@@ -1644,9 +1640,6 @@ REAL4 calcMean(REAL4Vector *vector)
 {
 
    INT4 ii;
-   /* REAL8 total = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) total += (REAL8)vector->data[ii];
-   REAL4 meanval = (REAL4)(total / vector->length); */
    
    double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
@@ -1665,10 +1658,6 @@ REAL4 calcStddev(REAL4Vector *vector)
 {
 
    INT4 ii;
-   /* REAL4 meanval = calcMean(vector);
-   REAL4 values = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) values += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
-   REAL4 stddev = sqrt( values / (vector->length - 1) ); */
    
    double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
    for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
@@ -1710,16 +1699,6 @@ REAL4 calcRms(REAL4Vector *vector)
 REAL8 calcMeanD(REAL8Vector *vector)
 {
    
-   //INT4 ii;
-   /* REAL8 total = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) total += vector->data[ii];
-   REAL8 meanval = total / vector->length; */
-   
-   //double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
-   //for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = vector->data[ii];
-   //REAL8 meanval = gsl_stats_mean(gslarray, 1, vector->length);
-   
-   //XLALFree((double*)gslarray);
    REAL8 meanval = gsl_stats_mean((double*)vector->data, 1, vector->length);
    
    return meanval;
@@ -1731,18 +1710,7 @@ REAL8 calcMeanD(REAL8Vector *vector)
 // Compute the standard deviation of a vector of REAL8 values
 REAL8 calcStddevD(REAL8Vector *vector)
 {
-   
-   //INT4 ii;
-   /* REAL8 meanval = calcMeanD(vector);
-   REAL8 values = 0;
-   for (ii=0; ii<(INT4)vector->length; ii++) values += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
-   REAL8 stddev = sqrt( values / (vector->length - 1) ); */
-   
-   //double *gslarray = (double*)XLALMalloc(sizeof(double)*vector->length);
-   //for (ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = vector->data[ii];
-   //REAL8 stddev = gsl_stats_sd(gslarray, 1, vector->length);
-   
-   //XLALFree((double*)gslarray);   
+     
    REAL8 stddev = gsl_stats_sd((double*)vector->data, 1, vector->length);
    
    return stddev;

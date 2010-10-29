@@ -1415,27 +1415,28 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	#
 
 	caches = [set(bin.objects) for bin in bins]
-	segs = [bin.extent for bin in bins]
+	segs = [cache_span(bin.objects) for bin in bins]
 
 	#
 	# determine the clipping boundaries to use for each coincidence job
 	# if an extentlimit has been imposed
 	#
 
-	clipsegs = [None] * len(segs)
+	clipsegs = [None] * len(extents)
 	if extentlimit is not None:
-		for i, seg in enumerate(segs):
+		extents = [bin.extent for bin in bins]
+		for i, extent in enumerate(extents):
 			# FIXME:  when we can rely on Python >= 2.5,
-			#lo = segments.NegInfinity if i == 0 or segs[i - 1].disjoint(seg) else seg[0]
+			#lo = segments.NegInfinity if i == 0 or extents[i - 1].disjoint(extent) else extent[0]
 			# etc.
-			if i == 0 or segs[i - 1].disjoint(seg):
+			if i == 0 or extents[i - 1].disjoint(extent):
 				lo = segments.NegInfinity
 			else:
-				lo = seg[0]
-			if i >= len(segs) - 2 or segs[i + 1].disjoint(seg):
+				lo = extent[0]
+			if i >= len(extents) - 2 or extents[i + 1].disjoint(extent):
 				hi = segments.PosInfinity
 			else:
-				hi = seg[1]
+				hi = extent[1]
 			if lo is not segments.NegInfinity or hi is not segments.PosInfinity:
 				clipsegs[i] = segments.segment(lo, hi)
 

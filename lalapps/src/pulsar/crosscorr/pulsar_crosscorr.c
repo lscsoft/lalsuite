@@ -104,8 +104,8 @@ CHAR 	 *uvar_debugOut=NULL;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define SQUARE(x) (x*x)
-#define CUBE(x) (x*x*x)
+#define SQUARE(x) ((x)*(x))
+#define CUBE(x) ((x)*(x)*(x))
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
@@ -989,6 +989,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	        thisPoint.Delta = skyDelta[skyCounter]; 
 
 	        /*normalise rho by stddev */
+//printf("raw rho %1.15g\n", rho->data[counter]);
 	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
 	        fprintf(fpCrossCorr, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10g\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
@@ -1346,7 +1347,7 @@ void GetBeamInfo(LALStatus *status,
     ts->data[0] = sft->sft.epoch;
     /* note that this function returns the velocity at the
        mid-time of the SFTs -- should not make any 
-difference */
+       difference */
 
     LALGetDetectorStates ( status->statusPtr, &detState, ts, det,
 			   edat, tOffs);
@@ -1370,7 +1371,14 @@ difference */
 
     beamtmp->beamfn.a = (AMcoef->a->data[0]);
     beamtmp->beamfn.b = (AMcoef->b->data[0]);
-    
+  
+/*  
+printf("beam A %1.15g\n", beamtmp->beamfn.a);
+printf("beam B %1.15g\n", beamtmp->beamfn.b);
+printf("vel %1.15g %1.15g %1.15g\n", thisVel.data[0], thisVel.data[1], thisVel.data[2]);
+printf("pos %1.15g %1.15g %1.15g\n\n", thisPos.data[0], thisPos.data[1], thisPos.data[2]);
+*/
+
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);
     XLALDestroyDetectorStateSeries(detState);
@@ -1412,7 +1420,6 @@ void CopySFTFromCatalog(LALStatus *status,
   *sft = NULL;
 
   ASSERT ( catalog, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL );
-
   /*check that we are loading an sensible frequency range*/
   if (fMin < catalog->data[sftindex].header.f0 || fMax > (catalog->data[sftindex].header.f0 + catalog->data[sftindex].numBins*catalog->data[sftindex].header.deltaF)) {
     ABORT(status, PULSAR_CROSSCORR_EVAL, PULSAR_CROSSCORR_MSGEVAL);

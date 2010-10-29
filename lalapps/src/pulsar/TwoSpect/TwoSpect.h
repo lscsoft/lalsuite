@@ -20,9 +20,6 @@
 #ifndef __TWOSPECT_H__
 #define __TWOSPECT_H__
 
-
-#include <time.h>
-
 #include <lal/RealFFT.h>
 
 #include <gsl/gsl_rng.h>

@@ -18,7 +18,6 @@
 */
 
 #include <math.h>
-#include <lal/Date.h>
 #include "antenna.h"
 
 

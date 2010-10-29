@@ -25,7 +25,6 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <time.h>
 
 #include <lal/LALConstants.h>
 #include <lal/Sort.h>
