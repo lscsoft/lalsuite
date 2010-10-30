@@ -299,11 +299,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					}
 				} //upperRank
 			} //lowerRank
-			for (p=0; p<(nPar*nChain); ++p){
-				if(p % nPar==0){printf("\n");}
-				printf("%f\t",sigmaVec[p]);
+			
+			for(t=0;t<nChain;++t){
+				k=0;
+				while(tempIndexVec[k]!=t)k++;
+				for (p=0; p<(nPar); ++p){
+					printf("%f\t",sigmaVec[p+nPar*(k)]);
+				}
+				printf("\n");
 			}
 			printf("\n");
+			
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
@@ -676,18 +682,18 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 	// (above proposal is not symmetric!)
 	//mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
-	mc_proposed   = mc * exp(gsl_ran_gaussian(GSLrandom,sigma[0])*big_sigma*0.001);          /* mc changed by ~0.1% */
+	mc_proposed   = mc * exp(gsl_ran_gaussian(GSLrandom,sigma[8])*big_sigma*0.001);          /* mc changed by ~0.1% */
 	logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-	eta_proposed  = eta  + gsl_ran_gaussian(GSLrandom,sigma[1])*big_sigma*0.01; /*eta changed by 0.01*/
+	eta_proposed  = eta  + gsl_ran_gaussian(GSLrandom,sigma[7])*big_sigma*0.01; /*eta changed by 0.01*/
 	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-	iota_proposed = iota + gsl_ran_gaussian(GSLrandom,sigma[2])*big_sigma*0.1;
-	tc_proposed   = tc   + gsl_ran_gaussian(GSLrandom,sigma[3])*big_sigma*0.005; /*time changed by 5 ms*/
+	iota_proposed = iota + gsl_ran_gaussian(GSLrandom,sigma[6])*big_sigma*0.1;
+	tc_proposed   = tc   + gsl_ran_gaussian(GSLrandom,sigma[5])*big_sigma*0.005; /*time changed by 5 ms*/
 	phi_proposed  = phi  + gsl_ran_gaussian(GSLrandom,sigma[4])*big_sigma*0.5;
-	ra_proposed   = ra   + gsl_ran_gaussian(GSLrandom,sigma[5])*big_sigma*0.05;
-	dec_proposed  = dec  + gsl_ran_gaussian(GSLrandom,sigma[6])*big_sigma*0.05;
-	psi_proposed  = psi  + gsl_ran_gaussian(GSLrandom,sigma[7])*big_sigma*0.1;
+	ra_proposed   = ra   + gsl_ran_gaussian(GSLrandom,sigma[3])*big_sigma*0.05;
+	dec_proposed  = dec  + gsl_ran_gaussian(GSLrandom,sigma[2])*big_sigma*0.05;
+	psi_proposed  = psi  + gsl_ran_gaussian(GSLrandom,sigma[1])*big_sigma*0.1;
 	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
-	dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigma[8])*big_sigma*0.1); // ~10% change
+	dist_proposed = dist * exp(gsl_ran_gaussian(GSLrandom,sigma[0])*big_sigma*0.1); // ~10% change
 	logProposalRatio *= dist_proposed / dist;
 	
 	copyVariables(currentParams, proposedParams);
