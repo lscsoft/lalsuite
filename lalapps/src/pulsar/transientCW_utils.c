@@ -45,11 +45,12 @@
 
 /* ---------- internal prototypes ---------- */
 /* empty struct initializers */
-const TransientCandidate_t empty_TransientCandidate;
+const transientCandidate_t empty_transientCandidate;
 const transientWindow_t empty_transientWindow;
 const transientWindowRange_t empty_transientWindowRange;
+const transientFstatMap_t empty_transientFstatMap;
 
-/* ----- module-global lookup-table handling for negative exponentials ----- */
+/* ----- module-local fast lookup-table handling of negative exponentials ----- */
 
 /** Lookup-table for negative exponentials e^(-x)
  * Holds an array 'data' of 'length' for values e^(-x) for x in the range [0, xmax]
@@ -59,7 +60,7 @@ const transientWindowRange_t empty_transientWindowRange;
 static gsl_vector *expLUT = NULL; 	/**< module-global lookup-table for negative exponentials e^(-x) */
 #define EXPLUT_DXINV  ((EXPLUT_LENGTH)/(EXPLUT_XMAX))	// 1/dx with dx = xmax/length
 
-static int XLALCreateExpLUT ( void );	/* only used internally, destructor is in exported API */
+static int XLALCreateExpLUT ( void );	/* only ever used internally, destructor is in exported API */
 
 
 /* ==================== function definitions ==================== */
@@ -331,63 +332,128 @@ XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par )
 } /* PulsarDopplerParams2String() */
 
 
-/** Function to compute marginalized B-statistic over start-time and duration
- * of transient CW signal, using given type and parameters of transient window range.
+/** Compute transient-CW Bayes-factor B_SG = P(x|HypS)/P(x|HypG)  (where HypG = Gaussian noise hypothesis),
+ * marginalized over start-time and timescale of transient CW signal, using given type and parameters
+ * of transient window range.
  *
  * Note: this function is a C-implemention, partially based-on/inspired-by Stefanos Giampanis'
  * original matlab implementation of this search function.
  *
- * Note2: if window->type == none, we compute a single rectangular window covering all the data.
+ * Note2: if window->type == none, uses a single rectangular window covering all the data.
  */
-int
-XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient candidate info */
-                            gsl_matrix **Fstat_m_n,			/**< [out] optional (if !NULL): output of Fstat-map over t0_m x tau_n */
-                            const MultiFstatAtomVector *multiFstatAtoms,/**< [in] multi-IFO F-statistic atoms */
-                            transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range to search */
-                            BOOLEAN useFReg				/**< [in] experimental switch: instead of e^F marginalize (1/D)e^F if TRUE */
+REAL8
+XLALComputeTransientBstat ( transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range */
+                            const transientFstatMap_t *FstatMap		/**< [in] pre-computed transient-Fstat map F_mn over {t0, tau} ranges */
                             )
 {
   const char *fn = __func__;
 
-  /* macro to be used only inside this function!
-   * map indices {m,n} over {t0, tau} space into 1-dimensional
-   * array index, with tau-index n faster varying
-   */
-#define IND_MN(m,n) ( (m) * N_tauRange + (n) )
-
-  /* initialize empty return, in case sth goes wrong */
-  TransientCandidate_t ret = empty_TransientCandidate;
-  (*cand) = ret;
-
-  /* check input consistency */
-  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]) {
-    XLALPrintError ("%s: invalid NULL input.\n", fn );
+  /* ----- check input consistency */
+  if ( !FstatMap || !FstatMap->F_mn ) {
+    XLALPrintError ("%s: invalid NULL input 'FstatMap' or 'FstatMap->F_mn'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   if ( windowRange.type >= TRANSIENT_LAST ) {
     XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  if ( (Fstat_m_n != NULL) && (*Fstat_m_n != NULL ) ) {
-    XLALPrintError ("%s: *Fstat_m_n pointer must be initialized to NULL.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+
+  /* ----- step through F_mn array subtract maxF and sum e^{F_mn - maxF}*/
+  /*
+   * The maximum-likelihood Fmax is globally subtracted from F_mn, and stored separatedly in the struct, because in most
+   * expressions it is numerically more robust to compute e^(F_mn - Fmax), which at worst can underflow, while
+   * e^F_mn can overflow (for F>~700). The constant offset e^Fmax is irrelevant for posteriors (normalization constant), or
+   * can be handled separately, eg by computing log(B) = Fmax + log(sum e^(Fmn-Fmax)) for the Bayes-factor.
+   */
+  UINT4 N_t0Range  = FstatMap->F_mn->size1;
+  UINT4 N_tauRange = FstatMap->F_mn->size2;
+  UINT4 m, n;
+  REAL8 sum_eB = 0;
+  for ( m=0; m < N_t0Range; m ++ )
+    {
+      for ( n=0; n < N_tauRange; n ++ )
+        {
+          REAL8 DeltaF = FstatMap->maxF - gsl_matrix_get ( FstatMap->F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
+
+          //sum_eB += exp ( - DeltaF );
+          sum_eB += XLALFastNegExp ( DeltaF );
+
+        } /* for n < N_tauRange */
+
+    } /* for m < N_t0Range */
+
+  /* combine this to final log(Bstat) result with proper normalization (assuming rhohMax=1) : */
+
+  REAL8 logBhat = FstatMap->maxF + log ( sum_eB );	// unnormalized Bhat
+
+  REAL8 normBh = 70.0 / ( N_t0Range * N_tauRange );	// normalization factor assuming rhohMax=1
+
+  /* final normalized Bayes factor, assuming rhohMax=1 */
+  /* NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to logB*/
+  REAL8 logB_SG = log ( normBh ) +  logBhat;	/* - 4.0 * log ( rhohMax ) */
+
+  // printf ( "\n\nlogBhat = %g, normBh = %g, log(normBh) = %g\nN_t0Range = %d, N_tauRange=%d\n\n", logBhat, normBh, log(normBh), N_t0Range, N_tauRange );
+
+  /* free mem */
+  XLALDestroyExpLUT();
+
+  /* ----- return ----- */
+  return logB_SG;
+
+} /* XLALComputeTransientBstat() */
+
+/** Function to compute transient-window "F-statistic map" over start-time and timescale {t0, tau}.
+ *
+ * Returns a 2D matrix F_mn, with m = index over start-times t0, and n = index over timescales tau,
+ * in steps of dt0 in [t0, t0+t0Band], and dtau in [tau, tau+tauBand] as defined in transientWindowRange
+ *
+ * Note: if window->type == none, we compute a single rectangular window covering all the data.
+ *
+ * Note2: if the experimental switch useFReg is true, returns FReg=F - log(D) instead of F. This option is of
+ * little practical interest, except for demonstrating that marginalizing (1/D)e^F is *less* sensitive
+ * than marginalizing e^F (see transient methods-paper [in prepartion])
+ *
+ */
+transientFstatMap_t *
+XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**< [in] multi-IFO F-statistic atoms */
+                               transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range to search */
+                               BOOLEAN useFReg					/**< [in] experimental switch: compute FReg = F - log(D) instead of F */
+                               )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !multiFstatAtoms || !multiFstatAtoms->data || !multiFstatAtoms->data[0]) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( windowRange.type >= TRANSIENT_LAST ) {
+    XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
-  /* combine all multi-atoms into a single atoms-vector with *unique* timestamps */
+  /* ----- pepare return container ----- */
+  transientFstatMap_t *ret;
+  if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(1,%s) failed.\n", sizeof(*ret) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* ----- first combine all multi-atoms into a single atoms-vector with *unique* timestamps */
   FstatAtomVector *atoms;
   UINT4 TAtom = multiFstatAtoms->data[0]->TAtom;
-  UINT4 TAtomHalf = TAtom/2;
+  UINT4 TAtomHalf = TAtom/2;	/* integer division */
 
   if ( (atoms = XLALmergeMultiFstatAtomsBinned ( multiFstatAtoms, TAtom )) == NULL ) {
     XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", fn, xlalErrno );
-    XLAL_ERROR ( fn, XLAL_EFUNC );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
   UINT4 numAtoms = atoms->length;
   /* actual data spans [t0_data, t0_data + numAtoms * TAtom] in steps of TAtom */
   UINT4 t0_data = atoms->data[0].timestamp;
   UINT4 t1_data = atoms->data[numAtoms-1].timestamp + TAtom;
 
-  /* special treatment of window_type = none ==> replace by rectangular window spanning all the data */
+  /* ----- special treatment of window_type = none ==> replace by rectangular window spanning all the data */
   if ( windowRange.type == TRANSIENT_NONE )
     {
       windowRange.type = TRANSIENT_RECTANGULAR;
@@ -399,19 +465,11 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
       windowRange.dtau = TAtom;	/* irrelevant */
     }
 
-  /* It is often numerically impossible to compute e^F and sum these values, because of range-overflow
-   * instead we first determine max{F_mn}, then compute the logB = log ( e^Fmax * sum_{mn} e^{Fmn - Fmax} )
-   * which is logB = Fmax + log( sum_{mn} e^(-DeltaF) ), where DeltaF = Fmax - Fmn.
-   * This avoids numerical problems.
-   *
-   * As we don't know Fmax before having computed the full matrix F_mn, we keep the full array of
-   * F-stats F_mn over the field of {t0, tau} values in steps of dt0 x dtau.
-   *
-   * NOTE2: indices {i,j} enumerate *actual* atoms and their timestamps t_i, while the
+  /* NOTE: indices {i,j} enumerate *actual* atoms and their timestamps t_i, while the
    * indices {m,n} enumerate the full grid of values in [t0_min, t0_max]x[Tcoh_min, Tcoh_max] in
    * steps of deltaT. This allows us to deal with gaps in the data in a transparent way.
    *
-   * NOTE3: we operate on the 'binned' atoms returned from XLALmergeMultiFstatAtomsBinned(),
+   * NOTE2: we operate on the 'binned' atoms returned from XLALmergeMultiFstatAtomsBinned(),
    * which means we can safely assume all atoms to be lined up perfectly on a 'deltaT' binned grid.
    *
    * The mapping used will therefore be {i,j} -> {m,n}:
@@ -430,24 +488,23 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
   UINT4 N_t0Range  = (UINT4) floor ( windowRange.t0Band / windowRange.dt0 ) + 1;
   UINT4 N_tauRange = (UINT4) floor ( windowRange.tauBand / windowRange.dtau ) + 1;
 
-  gsl_matrix *F_mn;	/* 2D matrix {m x n} of F-values, will be initialized to zeros ! */
-  if ( ( F_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
-    XLALPrintError ("%s: failed gsl_matrix_calloc ( %d, %s )\n", fn, N_tauRange, N_t0Range );
-    XLAL_ERROR ( fn, XLAL_ENOMEM );
+  if ( ( ret->F_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
+    XLALPrintError ("%s: failed ret->F_mn = gsl_matrix_calloc ( %d, %s )\n", fn, N_tauRange, N_t0Range );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
   REAL8 maxF = 0;	// keep track of loudest F-value over t0Band x tauBand space
   UINT4 m, n;
 
-  transientWindow_t window;
-  window.type = windowRange.type;
+  transientWindow_t win_mn;
+  win_mn.type = windowRange.type;
 
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
     {
       /* compute Fstat-atom index i_t0 in [0, numAtoms) */
-      window.t0 = windowRange.t0 + m * windowRange.dt0;
-      INT4 i_tmp = ( window.t0 - t0_data + TAtomHalf ) / TAtom;	// integer round: floor(x+0.5)
+      win_mn.t0 = windowRange.t0 + m * windowRange.dt0;
+      INT4 i_tmp = ( win_mn.t0 - t0_data + TAtomHalf ) / TAtom;	// integer round: floor(x+0.5)
       if ( i_tmp < 0 ) i_tmp = 0;
       UINT4 i_t0 = (UINT4)i_tmp;
       if ( i_t0 >= numAtoms ) i_t0 = numAtoms - 1;
@@ -461,13 +518,13 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           /* translate n into an atoms end-index for this search interval [t0, t0+Tcoh],
            * giving the index range of atoms to sum over
            */
-          window.tau = windowRange.tau + n * windowRange.dtau;
+          win_mn.tau = windowRange.tau + n * windowRange.dtau;
 
           /* get end-time t1 of this transient-window search */
           UINT4 t0, t1;
-          if ( XLALGetTransientWindowTimespan ( &t0, &t1, window ) != XLAL_SUCCESS ) {
+          if ( XLALGetTransientWindowTimespan ( &t0, &t1, win_mn ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: XLALGetTransientWindowTimespan() failed.\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
+            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
           }
 
           /* compute window end-time Fstat-atom index i_t1 in [0, numAtoms) */
@@ -480,9 +537,9 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           if ( i_t1 == i_t0 ) {
             XLALPrintError ("%s: encountered a single-atom Fstat-calculation. This is degenerate and cannot be computed!\n", fn );
             XLALPrintError ("Window-values m=%d (t0=%d=t0_data + %d), n=%d (tau=%d) ==> t1_data - t0 = %d\n",
-                            m, window.t0, i_t0 * TAtom, n, window.tau, t1_data - window.t0 );
+                            m, win_mn.t0, i_t0 * TAtom, n, win_mn.tau, t1_data - win_mn.t0 );
             XLALPrintError ("The most likely cause is that your t0-range covered all of your data: t0 must stay away *at least* 2*TAtom from the end of the data!\n");
-            XLAL_ERROR ( fn, XLAL_EDOM );
+            XLAL_ERROR_NULL ( fn, XLAL_EDOM );
           }
 
           /* now we have two valid atoms-indices [i_t0, i_t1] spanning our Fstat-window to sum over,
@@ -525,7 +582,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
                   UINT4 t_i = thisAtom_i->timestamp;
 
                   REAL8 win_i;
-                  win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, window.tau );
+                  win_i = XLALGetExponentialTransientWindowValue ( t_i, t0, t1, win_mn.tau );
 
                   REAL8 win2_i = win_i * win_i;
 
@@ -545,7 +602,7 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
             default:
               XLALPrintError ("%s: invalid transient window type %d not in [%d, %d].\n",
                               fn, windowRange.type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
-              XLAL_ERROR ( fn, XLAL_EINVAL );
+              XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
               break;
 
             } /* switch window.type */
@@ -560,9 +617,9 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > maxF )
             {
-              maxF = F;
-              ret.t0offs_maxF  = window.t0 - windowRange.t0;	/* start-time offset from earliest t0 in window-range*/
-              ret.tau_maxF = window.tau;
+              ret->maxF = F;
+              ret->t0_maxF  = win_mn.t0;	/* start-time t0 corresponding to Fmax */
+              ret->tau_maxF = win_mn.tau;	/* timescale tau corresponding to Fmax */
             }
 
           /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
@@ -570,54 +627,21 @@ XLALComputeTransientBstat ( TransientCandidate_t *cand, 		/**< [out] transient c
             F += log( DdInv );
 
           /* and store this in Fstat-matrix as element {m,n} */
-          gsl_matrix_set ( F_mn, m, n, F );
+          gsl_matrix_set ( ret->F_mn, m, n, F );
 
         } /* for n in n[tau] : n[tau+tauBand] */
 
     } /* for m in m[t0] : m[t0+t0Band] */
 
-  ret.maxTwoF = 2.0 * maxF;	/* report final loudest 2F value */
-
-  /* now step through F_mn array subtract maxF and sum e^{F_mn - maxF}*/
-  REAL8 sum_eB = 0;
-  for ( m=0; m < N_t0Range; m ++ )
-    {
-      for ( n=0; n < N_tauRange; n ++ )
-        {
-          REAL8 DeltaF = maxF - gsl_matrix_get ( F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
-
-          //sum_eB += exp ( - DeltaF );
-          sum_eB += XLALFastNegExp ( DeltaF );
-
-        } /* for n < N_tauRange */
-
-    } /* for m < N_t0Range */
-
-  /* combine this to final log(Bstat) result with proper normalization (assuming hmaxhat=1) : */
-
-  REAL8 logBhat = maxF + log ( sum_eB );	/* unnormalized Bhat */
-  /* final normalized Bayes factor, assuming rhohMax=1 */
-  /* NOTE: correct for different rhohMax by adding "- 4 * log(rhohMax)" to this */
-
-  REAL8 normBh = 70.0 / ( N_t0Range * N_tauRange );	// valid for "non-regularized" B-stat, ie sum over e^F
-  // printf ( "\n\nlogBhat = %g, normBh = %g, log(normBh) = %g\nN_t0Range = %d, N_tauRange=%d\n\n", logBhat, normBh, log(normBh), N_t0Range, N_tauRange );
-  ret.logBstat = log ( normBh ) +  logBhat;	/* - 4.0 * log ( rhohMax ) */
-
-  /* free mem */
+  /* free internal mem */
   XLALDestroyFstatAtomVector ( atoms );
-  XLALDestroyExpLUT();
 
-  /* ----- return ----- */
+  /* return end product: F-stat map */
+  return ret;
 
-  if ( Fstat_m_n )	/* return Fstat matrix over {t0 x tau} if requested */
-    (*Fstat_m_n ) = F_mn;
-  else			/* free it otherwise */
-    gsl_matrix_free ( F_mn );
+} /* XLALComputeTransientFstatMap() */
 
-  (*cand) = ret;
-  return XLAL_SUCCESS;
 
-} /* XLALComputeTransientBstat() */
 
 
 /** Combine N Fstat-atoms vectors into a single 'canonical' binned and ordered atoms-vector.
@@ -713,32 +737,49 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
 } /* XLALmergeMultiFstatAtomsBinned() */
 
 /** Write one line for given transient CW candidate into output file.
- * Note: if input candidate == NULL, write a header comment-line explaining fields
+ *
+ * NOTE: if input thisCand == NULL, we write a header comment-line explaining the fields
+ *
  */
 int
-write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisCand )
+write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand )
 {
   const char *fn = __func__;
 
+  /* sanity checks */
   if ( !fp ) {
     XLALPrintError ( "%s: invalid NULL filepointer input.\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
+
   if ( thisCand == NULL )	/* write header-line comment */
-    fprintf (fp, "%%%%        fkdot[0]         Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   twoFtotal  t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
+    {
+      fprintf (fp, "%%%%        Freq             Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
+    }
   else
-    fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %11.9g        %7.5f      %7.5f   %11.9g    %11.9g\n",
-             thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
-             thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-             thisCand->twoFtotal,
-             1.0 * thisCand->t0offs_maxF / DAY24, 1.0 * thisCand->tau_maxF / DAY24, thisCand->maxTwoF,
-             thisCand->logBstat
-             );
+    {
+      if ( !thisCand->FstatMap ) {
+        XLALPrintError ("%s: incomplete: transientCand->FstatMap == NULL!\n", fn );
+        XLAL_ERROR ( fn, XLAL_EINVAL );
+      }
+      UINT4 t0 = thisCand->windowRange.t0;
+      REAL8 t0offs_maxF_d = 1.0 * (thisCand->FstatMap->t0_maxF - t0) / DAY24;
+      REAL8 tau_maxF_d    = 1.0 *  thisCand->FstatMap->tau_maxF / DAY24;
+      REAL8 maxTwoF       = 2.0 *  thisCand->FstatMap->maxF;
+
+      fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %7.5f      %7.5f   %11.9g    %11.9g\n",
+               thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
+               thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
+               t0offs_maxF_d, tau_maxF_d, maxTwoF,
+               thisCand->logBstat
+               );
+    }
 
   return XLAL_SUCCESS;
 
 } /* write_TransCandidate_to_fp() */
+
 
 /** Write multi-IFO F-stat atoms 'multiAtoms' into output stream 'fstat'.
  */
@@ -859,3 +900,38 @@ XLALFastNegExp ( REAL8 mx )
 
 } /* XLALFastNegExp() */
 
+/** Standard destructor for transientFstatMap_t
+ * Fully NULL-robust as usual.
+ */
+void
+XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap )
+{
+  if ( !FstatMap )
+    return;
+
+  if ( FstatMap->F_mn )
+    gsl_matrix_free ( FstatMap->F_mn );
+
+  XLALFree ( FstatMap );
+
+  return;
+
+} /* XLALDestroyTransientFstatMap() */
+
+/** Standard destructor for transientCandidate_t
+ * Fully NULL-robust as usual.
+ */
+void
+XLALDestroyTransientCandidate ( transientCandidate_t *cand )
+{
+  if ( !cand )
+    return;
+
+  if ( cand->FstatMap )
+    XLALDestroyTransientFstatMap ( cand->FstatMap );
+
+  XLALFree ( cand );
+
+  return;
+
+} /* XLALDestroyTransientCandidate() */

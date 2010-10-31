@@ -328,7 +328,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
       fprintf (fpTransientStats, "%s", cfg.logString );		/* write search log comment */
-      if ( write_TransientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_transientCandidate_to_fp ( fpTransientStats, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
     } /* if outputStats */
@@ -356,44 +356,81 @@ int main(int argc,char *argv[])
     {
       InjParams_t injParams = empty_InjParams_t;
 
-      /* generate signal random draws from ranges and generate Fstat atoms */
+      /* ----- generate signal random draws from ranges and generate Fstat atoms */
       MultiFstatAtomVector *multiAtoms;
       if ( (multiAtoms = XLALSynthesizeTransientAtoms ( &injParams, &cfg, &multiAMBuffer )) == NULL ) {
         LogPrintf ( LOG_CRITICAL, "%s: XLALSynthesizeTransientAtoms() failed with xlalErrno = %d\n", fn, xlalErrno );
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
 
-      /* if requested, output signal injection parameters into file */
+      /* ----- if requested, output signal injection parameters into file */
       if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParams ) != XLAL_SUCCESS ) ) {
         XLAL_ERROR ( fn, XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
-      TransientCandidate_t cand = empty_TransientCandidate;
-      gsl_matrix *Fstat_m_n = NULL;
-      /* if requested: compute transient-Bstat search statistic on these atoms */
+
+      /* ----- add meta-info on current transient-CW candidate */
+      transientCandidate_t cand = empty_transientCandidate;
+      cand.doppler.Alpha = multiAMBuffer.skypos.longitude;
+      cand.doppler.Delta = multiAMBuffer.skypos.latitude;
+      cand.windowRange   = cfg.transientSearchRange;
+
+      /* ----- if requested: compute transient-Bstat search statistic on these atoms */
       if ( fpTransientStats || uvar.outputFstatMap )
         {
-          if ( XLALComputeTransientBstat ( &cand, &Fstat_m_n, multiAtoms,  cfg.transientSearchRange, uvar.useFReg ) != XLAL_SUCCESS ) {
-            LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno );
+          /* compute Fstat map F_mn over {t0, tau} */
+          if ( (cand.FstatMap = XLALComputeTransientFstatMap ( multiAtoms, cand.windowRange, uvar.useFReg)) == NULL ) {
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
-        }
+        } /* if we'll need the Fstat-map F_mn */
 
-      /* if requested, compute Ftotal over full data-span */
+      /* ----- if requested compute marginalized Bayes factor */
+      if ( fpTransientStats )
+        {
+          cand.logBstat = XLALComputeTransientBstat ( cand.windowRange, cand.FstatMap );
+          UINT4 err = xlalErrno;
+          if ( err ) {
+            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          if ( uvar.SignalOnly )
+            {
+              cand.FstatMap->maxF += 2;
+              cand.logBstat += 2;
+            }
+
+        } /* if Bstat requested */
+
+      /* ----- if requested, compute Ftotal over full data-span */
       if ( uvar.computeFtotal )
         {
-          TransientCandidate_t candTotal;
+          transientFstatMap_t *FtotalMap;
+          /* prepare special window to cover all the data with one F-stat calculation == Ftotal */
           transientWindowRange_t winRangeAll = empty_transientWindowRange;
-          winRangeAll.type = TRANSIENT_NONE;	/* window 'none' will simply cover all the data with 1 F-stat calculation */
-          if ( XLALComputeTransientBstat ( &candTotal, NULL, multiAtoms,  winRangeAll, uvar.useFReg ) != XLAL_SUCCESS ) {
-            LogPrintf ( LOG_CRITICAL, "%s: XLALComputeTransientBstat() failed for totalFstat (winRangeAll) with xlalErrno = %d\n", fn, xlalErrno );
+          winRangeAll.type = TRANSIENT_NONE;
+
+          BOOLEAN useFReg = false;
+          if ( (FtotalMap = XLALComputeTransientFstatMap ( multiAtoms, winRangeAll, useFReg)) == NULL ) {
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
-          /* we only carry over twoFtotal = maxTwoF from this single-Fstat calculation */
-          cand.twoFtotal = candTotal.maxTwoF;
+
+          /* we only use twoFtotal = 2 * maxF from this single-Fstat calculation */
+          REAL8 twoFtotal = 2.0 * FtotalMap->maxF;
+          if ( uvar.SignalOnly )
+            twoFtotal += 4;
+
+          /* ugly hack: lacking a good container for twoFtotal, we borrow fkdot[3] for this here ;) [only used for paper-MCs] */
+          cand.doppler.fkdot[3] = twoFtotal;
+
+          /* good riddance .. */
+          XLALDestroyTransientFstatMap ( FtotalMap );
+
         } /* if computeFtotal */
 
-      /* if requested, output atoms-vector into file */
+      /* ----- if requested, output atoms-vector into file */
       if ( uvar.outputAtoms )
         {
           FILE *fpAtoms;
@@ -420,7 +457,7 @@ int main(int argc,char *argv[])
 	  fclose (fpAtoms);
         } /* if outputAtoms */
 
-      /* if requested, output Fstat-map over {t0, tau} */
+      /* ----- if requested, output Fstat-map over {t0, tau} */
       if ( uvar.outputFstatMap )
         {
           FILE *fpFstatMap;
@@ -439,7 +476,7 @@ int main(int argc,char *argv[])
 	  fprintf ( fpFstatMap, "%s", cfg.logString );	/* output header info */
 
           fprintf (fpFstatMap, "\nFstat_m_n = \\\n" );
-          if ( XLALfprintfGSLmatrix ( fpFstatMap, "%.9g", Fstat_m_n ) != XLAL_SUCCESS ) {
+          if ( XLALfprintfGSLmatrix ( fpFstatMap, "%.9g", cand.FstatMap->F_mn ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: XLALfprintfGSLmatrix() failed.\n", fn );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
@@ -449,23 +486,15 @@ int main(int argc,char *argv[])
 
         } /* if outputFstatMap */
 
-      /* free Fstat-map */
-      if ( Fstat_m_n ) gsl_matrix_free ( Fstat_m_n );
-
-      /* free atoms */
-      XLALDestroyMultiFstatAtomVector ( multiAtoms );
-
-      /* add info on current transient-CW candidate */
-      cand.doppler.Alpha = multiAMBuffer.skypos.longitude;
-      cand.doppler.Delta = multiAMBuffer.skypos.latitude;
-
-      if ( uvar.SignalOnly )
-        cand.maxTwoF += 4;
-
-      if ( fpTransientStats && write_TransientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
-        LogPrintf ( LOG_CRITICAL, "%s: write_TransientCandidate_to_fp() failed.\n", fn );
+      /* ----- if requested, output transient-cand statistics */
+      if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
+        XLALPrintError ( "%s: write_transientCandidate_to_fp() failed.\n", fn );
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
+
+      /* ----- free Memory */
+      XLALDestroyTransientFstatMap ( cand.FstatMap );
+      XLALDestroyMultiFstatAtomVector ( multiAtoms );
 
     } /* for i < numDraws */
 
@@ -478,7 +507,7 @@ int main(int argc,char *argv[])
   XLALDestroyMultiTimestamps ( cfg.multiTS );
   XLALDestroyMultiAMCoeffs ( multiAMBuffer.multiAM );
   XLALDestroyExpLUT();
-  /* free amplitude prior pdfs */
+  /* ----- free amplitude prior pdfs ----- */
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_h0Nat );
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_cosi );
   XLALDestroyPDF1D ( cfg.AmpPrior.pdf_psi );
@@ -489,7 +518,7 @@ int main(int argc,char *argv[])
 
   XLALDestroyUserVars();
 
-  /* did we forget anything ? */
+  /* did we forget anything ? (doesn't cover gsl-memory!) */
   LALCheckMemoryLeaks();
 
   return 0;
@@ -1467,7 +1496,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
         XLAL_ERROR_NULL ( fn, XLAL_EDOM );
       }
 
-      REAL8 rescale;
+      REAL8 rescale = 1.0;
 
       if ( cfg->AmpPrior.fixedSNR > 0 )
         rescale = cfg->AmpPrior.fixedSNR / sqrt(rho2);	// rescale atoms by this factor, such that SNR = cfg->fixedSNR
