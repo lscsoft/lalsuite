@@ -263,8 +263,8 @@ typedef struct {
   INT4  transient_dt0;		/**< Step-size for search/marginalization over transient-window start-time, in seconds */
   REAL8 transient_tauDays;	/**< smallest transient window length for marginalization, in days */
   REAL8 transient_tauDaysBand;	/**< Range of transient-window timescales to search, in days */
-  INT4 transient_dtau;		/**< Step-size for search/marginalization over transient-window timescale, in seconds */
-
+  INT4  transient_dtau;		/**< Step-size for search/marginalization over transient-window timescale, in seconds */
+  BOOLEAN transient_useFReg;  	/**< FALSE: use 'standard' e^F for marginalization, TRUE: use e^FReg = (1/D)*e^F */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -411,7 +411,7 @@ int main(int argc,char *argv[])
 	}
 
       fprintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
-      write_TransientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
+      write_transientCandidate_to_fp ( fpTransientStats, NULL );	/* write header-line comment */
     }
 
   /* start Fstatistic histogram with a single empty bin */
@@ -673,22 +673,38 @@ int main(int argc,char *argv[])
       /* ----- compute transient-CW statistics if their output was requested  ----- */
       if ( fpTransientStats )
         {
-          TransientCandidate_t transientCand;
-          BOOLEAN useFReg = TRUE;
-          if ( XLALComputeTransientBstat ( &transientCand, NULL, Fstat.multiFstatAtoms, GV.transientWindowRange, useFReg ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, xlalErrno);
-            return COMPUTEFSTATISTIC_EXLAL;
-          }
-          /* combine info on current transient-CW candidate */
-          transientCand.doppler = dopplerpos;
-          transientCand.twoFtotal =  2.0 * thisFCand.Fstat.F;
-          if ( uvar.SignalOnly )
-            transientCand.maxTwoF += 4;
+          transientCandidate_t transientCand = empty_transientCandidate;
 
-          if ( write_TransientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: write_TransientCandidate_to_fp() failed.\n", fn );
+          /* compute Fstat map F_mn over {t0, tau} */
+          if ( (transientCand.FstatMap = XLALComputeTransientFstatMap ( Fstat.multiFstatAtoms, GV.transientWindowRange, uvar.transient_useFReg)) == NULL ) {
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
             return COMPUTEFSTATISTIC_EXLAL;
           }
+
+          /* compute marginalized Bayes factor */
+          transientCand.logBstat = XLALComputeTransientBstat ( GV.transientWindowRange, transientCand.FstatMap );
+          UINT4 err = xlalErrno;
+          if ( err ) {
+            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
+            return COMPUTEFSTATISTIC_EXLAL;
+          }
+
+          /* add meta-info on current transient-CW candidate */
+          transientCand.doppler = dopplerpos;
+          transientCand.windowRange = GV.transientWindowRange;
+
+          /* correct for missing bias in signal-only case */
+          if ( uvar.SignalOnly )
+            transientCand.FstatMap->maxF += 2;
+
+          /* output everything into stats-file (one line per candidate) */
+          if ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: write_transientCandidate_to_fp() failed.\n", fn );
+            return COMPUTEFSTATISTIC_EXLAL;
+          }
+
+          /* free dynamically allocated F-stat map */
+          XLALDestroyTransientFstatMap ( transientCand.FstatMap );
 
         } /* if fpTransientStats */
 
@@ -916,6 +932,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 #define DEFAULT_TRANSIENT "none"
   uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
   strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
+  uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
   LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
@@ -997,6 +1014,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
+  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -1022,7 +1040,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status,  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
   LALregREALUserStruct(status,  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
 
-  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
+  XLALregBOOLUserStruct ( transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

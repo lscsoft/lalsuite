@@ -98,20 +98,32 @@ typedef struct
   UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
 } transientWindowRange_t;
 
+/** Struct holding a transient-window "F-statistic map" over start-time and timescale {t0, tau}.
+ * This contains a 2D matrix F_mn, with m = index over start-times t0, and n = index over timescales tau,
+ * in steps of dt0 in [t0, t0+t0Band], and dtau in [tau, tau+tauBand] as defined in transientWindowRange.
+ *
+ */
+typedef struct {
+  gsl_matrix *F_mn;			/**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
+  REAL8 maxF;				/**< maximal F-value obtained over transientWindowRange */
+  UINT4 t0_maxF;			/**< t0_MLE: start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
+  UINT4 tau_maxF;			/**< tau_MLE: duration Tcoh of max{2F} over the transientWindowRange (in seconds) */
+} transientFstatMap_t;
+
+
 /** Struct holding a transient CW candidate */
 typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
-  REAL8 twoFtotal;			/**< 2F obtained in the full search over all SFTs */
-  REAL8 maxTwoF;			/**< maximal 2F value obtained over transientWindowRange */
-  UINT4 t0offs_maxF;			/**< start-time offset from transient_t0 of max{2F} over transientWindowRange (in GPS seconds)*/
-  UINT4 tau_maxF;			/**< duration Tcoh where max{2F} occurred over the transientWindowRange (in seconds) */
+  transientWindowRange_t windowRange;	/**< type and parameters specifying the transient window range in {t0, tau} covered */
+  transientFstatMap_t *FstatMap;	/**< F-statistic over transient-window range {t0, tau} AND ML-estimators { Fmax, t0_Fmax, tau_Fmax } */
   REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
-} TransientCandidate_t;
+} transientCandidate_t;
 
 /* empty struct initializers */
-extern const TransientCandidate_t empty_TransientCandidate;
+extern const transientCandidate_t empty_transientCandidate;
 extern const transientWindow_t empty_transientWindow;
 extern const transientWindowRange_t empty_transientWindowRange;
+extern const transientFstatMap_t empty_transientFstatMap;
 
 /* ---------- exported API prototypes ---------- */
 int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
@@ -122,21 +134,24 @@ int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights
                                             const MultiLIGOTimeGPSVector *multiTS,
                                             transientWindow_t TransientWindowParams );
 
-int write_TransientCandidate_to_fp ( FILE *fp, const TransientCandidate_t *thisTransCand );
+int write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisTransCand );
 
-int XLALComputeTransientBstat ( TransientCandidate_t *transientCand,
-                                gsl_matrix **Fstat_m_n,
-                                const MultiFstatAtomVector *multiFstatAtoms,
-                                transientWindowRange_t windowRange,
-                                BOOLEAN useFReg );
 
-/* these functions operate on module-global lookup-table for negative-exponentials,
+transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms,
+                                                    transientWindowRange_t windowRange,
+                                                    BOOLEAN useFReg );
+
+REAL8 XLALComputeTransientBstat ( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+
+void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
+void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
+
+/* these functions operate on the module-local lookup-table for negative-exponentials,
  * which will dynamically be generated on first use of XLALFastNegExp(), and can
  * be destroyed at any time using XLALDestroyExpLUT()
  */
 REAL8 XLALFastNegExp ( REAL8 mx );
 void XLALDestroyExpLUT( void );
-
 
 /* ---------- Fstat-atoms related functions ----------*/
 int write_MultiFstatAtoms_to_fp ( FILE *fp, const MultiFstatAtomVector *multiAtoms );
