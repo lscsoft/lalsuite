@@ -133,6 +133,7 @@ typedef struct {
   CHAR *outputAtoms;	/**< output F-statistic atoms into a file with this basename */
   CHAR *outputFstatMap;	/**< output F-statistic over 2D parameter space {t0, tau} into file with this basename */
   CHAR *outputInjParams;/**< output injection parameters into this file */
+  CHAR *outputPosteriors;/**< output posterior pdfs on t0 and tau */
   BOOLEAN SignalOnly;	/**< dont generate noise-draws: will result in non-random 'signal only' values of F and B */
 
   BOOLEAN useFReg;	/**< use 'regularized' Fstat (1/D)*e^F for marginalization, or 'standard' e^F */
@@ -351,8 +352,8 @@ int main(int argc,char *argv[])
       cand.doppler.Delta = multiAMBuffer.skypos.latitude;
       cand.windowRange   = cfg.transientSearchRange;
 
-      /* ----- if requested: compute transient-Bstat search statistic on these atoms */
-      if ( fpTransientStats || uvar.outputFstatMap )
+      /* ----- if needed: compute transient-Bstat search statistic on these atoms */
+      if ( fpTransientStats || uvar.outputFstatMap || uvar.outputPosteriors )
         {
           /* compute Fstat map F_mn over {t0, tau} */
           if ( (cand.FstatMap = XLALComputeTransientFstatMap ( multiAtoms, cand.windowRange, uvar.useFReg)) == NULL ) {
@@ -409,6 +410,7 @@ int main(int argc,char *argv[])
       /* ----- if requested, output atoms-vector into file */
       if ( uvar.outputAtoms )
         {
+
           FILE *fpAtoms;
           char *fnameAtoms;
           UINT4 len = strlen ( uvar.outputAtoms ) + 20;
@@ -461,6 +463,55 @@ int main(int argc,char *argv[])
 	  fclose (fpFstatMap);
 
         } /* if outputFstatMap */
+
+      /* ----- if requested, output posterior pdfs on transient params {t0, tau} into a file */
+      if ( uvar.outputPosteriors )
+        {
+          FILE *fpPosteriors;
+          char *fnamePosteriors;
+          UINT4 len = strlen ( uvar.outputPosteriors ) + 20;
+          if ( (fnamePosteriors = XLALCalloc ( 1, len )) == NULL ) {
+            XLALPrintError ("%s: failed to XLALCalloc ( 1, %d )\n", fn, len );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          sprintf ( fnamePosteriors, "%s_%04d_of_%04d.dat", uvar.outputPosteriors, i + 1, uvar.numDraws );
+
+          if ( ( fpPosteriors = fopen ( fnamePosteriors, "wb" )) == NULL ) {
+            XLALPrintError ("%s: failed to open posteriors-output file '%s' for writing.\n", fn, fnamePosteriors );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+	  fprintf ( fpPosteriors, "%s", cfg.logString );	/* output header info */
+
+          /* actually compute posteriors ;) */
+          pdf1D_t *pdf_t0;
+          pdf1D_t *pdf_tau;
+          if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
+            XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          if ( (pdf_tau = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
+            XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          /* write them to file, using pdf-method */
+	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_t0, "pdf_to" ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: failed to output t0-posterior to file '%s'.\n", fn, fnamePosteriors );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_tau, "pdf_tau" ) != XLAL_SUCCESS ) {
+            XLALPrintError ("%s: failed to output tau-posterior to file '%s'.\n", fn, fnamePosteriors );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+          /* free mem, close file */
+          XLALDestroyPDF1D ( pdf_t0 );
+          XLALDestroyPDF1D ( pdf_tau );
+          XLALFree ( fnamePosteriors );
+	  fclose (fpPosteriors);
+
+        } /* if outputPosteriors */
+
 
       /* ----- if requested, output transient-cand statistics */
       if ( fpTransientStats && write_transientCandidate_to_fp ( fpTransientStats, &cand ) != XLAL_SUCCESS ) {
@@ -613,6 +664,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregSTRINGUserStruct ( outputFstatMap,	 0,  UVAR_OPTIONAL, "Output F-statistic over 2D parameter space {t0, tau} into file with this basename");
 
   XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
+  XLALregSTRINGUserStruct ( outputPosteriors,	 0,  UVAR_OPTIONAL,  "output posterior pdfs on t0 and tau (in octave format) into this file ");
 
   XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
   XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
