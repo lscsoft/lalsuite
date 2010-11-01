@@ -91,6 +91,9 @@ REAL8 XLALDrawFromPDF1D ( pdf1D_t *pdf, const gsl_rng *rng );
 int XLALCheckValidPDF1D ( const pdf1D_t *pdf );
 int XLALNormalizePDF1D ( pdf1D_t *pdf );
 
+int XLALOutputPDF1D_to_fp ( FILE* fp, const pdf1D_t *pdf, const char *name );
+
+
 void XLALDestroyPDF1D ( pdf1D_t *pdf );
 
 

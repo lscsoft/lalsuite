@@ -399,3 +399,88 @@ XLALNormalizePDF1D ( pdf1D_t *pdf )
 
 } /* XLALNormalizePDF1D() */
 
+/** Function to write a pdf1D to given filepointer fp.
+ *
+ * Writes the pdf in octave format as a 2xN matrix, containing
+ * values { xtics[i], pdf[i] }
+ */
+int
+XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [append] */
+                        const pdf1D_t *pdf,	/**< input pdf [need not be normalized] */
+                        const char *name	/**< octave variable-name to use in output (default = 'pdf' if NULL) */
+                        )
+{
+  const char *fn = __func__;
+
+  /* input sanity check */
+  if ( !fp || !pdf ) {
+    XLALPrintError ("%s: invalid NULL input 'fp=%p' or 'pdf=%p'\n", fn, fp, pdf );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: invalid probability-density 'pdf'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
+#define PDF_FMT "%.16g"
+
+  const char *varname;
+  if ( name )
+    varname = name;
+  else
+    varname = "pdf";
+
+  fprintf (fp, "%%%%  Probability density function in octave format, as a 2xN matrix, containing value-pairs { x[i], pdf(x[i]) }\n");
+  fprintf (fp, "%s = [ \\\n", varname );
+
+  /* ----- special case 1: single value with certainty */
+  if ( (pdf->xTics->length == 1) && (pdf->probDens == NULL) )
+    fprintf (fp, PDF_FMT ";\n" PDF_FMT ";\n", pdf->xTics->data[0], 1.0 );	// not quite correct, should be a Dirac-delta function
+
+  /* ----- special case 2: uniform pdf in [xMin, xMax] */
+  if ( (pdf->xTics->length == 2) && (pdf->probDens == NULL) )
+    {
+      REAL8 x0 = pdf->xTics->data[0];
+      REAL8 x1 = pdf->xTics->data[1];
+      REAL8 p  = 1.0 / ( x1 - x0 );
+      fprintf (fp, PDF_FMT ", " PDF_FMT ";\n" PDF_FMT ", " PDF_FMT ";\n", x0, x1, p, p );
+    }
+
+  /* ----- general case: discretized pdf ----- */
+  /* Note: Given that we only know the pdf-values over N finite-sized 'bins',
+   * we output N + 2 points for the pdf, namely we include the boundary-tics
+   * to fully represent the domain of the pdf.
+   * We use the values of the first and last 'bin' respectively for the
+   * boundary-values of the pdf, while using the N bin-centers for all the other values
+   * i.e. pdf = [
+   * x[0], xMid[0], xMid[1], xMid[2], ... xMid[N-1], x[N-1] ;
+   * p[0],    p[0],    p[1],    p[2], ....   p[N-1], p[N-1] ;
+   * ];
+   *
+   */
+  UINT4 numBins = pdf->xTics->length - 1;
+  UINT4 i;
+
+  /* output the x-values x[i] */
+  fprintf (fp, PDF_FMT, pdf->xTics->data[0] );
+  for ( i=0; i < numBins; i ++ )
+    {
+      REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
+      fprintf (fp, ", " PDF_FMT, xMid );
+    }
+  fprintf (fp, ", " PDF_FMT ";\n", pdf->xTics->data[numBins] );
+
+  /* output the pdf values pdf(x[i]) */
+  fprintf (fp, PDF_FMT, pdf->probDens->data[0] );
+  for ( i=0; i < numBins; i ++ )
+    {
+      fprintf (fp, ", " PDF_FMT, pdf->probDens->data[i] );
+    }
+  fprintf (fp, ", " PDF_FMT ";\n", pdf->probDens->data[numBins - 1] );
+
+  fprintf (fp, " ];\n " );
+
+#undef PDF_FMT
+
+  return XLAL_SUCCESS;
+
+} /* XLALOutputPDF1D_to_fp() */
