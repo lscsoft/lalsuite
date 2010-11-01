@@ -941,7 +941,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%%        Freq             Alpha[rad]         Delta[rad]  fkdot[1] fkdot[2] fkdot[3]   t0offs_maxF[d] tau_maxF[d]      maxTwoF       logBstat\n");
+      fprintf (fp, "%%%% Freq[Hz]           Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0offs_ML[d]  tau_ML[d]    maxTwoF          logBstat\n");
     }
   else
     {
@@ -954,7 +954,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
       REAL8 tau_maxF_d    = 1.0 *  thisCand->FstatMap->tau_maxF / DAY24;
       REAL8 maxTwoF       = 2.0 *  thisCand->FstatMap->maxF;
 
-      fprintf (fp, "%18.16g %18.16g %18.16g %8.6g %8.5g %8.5g  %7.5f      %7.5f   %11.9g    %11.9g\n",
+      fprintf (fp, "  %- 18.16g %- 19.16g %- 19.16g %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %11.8g\n",
                thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
                thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
                t0offs_maxF_d, tau_maxF_d, maxTwoF,
