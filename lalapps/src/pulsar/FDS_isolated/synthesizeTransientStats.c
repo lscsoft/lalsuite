@@ -1482,7 +1482,9 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParams,		/**< [out] return summar
   PulsarAmplitudeParams Amp;
   if ( cfg->AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
     Amp.h0 = 1.0;
-  else
+  else if ( cfg->AmpPrior.fixedSNR == 0 )/* same as setting h0 = 0 */
+    Amp.h0 = 0;
+  else					/* otherwise, draw from h0-prior */
     Amp.h0 = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_h0Nat, cfg->rng );
 
   Amp.cosi = XLALDrawFromPDF1D ( cfg->AmpPrior.pdf_cosi, cfg->rng );
