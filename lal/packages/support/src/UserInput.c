@@ -1021,11 +1021,10 @@ XLALGetDebugLevel (int argc, char *argv[], CHAR optchar)
 /** Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
- * \param[out] **outstr	the string containing the user-input record.
- * \param[in] format	return as config-file or command-line
  */
 CHAR *
-XLALUserVarGetLog ( UserVarLogFormat format )
+XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as config-file or command-line */
+                    )
 {
   const char *fn = __func__;
 

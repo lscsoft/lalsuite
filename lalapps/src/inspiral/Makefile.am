@@ -100,7 +100,7 @@ bin_PROGRAMS = $(LALFRAME_LALMETAIO_PROGS) $(LALPULSAR_PROGS)
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
-	      lalapps_multi_hipe lalapps_trigger_hipe\
+              lalapps_inspiral_ssipe lalapps_multi_hipe lalapps_trigger_hipe \
               lalapps_inspiral_online_pipe \
               lalapps_inspiral_online_pipe_inject \
               lalapps_ihope_daily_page \
@@ -130,6 +130,9 @@ lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
 lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
 	chmod +x lalapps_inspiral_hipe
+lalapps_inspiral_ssipe: $(srcdir)/inspiral_ssipe.in python_config.sed
+	sed -f python_config.sed $(srcdir)/inspiral_ssipe.in > lalapps_inspiral_ssipe
+	chmod +x lalapps_inspiral_ssipe
 lalapps_plot_hipe: $(srcdir)/plot_hipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/plot_hipe.in > lalapps_plot_hipe
 	chmod +x lalapps_plot_hipe
@@ -200,13 +203,14 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
              $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
              $(SPLITBANKSRC) inspiral.py inspiralutils.py inspiral_pipe.in \
-             inspiral_online_pipe.in inspiral_hipe.in cohPTF_hipe.in \
-	     multi_hipe.in trigger_hipe.in ihope.in ihope_status.in\
-             inspiral_online_pipe_inject.in check_hipe_times.in \
-	     followup0_pipe.in plot_hipe.in  write_ihope_page.in\
-	     compare_ini.in link_old_ihope.in generate_upper_limits.in\
-	     followup0_page.in cbc_pipedown.in ihope_daily_page.in \
-	     check_flag.in flag_triggers.in glitch_probe.in $(DATA)
+             inspiral_online_pipe.in inspiral_hipe.in inspiral_ssipe.in \
+	     cohPTF_hipe.in multi_hipe.in trigger_hipe.in ihope.in \
+	     ihope_status.in inspiral_online_pipe_inject.in \
+	     check_hipe_times.in followup0_pipe.in plot_hipe.in \
+	     write_ihope_page.in compare_ini.in link_old_ihope.in \
+	     generate_upper_limits.in followup0_page.in cbc_pipedown.in \
+	     ihope_daily_page.in check_flag.in flag_triggers.in \
+	     glitch_probe.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

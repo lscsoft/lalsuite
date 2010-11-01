@@ -1560,7 +1560,7 @@ int MAIN( int argc, char *argv[]) {
 
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate
     detector-state */
-void SetUpSFTs( LALStatus *status,
+void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
 		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
@@ -1819,7 +1819,7 @@ void SetUpSFTs( LALStatus *status,
     there are long gaps in the data, then some of the catalogs in the
     output catalog sequence may be of zero length.
 */
-void SetUpStacks(LALStatus *status,
+void SetUpStacks(LALStatus *status,	   /**< pointer to LALStatus structure */
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
 		 REAL8 tStack,             /**< Output duration of each stack */
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/

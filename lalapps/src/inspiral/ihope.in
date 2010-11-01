@@ -434,6 +434,8 @@ gps_start = int(opts.gps_start_time)
 gps_end = int(opts.gps_end_time)
 duration = gps_end - gps_start
 
+dqVetoes = {}
+dqVetoes["combined-veto-file"] = {}
 for category in [1] + veto_categories:
   ifos_string = ''
   veto_cat_files = []
@@ -441,12 +443,20 @@ for category in [1] + veto_categories:
   for ifo in ifos:
     veto_cat_files.append('-'.join([ifo, 'VETOTIME_CAT' + str(category), veto_cat_filename]))
     ifos_string += ifo
+  dqVetoes["combined-veto-file"][category] = '-'.join([ifos_string, 'VETOTIME_CAT_' + str(category), veto_cat_filename])
   concat_veto_call = ' '.join([ cp.get("condor", "ligolw_add"),
-    "--output", '-'.join([ifos_string, 'VETOTIME_CAT_' + str(category), veto_cat_filename])] + veto_cat_files )
+    "--output", dqVetoes["combined-veto-file"][category]] + veto_cat_files )
   inspiralutils.make_external_call(concat_veto_call)
 
+  # FIXME: remove this block  when the veto files from
+  # ligolw_segments_from_cats have contain a segment table with start_time_ns
+  # and end_time_ns, and when the process table doesn't need the domain, jobid,
+  # and is_online columns added
+
+  compat_veto_call = ' '.join([cp.get("condor", "ligolw_segments_compat"), dqVetoes["combined-veto-file"][category]])
+  inspiralutils.make_external_call(compat_veto_call)
+
 segFile = {}
-dqVetoes = {}
 
 for ifo in ifos:
   segFile[ifo], dqVetoes[ifo] = inspiralutils.findSegmentsToAnalyze(
@@ -458,6 +468,8 @@ for ifo in ifos:
   cp.set("input", ifo.lower() + "-segments", segFile[ifo])
   for key in dqVetoes[ifo].keys():
     dqVetoes[ifo][key] = "../segments/" + dqVetoes[ifo][key]
+for key in dqVetoes["combined-veto-file"].keys():
+  dqVetoes["combined-veto-file"][key] = "../segments/" + dqVetoes["combined-veto-file"][key]
 
 os.chdir("..")
 
@@ -756,7 +768,6 @@ if opts.reverse_analysis:
           hipePlayVetoNode[category].add_parent(hipePlayNode)
         elif category>2:
           hipePlayVetoNode[category].add_parent(hipePlayVetoNode[category-1])
-
 
       if opts.run_full_data:
         print "Running inspiral hipe for full data with vetoes for reverse analysis"

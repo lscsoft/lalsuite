@@ -30,7 +30,7 @@
 	 phase.
 	 
 	 \subsection*{Synopsis}
-	 \begin{verabtim}
+	 \begin{verbatim}
 	 #include <lal/HeterodyneCrabPulsar.h>
 	 \end{verbatim}
 	 

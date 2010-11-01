@@ -30,7 +30,7 @@
  * (including effects of Moon, planets, and the
  * Earths time-varying spin axis and spin rate),
  * Einstein delay, and Shapiro delay. Accuracy is
- * better than 3 $\mu$s. Full details will be in monograph
+ * better than \f$3\mu\f$s. Full details will be in monograph
  * by Cutler in Los Alamos preprint archive.
  *
  *

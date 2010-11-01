@@ -140,7 +140,7 @@ xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *nam
  * This function takes a VOTable XML document and deserializes (extracts)
  * the \c LIGOTimeGPS structure identified by the given name.
  *
- * \param xml [in] Pointer to the VOTable XML document containing the structure
+ * \param xmlDocument [in] Pointer to the VOTable XML document containing the structure
  * \param name [in] Unique identifier of the particular \c LIGOTimeGPS structure to be deserialized
  * \param ltg [out] Pointer to an empty \c  LIGOTimeGPS structure to store the deserialized instance
  *
@@ -357,7 +357,7 @@ XLALBinaryOrbitParams2VOTNode ( const BinaryOrbitParams *const bop, const char *
  * This function takes a VOTable XML document and deserializes (extracts)
  * the \c BinaryOrbitParams structure identified by the given name.
  *
- * \param xmlDoc [in] Pointer to the VOTable XML document containing the structure
+ * \param xmlDocument [in] Pointer to the VOTable XML document containing the structure
  * \param name [in] Unique identifier of the particular \c BinaryOrbitParams structure to be deserialized
  * \param bop [out] Pointer to an empty \c  BinaryOrbitParams structure to store the deserialized instance
  *
@@ -1072,7 +1072,7 @@ XLALVOTDoc2gsl_vectorByName ( const xmlDocPtr xmlDocument,	/**< [in] Pointer to 
  *
  * \note All matrix elements are written with maximal precision "%.16g" for a double
  *
- * \note We use a VOTable <PARAM> element with arraysize=dim1xdim2. The arraysize-convention
+ * \note We use a VOTable \<PARAM\> element with arraysize=dim1xdim2. The arraysize-convention
  *  is that the the first index varies fastest, while the last index is the slowest-varying.
  * We therefore write the matrix in *transposed* order, ie. "cols x rows", such that the
  * fastest-varying index is the column-index!

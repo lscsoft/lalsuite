@@ -144,9 +144,9 @@ DopplerLatticeScan *XLALDuplicateDopplerLatticeScan ( const DopplerLatticeScan *
 /** Initialize search-grid using optimal lattice-covering
  */
 void
-InitDopplerLatticeScan ( LALStatus *status,
-			 DopplerLatticeScan **scan, 		/**< [out] initialized scan-state for lattice-scan */
-			 const DopplerLatticeInit *init		/**< [in] scan init parameters */
+InitDopplerLatticeScan ( LALStatus *status,		/**< pointer to LALStatus structure */
+			 DopplerLatticeScan **scan, 	/**< [out] initialized scan-state for lattice-scan */
+			 const DopplerLatticeInit *init	/**< [in] scan init parameters */
 			 )
 {
   DopplerLatticeScan *ret = NULL;
@@ -959,7 +959,7 @@ convertCanonical2Doppler ( dopplerParams_t *doppler, const gsl_vector *canonical
 /** Convert a sky-region string into a list of vectors in ecliptic 2D coords {nX, nY}
  */
 void
-skyRegionString2vect3D ( LALStatus *status,
+skyRegionString2vect3D ( LALStatus *status,		/**< pointer to LALStatus structure */
 			 vect3Dlist_t **skyRegion, 	/**< [out] list of skypoints in 3D-ecliptic coordinates {nX, nY, nZ} */
 			 const CHAR *skyRegionString )	/**< [in] string of equatorial-coord. sky-positions */
 {

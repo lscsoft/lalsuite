@@ -427,7 +427,8 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
   sanity_check( trigTime > 0 );
   sanity_check( params->threshold );
   sanity_check( params->timeWindow );
-  sanity_check( params->outputFile );
+// This sanity check needs fixing!
+//  sanity_check( params->outputFile );
   if ( params->bankFile )
   {
     fprintf(stderr,"Please use --spin-bank and/or --non-spin-bank with this ");

@@ -68,11 +68,11 @@ Optional OPTIONS:\n \
 [--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
 [--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor)]\n \
-[--ampOrder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
+[--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
+[--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
-[--RA FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
-[ --GRB\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
-[--distMax FLOAT (100)\t:\tMaximum distance to use]\n \
+[--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
+[--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
 [--deta FLOAT\t:\twidth of eta window]\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
 [--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
@@ -136,7 +136,7 @@ int decohereflag=0;
 REAL8 offset=0.0;
 extern const LALUnit strainPerCount;
 INT4 ampOrder=0;
-
+INT4 phaseOrder=4;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 
@@ -190,7 +190,7 @@ void initialise(int argc, char *argv[]){
 		{"XMLfile",required_argument,0,'X'},
 		{"Nmcmc",required_argument,0,'M'},
 		{"Nruns",required_argument,0,'r'},
-		{"GRB",no_argument,0,'b'},
+		{"grb",no_argument,0,'b'},
 		{"out",required_argument,0,'o'},
 		{"inj",required_argument,0,'j'},
 		{"fake",no_argument,0,'F'},
@@ -206,14 +206,15 @@ void initialise(int argc, char *argv[]){
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
 		{"studentt",no_argument,0,'l'},
-		{"RA",required_argument,0,'O'},
+		{"ra",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 		{"SNRfac",required_argument,0,14},
 		{"skyloc",no_argument,0,13},
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
-		{"ampOrder",required_argument,0,17},
+		{"amporder",required_argument,0,17},
+		{"phaseorder",required_argument,0,20},
 		{"Dmin",required_argument,0,18},
 		{"Dmax",required_argument,0,19},
 		{"version",no_argument,0,'V'},
@@ -250,6 +251,9 @@ void initialise(int argc, char *argv[]){
 			break;
 		case 15:
 			HighMassFlag=1;
+			break;
+		case 20:
+			phaseOrder=atoi(optarg);
 			break;
 		case 'i': /* This type of arragement builds a list of file names for later use */
 			if(nCache==0) CacheFileNames=malloc(sizeof(char *));
@@ -826,6 +830,62 @@ int main( int argc, char *argv[])
 		fprintf(stderr,"Warning, setting amp order %i but not using AmpCorPPN. Amplitude corrected waveforms will NOT be generated!\n",ampOrder);
 	}
 	inputMCMC.ampOrder=ampOrder;
+
+	if(phaseOrder>7 && inputMCMC.approximant!=EOBNR)
+	{
+		fprintf(stderr,"Error: Cannot go above 3.5PN in phase using this template!\n");
+		exit(1);
+	}
+	switch(phaseOrder)
+	{
+		case 0:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_NEWTONIAN;
+			break;
+		}
+		case 1:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_HALF;
+			break;
+		}
+		case 2:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_ONE;
+			break;
+		}
+		case 3:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_ONE_POINT_FIVE;
+			break;
+		}
+		case 4:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_TWO;
+			break;
+		}
+		case 5:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_TWO_POINT_FIVE;
+			break;
+		}
+		case 6:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_THREE;
+			break;
+		}
+		case 7:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
+			break;
+		}
+		case 8:
+		{
+			inputMCMC.phaseOrder=LAL_PNORDER_PSEUDO_FOUR;
+			break;
+		}
+		default:
+			inputMCMC.phaseOrder=LAL_PNORDER_TWO;
+	}
 
 	/* Set the initialisation and likelihood functions */
 	if(SkyPatch) {inputMCMC.funcInit = NestInitSkyPatch; goto doneinit;}

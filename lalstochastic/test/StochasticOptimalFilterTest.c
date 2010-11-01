@@ -243,8 +243,6 @@ int main(int argc, char *argv[])
 
   REAL4FrequencySeries     realBadData;
   COMPLEX8FrequencySeries  complexBadData;
-  REAL4*                   realTempPtr;
-  COMPLEX8*                complexTempPtr;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -533,6 +531,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
+    REAL4*                   realTempPtr;
     realTempPtr = realBadData.data->data;
     realBadData.data->data = NULL;
 
@@ -583,6 +582,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
+    COMPLEX8*                complexTempPtr;
     complexTempPtr = complexBadData.data->data;
     complexBadData.data->data = NULL;
 

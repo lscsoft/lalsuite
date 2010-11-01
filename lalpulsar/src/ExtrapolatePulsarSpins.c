@@ -145,7 +145,7 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
  * replaced by the output.
  */
 void
-LALExtrapolatePulsarSpins (LALStatus   *status,
+LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus structure */
 			   PulsarSpins  fkdot1,		/**< [out] spin-parameters at epoch1 */
 			   LIGOTimeGPS  epoch1, 	/**< [in] GPS SSB-time of new epoch1 */
 			   const PulsarSpins  fkdot0,	/**< [in] spin-params at reference epoch0 */
@@ -211,7 +211,7 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 /** Extrapolate phase phi0 from epoch0 to epoch1, given the spins fkdot1 at epoch1
  * Returns phi1 in the range [0, 2pi] */
 void
-LALExtrapolatePulsarPhase (LALStatus *status,
+LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structure */
 			   REAL8 *phi1,			/**< [out] phase at epoch1 */
 			   PulsarSpins fkdot1,		/**< [in] spin-params at reference epoch1 */
 			   LIGOTimeGPS epoch1, 		/**< [in] GPS SSB-time of epoch1 */

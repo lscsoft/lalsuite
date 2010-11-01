@@ -194,8 +194,8 @@ XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
 /** Initialize the Doppler sky-scanner
  */
 void
-InitDopplerSkyScan( LALStatus *status,
-		    DopplerSkyScanState *skyScan, 		/**< [out] the initialized scan-structure */
+InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
+		    DopplerSkyScanState *skyScan, 	/**< [out] the initialized scan-structure */
 		    const DopplerSkyScanInit *init)	/**< [in] init-params */
 {
   DopplerSkyGrid *node;
@@ -1395,7 +1395,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
  * "SkyRegion"-string of the form '(a1,d1), (a2,d2),...'
  */
 void
-SkySquare2String (LALStatus *status,
+SkySquare2String (LALStatus *status,	/**< pointer to LALStatus structure */
 		  CHAR **string,	/**< OUT: skyRegion string */
 		  REAL8 Alpha,		/**< longitude of first point */
 		  REAL8 Delta,		/**< latitude of first point */
@@ -1458,10 +1458,10 @@ SkySquare2String (LALStatus *status,
  * NOTE: currently only 1 spindown is supported!
  */
 void
-getGridSpacings( LALStatus *status,
+getGridSpacings( LALStatus *status,			/**< pointer to LALStatus structure */
 		 PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in gridpoint */
 		 PulsarDopplerParams gridpoint,		/**< IN: gridpoint to get spacings for*/
-		 const DopplerSkyScanInit *params)		/**< IN: Doppler-scan parameters */
+		 const DopplerSkyScanInit *params)	/**< IN: Doppler-scan parameters */
 {
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
@@ -1575,7 +1575,7 @@ getGridSpacings( LALStatus *status,
  *  PointsPerDim == 1: DopplerRegion is only one point (randomized within one cell)
  */
 void
-getMCDopplerCube (LALStatus *status,
+getMCDopplerCube (LALStatus *status,		/**< pointer to LALStatus structure */
 		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
 		  PulsarDopplerParams lal_signal, 	/**< signal-position: approximate cube-center */
 		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */

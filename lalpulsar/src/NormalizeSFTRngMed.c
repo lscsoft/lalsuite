@@ -74,7 +74,7 @@ NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 /** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
 void
-LALSFTtoPeriodogram (LALStatus    *status,
+LALSFTtoPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure */
 		     REAL8FrequencySeries    *periodo,	/**< [out] mod squares of SFT data */
 		     const COMPLEX8FrequencySeries *SFT	/**< [in] input SFT */
 		     )
@@ -129,7 +129,7 @@ LALSFTtoPeriodogram (LALStatus    *status,
 /** Calculates running median over a single periodogram.
 */
 void
-LALPeriodoToRngmed (LALStatus  *status,
+LALPeriodoToRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
 		    REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoothed' periodogram */
 		    const REAL8FrequencySeries  *periodo,	/**< [in] input periodogram */
 		    UINT4 blockSize			/**< Running median block size */
@@ -207,7 +207,7 @@ LALPeriodoToRngmed (LALStatus  *status,
 /** Calculates a smoothed (running-median) periodogram for the given SFT.
  */
 void
-LALSFTtoRngmed (LALStatus  *status,
+LALSFTtoRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
 		REAL8FrequencySeries  *rngmed,		/**< [out] running-median smoothed periodo [must be allocated!] */
 		const COMPLEX8FrequencySeries *sft,	/**< [in]  input SFT */
 		UINT4 blockSize				/**< Running median block size */
@@ -275,7 +275,7 @@ LALSFTtoRngmed (LALStatus  *status,
 /** Normalize an sft based on RngMed estimated PSD.
  */
 void
-LALNormalizeSFT (LALStatus           *status,
+LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structure */
 		 REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed periodogram over SFT (Tsft*Sn/2) */
 		 SFTtype              *sft,     /**< SFT to be normalized */
 		 UINT4                blockSize)/**< Running median block size for rngmed calculation */
@@ -325,7 +325,7 @@ LALNormalizeSFT (LALStatus           *status,
 /** Function for normalizing a vector of SFTs.
  */
 void
-LALNormalizeSFTVect (LALStatus  *status,
+LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
 		     SFTVector  *sftVect,	/**< [in/out] pointer to a vector of SFTs which will be normalized */
 		     UINT4     blockSize	/**< Running median window size */
 		     )
@@ -408,7 +408,7 @@ LALNormalizeSFTVect (LALStatus  *status,
  * returns the running-median estimates of the power.
  */
 void
-LALNormalizeMultiSFTVect (LALStatus      *status,
+LALNormalizeMultiSFTVect (LALStatus      *status,		/**< pointer to LALStatus structure */
 			  MultiPSDVector **multiRngmed,	/**< [out] multi running-median power estimates of input SFTs */
 			  MultiSFTVector *multsft,	/**< [in/out] multi-vector of SFTs which will be normalized */
 			  UINT4          blockSize	/**< Running median window size */
@@ -523,7 +523,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,
 /** Calculate the cross-correlation periodogram from 2 SFTs.
  */
 void
-LALSFTstoCrossPeriodogram (LALStatus    *status,
+LALSFTstoCrossPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure */
 			   REAL8FrequencySeries *periodo,	/**< [out] modulus square of SFT data  */
 			   const COMPLEX8FrequencySeries *sft1,	/**< [in] pointer to first SFT  */
 			   const COMPLEX8FrequencySeries *sft2	/**< [in] pointer to second SFT */

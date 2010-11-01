@@ -106,7 +106,7 @@ int finite(double x);
     to be calculated are read from fstatVector.  The other parameters are not checked and
     they must be correctly set outside this function.
 */ 
-void ComputeFStatFreqBand_RS ( LALStatus *status,
+void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus structure */
 			       REAL4FrequencySeries *fstatVector, 		/**< [out] Vector of Fstat values */
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */

@@ -132,10 +132,10 @@ NRCSID (DRIVEHOUGHC, "$Id$");
     right border, and this function figures out what the borders are
     and constructs pointers to them */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHConstructSpacePHMD  (LALStatus            *status,
+void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
 				  PHMDVectorSequence   *phmdVS, /**< Cylindrical buffer of PHMDs */
-				  HOUGHPeakGramVector  *pgV, /**< Vetor of peakgrams */
-				  HOUGHptfLUTVector    *lutV /**< vector of look up tables */)
+				  HOUGHPeakGramVector  *pgV, 	/**< Vetor of peakgrams */
+				  HOUGHptfLUTVector    *lutV 	/**< vector of look up tables */)
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4    k,j;
@@ -385,10 +385,10 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
     -- this is the top level function to be called for constructing
     a total hough map.*/
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHConstructHMT  (LALStatus                  *status,
-			    HOUGHMapTotal              *ht, /**< The output hough map */
-			    UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */
-			    PHMDVectorSequence         *phmdVS /**< set of partial hough map derivatives */)
+void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to LALStatus structure */
+			    HOUGHMapTotal              *ht, 	/**< The output hough map */
+			    UINT8FrequencyIndexVector  *freqInd,/**< time-frequency trajectory */
+			    PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
 { /*   *********************************************  </lalVerbatim> */
 
 
@@ -551,10 +551,10 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
     each PHMD to have a different weight factor to account for varying
     sensitivity at different sky-locations. */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHConstructHMT_W (LALStatus                  *status,
-			     HOUGHMapTotal              *ht, /**< The output hough map */
-			     UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */
-			     PHMDVectorSequence         *phmdVS /**< set of partial hough map derivatives */)
+void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to LALStatus structure */
+			     HOUGHMapTotal              *ht, 		/**< The output hough map */
+			     UINT8FrequencyIndexVector  *freqInd, 	/**< time-frequency trajectory */
+			     PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
 { /*   *********************************************  </lalVerbatim> */
 
 
@@ -655,9 +655,9 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,
 /** Adds weight factors for set of partial hough map derivatives -- the
     weights must be calculated outside this function.  */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
-			      PHMDVectorSequence   *phmdVS, /**< partial hough map derivatives */
-			      REAL8Vector *weightV /**< vector of weights */)
+void LALHOUGHWeighSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
+			      PHMDVectorSequence   *phmdVS, 	/**< partial hough map derivatives */
+			      REAL8Vector *weightV 		/**< vector of weights */)
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4    k,j;
@@ -708,8 +708,8 @@ void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
 
 /** Initializes weight factors to unity */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHInitializeWeights  (LALStatus  *status,
-				REAL8Vector *weightV /**< vector of weights */)
+void LALHOUGHInitializeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
+				REAL8Vector *weightV 	/**< vector of weights */)
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4 j, length;
@@ -743,8 +743,8 @@ void LALHOUGHInitializeWeights  (LALStatus  *status,
 
 /** Normalizes weight factors so that their sum is N */
 /* *******************************  <lalVerbatim file="DriveHoughD"> */
-void LALHOUGHNormalizeWeights  (LALStatus  *status,
-				REAL8Vector *weightV /**< vector of weights */)
+void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
+				REAL8Vector *weightV 	/**< vector of weights */)
 { /*   *********************************************  </lalVerbatim> */
 
   UINT4 j, length;
