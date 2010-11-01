@@ -49,14 +49,10 @@
 #include <unistd.h>
 #endif
 
-#include "../transientCW_utils.h"
-
 /* GSL includes */
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf_bessel.h>
 
 
 /* LAL-includes */
@@ -69,6 +65,10 @@
 
 
 #include <lalapps.h>
+
+
+#include "../transientCW_utils.h"
+#include "../ProbabilityDensity.h"
 
 /*---------- DEFINES ----------*/
 #define EPHEM_YEARS  "05-09"	/**< default range, covering S5: override with --ephemYear */
@@ -142,23 +142,6 @@ typedef struct {
   BOOLEAN version;	/**< output version-info */
   INT4 randSeed;	/**< GSL random-number generator seed value to use */
 } UserInput_t;
-
-/** Encode a pdf(x) as a discretized probability distribution P[i] = prob(x in xBin[i]) with user-specified bins xBin[i].
- *
- * NOTE: Allows for some special encodings for simplicity and efficiency:
- *    - one x0 known with certainty:  pdf(x) = delta(x-x0): ==> xTics = {x0}, prob=NULL
- *    - uniform pdf over [xMin,xMax]: pdf(x) = const.       ==> xTics = {xMin, xMax}, prob=NULL
- *
- * NOTE2: the optional field 'sampling' allows to use gsl_ran_discrete() to efficiently draw samples from that distribution (cost~O(1)).
- *
- */
-typedef struct
-{
-  REAL8Vector *xTics;		/**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
-  REAL8Vector *prob;		/**< N-dim vector of binned probabilities prob[i] = P( x in [ x[i],x[i+i] ) */
-  BOOLEAN normalized;		/**< true if the prob is normalized, ie sum_i P[i] = 1 */
-  gsl_ran_discrete_t *sampling;	/**< optional: preprocessed sampling distribution for drawing samples using gsl_ran_discrete() [can be NULL]*/
-} pdf1D_t;
 
 
 /** Signal (amplitude) parameter ranges
@@ -237,13 +220,6 @@ REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, An
 MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( InjParams_t *injParams, const ConfigVariables *cfg, multiAMBuffer_t *multiAMBuffer );
 
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
-
-REAL8 XLALDrawFromPDF1D ( pdf1D_t *probDist, const gsl_rng *rng );
-void XLALDestroyPDF1D ( pdf1D_t *pdf );
-pdf1D_t *XLALCreateSingularPDF1D ( REAL8 x0 );
-pdf1D_t *XLALCreateUniformPDF1D ( REAL8 xMin, REAL8 xMax );
-pdf1D_t *XLALCreateDiscretePDF1D ( REAL8 xMin, REAL8 xMax, UINT4 numBins );
-
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 
 int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par );
@@ -1582,63 +1558,6 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
 } /* XLALRescaleMultiFstatAtomVector() */
 
 
-/** Function to generate random samples drawn from the given pdf(x)
- *
- * NOTE: if the 'sampling' field is NULL, it will be set the first call to this function.
- */
-REAL8
-XLALDrawFromPDF1D ( pdf1D_t *pdf,	/**< [in] probability distribution to sample from */
-                    const gsl_rng *rng	/**< random-number generator */
-                    )
-{
-  const char *fn = __func__;
-
-  /* check input consistency */
-  if ( !pdf || !rng ) {
-    XLALPrintError ("%s: NULL input 'pdf = %p' or 'rng = %p'\n", fn, pdf, rng );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
-  }
-  if ( (pdf->xTics == NULL) || (pdf->xTics->length==0) || (pdf->xTics->data==NULL) ) {
-    XLALPrintError ("%s: invalid input pdf->xTics\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
-  }
-
-  /* ----- special case 1: single value with certainty */
-  if ( pdf->xTics->length == 1 )
-    return pdf->xTics->data[0];
-
-  /* ----- special case 2: uniform pdf in [xMin, xMax] */
-  if ( pdf->xTics->length == 2 )
-    return gsl_ran_flat ( rng, pdf->xTics->data[0], pdf->xTics->data[1] );
-
-  /* ----- general case: draw from discretized pdf ----- */
-  UINT4 numBins = pdf->xTics->length - 1;
-
-  // first check that 'prob' is actually valid
-  if ( (pdf->prob == NULL ) || ( pdf->prob->length != numBins ) || ( pdf->prob->data == NULL ) ) {
-    XLALPrintError ("%s: invalid input pdf->prob\n", fn );
-    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
-  }
-
-  // buffer gsl_ran_discrete_t if not computed previously
-  if ( pdf->sampling == NULL ) {
-    if ( (pdf->sampling = gsl_ran_discrete_preproc ( pdf->prob->length, pdf->prob->data ) ) == NULL ) {
-      XLALPrintError ("%s: gsl_ran_discrete_preproc() failed\n", fn );
-      XLAL_ERROR ( fn, XLAL_EFAILED );
-    }
-  }
-
-  // draw an index from pdf->prob
-  UINT4 ind = gsl_ran_discrete (rng, pdf->sampling );
-  // get the corresponding bin-boundaries of bin[i] = [x[i], x[i+1]]
-  REAL8 x0 = pdf->xTics->data[ind];
-  REAL8 x1 = pdf->xTics->data[ind+1];
-
-  // and do another uniform draw from [x0, x1]	(thanks to Karl for that suggestion ;)
-  return gsl_ran_flat ( rng, x0, x1 );
-
-} /* XLALDrawFromPDF1D() */
-
 /** Write an injection-parameters structure to the given file-pointer,
  * adding one line with the injection parameters
  */
@@ -1686,162 +1605,6 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
  return XLAL_SUCCESS;
 
 } /* write_InjParams_to_fp() */
-
-
-/** Destructor function for 1-D pdf
- */
-void
-XLALDestroyPDF1D ( pdf1D_t *pdf )
-{
-  if ( !pdf )
-    return;
-
-  if ( pdf->xTics )
-    XLALDestroyREAL8Vector ( pdf->xTics );
-  if ( pdf->prob )
-    XLALDestroyREAL8Vector ( pdf->prob );
-
-  if ( pdf->sampling )
-    gsl_ran_discrete_free ( pdf->sampling );
-
-
-  XLALFree ( pdf );
-
-  return;
-
-} /* XLALDestroyPDF1D() */
-
-
-/** Creator function for a 'singular' 1D pdf, containing a single value with certainty, ie P(x0)=1, and P(x!=x0)=0
- *
- * This is encoded as an xTics array containing just one value: x0, and prob=NULL, sampling=NULL
- */
-pdf1D_t *
-XLALCreateSingularPDF1D ( REAL8 x0	/**< domain of pdf is a single point: x0 */
-                          )
-{
-  const char *fn = __func__;
-
-  /* allocate memory for output pdf */
-  pdf1D_t *ret;
-
-  if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  if ( ( ret->xTics = XLALCreateREAL8Vector ( 1 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(1) failed!\n", fn );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  ret->xTics->data[0] = x0;	/* only value required: P[x0]=1 */
-
-  return ret;
-
-} /* XLALCreateSingularPDF1D() */
-
-/** Creator function for a uniform 1D pdf over [xMin, xMax]
- *
- * This is encoded as an xTics array containing just two values: x[0]=xMin, x[1]=xMax,
- * and prob=NULL, sampling=NULL {not required to draw from this pdf}
- */
-pdf1D_t *
-XLALCreateUniformPDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
-                         REAL8 xMax	/**< upper boundary of domain interval */
-                         )
-{
-  const char *fn = __func__;
-
-  /* check input */
-  if ( xMax < xMin ) {
-    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", fn, xMax, xMin );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  /* allocate memory for output pdf */
-  pdf1D_t *ret;
-
-  if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  if ( ( ret->xTics = XLALCreateREAL8Vector ( 2 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(2) failed!\n", fn );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  ret->xTics->data[0] = xMin;
-  ret->xTics->data[1] = xMax;
-
-  return ret;
-
-} /* XLALCreateUniformPDF1D() */
-
-
-/** Creator function for a generic discrete 1D pdf over [xMin, xMax], discretized into numBins bins
- *
- * NOTE: generates a uniform sampling of the domain [xMin, xMax] in numBins
- * NOTE2: returns the P[i] array 'prob' initialized to 0, so after calling this function
- * the user still needs to feed in the correct values for the probabilities P[i] of x in [x[i],x[i+1]]
- */
-pdf1D_t *
-XLALCreateDiscretePDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
-                          REAL8 xMax,	/**< upper boundary of domain interval */
-                          UINT4 numBins /**< number of bins to discretize PDF into */
-                         )
-{
-  const char *fn = __func__;
-
-  /* check input */
-  if ( xMax < xMin ) {
-    XLALPrintError ("%s: invalid input, xMax=%f must be > xMin = %f\n", fn, xMax, xMin );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-  if ( numBins == 0 ) {
-    XLALPrintError ("%s: invalid input, numBins must be positive!\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
-  }
-
-  /* allocate memory for output pdf */
-  pdf1D_t *ret;
-
-  if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  if ( ( ret->xTics = XLALCreateREAL8Vector ( numBins + 1 )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", fn, numBins + 1 );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  if ( ( ret->prob = XLALCreateREAL8Vector ( numBins )) == NULL ) {
-    XLALPrintError ("%s: surprisingly, XLALCreateREAL8Vector(%d) failed!\n", fn, numBins );
-    XLALDestroyREAL8Vector ( ret->xTics );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  /* initialize N bins uniformly spaced over [xMin, xMax], ie. N+1 'tics' */
-  UINT4 i;
-  REAL8 dx = ( xMax - xMin ) / numBins;
-  for (i = 0; i < numBins + 1; i ++ )
-    {
-      REAL8 xi = xMin + i * dx;
-      ret->xTics->data[i] = xi;
-
-    } /* for i < numBins+1 */
-
-  /* initialized pdf bins to zero */
-  memset ( ret->prob->data, 0, numBins * sizeof( *ret->prob->data ) );
-
-  return ret;
-
-} /* XLALCreateDiscretePDF1D() */
 
 
 /** Initialize amplitude-prior pdfs from the user-input
@@ -1941,10 +1704,10 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
           if ( ( pdf = XLALCreateDiscretePDF1D ( 0, h0NatMax, AmpPriorBins )) == NULL )
             XLAL_ERROR ( fn, XLAL_EFUNC );
 
-          for ( i=0; i < pdf->prob->length; i ++ )
+          for ( i=0; i < pdf->probDens->length; i ++ )
             {
               REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
-              pdf->prob->data[i] = CUBE( xMid );	// pdf(h0) ~ h0^3
+              pdf->probDens->data[i] = CUBE( xMid );	// pdf(h0) ~ h0^3
             }
           AmpPrior->pdf_h0Nat = pdf;
         }
@@ -1956,11 +1719,11 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
           if ( ( pdf = XLALCreateDiscretePDF1D ( -1.0, 1.0, AmpPriorBins )) == NULL )
             XLAL_ERROR ( fn, XLAL_EFUNC );
 
-          for ( i=0; i < pdf->prob->length; i ++ )
+          for ( i=0; i < pdf->probDens->length; i ++ )
             {
               REAL8 xMid = 0.5 * ( pdf->xTics->data[i] + pdf->xTics->data[i+1] );
               REAL8 y = 1.0 - SQ(xMid);
-              pdf->prob->data[i] = CUBE( y );
+              pdf->probDens->data[i] = CUBE( y );
             }
           AmpPrior->pdf_cosi = pdf;
         }
