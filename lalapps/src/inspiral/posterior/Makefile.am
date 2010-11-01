@@ -27,7 +27,8 @@ EXTRA_DIST = \
 	coherence_test.in \
 	merge_nested_sampling_runs.in \
 	nest_pipe.in \
-	nest_utils.py
+	nest_utils.py \
+	combine_evidence.py
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
