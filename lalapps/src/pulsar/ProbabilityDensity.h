@@ -49,16 +49,18 @@ extern "C" {
 
 /* ---------- exported API types ---------- */
 
-/** Encode a pdf(x) as a discretized function pdf[i] = pdf( x[i] ) with user-specified bins xBin[i].
+/** Encode a pdf(x) as a discretized function probDens[i] = pdf( x[i] ) with user-specified bins xBin[i].
  *
- * We store the actual probability *density values, such that prob(x in xBin[i]) = p[i] * xBin[i].
+ * We store the actual probability *density values, such that prob(x in xBin[i]) = probDens[i] * xBin[i].
  *
  * NOTE: Allows for some special encodings for simplicity and efficiency:
- *    - one x0 known with certainty:  pdf(x) = delta(x-x0): ==> xTics = {x0}, pdf=NULL
- *    - uniform pdf over [xMin,xMax]: pdf(x) = const.       ==> xTics = {xMin, xMax}, pdf=NULL
+ *    - one x0 known with certainty:  pdf(x) = delta(x-x0): ==> xTics = {x0},         probDens=NULL
+ *    - uniform pdf over [xMin,xMax]: pdf(x) = const.       ==> xTics = {xMin, xMax}, probDens=NULL
  *
- * NOTE2: the optional field 'sampling' allows to use gsl_ran_discrete() to efficiently draw samples
- * from that distribution (very efficiently, cost ~ O(1)).
+ * NOTE2: the optional field 'sampling' is used to buffer gsl-precomputed internals to allow using
+ * gsl_ran_discrete() to efficiently draw samples from that distribution (cost ~ O(1)).
+ * This field is only for internal use, and will be created automatically by XLALDrawFromPDF1D()
+ * if it's not initialized yet.
  *
  */
 struct tag_pdf1D_t
@@ -66,7 +68,7 @@ struct tag_pdf1D_t
   REAL8Vector *xTics;		/**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
   REAL8Vector *probDens;	/**< N-dim vector of binned probability densities probDens[i] = prob( x in [ x[i],x[i+i] )/xBin[i]  */
   BOOLEAN isNormalized;		/**< true if the prob is normalized, ie 1 = int P(x) dx ~ sum_i probDens[i] xBin[i] */
-  gsl_ran_discrete_t *sampling;	/**< optional: preprocessed sampling distribution for drawing samples using gsl_ran_discrete() [can be NULL]*/
+  gsl_ran_discrete_t *sampling;	/**< internal: buffer preprocessed sampling distribution for drawing samples using gsl_ran_discrete() */
 };
 
 
