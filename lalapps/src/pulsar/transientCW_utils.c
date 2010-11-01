@@ -404,11 +404,11 @@ XLALComputeTransientBstat ( transientWindowRange_t windowRange,		/**< [in] type 
 
 } /* XLALComputeTransientBstat() */
 
-/** Compute transient-CW posterior on start-time t0, using given type and parameters
+/** Compute transient-CW posterior (normalized) on start-time t0, using given type and parameters
  * of transient window range.
  *
- * NOTE: the returned pdf has a number of sample-points Nt0points given by the size
- * of the input matrix  FstatMap (namely Nt0points = t0Band / dt0)
+ * NOTE: the returned pdf has a number of sample-points N_t0Range given by the size
+ * of the input matrix  FstatMap (namely N_t0Range = t0Band / dt0)
  *
  */
 pdf1D_t *
@@ -465,10 +465,89 @@ XLALComputeTransientPosterior_t0 ( transientWindowRange_t windowRange,		/**< [in
   /* free mem */
   XLALDestroyExpLUT();
 
+  /* normalize this PDF */
+  if ( XLALNormalizePDF1D ( ret ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: failed to normalize posterior pdf ..\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
   /* ----- return ----- */
   return ret;
 
 } /* XLALComputeTransientPosterior_t0() */
+
+/** Compute transient-CW posterior (normalized) on timescale tau, using given type and parameters
+ * of transient window range.
+ *
+ * NOTE: the returned pdf has a number of sample-points N_tauRange given by the size
+ * of the input matrix  FstatMap (namely N_tauRange = tauBand / dtau)
+ *
+ */
+pdf1D_t *
+XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range */
+                                    const transientFstatMap_t *FstatMap		/**< [in] pre-computed transient-Fstat map F_mn over {t0, tau} ranges */
+                                    )
+{
+  const char *fn = __func__;
+
+  /* ----- check input consistency */
+  if ( !FstatMap || !FstatMap->F_mn ) {
+    XLALPrintError ("%s: invalid NULL input 'FstatMap' or 'FstatMap->F_mn'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( windowRange.type >= TRANSIENT_LAST ) {
+    XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* ----- step through F_mn array subtract maxF and sum e^{F_mn - maxF}*/
+  /*
+   * It is numerically more robust to marginalize over e^(F_mn - Fmax), which at worst can underflow, while
+   * e^F_mn can overflow (for F>~700). The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
+   */
+  UINT4 N_t0Range  = FstatMap->F_mn->size1;
+  UINT4 N_tauRange = FstatMap->F_mn->size2;
+
+  REAL8 tau0 = windowRange.tau;
+  REAL8 tau1 = tau0 + windowRange.tauBand;
+
+  pdf1D_t *ret;
+  if ( ( ret = XLALCreateDiscretePDF1D ( tau0, tau1, N_tauRange )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateDiscretePDF1D() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 m, n;
+  for ( n=0; n < N_tauRange; n ++ )
+    {
+      REAL8 sum_eF = 0;
+      for ( m=0; m < N_t0Range; m ++ )
+        {
+          REAL8 DeltaF = FstatMap->maxF - gsl_matrix_get ( FstatMap->F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
+
+          //sum_eB += exp ( - DeltaF );
+          sum_eF += XLALFastNegExp ( DeltaF );
+
+        } /* for m < N_t0Range */
+
+      ret->probDens->data[m] = sum_eF;
+
+    } /* for n < N_tauRange */
+
+  /* free mem */
+  XLALDestroyExpLUT();
+
+  /* normalize this PDF */
+  if ( XLALNormalizePDF1D ( ret ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: failed to normalize posterior pdf ..\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* ----- return ----- */
+  return ret;
+
+} /* XLALComputeTransientPosterior_tau() */
+
 
 
 /** Function to compute transient-window "F-statistic map" over start-time and timescale {t0, tau}.
