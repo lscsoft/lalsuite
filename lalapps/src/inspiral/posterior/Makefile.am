@@ -19,7 +19,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs lalapps_nest_pipe
-pkgpython_DATA = nest_utils.py
+pkgpython_DATA = nest_utils.py combine_evidence.py
 endif
 
 EXTRA_DIST = \
