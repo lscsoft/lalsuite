@@ -453,7 +453,7 @@ int main(int argc,char *argv[])
           }
 	  fprintf ( fpFstatMap, "%s", cfg.logString );	/* output header info */
 
-          fprintf (fpFstatMap, "\nFstat_m_n = \\\n" );
+          fprintf (fpFstatMap, "\nFstat_mn = \\\n" );
           if ( XLALfprintfGSLmatrix ( fpFstatMap, "%.9g", cand.FstatMap->F_mn ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: XLALfprintfGSLmatrix() failed.\n", fn );
             XLAL_ERROR ( fn, XLAL_EFUNC );
@@ -489,13 +489,13 @@ int main(int argc,char *argv[])
             XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
-          if ( (pdf_tau = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
+          if ( (pdf_tau = XLALComputeTransientPosterior_tau ( cand.windowRange, cand.FstatMap )) == NULL ) {
             XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
           /* write them to file, using pdf-method */
-	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_t0, "pdf_to" ) != XLAL_SUCCESS ) {
+	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_t0, "pdf_t0" ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to output t0-posterior to file '%s'.\n", fn, fnamePosteriors );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
