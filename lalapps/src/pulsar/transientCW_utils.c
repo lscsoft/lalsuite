@@ -440,16 +440,36 @@ XLALComputeTransientPosterior_t0 ( transientWindowRange_t windowRange,		/**< [in
   REAL8 t1 = t0 + windowRange.t0Band;
 
   pdf1D_t *ret;
+
+  /* ----- handle special cases: 1) point-like support, 2) uniform pdf-value over 1 bin ----- */
+  if ( N_t0Range == 1 && (windowRange.t0Band == 0) )
+    {
+      if ( (ret = XLALCreateSingularPDF1D ( t0 )) == NULL ) {
+        XLALPrintError ("%s: failed to create singular pdf for t0 = %g\n", fn, t0 );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      return ret;
+    } /* if singular pdf in t0 */
+  if ( (N_t0Range == 1) && (windowRange.t0Band > 0) )
+    {
+      if ( (ret = XLALCreateUniformPDF1D ( t0, t1 )) == NULL ) {
+        XLALPrintError ( "%s: failed to created unform pdf over [%g, %g]\n", fn, t0, t1 );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      return ret;
+    } /* if uniform pdf over small band t0Band */
+
+  /* ----- general N>1 point pdf case ----- */
   if ( ( ret = XLALCreateDiscretePDF1D ( t0, t1, N_t0Range )) == NULL ) {
     XLALPrintError ("%s: XLALCreateDiscretePDF1D() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
   UINT4 m, n;
-  for ( m=0; m < N_t0Range; m ++ )
+  for ( m=0; m < N_t0Range; m ++ )	/* loop over start-times t0 */
     {
       REAL8 sum_eF = 0;
-      for ( n=0; n < N_tauRange; n ++ )
+      for ( n=0; n < N_tauRange; n ++ )	/* loop over timescales tau */
         {
           REAL8 DeltaF = FstatMap->maxF - gsl_matrix_get ( FstatMap->F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
 
@@ -512,16 +532,36 @@ XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,		/**< [i
   REAL8 tau1 = tau0 + windowRange.tauBand;
 
   pdf1D_t *ret;
+
+  /* ----- handle special cases: 1) point-like support, 2) uniform pdf-value over 1 bin ----- */
+  if ( N_tauRange == 1 && (windowRange.tauBand == 0) )
+    {
+      if ( (ret = XLALCreateSingularPDF1D ( tau0 )) == NULL ) {
+        XLALPrintError ("%s: failed to create singular pdf for tau0 = %g\n", fn, tau0 );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      return ret;
+    } /* if singular pdf in tau */
+  if ( (N_tauRange == 1) && (windowRange.tauBand > 0) )
+    {
+      if ( (ret = XLALCreateUniformPDF1D ( tau0, tau1 )) == NULL ) {
+        XLALPrintError ( "%s: failed to created unform pdf over [%g, %g]\n", fn, tau0, tau1 );
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      }
+      return ret;
+    } /* if uniform pdf over small band tauBand */
+
+  /* ----- general N>1 point pdf case ----- */
   if ( ( ret = XLALCreateDiscretePDF1D ( tau0, tau1, N_tauRange )) == NULL ) {
     XLALPrintError ("%s: XLALCreateDiscretePDF1D() failed with xlalErrno = %d\n", fn, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
   UINT4 m, n;
-  for ( n=0; n < N_tauRange; n ++ )
+  for ( n=0; n < N_tauRange; n ++ )	/* loop over timescales tau */
     {
       REAL8 sum_eF = 0;
-      for ( m=0; m < N_t0Range; m ++ )
+      for ( m=0; m < N_t0Range; m ++ )	/* loop over start-times t0 */
         {
           REAL8 DeltaF = FstatMap->maxF - gsl_matrix_get ( FstatMap->F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
 
@@ -530,7 +570,7 @@ XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange,		/**< [i
 
         } /* for m < N_t0Range */
 
-      ret->probDens->data[m] = sum_eF;
+      ret->probDens->data[n] = sum_eF;
 
     } /* for n < N_tauRange */
 
@@ -641,12 +681,10 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
-  REAL8 maxF = 0;	// keep track of loudest F-value over t0Band x tauBand space
-  UINT4 m, n;
-
   transientWindow_t win_mn;
   win_mn.type = windowRange.type;
-
+  ret->maxF = 0;	// keep track of loudest F-stat point
+  UINT4 m, n;
   /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */
   for ( m = 0; m < N_t0Range; m ++ ) /* m enumerates 'binned' t0 start-time indices  */
     {
@@ -763,7 +801,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
                               );
 
           /* keep track of loudest F-stat value encountered over the m x n matrix */
-          if ( F > maxF )
+          if ( F > ret->maxF )
             {
               ret->maxF = F;
               ret->t0_maxF  = win_mn.t0;	/* start-time t0 corresponding to Fmax */
