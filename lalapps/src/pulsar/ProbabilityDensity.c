@@ -434,7 +434,10 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
 
   /* ----- special case 1: single value with certainty */
   if ( (pdf->xTics->length == 1) && (pdf->probDens == NULL) )
-    fprintf (fp, PDF_FMT ";\n" PDF_FMT ";\n", pdf->xTics->data[0], 1.0 );	// not quite correct, should be a Dirac-delta function
+    {
+      fprintf (fp, PDF_FMT ";\n" PDF_FMT ";\n];\n", pdf->xTics->data[0], 1.0 );	// not quite correct, should be a Dirac-delta function
+      return XLAL_SUCCESS;
+    }
 
   /* ----- special case 2: uniform pdf in [xMin, xMax] */
   if ( (pdf->xTics->length == 2) && (pdf->probDens == NULL) )
@@ -442,7 +445,8 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
       REAL8 x0 = pdf->xTics->data[0];
       REAL8 x1 = pdf->xTics->data[1];
       REAL8 p  = 1.0 / ( x1 - x0 );
-      fprintf (fp, PDF_FMT ", " PDF_FMT ";\n" PDF_FMT ", " PDF_FMT ";\n", x0, x1, p, p );
+      fprintf (fp, PDF_FMT ", " PDF_FMT ";\n" PDF_FMT ", " PDF_FMT ";\n];\n", x0, x1, p, p );
+      return XLAL_SUCCESS;
     }
 
   /* ----- general case: discretized pdf ----- */
