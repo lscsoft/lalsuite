@@ -28,8 +28,6 @@
  *********************************************************************************/
 #include "config.h"
 
-#include "transientCW_utils.h"
-
 /* System includes */
 #include <math.h>
 
@@ -38,6 +36,10 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
+
+#include "ProbabilityDensity.h"
+#include "transientCW_utils.h"
+
 
 /* ----- MACRO definitions ---------- */
 #define SQ(x) ((x)*(x))
@@ -390,7 +392,7 @@ XLALComputeTransientBstat ( transientWindowRange_t windowRange,		/**< [in] type 
 
   /* final normalized Bayes factor, assuming rhohMax=1 */
   /* NOTE: correct this for different rhohMax by adding "- 4 * log(rhohMax)" to logB*/
-  REAL8 logB_SG = log ( normBh ) +  logBhat;	/* - 4.0 * log ( rhohMax ) */
+  REAL8 logBstat = log ( normBh ) +  logBhat;	/* - 4.0 * log ( rhohMax ) */
 
   // printf ( "\n\nlogBhat = %g, normBh = %g, log(normBh) = %g\nN_t0Range = %d, N_tauRange=%d\n\n", logBhat, normBh, log(normBh), N_t0Range, N_tauRange );
 
@@ -398,9 +400,76 @@ XLALComputeTransientBstat ( transientWindowRange_t windowRange,		/**< [in] type 
   XLALDestroyExpLUT();
 
   /* ----- return ----- */
-  return logB_SG;
+  return logBstat;
 
 } /* XLALComputeTransientBstat() */
+
+/** Compute transient-CW posterior on start-time t0, using given type and parameters
+ * of transient window range.
+ *
+ * NOTE: the returned pdf has a number of sample-points Nt0points given by the size
+ * of the input matrix  FstatMap (namely Nt0points = t0Band / dt0)
+ *
+ */
+pdf1D_t *
+XLALComputeTransientPosterior_t0 ( transientWindowRange_t windowRange,		/**< [in] type and parameters specifying transient window range */
+                                   const transientFstatMap_t *FstatMap		/**< [in] pre-computed transient-Fstat map F_mn over {t0, tau} ranges */
+                                   )
+{
+  const char *fn = __func__;
+
+  /* ----- check input consistency */
+  if ( !FstatMap || !FstatMap->F_mn ) {
+    XLALPrintError ("%s: invalid NULL input 'FstatMap' or 'FstatMap->F_mn'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( windowRange.type >= TRANSIENT_LAST ) {
+    XLALPrintError ("%s: unknown window-type (%d) passes as input. Allowed are [0,%d].\n", fn, windowRange.type, TRANSIENT_LAST-1);
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* ----- step through F_mn array subtract maxF and sum e^{F_mn - maxF}*/
+  /*
+   * It is numerically more robust to marginalize over e^(F_mn - Fmax), which at worst can underflow, while
+   * e^F_mn can overflow (for F>~700). The constant offset e^Fmax is irrelevant for posteriors (normalization constant).
+   */
+  UINT4 N_t0Range  = FstatMap->F_mn->size1;
+  UINT4 N_tauRange = FstatMap->F_mn->size2;
+
+  REAL8 t0 = windowRange.t0;
+  REAL8 t1 = t0 + windowRange.t0Band;
+
+  pdf1D_t *ret;
+  if ( ( ret = XLALCreateDiscretePDF1D ( t0, t1, N_t0Range )) == NULL ) {
+    XLALPrintError ("%s: XLALCreateDiscretePDF1D() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  UINT4 m, n;
+  for ( m=0; m < N_t0Range; m ++ )
+    {
+      REAL8 sum_eF = 0;
+      for ( n=0; n < N_tauRange; n ++ )
+        {
+          REAL8 DeltaF = FstatMap->maxF - gsl_matrix_get ( FstatMap->F_mn, m, n );	// always >= 0, exactly ==0 at {m,n}_max
+
+          //sum_eB += exp ( - DeltaF );
+          sum_eF += XLALFastNegExp ( DeltaF );
+
+        } /* for n < N_tauRange */
+
+      ret->probDens->data[m] = sum_eF;
+
+    } /* for m < N_t0Range */
+
+  /* free mem */
+  XLALDestroyExpLUT();
+
+  /* ----- return ----- */
+  return ret;
+
+} /* XLALComputeTransientPosterior_t0() */
+
 
 /** Function to compute transient-window "F-statistic map" over start-time and timescale {t0, tau}.
  *

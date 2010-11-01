@@ -36,8 +36,9 @@ extern "C" {
 
 #include "config.h"
 
-/* ---------- System includes ---------- */
+#include "ProbabilityDensity.h"
 
+/* ---------- System includes ---------- */
 /* gsl-includes */
 #define GSL_RANGE_CHECK_OFF 1
 #define GSL_C99_INLINE 1
@@ -142,6 +143,8 @@ transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *
                                                     BOOLEAN useFReg );
 
 REAL8 XLALComputeTransientBstat ( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+pdf1D_t *XLALComputeTransientPosterior_t0 ( transientWindowRange_t windowRange,const transientFstatMap_t *FstatMap );
+
 
 void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
 void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
