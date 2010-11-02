@@ -677,7 +677,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
   UINT4 N_tauRange = (UINT4) floor ( windowRange.tauBand / windowRange.dtau ) + 1;
 
   if ( ( ret->F_mn = gsl_matrix_calloc ( N_t0Range, N_tauRange )) == NULL ) {
-    XLALPrintError ("%s: failed ret->F_mn = gsl_matrix_calloc ( %d, %s )\n", fn, N_tauRange, N_t0Range );
+    XLALPrintError ("%s: failed ret->F_mn = gsl_matrix_calloc ( %d, %d )\n", fn, N_tauRange, N_t0Range );
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
