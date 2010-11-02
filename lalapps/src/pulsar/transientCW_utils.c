@@ -734,10 +734,16 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
           switch ( windowRange.type )
             {
             case TRANSIENT_RECTANGULAR:
+#if 0
+              /* 'vanilla' unoptimized method, for sanity checks with 'optimized' method */
+              Ad=0; Bd=0; Cd=0; Fa_re=0; Fa_im=0; Fb_re=0; Fb_im=0;
+              for ( UINT4 i = i_t0; i <= i_t1; i ++ )
+#else
               /* special optimiziation in the rectangular-window case: just add on to previous tau values
                * ie re-use the sum over [i_t0, i_t1_last] from the pevious tau-loop iteration
                */
               for ( UINT4 i = i_t1_last; i <= i_t1; i ++ )
+#endif
                 {
                   FstatAtom *thisAtom_i = &atoms->data[i];
 
