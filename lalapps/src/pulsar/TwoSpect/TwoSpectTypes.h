@@ -27,8 +27,8 @@
 typedef struct
 {
    REAL4Vector *ffdata;    //Doubly Fourier transformed data
-   REAL4 tfnormalization;
-   REAL4 ffnormalization;
+   REAL8 tfnormalization;
+   REAL8 ffnormalization;
 } ffdataStruct;
 
 typedef struct

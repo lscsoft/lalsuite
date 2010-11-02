@@ -24,7 +24,6 @@
 
 
 #include <lal/LALConstants.h>
-#include <lal/Sequence.h>
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -132,8 +131,8 @@ int main(int argc, char *argv[])
    
    //
    if (args_info.antennaOff_given) {
-      fprintf(LOG,"NOTE: Antenna pattern weights are all being set to 1.0\n");
-      fprintf(stderr,"NOTE: Antenna pattern weights are all being set to 1.0\n");
+      fprintf(LOG,"WARNING: Antenna pattern weights are all being set to 1.0\n");
+      fprintf(stderr,"WARNING: Antenna pattern weights are all being set to 1.0\n");
    }
    
    //Adjust parameter space search values, if necessary
@@ -201,6 +200,7 @@ int main(int argc, char *argv[])
    InitDopplerSkyScan(&status, &scan, &scanInit);
    XLALNextDopplerSkyPos(&dopplerpos, &scan); //Start at first location
    
+   //Print to log file and stderr the parameters of the search
    fprintf(LOG,"Tobs = %f sec\n",inputParams->Tobs);
    fprintf(LOG,"Tcoh = %f sec\n",inputParams->Tcoh);
    fprintf(LOG,"SFToverlap = %f sec\n",inputParams->SFToverlap);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
    //Assume maximum bin shift possible
    inputParams->maxbinshift = (INT4)round(detectorVmax * inputParams->fmin * inputParams->Tcoh)+1; //TODO: better way to do this?
    
-   //Read in the T-F data
+   //Read in the T-F data from SFTs
    fprintf(LOG,"Loading in SFTs... ");
    fprintf(stderr,"Loading in SFTs... ");
    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(inputExpectedSqrtSh*inputExpectedSqrtSh);
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
    tfRngMeans(background, tfdata, numffts, numfbins + 2*inputParams->maxbinshift, inputParams->blksize);
    
    //I wrote this to compensate for a bad input of the expected noise floor and for non-present SFTs
-   REAL4 backgroundmeannormfactor = 0.0;
+   REAL8 backgroundmeannormfactor = 0.0;
    INT4 avefact = 0;
    for (ii=0; ii<(INT4)background->length; ii++) {
       if (background->data[ii]!=0.0) {
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
          avefact++;
       }
    }
-   backgroundmeannormfactor = (REAL4)avefact/backgroundmeannormfactor;
+   backgroundmeannormfactor = avefact/backgroundmeannormfactor;
    for (ii=0; ii<(INT4)background->length; ii++) background->data[ii] *= backgroundmeannormfactor;
    ffdata->tfnormalization *= backgroundmeannormfactor;
    fprintf(LOG,"done\n");
@@ -320,6 +320,7 @@ int main(int argc, char *argv[])
       fprintf(LOG,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       fprintf(stderr,"Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       
+      //Reset early stage candidate counds
       numofcandidates = numofcandidates2 = 0;
       
       //Determine detector velocity w.r.t. a sky location for each SFT
@@ -1169,7 +1170,7 @@ void free_ffdata(ffdataStruct *data)
 
 //////////////////////////////////////////////////////////////
 // Read in SFT data to produce a TF vector
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization)
+REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 {
 
    INT4 ii, jj;
@@ -1201,7 +1202,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization)
    INT4 sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
    REAL4Vector *tfdata = XLALCreateREAL4Vector((UINT4)(numffts*sftlength));
-   REAL4 sqrtnorm = sqrtf(*(normalization));
+   REAL8 sqrtnorm = sqrt(*(normalization));
    for (ii=0; ii<numffts; ii++) {
       
       SFTDescriptor *sftdescription = &(catalog->data[ii - nonexistantsft]);
@@ -1279,7 +1280,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
          LALSRunningMedian2(&status, mediansout, inpsd, block);
          
          //Now make the output medians into means by multiplying by 1/bias
-         for (jj=0; jj<(INT4)mediansout->length; jj++) output->data[ii*numfbins + jj] = mediansout->data[jj]*invbias;
+         for (jj=0; jj<(INT4)mediansout->length; jj++) output->data[ii*numfbins + jj] = (REAL4)(mediansout->data[jj]*invbias);
       } else {
          //Otherwise, set means to zero
          for (jj=0; jj<(INT4)mediansout->length; jj++) output->data[ii*numfbins + jj] = 0.0;
@@ -1336,7 +1337,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
 
 //////////////////////////////////////////////////////////////
 // Make the second FFT powers
-void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan)
+void makeSecondFFT(REAL4Vector *output, REAL8 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan)
 {
    
    INT4 ii, jj;
@@ -1358,7 +1359,7 @@ void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata
    
       //Next, loop over times and pick the right frequency bin for each FFT and window
       for (jj=0; jj<(INT4)x->length; jj++) {
-         x->data[jj] = tfdata->data[ii + jj*numfbins]*win->data->data[jj];
+         x->data[jj] = (REAL4)(tfdata->data[ii + jj*numfbins]*win->data->data[jj]);
       }
       
       //Make the FFT
@@ -1378,7 +1379,7 @@ void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata
       
       //Scale the data points by 1/N and window factor and (1/fs)
       //Order of vector is by second frequency then first frequency
-      for (jj=0; jj<(INT4)psd->length; jj++) output->data[psd->length*ii + jj] = psd->data[jj]*psdfactor*normalization;
+      for (jj=0; jj<(INT4)psd->length; jj++) output->data[psd->length*ii + jj] = (REAL4)(psd->data[jj]*psdfactor*normalization);
       
    }
    
@@ -1390,6 +1391,8 @@ void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata
 
 
 
+//////////////////////////////////////////////////////////////
+// Determine the average of the noise power in each frequency bin across the band
 REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax)
 {
    
@@ -1410,6 +1413,9 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
    
 }
 
+
+//////////////////////////////////////////////////////////////
+// Determine the rms of the noise power in each frequency bin across the band
 REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax)
 {
    
@@ -1433,7 +1439,7 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 //////////////////////////////////////////////////////////////
 // Measure of the average noise power in each 2st FFT frequency bin  -- 
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4 *normalization)
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL8 *normalization)
 {
 
    INT4 ii, jj, numfbins, numffts, numfprbins;
@@ -1464,9 +1470,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       
       if (backgrnd->data[ii*numfbins]!=0.0) {
-         for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) {
-            rngMeansOverBand->data[jj] = backgrnd->data[ii*numfbins + jj];
-         }
+         for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) rngMeansOverBand->data[jj] = backgrnd->data[ii*numfbins + jj];
          aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
          
          sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
@@ -1527,7 +1531,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
                x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0));
             } else {
                REAL8 newnoiseval = (1.0-corrfactorsquared)*noiseval + corrfactorsquared*prevnoiseval;
-               x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(newnoiseval/aveNoiseInTime->data[jj]-1.0));
+               REAL8 newavenoise = (1.0-corrfactorsquared)*aveNoiseInTime->data[jj] + corrfactorsquared*aveNoiseInTime->data[jj-1];
+               x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(newnoiseval/newavenoise-1.0));
             }
             prevnoiseval = noiseval;
          } else {
@@ -1581,8 +1586,6 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
 
 
 
-
-
 //////////////////////////////////////////////////////////////
 // Calculate the R statistic
 REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios)
@@ -1630,7 +1633,6 @@ REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime)
    return minP;
 
 }
-
 
 
 
