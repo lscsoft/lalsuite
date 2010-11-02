@@ -1299,6 +1299,9 @@ int checkParamInList(const char *list, const char *param)
 {
 	/* Check for param in comma-seperated list */
 	char *post=NULL,*pos=NULL;
+	if (list==NULL) return 0;
+	if (param==NULL) return 0;
+
 	if(!(pos=strstr(list,param))) return 0;
 	
 	/* The string is a substring. Check that it is a token */
