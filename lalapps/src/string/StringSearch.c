@@ -367,14 +367,8 @@ int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
   /* Inject the signals into ht */
 
   /* only calibration uncertainties if null stream */
-  if(!strcmp(CLA.ChannelName,"H2:LSC-STRAIN_HMINUS")){
+  if(!strcmp(CLA.ChannelName,"H2:LSC-STRAIN_HNULL")){
     if(XLALBurstInjectHNullSignals(ht, sim_burst)) return 1;
-  }
-  /* inject twice if H1+H2 */
-  else if(!strcmp(CLA.ChannelName,"H1:LSC-STRAIN_HPLUS")){
-    if(XLALBurstInjectSignals(ht, sim_burst, NULL)) return 1;
-    if(XLALBurstInjectSignals(ht, sim_burst, NULL)) return 1;
-
   }
   /* inject once otherwise */
   else{
