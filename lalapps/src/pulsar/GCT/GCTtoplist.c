@@ -35,6 +35,7 @@
    eah_rename (in win_lib.h) */
 #define rename eah_rename
 #else  // _WIN32
+#include "boinc/filesys.h"
 #define rename boinc_rename
 #endif // _WIN32
 #endif // _BOINC
