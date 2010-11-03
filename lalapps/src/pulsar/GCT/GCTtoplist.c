@@ -27,6 +27,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
+#include <lalapps.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
 #ifdef _WIN32
@@ -322,9 +323,10 @@ int write_gctFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
   char* tempname;
-  INT4 length;
+  INT4 length=0;
   FILE * fpnew;
   UINT4 s;
+  int ret;
 
 #define TEMP_EXT ".tmp"
   s = strlen(filename)+strlen(TEMP_EXT)+1;
@@ -346,10 +348,31 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
     free(tempname);
     return -1;
   }
-  length = write_gctFStat_toplist_to_fp(l,fpnew,checksum);
+
+  if (write_done) {
+    CHAR *VCSInfoString;
+    if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "XLALGetVersionString(0) failed.\n");
+      length = -1;
+    } else {
+      ret = fprintf(fpnew,"%s", VCSInfoString);
+      XLALFree(VCSInfoString);
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+    }
+  }
+
+  if (length >= 0) {
+    ret = write_gctFStat_toplist_to_fp(l,fpnew,checksum);
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+  }
 
   if ((write_done) && (length >= 0)) {
-    int ret;
     ret = fprintf(fpnew,"%%DONE\n");
     if (ret < 0)
       length = ret;
