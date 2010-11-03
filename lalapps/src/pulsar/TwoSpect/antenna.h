@@ -20,19 +20,17 @@
 #ifndef __ANTENNA_H__
 #define __ANTENNA_H__
 
-#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/DetResponse.h>
-#include <lal/LALInitBarycenter.h>
 #include <lal/Velocity.h>
 
 EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris);
 void free_Ephemeris(EphemerisData *ephemdata);
 void initEphemeris(EphemerisData *ephemdata);
 
-void CompBinShifts(INT4Vector *out, REAL8 freq, REAL8Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier);
-void CompAntennaPatternWeights(REAL8Vector *out, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det);
-void CompAntennaVelocity(REAL8Vector *out, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
+void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier);
+void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det);
+void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
 
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
 

@@ -718,7 +718,7 @@ int read_cc_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
 }
 
 
-int write_cc_oputput(const char*filename, toplist_t*tl) {
+int write_cc_output(const char*filename, toplist_t*tl) {
   /* reduce the precision of the calculated values before doing the sort to
      the precision we will write the result with. This should ensure a sorting
      order that looks right to the validator, too */

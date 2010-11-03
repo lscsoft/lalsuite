@@ -148,6 +148,7 @@ static void ParseOptions(int argc, char *argv[])
 };
 
 
+#ifndef LAL_NDEBUG
 static void CHECKERROR(const char *msg, REAL8 result, int error )
 {
   if(!XLALIsREAL8FailNaN(result)) {
@@ -160,7 +161,7 @@ static void CHECKERROR(const char *msg, REAL8 result, int error )
   }
   XLALClearErrno();
 }
-
+#endif
 
 /*
  * Entry point
@@ -171,8 +172,6 @@ int main(int argc, char *argv[])
 	REAL8 chi2;
 	REAL8 dof;
 	REAL8 rho;
-	REAL8 falseAlarm;
-	REAL8 falseDismissal;
 
 	/*
 	 * Parse the command line options
@@ -221,8 +220,8 @@ int main(int argc, char *argv[])
 	 */
 
 #ifndef LAL_NDEBUG
-	falseAlarm = 0.970406;
-	falseDismissal = 0.00439452;
+	REAL8 falseAlarm = 0.970406;
+	REAL8 falseDismissal = 0.00439452;
 	if(!lalNoDebug) {
 		if(verbose || lalDebugLevel)
 			printf("\n===== Check Errors =====\n");

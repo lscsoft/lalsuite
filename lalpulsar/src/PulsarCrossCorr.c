@@ -197,9 +197,15 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   im1 = sft1->data->data[bin1].im;
   re2 = sft2->data->data[bin2].re;
   im2 = sft2->data->data[bin2].im;
+
   out->re = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*re2 + im1*im2);
   out->im = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
+/*
+printf("psd1 psd2 %1.15g %1.15g\n", psd1->data->data[bin1], psd2->data->data[bin2]);
+printf("sft1.re sft1.im %1.15g %1.15g\n", re1*sqrt(psd1->data->data[bin1]), im1*sqrt(psd1->data->data[bin1]));
+printf("sft2.re sft2.im %1.15g %1.15g\n\n", re2*sqrt(psd2->data->data[bin2]), im2*sqrt(psd2->data->data[bin2]));
+*/
   DETATCHSTATUSPTR (status);
 
   /* normal exit */
@@ -293,7 +299,7 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   /* this is the sft reference time  - the pulsar reference time */
   /* we need to convert epoch to REAL8 first before adding rdotn
    * because if LIGOTimeGPS only has INT4 accuracy. converting rdotn into LIGOTimeGPS
-   * will introduce rounding errors*/
+   * will introduce rounding errors*/ 
   epoch_plus_rdotn = XLALGPSGetREAL8(epoch) + rDotn_c;
   timeDiff = epoch_plus_rdotn - XLALGPSGetREAL8(&(dopp->refTime));
 
@@ -307,9 +313,7 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   }
 
   *out = LAL_TWOPI * ( phihat );
-
   DETATCHSTATUSPTR (status);
-
   /* normal exit */
   RETURN (status);
 }
@@ -344,7 +348,6 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
   bin2 = (INT8)ceil( ((freq2 - psd2->f0)/ (deltaF)) - 0.5);
   *out = SQUARE(deltaF)*SQUARE(deltaF) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
-
   /* normal exit */
   RETURN (status);
 
@@ -370,14 +373,13 @@ void LALCalculateAveUalpha(LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
-  /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(-exp^(delta phi)) * (aIaJ + bIbJ)*/
+  /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(exp^(-i delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
   im = - 0.1 * sin(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
 
   /*calculate Ualpha*/
   out->re = re/(sigmasq);
   out->im = -im/(sigmasq);
-
 
   DETATCHSTATUSPTR (status);
 
@@ -415,8 +417,6 @@ void LALCalculateUalpha(LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
-
-/*printf("%f %f\n", deltaPhi, LAL_PI * (freqI - freqJ)/deltaF);*/
 
  
   /*if not averaging over psi, calculate F+, Fx exactly*/
@@ -497,6 +497,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
   for (i=0; i < (INT4)yalpha->length; i++) {
 
   *out += 2.0 * ((yalpha->data[i].re * ualpha->data[i].re) - (yalpha->data[i].im * ualpha->data[i].im));
+
   }
 
   DETATCHSTATUSPTR (status);

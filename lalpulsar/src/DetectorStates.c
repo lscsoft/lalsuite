@@ -65,7 +65,7 @@ int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector
 /** Deprecated LAL wrapper to XLALGetDetectorStates()
  */
 void
-LALGetDetectorStates (LALStatus *status,
+LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure */
 		      DetectorStateSeries **DetectorStates,	/**< [out] series of DetectorStates */
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
@@ -323,10 +323,10 @@ XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 )
  * \note The time-series is based on the <em>midpoints</em> of the SFT-timestamps.
  */
 void
-LALGetMultiDetectorStates( LALStatus *status,
-			   MultiDetectorStateSeries **mdetStates, /**< [out] multi-IFO detector-states */
+LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus structure */
+			   MultiDetectorStateSeries **mdetStates, 	/**< [out] multi-IFO detector-states */
 			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
-			   const EphemerisData *edat )		/**< ephemeris data */
+			   const EphemerisData *edat )			/**< ephemeris data */
 {
   const char *fn = __func__;
 
@@ -380,7 +380,7 @@ LALGetMultiDetectorStates( LALStatus *status,
 
 /** Create a DetectorStateSeries */
 void
-LALCreateDetectorStateSeries (LALStatus *status,
+LALCreateDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus structure */
 			      DetectorStateSeries **vect,	/**< output vector */
 			      UINT4 length )			/**< number of entries */
 {
@@ -418,7 +418,7 @@ XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates )
 
 /** Destroy a DetectorStateSeries (and set it to NULL) */
 void
-LALDestroyDetectorStateSeries (LALStatus *status,
+LALDestroyDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus structure */
 			       DetectorStateSeries **detStates ) /**< pointer to vector to be destroyed */
 {
   INITSTATUS (status, "LALDestroyDetectorStateSeries", DETECTORSTATESC );

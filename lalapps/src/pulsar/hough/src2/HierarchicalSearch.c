@@ -1356,7 +1356,7 @@ int MAIN( int argc, char *argv[]) {
 
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate 
     detector-state */
-void SetUpSFTs( LALStatus *status,
+void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
 		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
@@ -1575,11 +1575,8 @@ void SetUpSFTs( LALStatus *status,
 
 
 
-/** \brief Function for calculating Hough Maps and candidates 
-    \param pgV is a HOUGHPeakGramVector obtained after thresholding Fstatistic vectors
-    \param params is a pointer to HoughParams -- parameters for calculating Hough maps
-    \param out Candidates from thresholding Hough number counts
-
+/** Function for calculating Hough Maps and candidates.
+ *
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function 
     produces a Hough map in the sky for each value of the frequency and spindown.
@@ -1588,10 +1585,11 @@ void SetUpSFTs( LALStatus *status,
     This uses DriveHough_v3.c as a prototype suitably modified to work 
     on demodulated data instead of SFTs.  
 */
-void ComputeFstatHoughMap(LALStatus *status,
-			  SemiCohCandidateList  *out,   /* output candidates */
-			  HOUGHPeakGramVector *pgV, /* peakgram vector */
-			  SemiCoherentParams *params)
+void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure */
+			  SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
+			  HOUGHPeakGramVector *pgV, 	/**< HOUGHPeakGramVector obtained after thresholding Fstatistic vectors */
+			  SemiCoherentParams *params	/**< pointer to HoughParams -- parameters for calculating Hough maps */
+                          )
 {
 
   /* hough structures */
@@ -2124,20 +2122,18 @@ void ComputeFstatHoughMap(LALStatus *status,
 
 }
 
-/** \brief Function for selecting frequency bins from a set of Fstatistic vectors
-    \param FstatVect : sequence of Fstatistic vectors
-    \param thr is a REAL8 threshold for selecting frequency bins
-    \param pgV a vector of peakgrams 
+/** Function for selecting frequency bins from a set of Fstatistic vectors.
 
     Input is a vector of Fstatistic vectors.  It allocates memory 
     for the peakgrams based on the frequency span of the Fstatistic vectors
     and fills tyem up by setting a threshold on the Fstatistic.  Peakgram must be 
     deallocated outside the function.
 */
-void FstatVectToPeakGram (LALStatus *status,
-			  HOUGHPeakGramVector *pgV,
-                          REAL4FrequencySeriesVector *FstatVect,
-			  REAL4  thr)
+void FstatVectToPeakGram (LALStatus *status,			/**< pointer to LALStatus structure */
+			  HOUGHPeakGramVector *pgV,		/**< a vector of peakgrams  */
+                          REAL4FrequencySeriesVector *FstatVect,/**< sequence of Fstatistic vectors */
+			  REAL4  thr				/**< REAL8 threshold for selecting frequency bins */
+                          )
 {
   INT4 j, k;
   INT4 nStacks, nSearchBins, nPeaks;
@@ -2233,7 +2229,7 @@ void FstatVectToPeakGram (LALStatus *status,
     there are long gaps in the data, then some of the catalogs in the
     output catalog sequence may be of zero length. 
 */
-void SetUpStacks(LALStatus *status, 
+void SetUpStacks(LALStatus *status, 	   /**< pointer to LALStatus structure */
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
 		 REAL8 tStack,             /**< Output duration of each stack */
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/

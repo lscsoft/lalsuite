@@ -75,7 +75,7 @@ const SFTandSignalParams empty_SFTandSignalParams;
 /** Generate a time-series at the detector for a given pulsar.
  */
 void
-LALGeneratePulsarSignal (LALStatus *status,
+LALGeneratePulsarSignal (LALStatus *status,		/**< pointer to LALStatus structure */
 			 REAL4TimeSeries **signalvec, 	   /**< output time-series */
 			 const PulsarSignalParams *params) /**< input params */
 {
@@ -255,7 +255,7 @@ LALGeneratePulsarSignal (LALStatus *status,
 /** Turn the given time-series into (v2-)SFTs and add noise if given.
  */
 void
-LALSignalToSFTs (LALStatus *status,
+LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 		 SFTVector **outputSFTs,	/**< [out] SFT-vector */
 		 const REAL4TimeSeries *signalvec, /**< input time-series */
 		 const SFTParams *params)	/**< params for output-SFTs */
@@ -520,7 +520,7 @@ LALSignalToSFTs (LALStatus *status,
  * LALFastGeneratePulsarSFTs() used these to find \f$F_+\f$ and \f$F_x\f$ for NONZERO Psi.
  */
 void
-LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,
+LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus structure */
                                    SkyConstAndZeroPsiAMResponse *output,	/**< output */
                                    const SFTandSignalParams *params)		/**< params */
 {
@@ -894,7 +894,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
  */
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-LALConvertGPS2SSB (LALStatus* status,
+LALConvertGPS2SSB (LALStatus* status,		/**< pointer to LALStatus structure */
 		   LIGOTimeGPS *SSBout, 	/**< [out] arrival-time in SSB */
 		   LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
 		   const PulsarSignalParams *params) /**< define source-location and detector */
@@ -947,7 +947,7 @@ LALConvertGPS2SSB (LALStatus* status,
  *       makefakedata_v2
  */
 void
-LALConvertSSB2GPS (LALStatus *status,
+LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
 		   LIGOTimeGPS *GPSout,		 /**< [out] GPS-arrival-time at detector */
 		   LIGOTimeGPS SSBin, 		 /**< [in] input: signal arrival time at SSB */
 		   const PulsarSignalParams *params) /**< params defining source-location and detector */

@@ -129,7 +129,7 @@ NRCSID (SFTCLEANC, "$Id$");
  * file format, and calculates the number of harmonic sets in this file.
  */
 /*<lalVerbatim file="SFTCleanD"> */
-void LALFindNumberHarmonics (LALStatus    *status,
+void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus structure */
 			     LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
 			     CHAR         *fname /**< input filename */)
 {/*   *********************************************  </lalVerbatim> */
@@ -183,7 +183,7 @@ void LALFindNumberHarmonics (LALStatus    *status,
  *  this structure before this function is called.
  */
 /*  <lalVerbatim file="SFTCleanD"> */
-void  LALReadHarmonicsInfo (LALStatus          *status,
+void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStatus structure */
 			    LineHarmonicsInfo  *harmonicsInfo, /**< list of harmonics */
 			    CHAR               *fname /**< input file */)
 {/*   *********************************************  </lalVerbatim> */
@@ -241,7 +241,7 @@ void  LALReadHarmonicsInfo (LALStatus          *status,
  *  lines.
  */
 /*  <lalVerbatim file="SFTCleanD"> */
-void  LALHarmonics2Lines (LALStatus          *status,
+void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus structure */
 			  LineNoiseInfo      *lineInfo, /**< output list of explicit lines */
 			  LineHarmonicsInfo  *harmonicsInfo) /**< input list of harmonics */
 {/*   *********************************************  </lalVerbatim> */
@@ -413,7 +413,7 @@ void  LALReadLineInfo (LALStatus     *status,
  * for discarding unnecessary lines to save computational cost and memory.
  */
 /*  <lalVerbatim file="SFTCleanD"> */
-void LALChooseLines (LALStatus        *status,
+void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structure */
 		     LineNoiseInfo    *outLine,  /**< reduced list of lines */
 		     LineNoiseInfo    *inLine,   /**< input list of lines */
 		     REAL8            fMin,      /**< start of frequency band */
@@ -499,7 +499,7 @@ void LALChooseLines (LALStatus        *status,
  * frequency is affected or not.
  */
 /*  <lalVerbatim file="SFTCleanD"> */
-void LALCheckLines ( LALStatus           *status,
+void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus structure */
 		     INT4                *countL, /**< number of lines affecting frequency */
 		     LineNoiseInfo       *lines, /**< list of lines */
 		     REAL8               freq)   /**< frequency to be checked */
@@ -618,7 +618,7 @@ void LALCheckLines ( LALStatus           *status,
 
  */
 /* *******************************  <lalVerbatim file="SFTCleanD"> */
-void LALCleanCOMPLEX8SFT (LALStatus          *status,
+void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus structure */
 			  SFTtype            *sft,  /**< SFT to be cleaned */
 			  INT4               width, /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
 			  INT4               window,/**< window size for noise floor estimation in vicinity of a line */
@@ -798,7 +798,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,
 
 /** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
     sft in vector */
-void LALCleanSFTVector (LALStatus       *status,
+void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus structure */
 			SFTVector       *sftVect,  /**< SFTVector to be cleaned */
 			INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
 			INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
@@ -835,7 +835,7 @@ void LALCleanSFTVector (LALStatus       *status,
 
 /** Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
     sft in vector */
-void LALCleanMultiSFTVect (LALStatus       *status,
+void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus structure */
 			   MultiSFTVector  *multVect, /**< SFTVector to be cleaned */
 			   INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
 			   INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
@@ -872,7 +872,7 @@ void LALCleanMultiSFTVect (LALStatus       *status,
 
 /** function to remove lines from a sft vector given a file
     containing list of lines */
-void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
+void LALRemoveKnownLinesInSFTVect (LALStatus   *status,   /**< pointer to LALStatus structure */
 				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
 				   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
 				   INT4        window,    /**< window size for noise floor estimation in vicinity of a line */
@@ -972,7 +972,7 @@ void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
 
 /** top level function to remove lines from a multi sft vector given a list of files
     containing list of known spectral lines */
-void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
+void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< pointer to LALStatus structure */
 					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
 					  INT4             width,          /**< maximum width to be cleaned */
 					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
