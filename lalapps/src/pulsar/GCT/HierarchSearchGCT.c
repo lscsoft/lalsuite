@@ -466,12 +466,14 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
 
-#ifdef GC_SSE2_OPT
-  if ( uvar_nStacksMax > 255) {
-    fprintf(stderr, "Number of segments exceeds 255!\n");
-    return( HIERARCHICALSEARCH_EBAD );
+  /* check that the numbercount can't exceed the data type */
+  {
+    unsigned int maxseg = (1 << (8*sizeof(FINEGRID_NC_T))) - 1;
+    if ( uvar_nStacksMax > maxseg) {
+      fprintf(stderr, "Number of segments exceeds %u!\n", maxseg);
+      return( HIERARCHICALSEARCH_EBAD );
+    }
   }
-#endif
 
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
@@ -1021,7 +1023,7 @@ int MAIN( int argc, char *argv[]) {
           Windows ==>???
 */
 
-        finegrid.nc = (UCHAR *)ALRealloc( finegrid.nc, finegrid.length * sizeof(UCHAR));
+        finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
         finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
 
         if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
@@ -1247,7 +1249,7 @@ int MAIN( int argc, char *argv[]) {
 
             REAL4 * cgrid2F = coarsegrid.TwoF + U1idx;
             REAL4 * fgrid2F = finegrid.sumTwoF + ifine;
-            UCHAR * fgridnc = finegrid.nc+ifine;
+            FINEGRID_NC_T * fgridnc = finegrid.nc+ifine;
 
 #ifdef GC_SSE2_OPT
             gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
