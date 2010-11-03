@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2010 Florent Robinet
+*  robinet@lal.in2p3.fr
 */
 
 #include <stdio.h>
@@ -23,9 +24,8 @@ int main(int argc,char *argv[])
 
   REAL8TimeSeries *ht_1;        /* H1 strain data      */
   REAL8TimeSeries *ht_2;        /* H2 strain data      */
-  REAL8TimeSeries *ht_p;        /* H+ strain data      */
   REAL8TimeSeries *ht_m;        /* H- strain data      */
-
+  
   char cache_name_1[256];       /* H1 frame cache name */
   char cache_name_2[256];       /* H2 frame cache name */
   FrCache *cache_1;             /* H1 frame cache      */
@@ -113,21 +113,17 @@ int main(int argc,char *argv[])
     ht_1->sampleUnits = lalStrainUnit;
     ht_2->sampleUnits = lalStrainUnit;
 
-    /* create H+ and H- time series */
-    ht_p = XLALCreateREAL8TimeSeries("H1:LSC-STRAIN_HPLUS", &gps_start, ht_1->f0, ht_1->deltaT, &ht_1->sampleUnits, ht_1->data->length);
-    ht_m = XLALCreateREAL8TimeSeries("H2:LSC-STRAIN_HMINUS", &gps_start, ht_2->f0, ht_2->deltaT, &ht_2->sampleUnits, ht_2->data->length);
-    
-    /* fill h+ and h- data vectors */
-    for ( p = 0 ; p < (int)ht_1->data->length; p++ ){
-      ht_p->data->data[p]=ht_1->data->data[p]+ht_2->data->data[p];
+    /* create H- time series */
+    ht_m = XLALCreateREAL8TimeSeries("H2:LSC-STRAIN_HNULL", &gps_start, ht_1->f0, ht_1->deltaT, &ht_1->sampleUnits, ht_1->data->length);
+        
+    /* fill H- data vector */
+    for ( p = 0 ; p < (int)ht_1->data->length; p++ )
       ht_m->data->data[p]=ht_1->data->data[p]-ht_2->data->data[p];
-    }
     
     /* save time series into a frame */
     frame = XLALFrameNew(&gps_start, XLALGPSDiff(&gps_end, &gps_start), "LIGO", 0, 1,LAL_LHO_4K_DETECTOR_BIT);
-    XLALFrameAddREAL8TimeSeriesProcData( frame, ht_1 );
-    XLALFrameAddREAL8TimeSeriesProcData( frame, ht_2 );
-    XLALFrameAddREAL8TimeSeriesProcData( frame, ht_p );
+    /*XLALFrameAddREAL8TimeSeriesProcData( frame, ht_1 );*/
+    /*XLALFrameAddREAL8TimeSeriesProcData( frame, ht_2 );*/
     XLALFrameAddREAL8TimeSeriesProcData( frame, ht_m );
     sprintf(filename,"%s/H-H1H2_COHERENT-%d-%d.gwf", argv[3],start,end-start);
     XLALFrameWrite(frame, filename, 0);
@@ -135,7 +131,6 @@ int main(int argc,char *argv[])
     /* cleaning */
     XLALDestroyREAL8TimeSeries(ht_1);
     XLALDestroyREAL8TimeSeries(ht_2);
-    XLALDestroyREAL8TimeSeries(ht_p);
     XLALDestroyREAL8TimeSeries(ht_m);
     FrameFree(frame);
   }
