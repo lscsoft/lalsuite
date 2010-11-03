@@ -150,8 +150,8 @@ static double estimated_flops = -1.0;
 
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
-static int global_argc;
-static char **global_argv;
+int global_argc;
+char **global_argv;
 
 
 /** variables for checkpointing */

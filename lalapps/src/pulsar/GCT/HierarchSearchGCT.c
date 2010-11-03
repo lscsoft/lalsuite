@@ -56,6 +56,8 @@ RCSID( "$Id$");
 #define FOPEN fopen
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
+char**global_argv;
+int global_argc;
 #endif
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
@@ -331,6 +333,10 @@ int MAIN( int argc, char *argv[]) {
 
   global_status = &status;
 
+#ifndef EAH_BOINC
+  global_argv = argv;
+  global_argc = argc;
+#endif
 
   /* LALDebugLevel must be called before any LALMallocs have been used */
   lalDebugLevel = 0;

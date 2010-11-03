@@ -349,8 +349,12 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
     return -1;
   }
 
+  /* when done, write code version and command line as comment in the result file */
   if (write_done) {
+    int a;
     CHAR *VCSInfoString;
+
+    /* write the version string */
     if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
       LogPrintf (LOG_CRITICAL, "XLALGetVersionString(0) failed.\n");
       length = -1;
@@ -362,8 +366,21 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
       else
 	length += ret;
     }
+
+    /* write the command-line */
+    if (length >= 0) {
+      for(a=0;a<global_argc;a++) {
+	ret = fprintf(fpnew,"%%%% argv[%d]: '%s'\n", a, global_argv[a]);
+	if (ret < 0) {
+	  length = ret;
+	  break;
+	} else
+	  length += ret;
+      }
+    }
   }
 
+  /* write the actual toplist */
   if (length >= 0) {
     ret = write_gctFStat_toplist_to_fp(l,fpnew,checksum);
       if (ret < 0)
@@ -372,6 +389,7 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
 	length += ret;
   }
 
+  /* write the done marker if told to */
   if ((write_done) && (length >= 0)) {
     ret = fprintf(fpnew,"%%DONE\n");
     if (ret < 0)
