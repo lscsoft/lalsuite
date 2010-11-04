@@ -79,6 +79,7 @@ Optional OPTIONS:\n \
 [--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
 [--pinparams STRING\t:\tList parameters to be fixed to their injected values (, separated) i.e. --pinparams mchirp,longitude\n \
 [--version\t:\tPrint version information and exit]\n \
+[--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
 [--help\t:\tPrint this message]\n"
 
 #ifdef __GNUC__
@@ -88,6 +89,7 @@ Optional OPTIONS:\n \
 #endif
 
 extern CHAR outfile[FILENAME_MAX];
+CHAR *datadump=NULL;
 extern double etawindow;
 extern double timewindow;
 CHAR **CacheFileNames = NULL;
@@ -224,6 +226,7 @@ void initialise(int argc, char *argv[]){
 		{"version",no_argument,0,'V'},
 		{"help",no_argument,0,'h'},
 		{"pinparams",required_argument,0,21},
+		{"datadump",required_argument,0,22},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -345,6 +348,10 @@ void initialise(int argc, char *argv[]){
 		case 'X':
 			inputXMLFile=(CHAR *)malloc(strlen(optarg)+1);
 			strcpy(inputXMLFile,optarg);
+			break;
+		case 22:
+			datadump=(CHAR *)malloc(strlen(optarg)+1);
+			strcpy(datadump,optarg);
 			break;
 		case 'N':
 			Nlive=atoi(optarg);
@@ -592,7 +599,7 @@ int main( int argc, char *argv[])
 		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
 		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
 		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
-		TrigSegStart=TrigSample+ (SampleRate) - seglen; /* Put trigger 1 s before end of segment */
+		TrigSegStart=TrigSample+ (SampleRate) - 2*seglen; /* Put trigger 2 s before end of segment */
 		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
 
 		segmentStart = datastart;
@@ -639,7 +646,8 @@ int main( int argc, char *argv[])
 			XLALDestroyRandomParams(randparam);
 		}
 		/* set up a Tukey Window with tails of 1s at each end */
-		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
+		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1s agreed on beta parameter for review */
+		/* if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen); */ /* Original window, commented out for review */
 		/* Read the data from disk into a vector (RawData) */
 		if(!FakeFlag){
 			RawData = readTseries(CacheFileNames[i],ChannelNames[i],datastart,duration); /* This reads the raw data from the cache */
@@ -949,6 +957,25 @@ doneinit:
 	}
 	fprintf(stdout,"reduced chi squared = %e\n",ReducedChiSq);
 	fprintf(stdout,"Number of points in F-domain above fLow = %i\n",(int)inputMCMC.stilde[0]->data->length-(int)(fLow/(double)inputMCMC.stilde[0]->deltaF));
+
+	/* Output data if requested */
+	if(datadump)
+	{
+		CHAR dumpfile[FILENAME_MAX];
+		for(j=0;j<inputMCMC.numberDataStreams;j++){
+			sprintf(dumpfile,"%s_%s.dat",datadump,IFOnames[j]);
+			FILE *dataoutfile=fopen(dumpfile,"w");
+			for(i=0;i<inputMCMC.stilde[j]->data->length;i++)
+			{
+				if(estimatenoise)
+					fprintf(dataoutfile,"%lf %lf %lf %lf\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+				else
+					fprintf(dataoutfile,"%lf %lf %lf\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+			}
+			fclose(dataoutfile);
+		}
+	}
+
 	evidence = nestZ(Nruns,Nlive,Live,&inputMCMC);
 	fprintf(stdout,"logZ = %lf\n",evidence);
 

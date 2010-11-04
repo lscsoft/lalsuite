@@ -795,23 +795,6 @@ void calculate_standard_chisq_freq_ranges(
   v1 = 0;
   v2 = 0;
   v3 = 0;
-
-  for( k = 0; k < LAL_NUM_IFO; k++)
-  {
-    if ( params->haveTrig[k] )
-    {
-      v1 += a[k]*a[k]*PTFM[k]->data[0];
-      v2 += b[k]*b[k]*PTFM[k]->data[0];
-      v3 += a[k]*b[k]*PTFM[k]->data[0];
-//      SNRmax = v1*v1 + v2*v2;
-//      SNRmax = v1 + v2;
-    }
-  }
-//  fprintf(stderr,"%e %e %e\n",v1,v2,v3);
-
-  v1 = 0;
-  v2 = 0;
-  v3 = 0;
   for( k = 0; k < LAL_NUM_IFO; k++)
   {
     if ( params->haveTrig[k] )
@@ -870,7 +853,7 @@ void calculate_standard_chisq_freq_ranges(
       {
         /* Record the frequency */
         frequencyRangesPlus[freqBinPlus-1] = i*deltaF;
-//        fprintf(stderr,"Frequency bin:%e \n",frequencyRanges[freqBin-1]);
+//        fprintf(stderr,"Frequency bin:%e \n",frequencyRangesPlus[freqBinPlus-1]);
         freqBinPlus+=1;
       }
     }
@@ -880,7 +863,7 @@ void calculate_standard_chisq_freq_ranges(
       {
         /* Record the frequency */
         frequencyRangesCross[freqBinCross-1] = i*deltaF;
-//        fprintf(stderr,"Frequency bin:%e \n",frequencyRanges[freqBin-1]);
+//        fprintf(stderr,"Frequency bin:%e \n",frequencyRangesCross[freqBinCross-1]);
         freqBinCross+=1;
       }
     }
@@ -888,6 +871,136 @@ void calculate_standard_chisq_freq_ranges(
 //  fclose(outfile);
 //  fprintf(stderr,"%e %e \n", SNRtemp,SNRmax);
 }
+
+void calculate_standard_chisq_power_bins(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4 a[LAL_NUM_IFO],
+    REAL4 b[LAL_NUM_IFO],
+    REAL4 *frequencyRanges,
+    REAL4 *powerBinsPlus,
+    REAL4 *powerBinsCross,
+    gsl_matrix *eigenvecs
+)
+{
+  UINT4 i,k,kmin,kmax,len,freqBin,numFreqBins;
+  REAL4 v1,v2,v3,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 SNRplusLast,SNRcrossLast;
+  REAL8         f_min, deltaF, fFinal;
+  COMPLEX8     *PTFQtilde   = NULL;
+  REAL4 a2[LAL_NUM_IFO];
+  REAL4 b2[LAL_NUM_IFO];
+//  FILE *outfile;
+
+  PTFQtilde = fcTmplt->PTFQtilde->data;
+  len = 0;
+  deltaF = 0;
+  for ( k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if ( params->haveTrig[k] )
+    {
+      len       = invspec[k]->data->length;
+      deltaF    = invspec[k]->deltaF;
+      break;
+    }
+  }
+  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  /* Note that these frequencies are not just hardcoded here, if you change*/
+  /* these values you will need to change them in other places as well */
+  f_min     = 40;
+  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
+  fFinal    = 1000;
+  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
+
+  numFreqBins = params->numChiSquareBins;
+
+  // NOTE: v3 is calculated for verification. It should = 0.
+  v1 = 0;
+  v2 = 0;
+  v3 = 0;
+  for( k = 0; k < LAL_NUM_IFO; k++)
+  {
+    if ( params->haveTrig[k] )
+    {
+      a2[k] = a[k]*gsl_matrix_get(eigenvecs,0,0) + b[k]*gsl_matrix_get(eigenvecs,1,0);
+      b2[k] = a[k]*gsl_matrix_get(eigenvecs,0,1) + b[k]*gsl_matrix_get(eigenvecs,1,1);
+      v1 += a2[k]*a2[k]*PTFM[k]->data[0];
+      v2 += b2[k]*b2[k]*PTFM[k]->data[0];
+      v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+    }
+  }
+//  fprintf(stderr,"%e %e %e\n",v1,v2,v3);
+
+  SNRmaxPlus = v1;
+  SNRmaxCross = v2;
+  if (SNRmaxPlus < 0) SNRmaxPlus = -SNRmaxPlus;
+  if (SNRmaxCross < 0) SNRmaxCross = -SNRmaxCross;
+
+  v1 = 0;
+  v2 = 0;
+
+  freqBin = 0;
+  SNRtempPlus = 0;
+  SNRtempCross = 0;
+  SNRplusLast = 0.;
+  SNRcrossLast = 0.;
+
+  for ( i = kmin; i < kmax ; ++i )
+  {
+    for( k = 0; k < LAL_NUM_IFO; k++)
+    {
+      if ( params->haveTrig[k] )
+      {
+        overlapCont = (PTFQtilde[i].re * PTFQtilde[i].re +
+               PTFQtilde[i].im * PTFQtilde[i].im )* invspec[k]->data->data[i] ;
+        v1 += a2[k] * a2[k] * overlapCont * 4 * deltaF;
+        v2 += b2[k] * b2[k] * overlapCont * 4 * deltaF;
+      }
+    }
+    SNRtempPlus = v1;
+    if (SNRtempPlus < 0) SNRtempPlus = -SNRtempPlus;
+    SNRtempCross = v2;
+    if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
+
+    if (i * deltaF > frequencyRanges[freqBin] && freqBin < (numFreqBins-1))
+    {
+      powerBinsPlus[freqBin] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
+      powerBinsCross[freqBin] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+//      fprintf(stderr,"Constructing plus: %e %e %e \n",SNRtempPlus,SNRmaxPlus,SNRplusLast);
+//      fprintf(stderr,"Constructing cross: %e %e %e \n",SNRtempCross,SNRmaxCross,SNRcrossLast);
+      SNRplusLast = SNRtempPlus/SNRmaxPlus;
+      SNRcrossLast = SNRtempCross/SNRmaxCross;
+      freqBin++;
+    }
+  }
+  if (freqBin == (numFreqBins-1))  
+  {
+    powerBinsPlus[freqBin] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
+    powerBinsCross[freqBin] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+  }   
+
+  /* Ensure that the power Bins add to 1. This should already be true but
+  numerical counting errors can have an effect here.*/
+  SNRplusLast = 0;
+  SNRcrossLast = 0;
+  for ( i = 0 ; i < (numFreqBins); i++)
+  {
+//    fprintf(stderr,"Power bins: %e %e \n",powerBinsPlus[i],powerBinsCross[i]);
+    SNRplusLast += powerBinsPlus[i];
+    SNRcrossLast += powerBinsCross[i];
+//    fprintf(stderr,"Totals: %e %e \n", SNRplusLast,SNRcrossLast);
+  }
+  for ( i = 0 ; i < (numFreqBins); i++)
+  {
+    powerBinsPlus[freqBin] = powerBinsPlus[freqBin]/SNRplusLast;
+    powerBinsCross[freqBin] = powerBinsCross[freqBin]/SNRcrossLast;
+//    fprintf(stderr,"Power bins: %e %e \n",powerBinsPlus[i],powerBinsCross[i]);
+
+  }
+}
+
         
 
 REAL4 calculate_chi_square(
@@ -900,7 +1013,9 @@ REAL4           a[LAL_NUM_IFO],
 REAL4           b[LAL_NUM_IFO],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 gsl_matrix *eigenvecs,
-gsl_vector *eigenvals   
+gsl_vector *eigenvals,   
+REAL4 *powerBinsPlus,
+REAL4 *powerBinsCross
 )
 {
   UINT4 i,halfNumPoints;
@@ -932,23 +1047,16 @@ gsl_vector *eigenvals
         timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
         position-numPoints/4+5000,1,2);
 
-//    SNRtemp = v1[0]*v1[0]+v1[1]*v1[1]+v2[0]*v2[0]+v2[1]*v2[1];
-//    SNRtemp = pow(SNRtemp,0.5);
-
-    SNRtemp = pow((v1[0] - v1full[0]/((REAL4)numChiSquareBins)),2);
+    SNRtemp = pow((v1[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
 //    fprintf(stderr,"Comp 1: %e %e \n",v1[0],v1full[0]);
-    SNRtemp += pow((v1[1] - v1full[1]/((REAL4)numChiSquareBins)),2);
+    SNRtemp += pow((v1[1] - v1full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
 //    fprintf(stderr,"Comp 2: %e %e \n",v1[1],v1full[1]);
-    SNRtemp += pow((v2[0] - v2full[0]/((REAL4)numChiSquareBins)),2);
+    SNRtemp += pow((v2[0] - v2full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
 //    fprintf(stderr,"Comp 3: %e %e \n",v2[0],v2full[0]);
-    SNRtemp += pow((v2[1] - v2full[1]/((REAL4)numChiSquareBins)),2);
+    SNRtemp += pow((v2[1] - v2full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
 //    fprintf(stderr,"Comp 4: %e %e \n",v2[1],v2full[1]);
-
     chiSq += SNRtemp;
-//    chiSq += pow(SNRtemp - SNRexp/((REAL4)numChiSquareBins),2);
-//    chiSq = SNRtemp * SNRexp;
   }
-  chiSq *= numChiSquareBins;
   LALFree(v1);
   LALFree(v2);
   LALFree(v1full);
