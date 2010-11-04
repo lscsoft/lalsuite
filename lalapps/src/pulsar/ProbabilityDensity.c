@@ -488,3 +488,54 @@ XLALOutputPDF1D_to_fp ( FILE* fp,		/**< output file-pointer to write into [appen
   return XLAL_SUCCESS;
 
 } /* XLALOutputPDF1D_to_fp() */
+
+/** Find the 'mode' of the probabilty distribution, ie. the value x at which the pdf has its maximum.
+ *
+ * Note1: We return the center-value of the discrete 'bin' containing the maximum of the distribution 'pdf'.
+ * (in particular, for an explicitly uniform distribution (2 tics, probDens=NULL) we return the mid-point of the domain).
+ *
+ * Note2: If the mode is not unique, we return the *first* (ie 'leftmost') value of x.
+ *
+ */
+REAL8
+XLALFindModeOfPDF1D ( const pdf1D_t *pdf )
+{
+  const char *fn = __func__;
+
+  /* check input */
+  if ( !pdf ) {
+    XLALPrintError ("%s: invalid NULL input 'pdf'\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EINVAL );
+  }
+  if ( XLALCheckValidPDF1D ( pdf ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: invalid input pdf\n", fn );
+    XLAL_ERROR_REAL8 ( fn, XLAL_EFUNC );
+  }
+
+  /* special case 1) singular pdf */
+  if ( (pdf->xTics->length == 1) && (pdf->probDens == NULL) )
+    return pdf->xTics->data[0];	// mode is trivially at the spike
+
+  /* special case 2) uniform pdf in [xMin, xMax] ==> return center-value */
+  if ( (pdf->xTics->length == 2) && (pdf->probDens == NULL) )
+    return 0.5 * (pdf->xTics->data[0] + pdf->xTics->data[1]);	// center-point of 'bin'
+
+  UINT4 numBins = pdf->probDens->length;
+  UINT4 i;
+  REAL8 max_p = 0;
+  UINT4 mode_i = 0;
+  for ( i=0; i < numBins; i ++ )
+    {
+      REAL8 this_p = pdf->probDens->data[i];
+      if ( this_p > max_p )	// strict monotony ==> first (ie leftmost) mode will be returned
+        {
+          max_p = this_p;
+          mode_i = i;
+        } /* if new maximum found */
+    } /* for i < numBins */
+
+  REAL8 xmode = 0.5 * ( pdf->xTics->data[mode_i] + pdf->xTics->data[mode_i+1] );
+
+  return xmode;
+
+} /* XLALFindModeOfPDF1D() */
