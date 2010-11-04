@@ -323,7 +323,9 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				lladd_nodes |= these_lladd_nodes
 
 		#
-		# ligolw_burca pool
+		# ligolw_burca pool.  these are the burca jobs that don't
+		# require special clipping command line options, and so can
+		# bulk-process many files with each job
 		#
 
 		if verbose:

@@ -339,11 +339,11 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  spin1Max,         /**< maximum magnitude of spin1 */
     REAL4  spin2Min,         /**< minimum magnitude of spin2 */
     REAL4  spin2Max,          /**< maximum magnitude of spin2 */
-    REAL4  kappa1Min,
-    REAL4  kappa1Max,
-    REAL4  abskappa1Min,
-    REAL4  abskappa1Max,
-    int aligned
+    REAL4  kappa1Min,		/**< FIXME: !TO BE DOCUMENTED! */
+    REAL4  kappa1Max,		/**< FIXME: !TO BE DOCUMENTED! */
+    REAL4  abskappa1Min,	/**< FIXME: !TO BE DOCUMENTED! */
+    REAL4  abskappa1Max,	/**< FIXME: !TO BE DOCUMENTED! */
+    int aligned			/**< FIXME: !TO BE DOCUMENTED! */
     )
 {
   REAL4 spin1Mag;

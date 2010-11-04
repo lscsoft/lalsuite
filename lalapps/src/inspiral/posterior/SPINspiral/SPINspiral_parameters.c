@@ -1065,7 +1065,7 @@ void readParameterInputfile(struct runPar *run)
 	  run->offsetMCMC = 1;
 	  run->offsetX = 10.0;	
 	  
-	  if(run->commandSettingsFlag[16] == 1 && run->mcmcWaveform == 4) {
+	  if(run->commandSettingsFlag[17] == 1 && run->mcmcWaveform == 4) {
 		  
 		  if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 9-parameter non-spinning waveform as the MCMC template.\n",run->mcmcPNorder);
 		  run->nMCMCpar=9;
