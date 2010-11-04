@@ -947,7 +947,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%% Freq[Hz]           Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0_ML[d]      tau_ML[d]    maxTwoF          logBstat     t0_MP[d]      tau_MP[d]\n");
+      fprintf (fp, "%%%% Freq[Hz]            Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0_ML[d]      tau_ML[d]    maxTwoF        logBstat      t0_MP[d]      tau_MP[d]\n");
     }
   else
     {
