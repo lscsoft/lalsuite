@@ -189,6 +189,7 @@ tagLALInferenceRunState
   LALVariables				**livePoints; /* Array of live points for Nested Sampling */
   
   REAL8						currentLikelihood;
+  REAL8                     currentPrior;
   gsl_rng                   *GSLrandom;
 } LALInferenceRunState;
 

@@ -184,7 +184,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* This is the LAL template generator for inspiral signals */
 	runState->template=&templateLAL;
 	runState->likelihood=&FreqDomainLogLikelihood;
-	runState->likelihood=&UnityLikelihood;
+	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;
 	runState->prior=&LALInferenceInspiralPriorNonSpinning;
@@ -284,6 +284,7 @@ void initVariables(LALInferenceRunState *state)
 	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
 	Approximant approx=TaylorF2;
 	INT4 numberI4 = TaylorF2;
+	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
@@ -341,6 +342,7 @@ void initVariables(LALInferenceRunState *state)
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;numberI4 = TaylorF2;
+		if(strstr(ppt->value,"TaylorT3")) approx=TaylorT3;numberI4 = TaylorT3;
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	}
 	
@@ -389,12 +391,11 @@ void initVariables(LALInferenceRunState *state)
 	
 	printf("Read end time %f\n",endtime);
 
-	//INT4 numberI4 = TaylorT4;
 	//addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
 	addVariable(currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
-	numberI4 = LAL_PNORDER_TWO;
-    //addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);	
-	addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
+	//numberI4 = LAL_PNORDER_TWO;
+    addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);	
+	//addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
 	tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);

@@ -114,8 +114,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-	//nullLikelihood = NullLogLikelihood(runState->data);
-	nullLikelihood = 0.0;
+	nullLikelihood = NullLogLikelihood(runState->data);
+	//nullLikelihood = 0.0;
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	
@@ -335,7 +335,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	REAL8 temperature;
 	
 	// current values:
-	logPriorCurrent      = runState->prior(runState, runState->currentParams);
+	//logPriorCurrent      = runState->prior(runState, runState->currentParams);
+	logPriorCurrent      = runState->currentPrior;
 	logLikelihoodCurrent = runState->currentLikelihood;
 	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
 //	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
@@ -349,10 +350,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	
 	// compute prior & likelihood:
 	logPriorProposed = runState->prior(runState, &proposedParams);
-	if (logPriorProposed > -HUGE_VAL)
+	if (logPriorProposed > -DBL_MAX)
 		logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
 	else
-		logLikelihoodProposed = -HUGE_VAL;
+		logLikelihoodProposed = -DBL_MAX;
 	
 	// determine acceptance probability:
 	logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent) 
@@ -368,6 +369,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
+		runState->currentPrior = logPriorProposed;
 		//}
 	}
 	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
@@ -411,10 +413,10 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 	
 	// compute prior & likelihood:
 	logPriorProposed = runState->prior(runState, &proposedParams);
-	if (logPriorProposed > -HUGE_VAL)
+	if (logPriorProposed > -DBL_MAX)
 		logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
 	else
-		logLikelihoodProposed = -HUGE_VAL;
+		logLikelihoodProposed = -DBL_MAX;
 	
 	// determine acceptance probability:
 	logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent) 
@@ -452,10 +454,10 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 		
 		// compute prior & likelihood:
 		logPriorProposed = runState->prior(runState, &proposedParams);
-		if (logPriorProposed > -HUGE_VAL)
+		if (logPriorProposed > -DBL_MAX)
 			logLikelihoodProposed = runState->likelihood(&proposedParams, runState->data, runState->template);
 		else
-			logLikelihoodProposed = -HUGE_VAL;
+			logLikelihoodProposed = -DBL_MAX;
 		
 		// determine acceptance probability:
 		logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent) 
@@ -520,7 +522,7 @@ REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 	   && tc>=968654557.90 && tc<=968654558.20)	
 		logdensity = 0.0;
 	else
-		logdensity = -HUGE_VAL;
+		logdensity = -DBL_MAX;
 	//TODO: should be properly normalized; pass in range via priorArgs?	
 	
 	return(logdensity);
@@ -864,7 +866,7 @@ REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *param
 	if(x0>=-1.0 && x0<=1.0)	
 		logdensity = 0.0;
 	else
-		logdensity = -HUGE_VAL;
+		logdensity = -DBL_MAX;
 	//TODO: should be properly normalized; pass in range via priorArgs?	
 	
 	return(logdensity);
