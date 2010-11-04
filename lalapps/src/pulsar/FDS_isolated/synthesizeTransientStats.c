@@ -380,6 +380,33 @@ int main(int argc,char *argv[])
 
         } /* if Bstat requested */
 
+      /* ----- if requested, compute parameter posteriors for {t0, tau} */
+      pdf1D_t *pdf_t0  = NULL;
+      pdf1D_t *pdf_tau = NULL;
+      if ( fpTransientStats || uvar.outputPosteriors )
+        {
+          if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
+            XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          if ( (pdf_tau = XLALComputeTransientPosterior_tau ( cand.windowRange, cand.FstatMap )) == NULL ) {
+            XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          /* get maximum-posterior estimate (MP) from the modes of these pdfs */
+          cand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
+          if ( xlalErrno ) {
+            XLALPrintError ("%s: mode-estimation failed for pdf_t0. xlalErrno = %d\n", fn, xlalErrno );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+          cand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
+          if ( xlalErrno ) {
+            XLALPrintError ("%s: mode-estimation failed for pdf_tau. xlalErrno = %d\n", fn, xlalErrno );
+            XLAL_ERROR ( fn, XLAL_EFUNC );
+          }
+
+        } // if posteriors required
+
       /* ----- if requested, compute Ftotal over full data-span */
       if ( uvar.computeFtotal )
         {
@@ -482,18 +509,6 @@ int main(int argc,char *argv[])
           }
 	  fprintf ( fpPosteriors, "%s", cfg.logString );	/* output header info */
 
-          /* actually compute posteriors ;) */
-          pdf1D_t *pdf_t0;
-          pdf1D_t *pdf_tau;
-          if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( cand.windowRange, cand.FstatMap )) == NULL ) {
-            XLALPrintError ("%s: failed to compute t0-posterior\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
-          }
-          if ( (pdf_tau = XLALComputeTransientPosterior_tau ( cand.windowRange, cand.FstatMap )) == NULL ) {
-            XLALPrintError ("%s: failed to compute tau-posterior\n", fn );
-            XLAL_ERROR ( fn, XLAL_EFUNC );
-          }
-
           /* write them to file, using pdf-method */
 	  if ( XLALOutputPDF1D_to_fp ( fpPosteriors, pdf_t0, "pdf_t0" ) != XLAL_SUCCESS ) {
             XLALPrintError ("%s: failed to output t0-posterior to file '%s'.\n", fn, fnamePosteriors );
@@ -505,8 +520,6 @@ int main(int argc,char *argv[])
           }
 
           /* free mem, close file */
-          XLALDestroyPDF1D ( pdf_t0 );
-          XLALDestroyPDF1D ( pdf_tau );
           XLALFree ( fnamePosteriors );
 	  fclose (fpPosteriors);
 
@@ -522,6 +535,8 @@ int main(int argc,char *argv[])
       /* ----- free Memory */
       XLALDestroyTransientFstatMap ( cand.FstatMap );
       XLALDestroyMultiFstatAtomVector ( multiAtoms );
+      XLALDestroyPDF1D ( pdf_t0 );
+      XLALDestroyPDF1D ( pdf_tau );
 
     } /* for i < numDraws */
 
