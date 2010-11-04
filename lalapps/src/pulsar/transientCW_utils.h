@@ -107,8 +107,8 @@ typedef struct
 typedef struct {
   gsl_matrix *F_mn;			/**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
   REAL8 maxF;				/**< maximal F-value obtained over transientWindowRange */
-  UINT4 t0_maxF;			/**< t0_MLE: start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
-  UINT4 tau_maxF;			/**< tau_MLE: duration Tcoh of max{2F} over the transientWindowRange (in seconds) */
+  UINT4 t0_ML;				/**< maximum-likelihood estimator for start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
+  UINT4 tau_ML;				/**< maximum-likelihood estimator for duration Tcoh of max{2F} over the transientWindowRange (in seconds) */
 } transientFstatMap_t;
 
 
@@ -118,6 +118,8 @@ typedef struct {
   transientWindowRange_t windowRange;	/**< type and parameters specifying the transient window range in {t0, tau} covered */
   transientFstatMap_t *FstatMap;	/**< F-statistic over transient-window range {t0, tau} AND ML-estimators { Fmax, t0_Fmax, tau_Fmax } */
   REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
+  REAL8 t0_MP;				/**< maximum-posterior estimate for t0 */
+  REAL8 tau_MP;				/**< maximum-posterior estimate for tau */
 } transientCandidate_t;
 
 /* empty struct initializers */
