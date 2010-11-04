@@ -34,6 +34,7 @@ from glue import lal
 from pylal import ligolw_tisi
 from pylal import ligolw_cafe
 from lalapps import inspiral
+from lalapps import power
 
 ##############################################################################
 # concrete dag setup functions
@@ -183,7 +184,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   # see if we are using calibrated data
   if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
     calibrated = True
-    print "we use calibrated data for ", ifo_name 
+    print "we use calibrated data for", ifo_name
   else: calibrated = False
 
   # prepare the injection filename
@@ -263,6 +264,8 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
             insp.set_category('inspiral1')
           if not opts.disable_dag_priorities:
             insp.set_priority(2)
+          if usertag:
+            insp.set_user_tag(usertag.split('_CAT')[0])
           insp.set_start(chunk.start())
           insp.set_end(chunk.end())
           insp.set_trig_start(chunk.trig_start())
@@ -292,16 +295,17 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
 ##############################################################################
 # function to do thinca on coincident IFO data  
-def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, lladd_job,
-    coinc_job, dag, do_coinc, do_insp, usertag=None):
+def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
+    lladd_job, coinc_job, dag, do_coinc, do_insp, usertag=None):
   """
   Run thinca on the coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
   for all. 
-  
+
   ifo_list = a list of the ifos we are to analyze
   single_data_analyzed = dictionary of single ifo data analyzed
   cafe_caches = the caches from ligolw_cafe.ligolw_cafe()
+  cafe_base = the base name for the cafe caches
   lladd_job = the condor job to do ligolw_add
   coinc_job = the condor job to do thinca
   dag = the DAG to attach the nodes to
@@ -311,73 +315,73 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, lladd_job,
   """
 
   # create caches using ligolw_cafe
-  cafe_base = cp.get("ligolw_cafe", "base")
-  if usertag:
-    cafe_base += '_' + usertag
   cache_names = ligolw_cafe.write_caches(cafe_base, cafe_caches, set(ifo_list))
   coinc_analyzed = []
 
   # loop over caches
   for idx in range(len(cafe_caches)):
-    cache = cafe_caches[idx]
-    cachename = cache_names[idx]
+    if len(cafe_caches[idx].objects):
+      cache = cafe_caches[idx]
+      cachename = cache_names[idx]
+      thincabase = cachename.split('.')[0].strip('CAFE_')
+      ifos = set(cache_entry.observatory for cache_entry in cache.objects)
 
-    # extract segment information
-    seg = cache.extent
-    seg = pipeline.AnalysisChunk(int(seg[0]),int(seg[1]))
+      # extract segment information
+      seg = power.cache_span(cache.objects)
+      seg = pipeline.AnalysisChunk(seg[0],seg[1])
 
-    # create node for ligolw_add to create xml file from cache
-    lladd = pipeline.LigolwAddNode(lladd_job)
-    lladd.set_input(cachename, pass_to_command_line=False)
-    lladd.add_var_opt('input-cache', cachename)
+      # create node for ligolw_add to create xml file from cache
+      lladd = pipeline.LigolwAddNode(lladd_job)
+      lladd.set_input(cachename, pass_to_command_line=False)
+      lladd.add_var_opt('input-cache', cachename)
 
-    # create node for ligolw_thinca to analyze xml file
-    thinca = inspiral.ThincaNode(coinc_job)
-    thinca.set_start(seg.start(), pass_to_command_line=False)
-    thinca.set_end(seg.end(), pass_to_command_line=False)
-    thinca.set_zip_output(True)
-    if usertag: thinca.set_user_tag(usertag, pass_to_command_line=False)
+      # create node for ligolw_thinca to analyze xml file
+      thinca = inspiral.ThincaNode(coinc_job)
+      thinca.set_start(seg.start(), pass_to_command_line=False)
+      thinca.set_end(seg.end(), pass_to_command_line=False)
+      thinca.set_zip_output(True)
+      if usertag: thinca.set_user_tag(thincabase, pass_to_command_line=False)
 
-    # check if caches are adjacent
-    coinc_end_time_segment = ''
-    if idx and (cache.extent[0] == cafe_caches[idx-1].extent[1]):
-      coinc_end_time_segment += str(cache.extent[0])
-    coinc_end_time_segment += ':'
-    if idx + 1 - len(cafe_caches) and (cache.extent[1] == cafe_caches[idx+1].extent[0]):
-      coinc_end_time_segment += str(cache.extent[1])
-    thinca.add_var_opt('coinc-end-time-segment',coinc_end_time_segment)
+      # check if caches are adjacent
+      coinc_end_time_segment = ''
+      if idx and (cache.extent[0] == cafe_caches[idx-1].extent[1]):
+        coinc_end_time_segment += str(cache.extent[0])
+      coinc_end_time_segment += ':'
+      if idx + 1 - len(cafe_caches) and (cache.extent[1] == cafe_caches[idx+1].extent[0]):
+        coinc_end_time_segment += str(cache.extent[1])
+      thinca.add_var_opt('coinc-end-time-segment',coinc_end_time_segment)
 
-    # scroll through ifos, adding the appropriate ones
-    for ifo in ifo_list:
-      if ifo in ifos:
-        thinca.set_ifo(ifo, pass_to_command_line=False)
+      # scroll through ifos, adding the appropriate ones
+      for ifo in ifo_list:
+        if ifo in ifos:
+          thinca.set_ifo(ifo, pass_to_command_line=False)
                 
-        # add all IFO A master chunks that overlap with segment to input
-        for done in single_data_analyzed[ifo]:
-          if inspiral.overlap_test(done.get_chunk(),seg):
-            if do_insp: lladd.add_parent(done.get_dag_node())
+          # add all inspiral jobs in this cache to input
+          if do_insp:
+            for cache_entry in cache.objects:
+              lladd.add_parent(single_data_analyzed[cache_entry])
 
-    # set output of
-    lladd.set_output(thinca.get_output())
-    thinca.set_input(lladd.get_output(), pass_to_command_line=False)
-    thinca.add_file_arg(lladd.get_output())
+      # set output of ligolw_add jobs to follow thinca's convention
+      lladd.set_output(thinca.get_output())
+      thinca.set_input(lladd.get_output(), pass_to_command_line=False)
+      thinca.add_file_arg(lladd.get_output())
 
-    # check for condor settings
-    if not opts.disable_dag_categories:
-      lladd.set_category('ligolw_add')
-      thinca.set_category('thinca')
-    if not opts.disable_dag_priorities:
-      lladd.set_priority(3)
-      thinca.set_priority(3)
+      # check for condor settings
+      if not opts.disable_dag_categories:
+        lladd.set_category('ligolw_add')
+        thinca.set_category('thinca')
+      if not opts.disable_dag_priorities:
+        lladd.set_priority(3)
+        thinca.set_priority(3)
 
-    # add ligolw_add and ligolw_thinca nodes to dag
-    if do_coinc:
-      dag.add_node(lladd)
-      thinca.add_parent(lladd)
-      dag.add_node(thinca)
+      # add ligolw_add and ligolw_thinca nodes to dag
+      if do_coinc:
+        dag.add_node(lladd)
+        thinca.add_parent(lladd)
+        dag.add_node(thinca)
 
-    # add ligolw_thinca coincident segment
-    coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
+      # add ligolw_thinca coincident segment
+      coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
 
   return coinc_analyzed
 
@@ -1034,14 +1038,6 @@ else:
   inj_file = None
   inspinj = None
 
-# choose slide-file to use based on presence of inj_file
-if cp.has_section("ligolw_cafe"):
-  if inj_file:
-    cp.set("ligolw_cafe","slides-file",cp.get("ligolw_cafe","zero-lag-slides"))
-  else:
-    cp.set("ligolw_cafe","slides-file",
-        cp.get("ligolw_cafe","background-slides"))
-
 # add the injection details to inspiral/sire jobs  
 if inj_file:
   inj_jobs = [sire_job, sire_summary_job] 
@@ -1064,7 +1060,7 @@ chunks_analyzed = {}
 prev_df = None
 
 for ifo in ifo_list:
-  print "setting up jobs to filter " + ifo + " data...",
+  print "setting up jobs to filter " + ifo + " data..."
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
@@ -1088,34 +1084,70 @@ for ifo in ifo_list:
 # Step 6: Run thinca on each of the disjoint sets of coincident data
 
 if opts.coincidence:
+  print "setting up thinca jobs..."
+  sys.stdout.flush()
+
+  # create a cache of the inspiral jobs
+  single_data_analyzed = {}
   inspiral_cache = lal.Cache()
   for ifo in ifo_list:
     for insp in chunks_analyzed[ifo]:
       output_file = insp.get_dag_node().get_output()
-      inspiral_cache.append(lal.Cache.from_urls([output_file])[0])
+      output_cache_entry = lal.Cache.from_urls([output_file])[0]
+      inspiral_cache.append(output_cache_entry)
+      single_data_analyzed[output_cache_entry] = insp.get_dag_node()
 
-  cafe_caches = ligolw_cafe.ligolw_cafe(inspiral_cache,
-      ligolw_tisi.load_time_slides(cp.get("ligolw_cafe","slides-file"),
-          gz = cp.get("ligolw_cafe","slides-file").endswith(".gz")).values(),
-      extentlimit = float(cp.get("ligolw_cafe","extentlimit")))[1]
-
-  print "setting up thinca jobs on " + ifos + " data...",
-  sys.stdout.flush()
-
-  lladd_job.add_input_file(cp.get("ligolw_cafe","slides-file"))
-  lladd_job.add_file_arg(cp.get("ligolw_cafe","slides-file"))
+  # add th injection file to the ligolw_add jobs
   if inj_file:
     lladd_job.add_input_file(inj_file)
     lladd_job.add_file_arg(inj_file)
+
+  # get the ligolw_thinca command line arguments
   thinca_job.add_ini_opts(cp, 'thinca')
+
+  # add the vetoes to the ligolw_add and ligolw_thinca jobs
   if cp.has_section("vetoes"):
     lladd_job.add_input_file(cp.get("vetoes","vetoes-file"))
     lladd_job.add_file_arg(cp.get("vetoes","vetoes-file"))
     thinca_job.add_opt("vetoes-name",cp.get("vetoes","vetoes-name"))
 
-  coinc_nodes = thinca_coinc(ifo_list, chunks_analyzed, cafe_caches,
-      lladd_job, thinca_job, dag, opts.coincidence, opts.inspiral,
-      usertag)
+  # load the number of distint time-slide files
+  if inj_file:
+    tisi_file_nums = [0]
+  else:
+    tisi_file_nums = range(int(cp.get("ligolw_cafe","num-slides-files")))
+
+  coinc_nodes = []
+  # loop over time-slide files and create coinc nodes
+  for tisi_file_num in tisi_file_nums:
+
+    # we need different jobs for different time-slide files
+    tisi_file_name = cp.get("ligolw_cafe","slides-file-%i"%tisi_file_num)
+    this_lladd_job = copy.deepcopy(lladd_job)
+    this_lladd_job.add_input_file(tisi_file_name)
+    this_lladd_job.add_file_arg(tisi_file_name)
+
+    # create cafe caches
+    cafe_extent_limit = float(cp.get("ligolw_cafe","extentlimit"))
+    print "\tsetting up cafe caches for tisi file %s"%tisi_file_name
+    cafe_caches = ligolw_cafe.ligolw_cafe(inspiral_cache,
+        ligolw_tisi.load_time_slides(tisi_file_name,
+            gz = tisi_file_name.endswith(".gz")).values(),
+        extentlimit = cafe_extent_limit)[1]
+
+    # create the base name for the cafe jobs
+    cafe_base = "%%s%%s_%%0%dd_" % int(math.log10(len(tisi_file_nums))+1)
+    cafeusertag = ""
+    if usertag:
+      cafeusertag += "_" + usertag
+    cafe_base = cafe_base % ('CAFE',cafeusertag,tisi_file_num)
+
+    # create the coinc nodes
+    new_coinc_nodes = thinca_coinc(ifo_list, single_data_analyzed, cafe_caches,
+        cafe_base, this_lladd_job, thinca_job, dag, opts.coincidence,
+        opts.inspiral, usertag)
+
+    coinc_nodes.extend(new_coinc_nodes)
 
   print "done"
 

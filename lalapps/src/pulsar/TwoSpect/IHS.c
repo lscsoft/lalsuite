@@ -395,6 +395,8 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
    REAL8 fsig, per0, B;
    REAL4 ihsfomfar = 6.0;
    
+   //INT4 numberofIHSvalsChecked = 0;
+   
    INT4 numfbins = (INT4)round(params->fspan*params->Tcoh)+1;
    
    /* FILE *IHSVALS = fopen("./realihsvals.dat","w");
@@ -431,6 +433,8 @@ void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruc
          
          REAL4 meanNoise = calcMean(avgsinrange);
          //REAL8 rmsNoise = calcRms(rmssinrange);
+         
+         //numberofIHSvalsChecked++;  //test number of "templates"
          
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
          if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {

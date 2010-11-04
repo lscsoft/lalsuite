@@ -77,6 +77,7 @@ Optional OPTIONS:\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
 [--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
 [--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
+[--pinparams STRING\t:\tList parameters to be fixed to their injected values (, separated) i.e. --pinparams mchirp,longitude\n \
 [--version\t:\tPrint version information and exit]\n \
 [--help\t:\tPrint this message]\n"
 
@@ -137,8 +138,11 @@ REAL8 offset=0.0;
 extern const LALUnit strainPerCount;
 INT4 ampOrder=0;
 INT4 phaseOrder=4;
+char *pinned_params=NULL;
+
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
+int checkParamInList(const char *list, const char *param);
 
 
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
@@ -219,6 +223,7 @@ void initialise(int argc, char *argv[]){
 		{"Dmax",required_argument,0,19},
 		{"version",no_argument,0,'V'},
 		{"help",no_argument,0,'h'},
+		{"pinparams",required_argument,0,21},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -226,6 +231,10 @@ void initialise(int argc, char *argv[]){
 		case 'h':
 			fprintf(stdout,USAGE);
 			exit(0);
+			break;
+		case 21:
+			pinned_params=calloc(strlen(optarg)+1 ,sizeof(char));
+			memcpy(pinned_params,optarg,strlen(optarg)+1);
 			break;
 		case 'V':
 			fprintf(stdout,"LIGO/LSC Bayesian parameter estimation and evidence calculation code\nfor CBC signals, using nested sampling algorithm.\nJohn Veitch <john.veitch@ligo.org>\n");
@@ -1228,23 +1237,83 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);
 	localetawin=etamax-etamin;
-
-	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	
+	LALMCMCParam *head;
+	
+	if(checkParamInList(pinned_params,"logM")||checkParamInList(pinned_params,"mchirp"))
+		XLALMCMCAddParam(parameter,"logM",log(injTable->mchirp),lmmin,lmmax,-1);
+	else
+		XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
 
-	XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
-	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
-	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-	/*XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, -1);*/
-	XLALMCMCAddParam(parameter,"logdist",(log(manual_dist_max)-log(manual_dist_min))*gsl_rng_uniform(RNG)+log(manual_dist_min) ,log(manual_dist_min),log(manual_dist_max),0);
+	if(checkParamInList(pinned_params,"eta"))
+		XLALMCMCAddParam(parameter,"eta",injTable->eta,etamin,etamax,-1);
+	else
+		XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
+	
+	if(checkParamInList(pinned_params,"time"))
+		XLALMCMCAddParam(parameter,"time",trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,-1);
+	else
+		XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
+	
+	if(checkParamInList(pinned_params,"phi"))
+		XLALMCMCAddParam(parameter,"phi",injTable->coa_phase,0,LAL_TWOPI,-1);
+	else
+		XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
+	
+	if(checkParamInList(pinned_params,"dist") || checkParamInList(pinned_params,"logdist") || checkParamInList(pinned_params,"distance") || checkParamInList(pinned_params,"logdistance"))
+		XLALMCMCAddParam(parameter,"logdist",log(injTable->distance),log(manual_dist_min),log(manual_dist_max),-1);
+	else
+		XLALMCMCAddParam(parameter,"logdist",(log(manual_dist_max)-log(manual_dist_min))*gsl_rng_uniform(RNG)+log(manual_dist_min) ,log(manual_dist_min),log(manual_dist_max),0);
 
-	XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*LAL_TWOPI,0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat", acos(2.0*gsl_rng_uniform(RNG)-1.0)-LAL_PI/2.0,-LAL_PI/2.0,LAL_PI/2.0,0);
+	if(checkParamInList(pinned_params,"long")||checkParamInList(pinned_params,"longitude")||checkParamInList(pinned_params,"RA"))
+		XLALMCMCAddParam(parameter,"long",injTable->longitude,0,LAL_TWOPI,-1);
+	else
+		XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*LAL_TWOPI,0,LAL_TWOPI,1);
+	if(checkParamInList(pinned_params,"lat") || checkParamInList(pinned_params,"latitude") || checkParamInList(pinned_params,"dec"))
+		XLALMCMCAddParam(parameter,"lat",injTable->latitude,-LAL_PI/2.0,LAL_PI/2.0,-1);
+	else
+		XLALMCMCAddParam(parameter,"lat", acos(2.0*gsl_rng_uniform(RNG)-1.0)-LAL_PI/2.0,-LAL_PI/2.0,LAL_PI/2.0,0);
 
-	XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI,0,LAL_PI,1);
-	XLALMCMCAddParam(parameter,"iota", acos(2.0*gsl_rng_uniform(RNG)-1.0) ,0,LAL_PI,0);
+	if(checkParamInList(pinned_params,"psi")||checkParamInList(pinned_params,"polarization"))
+		XLALMCMCAddParam(parameter,"psi",injTable->polarization,0,LAL_PI,-1);
+	else
+		XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI,0,LAL_PI,1);
+	
+	if(checkParamInList(pinned_params,"iota") || checkParamInList(pinned_params,"inclination"))
+		XLALMCMCAddParam(parameter,"iota", injTable->inclination, 0, LAL_PI, -1);
+	else
+		XLALMCMCAddParam(parameter,"iota", acos(2.0*gsl_rng_uniform(RNG)-1.0) ,0,LAL_PI,0);
 
+	for (head=parameter->param;head;head=head->next)
+	{
+		if(head->core->wrapping==-1)
+			fprintf(stdout,"Fixed parameter %s to %lf\n",head->core->name,head->value);
+	}
 
 	return;
 
 }
+
+int checkParamInList(const char *list, const char *param)
+{
+	/* Check for param in comma-seperated list */
+	char *post=NULL,*pos=NULL;
+	if (list==NULL) return 0;
+	if (param==NULL) return 0;
+
+	if(!(pos=strstr(list,param))) return 0;
+	
+	/* The string is a substring. Check that it is a token */
+	/* Check the character before and after */
+	if(pos!=list)
+		if(*(pos-1)!=',')
+			return 0;
+
+	post=&(pos[strlen(param)]);
+	if(*post!='\0')
+		if(*post!=',')
+			return 0;
+	return 1;
+}
+

@@ -32,13 +32,13 @@ void free_inputParams(inputParamsStruct *input);
 ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
 
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan);
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4 *normalization);
+void makeSecondFFT(REAL4Vector *output, REAL8 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan);
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL8 *normalization);
 
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
