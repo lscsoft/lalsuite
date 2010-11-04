@@ -378,8 +378,6 @@ void LALPSpinInspiralRD (
    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
 
-   LALInspiralInit(status->statusPtr, params, &paramsInit);
-
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
    /* Call the engine function */
    LALPSpinInspiralRDEngine(status->statusPtr, signalvec, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
@@ -431,18 +429,16 @@ void LALPSpinInspiralRDTemplates (
    ASSERT(params->totalMass > 0., status,
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   /*   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
+   LALInspiralSetup (status->statusPtr, &(paramsInit.ak), params);
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &(paramsInit.func), &(paramsInit.ak), params);
-   CHECKSTATUSPTR(status);*/
-   LALInspiralInit(status->statusPtr, params, &paramsInit);
    CHECKSTATUSPTR(status);
 
    memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
-   //fprintf(stdout,"** PSIRDTemplate **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e  nbins=%d\n",params->mass1,params->mass2,params->inclination,params->startPhase,paramsInit.nbins);
-   //fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);
+   /*fprintf(stdout,"** PSIRDTemplate **: m1=%11.3e  m2=%11.3e  inclination=%8.4f  phi0=%11.5e  nbins=%d\n",params->mass1,params->mass2,params->inclination,params->startPhase,paramsInit.nbins);
+     fprintf(stdout,"                    : s1=(%8.4f  %8.4f  %8.4f)  s2=(%8.4f  %8.4f  %8.4f)  distance=%11.5e\n",params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2],params->distance);*/
 
    LALPSpinInspiralRDEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
@@ -1366,7 +1362,7 @@ void LALPSpinInspiralRDEngine (
   v=sqrt(v2);
 
 
-  params->ampOrder=LAL_PNORDER_ONE_POINT_FIVE;
+  params->ampOrder=0;
 
   if (params->distance > 0.) amp22ini= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.);
   else amp22ini  = 2. * sqrt( LAL_PI / 5.0) * params->signalAmplitude;
@@ -1882,7 +1878,6 @@ void LALPSpinInspiralRDEngine (
        k=2*i+1;
        hap->data[j] = sig1->data[i];
        hap->data[k] = sig2->data[i];
-       if ((fabs(sig1->data[i])>0.001)||(fabs(sig1->data[i]>0.001))) printf("i=%d  %11.3e  %11.3e\n",i,sig1->data[i],sig2->data[i]);
      }
    }
 
