@@ -107,14 +107,14 @@ typedef struct {
 
   /* transient window ranges: for injection ... */
   CHAR *injectWindow_type; 	/**< Type of transient window to inject ('none', 'rect', 'exp'). */
-  INT4  injectWindow_t0;	/**< Earliest GPS start-time of transient window to inject, in seconds */
-  INT4  injectWindow_t0Band;	/**< Range of GPS start-time of transient window to inject, in seconds */
+  REAL8 injectWindow_t0Days;	/**< Earliest start-time of transient window to inject, as offset in days from dataStartGPS */
+  REAL8 injectWindow_t0DaysBand;/**< Range of start-times of transient window to inject, in days */
   REAL8 injectWindow_tauDays;	/**< Shortest transient-window timescale to inject, in days */
   REAL8 injectWindow_tauDaysBand; /**< Range of transient-window timescale to inject, in days */
   /* ... and for search */
   CHAR *searchWindow_type; 	/**< Type of transient window to search with ('none', 'rect', 'exp'). */
-  INT4  searchWindow_t0;	/**< Earliest GPS start-time of transient window to search, in seconds */
-  INT4  searchWindow_t0Band;	/**< Range of GPS start-time of transient window to search, in seconds */
+  REAL8 searchWindow_t0Days;	/**< Earliest start-time of transient window to search, as offset in days from dataStartGPS */
+  REAL8 searchWindow_t0DaysBand;/**< Range of start-times of transient window to inject, in days */
   REAL8 searchWindow_tauDays;	/**< Shortest transient-window timescale to search, in days */
   REAL8 searchWindow_tauDaysBand; /**< Range of transient-window timescale to search, in days */
   INT4  searchWindow_dt0;	/**< Step-size for search/marginalization over transient-window start-time, in seconds [Default:Tsft] */
@@ -616,13 +616,15 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   uvar->injectWindow_tauDays     = 1.0;
   uvar->injectWindow_tauDaysBand = 13.0;
-  REAL8 tauMax = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand ) * DAY24;
+
+  REAL8 tauMaxDays = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand );
   /* default window-ranges are t0 in [dataStartTime, dataStartTime - 3 * tauMax] */
-  uvar->injectWindow_t0     = uvar->dataStartGPS;
-  uvar->injectWindow_t0Band = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax );	/* make sure it's >= 0 */
+  uvar->injectWindow_t0Days     = 0; // offset in days from uvar->dataStartGPS
+  uvar->injectWindow_t0DaysBand = fmax ( 0.0, uvar->dataDuration/DAY24 - TRANSIENT_EXP_EFOLDING * tauMaxDays );	/* make sure it's >= 0 */
+
   /* search-windows by default identical to inject-windows */
-  uvar->searchWindow_t0 = uvar->injectWindow_t0;
-  uvar->searchWindow_t0Band = uvar->injectWindow_t0Band;
+  uvar->searchWindow_t0Days = uvar->injectWindow_t0Days;
+  uvar->searchWindow_t0DaysBand = uvar->injectWindow_t0DaysBand;
   uvar->searchWindow_tauDays = uvar->injectWindow_tauDays;
   uvar->searchWindow_tauDaysBand = uvar->injectWindow_tauDaysBand;
 
@@ -656,14 +658,14 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALregSTRINGUserStruct( injectWindow_type,    0, UVAR_OPTIONAL, "Type of transient window to inject ('none', 'rect', 'exp')");
   XLALregREALUserStruct  ( injectWindow_tauDays, 0, UVAR_OPTIONAL, "Shortest transient-window timescale to inject, in days");
   XLALregREALUserStruct  ( injectWindow_tauDaysBand,0,UVAR_OPTIONAL,"Range of transient-window timescale to inject, in days");
-  XLALregINTUserStruct   ( injectWindow_t0, 	 0, UVAR_OPTIONAL, "Earliest GPS start-time of transient window to inject, in seconds [Default:dataStartGPS]");
-  XLALregINTUserStruct   ( injectWindow_t0Band,  0, UVAR_OPTIONAL, "Range of GPS start-time of transient window to inject, in seconds [Default:dataDuration-3*tauMax]");
+  XLALregREALUserStruct  ( injectWindow_t0Days,  0, UVAR_OPTIONAL, "Earliest start-time of transient window to inject, as offset in days from dataStartGPS");
+  XLALregREALUserStruct  ( injectWindow_t0DaysBand,0,UVAR_OPTIONAL,"Range of GPS start-time of transient window to inject, in days [Default:dataDuration-3*tauMax]");
   /* ... and for search */
   XLALregSTRINGUserStruct( searchWindow_type,    0, UVAR_OPTIONAL, "Type of transient window to search with ('none', 'rect', 'exp') [Default:injectWindow]");
   XLALregREALUserStruct  ( searchWindow_tauDays, 0, UVAR_OPTIONAL, "Shortest transient-window timescale to search, in days [Default:injectWindow]");
   XLALregREALUserStruct  ( searchWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to search, in days [Default:injectWindow]");
-  XLALregINTUserStruct   ( searchWindow_t0,      0, UVAR_OPTIONAL, "Earliest GPS start-time of transient window to search, in seconds [Default:injectWindow]");
-  XLALregINTUserStruct   ( searchWindow_t0Band,  0, UVAR_OPTIONAL, "Range of GPS start-time of transient window to search, in seconds [Default:injectWindow]");
+  XLALregREALUserStruct  ( searchWindow_t0Days,  0, UVAR_OPTIONAL, "Earliest start-time of transient window to search, as offset in days from dataStartGPS [Default:injectWindow]");
+  XLALregREALUserStruct  ( searchWindow_t0DaysBand,0,UVAR_OPTIONAL, "Range of GPS start-time of transient window to search, in days [Default:injectWindow]");
 
   XLALregINTUserStruct   ( searchWindow_dtau, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:TAtom]");
   XLALregINTUserStruct   ( searchWindow_dt0, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
@@ -826,28 +828,25 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
     }
   /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
   if ( InjectRange.type == TRANSIENT_NONE )
-    if ( XLALUserVarWasSet ( &uvar->injectWindow_t0 ) || XLALUserVarWasSet ( &uvar->injectWindow_t0Band ) ||
+    if ( XLALUserVarWasSet ( &uvar->injectWindow_t0Days ) || XLALUserVarWasSet ( &uvar->injectWindow_t0DaysBand ) ||
          XLALUserVarWasSet ( &uvar->injectWindow_tauDays ) || XLALUserVarWasSet ( &uvar->injectWindow_tauDaysBand ) ) {
       XLALPrintError ("%s: ERROR: injectWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
       XLAL_ERROR ( fn, XLAL_EINVAL );
     }
 
-  if ( uvar->injectWindow_t0Band < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->injectWindow_t0Band, uvar->injectWindow_tauDaysBand );
+  if ( uvar->injectWindow_t0DaysBand < 0 || uvar->injectWindow_tauDaysBand < 0 ) {
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->injectWindow_t0DaysBand, uvar->injectWindow_tauDaysBand );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
   /* apply correct defaults if unset: t0=dataStart, t0Band=dataDuration-3*tauMax */
-  if ( !XLALUserVarWasSet ( &uvar->injectWindow_t0 ) )
-    InjectRange.t0 = uvar->dataStartGPS;
-  else
-    InjectRange.t0      = uvar->injectWindow_t0;
+  InjectRange.t0 = uvar->dataStartGPS + uvar->injectWindow_t0Days * DAY24;
 
   REAL8 tauMax = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand ) * DAY24;
-  if ( !XLALUserVarWasSet (&uvar->injectWindow_t0Band ) )
-    InjectRange.t0Band  = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax ); 	/* make sure it's >= 0 */
+  if ( XLALUserVarWasSet (&uvar->injectWindow_t0DaysBand ) )
+    InjectRange.t0Band  = uvar->injectWindow_t0DaysBand * DAY24;
   else
-    InjectRange.t0Band  = uvar->injectWindow_t0Band;
+    InjectRange.t0Band  = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax - InjectRange.t0 ); 	/* make sure it's >= 0 */
 
   InjectRange.tau     = (UINT4) ( uvar->injectWindow_tauDays * DAY24 );
   InjectRange.tauBand = (UINT4) ( uvar->injectWindow_tauDaysBand * DAY24 );
@@ -871,14 +870,14 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* apply correct defaults if unset: use inect window */
   if ( !XLALUserVarWasSet ( &uvar->searchWindow_type ) )
     SearchRange.type    = InjectRange.type;
-  if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0 ) )
+  if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0Days ) )
     SearchRange.t0      = InjectRange.t0;
   else
-    SearchRange.t0      = uvar->searchWindow_t0;
-  if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0Band ) )
+    SearchRange.t0      = uvar->dataStartGPS + uvar->searchWindow_t0Days * DAY24;
+  if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0DaysBand ) )
     SearchRange.t0Band = InjectRange.t0Band;
   else
-    SearchRange.t0Band  = uvar->searchWindow_t0Band;
+    SearchRange.t0Band  = (UINT4) (uvar->searchWindow_t0DaysBand * DAY24);
   if ( !XLALUserVarWasSet ( &uvar->searchWindow_tauDays ) )
     SearchRange.tau = InjectRange.tau;
   else
@@ -900,14 +899,14 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* make sure user doesn't set window=none but sets window-parameters => indicates she didn't mean 'none' */
   if ( SearchRange.type == TRANSIENT_NONE )
-    if ( XLALUserVarWasSet ( &uvar->searchWindow_t0 ) || XLALUserVarWasSet ( &uvar->searchWindow_t0Band ) ||
+    if ( XLALUserVarWasSet ( &uvar->searchWindow_t0Days ) || XLALUserVarWasSet ( &uvar->searchWindow_t0DaysBand ) ||
          XLALUserVarWasSet ( &uvar->searchWindow_tauDays ) || XLALUserVarWasSet ( &uvar->searchWindow_tauDaysBand ) ) {
       XLALPrintError ("%s: ERROR: searchWindow_type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
       XLAL_ERROR ( fn, XLAL_EINVAL );
     }
 
-  if (   uvar->searchWindow_t0Band < 0 || uvar->searchWindow_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->searchWindow_t0Band, uvar->searchWindow_tauDaysBand );
+  if (   uvar->searchWindow_t0DaysBand < 0 || uvar->searchWindow_tauDaysBand < 0 ) {
+    XLALPrintError ("%s: only positive t0/tau window injection bands allowed (%d, %f)\n", fn, uvar->searchWindow_t0DaysBand, uvar->searchWindow_tauDaysBand );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
