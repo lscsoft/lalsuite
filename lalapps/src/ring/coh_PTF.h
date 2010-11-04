@@ -379,6 +379,18 @@ void calculate_standard_chisq_freq_ranges(
     gsl_matrix *eigenvecs
 );
 
+void calculate_standard_chisq_power_bins(
+    struct coh_PTF_params   *params,
+    FindChirpTemplate       *fcTmplt,
+    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4 a[LAL_NUM_IFO],
+    REAL4 b[LAL_NUM_IFO],
+    REAL4 *frequencyRanges,
+    REAL4 *powerBinsPlus,
+    REAL4 *powerBinsCross,
+    gsl_matrix *eigenvecs
+);
 REAL4 calculate_chi_square(
 struct coh_PTF_params   *params,
 UINT4           numPoints,
@@ -389,6 +401,8 @@ REAL4           a[LAL_NUM_IFO],
 REAL4           b[LAL_NUM_IFO],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 gsl_matrix *eigenvecs,
-gsl_vector *eigenvals
+gsl_vector *eigenvals,
+REAL4 *powerBinsPlus,
+REAL4 *powerBinsCross
 );
 
