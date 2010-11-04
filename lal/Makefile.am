@@ -19,12 +19,9 @@ EXTRA_DIST = \
 	README.install \
 	lal.pc.in \
 	lalsupport.pc.in \
-	lal-config.in \
 	aclocal.m4 \
 	lal.spec.in \
 	lal.spec
-
-bin_SCRIPTS = lal-config
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = \

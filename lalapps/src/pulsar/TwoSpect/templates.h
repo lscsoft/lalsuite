@@ -24,26 +24,26 @@
 
 struct gsl_probR_pars {
    templateStruct *templatestruct;
-   REAL8Vector *ffplanenoise;
-   REAL8Vector *fbinaveratios;
-   REAL8 threshold;
+   REAL4Vector *ffplanenoise;
+   REAL4Vector *fbinaveratios;
+   REAL4 threshold;
    INT4 errcode;
 };
 
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
-void estimateFAR(farStruct *out, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios);
-void numericFAR(farStruct *out, templateStruct *templatestruct, REAL8 thresh, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios);
+void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
+void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
 REAL8 gsl_probR(REAL8 R, void *pars);
 REAL8 gsl_dprobRdR(REAL8 R, void *pars);
 void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
 
 templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);
-void makeTemplateGaussians(templateStruct *out, candidate *in, inputParamsStruct *params);
-void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL8FFTPlan *plan);
+void makeTemplateGaussians(templateStruct *output, candidate *input, inputParamsStruct *params);
+void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan);
 
-REAL8 probR(templateStruct *templatestruct, REAL8Vector *ffplanenoise, REAL8Vector *fbinaveratios, REAL8 R, INT4 *errcode);
+REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);
 
 

@@ -75,7 +75,6 @@ install : build
 
 	# split off -dev
 #	mkdir -p $(CURDIR)/debian/lal-dev/$(PREFIX)/bin $(CURDIR)/debian/lal-dev/$(PREFIX)/lib $(CURDIR)/debian/lal-dev/$(PREFIX)/include
-##	mv $(CURDIR)/debian/lal/$(PREFIX)/bin/lal-config $(CURDIR)/debian/lal-dev/$(PREFIX)/bin/
 ##	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/*a $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
 ##	mv $(CURDIR)/debian/lal/$(PREFIX)/lib/pkgconfig $(CURDIR)/debian/lal-dev/$(PREFIX)/lib/
 ##	mv $(CURDIR)/debian/lal/$(PREFIX)/include/* $(CURDIR)/debian/lal-dev/$(PREFIX)/include/

@@ -41,7 +41,6 @@ include/lal/*.h
 include/lal/stamp-h2
 include/stamp-h1
 lal-*.tar.gz
-lal-config
 lal.spec
 lib/.vcsinfo
 lib/LALBuildDate.c

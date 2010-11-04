@@ -9,11 +9,13 @@ bin_PROGRAMS = lalapps_SemiCoherentBinary lalapps_HJDtoGPSSSB \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
 	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	\
 	lalapps_CalculateSensitivity lalapps_FindCoincidence \
-	lalapps_ComputeUL
+	lalapps_ComputeUL lalapps_CombineBayesianResults
 
 lalapps_SemiCoherentBinary_SOURCES = SemiCoherentBinary.c
 
 lalapps_HJDtoGPSSSB_SOURCES = HJDtoGPSSSB.c
+
+lalapps_CombineBayesianResults_SOURCES = CombineBayesianResults.c
 
 lalapps_ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary_v2.c ReadWriteBinaryHeader_v1.c \
 	ComputeFStatisticBinary_v2.h clusters.c clusters.h ReadSourceFile_v1.c \
