@@ -1866,6 +1866,8 @@ void LALPSpinInspiralRDEngine (
        }
    }
 
+   params->fFinal = params->tSampling/2.;
+
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
     * relevant arrays
