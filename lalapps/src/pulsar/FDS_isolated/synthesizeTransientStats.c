@@ -1646,7 +1646,7 @@ write_InjParams_to_fp ( FILE * fp,		/**< [in] file-pointer to output file */
   int ret;
   /* if requested, write header-comment line */
   if ( par == NULL ) {
-    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0[d]    tau  type (detMp)^(1/8)\n");
+    ret = fprintf(fp, "%%%%Alpha Delta      SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd       t0[d]     tau[d] type   (detMp)^(1/8)\n");
     if ( ret < 0 ) {
       XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
       XLAL_ERROR ( fn, XLAL_EIO );
