@@ -223,7 +223,7 @@ MultiFstatAtomVector *XLALSynthesizeTransientAtoms ( InjParams_t *injParams, con
 int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
 
-int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par );
+int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, UINT4 dataStartGPS );
 
 
 /*---------- Global variables ----------*/
@@ -320,7 +320,7 @@ int main(int argc,char *argv[])
 	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
       fprintf (fpInjParams, "%s", cfg.logString );		/* write search log comment */
-      if ( write_InjParams_to_fp ( fpInjParams, NULL ) != XLAL_SUCCESS ) { /* write header-line comment */
+      if ( write_InjParams_to_fp ( fpInjParams, NULL, 0 ) != XLAL_SUCCESS ) { /* write header-line comment */
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
     } /* if outputInjParams */
@@ -341,7 +341,7 @@ int main(int argc,char *argv[])
       }
 
       /* ----- if requested, output signal injection parameters into file */
-      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParams ) != XLAL_SUCCESS ) ) {
+      if ( fpInjParams && (write_InjParams_to_fp ( fpInjParams, &injParams, uvar.dataStartGPS ) != XLAL_SUCCESS ) ) {
         XLAL_ERROR ( fn, XLAL_EFUNC );
       } /* if fpInjParams & failure*/
 
@@ -620,7 +620,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   REAL8 tauMaxDays = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand );
   /* default window-ranges are t0 in [dataStartTime, dataStartTime - 3 * tauMax] */
   uvar->injectWindow_t0Days     = 0; // offset in days from uvar->dataStartGPS
-  uvar->injectWindow_t0DaysBand = fmax ( 0.0, uvar->dataDuration/DAY24 - TRANSIENT_EXP_EFOLDING * tauMaxDays );	/* make sure it's >= 0 */
+  uvar->injectWindow_t0DaysBand = fmax ( 0.0, 1.0*uvar->dataDuration/DAY24 - TRANSIENT_EXP_EFOLDING * tauMaxDays );	/* make sure it's >= 0 */
 
   /* search-windows by default identical to inject-windows */
   uvar->searchWindow_t0Days = uvar->injectWindow_t0Days;
@@ -1630,8 +1630,9 @@ XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	/**< [in/out
  * adding one line with the injection parameters
  */
 int
-write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
-                        const InjParams_t *par	/**< [in] injection params to write. NULL means write header-comment line */
+write_InjParams_to_fp ( FILE * fp,		/**< [in] file-pointer to output file */
+                        const InjParams_t *par,	/**< [in] injection params to write. NULL means write header-comment line */
+                        UINT4 dataStartGPS	/**< [in] data start-time in GPS seconds (used to turn window 't0' into offset from dataStartGPS) */
                         )
 {
   const char *fn = __func__;
@@ -1645,7 +1646,7 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
   int ret;
   /* if requested, write header-comment line */
   if ( par == NULL ) {
-    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0       tau  type (detMp)^(1/8)\n");
+    ret = fprintf(fp, "%%%%Alpha Delta       SNR       h0   cosi    psi   phi0          A1       A2       A3       A4         Ad       Bd       Cd       Dd           t0[d]    tau  type (detMp)^(1/8)\n");
     if ( ret < 0 ) {
       XLALPrintError ("%s: failed to fprintf() to given file-pointer 'fp'.\n", fn );
       XLAL_ERROR ( fn, XLAL_EIO );
@@ -1655,14 +1656,17 @@ write_InjParams_to_fp ( FILE * fp,		/** [in] file-pointer to output file */
 
   } /* if par == NULL */
 
+  REAL8 t0_d = 1.0 * ( par->transientWindow.t0 - dataStartGPS ) / DAY24;
+  REAL8 tau_d = 1.0 * par->transientWindow.tau / DAY24;
+
   /* if injParams given, output them to the file */
-  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8d  %8d    %1d   %8.3g\n",
+  ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f    %8.3g %8.3g %8.3g %8.3g   %8.3g %8.3g %8.3g %8.3g    %8.3f  %8.3f    %1d   %8.3g\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
                   par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/
                   par->ampVect[0], par->ampVect[1], par->ampVect[2], par->ampVect[3],			/* ampltiude vector A^mu */
                   par->M_mu_nu.Ad, par->M_mu_nu.Bd, par->M_mu_nu.Cd, par->M_mu_nu.Dd,			/* antenna-pattern matrix components */
-                  par->transientWindow.t0, par->transientWindow.tau, par->transientWindow.type,		/* transient-window params */
+                  t0_d, tau_d, par->transientWindow.type,		/* transient-window params */
                   par->detM1o8										/* rescale parameter (detMp)^(1/8) */
                   );
   if ( ret < 0 ) {

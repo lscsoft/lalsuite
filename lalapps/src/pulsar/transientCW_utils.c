@@ -957,10 +957,10 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
       }
       UINT4 t0 = thisCand->windowRange.t0;
       REAL8 t0_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
-      REAL8 tau_d_ML    = 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
-      REAL8 maxTwoF     = 2.0 *  thisCand->FstatMap->maxF;
-      REAL8 t0_d_MP = ( thisCand->t0_MP - t0 ) / DAY24;
-      REAL8 tau_d_MP    = thisCand->tau_MP / DAY24;
+      REAL8 tau_d_ML= 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
+      REAL8 maxTwoF = 2.0 *  thisCand->FstatMap->maxF;
+      REAL8 t0_d_MP = 1.0 * ( thisCand->t0_MP - t0 ) / DAY24;
+      REAL8 tau_d_MP= 1.0 * thisCand->tau_MP / DAY24;
 
       fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %8.5f\n",
                thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
