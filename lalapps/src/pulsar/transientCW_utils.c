@@ -810,8 +810,8 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
           if ( F > ret->maxF )
             {
               ret->maxF = F;
-              ret->t0_maxF  = win_mn.t0;	/* start-time t0 corresponding to Fmax */
-              ret->tau_maxF = win_mn.tau;	/* timescale tau corresponding to Fmax */
+              ret->t0_ML  = win_mn.t0;	/* start-time t0 corresponding to Fmax */
+              ret->tau_ML = win_mn.tau;	/* timescale tau corresponding to Fmax */
             }
 
           /* if requested: use 'regularized' F-stat: log ( 1/D * e^F ) = F + log(1/D) */
@@ -947,7 +947,7 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
 
   if ( thisCand == NULL )	/* write header-line comment */
     {
-      fprintf (fp, "%%%% Freq[Hz]           Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0offs_ML[d]  tau_ML[d]    maxTwoF          logBstat\n");
+      fprintf (fp, "%%%% Freq[Hz]           Alpha[rad]          Delta[rad]          fkdot[1]  fkdot[2]  fkdot[3]    t0offs_ML[d]  tau_ML[d]    maxTwoF          logBstat     t0offs_MP[d]  tau_MP[d]\n");
     }
   else
     {
@@ -956,15 +956,18 @@ write_transientCandidate_to_fp ( FILE *fp, const transientCandidate_t *thisCand 
         XLAL_ERROR ( fn, XLAL_EINVAL );
       }
       UINT4 t0 = thisCand->windowRange.t0;
-      REAL8 t0offs_maxF_d = 1.0 * (thisCand->FstatMap->t0_maxF - t0) / DAY24;
-      REAL8 tau_maxF_d    = 1.0 *  thisCand->FstatMap->tau_maxF / DAY24;
-      REAL8 maxTwoF       = 2.0 *  thisCand->FstatMap->maxF;
+      REAL8 t0offs_d_ML = 1.0 * (thisCand->FstatMap->t0_ML - t0) / DAY24;
+      REAL8 tau_d_ML    = 1.0 *  thisCand->FstatMap->tau_ML / DAY24;
+      REAL8 maxTwoF     = 2.0 *  thisCand->FstatMap->maxF;
+      REAL8 t0offs_d_MP = ( thisCand->t0_MP - t0 ) / DAY24;
+      REAL8 tau_d_MP    = thisCand->tau_MP / DAY24;
 
-      fprintf (fp, "  %- 18.16g %- 19.16g %- 19.16g %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %11.8g\n",
+      fprintf (fp, "  %- 18.16f %- 19.16f %- 19.16f %- 9.6g %- 9.5g %- 9.5g    %-8.5f      %-8.5f    %- 11.8g    %- 11.8g    %-8.5f      %-8.5f\n",
                thisCand->doppler.fkdot[0], thisCand->doppler.Alpha, thisCand->doppler.Delta,
                thisCand->doppler.fkdot[1], thisCand->doppler.fkdot[2], thisCand->doppler.fkdot[3],
-               t0offs_maxF_d, tau_maxF_d, maxTwoF,
-               thisCand->logBstat
+               t0offs_d_ML, tau_d_ML, maxTwoF,
+               thisCand->logBstat,
+               t0offs_d_MP, tau_d_MP
                );
     }
 
