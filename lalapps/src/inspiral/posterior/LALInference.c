@@ -140,7 +140,7 @@ VariableType getVariableTypeByIndex(LALVariables *vars, int idx)
 {
   LALVariableItem *item;
   if ((idx < 1) | (idx > vars->dimension)){
-    fprintf(stderr, " ERROR in getVariableName(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
+    fprintf(stderr, " ERROR in getVariableTypeByIndex(...,idx=%d): idx needs to be 1 <= idx <= dimension = %d.\n", 
             idx, vars->dimension);
     exit(1);
   }

@@ -36,7 +36,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,j,t,k,p,lowerRank,upperRank;
+	int i,t,k,p,lowerRank,upperRank; //indexes for for() loops
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -69,21 +69,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	nChain = MPIsize;		//number of parallel chain
 	tempIndex = MPIrank;		//set initial temp indices
 
-
 	tempLadder = malloc(nChain * sizeof(REAL8));			//the temperature ladder
+	
 	if(MPIrank == 0){	
-//		REAL8Vector **sigmaVec = (REAL8Vector *)calloc(nChain,sizeof(REAL8Vector));//matrix of sigmas per parameter and temperature for adaptation
 		sigmaVec = (REAL8 *)malloc(MPIsize*nPar*sizeof(REAL8));//matrix of sigmas per parameter and temperature for adaptatio
 		
 		for (p=0;p<(nChain*nPar);++p){
 			sigmaVec[p]=1.0;
-		}
-//		for (t=0; t<nChain; ++t) {
-//			(sigmaVec[t]) = XLALCreateREAL8Vector(nPar);
-//			for (p=0; p<nPar; ++p) {
-//				(sigmaVec[t])->data[p]=1.0;
-//			}
-//		}				
+		}				
 	}
 	//REAL8 *sigma = (REAL8*)calloc(nPar,sizeof(REAL8));
 	REAL8 s_gamma = 1.0;
@@ -121,8 +114,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-	nullLikelihood = NullLogLikelihood(runState->data);
-	//nullLikelihood = 0.0;
+	//nullLikelihood = NullLogLikelihood(runState->data);
+	nullLikelihood = 0.0;
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	
@@ -299,17 +292,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 					}
 				} //upperRank
 			} //lowerRank
-			
-			for(t=0;t<nChain;++t){
-				k=0;
-				while(tempIndexVec[k]!=t)k++;
-				for (p=0; p<(nPar); ++p){
-					printf("%f\t",sigmaVec[p+nPar*(k)]);
-				}
-				printf("\n");
-			}
-			printf("\n");
-			
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
@@ -356,7 +338,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	logPriorCurrent      = runState->prior(runState, runState->currentParams);
 	logLikelihoodCurrent = runState->currentLikelihood;
 	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
-	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
+//	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
 	
 	// generate proposal:
 	proposedParams.head = NULL;
@@ -378,11 +360,11 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	+ logProposalRatio;
 	
 	//fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-	double temp = log(gsl_rng_uniform(runState->GSLrandom));
+	//double temp = log(gsl_rng_uniform(runState->GSLrandom));
 	// accept/reject:
 	if ((logAcceptanceProbability > 0) 
-		//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
-		|| (temp < logAcceptanceProbability)) {   //accept
+		|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+		//|| (temp < logAcceptanceProbability)) {   //accept
 		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
@@ -414,7 +396,7 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 	logPriorCurrent      = runState->prior(runState, runState->currentParams);
 	logLikelihoodCurrent = runState->currentLikelihood;
 	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
-	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
+	//REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
 	
 	// generate proposal:
 	proposedParams.head = NULL;
@@ -440,11 +422,11 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 	+ logProposalRatio;
 	
 	//fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-	double temp = log(gsl_rng_uniform(runState->GSLrandom));
+	//double temp = log(gsl_rng_uniform(runState->GSLrandom));
 	// accept/reject:
 	if ((logAcceptanceProbability > 0) 
-		//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
-		|| (temp < logAcceptanceProbability)) {   //accept
+		|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+		//|| (temp < logAcceptanceProbability)) {   //accept
 		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
@@ -481,11 +463,11 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 		+ logProposalRatio;
 		
 		//fprintf(stdout," %9.5f=(1.0 / %9.5f)*(%9.5f-%9.5f)+(%9.5f-%9.5f)+%9.5f\n",logAcceptanceProbability,temperature,logLikelihoodProposed,logLikelihoodCurrent,logPriorProposed,logPriorCurrent,logProposalRatio);
-		double temp = log(gsl_rng_uniform(runState->GSLrandom));
+		//double temp = log(gsl_rng_uniform(runState->GSLrandom));
 		// accept/reject:
 		if ((logAcceptanceProbability > 0) 
-			//|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
-			|| (temp < logAcceptanceProbability)) {   //accept
+			|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
+			//|| (temp < logAcceptanceProbability)) {   //accept
 			//if(logLikelihoodProposed>nullLikelihood){
 			copyVariables(&proposedParams, runState->currentParams);
 			runState->currentLikelihood = logLikelihoodProposed;
@@ -636,13 +618,13 @@ void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *p
 	REAL8 logProposalRatio = 1.0;  // = log(P(backward)/P(forward))
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
-	REAL8 sigmat = 0.1;
+	//REAL8 sigmat = 0.1;
 	//INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
-	INT4 i,j;
+	//INT4 i,j;
 	
-	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
-	INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
-	INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
+	//INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
+	//INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
+	//INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
 	REAL8 big_sigma = 1.0;
 	
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
@@ -734,14 +716,14 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariab
 	REAL8 logProposalRatio = 1.0;  // = log(P(backward)/P(forward))
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
-	REAL8 sigmat = 0.1;
+	//REAL8 sigmat = 0.1;
 	//INT4 nPar = getVariableDimensionNonFixed(runState->currentParams);
-	INT4 i,j;
+	//INT4 i,j;
 	
 	INT4 p = *(INT4*) getVariable(runState->proposalArgs, "parameter");
-	INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
-	INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
-	INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
+	//INT4 nPar  = *(INT4*) getVariable(runState->algorithmParams, "nPar");
+	//INT4 nChain  = *(INT4*) getVariable(runState->algorithmParams, "nChain");
+	//INT4 tempIndex  = *(INT4*) getVariable(runState->proposalArgs, "tempIndex");
 	REAL8 big_sigma = 1.0;
 	
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
@@ -863,6 +845,13 @@ REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemp
 	return result;
 
 }
+
+REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
+{
+	return 1.0;
+}
+
+
 
 REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params)
 {

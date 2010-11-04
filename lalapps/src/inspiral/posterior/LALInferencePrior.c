@@ -37,7 +37,8 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
-		if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
+		//if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
+		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT) continue;
 		else
 		{
 			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
@@ -77,6 +78,6 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 		if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
 		   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
 			return -DBL_MAX;
-	
+
 	return(logPrior);
 }
