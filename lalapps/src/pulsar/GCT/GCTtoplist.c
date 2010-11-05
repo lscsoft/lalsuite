@@ -235,8 +235,10 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   return(snprintf(buf, buflen,
-#ifdef EAH_BOINC /* use obsolete output format for compatibility with current E@H Apps */
-                     "%.14f %.13f %.13f %.7g %d %.6f\n",
+#ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
+		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
+		    as discussed with Holger & Reinhard 5.11.2010 */
+                     "%.12g %.7f %.7f %.12g %d %.6f\n",
 #else
                      "%.14g %.13g %.13g %.13g %d %.6f\n",
 #endif
