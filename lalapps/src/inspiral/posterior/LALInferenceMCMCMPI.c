@@ -341,9 +341,10 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
-		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;numberI4 = TaylorF2;
-		if(strstr(ppt->value,"TaylorT3")) approx=TaylorT3;numberI4 = TaylorT3;
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;numberI4 = TaylorF2;}
+		if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;numberI4 = TaylorT3;}
+		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
 	
 	/* Over-ride end time if specified */

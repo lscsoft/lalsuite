@@ -144,11 +144,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 							864162757.00000,8.00,1024,9152,4577);
 			}
 			fprintf(chainoutput[t], "\n\n%31s","");
-			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",51,52,32,31,22,41,11,62,61);
+			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 			//fprintf(chainoutput[t], " %9i",185);
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
-			fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","cos(i)","psi","sin(dec)","R.A.","log(d)","phi_orb","t_c","eta","Mc");
+			fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","R.A.","dist","phi_orb","t_c","eta","Mc");
 			//fprintf(chainoutput[t], " %9s","x1");
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,runState->currentLikelihood - nullLikelihood,1.0);
