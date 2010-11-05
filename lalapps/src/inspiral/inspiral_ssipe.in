@@ -323,7 +323,7 @@ def thinca_coinc(ifo_list, single_data_analyzed, cafe_caches, cafe_base,
     if len(cafe_caches[idx].objects):
       cache = cafe_caches[idx]
       cachename = cache_names[idx]
-      thincabase = cachename.split('.')[0].strip('CAFE_')
+      thincabase = cachename.split('.')[0].replace('CAFE_','')
       ifos = set(cache_entry.observatory for cache_entry in cache.objects)
 
       # extract segment information
