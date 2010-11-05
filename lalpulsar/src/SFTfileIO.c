@@ -485,6 +485,7 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALSFTdataFind() */
 
+
 /** Extract a timstamps-vector from the given SFTCatalog.
  *
  * \note A list of *unique* timestamps is returned, i.e. only a single copy of a timestamp
@@ -542,6 +543,40 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
   RETURN(status);
 } /* LALTimestampsFromSFTCatalog() */
 
+
+/*
+- calculate frequency bins, i.e. space required per final SFT
+
+either:
+
+* count SFTs (different timestamps) from catalog, verify constraints (same detector etc)
+  - LALSFTtimestampsFromCatalog()? No, own loop can be more efficient. Catalog should be sorted by GPS.
+* calculate bins
+  - get deltaF from first SFT in catalog
+* allocate SFTs
+* sort catalog by file
+* read SFT segments from file, keeping track of segments in a temp structure
+* free temp structure
+
++ most memory efficient (doesn't use more than needed)
+- many realloc()s
+
+
+or:
+* sort catalog by file, start bin
+* build up SFT segment structure while reading the file, joining segments where possible
+
++ next best memory efficient, overhead only (possibly) for joining segments
+- still many realloc()s
+
+or:
+* sort catalog by file
+* read SFTs into temporary structure
+* convert temporary structure into final structure
+
+- lease memory efficient, effectively doubles space required for SFTs
+
+*/
 
 
 /** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
