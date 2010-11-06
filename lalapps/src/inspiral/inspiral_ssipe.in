@@ -1124,6 +1124,10 @@ if opts.coincidence:
     # we need different jobs for different time-slide files
     tisi_file_name = cp.get("ligolw_cafe","slides-file-%i"%tisi_file_num)
     this_lladd_job = copy.deepcopy(lladd_job)
+    # create new sub files for different slides if we have more than one
+    if tisi_file_num:
+      this_lladd_job.set_sub_file( basename + '.ligolw_add_%i'%tisi_file_num \
+          + subsuffix )
     this_lladd_job.add_input_file(tisi_file_name)
     this_lladd_job.add_file_arg(tisi_file_name)
 
