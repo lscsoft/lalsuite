@@ -305,7 +305,7 @@ for ifo in ifos:
             df_node.set_start(int(sciseg.start()))
             df_node.set_end(int(sciseg.end()))
             df_node.set_observatory(ifo[0])
-            df_node.set_type(cp.get('data',ifo+'-type'))
+            df_node.set_type(types[ifo])
             sciseg.set_df_node(df_node)
 
 os.chdir('../../')
