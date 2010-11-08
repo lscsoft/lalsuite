@@ -1,7 +1,7 @@
 import sys
 import math
 import os
-from numpy import log,loadtxt,vstack,array
+from numpy import log,loadtxt,vstack,array,exp
 
 def logadd(a,b):
     if(a>b): (a,b)=(b,a)
