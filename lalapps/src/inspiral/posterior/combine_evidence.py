@@ -84,7 +84,7 @@ def nest2pos(samps,weights):
     pos=samps[posidx,:]
     return pos
 
-def combine_evidence(data,x2iota,Nlive):
+def combine_evidence(data,xflag,Nlive):
 
     nfiles=len(data)
 
@@ -129,3 +129,4 @@ def combine_evidence(data,x2iota,Nlive):
     d_all=d_all[d_idx,:]
 
     return pos,d_all,totalBayes,ZnoiseTotal
+
