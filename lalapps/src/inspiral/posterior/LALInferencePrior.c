@@ -54,6 +54,10 @@ REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVa
 		logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"inclination"))));
 	if(checkVariable(params,"declination"))
 		logPrior+=log(fabs(cos(*(REAL8 *)getVariable(params,"declination"))));
+	if(checkVariable(params,"theta_spin1"))
+		logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin1"))));
+	if(checkVariable(params,"theta_spin2"))
+		logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin2"))));
 	
 	if(checkVariable(params,"logmc"))
 		logmc=*(REAL8 *)getVariable(params,"logmc");

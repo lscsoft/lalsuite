@@ -43,7 +43,6 @@
 
 int MPIrank, MPIsize;
 
-
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeMCMC(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
@@ -137,7 +136,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	return(irs);
 }
 
-/***** Initialise Nested Sampling structures ****/
+/********** Initialise MCMC structures *********/
 /* Fill in samples from the prior distribution */
 /* runState->algorithmParams must contain a variable "logLikelihoods" */
 /* which contains a REAL8 array of likelihood values for the live */
@@ -182,7 +181,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->proposal=PTMCMCGaussianProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
-	runState->template=&templateLAL;
+	//runState->template=&templateLAL;
+	runState->template=&templateLALSTPN;
 	runState->likelihood=&FreqDomainLogLikelihood;
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
@@ -226,7 +226,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	addVariable(runState->algorithmParams,"Nskip",&tmpi, INT4_t,PARAM_FIXED);
 	
 	printf("set highest temperature.\n");
-	/* Tolerance of the Nested sampling integrator */
+	/* Maximum temperature of the temperature ladder */
 	ppt=getProcParamVal(commandLine,"--tempMax");
 	if(ppt){
 		tempMax=strtod(ppt->value,(char **)NULL);
@@ -296,17 +296,23 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 etaMin=0.03;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
-	REAL8 tmpMin,tmpMax,tmpVal;
+	REAL8 tmpMin,tmpMax;//,tmpVal;
 	gsl_rng * GSLrandom=state->GSLrandom;
 	REAL8 endtime;
-	REAL8 start_mc		=4.82+gsl_ran_gaussian(GSLrandom,0.025);
-	REAL8 start_eta		=etaMin+gsl_rng_uniform(GSLrandom)*(etaMax-etaMin);
-	REAL8 start_phase	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
-	REAL8 start_dist	=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
-	REAL8 start_ra		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
-	REAL8 start_dec		=-LAL_PI/2.0+gsl_rng_uniform(GSLrandom)*(LAL_PI/2.0-(-LAL_PI/2.0));
-	REAL8 start_psi		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
-	REAL8 start_iota	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
+	REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
+	REAL8 start_eta			=etaMin+gsl_rng_uniform(GSLrandom)*(etaMax-etaMin);
+	REAL8 start_phase		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
+	REAL8 start_dist		=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
+	REAL8 start_ra			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
+	REAL8 start_dec			=-LAL_PI/2.0+gsl_rng_uniform(GSLrandom)*(LAL_PI/2.0-(-LAL_PI/2.0));
+	REAL8 start_psi			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
+	REAL8 start_iota		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
+	REAL8 start_a_spin1		=0.0+gsl_rng_uniform(GSLrandom)*(1.0-0.0);
+	REAL8 start_theta_spin1 =0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
+	REAL8 start_phi_spin1	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
+	REAL8 start_a_spin2		=0.0+gsl_rng_uniform(GSLrandom)*(1.0-0.0);
+	REAL8 start_theta_spin2 =0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
+	REAL8 start_phi_spin2	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
 	
 	memset(currentParams,0,sizeof(LALVariables));
 	
@@ -356,6 +362,7 @@ void initVariables(LALInferenceRunState *state)
 		LALGetApproximantFromString(&status,ppt->value,&approx);
 		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;numberI4 = TaylorF2;}
 		if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;numberI4 = TaylorT3;}
+		if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;numberI4 = SpinTaylor;}
 		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
@@ -436,7 +443,7 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
-	tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);
+	//tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);
 	//tmpVal=7.86508;
 	addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_LINEAR);
 	//addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_FIXED);
@@ -446,7 +453,7 @@ void initVariables(LALInferenceRunState *state)
 	//addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
 	
 	//tmpVal=0.244;
-	tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
+	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
 	addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_LINEAR);
 	//addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_FIXED);
@@ -459,14 +466,14 @@ void initVariables(LALInferenceRunState *state)
 	
 	//tmpVal=1.5;
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
-	tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=3.89954;
     addVariable(currentParams, "phase",           &start_phase,             REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	//tmpVal=5.8287;
-	tmpVal=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
+	//tmpVal=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
 	//Dmin+(Dmax-Dmin)/2.0;
 	//tmpVal=46.92314;
 	addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_LINEAR);
@@ -475,7 +482,7 @@ void initVariables(LALInferenceRunState *state)
 	
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	//tmpVal=4.5500;//1.0;
-	tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=3.34650;
 	addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_FIXED);
@@ -483,7 +490,7 @@ void initVariables(LALInferenceRunState *state)
 	
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	//tmpVal=1.0759;
-	tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=-0.90547;
 	addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_FIXED);
@@ -491,7 +498,7 @@ void initVariables(LALInferenceRunState *state)
     
 	tmpMin=0.0; tmpMax=LAL_PI;
 	//tmpVal=0.2000;
-	tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=0.64546;
 	addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_FIXED);
@@ -499,11 +506,36 @@ void initVariables(LALInferenceRunState *state)
 	
 	tmpMin=0.0; tmpMax=LAL_PI;
 	//tmpVal=0.9207;
-	tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
+	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=2.86094;
  	addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_CIRCULAR);
 	//addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	tmpMin=0.0; tmpMax=1.0;
+ 	addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+	addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	tmpMin=0.0; tmpMax=LAL_PI;
+ 	addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
+	addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	tmpMin=0.0; tmpMax=LAL_TWOPI;
+ 	addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
+	addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	
+	tmpMin=0.0; tmpMax=1.0;
+ 	addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+	addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	tmpMin=0.0; tmpMax=LAL_PI;
+ 	addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
+	addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+	
+	tmpMin=0.0; tmpMax=LAL_TWOPI;
+ 	addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
+	addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	
 	//REAL8 x0 = 0.9;
@@ -535,7 +567,7 @@ int main(int argc, char *argv[]){
 	/* And allocating memory */
 	runState = initialize(procParams);
   
-	/* Set up structures for nested sampling */
+	/* Set up structures for MCMC */
 	initializeMCMC(runState);
 	
 	/* Set up currentParams with variables to be used */

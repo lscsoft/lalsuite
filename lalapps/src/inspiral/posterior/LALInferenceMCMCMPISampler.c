@@ -36,7 +36,7 @@
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-	int i,t,k,p,lowerRank,upperRank; //indexes for for() loops
+	int i,t,p,lowerRank,upperRank; //indexes for for() loops
 	int tempSwapCount=0;
 	REAL8 tempDelta;
 	int nChain;
@@ -543,11 +543,16 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 /****************************************/
 {
 	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
+	REAL8 a_spin1, a_spin2, theta_spin1, theta_spin2, phi_spin1, phi_spin2;
 	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
 	ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+	REAL8 a_spin1_proposed, a_spin2_proposed, theta_spin1_proposed, 
+	theta_spin2_proposed, phi_spin1_proposed, phi_spin2_proposed;
 	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariables * currentParams = runState->currentParams;
+	copyVariables(currentParams, proposedParams);
+	
 	REAL8 sigma = 0.1;
 	REAL8 big_sigma = 1.0;
 	
@@ -565,6 +570,37 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	psi  = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
 	dist = *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
 	
+	if (checkVariable(currentParams, "a_spin1")){
+		a_spin1 = *(REAL8*) getVariable(currentParams, "a_spin1");
+		a_spin1_proposed = a_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+		setVariable(proposedParams, "a_spin1",      &a_spin1_proposed);
+	}
+	if (checkVariable(currentParams, "theta_spin1")){
+		theta_spin1 = *(REAL8*) getVariable(currentParams, "theta_spin1");
+		theta_spin1_proposed = theta_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+		setVariable(proposedParams, "theta_spin1",      &theta_spin1_proposed);
+	}
+	if (checkVariable(currentParams, "phi_spin1")){
+		phi_spin1 = *(REAL8*) getVariable(currentParams, "phi_spin1");
+		phi_spin1_proposed = phi_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+		setVariable(proposedParams, "phi_spin1",      &phi_spin1_proposed);
+	}
+	if (checkVariable(currentParams, "a_spin2")){
+		a_spin2 = *(REAL8*) getVariable(currentParams, "a_spin2");
+		a_spin2_proposed = a_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+		setVariable(proposedParams, "a_spin2",      &a_spin2_proposed);
+	}
+	if (checkVariable(currentParams, "theta_spin2")){
+		theta_spin2 = *(REAL8*) getVariable(currentParams, "theta_spin2");
+		theta_spin2_proposed = theta_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+		setVariable(proposedParams, "theta_spin2",      &theta_spin2_proposed);
+	}
+	if (checkVariable(currentParams, "phi_spin2")){
+		phi_spin2 = *(REAL8*) getVariable(currentParams, "phi_spin2");
+		phi_spin2_proposed = phi_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+		setVariable(proposedParams, "phi_spin2",      &phi_spin2_proposed);
+	}
+
 	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
 	// (above proposal is not symmetric!)
 	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;	/*mc changed by 0.0001 */
@@ -582,7 +618,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
 	logProposalRatio *= dist_proposed / dist;
 	
-	copyVariables(currentParams, proposedParams);
+	
 	setVariable(proposedParams, "chirpmass",      &mc_proposed);		
 	setVariable(proposedParams, "massratio",      &eta_proposed);
 	setVariable(proposedParams, "inclination",    &iota_proposed);
@@ -592,6 +628,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	setVariable(proposedParams, "declination",    &dec_proposed);
 	setVariable(proposedParams, "polarisation",   &psi_proposed);
 	setVariable(proposedParams, "distance",       &dist_proposed);
+	
+	
 	
 	// return ratio of proposal densities (for back & forth jumps) 
 	// in "runState->proposalArgs" vector:
