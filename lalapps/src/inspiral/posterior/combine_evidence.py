@@ -1,7 +1,8 @@
 import sys
 import math
 import os
-from numpy import log,loadtxt,vstack,array,exp,rand
+from numpy import log,loadtxt,vstack,array,exp,size,argsort
+from numpy.random import rand
 
 def logadd(a,b):
     if(a>b): (a,b)=(b,a)
@@ -80,7 +81,8 @@ def nest2pos(samps,weights):
     randoms=rand(size(samps,0))
     wt=weights+samps[:,-1]
     maxwt=max(wt)
-    posidx=find(wt>maxwt+log(randoms))
+    #posidx=find(wt>maxwt+log(randoms))
+    posidx=[i for i in range(0,size(weights)) if wt[i]>maxwt+log(randoms[i]) ]
     pos=samps[posidx,:]
     return pos
 
