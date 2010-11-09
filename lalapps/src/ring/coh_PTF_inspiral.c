@@ -1489,6 +1489,8 @@ void cohPTFmodBasesUnconstrainedStatistic(
   COMPLEX8VectorSequence *tempqVec = NULL;
   REAL4 *frequencyRangesPlus = NULL;
   REAL4 *frequencyRangesCross = NULL;
+  REAL4 *powerBinsPlus = NULL;
+  REAL4 *powerBinsCross = NULL;
   REAL4 fLow,fHigh;
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
@@ -1922,7 +1924,12 @@ void cohPTFmodBasesUnconstrainedStatistic(
               LALCalloc( params->numChiSquareBins-1, sizeof(REAL4) );
             frequencyRangesCross = (REAL4 *)
               LALCalloc( params->numChiSquareBins-1, sizeof(REAL4) );
+            powerBinsPlus = (REAL4 *) 
+              LALCalloc( params->numChiSquareBins, sizeof(REAL4) );
+            powerBinsCross = (REAL4 *)
+              LALCalloc( params->numChiSquareBins, sizeof(REAL4) );
             calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,frequencyRangesCross,Autoeigenvecs);
+            calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,powerBinsPlus,powerBinsCross,Autoeigenvecs);
           }
           if (! tempqVec)
             tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
@@ -1968,7 +1975,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
             }
           }
           /* Calculate chi square here */
-          chiSquare->data->data[i-numPoints/4] = calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
+          chiSquare->data->data[i-numPoints/4] = calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,powerBinsPlus,powerBinsCross);
         
         }
         else if (params->doChiSquare)
@@ -2028,7 +2035,7 @@ void cohPTFmodBasesUnconstrainedStatistic(
   }
   fclose(outfile);*/
 
-  /*outfile = fopen("chi_square_timeseries.dat","w");
+/*  outfile = fopen("chi_square_timeseries.dat","w");
   for ( i = 0; i < chiSquare->data->length; ++i)
   {
     fprintf (outfile,"%f %f \n",deltaT*i,chiSquare->data->data[i]);

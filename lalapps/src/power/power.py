@@ -1422,7 +1422,7 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	# if an extentlimit has been imposed
 	#
 
-	clipsegs = [None] * len(extents)
+	clipsegs = [None] * len(bins)
 	if extentlimit is not None:
 		extents = [bin.extent for bin in bins]
 		for i, extent in enumerate(extents):

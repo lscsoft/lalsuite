@@ -305,7 +305,7 @@ for ifo in ifos:
             df_node.set_start(int(sciseg.start()))
             df_node.set_end(int(sciseg.end()))
             df_node.set_observatory(ifo[0])
-            df_node.set_type(cp.get('data',ifo+'-type'))
+            df_node.set_type(types[ifo])
             sciseg.set_df_node(df_node)
 
 os.chdir('../../')
@@ -584,7 +584,7 @@ if opts.enable_pages_alltimes is True:
         if time_event is not None:   
             if time_event[time] is not None:
                 results_page_node.set_event_number(time_event[time])
-                results_page_node.add_var_opt('inj',opts.inj)
+                results_page_node.add_var_arg('--inj '+os.path.abspath(opts.inj))
         results_page_node.add_parent(combine_each_time_nodes[time])
         results_page_node.add_var_opt('bsn',bayesfiles_by_time[time])
 
@@ -599,7 +599,7 @@ if opts.enable_pages_alltimes is True:
                     if time_event is not None:   
                         if time_event[time] is not None:
                             results_node.set_event_number(time_event[time])
-                            results_node.add_var_opt('inj',opts.inj)
+                            results_node.add_var_arg('--inj '+os.path.abspath(opts.inj))
                     results_node.add_parent(combine_nodes_by_time[time][ifo])
                     ifo_results_path=os.path.join(results_dir,ifo)
                     results_node.add_var_opt('outpath',ifo_results_path)
