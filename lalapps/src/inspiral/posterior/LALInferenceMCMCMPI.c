@@ -181,8 +181,21 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->proposal=PTMCMCGaussianProposal;
 	
 	/* This is the LAL template generator for inspiral signals */
-	//runState->template=&templateLAL;
-	runState->template=&templateLALSTPN;
+	
+	ppt=getProcParamVal(commandLine,"--approx");
+	if(ppt){
+		if(strstr(ppt->value,"SpinTaylor")) {
+			runState->template=&templateLALSTPN;
+			fprintf(stdout,"Template function called is \"templateLALSTPN\"\n");
+		}
+		else {
+			runState->template=&templateLAL;
+			fprintf(stdout,"Template function called is \"templateLAL\"\n");
+		}
+		
+	}
+	else {runState->template=&templateLAL;}
+	
 	//runState->likelihood=&FreqDomainLogLikelihood;
 	runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
 	//runState->likelihood=&UnityLikelihood;
@@ -283,7 +296,7 @@ void initVariables(LALInferenceRunState *state)
 	INT4 AmpOrder=0;
 	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
 	Approximant approx=TaylorF2;
-	INT4 numberI4 = TaylorF2;
+	//INT4 numberI4 = TaylorF2;
 	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
 	InspiralApplyTaper bookends = INSPIRAL_TAPER_NONE;
@@ -362,11 +375,11 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
-		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;numberI4 = TaylorF2;}
-		if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;numberI4 = TaylorT3;}
-		if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;numberI4 = SpinTaylor;}
-		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
-		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
+		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}
+		if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
+		if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
+		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
 
 	/* Over-ride taper if specified */
@@ -444,8 +457,8 @@ void initVariables(LALInferenceRunState *state)
 	
 	printf("Read end time %f\n",endtime);
 
-	//addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
-	addVariable(currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
+	addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
+	//addVariable(currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
 	//numberI4 = LAL_PNORDER_TWO;
     addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);	
 	//addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
