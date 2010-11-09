@@ -31,7 +31,8 @@ REAL8 ang_var(LALVariables **list,const char *pname, int N);
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter);
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter);
-void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs);
+//Declared in LALInferencePrior.h instead:
+//void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *priorArgs);
 INT4 LALInferenceReflectDetPlane(
 							 LALInferenceRunState *state,
 							 LALVariables *parameter

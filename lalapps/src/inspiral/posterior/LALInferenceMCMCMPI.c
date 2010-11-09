@@ -183,7 +183,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	/* This is the LAL template generator for inspiral signals */
 	//runState->template=&templateLAL;
 	runState->template=&templateLALSTPN;
-	runState->likelihood=&FreqDomainLogLikelihood;
+	//runState->likelihood=&FreqDomainLogLikelihood;
+	runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;
@@ -285,6 +286,7 @@ void initVariables(LALInferenceRunState *state)
 	INT4 numberI4 = TaylorF2;
 	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
+	InspiralApplyTaper bookends = INSPIRAL_TAPER_NONE;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
 	REAL8 Dmin=1.0;
@@ -366,6 +368,12 @@ void initVariables(LALInferenceRunState *state)
 		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
+
+	/* Over-ride taper if specified */
+	ppt=getProcParamVal(commandLine,"--taper");
+	if(ppt){
+		if(strstr(ppt->value,"STARTEND")) bookends=INSPIRAL_TAPER_STARTEND;
+	}
 	
 	/* Over-ride end time if specified */
 	ppt=getProcParamVal(commandLine,"--trigtime");
@@ -441,6 +449,8 @@ void initVariables(LALInferenceRunState *state)
 	//numberI4 = LAL_PNORDER_TWO;
     addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);	
 	//addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
+	
+	addVariable(currentParams, "INSPIRAL_TAPER",     &bookends,        INT4_t, PARAM_FIXED);
 	
 	/* Set up the variable parameters */
 	//tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);

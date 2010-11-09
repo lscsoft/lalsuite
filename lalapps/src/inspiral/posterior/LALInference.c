@@ -1223,3 +1223,7 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
 	return(loglikeli);
 }
+
+
+
+

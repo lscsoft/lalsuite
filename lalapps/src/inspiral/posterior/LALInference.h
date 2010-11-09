@@ -275,5 +275,7 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 void mc2masses(double mc, double eta, double *m1, double *m2);
 
 
+
+
 #endif
 

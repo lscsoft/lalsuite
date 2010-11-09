@@ -1175,11 +1175,11 @@ void TemplateDumpTest(void)
 void PTMCMCTest(void)
 {
 	fprintf(stdout, "PTMCMC test\n");
-	runstate->algorithm=PTMCMCAlgorithm;
-	runstate->evolve=PTMCMCOneStep;
-	runstate->prior=PTUniformLALPrior;
+	//runstate->algorithm=PTMCMCAlgorithm;
+	//runstate->evolve=PTMCMCOneStep;
+	//runstate->prior=PTUniformLALPrior;
 	//runstate->prior=PTUniformGaussianPrior;
-	runstate->proposal=PTMCMCLALProposal;
+	//runstate->proposal=PTMCMCLALProposal;
 	//runstate->proposal=PTMCMCGaussianProposal;
 	runstate->proposalArgs = malloc(sizeof(LALVariables));
 	runstate->proposalArgs->head=NULL;
@@ -1226,7 +1226,7 @@ void PTMCMCTest(void)
 	
 	
 	runstate->currentParams=&currentParams;
-	PTMCMCAlgorithm(runstate);
+	//PTMCMCAlgorithm(runstate);
 	fprintf(stdout, "End of PTMCMC test\n");
 }
 

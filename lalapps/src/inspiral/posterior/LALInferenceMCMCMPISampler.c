@@ -32,6 +32,7 @@
 #include "LALInference.h"
 #include "mpi.h"
 #include "LALInferenceMCMCMPISampler.h"
+#include "LALInferencePrior.h"
 
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
@@ -529,6 +530,7 @@ REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 }
 
 
+
 //Test LALProposalFunction
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 /****************************************/
@@ -605,7 +607,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	// (above proposal is not symmetric!)
 	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;	/*mc changed by 0.0001 */
 	//mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.01);          /* mc changed by ~0.1% */
-	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
+	
 	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*eta changed by 0.01*/
 	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
 	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.5;
@@ -616,7 +618,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
 	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
 	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
-	logProposalRatio *= dist_proposed / dist;
+	
 	
 	
 	setVariable(proposedParams, "chirpmass",      &mc_proposed);		
@@ -629,7 +631,11 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	setVariable(proposedParams, "polarisation",   &psi_proposed);
 	setVariable(proposedParams, "distance",       &dist_proposed);
 	
+	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
 	
+	dist_proposed = *(REAL8*) getVariable(proposedParams, "distance");
+	logProposalRatio *= dist_proposed / dist;
+	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
 	
 	// return ratio of proposal densities (for back & forth jumps) 
 	// in "runState->proposalArgs" vector:
