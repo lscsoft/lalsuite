@@ -248,6 +248,9 @@ sub cleanupLSD {
     # get rid of CVS tags
     $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
 
+    # use 'Revision:' string as a hook to place a '\file' command
+    $text =~ s!^Revision:!\\file!mg;
+
     # convert Author: comments to doxygen
     $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mg;
 
@@ -278,7 +281,7 @@ sub cleanupLSD {
 	    $text =~ s!\\$_$bbk?$bbr!!mg;
 	}
 	# one argument
-	foreach (qw(index input label vfill vspace)) {
+	foreach (qw(index input vfill vspace)) {
 	    $text =~ s!\\$_$bbr!!mg;
 	}
 	# no arguments
@@ -291,10 +294,21 @@ sub cleanupLSD {
 	    $_ = $2;
 	    $_ =~ /\n/ ? '\f[' . $_ . '\f]' : '\f$' . $_ . '\f$'
 	}sge;
-	$text =~ s!\\begin$n*{(?:equation|displaymath)}!\\f[!mg;
-	$text =~ s!\\end$n*{(?:equation|displaymath)}!\\f]!mg;
-	$text =~ s!\\begin$n*{eqnarray\*?}!\\f{eqnarray*}{!mg;
-	$text =~ s!\\end$n*{eqnarray\*?}!\\f}!mg;
+        # displaymath
+	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
+	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
+        # equation
+	$text =~ s!\\begin$n*{equation}!\\f{equation}{!mg;
+	$text =~ s!\\end$n*{equation}!\\f}!mg;
+        # equation*
+	$text =~ s!\\begin$n*{equation*}!\\f{equation*}{!mg;
+	$text =~ s!\\end$n*{equation*}!\\f}!mg;
+        # eqnarray
+	$text =~ s!\\begin$n*{eqnarray}!\\f{eqnarray}{!mg;
+	$text =~ s!\\end$n*{eqnarray}!\\f}!mg;
+        # eqnarray*
+	$text =~ s!\\begin$n*{eqnarray\*}!\\f{eqnarray*}{!mg;
+	$text =~ s!\\end$n*{eqnarray\*}!\\f}!mg;
 
 	# convert descriptions
 	sub desc {
