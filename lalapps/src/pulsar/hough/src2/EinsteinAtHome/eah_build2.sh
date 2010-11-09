@@ -427,10 +427,6 @@ else
     if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
         log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
     fi
-    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
-        log_and_do cp configure.ac configure.ac~
-        log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
-    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lal"
     log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -446,10 +442,6 @@ else
     log_and_do cd "$SOURCE/lalsuite/lalpulsar"
     if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
         log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
-    fi
-    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
-        log_and_do cp configure.ac configure.ac~
-        log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
     fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lalpulsar"
@@ -484,11 +476,6 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
 	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
 ' >> src/pulsar/GCT/Makefile.am
     fi
-fi
-
-if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
-    log_and_do cp configure.ac configure.ac~
-    log_and_do sh -c "grep -v LALSUITE_USE_LIBTOOL configure.ac~ > configure.ac"
 fi
 
 log_and_do ./00boot
