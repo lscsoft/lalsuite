@@ -1,4 +1,6 @@
-./figures
-./figures
-./latex
+/auto
+/figures/
+/html/
+/lal.tag
+/latex/
 /refman.pdf
