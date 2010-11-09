@@ -1224,6 +1224,20 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
+  COMPLEX16FrequencySeries *InvPSD = NULL;
+  size_t i;
 
+  InvPSD = (COMPLEX16FrequencySeries *) XLALCreateCOMPLEX16FrequencySeries("1/PSD", &(PSD->epoch), 0.0, PSD->deltaF, 
+                                                                           &(PSD->sampleUnits), /* Dimensionless Unit */
+                                                                           PSD->data->length);
 
+  for (i = 0; i < PSD->data->length; i++) {
+    InvPSD->data->data[i].re = 1.0/PSD->data->data[i];
+    InvPSD->data->data[i].im = 0.0;
+  }
 
+  XLALREAL8FreqTimeFFT(TDW, InvPSD, plan);
+
+  XLALDestroyCOMPLEX16FrequencySeries(InvPSD);
+}

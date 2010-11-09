@@ -213,6 +213,7 @@ tagLALIFOData
   LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
+  REAL8TimeSeries           *oneSidedNoiseTimeDomainWeight;
   REAL8Window               *window;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8                     fLow, fHigh;	//integration limits;
@@ -242,6 +243,10 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data,
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
 REAL8 NullLogLikelihood(LALIFOData *data);
+
+/* Converts a PSD to the corresponding time domain correlation weight
+   function. */
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan);
 								  
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
