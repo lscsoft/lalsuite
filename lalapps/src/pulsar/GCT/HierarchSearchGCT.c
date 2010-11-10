@@ -252,7 +252,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_tmp, f1dot_tmp;
-  REAL4 Fstat, TwoFthreshold, sumTwoF_tmp, TwoF_tmp, sumTwoFmax; /* REAL4 precision of Fstat values */
+  REAL4 Fstat, TwoFthreshold, sumTwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
@@ -468,9 +468,9 @@ int MAIN( int argc, char *argv[]) {
 
   /* check that the numbercount can't exceed the data type */
   {
-    unsigned int maxseg = (1 << (8*sizeof(FINEGRID_NC_T))) - 1;
+    INT4 maxseg = ((unsigned long)1 << (8*sizeof(FINEGRID_NC_T))) - 1;
     if ( uvar_nStacksMax > maxseg) {
-      fprintf(stderr, "Number of segments exceeds %u!\n", maxseg);
+      fprintf(stderr, "Number of segments exceeds %d!\n", maxseg);
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
