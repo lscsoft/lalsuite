@@ -164,6 +164,10 @@ if [ ."$build_win32" = ."true" ] ; then
     CROSS=--host=i586-pc-mingw32
     ext=".exe"
     wine=`which wine`
+    if [ ".$wine" = "." -a ".$check" = ".true" ]; then
+        log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
+        check=false
+    fi
     if [ ".$cuda" = ".true" ] ; then
 	test ".$WINEPREFIX" = "." &&
 	WINEPREFIX="$HOME/.wine"
