@@ -1,17 +1,23 @@
-all: doxygen
+all: getfigs html
 
-doxygen:
+getfigs:
 	echo -n "Collecting figures from LAL ... "
 	./collect_figures.sh
-	echo -n "done. Now running doxygen ... "
-	doxygen lsd_doxy.cfg
+	echo -n "done."
+
+
+html:
+	echo -n "Running doxygen to produce HTML ... "
+	doxygen doxygen-html.cfg
 	echo "done."
 
-
-refman:
-	cd latex && make refman.pdf
+pdf:
+	echo -n "Running doxygen to produce PDF ... "
+	doxygen doxygen-pdf.cfg
+	echo -n "done. Now compiling the pdf manual 'refman.pdf' ..."
+	cd latex && pool_size=4000000 make refman.pdf
 	ln -fs latex/refman.pdf .
-	echo "done".
+	echo "done."
 
 clean:
-	rm -rf ./latex ./html ./figures
+	rm -rf refman.pdf ./latex ./html ./figures
