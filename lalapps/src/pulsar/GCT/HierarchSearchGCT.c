@@ -54,11 +54,23 @@ RCSID( "$Id$");
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
 #define FOPEN fopen
+#ifdef HS_OPTIMIZATION
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#else
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
+#endif
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 char**global_argv;
 int global_argc;
-#endif
+#endif /* EAH_BOINC */
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
 #define SUNEPHEMERIS 	"sun05-09.dat"
