@@ -145,10 +145,13 @@ void incHarmSum(ihsVals *output, REAL4Vector *input)
    //Start ii >= 15
    for (ii=15; ii<(INT4)input->length; ii++) {
       //REAL4 sum = in->data[ii] + 0.5*in->data[(INT4)floorf(ii*0.5)] + in->data[(INT4)floorf(ii/3)]/3.0 + 0.25*in->data[(INT4)floorf(ii*0.25)] + 0.2*in->data[(INT4)floorf(ii*0.2)];
-      REAL4 sum = input->data[ii] + input->data[(INT4)floorf(ii*0.5)] + input->data[(INT4)floorf(ii/3.0)] + input->data[(INT4)floorf(ii*0.25)] + input->data[(INT4)floorf(ii*0.2)];
+      //REAL4 sum = input->data[ii] + input->data[(INT4)floorf(ii*0.5)] + input->data[(INT4)floorf(ii/3.0)] + input->data[(INT4)floorf(ii*0.25)] + input->data[(INT4)floorf(ii*0.2)];
+      REAL4 sum = input->data[ii] + input->data[(INT4)(ii*0.5)] + input->data[(INT4)(ii/3.0)] + input->data[(INT4)(ii*0.25)] + input->data[(INT4)(ii*0.2)];
+
       if (sum > ihs) {
          ihs = sum;
-         loc = (INT4)floor(ii/3.0);
+         //loc = (INT4)floor(ii/3.0);
+         loc = (INT4)(ii/3.0);
       }
    }
    
@@ -336,7 +339,8 @@ REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
    //Find which pair has the best combined SNR (RMS) and the location
    maxsnr = sqrtf(snrs->data[0]*snrs->data[0] + snrs->data[snrs->length-1]*snrs->data[snrs->length-1]);
    maxsnrloc = 0;
-   for (ii=1; ii<(INT4)floorf(snrs->length*0.5); ii++) {
+   //for (ii=1; ii<(INT4)floorf(snrs->length*0.5); ii++) {
+   for (ii=1; ii<(INT4)(snrs->length*0.5); ii++) {
       if (sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1])>maxsnr) {
          maxsnr = sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1]);
          maxsnrloc = ii;
@@ -369,7 +373,8 @@ REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
    //Find which pair has the best combined SNR (RMS) and the location
    maxsnr = sqrtf(snrs->data[0]*snrs->data[0] + snrs->data[snrs->length-1]*snrs->data[snrs->length-1]);
    maxsnrloc = 0;
-   for (ii=1; ii<(INT4)floorf(snrs->length*0.5); ii++) {
+   //for (ii=1; ii<(INT4)floorf(snrs->length*0.5); ii++) {
+   for (ii=1; ii<(INT4)(snrs->length*0.5); ii++) {
       if (sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1])>maxsnr) {
          maxsnr = sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1]);
          maxsnrloc = ii;
