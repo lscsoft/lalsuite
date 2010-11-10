@@ -1,10 +1,11 @@
 all: getfigs html
 
+.PHONY: getfigs html pdf clean
+
 getfigs:
 	echo -n "Collecting figures from LAL ... "
 	./collect_figures.sh
 	echo -n "done."
-
 
 html:
 	echo -n "Running doxygen to produce HTML ... "
