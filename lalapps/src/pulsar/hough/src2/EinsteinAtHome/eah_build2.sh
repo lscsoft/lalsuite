@@ -82,15 +82,18 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
+	    fftw_copts=--enable-sse
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
+	    fftw_copts="--enable-sse --enable-sse2"
 	    acc="_sse2";;
 	--altivec)
 	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
 	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
+	    fftw_copts=--enable-altivec
 	    acc="_altivec";;
 	--cuda)
 	    cuda=true
@@ -300,13 +303,14 @@ fi
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw"
 else
+--enable-sse, --enable-sse2
     log_and_show "compiling fftw"
     log_and_do cd "$BUILD/$fftw"
-    log_and_do "$SOURCE/$fftw/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do "$SOURCE/$fftw/configure" --enable-single "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts --enable-single "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
