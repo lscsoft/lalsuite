@@ -881,6 +881,7 @@ void LALPSpinInspiralRDEngine (
   REAL4           x0, x1, x2, x3;
 
   REAL4 inc;
+  REAL4 sqrtOneMinus4Eta;
 
   REAL4 fracRD=0.55;
 
@@ -912,7 +913,6 @@ void LALPSpinInspiralRDEngine (
   mparams = &PSIRDparameters;
 
   m = params->totalMass * LAL_MTSUN_SI;
-  params->mu=params->mass1*params->mass2/params->totalMass; 
   unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8)LAL_PI;
   /*    tSampling is in Hz, so dt is in seconds*/
   dt = 1.0/params->tSampling;
@@ -928,7 +928,9 @@ void LALPSpinInspiralRDEngine (
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
   //omegamatch = params->fCutoff *unitHz;
-  omegamatch = 0.0560 +6.05e-3*sqrt(1.-4.*params->eta);
+  if ((4.*params->eta)>=1.) sqrtOneMinus4Eta=0.;
+  else                      sqrtOneMinus4Eta=sqrt(1.-4.*params->eta);
+  omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta;
 
   while ((omegamatch * 16./unitHz) >  (REAL4)(subsampling)*params->tSampling ) subsampling*=2; 
   dt/= (REAL4)(subsampling);
@@ -1506,19 +1508,38 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    omegamatch = 0.0560 +6.05e-3*sqrt(1.-4.*mparams->eta) - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);
+    omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);
     //omegamatch= 0.0548 +0.04*(0.25-mparams->eta) - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
   
   }
 
  /* Test that omega/unitHz < NYQUIST */
   
-  while( energy <= 0.9*enold && omega >= 0.999*omegaold && omega/unitHz < params->tSampling && !(isnan(omega)) && omega < omegamatch);
+  while ( (energy <= 0.99*enold) && (omega >= 0.99*omegaold) && (omega/unitHz < params->tSampling) && (!(isnan(omega))) && (omega < omegamatch) );
 
  /* if code stopped since evolving quantities became nan write an error message */
-  if (isnan(omega)){
+  if ( omega/unitHz >= params->tSampling ) {
     fprintf(stderr,
-	    "** LALPhenSpinInspiralRD ERROR **: evolving quantities have become nan. "
+            "** LALPhenSpinInspiralRD ERROR **: f=%11.4e  rate=%11.4e "
+	    "m1: %e, "
+	    "m2: %e, "
+	    "spin1x: %e, "
+	    "spin1y: %e, "
+	    "spin1z: %e, "
+	    "spin2x: %e, "
+	    "spin2y: %e, "
+	    "spin2z: %e, "
+	    "inclination: %e\n ",
+	    omega/unitHz,params->tSampling,
+	    params->mass1, params->mass2,
+	    params->spin1[0], params->spin1[1], params->spin1[2],
+	    params->spin2[0], params->spin2[1], params->spin2[2],
+	    params->inclination);
+    ABORTXLAL( status );
+  }
+  else if (isnan(omega)){
+    fprintf(stderr,
+	    "** LALPhenSpinInspiralRD ERROR **: omega has become nan. "
 	    "m1: %e, "
 	    "m2: %e, "
 	    "spin1x: %e, "
@@ -1557,7 +1578,27 @@ void LALPSpinInspiralRDEngine (
     fprintf(stderr, "** LALPhenSpinInspiralRD ERROR **: waveform terminated, energy increases %11.3e > %11.3e  int. step=%d  omega=%11.3e\n",energy,enold,count,omega);
     ABORTXLAL(status);
   }
-  else if ( omega > omegamatch) {
+  else if ( omega < omegaold) {
+    fprintf(stdout,"omega %11.4e < omegaold %11.4e\n",omega,omegaold);
+    fprintf( stderr,
+	     "** LALPhenSpinInspiralRD ERROR **: waveform terminated, omega decrease "
+	     "om: %e,  omold: %e"
+	     "m1: %e, "
+	     "m2: %e, "
+	     "spin1x: %e, "
+	     "spin1y: %e, "
+	     "spin1z: %e, "
+	     "spin2x: %e, "
+	     "spin2y: %e, "
+	     "spin2z: %e, "
+	     "inclination: %e\n ",
+	     omega,omegaold,
+	     params->mass1, params->mass2,
+	     params->spin1[0], params->spin1[1], params->spin1[2],
+	     params->spin2[0], params->spin2[1], params->spin2[2],
+	     params->inclination);
+  }
+  else if ( omega >= omegamatch) {
     //fprintf(stdout, "** LALPSpinInspiralRD.c ** STOP: omega=%10.4e > omegamatch= %10.4e, fracRD=%8.3f  step=%d  step/write=%d\n",omega,omegamatch,fracRD,count,write);
     rett=1;
   }
@@ -1693,7 +1734,13 @@ void LALPSpinInspiralRDEngine (
     } while ((omega < fracRD*omegaRD));
     
   }
-  else fprintf(stderr,"** LALPhenSpinInspiralRD ERROR **: No phen part added\n");
+  else {
+    fprintf(stdout,"** LALPhenSpinInspiralRD ERROR **: No phen part added\n");
+    fprintf(stdout,"** m (%11.4e  %11.4e)  f0 %11.4e\n",params->mass1,params->mass2,params->fLower);
+    fprintf(stdout,"** S1 (%8.4f  %8.4f  %8.4f)\n",initS1[0],initS1[1],initS1[2]);
+    fprintf(stdout,"** S2 (%8.4f  %8.4f  %8.4f)\n",initS2[0],initS2[1],initS2[2]);
+    fprintf(stdout,"** om (%11.4e  %11.4e)  E (%11.4e, %11.4e) count %d\n",omega,omegaold,energy,enold,count);
+  }
 
   *countback=count;
 
