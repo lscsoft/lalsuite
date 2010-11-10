@@ -492,7 +492,7 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 
 
 //Test LALPriorFunction
-REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
+//REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 /****************************************/
 /* Returns unnormalized (!),            */
 /* logarithmic (!) prior density.      	*/
@@ -504,35 +504,35 @@ REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params)
 /* desclination, polarisation, distance.*/
 /* Prior is flat if within range	*/
 /****************************************/
-{
-	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;	
-	REAL8 logdensity;
-	
-	mc   = *(REAL8*) getVariable(params, "chirpmass");		/* solar masses*/
-	eta  = *(REAL8*) getVariable(params, "massratio");		/* dim-less    */
-	iota = *(REAL8*) getVariable(params, "inclination");		/* radian      */
-	tc   = *(REAL8*) getVariable(params, "time");			/* GPS seconds */
-	phi  = *(REAL8*) getVariable(params, "phase");		/* radian      */
-	ra   = *(REAL8*) getVariable(params, "rightascension");	/* radian      */
-	dec  = *(REAL8*) getVariable(params, "declination");		/* radian      */
-	psi  = *(REAL8*) getVariable(params, "polarisation"); 	/* radian      */
-	dist = *(REAL8*) getVariable(params, "distance");		/* Mpc         */
-	
-	if(mc>2.41 && mc<=9.64 && eta>0.03 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
-	   && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI && dist>0.0 && dist<=100.0
-	   && tc>=968654557.90 && tc<=968654558.20)	
-		logdensity = 0.0;
-	else
-		logdensity = -DBL_MAX;
-	//TODO: should be properly normalized; pass in range via priorArgs?	
-	
-	return(logdensity);
-}
+//{
+//	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;	
+//	REAL8 logdensity;
+//	
+//	mc   = *(REAL8*) getVariable(params, "chirpmass");		/* solar masses*/
+//	eta  = *(REAL8*) getVariable(params, "massratio");		/* dim-less    */
+//	iota = *(REAL8*) getVariable(params, "inclination");		/* radian      */
+//	tc   = *(REAL8*) getVariable(params, "time");			/* GPS seconds */
+//	phi  = *(REAL8*) getVariable(params, "phase");		/* radian      */
+//	ra   = *(REAL8*) getVariable(params, "rightascension");	/* radian      */
+//	dec  = *(REAL8*) getVariable(params, "declination");		/* radian      */
+//	psi  = *(REAL8*) getVariable(params, "polarisation"); 	/* radian      */
+//	dist = *(REAL8*) getVariable(params, "distance");		/* Mpc         */
+//	
+//	if(mc>2.41 && mc<=9.64 && eta>0.03 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
+//	   && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI && dist>0.0 && dist<=100.0
+//	   && tc>=968654557.90 && tc<=968654558.20)	
+//		logdensity = 0.0;
+//	else
+//		logdensity = -DBL_MAX;
+//	//TODO: should be properly normalized; pass in range via priorArgs?	
+//	
+//	return(logdensity);
+//}
 
 
 
 //Test LALProposalFunction
-void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams)
 /****************************************/
 /* Assumes the following parameters		*/
 /* exist (e.g., for TaylorT1):			*/
@@ -643,6 +643,34 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
 	else
 		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+}
+
+
+
+void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+{
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariableItem *paraHead=NULL;
+	INT4 i;
+	copyVariables(runState->currentParams, proposedParams);
+	
+	REAL8 sigma = 0.1;
+	REAL8 big_sigma = 1.0;
+	
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
+
+	/* loop over all parameters */
+	for (paraHead=proposedParams->head,i=0; paraHead; paraHead=paraHead->next)
+	{ 
+		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR){
+			*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+			i++;
+		}
+	}
+	
+	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+
 }
 
 
@@ -864,7 +892,7 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariab
 
 
 
-REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
+/*REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
 {
 	
 	double result=0.0;
@@ -890,16 +918,16 @@ REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemp
 	result=1.0/(2.0*deltax)-sumsq;
 	return result;
 
-}
+}*/
 
-REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
+/*REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
 {
 	return 1.0;
-}
+}*/
 
 
 
-REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params)
+/*REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params)
 {
 
 	REAL8 x0;	
@@ -915,9 +943,9 @@ REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *param
 	
 	return(logdensity);
 	
-}
+}*/
 
-void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+/*void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
 	
 	REAL8 x0;
@@ -946,4 +974,4 @@ void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *propos
 	
 	
 	
-}
+}*/
