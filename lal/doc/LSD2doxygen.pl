@@ -62,8 +62,8 @@ my $ifdef = qr{(?<BLOCK>                          # name this match
 		  \n|                             #       blank line
                   [^\#].*?\n|                     #       any line not beginning with #
                   \#\s*?[^ie].*?\n|               #       any non #i*/#e* directive
-                  \#\s*?el.*?\n|                  #       #else/#elif directives    
-                  \#\s*?in.*?\n                   #       #include directives    
+                  \#\s*?el.*?\n|                  #       #else/#elif directives
+                  \#\s*?in.*?\n                   #       #include directives
                  )++                              #    match without backtracking
                  |                                # or
                  (?-1)                            #    must have found a nested #if*/#endif, so
@@ -174,16 +174,16 @@ switch ($action) {
 		open FILE, ">$tmp2" or die "Could not open '$tmp2'!: $!";
 		print FILE $cpp;
 		close FILE;
-		
+
 		# print differences
 		system "$diffcmd $tmp1 $tmp2";
-		
+
 	    }
 	    else {
 		print "Code has been modified in '$fname'!\n";
 	    }
 	}
-	
+
 	# or errors?
 	my @err;
 	foreach (keys %$cpperr) {
@@ -193,7 +193,7 @@ switch ($action) {
 	    print "Errors in preprocessing '$fname'!\n";
 	    map { print "   $_\n" } @err;
 	}
-	
+
     }
     else {
 	die "Invalid action '$action'!";
@@ -229,12 +229,12 @@ sub parseThruCPP {
 # clean up LSD documentation
 sub cleanupLSD {
     my ($text) = @_;
-    
+
     # return no cleanup was asked for
     return $text if $noclean;
 
     # get rid of any LSD directives, return if there are none
-    return $text if 
+    return $text if
 	(($text =~ s!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!!sg) == 0);
 
     # make embedded C comments safe
@@ -248,12 +248,15 @@ sub cleanupLSD {
     # get rid of CVS tags
     $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
 
+    # use 'Revision:' string as a hook to place a '\file' command
+    $text =~ s!^Revision:!\\file!mg;
+
     # convert Author: comments to doxygen
     $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mg;
 
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
-	
+
 	# regexes for:
 	# non-line-breaking whitespace
 	my $n = "[^\\S\n]";
@@ -278,7 +281,7 @@ sub cleanupLSD {
 	    $text =~ s!\\$_$bbk?$bbr!!mg;
 	}
 	# one argument
-	foreach (qw(index input label vfill vspace)) {
+	foreach (qw(index input vfill vspace)) {
 	    $text =~ s!\\$_$bbr!!mg;
 	}
 	# no arguments
@@ -291,10 +294,21 @@ sub cleanupLSD {
 	    $_ = $2;
 	    $_ =~ /\n/ ? '\f[' . $_ . '\f]' : '\f$' . $_ . '\f$'
 	}sge;
-	$text =~ s!\\begin$n*{(?:equation|displaymath)}!\\f[!mg;
-	$text =~ s!\\end$n*{(?:equation|displaymath)}!\\f]!mg;
-	$text =~ s!\\begin$n*{eqnarray\*?}!\\f{eqnarray*}{!mg;
-	$text =~ s!\\end$n*{eqnarray\*?}!\\f}!mg;
+        # displaymath
+	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
+	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
+        # equation
+	$text =~ s!\\begin$n*{equation}!\\f{equation}{!mg;
+	$text =~ s!\\end$n*{equation}!\\f}!mg;
+        # equation*
+	$text =~ s!\\begin$n*{equation*}!\\f{equation*}{!mg;
+	$text =~ s!\\end$n*{equation*}!\\f}!mg;
+        # eqnarray
+	$text =~ s!\\begin$n*{eqnarray}!\\f{eqnarray}{!mg;
+	$text =~ s!\\end$n*{eqnarray}!\\f}!mg;
+        # eqnarray*
+	$text =~ s!\\begin$n*{eqnarray\*}!\\f{eqnarray*}{!mg;
+	$text =~ s!\\end$n*{eqnarray\*}!\\f}!mg;
 
 	# convert descriptions
 	sub desc {
@@ -334,7 +348,7 @@ sub cleanupLSD {
 	    $_ =~ s!$n*\\\\$n*\n!</td></tr>\n<tr><td>!sg;
 	    $_ =~ s|$n*(?<!\\)&$n*|</td><td>|sg;
 	    '<table><tr><td>' . $_ . '</td></tr></table>'
-	}sge;	
+	}sge;
 
 	# convert verbatim
 	$text =~ s!\\begin$n*{(?:verbatim|quote)}!\\code!mg;
@@ -357,7 +371,7 @@ sub cleanupLSD {
 		($e eq 'tt' ? "\\c $_"      : "\\e $_"      ) :
 		($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
 	}sge;
-	
+
 	# replace subsection commands
 	$text =~ s!\\(?:sub)*section\*?$wbbr!\\par $1!mg;
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
@@ -409,7 +423,7 @@ Run the conversion on "file" and display a side-by-side diff of the changes made
 =item --check
 
 Run the original "file" through the C preprocessor, do the conversion,
-run the converted "file" through the C preprocessor, and check that 
+run the converted "file" through the C preprocessor, and check that
 i) the preprocessed files are identical before/after conversion
 ii) no change in error messages from the C preprocessor.
 

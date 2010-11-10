@@ -4,15 +4,14 @@ doxygen:
 	echo -n "Collecting figures from LAL ... "
 	./collect_figures.sh
 	echo -n "done. Now running doxygen ... "
-	doxygen lal-doxy.cfg
+	doxygen lsd_doxy.cfg
 	echo "done."
 
 
 refman:
 	cd latex && make refman.pdf
-	ln -fs latex/refman.pdf . >& /dev/null
+	ln -fs latex/refman.pdf .
 	echo "done".
 
 clean:
-	rm -f ./figures/*.eps figures/*.png;
-	rm -rf latex/* html/*
+	rm -rf ./latex ./html ./figures

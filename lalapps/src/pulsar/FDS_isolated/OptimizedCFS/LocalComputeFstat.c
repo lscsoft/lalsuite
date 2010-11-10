@@ -98,6 +98,15 @@ LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 		      const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 
+void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 

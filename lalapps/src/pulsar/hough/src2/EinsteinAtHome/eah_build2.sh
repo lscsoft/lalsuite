@@ -41,6 +41,9 @@ download() {
 
 HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
+boinc_rev=-r22561
+#previous:-r22503 -r22363 -r21777 -r'{2008-12-01}'
+
 for i; do
     case "$i" in
 	--win32)
@@ -55,14 +58,19 @@ for i; do
 	    rebuild_lal=true ;;
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
+	--rebuild-binutils)
+	    rebuild_binutils=true ;;
 	--release)
+	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
 	    rebuild=true
 	    release=true
+	    CFLAGS="-O3 $CFLAGS"
 	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    SHARED="--disable-shared"  ;;
 	--norebuild) # dangerous, for testing only!
+	    rebuild_binutils=""
 	    rebuild_boinc=""
 	    rebuild_lal=""
 	    rebuild="" ;;
@@ -74,15 +82,18 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
+	    fftw_copts=--enable-sse
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
+	    fftw_copts="--enable-sse --enable-sse2"
 	    acc="_sse2";;
 	--altivec)
 	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
 	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
+	    fftw_copts=--enable-altivec
 	    acc="_altivec";;
 	--cuda)
 	    cuda=true
@@ -110,8 +121,9 @@ for i; do
 	--check-app=*)
 	    check=true
 	    check_only=true
-	    check_app=`echo $PWD/$i | sed 's/--check-app=//;s%.*//%/%'`
-	    shift ;;
+	    check_app=`echo $PWD/$i | sed 's/--check-app=//;s%.*//%/%'`;;
+	--boinc-rev=*)
+	    boinc_rev="`echo $i | sed s/^--boinc-rev=//`";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -125,11 +137,13 @@ for i; do
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
+	    echo "  --boinc-rev=<rev> specify a BOINC SVN trunk revision to use"
 	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
-	    echo "  --release         use some dark magic to make the App most compatible and adds remote debugging. Implies --static and --rebuild"
+	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
+	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
@@ -153,6 +167,10 @@ if [ ."$build_win32" = ."true" ] ; then
     CROSS=--host=i586-pc-mingw32
     ext=".exe"
     wine=`which wine`
+    if [ ".$wine" = "." -a ".$check" = ".true" ]; then
+        log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
+        check=false
+    fi
     if [ ".$cuda" = ".true" ] ; then
 	test ".$WINEPREFIX" = "." &&
 	WINEPREFIX="$HOME/.wine"
@@ -178,6 +196,7 @@ else
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
 		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty"
 		build_binutils=true
+		enable_linux_compatibility_workarounds=true
 	    fi ;;
     esac
 fi
@@ -259,18 +278,21 @@ else
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
-if test -n "$build_binutils"; then
+if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
     log_and_show "retrieving $binutils"
 #    download http://www.aei.mpg.de/~repr/EaH_packages $binutils.tar.gz
     download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
+    log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
+#    log_and_do sh -c "grep -v '^ *SUBDIRS *=' $binutils/bfd/Makefile.am > $binutils/bfd/Makefile.tmp"
+#    log_and_do mv $binutils/bfd/Makefile.tmp $binutils/bfd/Makefile.am
 fi
 
-if test -z "$rebuild_boinc" && test -d "$SOURCE/boinc" ; then
+if test -z "$rebuild_boinc" -a -d "$SOURCE/boinc" ; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
-    log_and_do svn co -r21777 http://boinc.berkeley.edu/svn/trunk/boinc #-r'{2008-12-01}'
+    log_and_do svn co "$boinc_rev" http://boinc.berkeley.edu/svn/trunk/boinc
 fi
 
 if test \! -d lalsuite/.git ; then
@@ -281,13 +303,14 @@ fi
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw"
 else
+--enable-sse, --enable-sse2
     log_and_show "compiling fftw"
     log_and_do cd "$BUILD/$fftw"
-    log_and_do "$SOURCE/$fftw/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do "$SOURCE/$fftw/configure" --enable-single "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts --enable-single "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -305,13 +328,21 @@ else
 fi
 
 if test -n "$build_binutils"; then
+  if test -z "$rebuild_binutils"; then
+    log_and_show "using existing gsl"
+  else
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
     log_and_do cd "$BUILD/$binutils"
     log_and_do "$SOURCE/$binutils/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
-    log_and_do make
-    log_and_do make install
+    if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
+        log_and_dont_fail make -k
+        log_and_dont_fail make -k install
+    else
+        log_and_do make
+        log_and_do make install
+    fi
     # some post-build installation due to targets missing in the library
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
@@ -367,6 +398,7 @@ Only in include: libcoff.h~
 EOF
 )
     fi
+  fi
 fi
 
 if test -z "$rebuild_boinc" && test -r "$INSTALL/lib/libboinc_api.a" ; then
@@ -400,8 +432,9 @@ if test -z "$rebuild_lal" && pkg-config --exists lal; then
 else
     log_and_show "compiling LAL"
     log_and_do cd "$SOURCE/lalsuite/lal"
-    test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" &&
-    log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lal"
     log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -415,8 +448,9 @@ if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then
 else
     log_and_show "compiling LALPulsar"
     log_and_do cd "$SOURCE/lalsuite/lalpulsar"
-    test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" &&
-    log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
+    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lalpulsar"
     log_and_do "$SOURCE/lalsuite/lalpulsar/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -454,7 +488,7 @@ fi
 
 log_and_do ./00boot
 if [ ."$build_win32" = ."true" ] ; then
-  sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
+    sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
 fi
 log_and_do cd "$BUILD/lalapps"
 log_and_do "$SOURCE/lalsuite/lalapps/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
@@ -524,7 +558,7 @@ if [ .$check = .true ]; then
     log_and_do cd test
     log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4$ext
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat$ext
-    log_and_do cp ../install/share/lalpulsar/*05-09.dat .
+    log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
     PATH=".:$PATH" LAL_DATA_PATH="$PWD" log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"
