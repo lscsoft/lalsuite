@@ -33,13 +33,13 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
  */
 
 
-static INT8 start_time(const SnglBurst *x)
+static INT8 int8_start_time(const SnglBurst *x)
 {
 	return XLALGPSToINT8NS(&x->start_time);
 }
 
 
-static INT8 peak_time(const SnglBurst *x)
+static INT8 int8_peak_time(const SnglBurst *x)
 {
 	return XLALGPSToINT8NS(&x->peak_time);
 }
@@ -174,8 +174,8 @@ int XLALCompareSnglBurstByStartTime(
 {
 	INT8 ta, tb;
 
-	ta = start_time(*a);
-	tb = start_time(*b);
+	ta = int8_start_time(*a);
+	tb = int8_start_time(*b);
 
 	if(ta > tb)
 		return 1;
@@ -197,8 +197,8 @@ int XLALCompareSnglBurstByExactPeakTime(
 {
 	INT8 ta, tb;
 
-	ta = peak_time(*a);
-	tb = peak_time(*b);
+	ta = int8_peak_time(*a);
+	tb = int8_peak_time(*b);
 
 	if(ta > tb)
 		return 1;
@@ -443,6 +443,29 @@ void XLALDestroySimBurstTable(SimBurst *head)
 		XLALDestroySimBurst(head);
 		head = next;
 	}
+}
+
+
+/**
+ * Compare the geocentre times of two SimBurst events.
+ */
+
+
+int XLALCompareSimBurstByGeocentTimeGPS(
+	const SimBurst * const *a,
+	const SimBurst * const *b
+)
+{
+	INT8 ta, tb;
+
+	ta = XLALGPSToINT8NS(&(*a)->time_geocent_gps);
+	tb = XLALGPSToINT8NS(&(*b)->time_geocent_gps);
+
+	if(ta > tb)
+		return 1;
+	if(ta < tb)
+		return -1;
+	return 0;
 }
 
 
