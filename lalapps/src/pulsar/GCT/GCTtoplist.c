@@ -27,6 +27,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
+#include <lalapps.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
 #ifdef _WIN32
@@ -35,6 +36,7 @@
    eah_rename (in win_lib.h) */
 #define rename eah_rename
 #else  // _WIN32
+#include "boinc/filesys.h"
 #define rename boinc_rename
 #endif // _WIN32
 #endif // _BOINC
@@ -233,7 +235,13 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   return(snprintf(buf, buflen,
+#ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
+		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
+		    as discussed with Holger & Reinhard 5.11.2010 */
+                     "%.12g %.7f %.7f %.12g %d %.6f\n",
+#else
                      "%.14g %.13g %.13g %.13g %d %.6f\n",
+#endif
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
@@ -317,9 +325,10 @@ int write_gctFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    NOTE that the checksum will be a little wrong when %DOME is appended, as this line is not counted */
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done) {
   char* tempname;
-  INT4 length;
+  INT4 length=0;
   FILE * fpnew;
   UINT4 s;
+  int ret;
 
 #define TEMP_EXT ".tmp"
   s = strlen(filename)+strlen(TEMP_EXT)+1;
@@ -341,10 +350,49 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
     free(tempname);
     return -1;
   }
-  length = write_gctFStat_toplist_to_fp(l,fpnew,checksum);
 
+  /* when done, write code version and command line as comment in the result file */
+  if (write_done) {
+    int a;
+    CHAR *VCSInfoString;
+
+    /* write the version string */
+    if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "XLALGetVersionString(0) failed.\n");
+      length = -1;
+    } else {
+      ret = fprintf(fpnew,"%s", VCSInfoString);
+      XLALFree(VCSInfoString);
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+    }
+
+    /* write the command-line */
+    if (length >= 0) {
+      for(a=0;a<global_argc;a++) {
+	ret = fprintf(fpnew,"%%%% argv[%d]: '%s'\n", a, global_argv[a]);
+	if (ret < 0) {
+	  length = ret;
+	  break;
+	} else
+	  length += ret;
+      }
+    }
+  }
+
+  /* write the actual toplist */
+  if (length >= 0) {
+    ret = write_gctFStat_toplist_to_fp(l,fpnew,checksum);
+      if (ret < 0)
+	length = ret;
+      else
+	length += ret;
+  }
+
+  /* write the done marker if told to */
   if ((write_done) && (length >= 0)) {
-    int ret;
     ret = fprintf(fpnew,"%%DONE\n");
     if (ret < 0)
       length = ret;

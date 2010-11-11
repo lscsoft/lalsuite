@@ -13,12 +13,12 @@ if [ ! -d "$latexdir" ]; then
     mkdir -p $latexdir;
 fi
 
-if [ -d "$figdir" ]; then
-    rm -rf $figdir;
+if [ ! -d "$figdir" ]; then
+    mkdir -p $figdir;
 fi
-mkdir -p $figdir;
 
 for i in $allfigs; do
-    ln -s $i $figdir &> /dev/null;
+    ln -f -s $i $figdir &> /dev/null;
+    ln -f -s $i $latexdir &> /dev/null;
 done
 

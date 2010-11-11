@@ -599,7 +599,7 @@ int main( int argc, char *argv[])
 		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
 		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
 		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
-		TrigSegStart=TrigSample+ (SampleRate) - 2*seglen; /* Put trigger 2 s before end of segment */
+		TrigSegStart=TrigSample+ (2*SampleRate) - seglen; /* Put trigger 2 s before end of segment */
 		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
 
 		segmentStart = datastart;

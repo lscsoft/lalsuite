@@ -57,6 +57,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
+  "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
     0
 };
 
@@ -165,6 +166,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->skyRegion_given = 0 ;
   args_info->SFToverlap_given = 0 ;
   args_info->antennaOff_given = 0 ;
+  args_info->gaussTemplatesOnly_given = 0 ;
 }
 
 static
@@ -207,6 +209,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
   args_info->antennaOff_flag = 0;
+  args_info->gaussTemplatesOnly_flag = 0;
   
 }
 
@@ -240,6 +243,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->skyRegion_help = gengetopt_args_info_full_help[22] ;
   args_info->SFToverlap_help = gengetopt_args_info_full_help[23] ;
   args_info->antennaOff_help = gengetopt_args_info_full_help[24] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[25] ;
   
 }
 
@@ -435,6 +439,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
   if (args_info->antennaOff_given)
     write_into_file(outfile, "antennaOff", 0, 0 );
+  if (args_info->gaussTemplatesOnly_given)
+    write_into_file(outfile, "gaussTemplatesOnly", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -718,6 +724,7 @@ cmdline_parser_internal (
         { "skyRegion",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
+        { "gaussTemplatesOnly",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -1047,6 +1054,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->antennaOff_flag), 0, &(args_info->antennaOff_given),
                 &(local_args_info.antennaOff_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "antennaOff", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Gaussian templates only throughout the pipeline if this flag is used.  */
+          else if (strcmp (long_options[option_index].name, "gaussTemplatesOnly") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->gaussTemplatesOnly_flag), 0, &(args_info->gaussTemplatesOnly_given),
+                &(local_args_info.gaussTemplatesOnly_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "gaussTemplatesOnly", '-',
                 additional_error))
               goto failure;
           

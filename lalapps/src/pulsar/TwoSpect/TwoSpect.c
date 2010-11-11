@@ -129,10 +129,14 @@ int main(int argc, char *argv[])
    //Blocksize should be an odd number
    if (inputParams->blksize % 2 != 1) inputParams->blksize += 1;
    
-   //
+   // Warnings when using hidden flags
    if (args_info.antennaOff_given) {
       fprintf(LOG,"WARNING: Antenna pattern weights are all being set to 1.0\n");
       fprintf(stderr,"WARNING: Antenna pattern weights are all being set to 1.0\n");
+   }
+   if (args_info.gaussTemplatesOnly_given) {
+      fprintf(LOG,"WARNING: Only Gaussian templates will be used\n");
+      fprintf(stderr,"WARNING: Only Gaussian templates will be used\n");
    }
    
    //Adjust parameter space search values, if necessary
@@ -843,7 +847,8 @@ int main(int argc, char *argv[])
 ////////Initial check using "exact" template
       for (ii=0; ii<numofcandidates; ii++) {
          templateStruct *template = new_templateStruct(inputParams->templatelength);
-         makeTemplate(template, gaussCandidates4[ii], inputParams, secondFFTplan);
+         if (!args_info.gaussTemplatesOnly_given) makeTemplate(template, gaussCandidates4[ii], inputParams, secondFFTplan);
+         else makeTemplateGaussians(template, gaussCandidates4[ii], inputParams);
          farval = new_farStruct();
          numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
          REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
@@ -926,7 +931,8 @@ int main(int argc, char *argv[])
                candidate *cand = new_candidate();
                loadCandidateData(cand, trialf->data[jj], tempP, trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                templateStruct *template = new_templateStruct(inputParams->templatelength);
-               makeTemplate(template, cand, inputParams, secondFFTplan);
+               if (!args_info.gaussTemplatesOnly_given) makeTemplate(template, cand, inputParams, secondFFTplan);
+               else makeTemplateGaussians(template, cand, inputParams);
                farval = new_farStruct();
                numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
                free_candidate(cand);
@@ -939,7 +945,8 @@ int main(int argc, char *argv[])
                      cand = new_candidate();
                      loadCandidateData(cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                      template = new_templateStruct(inputParams->templatelength);
-                     makeTemplate(template, cand, inputParams, secondFFTplan);
+                     if (!args_info.gaussTemplatesOnly_given) makeTemplate(template, cand, inputParams, secondFFTplan);
+                     else makeTemplateGaussians(template, cand, inputParams);
                      
                      REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                      REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
