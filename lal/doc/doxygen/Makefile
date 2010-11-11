@@ -1,4 +1,4 @@
-all: getfigs html
+all: html
 
 .PHONY: getfigs html pdf clean
 
@@ -7,12 +7,12 @@ getfigs:
 	./collect_figures.sh
 	echo -n "done."
 
-html:
+html: getfigs
 	echo -n "Running doxygen to produce HTML ... "
 	doxygen doxygen-html.cfg
 	echo "done."
 
-pdf:
+pdf: getfigs
 	echo -n "Running doxygen to produce PDF ... "
 	doxygen doxygen-pdf.cfg
 	echo -n "done. Now compiling the pdf manual 'refman.pdf' ..."
