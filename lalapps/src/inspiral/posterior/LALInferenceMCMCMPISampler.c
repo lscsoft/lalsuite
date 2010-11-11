@@ -28,11 +28,24 @@
 #include <lal/VectorOps.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/TimeDelay.h>
+#include <lalapps.h>
 #include <mpi.h>
 #include "LALInference.h"
-#include "mpi.h"
+//#include "mpi.h"
 #include "LALInferenceMCMCMPISampler.h"
 #include "LALInferencePrior.h"
+
+
+#include <lal/LALStdlib.h>
+
+RCSID("$Id$");
+#define PROGRAM_NAME "LALInferenceMCMCMPISampler.c"
+#define CVS_ID_STRING "$Id$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define CVS_NAME_STRING "$Name$"
 
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
@@ -529,125 +542,43 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 //	return(logdensity);
 //}
 
-
-
-//Test LALProposalFunction
-void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams)
-/****************************************/
-/* Assumes the following parameters		*/
-/* exist (e.g., for TaylorT1):			*/
-/* chirpmass, massratio, inclination,	*/
-/* phase, time, rightascension,			*/
-/* desclination, polarisation, distance.*/
-/* Simply picks a new value based on	*/
-/* fixed Gaussian;						*/
-/* need smarter wall bounces in future.	*/
-/****************************************/
+void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
-	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
-	REAL8 a_spin1, a_spin2, theta_spin1, theta_spin2, phi_spin1, phi_spin2;
-	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
-	ra_proposed, dec_proposed, psi_proposed, dist_proposed;
-	REAL8 a_spin1_proposed, a_spin2_proposed, theta_spin1_proposed, 
-	theta_spin2_proposed, phi_spin1_proposed, phi_spin2_proposed;
-	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
-	gsl_rng * GSLrandom=runState->GSLrandom;
-	LALVariables * currentParams = runState->currentParams;
-	copyVariables(currentParams, proposedParams);
-	
-	REAL8 sigma = 0.1;
-	REAL8 big_sigma = 1.0;
-	
-	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
-	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
-	
-	
-	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
-	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
-	iota = *(REAL8*) getVariable(currentParams, "inclination");		/* radian      */
-	tc   = *(REAL8*) getVariable(currentParams, "time");				/* GPS seconds */
-	phi  = *(REAL8*) getVariable(currentParams, "phase");			/* radian      */
-	ra   = *(REAL8*) getVariable(currentParams, "rightascension");	/* radian      */
-	dec  = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
-	psi  = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
-	dist = *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
-	
-	if (checkVariable(currentParams, "a_spin1")){
-		a_spin1 = *(REAL8*) getVariable(currentParams, "a_spin1");
-		a_spin1_proposed = a_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-		setVariable(proposedParams, "a_spin1",      &a_spin1_proposed);
+	UINT4 nIFO=0;
+	LALIFOData *ifo=runState->data;
+	REAL8 randnum;
+	REAL8 BLOCKFRAC=0.45,
+	SINGLEFRAC=0.45,
+	SKYFRAC=0.1;
+top:
+	randnum=gsl_rng_uniform(runState->GSLrandom);
+	/* Choose a random type of jump to propose */
+	if(randnum<BLOCKFRAC)
+		PTMCMCLALBlockProposal(runState, proposedParams);
+	else if(randnum<BLOCKFRAC + SINGLEFRAC)
+		PTMCMCLALSingleProposal(runState,proposedParams);
+	else if(randnum<BLOCKFRAC + SINGLEFRAC + SKYFRAC){
+		/* Check number of detectors */
+		while(ifo){ifo=ifo->next; nIFO++;}
+		
+		if(nIFO<2) goto top;
+		if(nIFO<3) 
+			PTMCMCLALInferenceRotateSky(runState, proposedParams);
+		else {
+			/* Choose to rotate or reflect */
+			if(randnum- (BLOCKFRAC + SINGLEFRAC)>SKYFRAC/2.0)
+				PTMCMCLALInferenceRotateSky(runState, proposedParams);
+			else{
+				PTMCMCLALInferenceReflectDetPlane(runState, proposedParams);
+				PTMCMCLALBlockProposal(runState,proposedParams);
+			}
+		}
 	}
-	if (checkVariable(currentParams, "theta_spin1")){
-		theta_spin1 = *(REAL8*) getVariable(currentParams, "theta_spin1");
-		theta_spin1_proposed = theta_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-		setVariable(proposedParams, "theta_spin1",      &theta_spin1_proposed);
-	}
-	if (checkVariable(currentParams, "phi_spin1")){
-		phi_spin1 = *(REAL8*) getVariable(currentParams, "phi_spin1");
-		phi_spin1_proposed = phi_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-		setVariable(proposedParams, "phi_spin1",      &phi_spin1_proposed);
-	}
-	if (checkVariable(currentParams, "a_spin2")){
-		a_spin2 = *(REAL8*) getVariable(currentParams, "a_spin2");
-		a_spin2_proposed = a_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-		setVariable(proposedParams, "a_spin2",      &a_spin2_proposed);
-	}
-	if (checkVariable(currentParams, "theta_spin2")){
-		theta_spin2 = *(REAL8*) getVariable(currentParams, "theta_spin2");
-		theta_spin2_proposed = theta_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-		setVariable(proposedParams, "theta_spin2",      &theta_spin2_proposed);
-	}
-	if (checkVariable(currentParams, "phi_spin2")){
-		phi_spin2 = *(REAL8*) getVariable(currentParams, "phi_spin2");
-		phi_spin2_proposed = phi_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-		setVariable(proposedParams, "phi_spin2",      &phi_spin2_proposed);
-	}
-
-	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
-	// (above proposal is not symmetric!)
-	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;	/*mc changed by 0.0001 */
-	//mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.01);          /* mc changed by ~0.1% */
 	
-	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*eta changed by 0.01*/
-	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.5;
-	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*time changed by 5 ms*/
-	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
-	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
-	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
-	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
-	
-	
-	
-	setVariable(proposedParams, "chirpmass",      &mc_proposed);		
-	setVariable(proposedParams, "massratio",      &eta_proposed);
-	setVariable(proposedParams, "inclination",    &iota_proposed);
-	setVariable(proposedParams, "phase",          &phi_proposed);
-	setVariable(proposedParams, "time",           &tc_proposed); 
-	setVariable(proposedParams, "rightascension", &ra_proposed);
-	setVariable(proposedParams, "declination",    &dec_proposed);
-	setVariable(proposedParams, "polarisation",   &psi_proposed);
-	setVariable(proposedParams, "distance",       &dist_proposed);
-	
-	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
-	
-	dist_proposed = *(REAL8*) getVariable(proposedParams, "distance");
-	logProposalRatio *= dist_proposed / dist;
-	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-	
-	// return ratio of proposal densities (for back & forth jumps) 
-	// in "runState->proposalArgs" vector:
-	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
-		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
-	else
-		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
 }
 
 
-
-void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
 	gsl_rng * GSLrandom=runState->GSLrandom;
 	LALVariableItem *paraHead=NULL;
@@ -659,19 +590,176 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
-
+	
 	/* loop over all parameters */
 	for (paraHead=proposedParams->head,i=0; paraHead; paraHead=paraHead->next)
 	{ 
 		if(paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR){
-			*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+			
+			if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
+				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+			}else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
+				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+			}else{
+				*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+			}
 			i++;
 		}
 	}
 	
 	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
-
+	
 }
+
+
+
+void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
+{
+	gsl_rng * GSLrandom=runState->GSLrandom;
+	LALVariableItem *paraHead=NULL;
+	copyVariables(runState->currentParams, proposedParams);
+	
+	REAL8 sigma = 0.1;
+	REAL8 big_sigma = 1.0;
+	
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in a parameter
+	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in a parameter
+	
+	paraHead=proposedParams->head;
+	while((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT)){
+		paraHead=getItemNr(proposedParams,1+(int)gsl_rng_uniform_int(GSLrandom,proposedParams->dimension));
+	}
+	//printf("%s\n",paraHead->name);
+		
+	if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
+		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+	}else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
+		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+	}else{
+		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+	}
+	
+	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+	
+}
+
+
+
+
+//Test LALProposalFunction
+//void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist (e.g., for TaylorT1):			*/
+/* chirpmass, massratio, inclination,	*/
+/* phase, time, rightascension,			*/
+/* desclination, polarisation, distance.*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian;						*/
+/* need smarter wall bounces in future.	*/
+/****************************************/
+//{
+//	REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
+//	REAL8 a_spin1, a_spin2, theta_spin1, theta_spin2, phi_spin1, phi_spin2;
+//	REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
+//	ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+//	REAL8 a_spin1_proposed, a_spin2_proposed, theta_spin1_proposed, 
+//	theta_spin2_proposed, phi_spin1_proposed, phi_spin2_proposed;
+//	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+//	gsl_rng * GSLrandom=runState->GSLrandom;
+//	LALVariables * currentParams = runState->currentParams;
+//	copyVariables(currentParams, proposedParams);
+//	
+//	REAL8 sigma = 0.1;
+//	REAL8 big_sigma = 1.0;
+//	
+//	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
+//	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
+//	
+//	
+//	mc   = *(REAL8*) getVariable(currentParams, "chirpmass");		/* solar masses*/
+//	eta  = *(REAL8*) getVariable(currentParams, "massratio");		/* dim-less    */
+//	iota = *(REAL8*) getVariable(currentParams, "inclination");		/* radian      */
+//	tc   = *(REAL8*) getVariable(currentParams, "time");				/* GPS seconds */
+//	phi  = *(REAL8*) getVariable(currentParams, "phase");			/* radian      */
+//	ra   = *(REAL8*) getVariable(currentParams, "rightascension");	/* radian      */
+//	dec  = *(REAL8*) getVariable(currentParams, "declination");		/* radian      */
+//	psi  = *(REAL8*) getVariable(currentParams, "polarisation");		/* radian      */
+//	dist = *(REAL8*) getVariable(currentParams, "distance");			/* Mpc         */
+//	
+//	if (checkVariable(currentParams, "a_spin1")){
+//		a_spin1 = *(REAL8*) getVariable(currentParams, "a_spin1");
+//		a_spin1_proposed = a_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+//		setVariable(proposedParams, "a_spin1",      &a_spin1_proposed);
+//	}
+//	if (checkVariable(currentParams, "theta_spin1")){
+//		theta_spin1 = *(REAL8*) getVariable(currentParams, "theta_spin1");
+//		theta_spin1_proposed = theta_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//		setVariable(proposedParams, "theta_spin1",      &theta_spin1_proposed);
+//	}
+//	if (checkVariable(currentParams, "phi_spin1")){
+//		phi_spin1 = *(REAL8*) getVariable(currentParams, "phi_spin1");
+//		phi_spin1_proposed = phi_spin1 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//		setVariable(proposedParams, "phi_spin1",      &phi_spin1_proposed);
+//	}
+//	if (checkVariable(currentParams, "a_spin2")){
+//		a_spin2 = *(REAL8*) getVariable(currentParams, "a_spin2");
+//		a_spin2_proposed = a_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+//		setVariable(proposedParams, "a_spin2",      &a_spin2_proposed);
+//	}
+//	if (checkVariable(currentParams, "theta_spin2")){
+//		theta_spin2 = *(REAL8*) getVariable(currentParams, "theta_spin2");
+//		theta_spin2_proposed = theta_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//		setVariable(proposedParams, "theta_spin2",      &theta_spin2_proposed);
+//	}
+//	if (checkVariable(currentParams, "phi_spin2")){
+//		phi_spin2 = *(REAL8*) getVariable(currentParams, "phi_spin2");
+//		phi_spin2_proposed = phi_spin2 + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//		setVariable(proposedParams, "phi_spin2",      &phi_spin2_proposed);
+//	}
+//
+//	//mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
+//	// (above proposal is not symmetric!)
+//	mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;	/*mc changed by 0.0001 */
+//	//mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.01);          /* mc changed by ~0.1% */
+//	
+//	eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*eta changed by 0.01*/
+//	//TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
+//	iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.5;
+//	tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001; /*time changed by 5 ms*/
+//	phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+//	ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//	dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+//	psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+//	//dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
+//	dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*sigma*0.1); // ~10% change
+//	
+//	
+//	
+//	setVariable(proposedParams, "chirpmass",      &mc_proposed);		
+//	setVariable(proposedParams, "massratio",      &eta_proposed);
+//	setVariable(proposedParams, "inclination",    &iota_proposed);
+//	setVariable(proposedParams, "phase",          &phi_proposed);
+//	setVariable(proposedParams, "time",           &tc_proposed); 
+//	setVariable(proposedParams, "rightascension", &ra_proposed);
+//	setVariable(proposedParams, "declination",    &dec_proposed);
+//	setVariable(proposedParams, "polarisation",   &psi_proposed);
+//	setVariable(proposedParams, "distance",       &dist_proposed);
+//	
+//	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+//	
+//	dist_proposed = *(REAL8*) getVariable(proposedParams, "distance");
+//	logProposalRatio *= dist_proposed / dist;
+//	//logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
+//	
+//	// return ratio of proposal densities (for back & forth jumps) 
+//	// in "runState->proposalArgs" vector:
+//	if (checkVariable(runState->proposalArgs, "logProposalRatio"))
+//		setVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+//	else
+//		addVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, REAL8_t, PARAM_OUTPUT);
+//}
+
 
 
 void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
@@ -975,3 +1063,271 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariab
 	
 	
 }*/
+
+
+
+void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
+void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
+{
+	vec[0]=cos(longitude)*cos(latitude);
+	vec[1]=sin(longitude)*cos(latitude);
+	vec[1]=sin(latitude);
+	return;
+}
+
+void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
+void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude)
+{
+	REAL8 longi,lat,dist;
+	dist=sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2]);
+	/*XLALMCMCSetParameter(parameter,"distMpc",dist);*/
+	longi=atan2(pos[1]/dist,pos[0]/dist);
+	if(longi<0.0) longi=LAL_TWOPI+longi;
+	lat=asin(pos[2]/dist);
+	*longitude=longi;
+	*latitude=lat;	
+	return;
+}
+
+void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
+void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3])
+{
+	out[0]=x[1]*y[2] - x[2]*y[1];
+	out[1]=y[0]*x[2] - x[0]*y[2];
+	out[2]=x[0]*y[1] - x[1]*y[0];
+	return;
+}
+
+void normalise(REAL8 vec[3]);
+void normalise(REAL8 vec[3]){
+	REAL8 my_abs=0.0;
+	my_abs=sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
+	vec[0]/=my_abs;
+	vec[1]/=my_abs;
+	vec[2]/=my_abs;
+	return;
+}
+
+
+void PTMCMCLALInferenceRotateSky(
+						   LALInferenceRunState *state,
+						   LALVariables *parameter
+						   )
+{ /* Function to rotate the current sample around the vector between two random detectors */
+	static LALStatus status;
+	INT4 IFO1,IFO2;
+	REAL4 randnum;
+	REAL8 vec[3];
+	REAL8 cur[3];
+	REAL8 longi,lat;
+	REAL8 vec_abs=0.0,theta,c,s;
+	UINT4 i,j;
+	
+	UINT4 nIFO=0;
+	LALIFOData *ifodata1=state->data;
+	while(ifodata1){
+		nIFO++;
+		ifodata1=ifodata1->next;
+	}
+	
+	LALIFOData **IFOs=calloc(nIFO,sizeof(LALIFOData *));
+	for(i=0,ifodata1=state->data;i<nIFO;i++){
+		IFOs[i]=ifodata1;
+		ifodata1=ifodata1->next;
+	}
+	
+	
+	if(nIFO<2) return;
+	if(nIFO==2 && IFOs[0]==IFOs[1]) return;
+	
+	longi = *(REAL8 *)getVariable(parameter,"rightascension");
+	lat = *(REAL8 *)getVariable(parameter,"declination");
+	
+	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
+	SkyPosition geodetic,equatorial;
+	equatorial.longitude=longi;
+	equatorial.latitude=lat;
+	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
+	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
+	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(IFOs[0]->epoch));
+	longi=geodetic.longitude;
+	lat=geodetic.latitude;
+	cur[0]=cos(lat)*cos(longi);
+	cur[1]=cos(lat)*sin(longi);
+	cur[2]=sin(lat);
+	
+	IFO1 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	do{ /* Pick random interferometer other than the first one */
+		IFO2 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	}while(IFO2==IFO1 || IFOs[IFO1]->detector==IFOs[IFO2]->detector);
+	
+	/*	fprintf(stderr,"Rotating around %s-%s vector\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2]);*/
+	/* Calc normalised direction vector */
+	for(i=0;i<3;i++) vec[i]=IFOs[IFO2]->detector->location[i]-IFOs[IFO1]->detector->location[i];
+	for(i=0;i<3;i++) vec_abs+=vec[i]*vec[i];
+	vec_abs=sqrt(vec_abs);
+	for(i=0;i<3;i++) vec[i]/=vec_abs;
+	
+	/* Chose random rotation angle */
+	randnum=gsl_rng_uniform(state->GSLrandom);
+	theta=LAL_TWOPI*randnum;
+	c=cos(-theta); s=sin(-theta);
+	/* Set up rotation matrix */
+	double R[3][3] = {{c+vec[0]*vec[0]*(1.0-c), 
+		vec[0]*vec[1]*(1.0-c)-vec[2]*s,
+		vec[0]*vec[2]*(1.0-c)+vec[1]*s},
+		{vec[1]*vec[0]*(1.0-c)+vec[2]*s,
+			c+vec[1]*vec[1]*(1.0-c),
+			vec[1]*vec[2]*(1.0-c)-vec[0]*s},
+		{vec[2]*vec[0]*(1.0-c)-vec[1]*s,
+			vec[2]*vec[1]*(1.0-c)+vec[0]*s,
+			c+vec[2]*vec[2]*(1.0-c)}};
+	REAL8 new[3]={0.0,0.0,0.0};
+	for (i=0; i<3; ++i)
+		for (j=0; j<3; ++j)
+			new[i] += R[i][j]*cur[j];
+	double newlong = atan2(new[1],new[0]);
+	if(newlong<0.0) newlong=LAL_TWOPI+newlong;
+	
+	geodetic.longitude=newlong;
+	geodetic.latitude=asin(new[2]);
+	/* Convert back into equatorial (sky) coordinates */
+	LALGeographicToEquatorial(&status,&equatorial,&geodetic,&(IFOs[0]->epoch));
+	newlong=equatorial.longitude;
+	double newlat=equatorial.latitude;
+	
+	/* Compute change in tgeocentre for this change in sky location */
+	REAL8 dtold,dtnew,deltat;
+	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
+	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newlong, newlat, &(IFOs[0]->epoch)); /* Compute time delay */
+	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
+	deltat+=*(REAL8 *)getVariable(parameter,"time");
+	setVariable(parameter,"time",&deltat);	
+	setVariable(parameter,"declination",&newlat);
+	setVariable(parameter,"rightascension",&newlong);
+	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
+	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
+	free(IFOs);
+	return;
+}
+
+
+INT4 PTMCMCLALInferenceReflectDetPlane(
+								 LALInferenceRunState *state,
+								 LALVariables *parameter
+								 )
+{ /* Function to reflect a point on the sky about the plane of 3 detectors */
+	/* Returns -1 if not possible */
+	static LALStatus status;
+	UINT4 i;
+	int DetCollision=0;
+	REAL4 randnum;
+	REAL8 longi,lat;
+	REAL8 dist;
+	REAL8 pos[3];
+	REAL8 normal[3];
+	REAL8 w1[3]; /* work vectors */
+	REAL8 w2[3];
+	INT4 IFO1,IFO2,IFO3;
+	REAL8 detvec[3];
+	
+	UINT4 nIFO=0;
+	LALIFOData *ifodata1=state->data;
+	LALIFOData *ifodata2=NULL;
+	while(ifodata1){
+		nIFO++;
+		ifodata1=ifodata1->next;
+	}
+	
+	LALIFOData **IFOs=calloc(nIFO,sizeof(LALIFOData *));
+	if(!IFOs) {
+		printf("Unable to allocate memory for %i LALIFOData *s\n",nIFO);
+		exit(1);
+	}
+	for(i=0,ifodata1=state->data;i<nIFO;i++){
+		IFOs[i]=ifodata1;
+		ifodata1=ifodata1->next;
+	}
+	
+	if(nIFO<3) return(-1) ; /* not enough IFOs to construct a plane */
+	for(ifodata1=state->data;ifodata1;ifodata1=ifodata1->next)
+		for(ifodata2=ifodata1->next;ifodata2;ifodata2=ifodata2->next)
+			if(ifodata1->detector==ifodata2->detector) DetCollision+=1;
+	
+	if(nIFO-DetCollision<3) return(-1); /* Not enough independent IFOs */
+	
+	/* Select IFOs to use */
+	IFO1=gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	do {
+		IFO2=gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	}while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]);
+	randnum=gsl_rng_uniform(state->GSLrandom);
+	do {
+		IFO3 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
+	}while(IFO3==IFO1
+		   || IFO3==IFO2
+		   || IFOs[IFO3]==IFOs[IFO1]
+		   || IFOs[IFO3]==IFOs[IFO2]);
+	/*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
+	
+	longi = *(REAL8 *)getVariable(parameter,"rightascension");
+	lat = *(REAL8 *)getVariable(parameter,"declination");
+	
+	double deltalong=0;
+	
+	/* Convert to earth coordinates */
+	SkyPosition geodetic,equatorial;
+	equatorial.longitude=longi;
+	equatorial.latitude=lat;
+	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
+	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
+	LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
+	deltalong=geodetic.longitude-equatorial.longitude;
+	
+	/* Add offset to RA to convert to earth-fixed */
+	
+	/* Calculate cartesian version of earth-fixed sky position */
+	GetCartesianPos(pos,geodetic.longitude,lat); /* Get sky position in cartesian coords */
+	
+	
+	/* calculate the unit normal vector of the detector plane */
+	for(i=0;i<3;i++){ /* Two vectors in the plane */
+		w1[i]=IFOs[IFO2]->detector->location[i] - IFOs[IFO1]->detector->location[i];
+		w2[i]=IFOs[IFO3]->detector->location[i] - IFOs[IFO1]->detector->location[i];
+		detvec[i]=IFOs[IFO1]->detector->location[i];
+	}
+	crossProduct(normal,w1,w2);
+	normalise(normal);
+	normalise(detvec);
+	
+	/* Calculate the distance between the point and the plane n.(point-IFO1) */
+	for(dist=0.0,i=0;i<3;i++) dist+=pow(normal[i]*(pos[i]-detvec[i]),2.0);
+	dist=sqrt(dist);
+	/* Reflect the point pos across the plane */
+	for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
+	
+	REAL8 newLongGeo,newLat;
+	CartesianToSkyPos(pos,&newLongGeo,&newLat);
+	REAL8 newLongSky=newLongGeo-deltalong;
+	
+	
+	setVariable(parameter,"rightascension",&newLongSky);
+	setVariable(parameter,"declination",&newLat);
+	
+	/* Compute change in tgeocentre for this change in sky location */
+	REAL8 dtold,dtnew,deltat;
+	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
+	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newLongSky, newLat, &(IFOs[0]->epoch)); /* Compute time delay */
+	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
+	deltat+=*(REAL8 *)getVariable(parameter,"time");
+	setVariable(parameter,"time",&deltat);
+	
+	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
+	free(IFOs);
+	
+	return(0);
+}
+
+
+
+

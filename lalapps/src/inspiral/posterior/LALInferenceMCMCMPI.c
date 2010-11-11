@@ -38,7 +38,7 @@
 #include "LALInferencePrior.h"
 
 #include <mpi.h>
-#include "mpi.h"
+//#include "mpi.h"
 
 
 int MPIrank, MPIsize;
@@ -177,6 +177,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	runState->evolve=PTMCMCOneStep;
 	//runState->evolve=&PTMCMCAdaptationOneStep;
 	runState->proposal=&PTMCMCLALProposal;
+	//runState->proposal=&PTMCMCLALSingleProposal;
 	//runState->proposal=&PTMCMCLALAdaptationProposal;
 	//runState->proposal=PTMCMCGaussianProposal;
 	
@@ -535,31 +536,34 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpMin=0.0; tmpMax=1.0;
- 	addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
-	addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+	if(approx==SpinTaylor){
 	
-	tmpMin=0.0; tmpMax=LAL_PI;
- 	addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
-	addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+		tmpMin=0.0; tmpMax=1.0;
+		addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+		addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		tmpMin=0.0; tmpMax=LAL_PI;
+		addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
+		addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		tmpMin=0.0; tmpMax=LAL_TWOPI;
+		addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
+		addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		
+		tmpMin=0.0; tmpMax=1.0;
+		addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		tmpMin=0.0; tmpMax=LAL_PI;
+		addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
+		addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		tmpMin=0.0; tmpMax=LAL_TWOPI;
+		addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
+		addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	tmpMin=0.0; tmpMax=LAL_TWOPI;
- 	addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
-	addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
-	
-	
-	tmpMin=0.0; tmpMax=1.0;
- 	addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
-	addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
-	
-	tmpMin=0.0; tmpMax=LAL_PI;
- 	addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
-	addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
-	
-	tmpMin=0.0; tmpMax=LAL_TWOPI;
- 	addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
-	addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
-	
+	}
 	
 	//REAL8 x0 = 0.9;
 	//addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);

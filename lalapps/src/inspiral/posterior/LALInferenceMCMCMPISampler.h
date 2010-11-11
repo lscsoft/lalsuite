@@ -12,7 +12,9 @@ void PTMCMCOneStep(LALInferenceRunState *runState);
 void PTMCMCAdaptationOneStep(LALInferenceRunState *runState);
 //REAL8 PTUniformLALPrior(LALInferenceRunState *runState, LALVariables *params);
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
-void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+//void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams);
 
 //REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
@@ -20,3 +22,6 @@ void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *propose
 //void PTMCMCGaussianProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 void PTMCMCLALAdaptationProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+
+void PTMCMCLALInferenceRotateSky(LALInferenceRunState *state,LALVariables *parameter);
+INT4 PTMCMCLALInferenceReflectDetPlane(LALInferenceRunState *state,LALVariables *parameter);
