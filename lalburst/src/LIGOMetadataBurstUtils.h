@@ -129,6 +129,15 @@ XLALDestroySimBurstTable(
 	SimBurst *head
 );
 
+int XLALSimBurstTableLength(
+	SimBurst *head
+);
+
+SimBurst **XLALSortSimBurst(
+	SimBurst **head,
+	int (*comparefunc)(const SimBurst * const *, const SimBurst * const *)
+);
+
 long
 XLALSimBurstAssignIDs(
 	SimBurst *head,
