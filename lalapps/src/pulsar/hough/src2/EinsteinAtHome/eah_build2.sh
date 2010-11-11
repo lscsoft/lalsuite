@@ -502,8 +502,8 @@ fi
 if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do make LALAppsVCSInfo.h liblalapps.la
 else
-    log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o getopt.o getopt1.o
-    log_and_do ar cru liblalapps.la lalapps.o getopt.o getopt1.o LALAppsVCSInfo.o
+    log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
+    log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
 fi
 
 if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
