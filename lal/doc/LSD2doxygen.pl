@@ -269,46 +269,38 @@ sub cleanupLSD {
 
 	# remove these LaTeX commands:
 	# environments
-	foreach (qw(center document figure obeylines table wrapfigure)) {
-	    $text =~ s!\\(?:begin|end)$n*{$_}!!mg;
-	}
+	$text =~ s!\\(?:begin|end)$n*{(?:
+                   center|document|figure|obeylines|table
+                   )}!!mgx;
 	# two arguments
-	foreach (qw(providecommand)) {
-	    $text =~ s!\\$_$bbr$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   providecommand
+                   )$bbr$bbr!!mgx;
 	# two arguments, first optional
-	foreach (qw(idx)) {
-	    $text =~ s!\\$_$bbk?$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   idx
+                   )$bbk?$bbr!!mgx;
 	# one argument
-	foreach (qw(index input vfill vspace)) {
-	    $text =~ s!\\$_$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   index|input|vfill|vspace
+                   )$bbr!!mgx;
 	# no arguments
-	foreach (qw(footnotesize medskip newpage noindent)) {
-	    $text =~ s!\\$_ *!!mg;
-	}
+	$text =~ s!\\(?:
+                   footnotesize|medskip|newpage|noindent
+                  )$n*!!mg;
 
 	# convert formulae
-	$text =~ s{(\$\$?)(.+?)\1}{
-	    $_ = $2;
-	    $_ =~ /\n/ ? '\f[' . $_ . '\f]' : '\f$' . $_ . '\f$'
+	$text =~ s!\$\$(.+?)\$\$!\f[$1\f]!sg;
+	$text =~ s{\$(.+?)\$}{
+	    $_ = '\f$' . $1 . '\f$';
+	    #s/^([^\n]*)\n([^\n]+)$/$1 $2\n/sg;
+	    $_
 	}sge;
-        # displaymath
 	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
 	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
-        # equation
-	$text =~ s!\\begin$n*{equation}!\\f{equation}{!mg;
-	$text =~ s!\\end$n*{equation}!\\f}!mg;
-        # equation*
-	$text =~ s!\\begin$n*{equation*}!\\f{equation*}{!mg;
-	$text =~ s!\\end$n*{equation*}!\\f}!mg;
-        # eqnarray
-	$text =~ s!\\begin$n*{eqnarray}!\\f{eqnarray}{!mg;
-	$text =~ s!\\end$n*{eqnarray}!\\f}!mg;
-        # eqnarray*
-	$text =~ s!\\begin$n*{eqnarray\*}!\\f{eqnarray*}{!mg;
-	$text =~ s!\\end$n*{eqnarray\*}!\\f}!mg;
+	$_ = 'equation\*?|eqnarray\*?';
+	$text =~ s!\\begin$n*{($_)}!\\f{$1}{!mg;
+	$text =~ s!\\end$n*{($_)}!\\f}!mg;
 
 	# convert descriptions
 	sub desc {
@@ -373,7 +365,11 @@ sub cleanupLSD {
 	}sge;
 
 	# replace subsection commands
-	$text =~ s!\\(?:sub)*section\*?$wbbr!\\par $1!mg;
+	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)}{
+	    $_ = '\\par ' . $1 . "\n";
+	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
+	    $_
+	}sge;
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
 
 	# replace citations
