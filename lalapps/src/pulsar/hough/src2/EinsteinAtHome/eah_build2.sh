@@ -303,7 +303,6 @@ fi
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw"
 else
---enable-sse, --enable-sse2
     log_and_show "compiling fftw"
     log_and_do cd "$BUILD/$fftw"
     log_and_do "$SOURCE/$fftw/configure" $fftw_copts "$SHARED" "$CROSS" --prefix="$INSTALL"
