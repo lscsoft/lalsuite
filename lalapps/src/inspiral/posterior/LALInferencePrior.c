@@ -23,7 +23,7 @@
 #include "LALInferencePrior.h"
 #include <math.h>
 
-/* Return the log Prior of the variables specified, for the non-spinning inspiral signal case */
+/* Return the log Prior of the variables specified, for the (non-)spinning inspiral signal case */
 REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVariables *params)
 {
 	REAL8 logPrior=0.0;

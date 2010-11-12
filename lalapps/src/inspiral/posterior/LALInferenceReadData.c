@@ -99,7 +99,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	int nSegs=0;
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
-	REAL8 padding=1.0;
+	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
 	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
 	int FakeFlag=0;
@@ -187,9 +187,9 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	}
 	
 	
-	/* Trigger time = 1 second before end of segment */
+	/* Trigger time = 2 seconds before end of segment (was 1 seconds, but Common Inputs for The Events are -6 +2*/
 	memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
-	XLALGPSAdd(&segStart,-SegmentLength+1);
+	XLALGPSAdd(&segStart,-SegmentLength+2);
 	
 	
 	/* Read the PSD data */

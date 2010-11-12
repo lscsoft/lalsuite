@@ -1162,7 +1162,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 
 	//printVariables(IFOdata->modelParams);
-	newswitch = 1; //temporay global variable to use the new LALSTPN
+	newswitch = 0; //temporay global variable to use the new LALSTPN
 	
 	REAL8 m1,m2,mc,eta;
 	mc  = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
@@ -1173,7 +1173,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	injParams.mass1			= m1;				/* stellar mass */
 	injParams.mass2			= m2;			    /* stellar mass */
 	injParams.inclination	= *(REAL8*) getVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
-	//injParams.coa_phase		= *(REAL8*) getVariable(IFOdata->modelParams, "phase");
+	injParams.coa_phase		= *(REAL8*) getVariable(IFOdata->modelParams, "phase");
 	
 	REAL8 a_spin1		= *(REAL8*) getVariable(IFOdata->modelParams, "a_spin1");
 	REAL8 theta_spin1	= *(REAL8*) getVariable(IFOdata->modelParams, "theta_spin1");
@@ -1191,7 +1191,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	injParams.spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
 	injParams.spin2z = (a_spin2 * cos(theta_spin2));
 	
-	REAL8 shift0			= *(REAL8*) getVariable(IFOdata->modelParams, "phase");				/* initial phase */	
+	//REAL8 shift0			= *(REAL8*) getVariable(IFOdata->modelParams, "phase");				/* initial phase */	
 	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
 	
 	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
@@ -1289,8 +1289,8 @@ void templateLALSTPN(LALIFOData *IFOdata)
         phi     = (1.0-fractionalRightShift)*waveform.phi->data->data[i+integerLeftShift]+fractionalRightShift*waveform.phi->data->data[i+integerLeftShift+1];
         shift   = (1.0-fractionalRightShift)*waveform.shift->data->data[i+integerLeftShift]+fractionalRightShift*waveform.shift->data->data[i+integerLeftShift+1];
 		
-		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift-shift0)*cos(phi) - a2*sin(shift-shift0)*sin(phi);
-		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift-shift0)*cos(phi) + a2*cos(shift-shift0)*sin(phi);
+		IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+		IFOdata->timeModelhCross->data->data[i] = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
 		}
 	}	
 	
@@ -1307,9 +1307,16 @@ void templateLALSTPN(LALIFOData *IFOdata)
 		}
 		XLALInspiralWaveTaper(tempVec,bookends);
 		for (i=0; i<IFOdata->timeData->data->length; i++){
+			IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
+		}
+		
+		for (i=0; i<IFOdata->timeData->data->length; i++){
 			tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
 		}
 		XLALInspiralWaveTaper(tempVec,bookends);
+		for (i=0; i<IFOdata->timeData->data->length; i++){
+			IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
+		}
 		XLALDestroyREAL4Vector(tempVec);
 	}
 	

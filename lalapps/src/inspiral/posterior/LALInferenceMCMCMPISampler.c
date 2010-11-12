@@ -547,9 +547,9 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	UINT4 nIFO=0;
 	LALIFOData *ifo=runState->data;
 	REAL8 randnum;
-	REAL8 BLOCKFRAC=0.45,
-	SINGLEFRAC=0.45,
-	SKYFRAC=0.1;
+	REAL8 BLOCKFRAC=0.05,
+	SINGLEFRAC=0.9,
+	SKYFRAC=0.05;
 top:
 	randnum=gsl_rng_uniform(runState->GSLrandom);
 	/* Choose a random type of jump to propose */
