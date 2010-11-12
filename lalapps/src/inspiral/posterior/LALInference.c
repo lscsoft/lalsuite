@@ -1138,24 +1138,30 @@ void executeFT(LALIFOData *IFOdata)
 {
   UINT4 i;
   double norm;
+  
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
     if(!IFOdata->freqModelhPlus)
       IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
+    
     XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data);
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan);
+    
     /* hx */
     if(!IFOdata->freqModelhCross)
       IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length);
+    
     XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data);
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan);
-      norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
-	  for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-		  IFOdata->freqModelhPlus->data->data[i].re*=norm;
-		  IFOdata->freqModelhPlus->data->data[i].im*=norm;
-		  IFOdata->freqModelhCross->data->data[i].re*=norm;
-		  IFOdata->freqModelhCross->data->data[i].im*=norm;
-		  }
+    
+    norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+    
+    for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
+      IFOdata->freqModelhPlus->data->data[i].re*=norm;
+      IFOdata->freqModelhPlus->data->data[i].im*=norm;
+      IFOdata->freqModelhCross->data->data[i].re*=norm;
+      IFOdata->freqModelhCross->data->data[i].im*=norm;
+    }
   }
 }
 
@@ -1167,14 +1173,19 @@ void executeInvFT(LALIFOData *IFOdata)
 {
   while (IFOdata != NULL) {
     if (IFOdata->freqToTimeFFTPlan==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqToTimeFFTPlan'.\n");
+
     /*  h+ :  */
     if (IFOdata->timeModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhPlus'.\n");
     if (IFOdata->freqModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
+    
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
+    
     /*  hx :  */
     if (IFOdata->timeModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
     if (IFOdata->freqModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
+    
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
+    
     IFOdata=IFOdata->next;
   }
 }
@@ -1182,16 +1193,16 @@ void executeInvFT(LALIFOData *IFOdata)
 
 /* Function to add the min and max values for the prior onto the priorArgs */
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type){
-		char minName[VARNAME_MAX];
-		char maxName[VARNAME_MAX];
-    
-		sprintf(minName,"%s_min",name);
-		sprintf(maxName,"%s_max",name);
-    
-		addVariable(priorArgs,minName,min,type,PARAM_FIXED);
-		addVariable(priorArgs,maxName,max,type,PARAM_FIXED);    
-		return;
-	}
+  char minName[VARNAME_MAX];
+  char maxName[VARNAME_MAX];
+  
+  sprintf(minName,"%s_min",name);
+  sprintf(maxName,"%s_max",name);
+  
+  addVariable(priorArgs,minName,min,type,PARAM_FIXED);
+  addVariable(priorArgs,maxName,max,type,PARAM_FIXED);    
+  return;
+}
 
 /* Get the min and max values of the prior from the priorArgs list, given a name */
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
@@ -1224,20 +1235,31 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
-  COMPLEX16FrequencySeries *InvPSD = NULL;
+/* The time-domain weight corresponding to the noise power spectrum
+   S(f) is defined to be:
+
+   s(tau) == \int_0^\infty df \frac{\exp(- 2 \pi i f tau)}{S(f)}
+
+*/
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD) {
+  REAL8Vector *InvPSD = NULL;
+  REAL8FFTPlan *plan = NULL;
   size_t i;
 
-  InvPSD = (COMPLEX16FrequencySeries *) XLALCreateCOMPLEX16FrequencySeries("1/PSD", &(PSD->epoch), 0.0, PSD->deltaF, 
-                                                                           &(PSD->sampleUnits), /* Dimensionless Unit */
-                                                                           PSD->data->length);
+  InvPSD = (REAL8Vector *) XLALCreateREAL8Vector(PSD->data->length);
+  plan = (REAL8FFTPlan *) XLALCreateREAL8FFTPlan(PSD->data->length, 1, 1);
 
   for (i = 0; i < PSD->data->length; i++) {
-    InvPSD->data->data[i].re = 1.0/PSD->data->data[i];
-    InvPSD->data->data[i].im = 0.0;
+    InvPSD->data[i] = 1.0 / PSD->data->data[i];
   }
 
-  XLALREAL8FreqTimeFFT(TDW, InvPSD, plan);
+  XLALREAL8VectorFFT(TDW->data, InvPSD, plan);
+  TDW->deltaT = 1.0/(PSD->deltaF*(PSD->data->length - 1));
+  
+  for (i = 0; i < TDW->data->length; i++) {
+    TDW->data->data[i] *= PSD->deltaF; /* Re-scale to correct size. */
+  }
 
-  XLALDestroyCOMPLEX16FrequencySeries(InvPSD);
+  XLALDestroyREAL8FFTPlan(plan);
+  XLALDestroyREAL8Vector(InvPSD);
 }

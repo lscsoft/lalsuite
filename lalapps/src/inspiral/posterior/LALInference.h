@@ -246,7 +246,7 @@ REAL8 NullLogLikelihood(LALIFOData *data);
 
 /* Converts a PSD to the corresponding time domain correlation weight
    function. */
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan);
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD);
 								  
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
