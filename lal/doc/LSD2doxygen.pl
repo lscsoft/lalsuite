@@ -249,10 +249,10 @@ sub cleanupLSD {
     $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
 
     # use 'Revision:' string as a hook to place a '\file' command
-    $text =~ s!^Revision:!\\file!mg;
+    $text =~ s!^(\s*\*?\s*)Revision:!\\file!mp;
 
     # convert Author: comments to doxygen
-    $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mg;
+    $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mp;
 
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
@@ -365,7 +365,7 @@ sub cleanupLSD {
 	}sge;
 
 	# replace subsection commands
-	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)}{
+	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
 	    $_ = '\\par ' . $1 . "\n";
 	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
 	    $_
