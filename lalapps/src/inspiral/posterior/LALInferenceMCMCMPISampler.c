@@ -1123,6 +1123,8 @@ void PTMCMCLALInferenceRotateSky(
 	REAL8 vec_abs=0.0,theta,c,s;
 	UINT4 i,j;
 	
+	copyVariables(state->currentParams, parameter);
+	
 	UINT4 nIFO=0;
 	LALIFOData *ifodata1=state->data;
 	while(ifodata1){
@@ -1230,6 +1232,8 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	REAL8 w2[3];
 	INT4 IFO1,IFO2,IFO3;
 	REAL8 detvec[3];
+	
+	copyVariables(state->currentParams, parameter);
 	
 	UINT4 nIFO=0;
 	LALIFOData *ifodata1=state->data;
