@@ -277,7 +277,7 @@ typedef struct {
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
-  CHAR *transientWindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
+  CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   REAL8 transient_t0Days;	/**< earliest GPS start-time for transient window search, as offset in days from dataStartGPS */
   REAL8 transient_t0DaysBand;	/**< Range of GPS start-times to search in transient search, in days */
   INT4  transient_dt0;		/**< Step-size for search/marginalization over transient-window start-time, in seconds */
@@ -998,8 +998,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->GPUready = 0;
 
 #define DEFAULT_TRANSIENT "none"
-  uvar->transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
-  strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
+  uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar->transient_WindowType, DEFAULT_TRANSIENT );
   uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
@@ -1071,7 +1071,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
-  LALregSTRINGUserStruct(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
   LALregREALUserStruct (status, transient_t0Days, 0,  UVAR_OPTIONAL, "Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
   LALregREALUserStruct (status, transient_t0DaysBand,0,UVAR_OPTIONAL, "Range of GPS start-times to search in transient search, in days");
   LALregINTUserStruct (status, transient_dt0,    0,  UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:Tsft]");
@@ -1514,15 +1514,15 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
 
   /* ----- transient-window related parameters ----- */
-  if ( !XLALUserVarWasSet ( &uvar->transientWindowType ) || !strcmp ( uvar->transientWindowType, "none") )
+  if ( !XLALUserVarWasSet ( &uvar->transient_WindowType ) || !strcmp ( uvar->transient_WindowType, "none") )
     cfg->transientWindowRange.type = TRANSIENT_NONE;		/* default: no transient signal window */
-  else if ( !strcmp ( uvar->transientWindowType, "rect" ) )
+  else if ( !strcmp ( uvar->transient_WindowType, "rect" ) )
     cfg->transientWindowRange.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
-  else if ( !strcmp ( uvar->transientWindowType, "exp" ) )
+  else if ( !strcmp ( uvar->transient_WindowType, "exp" ) )
     cfg->transientWindowRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
   else
     {
-      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->transientWindowType);
+      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->transient_WindowType);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
