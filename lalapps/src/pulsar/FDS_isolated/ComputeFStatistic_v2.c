@@ -144,11 +144,11 @@ typedef struct
   /* transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
   UINT4 tauMax;			/**< longest transient timescale [s] */
-  UINT4 NtStart;		/**< number of transient start-time steps in FstatMap matrix */
-  UINT4 NtTau;			/**< number of transient timescale steps in FstatMap matrix */
+  UINT4 NStart;			/**< number of transient start-time steps in FstatMap matrix */
+  UINT4 NTau;			/**< number of transient timescale steps in FstatMap matrix */
 
   REAL8 tauTransFstatMap;	/**< time to compute transient-search Fstatistic-map over {t0, tau} [s]     */
-  REAL8 tauTransBstat;		/**< time to compute transient-search Bayes factor by summing FstatMap [s] */
+  REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
 } timingInfo_t;
 
 
@@ -738,13 +738,13 @@ int main(int argc,char *argv[])
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = XLALGetTimeOfDay();
-          timing.tauTransBstat = toc - tic;
+          timing.tauTransMarg = toc - tic;
 
           /* record timing-relevant transient search params */
           timing.tauMin  = GV.transientWindowRange.tau;
           timing.tauMax  = timing.tauMin + GV.transientWindowRange.tauBand;
-          timing.NtStart = transientCand.FstatMap->F_mn->size1;
-          timing.NtTau   = transientCand.FstatMap->F_mn->size2;
+          timing.NStart  = transientCand.FstatMap->F_mn->size1;
+          timing.NTau    = transientCand.FstatMap->F_mn->size2;
 
           /* add meta-info on current transient-CW candidate */
           transientCand.doppler = dopplerpos;
@@ -2204,13 +2204,13 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
   /* if timingInfo == NULL ==> write header comment line */
   if ( ti == NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NtStart   NtTau   costTransFstatMap[s]  costTransBstat[s]\n");
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s]\n");
       return XLAL_SUCCESS;
     } /* if ti == NULL */
 
 
   fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NtStart, ti->NtTau, ti->tauTransFstatMap, ti->tauTransBstat );
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg );
 
   return XLAL_SUCCESS;
 
