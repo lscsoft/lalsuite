@@ -25,21 +25,25 @@
 */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <SPINspiral.h>
 
 double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 
 /**
- * \file
- * \brief Contains main routines for SPINspiral
- *
+ * \mainpage SPINspiral documentation
  * SPINspiral is a parameter-estimation code designed to extract the physical parameters of compact-binary coalescences (CBCs) from observed gravitational-wave signals.
  *
- * More information about SPINspiral can be found on its web page:
+ * More information about SPINspiral can be found on its web page: 
  * <a href="http://www.astro.northwestern.edu/~sluys/index.php?title=SPINspiral">http://www.astro.northwestern.edu/~sluys/index.php?title=SPINspiral</a>.
  *
  * The pages in this documentation provide information on the SPINspiral code.
  *
+ * \file SPINspiral_main.c
+ * \brief Contains main routine
  */
 
 
@@ -48,7 +52,7 @@ double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 int main(int argc, char* argv[])
 {
   printf("\n\n   Starting SPINspiral...\n");
-  printf("   Compiled from source code version $Id: SPINspiral_main.c 227 2009-10-28 09:04:49Z vivien $ \n");
+  printf("   Compiled from source code version $Id: SPINspiral_main.c 252 2010-10-22 12:18:27Z sluys $ \n");
   
   clock_t time0 = clock();
   int ifonr=0,i=0,injectionWF=0,mcmcWF=0;
@@ -66,7 +70,7 @@ int main(int argc, char* argv[])
     run.mcmcParUse[i] = 0;
     run.injParUse[i]  = 0;
   }
-  sprintf(run.executable, "%s", argv[0]);
+  sprintf(run.executable,"%s",argv[0]);
   run.lowFrequencyCut = 0.0;
   run.injXMLfilename = NULL;
   run.injXMLnr = -1;
@@ -80,7 +84,10 @@ int main(int argc, char* argv[])
   
   readMainInputfile(&run);                 //Read main input data file for this run from input.mcmc
   readMCMCinputfile(&run);                 //Read the input data on how to do MCMC 
-  setSeed(&run.MCMCseed);                  //Set MCMCseed if 0, otherwise keep the current value
+  if(run.MCMCseed==0) {
+    setSeed(&run.MCMCseed);                  //Set MCMCseed if 0, otherwise keep the current value
+    if(run.beVerbose>=1) printf("   Picking seed from the system clock to start Markov chains from randomly offset values: %d\n", run.MCMCseed);
+  }
   readInjectionInputfile(&run);            //Read the input data on whether and how to do a software injection
   if(run.injXMLfilename != NULL && run.injXMLnr >= 0) readInjectionXML(&run);    //Read injection XML file if specified:
   readParameterInputfile(&run);            //Read the input data on how to handle MCMC parameters
@@ -89,7 +96,7 @@ int main(int argc, char* argv[])
   
   
   //Set up the data for the IFOs in an IFO database you may want to use (H1,L1 + VIRGO by default)
-  run.maxIFOdbaseSize = 4;  //The maximum number of IFOs to read the properties in for from the data input file (SPINspiral.input.data or equivalent)
+  run.maxIFOdbaseSize = 3;  //The maximum number of IFOs to read the properties in for from the data input file (SPINspiral.input.data or equivalent)
   struct interferometer database[run.maxIFOdbaseSize];
   setIFOdata(&run, database);
   
@@ -208,11 +215,16 @@ int main(int argc, char* argv[])
   
   if(run.beVerbose >= 1) {
     printf("\n  %10s  %10s  %6s  %6s  ","nIter","nBurn","seed","nDet");
-    for(ifonr=0;ifonr<networkSize;ifonr++) printf("%16s%4s  ",network[ifonr]->name,"SNR");
-    printf("%20s  ","Network SNR");
+    for(ifonr=0;ifonr<networkSize;ifonr++) printf("%18s%4s     ",network[ifonr]->name,"SNR");
+    printf("%18s  ","Network SNR");
+    
+    double maxSNR=0.0, relSNR[99];
+    for(ifonr=0;ifonr<networkSize;ifonr++) maxSNR = max(maxSNR,network[ifonr]->snr);
+    for(ifonr=0;ifonr<networkSize;ifonr++) relSNR[ifonr] = network[ifonr]->snr/maxSNR;
+    
     printf("\n  %10d  %10d  %6d  %6d  ",run.nIter,run.annealNburn,run.MCMCseed,networkSize);
-    for(ifonr=0;ifonr<networkSize;ifonr++) printf("%20.10lf  ",network[ifonr]->snr);
-    printf("%20.10lf\n\n",run.netsnr);
+    for(ifonr=0;ifonr<networkSize;ifonr++) printf("%18.8lf (%4.2lf)  ",network[ifonr]->snr,relSNR[ifonr]);
+    printf("%18.8lf\n\n",run.netsnr);
   }
   
   //Print actual injection parameters to screen:
