@@ -58,7 +58,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	int MPIrank, MPIsize;
 	LALStatus status;
 	memset(&status,0,sizeof(status));
-	REAL8 dummyR8 = 0.0;
+	//REAL8 dummyR8 = 0.0;
 	REAL8 temperature = 1.0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
@@ -217,8 +217,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
 		setVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
-		s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
-		setVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
+		//s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
+		//setVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
 		//setVariable(runState->proposalArgs, "sigma", sigmaVec[tempIndex]);
 		//dummyR8 = runState->currentLikelihood;
 		//	if (runState->currentLikelihood != dummyR8) {
@@ -269,7 +269,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	fprintf(stdout,"\n");
 		//}
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		MPI_Gather(sigma->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+		//MPI_Gather(sigma->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);	
 			
 		//printVariables(&(TcurrentParams[0]));
@@ -298,17 +298,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						TcurrentLikelihood[tempi] = dummyR8;
 						count++;
 						*/
-						for (p=0; p<(nPar); ++p){
-							dummyR8=sigmaVec[p+nPar*upperRank];
-							sigmaVec[p+nPar*upperRank]=sigmaVec[p+nPar*lowerRank];
-							sigmaVec[p+nPar*lowerRank]=dummyR8;
-						}
+						//for (p=0; p<(nPar); ++p){
+						//	dummyR8=sigmaVec[p+nPar*upperRank];
+						//	sigmaVec[p+nPar*upperRank]=sigmaVec[p+nPar*lowerRank];
+						//	sigmaVec[p+nPar*lowerRank]=dummyR8;
+						//}
 					}
 				} //upperRank
 			} //lowerRank
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+		//MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
 		//printf("%d\n",count);
 		count = 0;
