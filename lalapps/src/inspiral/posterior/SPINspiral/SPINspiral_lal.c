@@ -25,11 +25,16 @@
 */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateInspiral.h>
+
 
 //#include <lal/LALConstants.h>
 
@@ -46,8 +51,36 @@
 //////////////////////////////////////////
 
 
+#include <stdio.h>
+
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/Units.h>
+
+#include <lal/FrameCache.h>
+#include <lal/FrameStream.h>
+#include <lal/Units.h>
+//#include <lal/TimeFreqFFT.h>
+#include <lal/LALDetectors.h>
+#include <lal/AVFactories.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
+#include <lal/Date.h>
+#include <lal/StringInput.h>
+#include <lal/VectorOps.h>
+#include <lal/Random.h>
+//#include <lal/LALNoiseModels.h>
+#include <lal/XLALError.h>
+#include <lal/LIGOLwXMLRead.h>
+//#include <lal/LIGOLwXMLInspiralRead.h>
 
 
+// For templateLALPhenSpinTaylorRD():
+#include <lal/NRWaveInject.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/Inject.h>
 
 
 
@@ -393,8 +426,8 @@ void LALHpHc12(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //printf("\n  %s\n\n",waveformApproximant);
   
   snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
-  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
-  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s","SpinTayloronePointFivePN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s","SpinTaylortwoPN");
   
   /* this is given in Mpc */    
   injParams->distance = (float)exp(pLogDl);//d_L;
@@ -660,13 +693,13 @@ void LALHpHc15(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   //Remember we're in the 15-par routine here
   char* waveformApproximant = (char*)calloc(128,sizeof(char));
   getWaveformApproximant("SpinTaylor",128,PNorder,waveformApproximant);  //Spinning
-  //snprintf(waveformApproximant,128,"SpinTaylorthreePointFivePN"); //Set it manually
+  //snprintf(waveformApproximant,128,"%s","SpinTaylorthreePointFivePN"); //Set it manually
   //printf("\n  %s\n\n",waveformApproximant);
   
   snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
-  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTayloronePointFivePN");
-  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylortwoPN");
-  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorthreePointFivePN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s","SpinTayloronePointFivePN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s","SpinTaylortwoPN");
+  //snprintf(injParams->waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s","SpinTaylorthreePointFivePN");
   
   // This is given in Mpc:
   injParams->distance = (float)exp(pLogDl); // d_L;
@@ -844,7 +877,7 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   // Remember we're in the 15-par routine here:
   char* waveformApproximant = (char*)calloc(128,sizeof(char));
   getWaveformApproximant("SpinTaylor",128,PNorder,waveformApproximant);  //Spinning
-  //snprintf(waveformApproximant,128,"SpinTaylorthreePointFivePN"); //Set it manually
+  //snprintf(waveformApproximant,128,"%s","SpinTaylorthreePointFivePN"); //Set it manually
   
   snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
   
@@ -884,14 +917,14 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   
   // Call the injection function:
   LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
-  if(status.statusCode) {
+	if(status.statusCode) {
     if(injectionWF==1) {
       fprintf(stderr, "\n\n   templateLAL15():  ERROR generating injection waveform %s (too high mass?)\n   Aborting...\n\n", waveformApproximant);
       REPORTSTATUS(&status);
       exit(1);
     }
     for(i=0; i<length; ++i) ifo[ifonr]->FTin[i] = 0.0;
-    
+		
     //LALfreedomNoSpin(&waveform);  //Why does this give a seg.fault here, but not at the end of the routine?
     free(wave);
     free(waveformApproximant);
@@ -919,6 +952,452 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
 
 
 
+// ****************************************************************************************************************************************************  
+/**
+ * \brief Compute waveform for a 15-parameter (two spins) LAL PhenSpinTaylorRD waveform
+ * 
+ * Use the LAL 3.5/2.5 PN spinning hybrid PhenSpinTaylorRD waveform, with 2 spinning objects (15 parameters). Phenomenological ring-down attached
+ */
+// ****************************************************************************************************************************************************  
+void templateLALPhenSpinTaylorRD(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run)
+{
+	
+	// Get the 15 waveform parameters from their array:
+	double pMc=0.0,pEta=0.0,pTc=0.0,pLogDl=0.0,pRA=0.0,pLongi=0.0,pSinDec=0.0,pPhase=0.0,pCosI=0.0,pPsi=0.0;
+	double pSpin1=0.0,pSpCosTh1=0.0,pSpPhi1=0.0,pSpin2=0.0,pSpCosTh2=0.0,pSpPhi2=0.0,PNorder=0.0;
+	//REAL8 h1, h2, phi, shift;
+	REAL4TimeSeries *htData = NULL;
+	CHAR ifoname[LIGOMETA_IFO_MAX];
+	INT8 waveformStartTime;
+	INT4 dataLength, wfmLength;
+	float *x1;
+	
+	if(injectionWF==1) {                                               // Then this is an injection waveform template
+		pTc       = par->par[run.injRevID[11]];                                            // 11: t_c
+		pLogDl    = par->par[run.injRevID[22]];                                            // 22: log(d_L)
+		pMc       = par->par[run.injRevID[61]];                                            // 61: Mc
+		pEta      = par->par[run.injRevID[62]];                                            // 62: eta
+		
+		pRA       = par->par[run.injRevID[31]];                                            // 31: RA
+		pSinDec   = par->par[run.injRevID[32]];                                            // 32: sin(Dec)
+		pPhase    = par->par[run.injRevID[41]];                                            // 41: phi_c - GW phase at coalescence
+		pCosI     = par->par[run.injRevID[51]];                                            // 51: cos(inclination)
+		pPsi      = par->par[run.injRevID[52]];                                            // 52: psi: polarisation angle
+		
+		pSpin1    = par->par[run.injRevID[71]];                                            // 71: a_spin1
+		pSpCosTh1 = par->par[run.injRevID[72]];                                            // 72: cos(theta_spin1)
+		pSpPhi1   = par->par[run.injRevID[73]];                                            // 73: phi_spin1    
+		pSpin2    = par->par[run.injRevID[81]];                                            // 81: a_spin2
+		pSpCosTh2 = par->par[run.injRevID[82]];                                            // 82: cos(theta_spin2)
+		pSpPhi2   = par->par[run.injRevID[83]];                                            // 83: phi_spin2    
+		
+		PNorder   = run.injectionPNorder;                                                  // Post-Newtonian order
+	} else {                                                           // Then this is an MCMC waveform template
+		pTc       = par->par[run.parRevID[11]];                                            // 11: t_c
+		pLogDl    = par->par[run.parRevID[22]];                                            // 22: log(d_L)
+		pMc       = par->par[run.parRevID[61]];                                            // 61: Mc
+		pEta      = par->par[run.parRevID[62]];                                            // 62: eta
+		
+		pRA       = par->par[run.parRevID[31]];                                            // 31: RA
+		pSinDec   = par->par[run.parRevID[32]];                                            // 32: sin(Dec)
+		pPhase    = par->par[run.parRevID[41]];                                            // 41: phi_c - GW phase at coalescence
+		pCosI     = par->par[run.parRevID[51]];                                            // 51: cos(inclination) of the binary
+		pPsi      = par->par[run.parRevID[52]];                                            // 52: psi: polarisation angle of the binary
+		
+		pSpin1    = par->par[run.parRevID[71]];                                            // 71: a_spin1
+		pSpCosTh1 = par->par[run.parRevID[72]];                                            // 72: cos(theta_spin1)
+		pSpPhi1   = par->par[run.parRevID[73]];                                            // 73: phi_spin1    
+		pSpin2    = par->par[run.parRevID[81]];                                            // 81: a_spin2
+		pSpCosTh2 = par->par[run.parRevID[82]];                                            // 82: cos(theta_spin2)
+		pSpPhi2   = par->par[run.parRevID[83]];                                            // 83: phi_spin2    
+		
+		PNorder   = run.mcmcPNorder;                                                       // Post-Newtonian order
+	}
+	
+	pLongi = pRA; //XLALComputeDetAMResponse() takes RA. fmod(longitude(pRA, GMST(pTc)) + mtpi, tpi);    // RA -> 'lon'
+	
+	double temp_ra = fmod(longitude(pRA, GMST(pTc)) + mtpi, tpi);
+	printf("temp_ra=%f\n",temp_ra);
+	
+	// Get masses from Mch and eta:
+	double m1,m2;
+	McEta2masses(pMc,pEta,&m1,&m2);
+	
+	//printf(" LAL two-spin WF pars:  injWF: %i, Mc: %f, eta: %f, tc: %f, logD: %f, RA: %f, dec: %f, phi: %f, cos(i): %f, psi: %f,  a1: %f, cth1: %f, phi1: %f,  a2: %f, cth2: %f, phi2: %f\n",
+	//injectionWF,pMc, pEta, pTc, pLogDl, pRA, pSinDec, pPhase, pCosI, pPsi,  pSpin1, pSpCosTh1, pSpPhi1,  pSpin2, pSpCosTh2, pSpPhi2);
+	//printf(" Mc: %f,  M1: %f,  M2: %f,  Mtot: %f\n",pMc,m1,m2,m1+m2);
+	
+	
+	// Cannot compute templates for Mtot >~ 146Mo (?).  Use 140Mo.
+	int length = ifo[ifonr]->samplesize;
+	int i=0;
+	for ( i = 0; i < length; i++ ) {ifo[ifonr]->FTin[i] = 0.0;}
+	
+	REAL8 samplerate = (double)ifo[ifonr]->samplerate;
+	double inversesamplerate = 1.0/samplerate;
+	double *wave = (double*)calloc(length+2,sizeof(double));
+	
+	// LAL thingies needed. Have to be freed later:
+	static LALStatus    status;
+	CoherentGW          waveform;
+	SimInspiralTable    injParams;
+	PPNParamStruc       ppnParams;
+	
+	memset( &status, 0, sizeof(LALStatus) );
+	memset( &waveform, 0, sizeof(CoherentGW) );
+	memset( &injParams, 0, sizeof(SimInspiralTable) );
+	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+	
+	ppnParams.deltaT   = inversesamplerate;
+	ppnParams.lengthIn = 0;
+	ppnParams.ppn      = NULL;
+	
+	
+	////////////////////////////////////////////////////////////now we fill the injParam structure with the parameters//////////////
+	
+	injParams.mass1 = (float)m1;
+	injParams.mass2 = (float)m2;
+	
+	injParams.f_final = (float)ifo[ifonr]->highCut;  // It seems injParams.f_final gets overwritten by LALGenerateInspiral; it's an output parameter rather than input. This will also somewhat affect SNR comparisons with the Apostolatos waveform.
+	injParams.f_lower = (float)ifo[ifonr]->lowCut;
+	
+	// Remember we're in the 15-par routine here:
+	char* waveformApproximant = (char*)calloc(128,sizeof(char));
+	getWaveformApproximant("PhenSpinTaylorRD",128,PNorder,waveformApproximant);  //Spinning
+	//snprintf(waveformApproximant,128,"%s","SpinTaylorthreePointFivePN"); //Set it manually
+	
+	snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
+	
+	// This is given in Mpc:
+	injParams.distance = (float)exp(pLogDl); // d_L;
+	
+	injParams.inclination = (float)acos(pCosI);                      // Inclination of the binary
+	
+	double pSpsinth1 = sqrt(1.0 - pSpCosTh1*pSpCosTh1);
+	injParams.spin1x = (float)(pSpin1 * pSpsinth1 * cos(pSpPhi1));
+	injParams.spin1y = (float)(pSpin1 * pSpsinth1 * sin(pSpPhi1));
+	injParams.spin1z = (float)(pSpin1 * pSpCosTh1);
+	
+	double pSpsinth2 = sqrt(1.0 - pSpCosTh2*pSpCosTh2);
+	injParams.spin2x = (float)(pSpin2 * pSpsinth2 * cos(pSpPhi2));
+	injParams.spin2y = (float)(pSpin2 * pSpsinth2 * sin(pSpPhi2));
+	injParams.spin2z = (float)(pSpin2 * pSpCosTh2);
+	
+	// 4 parameters used after the computation of h+,x ********************//
+	injParams.coa_phase = (float)pPhase;                                      // GW phase at coalescence
+	ppnParams.phi = injParams.coa_phase;
+	injParams.longitude = (float)pLongi;                                      // 'Longitude'
+	injParams.latitude = (float)asin(pSinDec);                                // Declination
+//	injParams.theta0       = injParams.longitude;         //?
+//    injParams.phi0         = injParams.latitude;          //?
+	injParams.polarization = (float)pPsi;                                     // Polarisation angle
+	
+	REAL8 geocent_end_time = pTc;
+	
+	XLALGPSSetREAL8( &(injParams.geocent_end_time), geocent_end_time );
+	
+	waveform.position.system=COORDINATESYSTEM_GEOGRAPHIC;
+	//ppnParams.deltaT = inversesamplerate;
+	
+	
+	//Print output:
+	  //printf("  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf  %lf\n",
+	//  printf("  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f\n",
+	//     injParams.mass1,injParams.mass2,injParams.f_final,injParams.f_lower,injParams.distance,injParams.inclination,injParams.spin1x,injParams.spin1y,injParams.spin1z,
+	//     injParams.spin2x,injParams.spin2y,injParams.spin2z,injParams.coa_phase,injParams.longitude,injParams.latitude,injParams.polarization);
+	
+	//  printf("%8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f  %8.10f\n",
+	//		 pMc,pEta,pTc,pLogDl,pRA,pSinDec,pCosI,pPhase,pPsi,pSpin1,pSpCosTh1,pSpPhi1,pSpin2,pSpCosTh2,pSpPhi2);	
+	
+	XLALSetErrno( 0 );
+	// Call the injection function:
+	LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
+	if(status.statusCode || waveform.h == NULL) {
+		if(injectionWF==1) {
+			fprintf(stderr, "\n\n   templateLALPhenSpinTaylorRD():  ERROR generating injection waveform %s (too high mass?)\n   Aborting...\n\n", waveformApproximant);
+			REPORTSTATUS(&status);
+			exit(1);
+		}
+		if(waveform.h == NULL){fprintf(stderr,"waveform.h == NULL\n");}
+		REPORTSTATUS(&status);
+		for(i=0; i<length; ++i) ifo[ifonr]->FTin[i] = 0.0;
+    //printf("wave at zero\n");
+		//LALfreedomPhenSpinTaylorRD(&waveform);
+		//XLALDestroyREAL4Vector ( htData->data);
+		//LALFree(htData);
+		
+		//LALfreedomNoSpin(&waveform);  //Why does this give a seg.fault here, but not at the end of the routine?
+		free(wave);
+		free(waveformApproximant);
+		return;
+	}
+	// LALInfo( status, ppnParams.termDescription );
+	
+//	DetectorResponse detector;   // the detector in question 
+	//memset( &detector, 0, sizeof( DetectorResponse ) );
+	
+	
+	//LALDetector site;
+//	detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+	
+	//site = lalCachedDetectors[LALDetectorIndexLLODIFF];
+	
+	//detector.site = &site;
+//	detector.transfer = NULL;
+//	detector.ephemerides = NULL;
+	
+	switch ( ifonr )
+	{
+		case 0:
+		//	*(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+			strcpy(ifoname, "H1");
+			break;
+		case 1:
+		//	*(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+			strcpy(ifoname, "L1");
+			break;
+		case 2:
+		//	*(detector.site) = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+			strcpy(ifoname, "V1");
+			break;
+		default:
+		//	LALFree( detector.site );
+		//	detector.site = NULL;
+			fprintf(stderr, "\n\n   Unknown detector site ifonr=%d\n   Aborting...\n\n",ifonr);
+			REPORTSTATUS(&status);
+			exit(1);
+			break;
+	}
+	
+	waveformStartTime = XLALGPSToINT8NS( &(injParams.geocent_end_time) );
+	waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
+	XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
+//	memcpy( &(waveform.f->epoch), &(waveform.h->epoch),
+//		   sizeof(LIGOTimeGPS) );
+//	memcpy( &(waveform.phi->epoch), &(waveform.h->epoch),
+//		   sizeof(LIGOTimeGPS) );
+//	memcpy( &(waveform.a->epoch), &(waveform.a->epoch),
+//		   sizeof(LIGOTimeGPS) );
+
+	wfmLength = waveform.h->data->length;
+	dataLength = 2*wfmLength;
+	x1 = (float *) LALMalloc(sizeof(x1)*dataLength);
+	/*
+	 * We are using functions from NRWaveInject which do not take a vector
+	 * with alternating h+ & hx but rather one that stores h+ in the first
+	 * half and hx in the second half.
+	 *
+	 * We also must multiply the strain by the distance to be compatible
+	 * with NRWaveInject.
+	 *
+	 */
+	for( i = 0; i < dataLength; i++)
+	{
+        x1[i] = waveform.h->data->data[i]*injParams.distance;
+	}
+	for( i = 0; i < wfmLength; i++)
+	{
+		waveform.h->data->data[i] = x1[2*i];
+		waveform.h->data->data[wfmLength+i] = x1[2*i+1];
+	}
+	
+	LALFree(x1);
+	
+	waveform.h->data->vectorLength = wfmLength;
+	
+	INT4 sampleRate = (INT4)samplerate;
+	
+	// Compute the detector response:
+	//htData = XLALCalculateNRStrain( waveform.h, &injParams, ifoname, sampleRate );
+	
+	
+	
+	LALDetector            det;
+	double                 fplus;
+	double                 fcross;
+	double                 tDelay;
+	//REAL4TimeSeries       *htData = NULL;
+	UINT4                  vecLength, k;
+	InterferometerNumber   ifoNumber = LAL_UNKNOWN_IFO;
+	
+	/* get the detector information */
+	memset( &det, 0, sizeof(LALDetector) );
+	ifoNumber = (InterferometerNumber)XLALIFONumber( ifoname );
+	XLALReturnDetector( &det, ifoNumber );
+	
+	if( ifoNumber == LAL_UNKNOWN_IFO )
+	{
+		XLALPrintWarning( "Unknown ifo! Injecting signal overhead!\n" );
+		fplus  = 1.0;
+		fcross = 0.0;
+		tDelay = 0.0;
+	}
+	else
+	{
+		/* compute detector response */
+		XLALComputeDetAMResponse(&fplus, &fcross, det.response, injParams.longitude,
+								 injParams.latitude, injParams.polarization, injParams.end_time_gmst);
+		
+		/* calculate the time delay */
+		tDelay = XLALTimeDelayFromEarthCenter( det.location, injParams.longitude,
+											  injParams.latitude, &(injParams.geocent_end_time) );
+	}
+	
+	/* create htData */
+	htData = LALCalloc(1, sizeof(*htData));
+	if (!htData)
+	{
+		printf("hData unassigned\n");
+		//ABORTXLAL( &status );
+		exit(1);
+	}
+	vecLength = waveform.h->data->vectorLength;
+	htData->data = XLALCreateREAL4Vector( vecLength );
+	if ( ! htData->data )
+	{
+		LALFree( htData );
+		printf("hData->data unassigned\n");
+		//ABORTXLAL( &status );
+		exit(1);
+	}
+	
+	/* store the htData */
+	
+	/* add timedelay to inj->geocent_end_time */
+	{
+		REAL8 tEnd;
+		tEnd =  XLALGPSGetREAL8(&(injParams.geocent_end_time) );
+		tEnd += tDelay;
+		XLALGPSSetREAL8(&(htData->epoch), tEnd );
+	}
+	/* Using XLALGPSAdd is bad because that changes the GPS time! */
+	/*  htData->epoch = *XLALGPSAdd( &(inj->geocent_end_time), tDelay ); */
+	
+	htData->deltaT = waveform.h->deltaT;
+	htData->sampleUnits = lalADCCountUnit;
+	
+	for ( k = 0; k < vecLength; ++k )
+	{
+	  htData->data->data[k] = (float)(fplus * waveform.h->data->data[k]  +
+				   fcross * waveform.h->data->data[vecLength + k]) / injParams.distance;
+	}
+	
+	/*interpolate to given sample rate */
+	//htData = XLALInterpolateNRWave( htData, sampleRate);
+
+
+	
+	
+	
+	
+	
+	REAL4TimeSeries *ret=NULL;
+	REAL8 deltaTin, deltaTout, r, y_1, y_2;
+	REAL8 tObs; /* duration of signal */
+	UINT4 lo, numPoints;
+	
+	deltaTin = htData->deltaT;
+	tObs = deltaTin * htData->data->length;
+	
+	/* length of output vector */
+	numPoints = (UINT4) (sampleRate * tObs);
+	
+	/* allocate memory */
+	ret = LALCalloc(1, sizeof(*ret));
+	if (!ret)
+	{
+		printf("ret unassigned\n");
+		//ABORTXLAL( &status );
+		exit(1);
+	}
+	
+	ret->data = XLALCreateREAL4Vector( numPoints );
+	if (! ret->data)
+	{
+		printf("ret->data unassigned\n");
+		//ABORTXLAL( &status );
+		exit(1);
+	}
+	
+	ret->deltaT = 1./sampleRate;
+	deltaTout = ret->deltaT;
+	
+	/* copy stuff from in which should be the same */
+	ret->epoch = htData->epoch;
+	ret->f0 = htData->f0;
+	ret->sampleUnits = htData->sampleUnits;
+	strcpy(ret->name, htData->name);
+	
+	/* go over points of output vector and interpolate linearly
+     using closest points of input */
+	for (k = 0; k < numPoints; k++) {
+		
+		lo = (UINT4)( k*deltaTout / deltaTin);
+		
+		/* y_1 and y_2 are the input values at x1 and x2 */
+		/* here we need to make sure that we don't exceed
+		 bounds of input vector */
+		if ( lo < htData->data->length - 1) {
+			y_1 = htData->data->data[lo];
+			y_2 = htData->data->data[lo+1];
+			
+			/* we want to calculate y_2*r + y_1*(1-r) where
+			 r = (x-x1)/(x2-x1) */
+			r = k*deltaTout / deltaTin - lo;
+			
+			ret->data->data[k] = (float)(y_2 * r + y_1 * (1 - r));
+		}
+		else {
+			ret->data->data[k] = 0.0;
+		}
+	}
+	
+	if ( !ret )
+	{
+		printf("ret unassigned\n");
+		//ABORTXLAL( &status );
+		exit(1);
+	}
+	
+	REAL8 offset;
+	XLALFindNRCoalescenceTime( &offset, waveform.h);
+	XLALGPSAdd( &(ret->epoch), -offset);
+	
+	REAL4TimeSeries signalvec;        // GW signal 
+	
+	memset( &signalvec, 0, sizeof(REAL4TimeSeries) );
+	
+	/* set the parameters for the signal time series */
+	signalvec.deltaT = ret->deltaT;
+	
+	signalvec.sampleUnits = lalADCCountUnit;
+	//signal.f0 = 0.0;
+	signalvec.data = NULL;
+	/* simulate the detectors response to the inspiral */
+	LALSCreateVector( &status, &(signalvec.data), (UINT4)length );
+	XLALGPSSetREAL8( &(signalvec.epoch), ifo[ifonr]->FTstart);	
+	for ( i = 0; i < (int)signalvec.data->length; i++ ) {signalvec.data->data[i]=0.0;}
+	LALSSInjectTimeSeries( &status, &signalvec, ret );
+	
+	for ( i = 0; i < (int)signalvec.data->length && i < length; i++ ) {ifo[ifonr]->FTin[i] = signalvec.data->data[i];
+																//printf("signal.data->data[%d] = %10.10e\n",i,signal.data->data[i]);
+																}
+	
+	free(wave);
+	free(waveformApproximant);
+	LALfreedomPhenSpinTaylorRD(&waveform);
+	XLALDestroyREAL4Vector ( htData->data);
+	LALFree(htData);
+	XLALDestroyREAL4Vector ( ret->data);
+	LALFree(ret);
+	LALSDestroyVector( &status, &( signalvec.data ) );
+//	if ( detector.site ) LALFree( detector.site );
+//	LALFree( detector.transfer );
+
+	
+} // End of templateLALPhenSpinTaylorRD()
+// ****************************************************************************************************************************************************  
 
 
 
@@ -1015,7 +1494,7 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
   snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
   Approximant injapprox;
   LALGetApproximantFromString(&status,injParams.waveform,&injapprox);
-  if(injapprox!=GeneratePPN) fprintf(stderr,"\n *** Warning:  not using GeneratePPN approximant causes incoherent injections ***\n");
+  if(injapprox!=GeneratePPN) fprintf(stderr,"\n *** Warning:  not using GeneratePPN approximant causes incoherent injections. Used: %s\t%s***\n",waveformApproximant,injParams.waveform);
   
   // Fill injParam with the waveform parameters:
   injParams.mass1 = (float)m1;
@@ -1174,7 +1653,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   
   //signalvec.epoch.gpsSeconds = (INT4)par->par[2];  // Can't use par[i] anymore...
-  //signalvec.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signalvev.epoch.gpsSeconds));  // Can't use par[i] anymore...
+  //signalvec.epoch.gpsNanoSeconds = (INT4)(100000000.0*(par->par[2] - (double)signalvec.epoch.gpsSeconds));  // Can't use par[i] anymore...
   
   //waveform->f->epoch = waveform->phi->epoch = waveform->a->epoch = signalvec.epoch; 
   INT8 waveformStartTime;
@@ -1193,12 +1672,10 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   XLALINT8NSToGPS(&(waveform->a->epoch), waveformStartTime );
   
-  
   memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
   memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
-  
-  
-  /* set the start time of the signal vector to the start time of ifo[ifonr]->FTstart */
+
+	/* set the start time of the signal vector to the start time of ifo[ifonr]->FTstart */
   
   
   
@@ -1208,7 +1685,7 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   signalvec.deltaT = waveform->phi->deltaT;
   
   signalvec.sampleUnits = lalADCCountUnit;
-  signalvec.f0 = 0.0;
+  //signalvec.f0 = 0.0;
   signalvec.data = NULL;
   /* simulate the detectors response to the inspiral */
   LALSCreateVector( status, &(signalvec.data), (UINT4)length );
@@ -1248,8 +1725,9 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
     //printf("%d\t%10.10e\n", i, chan.data->data[i]);
     
     wave[i] = signalvec.data->data[i]; // wave is my array of doubles to send back the waveform to the rest of SPINspiral.
+	  //printf("%d\t%10.10e\n", i, signalvec.data->data[i]);
   }
-  
+  //printf("1000\t%10.10e\n",wave[1000]);
   /*********TIME DELAY***********/
   
   
@@ -1365,13 +1843,38 @@ void LALfreedomSpin(CoherentGW *waveform) {
   LALDDestroyVector(&stat, &( waveform->phi->data ));
   LALSDestroyVector(&stat, &( waveform->shift->data ));
   
-  LALFree( waveform->a );
-  LALFree( waveform->f ); 
-  LALFree( waveform->phi) ;
-  LALFree( waveform->shift );
+  LALFree( waveform->a ); waveform->a = NULL;
+  LALFree( waveform->f ); waveform->f = NULL;
+  LALFree( waveform->phi) ; waveform->phi = NULL;
+  LALFree( waveform->shift ); waveform->shift = NULL;
   
 } // End of LALfreedomSpin
 // ****************************************************************************************************************************************************  
+
+// ****************************************************************************************************************************************************  
+/**
+ * \brief Free spinning LAL variables
+ */
+// ****************************************************************************************************************************************************  
+void LALfreedomPhenSpinTaylorRD(CoherentGW *waveform) {
+	// Free LAL stuff  
+	static LALStatus stat;     // status structure
+	
+	memset( &stat, 0, sizeof(LALStatus) );
+	
+	LALSDestroyVectorSequence(&stat, &( waveform->h->data ));
+	LALSDestroyVector(&stat, &( waveform->f->data ));
+	LALDDestroyVector(&stat, &( waveform->phi->data ));
+	LALSDestroyVector(&stat, &( waveform->shift->data ));
+	
+	LALFree( waveform->h ); waveform->h = NULL;
+	LALFree( waveform->f ); waveform->f = NULL;
+	LALFree( waveform->phi) ; waveform->phi = NULL;
+	LALFree( waveform->shift ); waveform->shift = NULL;
+	
+} // End of LALfreedomSpin
+// ****************************************************************************************************************************************************  
+
 
 
 // ****************************************************************************************************************************************************  

@@ -25,9 +25,14 @@
 */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <getopt.h>
 
 #include <lal/LIGOMetadataTables.h>
+//#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <SPINspiral.h>
@@ -37,6 +42,8 @@
 #else
 #define UNUSED
 #endif
+
+
 
 /**
  * \file SPINspiral_parameters.c
@@ -65,6 +72,8 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   run->triggerTc = 0.0;               // Time of coalescence from the command line - zero means no value
   run->triggerDist = 0.0;             // Distance (in Mpc) from the command line - zero means no value
   run->PSDstart = 0.0;                // GPS start of the PSD - zero means no value
+  run->tukey1 = 0.0;//0.15;
+  run->tukey2 = 0.0;//0.01;//
   for(i=0;i<3;i++) strcpy(run->channelname[i],"");
   
   if(argc > 1) printf("   Parsing %i command-line arguments:\n",argc-1);
@@ -73,34 +82,36 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   //Set up struct with long (--) options:
   static struct option long_options[] =
     {
-      {"injXMLfile",      required_argument, 0,               0},
-      {"injXMLnr",        required_argument, 0,               0},
-      {"mChirp",          required_argument, 0,             'm'},
-      {"eta",             required_argument, 0,             'e'},
-      {"tc",              required_argument, 0,             't'},
-      {"dist",            required_argument, 0,             'd'},
-	  {"template",          required_argument, 0,             'w'},
-      {"nIter",           required_argument, 0,             'n'},
-      {"nSkip",           required_argument, 0,             's'},
-	  {"rseed",           required_argument, 0,             'r'},
-      {"network",         required_argument, 0,             'a'},
-      {"channel",         required_argument, 0,             'a'},
-      {"downsample",      required_argument, 0,             'a'},
-      {"beforetc",        required_argument, 0,             'a'},
-      {"aftertc",         required_argument, 0,             'a'},
-      {"Flow",            required_argument, 0,             'a'},
-      {"Fhigh",           required_argument, 0,             'a'},
-      {"nPSDsegment",     required_argument, 0,             'a'},
-      {"lPSDsegment",     required_argument, 0,             'a'},
-      {"PSDstart",        required_argument, 0,             'a'},
-      {"outputPath",      required_argument, 0,             'o'},
-      {"cache",           required_argument, 0,             'c'},      
-      {0, 0, 0, 0}
+		{"injXMLfile",      required_argument, 0,               0},
+		{"injXMLnr",        required_argument, 0,               0},
+		{"mChirp",          required_argument, 0,             'm'},
+		{"eta",             required_argument, 0,             'e'},
+		{"tc",              required_argument, 0,             't'},
+		{"dist",            required_argument, 0,             'd'},
+		{"template",        required_argument, 0,             'w'},
+		{"tukey1",          required_argument, 0,             'y'},
+		{"tukey2",          required_argument, 0,             'z'},
+		{"nIter",           required_argument, 0,             'n'},
+		{"nSkip",           required_argument, 0,             's'},
+		{"rseed",           required_argument, 0,             'r'},
+		{"network",         required_argument, 0,             'a'},
+		{"channel",         required_argument, 0,             'a'},
+		{"downsample",      required_argument, 0,             'a'},
+		{"beforetc",        required_argument, 0,             'a'},
+		{"aftertc",         required_argument, 0,             'a'},
+		{"Flow",            required_argument, 0,             'a'},
+		{"Fhigh",           required_argument, 0,             'a'},
+		{"nPSDsegment",     required_argument, 0,             'a'},
+		{"lPSDsegment",     required_argument, 0,             'a'},
+		{"PSDstart",        required_argument, 0,             'a'},
+		{"outputPath",      required_argument, 0,             'o'},
+		{"cache",           required_argument, 0,             'c'},      
+		{0, 0, 0, 0}
     };
   
   
   int option_index = 0;
-  while( (C = getopt_long(argc, argv, "i:m:e:t:d:n:d:a:r:w:",long_options, &option_index)) != -1) {
+  while( (C = getopt_long(argc, argv, "i:m:e:t:d:n:d:a:o:c:r:w:y:x:",long_options, &option_index)) != -1) {
     switch(C) {
       
       
@@ -155,41 +166,51 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
       run->commandSettingsFlag[1] = 1;
       printf("    - From command line, thin output by\t\t\t\t= %d\n",run->thinOutput);
       break;
-
+      
 	case 'r':           
-	  run->MCMCseed = atoi(optarg);
-	  run->commandSettingsFlag[16] = 1;
-	  printf("    - From command line, random seed\t\t\t\t= %d\n",run->MCMCseed);
-	  break;
-			
+		run->MCMCseed = atoi(optarg);
+		run->commandSettingsFlag[16] = 1;
+		printf("    - From command line, random seed\t\t\t\t= %d\n",run->MCMCseed);
+		break;
+		
 	case 'w':           
-	  run->mcmcWaveform = atoi(optarg);
-	  run->commandSettingsFlag[17] = 1;
-	  if (run->mcmcWaveform == 1) {
-		  printf("    - From command line, mcmc template\t\t\t\t= %d\t 1.5PN 12-parameter SINGLE SPIN Apostolatos (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
-		  run->nMCMCpar=12;
-		  fprintf(stderr,"        1.5PN 12-parameter SINGLE SPIN Apostolatos not available on command line \n");
-		  exit(1);
-	  } else if (run->mcmcWaveform == 2) {
-		  printf("    - From command line, mcmc template\t\t\t\t= %d\t 12-parameter SINGLE SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
-		  run->nMCMCpar=12;
-		  fprintf(stderr,"        12-parameter SINGLE SPIN LAL  not available on command line \n");
-		  exit(1);
-	  } else if (run->mcmcWaveform == 3) {
-	      printf("    - From command line, mcmc template\t\t\t\t= %d\t 15-parameter DOUBLE SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
-		  run->nMCMCpar=15;
-	  } else if (run->mcmcWaveform == 4) {
-		  printf("    - From command line, mcmc template\t\t\t\t= %d\t 9-parameter NO SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
-		  run->nMCMCpar=9;
-	  } else {
-		  fprintf(stderr,"    - unknown waveform chosen as MCMC template: %d.   Available tested waveforms are:\n",run->mcmcWaveform);
-		  fprintf(stderr,"        1: Apostolatos, simple precession, 12 parameters\n");
-		  fprintf(stderr,"        2: LAL, single spin, 12 parameters\n");
-		  fprintf(stderr,"        3: LAL, double spin, 15 parameters\n");
-	      fprintf(stderr,"        4: LAL, non-spinnig, 9 parameters\n");
-		  fprintf(stderr,"      Please set mcmcWaveform in %s to one of these values. Input file or default DOUBLE SPIN will be choosen.\n\n",run->mcmcFilename);
-	  }
-	  break;
+		run->mcmcWaveform = atoi(optarg);
+		run->commandSettingsFlag[17] = 1;
+		if (run->mcmcWaveform == 1) {
+			printf("    - From command line, mcmc template\t\t\t\t= %d\t 1.5PN 12-parameter SINGLE SPIN Apostolatos (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
+			run->nMCMCpar=12;
+			fprintf(stderr,"        1.5PN 12-parameter SINGLE SPIN Apostolatos not available on command line \n");
+			exit(1);
+		} else if (run->mcmcWaveform == 2) {
+			printf("    - From command line, mcmc template\t\t\t\t= %d\t 12-parameter SINGLE SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
+			run->nMCMCpar=12;
+			fprintf(stderr,"        12-parameter SINGLE SPIN LAL  not available on command line \n");
+			exit(1);
+		} else if (run->mcmcWaveform == 3) {
+			printf("    - From command line, mcmc template\t\t\t\t= %d\t 15-parameter DOUBLE SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
+			run->nMCMCpar=15;
+		} else if (run->mcmcWaveform == 4) {
+			printf("    - From command line, mcmc template\t\t\t\t= %d\t 9-parameter NO SPIN LAL (Unless specified otherwise in an input file)\n",run->mcmcWaveform);
+			run->nMCMCpar=9;
+		} else {
+			fprintf(stderr,"    - unknown waveform chosen as MCMC template: %d.   Available tested waveforms are:\n",run->mcmcWaveform);
+			fprintf(stderr,"        1: Apostolatos, simple precession, 12 parameters\n");
+			fprintf(stderr,"        2: LAL, single spin, 12 parameters\n");
+			fprintf(stderr,"        3: LAL, double spin, 15 parameters\n");
+			fprintf(stderr,"        4: LAL, non-spinnig, 9 parameters\n");
+			fprintf(stderr,"      Please set mcmcWaveform in %s to one of these values. Input file or default DOUBLE SPIN will be choosen.\n\n",run->mcmcFilename);
+		}
+		break;
+	
+	case 'y':           
+		run->tukey1 = atof(optarg);
+		printf("    - From command line, tukey window alpha_1\t\t\t= %f\n",run->tukey1);
+		break;
+		
+	case 'z':           
+		run->tukey2 = atof(optarg);
+		printf("    - From command line, tukey window alpha_2\t\t\t= %f\n",run->tukey2);
+		break;		
 			
     case 'a': //Detector options
       if(strcmp(long_options[option_index].name,"network")==0) {
@@ -364,7 +385,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
     }
     ++i;
   } 
-}// End void parseCharacterOptionString(char *input, char **strings[], int *n)
+}  // End void parseCharacterOptionString(char *input, char **strings[], int *n)
 // ****************************************************************************************************************************************************  
 
 
@@ -381,55 +402,59 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
 // ****************************************************************************************************************************************************  
 void readMainInputfile(struct runPar *run)
 {
-  int i;
-  char tmpStr[500];
+  int i=0;
+  char tmpStr[500],*cstatus;
   FILE *fin;
   char UNUSED *str;
   
-  if((fin = fopen(run->mainFilename,"r")) == NULL) {
-    fprintf(stderr, "   No main input file: %s, using default values.\n",run->mainFilename);
-	  
-	  run->doSNR=1;
-	  run->doMCMC=1;
-	  run->doMatch=0;
-	  run->writeSignal=0;
-	  run->beVerbose=1;
-	  
-	  sprintf(run->mcmcFilename, "SPINspiral.input.mcmc");
-	  sprintf(run->dataFilename, "SPINspiral.input.data");
-	  sprintf(run->injectionFilename, "SPINspiral.input.injection");
-	  sprintf(run->parameterFilename, "SPINspiral.input.parameters");
-	  sprintf(run->systemFilename, "SPINspiral.input.system");
-
-    //exit(1);
+	if((fin = fopen(run->mainFilename,"r")) == NULL) {
+		fprintf(stderr, "   No main input file: %s, using default values.\n",run->mainFilename);
+		
+		run->doSNR=1;
+		run->doMCMC=1;
+		run->doMatch=0;
+		run->writeSignal=0;
+		run->beVerbose=1;
+		
+		sprintf(run->mcmcFilename, "SPINspiral.input.mcmc");
+		sprintf(run->dataFilename, "SPINspiral.input.data");
+		sprintf(run->injectionFilename, "SPINspiral.input.injection");
+		sprintf(run->parameterFilename, "SPINspiral.input.parameters");
+		sprintf(run->systemFilename, "SPINspiral.input.system");
+		
+		//exit(1);
+		
   } else {
     printf("   Using main input file: %s.\n",run->mainFilename);
   
   
-  
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=3;i++) str = fgets(tmpStr,500,fin);  //Read first 3 lines
+  for(i=1;i<=3;i++) cstatus = fgets(tmpStr,500,fin);  //Read first 3 lines
   
   //Operation and output:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doSNR);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMCMC);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMatch);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->writeSignal);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->beVerbose);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doSNR);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMCMC);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->doMatch);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->writeSignal);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->beVerbose);
   
   
   //Secondary input files:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); //Read the empty and comment lines
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->mcmcFilename);
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->dataFilename);
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->injectionFilename);
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->parameterFilename);
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->systemFilename);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin); //Read the empty and comment lines
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->mcmcFilename);
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->dataFilename);
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->injectionFilename);
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->parameterFilename);
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%s",run->systemFilename);
   
   fclose(fin);
-  }
+	    }
+  
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+
+  
 }  //End of readMainInputfile
 // ****************************************************************************************************************************************************  
 
@@ -451,64 +476,62 @@ void readMainInputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 void readMCMCinputfile(struct runPar *run)
 {
-  int i;
-  double tmpdbl;
-  char tmpStr[500];
+  int i=0,istatus=0;
+  double tmpdbl=0.0;
+  char tmpStr[500],*cstatus;
   FILE *fin;
-  char UNUSED *str;
-  int UNUSED rc;
   
-  if((fin = fopen(run->mcmcFilename,"r")) == NULL) {
-    fprintf(stderr, "   No MCMC input file: %s, using default values.\n",run->mcmcFilename);
-    
-	  if(run->commandSettingsFlag[0] == 0) {
-		  run->nIter = 2000000;
-	  }
-
-	  if(run->commandSettingsFlag[1] == 0) {        
-		  run->thinOutput = 100;
-	  }
-	  
-	  run->thinScreenOutput = 10000;
-	  
-	  if(run->commandSettingsFlag[16] == 0) {        
-		  run->MCMCseed = 0;
-	  }
-	  
-	  run->adaptiveMCMC = 1;
-	  run->acceptRateTarget = 0.25;
-	  run->minlogL = 0.0;
-	  run->blockFrac = 0.1;
-	  
-	  //Correlated update proposals:
-	  run->correlatedUpdates = 0;
-	  run->corrFrac = 0.7;
-	  run->nCorr = 1000;
-	  run->matAccFr = 0.5;
-	  run->prMatrixInfo = 0;
-	  
-	  
-	  //Annealing:
-	  run->annealTemp0 = 1.00;
-	  run->annealNburn = 100000;
-	  run->annealNburn0 = 100000;
-	  
-	  //Parallel tempering:
-	  run->parallelTempering = 1;
-	  run->nTemps = 5;
-	  run->maxTemp = 40.0;
-	  run->saveHotChains = 100;
-	  run->prParTempInfo = 1;
-	  
-	  //Manual temperature ladder for parallel tempering:
-	  run->tempLadder[0] = 1.00;
-	  run->tempLadder[1] = 2.51;
-	  run->tempLadder[2] = 6.32;
-	  run->tempLadder[3] = 15.91;
-	  run->tempLadder[4] = 40.00;
-	  
-	//exit(1);
-  } else {
+	if((fin = fopen(run->mcmcFilename,"r")) == NULL) {
+		fprintf(stderr, "   No MCMC input file: %s, using default values.\n",run->mcmcFilename);
+		
+		if(run->commandSettingsFlag[0] == 0) {
+			run->nIter = 2000000;
+		}
+		
+		if(run->commandSettingsFlag[1] == 0) {        
+			run->thinOutput = 100;
+		}
+		
+		run->thinScreenOutput = 10000;
+		
+		if(run->commandSettingsFlag[16] == 0) {        
+			run->MCMCseed = 0;
+		}
+		
+		run->adaptiveMCMC = 1;
+		run->acceptRateTarget = 0.25;
+		run->minlogL = 0.0;
+		run->blockFrac = 0.1;
+		
+		//Correlated update proposals:
+		run->correlatedUpdates = 0;
+		run->corrFrac = 0.7;
+		run->nCorr = 1000;
+		run->matAccFr = 0.5;
+		run->prMatrixInfo = 0;
+		
+		
+		//Annealing:
+		run->annealTemp0 = 1.00;
+		run->annealNburn = 100000;
+		run->annealNburn0 = 100000;
+		
+		//Parallel tempering:
+		run->parallelTempering = 1;
+		run->nTemps = 5;
+		run->maxTemp = 40.0;
+		run->saveHotChains = 100;
+		run->prParTempInfo = 1;
+		
+		//Manual temperature ladder for parallel tempering:
+		run->tempLadder[0] = 1.00;
+		run->tempLadder[1] = 2.51;
+		run->tempLadder[2] = 6.32;
+		run->tempLadder[3] = 15.91;
+		run->tempLadder[4] = 40.00;
+		
+		//exit(1);
+	} else {
     printf("   Using MCMC input file: %s.\n",run->mcmcFilename);
 
   
@@ -516,69 +539,73 @@ void readMCMCinputfile(struct runPar *run)
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
   for(i=1;i<=3;i++) { //Read first 3 lines
-    str = fgets(tmpStr,500,fin);
+    cstatus = fgets(tmpStr,500,fin);
   }
   
   //Basic settings
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
   
-  str = fgets(tmpStr,500,fin);  
+  cstatus = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[0] == 0) {
     sscanf(tmpStr,"%lg",&tmpdbl);
     run->nIter = (int)tmpdbl;
   }
   
-  str = fgets(tmpStr,500,fin);
+  cstatus = fgets(tmpStr,500,fin);
   if(run->commandSettingsFlag[1] == 0) {        
     sscanf(tmpStr,"%d",&run->thinOutput);
   }
   
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->thinScreenOutput);
-	  
-  str = fgets(tmpStr,500,fin);
-  if(run->commandSettingsFlag[16] == 0) {
-	sscanf(tmpStr,"%d",&run->MCMCseed);
-  }	  
-	  
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->adaptiveMCMC);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->acceptRateTarget);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->minlogL);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->blockFrac);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->thinScreenOutput);
+	
+	cstatus = fgets(tmpStr,500,fin);
+	if(run->commandSettingsFlag[16] == 0) {
+		sscanf(tmpStr,"%d",&run->MCMCseed);
+	}	 
+
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->adaptiveMCMC);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->acceptRateTarget);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->minlogL);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->blockFrac);
   
   
   
   //Correlated update proposals:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->correlatedUpdates);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->corrFrac);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->correlatedUpdates);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->corrFrac);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->nCorr = (int)tmpdbl;
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->matAccFr);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prMatrixInfo);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->matAccFr);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prMatrixInfo);
   
   
   //Annealing:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->annealTemp0);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->annealTemp0);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->annealNburn = (int)tmpdbl;
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lg",&tmpdbl);
   run->annealNburn0 = (int)tmpdbl;
   
   //Parallel tempering:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->parallelTempering);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->nTemps);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->maxTemp);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->saveHotChains);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prParTempInfo);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->parallelTempering);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->nTemps);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->maxTemp);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->saveHotChains);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->prParTempInfo);
   
   //Manual temperature ladder for parallel tempering:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); //Read the empty and comment line
-  for(i=0;i<run->nTemps;i++) rc = fscanf(fin,"%lf",&run->tempLadder[i]);  //Read the array directly, because sscanf cannot be in a loop...
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin); //Read the empty and comment line
+  for(i=0;i<run->nTemps;i++) istatus = fscanf(fin,"%lf",&run->tempLadder[i]);  //Read the array directly, because sscanf cannot be in a loop...
   
   fclose(fin);
-  }
+	}
+  
+  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+  
 } //End of void readMCMCinputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 
@@ -600,235 +627,237 @@ void readMCMCinputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 {
-  int i=0,j=0;
-  double lati,longi,leftArm,rightArm;
-  char tmpStr[500], subdir[500];
+  int i=0,j=0,istatus=0;
+  double lati=0.0,longi=0.0,leftArm=0.0,rightArm=0.0;
+  char tmpStr[500],*cstatus, subdir[500];
   FILE *fin;
   int dump = 0;
-  char UNUSED *str;
-  int UNUSED rc;
   
-  if((fin = fopen(run->dataFilename,"r")) == NULL) {
-    fprintf(stderr, "   No data file: %s, using default values.\n",run->dataFilename);
-	  
-
-	  sprintf(run->datasetName, "default");
-	  
-	  if(run->commandSettingsFlag[2] == 0) run->networkSize = 1;
-	  if(run->commandSettingsFlag[3] == 0) run->selectifos[0]=1;
-
-	  //Data handling:
-	  if(run->commandSettingsFlag[6] == 0) run->downsampleFactor = 8;
-	  if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 7.0;
-	  if(run->commandSettingsFlag[8] == 0) run->dataAfterTc = 1.0;
-	  if(run->commandSettingsFlag[9] == 0) run->lowFrequencyCut = 40.0;
-	  if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 600.0;
-	  run->tukeyWin = 0.15;
-	  
-	  
-	  //Read input for PSD estimation:
-	  if(run->commandSettingsFlag[11] == 0) run->PSDsegmentNumber = 32; 
-	  if(run->commandSettingsFlag[12] == 0) run->PSDsegmentLength = 8.0;
-		  
-		  sprintf(ifo[0].name, "Hanford");
-		  lati = 46.45;
-		  longi = -119.41;
-		  rightArm = 36.80;
-		  leftArm = 126.80;
-		  
-		  ifo[0].lati      = lati     /180.0*pi;
-		  ifo[0].longi     = longi    /180.0*pi;
-		  ifo[0].rightArm  = rightArm /180.0*pi;
-		  ifo[0].leftArm   = leftArm  /180.0*pi;
-		  
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[0].ch1name, "H1:LSC-STRAIN");}
-		  else{ strcpy(ifo[0].ch1name,run->channelname[0]);}
-		  sprintf(subdir, ".");
-		  sprintf(ifo[0].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[0].ch1fileprefix, "H1_RDS_C03_L2");
-		  sprintf(ifo[0].ch1filesuffix, "-128.gwf");
-		  ifo[0].ch1filesize = 128;
-		  ifo[0].ch1fileoffset = 0;
-		  ifo[0].ch1doubleprecision = 0;
-		  ifo[0].add2channels = 0;
-
-		  ifo[0].noiseGPSstart = 0;
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[0].noisechannel, "H1:LSC-STRAIN");}
-		  else{ strcpy(ifo[0].noisechannel,run->channelname[0]);}  
-		  sprintf(subdir, ".");
-		  sprintf(ifo[0].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[0].noisefileprefix, "H1_RDS_C03_L2");
-		  sprintf(ifo[0].noisefilesuffix, "-128.gwf");
-		  ifo[0].noisefilesize = 128;
-		  ifo[0].noisefileoffset = 0;
-		  ifo[0].noisedoubleprecision = 0;  
-	  
-	  
-		  sprintf(ifo[1].name, "Livingston");
-		  lati = 30.56;
-		  longi = -90.77;
-		  rightArm = 108.00;
-		  leftArm = 198.00;
-		  
-		  ifo[1].lati      = lati     /180.0*pi;
-		  ifo[1].longi     = longi    /180.0*pi;
-		  ifo[1].rightArm  = rightArm /180.0*pi;
-		  ifo[1].leftArm   = leftArm  /180.0*pi;
-		  
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[1].ch1name, "L1:LSC-STRAIN");}
-		  else{ strcpy(ifo[1].ch1name,run->channelname[1]);}
-		  sprintf(subdir, ".");
-		  sprintf(ifo[1].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[1].ch1fileprefix, "L1_RDS_C03_L2");
-		  sprintf(ifo[1].ch1filesuffix, "-128.gwf");
-		  ifo[1].ch1filesize = 128;
-		  ifo[1].ch1fileoffset = 0;
-		  ifo[1].ch1doubleprecision = 0;
-		  ifo[1].add2channels = 0;
-		  
-		  ifo[1].noiseGPSstart = 0;
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[1].noisechannel, "L1:LSC-STRAIN");}
-		  else{ strcpy(ifo[1].noisechannel,run->channelname[1]);}  
-		  sprintf(subdir, ".");
-		  sprintf(ifo[1].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[1].noisefileprefix, "L1_RDS_C03_L2");
-		  sprintf(ifo[1].noisefilesuffix, "-128.gwf");
-		  ifo[1].noisefilesize = 128;
-		  ifo[1].noisefileoffset = 0;
-		  ifo[1].noisedoubleprecision = 0;  
-		  
-	  
-		  sprintf(ifo[2].name, "Pisa");
-		  lati = 43.63;
-		  longi = 10.50;
-		  rightArm = 341.50;
-		  leftArm = 71.50;
-		  
-		  ifo[2].lati      = lati     /180.0*pi;
-		  ifo[2].longi     = longi    /180.0*pi;
-		  ifo[2].rightArm  = rightArm /180.0*pi;
-		  ifo[2].leftArm   = leftArm  /180.0*pi;
-		  
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[2].ch1name, "V1:STRAIN");}
-		  else{ strcpy(ifo[2].ch1name,run->channelname[2]);}
-		  sprintf(subdir, ".");
-		  sprintf(ifo[2].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[2].ch1fileprefix, "V1_RDS_C03_L2");
-		  sprintf(ifo[2].ch1filesuffix, "-128.gwf");
-		  ifo[2].ch1filesize = 128;
-		  ifo[2].ch1fileoffset = 0;
-		  ifo[2].ch1doubleprecision = 0;
-		  ifo[2].add2channels = 0;
-		  
-		  ifo[2].noiseGPSstart = 0;
-		  if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[2].noisechannel, "V1:STRAIN");}
-		  else{ strcpy(ifo[2].noisechannel,run->channelname[2]);}  
-		  sprintf(subdir, ".");
-		  sprintf(ifo[2].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
-		  sprintf(ifo[2].noisefileprefix, "V1_RDS_C03_L2");
-		  sprintf(ifo[2].noisefilesuffix, "-128.gwf");
-		  ifo[2].noisefilesize = 128;
-		  ifo[2].noisefileoffset = 0;
-		  ifo[2].noisedoubleprecision = 0;  
-		  
-	  
-    //exit(1);
-  } else {
+	if((fin = fopen(run->dataFilename,"r")) == NULL) {
+		fprintf(stderr, "   No data file: %s, using default values.\n",run->dataFilename);
+		
+		
+		sprintf(run->datasetName, "default");
+		
+		if(run->commandSettingsFlag[2] == 0) run->networkSize = 1;
+		if(run->commandSettingsFlag[3] == 0) run->selectifos[0]=1;
+		
+		//Data handling:
+		if(run->commandSettingsFlag[6] == 0) run->downsampleFactor = 8;
+		if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 7.0;
+		if(run->commandSettingsFlag[8] == 0) run->dataAfterTc = 1.0;
+		if(run->commandSettingsFlag[9] == 0) run->lowFrequencyCut = 40.0;
+		if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 600.0;
+		run->tukeyWin = 0.1;
+		
+		
+		//Read input for PSD estimation:
+		if(run->commandSettingsFlag[11] == 0) run->PSDsegmentNumber = 32; 
+		if(run->commandSettingsFlag[12] == 0) run->PSDsegmentLength = 8.0;
+		
+		sprintf(ifo[0].name, "Hanford");
+		lati = 46.45;
+		longi = -119.41;
+		rightArm = 36.80;
+		leftArm = 126.80;
+		
+		ifo[0].lati      = lati     /180.0*pi;
+		ifo[0].longi     = longi    /180.0*pi;
+		ifo[0].rightArm  = rightArm /180.0*pi;
+		ifo[0].leftArm   = leftArm  /180.0*pi;
+		
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[0].ch1name, "H1:LSC-STRAIN");}
+		else{ strcpy(ifo[0].ch1name,run->channelname[0]);}
+		sprintf(subdir, ".");
+		sprintf(ifo[0].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[0].ch1fileprefix, "H1_RDS_C03_L2");
+		sprintf(ifo[0].ch1filesuffix, "-128.gwf");
+		ifo[0].ch1filesize = 128;
+		ifo[0].ch1fileoffset = 0;
+		ifo[0].ch1doubleprecision = 0;
+		ifo[0].add2channels = 0;
+		
+		ifo[0].noiseGPSstart = 0;
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[0].noisechannel, "H1:LSC-STRAIN");}
+		else{ strcpy(ifo[0].noisechannel,run->channelname[0]);}  
+		sprintf(subdir, ".");
+		sprintf(ifo[0].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[0].noisefileprefix, "H1_RDS_C03_L2");
+		sprintf(ifo[0].noisefilesuffix, "-128.gwf");
+		ifo[0].noisefilesize = 128;
+		ifo[0].noisefileoffset = 0;
+		ifo[0].noisedoubleprecision = 0;  
+		
+		
+		sprintf(ifo[1].name, "Livingston");
+		lati = 30.56;
+		longi = -90.77;
+		rightArm = 108.00;
+		leftArm = 198.00;
+		
+		ifo[1].lati      = lati     /180.0*pi;
+		ifo[1].longi     = longi    /180.0*pi;
+		ifo[1].rightArm  = rightArm /180.0*pi;
+		ifo[1].leftArm   = leftArm  /180.0*pi;
+		
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[1].ch1name, "L1:LSC-STRAIN");}
+		else{ strcpy(ifo[1].ch1name,run->channelname[1]);}
+		sprintf(subdir, ".");
+		sprintf(ifo[1].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[1].ch1fileprefix, "L1_RDS_C03_L2");
+		sprintf(ifo[1].ch1filesuffix, "-128.gwf");
+		ifo[1].ch1filesize = 128;
+		ifo[1].ch1fileoffset = 0;
+		ifo[1].ch1doubleprecision = 0;
+		ifo[1].add2channels = 0;
+		
+		ifo[1].noiseGPSstart = 0;
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[1].noisechannel, "L1:LSC-STRAIN");}
+		else{ strcpy(ifo[1].noisechannel,run->channelname[1]);}  
+		sprintf(subdir, ".");
+		sprintf(ifo[1].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[1].noisefileprefix, "L1_RDS_C03_L2");
+		sprintf(ifo[1].noisefilesuffix, "-128.gwf");
+		ifo[1].noisefilesize = 128;
+		ifo[1].noisefileoffset = 0;
+		ifo[1].noisedoubleprecision = 0;  
+		
+		
+		sprintf(ifo[2].name, "Pisa");
+		lati = 43.63;
+		longi = 10.50;
+		rightArm = 341.50;
+		leftArm = 71.50;
+		
+		ifo[2].lati      = lati     /180.0*pi;
+		ifo[2].longi     = longi    /180.0*pi;
+		ifo[2].rightArm  = rightArm /180.0*pi;
+		ifo[2].leftArm   = leftArm  /180.0*pi;
+		
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[2].ch1name, "V1:STRAIN");}
+		else{ strcpy(ifo[2].ch1name,run->channelname[2]);}
+		sprintf(subdir, ".");
+		sprintf(ifo[2].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[2].ch1fileprefix, "V1_RDS_C03_L2");
+		sprintf(ifo[2].ch1filesuffix, "-128.gwf");
+		ifo[2].ch1filesize = 128;
+		ifo[2].ch1fileoffset = 0;
+		ifo[2].ch1doubleprecision = 0;
+		ifo[2].add2channels = 0;
+		
+		ifo[2].noiseGPSstart = 0;
+		if(run->commandSettingsFlag[4] ==0){ sprintf(ifo[2].noisechannel, "V1:STRAIN");}
+		else{ strcpy(ifo[2].noisechannel,run->channelname[2]);}  
+		sprintf(subdir, ".");
+		sprintf(ifo[2].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
+		sprintf(ifo[2].noisefileprefix, "V1_RDS_C03_L2");
+		sprintf(ifo[2].noisefilesuffix, "-128.gwf");
+		ifo[2].noisefilesize = 128;
+		ifo[2].noisefileoffset = 0;
+		ifo[2].noisedoubleprecision = 0;  
+		
+		
+		//exit(1);
+	} else {
     printf("   Using data input file: %s.\n",run->dataFilename);
   
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(j=1;j<=3;j++) str = fgets(tmpStr,500,fin);  //Read first 3 lines
-  str = fgets(run->datasetName,80,fin); str = fgets(tmpStr,500,fin);  //Read name of the data set used, and then the rest of the line
+  for(j=1;j<=3;j++) cstatus = fgets(tmpStr,500,fin);  //Read first 3 lines
+  cstatus = fgets(run->datasetName,80,fin);  cstatus = fgets(tmpStr,500,fin);  //Read name of the data set used, and then the rest of the line
   
   //Detector network:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
   
-  str = fgets(tmpStr,500,fin);
+  cstatus = fgets(tmpStr,500,fin);
   if(run->commandSettingsFlag[2] == 0) sscanf(tmpStr,"%d",&run->networkSize);
   
   for(i=0;i<run->networkSize;i++) {
     if(run->commandSettingsFlag[3] == 0) {
-      rc = fscanf(fin,"%d",&run->selectifos[i]);  //Read the array directly, because sscanf cannot be in a loop...
+      istatus = fscanf(fin,"%d",&run->selectifos[i]);  //Read the array directly, because sscanf cannot be in a loop...
     } else {
-      rc = fscanf(fin,"%d",&dump);
+      istatus = fscanf(fin,"%d",&dump);
     }
   }
-  str = fgets(tmpStr,500,fin);  //Read the rest of the line
+  cstatus = fgets(tmpStr,500,fin);  //Read the rest of the line
   
   
   //Data handling:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin); 
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[6] == 0) sscanf(tmpStr,"%d",&run->downsampleFactor);
-  str = fgets(tmpStr,500,fin); 
+  cstatus = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[7] == 0) sscanf(tmpStr,"%lf",&run->dataBeforeTc);
-  str = fgets(tmpStr,500,fin); 
+  cstatus = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[8] == 0) sscanf(tmpStr,"%lf",&run->dataAfterTc);
-  str = fgets(tmpStr,500,fin); 
+  cstatus = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[9] == 0) sscanf(tmpStr,"%lf",&run->lowFrequencyCut);
-  str = fgets(tmpStr,500,fin); 
+  cstatus = fgets(tmpStr,500,fin); 
   if(run->commandSettingsFlag[10] == 0) sscanf(tmpStr,"%lf",&run->highFrequencyCut);
-  str = fgets(tmpStr,500,fin); sscanf(tmpStr,"%lf",&run->tukeyWin);
+  cstatus = fgets(tmpStr,500,fin); sscanf(tmpStr,"%lf",&run->tukeyWin);
   
   
   //Read input for PSD estimation:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
-  str = fgets(tmpStr,500,fin);  
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment lines
+  cstatus = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[11] == 0) sscanf(tmpStr,"%d",&run->PSDsegmentNumber);
-  str = fgets(tmpStr,500,fin);  
+  cstatus = fgets(tmpStr,500,fin);  
   if(run->commandSettingsFlag[12] == 0) sscanf(tmpStr,"%lf",&run->PSDsegmentLength);
   
   
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
-  for(i=0;i<run->networkSize;i++){
-    str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment lines
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment lines
+  for(i=0;i<run->maxIFOdbaseSize;i++){
+    cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment lines
     
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].name);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&lati);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&longi);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&rightArm);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&leftArm);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].name);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&lati);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&longi);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&rightArm);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&leftArm);
     
     ifo[i].lati      = lati     /180.0*pi;
     ifo[i].longi     = longi    /180.0*pi;
     ifo[i].rightArm  = rightArm /180.0*pi;
     ifo[i].leftArm   = leftArm  /180.0*pi;
     
-    str = fgets(tmpStr,500,fin);  //Read the empty line
+    cstatus = fgets(tmpStr,500,fin);  //Read the empty line
     
-    str = fgets(tmpStr,500,fin);
+    cstatus = fgets(tmpStr,500,fin);
     if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].ch1name);}
     else{ strcpy(ifo[i].ch1name,run->channelname[i]);}
-    //str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].ch1filepath);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
+    //cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].ch1filepath);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].ch1filepath,"%s%s%s",run->dataDir,"/",subdir);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1fileprefix);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1filesuffix);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1filesize);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1fileoffset);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1doubleprecision);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].add2channels);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1fileprefix);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].ch1filesuffix);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1filesize);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1fileoffset);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].ch1doubleprecision);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].add2channels);
     
-    str = fgets(tmpStr,500,fin);  //Read the empty line
+    cstatus = fgets(tmpStr,500,fin);  //Read the empty line
     
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%ld",&ifo[i].noiseGPSstart);
-    str = fgets(tmpStr,500,fin);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%ld",&ifo[i].noiseGPSstart);
+    cstatus = fgets(tmpStr,500,fin);
     if(run->commandSettingsFlag[4] ==0){ sscanf(tmpStr,"%s",ifo[i].noisechannel);}
     else{ strcpy(ifo[i].noisechannel,run->channelname[i]);}  
-    //fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].noisefilepath);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
+    //cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",&ifo[i].noisefilepath);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",subdir);
     sprintf(ifo[i].noisefilepath,"%s%s%s",run->dataDir,"/",subdir);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefileprefix);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefilesuffix);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefilesize);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefileoffset);
-    str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisedoubleprecision);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefileprefix);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%s",ifo[i].noisefilesuffix);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefilesize);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisefileoffset);
+    cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&ifo[i].noisedoubleprecision);
     
   }
   fclose(fin);
-  }
+	}
+  
+  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+  
 }  //End of readDataInputfile
 // ****************************************************************************************************************************************************  
 
@@ -845,41 +874,39 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 // ****************************************************************************************************************************************************  
 void readInjectionInputfile(struct runPar *run)
 {
-  int i;
-  char tmpStr[500];
+  int i=0,istatus=0;
+  char tmpStr[500],*cstatus;
   FILE *fin;
-  char UNUSED *str;
-  int UNUSED rc;
   
   // Open injection input file:
-  if((fin = fopen(run->injectionFilename,"r")) == NULL) {
-    fprintf(stderr, "   No injection input file: %s, using default values.\n",run->injectionFilename);
-    
-	  run->injectSignal = 0;
-	  run->injectionWaveform = 3;
-	  run->injectionPNorder = 3.5;
-	  run->injectionSNR = 0.0;
-	  run->injRanSeed = 12345;
-	  run->nInjectPar = 0;
-	  
-	  //exit(1);
-  } else {
+	if((fin = fopen(run->injectionFilename,"r")) == NULL) {
+		fprintf(stderr, "   No injection input file: %s, using default values.\n",run->injectionFilename);
+		
+		run->injectSignal = 0;
+		run->injectionWaveform = 3;
+		run->injectionPNorder = 3.5;
+		run->injectionSNR = 0.0;
+		run->injRanSeed = 12345;
+		run->nInjectPar = 0;
+		
+		//exit(1);
+	} else {
     printf("   Using injection input file: %s.\n",run->injectionFilename);
-  
+
   
   
   // Read injection input file:
   // use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=2;i++) str = fgets(tmpStr,500,fin);  //Read first 2 lines
+  for(i=1;i<=2;i++) cstatus = fgets(tmpStr,500,fin);  //Read first 2 lines
   
   // Read general injection data:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectSignal);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectionWaveform);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionPNorder);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionSNR);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injRanSeed);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectSignal);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injectionWaveform);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionPNorder);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->injectionSNR);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->injRanSeed);
   
   //Get the number of injection parameters from the injectionWaveform
   if(run->injectSignal >= 1) {
@@ -895,12 +922,19 @@ void readInjectionInputfile(struct runPar *run)
     } else if(run->injectionWaveform==4) {
       if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, non-spinning waveform for the software injection.\n",run->injectionPNorder);
       run->nInjectPar=9;
+	} else if(run->injectionWaveform==5) {
+	  if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 15-parameter PhenSpinTaylorRD waveform for the software injection.\n",run->injectionPNorder);
+	  run->nInjectPar=15;
+	} else if(run->injectionWaveform==9) {
+	  if(run->beVerbose>=1) printf("    - using analytic Likelihood.\n");
+	  run->nInjectPar=15;		
     } else {
       fprintf(stderr,"    - unknown waveform chosen as MCMC template: %d.   Available waveforms are:\n",run->injectionWaveform);
       fprintf(stderr,"        1: Apostolatos, simple precession, 12 parameters\n");
       fprintf(stderr,"        2: LAL, single spin, 12 parameters\n");
       fprintf(stderr,"        3: LAL, double spin, 15 parameters\n");
       fprintf(stderr,"        4: LAL, non-spinning, 9 parameters\n");
+	  fprintf(stderr,"        9: LAL, analytic Likelihood\n");	
       fprintf(stderr,"      Please set injectionWaveform in %s to one of these values.\n\n",run->injectionFilename);
       exit(1);
     }
@@ -909,11 +943,11 @@ void readInjectionInputfile(struct runPar *run)
   
   
   // Read injection parameters:
-  for(i=1;i<=5;i++) str = fgets(tmpStr,500,fin);  //Read empty and comment lines
+  for(i=1;i<=5;i++) cstatus = fgets(tmpStr,500,fin);  //Read empty and comment lines
   
   for(i=0;i<run->nInjectPar;i++) {
-    rc = fscanf(fin,"%d %d %lf %d %lf %d %lf %lf",&run->injNumber[i],&run->injID[i],&run->injParValOrig[i],&run->injRanPar[i],&run->injSigma[i],&run->injBoundType[i],&run->injBoundLow[i],&run->injBoundUp[i]);
-    str = fgets(tmpStr,500,fin);  //Read rest of the line
+    istatus = fscanf(fin,"%d %d %lf %d %lf %d %lf %lf",&run->injNumber[i],&run->injID[i],&run->injParValOrig[i],&run->injRanPar[i],&run->injSigma[i],&run->injBoundType[i],&run->injBoundLow[i],&run->injBoundUp[i]);
+    cstatus = fgets(tmpStr,500,fin);  //Read rest of the line
     
     //printf("%d %d %lf %d %lf %d %lf %lf\n",run->injNumber[i],run->injID[i],run->injParValOrig[i],run->injRanPar[i],run->injSigma[i],run->injBoundType[i],run->injBoundLow[i],run->injBoundUp[i]);
     
@@ -1000,7 +1034,7 @@ void readInjectionInputfile(struct runPar *run)
   run->geocentricTc = run->injParVal[run->injRevID[11]];    // This value must be overwritten by the 'best' value in readParameterInputfile() which is called next, in the case of no SW injection
   
   fclose(fin);
-  }
+	}
   
   
   // Print injection parameters and prior ranges to screen:
@@ -1012,11 +1046,11 @@ void readInjectionInputfile(struct runPar *run)
           printf("        %2d  %3i  %-11s     %15.4lf      Taken from the value set in %s\n",i,run->injID[i],run->parAbrev[run->injID[i]],run->injParVal[i],
                  run->injectionFilename);
         } else if(run->injRanPar[i]==1) {
-          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a Gaussian distribution with centre  %lf  and width  %lf\n",i,run->injID[i],
-                 run->parAbrev[run->injID[i]],run->injParVal[i],run->injParValOrig[i],run->injSigma[i]);
+          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a Gaussian distribution with centre  %lf  and width  %lf  (seed=%i)\n",i,run->injID[i],
+                 run->parAbrev[run->injID[i]],run->injParVal[i],run->injParValOrig[i],run->injSigma[i],run->injRanSeed);
         } else if(run->injRanPar[i]==2) {
-          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a uniform distribution  %14.4lf - %-14.4lf\n",i,run->injID[i],run->parAbrev[run->injID[i]]
-                 ,run->injParVal[i],run->injBoundLow[i],run->injBoundUp[i]);
+          printf("        %2d  %3i  %-11s     %15.4lf      Drawn randomly from a uniform distribution  %lf  -  %lf  (seed=%i)\n",i,run->injID[i],run->parAbrev[run->injID[i]]
+                 ,run->injParVal[i],run->injBoundLow[i],run->injBoundUp[i],run->injRanSeed);
         }
       }
       printf("\n");
@@ -1025,6 +1059,8 @@ void readInjectionInputfile(struct runPar *run)
     }
   }
   
+  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
   
 }  //End of readInjectionInputfile
 // ****************************************************************************************************************************************************  
@@ -1050,240 +1086,238 @@ void readInjectionInputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 void readParameterInputfile(struct runPar *run)
 {
-  int i,iInj;
-  char tmpStr[500];
+  int i=0,iInj=0,istatus=0;
+  char tmpStr[500],*cstatus;
   FILE *fin;
-  char UNUSED *str;
-  int UNUSED rc;
   int warnings = 0;
-	
-  if((fin = fopen(run->parameterFilename,"r")) == NULL) {
-    fprintf(stderr, "   No parameter input file: %s, using default values.\n",run->parameterFilename);
-	  
-	  run->mcmcPNorder = 3.5;
-	  run->priorSet = 1;
-	  run->offsetMCMC = 1;
-	  run->offsetX = 10.0;	
-	  
-	  if(run->commandSettingsFlag[17] == 1 && run->mcmcWaveform == 4) {
-		  
-		  if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 9-parameter non-spinning waveform as the MCMC template.\n",run->mcmcPNorder);
-		  run->nMCMCpar=9;
-		  
-		  for(i=0;i<run->nMCMCpar;i++) {
-			  run->parNumber[i] = i+1;
-			  run->parFix[i] = 0;
-		  }
-		  
-		  run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
-		  run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
-		  run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
-		  run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
-		  run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
-		  run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
-		  run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
-		  run->parID[7] = 41;run->parBestVal[7] = 0.0;			run->parStartMCMC[7] = 5;run->parSigma[7] = 0.1000;		run->priorType[7] = 21;		run->priorBoundLow[7] = 0.0;		run->priorBoundUp[7] = 6.283185;
-		  run->parID[8] = 52;run->parBestVal[8] = 0.0;			run->parStartMCMC[8] = 5;run->parSigma[8] = 0.1000;		run->priorType[8] = 22;		run->priorBoundLow[8] = 0.0;		run->priorBoundUp[8] = 3.141593;
-			  
-		  } else {
-		  run->mcmcWaveform = 3;
-		  if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 15-parameter spinning waveform as the MCMC template.\n",run->mcmcPNorder);
-		  run->nMCMCpar=15;
-	  
-		  for(i=0;i<run->nMCMCpar;i++) {
-			  run->parNumber[i] = i+1;
-			  run->parFix[i] = 0;
-		  }
-	
-		  run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
-		  run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
-		  run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
-		  run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
-		  run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
-		  run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
-		  run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
-		  run->parID[7] = 41;run->parBestVal[7] = 0.0;			run->parStartMCMC[7] = 5;run->parSigma[7] = 0.1000;		run->priorType[7] = 21;		run->priorBoundLow[7] = 0.0;		run->priorBoundUp[7] = 6.283185;
-		  run->parID[8] = 52;run->parBestVal[8] = 0.0;			run->parStartMCMC[8] = 5;run->parSigma[8] = 0.1000;		run->priorType[8] = 22;		run->priorBoundLow[8] = 0.0;		run->priorBoundUp[8] = 3.141593;
-		  run->parID[9] = 71;run->parBestVal[9] = 0.000001;		run->parStartMCMC[9] = 5;run->parSigma[9] = 0.1000;		run->priorType[9] = 11;		run->priorBoundLow[9] = 0.000001;	run->priorBoundUp[9] = 0.999999;
-		  run->parID[10] = 72;run->parBestVal[10] = 0.0;		run->parStartMCMC[10] = 5;run->parSigma[10] = 0.1000;	run->priorType[10] = 11;	run->priorBoundLow[10] = -0.999999;	run->priorBoundUp[10] = 0.999999;
-		  run->parID[11] = 73;run->parBestVal[11] = 0.0;		run->parStartMCMC[11] = 5;run->parSigma[11] = 0.1000;	run->priorType[11] = 21;	run->priorBoundLow[11] = 0.0;		run->priorBoundUp[11] = 6.283185;
-		  run->parID[12] = 81;run->parBestVal[12] = 0.000001;	run->parStartMCMC[12] = 5;run->parSigma[12] = 0.1000;	run->priorType[12] = 11;	run->priorBoundLow[12] = 0.000001;	run->priorBoundUp[12] = 0.999999;
-		  run->parID[13] = 82;run->parBestVal[13] = 0.0;		run->parStartMCMC[13] = 5;run->parSigma[13] = 0.1000;	run->priorType[13] = 11;	run->priorBoundLow[13] = -0.999999;	run->priorBoundUp[13] = 0.999999;
-		  run->parID[14] = 83;run->parBestVal[14] = 0.0;		run->parStartMCMC[14] = 5;run->parSigma[14] = 0.1000;	run->priorType[14] = 21;	run->priorBoundLow[14] = 0.0;		run->priorBoundUp[14] = 6.283185;
-	  }
-	  
-	  
-	  
-	  for(i=0;i<run->nMCMCpar;i++) {
-		  
-		  //Check if trigger values from the command line should replace these values:
-		  if(run->parID[i] == 11 && fabs(run->triggerTc) > 1.e-10) run->parBestVal[i] = run->triggerTc;               // Tc
-		  if(run->parID[i] == 21 && fabs(run->triggerDist) > 1.e-10) run->parBestVal[i] = pow(run->triggerDist,3.0);  // Distance (d^3)
-		  if(run->parID[i] == 22 && fabs(run->triggerDist) > 1.e-10) run->parBestVal[i] = log(run->triggerDist);      // Distance log(d)
-		  if(run->parID[i] == 61 && fabs(run->triggerMc) > 1.e-10) run->parBestVal[i] = run->triggerMc;               // Chirp mass
-		  if(run->parID[i] == 62 && fabs(run->triggerEta) > 1.e-10) run->parBestVal[i] = run->triggerEta;             // Eta
-		  
-		  //printf("%d:  %d %d %lf %d %lf %d %lf %lf\n",i,run->parNumber[i],run->parID[i],run->parBestVal[i],run->parStartMCMC[i],run->parSigma[i],
-		  //run->priorType[i],run->priorBoundLow[i],run->priorBoundUp[i]);
-		  
-		  
-		  if(run->parNumber[i] != i+1) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter:  parameter %d has number %d.\n   Aborting...\n\n",i+1,run->parNumber[i]);
-			  exit(1);
-		  }
-		  
-		  if(run->parDef[run->parID[i]] != 1) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter, parameter %d:\n     parameter ID %d is not defined.\n   Aborting...\n\n",
-					  run->parNumber[i],run->parID[i]);
-			  exit(1);
-		  }
-		  
-		  
-		  
-		  // Set the reverse parameter ID:
-		  run->parRevID[run->parID[i]] = i;
-		  
-		  // Set this parameter as being used for MCMC:
-		  run->mcmcParUse[run->parID[i]] = 1;
-		  
-		  
-		  
-		  // Get the desired boundary conditions:
-		  switch (run->priorType[i]) {
-			  case 11 : // General range, BoundLow-BoundUp (as is)
-				  break;
-				  
-			  case 12 : // General range, best value+BoundLow - best value+BoundUp
-				  if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
-					  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 12, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
-							  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-					  exit(1);
-				  }
-				  run->priorBoundLow[i] = run->parBestVal[i] + run->priorBoundLow[i];
-				  run->priorBoundUp[i]  = run->parBestVal[i] + run->priorBoundUp[i];
-				  break;
-				  
-			  case 13 : // General range, best value*BoundLow - best value*BoundUp
-				  if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
-					  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 13, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
-							  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-					  exit(1);
-				  }
-				  run->priorBoundLow[i] = run->parBestVal[i] * run->priorBoundLow[i];
-				  run->priorBoundUp[i]  = run->parBestVal[i] * run->priorBoundUp[i];
-				  break;
-				  
-			  case 14 : // General range, injection value+BoundLow - injection value+BoundUp
-				  if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
-					  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 14, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
-							  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-					  exit(1);
-				  }
-				  run->priorBoundLow[i] = run->injParVal[i] + run->priorBoundLow[i];
-				  run->priorBoundUp[i]  = run->injParVal[i] + run->priorBoundUp[i];
-				  break;
-				  
-			  case 15 : // General range, injection value*BoundLow - injection value*BoundUp
-				  if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
-					  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 15, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
-							  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
-					  exit(1);
-				  }
-				  run->priorBoundLow[i] = run->injParVal[i] * run->priorBoundLow[i];
-				  run->priorBoundUp[i]  = run->injParVal[i] * run->priorBoundUp[i];
-				  break;
-				  
-			  case 21 : // Periodic boundaries, 0-2pi
-				  run->priorBoundLow[i] = 0.0;
-				  run->priorBoundUp[i]  = tpi;
-				  break;
-				  
-			  case 22 : // Periodic boundaries, 0-pi
-				  run->priorBoundLow[i] = 0.0;
-				  run->priorBoundUp[i]  = pi;
-				  break;
-				  
-			  default :
-				  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for priorType.\n   Aborting...\n\n",
-						  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorType[i]);
-				  exit(1);
-		  } //End switch
-		  
-		  
-		  // Check whether value for fix is valid
-		  if(run->parFix[i] < 0 || run->parFix[i] > 2) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parFix.\n   Aborting...\n\n",
-					  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parFix[i]);
-			  exit(1);
-		  }      
-		  
-		  // Check whether value for start is valid
-		  if(run->parStartMCMC[i] < 1 || run->parStartMCMC[i] > 5) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parStartMCMC.\n   Aborting...\n\n",
-					  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parStartMCMC[i]);
-			  exit(1);
-		  }
-		  if((run->parStartMCMC[i] == 3 || run->parStartMCMC[i] == 4) && run->injectSignal <= 0) {
-			  fprintf(stdout, "    - no software injection was performed, so I'll use bestValue rather than injectionValue for %s.\n",run->parAbrev[run->parID[i]]);
-			  run->parStartMCMC[i] -= 2;
-		  }
-		  
-		  
-		  //Check whether the lower prior boundary < the upper
-		  if(run->priorBoundLow[i] >= run->priorBoundUp[i]) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the lower boundary of the prior is larger than or equal to the upper boundary (%lf vs. %lf).\n   Aborting...\n\n",
-					  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorBoundLow[i],run->priorBoundUp[i]);
-			  exit(1);
-		  }
-		  
-		  //Check whether  lower prior boundary <= best value <= upper boundary
-		  if( (run->parBestVal[i] < run->priorBoundLow[i] || run->parBestVal[i] > run->priorBoundUp[i])  && run->parStartMCMC[i] == 1 ) {
-			  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the best value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
-					  run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]], run->parBestVal[i], run->priorBoundLow[i], run->priorBoundUp[i]);
-			  exit(1);
-		  }
-		  
-		  //Check whether  lower prior boundary <= INJECTION value <= upper boundary
-		  iInj = run->injRevID[run->parID[i]];  //Get the index of this parameter in the injection set.  -1 if not available.
-		  if(iInj >= 0) {
-			  if(run->injParVal[iInj] < run->priorBoundLow[i] || run->injParVal[iInj] > run->priorBoundUp[i]) {
-				  fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the injection value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
-						  run->parameterFilename, run->parNumber[i], run->parAbrev[run->parID[i]], run->injParVal[iInj], run->priorBoundLow[i], run->priorBoundUp[i]);
-				  exit(1);
-			  }
-		  } else {
-			  if(run->injectSignal != 0) {
-				  if(warnings==0) fprintf(stderr, "\n");
-				  printf("    * Warning:  MCMC parameter %i (%s) does not occur in the injection template;  I cannot verify whether the injection value lies within the prior range *\n",
-						 run->parNumber[i],run->parAbrev[run->parID[i]]);
-				  warnings += 1;
-			  }
-		  } 
-	  } //End for (i)
-	  
-	  if(run->injectSignal<=0) {
-		  run->geocentricTc = run->parBestVal[run->parRevID[11]];    // This value overwrites the injection value from readInjectionInputfile(), in the case of no SW injection
-		  for(i=0;i<run->nMCMCpar;i++) run->injParVal[i] = run->parBestVal[i];   //CHECK Needed to avoid SegFault in the case of t_c
-	  }
-	  
-	  
-    //exit(1);
-  } else {
-    printf("   Using parameter input file: %s.\n",run->parameterFilename);
   
+	if((fin = fopen(run->parameterFilename,"r")) == NULL) {
+		fprintf(stderr, "   No parameter input file: %s, using default values.\n",run->parameterFilename);
+		
+		run->mcmcPNorder = 3.5;
+		run->priorSet = 1;
+		run->offsetMCMC = 1;
+		run->offsetX = 10.0;	
+		
+		if(run->commandSettingsFlag[17] == 1 && run->mcmcWaveform == 4) {
+			
+			if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 9-parameter non-spinning waveform as the MCMC template.\n",run->mcmcPNorder);
+			run->nMCMCpar=9;
+			
+			for(i=0;i<run->nMCMCpar;i++) {
+				run->parNumber[i] = i+1;
+				run->parFix[i] = 0;
+			}
+			
+			run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
+			run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
+			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
+			run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
+			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
+			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
+			run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
+			run->parID[7] = 41;run->parBestVal[7] = 0.0;			run->parStartMCMC[7] = 5;run->parSigma[7] = 0.1000;		run->priorType[7] = 21;		run->priorBoundLow[7] = 0.0;		run->priorBoundUp[7] = 6.283185;
+			run->parID[8] = 52;run->parBestVal[8] = 0.0;			run->parStartMCMC[8] = 5;run->parSigma[8] = 0.1000;		run->priorType[8] = 22;		run->priorBoundLow[8] = 0.0;		run->priorBoundUp[8] = 3.141593;
+			
+		} else {
+			run->mcmcWaveform = 3;
+			if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 15-parameter spinning waveform as the MCMC template.\n",run->mcmcPNorder);
+			run->nMCMCpar=15;
+			
+			for(i=0;i<run->nMCMCpar;i++) {
+				run->parNumber[i] = i+1;
+				run->parFix[i] = 0;
+			}
+			
+			run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
+			run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
+			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
+			run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
+			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
+			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
+			run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
+			run->parID[7] = 41;run->parBestVal[7] = 0.0;			run->parStartMCMC[7] = 5;run->parSigma[7] = 0.1000;		run->priorType[7] = 21;		run->priorBoundLow[7] = 0.0;		run->priorBoundUp[7] = 6.283185;
+			run->parID[8] = 52;run->parBestVal[8] = 0.0;			run->parStartMCMC[8] = 5;run->parSigma[8] = 0.1000;		run->priorType[8] = 22;		run->priorBoundLow[8] = 0.0;		run->priorBoundUp[8] = 3.141593;
+			run->parID[9] = 71;run->parBestVal[9] = 0.000001;		run->parStartMCMC[9] = 5;run->parSigma[9] = 0.1000;		run->priorType[9] = 11;		run->priorBoundLow[9] = 0.000001;	run->priorBoundUp[9] = 0.999999;
+			run->parID[10] = 72;run->parBestVal[10] = 0.0;		run->parStartMCMC[10] = 5;run->parSigma[10] = 0.1000;	run->priorType[10] = 11;	run->priorBoundLow[10] = -0.999999;	run->priorBoundUp[10] = 0.999999;
+			run->parID[11] = 73;run->parBestVal[11] = 0.0;		run->parStartMCMC[11] = 5;run->parSigma[11] = 0.1000;	run->priorType[11] = 21;	run->priorBoundLow[11] = 0.0;		run->priorBoundUp[11] = 6.283185;
+			run->parID[12] = 81;run->parBestVal[12] = 0.000001;	run->parStartMCMC[12] = 5;run->parSigma[12] = 0.1000;	run->priorType[12] = 11;	run->priorBoundLow[12] = 0.000001;	run->priorBoundUp[12] = 0.999999;
+			run->parID[13] = 82;run->parBestVal[13] = 0.0;		run->parStartMCMC[13] = 5;run->parSigma[13] = 0.1000;	run->priorType[13] = 11;	run->priorBoundLow[13] = -0.999999;	run->priorBoundUp[13] = 0.999999;
+			run->parID[14] = 83;run->parBestVal[14] = 0.0;		run->parStartMCMC[14] = 5;run->parSigma[14] = 0.1000;	run->priorType[14] = 21;	run->priorBoundLow[14] = 0.0;		run->priorBoundUp[14] = 6.283185;
+		}
+		
+		
+		
+		for(i=0;i<run->nMCMCpar;i++) {
+			
+			//Check if trigger values from the command line should replace these values:
+			if(run->parID[i] == 11 && fabs(run->triggerTc) > 1.e-10) run->parBestVal[i] = run->triggerTc;               // Tc
+			if(run->parID[i] == 21 && fabs(run->triggerDist) > 1.e-10) run->parBestVal[i] = pow(run->triggerDist,3.0);  // Distance (d^3)
+			if(run->parID[i] == 22 && fabs(run->triggerDist) > 1.e-10) run->parBestVal[i] = log(run->triggerDist);      // Distance log(d)
+			if(run->parID[i] == 61 && fabs(run->triggerMc) > 1.e-10) run->parBestVal[i] = run->triggerMc;               // Chirp mass
+			if(run->parID[i] == 62 && fabs(run->triggerEta) > 1.e-10) run->parBestVal[i] = run->triggerEta;             // Eta
+			
+			//printf("%d:  %d %d %lf %d %lf %d %lf %lf\n",i,run->parNumber[i],run->parID[i],run->parBestVal[i],run->parStartMCMC[i],run->parSigma[i],
+			//run->priorType[i],run->priorBoundLow[i],run->priorBoundUp[i]);
+			
+			
+			if(run->parNumber[i] != i+1) {
+				fprintf(stderr, "\n\n   ERROR reading parameter:  parameter %d has number %d.\n   Aborting...\n\n",i+1,run->parNumber[i]);
+				exit(1);
+			}
+			
+			if(run->parDef[run->parID[i]] != 1) {
+				fprintf(stderr, "\n\n   ERROR reading parameter, parameter %d:\n     parameter ID %d is not defined.\n   Aborting...\n\n",
+						run->parNumber[i],run->parID[i]);
+				exit(1);
+			}
+			
+			
+			
+			// Set the reverse parameter ID:
+			run->parRevID[run->parID[i]] = i;
+			
+			// Set this parameter as being used for MCMC:
+			run->mcmcParUse[run->parID[i]] = 1;
+			
+			
+			
+			// Get the desired boundary conditions:
+			switch (run->priorType[i]) {
+				case 11 : // General range, BoundLow-BoundUp (as is)
+					break;
+					
+				case 12 : // General range, best value+BoundLow - best value+BoundUp
+					if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
+						fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 12, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
+								run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+						exit(1);
+					}
+					run->priorBoundLow[i] = run->parBestVal[i] + run->priorBoundLow[i];
+					run->priorBoundUp[i]  = run->parBestVal[i] + run->priorBoundUp[i];
+					break;
+					
+				case 13 : // General range, best value*BoundLow - best value*BoundUp
+					if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
+						fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 13, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
+								run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+						exit(1);
+					}
+					run->priorBoundLow[i] = run->parBestVal[i] * run->priorBoundLow[i];
+					run->priorBoundUp[i]  = run->parBestVal[i] * run->priorBoundUp[i];
+					break;
+					
+				case 14 : // General range, injection value+BoundLow - injection value+BoundUp
+					if(run->priorBoundLow[i] > 0.0 || run->priorBoundUp[i] < 0.0) {
+						fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 14, priorBoundLow and priorBoundUp must be <= 0 and >= 0 respectively.\n   Aborting...\n\n",
+								run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+						exit(1);
+					}
+					run->priorBoundLow[i] = run->injParVal[i] + run->priorBoundLow[i];
+					run->priorBoundUp[i]  = run->injParVal[i] + run->priorBoundUp[i];
+					break;
+					
+				case 15 : // General range, injection value*BoundLow - injection value*BoundUp
+					if(run->priorBoundLow[i] > 1.0 || run->priorBoundUp[i] < 1.0) {
+						fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     for priorType = 15, priorBoundLow and priorBoundUp must be <= 1 and >= 1 respectively.\n   Aborting...\n\n",
+								run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]]);
+						exit(1);
+					}
+					run->priorBoundLow[i] = run->injParVal[i] * run->priorBoundLow[i];
+					run->priorBoundUp[i]  = run->injParVal[i] * run->priorBoundUp[i];
+					break;
+					
+				case 21 : // Periodic boundaries, 0-2pi
+					run->priorBoundLow[i] = 0.0;
+					run->priorBoundUp[i]  = tpi;
+					break;
+					
+				case 22 : // Periodic boundaries, 0-pi
+					run->priorBoundLow[i] = 0.0;
+					run->priorBoundUp[i]  = pi;
+					break;
+					
+				default :
+					fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for priorType.\n   Aborting...\n\n",
+							run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorType[i]);
+					exit(1);
+			} //End switch
+			
+			
+			// Check whether value for fix is valid
+			if(run->parFix[i] < 0 || run->parFix[i] > 2) {
+				fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parFix.\n   Aborting...\n\n",
+						run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parFix[i]);
+				exit(1);
+			}      
+			
+			// Check whether value for start is valid
+			if(run->parStartMCMC[i] < 1 || run->parStartMCMC[i] > 5) {
+				fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     %d is not a valid option for parStartMCMC.\n   Aborting...\n\n",
+						run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->parStartMCMC[i]);
+				exit(1);
+			}
+			if((run->parStartMCMC[i] == 3 || run->parStartMCMC[i] == 4) && run->injectSignal <= 0) {
+				fprintf(stdout, "    - no software injection was performed, so I'll use bestValue rather than injectionValue for %s.\n",run->parAbrev[run->parID[i]]);
+				run->parStartMCMC[i] -= 2;
+			}
+			
+			
+			//Check whether the lower prior boundary < the upper
+			if(run->priorBoundLow[i] >= run->priorBoundUp[i]) {
+				fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the lower boundary of the prior is larger than or equal to the upper boundary (%lf vs. %lf).\n   Aborting...\n\n",
+						run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]],run->priorBoundLow[i],run->priorBoundUp[i]);
+				exit(1);
+			}
+			
+			//Check whether  lower prior boundary <= best value <= upper boundary
+			if( (run->parBestVal[i] < run->priorBoundLow[i] || run->parBestVal[i] > run->priorBoundUp[i])  && run->parStartMCMC[i] == 1 ) {
+				fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the best value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
+						run->parameterFilename,run->parNumber[i],run->parAbrev[run->parID[i]], run->parBestVal[i], run->priorBoundLow[i], run->priorBoundUp[i]);
+				exit(1);
+			}
+			
+			//Check whether  lower prior boundary <= INJECTION value <= upper boundary
+			iInj = run->injRevID[run->parID[i]];  //Get the index of this parameter in the injection set.  -1 if not available.
+			if(iInj >= 0) {
+				if(run->injParVal[iInj] < run->priorBoundLow[i] || run->injParVal[iInj] > run->priorBoundUp[i]) {
+					fprintf(stderr, "\n\n   ERROR reading parameter input file %s, parameter %d (%s):\n     the injection value (%lf) lies outside the prior range (%lf - %lf).\n   Aborting...\n\n",
+							run->parameterFilename, run->parNumber[i], run->parAbrev[run->parID[i]], run->injParVal[iInj], run->priorBoundLow[i], run->priorBoundUp[i]);
+					exit(1);
+				}
+			} else {
+				if(run->injectSignal != 0) {
+					if(warnings==0) fprintf(stderr, "\n");
+					printf("    * Warning:  MCMC parameter %i (%s) does not occur in the injection template;  I cannot verify whether the injection value lies within the prior range *\n",
+						   run->parNumber[i],run->parAbrev[run->parID[i]]);
+					warnings += 1;
+				}
+			} 
+		} //End for (i)
+		
+		if(run->injectSignal<=0) {
+			run->geocentricTc = run->parBestVal[run->parRevID[11]];    // This value overwrites the injection value from readInjectionInputfile(), in the case of no SW injection
+			for(i=0;i<run->nMCMCpar;i++) run->injParVal[i] = run->parBestVal[i];   //CHECK Needed to avoid SegFault in the case of t_c
+		}
+		
+		
+		//exit(1);
+	} else {
+    printf("   Using parameter input file: %s.\n",run->parameterFilename);
+
   
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   
-  for(i=1;i<=2;i++) str = fgets(tmpStr,500,fin);  //Read first 2 lines
+  for(i=1;i<=2;i++) cstatus = fgets(tmpStr,500,fin);  //Read first 2 lines
   
   //Priors:
-  str = fgets(tmpStr,500,fin); str = fgets(tmpStr,500,fin);  //Read the empty and comment line
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->mcmcWaveform);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->mcmcPNorder);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->priorSet);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->offsetMCMC);
-  str = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->offsetX);
+  cstatus = fgets(tmpStr,500,fin); cstatus = fgets(tmpStr,500,fin);  //Read the empty and comment line
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->mcmcWaveform);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->mcmcPNorder);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->priorSet);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%d",&run->offsetMCMC);
+  cstatus = fgets(tmpStr,500,fin);  sscanf(tmpStr,"%lf",&run->offsetX);
   
   if(run->mcmcWaveform==1) {
     if(run->beVerbose>=1) printf("    - using Apostolatos, 1.5-pN, 12-parameter waveform as the MCMC template.\n");  //Only 1.5-pN order is available
@@ -1297,12 +1331,19 @@ void readParameterInputfile(struct runPar *run)
   } else if(run->mcmcWaveform==4) {
     if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, non-spinning waveform as the MCMC template.\n",run->mcmcPNorder);
     run->nMCMCpar=9;
+  } else if(run->mcmcWaveform==5) {
+	if(run->beVerbose>=1) printf("    - using LAL,%4.1f-pN, 15-parameter PhenSpinTaylorRD waveform as the MCMC template.\n",run->mcmcPNorder);
+	run->nMCMCpar=15;	  
+  } else if(run->mcmcWaveform==9) {
+	if(run->beVerbose>=1) printf("    - using analytic Likelihood.\n");
+	run->nMCMCpar=15;			  
   } else {
     fprintf(stderr,"    - unknown waveform chosen as MCMC template: %d.   Available waveforms are:\n",run->mcmcWaveform);
     fprintf(stderr,"        1: Apostolatos, simple precession, 12 parameters\n");
     fprintf(stderr,"        2: LAL, single spin, 12 parameters\n");
     fprintf(stderr,"        3: LAL, double spin, 15 parameters\n");
     fprintf(stderr,"        4: LAL, non-spinnig, 9 parameters\n");
+	fprintf(stderr,"        9: LAL, analytic Likelihood\n");
     fprintf(stderr,"      Please set mcmcWaveform in %s to one of these values.\n\n",run->mcmcFilename);
     exit(1);
   }
@@ -1311,12 +1352,12 @@ void readParameterInputfile(struct runPar *run)
   
   
   //Parameters:
-  for(i=1;i<=5;i++) str = fgets(tmpStr,500,fin);  //Read empty and comment lines
+  for(i=1;i<=5;i++) cstatus = fgets(tmpStr,500,fin);  //Read empty and comment lines
   
-
+	
   for(i=0;i<run->nMCMCpar;i++) {
-    rc = fscanf(fin,"%d %d %lf %d %d %lf %d %lf %lf",&run->parNumber[i],&run->parID[i],&run->parBestVal[i],&run->parFix[i],&run->parStartMCMC[i],&run->parSigma[i],&run->priorType[i],&run->priorBoundLow[i],&run->priorBoundUp[i]);
-    str = fgets(tmpStr,500,fin);  //Read rest of the line
+    istatus = fscanf(fin,"%d %d %lf %d %d %lf %d %lf %lf",&run->parNumber[i],&run->parID[i],&run->parBestVal[i],&run->parFix[i],&run->parStartMCMC[i],&run->parSigma[i],&run->priorType[i],&run->priorBoundLow[i],&run->priorBoundUp[i]);
+    cstatus = fgets(tmpStr,500,fin);  //Read rest of the line
     
     //Check if trigger values from the command line should replace these values:
     if(run->parID[i] == 11 && fabs(run->triggerTc) > 1.e-10) run->parBestVal[i] = run->triggerTc;               // Tc
@@ -1471,7 +1512,7 @@ void readParameterInputfile(struct runPar *run)
   }
   
   fclose(fin);
-  }
+	}
   
   
   //Print MCMC parameters and prior ranges to screen:
@@ -1492,11 +1533,20 @@ void readParameterInputfile(struct runPar *run)
   if(run->beVerbose>=1) {
     printf("\n      %2i MCMC parameters:\n        Nr:  ID: Name:                Best value:     Prior:     min:            max:    Fix parameter?        Start chain:\n",run->nMCMCpar);
     for(i=0;i<run->nMCMCpar;i++) {
-      printf("        %2d  %3i  %-11s     %15.4lf     %15.4lf %15.4lf     %-20s  %-45s\n",i,run->parID[i],run->parAbrev[run->parID[i]],run->parBestVal[i],
+      printf("        %2d  %3i  %-11s     %15.4lf     %15.4lf %15.4lf     %-20s  %-45s",i,run->parID[i],run->parAbrev[run->parID[i]],run->parBestVal[i],
              run->priorBoundLow[i],run->priorBoundUp[i],  FixStr[run->parFix[i]],StartStr[run->parStartMCMC[i]]);
+      if(run->parStartMCMC[i]==2 || run->parStartMCMC[i]==4 || run->parStartMCMC[i]==5) {
+	printf(" (seed=%i)\n",run->MCMCseed);
+      } else {
+	printf("\n");
+      }
+     
     }
     printf("\n");
   }
+  
+  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
   
 }  //End of readParameterInputfile
 // ****************************************************************************************************************************************************  
@@ -1515,29 +1565,32 @@ void readParameterInputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 void readSystemInputfile(struct runPar *run)
 {
-  int i;
-  char tmpStr[500];
+  int i=0,istatus=0;
+  char tmpStr[500],*cstatus;
   FILE *fin;
-  char UNUSED *str;
-  int UNUSED rc;
   
-  if((fin = fopen(run->systemFilename,"r")) == NULL) {
-    fprintf(stderr, "   No system file: %s.\n",run->systemFilename);
-	  sprintf(run->dataDir,"/");
-	  //exit(1);
-  } else {
-    printf("   Using system input file: %s.\n",run->systemFilename);
+	if((fin = fopen(run->systemFilename,"r")) == NULL) {
+		fprintf(stderr, "   No system file: %s.\n",run->systemFilename);
+		sprintf(run->dataDir,"/");
+		//exit(1);
+	} else {
+    printf("   Using system input file: %s.\n",run->parameterFilename);
   
   //Use and l for floats: %lf, %lg, etc, rather than %f, %g
   for(i=1;i<=3;i++) { //Read first 3 lines
-    str = fgets(tmpStr,500,fin);
+    cstatus = fgets(tmpStr,500,fin);
   }  
   
   //Data directory:
-  rc = fscanf(fin, "%s",run->dataDir);
+  istatus = fscanf(fin, "%s",run->dataDir);
   
   fclose(fin);
-  }
+	}
+  
+  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+
+  
 }  //End of readSystemInputfile
 // ****************************************************************************************************************************************************  
 
@@ -1675,9 +1728,8 @@ void readCachefile(struct runPar *run, int ifonr)
 {
   int i;
   int line=0;
-  char tmpStr[2048];
+  char tmpStr[2048],*cstatus;
   FILE *fin;
-  char UNUSED *str;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
     fprintf(stderr, "\n\n   ERROR opening cache file: %s, aborting.\n\n\n",run->cacheFilename[ifonr]);
@@ -1688,7 +1740,7 @@ void readCachefile(struct runPar *run, int ifonr)
   
   while ( ! feof (fin) ) //just to get the number of line. TO CHECK : last line of .cache file always empty ?
     {
-      str = fgets (tmpStr , 2048 , fin);
+      cstatus = fgets(tmpStr , 2048 , fin);
       line++;
     }
   fclose (fin); 
@@ -1707,7 +1759,7 @@ void readCachefile(struct runPar *run, int ifonr)
   fin = fopen(run->cacheFilename[ifonr],"r");
   for(i=0;i<(line-1);i++) {
     //Read line by line:
-    str = fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
+    cstatus = fgets(tmpStr,2048,fin); sscanf(tmpStr,"%s %s %d %d %s",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],&(run->FrameGPSstart[ifonr][i]),&(run->FrameLength[ifonr][i]),run->FrameName[ifonr][i]);
     //      printf("%s %s %d %d %s %d %d\n",run->FrameDetector[ifonr][i],run->FramePrefix[ifonr][i],run->FrameGPSstart[ifonr][i],run->FrameLength[ifonr][i],run->FrameName[ifonr][i],i,run->nFrame[ifonr]);
     
     //remove file://localhost at the beginning of the file name if present.
@@ -1720,6 +1772,9 @@ void readCachefile(struct runPar *run, int ifonr)
   }
   
   fclose(fin);
+  
+  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+  
 }  //End of readCachefile
 // ****************************************************************************************************************************************************  
 
@@ -1744,11 +1799,11 @@ void setRandomInjectionParameters(struct runPar *run)
   ran = gsl_rng_alloc(gsl_rng_mt19937);  // GSL random-number seed
   
   // Manually select a random seed, *** USE ONLY FOR TESTING ***
-  if(1==2 && run->injRanSeed == 0) {
-    printf("\n  *** SELECTING RANDOM SEED ***  This should only be done while testing!!! setRandomInjectionParameters() \n\n");
+  if(1==1 && run->injRanSeed == 0) {
+    printf("\n  *** SELECTING RANDOM INJECTION SEED ***  This should only be done while testing!!! setRandomInjectionParameters() \n\n");
     run->injRanSeed = 0;
     setSeed(&run->injRanSeed);
-    printf("   Seed: %d\n", run->injRanSeed);
+    printf("   Picking seed from the system clock for random injection parameters: %d\n", run->injRanSeed);
   }
   
   gsl_rng_set(ran, run->injRanSeed);     // Set seed
@@ -1883,11 +1938,57 @@ void setParameterNames(struct runPar * run)
   strcpy(run->parAbrv[87], "S2z");
   run->parDef[87] = 1;
   
-  
   //Set 09: merger, ringdown
   //strcpy(run->parAbrev[], "");
   //run->parDef[] = 1;
   
+	//Set 10: analytic
+	strcpy(run->parAbrev[185], "x_1");
+	strcpy(run->parAbrv[185], "x1");
+	run->parDef[185] = 1;		
+	strcpy(run->parAbrev[186], "x_2");
+	strcpy(run->parAbrv[186], "x2");
+    run->parDef[186] = 1;	
+	strcpy(run->parAbrev[187], "x_3");
+	strcpy(run->parAbrv[187], "x3");
+	run->parDef[187] = 1;		
+	strcpy(run->parAbrev[188], "x_4");
+	strcpy(run->parAbrv[188], "x4");
+	run->parDef[188] = 1;	
+	strcpy(run->parAbrev[189], "x_5");
+	strcpy(run->parAbrv[189], "x5");
+	run->parDef[189] = 1;		
+	strcpy(run->parAbrev[190], "x_6");
+	strcpy(run->parAbrv[190], "x6");
+	run->parDef[190] = 1;	
+	strcpy(run->parAbrev[191], "x_7");
+	strcpy(run->parAbrv[191], "x7");
+	run->parDef[191] = 1;		
+	strcpy(run->parAbrev[192], "x_8");
+	strcpy(run->parAbrv[192], "x8");
+	run->parDef[192] = 1;	
+	strcpy(run->parAbrev[193], "x_9");
+	strcpy(run->parAbrv[193], "x9");
+	run->parDef[193] = 1;		
+	strcpy(run->parAbrev[194], "x_10");
+	strcpy(run->parAbrv[194], "x10");
+	run->parDef[194] = 1;	
+	strcpy(run->parAbrev[195], "x_11");
+	strcpy(run->parAbrv[195], "x11");
+	run->parDef[195] = 1;		
+	strcpy(run->parAbrev[196], "x_12");
+	strcpy(run->parAbrv[196], "x12");
+	run->parDef[196] = 1;	
+	strcpy(run->parAbrev[197], "x_13");
+	strcpy(run->parAbrv[197], "x13");
+	run->parDef[197] = 1;		
+	strcpy(run->parAbrev[198], "x_14");
+	strcpy(run->parAbrv[198], "x14");
+	run->parDef[198] = 1;	
+	strcpy(run->parAbrev[199], "x_15");
+	strcpy(run->parAbrv[199], "x15");
+	run->parDef[199] = 1;		
+	
   //Set:
   //strcpy(run->parAbrev[], "");
   //run->parDef[] = 1;
