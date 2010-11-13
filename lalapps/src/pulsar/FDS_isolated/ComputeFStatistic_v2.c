@@ -45,6 +45,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <sys/time.h>
 
 int finite(double);
 
@@ -132,6 +133,24 @@ typedef struct
   FstatCandidate *center;		/**< pointer to middle candidate in window */
 } scanlineWindow_t;
 
+/** Struct holding various timing measurements and relevant search parameters.
+ * This is used to fit timing-models with measured times to predict search run-times
+ */
+typedef struct
+{
+  UINT4 NSFTs;			/**< total number of SFTs */
+  REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
+
+  /* transient-specific timings */
+  UINT4 tauMin;			/**< shortest transient timescale [s] */
+  UINT4 tauMax;			/**< longest transient timescale [s] */
+  UINT4 NtStart;		/**< number of transient start-time steps in FstatMap matrix */
+  UINT4 NtTau;			/**< number of transient timescale steps in FstatMap matrix */
+
+  REAL8 tauTransFstatMap;	/**< time to compute transient-search Fstatistic-map over {t0, tau} [s]     */
+  REAL8 tauTransBstat;		/**< time to compute transient-search Bayes factor by summing FstatMap [s] */
+} timingInfo_t;
+
 
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
@@ -146,6 +165,7 @@ typedef struct {
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
   EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
   MultiSFTVector *multiSFTs;		    /**< multi-IFO SFT-vectors */
+  UINT4 NSFTs;				    /**< total number of all SFTs used */
   MultiDetectorStateSeries *multiDetStates; /**< pos, vel and LMSTs for detector at times t_i */
   MultiNoiseWeights *multiNoiseWeights;	    /**< normalized noise-weights of those SFTs */
   ComputeFParams CFparams;		    /**< parameters for Fstat (e.g Dterms, SSB-prec,...) */
@@ -265,6 +285,9 @@ typedef struct {
   REAL8 transient_tauDaysBand;	/**< Range of transient-window timescales to search, in days */
   INT4  transient_dtau;		/**< Step-size for search/marginalization over transient-window timescale, in seconds */
   BOOLEAN transient_useFReg;  	/**< FALSE: use 'standard' e^F for marginalization, TRUE: use e^FReg = (1/D)*e^F */
+
+  CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
+
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -272,6 +295,7 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* empty initializers */
 static UserInput_t empty_UserInput;
+static timingInfo_t empty_timingInfo;
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -294,7 +318,7 @@ void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg
 
 
 CHAR *append_string ( CHAR *str1, const CHAR *append );
-
+int write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti );
 
 /* ---------- scanline window functions ---------- */
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
@@ -423,6 +447,20 @@ int main(int argc,char *argv[])
     gsl_vector_int_set_zero(Fstat_histogram);
   }
 
+  /* if timing-output was requested, open that output file now */
+  FILE *fpTiming = NULL;
+  if ( uvar.outputTiming ) {
+    if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
+      XLALPrintError ("%s: failed to open timing file '%s' for writing \n", fn, uvar.outputTiming );
+      return COMPUTEFSTATISTIC_ESYS;
+    }
+    /* write header comment line */
+    if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", fn, uvar.outputTiming );
+      return COMPUTEFSTATISTIC_EXLAL;
+    }
+  } /* if outputTiming */
+
   /* setup binary parameters */
   orbitalParams = NULL;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
@@ -461,11 +499,15 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
+  REAL8 tic, toc;	// high-precision timing counters
+  timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
+
   /* skip search if user supplied --countTemplates */
   while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
 
+      tic = XLALGetTimeOfDay();
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
@@ -486,6 +528,9 @@ int main(int argc,char *argv[])
           Fstat.F = F;
 
         } /* if GPUready==true */
+      toc = XLALGetTimeOfDay();
+      timing.tauFstat = toc - tic;	// Fstat-calculation time
+      timing.NSFTs = GV.NSFTs;
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -676,18 +721,30 @@ int main(int argc,char *argv[])
           transientCandidate_t transientCand = empty_transientCandidate;
 
           /* compute Fstat map F_mn over {t0, tau} */
+          tic = XLALGetTimeOfDay();
           if ( (transientCand.FstatMap = XLALComputeTransientFstatMap ( Fstat.multiFstatAtoms, GV.transientWindowRange, uvar.transient_useFReg)) == NULL ) {
             XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
             return COMPUTEFSTATISTIC_EXLAL;
           }
+          toc = XLALGetTimeOfDay();
+          timing.tauTransFstatMap = toc - tic; // time to compute transient Fstat-map
 
           /* compute marginalized Bayes factor */
+          tic = XLALGetTimeOfDay();
           transientCand.logBstat = XLALComputeTransientBstat ( GV.transientWindowRange, transientCand.FstatMap );
           UINT4 err = xlalErrno;
           if ( err ) {
             XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
             return COMPUTEFSTATISTIC_EXLAL;
           }
+          toc = XLALGetTimeOfDay();
+          timing.tauTransBstat = toc - tic;
+
+          /* record timing-relevant transient search params */
+          timing.tauMin  = GV.transientWindowRange.tau;
+          timing.tauMax  = timing.tauMin + GV.transientWindowRange.tauBand;
+          timing.NtStart = transientCand.FstatMap->F_mn->size1;
+          timing.NtTau   = transientCand.FstatMap->F_mn->size2;
 
           /* add meta-info on current transient-CW candidate */
           transientCand.doppler = dopplerpos;
@@ -712,7 +769,18 @@ int main(int argc,char *argv[])
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
 
+      /* if requested: output timings into timing-file */
+      if ( fpTiming ) {
+        if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
+          XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", fn );
+          return COMPUTEFSTATISTIC_EXLAL;
+        }
+      } /* if timing output requested */
+
     } /* while more Doppler positions to scan */
+
+  /* close timing-file, if it's open */
+  if ( fpTiming ) fclose ( fpTiming );
 
   /* ----- if using toplist: sort and write it out to file now ----- */
   if ( fpFstat && GV.FstatToplist )
@@ -1041,6 +1109,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   XLALregBOOLUserStruct ( transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
+  XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 } /* initUserVars() */
@@ -1115,7 +1185,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
   PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
 
-  UINT4 numSFTs;
   LIGOTimeGPS startTime, endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
@@ -1154,10 +1223,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* deduce start- and end-time of the observation spanned by the data */
-  numSFTs = catalog->length;
+  cfg->NSFTs = catalog->length;
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   startTime = catalog->data[0].header.epoch;
-  endTime   = catalog->data[numSFTs-1].header.epoch;
+  endTime   = catalog->data[cfg->NSFTs-1].header.epoch;
   XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
@@ -2116,3 +2185,33 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
   return outstr;
 
 } /* append_string() */
+
+/** Function to append one timing-info line to open output file.
+ *
+ * NOTE: called with NULL timing pointer writes header-comment line.
+ */
+int
+write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
+{
+  const char *fn = __func__;
+
+  /* input sanity */
+  if ( !fp ) {
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  /* if timingInfo == NULL ==> write header comment line */
+  if ( ti == NULL )
+    {
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NtStart   NtTau   costTransFstatMap[s]  costTransBstat[s]\n");
+      return XLAL_SUCCESS;
+    } /* if ti == NULL */
+
+
+  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e\n",
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NtStart, ti->NtTau, ti->tauTransFstatMap, ti->tauTransBstat );
+
+  return XLAL_SUCCESS;
+
+} /* write_TimingInfo_to_fp() */
