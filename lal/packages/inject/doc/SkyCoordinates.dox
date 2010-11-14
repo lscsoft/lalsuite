@@ -6,6 +6,7 @@
  *  \date 2002
  *
  *  \brief Module providing routines to convert among various sky coordinate systems.
+
 \latexonly \newpage \endlatexonly
 Most of these routines are discussed in Sec.5.1 of \ref Lang_K1999; we reproduce here
 some of the essential elements of this discussion.
@@ -64,10 +65,10 @@ way, these routines transform <em>directions</em> in space, not
 <em>locations</em> in space.  These directions are generically stored in
 the <tt>SkyPosition</tt> structure, defined below.
 
+\latexonly \newpage \endlatexonly
 The coordinate systems that we consider are defined as follows:
 
 \latexonly
-\newpage
 \begin{wrapfigure}{r}{0.63\textwidth}
 \vspace{-2ex}
 \begin{center}
@@ -77,7 +78,7 @@ horizon coordinate system.}}
 \end{center}
 \vspace{-2ex}
 \end{wrapfigure}
-\paragraph*{Horizon coordinates:}
+\textbf{Horizon coordinates:}
 \endlatexonly
 \image html inject_horizon.png "Fig 2: Definition of the horizon coordinate system."
 \htmlonly <b>Horizon coordinates:</b> \endhtmlonly
@@ -106,7 +107,7 @@ of the observer's \f$z\f$-axis direction.
 the geographic (Earth-fixed) coordinate system.}}
 \end{center}
 \end{wrapfigure}
-\paragraph*{Geographic coordinates:}
+\textbf{Geographic coordinates:}
 \endlatexonly
 \image html inject_geographic.png "Fig.3: Definition of the geographic (Earth-fixed) coordinate system."
 \htmlonly <b>Geographic coordinates:</b> \endhtmlonly
@@ -145,7 +146,6 @@ Mean Sidereal Time (GMST), and is often specified in hours, minutes,
 and seconds.
 
 \latexonly
-\newpage
 \begin{wrapfigure}{r}{0.46\textwidth}
 \vspace{-2ex}
 \begin{center}
@@ -155,7 +155,7 @@ the ecliptic sky-fixed coordinate systems.}}
 \end{center}
 \vspace{-2ex}
 \end{wrapfigure}
-\paragraph*{Equatorial coordinates:}
+\textbf{Equatorial coordinates:}
 \endlatexonly
 \image html inject_ecliptic.png "Fig.4: Definition of the ecliptic sky-fixed coordinate systems."
 \htmlonly <b>Equatorial coordinates:</b> \endhtmlonly
@@ -170,7 +170,7 @@ Fig.4.  In this coordinate system, the latitude coordinate is called the
 <em>right ascension</em> \f$\alpha\f$.
 
 \htmlonly <b>Ecliptic coordinates:</b> \endhtmlonly
-\latexonly \paragraph*{Ecliptic coordinates:}\endlatexonly
+\latexonly \textbf{Ecliptic coordinates:}\endlatexonly
 This is another sky-fixed coordinate
 system, shown in Fig.4. The \f$z\f$-axis is defined to
 be the direction orthogonal to the orbital plane of the Earth about
@@ -194,7 +194,7 @@ ecliptic longitude as \f$\lambda\f$.
 the Galactic coordinate system.}}
 \end{center}
 \end{wrapfigure}
-\paragraph*{Galactic coordinates:}
+\textbf{Galactic coordinates:}
 \endlatexonly
 \image html inject_galactic.png "Fig.5: Definition of the Galactic coordinate system."
 \htmlonly <b>Galactic coordinates:</b> \endhtmlonly
@@ -221,4 +221,5 @@ along the intersection of the Galactic and equatorial planes, such
 that right-handed rotation about the Galactic \f$z\f$-axis moves you from
 south to north through the equator.
 
+\latexonly \pagebreak \endlatexonly
 */

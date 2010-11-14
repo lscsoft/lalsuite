@@ -5,14 +5,22 @@ use Switch;
 use File::Temp qw/mktemp/;
 use Pod::Usage;
 
-my $diffcmd = "diff -y -W 160";
-
 # parse command line
-my ($fname, $action, $noclean, $nolatex, $printfn);
+my ($fname, $action, $diffcmd, $diffpipe, $noclean, $nolatex, $printfn);
 while (my $arg = shift @ARGV) {
     if ($arg =~ /^--/p) {
 	my $opt = ${^POSTMATCH};
 	switch ($opt) {
+	    case "diff" {
+		$diffcmd = "diff -y -W 160";
+		$diffpipe = "| less";
+		$action = "diff";
+	    }
+	    case "xxdiff" {
+		$diffcmd = "xxdiff";
+		$diffpipe = "";
+		$action = "diff";
+	    }
 	    case "print" {
 		$printfn = 1;
 	    }
@@ -40,7 +48,7 @@ my $tmp1 = mktemp("$fname.LSD2doxygen.XXXXX");
 my $tmp2 = mktemp("$fname.LSD2doxygen.XXXXX");
 
 # slurp the original file
-print "$fname\n" if $printfn;
+print "===== $fname =====\n" if $printfn;
 die "'$fname' is not a file!" if !(-f $fname);
 my $origfile = "";
 open FILE, "<$fname" or die "Could not open '$fname'!: $!";
@@ -137,7 +145,7 @@ switch ($action) {
 	    print "No changes were made to '$fname'\n";
 	}
 	else {
-	    open DIFF, "| $diffcmd $fname -" or die "'$diffcmd' failed: $!";
+	    open DIFF, "| $diffcmd $fname - $diffpipe" or die "'$diffcmd' failed: $!";
 	    print DIFF $file;
 	    close DIFF;
 	}
@@ -230,85 +238,90 @@ sub parseThruCPP {
 sub cleanupLSD {
     my ($text) = @_;
 
+    # regex for non-line-breaking whitespace
+    my $n = "[^\\S\n]";
+
     # return no cleanup was asked for
     return $text if $noclean;
 
-    # get rid of any LSD directives, return if there are none
+    # return if there are no LSD tags
     return $text if
-	(($text =~ s!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!!sg) == 0);
+	(($text =~ m!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!) == 0);
+
+    # get rid of LSD LaTeX and Verbatim tags
+    $text =~ s!$n*</?lal(?:LaTeX|Verbatim)[^>]*?>$n*!!sg;
 
     # make embedded C comments safe
     while (($text =~ s!\A(.+)/\*!$1/-*!sg) > 0) {}
     while (($text =~ s!\*/(.+)\Z!*-/$1!sg) > 0) {}
 
-    # replace the first and last non-blank lines with doxygen comments
-    $text =~ s!\A(\n*)[^\n]*?\n!$1/**\n!sg;
-    $text =~ s!\n[^\n]*?(\n*)\Z!\n*/$1!sg;
+    # replace first line #if / last line #endif directives with doxygen comments
+    $text =~ s!\A#if[^\n]*!/**!;
+    $text =~ s!#endif\Z!*/!;
+
+    # replace long first / last line comments with doxygen comments
+    $text =~ s!\A/\*+!/**!;
+    $text =~ s!$n*\*+/!*/!;
+
+    # get rid of any long string of divider characters
+    $text =~ s!$n*([-*%+=])\1{4,}$n*!!sg;
 
     # get rid of CVS tags
     $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
 
     # use 'Revision:' string as a hook to place a '\file' command
-    $text =~ s!^Revision:!\\file!mg;
+    $text =~ s!^(\s*\*?\s*)Revision:!\\file!mp;
 
-    # convert Author: comments to doxygen
-    $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mg;
+    # convert 'Author:' string to doxygen formatting
+    $text =~ s!^(\s*\*?\s*)Author:!$1\\author!mp;
+
+    # convert LSD error table to a doxygen group
+    $text =~ s!<lalErrTable[^>]*?>(\s*)\*/!\\name Error Codes \*/ $1/*@\{*/!sp;
+    $text =~ s!(/\*+)(\s*)</lalErrTable[^>]*?>!/*@\}*/$2$1!sp;
 
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
-
-	# regexes for:
-	# non-line-breaking whitespace
-	my $n = "[^\\S\n]";
-	# balanced braces
+	
+	# regexes for balanced braces and brackets
 	my $bbr  = qr!({(?:[^{}]++|(?-1))*})!;
 	my $wbbr = qr!{((?:[^{}]*$bbr)*[^{}]*)}!;
-	# balanced brackets
 	my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
 	my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
-
+	
 	# remove these LaTeX commands:
 	# environments
-	foreach (qw(center document figure obeylines table wrapfigure)) {
-	    $text =~ s!\\(?:begin|end)$n*{$_}!!mg;
-	}
+	$text =~ s!\\(?:begin|end)$n*{(?:
+                   center|document|figure|obeylines|table
+                   )}!!mgx;
 	# two arguments
-	foreach (qw(providecommand)) {
-	    $text =~ s!\\$_$bbr$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   providecommand
+                   )$bbr$bbr!!mgx;
 	# two arguments, first optional
-	foreach (qw(idx)) {
-	    $text =~ s!\\$_$bbk?$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   idx
+                   )$bbk?$bbr!!mgx;
 	# one argument
-	foreach (qw(index input vfill vspace)) {
-	    $text =~ s!\\$_$bbr!!mg;
-	}
+	$text =~ s!\\(?:
+                   index|input|vfill|vspace
+                   )$bbr!!mgx;
 	# no arguments
-	foreach (qw(footnotesize medskip newpage noindent)) {
-	    $text =~ s!\\$_ *!!mg;
-	}
+	$text =~ s!\\(?:
+                   footnotesize|medskip|newpage|noindent
+                  )$n*!!mg;
 
 	# convert formulae
-	$text =~ s{(\$\$?)(.+?)\1}{
-	    $_ = $2;
-	    $_ =~ /\n/ ? '\f[' . $_ . '\f]' : '\f$' . $_ . '\f$'
+	$text =~ s!\$\$(.+?)\$\$!\f[$1\f]!sg;
+	$text =~ s{\$(.+?)\$}{
+	    $_ = '\f$' . $1 . '\f$';
+	    #s/^([^\n]*)\n([^\n]+)$/$1 $2\n/sg;
+	    $_
 	}sge;
-        # displaymath
 	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
 	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
-        # equation
-	$text =~ s!\\begin$n*{equation}!\\f{equation}{!mg;
-	$text =~ s!\\end$n*{equation}!\\f}!mg;
-        # equation*
-	$text =~ s!\\begin$n*{equation*}!\\f{equation*}{!mg;
-	$text =~ s!\\end$n*{equation*}!\\f}!mg;
-        # eqnarray
-	$text =~ s!\\begin$n*{eqnarray}!\\f{eqnarray}{!mg;
-	$text =~ s!\\end$n*{eqnarray}!\\f}!mg;
-        # eqnarray*
-	$text =~ s!\\begin$n*{eqnarray\*}!\\f{eqnarray*}{!mg;
-	$text =~ s!\\end$n*{eqnarray\*}!\\f}!mg;
+	$_ = 'equation\*?|eqnarray\*?';
+	$text =~ s!\\begin$n*{($_)}!\\f{$1}{!mg;
+	$text =~ s!\\end$n*{($_)}!\\f}!mg;
 
 	# convert descriptions
 	sub desc {
@@ -373,7 +386,11 @@ sub cleanupLSD {
 	}sge;
 
 	# replace subsection commands
-	$text =~ s!\\(?:sub)*section\*?$wbbr!\\par $1!mg;
+	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
+	    $_ = '\\par ' . $1 . "\n";
+	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
+	    $_
+	}sge;
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
 
 	# replace citations
@@ -383,9 +400,8 @@ sub cleanupLSD {
 	    '\ref ' . $_
 	}mge;
 
-	# miscellaneous
+	# replace miscellaneous LaTeX commands
 	$text =~ s!\\lq!`!g;
-	$text =~ s|(?<!\\)@|\\@|g;
 
     }
 
@@ -396,6 +412,9 @@ sub cleanupLSD {
 	$wsp
     }sge;
     return $text if $text =~ m!\A\n*\Z!sg;
+
+    # remove trailing whitespace
+    $text =~ s!$n*$!!mg;
 
     return $text;
 }

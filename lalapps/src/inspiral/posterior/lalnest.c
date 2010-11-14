@@ -108,7 +108,7 @@ REAL4 padding=1.0;
 INT4 nSegs=0;
 INT4 Nruns=1;
 INT4 dataseed=0;
-REAL4 fLow=50.0; /* Low-frequency cutoff */
+REAL4 fLow=40.0; /* Low-frequency cutoff */
 UINT4 Nlive=1000;
 CHAR *inputXMLFile;
 CHAR *injXMLFile=NULL;
@@ -968,7 +968,7 @@ doneinit:
 			for(i=0;i<inputMCMC.stilde[j]->data->length;i++)
 			{
 				if(estimatenoise)
-					fprintf(dataoutfile,"%lf %lf %lf %lf\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%10.3e %10.10e %10.10e %10.10e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
 				else
 					fprintf(dataoutfile,"%lf %lf %lf\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
 			}

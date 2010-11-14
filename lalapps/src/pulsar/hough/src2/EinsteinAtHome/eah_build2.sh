@@ -39,7 +39,7 @@ download() {
     curl "$1/$2" > "$2" 2>> "$LOGFILE"
 }
 
-HERE="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
+eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 boinc_rev=-r22561
 #previous:-r22503 -r22363 -r21777 -r'{2008-12-01}'
@@ -49,7 +49,7 @@ for i; do
 	--win32)
 	    build_win32=true ;;
 	--static)
-	    SHARED="--disable-shared" ;;
+	    shared_copt="--disable-shared" ;;
 	--rebuild)
 	    rebuild_boinc=true
 	    rebuild_lal=true
@@ -68,7 +68,7 @@ for i; do
 	    release=true
 	    CFLAGS="-O3 $CFLAGS"
 	    LDFLAGS="-static-libgcc $LDFLAGS"
-	    SHARED="--disable-shared"  ;;
+	    shared_copt="--disable-shared"  ;;
 	--norebuild) # dangerous, for testing only!
 	    rebuild_binutils=""
 	    rebuild_boinc=""
@@ -164,7 +164,7 @@ if [ ."$build_win32" = ."true" ] ; then
     export RANLIB=i586-mingw32msvc-ranlib
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
-    CROSS=--host=i586-pc-mingw32
+    cross_copt=--host=i586-pc-mingw32
     ext=".exe"
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
@@ -297,20 +297,19 @@ fi
 
 if test \! -d lalsuite/.git ; then
     log_and_do rm -rf lalsuite
-    log_and_do ln -s "$HERE/../../../../../.." lalsuite
+    log_and_do ln -s "$eah_build2_loc/../../../../../.." lalsuite
 fi
 
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw"
 else
---enable-sse, --enable-sse2
     log_and_show "compiling fftw"
     log_and_do cd "$BUILD/$fftw"
-    log_and_do "$SOURCE/$fftw/configure" $fftw_copts "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
-    log_and_do "$SOURCE/$fftw/configure" $fftw_copts --enable-single "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$fftw/configure" $fftw_copts --enable-single "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -321,7 +320,7 @@ if test -z "$rebuild" && pkg-config --exists gsl; then
 else
     log_and_show "compiling gsl"
     log_and_do cd "$BUILD/$gsl"
-    log_and_do "$SOURCE/$gsl/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$gsl/configure" "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -334,7 +333,7 @@ if test -n "$build_binutils"; then
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
     log_and_do cd "$BUILD/$binutils"
-    log_and_do "$SOURCE/$binutils/configure" "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$binutils/configure" "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
         log_and_dont_fail make -k
@@ -416,7 +415,7 @@ else
 	log_and_do cd "$SOURCE/boinc"
 	log_and_do ./_autosetup
 	log_and_do cd "$BUILD/boinc"
-	log_and_do "$SOURCE/boinc/configure" --disable-server --disable-manager --disable-client "$WITH_SSL" "$SHARED" "$CROSS" --prefix="$INSTALL" # --target=powerpc-apple-darwin7.9.0
+	log_and_do "$SOURCE/boinc/configure" --disable-server --disable-manager --disable-client "$WITH_SSL" "$shared_copt" "$cross_copt" --prefix="$INSTALL" # --target=powerpc-apple-darwin7.9.0
 	if [ .$MACOSX_DEPLOYMENT_TARGET = .10.3 -a -r "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a" ]; then
 	    log_and_do sed -i~ "s%-lstdc++%$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a%g" `find . -name Makefile`
 	    log_and_do sed -i~ 's/#define HAVE_SYS_STATVFS_H 1/#undef HAVE_SYS_STATVFS_H/' config.h
@@ -437,7 +436,7 @@ else
     fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lal"
-    log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -453,7 +452,7 @@ else
     fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lalpulsar"
-    log_and_do "$SOURCE/lalsuite/lalpulsar/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
+    log_and_do "$SOURCE/lalsuite/lalpulsar/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -491,7 +490,7 @@ if [ ."$build_win32" = ."true" ] ; then
     sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
 fi
 log_and_do cd "$BUILD/lalapps"
-log_and_do "$SOURCE/lalsuite/lalapps/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$SHARED" "$CROSS" --prefix="$INSTALL"
+log_and_do "$SOURCE/lalsuite/lalapps/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
 
 log_and_show "building Apps"
 
@@ -503,8 +502,8 @@ fi
 if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do make LALAppsVCSInfo.h liblalapps.la
 else
-    log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o getopt.o getopt1.o
-    log_and_do ar cru liblalapps.la lalapps.o getopt.o getopt1.o LALAppsVCSInfo.o
+    log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
+    log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
 fi
 
 if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then

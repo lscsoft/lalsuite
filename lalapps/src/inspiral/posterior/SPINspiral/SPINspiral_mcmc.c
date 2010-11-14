@@ -26,6 +26,10 @@
 
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <SPINspiral.h>
 
 
@@ -121,7 +125,7 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
   
   // *** Set up temperature ladder ***
   if(mcmc.nTemps == 1) {
-    mcmc.tempLadder[0] = 1.0;
+  //  mcmc.tempLadder[0] = 1.0; Modified so that by default it uses mcmc.tempLadder[0] specified in SPINspiral.input.mcmc
   } else {
     setTemperatureLadderOld(&mcmc);
     //setTemperatureLadder(&mcmc);
@@ -324,8 +328,10 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
       if(gsl_rng_uniform(mcmc.ran) > mcmc.corrFrac) {                                               //Do correlated updates from the beginning (quicker, but less efficient start); this saves ~4-5h for 2D, nCorr=1e4, nTemps=5
         if(gsl_rng_uniform(mcmc.ran) < mcmc.blockFrac){   
           uncorrelatedMCMCblockUpdate(ifo, &state, &mcmc, run);                                          //Block update for the current temperature chain
-        } else {                                         
-          uncorrelatedMCMCsingleUpdate(ifo, &state, &mcmc, run);                                         //Componentwise update for the current temperature chain (e.g. 90% of the time)
+        } else {
+			for(i=0;i<mcmc.nMCMCpar;i++){
+				uncorrelatedMCMCsingleUpdate(ifo, &state, &mcmc, run);                                         //Componentwise update for the current temperature chain (e.g. 90% of the time)
+			}
         }
 	
         // *** Correlated update ****************************************************************************************************
@@ -679,22 +685,18 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
 {
   int p=0, tempi=mcmc->iTemp;
   double s_gamma=0.0;
-  double ran=0.0, largejump1=0.0, largejumpall=0.0;
+  double ran=0.0, largejumpall=0.0;
   
   largejumpall = 1.0;
   ran = gsl_rng_uniform(mcmc->ran);
   if(ran < 1.0e-3) largejumpall = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
   if(ran < 1.0e-4) largejumpall = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
-  
-  for(p=0;p<mcmc->nMCMCpar;p++) if(mcmc->parFix[p]==0) mcmc->nParam[tempi][p] = mcmc->param[tempi][p];
-  for(p=0;p<mcmc->nMCMCpar;p++){
-    if(mcmc->parFix[p]==0) {
-      largejump1 = 1.0;
-      ran = gsl_rng_uniform(mcmc->ran);
-      if(ran < 1.0e-2) largejump1 = 1.0e1;    //Every 1e2 iterations, take a 10x larger jump in this parameter
-      if(ran < 1.0e-3) largejump1 = 1.0e2;    //Every 1e3 iterations, take a 100x larger jump in this parameter
+	
+  for(p=0;p<mcmc->nMCMCpar;p++) mcmc->nParam[tempi][p] = mcmc->param[tempi][p];	
+	
+  while(mcmc->parFix[p]!=0) p=(int)gsl_rng_uniform_int(mcmc->ran,mcmc->nMCMCpar); //random parameter for which we propose a jump
       
-      mcmc->nParam[tempi][p] = mcmc->param[tempi][p] + gsl_ran_gaussian(mcmc->ran,mcmc->adaptSigma[tempi][p]) * largejump1 * largejumpall;
+      mcmc->nParam[tempi][p] = mcmc->param[tempi][p] + gsl_ran_gaussian(mcmc->ran,mcmc->adaptSigma[tempi][p]) * largejumpall;
       
       /*
       //Testing with sky position/orientation updates
@@ -739,9 +741,8 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
           sigmaPeriodicBoundaries(mcmc->adaptSigma[tempi][p], p, *mcmc);                                     //Bring the sigma between 0 and 2pi
         }
       } //if(mcmc->acceptPrior[tempi]==1)
-    } //if(mcmc->parFix[p]==0)
     mcmc->adaptSigmaOut[tempi][p] = mcmc->adaptSigma[tempi][p]; //Save sigma for output
-  } //p
+
 } // End uncorrelatedMCMCsingleUpdate
 // ****************************************************************************************************************************************************  
 
@@ -902,8 +903,8 @@ void writeMCMCoutput(struct MCMCvariables mcmc, struct interferometer *ifo[])
   if(tempi==0) { //Only for the T=1 chain
     /*ILYA*/
     // if((iIter % (50*thinScreenOutput))==0 || iIter<0) printf("Previous iteration has match of %10g with true signal\n\n", 
-    //  matchBetweenParameterArrayAndTrueParameters(mcmc.param[tempi], ifo, mcmc); //CHECK need support for two different waveforms
-    // While the above is commented out, get rid of 'not used' warnings for the ifo struct:
+    // matchBetweenParameterArrayAndTrueParameters(mcmc.param[tempi], ifo, mcmc); //CHECK need support for two different waveforms
+    // While the above is commented out, get rid of 'not used' warnings for the ifo struct from icc:
     ifo[0]->index = ifo[0]->index;
     
     if((iIter % (50*mcmc.thinScreenOutput))==0 || iIter<0) {

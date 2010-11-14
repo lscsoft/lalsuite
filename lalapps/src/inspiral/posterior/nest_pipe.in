@@ -378,7 +378,11 @@ for time in times:
 # Set up inspnest jobs, using parallel if needed
 if nparallel==1:
     for time in times:
-        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=time_event[time])
+        if time_event is not None:
+                thisevent=time_event[time]
+        else:
+                thisevent=None
+        inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=thisevent)
         inspnest_nodes_by_time[time]=inspnest_node
         dag.add_node(inspnest_node)
         combine_each_time_nodes[time].add_parent(inspnest_node)
@@ -387,8 +391,11 @@ else:
     merge_sub_file=os.path.join(opts.run_path,'merge.sub')
     merge_job=OddsPipeline.MergeJob(cp,merge_sub_file,opts.log_path)
     for time in times:
-    	
-        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=time_event[time])
+        if time_event is not None:
+                thisevent=time_event[time]
+        else:
+                thisevent=None
+        (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=segments_by_time[time].keys(),event=thisevent)
         dag.add_node(merge_node)
         map(dag.add_node,inspnest_nodes)
         nest_files[time]=merge_node.get_output_files()[0]
@@ -432,16 +439,19 @@ if opts.coherence_test:
             coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
             combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
             combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
-            
+            if time_event is not None:
+                thisevent=time_event[time]
+            else:
+                thisevent=None
             if nparallel>1:
-                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=time_event[time])
+                (merge_node,inspnest_nodes)=OddsPipeline.setup_parallel_nest(cp,inspnest_job,merge_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent)
                 dag.add_node(merge_node)
                 coherence_test_files[time][ifo]=merge_node.get_output_files()[0]
                 combine_node.add_parent(merge_node)
                 coherence_test_node.add_parent(merge_node)
                 coherence_inspnest_nodes[time][ifo]=merge_node
             else:
-                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=time_event[time])
+                inspnest_node=OddsPipeline.setup_single_nest(cp,inspnest_job,time,segments_by_time[time],nest_path,ifos=[ifo],event=thisevent)
                 inspnest_nodes=[inspnest_node]
                 coherence_test_files[time][ifo]=inspnest_node.get_output_files()[0]
                 combine_node.add_parent(inspnest_node)
