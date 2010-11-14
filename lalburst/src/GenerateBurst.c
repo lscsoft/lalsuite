@@ -31,6 +31,7 @@
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <lal/Date.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Units.h>
@@ -44,7 +45,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
-#include <lal/Random.h>
+
 
 NRCSID(GENERATEBURSTC, "$Id$");
 
@@ -207,70 +208,78 @@ int XLALBurstInjectSignals(
 
 
 int XLALBurstInjectHNullSignals(
-				REAL8TimeSeries *series,
-				const SimBurst *sim_burst)
+	REAL8TimeSeries *series,
+	const SimBurst *sim_burst
+)
 {
-  LALDetector H_detector; /* Hanford detectors */
-  REAL8TimeSeries *hplus, *hcross; /* + and x time series for injection waveform */
-  REAL8TimeSeries *h; /* injection time series */
-  /* skip injections whose geocentre times are more than this many
-   * seconds outside of the target time series */
-  const double injection_window = 100.0;
-  unsigned p;
-  RandomParams *randpar_amp=NULL;
-  REAL8 rand_amp;
+	REAL8TimeSeries *hplus, *hcross; /* + and x time series for injection waveform */
+	REAL8TimeSeries *h; /* injection time series */
+	/* skip injections whose geocentre times are more than this many
+	* seconds outside of the target time series */
+	const double injection_window = 100.0;
+	unsigned p;
+	REAL8 rand_amp;
+	/* FIXME:  fix the const entanglement so as to get rid of this */
+	LALDetector detector_copy = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
 
-  /* take H2 as a reference */
-  H_detector = lalCachedDetectors[LAL_LHO_2K_DETECTOR];
-    
-  /* iterate over injections */
-  for(; sim_burst; sim_burst = sim_burst->next) {
-    
-    /* skip injections whose "times" are too far outside of the target time series */
-    if(XLALGPSDiff(&series->epoch, &sim_burst->time_geocent_gps) > injection_window || XLALGPSDiff(&sim_burst->time_geocent_gps, &series->epoch) > (series->data->length * series->deltaT + injection_window)) continue;
-    
-    /* construct the h+ and hx time series for the injection
-     * waveform.  in the time series produced by this function,
-     * t = 0 is the "time" of the injection. */
-    if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT))
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-    
-    /* add the time of the injection at the geocentre to the
-     * start times of the h+ and hx time series.  after this,
-     * their epochs mark the start of those time series at the
-     * geocentre. */
-    XLALGPSAddGPS(&hcross->epoch, &sim_burst->time_geocent_gps);
-    XLALGPSAddGPS(&hplus->epoch, &sim_burst->time_geocent_gps);
-    
-    /* project the wave onto the detector to produce the strain
-     * in the H1 detector. */
-    h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &H_detector);
-    XLALDestroyREAL8TimeSeries(hplus);
-    XLALDestroyREAL8TimeSeries(hcross);
-    if(!h) XLAL_ERROR(__func__, XLAL_EFUNC);
-    
-    /* random amplitude calibration uncertainty */
-    randpar_amp = XLALCreateRandomParams(0);
-    rand_amp = XLALNormalDeviate(randpar_amp);
-    XLALDestroyRandomParams(randpar_amp);
-    rand_amp *= 0.1; /* FIXME: 10% is for S5, 
-			Is there a LAL function to get the amplitude uncertainty? */
-    
-    XLALPrintInfo("%s(): Amplitude calibration uncertainty = %.2f \%\n", __func__, rand_amp*100);
+	gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+	if(!rng) {
+		XLALPrintError("%s(): failure creating random number generator\n", __func__);
+		XLAL_ERROR(__func__, XLAL_ENOMEM);
+	}
 
-    /* what's left after H1-H2 subtraction */
-    for (p=0 ; p< h->data->length; p++) h->data->data[p] *=rand_amp;
-    
-    /* add the injection strain time series to the detector data */
-    if(XLALSimAddInjectionREAL8TimeSeries(series, h, NULL)) {
-      XLALDestroyREAL8TimeSeries(h);
-      XLAL_ERROR(__func__, XLAL_EFUNC);
-    }
-    
-    /* cleaning */
-    XLALDestroyREAL8TimeSeries(h);
-  } 
-  /* done */
-  
-  return 0;
+	/* iterate over injections */
+	for(; sim_burst; sim_burst = sim_burst->next) {
+		/* skip injections whose "times" are too far outside of the target time series */
+		if(XLALGPSDiff(&series->epoch, &sim_burst->time_geocent_gps) > injection_window || XLALGPSDiff(&sim_burst->time_geocent_gps, &series->epoch) > (series->data->length * series->deltaT + injection_window))
+			continue;
+
+		/* construct the h+ and hx time series for the injection
+		 * waveform.  in the time series produced by this function,
+		 * t = 0 is the "time" of the injection. */
+		if(XLALGenerateSimBurst(&hplus, &hcross, sim_burst, series->deltaT)) {
+			gsl_rng_free(rng);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		}
+
+		/* add the time of the injection at the geocentre to the
+		 * start times of the h+ and hx time series.  after this,
+		 * their epochs mark the start of those time series at the
+		 * geocentre. */
+		XLALGPSAddGPS(&hcross->epoch, &sim_burst->time_geocent_gps);
+		XLALGPSAddGPS(&hplus->epoch, &sim_burst->time_geocent_gps);
+
+		/* project the wave onto the detector to produce the strain
+		 * in the H1 detector. */
+		h = XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, sim_burst->ra, sim_burst->dec, sim_burst->psi, &detector_copy);
+		XLALDestroyREAL8TimeSeries(hplus);
+		XLALDestroyREAL8TimeSeries(hcross);
+		if(!h) {
+			gsl_rng_free(rng);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		}
+
+		/* random amplitude calibration uncertainty = 10% */
+		/* FIXME: 10% is for S5, Is there a LAL function to get the amplitude uncertainty? */
+		rand_amp = gsl_ran_gaussian(rng, 0.1);
+		XLALPrintInfo("%s(): amplitude calibration uncertainty = %.2f \%\n", __func__, rand_amp*100);
+
+		/* what's left after H1-H2 subtraction */
+		for (p=0 ; p< h->data->length; p++)
+			h->data->data[p] *= rand_amp;
+
+		/* add the injection strain time series to the detector data */
+		if(XLALSimAddInjectionREAL8TimeSeries(series, h, NULL)) {
+			XLALDestroyREAL8TimeSeries(h);
+			gsl_rng_free(rng);
+			XLAL_ERROR(__func__, XLAL_EFUNC);
+		}
+
+		/* cleaning */
+		XLALDestroyREAL8TimeSeries(h);
+	} 
+	gsl_rng_free(rng);
+
+	/* done */
+	return 0;
 }
