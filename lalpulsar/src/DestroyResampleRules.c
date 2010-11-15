@@ -17,40 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/************************* <lalVerbatim file="DestroyResampleRulesCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+\latexonly\label{ss:DestroyResampleRules.c}\endlatexonly
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{DestroyResampleRules.c}}
-\label{ss:DestroyResampleRules.c}
-
-Destroys an object of type \verb@ResampleRules@.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DestroyResampleRulesCP}
-\idx{LALDestroyResampleRules()}
-
-\subsubsection*{Description}
-
-This function destroys an object \verb@**rules@ of type
-\texttt{ResampleRules}, and sets \verb@*rules@ to \verb@NULL@.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-void LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DestroyResampleRulesCV}}
-
-******************************************************* </lalLaTeX> */
+Destroys an object of type \c ResampleRules.
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -59,11 +33,13 @@ void LALFree()
 NRCSID(DESTROYRESAMPLERULESC,"$Id$");
 
 
-/* <lalVerbatim file="DestroyResampleRulesCP"> */
+/** This function destroys an object <tt>**rules</tt> of type
+ * \c ResampleRules, and sets <tt>*rules</tt> to \c NULL.
+ */
 void
 LALDestroyResampleRules( LALStatus     *stat,
 			 ResampleRules **rules )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat,"LALDestroyResampleRules",DESTROYRESAMPLERULESC);
 
   /* Make sure that the handle is non-null, that it points to a
