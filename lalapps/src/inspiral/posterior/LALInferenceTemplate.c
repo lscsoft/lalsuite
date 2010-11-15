@@ -1180,8 +1180,8 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	REAL8 phi_spin1		= *(REAL8*) getVariable(IFOdata->modelParams, "phi_spin1");
 	
 	REAL8 a_spin2		= *(REAL8*) getVariable(IFOdata->modelParams, "a_spin2");
-	REAL8 theta_spin2	= *(REAL8*) getVariable(IFOdata->modelParams, "theta_spin1");
-	REAL8 phi_spin2		= *(REAL8*) getVariable(IFOdata->modelParams, "phi_spin1");
+	REAL8 theta_spin2	= *(REAL8*) getVariable(IFOdata->modelParams, "theta_spin2");
+	REAL8 phi_spin2		= *(REAL8*) getVariable(IFOdata->modelParams, "phi_spin2");
 	
 	injParams.spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
 	injParams.spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
