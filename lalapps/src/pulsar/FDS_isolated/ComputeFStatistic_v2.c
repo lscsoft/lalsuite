@@ -330,6 +330,15 @@ BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
 static const ConfigVariables empty_ConfigVariables;
 static const FstatCandidate empty_FstatCandidate;
 
+/* ----- which timing function to use ----- */
+#ifdef HIGHRES_TIMING
+REAL8 XLALGetUserCPUTime ( void );
+#define GETTIME XLALGetUserCPUTime
+#else
+#define GETTIME XLALGetTimeOfDay
+#endif
+
+
 /*----------------------------------------------------------------------*/
 /* Function definitions start here */
 /*----------------------------------------------------------------------*/
@@ -507,7 +516,7 @@ int main(int argc,char *argv[])
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
 
-      tic = XLALGetTimeOfDay();
+      tic = GETTIME();
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
@@ -528,7 +537,7 @@ int main(int argc,char *argv[])
           Fstat.F = F;
 
         } /* if GPUready==true */
-      toc = XLALGetTimeOfDay();
+      toc = GETTIME();
       timing.tauFstat = toc - tic;	// Fstat-calculation time
       timing.NSFTs = GV.NSFTs;
 
@@ -721,23 +730,23 @@ int main(int argc,char *argv[])
           transientCandidate_t transientCand = empty_transientCandidate;
 
           /* compute Fstat map F_mn over {t0, tau} */
-          tic = XLALGetTimeOfDay();
+          tic = GETTIME();
           if ( (transientCand.FstatMap = XLALComputeTransientFstatMap ( Fstat.multiFstatAtoms, GV.transientWindowRange, uvar.transient_useFReg)) == NULL ) {
             XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
             return COMPUTEFSTATISTIC_EXLAL;
           }
-          toc = XLALGetTimeOfDay();
+          toc = GETTIME();
           timing.tauTransFstatMap = toc - tic; // time to compute transient Fstat-map
 
           /* compute marginalized Bayes factor */
-          tic = XLALGetTimeOfDay();
+          tic = GETTIME();
           transientCand.logBstat = XLALComputeTransientBstat ( GV.transientWindowRange, transientCand.FstatMap );
           UINT4 err = xlalErrno;
           if ( err ) {
             XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
             return COMPUTEFSTATISTIC_EXLAL;
           }
-          toc = XLALGetTimeOfDay();
+          toc = GETTIME();
           timing.tauTransMarg = toc - tic;
 
           /* record timing-relevant transient search params */
@@ -2215,3 +2224,31 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
   return XLAL_SUCCESS;
 
 } /* write_TimingInfo_to_fp() */
+
+#ifdef HIGHRES_TIMING
+/** Return process User CPU time used.
+ */
+REAL8
+XLALGetUserCPUTime ( void )
+{
+  const char *fn = __func__;
+
+  struct timespec res;
+  struct timespec ut;
+  clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
+
+  if ( clock_getres ( clk_id, &res ) != 0 ) {
+    XLALPrintError ("%s: failed to call clock_getres(), errno = %d\n", fn, errno );
+    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+  }
+  XLALPrintError ("%s: Clock-precision: {%ld s, %ld ns}\n", fn, res.tv_sec, res.tv_nsec );
+
+  if ( clock_gettime ( clk_id, &ut) != 0 ) {
+    XLALPrintError ("%s: failed to call clock_gettime(), errno = %d\n", fn, errno );
+    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+  }
+
+  return ut.tv_sec + (ut.tv_nsec/1.e9);
+
+} /* XLALGetUserCPUTime() */
+#endif
