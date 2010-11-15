@@ -185,24 +185,27 @@ AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 
 # check for supported mac os x version
-if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS([SW_VERS],[sw_vers])
-  if test "x$SW_VERS" != "x"; then
-    AC_MSG_CHECKING([Mac OS X version])
-    MACOSX_VERSION=`$SW_VERS -productVersion`
-    AC_MSG_RESULT([$MACOSX_VERSION])
+LALSUITE_ENABLE_OSX_VERSION_CHECK
+if test "x${osx_version_check}" = "xtrue"; then
+  if test "x$build_vendor" = "xapple"; then
+    AC_CHECK_PROGS([SW_VERS],[sw_vers])
+    if test "x$SW_VERS" != "x"; then
+      AC_MSG_CHECKING([Mac OS X version])
+      MACOSX_VERSION=`$SW_VERS -productVersion`
+      AC_MSG_RESULT([$MACOSX_VERSION])
+    fi
+    case "$MACOSX_VERSION" in
+      10.0*|10.1*|10.2*|10.3*)
+        AC_MSG_ERROR([This version of Mac OS X is not supported])
+        ;;
+      10.4*|10.5*|10.6*)
+        # supported version
+        ;;
+      *)
+        AC_MSG_WARN([Unknown Mac OS X version])
+        ;;
+    esac
   fi
-  case "$MACOSX_VERSION" in
-    10.0*|10.1*|10.2*|10.3*)
-      AC_MSG_ERROR([This version of Mac OS X is not supported])
-      ;;
-    10.4*|10.5*|10.6*)
-      # supported version
-      ;;
-    *)
-      AC_MSG_WARN([Unknown Mac OS X version])
-      ;;
-  esac
 fi
 
 # link tests using libtool
