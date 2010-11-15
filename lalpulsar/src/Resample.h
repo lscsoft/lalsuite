@@ -20,12 +20,17 @@
 /**
 \author Creighton, T. D.
 \file
+\latexonly\label{s:Resample.h}\endlatexonly
+\ingroup Resample_h
+
+Provides routines for resampling time series according to a new
+canonical time coordinate.
+
 */
 
 /**
-
-\par Header <tt>Resample.h</tt>
-\latexonly\label{s:Resample.h}\endlatexonly
+   \defgroup Resample_h Header Resample.h
+   \ingroup pulsarCommon
 
 Provides routines for resampling time series according to a new
 canonical time coordinate.
@@ -115,7 +120,6 @@ extern "C" {
 NRCSID(RESAMPLEH,"$Id$");
 
 /**
-\par Error conditions
 \name Error Codes */ /*@{*/
 #define RESAMPLEH_ENUL    1
 #define RESAMPLEH_EOUT    2
@@ -133,157 +137,61 @@ NRCSID(RESAMPLEH,"$Id$");
 /*@}*/
 
 /**
-\par Types
-
-\par Structure \c ResampleRules
-
-
-\noindent This structure stores the rules for taking a time series
-\f$t\f$, sampled at constant intervals \f$\Delta t\f$, and resampling it at
-constant intervals \f$d\Delta t\f$ in the canonical time coordinate \f$\tau\f$,
-as described above.  The fields in this structure are as follows:
-
-<dl>
-<dt><tt>LIGOTimeGPS start</tt></dt><dd> The initial time for which the rules
-	apply.</dd>
-
-<dt><tt>LIGOTimeGPS stop</tt></dt><dd> The final time for which the rules
-	apply.</dd>
-
-<dt><tt>INT4 length</tt></dt><dd> The number of correction points, i.e.\
-	points where the resampling interval is adjusted from \f$d\Delta
-	t\f$ to \f$(d\pm n)\Delta t\f$.</dd>
-
-<dt><tt>INT4 *interval</tt></dt><dd> An array giving the number of resampled
-	time intervals between correction points.</dd>
-
-<dt><tt>INT2 *shift</tt></dt><dd> An array giving the size of the correction
-	shift (i.e.\ the number \f$n\f$ above) at each correction point.</dd>
-
-<dt><tt>INT4 decimate</tt></dt><dd> The decimation factor \f$d\f$.</dd>
-
-<dt><tt>REAL8 deltaT</tt></dt><dd> The sampling interval before decimation,
-	in seconds.</dd>
-
-<dt><tt>REAL8 startDiff</tt></dt><dd> The difference \f$\tau-t\f$ at the time
-	\c start, in seconds.</dd>
-
-<dt><tt>REAL8 stopDiff</tt></dt><dd> The difference \f$\tau-t\f$ at the time
-	\c stop, in seconds.</dd>
-</dl>
-
-*/
-
-typedef struct tagResampleRules{
-  LIGOTimeGPS start; /* Detector time at start of resample rules. */
-  LIGOTimeGPS stop;  /* Last time for which resample rules apply. */
-  INT4 length;       /* Size of the following two arrays. */
-  INT4 *interval;    /* Number of samples to the next shift point. */
-  INT2 *shift;       /* Size of shift (usually +/- 1). */
-  INT4 decimate;     /* Decimation factor. */
-  REAL8 deltaT;      /* Sampling rate of the unresampled data. */
-  REAL8 startDiff;   /* Offset between tau and t at the start. */
-  REAL8 stopDiff;    /* Offset between tau and t at the end. */
+ * The rules for taking a time series \f$t\f$, sampled at constant intervals \f$\Delta t\f$, and resampling it at
+ * constant intervals \f$d\Delta t\f$ in the canonical time coordinate \f$\tau\f$.
+ */
+typedef struct tagResampleRules {
+  LIGOTimeGPS start; /**< The initial time for which the rules apply */
+  LIGOTimeGPS stop;  /**< The final time for which the rules apply */
+  INT4 length;       /**< The number of correction points, i.e.\ points where the resampling interval
+                      * is adjusted from \f$d\Delta t\f$ to \f$(d\pm n)\Delta t\f$ */
+  INT4 *interval;    /**< An array giving the number of resampled time intervals between correction points */
+  INT2 *shift;       /**< An array giving the size of the correction shift (i.e.\ the number \f$n\f$ above) at each correction point */
+  INT4 decimate;     /**< decimation factor \f$d\f$ */
+  REAL8 deltaT;      /**< The sampling interval before decimation, n seconds */
+  REAL8 startDiff;   /**< The difference \f$\tau-t\f$ at the time #start, in seconds */
+  REAL8 stopDiff;    /**< The difference \f$\tau-t\f$ at the time #stop, in seconds */
 } ResampleRules;
 
 
-/**
-\par Structure \c PolycoStruc
+/** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
+ * Eq.\ \latexonly\ref{eq:delta-tau}\endlatexonly for notation.
+ */
+typedef struct tagPolycoStruc {
+  REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
+  REAL4 dec; 			/**< Declination angle of the source, in \e radians in the range \f$[-\pi/2,\pi/2]\f$ */
+  REAL4Vector *spindown; 	/**< A vector \f$\vec\lambda=(\lambda_0,\ldots,\lambda_{n-1})\f$ of parameters
+                                 * describing a slow intrisic frequency drift \f$f=f(t)\f$ of the source:
+                                 * \f$\lambda_k=f^{-1}d^{k+1}f/dt^{k+1}\f$ at the time given by #start. */
 
+  LIGOTimeGPS start;  		/**< The initial time over which the polynomial fit applies */
 
-\noindent This structure stores the parameters of the piecewise
-polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$.  See
-Eq.~\ref eqdelta-tau for notation.  The fields of this structure
-are:
+  REAL4Sequence *tBound; 	/**< The sequence of times \f$t_{\mathrm{bound}(i)}\f$ defining the endpoints
+                                 * of the fitting regions, given in seconds after the time #start;
+                                 * The first fitting region \f$i=0\f$ runs from #start to
+                                 * #start + \f$t_{\mathrm{bound}(0)}\f$, the next from there to
+                                 * #start + \f$t_{\mathrm{bound}(1)}\f$, and so on. */
 
-<dl>
-<dt><tt>REAL4 ra</tt></dt><dd> The right ascension angle of the source, in
-	\e radians in the range \f$[0,2\pi)\f$.</dd>
+  REAL4Sequence *t0;     	/**< The sequence of times \f$t_{(i)}\f$ in each fitting region at which the polynomial
+                                 * fits are computed, given in seconds after the time #start. */
 
-<dt><tt>REAL4 dec</tt></dt><dd> The declination angle of the source, in
-	\e radians in the range \f$[-\pi/2,pi/2]\f$.</dd>
-
-<dt><tt>REAL4Vector *spindown</tt></dt><dd> A vector
-	\f$\vec\lambda=(\lambda_0,\ldots,\lambda_{n-1})\f$ of parameters
-	describing a slow intrisic frequency drift \f$f=f(t)\f$ of the
-	source: \f$\lambda_k=f^{-1}d^{k+1}f/dt^{k+1}\f$ at the time given
-	by \c start (below).</dd>
-
-<dt><tt>LIGOTimeGPS start</tt></dt><dd> The initial time over which the
-	polynomial fit applies.</dd>
-
-<dt><tt>REAL4Sequence *tBound</tt></dt><dd> The sequence of times
-	\f$t_{\mathrm{bound}(i)}\f$ defining the endpoints of the fitting
-	regions, given in seconds after the time \c start.  The
-	first fitting region \f$i=0\f$ runs from \c start to
-	\c start+\f$t_{\mathrm{bound}(0)}\f$, the next from there to
-	\c start+\f$t_{\mathrm{bound}(1)}\f$, and so on.</dd>
-
-<dt><tt>REAL4Sequence *t0</tt></dt><dd> The sequence of times \f$t_{(i)}\f$ in
-	each fitting region at which the polynomial fits are computed,
-	given in seconds after the time \c start.</dd>
-
-<dt><tt>REAL4VectorSequence *polyco</tt></dt><dd> A sequence of vectors
-	\f$\vec a_{(i)}=(a_{0(i)},a_{1(i)},\ldots)\f$ giving the
-	coefficients of the polynomial fit at each time \f$t_{(i)}\f$.
-	Each element \f$a_{k(i)}\f$ has units of \f$\mathrm{s}^{1-k}\f$.</dd>
-</dl>
-
-*/
-
-typedef struct tagPolycoStruc{
-  REAL4 ra;  /* Right ascension of source */
-  REAL4 dec; /* Declination of source */
-  REAL4Vector *spindown; /* Spindown terms: f0^{-1} d^n f/(dt)^n */
-  LIGOTimeGPS start;  /* Start (reference) time of the polyco fit */
-  REAL4Sequence *tBound; /* End times of each fitting region */
-  REAL4Sequence *t0;     /* Fitting times in each region */
-  REAL4VectorSequence *polyco; /* Polynomial fitting parameters for
-                                  each fitting region */
+  REAL4VectorSequence *polyco;	/**< A sequence of vectors \f$\vec a_{(i)}=(a_{0(i)},a_{1(i)},\ldots)\f$ giving the
+                                 * coefficients of the polynomial fit at each time \f$t_{(i)}\f$;
+                                 * each element \f$a_{k(i)}\f$ has units of \f$\mathrm{s}^{1-k}\f$. */
 } PolycoStruc;
 
 
-/**
-\par Structure \c ResampleParamStruc
-
-
-\noindent This structure stores extra parameters required to construct
-a \c ResampleRules object from a \c PolycoStruc object.  The
-fields of this structure are:
-
-<dl>
-<dt><tt>LIGOTimeGPS start</tt></dt><dd> The initial time for which the
-	resample rules will apply.</dd>
-
-<dt><tt>LIGOTimeGPS stop</tt></dt><dd> The final time for which the resample
-	rules will apply.</dd>
-
-<dt><tt>REAL8 deltaT</tt></dt><dd> The sampling interval before decimation,
-	in seconds.</dd>
-
-<dt><tt>INT4 decimate</tt></dt><dd> The decimation factor.</dd>
-</dl>
-
-*/
-
+/** Extra parameters required to construct a ResampleRules object from a PolycoStruc object.
+ */
 typedef struct tagResampleParamStruc{
-  LIGOTimeGPS start;    /* Initial time for which the rules apply. */
-  LIGOTimeGPS stop;     /* Final time for which the rules apply. */
-  REAL8       deltaT;   /* Base (oversampled) sampling interval. */
-  INT4        decimate; /* Decimation factor. */
+  LIGOTimeGPS start;    /**< The initial time for which the resample rules will apply */
+  LIGOTimeGPS stop;     /**< The final time for which the resample rules will apply */
+  REAL8       deltaT;   /**< The sampling interval before decimation, in seconds */
+  INT4        decimate; /**< The decimation factor */
 } ResampleParamStruc;
 
 
-
-
-
-
-
 /* Function prototypes. */
-
-
-
-
 void
 LALCreateResampleRules( LALStatus          *status,
 			ResampleRules      **rules,
