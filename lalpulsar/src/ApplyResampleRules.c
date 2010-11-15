@@ -17,44 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="ApplyResampleRulesCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{ApplyResampleRules.c}}
-\label{ss:ApplyResampleRules.c}
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+\latexonly\label{ss:ApplyResampleRules.c}\endlatexonly
 
 Resamples a time series according to a set of resampling rules.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ApplyResampleRulesCP}
-\idx{LALApplyResampleRules()}
-
-\subsubsection*{Description}
-
-This function sets \verb@output->deltaT@ and fills \verb@output->data@
-with data from \verb@*input@, using the resampling rules specified in
-\verb@*rules@.  If the timespan required to fill \verb@output->data@
-is not a subset of the timespan covered by \verb@*input@ or
-\verb@*rules@, the data at the nonintersecting times are set to zero.
-
-\subsubsection*{Algorithm}
-
-At present this routine is just a stub.  It does not apply or even
-check \verb@*rules@, and instead simply makes \verb@*output@
-equivalent to (a subset of) \verb@*input@.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ApplyResampleRulesCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -64,13 +35,24 @@ equivalent to (a subset of) \verb@*input@.
 
 NRCSID(APPLYRESAMPLERULESC,"$Id$");
 
-/* <lalVerbatim file="ApplyResampleRulesCP"> */
+/** This function sets <tt>output->deltaT</tt> and fills <tt>output->data</tt>
+with data from <tt>*input</tt>, using the resampling rules specified in
+<tt>*rules</tt>.  If the timespan required to fill <tt>output->data</tt>
+is not a subset of the timespan covered by <tt>*input</tt> or
+<tt>*rules</tt>, the data at the nonintersecting times are set to zero.
+
+\par Algorithm
+
+At present this routine is just a stub.  It does not apply or even
+check <tt>*rules</tt>, and instead simply makes <tt>*output</tt>
+equivalent to (a subset of) <tt>*input</tt>.
+*/
 void
 LALApplyResampleRules( LALStatus       *stat,
 		       REAL4TimeSeries *output,
 		       REAL4TimeSeries *input,
 		       ResampleRules   *rules )
-{ /* </lalVerbatim> */
+{
   INT4 nStart, nStop; /* output domain for which we can get data */
 
   INITSTATUS(stat,"LALApplyResampleRules",APPLYRESAMPLERULESC);
