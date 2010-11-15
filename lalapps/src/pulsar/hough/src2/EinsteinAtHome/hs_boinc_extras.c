@@ -753,7 +753,8 @@ static void worker (void) {
 	  boinc_finish(HIERARCHICALSEARCH_EMEM);
 	}
 
-	/* skip the ';' in the original string */
+	/* put back the ';' in the original string and skip it for next iteration */
+	*endc = ';';
 	startc = endc+1;
       }
 
