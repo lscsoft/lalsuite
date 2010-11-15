@@ -249,7 +249,7 @@ sub cleanupLSD {
 	(($text =~ m!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!) == 0);
 
     # get rid of LSD LaTeX and Verbatim tags
-    $text =~ s!$n*</?lal(?:LaTeX|Verbatim)[^>]*?>$n*!!sg;
+    $text =~ s!</?lal(?:LaTeX|Verbatim)[^>]*?>!!sg;
 
     # make embedded C comments safe
     while (($text =~ s!\A(.+)/\*!$1/-*!sg) > 0) {}
@@ -260,11 +260,11 @@ sub cleanupLSD {
     $text =~ s!#endif\Z!*/!;
 
     # replace long first / last line comments with doxygen comments
-    $text =~ s!\A/\*+!/**!;
-    $text =~ s!$n*\*+/!*/!;
+    $text =~ s!\A/($n|\*)+!/**!;
+    $text =~ s!($n|\*)+/\Z!*/!;
 
     # get rid of any long string of divider characters
-    $text =~ s!$n*([-*%+=])\1{4,}$n*!!sg;
+    $text =~ s!([-*%+=])\1{4,}!!sg;
 
     # get rid of CVS tags
     $text =~ s!\$(?:Id|Date|Revision)\$!!mg;
@@ -385,7 +385,7 @@ sub cleanupLSD {
 		($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
 	}sge;
 
-	# replace subsection commands
+        # replace subsection commands, preserving labels
 	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
 	    $_ = '\\par ' . $1 . "\n";
 	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
@@ -393,8 +393,11 @@ sub cleanupLSD {
 	}sge;
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
 
+        # preserve references
+        $text =~ s!(~*\\ref$wbbr)!\\htmlonly<b>$2</b>\\endhtmlonly\\latexonly$1\\endlatexonly!sg;
+
 	# replace citations
-	$text =~ s{\\(?:cite|ref)$wbbr}{
+        $text =~ s{\\cite$wbbr}{
 	    $_ = $1;
 	    s/://g;
 	    '\ref ' . $_
@@ -406,6 +409,7 @@ sub cleanupLSD {
     }
 
     # get rid of empty comments
+    $text =~ s!\A/\*/\Z!!;
     $text =~ s{/\*+(\s*)\*+/}{
 	my $wsp = $1;
 	$wsp =~ s![^\n]!!g;
