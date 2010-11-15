@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 11
+# serial 12
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -313,4 +313,30 @@ AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
       *) AC_MSG_ERROR([bad value ${enableval} for --enable-osx-version-check]);;
     esac
   ], [ osx_version_check=true ] )
+])
+
+AC_DEFUN([LALSUITE_OSX_VERSION_CHECK],
+[
+LALSUITE_ENABLE_OSX_VERSION_CHECK
+if test "x${osx_version_check}" = "xtrue"; then
+  if test "x$build_vendor" = "xapple"; then
+    AC_CHECK_PROGS([SW_VERS],[sw_vers])
+    if test "x$SW_VERS" != "x"; then
+      AC_MSG_CHECKING([Mac OS X version])
+      MACOSX_VERSION=`$SW_VERS -productVersion`
+      AC_MSG_RESULT([$MACOSX_VERSION])
+    fi
+    case "$MACOSX_VERSION" in
+      10.0*|10.1*|10.2*|10.3*)
+        AC_MSG_ERROR([This version of Mac OS X is not supported])
+        ;;
+      10.4*|10.5*|10.6*)
+        # supported version
+        ;;
+      *)
+        AC_MSG_WARN([Unknown Mac OS X version])
+        ;;
+    esac
+  fi
+fi
 ])
