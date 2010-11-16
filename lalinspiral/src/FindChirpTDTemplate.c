@@ -153,6 +153,7 @@ LALFindChirpTDTemplate (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case IMRPhenomB:
       break;
 
     default:
@@ -261,6 +262,11 @@ LALFindChirpTDTemplate (
     tmplt->fLower          = params->fLow;
     tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
     tmplt->signalAmplitude = 1.0;
+    if (params->approximant == IMRPhenomB)
+    {
+      tmplt->spin1[2] = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
+      tmplt->distance = 1.;
+    }
 
     /* compute the tau parameters from the input template */
     LALInspiralParameterCalc( status->statusPtr, tmplt );
@@ -474,6 +480,7 @@ LALFindChirpTDNormalize(
     case PadeT1:
     case EOB:
     case EOBNR:
+    case IMRPhenomB:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );

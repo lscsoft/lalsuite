@@ -317,7 +317,6 @@ static void XLALComputePhenomParams2( BBHPhenomParams  *phenParams,
             phenParams->psi5    = 0.;
     }
 
-
     return;
 
 }
