@@ -692,8 +692,9 @@ void uncorrelatedMCMCsingleUpdate(struct interferometer *ifo[], struct parSet *s
   if(ran < 1.0e-3) largejumpall = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
   if(ran < 1.0e-4) largejumpall = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in all parameters
 	
-  for(p=0;p<mcmc->nMCMCpar;p++) mcmc->nParam[tempi][p] = mcmc->param[tempi][p];	
+  for(p=0;p<mcmc->nMCMCpar;p++) if(mcmc->parFix[p]==0) mcmc->nParam[tempi][p] = mcmc->param[tempi][p];	
 	
+  p=(int)gsl_rng_uniform_int(mcmc->ran,mcmc->nMCMCpar);
   while(mcmc->parFix[p]!=0) p=(int)gsl_rng_uniform_int(mcmc->ran,mcmc->nMCMCpar); //random parameter for which we propose a jump
       
       mcmc->nParam[tempi][p] = mcmc->param[tempi][p] + gsl_ran_gaussian(mcmc->ran,mcmc->adaptSigma[tempi][p]) * largejumpall;
