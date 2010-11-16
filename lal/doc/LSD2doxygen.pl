@@ -322,7 +322,7 @@ sub cleanupLSD {
                   )}!(MANUAL INTERVENTION $1 $2)!mgpx;
 
 	# convert formulae
-	$text =~ s!\$\$(.+?)\$\$!\f[$1\f]!sg;
+	$text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
 	$text =~ s{\$(.+?)\$}{
 	    $_ = '\f$' . $1 . '\f$';
 	    #s/^([^\n]*)\n([^\n]+)$/$1 $2\n/sg;
