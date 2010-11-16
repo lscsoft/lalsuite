@@ -213,7 +213,6 @@ tagLALIFOData
   LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
-  REAL8TimeSeries           *oneSidedNoiseTimeDomainWeight;
   REAL8Window               *window;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8                     fLow, fHigh;	//integration limits;
@@ -244,10 +243,6 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data,
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
 REAL8 NullLogLikelihood(LALIFOData *data);
 
-/* Converts a PSD to the corresponding time domain correlation weight
-   function. */
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD);
-								  
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);
 void dumptemplateTimeDomain(LALVariables *currentParams, LALIFOData * data, 
@@ -279,8 +274,13 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 
 void mc2masses(double mc, double eta, double *m1, double *m2);
 
-
-
+/* Time-Domain Likelihood Utility Functions. */
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan);
+UINT4 nextPowerOfTwo(const UINT4 n);
+void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
+void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
+UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *time, const REAL8TimeSeries *series);
+REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
 
 #endif
 

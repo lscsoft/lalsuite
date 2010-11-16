@@ -1238,28 +1238,119 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 /* The time-domain weight corresponding to the noise power spectrum
    S(f) is defined to be:
 
-   s(tau) == \int_0^\infty df \frac{\exp(- 2 \pi i f tau)}{S(f)}
+   s(tau) == \int_{-infty}^\infty df \frac{\exp(2 \pi i f tau)}{S(f)}
 
 */
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD) {
-  REAL8Vector *InvPSD = NULL;
-  REAL8FFTPlan *plan = NULL;
-  size_t i;
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
+  COMPLEX16FrequencySeries *CPSD = NULL;
+  UINT4 i;
+  
+  if (TDW->data->length != 2*(PSD->data->length - 1)) {
+    fprintf(stderr, "PSDToTDW: TDW-PSD length mismatch (in %s, line %d)", __FILE__, __LINE__);
+    exit(1);
+  }
 
-  InvPSD = (REAL8Vector *) XLALCreateREAL8Vector(PSD->data->length);
-  plan = (REAL8FFTPlan *) XLALCreateREAL8FFTPlan(PSD->data->length, 1, 1);
+  CPSD = 
+    XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    InvPSD->data[i] = 1.0 / PSD->data->data[i];
+    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
+    CPSD->data->data[i].im = 0.0;
   }
 
-  XLALREAL8VectorFFT(TDW->data, InvPSD, plan);
-  TDW->deltaT = 1.0/(PSD->deltaF*(PSD->data->length - 1));
+  XLALREAL8FreqTimeFFT(TDW, CPSD, plan);
+}
+
+UINT4 nextPowerOfTwo(const UINT4 n) {
+  UINT4 np2 = 1;
   
-  for (i = 0; i < TDW->data->length; i++) {
-    TDW->data->data[i] *= PSD->deltaF; /* Re-scale to correct size. */
+  for (np2 = 1; np2 < n; np2 *= 2) ; /* Keep doubling until >= n */
+
+  return np2;
+}
+
+void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
+  if (padded->length < data->length) {
+    fprintf(stderr, "padREAL8Sequence: padded sequence too short (in %s, line %d)", __FILE__, __LINE__);
+    exit(1);
   }
 
-  XLALDestroyREAL8FFTPlan(plan);
-  XLALDestroyREAL8Vector(InvPSD);
+  memset(padded->data, 0, padded->length*sizeof(padded->data[0]));
+  memcpy(padded->data, data->data, data->length*sizeof(data->data[0]));
+}
+
+void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
+  UINT4 i;
+  UINT4 np = padded->length;
+  UINT4 nd = data->length;
+
+  if (np < nd) {
+    fprintf(stderr, "padWrappedREAL8Sequence: padded sequence too short (in %s, line %d)", __FILE__, __LINE__);
+    exit(1);
+  }
+
+  memset(padded->data, 0, np*sizeof(padded->data[0]));
+
+  for (i = 0; i < nd/2; i++) {
+    padded->data[i] = data->data[i]; /* Positive times/frequencies. */
+    padded->data[np-i] = data->data[nd-i]; /* Wrapped, negative times/frequencies. */
+  }
+}
+
+UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *series) {
+  REAL8 dT = XLALGPSDiff(tm, &(series->epoch));
+
+  return (UINT4) (round(dT/series->deltaT));
+}
+
+REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2) {
+  LIGOTimeGPS start, stop;
+  LIGOTimeGPS stopS1, stopS2;
+  LIGOTimeGPS current;
+  UINT4 i1, i2;
+  REAL8 sum = 0.0;
+
+  /* Compute stop times. */
+  stopS1 = s1->epoch;
+  stopS2 = s2->epoch;
+  XLALGPSAdd(&stopS1, s1->deltaT);
+  XLALGPSAdd(&stopS2, s2->deltaT);
+
+  /* The start time is the max of the two start times, the stop time
+     is the min of the two stop times */
+  start = (XLALGPSCmp(&(s1->epoch), &(s2->epoch)) <= 0 ? s2->epoch : s1->epoch); /* Start at max start time. */
+  stop = (XLALGPSCmp(&stopS1, &stopS2) <= 0 ? stopS1 : stopS2); /* Stop at min end time. */
+
+  current = start;
+  i1 = LIGOTimeGPSToNearestIndex(&current, s1);
+  i2 = LIGOTimeGPSToNearestIndex(&current, s2);
+  do {
+    LIGOTimeGPS nextTime1, nextTime2, nextTime;
+    REAL8 dt;
+    nextTime1 = s1->epoch;
+    nextTime2 = s2->epoch;
+    XLALGPSAdd(&nextTime1, (i1+0.5)*s1->deltaT);
+    XLALGPSAdd(&nextTime2, (i2+0.5)*s2->deltaT);
+
+    /* Whichever series needs updating first gives us the next time. */
+    nextTime = (XLALGPSCmp(&nextTime1, &nextTime2) <= 0 ? nextTime1 : nextTime2);
+
+    /* Ensure we don't go past the stop time. */
+    nextTime = (XLALGPSCmp(&nextTime, &stop) <= 0 ? nextTime : stop);
+
+    dt = XLALGPSDiff(&nextTime, &current);
+
+    sum += dt*s1->data->data[i1]*s2->data->data[i2];
+
+    if (XLALGPSCmp(&nextTime, &nextTime1) == 0) {
+      i1++;
+    }
+    if (XLALGPSCmp(&nextTime, &nextTime2) == 0) {
+      i2++;
+    }
+
+    current = nextTime;    
+  } while (XLALGPSCmp(&current, &stop) < 0);
+
+  return sum;
 }
