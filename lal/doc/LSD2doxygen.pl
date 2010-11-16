@@ -308,10 +308,12 @@ sub cleanupLSD {
 	# no arguments
 	$text =~ s!\\(?:
                    footnotesize|medskip|newpage|noindent
-                  )$n*!!mg;
+                  )$n*!!mgx;
 
 	# flag these environments for manual intervention
-	$text =~ s!\\(begin|end)$n*{(figure|table)}!(MANUAL INTERVENTION $1 $2)!mgp;
+	$text =~ s!\\(begin|end)$n*{(
+                   figure|table
+                  )}!(MANUAL INTERVENTION $1 $2)!mgpx;
 
 	# convert formulae
 	$text =~ s!\$\$(.+?)\$\$!\f[$1\f]!sg;
