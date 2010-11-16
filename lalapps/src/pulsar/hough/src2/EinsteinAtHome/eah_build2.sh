@@ -41,6 +41,8 @@ download() {
 
 eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
+test ".$appname" = "." && appname=einstein_S5GC1HF
+test ".$appversion" = "." && appversion=0.00
 boinc_rev=-r22561
 #previous:-r22503 -r22363 -r21777 -r'{2008-12-01}'
 
@@ -69,6 +71,10 @@ for i; do
 	    CFLAGS="-O3 $CFLAGS"
 	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    shared_copt="--disable-shared"  ;;
+	--appname=*)
+	    appname=`echo "$i" | sed 's/--appname=//'` ;;
+	--appversion=*)
+	    appversion=`echo "$i" | sed 's/--appversion=//'` ;;
 	--norebuild) # dangerous, for testing only!
 	    rebuild_binutils=""
 	    rebuild_boinc=""
@@ -83,17 +89,20 @@ for i; do
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
 	    fftw_copts=--enable-sse
+	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
 	    fftw_copts="--enable-sse --enable-sse2"
+	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
 	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
 	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
 	    fftw_copts=--enable-altivec
+	    planclass=__ALTIVEC
 	    acc="_altivec";;
 	--cuda)
 	    cuda=true
@@ -144,6 +153,8 @@ for i; do
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
 	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
 	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
+	    echo "  --appname         set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
+	    echo "  --appversion      set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
@@ -166,6 +177,7 @@ if [ ."$build_win32" = ."true" ] ; then
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
     ext=".exe"
+    platform=windows_intelx86
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
         log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
@@ -188,10 +200,16 @@ if [ ."$build_win32" = ."true" ] ; then
 else
     case `uname -s` in
 	Darwin)
+            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+                platform=powerpc-apple-darwin
+	    else
+		platform=i686-apple-darwin
+	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
 	    LDFLAGS="-lpthread $LDFLAGS"
-	    if [ x"$release" = x"true" ]; then
+	    platform=i686-pc-linux-gnu
+	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
 		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty"
@@ -521,14 +539,16 @@ fi
 log_and_do cd "$BUILD/lalapps/src/pulsar/GCT"
 log_and_dont_fail make gitID
 if [  .$MACOSX_DEPLOYMENT_TARGET = .10.3 -a -r "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a" ] ; then
-  log_and_do rm -f libstdc++.a
-  log_and_do ln -s "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a"
-  log_and_do make "eah_HierarchSearchGCT_manual"
-  log_and_do cp "eah_HierarchSearchGCT_manual" "$EAH/eah_HierarchSearchGCT$acc"
+    log_and_do rm -f libstdc++.a
+    log_and_do ln -s "$SDKROOT/usr/lib/gcc/darwin/3.3/libstdc++.a"
+    log_and_do make "eah_HierarchSearchGCT_manual"
+    log_and_do cp "eah_HierarchSearchGCT_manual" "$EAH/eah_HierarchSearchGCT$acc"
 else
-  log_and_do make "eah_HierarchSearchGCT$ext"
-  log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
+    log_and_do make "eah_HierarchSearchGCT$ext"
+    log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 fi
+test ".$release" = ".true" &&
+    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
@@ -558,7 +578,8 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4$ext
     log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat$ext
     log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
-    PATH=".:$PATH" LAL_DATA_PATH="$PWD" log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
+    NOCLEANUP=1 PATH=".:$PATH" LAL_DATA_PATH="$PWD" \
+	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8
     log_and_show "==========================================="
     log_and_show "Test passed"
     log_and_show "==========================================="
