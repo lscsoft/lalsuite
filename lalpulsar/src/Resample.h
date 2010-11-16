@@ -40,7 +40,7 @@ canonical time coordinate.
 #include <lal/Resample.h>
 \endcode
 
-\noindent One of the crucial problems in searching for
+One of the crucial problems in searching for
 constant-frequency astrophysical signals is removing the effects of
 Doppler modulation due to the Earth's motion.  This is normally
 accomplished by constructing a canonical time coordinate \f$\tau\f$ of an
