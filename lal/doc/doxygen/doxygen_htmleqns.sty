@@ -2,7 +2,9 @@
 \ProvidesPackage{doxygen_htmleqns}
 
 % remove equation numbers
-\def\@eqnnum{}
+\def\@eqnnum{ }
 
 % make \label output the label name
-\def\label#1{\qquad\qquad\mathrm{(#1)}}
+%%\def\label#1{\qquad\qquad\mathrm{(#1)}}
+\usepackage[right]{showlabels}
+
