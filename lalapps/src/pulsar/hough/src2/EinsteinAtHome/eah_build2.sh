@@ -71,9 +71,9 @@ for i; do
 	    CFLAGS="-O3 $CFLAGS"
 	    LDFLAGS="-static-libgcc $LDFLAGS"
 	    shared_copt="--disable-shared"  ;;
-	--appname=)
+	--appname=*)
 	    appname=`echo "$i" | sed 's/--appname=//'` ;;
-	--appversion=)
+	--appversion=*)
 	    appversion=`echo "$i" | sed 's/--appversion=//'` ;;
 	--norebuild) # dangerous, for testing only!
 	    rebuild_binutils=""
