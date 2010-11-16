@@ -17,68 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="RulesToTimingDifferenceCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+\latexonly\label{ss:RulesToTimingDifference.c}\endlatexonly
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{RulesToTimingDifference.c}}
-\label{ss:RulesToTimingDifference.c}
-
-Computes values of the timing difference $(\tau-t)/\Delta t$ from a
+Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a
 set of resampling rules.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{RulesToTimingDifferenceCP}
-\idx{LALRulesToTimingDifference()}
-
-\subsubsection*{Description}
-
-These function fills a time series \verb@*difference@ with the values
-of the normalized timing difference $(\tau-t)/\Delta t$ between the
-detector time $t$ and some canonical time $\tau(t)$, sampled as a
-function of $t$.  This is computed using the resampling rules
-\verb@*rules@, which specify how one resamples a function of $t$ as a
-function of $\tau$.  Note that $\Delta t$ in the formula above is the
-raw (unresampled) sampling interval in $t$ used to compute the
-resampling rules, \emph{not} necessarily the sampling interval of the
-time series.  Thus a shift of $\pm1$ in the resampling rules
-corresponds to a change of $\pm1$ in the normalized timing difference.
-
-\subsubsection*{Algorithm}
-
-This routine is quite simple: it increments a time counter
-\verb@tNext@ by resampling rule intervals until it finds the next
-correction after the current time \verb@t@, accumulating the shifts to
-the timing function given by \verb@rules->shift@.  It then increments
-\verb@t@ until it steps past \verb@tNext@, each time filling
-\verb@difference->data@ with the current value of the cumulative
-timing error $(\tau-t)/\Delta t$.  These are iterated until the time
-series is completely filled.  Internally, all times are all converted
-to units of \verb@rules->deltaT@ and are measured from
-\verb@rules->start@.
-
-It is worth noting that a shift in the resampling, as given by
-\verb@rules->shift@, adjusts the value of $\tau-t$ by shifting the
-current value of $t$.  Thus the difference in \emph{detector} time
-between the $n^\mathrm{th}$ and the $(n+1)^\mathrm{th}$ resampling
-corrections is (\verb@interval[@$n$\verb@]@$\times$\verb@decimate@ +
-\verb@shift[@$n$\verb@]@)$\times\Delta t$, while the difference in
-\emph{canonical} time is simply
-\verb@interval[@$n$\verb@]@$\times$\verb@decimate@$\times\Delta t$.
-Since \verb@*difference@ is assumed to be sampled in detector time
-$t$, we use the first of these formulae.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{RulesToTimingDifferenceCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -88,12 +35,47 @@ $t$, we use the first of these formulae.
 
 NRCSID(RULESTOTIMINGDIFFERENCEC,"$Id$");
 
-/* <lalVerbatim file="RulesToTimingDifferenceCP"> */
+/** This function fills a time series <tt>*difference</tt> with the values
+of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
+detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, sampled as a
+function of \f$t\f$.  This is computed using the resampling rules
+<tt>*rules</tt>, which specify how one resamples a function of \f$t\f$ as a
+function of \f$\tau\f$.  Note that \f$\Delta t\f$ in the formula above is the
+raw (unresampled) sampling interval in \f$t\f$ used to compute the
+resampling rules, \e not necessarily the sampling interval of the
+time series.  Thus a shift of \f$\pm1\f$ in the resampling rules
+corresponds to a change of \f$\pm1\f$ in the normalized timing difference.
+
+\par Algorithm
+
+This routine is quite simple: it increments a time counter
+\c tNext by resampling rule intervals until it finds the next
+correction after the current time \c t, accumulating the shifts to
+the timing function given by <tt>rules->shift</tt>.  It then increments
+\c t until it steps past \c tNext, each time filling
+<tt>difference->data</tt> with the current value of the cumulative
+timing error \f$(\tau-t)/\Delta t\f$.  These are iterated until the time
+series is completely filled.  Internally, all times are all converted
+to units of <tt>rules->deltaT</tt> and are measured from
+<tt>rules->start</tt>.
+
+It is worth noting that a shift in the resampling, as given by
+<tt>rules->shift</tt>, adjusts the value of \f$\tau-t\f$ by shifting the
+current value of \f$t\f$.  Thus the difference in \e detector time
+between the \f$n^\mathrm{th}\f$ and the \f$(n+1)^\mathrm{th}\f$ resampling
+corrections is (<tt>interval[</tt>\f$n\f$<tt>]</tt>\f$\times\f$\c decimate +
+<tt>shift[</tt>\f$n\f$<tt>]</tt>)\f$\times\Delta t\f$, while the difference in
+\e canonical time is simply
+<tt>interval[</tt>\f$n\f$<tt>]</tt>\f$\times\f$\c decimate\f$\times\Delta t\f$.
+Since <tt>*difference</tt> is assumed to be sampled in detector time
+\f$t\f$, we use the first of these formulae.
+
+*/
 void
 LALRulesToTimingDifference( LALStatus       *stat,
 			    REAL4TimeSeries *difference,
 			    ResampleRules   *rules )
-{ /* </lalVerbatim> */
+{
   REAL8 tRuleStart; /* Start time of resampling rules */
   REAL8 tRuleStop;  /* Stop time of resampling rules */
   REAL8 tDiffStart; /* Start time of time series */
