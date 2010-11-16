@@ -29,7 +29,7 @@ canonical time coordinate.
 */
 
 /**
-   \defgroup Resample_h Header Resample.h
+   \defgroup Resample_h Time Series Resampling
    \ingroup pulsarCommon
 
 Provides routines for resampling time series according to a new
@@ -155,7 +155,7 @@ typedef struct tagResampleRules {
 
 
 /** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
- * Eq.\ \latexonly\ref{eq:delta-tau}\endlatexonly for notation.
+ * Eq.\ \htmlonly<tt>{eq:delta-tau}</tt>\endhtmlonly\latexonly(\ref{eq:delta-tau})\endlatexonly for notation.
  */
 typedef struct tagPolycoStruc {
   REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
