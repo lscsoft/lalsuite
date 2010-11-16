@@ -654,7 +654,7 @@ int main( int argc, char *argv[])
 			XLALDestroyRandomParams(randparam);
 		}
 		/* set up a Tukey Window with tails of 1s at each end */
-		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1s agreed on beta parameter for review */
+		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1 agreed on beta parameter for review */
 		/* if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen); */ /* Original window, commented out for review */
 		/* Read the data from disk into a vector (RawData) */
 		if(!FakeFlag){
