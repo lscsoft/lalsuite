@@ -21,6 +21,12 @@ while (my $arg = shift @ARGV) {
 		$diffpipe = "";
 		$action = "diff";
 	    }
+	    case "kompare" {
+		$diffcmd = "diff -u5";
+		$diffpipe = "| kompare -o -";
+		$action = "diff";
+	    }
+
 	    case "print" {
 		$printfn = 1;
 	    }
@@ -281,13 +287,13 @@ sub cleanupLSD {
 
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
-	
+
 	# regexes for balanced braces and brackets
 	my $bbr  = qr!({(?:[^{}]++|(?-1))*})!;
 	my $wbbr = qr!{((?:[^{}]*$bbr)*[^{}]*)}!;
 	my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
 	my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
-	
+
 	# remove these LaTeX commands:
 	# environments
 	$text =~ s!\\(?:begin|end)$n*{(?:
