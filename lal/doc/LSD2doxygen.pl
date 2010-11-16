@@ -399,7 +399,7 @@ sub cleanupLSD {
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
 
         # preserve references
-        $text =~ s!(~*\\ref$wbbr)!\\htmlonly($2)\\endhtmlonly\\latexonly$1\\endlatexonly!sg;
+        $text =~ s!~*(\(*\\ref$wbbr\)*)!\\ \\htmlonly<tt>{$2}</tt>\\endhtmlonly\\latexonly$1\\endlatexonly!sg;
 
 	# replace citations
         $text =~ s{\\cite$wbbr}{
