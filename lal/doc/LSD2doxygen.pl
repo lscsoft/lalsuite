@@ -291,7 +291,7 @@ sub cleanupLSD {
 	# remove these LaTeX commands:
 	# environments
 	$text =~ s!\\(?:begin|end)$n*{(?:
-                   center|document|figure|obeylines|table
+                   center|document|obeylines
                    )}!!mgx;
 	# two arguments
 	$text =~ s!\\(?:
@@ -309,6 +309,9 @@ sub cleanupLSD {
 	$text =~ s!\\(?:
                    footnotesize|medskip|newpage|noindent
                   )$n*!!mg;
+
+	# flag these environments for manual intervention
+	$text =~ s!\\(begin|end)$n*{(figure|table)}!(MANUAL INTERVENTION $1 $2)!mgp;
 
 	# convert formulae
 	$text =~ s!\$\$(.+?)\$\$!\f[$1\f]!sg;
