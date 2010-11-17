@@ -1244,10 +1244,12 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
   COMPLEX16FrequencySeries *CPSD = NULL;
   UINT4 i;
+  UINT4 TDWLength = 2*(PSD->data->length - 1);
   
   if (TDW->data->length != 2*(PSD->data->length - 1)) {
-    fprintf(stderr, "PSDToTDW: TDW-PSD length mismatch (in %s, line %d)", __FILE__, __LINE__);
-    exit(1);
+    fprintf(stderr, "WARNING: adjusting time-domain weight length (in %s, line %d)", __FILE__, __LINE__);
+    TDW->data->data = XLALRealloc(TDW->data->data, TDWLength*sizeof(TDW->data->data[0]));
+    TDW->data->length = TDWLength;
   }
 
   CPSD = 
