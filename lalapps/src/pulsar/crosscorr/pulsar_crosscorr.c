@@ -418,11 +418,17 @@ int main(int argc, char *argv[]){
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + (INT4)ceil(uvar_q1Band/uvar_q1Resolution);
+    if (uvar_q1Band > 0) {
+      nq1Loops = (INT8)floor(uvar_q1Band/uvar_q1Resolution);
+    }
     
-    nq2Loops = 1 + ceil(uvar_q2Band/uvar_q2Resolution);
+    if (uvar_q2Band > 0) {
+      nq2Loops = floor(uvar_q2Band/uvar_q2Resolution);
+    }
 
-    nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
+    if (uvar_brakingindexBand > 0) {
+      nnLoops = floor(uvar_brakingindexBand/uvar_brakingindexResolution);
+    }
 
     delta_q1 = uvar_q1Resolution;
     
@@ -441,9 +447,13 @@ int main(int argc, char *argv[]){
       uvar_fddotResolution = CUBE(1/tObs);
     }
 
-    nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+    if (uvar_fdotBand > 0) {
+      nfdotLoops = floor(uvar_fdotBand/uvar_fdotResolution);
+    }
 
-    nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+    if (uvar_fddotBand > 0) {
+    nfddotLoops = ceil(uvar_fddotBand/uvar_fddotResolution);
+    }
 
     delta_fdot = uvar_fdotResolution;
  
@@ -643,7 +653,7 @@ int main(int argc, char *argv[]){
   
   time(&t1); 
 
-  fprintf(stderr,"beginning main calculations over %d loops\n",nParams);
+  fprintf(stderr,"beginning main calculations over %ld loops:\n%ld freq, %ld Q1, %ldn\n",nParams, nfreqLoops, nq1Loops, nnLoops);
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
