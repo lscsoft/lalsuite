@@ -1236,6 +1236,10 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
+UINT4 NASDFromNPSD(const UINT4 NPSD) {
+  return 2*(NPSD - 1);
+}
+
 /* The time-domain weight corresponding to the noise power spectrum
    S(f) is defined to be:
 
@@ -1245,10 +1249,11 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
   COMPLEX16FrequencySeries *CPSD = NULL;
   UINT4 i;
-  UINT4 TDWLength = 2*(PSD->data->length - 1);
+  UINT4 TDWLength = NASDFromNPSD(PSD->data->length);
   
-  if (TDW->data->length != 2*(PSD->data->length - 1)) {
-    fprintf(stderr, "WARNING: adjusting time-domain weight length (in %s, line %d)", __FILE__, __LINE__);
+  if (TDW->data->length != TDWLength) {
+    fprintf(stderr, "WARNING: adjusting time-domain weight length from %d to %d (in %s, line %d)", 
+            TDW->data->length, TDWLength, __FILE__, __LINE__);
     TDW->data->data = XLALRealloc(TDW->data->data, TDWLength*sizeof(TDW->data->data[0]));
     TDW->data->length = TDWLength;
   }
@@ -1262,6 +1267,10 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
   }
 
   XLALREAL8FreqTimeFFT(TDW, CPSD, plan);
+
+  for (i = 0; i < TDWLength; i++) {
+    TDW->data->data[i] /= TDWLength; /* Normalize correctly. */
+  }
 }
 
 UINT4 nextPowerOfTwo(const UINT4 n) {

@@ -282,6 +282,7 @@ void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
 UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *time, const REAL8TimeSeries *series);
 REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
 void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
+UINT4 NASDFromNPSD(const UINT4 NPSD);
 
 #endif
 
