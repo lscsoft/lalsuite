@@ -2,6 +2,10 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+#Test for WMF
+td_test_progs = TDW_test
+TDW_test_SOURCES = LALInference.c TDW_test.c
+
 if LALINSPIRAL
 if LALFRAME
 
