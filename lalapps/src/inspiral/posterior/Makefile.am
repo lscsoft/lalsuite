@@ -2,6 +2,10 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+#WMF Test Programs---remove when time-domain likelihood finished
+td_test_progs = time_series_product_test
+time_series_product_test_SOURCES = time_series_product_test.c LALInference.c
+
 if LALINSPIRAL
 if LALFRAME
 
@@ -23,6 +27,7 @@ endif
 endif
 
 bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs)
+noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 BUILT_SOURCES =

@@ -1254,7 +1254,7 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
+    CPSD->data->data[i].re = 2.0 / PSD->data->data[i]; /* Factor of 2 for one-sided --> two-sided. */
     CPSD->data->data[i].im = 0.0;
   }
 
@@ -1313,8 +1313,8 @@ REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s
   /* Compute stop times. */
   stopS1 = s1->epoch;
   stopS2 = s2->epoch;
-  XLALGPSAdd(&stopS1, s1->deltaT);
-  XLALGPSAdd(&stopS2, s2->deltaT);
+  XLALGPSAdd(&stopS1, (s1->data->length-1)*s1->deltaT);
+  XLALGPSAdd(&stopS2, (s2->data->length-1)*s2->deltaT);
 
   /* The start time is the max of the two start times, the stop time
      is the min of the two stop times */
