@@ -17,188 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/************************** <lalVerbatim file="CreateResampleRulesCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+\latexonly\label{ss:CreateResampleRules.c}\endlatexonly
 
-/********************************************************** <lalLaTeX>
+Creates an object of type \c ResampleRules according to a
+piecewise polynomial fit to the canonical time \f$\tau(t)\f$.
 
-\subsection{Module \texttt{CreateResampleRules.c}}
-\label{ss:CreateResampleRules.c}
-
-Creates an object of type \verb@ResampleRules@ according to a
-piecewise polynomial fit to the canonical time $\tau(t)$.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CreateResampleRulesCP}
-\idx{LALCreateResampleRules()}
-
-\subsubsection*{Description}
-
-This function creates an object \verb@**rules@ of type
-\verb@ResampleRules@, according to the polynomial fit to the canonical
-time function found in \verb@*polyco@ and the sampling parameters
-found in \verb@*params@.  See the header \verb@Resample.h@ for a
-description of these datatypes.  Initially the output handle must be a
-valid handle (\verb@rules@$\neq$\verb@NULL@) but should not point to
-an existing object (\verb@*rules@=\verb@NULL@).
-
-\subsubsection*{Algorithm}
-
-\paragraph{Formulae for computing \texttt{ResampleRules}:}
-Since the resampling rules can be expected to be applied to datasets
-with a huge number of sample times, the primary concern when designing
-the algorithm was to maintain a low operation count per sample.  For
-instance, a simple and easy approach would be to step through the time
-domain at the rate of one resampled time interval $d\Delta t$ per
-step, and record how many steps it takes for $\tau-t$ to change by one
-(unresampled) interval $\Delta t$.  However, this approach requires us
-to recalculate $\tau-t$ at \emph{each} sample time, when it is only
-likely to change significantly every thousand or so sample times.  A
-much better approach is to invert the polynomial fit to give $t$ as a
-function of $\tau-t$; that is, we change $\tau-t$ by a discrete amount
-$\Delta t$, and find the corresponding change in $t$.  This function
-need only be evaluated once for each distinct value of $\tau-t$,
-rather than once for each distinct value of $t$.
-
-At present, \verb@CreateResampleRules()@ considers polynomial fits to
-$\tau(t)$ only up to quadratic order.  This is almost certainly
-sufficient for most conventional pulsar searches, where the dominant
-high-order variation in $\tau$ over short periods (under one hour)
-arises from the Earth's motion: $\tau-t\sim
-(R_\mathrm{Earth}/c)\sin(2\pi t/P_\mathrm{Earth})$.  Since one
-normally applies polynomial fits to $\tau(t)$ over hour-long time
-stretches, $t$ is never more than half an hour
-($1/48P_\mathrm{Earth}$) from a fitting point, and the maximum error
-in $\tau-t$ due to cubic and higher terms is $\sim
-(R_\mathrm{Earth}/c)(2\pi/48)^3/3! \sim 8\mu\mathrm{s}$.  This is
-insignificant at the 32~kHz sampling rate expected for LIGO.
-
-We do most of the computational work in dimensionless quantities
-normalized by the resampled time interval $d\Delta t$ (where $\Delta
-t$ is the unresampled time interval and $d$ is the decimation factor).
-In this way, dimensionless times can be converted into numbers of
-samples simply by rounding.  In any given fitting region
-$[t_{\mathrm{bound}(i-1)},t_{\mathrm{bound}(i)})$ we define
-dimensionless parameters:
-\begin{eqnarray}
- n  & = & \frac{\tau - t}{\Delta t}   \; , \nonumber\\
- T  & = & \frac{t-t_{(i)}}{d\Delta t} \; , \nonumber\\
-A_k & = & a_{k(i)}(d\Delta t)^{k-1}   \; . \nonumber
-\label{eq:dimensionless-params}
-\end{eqnarray}
-Eq.~(\ref{eq:delta-tau}) in the header \verb@Resample.h@ therefore
-gives us, for a quadratic fit:
-\begin{equation}
-\label{eq:dimensionless-tau}
-\frac{n}{d} = A_0 + A_1 T + A_2 T^2 \; .
-\end{equation}
-If one wants to know whether $n$ is increasing or decreasing with $T$,
-that is given by the sign of $A_1+2A_2T$.
-
-To compute the resample rules, we want to find the (integral)
-intervals in $T$ that correspond to (integral) shifts in $n$.
-Inverting the quadratic formula, we have the obvious solutions:
-\begin{equation}
-\label{eq:t-quadratic}
-T = \left(-\frac{A_1}{2A_2}\right) +
-	s\times\sqrt{\left[\left(-\frac{A_1}{2A_2}\right)^2
-	-\frac{A_0}{A_2}\right] + \left(\frac{1}{dA_2}\right)\times n}
-	\; ,
-\end{equation}
-where $s=\pm1$, depending on the sign of $A_2$ and whether $n$ is
-increasing or decreasing with $T$ ($s$ has the same sign as $A_2$ if
-$n$ is increasing, and the opposite if $n$ is decreasing).  Clearly
-most of these coefficients need only be computed once for any given
-polynomial fit, reducing the operation cost per evaluation of $T$.
-
-The procedure for computing a resample rule is to keep track of the
-current values of $n$ and $T$, and whether $n$ is increasing or
-decreasing with $T$.  One then increments/decrements $n$ by 1 (the
-\emph{shift}), computes a new value of $T$, and finds the difference
-from the old value (the \emph{interval}).  If the interval is less
-than a whole number, then increase the size of the shift by 1 and try
-again.  If the argument of the square root goes negative, then
-$\tau-t$ has reached a turning point: reverse the direction of the
-shift and the value of $s$.  If $T$ moves outside the current fitting
-region, then get the new polynomial fit and recompute $A_k$ and $T$
-(making sure to translate the old value of $T$, since the origin $T=0$
-has moved), and determine anew whether $n$ is increasing or
-decreasing.  Continue until $T$ moves out of the timespan for which we
-want to compute resample rules.
-
-If the \verb@*polyco@ structure contains only two polynomial
-coefficients per fitting interval, or if $A_2$ is dangerously small in
-a given fitting interval, then the \verb@CreateResampleRules()@
-routine reverts to a linear fit:
-\begin{equation}
-\label{eq:t-linear}
-T = \left(-\frac{A_0}{A_1}\right) + \left(\frac{1}{dA_1}\right)
-        \times n \; .
-\end{equation}
-
-If the \verb@*polyco@ structure contains only \emph{one} polynomial
-coefficients per fitting interval, or if $A_1$ is also dangerously
-small in a given fitting interval, then the
-\verb@CreateResampleRules()@ routine reverts to a constant fit: a
-shift is computed from the value of $n=dA_0$ at middle of the fitting
-region ($T=0$).
-
-\paragraph{Computational details:}
-The basic structure of the algorithm is an inner loop and an outer
-loop.  The inner loop is iterated once each time that $n$ is
-incremented or decremented and a new $T$ is computed; it terminates
-when $T$ moves out of the current region of fit, or past the end of
-the desired timespan.  The outer loop is iterated once for each set of
-polynomial fitting parameters that cover the desired timespan, and
-normally terminates only when $T$ leaves that timespan.  Loop
-termination is done with \verb@break@ and \verb@return@ commands, so
-as to avoid unnecessary repetition of tests.
-
-Once some initial setup is done by \verb@CreateResampleRules()@, this
-function calls distinct subroutines to perform quadratic, linear, or
-constant fits to $\tau-t$, depending on the number of polynomial
-coefficients per fitting region.  This avoids repeatedly querying the
-number of coefficients.
-
-Since the length of the arrays in the \verb@ResampleRules@ object are
-determined in the process of computing their contents, one must
-allocate temporary storage with care.  On the one hand, one doesn't
-want to allocate vastly more memory than will be required; on the
-other hand, allocating nodes to a linked list every time one evaluates
-$T$ would needlessly slow execution.  Unfortunately, the only hard
-upper limit on the size of the \verb@ResampleRules@ arrays is the
-total number $N_\mathrm{max}$ of resampled data in the timespan
-covered by the rules, and this probably overestimates the actual
-requirements by a factor of a thousand or so.
-
-The solution taken here is to allocate a two-dimensional array of
-integers, with $2\sqrt{N_\mathrm{max}}$ rows of
-$\sqrt{N_\mathrm{max}}$ elements.  Each pair of rows represents a
-continued sequence of intervals and shifts, and a new pair is
-allocated only when the previous one is full.  This requires the data
-to be copied into the output array at the end of execution, and adds
-an extra test to the inner loop to determine when new space is needed,
-but the actual memory allocation is done infrequently and in
-reasonably-sized blocks.  For instance, a week-long chunk of data
-sampled at 2~kHz would have $N_\mathrm{max}=1.2\times10^9$, but might
-actually require only $\sim2$~million integers.  These would end up
-being stored in $\sim60$ arrays of length 34780.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()
-LALCalloc()
-LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CreateResampleRulesCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -214,7 +42,7 @@ REAL8 globalNum;
     (INT4)( globalNum + 0.5 ) :                                      \
     (INT4)( globalNum - 0.5 ) ) */
 
-/* Simpler macro for rounding a number. */
+/** Simpler macro for rounding a number. */
 #define ROUND( num )                                                 \
   (INT4)( num )
 
@@ -246,14 +74,162 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 static void
 FreeTempRules( INT4 **tempRules, INT4 nSqrt );
 
+/** This function creates an object <tt>**rules</tt> of type
+\c ResampleRules, according to the polynomial fit to the canonical
+time function found in <tt>*polyco</tt> and the sampling parameters
+found in <tt>*params</tt>.  See the header Resample.h for a
+description of these datatypes.  Initially the output handle must be a
+valid handle (\c rules\f$\neq\f$\c NULL) but should not point to
+an existing object (<tt>*rules</tt>=\c NULL).
 
-/* <lalVerbatim file="CreateResampleRulesCP"> */
+\par Algorithm
+
+<b>Formulae for computing \c ResampleRules:</b>
+Since the resampling rules can be expected to be applied to datasets
+with a huge number of sample times, the primary concern when designing
+the algorithm was to maintain a low operation count per sample.  For
+instance, a simple and easy approach would be to step through the time
+domain at the rate of one resampled time interval \f$d\Delta t\f$ per
+step, and record how many steps it takes for \f$\tau-t\f$ to change by one
+(unresampled) interval \f$\Delta t\f$.  However, this approach requires us
+to recalculate \f$\tau-t\f$ at \e each sample time, when it is only
+likely to change significantly every thousand or so sample times.  A
+much better approach is to invert the polynomial fit to give \f$t\f$ as a
+function of \f$\tau-t\f$; that is, we change \f$\tau-t\f$ by a discrete amount
+\f$\Delta t\f$, and find the corresponding change in \f$t\f$.  This function
+need only be evaluated once for each distinct value of \f$\tau-t\f$,
+rather than once for each distinct value of \f$t\f$.
+
+At present, LALCreateResampleRules() considers polynomial fits to
+\f$\tau(t)\f$ only up to quadratic order.  This is almost certainly
+sufficient for most conventional pulsar searches, where the dominant
+high-order variation in \f$\tau\f$ over short periods (under one hour)
+arises from the Earth's motion: \f$\tau-t\sim
+(R_\mathrm{Earth}/c)\sin(2\pi t/P_\mathrm{Earth})\f$.  Since one
+normally applies polynomial fits to \f$\tau(t)\f$ over hour-long time
+stretches, \f$t\f$ is never more than half an hour
+(\f$1/48P_\mathrm{Earth}\f$) from a fitting point, and the maximum error
+in \f$\tau-t\f$ due to cubic and higher terms is \f$\sim
+(R_\mathrm{Earth}/c)(2\pi/48)^3/3! \sim 8\mu\mathrm{s}\f$.  This is
+insignificant at the 32~kHz sampling rate expected for LIGO.
+
+We do most of the computational work in dimensionless quantities
+normalized by the resampled time interval \f$d\Delta t\f$ (where \f$\Delta
+t\f$ is the unresampled time interval and \f$d\f$ is the decimation factor).
+In this way, dimensionless times can be converted into numbers of
+samples simply by rounding.  In any given fitting region
+\f$[t_{\mathrm{bound}(i-1)},t_{\mathrm{bound}(i)})\f$ we define
+dimensionless parameters:
+\f{eqnarray}{
+ n  & = & \frac{\tau - t}{\Delta t}   \; , \nonumber\\
+ T  & = & \frac{t-t_{(i)}}{d\Delta t} \; , \nonumber\\
+A_k & = & a_{k(i)}(d\Delta t)^{k-1}   \; . \nonumber
+\label{eq:dimensionless-params}
+\f}
+Eq.\ltxref{eq:delta-tau,Resample_h} therefore
+gives us, for a quadratic fit:
+\f{equation}{
+\label{eq:dimensionless-tau}
+\frac{n}{d} = A_0 + A_1 T + A_2 T^2 \; .
+\f}
+If one wants to know whether \f$n\f$ is increasing or decreasing with \f$T\f$,
+that is given by the sign of \f$A_1+2A_2T\f$.
+
+To compute the resample rules, we want to find the (integral)
+intervals in \f$T\f$ that correspond to (integral) shifts in \f$n\f$.
+Inverting the quadratic formula, we have the obvious solutions:
+\f{equation}{
+\label{eq:t-quadratic}
+T = \left(-\frac{A_1}{2A_2}\right) +
+	s\times\sqrt{\left[\left(-\frac{A_1}{2A_2}\right)^2
+	-\frac{A_0}{A_2}\right] + \left(\frac{1}{dA_2}\right)\times n}
+	\; ,
+\f}
+where \f$s=\pm1\f$, depending on the sign of \f$A_2\f$ and whether \f$n\f$ is
+increasing or decreasing with \f$T\f$ (\f$s\f$ has the same sign as \f$A_2\f$ if
+\f$n\f$ is increasing, and the opposite if \f$n\f$ is decreasing).  Clearly
+most of these coefficients need only be computed once for any given
+polynomial fit, reducing the operation cost per evaluation of \f$T\f$.
+
+The procedure for computing a resample rule is to keep track of the
+current values of \f$n\f$ and \f$T\f$, and whether \f$n\f$ is increasing or
+decreasing with \f$T\f$.  One then increments/decrements \f$n\f$ by 1 (the
+\e shift), computes a new value of \f$T\f$, and finds the difference
+from the old value (the \e interval).  If the interval is less
+than a whole number, then increase the size of the shift by 1 and try
+again.  If the argument of the square root goes negative, then
+\f$\tau-t\f$ has reached a turning point: reverse the direction of the
+shift and the value of \f$s\f$.  If \f$T\f$ moves outside the current fitting
+region, then get the new polynomial fit and recompute \f$A_k\f$ and \f$T\f$
+(making sure to translate the old value of \f$T\f$, since the origin \f$T=0\f$
+has moved), and determine anew whether \f$n\f$ is increasing or
+decreasing.  Continue until \f$T\f$ moves out of the timespan for which we
+want to compute resample rules.
+
+If the <tt>*polyco</tt> structure contains only two polynomial
+coefficients per fitting interval, or if \f$A_2\f$ is dangerously small in
+a given fitting interval, then the LALCreateResampleRules()
+routine reverts to a linear fit:
+\f{equation}{
+\label{eq:t-linear}
+T = \left(-\frac{A_0}{A_1}\right) + \left(\frac{1}{dA_1}\right)
+        \times n \; .
+\f}
+
+If the <tt>*polyco</tt> structure contains only \e one polynomial
+coefficients per fitting interval, or if \f$A_1\f$ is also dangerously
+small in a given fitting interval, then the
+LALCreateResampleRules() routine reverts to a constant fit: a
+shift is computed from the value of \f$n=dA_0\f$ at middle of the fitting
+region (\f$T=0\f$).
+
+<b>Computational details:</b>
+The basic structure of the algorithm is an inner loop and an outer
+loop.  The inner loop is iterated once each time that \f$n\f$ is
+incremented or decremented and a new \f$T\f$ is computed; it terminates
+when \f$T\f$ moves out of the current region of fit, or past the end of
+the desired timespan.  The outer loop is iterated once for each set of
+polynomial fitting parameters that cover the desired timespan, and
+normally terminates only when \f$T\f$ leaves that timespan.  Loop
+termination is done with \c break and \c return commands, so
+as to avoid unnecessary repetition of tests.
+
+Once some initial setup is done by LALCreateResampleRules(), this
+function calls distinct subroutines to perform quadratic, linear, or
+constant fits to \f$\tau-t\f$, depending on the number of polynomial
+coefficients per fitting region.  This avoids repeatedly querying the
+number of coefficients.
+
+Since the length of the arrays in the \c ResampleRules object are
+determined in the process of computing their contents, one must
+allocate temporary storage with care.  On the one hand, one doesn't
+want to allocate vastly more memory than will be required; on the
+other hand, allocating nodes to a linked list every time one evaluates
+\f$T\f$ would needlessly slow execution.  Unfortunately, the only hard
+upper limit on the size of the \c ResampleRules arrays is the
+total number \f$N_\mathrm{max}\f$ of resampled data in the timespan
+covered by the rules, and this probably overestimates the actual
+requirements by a factor of a thousand or so.
+
+The solution taken here is to allocate a two-dimensional array of
+integers, with \f$2\sqrt{N_\mathrm{max}}\f$ rows of
+\f$\sqrt{N_\mathrm{max}}\f$ elements.  Each pair of rows represents a
+continued sequence of intervals and shifts, and a new pair is
+allocated only when the previous one is full.  This requires the data
+to be copied into the output array at the end of execution, and adds
+an extra test to the inner loop to determine when new space is needed,
+but the actual memory allocation is done infrequently and in
+reasonably-sized blocks.  For instance, a week-long chunk of data
+sampled at 2~kHz would have \f$N_\mathrm{max}=1.2\times10^9\f$, but might
+actually require only \f$\sim2\f$~million integers.  These would end up
+being stored in \f$\sim60\f$ arrays of length 34780.
+*/
 void
 LALCreateResampleRules( LALStatus          *stat,
 			ResampleRules      **rules,
 			PolycoStruc        *polyco,
 			ResampleParamStruc *params )
-{ /* </lalVerbatim> */
+{
   INT4 nPoly;    /* Number of polynomial coefficients */
   REAL4 *tBound; /* Pointer to bounds of polynomial fitting regions */
   REAL4 *t0;     /* Pointer to polynomial fitting times */

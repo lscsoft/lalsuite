@@ -17,60 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/********************* <lalVerbatim file="PolycoToTimingDifferenceCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+\latexonly\label{ss:PolycoToTimingDifference.c}\endlatexonly
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{PolycoToTimingDifference.c}}
-\label{ss:PolycoToTimingDifference.c}
-
-Computes values of the timing difference $(\tau-t)/\Delta t$ from a
+Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a
 polynomial fit.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PolycoToTimingDifferenceCP}
-\idx{LALPolycoToTimingDifference()}
-
-\subsubsection*{Description}
-
-This function fills a time series \verb@*difference@ with the values
-of the normalized timing difference $(\tau-t)/\Delta t$ between the
-detector time $t$ and some canonical time $\tau(t)$, where $\Delta t$
-is the sampling interval in $t$.  The timing difference function is
-computed from the piecewise-polynomial fit stored in \verb@*polyco@,
-via Eq.~(\ref{eq:delta-tau}).
-
-\subsubsection*{Algorithm}
-
-By storing the timing difference as a dimensionless quantity, it is
-relatively easy to determine rules for resampling the datastream at
-equal intervals in $\tau$, since it gives the number of \emph{samples}
-difference between the two time coordinates.  When resampling a time
-series in $t$, simply track the value of $(\tau-t)/\Delta t$: When
-this value increases by +1, choose the next sample after the one that
-would otherwise have been chosen; when the value decreases by $-1$,
-choose (or repeat) the sample immediately preceding the one that would
-otherwise have been chosen.
-
-However, this is not a particularly \emph{efficient} routine for
-computing the resampling method, as it requires several floating-point
-opertations \emph{per sample}, which is an unacceptable computational
-burden for any optimized pulsar search.  It is primarily used to
-visualize and check the pulsar phase modulation model.  See the
-routine in \verb@CreateResampleRules.c@ for a more efficient
-algorithm.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{PolycoToTimingDifferenceCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -80,12 +35,38 @@ algorithm.
 
 NRCSID(POLYCOTOTIMINGDIFFERENCEC,"$Id$");
 
-/* <lalVerbatim file="PolycoToTimingDifferenceCP"> */
+/**
+This function fills a time series <tt>*difference</tt> with the values
+of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
+detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
+is the sampling interval in \f$t\f$.  The timing difference function is
+computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
+via Eq.\ltxref{eq:delta-tau,Resample_h}.
+
+\par Algorithm
+
+By storing the timing difference as a dimensionless quantity, it is
+relatively easy to determine rules for resampling the datastream at
+equal intervals in \f$\tau\f$, since it gives the number of \e samples
+difference between the two time coordinates.  When resampling a time
+series in \f$t\f$, simply track the value of \f$(\tau-t)/\Delta t\f$: When
+this value increases by +1, choose the next sample after the one that
+would otherwise have been chosen; when the value decreases by \f$-1\f$,
+choose (or repeat) the sample immediately preceding the one that would
+otherwise have been chosen.
+
+However, this is not a particularly \e efficient routine for
+computing the resampling method, as it requires several floating-point
+opertations <em>per sample</em>, which is an unacceptable computational
+burden for any optimized pulsar search.  It is primarily used to
+visualize and check the pulsar phase modulation model.  See the
+routine in CreateResampleRules.c for a more efficient algorithm.
+*/
 void
 LALPolycoToTimingDifference( LALStatus       *stat,
 			     REAL4TimeSeries *difference,
 			     PolycoStruc     *polyco )
-{ /* </lalVerbatim> */
+{
   UINT4 n;          /* Counter over length of time series */
   UINT4 nPoly;      /* Number of polynomial coefficients per fit */
   REAL8 tDiffStart; /* Start time of data series */

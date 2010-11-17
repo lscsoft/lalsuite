@@ -17,91 +17,96 @@
 *  MA  02111-1307  USA
 */
 
-/************************************* <lalVerbatim file="ResampleHV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{Resample.h}}
-\label{s:Resample.h}
+/**
+\author Creighton, T. D.
+\file
+\latexonly\label{s:Resample.h}\endlatexonly
+\ingroup Resample_h
 
 Provides routines for resampling time series according to a new
 canonical time coordinate.
 
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/Resample.h>
-\end{verbatim}
+*/
 
-\noindent One of the crucial problems in searching for
+/**
+   \defgroup Resample_h Time Series Resampling
+   \ingroup pulsarCommon
+
+Provides routines for resampling time series according to a new
+canonical time coordinate.
+
+\par Synopsis
+\code
+#include <lal/Resample.h>
+\endcode
+
+One of the crucial problems in searching for
 constant-frequency astrophysical signals is removing the effects of
 Doppler modulation due to the Earth's motion.  This is normally
-accomplished by constructing a canonical time coordinate $\tau$ of an
-inertial frame (i.e.\ the \emph{barycentred time}), and
-decimating/resampling the data at fixed intervals in $\tau$.  The
-reconstructed $\tau$ depends on the direction to the source relative
+accomplished by constructing a canonical time coordinate \f$\tau\f$ of an
+inertial frame (i.e.\ the <em>barycentred time</em>), and
+decimating/resampling the data at fixed intervals in \f$\tau\f$.  The
+reconstructed \f$\tau\f$ depends on the direction to the source relative
 to the Earth's motion; in addition, slow intrinsic parameterized
 modulations in the source frequency can also be corrected by this
 coordinate transformation.
 
-Most of the routines in this module assume that $\tau$ can be
-piecewise expanded as a Taylor series in $t$.  That is, one defines a
-set of fitting \emph{regions} $T_i=[t_{\mathrm{bound}(i-1)},
-t_{\mathrm{bound}(i)}]$, and a set of fitting \emph{points}
-$t_{(i)}\in T_i$.  In each region one then writes:
-\begin{equation}
+Most of the routines in this module assume that \f$\tau\f$ can be
+piecewise expanded as a Taylor series in \f$t\f$.  That is, one defines a
+set of fitting \e regions \f$T_i=[t_{\mathrm{bound}(i-1)},
+t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
+\f$t_{(i)}\in T_i\f$.  In each region one then writes:
+\f{equation}{
 \label{eq:tau}
 \tau(t) = \sum_{k=0} \frac{1}{k!}c_{k(i)}(t-t_{(i)})^k \; .
-\end{equation}
+\f}
 Since one is normally interested in tracking the difference
-$\tau(t)-t$, one can also write the expansion as:
-\begin{equation}
+\f$\tau(t)-t\f$, one can also write the expansion as:
+\f{equation}{
 \label{eq:delta-tau}
 \tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
-\end{equation}
+\f}
 where
-\begin{eqnarray}
+\f{eqnarray}{
 a_{0(i)} & = & c_{0(i)}-t_{(i)}           \; , \nonumber\\
 a_{1(i)} & = & c_{1(i)}-1                 \; , \nonumber\\
 a_{k(i)} & = & c_{k(i)}/k! \; , \; k\geq2 \; . \nonumber
 \label{eq:a_c}
-\end{eqnarray}
+\f}
 These are the polynomial coefficients normally assumed in the modules
 under this header.
 
-The procedure for resampling according to $\tau$ is normally combined
-with \emph{decimating} the time series.  That is, one takes a time
-series sampled at constant intervals $\Delta t$ in $t$, and samples it
-at constant intervals $d\Delta t$ in $\tau$, where the
-\emph{decimation factor} $d$ is normally taken to be an integer
-$\geq1$.  When $\tau$ and $t$ are drifting out of phase relatively
-slowly, this means that most of the time every $d^\mathrm{th}$ sample
+The procedure for resampling according to \f$\tau\f$ is normally combined
+with \e decimating the time series.  That is, one takes a time
+series sampled at constant intervals \f$\Delta t\f$ in \f$t\f$, and samples it
+at constant intervals \f$d\Delta t\f$ in \f$\tau\f$, where the
+<em>decimation factor</em> \f$d\f$ is normally taken to be an integer
+\f$\geq1\f$.  When \f$\tau\f$ and \f$t\f$ are drifting out of phase relatively
+slowly, this means that most of the time every \f$d^\mathrm{th}\f$ sample
 in the original time series becomes the next sample in the decimated
-time series.  However, when $\tau$ and $t$ drift out of synch by an
-amount $\pm\Delta t$, one can force the decimated time series to track
-$\tau$ (rather than $t$) by sampling the $d\pm1^\mathrm{th}$ next
-datum (rather than the $d^\mathrm{th}$).  If the drift is sufficiently
-rapid or $d$ is sufficiently large, one may be forced to choose the
-point $d\pm2$, $d\pm3$, etc.; the size of this adjustment is called
-the correction \emph{shift}.  The number of (resampled) time intervals
+time series.  However, when \f$\tau\f$ and \f$t\f$ drift out of synch by an
+amount \f$\pm\Delta t\f$, one can force the decimated time series to track
+\f$\tau\f$ (rather than \f$t\f$) by sampling the \f$d\pm1^\mathrm{th}\f$ next
+datum (rather than the \f$d^\mathrm{th}\f$).  If the drift is sufficiently
+rapid or \f$d\f$ is sufficiently large, one may be forced to choose the
+point \f$d\pm2\f$, \f$d\pm3\f$, etc.; the size of this adjustment is called
+the correction \e shift.  The number of (resampled) time intervals
 between one correction point and the next is called the correction
-\emph{interval}.
+\e interval.
 
 Unless otherwise specified, all time variables and parameters in the
 functions under this header can be assumed to measure the detector
-time coordinate $t$.  Canonical times are specified by giving the
-difference $\tau-t$.
+time coordinate \f$t\f$.  Canonical times are specified by giving the
+difference \f$\tau-t\f$.
 
-\paragraph{Caveat emptor:} The inclusion of this header and its
+<b>Caveat emptor:</b> The inclusion of this header and its
 associated modules into LAL is provisional at this time.  The routines
 and the test code appear to work, but a later standalone code,
 operating on much larger datasets, appeared to encounter a memory
 leak.  I have not yet determined whether this leak was in the
 standalone code or in these LAL routines.
 
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _RESAMPLE_H
 #define _RESAMPLE_H
@@ -114,9 +119,8 @@ extern "C" {
 
 NRCSID(RESAMPLEH,"$Id$");
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**
+\name Error Codes */ /*@{*/
 #define RESAMPLEH_ENUL    1
 #define RESAMPLEH_EOUT    2
 #define RESAMPLEH_EMEM    3
@@ -130,176 +134,80 @@ NRCSID(RESAMPLEH,"$Id$");
 #define RESAMPLEH_MSGELENGTH "Vector lengths in polyco structure don't argree"
 #define RESAMPLEH_MSGEDTPOS  "Sampling interval is not positive"
 #define RESAMPLEH_MSGETIME   "Requested output time span extends beyond range of validity of input"
-/*************************************************** </lalErrTable> */
+/*@}*/
 
-/********************************************************** <lalLaTeX>
-\subsection*{Types}
-
-\subsubsection*{Structure \texttt{ResampleRules}}
-\idx[Type]{ResampleRules}
-
-\noindent This structure stores the rules for taking a time series
-$t$, sampled at constant intervals $\Delta t$, and resampling it at
-constant intervals $d\Delta t$ in the canonical time coordinate $\tau$,
-as described above.  The fields in this structure are as follows:
-
-\begin{description}
-\item[\texttt{LIGOTimeGPS start}] The initial time for which the rules
-	apply.
-
-\item[\texttt{LIGOTimeGPS stop}] The final time for which the rules
-	apply.
-
-\item[\texttt{INT4 length}] The number of correction points, i.e.\
-	points where the resampling interval is adjusted from $d\Delta
-	t$ to $(d\pm n)\Delta t$.
-
-\item[\texttt{INT4 *interval}] An array giving the number of resampled
-	time intervals between correction points.
-
-\item[\texttt{INT2 *shift}] An array giving the size of the correction
-	shift (i.e.\ the number $n$ above) at each correction point.
-
-\item[\texttt{INT4 decimate}] The decimation factor $d$.
-
-\item[\texttt{REAL8 deltaT}] The sampling interval before decimation,
-	in seconds.
-
-\item[\texttt{REAL8 startDiff}] The difference $\tau-t$ at the time
-	\verb@start@, in seconds.
-
-\item[\texttt{REAL8 stopDiff}] The difference $\tau-t$ at the time
-	\verb@stop@, in seconds.
-\end{description}
-
-******************************************************* </lalLaTeX> */
-
-typedef struct tagResampleRules{
-  LIGOTimeGPS start; /* Detector time at start of resample rules. */
-  LIGOTimeGPS stop;  /* Last time for which resample rules apply. */
-  INT4 length;       /* Size of the following two arrays. */
-  INT4 *interval;    /* Number of samples to the next shift point. */
-  INT2 *shift;       /* Size of shift (usually +/- 1). */
-  INT4 decimate;     /* Decimation factor. */
-  REAL8 deltaT;      /* Sampling rate of the unresampled data. */
-  REAL8 startDiff;   /* Offset between tau and t at the start. */
-  REAL8 stopDiff;    /* Offset between tau and t at the end. */
+/**
+ * The rules for taking a time series \f$t\f$, sampled at constant intervals \f$\Delta t\f$, and resampling it at
+ * constant intervals \f$d\Delta t\f$ in the canonical time coordinate \f$\tau\f$.
+ */
+typedef struct tagResampleRules {
+  LIGOTimeGPS start; /**< The initial time for which the rules apply */
+  LIGOTimeGPS stop;  /**< The final time for which the rules apply */
+  INT4 length;       /**< The number of correction points, i.e.\ points where the resampling interval
+                      * is adjusted from \f$d\Delta t\f$ to \f$(d\pm n)\Delta t\f$ */
+  INT4 *interval;    /**< An array giving the number of resampled time intervals between correction points */
+  INT2 *shift;       /**< An array giving the size of the correction shift (i.e.\ the number \f$n\f$ above) at each correction point */
+  INT4 decimate;     /**< decimation factor \f$d\f$ */
+  REAL8 deltaT;      /**< The sampling interval before decimation, n seconds */
+  REAL8 startDiff;   /**< The difference \f$\tau-t\f$ at the time #start, in seconds */
+  REAL8 stopDiff;    /**< The difference \f$\tau-t\f$ at the time #stop, in seconds */
 } ResampleRules;
 
 
-/********************************************************** <lalLaTeX>
-\subsubsection*{Structure \texttt{PolycoStruc}}
-\idx[Type]{PolycoStruc}
+/** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
+ * Eq.\ltxref{eq:delta-tau,Resample_h} for notation.
+ */
+typedef struct tagPolycoStruc {
+  REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
+  REAL4 dec; 			/**< Declination angle of the source, in \e radians in the range \f$[-\pi/2,\pi/2]\f$ */
+  REAL4Vector *spindown; 	/**< A vector \f$\vec\lambda=(\lambda_0,\ldots,\lambda_{n-1})\f$ of parameters
+                                 * describing a slow intrisic frequency drift \f$f=f(t)\f$ of the source:
+                                 * \f$\lambda_k=f^{-1}d^{k+1}f/dt^{k+1}\f$ at the time given by #start. */
 
-\noindent This structure stores the parameters of the piecewise
-polynomial fit of $\tau-t$ as a function of $t$.  See
-Eq.~\ref{eq:delta-tau} for notation.  The fields of this structure
-are:
+  LIGOTimeGPS start;  		/**< The initial time over which the polynomial fit applies */
 
-\begin{description}
-\item[\texttt{REAL4 ra}] The right ascension angle of the source, in
-	\emph{radians} in the range $[0,2\pi)$.
+  REAL4Sequence *tBound; 	/**< The sequence of times \f$t_{\mathrm{bound}(i)}\f$ defining the endpoints
+                                 * of the fitting regions, given in seconds after the time #start;
+                                 * The first fitting region \f$i=0\f$ runs from #start to
+                                 * #start + \f$t_{\mathrm{bound}(0)}\f$, the next from there to
+                                 * #start + \f$t_{\mathrm{bound}(1)}\f$, and so on. */
 
-\item[\texttt{REAL4 dec}] The declination angle of the source, in
-	\emph{radians} in the range $[-\pi/2,pi/2]$.
+  REAL4Sequence *t0;     	/**< The sequence of times \f$t_{(i)}\f$ in each fitting region at which the polynomial
+                                 * fits are computed, given in seconds after the time #start. */
 
-\item[\texttt{REAL4Vector *spindown}] A vector
-	$\vec\lambda=(\lambda_0,\ldots,\lambda_{n-1})$ of parameters
-	describing a slow intrisic frequency drift $f=f(t)$ of the
-	source: $\lambda_k=f^{-1}d^{k+1}f/dt^{k+1}$ at the time given
-	by \verb@start@ (below).
-
-\item[\texttt{LIGOTimeGPS start}] The initial time over which the
-	polynomial fit applies.
-
-\item[\texttt{REAL4Sequence *tBound}] The sequence of times
-	$t_{\mathrm{bound}(i)}$ defining the endpoints of the fitting
-	regions, given in seconds after the time \verb@start@.  The
-	first fitting region $i=0$ runs from \verb@start@ to
-	\verb@start@+$t_{\mathrm{bound}(0)}$, the next from there to
-	\verb@start@+$t_{\mathrm{bound}(1)}$, and so on.
-
-\item[\texttt{REAL4Sequence *t0}] The sequence of times $t_{(i)}$ in
-	each fitting region at which the polynomial fits are computed,
-	given in seconds after the time \verb@start@.
-
-\item[\texttt{REAL4VectorSequence *polyco}] A sequence of vectors
-	$\vec a_{(i)}=(a_{0(i)},a_{1(i)},\ldots)$ giving the
-	coefficients of the polynomial fit at each time $t_{(i)}$.
-	Each element $a_{k(i)}$ has units of $\mathrm{s}^{1-k}$.
-\end{description}
-
-******************************************************* </lalLaTeX> */
-
-typedef struct tagPolycoStruc{
-  REAL4 ra;  /* Right ascension of source */
-  REAL4 dec; /* Declination of source */
-  REAL4Vector *spindown; /* Spindown terms: f0^{-1} d^n f/(dt)^n */
-  LIGOTimeGPS start;  /* Start (reference) time of the polyco fit */
-  REAL4Sequence *tBound; /* End times of each fitting region */
-  REAL4Sequence *t0;     /* Fitting times in each region */
-  REAL4VectorSequence *polyco; /* Polynomial fitting parameters for
-                                  each fitting region */
+  REAL4VectorSequence *polyco;	/**< A sequence of vectors \f$\vec a_{(i)}=(a_{0(i)},a_{1(i)},\ldots)\f$ giving the
+                                 * coefficients of the polynomial fit at each time \f$t_{(i)}\f$;
+                                 * each element \f$a_{k(i)}\f$ has units of \f$\mathrm{s}^{1-k}\f$. */
 } PolycoStruc;
 
 
-/********************************************************** <lalLaTeX>
-\subsubsection*{Structure \texttt{ResampleParamStruc}}
-\idx[Type]{ResampleParamStruc}
-
-\noindent This structure stores extra parameters required to construct
-a \verb@ResampleRules@ object from a \verb@PolycoStruc@ object.  The
-fields of this structure are:
-
-\begin{description}
-\item[\texttt{LIGOTimeGPS start}] The initial time for which the
-	resample rules will apply.
-
-\item[\texttt{LIGOTimeGPS stop}] The final time for which the resample
-	rules will apply.
-
-\item[\texttt{REAL8 deltaT}] The sampling interval before decimation,
-	in seconds.
-
-\item[\texttt{INT4 decimate}] The decimation factor.
-\end{description}
-
-******************************************************* </lalLaTeX> */
-
+/** Extra parameters required to construct a ResampleRules object from a PolycoStruc object.
+ */
 typedef struct tagResampleParamStruc{
-  LIGOTimeGPS start;    /* Initial time for which the rules apply. */
-  LIGOTimeGPS stop;     /* Final time for which the rules apply. */
-  REAL8       deltaT;   /* Base (oversampled) sampling interval. */
-  INT4        decimate; /* Decimation factor. */
+  LIGOTimeGPS start;    /**< The initial time for which the resample rules will apply */
+  LIGOTimeGPS stop;     /**< The final time for which the resample rules will apply */
+  REAL8       deltaT;   /**< The sampling interval before decimation, in seconds */
+  INT4        decimate; /**< The decimation factor */
 } ResampleParamStruc;
 
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{ResampleHV}}
-</lalLaTeX> */
-
-
 /* Function prototypes. */
-
-/* <lalLaTeX>
-\newpage\input{CreateResampleRulesC}
-</lalLaTeX> */
 void
 LALCreateResampleRules( LALStatus          *status,
 			ResampleRules      **rules,
 			PolycoStruc        *polyco,
 			ResampleParamStruc *params );
 
-/* <lalLaTeX>
-\newpage\input{DestroyResampleRulesC}
-</lalLaTeX> */
+
+
+
 void
 LALDestroyResampleRules( LALStatus     *status,
 			 ResampleRules **rules );
 
-/* <lalLaTeX>
-\newpage\input{ApplyResampleRulesC}
-</lalLaTeX> */
+
+
+
 void
 LALApplyResampleRules( LALStatus       *status,
 		       REAL4TimeSeries *output,
@@ -310,25 +218,25 @@ LALApplyResampleRules( LALStatus       *status,
    lower-level routine that operates on vectors, or whether time
    series are okay. */
 
-/* <lalLaTeX>
-\newpage\input{PolycoToTimingDifferenceC}
-</lalLaTeX> */
+
+
+
 void
 LALPolycoToTimingDifference( LALStatus       *status,
 			     REAL4TimeSeries *difference,
 			     PolycoStruc     *polyco );
 
-/* <lalLaTeX>
-\newpage\input{RulesToTimingDifferenceC}
-</lalLaTeX> */
+
+
+
 void
 LALRulesToTimingDifference( LALStatus       *status,
 			    REAL4TimeSeries *difference,
 			    ResampleRules   *rules );
 
-/* <lalLaTeX>
-\newpage\input{ResampleTestC}
-</lalLaTeX> */
+
+
+
 
 #ifdef __cplusplus
 }
