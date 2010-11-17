@@ -410,7 +410,7 @@ int main(int argc, char *argv[]){
   }
 
   /*get number of frequency loops*/
-  nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
+  nfreqLoops = rint(uvar_fBand/uvar_fResolution);
   /* if we are using spindown parameters, initialise the fdots array */
   if (uvar_QCoeffs) {
 
@@ -419,15 +419,15 @@ int main(int argc, char *argv[]){
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
     if (uvar_q1Band > 0) {
-      nq1Loops = (INT8)floor(uvar_q1Band/uvar_q1Resolution);
+      nq1Loops = rint(uvar_q1Band/uvar_q1Resolution);
     }
     
     if (uvar_q2Band > 0) {
-      nq2Loops = floor(uvar_q2Band/uvar_q2Resolution);
+      nq2Loops = rint(uvar_q2Band/uvar_q2Resolution);
     }
 
     if (uvar_brakingindexBand > 0) {
-      nnLoops = floor(uvar_brakingindexBand/uvar_brakingindexResolution);
+      nnLoops = rint(uvar_brakingindexBand/uvar_brakingindexResolution);
     }
 
     delta_q1 = uvar_q1Resolution;
@@ -448,11 +448,11 @@ int main(int argc, char *argv[]){
     }
 
     if (uvar_fdotBand > 0) {
-      nfdotLoops = floor(uvar_fdotBand/uvar_fdotResolution);
+      nfdotLoops = rint(uvar_fdotBand/uvar_fdotResolution);
     }
 
     if (uvar_fddotBand > 0) {
-    nfddotLoops = ceil(uvar_fddotBand/uvar_fddotResolution);
+    nfddotLoops = rint(uvar_fddotBand/uvar_fddotResolution);
     }
 
     delta_fdot = uvar_fdotResolution;
