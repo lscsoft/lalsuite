@@ -2,10 +2,6 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-#WMF Test Programs---remove when time-domain likelihood finished
-td_test_progs = time_series_product_test
-time_series_product_test_SOURCES = time_series_product_test.c LALInference.c
-
 if LALINSPIRAL
 if LALFRAME
 
