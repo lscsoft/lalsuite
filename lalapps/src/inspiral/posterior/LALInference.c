@@ -31,6 +31,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
 #include <lal/Date.h>
+#include <lal/Sequence.h>
 
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8), 
@@ -1355,4 +1356,72 @@ REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s
   } while (XLALGPSCmp(&current, &stop) < 0);
 
   return sum;
+}
+
+void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response) {
+  UINT4 responseSpan = (response->data->length + 1)/2;
+  UINT4 paddedLength = nextPowerOfTwo(data->data->length + responseSpan);
+  REAL8FFTPlan *fwdPlan = XLALCreateForwardREAL8FFTPlan(paddedLength, 1); /* Actually measure---rely on FFTW to store the best plan for a given length. */
+  REAL8FFTPlan *revPlan = XLALCreateReverseREAL8FFTPlan(paddedLength, 1); /* Same. */
+  REAL8Sequence *paddedData, *paddedResponse, *paddedConv;
+  COMPLEX16Sequence *dataFFT, *responseFFT;
+  UINT4 i;
+
+  if (data->deltaT != response->deltaT) {
+    fprintf(stderr, "convolveTimeSeries: sample spacings differ (in %s, line %d)\n", __FILE__, __LINE__);
+    exit(1);
+  }
+
+  if (conv->data->length < data->data->length) {
+    fprintf(stderr, "convolveTimeSeries: output length smaller than input length (in %s, line %d)", __FILE__, __LINE__);
+    exit(1);
+  }
+
+  paddedData = XLALCreateREAL8Sequence(paddedLength);
+  paddedResponse = XLALCreateREAL8Sequence(paddedLength);
+  paddedConv = XLALCreateREAL8Sequence(paddedLength);
+
+  dataFFT = XLALCreateCOMPLEX16Sequence(paddedLength/2 + 1); /* Exploit R -> C symmetry. */
+  responseFFT = XLALCreateCOMPLEX16Sequence(paddedLength/2 + 1);
+
+  padREAL8Sequence(paddedData, data->data);
+  padWrappedREAL8Sequence(paddedResponse, response->data);
+
+  XLALREAL8ForwardFFT(dataFFT, paddedData, fwdPlan);
+  XLALREAL8ForwardFFT(responseFFT, paddedResponse, fwdPlan);
+
+  for (i = 0; i < paddedLength/2 + 1; i++) {
+    /* Store product in dataFFT. */
+    double dataRe, dataIm, resRe, resIm;
+    dataRe = dataFFT->data[i].re;
+    dataIm = dataFFT->data[i].im;
+    resRe = responseFFT->data[i].re;
+    resIm = responseFFT->data[i].im;
+
+    dataFFT->data[i].re = dataRe*resRe - dataIm*resIm;
+    dataFFT->data[i].im = dataRe*resIm + resRe*dataIm;
+  }
+
+  XLALREAL8ReverseFFT(paddedConv, dataFFT, revPlan);
+
+  memset(conv->data->data, 0, conv->data->length*sizeof(conv->data->data[0]));
+  for (i = 0; i < data->data->length; i++) {
+    conv->data->data[i] = paddedConv->data[i]/data->data->length; /* Normalize */
+  }
+
+  strncpy(conv->name, "convolved", LALNameLength);
+  conv->epoch = data->epoch;
+  conv->deltaT = data->deltaT;
+  conv->f0 = data->f0;
+  conv->sampleUnits = data->sampleUnits;  
+
+  XLALDestroyREAL8FFTPlan(fwdPlan);
+  XLALDestroyREAL8FFTPlan(revPlan);
+
+  XLALDestroyREAL8Sequence(paddedData);
+  XLALDestroyREAL8Sequence(paddedResponse);
+  XLALDestroyREAL8Sequence(paddedConv);
+
+  XLALDestroyCOMPLEX16Sequence(dataFFT);
+  XLALDestroyCOMPLEX16Sequence(responseFFT);
 }
