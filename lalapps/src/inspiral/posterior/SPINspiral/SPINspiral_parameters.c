@@ -72,8 +72,8 @@ void readCommandLineOptions(int argc, char* argv[], struct runPar *run)
   run->triggerTc = 0.0;               // Time of coalescence from the command line - zero means no value
   run->triggerDist = 0.0;             // Distance (in Mpc) from the command line - zero means no value
   run->PSDstart = 0.0;                // GPS start of the PSD - zero means no value
-  run->tukey1 = 0.0;//0.15;
-  run->tukey2 = 0.0;//0.01;//
+  run->tukey1 = 0.15;
+  run->tukey2 = 0.01;//
   for(i=0;i<3;i++) strcpy(run->channelname[i],"");
   
   if(argc > 1) printf("   Parsing %i command-line arguments:\n",argc-1);
@@ -501,7 +501,7 @@ void readMCMCinputfile(struct runPar *run)
 		run->adaptiveMCMC = 1;
 		run->acceptRateTarget = 0.25;
 		run->minlogL = 0.0;
-		run->blockFrac = 0.1;
+		run->blockFrac = 0.012;
 		
 		//Correlated update proposals:
 		run->correlatedUpdates = 0;
@@ -644,10 +644,10 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 		
 		//Data handling:
 		if(run->commandSettingsFlag[6] == 0) run->downsampleFactor = 8;
-		if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 7.0;
-		if(run->commandSettingsFlag[8] == 0) run->dataAfterTc = 1.0;
+		if(run->commandSettingsFlag[7] == 0) run->dataBeforeTc = 6.0;
+		if(run->commandSettingsFlag[8] == 0) run->dataAfterTc = 2.0;
 		if(run->commandSettingsFlag[9] == 0) run->lowFrequencyCut = 40.0;
-		if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 600.0;
+		if(run->commandSettingsFlag[10] == 0) run->highFrequencyCut = 250.0;
 		run->tukeyWin = 0.1;
 		
 		
@@ -1109,10 +1109,10 @@ void readParameterInputfile(struct runPar *run)
 				run->parFix[i] = 0;
 			}
 			
-			run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
-			run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
+			run->parID[0] = 65;run->parBestVal[0] = 1.3;		    run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.890;		run->priorBoundUp[0] = 1.125;
+			run->parID[1] = 62;run->parBestVal[1] = 0.2;		    run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.0312;		run->priorBoundUp[1] = 0.25;
 			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
-			run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
+			run->parID[3] = 21;run->parBestVal[3] = 125000.0;		run->parStartMCMC[3] = 2;run->parSigma[3] = 1.0000;		run->priorType[3] = 11;		run->priorBoundLow[3] = 1.0;		run->priorBoundUp[3] = 1000000.0;
 			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
 			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
 			run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
@@ -1129,10 +1129,10 @@ void readParameterInputfile(struct runPar *run)
 				run->parFix[i] = 0;
 			}
 			
-			run->parID[0] = 61;run->parBestVal[0] = 2.9943;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.500;		run->priorBoundUp[0] = 2.000;
-			run->parID[1] = 62;run->parBestVal[1] = 0.1077;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.03;		run->priorBoundUp[1] = 0.25;
+			run->parID[0] = 65;run->parBestVal[0] = 1.3;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.890;		run->priorBoundUp[0] = 1.125;
+			run->parID[1] = 62;run->parBestVal[1] = 0.2;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.0312;		run->priorBoundUp[1] = 0.25;
 			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
-			run->parID[3] = 22;run->parBestVal[3] = 1.7628;		run->parStartMCMC[3] = 2;run->parSigma[3] = 0.1000;		run->priorType[3] = 11;		run->priorBoundLow[3] = -6.9;		run->priorBoundUp[3] = 4.6;
+			run->parID[3] = 21;run->parBestVal[3] = 125000.0;		run->parStartMCMC[3] = 2;run->parSigma[3] = 1.0000;		run->priorType[3] = 11;		run->priorBoundLow[3] = 1.0;		run->priorBoundUp[3] = 1000000.0;
 			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
 			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
 			run->parID[6] = 51;run->parBestVal[6] = 0.0;			run->parStartMCMC[6] = 5;run->parSigma[6] = 0.1000;		run->priorType[6] = 11;		run->priorBoundLow[6] = -0.999999;	run->priorBoundUp[6] = 0.999999;
@@ -1156,6 +1156,7 @@ void readParameterInputfile(struct runPar *run)
 			if(run->parID[i] == 22 && fabs(run->triggerDist) > 1.e-10) run->parBestVal[i] = log(run->triggerDist);      // Distance log(d)
 			if(run->parID[i] == 61 && fabs(run->triggerMc) > 1.e-10) run->parBestVal[i] = run->triggerMc;               // Chirp mass
 			if(run->parID[i] == 62 && fabs(run->triggerEta) > 1.e-10) run->parBestVal[i] = run->triggerEta;             // Eta
+			if(run->parID[i] == 65 && fabs(run->triggerMc) > 1.e-10) run->parBestVal[i] = pow(run->triggerMc,2*c3rd);
 			
 			//printf("%d:  %d %d %lf %d %lf %d %lf %lf\n",i,run->parNumber[i],run->parID[i],run->parBestVal[i],run->parStartMCMC[i],run->parSigma[i],
 			//run->priorType[i],run->priorBoundLow[i],run->priorBoundUp[i]);
@@ -1895,7 +1896,11 @@ void setParameterNames(struct runPar * run)
   strcpy(run->parAbrev[64], "M2");
   strcpy(run->parAbrv[64], "M2");
   run->parDef[64] = 1;
-  
+  strcpy(run->parAbrev[65], "Mc_16");
+  strcpy(run->parAbrv[65], "Mc_16");
+  run->parDef[65] = 1;
+	
+	
   //Set 07: spin1
   strcpy(run->parAbrev[71], "a_spin1");
   strcpy(run->parAbrv[71], "asp1");
@@ -2179,7 +2184,6 @@ void getStartParameters(struct parSet *par, struct runPar run)  //Set the parame
     par->par[i]      = run.parBestVal[i];
   }
   par->nPar = run.nMCMCpar;
-  
 } // End getStartParameters
 // ****************************************************************************************************************************************************  
 
