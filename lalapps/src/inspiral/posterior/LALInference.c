@@ -1493,3 +1493,30 @@ void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8Ti
   /* Adjust start time. */
   XLALGPSAdd(&wrapped->epoch, NNeg*wrapped->deltaT);
 }
+
+REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW) {
+  UINT4 NTDW = TDW->data->length;
+  UINT4 NNeg = (NTDW-1)/2;
+  REAL8 TNeg = NNeg*TDW->deltaT;
+  UINT4 b;
+  REAL8TimeSeries *linearTDW;
+  REAL8 sum = 0.0;
+
+  if (A->deltaT != B->deltaT || B->deltaT != TDW->deltaT) {
+    fprintf(stderr, "slowTimeDomainOverlap: sampling rates disagree (in %s, line %d)",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+
+  linearTDW = XLALCreateREAL8TimeSeries(TDW->name, &(TDW->epoch), 0.0, TDW->deltaT, &(TDW->sampleUnits), NTDW);
+  wrappedTimeSeriesToLinearTimeSeries(linearTDW, TDW);
+
+  for (b = 0; b < B->data->length; b++) {
+    linearTDW->epoch = B->epoch;
+    XLALGPSAdd(&(linearTDW->epoch), b*B->deltaT - TNeg);
+
+    sum += B->data->data[b]*integrateSeriesProduct(A, linearTDW);
+  }
+
+  return sum;
+}

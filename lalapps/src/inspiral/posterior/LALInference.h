@@ -286,5 +286,7 @@ UINT4 NTDWFromNPSD(const UINT4 NPSD);
 void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
 void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
 
+REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW);
+
 #endif
 
