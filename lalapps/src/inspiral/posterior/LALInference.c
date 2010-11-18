@@ -1433,3 +1433,63 @@ void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, cons
   XLALDestroyCOMPLEX16Sequence(dataFFT);
   XLALDestroyCOMPLEX16Sequence(responseFFT);
 }
+
+void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped) {
+  UINT4 NNeg, NPos, N, i;
+
+  if (linear->data->length != wrapped->data->length) {
+    fprintf(stderr, "wrappedTimeSeriesToLinearTimeSeries: lengths differ (in %s, line %d)",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+
+  N = linear->data->length;
+  NNeg = (N-1)/2;
+  NPos = N-NNeg-1; /* 1 for the zero component. */
+
+  for (i = 0; i < NNeg; i++) {
+    linear->data->data[i] = wrapped->data->data[N-i-1];
+  }
+  linear->data->data[NNeg] = wrapped->data->data[0];
+  for (i = 1; i <= NPos; i++) {
+    linear->data->data[NNeg+i] = wrapped->data->data[i];
+  }
+
+  linear->epoch = wrapped->epoch;
+  linear->deltaT = wrapped->deltaT;
+  linear->f0 = wrapped->f0;
+  linear->sampleUnits = wrapped->sampleUnits;
+  
+  /* Adjust start time for linear to account for negative components. */
+  XLALGPSAdd(&linear->epoch, -(NNeg*linear->deltaT));
+}
+
+void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear) {
+  UINT4 NNeg, NPos, N, i;
+
+  if (wrapped->data->length != linear->data->length) {
+    fprintf(stderr, "linearTimeSeriesToWrappedTimeSeries: lengths differ (in %s, line %d)",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+
+  N = wrapped->data->length;
+  NNeg = (N-1)/2;
+  NPos = N-NNeg-1;
+
+  wrapped->data->data[0] = linear->data->data[NNeg];
+  for (i = 1; i <= NPos; i++) {
+    wrapped->data->data[i] = linear->data->data[NNeg+i];
+  }
+  for (i = 0; i < NNeg; i++) {
+    wrapped->data->data[N-i-1] = linear->data->data[i];
+  }
+
+  wrapped->epoch = linear->epoch;
+  wrapped->deltaT = linear->deltaT;
+  wrapped->f0 = linear->f0;
+  wrapped->sampleUnits = linear->sampleUnits;
+  
+  /* Adjust start time. */
+  XLALGPSAdd(&wrapped->epoch, NNeg*wrapped->deltaT);
+}
