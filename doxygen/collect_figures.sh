@@ -1,24 +1,28 @@
 #!/bin/bash
 
-cwd=`pwd`;
-topdir="${cwd}/../../..";
-doxydir="${topdir}/lal/doc/doxygen"
-cmdline="find $topdir -path $doxydir -prune -o \( -regex '.*[.]eps$' -print -o -regex '.*[.]png$' -print -o -regex '.*[.]pdf$' -print \)"
-allfigs=`eval $cmdline`;
+printerror() {
+    echo ERROR: "$@" >& 2
+    exit 1
+}
+export -f printerror
 
-figdir="./figures";
-latexdir="./latex";
+[ -z "$abs_builddir"   ] && printerror $0 needs '$abs_builddir'
+[ -z "$abs_srcdir"     ] && printerror $0 needs '$abs_srcdir'
+[ -z "$abs_top_srcdir" ] && printerror $0 needs '$abs_top_srcdir'
+[ -z "$MKDIR_P"        ] && printerror $0 needs '$MKDIR_P'
+[ -z "$LN_S"           ] && printerror $0 needs '$LN_S'
 
-if [ ! -d "$latexdir" ]; then
-    mkdir -p $latexdir;
-fi
+figdir="$abs_builddir/figures"
+latexdir="$abs_builddir/latex"
 
-if [ ! -d "$figdir" ]; then
-    mkdir -p $figdir;
-fi
-
-for i in $allfigs; do
-    ln -f -s $i $figdir &> /dev/null;
-    ln -f -s $i $latexdir &> /dev/null;
+cmd=""
+for basedir in "$figdir" "$latexdir"; do
+    if [ ! -d "$basedir" ] && ! ( $MKDIR_P "$basedir" ); then
+        printerror $0 could not make directory "'$basedir'"
+    fi
+    cmd="$cmd ( cd '$basedir' && rm -f '%f' && $LN_S '%p' '%f' ) ||"
+    cmd="$cmd printerror $0 failed to link '%f' in '$basedir';\n"
 done
 
+find $abs_top_srcdir -path $abs_srcdir -prune -o \
+     -regex '.*\.\(eps\|png\|pdf\)$' -printf "$cmd" | /bin/bash
