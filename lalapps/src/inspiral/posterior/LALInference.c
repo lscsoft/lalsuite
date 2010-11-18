@@ -1236,10 +1236,6 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
-UINT4 NASDFromNPSD(const UINT4 NPSD) {
-  return 2*(NPSD - 1);
-}
-
 /* The time-domain weight corresponding to the noise power spectrum
    S(f) is defined to be:
 
@@ -1249,13 +1245,12 @@ UINT4 NASDFromNPSD(const UINT4 NPSD) {
 void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
   COMPLEX16FrequencySeries *CPSD = NULL;
   UINT4 i;
-  UINT4 TDWLength = NASDFromNPSD(PSD->data->length);
+  UINT4 PSDLength = TDW->data->length/2 + 1;
   
-  if (TDW->data->length != TDWLength) {
-    fprintf(stderr, "WARNING: adjusting time-domain weight length from %d to %d (in %s, line %d)", 
-            TDW->data->length, TDWLength, __FILE__, __LINE__);
-    TDW->data->data = XLALRealloc(TDW->data->data, TDWLength*sizeof(TDW->data->data[0]));
-    TDW->data->length = TDWLength;
+  if (PSD->data->length != PSDLength) {
+    fprintf(stderr, "PSDToTDW: lengths of PSD and TDW do not match (in %s, line %d)", 
+            __FILE__, __LINE__);
+    exit(1);
   }
 
   CPSD = 
@@ -1268,8 +1263,8 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
 
   XLALREAL8FreqTimeFFT(TDW, CPSD, plan);
 
-  for (i = 0; i < TDWLength; i++) {
-    TDW->data->data[i] /= TDWLength; /* Normalize correctly. */
+  for (i = 0; i < TDW->data->length; i++) {
+    TDW->data->data[i] /= TDW->data->length; /* Normalize correctly. */
   }
 }
 
@@ -1303,9 +1298,13 @@ void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data) {
 
   memset(padded->data, 0, np*sizeof(padded->data[0]));
 
-  for (i = 0; i < nd/2; i++) {
+  padded->data[0] = data->data[0];
+  for (i = 1; i <= (nd-1)/2; i++) {
     padded->data[i] = data->data[i]; /* Positive times/frequencies. */
     padded->data[np-i] = data->data[nd-i]; /* Wrapped, negative times/frequencies. */
+  }
+  if (nd % 2 == 0) { /* If even, take care of singleton positive frequency. */
+    padded->data[nd/2] = data->data[nd/2];
   }
 }
 
@@ -1415,7 +1414,7 @@ void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, cons
 
   memset(conv->data->data, 0, conv->data->length*sizeof(conv->data->data[0]));
   for (i = 0; i < data->data->length; i++) {
-    conv->data->data[i] = paddedConv->data[i]/data->data->length; /* Normalize */
+    conv->data->data[i] = paddedConv->data[i]/paddedConv->length; /* Normalize */
   }
 
   strncpy(conv->name, "convolved", LALNameLength);
