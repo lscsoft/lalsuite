@@ -88,20 +88,20 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
-	    fftw_copts=--enable-sse
+	    # fftw_copts=--enable-sse
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
-	    fftw_copts="--enable-sse --enable-sse2"
+	    # fftw_copts="--enable-sse --enable-sse2"
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
 	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
 	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
-	    fftw_copts=--enable-altivec
+	    # fftw_copts=--enable-altivec
 	    planclass=__ALTIVEC
 	    acc="_altivec";;
 	--cuda)
