@@ -323,11 +323,7 @@ sub cleanupLSD {
 
 	# convert formulae
 	$text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
-	$text =~ s{\$(.+?)\$}{
-	    $_ = '\f$' . $1 . '\f$';
-	    #s/^([^\n]*)\n([^\n]+)$/$1 $2\n/sg;
-	    $_
-	}sge;
+	$text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
 	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
 	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
 	$_ = 'equation\*?|eqnarray\*?';
@@ -405,7 +401,7 @@ sub cleanupLSD {
 	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
 
         # preserve references
-        $text =~ s!~*(\(*\\ref$wbbr\)*)!\\ \\htmlonly<tt>{$2}</tt>\\endhtmlonly\\latexonly$1\\endlatexonly!sg;
+        $text =~ s![~ ]*\(*\\(?:eq)?ref$wbbr\)*!\\ltxref{$1}!sg;
 
 	# replace citations
         $text =~ s{\\cite$wbbr}{

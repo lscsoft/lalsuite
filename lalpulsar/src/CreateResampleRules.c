@@ -126,7 +126,7 @@ dimensionless parameters:
 A_k & = & a_{k(i)}(d\Delta t)^{k-1}   \; . \nonumber
 \label{eq:dimensionless-params}
 \f}
-Eq. \latexonly(\ref{eq:delta-tau})\endlatexonly in \ref Resample_h therefore
+Eq.\ltxref{eq:delta-tau,Resample_h} therefore
 gives us, for a quadratic fit:
 \f{equation}{
 \label{eq:dimensionless-tau}
