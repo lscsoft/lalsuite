@@ -1376,7 +1376,8 @@ void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, cons
   UINT4 i;
 
   if (data->deltaT != response->deltaT) {
-    fprintf(stderr, "convolveTimeSeries: sample spacings differ (in %s, line %d)\n", __FILE__, __LINE__);
+    fprintf(stderr, "convolveTimeSeries: sample spacings differ: %g vs %g (in %s, line %d)\n", 
+            data->deltaT, response->deltaT, __FILE__, __LINE__);
     exit(1);
   }
 
