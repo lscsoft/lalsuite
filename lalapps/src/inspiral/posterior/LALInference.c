@@ -1502,12 +1502,6 @@ REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, 
   REAL8TimeSeries *linearTDW;
   REAL8 sum = 0.0;
 
-  if (A->deltaT != B->deltaT || B->deltaT != TDW->deltaT) {
-    fprintf(stderr, "slowTimeDomainOverlap: sampling rates disagree (in %s, line %d)",
-            __FILE__, __LINE__);
-    exit(1);
-  }
-
   linearTDW = XLALCreateREAL8TimeSeries(TDW->name, &(TDW->epoch), 0.0, TDW->deltaT, &(TDW->sampleUnits), NTDW);
   wrappedTimeSeriesToLinearTimeSeries(linearTDW, TDW);
 
@@ -1518,5 +1512,22 @@ REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, 
     sum += B->data->data[b]*integrateSeriesProduct(A, linearTDW);
   }
 
+  XLALDestroyREAL8TimeSeries(linearTDW);
+
   return sum;
+}
+
+REAL8 timeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW) {
+  REAL8TimeSeries *Bconv;
+  REAL8 overlap;
+
+  Bconv = XLALCreateREAL8TimeSeries(B->name, &(B->epoch), 0.0, B->deltaT, &(B->sampleUnits), B->data->length);
+
+  convolveTimeSeries(Bconv, B, TDW);
+
+  overlap = integrateSeriesProduct(A, Bconv);
+
+  XLALDestroyREAL8TimeSeries(Bconv);
+
+  return overlap;
 }

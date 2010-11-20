@@ -287,6 +287,7 @@ void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8Tim
 void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
 
 REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW);
+REAL8 timeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW);
 
 #endif
 
