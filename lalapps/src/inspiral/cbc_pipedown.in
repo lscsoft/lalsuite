@@ -129,6 +129,7 @@ cp = ConfigParser.ConfigParser()
 cp.read(options.config_file)
 
 tmp_space = cp.get('pipeline', 'node-tmp-dir')
+onestage = cp.has_option('pipeline', 'single-stage')
 
 experiment_start = options.gps_start_time
 experiment_duration = str(int(options.gps_end_time) - int(options.gps_start_time))
@@ -160,7 +161,7 @@ dag.set_dag_file(basename)
 print "Parsing the ihope cache..."
 ihope_cache = [line for line in file(options.ihope_cache) \
   if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line \
-  or " INJECTIONS" in line or "INSPIRAL_SECOND" in line]
+  or " INJECTIONS" in line or "INSPIRAL" in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SECOND" in entry])
@@ -168,8 +169,12 @@ slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
   if "THINCA_SLIDE_SECOND" in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
   " INJECTIONS" in entry])
-all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
-  if "INSPIRAL_SECOND" in entry]) 
+if onestage:
+  all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+    if "INSPIRAL_FIRST" in entry])
+else:
+  all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
+    if "INSPIRAL_SECOND" in entry])
 
 del ihope_cache
 
