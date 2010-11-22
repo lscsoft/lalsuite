@@ -75,7 +75,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	INT4 Niter = *(INT4*) getVariable(runState->algorithmParams, "Niter");
 	INT4 Nskip = *(INT4*) getVariable(runState->algorithmParams, "Nskip");
 	REAL8 tempMax = *(REAL8*) getVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
-	INT4 randomseed = *(INT4*) getVariable(runState->algorithmParams,"random_seed");
+	UINT4 randomseed = *(UINT4*) getVariable(runState->algorithmParams,"random_seed");
 
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -142,14 +142,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
-		sprintf(outfileName[t],"PTMCMC.output.%d.%2.2d",randomseed,t);
+		sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
 		if (MPIrank == 0) {
 			chainoutput[t] = fopen(outfileName[t],"w");
 			fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
 			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
-			fprintf(chainoutput[t], "%10d  %10d  %6d  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-					Niter,10,100000,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
+			fprintf(chainoutput[t], "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
+					Niter,0,randomseed,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
 			fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
 					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
 			for(i=0;i<1;i++) {
