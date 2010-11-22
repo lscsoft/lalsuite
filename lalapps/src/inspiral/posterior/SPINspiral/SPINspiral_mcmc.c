@@ -329,9 +329,9 @@ void MCMC(struct runPar run, struct interferometer *ifo[])
         if(gsl_rng_uniform(mcmc.ran) < mcmc.blockFrac){   
           uncorrelatedMCMCblockUpdate(ifo, &state, &mcmc, run);                                          //Block update for the current temperature chain
         } else {
-			for(i=0;i<mcmc.nMCMCpar;i++){
+			//for(i=0;i<mcmc.nMCMCpar;i++){
 				uncorrelatedMCMCsingleUpdate(ifo, &state, &mcmc, run);                                         //Componentwise update for the current temperature chain (e.g. 90% of the time)
-			}
+			//}
         }
 	
         // *** Correlated update ****************************************************************************************************
