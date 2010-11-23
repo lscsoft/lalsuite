@@ -76,6 +76,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	INT4 Nskip = *(INT4*) getVariable(runState->algorithmParams, "Nskip");
 	REAL8 tempMax = *(REAL8*) getVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
 	UINT4 randomseed = *(UINT4*) getVariable(runState->algorithmParams,"random_seed");
+	UINT4 nIFO=0;
+	LALIFOData *ifodata1=runState->data;
+	while(ifodata1){
+		nIFO++;
+		ifodata1=ifodata1->next;
+	}
+	
 
 	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -149,13 +156,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 			fprintf(chainoutput[t], "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-					Niter,0,randomseed,nullLikelihood,1,1,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
+					Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
 			fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
 					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
-			for(i=0;i<1;i++) {
-					fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
-							"Hanford",50.0,40.0,350.0,6.00,1.00,
+			ifodata1=runState->data;
+			while(ifodata1){
+				fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
+							ifodata1->detector->frDetector.name,0.0,ifodata1->fLow,ifodata1->fHigh,6.00,1.00,
 							864162757.00000,8.00,1024,9152,4577);
+				ifodata1=ifodata1->next;
 			}
 			fprintf(chainoutput[t], "\n\n%31s","");
 			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
