@@ -74,6 +74,9 @@ struct gengetopt_args_info
   double dfmax_arg;	/**< @brief Maximum modulation depth to search.  */
   char * dfmax_orig;	/**< @brief Maximum modulation depth to search original value given at command line.  */
   const char *dfmax_help; /**< @brief Maximum modulation depth to search help description.  */
+  char * IFO_arg;	/**< @brief Interferometer of whose data is being analyzed (default='H1').  */
+  char * IFO_orig;	/**< @brief Interferometer of whose data is being analyzed original value given at command line.  */
+  const char *IFO_help; /**< @brief Interferometer of whose data is being analyzed help description.  */
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
@@ -107,6 +110,8 @@ struct gengetopt_args_info
   double SFToverlap_arg;	/**< @brief SFT overlap in seconds, usually Tcoh/2 (default='900').  */
   char * SFToverlap_orig;	/**< @brief SFT overlap in seconds, usually Tcoh/2 original value given at command line.  */
   const char *SFToverlap_help; /**< @brief SFT overlap in seconds, usually Tcoh/2 help description.  */
+  int IHSonly_flag;	/**< @brief IHS stage only is run. Output statistic is the IHS statistic. (default=off).  */
+  const char *IHSonly_help; /**< @brief IHS stage only is run. Output statistic is the IHS statistic. help description.  */
   int antennaOff_flag;	/**< @brief Antenna pattern weights are /NOT/ used if this flag is used (default=off).  */
   const char *antennaOff_help; /**< @brief Antenna pattern weights are /NOT/ used if this flag is used help description.  */
   int gaussTemplatesOnly_flag;	/**< @brief Gaussian templates only throughout the pipeline if this flag is used (default=off).  */
@@ -125,6 +130,7 @@ struct gengetopt_args_info
   unsigned int Pmax_given ;	/**< @brief Whether Pmax was given.  */
   unsigned int dfmin_given ;	/**< @brief Whether dfmin was given.  */
   unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
+  unsigned int IFO_given ;	/**< @brief Whether IFO was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
@@ -136,6 +142,7 @@ struct gengetopt_args_info
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
+  unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
 

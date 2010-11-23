@@ -45,6 +45,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --Pmax=DOUBLE             Maximum period to be searched",
   "      --dfmin=DOUBLE            Minimum modulation depth to search",
   "      --dfmax=DOUBLE            Maximum modulation depth to search",
+  "      --IFO=STRING              Interferometer of whose data is being analyzed  \n                                  (default=`H1')",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
   "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh  \n                                  (default=`1.0')",
@@ -56,6 +57,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
+  "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
     0
@@ -88,11 +90,13 @@ init_help_array(void)
   gengetopt_args_info_help[21] = gengetopt_args_info_full_help[21];
   gengetopt_args_info_help[22] = gengetopt_args_info_full_help[22];
   gengetopt_args_info_help[23] = gengetopt_args_info_full_help[23];
-  gengetopt_args_info_help[24] = 0; 
+  gengetopt_args_info_help[24] = gengetopt_args_info_full_help[24];
+  gengetopt_args_info_help[25] = gengetopt_args_info_full_help[25];
+  gengetopt_args_info_help[26] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[25];
+const char *gengetopt_args_info_help[27];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -154,6 +158,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->Pmax_given = 0 ;
   args_info->dfmin_given = 0 ;
   args_info->dfmax_given = 0 ;
+  args_info->IFO_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->tmplfar_given = 0 ;
   args_info->avesqrtSh_given = 0 ;
@@ -165,6 +170,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
   args_info->SFToverlap_given = 0 ;
+  args_info->IHSonly_given = 0 ;
   args_info->antennaOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
 }
@@ -186,6 +192,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->Pmax_orig = NULL;
   args_info->dfmin_orig = NULL;
   args_info->dfmax_orig = NULL;
+  args_info->IFO_arg = gengetopt_strdup ("H1");
+  args_info->IFO_orig = NULL;
   args_info->ihsfar_arg = 0.01;
   args_info->ihsfar_orig = NULL;
   args_info->tmplfar_arg = 0.01;
@@ -208,6 +216,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->skyRegion_orig = NULL;
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
+  args_info->IHSonly_flag = 0;
   args_info->antennaOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
   
@@ -231,19 +240,21 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->Pmax_help = gengetopt_args_info_full_help[10] ;
   args_info->dfmin_help = gengetopt_args_info_full_help[11] ;
   args_info->dfmax_help = gengetopt_args_info_full_help[12] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[13] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[14] ;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[15] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[16] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[17] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[18] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[19] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[20] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[21] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[22] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[23] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[24] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[25] ;
+  args_info->IFO_help = gengetopt_args_info_full_help[13] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[14] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[15] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[16] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[17] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[18] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[19] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[20] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[21] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[22] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[23] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[24] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[25] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[26] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[27] ;
   
 }
 
@@ -344,6 +355,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->Pmax_orig));
   free_string_field (&(args_info->dfmin_orig));
   free_string_field (&(args_info->dfmax_orig));
+  free_string_field (&(args_info->IFO_arg));
+  free_string_field (&(args_info->IFO_orig));
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->tmplfar_orig));
   free_string_field (&(args_info->avesqrtSh_orig));
@@ -415,6 +428,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "dfmin", args_info->dfmin_orig, 0);
   if (args_info->dfmax_given)
     write_into_file(outfile, "dfmax", args_info->dfmax_orig, 0);
+  if (args_info->IFO_given)
+    write_into_file(outfile, "IFO", args_info->IFO_orig, 0);
   if (args_info->ihsfar_given)
     write_into_file(outfile, "ihsfar", args_info->ihsfar_orig, 0);
   if (args_info->tmplfar_given)
@@ -437,6 +452,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
   if (args_info->SFToverlap_given)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
+  if (args_info->IHSonly_given)
+    write_into_file(outfile, "IHSonly", 0, 0 );
   if (args_info->antennaOff_given)
     write_into_file(outfile, "antennaOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
@@ -712,6 +729,7 @@ cmdline_parser_internal (
         { "Pmax",	1, NULL, 0 },
         { "dfmin",	1, NULL, 0 },
         { "dfmax",	1, NULL, 0 },
+        { "IFO",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "tmplfar",	1, NULL, 0 },
         { "avesqrtSh",	1, NULL, 0 },
@@ -723,6 +741,7 @@ cmdline_parser_internal (
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
+        { "IHSonly",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -892,6 +911,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Interferometer of whose data is being analyzed.  */
+          else if (strcmp (long_options[option_index].name, "IFO") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->IFO_arg), 
+                 &(args_info->IFO_orig), &(args_info->IFO_given),
+                &(local_args_info.IFO_given), optarg, 0, "H1", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "IFO", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* IHS FAR threshold.  */
           else if (strcmp (long_options[option_index].name, "ihsfar") == 0)
           {
@@ -1042,6 +1075,18 @@ cmdline_parser_internal (
                 &(local_args_info.SFToverlap_given), optarg, 0, "900", ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "SFToverlap", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* IHS stage only is run. Output statistic is the IHS statistic..  */
+          else if (strcmp (long_options[option_index].name, "IHSonly") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->IHSonly_flag), 0, &(args_info->IHSonly_given),
+                &(local_args_info.IHSonly_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "IHSonly", '-',
                 additional_error))
               goto failure;
           
