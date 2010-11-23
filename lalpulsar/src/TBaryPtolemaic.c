@@ -17,25 +17,30 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup PulsarTimes_h
-\latexonly\label{ss:TBaryPtolemaic.c}\endlatexonly
+#include<math.h>
+#include<lal/LALStdlib.h>
+#include<lal/LALConstants.h>
+#include<lal/PulsarTimes.h>
 
-Computes the barycentric arrival time of an incoming wavefront using a
-circular model of the Earth's orbit.
 
-\par Description
+/* Uncomment to remove orbital motion.
+#define LAL_AU_SI 0.0 */
 
-These routines compute the barycentric time transformation and its
-derivatives.  That is, if a signal originating from a right ascension
+NRCSID(TBARYPTOLEMAICC,"$Id$");
+
+/** \defgroup TBaryPtolemaic
+    \ingroup PulsarTimes_h
+    \brief Compute the barycentric arrival time of an incoming wavefront using a circular model of the Earth's orbit.
+    \author Creighton, T. D.
+
+These routines compute the barycentric time transformation and its derivatives.
+That is, if a signal originating from a right ascension
 \f$\alpha\f$ and declination \f$\delta\f$ on the sky and arrives at the
 detector at a time \f$t\f$, then it will pass the centre of the solar
 system at a time \f$t_b(t,\alpha,\delta)\f$.
 
-The routines obey the calling convention presented in the header
-\ref PulsarTimes.h, with \f$n=2\f$ variable parameters
+The routines obey the calling convention presented in the module
+\ref PulsarTimes_h, with \f$n=2\f$ variable parameters
 \f$\lambda^1=\alpha\f$, \f$\lambda^2=\delta\f$ (both measured in radians).
 The constant parameter fields used by these routines are
 <tt>constants->tAutumn</tt>, <tt>constants->tMidnight</tt>,
@@ -47,7 +52,7 @@ be longer, but values beyond the third are ignored.
 computed is determined by <tt>*dtBary->length-1</tt>.
 All elements beyond the fourth will be set to zero.
 
-\par Algorithm
+<b>Algorithm</b>
 
 Let \f$\mathbf{\hat{n}}(\alpha,\delta)\f$ be the unit vector to the source
 on the sky, and \f$\mathbf{x}(t)\f$ be the position of the detector
@@ -132,21 +137,9 @@ Eqs.\ltxref{eq:n-alphadelta}.  Similarly for \f$\delta\f$.
 \code
 lalDebugLevel
 \endcode
-
 */
-
-#include<math.h>
-#include<lal/LALStdlib.h>
-#include<lal/LALConstants.h>
-#include<lal/PulsarTimes.h>
-
-
-/* Uncomment to remove orbital motion.
-#define LAL_AU_SI 0.0 */
-
-NRCSID(TBARYPTOLEMAICC,"$Id$");
-
-
+/*@{*/
+/** See documentation in \ref TBaryPtolemaic */
 void
 LALTBaryPtolemaic( LALStatus             *stat,
 		   REAL8                 *tBary,
@@ -219,7 +212,7 @@ LALTBaryPtolemaic( LALStatus             *stat,
 }
 
 
-
+/** See documentation in \ref TBaryPtolemaic */
 void
 LALDTBaryPtolemaic( LALStatus             *stat,
 		    REAL8Vector           *dtBary,
@@ -339,3 +332,4 @@ LALDTBaryPtolemaic( LALStatus             *stat,
   RETURN(stat);
 
 } /* LALDTBaryPtolemaic() */
+/*@}*/

@@ -17,13 +17,15 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup PulsarTimes_h
-\latexonly\label{ss:TComp.c}\endlatexonly
+#include<lal/LALStdlib.h>
+#include<lal/PulsarTimes.h>
 
-Computes the composition of two time transformations.
+NRCSID(TCOMPC,"$Id$");
+
+/** \defgroup TComp
+    \author Creighton, T. D.
+    \ingroup PulsarTimes_h
+    \brief Computes the composition of two time transformations.
 
 \par Description
 
@@ -39,8 +41,8 @@ between the parameter sets, LALDTComp() will \e not correctly
 compute the derivatives of \f$t_c(t)\f$ (although the \e value of
 \f$t_c\f$ will still be correct).
 
-The routines obey the calling convention presented in the header
-\ref PulsarTimes.h.  The contents of <tt>*variables</tt> are, firstly,
+The routines obey the calling convention presented in
+\ref PulsarTimes_h.  The contents of <tt>*variables</tt> are, firstly,
 the time \f$t\f$ that will be sent to \f$t_1(t,\vec\lambda_{(1)})\f$; next,
 the \f$n\f$ parameters \f$\lambda^1,\ldots,\lambda^n\f$ that will be sent to
 \f$t_1(t,\vec\lambda_{(1)})\f$ as
@@ -129,13 +131,8 @@ lalDebugLevel
 \endcode
 
 */
-
-#include<lal/LALStdlib.h>
-#include<lal/PulsarTimes.h>
-
-NRCSID(TCOMPC,"$Id$");
-
-
+/*@{*/
+/** See documentation in \ref TComp. */
 void
 LALTComp( LALStatus             *stat,
 	  REAL8                 *tComp,
@@ -206,7 +203,7 @@ LALTComp( LALStatus             *stat,
 }
 
 
-
+/** See documentation in \ref TComp. */
 void
 LALDTComp( LALStatus             *stat,
 	   REAL8Vector           *dtComp,
@@ -299,3 +296,4 @@ LALDTComp( LALStatus             *stat,
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
+/*@}*/

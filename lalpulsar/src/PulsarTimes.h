@@ -17,21 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-/**
+
+#ifndef _PULSARTIMES_H
+#define _PULSARTIMES_H
+
+#include <lal/LALStdlib.h>
+
+#include <lal/LALBarycenter.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+NRCSID(PULSARTIMESH,"$Id$");
+
+/**\defgroup PulsarTimes_h  Pulsar time transformations
    \author Creighton, T. D.
-   \file
-   \ingroup PulsarTimes_h
-   \latexonly\label{s:PulsarTimes.h}\endlatexonly
-
-   Provides routines to transform among various time coordinates used in a pulsar search.
-
-*/
-
-/**
-   \defgroup PulsarTimes_h  Pulsar time transformations
    \ingroup pulsarCommon
 
-   This module covers routines that computes time coordinate
+   \brief This module covers routines that computes time coordinate
    transformations, and derivatives of these transformations with respect
    to their parameters.
 
@@ -137,20 +141,9 @@ routines that place different parameters in <tt>*variables</tt> and
 
 */
 
-#ifndef _PULSARTIMES_H
-#define _PULSARTIMES_H
-
-#include <lal/LALStdlib.h>
-
-#include <lal/LALBarycenter.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-NRCSID(PULSARTIMESH,"$Id$");
-
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */
+ /*@{*/
+/** \ingroup PulsarTimes_h */
 #define PULSARTIMESH_ENUL 1
 #define PULSARTIMESH_EBAD 2
 
@@ -158,7 +151,8 @@ NRCSID(PULSARTIMESH,"$Id$");
 #define PULSARTIMESH_MSGEBAD "Bad parameter values"
 /*@}*/
 
-/** This structure stores a superset of all constant parameters
+/** \ingroup PulsarTimes_h
+ * This structure stores a superset of all constant parameters
  * required by the functions provided by the header PulsarTimes.h.
  * Although the structure is quite large, it is
  * supposed to store only constants, so only one structure need be

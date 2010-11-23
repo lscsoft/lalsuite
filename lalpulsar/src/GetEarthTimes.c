@@ -17,16 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup PulsarTimes_h
-\latexonly\label{ss:GetEarthTimes.c}\endlatexonly
-
-Computes the next sidereal midnight and autumnal equinox.
-
-*/
-
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -49,17 +39,21 @@ static const INT4 equinoxes[NEQUINOXES] = {
   1284816613 };
 
 
-/** Computes the next sidereal midnight and autumnal equinox.
+/** \defgroup GetEarthTimes
+    \brief Computes the next sidereal midnight and autumnal equinox.
+    \author Creighton, T. D.
+    \ingroup PulsarTimes_h
+
 This function takes a GPS time from the parameter field
 <tt>times->epoch</tt> and uses it to assign the fields
 <tt>times->tAutumn</tt> and <tt>times->tMidnight</tt>, which are
 REAL8 representations of the time in seconds from
 <tt>times->epoch</tt> to the next autumnal equinox or sidereal midnight,
-respectively.  This routine was written under the \ref PulsarTimes.h
-header because these quantities are vital for performing pulsar
+respectively.  This routine was written under the \ref PulsarTimes_h
+module because these quantities are vital for performing pulsar
 timing: they characterize the Earth's orbital and rotational phase,
-and hence the Doppler modulation on an incoming signal.  See the
-\ref PulsarTimes.h header for more information about the
+and hence the Doppler modulation on an incoming signal.  See
+\ref PulsarTimes_h for more information about the
 PulsarTimesParamStruc structure.
 
 \par Algorithm
@@ -89,7 +83,8 @@ the REAL8 time variables may suffer loss of precision.
 \code
 XLALGreenwichMeanSiderealTime()
 \endcode
-*/
+*/ /*@{*/
+/** See documentation in \ref GetEarthTimes */
 void
 LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
 {
@@ -134,3 +129,4 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   DETATCHSTATUSPTR( stat );
   RETURN(stat);
 }
+/*@}*/

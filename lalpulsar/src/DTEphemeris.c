@@ -17,14 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Jones, D. I.,   Owen, B. J.
-\file
-\ingroup PulsarTimes_h
-\latexonly\label{ss:DTEphemeris.c}\endlatexonly
+#include <math.h>
+#include <stdio.h>
+#include <lal/AVFactories.h>
+#include <lal/LALBarycenter.h>
+#include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
+#include <lal/Date.h>
 
-Computes the barycentric arrival time of an incoming wavefront using
-accurate ephemeris-based data files of the Sun and Earth's motions.
+#include "PulsarTimes.h"
+
+NRCSID(DTEPHEMERISC,"$Id$");
+
+/** \defgroup DTEphemeris
+    \author Jones, D. I.,   Owen, B. J.
+    \ingroup PulsarTimes_h
+    \brief Computes the barycentric arrival time of an incoming wavefront using
+    accurate ephemeris-based data files of the Sun and Earth's motions.
 
 \par Description
 
@@ -54,20 +63,8 @@ LALBarycenter()
 \endcode
 
 */
-
-#include <math.h>
-#include <stdio.h>
-#include <lal/AVFactories.h>
-#include <lal/LALBarycenter.h>
-#include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
-#include <lal/Date.h>
-
-#include "PulsarTimes.h"
-
-NRCSID(DTEPHEMERISC,"$Id$");
-
-
+/*@{*/
+/** See \ref DTEphemeris for documention */
 void
 LALDTEphemeris( LALStatus             *status,
 	        REAL8Vector           *drv,
@@ -209,9 +206,7 @@ LALDTEphemeris( LALStatus             *status,
   RETURN( status );
 }
 
-/*Computes the barycentric time using Ephemeris data.*/
-
-
+/** See \ref DTEphemeris for documention */
 void
 LALTEphemeris( LALStatus   *status,
 	       REAL8 *tBary,
@@ -275,3 +270,4 @@ LALTEphemeris( LALStatus   *status,
 
   RETURN(status);
 }
+/*@}*/

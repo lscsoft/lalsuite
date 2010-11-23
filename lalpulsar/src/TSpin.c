@@ -17,13 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup PulsarTimes_h
-\latexonly\label{ss:TSpin.c}\endlatexonly
 
-Computes the rotation-synchronized time coordinate for an object with smoothly-varying spin.
+#include<lal/LALStdlib.h>
+#include<lal/PulsarTimes.h>
+
+NRCSID(TSPINC,"$Id$");
+
+/** \defgroup TSpin
+    \author Creighton, T. D.
+    \ingroup PulsarTimes_h
+    \brief Computes the rotation-synchronized time coordinate for an object with smoothly-varying spin.
 
 \par Description
 
@@ -35,8 +38,8 @@ coordinate, while the actual physical rotation rate may be changing
 gradually.  The frequency drift \f$f(t)\f$ is characterized by
 frequency-normalized Taylor coefficients \f$f_k=(k!f)^{-1}\partial^k f/\partial t^k\f$.
 
-The routines obey the calling convention presented in the header
-\ref PulsarTimes.h, with \f$n\f$ variable parameters \f$\lambda^k=f_k\f$
+The routines obey the calling convention presented in the module
+\ref PulsarTimes_h, with \f$n\f$ variable parameters \f$\lambda^k=f_k\f$
 (measured in \f$\mathrm{Hz}^k\f$), where \f$k=1,\ldots,n\f$.  The only
 constant parameter field used by these routines is
 <tt>constants->t0</tt>, which is the time when the Taylor coefficients
@@ -84,13 +87,8 @@ lalDebugLevel
 \endcode
 
 */
-
-#include<lal/LALStdlib.h>
-#include<lal/PulsarTimes.h>
-
-NRCSID(TSPINC,"$Id$");
-
-
+/*@{*/
+/** See documentation in \ref TSpin */
 void
 LALTSpin( LALStatus             *stat,
 	  REAL8                 *tSpin,
@@ -136,7 +134,7 @@ LALTSpin( LALStatus             *stat,
 }
 
 
-
+/** See documentation in \ref TSpin */
 void
 LALDTSpin( LALStatus             *stat,
 	   REAL8Vector           *dtSpin,
@@ -204,3 +202,4 @@ LALDTSpin( LALStatus             *stat,
   *data2=dts;
   RETURN(stat);
 }
+/*@}*/
