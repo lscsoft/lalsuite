@@ -1273,7 +1273,7 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 2.0 / PSD->data->data[i]; /* Factor of 2 for one-sided --> two-sided. */
+    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
     CPSD->data->data[i].im = 0.0;
   }
 
@@ -1509,29 +1509,6 @@ void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8Ti
   
   /* Adjust start time. */
   XLALGPSAdd(&wrapped->epoch, NNeg*wrapped->deltaT);
-}
-
-REAL8 slowTimeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW) {
-  UINT4 NTDW = TDW->data->length;
-  UINT4 NNeg = (NTDW-1)/2;
-  REAL8 TNeg = NNeg*TDW->deltaT;
-  UINT4 b;
-  REAL8TimeSeries *linearTDW;
-  REAL8 sum = 0.0;
-
-  linearTDW = XLALCreateREAL8TimeSeries(TDW->name, &(TDW->epoch), 0.0, TDW->deltaT, &(TDW->sampleUnits), NTDW);
-  wrappedTimeSeriesToLinearTimeSeries(linearTDW, TDW);
-
-  for (b = 0; b < B->data->length; b++) {
-    linearTDW->epoch = B->epoch;
-    XLALGPSAdd(&(linearTDW->epoch), b*B->deltaT - TNeg);
-
-    sum += B->data->data[b]*integrateSeriesProduct(A, linearTDW);
-  }
-
-  XLALDestroyREAL8TimeSeries(linearTDW);
-
-  return sum;
 }
 
 REAL8 timeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW) {

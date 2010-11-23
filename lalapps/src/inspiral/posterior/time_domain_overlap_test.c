@@ -5,11 +5,12 @@
 #include <lal/TimeFreqFFT.h>
 
 int main() {
-  const UINT4 N = 128;
-  const UINT4 NPSD = 65;
+  const UINT4 N = 256;
+  const UINT4 NPSD = N/2+1;
   const REAL8 T = 1.0;
   const REAL8 dT = T/(N-1);
-  const REAL8 dF = 1.0/T;
+  const REAL8 fNy = 1.0/(2.0*dT);
+  const REAL8 dF = fNy/(NPSD-1);
 
   const REAL8 Af0 = 15.0;
   const REAL8 Afdot0 = 10.0;
