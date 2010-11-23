@@ -34,7 +34,8 @@
 #include <lal/Sequence.h>
 
 size_t typeSize[] = {sizeof(INT4), 
-                     sizeof(INT8), 
+                     sizeof(INT8),
+                     sizeof(UINT4),
                      sizeof(REAL4), 
                      sizeof(REAL8), 
                      sizeof(COMPLEX8), 
@@ -317,6 +318,9 @@ void printVariables(LALVariables *var)
         case INT8_t:
           fprintf(stdout, "'INT8'");
           break;
+		case UINT4_t:
+		  fprintf(stdout, "'UINT4'");
+		  break;			  
         case REAL4_t:
           fprintf(stdout, "'REAL4'");
           break;
@@ -344,6 +348,9 @@ void printVariables(LALVariables *var)
         case INT8_t:
           fprintf(stdout, "%lld", *(INT8 *) ptr->value);
           break;
+		case UINT4_t:
+		  fprintf(stdout, "%ud", *(UINT4 *) ptr->value);
+		  break;			  
         case REAL4_t:
           fprintf(stdout, "%.15lf", *(REAL4 *) ptr->value);
           break;
@@ -382,6 +389,9 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				break;
 			case INT8_t:
 				fprintf(fp, "%lld", *(INT8 *) ptr->value);
+				break;
+			case UINT4_t:
+				fprintf(fp, "%ud", *(UINT4 *) ptr->value);
 				break;
 			case REAL4_t:
 				fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
@@ -422,6 +432,9 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample){
 					break;
 				case INT8_t:
 					fprintf(fp, "%lld", *(INT8 *) ptr->value);
+					break;
+				case UINT4_t:
+					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
 					break;
 				case REAL4_t:
 					fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
@@ -473,6 +486,9 @@ int compareVariables(LALVariables *var1, LALVariables *var2)
           case INT8_t: 
             result = ((*(INT8 *) ptr2->value) != (*(INT8 *) ptr1->value));
             break;
+		  case UINT4_t: 
+			result = ((*(UINT4 *) ptr2->value) != (*(UINT4 *) ptr1->value));
+			break;
           case REAL4_t: 
             result = ((*(REAL4 *) ptr2->value) != (*(REAL4 *) ptr1->value));
             break;

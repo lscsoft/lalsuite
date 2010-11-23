@@ -75,7 +75,8 @@ struct tagLALIFOData;
 
 typedef enum {
   INT4_t, 
-  INT8_t, 
+  INT8_t,
+  UINT4_t,
   REAL4_t, 
   REAL8_t, 
   COMPLEX8_t, 

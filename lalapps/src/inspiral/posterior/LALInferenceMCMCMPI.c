@@ -151,7 +151,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	[--randomseed seed]\tRandom seed of sampling distribution\n";
 	
 	INT4 verbose=0,tmpi=0;
-	unsigned long int randomseed=0;
+	unsigned int randomseed=0;
 	REAL8 tempMax = 40.0;
 	//REAL8 tmp=0;
 	ProcessParamsTable *commandLine=runState->commandLine;
@@ -273,8 +273,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
-	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
-	addVariable(runState->algorithmParams,"random_seed",&randomseed, INT4_t,PARAM_FIXED);
+	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
+	addVariable(runState->algorithmParams,"random_seed",&randomseed, UINT4_t,PARAM_FIXED);
 	gsl_rng_set(runState->GSLrandom, randomseed);
 	
 	return;
