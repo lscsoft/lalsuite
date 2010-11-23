@@ -17,60 +17,43 @@
 *  MA  02111-1307  USA
 */
 
-/******************************* <lalVerbatim file="DTEphemerisCV">
-Author: Jones, D. I.,   Owen, B. J.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{DTEphemeris.c}}
-\label{ss:DTEphemeris.c}
+/**
+\author Jones, D. I.,   Owen, B. J.
+\file
+\ingroup PulsarTimes_h
+\latexonly\label{ss:DTEphemeris.c}\endlatexonly
 
 Computes the barycentric arrival time of an incoming wavefront using
 accurate ephemeris-based data files of the Sun and Earth's motions.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DTEphemerisCP}
-\idx{LALDTEphemeris()}
-\idx{LALTEphemeris()}
-
-\subsubsection*{Description}
-
+\par Description
 
 These routines compute the barycentric time transformation and its
 derivatives.  That is, if a signal originating from a right ascension
-$\alpha$ and declination $\delta$ on the sky and arrives at the
-detector at a time $t$, then it will pass the centre of the solar
-system at a time $t_b(t,\alpha,\delta)$.
+\f$\alpha\f$ and declination \f$\delta\f$ on the sky and arrives at the
+detector at a time \f$t\f$, then it will pass the centre of the solar
+system at a time \f$t_b(t,\alpha,\delta)\f$.
 
 The input/output features of this function are nearly identical to
-those of \texttt{DTBaryPtolemaic()}, whose documentation should be
+those of LALDTBaryPtolemaic(), whose documentation should be
 consulted  for the details. One important difference in calling this
 function is that the user has to supply the initialised ephemeris-data
-in the \verb+PulsarTimesParamStruc->ephemeris+ and the detector-data
-in \verb+PulsarTimesParamStruc->site+.
+in the PulsarTimesParamStruc::ephemeris and the detector-data
+in PulsarTimesParamStruc::site.
 
-\texttt{DTBaryPtolemaic()} uses the Ptolemaic approximation to model
-the Earth/Sun system, while \texttt{DTEphemeris()} uses accurate
+LALDTBaryPtolemaic() uses the Ptolemaic approximation to model
+the Earth/Sun system, while LALDTEphemeris() uses accurate
 ephemeris data read in from files in the calling function, and passed
-into \texttt{DTEphemeris()} using the \texttt{EphemerisData}
-structure, which is a member of the \texttt{PulsarTimesParamStruc}.
+into LALDTEphemeris() using the EphemerisData
+structure, which is a member of the PulsarTimesParamStruc.
 
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\par Uses
+\code
 lalDebugLevel                LALBarycenterEarth()
 LALBarycenter()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DTEphemerisCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdio.h>
@@ -80,16 +63,17 @@ LALBarycenter()
 #include <lal/StackMetric.h>
 #include <lal/Date.h>
 
+#include "PulsarTimes.h"
 
 NRCSID(DTEPHEMERISC,"$Id$");
 
-/* <lalVerbatim file="DTEphemerisCP"> */
+
 void
 LALDTEphemeris( LALStatus             *status,
 	        REAL8Vector           *drv,
 	        REAL8Vector           *var,
 	        PulsarTimesParamStruc *tev )
-{ /* </lalVerbatim> */
+{
   LIGOTimeGPS tGPS;           /* Input structure to BartcenterEarth()  */
   const EphemerisData *eph;         /* Input structure to BarycenterEarth()  */
   EarthState earth;           /* Output structure of BarycenterEarth() */
@@ -227,13 +211,13 @@ LALDTEphemeris( LALStatus             *status,
 
 /*Computes the barycentric time using Ephemeris data.*/
 
-/* <lalVerbatim file="DTEphemerisCP"> */
+
 void
 LALTEphemeris( LALStatus   *status,
 	       REAL8 *tBary,
 	       REAL8Vector *var,
 	       PulsarTimesParamStruc *tev )
-{ /* </lalVerbatim>*/
+{
   LIGOTimeGPS tGPS; /* Input structure to BarycenterEarth() */
   const EphemerisData *eph; /* Input structure to BarycenterEarth() */
   EarthState earth; /* Output structure of BarycenterEarth() */
