@@ -51,9 +51,7 @@ NRCSID(RESAMPLEH,"$Id$");
    \defgroup Resample_h Time Series Resampling
    \ingroup pulsarCommon
    \author Creighton, T. D.
-
-Provides routines for resampling time series according to a new
-canonical time coordinate.
+   \brief Provides routines for resampling time series according to a new canonical time coordinate.
 
 \par Synopsis
 \code

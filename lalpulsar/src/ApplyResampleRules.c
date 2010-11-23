@@ -26,8 +26,9 @@
 NRCSID(APPLYRESAMPLERULESC,"$Id$");
 
 
-/** \ingroup Resample_h
+/**
     \author Creighton, T. D.
+    \ingroup Resample_h
     \brief Resamples a time series according to a set of resampling rules.
 
 This function sets <tt>output->deltaT</tt> and fills <tt>output->data</tt>
