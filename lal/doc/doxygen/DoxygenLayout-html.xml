@@ -136,12 +136,11 @@
       <namespaces visible="yes" title=""/>
       <dirs visible="yes" title=""/>
       <nestedgroups visible="yes" title=""/>
-      <files visible="yes" title=""/>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
       <functions title=""/>
+      <files visible="yes" title=""/>
       <variables title=""/>
       <signals title=""/>
       <publicslots title=""/>
@@ -154,11 +153,10 @@
     </memberdecl>
     <memberdef>
       <pagedocs/>
-      <defines title=""/>
+      <functions title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
-      <functions title=""/>
       <variables title=""/>
       <signals title=""/>
       <publicslots title=""/>
