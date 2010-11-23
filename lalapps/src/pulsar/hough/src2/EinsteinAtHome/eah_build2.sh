@@ -525,7 +525,7 @@ else
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
 fi
 
-if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
+if [ ".$MACOSX_DEPLOYMENT_TARGET" != ".10.3" -a ".$acc" != "._altivec" ] ; then
     log_and_do cd "$BUILD/lalapps/src/pulsar/hough/src2"
     log_and_dont_fail make gitID
     if [ ".$cuda" = ".true" ] ; then
