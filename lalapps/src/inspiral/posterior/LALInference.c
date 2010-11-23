@@ -1511,7 +1511,7 @@ void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8Ti
   XLALGPSAdd(&wrapped->epoch, NNeg*wrapped->deltaT);
 }
 
-REAL8 timeDomainOverlap(const REAL8TimeSeries *A, const REAL8TimeSeries *B, const REAL8TimeSeries *TDW) {
+REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B) {
   REAL8TimeSeries *Bconv;
   REAL8 overlap;
 

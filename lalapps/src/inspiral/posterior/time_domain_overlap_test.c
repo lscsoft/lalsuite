@@ -53,7 +53,7 @@ int main() {
 
   XLALREAL8TimeFreqFFT(Af, A, fwd);
 
-  overlap = timeDomainOverlap(A, A, TDW);
+  overlap = timeDomainOverlap(TDW, A, A);
 
   for (i = 0; i < NPSD; i++) {
     REAL8 re = Af->data->data[i].re;
