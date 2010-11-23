@@ -27,7 +27,7 @@
 
 const char *gengetopt_args_info_purpose = "TwoSpect analysis program";
 
-const char *gengetopt_args_info_usage = "Usage: " CMDLINE_PARSER_PACKAGE " [OPTIONS]...";
+const char *gengetopt_args_info_usage = "Usage: lalapps_TwoSpect [OPTIONS]...";
 
 const char *gengetopt_args_info_description = "";
 
@@ -36,6 +36,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
   "      --config=STRING           Configuration file in gengetopt format for \n                                  passing parameters",
+  "  -v, --verbosity=INT           Verbosity level  (default=`0')",
   "      --Tobs=DOUBLE             Total observation time",
   "      --Tcoh=DOUBLE             SFT coherence time  (default=`1800')",
   "      --t0=DOUBLE               Start time of the search in GPS seconds",
@@ -92,11 +93,12 @@ init_help_array(void)
   gengetopt_args_info_help[23] = gengetopt_args_info_full_help[23];
   gengetopt_args_info_help[24] = gengetopt_args_info_full_help[24];
   gengetopt_args_info_help[25] = gengetopt_args_info_full_help[25];
-  gengetopt_args_info_help[26] = 0; 
+  gengetopt_args_info_help[26] = gengetopt_args_info_full_help[26];
+  gengetopt_args_info_help[27] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[27];
+const char *gengetopt_args_info_help[28];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -149,6 +151,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->config_given = 0 ;
+  args_info->verbosity_given = 0 ;
   args_info->Tobs_given = 0 ;
   args_info->Tcoh_given = 0 ;
   args_info->t0_given = 0 ;
@@ -181,6 +184,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->config_arg = NULL;
   args_info->config_orig = NULL;
+  args_info->verbosity_arg = 0;
+  args_info->verbosity_orig = NULL;
   args_info->Tobs_orig = NULL;
   args_info->Tcoh_arg = 1800;
   args_info->Tcoh_orig = NULL;
@@ -231,30 +236,31 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->full_help_help = gengetopt_args_info_full_help[1] ;
   args_info->version_help = gengetopt_args_info_full_help[2] ;
   args_info->config_help = gengetopt_args_info_full_help[3] ;
-  args_info->Tobs_help = gengetopt_args_info_full_help[4] ;
-  args_info->Tcoh_help = gengetopt_args_info_full_help[5] ;
-  args_info->t0_help = gengetopt_args_info_full_help[6] ;
-  args_info->fmin_help = gengetopt_args_info_full_help[7] ;
-  args_info->fspan_help = gengetopt_args_info_full_help[8] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[9] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[10] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[11] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[12] ;
-  args_info->IFO_help = gengetopt_args_info_full_help[13] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[14] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[15] ;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[16] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[17] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[18] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[19] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[20] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[21] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[22] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[23] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[24] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[25] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[26] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[27] ;
+  args_info->verbosity_help = gengetopt_args_info_full_help[4] ;
+  args_info->Tobs_help = gengetopt_args_info_full_help[5] ;
+  args_info->Tcoh_help = gengetopt_args_info_full_help[6] ;
+  args_info->t0_help = gengetopt_args_info_full_help[7] ;
+  args_info->fmin_help = gengetopt_args_info_full_help[8] ;
+  args_info->fspan_help = gengetopt_args_info_full_help[9] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[10] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[11] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[12] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[13] ;
+  args_info->IFO_help = gengetopt_args_info_full_help[14] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[15] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[16] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[17] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[18] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[19] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[20] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[21] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[22] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[23] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[24] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[25] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[26] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[27] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[28] ;
   
 }
 
@@ -346,6 +352,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->config_arg));
   free_string_field (&(args_info->config_orig));
+  free_string_field (&(args_info->verbosity_orig));
   free_string_field (&(args_info->Tobs_orig));
   free_string_field (&(args_info->Tcoh_orig));
   free_string_field (&(args_info->t0_orig));
@@ -410,6 +417,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->config_given)
     write_into_file(outfile, "config", args_info->config_orig, 0);
+  if (args_info->verbosity_given)
+    write_into_file(outfile, "verbosity", args_info->verbosity_orig, 0);
   if (args_info->Tobs_given)
     write_into_file(outfile, "Tobs", args_info->Tobs_orig, 0);
   if (args_info->Tcoh_given)
@@ -720,6 +729,7 @@ cmdline_parser_internal (
         { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "config",	1, NULL, 0 },
+        { "verbosity",	1, NULL, 'v' },
         { "Tobs",	1, NULL, 0 },
         { "Tcoh",	1, NULL, 0 },
         { "t0",	1, NULL, 0 },
@@ -747,7 +757,7 @@ cmdline_parser_internal (
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hV", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVv:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -763,6 +773,18 @@ cmdline_parser_internal (
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
+        case 'v':	/* Verbosity level.  */
+        
+        
+          if (update_arg( (void *)&(args_info->verbosity_arg), 
+               &(args_info->verbosity_orig), &(args_info->verbosity_given),
+              &(local_args_info.verbosity_given), optarg, 0, "0", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "verbosity", 'v',
+              additional_error))
+            goto failure;
+        
+          break;
 
         case 0:	/* Long option with no short option */
           if (strcmp (long_options[option_index].name, "full-help") == 0) {

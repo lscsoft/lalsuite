@@ -63,7 +63,10 @@ int main(int argc, char *argv[])
    LALStatus status;
    status.statusPtr = NULL;
    char s[20000], t[20000], u[20000];
-
+   
+   //Turn off gsl error handler
+   gsl_set_error_handler_off();
+   
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
    configparams = cmdline_parser_params_create();
@@ -71,6 +74,9 @@ int main(int argc, char *argv[])
    if ( args_info.config_given ) {
       if ( cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) exit(-1);
    }
+   
+   //Set lalDebugLevel to user input or 0 if no input
+   lalDebugLevel = args_info.verbosity_arg;
    
    //Create directory
    if (args_info.outdirectory_given) {

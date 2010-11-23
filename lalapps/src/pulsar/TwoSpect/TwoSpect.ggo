@@ -1,6 +1,9 @@
+package "lalapps_TwoSpect"
+version "1.0.0"
 purpose "TwoSpect analysis program"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
+option "verbosity" v "Verbosity level" int default="0" optional
 option "Tobs"  - "Total observation time" double optional
 option "Tcoh"  - "SFT coherence time" double default="1800" optional
 option "t0"    - "Start time of the search in GPS seconds" double optional

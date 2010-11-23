@@ -120,7 +120,10 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    }
-   gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length);
+   if ((gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length)) != 0) {
+      XLALPrintError("%s: gsl_sort_float_largest() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    
    output->far = output->topRvalues->data[output->topRvalues->length - 1];
    output->distMean = mean;
@@ -181,9 +184,17 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    while (status==GSL_CONTINUE && ii<max_iter) {
       ii++;
       status = gsl_root_fdfsolver_iterate(s);
+      if (status!=0) {
+         XLALPrintError("%s: gsl_root_fdfsolver_iterate() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
       prevroot = root;
       root = gsl_root_fdfsolver_root(s);
       status = gsl_root_test_delta(prevroot, root, 0.0, 0.001);
+      if (status!=0) {
+         XLALPrintError("%s: gsl_root_test_delta() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
    }
    
    if (status != GSL_SUCCESS) {

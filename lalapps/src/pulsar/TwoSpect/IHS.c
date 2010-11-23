@@ -336,7 +336,10 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
          XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf((trials-ii)*threshold)+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-      gsl_sort_float_largest((float*)topihsvals->data, topihsvals->length, (float*)tempihsvals->data, 1, tempihsvals->length);
+      if( (gsl_sort_float_largest((float*)topihsvals->data, topihsvals->length, (float*)tempihsvals->data, 1, tempihsvals->length)) != 0) {
+         XLALPrintError("%s: gsl_sort_float_largest() failed.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
       
       output->ihsfar->data[ii-1] = topihsvals->data[topihsvals->length-1];
       XLALDestroyREAL4Vector(topihsvals);
@@ -580,13 +583,6 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                per0 = params->Tobs/loc;
                
                //fprintf(stderr,"IHS candidate %d: f0 = %g, P = %g, df = %g\n",(*numofcandidates),fsig,per0,B);
-               
-               //REAL4 ihs_sum = ihsmaxima->maxima->data[checkbin];
-               //REAL4 ihsSnr = (ihs_sum - meanNoise*ihsfarstruct->ihsdistMean->data[ii])/(rmsNoise*ihsfarstruct->ihsdistSigma->data[ii]);
-               
-               //candlist[(*numofcandidates)] = new_candidate();
-               //loadCandidateData(candlist[(*numofcandidates)], fsig, per0, B, 0.0, 0.0, 0.0, 0.0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-               //(*numofcandidates)++;
                
                if (candlist->numofcandidates == candlist->length-1) {
                   candlist = resize_candidateVector(candlist, 2*(candlist->length));
