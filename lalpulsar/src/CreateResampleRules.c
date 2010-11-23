@@ -17,17 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:CreateResampleRules.c}\endlatexonly
-
-Creates an object of type \c ResampleRules according to a
-piecewise polynomial fit to the canonical time \f$\tau(t)\f$.
-
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -74,7 +63,14 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 static void
 FreeTempRules( INT4 **tempRules, INT4 nSqrt );
 
-/** This function creates an object <tt>**rules</tt> of type
+
+/**
+   \author Creighton, T. D.
+   \ingroup Resample_h
+   \brief Creates an object of type ResampleRules according to a
+   piecewise polynomial fit to the canonical time \f$\tau(t)\f$.
+
+This function creates an object <tt>**rules</tt> of type
 \c ResampleRules, according to the polynomial fit to the canonical
 time function found in <tt>*polyco</tt> and the sampling parameters
 found in <tt>*params</tt>.  See the header Resample.h for a

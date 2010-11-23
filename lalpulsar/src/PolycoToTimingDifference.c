@@ -17,16 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:PolycoToTimingDifference.c}\endlatexonly
-
-Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a
-polynomial fit.
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -35,7 +25,10 @@ polynomial fit.
 
 NRCSID(POLYCOTOTIMINGDIFFERENCEC,"$Id$");
 
-/**
+/** \author Creighton, T. D.
+    \ingroup Resample_h
+    \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a polynomial fit.
+
 This function fills a time series <tt>*difference</tt> with the values
 of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
 detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
