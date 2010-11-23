@@ -306,17 +306,12 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.lim = 10000;
    vars.c = Rpr;
    sigma = sqrt(sigma)*1.0e4;
-   REAL8 accuracy = 1.0e-5;
+   REAL8 accuracy = 1.0e-5;   //don't change this value
    
    sigma = 0.0;
-   //fprintf(stderr,"Sigma is %g\n",sigma);
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);
-   if (errcode!=0) {
-      XLALPrintError("%s: cdfwchisq() failed.\n", fn);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-   }
    
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
@@ -326,40 +321,36 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
+      INT4 errcode1 = 0, errcode2 = 0;
+      
       c1 = 0.9*vars.c;
       vars.c = c1;
-      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
-      if (errcode!=0) {
-         XLALPrintError("%s: cdfwchisq() failed.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
+      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode1);
       while (tempprob<1.0e-4) {
          c1 *= 0.9;
          vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, errcode);
-         if (errcode!=0) {
-            XLALPrintError("%s: cdfwchisq() failed.\n", fn);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-         }
+         tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode1);
       }
       logprob1 = log10(tempprob);
       
       c2 = 0.9*c1;
       vars.c = c2;
-      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
-      if (errcode!=0) {
-         XLALPrintError("%s: cdfwchisq() failed.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      }
+      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode2));
       while ((logprob2-logprob1)<=2.0*1.0e-4) {
          c2 *= 0.9;
          vars.c = c2;
-         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, errcode));
-         if (errcode!=0) {
-            XLALPrintError("%s: cdfwchisq() failed.\n", fn);
-            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-         }
+         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode2));
       }
+      
+      //If either point along the slope had a problem at the end, then better fail.
+      //Otherwise, set errcode = 0;
+      if (errcode1!=0 || errcode2!=0) {
+         XLALPrintError("%s: cdfwchisq() failed.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      } else {
+         *errcode = errcode1;
+      }
+
       
       //Calculating slope
       probslope = (logprob1-logprob2)/(c1-c2);
@@ -367,6 +358,12 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       //Find the log10(prob) of the original Rpr value
       logprobest = logprob1 - probslope*(c1-Rpr);
       
+   }
+   
+   //If errcode is still 0, better fail
+   if (*errcode!=0) {
+      XLALPrintError("%s: cdfwchisq() failed.\n", fn);
+      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    
    //Cleanup
