@@ -39,10 +39,10 @@ static const INT4 equinoxes[NEQUINOXES] = {
   1284816613 };
 
 
-/** \defgroup GetEarthTimes
-    \brief Computes the next sidereal midnight and autumnal equinox.
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
+    \brief Computes the next sidereal midnight and autumnal equinox.
 
 This function takes a GPS time from the parameter field
 <tt>times->epoch</tt> and uses it to assign the fields
@@ -84,7 +84,7 @@ the REAL8 time variables may suffer loss of precision.
 XLALGreenwichMeanSiderealTime()
 \endcode
 */ /*@{*/
-/** See documentation in \ref GetEarthTimes */
+
 void
 LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
 {

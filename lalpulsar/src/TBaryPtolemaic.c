@@ -26,12 +26,15 @@
 /* Uncomment to remove orbital motion.
 #define LAL_AU_SI 0.0 */
 
+/** \cond EXCLUDE_FROM_DOXYGEN */
 NRCSID(TBARYPTOLEMAICC,"$Id$");
+/** \endcond */
 
-/** \defgroup TBaryPtolemaic
+/** \file
+    \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Compute the barycentric arrival time of an incoming wavefront using a circular model of the Earth's orbit.
-    \author Creighton, T. D.
+
 
 These routines compute the barycentric time transformation and its derivatives.
 That is, if a signal originating from a right ascension
@@ -139,7 +142,7 @@ lalDebugLevel
 \endcode
 */
 /*@{*/
-/** See documentation in \ref TBaryPtolemaic */
+
 void
 LALTBaryPtolemaic( LALStatus             *stat,
 		   REAL8                 *tBary,
@@ -212,7 +215,6 @@ LALTBaryPtolemaic( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TBaryPtolemaic */
 void
 LALDTBaryPtolemaic( LALStatus             *stat,
 		    REAL8Vector           *dtBary,

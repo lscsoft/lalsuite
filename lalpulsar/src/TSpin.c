@@ -23,7 +23,7 @@
 
 NRCSID(TSPINC,"$Id$");
 
-/** \defgroup TSpin
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Computes the rotation-synchronized time coordinate for an object with smoothly-varying spin.
@@ -88,7 +88,7 @@ lalDebugLevel
 
 */
 /*@{*/
-/** See documentation in \ref TSpin */
+
 void
 LALTSpin( LALStatus             *stat,
 	  REAL8                 *tSpin,
@@ -134,7 +134,6 @@ LALTSpin( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TSpin */
 void
 LALDTSpin( LALStatus             *stat,
 	   REAL8Vector           *dtSpin,

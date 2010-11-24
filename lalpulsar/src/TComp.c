@@ -22,7 +22,7 @@
 
 NRCSID(TCOMPC,"$Id$");
 
-/** \defgroup TComp
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Computes the composition of two time transformations.
@@ -132,7 +132,7 @@ lalDebugLevel
 
 */
 /*@{*/
-/** See documentation in \ref TComp. */
+
 void
 LALTComp( LALStatus             *stat,
 	  REAL8                 *tComp,
@@ -203,7 +203,6 @@ LALTComp( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TComp. */
 void
 LALDTComp( LALStatus             *stat,
 	   REAL8Vector           *dtComp,

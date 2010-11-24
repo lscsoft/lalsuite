@@ -29,7 +29,7 @@
 
 NRCSID(DTEPHEMERISC,"$Id$");
 
-/** \defgroup DTEphemeris
+/** \file
     \author Jones, D. I.,   Owen, B. J.
     \ingroup PulsarTimes_h
     \brief Computes the barycentric arrival time of an incoming wavefront using
@@ -64,7 +64,7 @@ LALBarycenter()
 
 */
 /*@{*/
-/** See \ref DTEphemeris for documention */
+
 void
 LALDTEphemeris( LALStatus             *status,
 	        REAL8Vector           *drv,
@@ -206,7 +206,6 @@ LALDTEphemeris( LALStatus             *status,
   RETURN( status );
 }
 
-/** See \ref DTEphemeris for documention */
 void
 LALTEphemeris( LALStatus   *status,
 	       REAL8 *tBary,
