@@ -26,7 +26,7 @@
 /* Uncomment to remove orbital motion.
 #define LAL_AU_SI 0.0 */
 
-/** \cond EXCLUDE_FROM_DOXYGEN */
+/** \cond DONT_DOXYGEN */
 NRCSID(TBARYPTOLEMAICC,"$Id$");
 /** \endcond */
 
@@ -70,11 +70,12 @@ Choosing a right-handed coordinate system with \f$\mathbf{\hat{e}}_x\f$
 toward the vernal equinox and \f$\mathbf{\hat{e}}_z\f$ toward celestial
 North, the components of \f$\mathbf{\hat{n}}(\alpha,\delta)\f$ can be
 written as:
+\anchor eq_n-alphadelta
 \f{eqnarray}{
 n_x & = & \cos\alpha\cos\delta \; , \nonumber\\
 n_y & = & \sin\alpha\cos\delta \; , \nonumber\\
 n_z & = & \sin\delta           \; .
-\label{eq:n-alphadelta}
+\label{eq_n-alphadelta}
 \f}
 
 In a first-order Ptolemaic model of the solar system, the rotation of
@@ -134,7 +135,7 @@ Differentiating with respect to \f$\alpha\f$ gives:
 		{\partial\alpha} \; ,
 \f]
 where \f$\partial\mathbf{n}/\partial\alpha\f$ is easily obtained from
-Eqs.\ltxref{eq:n-alphadelta}.  Similarly for \f$\delta\f$.
+Eqs.\ltxref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
 
 \par Uses
 \code

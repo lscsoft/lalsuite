@@ -28,8 +28,7 @@ extern "C" {
 
 NRCSID(RESAMPLEH,"$Id$");
 
-/**
-\name Error Codes */
+/** \name Error Codes */
 /*@{*/
 /** \ingroup Resample_h */
 #define RESAMPLEH_ENUL    1
@@ -48,7 +47,7 @@ NRCSID(RESAMPLEH,"$Id$");
 /*@}*/
 
 /**
-   \defgroup Resample_h Time Series Resampling
+   \defgroup Resample_h Resample
    \ingroup pulsarCommon
    \author Creighton, T. D.
    \brief Provides routines for resampling time series according to a new canonical time coordinate.
@@ -80,8 +79,9 @@ t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
 \f}
 Since one is normally interested in tracking the difference
 \f$\tau(t)-t\f$, one can also write the expansion as:
+\anchor eq_delta-tau
 \f{equation}{
-\label{eq:delta-tau}
+\label{eq_delta-tau}
 \tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
 \f}
 where
@@ -146,7 +146,7 @@ typedef struct tagResampleRules {
 
 
 /** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
- * Eq.\ltxref{eq:delta-tau,Resample_h} for notation.
+ *  Eq.\ltxref{eq_delta-tau} for notation.
  */
 typedef struct tagPolycoStruc {
   REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */
