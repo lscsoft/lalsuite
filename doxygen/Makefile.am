@@ -2,7 +2,7 @@ all: html
 
 .PHONY: getfigs html pdf
 
-export abs_builddir abs_srcdir abs_top_srcdir MKDIR_P LN_S
+export abs_builddir abs_srcdir abs_lalsuite_srcdir MKDIR_P LN_S
 
 export TEXINPUTS = .:$(abs_srcdir):
 export pool_size = 4000000
