@@ -26,6 +26,10 @@
 
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <SPINspiral.h>
 
 
@@ -43,12 +47,15 @@
 // ****************************************************************************************************************************************************  
 double netLogLikelihood(struct parSet *par, int networkSize, struct interferometer *ifo[], int waveformVersion, int injectionWF, struct runPar run)
 {
-  double result = 0.0;
+	  double result = 0.0;
+	if(waveformVersion==9){
+		return result = logLikelihood_nine(par, waveformVersion, injectionWF, run);
+	} else{
   int i;
   for (i=0; i<networkSize; ++i){
     result += IFOlogLikelihood(par, ifo, i, waveformVersion, injectionWF, run);
   }
-  return result;
+	return result;}
 } // End of netLogLikelihood()
 // ****************************************************************************************************************************************************  
 
@@ -61,27 +68,36 @@ double netLogLikelihood(struct parSet *par, int networkSize, struct interferomet
 // ****************************************************************************************************************************************************  
 double IFOlogLikelihood(struct parSet *par, struct interferometer *ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run)
 {
-  int j=0;
+  //int j=0;
+  //int tStart, tEnd;     // Start and end of templatea
+  //int tLength;          // Template length
+  double overlaphd=0.0;
+  double overlaphh=0.0;
   
   // Fill ifo[ifonr]->FTin with time-domain template:
   waveformTemplate(par, ifo, ifonr, waveformVersion, injectionWF, run);
   
+  //printf("tStart: %d\n tEnd: %d\n", tStart, tEnd);
+
+
+  /*
   // Window template, FTwindow is a Tukey window:
   for(j=0; j<ifo[ifonr]->samplesize; ++j) 
     ifo[ifonr]->FTin[j] *= ifo[ifonr]->FTwindow[j];
-  
+  */
+ 
   // Execute Fourier transform of signal template:
   fftw_execute(ifo[ifonr]->FTplan);
   
   // Compute the overlap between waveform and data:
-  double overlaphd = vecOverlap(ifo[ifonr]->raw_dataTrafo, 
+  overlaphd = vecOverlap(ifo[ifonr]->raw_dataTrafo, 
                                 ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
                                 ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
   //correct FFT for sampling rate of waveform
   overlaphd/=((double)ifo[ifonr]->samplerate);  
   
   // Compute the overlap between waveform and itself:
-  double overlaphh = vecOverlap(ifo[ifonr]->FTout,
+  overlaphh = vecOverlap(ifo[ifonr]->FTout,
                                 ifo[ifonr]->FTout, ifo[ifonr]->noisePSD,
                                 ifo[ifonr]->lowIndex, ifo[ifonr]->highIndex, ifo[ifonr]->deltaFT);
   //correct FFT for sampling rate of waveform
@@ -123,14 +139,16 @@ double signalToNoiseRatio(struct parSet *par, struct interferometer *ifo[], int 
 // SNR of signal corresponding to parameter set, w.r.t. i-th interferometer's noise.
 // (see SNR definition in Christensen/Meyer/Libson (2004), p.323)
 {
-  int j=0;
+ // int tStart, tEnd;
+ // int tLength;
+ // int j=0;
   
   // Fill ifo[ifonr]->FTin with time-domain template:
   waveformTemplate(par, ifo, ifonr, waveformVersion, injectionWF, run);
-  
+
   // Window template, FTwindow is a Tukey window:
-  for(j=0; j<ifo[ifonr]->samplesize; ++j)
-    ifo[ifonr]->FTin[j] *= ifo[ifonr]->FTwindow[j];
+  //for(j=0; j<ifo[ifonr]->samplesize; ++j)
+  //  ifo[ifonr]->FTin[j] *= ifo[ifonr]->FTwindow[j];
   
   // Execute Fourier transform of signal template:
   fftw_execute(ifo[ifonr]->FTplan);
@@ -292,6 +310,8 @@ double vecOverlap(fftw_complex *vec1, fftw_complex *vec2, double * noise, int j_
 // ****************************************************************************************************************************************************  
 void signalFFT(fftw_complex* FFTout, struct parSet* par, struct interferometer* ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run)
 {
+  //int tStart, tEnd;
+  //int tLength;
   int j=0;
   if(FFTout==NULL) {
     fprintf(stderr,"\n\n   ERROR: memory should be allocated for FFTout vector before call to signalFFT()\n   Aborting...\n\n");
@@ -304,7 +324,7 @@ void signalFFT(fftw_complex* FFTout, struct parSet* par, struct interferometer* 
   waveformTemplate(par, ifo, ifonr, waveformVersion, injectionWF, run);
   
   // Window template, FTwindow is a Tukey window:
-  for(j=0; j<ifo[ifonr]->samplesize; ++j) ifo[ifonr]->FTin[j] *= ifo[ifonr]->FTwindow[j];
+  //for(j=0; j<ifo[ifonr]->samplesize; ++j) ifo[ifonr]->FTin[j] *= ifo[ifonr]->FTwindow[j];
   
   // Execute Fourier transform of signal template:
   fftw_execute(ifo[ifonr]->FTplan);
@@ -347,7 +367,39 @@ double matchBetweenParameterArrayAndTrueParameters(double * pararray, struct int
 // ****************************************************************************************************************************************************  
 
 
+// ****************************************************************************************************************************************************  
+/**
+ * \brief Compute a analytical log(Likelihood)
+ */
+// ****************************************************************************************************************************************************  
 
+double logLikelihood_nine(struct parSet *par, int waveformVersion, int injectionWF, struct runPar run)
+{
+  double result=0.0;
+  double sumsq=0.0;
+  //double norm=0.0;
+  int i=0;
+  double x[20];
+  double xmax=0.0;
+  double deltax=0.01;
+  
+  waveformVersion = waveformVersion;  // Suppress 'never referenced' warnings from icc
+  injectionWF = injectionWF;          // Suppress 'never referenced' warnings from icc
+  
+  for(i=0;i<run.nMCMCpar;i++){
+    x[i]= par->par[run.parRevID[185+i]];
+  }
+  
+  for(i=0;i<run.nMCMCpar;i++){
+    sumsq+=(x[i]-xmax)*(x[i]-xmax)/(2*deltax);
+    //norm+=-0.91893853320468-log(sqrt(deltax));
+  }
+  //result=log(100*exp(-sumsq));
+  result=15/(2*deltax)-sumsq;
+  return result;
+  
+} // End of logLikelihood_nine()
+// ****************************************************************************************************************************************************  
 
 
 // ****************************************************************************************************************************************************  

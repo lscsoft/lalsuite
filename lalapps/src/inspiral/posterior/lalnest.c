@@ -108,7 +108,7 @@ REAL4 padding=1.0;
 INT4 nSegs=0;
 INT4 Nruns=1;
 INT4 dataseed=0;
-REAL4 fLow=50.0; /* Low-frequency cutoff */
+REAL4 fLow=40.0; /* Low-frequency cutoff */
 UINT4 Nlive=1000;
 CHAR *inputXMLFile;
 CHAR *injXMLFile=NULL;
@@ -599,7 +599,7 @@ int main( int argc, char *argv[])
 		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
 		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
 		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
-		TrigSegStart=TrigSample+ (SampleRate) - 2*seglen; /* Put trigger 2 s before end of segment */
+		TrigSegStart=TrigSample+ (2*SampleRate) - seglen; /* Put trigger 2 s before end of segment */
 		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
 
 		segmentStart = datastart;
@@ -968,7 +968,7 @@ doneinit:
 			for(i=0;i<inputMCMC.stilde[j]->data->length;i++)
 			{
 				if(estimatenoise)
-					fprintf(dataoutfile,"%lf %lf %lf %lf\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%10.3e %10.10e %10.10e %10.10e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
 				else
 					fprintf(dataoutfile,"%lf %lf %lf\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
 			}

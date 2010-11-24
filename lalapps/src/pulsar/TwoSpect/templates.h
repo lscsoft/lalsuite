@@ -40,8 +40,8 @@ void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprob
 
 templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);
-void makeTemplateGaussians(templateStruct *output, candidate *input, inputParamsStruct *params);
-void makeTemplate(templateStruct *out, candidate *in, inputParamsStruct *params, REAL4FFTPlan *plan);
+void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params);
+void makeTemplate(templateStruct *output, candidate intput, inputParamsStruct *params, REAL4FFTPlan *plan);
 
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);

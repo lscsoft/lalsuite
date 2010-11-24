@@ -115,10 +115,11 @@ typedef struct {
 } PulsarCandidate;
 
 
-/** [DEPRECATED] Type defining the parameters of a pulsar-source of Gravitational waves.
- * NOTE: this type is obsolete and should no longer be used [==> use 'PulsarParams' instead]
- * however, it's too entrenched in the the GeneratePulsarSignal() functions and codes using it,
- * so we can't easily get rid of it any more, so we keep it for now....
+/** \deprecated Use #PulsarParams instead.
+ * Type defining the parameters of a pulsar-source of Gravitational waves.
+ * \note this type is obsolete and should no longer be used,
+ * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
+ * so we can't easily get rid of it and keep it for now....
  */
 typedef struct {
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */

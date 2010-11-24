@@ -25,6 +25,9 @@
 */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <SPINspiral.h>
 
@@ -47,7 +50,9 @@
 // ****************************************************************************************************************************************************  
 void waveformTemplate(struct parSet *par, struct interferometer *ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run)
 {
-  
+  int j=0;
+  int tStart, tEnd;     // Start and end of templatea
+  int tLength;          // Template length
   //CHECK: test - remove this
   /*
     int i=0;
@@ -63,8 +68,44 @@ void waveformTemplate(struct parSet *par, struct interferometer *ifo[], int ifon
     templateLAL12(par, ifo, ifonr, injectionWF, run);  // LAL 12-parameter template
   } else if(waveformVersion==3) {
     templateLAL15(par, ifo, ifonr, injectionWF, run);  // LAL 15-parameter template
+
+    // Determine template start and end (exclude 0 padding):
+    j = 0;
+    while( ifo[ifonr]->FTin[j] == 0 )
+      j++;
+    tStart = j;
+
+    j = ifo[ifonr]->samplesize-1;
+    while( ifo[ifonr]->FTin[j] == 0 )
+      j--;
+    tEnd = j;
+    tLength = tEnd - tStart;
+
+    // Window template (not padding):
+    for( j=tStart; j<=tEnd; j++)
+      ifo[ifonr]->FTin[j] *= modifiedTukeyWindow(j-tStart, tLength, run.tukey1, run.tukey2);
+
   } else if(waveformVersion==4) {
     templateLALnonSpinning(par, ifo, ifonr, injectionWF, run);  // LAL non-spinning template
+    
+    // Determine template start and end (exclude 0 padding):
+    j = 0;
+    while( ifo[ifonr]->FTin[j] == 0 )
+      j++;
+    tStart = j;
+
+    j = ifo[ifonr]->samplesize-1;
+    while( ifo[ifonr]->FTin[j] == 0 )
+      j--;
+    tEnd = j;
+    tLength = tEnd - tStart;
+
+    // Window template (not padding):
+    for( j=tStart; j<=tEnd; j++)
+      ifo[ifonr]->FTin[j] *= modifiedTukeyWindow(j-tStart, tLength, run.tukey1, run.tukey2);
+  
+  } else if(waveformVersion==5) {
+	templateLALPhenSpinTaylorRD(par, ifo, ifonr, injectionWF, run);  // LAL PhenSpinTaylorRD template
   } else {
     fprintf(stderr,"\n\n   ERROR:  waveformTemplate(): waveformVersion %i not defined!\n\n",waveformVersion);
     exit(1);
@@ -411,6 +452,7 @@ void templateApostolatos(struct parSet *par, struct interferometer *ifo[], int i
 // ****************************************************************************************************************************************************  
 void localPar(struct parSet *par, struct interferometer *ifo[], int networkSize, int injectionWF, struct runPar run)
 {
+	if(networkSize!=0){ 
   int ifonr=0,j=0;
   double lineofsight[3], dummyvec[3], scalprod1=0.0, delay=0.0;
   
@@ -449,7 +491,7 @@ void localPar(struct parSet *par, struct interferometer *ifo[], int networkSize,
     
     //printf("  localPar:  %d  %lf  %lf  %s\n",ifonr,ifo[ifonr]->lati/pi*180.0,ifo[ifonr]->longi/pi*180.0,ifo[ifonr]->name);
   }
-  
+	}
 } // End of localPar()
 // ****************************************************************************************************************************************************  
 

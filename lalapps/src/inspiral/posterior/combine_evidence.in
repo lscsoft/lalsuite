@@ -33,7 +33,7 @@ if __name__=='__main__':
         print 'No output specified, nothing to do'
         sys.exit(0)
 
-    pos,d_all,totalBayes,ZnoiseTotal=combine_evidence(data,opts.x2iota,opts.Nlive)
+    pos,d_all,totalBayes,ZnoiseTotal=combine_evidence(data,opts.xflag,opts.Nlive)
 
     if opts.outpos is not None:
         posfilename=opts.outpos

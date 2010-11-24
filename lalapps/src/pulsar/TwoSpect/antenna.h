@@ -24,9 +24,9 @@
 #include <lal/DetResponse.h>
 #include <lal/Velocity.h>
 
-EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris);
-void free_Ephemeris(EphemerisData *ephemdata);
-void initEphemeris(EphemerisData *ephemdata);
+//EphemerisData * new_Ephemeris(CHAR *earth_ephemeris, CHAR *sun_ephemeris);
+//void free_Ephemeris(EphemerisData *ephemdata);
+//void initEphemeris(EphemerisData *ephemdata);
 
 void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier);
 void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det);
