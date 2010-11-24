@@ -17,17 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \ingroup pulsarCommon
- * \brief Some common useful data-types for pulsar-searches.
- *
- * $Id$
- *
- */
-
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
 #define _PULSARDATATYPES_H
 
@@ -47,6 +36,21 @@ extern "C" {
 #endif
 
 NRCSID( PULSARDATATYPESH, "$Id$");
+
+/**
+ * \author Reinhard Prix
+ * \date 2005
+ * \defgroup PulsarDataTypes_h Pulsar Data Types
+ * \ingroup pulsarCommon
+ * \brief Some common useful data-types for pulsar-searches.
+ *
+ * \par Synopsis
+ * \code
+ * #include <lal/PulsarDataTypes.h>
+ * \endcode
+ *
+ */
+/*@{*/
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
@@ -115,11 +119,11 @@ typedef struct {
 } PulsarCandidate;
 
 
-/** \deprecated Use #PulsarParams instead.
- * Type defining the parameters of a pulsar-source of Gravitational waves.
+/** DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
  * \note this type is obsolete and should no longer be used,
  * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
  * so we can't easily get rid of it and keep it for now....
+ * \deprecated Use #PulsarParams instead.
  */
 typedef struct {
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
@@ -146,6 +150,9 @@ extern const LIGOTimeGPS empty_LIGOTimeGPS;
 extern const BarycenterInput empty_BarycenterInput;
 extern const EphemerisData empty_EphemerisData;
 extern const SkyPosition empty_SkyPosition;
+
+
+/*@}*/
 
 #ifdef  __cplusplus
 }
