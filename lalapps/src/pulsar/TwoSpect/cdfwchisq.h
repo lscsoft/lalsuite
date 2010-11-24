@@ -56,4 +56,6 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn);
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq);
 REAL8 coeff(qfvars *vars, REAL8 x);
 
+int compar(void *p, const void *a, const void *b);
+
 #endif

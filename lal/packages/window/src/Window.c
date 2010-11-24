@@ -271,7 +271,7 @@ REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence)
  * Multiply a REAL8Sequence in-place by a REAL8Window with a normalization
  * that preserves the variance of a zero-mean stationary Gaussian random
  * process.  If the window's length is N samples and its sum-of-squares is
- * S, then the input sequence is multiplied by the window * \sqrt{N / S}.
+ * S, then the input sequence is multiplied by the window * \f$\sqrt{N / S}\f$.
  * Returns the address of the REAL8Sequence or NULL on failure.
  */
 

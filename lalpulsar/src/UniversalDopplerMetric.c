@@ -842,7 +842,7 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 gsl_matrix *
 XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input parameters determining the metric calculation */
 			 const EphemerisData *edat,			/**< ephemeris data */
-                         double *relerr_max
+                         double *relerr_max				/**< [in] maximal relative error in integration */
 			 )
 {
   const CHAR *fn = "XLALDopplerPhaseMetric()";
@@ -1516,7 +1516,7 @@ XLALDopplerCoordinateHelpAll ( void )
  * Return  0 == OK, nonzero == ERROR
  */
 int
-XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/** [out] parsed detector-info struct */
+XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detector-info struct */
 			     const LALStringVector *detNames,	/**< [in] list of detector names */
 			     const LALStringVector *detWeights	/**< [in] list of (strings) with detector weights (NULL if all 1) */
 			     )

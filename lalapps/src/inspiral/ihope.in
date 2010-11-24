@@ -448,6 +448,14 @@ for category in [1] + veto_categories:
     "--output", dqVetoes["combined-veto-file"][category]] + veto_cat_files )
   inspiralutils.make_external_call(concat_veto_call)
 
+  # FIXME: remove this block  when the veto files from
+  # ligolw_segments_from_cats have contain a segment table with start_time_ns
+  # and end_time_ns, and when the process table doesn't need the domain, jobid,
+  # and is_online columns added
+
+  compat_veto_call = ' '.join([cp.get("condor", "ligolw_segments_compat"), dqVetoes["combined-veto-file"][category]])
+  inspiralutils.make_external_call(compat_veto_call)
+
 segFile = {}
 
 for ifo in ifos:

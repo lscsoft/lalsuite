@@ -49,6 +49,7 @@ BOOLEAN  uvar_averageIota;
 BOOLEAN  uvar_autoCorrelate;
 BOOLEAN  uvar_QCoeffs;
 BOOLEAN  uvar_timingOn;
+
 INT4     uvar_blocksRngMed; 
 INT4     uvar_detChoice;
 REAL8    uvar_startTime, uvar_endTime;
@@ -79,6 +80,7 @@ CHAR     *uvar_dirnameOut=NULL;
 CHAR     *uvar_skyfile=NULL;
 CHAR     *uvar_skyRegion=NULL;
 CHAR     *uvar_filenameOut=NULL;
+CHAR 	 *uvar_debugOut=NULL;
 
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
 #define EPHEM_YEARS "05-09"
@@ -93,6 +95,7 @@ CHAR     *uvar_filenameOut=NULL;
 
 #define DIROUT "./output/"   /* output directory */
 #define FILEOUT "CrossCorr_out.dat"
+#define DEBUGOUT "estimator.dat"
 #define BASENAMEOUT "radio"    /* prefix file output */
 
 #define SKYFILE "./skypatchfile"
@@ -101,8 +104,8 @@ CHAR     *uvar_filenameOut=NULL;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-#define SQUARE(x) (x*x)
-#define CUBE(x) (x*x*x)
+#define SQUARE(x) ((x)*(x))
+#define CUBE(x) ((x)*(x)*(x))
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
@@ -127,7 +130,7 @@ int main(int argc, char *argv[]){
   REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
   REAL8 deltaF_SFT, timeBase;
   REAL8  *psi = NULL; 
-  UINT4 counter = 0; 
+  INT8 counter = 0; 
   COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
@@ -158,29 +161,29 @@ int main(int argc, char *argv[]){
   /* skypatch info */
   REAL8  *skyAlpha=NULL, *skyDelta=NULL,
     *skySizeAlpha=NULL, *skySizeDelta=NULL; 
-  INT4   nSkyPatches, skyCounter=0; 
+  INT8   nSkyPatches, skyCounter=0; 
   SkyPatchesInfo skyInfo;
 
   /* frequency loop info */
-  INT4 nfreqLoops=1, freqCounter = 0;
-  INT4 nParams = 0;
+  INT8 nfreqLoops=1, freqCounter = 0;
+  INT8 nParams = 0;
   REAL8 f_current = 0.0;
-  INT4 ualphacounter=0.0;
+  INT8 ualphacounter=0.0;
 
   /* frequency derivative loop info. we can go up to f_doubledot */
-  INT4 nfdotLoops = 1, fdotCounter = 0;
-  INT4 nfddotLoops = 1, fddotCounter = 0;
+  INT8 nfdotLoops = 1, fdotCounter = 0;
+  INT8 nfddotLoops = 1, fddotCounter = 0;
   REAL8 fdot_current = 0.0, delta_fdot = 0.0;
   REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
 
   /* frequency derivative array, if we search over q1, q2, n */
-  INT4 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
-  INT4 q1Counter = 0, q2Counter = 0, nCounter = 0;
+  INT8 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
+  INT8 q1Counter = 0, q2Counter = 0, nCounter = 0;
   REAL8 q1_current = 0.0, q2_current = 0.0, n_current = 0.0;
   REAL8 delta_q1 = 0.0, delta_q2 = 0.0, delta_n = 0.0;
   REAL8Vector *fdots = NULL;
 
-  INT4 paramCounter = 0;
+  INT8 paramCounter = 0;
 
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
@@ -192,10 +195,11 @@ int main(int argc, char *argv[]){
   REAL8 doppWings, fMin, fMax;
 
 
-  /* output file */
-  FILE *fp = NULL;
-  FILE *estimator = NULL;
-  CHAR filename[MAXFILENAMELENGTH];
+  /* output files */
+  FILE *fpdebug = NULL;
+  FILE *fpCrossCorr = NULL;
+  CHAR *fnameDebug = NULL;
+  CHAR *fnameCrossCorrCand = NULL;
 
   /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS, refTime;
@@ -295,33 +299,52 @@ int main(int argc, char *argv[]){
   }
 
 
-  /* open output file */
-  strcpy (filename, uvar_dirnameOut);
-  strcat(filename, uvar_filenameOut);
-
-  if ((fp = fopen(filename, "w")) == NULL) {
-    fprintf(stderr, "error opening output file\n");
-    exit(1);
-  }
 
   /* if debugging, and averaging over both psi & iota, OR using exact psi & iota
    * values, print out estimator info */
   if (lalDebugLevel && ((!uvar_averagePsi && !uvar_averageIota) ||
 		(uvar_averagePsi && uvar_averageIota))) {
-    strcpy (filename, uvar_dirnameOut);
-    strcat (filename, "estimator.dat");
-    if ((estimator = fopen(filename, "w")) == NULL) {
-      fprintf(stderr, "error opening estimator output file\n");
-      exit(1);
-  }
+
+    fnameDebug = LALCalloc( strlen(uvar_debugOut) + strlen(uvar_dirnameOut) + 1, sizeof(CHAR) );
+    if (fnameDebug == NULL) {
+      fprintf(stderr, "error allocating memory [pulsar_crosscorr.c %d]\n", __LINE__);
+      return(PULSAR_CROSSCORR_EMEM);
+    }
+
+    strcpy (fnameDebug, uvar_dirnameOut);
+    strcat (fnameDebug, uvar_debugOut);
+    if (!(fpdebug = fopen(fnameDebug, "wb"))) {
+      fprintf(stderr, "Unable to open debugging output file '%s' for writing.\n", fnameDebug);
+      return PULSAR_CROSSCORR_EFILE;
+    }
 
   }
+
+  /* initialise output file name */
+
+  fnameCrossCorrCand = LALCalloc( strlen(uvar_filenameOut) + strlen(uvar_dirnameOut) + 1, sizeof(CHAR) );
+  if (fnameCrossCorrCand == NULL) {
+    fprintf(stderr, "error allocating memory [pulsar_crosscorr.c %d]\n", __LINE__);
+    return(PULSAR_CROSSCORR_EMEM);
+  }
+  
+  strcpy(fnameCrossCorrCand, uvar_dirnameOut);
+  strcat(fnameCrossCorrCand, uvar_filenameOut);
+  
+  if (!(fpCrossCorr = fopen(fnameCrossCorrCand, "wb"))) {
+     fprintf ( stderr, "Unable to open output-file '%s' for writing.\n", fnameCrossCorrCand);
+     return PULSAR_CROSSCORR_EFILE;
+  }
+
+
   if (uvar_QCoeffs) {
-    fprintf(fp, "##Alpha\tDelta\tFrequency\tQ1\tQ2\tBraking Index\tNormalised Power\n");
+    fprintf(fpCrossCorr, "##Alpha\tDelta\tFrequency\tQ1\tQ2\tBraking Index\tNormalised Power\n");
   }
   else {
-    fprintf(fp, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
+    fprintf(fpCrossCorr, "##Alpha\tDelta\tFrequency\t Fdot \t Fddot \t Normalised Power\n");
   }
+
+
 
   /* set sft catalog constraints */
   constraints.detector = NULL;
@@ -387,7 +410,7 @@ int main(int argc, char *argv[]){
   }
 
   /*get number of frequency loops*/
-  nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
+  nfreqLoops = rint(uvar_fBand/uvar_fResolution);
   /* if we are using spindown parameters, initialise the fdots array */
   if (uvar_QCoeffs) {
 
@@ -395,11 +418,17 @@ int main(int argc, char *argv[]){
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + (INT4)ceil(uvar_q1Band/uvar_q1Resolution);
+    if (uvar_q1Band > 0) {
+      nq1Loops = rint(uvar_q1Band/uvar_q1Resolution);
+    }
     
-    nq2Loops = 1 + ceil(uvar_q2Band/uvar_q2Resolution);
+    if (uvar_q2Band > 0) {
+      nq2Loops = rint(uvar_q2Band/uvar_q2Resolution);
+    }
 
-    nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
+    if (uvar_brakingindexBand > 0) {
+      nnLoops = rint(uvar_brakingindexBand/uvar_brakingindexResolution);
+    }
 
     delta_q1 = uvar_q1Resolution;
     
@@ -418,9 +447,13 @@ int main(int argc, char *argv[]){
       uvar_fddotResolution = CUBE(1/tObs);
     }
 
-    nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+    if (uvar_fdotBand > 0) {
+      nfdotLoops = rint(uvar_fdotBand/uvar_fdotResolution);
+    }
 
-    nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+    if (uvar_fddotBand > 0) {
+    nfddotLoops = rint(uvar_fddotBand/uvar_fddotResolution);
+    }
 
     delta_fdot = uvar_fdotResolution;
  
@@ -619,6 +652,8 @@ int main(int argc, char *argv[]){
   slidingcounter = 0;
   
   time(&t1); 
+
+  fprintf(stderr,"beginning main calculations over %ld loops:\n%ld freq, %ld Q1, %ldn\n",nParams, nfreqLoops, nq1Loops, nnLoops);
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
@@ -849,7 +884,6 @@ int main(int argc, char *argv[]){
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 	     }
-
 	     ualphacounter++;
 
              }
@@ -927,7 +961,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
     } /*end if listLength > 1 */
   } /* finish loop over all sfts */
 
-  printf("finish loop over all sfts\n");
+  fprintf(stderr,"finish loop over all sfts\n");
 
   time(&t2);
 
@@ -938,13 +972,14 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   counter = 0;
 
   time(&t1);
-  /* print all variables to file */
+  /* print output - all variables to file */
+
   for (freqCounter = 0; freqCounter < nfreqLoops; freqCounter++) {
 
     f_current = uvar_f0 + (uvar_fResolution*freqCounter);
 
     if (uvar_QCoeffs) { /*if searching over q1, q2, n*/
- 
+
         /* Q1 loop */
 	for (q1Counter = 0; q1Counter < nq1Loops; q1Counter++) {
 
@@ -966,17 +1001,18 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	        thisPoint.Delta = skyDelta[skyCounter]; 
 
 	        /*normalise rho by stddev */
+//printf("raw rho %1.15g\n", rho->data[counter]);
 	        rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
-	        fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10g\n", thisPoint.Alpha,
+	        fprintf(fpCrossCorr, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %e\t %1.10g\n", thisPoint.Alpha,
 		thisPoint.Delta, f_current,
 		q1_current, q2_current, n_current, rho->data[counter]);
 	
 		if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
-		   fprintf(estimator, "%1.5f %e %e %g %g %g\n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter])), galphasq->data[counter], galphare->data[counter], galphaim->data[counter]); 
+		   fprintf(fpdebug, "%1.5f %e %e %g %g %g\n", f_current, sqrt(fabs(aplussq2->data[counter]/aplussq1->data[counter])), sqrt(fabs(acrossq2->data[counter]/acrossq1->data[counter])), galphasq->data[counter], galphare->data[counter], galphaim->data[counter]); 
 		}
 
 		if (lalDebugLevel && uvar_averagePsi && uvar_averageIota) {
-		   fprintf(estimator, "%1.5f %g %g %g\n", f_current, galphasq->data[counter], galphare->data[counter], galphaim->data[counter]);
+		   fprintf(fpdebug, "%1.5f %g %g %g\n", f_current, galphasq->data[counter], galphare->data[counter], galphaim->data[counter]);
 		}
 
 	        counter++;
@@ -984,8 +1020,8 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	    } /*end n loop*/
           } /*end q2loop*/
         } /*end q1 loop*/
-    } /*endif */
-    
+    } /*endif uvar_Qcoeffs */
+
     else {  
 
       /* frequency derivative loop */
@@ -1001,14 +1037,14 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 	    thisPoint.Delta = skyDelta[skyCounter]; 
 	    /*normalise rho*/
 	    rho->data[counter] = rho->data[counter]/sqrt(variance->data[counter]);
-	    fprintf(fp, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
+	    fprintf(fpCrossCorr, "%1.5f\t %1.5f\t %1.5f\t %e\t %e\t %1.10f\n", thisPoint.Alpha,
 		  thisPoint.Delta, f_current,
 		  fdot_current, fddot_current, rho->data[counter]);
 	    counter++;
  	  }
         }
       }
-    } /*endelse*/
+    } /*endelse uvar_Qcoeffs*/
   }
 
   time(&t2);
@@ -1019,11 +1055,11 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 
 
 
-  fclose (fp);
+  fclose (fpCrossCorr);
 
   if (lalDebugLevel && !uvar_averagePsi && !uvar_averageIota) {
 
-     fclose (estimator);
+     fclose (fpdebug);
 
   }
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
@@ -1035,13 +1071,15 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
+  LALFree(fnameCrossCorrCand);
+  LALFree(fnameDebug);
   XLALDestroyREAL8Vector(variance);
   XLALDestroyREAL8Vector(rho);
-      XLALDestroyREAL8Vector(aplussq1);
-      XLALDestroyREAL8Vector(aplussq2);
-      XLALDestroyREAL8Vector(acrossq1);
-      XLALDestroyREAL8Vector(acrossq2);
-   XLALDestroyREAL8Vector(galphasq);
+  XLALDestroyREAL8Vector(aplussq1);
+  XLALDestroyREAL8Vector(aplussq2);
+  XLALDestroyREAL8Vector(acrossq1);
+  XLALDestroyREAL8Vector(acrossq2);
+  XLALDestroyREAL8Vector(galphasq);
   XLALDestroyREAL8Vector(galphare);
   XLALDestroyREAL8Vector(galphaim);
 
@@ -1100,7 +1138,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
 /** Set up location of skypatch centers and sizes
     If user specified skyRegion then use DopplerScan function
     to construct an isotropic grid. Otherwise use skypatch file. */
-void SetUpRadiometerSkyPatches(LALStatus           *status,
+void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALStatus structure */
 			       SkyPatchesInfo      *out,   /**< output skypatches info */
 			       CHAR                *skyFileName, /**< name of skypatch file */
 			       CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */
@@ -1301,7 +1339,6 @@ void GetBeamInfo(LALStatus *status,
   thisPos.length = 3;
   tOffs = 0.5/sft->sft.deltaF;
 
-
   /* get information about all detectors including velocity and
      timestamps */
   /*only have 1 element in detectorStateSeries and AMCoeffs because
@@ -1318,9 +1355,11 @@ void GetBeamInfo(LALStatus *status,
     XLALGPSAdd(&tgps, tOffs);
 
     det = XLALGetSiteInfo (sft->sft.name); 
+
     ts->data[0] = sft->sft.epoch;
     /* note that this function returns the velocity at the
-       mid-time of the SFTs -- should not make any difference */
+       mid-time of the SFTs -- should not make any 
+       difference */
 
     LALGetDetectorStates ( status->statusPtr, &detState, ts, det,
 			   edat, tOffs);
@@ -1330,7 +1369,6 @@ void GetBeamInfo(LALStatus *status,
     LALNewGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
     thisVel.data = detState->data[0].vDetector;
     thisPos.data = detState->data[0].rDetector;
-
 
     LALGetSignalFrequencyInSFT( status->statusPtr, &freq1, &tgps, thisPoint,
 				&thisVel);
@@ -1343,9 +1381,16 @@ void GetBeamInfo(LALStatus *status,
 
     /* store a and b in the CrossCorrBeamFn */
 
-      beamtmp->beamfn.a = (AMcoef->a->data[0]);
-      beamtmp->beamfn.b = (AMcoef->b->data[0]);
-	
+    beamtmp->beamfn.a = (AMcoef->a->data[0]);
+    beamtmp->beamfn.b = (AMcoef->b->data[0]);
+  
+/*  
+printf("beam A %1.15g\n", beamtmp->beamfn.a);
+printf("beam B %1.15g\n", beamtmp->beamfn.b);
+printf("vel %1.15g %1.15g %1.15g\n", thisVel.data[0], thisVel.data[1], thisVel.data[2]);
+printf("pos %1.15g %1.15g %1.15g\n\n", thisPos.data[0], thisPos.data[1], thisPos.data[2]);
+*/
+
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);
     XLALDestroyDetectorStateSeries(detState);
@@ -1387,7 +1432,6 @@ void CopySFTFromCatalog(LALStatus *status,
   *sft = NULL;
 
   ASSERT ( catalog, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL );
-
   /*check that we are loading an sensible frequency range*/
   if (fMin < catalog->data[sftindex].header.f0 || fMax > (catalog->data[sftindex].header.f0 + catalog->data[sftindex].numBins*catalog->data[sftindex].header.deltaF)) {
     ABORT(status, PULSAR_CROSSCORR_EVAL, PULSAR_CROSSCORR_MSGEVAL);
@@ -1694,6 +1738,7 @@ void initUserVars (LALStatus *status)
   uvar_QCoeffs = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
   uvar_timingOn = FALSE;
+
   uvar_detChoice = 2;
   uvar_f0 = F0;
   uvar_fBand = FBAND;
@@ -1733,6 +1778,9 @@ void initUserVars (LALStatus *status)
 
   uvar_filenameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_filenameOut,FILEOUT);
+
+  uvar_debugOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
+  strcpy(uvar_debugOut,DEBUGOUT);
 
   uvar_skyfile = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
@@ -1850,6 +1898,10 @@ void initUserVars (LALStatus *status)
 			    0, UVAR_OPTIONAL,
 			    "Output filename",
 			    &uvar_filenameOut);
+  LALRegisterSTRINGUserVar( status->statusPtr, "debugOut",
+			    0, UVAR_OPTIONAL,
+			    "Debugging output filename",
+			    &uvar_debugOut);
   LALRegisterINTUserVar( status->statusPtr, "blocksRngMed",
 			 0, UVAR_OPTIONAL,
 			 "Running Median block size",

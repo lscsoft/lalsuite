@@ -593,10 +593,10 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
  *
  */
 void
-getSearchRegion (LALStatus *status,
+getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 		 DopplerRegion *searchRegion,	/**< OUT: the DopplerRegion to search over */
 		 const DopplerSkyScanInit *params,	/**< IN: DopplerSkyScan params might be needed */
-		 const UserVariables_t *uvar
+		 const UserVariables_t *uvar	/**< [in] set of all user-input */
 		 )
 {
 

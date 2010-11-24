@@ -88,6 +88,8 @@
                 --aftertc <data after t_c being analysed in seconds> \n\
                 --Flow <low frequency cut off in Hz> \n\
                 --Fhigh <high frequency cut off in Hz> \n\
+                --tukey1 <alpha1, the 1st parameter of the template tukey window. default 0.0> \n\
+                --tukey1 <alpha2, the 2nd parameter of the template tukey window. default 0.0> \n\
                 --nPSDsegment <number of segments to estimate the PSD> \n\
                 --lPSDsegment <length of each segment to estimate the PSD> \n\
                 --outputPath <output path> \n\
@@ -95,8 +97,7 @@
                 --channel <list of channels, e.g. [H1:LSC-STRAIN,L1:LSC-STRAIN]> \n\
                 --PSDstart <GPS time for the start of the PSD. default begining of cache file> \n\
                 --template <waveform template, 3 for spin, 4 for no spin> \n\
-example: ./lalapps_spinspiral -i ./pipeline/SPINspiral.input --mChirp 1.7 --eta 0.12 --tc 873739311.00000 --dist 15 --nIter 5 --nSkip 1 --rseed 123456 --downsample 1 --beforetc 5 --aftertc 2 --Flow 45 --Fhigh 1600.0 --nPSDsegment 32 --lPSDsegment 4 --network [1,2] --outputPath ./pipeline/ --cache [./pipeline/H-H1_RDS_C03_L2-873739103-873740831.cache,./pipeline/L-L1_RDS_C03_L2-873739055-873740847.cache] --channel [H1:LSC-STRAIN,L1:LSC-STRAIN] --PSDstart 873740000 --template 3\n\
-\n\n"
+example: ./lalapps_spinspiral -i ./pipeline/SPINspiral.input --mChirp 1.7 --eta 0.12 --tc 873739311.00000 --dist 15 --nIter 5 --nSkip 1 --downsample 1 --beforetc 5 --aftertc 2 --Flow 45 --Fhigh 1600.0 --nPSDsegment 32 --lPSDsegment 4 --network [1,2] --outputPath ./pipeline/ --cache [./pipeline/H-H1_RDS_C03_L2-873739103-873740831.cache,./pipeline/L-L1_RDS_C03_L2-873739055-873740847.cache] --channel [H1:LSC-STRAIN,L1:LSC-STRAIN] --PSDstart 873740000\n\\n\n"
 
 
 
@@ -184,6 +185,8 @@ struct runPar{
   double highFrequencyCut;        // Upper frequency cutoff to compute the overlap for
   double tukeyWin;                // Parameter for Tukey-window used in dataFT
   int downsampleFactor;           // Factor by which the data should be downsampled before the analysis
+  double tukey1;
+  double tukey2;
   
   int PSDsegmentNumber;           // Number of data segments used for PSD estimation
   double PSDsegmentLength;        // Length of each segment of data used for PSD estimation
@@ -563,6 +566,7 @@ double *downsample(double data[], int *datalength, double coef[], int ncoef, str
 void dataFT(struct interferometer *ifo[], int i, int networkSize, struct runPar run);
 double hannWindow(int j, int N);
 double tukeyWindow(int j, int N, double r);
+double modifiedTukeyWindow(int j, int N, double r1, double r2);
 void noisePSDestimate(struct interferometer *ifo[], int ifonr, struct runPar run);
 double logNoisePSD(double f, struct interferometer *ifo);
 double interpolLogNoisePSD(double f, struct interferometer *ifo);
@@ -584,6 +588,7 @@ void localPar(struct parSet *par, struct interferometer *ifo[], int networkSize,
 void templateLAL12(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run);
 void templateLAL15old(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run);
 void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run);
+void templateLALPhenSpinTaylorRD(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run);
 void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], int ifonr, int injectionWF, struct runPar run);
 
 //void LALHpHc(CoherentGW *waveform, double *hplus, double *hcross, int *l, int length, struct parSet *par, struct interferometer *ifo, int ifonr);
@@ -596,11 +601,13 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
 void getWaveformApproximant(const char* familyName, int length, double PNorder, char* waveformApproximant);
 void LALfreedomSpin(CoherentGW *waveform);
 void LALfreedomNoSpin(CoherentGW *waveform);
+void LALfreedomPhenSpinTaylorRD(CoherentGW *waveform);
 
 //************************************************************************************************************************************************
 
 double netLogLikelihood(struct parSet *par, int networkSize, struct interferometer *ifo[], int waveformVersion, int injectionWF, struct runPar run);
 double IFOlogLikelihood(struct parSet *par, struct interferometer *ifo[], int i, int waveformVersion, int injectionWF, struct runPar run);
+double logLikelihood_nine(struct parSet *par, int waveformVersion, int injectionWF, struct runPar run);
 double signalToNoiseRatio(struct parSet *par, struct interferometer *ifo[], int i, int waveformVersion, int injectionWF, struct runPar run);
 double parMatch(struct parSet* par1, int waveformVersion1, int injectionWF1, struct parSet* par2, int waveformVersion2, int injectionWF2, struct interferometer *ifo[], int networkSize, struct runPar run);
 double overlapWithData(struct parSet *par, struct interferometer *ifo[], int ifonr, int waveformVersion, int injectionWF, struct runPar run);

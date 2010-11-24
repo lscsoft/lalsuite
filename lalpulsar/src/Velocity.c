@@ -26,8 +26,7 @@
     time or averaged over a time interval.  This is a wrapper for the
     LALBarycenter routines.
 
- *  $Id$
-    \description
+    \par Description
 
     The function LALDetectorVel() finds the velocity of a given detector at a
     given time. It is basically a wrapper for LALBarycenter.
@@ -111,7 +110,7 @@ NRCSID (VELOCITYC, "$Id$");
  *   average velocity of the detector delta x/delta t during the interval
  */
 /* *******************************  <lalVerbatim file="VelocityD"> */
-void LALAvgDetectorVel( LALStatus *status,
+void LALAvgDetectorVel( LALStatus *status,	/**< pointer to LALStatus structure */
 		        REAL8 v[3], /**< [out] velocity vector */
 		        VelocityPar *in /**< [in] input parameter structure */ )
 { /*-------------------------------------------------</lalVerbatim> */

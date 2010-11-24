@@ -54,9 +54,23 @@ RCSID( "$Id$");
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
 #define FOPEN fopen
+#ifdef HS_OPTIMIZATION
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#else
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
-#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #endif
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
+char**global_argv;
+int global_argc;
+#endif /* EAH_BOINC */
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
 #define SUNEPHEMERIS 	"sun05-09.dat"
@@ -331,6 +345,10 @@ int MAIN( int argc, char *argv[]) {
 
   global_status = &status;
 
+#ifndef EAH_BOINC
+  global_argv = argv;
+  global_argc = argc;
+#endif
 
   /* LALDebugLevel must be called before any LALMallocs have been used */
   lalDebugLevel = 0;
@@ -1560,7 +1578,7 @@ int MAIN( int argc, char *argv[]) {
 
 /** Set up stacks, read SFTs, calculate SFT noise weights and calculate
     detector-state */
-void SetUpSFTs( LALStatus *status,
+void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiSFTVectorSequence *stackMultiSFT, /**< output multi sft vector for each stack */
 		MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
@@ -1819,7 +1837,7 @@ void SetUpSFTs( LALStatus *status,
     there are long gaps in the data, then some of the catalogs in the
     output catalog sequence may be of zero length.
 */
-void SetUpStacks(LALStatus *status,
+void SetUpStacks(LALStatus *status,	   /**< pointer to LALStatus structure */
 		 SFTCatalogSequence  *out, /**< Output catalog of sfts -- one for each stack */
 		 REAL8 tStack,             /**< Output duration of each stack */
 		 SFTCatalog  *in,          /**< Input sft catalog to be broken up into stacks (ordered in increasing time)*/
