@@ -574,7 +574,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   FILE* fp = NULL;
 
   /* determine number of SFTs, i.e. number of different GPS timestamps
-     the catalog should be sorted by GPS time, so just count changes */
+     the catalog should be sorted by GPS time, so just count changes
+     record the 'index' of GPS time in the 'isft' field of the locator
+     so that we know in which SFT to later put this segment */
   {
     LIGOTimeGPS epoch = {0,0};
     for(catPos = 0; catPos < catalog->length; catPos++)
@@ -602,7 +604,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* make a copy of the catalog that gets sorted by locator.
      Eases maintaing a correctly (epoch-)sorted catalog, particulary in case of errors
-     note: only the pointers to the SFTdescriptors are copied & sorted, not the data */
+     note: only the pointers to the SFTdescriptors are copied & sorted, not the descriptors */
   locatalog.length = catalog->length;
   {
     UINT4 size = catalog->length * sizeof( catalog->data[0] );
@@ -619,36 +621,30 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   for(catPos = 0; catPos < catalog->length; catPos++) {
 
+    /* open and close a file only when necessary */
     if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
       if(fp)
 	fclose(fp);
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
     }
+
+    /* read_bins_from_fp to sftVector[locator.isft] */
+
+    /* record bins read in segments */
   }
 
+  /* close the last file */
   if(fp)
     fclose(fp);
+
+  /* check segments list: only one segment remaining per SFT */
 
   /* just avoids a compiler warning about unused function */
   if(0)
     read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
 
-/*
-
-+ parse SFT catalog once, count different timestamps and check constraints (same detector etc)
-  + Own loop; catalog should be sorted by GPS, so count only timestamp changes
-+ calculate start and endbin
-  + get deltaF from first SFT in catalog
-+ allocate SFTVector (end-start+1)*n*sizeof(bin)
-+ sort catalog by locator (filename)
-  + temp pointer structure?
-- read SFT segments from file, keeping track of segments in a temp structure
-  - linked list startbin,endbin,next; function insert_and_join
-- check for completeness: only one segment per SFT with correct start- and endbin
-- free temp structure(s)
-
-*/
+  /* free() */
 
   return(sftVector);
 }
