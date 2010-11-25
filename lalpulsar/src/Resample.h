@@ -52,7 +52,7 @@ NRCSID(RESAMPLEH,"$Id$");
    \author Creighton, T. D.
    \brief Provides routines for resampling time series according to a new canonical time coordinate.
 
-\par Synopsis
+\heading{Synopsis}
 \code
 #include <lal/Resample.h>
 \endcode
@@ -117,7 +117,7 @@ functions under this header can be assumed to measure the detector
 time coordinate \f$t\f$.  Canonical times are specified by giving the
 difference \f$\tau-t\f$.
 
-<b>Caveat emptor:</b> The inclusion of this header and its
+\heading{Caveat emptor:} The inclusion of this header and its
 associated modules into LAL is provisional at this time.  The routines
 and the test code appear to work, but a later standalone code,
 operating on much larger datasets, appeared to encounter a memory

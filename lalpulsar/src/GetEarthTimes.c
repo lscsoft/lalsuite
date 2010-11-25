@@ -57,7 +57,7 @@ and hence the Doppler modulation on an incoming signal.  See
 \ref PulsarTimes_h for more information about the
 PulsarTimesParamStruc structure.
 
-\par Algorithm
+\heading{Algorithm}
 
 The routine first computes the Greenwich mean sidereal time at
 <tt>times->epoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
@@ -80,7 +80,7 @@ a REAL8 time variable whose origin is the time
 <tt>times->epoch</tt>.  If this is too far from the times of interest,
 the REAL8 time variables may suffer loss of precision.
 
-\par Uses
+\heading{Uses}
 \code
 XLALGreenwichMeanSiderealTime()
 \endcode

@@ -27,7 +27,7 @@
  * $Id$
  *
 
- \par Description
+ \heading{Description}
 
  This function takes a metric \f$g_{\alpha\beta}\f$, where
  \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
@@ -47,9 +47,9 @@ the same manner as above, with the physically meaningless components
 \f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
 identically to zero.
 
-\par Algorithm
+\heading{Algorithm}
 
-The function simply implements \ref eq_gij_gab "Eq. (2)" in header
+The function simply implements \ltxref{eq_gij_gab} in header
 StackMetric.h.  The formula used to convert uncertainties
 \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
 uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:

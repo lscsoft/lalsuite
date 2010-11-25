@@ -36,7 +36,7 @@ NRCSID(PULSARTIMESH,"$Id$");
    \ingroup pulsarCommon
    \brief Provides routines to transform among various time coordinates used in a pulsar search.
 
-   \par Synopsis
+   \heading{Synopsis}
    \code
    #include <lal/PulsarTimes.h>
    \endcode

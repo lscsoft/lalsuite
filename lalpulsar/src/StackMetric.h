@@ -27,7 +27,7 @@
  *
  * $Id$
  *
- * \par Description
+ * \heading{Description}
  *
  This header covers routines that determine the metric
  coefficients for the mismatch function (ambiguity function) on the

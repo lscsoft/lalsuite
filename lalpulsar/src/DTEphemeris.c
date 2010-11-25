@@ -37,7 +37,7 @@ NRCSID(DTEPHEMERISC,"$Id$");
     \brief Computes the barycentric arrival time of an incoming wavefront using
     accurate ephemeris-based data files of the Sun and Earth's motions.
 
-\par Description
+\heading{Description}
 
 These routines compute the barycentric time transformation and its
 derivatives.  That is, if a signal originating from a right ascension
@@ -58,7 +58,7 @@ ephemeris data read in from files in the calling function, and passed
 into LALDTEphemeris() using the EphemerisData
 structure, which is a member of the PulsarTimesParamStruc.
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel                LALBarycenterEarth()
 LALBarycenter()

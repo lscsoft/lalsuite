@@ -36,7 +36,7 @@ is the sampling interval in \f$t\f$.  The timing difference function is
 computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
 via Eq.\ltxref{eq_delta-tau}.
 
-\par Algorithm
+\heading{Algorithm}
 
 By storing the timing difference as a dimensionless quantity, it is
 relatively easy to determine rules for resampling the datastream at

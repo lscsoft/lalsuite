@@ -137,7 +137,7 @@ Differentiating with respect to \f$\alpha\f$ gives:
 where \f$\partial\mathbf{n}/\partial\alpha\f$ is easily obtained from
 Eqs.\ltxref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel
 \endcode
