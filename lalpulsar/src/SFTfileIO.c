@@ -141,6 +141,7 @@ static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
 static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
 static void lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
+static UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
@@ -572,6 +573,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   char empty = '\0';
   char* fname = &empty;        /* name of currently open file */
   FILE* fp = NULL;
+  SFTtype thisSFT;
 
   /* determine number of SFTs, i.e. number of different GPS timestamps
      the catalog should be sorted by GPS time, so just count changes
@@ -619,9 +621,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* allocate segment vector, one element per final SFT */
   segments = XLALCalloc(nSFTs, sizeof(SFTReadSegment*));
 
+  /* loop over all files (actually locators) in the catalog */
   for(catPos = 0; catPos < catalog->length; catPos++) {
 
-    /* open and close a file only when necessary */
+    /* open and close a file only when necessary, i.e. reading a different file */
     if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
       if(fp)
 	fclose(fp);
@@ -629,16 +632,26 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       fp = fopen(fname,"rb");
     }
 
-    /* read_bins_from_fp to sftVector[locator.isft] */
+    /* seek to the position of the SFT if necessary */
+    if ( locatalog.data[catPos].locator->offset )
+      if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 )
+	return(NULL);
 
-    /* record bins read in segments */
+    {
+      UINT4 firstBinRead;
+      UINT4 lastBinRead = read_sft_bins_from_fp ( &thisSFT, &firstBinRead, firstbin, lastbin, fp );
+      firstBinRead = lastBinRead;
+      /* update matadata from read SFT */
+      /* copy bins to sftVector[locator.isft] */
+      /* record bins read in segments */
+    }
   }
 
   /* close the last file */
   if(fp)
     fclose(fp);
 
-  /* check segments list: only one segment remaining per SFT */
+  /* check segments list: only one segment remaining per SFT, containing the correct bin range */
 
   /* just avoids a compiler warning about unused function */
   if(0)
@@ -647,7 +660,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* free() */
 
   return(sftVector);
-}
+
+} /* XLALLoadSFTs() */
 
 
 
@@ -3031,6 +3045,117 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
   DETATCHSTATUSPTR ( status );
   RETURN (status);
 } /* lal_read_sft_bins_from_fp() */
+
+
+/* 
+   This function reads an SFT (segment) from an open file pointer into a buffer.
+   firstBin2read specifies the first bin to read from the SFT, lastBin2read is the last bin.
+   If the SFT contains fewer bins than specified, all bins from the SFT are read.
+   The function returns the last bin actually read, firstBinRead
+   is set to the first bin actually read. In case of an error, 0 is returned
+   and firstBinRead is set to a code further decribing the error condition.
+*/
+static UINT4
+read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
+{
+  UINT4 version;
+  UINT8 crc64;
+  BOOLEAN swapEndian;
+  UINT4 numBins2read;
+  UINT4 firstSFTbin, lastSFTbin, numSFTbins;
+  INT4 offsetBins;
+  long offsetBytes;
+  volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
+
+  *firstBinRead = 0;
+
+  if ( firstBin2read > lastBin2read )
+    {
+      XLALPrintError ("read_sft_bins_from_fp(): Empty frequency-interval requested [%d, %d] bins\n",
+		      firstBin2read, lastBin2read );
+      *firstBinRead = 1;
+      return(0);
+    }
+
+  if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
+    {
+      XLALPrintError ("read_sft_bins_from_fp(): Failed to read SFT-header!\n");
+      *firstBinRead = 2;
+      return(0);
+    }
+
+  tmp = ret->f0 / ret->deltaF;
+  firstSFTbin = MYROUND ( tmp );
+  lastSFTbin = firstSFTbin + numSFTbins - 1;
+
+  /* check that requested interval is found in SFT */
+  if ( firstBin2read < firstSFTbin )
+    firstBin2read = firstSFTbin;
+  if ( lastBin2read > lastSFTbin )
+    lastBin2read = lastSFTbin;
+  *firstBinRead = firstBin2read;
+
+  offsetBins = firstBin2read - firstSFTbin;
+  offsetBytes = offsetBins * 2 * sizeof( REAL4 );
+  numBins2read = lastBin2read - firstBin2read + 1;
+
+  /* seek to the desired bins */
+  if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
+    {
+      XLALPrintError ( "read_sft_bins_from_fp(): Failed to fseek() to first frequency-bin %d: %s\n",
+		       firstBin2read, strerror(errno) );
+      *firstBinRead = 3;
+      return(0);
+    }
+
+  /* actually read the data */
+  if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
+    {
+      XLALPrintError ("read_sft_bins_from_fp(): Failed to read %d bins from SFT!\n", numBins2read );
+      *firstBinRead = 4;
+      return(0);
+    }
+
+  /* update the start-frequency entry in the SFT-header to the new value */
+  ret->f0 = 1.0 * firstBin2read * ret->deltaF;
+
+  /* take care of normalization and endian-swapping */
+  if ( version == 1 || swapEndian )
+    {
+      UINT4 i;
+      REAL8 band = 1.0 * numSFTbins * ret->deltaF;/* need the TOTAL frequency-band in the SFT-file! */
+      REAL8 fsamp = 2.0 * band;
+      REAL8 dt = 1.0 / fsamp;
+
+      for ( i=0; i < numBins2read; i ++ )
+	{
+	  REAL4 *rep, *imp;
+
+	  rep = &(ret->data->data[i].re);
+	  imp = &(ret->data->data[i].im);
+
+	  if ( swapEndian )
+	    {
+	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
+	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
+	    }
+
+	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t'
+	   * in order to follow the correct SFT-normalization
+	   * (see LIGO-T040164-01-Z, and LIGO-T010095-00)
+	   */
+	  if ( version == 1 )
+	    {
+	      (*rep) *= dt;
+	      (*imp) *= dt;
+	    }
+	} /* for i < numBins2read */
+    } /* if SFT-v1 */
+
+  /* return last bin read */
+  return(lastBin2read);
+
+} /* read_sft_bins_from_fp() */
 
 
 /* Try to read an SFT-header (of ANY VALID SFT-VERSION) at the given FILE-pointer fp,
