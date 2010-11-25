@@ -546,6 +546,16 @@ void templateLAL(LALIFOData *IFOdata)
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
     LAL_CALL(LALInspiralParameterCalc(&status, &params),&status); /* (re-calculation necessary? probably not...) */
   }
+	
+  if (params.approximant == TaylorF2) {	
+	expnCoeffs ak;
+	expnFunc expnFunction;
+	memset(&ak,0,sizeof(expnCoeffs));
+	/* Calculate the time of ISCO (v = 6^(-1/2) ) */
+	LALInspiralSetup(&status,&ak,&params);
+	LALInspiralChooseModel(&status,&expnFunction,&ak,&params);
+	chirptime=ak.tn;
+  }
 
   /* compute "params.signalAmplitude" slot: */
   LAL_CALL(LALInspiralRestrictedAmplitude(&status, &params),&status);
