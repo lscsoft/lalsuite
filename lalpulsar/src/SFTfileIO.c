@@ -90,6 +90,7 @@ struct tagSFTLocator
 {
   CHAR *fname;		/* name of file containing this SFT */
   long offset;		/* SFT-offset with respect to a merged-SFT */
+  UINT4 isft;           /* index of SFT this locator belongs to, used only in XLALLoadSFTs() */
 };
 
 typedef struct
@@ -145,6 +146,7 @@ static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, 
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
 static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 static int compareSFTdesc(const void *ptr1, const void *ptr2);
+static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetName(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
@@ -544,21 +546,105 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
 } /* LALTimestampsFromSFTCatalog() */
 
 
+
+typedef struct {
+  UINT4 first;
+  UINT4 last;
+  struct SFTReadSegment* next;
+} SFTReadSegment;
+
+
+SFTVector*
+XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
+	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
+	      REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
+	      )
+{
+  UINT4 catPos;                /* current file in catalog */
+  REAL8 epochR8;               /* current timestamp */
+  UINT4 firstbin, lastbin;     /* the first and last bin we want to read */
+  UINT4 nSFTs = 0;             /* number of SFTs, i.e. different GPS timestamps */
+  REAL8 deltaF;
+  SFTCatalog locatalog;        /* local copy of the catalog to be sorted by 'locator' */
+  SFTVector* sftVector;        /* the vector of SFTs to be returned */
+  SFTReadSegment* segments;    /* array of segments already read of an SFT */
+  char* fname = "";            /* name of currently open file */
+  FILE* fp = NULL;
+
+  /* determine number of SFTs, i.e. number of different GPS timestamps
+     the catalog should be sorted by GPS time, so just count changes */
+  epochR8 = 0.0;
+  for(catPos = 0; catPos < catalog->length; catPos++) {
+    if(epochR8 != GPS2REAL8(catalog->data[catPos].header.epoch)) {
+      epochR8 = GPS2REAL8(catalog->data[catPos].header.epoch);
+      catalog->data[catPos].locator->isft = nSFTs;
+      nSFTs++;
+    }
+  }
+
+  /* calculate first and last frequency bin to read */
+  deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
+  if (fMin < 0)
+    firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  else
+    firstbin = floor(fMin / deltaF);
+  if (fMax < 0)
+    lastbin = firstbin + catalog->data[0].numBins - 1;
+  else
+    lastbin = ceil (fMax / deltaF);
+
+  /* allocate the SFT vector */
+  if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin+1-firstbin)))
+    return(NULL);
+
+  /* make a copy of the catalog that gets sorted by locator.
+     Eases maintaing a correctly (epoch-)sorted catalog, particulary in case of errors
+     note: only the pointers to the SFTdescriptors are copied & sorted, not the data */
+  locatalog.length = catalog->length;
+  {
+    UINT4 size = catalog->length * sizeof( catalog->data[0] );
+    if(!(locatalog.data = XLALMalloc(size)))
+      return(NULL);
+    memcpy(locatalog.data,catalog->data,size);
+  }
+
+  /* sort catalog by locator */
+  qsort( (void*)locatalog.data, locatalog.length, sizeof( locatalog.data[0] ), compareSFTloc );
+
+  /* allocate segment vector, one element per final SFT */
+  segments = XLALCalloc(nSFTs, sizeof(SFTReadSegment*));
+
+  for(catPos = 0; catPos < catalog->length; catPos++) {
+
+    if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
+      if(fp)
+	fclose(fp);
+      fname = locatalog.data[catPos].locator->fname;
+      fp = fopen(fname,"rb");
+    }
+  }
+
+  if(fp)
+    fclose(fp);
+
 /*
 
-- parse SFT catalog once, count different timestamps and check constraints (same detector etc)
-  - Own loop; catalog should be sorted by GPS, so count only timestamp changes
-- calculate start and endbin
-  - get deltaF from first SFT in catalog
-- allocate SFTs (end-start+1)*n*sizeof(bin)
-- sort catalog by locator (filename)
-  - temp pointer structure?
++ parse SFT catalog once, count different timestamps and check constraints (same detector etc)
+  + Own loop; catalog should be sorted by GPS, so count only timestamp changes
++ calculate start and endbin
+  + get deltaF from first SFT in catalog
++ allocate SFTVector (end-start+1)*n*sizeof(bin)
++ sort catalog by locator (filename)
+  + temp pointer structure?
 - read SFT segments from file, keeping track of segments in a temp structure
   - linked list startbin,endbin,next; function insert_and_join
 - check for completeness: only one segment per SFT with correct start- and endbin
 - free temp structure(s)
 
 */
+
+}
+
 
 
 /** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
@@ -1766,6 +1852,47 @@ LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure 
 
 } /* LALDestroySFTCatalog() */
 
+
+
+/** Free an 'SFT-catalogue' */
+SFTCatalog*
+XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
+{
+  if ( *catalog )
+    {
+      if ( (*catalog) -> data )
+	{
+	  UINT4 i;
+	  for ( i=0; i < (*catalog)->length; i ++ )
+	    {
+	      SFTDescriptor *ptr = &( (*catalog)->data[i] );
+	      if ( ptr->locator )
+		{
+		  if ( ptr->locator->fname )
+		    XLALFree ( ptr->locator->fname );
+		  XLALFree ( ptr->locator );
+		}
+	      if ( ptr->comment )
+		XLALFree ( ptr->comment );
+
+	      /* this should not happen, but just in case: free data-entry in SFT-header */
+	      if ( ptr->header.data )
+		XLALFree ( ptr->header.data );
+	    } /* for i < length */
+
+	  XLALFree ( (*catalog)->data );
+
+	} /* if *catalog->data */
+
+      XLALFree ( *catalog );
+
+    } /* if *catalog */
+
+  (*catalog) = NULL;
+
+  return ( *catalog );
+
+} /* XLALDestroySFTCatalog() */
 
 
 /** Mostly for *debugging* purposes: provide a user-API to allow inspecting the SFT-locator
@@ -3826,6 +3953,26 @@ compareSFTdesc(const void *ptr1, const void *ptr2)
   else
     return 0;
 } /* compareSFTdesc() */
+
+
+/* compare two SFT-descriptors by their locator (file, then position) */
+static int
+compareSFTloc(const void *ptr1, const void *ptr2)
+{
+  const SFTDescriptor *desc1 = ptr1;
+  const SFTDescriptor *desc2 = ptr2;
+  int s = strcmp(desc1->locator->fname, desc2->locator->fname);
+  if(!s) {
+    if (desc1->locator->fname < desc2->locator->offset)
+      return(-1);
+    else if (desc1->locator->fname > desc2->locator->offset)
+      return(1);
+    else
+      return(0);
+  }
+  return(s);
+} /* compareSFTloc() */
+
 
 /* compare two SFT-vectors by detector name in alphabetic order */
 static int
