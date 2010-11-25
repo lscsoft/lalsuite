@@ -294,6 +294,9 @@ sub cleanupLSD {
 	my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
 	my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
+        # regex substitution for illegal \ref characters
+        my $illref = sub { $_[0] =~ s![-:.]!_!g; $_[0] };
+
 	# remove these LaTeX commands:
 	# environments
 	$text =~ s!\\(?:begin|end)$n*{(?:
@@ -326,9 +329,17 @@ sub cleanupLSD {
 	$text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
 	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
 	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
-	$_ = 'equation\*?|eqnarray\*?';
-	$text =~ s!\\begin$n*{($_)}!\\f{$1}{!mg;
-	$text =~ s!\\end$n*{($_)}!\\f}!mg;
+        $text =~ s{\\begin$n*{(equation\*?|eqnarray\*?)}(.*?)\\end$n*{\1}}{
+            my $env = $1;
+            my $eqn = $2;
+            my $anch = '';
+            $eqn =~ s{\\label$n*$wbbr}{
+                $_ = $1;
+                $anch .= '\anchor ' . &$illref($_) . ' ';
+                '\label{' . $_ . '}'
+            }sge;
+            $anch . '\f{' . $env . '}{' . $eqn . '\f}'
+        }sge;
 
 	# convert descriptions
 	sub desc {
@@ -394,15 +405,20 @@ sub cleanupLSD {
 
         # replace subsection commands, preserving labels
 	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
-	    $_ = '\\par ' . $1 . "\n";
-	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
+	    $_ = '\\heading{' . $1 . "}\n";
+            if (defined(my $lbl = $+{LBL})) {
+                $_ .= '\\latexonly' . &$illref($lbl) . '\\endlatexonly';
+            }
 	    $_
 	}sge;
-	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
+	$text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
 
         # preserve references
-        $text =~ s![~ ]*\(*\\(?:eq)?ref$wbbr\)*!\\ltxref{$1}!sg;
-
+        $text =~ s{[~ ]*\(*\\(?:eq)?ref$wbbr\)*}{
+            $_ = $1;
+            '\ltxref{' . &$illref($_) . '}'
+        }sge;
+        
 	# replace citations
         $text =~ s{\\cite$wbbr}{
 	    $_ = $1;
