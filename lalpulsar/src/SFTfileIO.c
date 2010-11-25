@@ -82,7 +82,7 @@ NRCSID (SFTFILEIOC, "$Id$");
 
 /*---------- internal types ----------*/
 
-/* NOTE: the locator is implemented as an OAPQUE type in order to enforce encapsulation
+/* NOTE: the locator is implemented as an OPAQUE type in order to enforce encapsulation
  * of the actual physical storage of SFTs and to ease future extensions of the interface.
  * DO NOT TRY TO USE THIS TYPE OUTSIDE OF THIS MODULE!!
  */
@@ -549,11 +549,11 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
 
 
 typedef struct {
-  UINT4 first;                     /* first bin in this segment */
-  UINT4 last;                      /* last bin in this segment */
-  struct tagSFTLocator *firstfrom; /* first bin read from this locator */
-  struct tagSFTLocator *lastfrom;  /* last bin read from this locator */
-  struct SFTReadSegment* next;     /* next segment of this SFT (if any) */
+  UINT4 first;                     /**< first bin in this segment */
+  UINT4 last;                      /**< last bin in this segment */
+  struct tagSFTLocator *firstfrom; /**< first bin read from this locator */
+  struct tagSFTLocator *lastfrom;  /**< last bin read from this locator */
+  struct SFTReadSegment* next;     /**< next segment of this SFT (if any) */
 } SFTReadSegment;
 
 
@@ -563,21 +563,21 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	      REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
 	      )
 {
-  UINT4 catPos;                /* current file in catalog */
-  UINT4 firstbin, lastbin;     /* the first and last bin we want to read */
-  UINT4 nSFTs = 0;             /* number of SFTs, i.e. different GPS timestamps */
+  UINT4 catPos;                /**< current file in catalog */
+  UINT4 firstbin, lastbin;     /**< the first and last bin we want to read */
+  UINT4 nSFTs = 0;             /**< number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;
-  SFTCatalog locatalog;        /* local copy of the catalog to be sorted by 'locator' */
-  SFTVector* sftVector;        /* the vector of SFTs to be returned */
-  SFTReadSegment* segments;    /* array of segments already read of an SFT */
+  SFTCatalog locatalog;        /**< local copy of the catalog to be sorted by 'locator' */
+  SFTVector* sftVector;        /**< the vector of SFTs to be returned */
+  SFTReadSegment* segments;    /**< array of segments already read of an SFT */
   char empty = '\0';
-  char* fname = &empty;        /* name of currently open file */
+  char* fname = &empty;        /**< name of currently open file */
   FILE* fp = NULL;
   SFTtype thisSFT;
 
-  /* determine number of SFTs, i.e. number of different GPS timestamps
-     the catalog should be sorted by GPS time, so just count changes
-     record the 'index' of GPS time in the 'isft' field of the locator
+  /* determine number of SFTs, i.e. number of different GPS timestamps.
+     The catalog should be sorted by GPS time, so just count changes.
+     Record the 'index' of GPS time in the 'isft' field of the locator,
      so that we know in which SFT to later put this segment */
   {
     LIGOTimeGPS epoch = {0,0};
@@ -639,10 +639,12 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
     {
       UINT4 firstBinRead;
+      /* FIXME: thisSFT->data is uninitialized!! */
       UINT4 lastBinRead = read_sft_bins_from_fp ( &thisSFT, &firstBinRead, firstbin, lastbin, fp );
-      firstBinRead = lastBinRead;
-      /* update matadata from read SFT */
+      /* just avoids a compiler warning about unused variable */
+      if(0) firstBinRead = lastBinRead;
       /* copy bins to sftVector[locator.isft] */
+      /* update SFT vector matadata / header from the SFT just read */
       /* record bins read in segments */
     }
   }
@@ -652,10 +654,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     fclose(fp);
 
   /* check segments list: only one segment remaining per SFT, containing the correct bin range */
+  /* update metadata (frequncy / bin range) in SFT vector */
 
   /* just avoids a compiler warning about unused function */
-  if(0)
-    read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
+  if(0) read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
 
   /* free() */
 
