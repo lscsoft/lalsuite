@@ -563,7 +563,6 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	      )
 {
   UINT4 catPos;                /* current file in catalog */
-  REAL8 epochR8;               /* current timestamp */
   UINT4 firstbin, lastbin;     /* the first and last bin we want to read */
   UINT4 nSFTs = 0;             /* number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;
@@ -576,13 +575,14 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* determine number of SFTs, i.e. number of different GPS timestamps
      the catalog should be sorted by GPS time, so just count changes */
-  epochR8 = 0.0;
-  for(catPos = 0; catPos < catalog->length; catPos++) {
-    if(epochR8 != GPS2REAL8(catalog->data[catPos].header.epoch)) {
-      epochR8 = GPS2REAL8(catalog->data[catPos].header.epoch);
-      catalog->data[catPos].locator->isft = nSFTs;
-      nSFTs++;
-    }
+  {
+    LIGOTimeGPS epoch = {0,0};
+    for(catPos = 0; catPos < catalog->length; catPos++)
+      if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
+	epoch = catalog->data[catPos].header.epoch;
+	catalog->data[catPos].locator->isft = nSFTs;
+	nSFTs++;
+      }
   }
 
   /* calculate first and last frequency bin to read */
