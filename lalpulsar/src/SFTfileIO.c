@@ -553,89 +553,14 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
  * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>,
  * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
  * in the SFT-file.
- */
-void
-_LALLoadSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
-	       SFTVector **sfts,			/**< [out] vector of read-in SFTs */
-	       const SFTCatalog *catalog,	/**< The 'catalogue' of SFTs to load */
-	       REAL8 fMin,		  /**< minumum requested frequency (-1 = read from lowest) */
-	       REAL8 fMax		  /**< maximum requested frequency (-1 = read up to highest) */
-	       )
-{
-  UINT4 i;
-  UINT4 numSFTs;
-  SFTVector *ret = NULL;
-  /* CHAR prev_det[3] = {0,0,0}; */  /* equal-detector constraint dropped */
-
-  INITSTATUS (status, "LALLoadSFTs", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( sfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-  ASSERT ( *sfts == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
-
-  ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-
-  numSFTs = catalog -> length;
-
-  /* Allocate SFT-vector with zero length to append to */
-  if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-  }
-
-  for ( i=0; i < numSFTs; i++ )
-    {
-      FILE *fp;
-      SFTtype *this_sft = NULL;
-
-
-      /* equal-detector constraint dropped */
-      if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
-	{
-	  LALDestroySFTVector (status->statusPtr, &ret );
-	  ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
-	}
-
-      read_one_sft_from_fp ( status->statusPtr,  &this_sft, fMin, fMax, fp );
-      BEGINFAIL ( status ) {
-	LALDestroySFTVector (status->statusPtr, &ret );
-	fclose(fp);
-      } ENDFAIL(status);
-
-      fclose(fp);
-
-      /* NOTE: LALSFTdataFind() requires overriding v1 detector-name ('??')
-       * by a proper detector-name using the constraint-entry.
-       * This is field therefore updated here from the catalog */
-      strncpy ( this_sft->name, catalog->data[i].header.name, 2 );
-
-      LALAppendSFT2Vector ( status->statusPtr, ret, this_sft );
-      BEGINFAIL ( status ) {
-	LALDestroySFTtype ( status->statusPtr, &this_sft );
-	LALDestroySFTVector (status->statusPtr, &ret );
-	fclose(fp);
-      } ENDFAIL(status);
-
-      LALDestroySFTtype ( status->statusPtr, &this_sft );
-
-    } /* for i < numSFTs */
-
-  /* return final SFT-vector */
-  (*sfts) = ret;
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* LALLoadSFTs() */
-
-/* This is meant to replace LALLoadSFT().
-   It has the same interface and basically does the same, with the additional capability to read
-   sequences of (v2-)SFT segments and putting them together to single SFTs while reading.
-   While developing it is kept as a separate function
+ *
+ * Note 3: This function has the capability to read sequences of (v2-)SFT segments and
+ * putting them together to single SFTs while reading.
 */
 void
 LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      SFTVector **outsfts,	   /**< [out] vector of read-in SFTs */
-	      const SFTCatalog *catalog,  /**< The 'catalogue' of SFTs to load */
+	      const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
 	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
 	      REAL8 fMax		   /**< maximum requested frequency (-1 = read up to highest) */
 	      )
