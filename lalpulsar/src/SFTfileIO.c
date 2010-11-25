@@ -140,7 +140,7 @@ static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
 static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
-static void read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
+static void lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
@@ -798,7 +798,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
+	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
 	      XLALPrintError ( "Failed to read from locator '%s'\n",
@@ -828,7 +828,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, firstbin, lastbin, fp);
+	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, firstbin, lastbin, fp);
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
 	      XLALPrintError ( "Failed to read from locator '%s'\n",
@@ -856,7 +856,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      LALDestroySFTVector (status->statusPtr, &sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
-	    read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
+	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
 
 	    fclose(fp);
 	    if ( status->statusPtr->statusCode ) {
@@ -2914,7 +2914,7 @@ read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax
    lastBin or the end of the SFT
 */
 static void
-read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
+lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
 {
   SFTtype *ret = NULL;
   UINT4 version;
@@ -2926,7 +2926,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
   long offsetBytes;
   volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
 
-  INITSTATUS (status, "read_sft_bins_from_fp", SFTFILEIOC);
+  INITSTATUS (status, "lal_read_sft_bins_from_fp", SFTFILEIOC);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -3032,7 +3032,7 @@ read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4
 
   DETATCHSTATUSPTR ( status );
   RETURN (status);
-} /* read_sft_bins_from_fp() */
+} /* lal_read_sft_bins_from_fp() */
 
 
 /* Try to read an SFT-header (of ANY VALID SFT-VERSION) at the given FILE-pointer fp,
