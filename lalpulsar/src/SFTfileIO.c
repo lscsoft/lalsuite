@@ -140,7 +140,7 @@ static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
 static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
-static void read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 larstBin2read , FILE *fp );
+static void read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **comment, BOOLEAN swapEndian);
@@ -568,7 +568,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   SFTCatalog locatalog;        /* local copy of the catalog to be sorted by 'locator' */
   SFTVector* sftVector;        /* the vector of SFTs to be returned */
   SFTReadSegment* segments;    /* array of segments already read of an SFT */
-  char* fname = "";            /* name of currently open file */
+  char empty = '\0';
+  char* fname = &empty;        /* name of currently open file */
   FILE* fp = NULL;
 
   /* determine number of SFTs, i.e. number of different GPS timestamps
@@ -627,6 +628,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if(fp)
     fclose(fp);
 
+  /* just avoids a compiler warning about unused function */
+  if(0)
+    read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
+
 /*
 
 + parse SFT catalog once, count different timestamps and check constraints (same detector etc)
@@ -643,6 +648,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
 */
 
+  return(sftVector);
 }
 
 
@@ -3963,9 +3969,9 @@ compareSFTloc(const void *ptr1, const void *ptr2)
   const SFTDescriptor *desc2 = ptr2;
   int s = strcmp(desc1->locator->fname, desc2->locator->fname);
   if(!s) {
-    if (desc1->locator->fname < desc2->locator->offset)
+    if (desc1->locator->offset < desc2->locator->offset)
       return(-1);
-    else if (desc1->locator->fname > desc2->locator->offset)
+    else if (desc1->locator->offset > desc2->locator->offset)
       return(1);
     else
       return(0);
