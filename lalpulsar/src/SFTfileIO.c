@@ -548,9 +548,11 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
 
 
 typedef struct {
-  UINT4 first;
-  UINT4 last;
-  struct SFTReadSegment* next;
+  UINT4 first;                     /* first bin in this segment */
+  UINT4 last;                      /* last bin in this segment */
+  struct tagSFTLocator *firstfrom; /* first bin read from this locator */
+  struct tagSFTLocator *lastfrom;  /* last bin read from this locator */
+  struct SFTReadSegment* next;     /* next segment of this SFT (if any) */
 } SFTReadSegment;
 
 
