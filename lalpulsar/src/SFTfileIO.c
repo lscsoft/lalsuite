@@ -767,6 +767,7 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
   return(0);
 } /* insertSFTReadSegment */
 
+
 static void
 freeSFTReadSegment(SFTReadSegment* curr) {
   if(curr) {
@@ -797,7 +798,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* determine number of SFTs, i.e. number of different GPS timestamps.
      The catalog should be sorted by GPS time, so just count changes.
      Record the 'index' of GPS time in the 'isft' field of the locator,
-     so that we know in which SFT to later put this segment */
+     so that we know later in which SFT to put this segment */
   {
     LIGOTimeGPS epoch = {0,0};
     for(catPos = 0; catPos < catalog->length; catPos++)
@@ -859,6 +860,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 )
 	return(NULL);
 
+    /* read SFT data */
     {
       struct tagSFTLocator*locator = locatalog.data[catPos].locator;
       UINT4 isft = locator->isft;
@@ -868,9 +870,15 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       if(lastBinRead) {
 	/* record bins read in segments */
 	INT4 ret = insertSFTReadSegment( &(segments[isft]), firstBinRead, lastBinRead, locator );
+	/* copy data & metadata from the SFT just read */
 	if(ret) {
-	  /* copy bins to sftVector[locator.isft] */
-	  /* update SFT vector matadata / header from the SFT just read */
+	  sftVector->data[isft].epoch       = thisSFT->epoch;
+	  sftVector->data[isft].deltaF      = thisSFT->deltaF;
+	  sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
+	  sftVector->data[isft].f0          = 1.0 * firstbin * sftVector->data[isft].deltaF;
+	  memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
+		 thisSFT->data->data,
+		 (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
 	} else {
 	  return(NULL);
 	}
@@ -884,8 +892,41 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if(fp)
     fclose(fp);
 
-  /* check segments list: only one segment remaining per SFT, containing the correct bin range */
-  /* update metadata (frequncy / bin range) in SFT vector */
+  {
+    UINT4 isft;
+    BOOLEAN error = 0;
+
+    /* check segments list: only one segment remaining per SFT, containing the correct bin range */
+    for(isft = 0; isft < nSFTs; isft++) {
+
+      if(segments[isft]) {
+	if (firstbin != segments[isft]->first) {
+	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at beginning of SFT#%u: expected bin: %u read bin: %u\n",
+			 isft, firstbin, segments[isft]->first);
+	  error=-1;
+	}
+
+	if (lastbin != segments[isft]->last) {
+	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at end of SFT#%u: expected bin: %u read bin: %u\n",
+			 isft, lastbin, segments[isft]->last);
+	  error=-1;
+	}
+
+	if (segments[isft]->next) {
+	  XLALPrintError("XLALLoadSFTs(): ERROR: data gap in SFT#%u between bin %u read from file '%s' and bin %u read from file '%s'\n",
+			 isft, segments[isft]->last, segments[isft]->lastfrom->fname,
+			 ((SFTReadSegment*)segments[isft]->next)->last, ((SFTReadSegment*)segments[isft]->next)->lastfrom->fname);
+	  error=-1;
+	}
+
+      } else {
+	XLALPrintError("XLALLoadSFTs(): ERROR: no data read for SFT#%u\n", isft);
+	error=-1;
+      }
+    }
+    if(error)
+      return(NULL);
+  }
 
   /* just avoids a compiler warning about unused function */
   if(0) read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
@@ -896,6 +937,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   XLALFree(segments);
   XLALFree(locatalog.data);
   XLALDestroySFT(thisSFT);
+  // only in case of error: XLALDestroySFTVector(sftVector)
 
   return(sftVector);
 
