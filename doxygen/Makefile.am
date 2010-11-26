@@ -17,7 +17,7 @@ html: getfigs
 	doxygen $(abs_builddir)/doxygen-html.cfg
 	@echo "$(abs_builddir)/Makefile: ... done."
 
-pdf: getfigs
+pdf:
 	@echo "$(abs_builddir)/Makefile: Running doxygen to produce PDF ..."
 	doxygen $(abs_builddir)/doxygen-pdf.cfg
 	@echo "$(abs_builddir)/Makefile: Compiling the PDF manual 'refman.pdf' ..."

@@ -671,7 +671,15 @@ EXAMPLE_RECURSIVE      = NO
 # the \image command).
 
 IMAGE_PATH             = @abs_srcdir@/src \
-                         @abs_srcdir@/figures
+                         @abs_top_srcdir@/lal/packages \
+                         @abs_top_srcdir@/lalxml \
+                         @abs_top_srcdir@/lalburst \
+                         @abs_top_srcdir@/lalframe \
+                         @abs_top_srcdir@/lalinspiral \
+                         @abs_top_srcdir@/lalmetaio \
+                         @abs_top_srcdir@/lalpulsar \
+                         @abs_top_srcdir@/lalstochastic \
+                         @abs_top_srcdir@/lalapps/src
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

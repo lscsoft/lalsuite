@@ -13,10 +13,9 @@ export -f printerror
 [ -z "$LN_S"           ] && printerror $0 needs '$LN_S'
 
 figdir="$abs_builddir/figures"
-latexdir="$abs_builddir/latex"
 
 cmd=""
-for basedir in "$figdir" "$latexdir"; do
+for basedir in "$figdir"; do
     if [ ! -d "$basedir" ] && ! ( $MKDIR_P "$basedir" ); then
         printerror $0 could not make directory "'$basedir'"
     fi
