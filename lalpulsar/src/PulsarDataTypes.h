@@ -35,7 +35,9 @@
 extern "C" {
 #endif
 
+/** \cond DONT_DOXYGEN */
 NRCSID( PULSARDATATYPESH, "$Id$");
+/** \endcond */
 
 /**
  * \author Reinhard Prix
@@ -49,8 +51,7 @@ NRCSID( PULSARDATATYPESH, "$Id$");
  * #include <lal/PulsarDataTypes.h>
  * \endcode
  *
- */
-/*@{*/
+ */ /*@{*/
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
@@ -136,8 +137,11 @@ typedef struct {
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
+/*@}*/
+
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
+/** \name empty struct initializers *//* @{ */
+/** \ingroup PulsarDataTypes_h */
 extern const BinaryOrbitParams empty_BinaryOrbitParams;
 extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
 extern const PulsarSpinRange empty_PulsarSpinRange;
@@ -150,9 +154,8 @@ extern const LIGOTimeGPS empty_LIGOTimeGPS;
 extern const BarycenterInput empty_BarycenterInput;
 extern const EphemerisData empty_EphemerisData;
 extern const SkyPosition empty_SkyPosition;
-
-
 /*@}*/
+
 
 #ifdef  __cplusplus
 }
