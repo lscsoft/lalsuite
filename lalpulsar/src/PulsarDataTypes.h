@@ -44,7 +44,7 @@ NRCSID( PULSARDATATYPESH, "$Id$");
  * \ingroup pulsarCommon
  * \brief Some common useful data-types for pulsar-searches.
  *
- * \par{Synopsis}
+ * \heading{Synopsis}
  * \code
  * #include <lal/PulsarDataTypes.h>
  * \endcode
