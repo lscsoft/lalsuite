@@ -63,7 +63,6 @@
 % can't parse any arguments with Doxygen's \image command, a new alias,
 % \wrapfig (defined in doxy-pdf-aliases.cfg) is used to pass the placement,
 % width, and label of the figure using the \LSDwrapfig* variables
-% TODO: implement label
 
 \def\LSDwrapfigPlace{r}
 \def\LSDwrapfigWidth{0.5\textwidth}
@@ -72,6 +71,7 @@
   \wrapfigure{\LSDwrapfigPlace}{\LSDwrapfigWidth}%
   \center%
 }{%
+  \label{\LSDwrapfigLabel}%
   \endcenter%
   \endwrapfigure%
 }
@@ -97,6 +97,7 @@
 
 \pagenumbering{roman}
 \tableofcontents
+\listoffigures
 
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}

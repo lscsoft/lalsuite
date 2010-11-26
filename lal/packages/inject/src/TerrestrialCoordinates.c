@@ -130,13 +130,11 @@ As explained in <tt>CelestialCoordinates.c</tt>, the function
 \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
 
 \wrapfig{r,0.35\textwidth,fig_geodetic}
-\image html  inject_geodetic.png "Fig. 1: The difference between geodetic and geocentric latitude."
+\image html  inject_geodetic.png "The difference between geodetic and geocentric latitude."
 \image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
 \latexonly\textbf{Geocentric coordinates:}\endlatexonly
 \htmlonly      <b>Geocentric coordinates:</b>\endhtmlonly
-As shown in
-\latexonly Fig.~\ref{fig:geodetic},\endlatexonly
-\htmlonly Fig. 1,\endhtmlonly
+As shown in Fig.\figref{fig_geodetic},
 the ellipticity of the Earth means that the
 vertical axis of a point on the Earth's surface does not pass through
 the geometric centre of the Earth.  This means that the geodetic
