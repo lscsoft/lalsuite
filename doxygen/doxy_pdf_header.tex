@@ -64,9 +64,11 @@
 % \wrapfig (defined in doxy-pdf-aliases.cfg) is used to pass the placement,
 % width, and label of the figure using the \LSDwrapfig* variables
 
-\def\LSDwrapfigPlace{r}
-\def\LSDwrapfigWidth{0.5\textwidth}
-\def\LSDwrapfigLabel{}
+\def\LSDwrapfig#1#2#3{%
+  \def\LSDwrapfigPlace{#1}%
+  \def\LSDwrapfigWidth{#2}%
+  \def\LSDwrapfigLabel{#3}%
+}
 \renewenvironment{DoxyImage}{%
   \wrapfigure{\LSDwrapfigPlace}{\LSDwrapfigWidth}%
   \center%
@@ -74,6 +76,7 @@
   \label{\LSDwrapfigLabel}%
   \endcenter%
   \endwrapfigure%
+  \LSDwrapfig{}{}{}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
