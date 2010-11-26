@@ -34,7 +34,7 @@ of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
 detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, where \f$\Delta t\f$
 is the sampling interval in \f$t\f$.  The timing difference function is
 computed from the piecewise-polynomial fit stored in <tt>*polyco</tt>,
-via Eq.\ltxref{eq_delta-tau}.
+via Eq.\eqref{eq_delta-tau}.
 
 \heading{Algorithm}
 

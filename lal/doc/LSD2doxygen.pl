@@ -295,7 +295,7 @@ sub cleanupLSD {
         my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
         # regex substitution for illegal \ref characters
-        my $illref = sub { $_[0] =~ s![-:.]!_!g; $_[0] };
+        my $illref = sub { $_[0] =~ s![:.]!_!g; $_[0] };
 
         # remove these LaTeX commands:
         # environments
@@ -416,8 +416,9 @@ sub cleanupLSD {
         # preserve references
         $text =~ s{[~ ]*\(*\\(?:eq)?ref$wbbr\)*}{
             $_ = $1;
-            '\ltxref{' . &$illref($_) . '}'
+            '\TODOref{' . &$illref($_) . '}'
         }sge;
+        $text =~ s![Ee]q(s?)\.?\\TODOref!Eq\1.\\eqref!mg;
 
         # replace citations
         $text =~ s{\\cite$wbbr}{

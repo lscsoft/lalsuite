@@ -146,7 +146,7 @@ typedef struct tagResampleRules {
 
 
 /** Parameters of the piecewise polynomial fit of \f$\tau-t\f$ as a function of \f$t\f$, see
- *  Eq.\ltxref{eq_delta-tau} for notation.
+ *  Eq.\eqref{eq_delta-tau} for notation.
  */
 typedef struct tagPolycoStruc {
   REAL4 ra;  			/**< Right ascension angle of the source, in \e radians in the range \f$[0,2\pi)\f$ */

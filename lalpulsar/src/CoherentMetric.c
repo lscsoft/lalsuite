@@ -51,7 +51,7 @@
 
  \heading{Algorithm}
 
- This routine simply computes the function given in \ltxref{eq_gab_phi}
+ This routine simply computes the function given in Eq.\eqref{eq_gab_phi}
  of header StackMetric.h.  Most of the work is done by the
  function \a params->dtCanon(), which computes the value and
  parameter derivatives of the canonical time coordinate

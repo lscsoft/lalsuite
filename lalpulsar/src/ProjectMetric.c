@@ -49,7 +49,7 @@ identically to zero.
 
 \heading{Algorithm}
 
-The function simply implements \ltxref{eq_gij_gab} in header
+The function simply implements Eq.\eqref{eq_gij_gab} in header
 StackMetric.h.  The formula used to convert uncertainties
 \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
 uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:
