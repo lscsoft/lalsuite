@@ -557,32 +557,91 @@ typedef struct {
 } SFTReadSegment;
 
 /** insert a new segment into the list of segments, preferrably extending an existing one */
+/*
+  returns:
+   0 if all went ok,
+   1 in case of a data error (overlap detected)
+  -1 if out of memory
+  -2 in case of a program error (this should never happen)
+*/
 static int
 insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRead, struct tagSFTLocator*locator)
 {
   if((*chain)) {
-    /* there already is a segment. Try extending it
-       if (fits at beginning)
-         extend
-       else if (fits at the end)
-         extend
-         if (end fits at beginning of next segment)
-           combine segments
-       else if (completely after)
-         if (next segment present)
-           advance to next segment and try again
-         else
-           new segment at end
-       else if (completely before)
-         if (curr==*chain)
-           new segment at beginning -> set chain
-         else
-           program error
-       else
-         data error (overlap?)
-     */
+    // there already is a segment in the chain
+    SFTReadSegment* curr = *chain;
+    while(1) { // loop through segments of this chain, will be left with break
+      if (lastBinRead + 1 == curr->first) {
+	// read segment fits at beginning of current segment: extend
+	curr->first = firstBinRead;
+	curr->firstfrom = locator;
+	break;
+      } else if (firstBinRead == curr->last + 1) {
+	// read segment fits at the end of current segment: extend
+	curr->last = lastBinRead;
+	curr->lastfrom = locator;
+	if (curr->next) {
+	  // there is a next segment
+	  if ( lastBinRead + 1 == ((SFTReadSegment*)curr->next)->first ) {
+	    // end of current segment fits at beginning of next segment: join
+	    SFTReadSegment* old = ((SFTReadSegment*)curr->next);
+	    curr->last = old->last;
+	    curr->lastfrom = old->lastfrom;
+	    curr->next = old->next;
+	    XLALFree(old);
+	  } else if ( lastBinRead >= ((SFTReadSegment*)curr->next)->first ) {
+	    // data error: overlap
+	    return(1);
+	  }
+	}
+	break;
+      } else if (firstBinRead > curr->last + 1) {
+	// read segment lies completely after current segment
+	if(curr->next)
+	  // there is a next segment
+	  if(firstBinRead >= ((SFTReadSegment*)curr->next)->first) {
+	    // read segment lies after beginning of next segment
+	    curr = ((SFTReadSegment*)curr->next);
+	    // advance to next segment and try again
+	    continue;
+	  }
+	// create new segment after current segment
+	SFTReadSegment* new = XLALMalloc(sizeof(SFTReadSegment));
+	if(!new)
+	  return(-1);
+	new->first = firstBinRead;
+	new->last = lastBinRead;
+	new->firstfrom = locator;
+	new->lastfrom = locator;
+	new->next = curr->next;
+	curr->next = (struct SFTReadSegment*)new;
+	break;
+      } else if (lastBinRead + 1 < curr->first) {
+	// read segment lies completely before current segment
+	if (curr == *chain) {
+	  // create new segment at beginning of chain
+	  (*chain) = XLALMalloc(sizeof(SFTReadSegment));
+	  if(!(*chain)) {
+	    // in case we couldn't alloc a new element, restore old chain
+	    (*chain) = curr;
+	    return(-1);
+	  }
+	  (*chain)->first = firstBinRead;
+	  (*chain)->last = lastBinRead;
+	  (*chain)->firstfrom = locator;
+	  (*chain)->lastfrom = locator;
+	  (*chain)->next = (struct SFTReadSegment*)curr;
+	  break;
+	} else
+	  // program error
+	  return(-2);
+      } else {
+	// data error (overlap?)
+	return(1);
+      }
+    } // while(1)
   } else {
-    /* no segment yet, allocate one and fill with data */
+    // no segment yet -> create new
     (*chain) = XLALMalloc(sizeof(SFTReadSegment));
     if(!(*chain))
       return(-1);
