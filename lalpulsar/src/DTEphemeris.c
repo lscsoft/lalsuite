@@ -27,15 +27,17 @@
 
 #include "PulsarTimes.h"
 
+/** \cond DONT_DOXYGEN */
 NRCSID(DTEPHEMERISC,"$Id$");
+/** \endcond */
 
-/** \defgroup DTEphemeris
+/** \file
     \author Jones, D. I.,   Owen, B. J.
     \ingroup PulsarTimes_h
     \brief Computes the barycentric arrival time of an incoming wavefront using
     accurate ephemeris-based data files of the Sun and Earth's motions.
 
-\par Description
+\heading{Description}
 
 These routines compute the barycentric time transformation and its
 derivatives.  That is, if a signal originating from a right ascension
@@ -56,7 +58,7 @@ ephemeris data read in from files in the calling function, and passed
 into LALDTEphemeris() using the EphemerisData
 structure, which is a member of the PulsarTimesParamStruc.
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel                LALBarycenterEarth()
 LALBarycenter()
@@ -64,7 +66,7 @@ LALBarycenter()
 
 */
 /*@{*/
-/** See \ref DTEphemeris for documention */
+
 void
 LALDTEphemeris( LALStatus             *status,
 	        REAL8Vector           *drv,
@@ -206,7 +208,6 @@ LALDTEphemeris( LALStatus             *status,
   RETURN( status );
 }
 
-/** See \ref DTEphemeris for documention */
 void
 LALTEphemeris( LALStatus   *status,
 	       REAL8 *tBary,

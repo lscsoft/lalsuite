@@ -26,7 +26,7 @@
  *
  * $Id$
  *
- * \par Description
+ * \heading{Description}
  *
  This module contains metric computation routines suitable for passing
  into LALCreateTwoDMesh() via the \a params->getMetric

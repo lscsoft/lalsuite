@@ -4,10 +4,17 @@ AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([
   Makefile \
-  gnuscripts/Makefile
+  gnuscripts/Makefile \
+  doxygen/Makefile \
+  doxygen/doxygen-html.cfg \
+  doxygen/doxygen-pdf.cfg
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
+
+# for building doxygen
+AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
+AC_PROG_LN_S
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO

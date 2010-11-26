@@ -28,7 +28,7 @@
  *  Created by Badri Krishnan on July 09, 2003
 
 
-\par Description
+\heading{Description}
 
 Given a total Hough map, the function LALHoughStatistics() calculates
 the maximum number count, minimum number count, average and

@@ -27,7 +27,7 @@
  *
  * $Id$
  *
- * \par Description
+ * \heading{Description}
  *
  This header covers routines for using a ``Ptolemaic'' (epicyclic)
  approximation to the detector motion to compute the parameter-space metric
