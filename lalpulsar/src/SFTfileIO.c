@@ -547,7 +547,7 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
 } /* LALTimestampsFromSFTCatalog() */
 
 
-
+/** linked list of sergments read so far from one SFT */
 typedef struct {
   UINT4 first;                     /**< first bin in this segment */
   UINT4 last;                      /**< last bin in this segment */
@@ -556,6 +556,52 @@ typedef struct {
   struct SFTReadSegment* next;     /**< next segment of this SFT (if any) */
 } SFTReadSegment;
 
+/** insert a new segment into the list of segments, preferrably extending an existing one */
+static int
+insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRead, struct tagSFTLocator*locator)
+{
+  if((*chain)) {
+    /* there already is a segment. Try extending it
+       if (fits at beginning)
+         extend
+       else if (fits at the end)
+         extend
+         if (end fits at beginning of next segment)
+           combine segments
+       else if (completely after)
+         if (next segment present)
+           advance to next segment and try again
+         else
+           new segment at end
+       else if (completely before)
+         if (curr==*chain)
+           new segment at beginning -> set chain
+         else
+           program error
+       else
+         data error (overlap?)
+     */
+  } else {
+    /* no segment yet, allocate one and fill with data */
+    (*chain) = XLALMalloc(sizeof(SFTReadSegment));
+    if(!(*chain))
+      return(-1);
+    (*chain)->first = firstBinRead;
+    (*chain)->last = lastBinRead;
+    (*chain)->firstfrom = locator;
+    (*chain)->lastfrom = locator;
+    (*chain)->next = NULL;
+  }
+  return(0);
+}
+
+static void
+freeSFTReadSegment(SFTReadSegment* curr) {
+  if(curr) {
+    freeSFTReadSegment((SFTReadSegment*)curr->next);
+    XLALFree(curr);
+  }
+}
 
 SFTVector*
 XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
@@ -569,11 +615,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   REAL8 deltaF;
   SFTCatalog locatalog;        /**< local copy of the catalog to be sorted by 'locator' */
   SFTVector* sftVector;        /**< the vector of SFTs to be returned */
-  SFTReadSegment* segments;    /**< array of segments already read of an SFT */
+  SFTReadSegment**segments;    /**< array of segments already read of an SFT */
   char empty = '\0';
   char* fname = &empty;        /**< name of currently open file */
   FILE* fp = NULL;
-  SFTtype thisSFT;
+  SFTtype* thisSFT;
 
   /* determine number of SFTs, i.e. number of different GPS timestamps.
      The catalog should be sorted by GPS time, so just count changes.
@@ -601,8 +647,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     lastbin = ceil (fMax / deltaF);
 
   /* allocate the SFT vector */
-  if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin+1-firstbin)))
+  if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin)))
     return(NULL);
+
+  /* allocate an additioan single SFT where SFTs are read in */
+  thisSFT = XLALCreateSFT ( lastbin + 1 - firstbin );
 
   /* make a copy of the catalog that gets sorted by locator.
      Eases maintaing a correctly (epoch-)sorted catalog, particulary in case of errors
@@ -638,14 +687,23 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	return(NULL);
 
     {
+      struct tagSFTLocator*locator = locatalog.data[catPos].locator;
+      UINT4 isft = locator->isft;
       UINT4 firstBinRead;
-      /* FIXME: thisSFT->data is uninitialized!! */
-      UINT4 lastBinRead = read_sft_bins_from_fp ( &thisSFT, &firstBinRead, firstbin, lastbin, fp );
-      /* just avoids a compiler warning about unused variable */
-      if(0) firstBinRead = lastBinRead;
-      /* copy bins to sftVector[locator.isft] */
-      /* update SFT vector matadata / header from the SFT just read */
-      /* record bins read in segments */
+      UINT4 lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
+
+      if(lastBinRead) {
+	/* record bins read in segments */
+	INT4 ret = insertSFTReadSegment( &(segments[isft]), firstBinRead, lastBinRead, locator );
+	if(ret) {
+	  /* copy bins to sftVector[locator.isft] */
+	  /* update SFT vector matadata / header from the SFT just read */
+	} else {
+	  return(NULL);
+	}
+      } else {
+	return(NULL);
+      }
     }
   }
 
@@ -659,7 +717,12 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* just avoids a compiler warning about unused function */
   if(0) read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
 
-  /* free() */
+  /* cleanup  */
+  for(UINT4 isft = 0; isft < nSFTs; isft++)
+    freeSFTReadSegment(segments[isft]);
+  XLALFree(segments);
+  XLALFree(locatalog.data);
+  XLALDestroySFT(thisSFT);
 
   return(sftVector);
 
