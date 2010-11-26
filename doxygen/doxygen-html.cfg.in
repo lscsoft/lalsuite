@@ -582,16 +582,7 @@ WARN_LOGFILE           = doxygen-html.log
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @abs_srcdir@/src \
-                         @abs_top_srcdir@/lal/packages \
-                         @abs_top_srcdir@/lalxml \
-                         @abs_top_srcdir@/lalburst \
-                         @abs_top_srcdir@/lalframe \
-                         @abs_top_srcdir@/lalinspiral \
-                         @abs_top_srcdir@/lalmetaio \
-                         @abs_top_srcdir@/lalpulsar \
-                         @abs_top_srcdir@/lalstochastic \
-                         @abs_top_srcdir@/lalapps/src
+INPUT                  = $(doxy_inputdirs)
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -670,16 +661,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = @abs_srcdir@/src \
-                         @abs_top_srcdir@/lal/packages \
-                         @abs_top_srcdir@/lalxml \
-                         @abs_top_srcdir@/lalburst \
-                         @abs_top_srcdir@/lalframe \
-                         @abs_top_srcdir@/lalinspiral \
-                         @abs_top_srcdir@/lalmetaio \
-                         @abs_top_srcdir@/lalpulsar \
-                         @abs_top_srcdir@/lalstochastic \
-                         @abs_top_srcdir@/lalapps/src
+IMAGE_PATH             = $(doxy_inputdirs)
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

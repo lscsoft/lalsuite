@@ -2,21 +2,39 @@ all: html
 
 .PHONY: html pdf
 
-export TEXINPUTS = .:$(abs_srcdir):
-export pool_size = 4000000
+DOXYINPUT = lal/packages \
+            lalframe \
+            lalmetaio \
+            lalxml \
+            lalburst \
+            lalinspiral \
+            lalpulsar \
+            lalstochastic \
+            lalapps/src
 
-html:
-	@echo "$(abs_builddir)/Makefile: Running doxygen to produce HTML ..."
+override doxy_inputdirs = $(abs_srcdir)/src \
+                          $(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))
+
+override TEXINPUTS = .:$(abs_srcdir):
+override pool_size = 4000000
+
+export doxy_inputdirs TEXINPUTS pool_size
+
+html: doxygen-html.cfg
+	@echo "***** building doxygen HTML in $(abs_builddir) *****"
+	@echo "DOXYINPUT=$(DOXYINPUT)"
 	doxygen $(abs_builddir)/doxygen-html.cfg
-	@echo "$(abs_builddir)/Makefile: ... done."
+	@echo "***** done building doxygen HTML *****"
 
-pdf:
-	@echo "$(abs_builddir)/Makefile: Running doxygen to produce PDF ..."
+pdf: doxygen-pdf.cfg
+	@echo "***** building doxygen PDF in $(abs_builddir) *****"
+	@echo "DOXYINPUT=$(DOXYINPUT)"
 	doxygen $(abs_builddir)/doxygen-pdf.cfg
-	@echo "$(abs_builddir)/Makefile: Compiling the PDF manual 'refman.pdf' ..."
 	cd $(abs_builddir)/latex && $(MAKE)
 	cd $(abs_builddir) && rm -f refman.pdf && $(LN_S) latex/refman.pdf .
-	@echo "$(abs_builddir)/Makefile: ... done."
+	@echo "***** done building doxygen PDF *****"
 
 clean-local:
-	cd $(abs_builddir) && rm -rf html/ latex/ refman.pdf
+	cd $(abs_builddir) && \
+	rm -fr html/ latex/ && \
+	rm -f  refman.pdf doxygen-html.log doxygen-pdf.log
