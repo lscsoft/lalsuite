@@ -716,8 +716,10 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
 	// read segment lies completely after current segment
 	if(curr->next) {
 	  // there is a next segment
-	  if(firstBinRead >= ((SFTReadSegment*)curr->next)->first) {
+	  if((firstBinRead >= ((SFTReadSegment*)curr->next)->first) ||
 	    // read segment lies after beginning of next segment
+	     (lastBinRead + 1 == ((SFTReadSegment*)curr->next)->first)) {
+	    // read segment fits at beginning of next segment
 	    curr = ((SFTReadSegment*)curr->next);
 	    // advance to next segment and try again
 	    continue;
