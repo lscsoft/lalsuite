@@ -795,6 +795,20 @@ freeSFTReadSegment(SFTReadSegment* curr) {
 } /* freeSFTReadSegment */
 
 
+/** Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
+ * SFT-'catalogue' ( returned by LALSFTdataFind() ).
+ *
+ * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
+ * Frequency-bins from the lowest (or up to the highest) found in the first SFT-file
+ * found in the catalogue.
+ *
+ * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>,
+ * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
+ * in the SFT-file.
+ *
+ * Note 3: This function has the capability to read sequences of (v2-)SFT segments and
+ * putting them together to single SFTs while reading.
+*/
 SFTVector*
 XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load */
 	      REAL8 fMin,		   /**< minumum requested frequency (-1 = read from lowest) */
@@ -816,7 +830,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* error handler: free memory and return with error */
 #define XLALLOADSFTSERROR(eno)	{		\
     if(segments) {				\
-      for(UINT4 i = 0; i < nSFTs; i++)	\
+      for(UINT4 i = 0; i < nSFTs; i++)		\
 	freeSFTReadSegment(segments[i]);	\
       XLALFree(segments);			\
     }						\
