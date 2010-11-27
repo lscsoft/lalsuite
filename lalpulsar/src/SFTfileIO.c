@@ -677,22 +677,25 @@ typedef struct {
   -1 if out of memory
   -2 in case of a program error (this should never happen)
 */
-static int
+static INT4
 insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRead, struct tagSFTLocator*locator)
 {
   if((*chain)) {
     // there already is a segment in the chain
     SFTReadSegment* curr = *chain;
     while(1) { // loop through segments of this chain, will be left with break
+
       if (lastBinRead + 1 == curr->first) {
 	// read segment fits at beginning of current segment: extend
 	curr->first = firstBinRead;
 	curr->firstfrom = locator;
 	break;
+
       } else if (firstBinRead == curr->last + 1) {
 	// read segment fits at the end of current segment: extend
 	curr->last = lastBinRead;
 	curr->lastfrom = locator;
+	// check wiht next segment
 	if (curr->next) {
 	  // there is a next segment
 	  if ( lastBinRead + 1 == ((SFTReadSegment*)curr->next)->first ) {
@@ -703,24 +706,30 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
 	    curr->next = old->next;
 	    XLALFree(old);
 	  } else if ( lastBinRead >= ((SFTReadSegment*)curr->next)->first ) {
-	    // data error: overlap
+	    // data error: read segment overlaps with next segment
 	    return(1);
 	  }
 	}
 	break;
+
       } else if (firstBinRead > curr->last + 1) {
 	// read segment lies completely after current segment
-	if(curr->next)
+	if(curr->next) {
 	  // there is a next segment
 	  if(firstBinRead >= ((SFTReadSegment*)curr->next)->first) {
 	    // read segment lies after beginning of next segment
 	    curr = ((SFTReadSegment*)curr->next);
 	    // advance to next segment and try again
 	    continue;
+	  } else if (lastBinRead >= ((SFTReadSegment*)curr->next)->first) {
+	    // data error: read segment overlaps with next segment
+	    return(1);
 	  }
+	}
 	// create new segment after current segment
 	SFTReadSegment* new = XLALMalloc(sizeof(SFTReadSegment));
 	if(!new)
+	  // out of memory
 	  return(-1);
 	new->first = firstBinRead;
 	new->last = lastBinRead;
@@ -729,14 +738,16 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
 	new->next = curr->next;
 	curr->next = (struct SFTReadSegment*)new;
 	break;
+
       } else if (lastBinRead + 1 < curr->first) {
 	// read segment lies completely before current segment
 	if (curr == *chain) {
-	  // create new segment at beginning of chain
+	  // at beginning of a chain create new segment
 	  (*chain) = XLALMalloc(sizeof(SFTReadSegment));
 	  if(!(*chain)) {
 	    // in case we couldn't alloc a new element, restore old chain
 	    (*chain) = curr;
+	    // out of memory
 	    return(-1);
 	  }
 	  (*chain)->first = firstBinRead;
@@ -746,15 +757,19 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
 	  (*chain)->next = (struct SFTReadSegment*)curr;
 	  break;
 	} else
-	  // program error
+	  // if that happens in a later segment,
+	  // there's something severely wrong (program error)
 	  return(-2);
+
       } else {
 	// data error (overlap?)
 	return(1);
       }
     } // while(1)
-  } else {
-    // no segment yet -> create new
+
+  } else { // if (*chain)
+
+    // no segment yet -> create one
     (*chain) = XLALMalloc(sizeof(SFTReadSegment));
     if(!(*chain))
       return(-1);
@@ -763,6 +778,7 @@ insertSFTReadSegment(SFTReadSegment**chain, UINT4 firstBinRead, UINT4 lastBinRea
     (*chain)->firstfrom = locator;
     (*chain)->lastfrom = locator;
     (*chain)->next = NULL;
+
   }
   return(0);
 } /* insertSFTReadSegment */
@@ -785,13 +801,13 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 {
   UINT4 catPos;                /**< current file in catalog */
   UINT4 firstbin, lastbin;     /**< the first and last bin we want to read */
-  UINT4 nSFTs = 0;             /**< number of SFTs, i.e. different GPS timestamps */
+  UINT4 nSFTs = 1;             /**< number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;
   SFTCatalog locatalog;        /**< local copy of the catalog to be sorted by 'locator' */
   SFTVector* sftVector;        /**< the vector of SFTs to be returned */
   SFTReadSegment**segments;    /**< array of segments already read of an SFT */
   char empty = '\0';
-  char* fname = &empty;        /**< name of currently open file */
+  char* fname = &empty;        /**< name of currently open file, initially "" */
   FILE* fp = NULL;
   SFTtype* thisSFT;
 
@@ -800,13 +816,15 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
      Record the 'index' of GPS time in the 'isft' field of the locator,
      so that we know later in which SFT to put this segment */
   {
-    LIGOTimeGPS epoch = {0,0};
-    for(catPos = 0; catPos < catalog->length; catPos++)
+    LIGOTimeGPS epoch = catalog->data[0].header.epoch;
+    catalog->data[0].locator->isft = nSFTs - 1;
+    for(catPos = 1; catPos < catalog->length; catPos++) {
       if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
 	epoch = catalog->data[catPos].header.epoch;
-	catalog->data[catPos].locator->isft = nSFTs;
 	nSFTs++;
       }
+      catalog->data[catPos].locator->isft = nSFTs - 1;
+    }
   }
 
   /* calculate first and last frequency bin to read */
@@ -820,22 +838,23 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   else
     lastbin = ceil (fMax / deltaF);
 
-  /* allocate the SFT vector */
+  /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin)))
     return(NULL);
 
-  /* allocate an additioan single SFT where SFTs are read in */
-  thisSFT = XLALCreateSFT ( lastbin + 1 - firstbin );
+  /* allocate an additional single SFT where SFTs are read in */
+  if(!(thisSFT = XLALCreateSFT (lastbin + 1 - firstbin)))
+    return(NULL);
 
   /* make a copy of the catalog that gets sorted by locator.
      Eases maintaing a correctly (epoch-)sorted catalog, particulary in case of errors
      note: only the pointers to the SFTdescriptors are copied & sorted, not the descriptors */
   locatalog.length = catalog->length;
   {
-    UINT4 size = catalog->length * sizeof( catalog->data[0] );
+    UINT4 size = catalog->length * sizeof(catalog->data[0]);
     if(!(locatalog.data = XLALMalloc(size)))
       return(NULL);
-    memcpy(locatalog.data,catalog->data,size);
+    memcpy(locatalog.data, catalog->data, size);
   }
 
   /* sort catalog by locator */
@@ -853,11 +872,15 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	fclose(fp);
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
+      if(!fp)
+	// could not open
+	return(NULL);
     }
 
     /* seek to the position of the SFT if necessary */
     if ( locatalog.data[catPos].locator->offset )
       if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 )
+	// could not seek
 	return(NULL);
 
     /* read SFT data */
@@ -872,6 +895,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	INT4 ret = insertSFTReadSegment( &(segments[isft]), firstBinRead, lastBinRead, locator );
 	/* copy data & metadata from the SFT just read */
 	if(ret) {
+	  // overlap (or program or memory) error
+	  return(NULL);
+	} else {
 	  sftVector->data[isft].epoch       = thisSFT->epoch;
 	  sftVector->data[isft].deltaF      = thisSFT->deltaF;
 	  sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
@@ -879,10 +905,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	  memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 		 thisSFT->data->data,
 		 (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
-	} else {
-	  return(NULL);
 	}
       } else {
+	// could not read
 	return(NULL);
       }
     }
@@ -892,23 +917,24 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if(fp)
     fclose(fp);
 
+
+  /* finally check segment list for gaps: there should be only one segment per SFT, containing the full bin range */
   {
     UINT4 isft;
     BOOLEAN error = 0;
 
-    /* check segments list: only one segment remaining per SFT, containing the correct bin range */
     for(isft = 0; isft < nSFTs; isft++) {
 
       if(segments[isft]) {
 	if (firstbin != segments[isft]->first) {
-	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at beginning of SFT#%u: expected bin: %u read bin: %u\n",
-			 isft, firstbin, segments[isft]->first);
+	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at beginning of SFT#%u: expected bin: %u first bin: %u read from file '%s'\n",
+			 isft, firstbin, segments[isft]->first, segments[isft]->firstfrom->fname);
 	  error=-1;
 	}
 
 	if (lastbin != segments[isft]->last) {
-	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at end of SFT#%u: expected bin: %u read bin: %u\n",
-			 isft, lastbin, segments[isft]->last);
+	  XLALPrintError("XLALLoadSFTs(): ERROR: data missing at end of SFT#%u: expected bin: %u last bin: %u read from file '%s'\n",
+			 isft, lastbin, segments[isft]->last, segments[isft]->lastfrom->fname);
 	  error=-1;
 	}
 
@@ -925,6 +951,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       }
     }
     if(error)
+      // gap error
       return(NULL);
   }
 
