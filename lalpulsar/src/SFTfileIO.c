@@ -693,7 +693,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   REAL8 deltaF;
   SFTCatalog locatalog;            /**< local copy of the catalog to be sorted by 'locator' */
   SFTVector* sftVector;            /**< the vector of SFTs to be returned */
-  SFTReadSegment*segments = NULL; /**< array of segments already read of an SFT */
+  SFTReadSegment*segments = NULL;  /**< array of segments already read of an SFT */
   char empty = '\0';
   char* fname = &empty;            /**< name of currently open file, initially "" */
   FILE* fp = NULL;
@@ -3274,7 +3274,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
  *
  */
 static int
-read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins )
+read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **comment, UINT4 *numBins )
 {
   SFTtype head = empty_SFTtype;
   UINT4 nsamples;
