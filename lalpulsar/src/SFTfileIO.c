@@ -548,7 +548,7 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
 
 
 
-/* 
+/*
    This function reads an SFT (segment) from an open file pointer into a buffer.
    firstBin2read specifies the first bin to read from the SFT, lastBin2read is the last bin.
    If the SFT contains fewer bins than specified, all bins from the SFT are read.
@@ -659,7 +659,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 } /* read_sft_bins_from_fp() */
 
 
-/** sergments read so far from one SFT */
+/** segments read so far from one SFT */
 typedef struct {
   UINT4 first;                     /**< first bin in this segment */
   UINT4 last;                      /**< last bin in this segment */
@@ -848,6 +848,17 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* just avoids a compiler warning about unused function */
   if(0) read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
+
+  /* check that all SFTs are complete */
+  for(UINT4 isft = 0; isft < nSFTs; isft++)
+    if(segments[isft].last != lastbin) {
+      XLALPrintError("data missing at end of SFT#%u (GPS %lf)"
+		     " expected bin %u, bin %u read from file '%s'\n",
+		     isft, GPS2REAL8(sftVector->data[isft].epoch),
+		     lastbin, segments[isft].last,
+		     segments[isft].lastfrom->fname);
+      XLALLOADSFTSERROR(XLAL_EIO);
+    }
 
   /* cleanup  */
   XLALFree(segments);
