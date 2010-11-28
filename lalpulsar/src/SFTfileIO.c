@@ -139,7 +139,6 @@ static long get_file_len ( FILE *fp );
 static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
-static void read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, FILE *fp );
 static void lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 static UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
@@ -846,9 +845,6 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if(fp)
     fclose(fp);
 
-  /* just avoids a compiler warning about unused function */
-  if(0) read_one_sft_from_fp (NULL,NULL,fMin,fMax,fp);
-
   /* check that all SFTs are complete */
   for(UINT4 isft = 0; isft < nSFTs; isft++)
     if(segments[isft].last != lastbin) {
@@ -1144,7 +1140,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
     * output SFTvectors are sorted alphabetically by detector-name
     *
  */
-void LALLoadMultiSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
+void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure */
 			MultiSFTVector **out,             /**< [out] vector of read-in SFTs -- one sft vector for each ifo found in catalog*/
 			const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFTs to load */
 			REAL8 fMin,		          /**< minumum requested frequency (-1 = read from lowest) */
@@ -2962,176 +2958,24 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
 } /* consistent_mSFT_header() */
 
 
-/** Read one SFT, leave filepointer at the end of the read SFT if successful,
+/** Read bins from an SFT, leave filepointer at the end of the read SFT if successful,
  * leave fp at initial position if failure
  *
- * If fMin == -1: read starting from first bin
- *    fMax == -1: read until last bin
- *
- *
  * This uses read_sft_header_from_fp() for reading the header, and then reads the data.
+ *
+ * firstBin2read is the first bin to read from the SFT the fp points to,
+ * lastBin2read is the last bin.
+ * An error is issued if firstBin2read is not contained in the sft,
+ * but NO ERROR is issued if lastBin2read is not contained.
+ *
+ * binread is set to the number of bins actually read (from firtsBin to either
+ * lastBin or the end of the SFT
  *
  * NOTE: we DO NOT check the crc64 checksum in here, a separate "check-SFT" function
  * should be used for that.
  *
  * NOTE2:  The returned SFT is always normalized correctly according to SFT-v2 spec
  * (see LIGO-T040164-01-Z, and LIGO-T010095-00), irrespective of the input-files.
- *
- */
-static void
-read_one_sft_from_fp (  LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax , FILE *fp )
-{
-  SFTtype *ret = NULL;
-  UINT4 version;
-  UINT8 crc64;
-  BOOLEAN swapEndian;
-  UINT4 firstBin2read, lastBin2read, numBins2read;
-  UINT4 firstSFTbin, lastSFTbin, numSFTbins;
-  INT4 offsetBins;
-  long offsetBytes;
-  volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
-
-  INITSTATUS (status, "read_one_sft_from_fp", SFTFILEIOC);
-  ATTATCHSTATUSPTR ( status );
-
-  ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
-  ASSERT ( *sft == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
-
-  TRY ( LALCreateSFTtype ( status->statusPtr, &ret, 0 ), status );
-
-  if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
-    {
-      XLALPrintError ("\nFailed to read SFT-header!\n\n");
-      LALDestroySFTtype ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER );
-    }
-
-  tmp = ret->f0 / ret->deltaF;
-  firstSFTbin = MYROUND ( tmp );
-  lastSFTbin = firstSFTbin + numSFTbins - 1;
-
-  /* figure out frequency-bounds to read in */
-  if ( fMin > 0 )
-    {
-      tmp = fMin / ret->deltaF;
-      firstBin2read = floor ( tmp );	/* round down! requested fMin is contained */
-    }
-  else
-    {
-      firstBin2read = firstSFTbin;
-    }
-
-  if ( fMax > 0 )
-    {
-      tmp = fMax / ret->deltaF;
-      lastBin2read = ceil ( tmp );	/* round up! requested fMax is contained */
-    }
-  else
-    {
-      lastBin2read = lastSFTbin;
-    }
-
-  if ( firstBin2read > lastBin2read )
-    {
-      if ( lalDebugLevel )
-	XLALPrintError ("\nEmpty frequency-interval requested [%d, %d] bins\n\n",
-		       firstBin2read, lastBin2read );
-      ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
-    }
-
-  /* check that requested interval is found in SFT */
-  if ( firstBin2read < firstSFTbin )
-    {
-      if ( lalDebugLevel )
-	XLALPrintError ( "\nRequested fMin=%f is not contained in SFT! (%d < %d)\n\n",
-			fMin, firstBin2read, firstSFTbin );
-      LALDestroySFTtype ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
-    }
-  if ( lastBin2read > lastSFTbin )
-    {
-      if ( lalDebugLevel )
-	XLALPrintError ( "\nRequested fMax=%f is not contained in SFT! (%d > %d)\n\n",
-			fMax, lastBin2read, lastSFTbin );
-      LALDestroySFTtype ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
-    }
-
-  offsetBins = firstBin2read - firstSFTbin;
-  offsetBytes = offsetBins * 2 * sizeof( REAL4 );
-  numBins2read = lastBin2read - firstBin2read + 1;
-
-  if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
-    {
-      if ( lalDebugLevel )
-	XLALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n",
-			firstBin2read, strerror(errno) );
-      LALDestroySFTtype ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
-    }
-
-  if ( (ret->data = XLALCreateCOMPLEX8Vector ( numBins2read )) == NULL ) {
-    LALDestroySFTtype ( status->statusPtr, &ret );
-    ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
-  }
-
-  if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
-    {
-      if (lalDebugLevel) XLALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
-      LALDestroySFTtype ( status->statusPtr, &ret );
-      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
-    }
-
-  /* update the start-frequency entry in the SFT-header to the new value */
-  ret->f0 = 1.0 * firstBin2read * ret->deltaF;
-
-  /* take care of normalization and endian-swapping */
-  if ( version == 1 || swapEndian )
-    {
-      UINT4 i;
-      REAL8 band = 1.0 * numSFTbins * ret->deltaF;/* need the TOTAL frequency-band in the SFT-file! */
-      REAL8 fsamp = 2.0 * band;
-      REAL8 dt = 1.0 / fsamp;
-
-      for ( i=0; i < numBins2read; i ++ )
-	{
-	  REAL4 *rep, *imp;
-
-	  rep = &(ret->data->data[i].re);
-	  imp = &(ret->data->data[i].im);
-
-	  if ( swapEndian )
-	    {
-	      endian_swap( (CHAR *) rep, sizeof ( *rep ), 1 );
-	      endian_swap( (CHAR *) imp, sizeof ( *imp ), 1 );
-	    }
-
-	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t'
-	   * in order to follow the correct SFT-normalization
-	   * (see LIGO-T040164-01-Z, and LIGO-T010095-00)
-	   */
-	  if ( version == 1 )
-	    {
-	      (*rep) *= dt;
-	      (*imp) *= dt;
-	    }
-	} /* for i < numBins2read */
-    } /* if SFT-v1 */
-
-  /* return resulting SFT */
-  (*sft) = ret;
-
-  DETATCHSTATUSPTR ( status );
-  RETURN (status);
-} /* read_one_sft_from_fp() */
-
-
-/* local copy of read_one_sft_from_fp() that deals with bins instead of frequencies.
-   firstBin2read is the first bin to read from the SFT the fp points to,
-   lastBin2read is the last bin. An error is issued if firstBin2read is not contained
-   in the sft, but NO ERROR is issued if lastBin2read is not contained.
-   binread is set to the number of bins actually read (from firtsBin to either
-   lastBin or the end of the SFT
 */
 static void
 lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp )
