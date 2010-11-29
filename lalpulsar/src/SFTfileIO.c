@@ -567,7 +567,29 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   long offsetBytes;
   volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
 
+  if (!firstBinRead)
+    {
+      XLALPrintError ( "read_sft_bins_from_fp(): got passed NULL *firstBinRead\n" );
+      return(0);
+    }
+
   *firstBinRead = 0;
+
+  if ((ret == NULL) ||
+      (ret->data == NULL) ||
+      (ret->data->data == NULL))
+    {
+      XLALPrintError ( "read_sft_bins_from_fp(): got passed NULL SFT*\n" );
+      *firstBinRead = 1;
+      return(0);
+    }
+
+  if (!fp)
+    {
+      XLALPrintError ( "read_sft_bins_from_fp(): got passed NULL FILE*\n" );
+      *firstBinRead = 1;
+      return(0);
+    }
 
   if ( firstBin2read > lastBin2read )
     {
@@ -598,6 +620,14 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   offsetBins = firstBin2read - firstSFTbin;
   offsetBytes = offsetBins * 2 * sizeof( REAL4 );
   numBins2read = lastBin2read - firstBin2read + 1;
+
+  if ( ret->data->length < numBins2read )
+    {
+      XLALPrintError ("read_sft_bins_from_fp(): passed SFT has not enough bins (%u/%u)\n",
+		      ret->data->length, numBins2read );
+      *firstBinRead = 1;
+      return(0);
+    }
 
   /* seek to the desired bins */
   if ( fseek ( fp, offsetBytes, SEEK_CUR ) != 0 )
