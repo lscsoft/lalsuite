@@ -7,7 +7,8 @@ AC_CONFIG_FILES([
   gnuscripts/Makefile \
   doxygen/Makefile \
   doxygen/doxygen-html.cfg \
-  doxygen/doxygen-pdf.cfg
+  doxygen/doxygen-pdf.cfg \
+  doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
@@ -77,6 +78,7 @@ if test "$lalxml" = "true"; then
   LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
   export LALXML_LIBS LALXML_CFLAGS
 fi
+
 
 AC_CONFIG_SUBDIRS([lal])
 

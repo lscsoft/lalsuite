@@ -1,3 +1,15 @@
+EXTRA_DIST = \
+	DoxygenLayout-html.xml \
+	DoxygenLayout-pdf.xml \
+	doxy-html-aliases.cfg \
+	doxy-pdf-aliases.cfg \
+	doxy_html_eqns.sty \
+	doxy_pdf_header.tex \
+	doxygen-html.cfg.in \
+	doxygen-pdf.cfg.in
+
+SUBDIRS = src
+
 all: html
 
 .PHONY: html pdf
