@@ -15,10 +15,23 @@ DOXYINPUT = lal/packages \
 override doxy_inputdirs = $(abs_srcdir)/src \
                           $(addprefix $(abs_lalsuite_srcdir)/,$(DOXYINPUT))
 
+override lalsuite_version = $(shell \
+   cd $(abs_lalsuite_srcdir) || exit 1; \
+   lsv=$(PACKAGE_VERSION); \
+   if test "x$(GIT)" != x && test -d .git; then \
+      lsv="$$lsv-"`$(GIT) log -1 --format="%h"`; \
+      if $(GIT) diff --quiet HEAD; then \
+         : ; \
+      else \
+         lsv="$$lsv-unclean"; \
+      fi; \
+   fi; \
+   echo $$lsv )
+
 override TEXINPUTS = .:$(abs_srcdir):
 override pool_size = 4000000
 
-export doxy_inputdirs TEXINPUTS pool_size
+export doxy_inputdirs lalsuite_version TEXINPUTS pool_size
 
 html: doxygen-html.cfg
 	@echo "***** building doxygen HTML in $(abs_builddir) *****"

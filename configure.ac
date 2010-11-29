@@ -15,6 +15,7 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 # for building doxygen
 AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
 AC_PROG_LN_S
+AC_CHECK_PROGS([GIT], [git], [])
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
