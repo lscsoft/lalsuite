@@ -68,30 +68,30 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
 /* Macros for printing errors & testing subroutines (from Creighton) */
 /*********************************************************************/
 
-#define ERROR( code, msg, statement )                                \
-do {                                                                 \
-  if ( lalDebugLevel & LALERROR )                                    \
-    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
-                   "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, SFTFILEIOTESTC, statement ? statement :  \
-                   "", (msg) );                                      \
+#define ERROR( code, msg, statement )					\
+  do {									\
+  if ( lalDebugLevel & LALERROR )					\
+    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"	\
+		    "        %s %s\n", (code), *argv, __FILE__,		\
+		    __LINE__, SFTFILEIOTESTC, statement ? statement :	\
+		    "", (msg) );					\
 } while (0)
 
-#define INFO( statement )                                            \
-do {                                                                 \
-  if ( lalDebugLevel & LALINFO )                                     \
-    XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
-                   "        %s\n", *argv, __FILE__, __LINE__,        \
-              SFTFILEIOTESTC, (statement) );                     \
-} while (0)
+#define INFO( statement )					      \
+  do {								      \
+    if ( lalDebugLevel & LALINFO )				      \
+      XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"   \
+		      "        %s\n", *argv, __FILE__, __LINE__,      \
+		      SFTFILEIOTESTC, (statement) );		      \
+  } while (0)
 
 #define SUB( func, statusptr )                                       \
 do {                                                                 \
   if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      \
+    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,		     \
            "Function call \"" #func "\" failed:" );                  \
-    return SFTFILEIOTESTC_ESUB;                                  \
-  }                                                                  \
+    return SFTFILEIOTESTC_ESUB;					     \
+  }								     \
 } while (0)
 
 
