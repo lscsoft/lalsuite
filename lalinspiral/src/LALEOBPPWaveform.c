@@ -246,9 +246,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	Heff	= XLALEffectiveHamiltonian( values, ak ); 
 	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
 	Omega	= dvalues -> data[1];
-	v	= pow( Omega, 1./3.);
+	v	= cbrt( Omega );
 	v2	= v * v;
-	vh	= pow( Hreal * Omega, 1./3.);
+	vh	= cbrt(Hreal * Omega);
 	vh3	= vh * vh * vh;
 	eulerlogxabs = LAL_GAMMA + log( 2*m ) + log( v );
 	
@@ -261,7 +261,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
   
         omegaofrP4PN( &vPhi, values->data[0], &pr3in );
 
-        vPhi  = pow( vPhi, - twoby3 );
+        vPhi  = cbrt( 1.0 / (vPhi*vPhi) );
         vPhi *= Omega;
 
         /* Calculate the NQC term. aNQC values will be given after calibration. */
@@ -794,8 +794,8 @@ LALprInitP4PN(
    onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3 + 36.*eta2*u4;
    AbyD = A * onebyD;
 
-   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   Heff = sqrt(A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2));
+   HReal = sqrt(1. + 2.*eta*(Heff - 1.)) / eta;
    etahH = eta*Heff*HReal;
 
    *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH;
@@ -836,7 +836,7 @@ omegaofrP4PN (
            - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
            + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u3))/(DA*DA);
 
-   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+   *x = sqrt(u3) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
 
 }
 
@@ -949,7 +949,7 @@ LALHCapDerivativesP4PN(
    dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / Heff;
    ds = dvalues->data[1] = omega = q * A * u2 / Heff;
 
-   v = pow(omega,oneby3);
+   v = cbrt(omega);
 
    memset( &pr3in, 0, sizeof( pr3In ) );
    pr3in.omega  = omega;
@@ -958,7 +958,7 @@ LALHCapDerivativesP4PN(
    pr3in.eta    = eta;
 
    omegaofrP4PN( &vPhi, values->data[0], &pr3in );
-   vPhi = pow( vPhi, - twoby3 );
+   vPhi = cbrt( 1.0 / (vPhi*vPhi) );
    vPhi *= omega;
 
    vPhi6  = vPhi*vPhi*vPhi;
@@ -1016,7 +1016,7 @@ LALHCapDerivativesP4PNFF(
 /*-------------------------------------------------------------------*/
  void LALvrP4PN(REAL8 *vr, void *params )
 {
-  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA;
+  REAL8 A, dA, d2A, NA, DA, DASq, dDA, dNA, d2DA;
   REAL8 u, u2, u3, u4, v, x1;
   REAL8 eta, eta2, a4, a5, FDIS;
 
@@ -1038,6 +1038,8 @@ LALHCapDerivativesP4PNFF(
   DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
        - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
        + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
+
+  DASq = DA * DA;
   A = NA/DA;
   dNA = (32. - 24.*eta - 4.*a4 - a5*eta);
   dDA = - (2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
@@ -1047,9 +1049,9 @@ LALHCapDerivativesP4PNFF(
        - 6.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u
        + 12.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u2;
 
-  dA = (dNA * DA - NA * dDA)/ (DA*DA);
-  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
-  v = pow(pr3in->omega,oneby3);
+  dA = (dNA * DA - NA * dDA)/ DASq;
+  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DASq * DA);
+  v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
   x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) )
                 / (2.* u * dA * dA + A*dA - u * A * d2A);
@@ -1639,7 +1641,7 @@ LALEOBPPWaveformEngine (
    LALInspiralVelocity(status->statusPtr, &v, &in1);
    CHECKSTATUSPTR(status);
 
-   omega = pow(v,3.);
+   omega = v*v*v;
    f = omega/(LAL_PI*m);
 
    /* Then the initial phase */
@@ -1915,7 +1917,7 @@ LALEOBPPWaveformEngine (
         }
       }
 
-      v = pow(omega, oneby3);
+      v = cbrt(omega);
       v2 = v*v;
 
       if (writeToWaveform)
