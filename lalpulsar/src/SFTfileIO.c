@@ -704,6 +704,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 typedef struct {
   UINT4 first;                     /**< first bin in this segment */
   UINT4 last;                      /**< last bin in this segment */
+  LIGOTimeGPS epoch;               /**< timestamp of this SFT */
   struct tagSFTLocator *lastfrom;  /**< last bin read from this locator */
 } SFTReadSegment;
 
@@ -875,6 +876,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	}
 	segments[isft].last               = lastBinRead;
 	segments[isft].lastfrom           = locator;
+	segments[isft].epoch              = thisSFT->epoch;
 	sftVector->data[isft].epoch       = thisSFT->epoch;
 	sftVector->data[isft].deltaF      = thisSFT->deltaF;
 	sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
@@ -885,6 +887,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       } else if(firstBinRead == 0) {
 	XLALPrintWarning("SFT#%u (GPS %lf) locator(%s:%ld): Bins %u,%u not contained in SFT\n",
 			 isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin);
+	segments[isft].epoch = thisSFT->epoch;
       } else {
 	XLALPrintError("Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
@@ -901,11 +904,15 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* check that all SFTs are complete */
   for(UINT4 isft = 0; isft < nSFTs; isft++)
     if(segments[isft].last != lastbin) {
-      XLALPrintError("data missing at end of SFT#%u (GPS %lf)"
-		     " expected bin %u, bin %u read from file '%s'\n",
-		     isft, GPS2REAL8(sftVector->data[isft].epoch),
-		     lastbin, segments[isft].last,
-		     segments[isft].lastfrom->fname);
+      if (segments[isft].last)
+	XLALPrintError("data missing at end of SFT#%u (GPS %lf)"
+		       " expected bin %u, bin %u read from file '%s'\n",
+		       isft, GPS2REAL8(segments[isft].epoch),
+		       lastbin, segments[isft].last,
+		       segments[isft].lastfrom->fname);
+      else
+	XLALPrintError("no data could be read for SFT#%u (GPS %lf)\n",
+		       isft, GPS2REAL8(segments[isft].epoch));
       XLALLOADSFTSERROR(XLAL_EIO);
     }
 
