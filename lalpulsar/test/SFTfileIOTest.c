@@ -132,8 +132,6 @@ LALStatus empty_status;
 SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
-INT4 lalDebugLevel = 3;
-
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[])
 {
@@ -150,6 +148,8 @@ int main(int argc, char *argv[])
   /* band to read from infile.* SFTs */
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
+
+  lalDebugLevel = 3;
 
   if ( argc == 1)	/* avoid warning */
     argc = 1;
