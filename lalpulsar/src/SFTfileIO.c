@@ -731,14 +731,14 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   UINT4 catPos;                    /**< current file in catalog */
   UINT4 firstbin, lastbin;         /**< the first and last bin we want to read */
   UINT4 nSFTs = 1;                 /**< number of SFTs, i.e. different GPS timestamps */
-  REAL8 deltaF;
+  REAL8 deltaF;                    /**< frequency spacing of SFT */
   SFTCatalog locatalog;            /**< local copy of the catalog to be sorted by 'locator' */
   SFTVector* sftVector = NULL;     /**< the vector of SFTs to be returned */
   SFTReadSegment*segments = NULL;  /**< array of segments already read of an SFT */
-  char empty = '\0';
+  char empty = '\0';               /**< empty string */
   char* fname = &empty;            /**< name of currently open file, initially "" */
-  FILE* fp = NULL;
-  SFTtype* thisSFT = NULL;
+  FILE* fp = NULL;                 /**< open file */
+  SFTtype* thisSFT = NULL;         /**< SFT to read from file */
 
   /* error handler: free memory and return with error */
 #define XLALLOADSFTSERROR(eno)	{		\
@@ -828,8 +828,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
     /* open and close a file only when necessary, i.e. reading a different file */
     if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
-      if(fp)
+      if(fp) {
 	fclose(fp);
+	fp = NULL;
+      }
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
       if(!fp) {
@@ -891,8 +893,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   }
 
   /* close the last file */
-  if(fp)
+  if(fp) {
     fclose(fp);
+    fp = NULL;
+  }
 
   /* check that all SFTs are complete */
   for(UINT4 isft = 0; isft < nSFTs; isft++)
