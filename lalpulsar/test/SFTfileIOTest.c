@@ -224,21 +224,6 @@ int main(int argc, char *argv[])
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
 
-/*   SHOULD_WORK ( _LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status ); */
-/*   { */
-/*     UINT4 alpha; */
-/*     CHAR name[100], comment[200]; */
-
-/*     for ( alpha=0; alpha < sft_vect->length; alpha ++ ) */
-/*       { */
-/* 	REAL8 Tsft = 1.0 / sft_vect->data[alpha].deltaF; */
-/* 	sprintf ( name, "SFT-test%d.new", alpha + 1 ); */
-/* 	sprintf ( comment, "This is the SFT '%s'!", name ); */
-/* 	sft_vect->data[alpha].epoch.gpsSeconds += alpha * Tsft ; */
-/* 	SHOULD_WORK ( LALWriteSFT2file( &status, &(sft_vect->data[alpha]), name, comment), &status ); */
-/*       } */
-/*   } */
-
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
