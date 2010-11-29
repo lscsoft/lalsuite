@@ -570,7 +570,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   if (!firstBinRead)
     {
       XLALPrintError ( "read_sft_bins_from_fp(): got passed NULL *firstBinRead\n" );
-      return(0);
+      return((UINT4)-1);
     }
 
   *firstBinRead = 0;
@@ -614,11 +614,19 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   firstSFTbin = MYROUND ( tmp );
   lastSFTbin = firstSFTbin + numSFTbins - 1;
 
-  /* check that requested interval is found in SFT */
+  /* limit the interval to be read to what's actually in the SFT */
   if ( firstBin2read < firstSFTbin )
     firstBin2read = firstSFTbin;
   if ( lastBin2read > lastSFTbin )
     lastBin2read = lastSFTbin;
+
+  /* check that requested interval is found in SFT */
+  /* return 0 (no bins read) if this isn't the case */
+  if ( firstBin2read >= lastBin2read ) {
+    *firstBinRead = 0;
+    return(0);
+  }
+
   *firstBinRead = firstBin2read;
 
   offsetBins = firstBin2read - firstSFTbin;
@@ -872,6 +880,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 	       thisSFT->data->data,
 	       (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
+      } else if(firstBinRead == 0) {
+	XLALPrintWarning("SFT#%u (GPS %lf) locator(%s:%ld): Bins %u,%u not contained in SFT\n",
+			 isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin);
       } else {
 	XLALPrintError("Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
