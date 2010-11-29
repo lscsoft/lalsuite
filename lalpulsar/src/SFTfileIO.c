@@ -599,12 +599,16 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
       return(0);
     }
 
-  if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
-    {
-      XLALPrintError ("read_sft_bins_from_fp(): Failed to read SFT-header!\n");
-      *firstBinRead = 2;
-      return(0);
-    }
+  {
+    COMPLEX8Sequence*data = ret->data;
+    if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
+      {
+	XLALPrintError ("read_sft_bins_from_fp(): Failed to read SFT-header!\n");
+	*firstBinRead = 2;
+	return(0);
+      }
+    ret->data = data;
+  }
 
   tmp = ret->f0 / ret->deltaF;
   firstSFTbin = MYROUND ( tmp );
@@ -3229,7 +3233,6 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
     }
 
   /* ok */
-  head.data = header->data;
   (*header) = head;
   (*version) = ver;
 
