@@ -691,7 +691,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   UINT4 nSFTs = 1;                 /**< number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;
   SFTCatalog locatalog;            /**< local copy of the catalog to be sorted by 'locator' */
-  SFTVector* sftVector;            /**< the vector of SFTs to be returned */
+  SFTVector* sftVector = NULL;     /**< the vector of SFTs to be returned */
   SFTReadSegment*segments = NULL;  /**< array of segments already read of an SFT */
   char empty = '\0';
   char* fname = &empty;            /**< name of currently open file, initially "" */
@@ -715,6 +715,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* initialize locatalog.data so it doesn't get free()d on early error */
   locatalog.data = NULL;
+
+  /* check function parameters */
+  if(!catalog)
+    XLALLOADSFTSERROR(XLAL_EINVAL);
 
   /* determine number of SFTs, i.e. number of different GPS timestamps.
      The catalog should be sorted by GPS time, so just count changes.
