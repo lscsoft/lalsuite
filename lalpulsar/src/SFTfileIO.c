@@ -3199,6 +3199,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
     }
 
   /* ok */
+  head.data = header->data;
   (*header) = head;
   (*version) = ver;
 
