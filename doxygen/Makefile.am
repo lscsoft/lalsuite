@@ -13,7 +13,7 @@ DOXYINPUT = lal/packages \
             lalapps/src
 
 override doxy_inputdirs = $(abs_srcdir)/src \
-                          $(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))
+                          $(addprefix $(abs_lalsuite_srcdir)/,$(DOXYINPUT))
 
 override TEXINPUTS = .:$(abs_srcdir):
 override pool_size = 4000000
