@@ -127,8 +127,6 @@ do { 											\
 } while(0)
 
 
-
-
 /*---------- empty initializers ---------- */
 LALStatus empty_status;
 SFTConstraints empty_constraints;
@@ -144,6 +142,7 @@ int main(int argc, char *argv[])
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
+  SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
@@ -223,6 +222,31 @@ int main(int argc, char *argv[])
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
+  if (!sft_vect2)
+    {
+      XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+
+  /* compare the SFT vectors just read */
+  {
+    UINT4 sft,bin;
+    if (sft_vect->length != sft_vect2->length) {
+      XLALPrintError ( "\nComparing SFT vector read by LALLoadSFTs() and XLALLoadSFTs(): vector lengths differ!\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+    for(sft=0; sft < sft_vect->length; sft++) {
+      SFTtype sft1 = sft_vect->data[sft];
+      SFTtype sft2 = sft_vect2->data[sft];
+      if (sft1.data->length != sft2.data->length) {
+	XLALPrintError ( "\nComparing SFT vector read by LALLoadSFTs() and XLALLoadSFTs(): lengths of SFT#%u differ!\n\n", sft);
+	return SFTFILEIOTESTC_ESUB;
+      }
+      for(bin=0; bin < sft1.data->length; bin++) {
+      }
+    }
+  }
 
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
@@ -319,7 +343,7 @@ int main(int argc, char *argv[])
     fclose(fpConcat);
     fprintf(stderr, "*** Comparing was successful!!! ***\n");
   }
-  
+
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;	/* shift start-time so they don't look like segmented SFTs! */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
