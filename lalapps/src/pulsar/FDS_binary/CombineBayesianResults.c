@@ -784,14 +784,14 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	XLAL_ERROR(fn,XLAL_ENOMEM);
       }
       (*combinedresult)->length[k] = newlen;
-      
+
       /* initialise results */
       for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
 	(*combinedresult)->logprior[k]->data[j] = -1e200;
 	(*combinedresult)->logposterior[k]->data[j] = -1e200;
 	(*combinedresult)->logposterior_fixed[k]->data[j] = -1e200;
       }
-      
+
       /* fill in some header info */
       snprintf((*combinedresult)->name[k],STRINGLENGTH,"%s",resultsfiles->file[0].name[k]);
       snprintf((*combinedresult)->prior[k],STRINGLENGTH,"%s",resultsfiles->file[0].prior[k]);
@@ -815,6 +815,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
 	gsl_spline *spline_fixed = gsl_spline_alloc(gsl_interp_cspline,N);
 	gsl_spline *spline_prior = gsl_spline_alloc(gsl_interp_cspline,N);
+
 	REAL8 *x = NULL;
 	REAL8 *y = NULL;
 	REAL8 *y_fixed = NULL;
@@ -846,12 +847,13 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	  y_prior[j] = resultsfiles->file[i].logprior[k]->data[j];
 	  /* printf("x = %f y = %f y_fixed = %f\n",x[j],y[j],y_fixed[j]); */
 	}
-	
-	if (N>1) {
+
+	if (N>2) {
+  
 	  gsl_spline_init(spline,x,y,N);
 	  gsl_spline_init(spline_fixed,x,y_fixed,N);
 	  gsl_spline_init(spline_prior,x,y_prior,N);
-
+	 
 	  /* interpolate and add to result */
 	  for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
 	    REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
@@ -866,21 +868,44 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	    (*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
 	    (*combinedresult)->logprior[k]->data[j] = XLALLogSumExp(temp5,temp6);
 	  }
+	 
+	}
+	/* linear interp for 2 points */
+	else if (N==2) {
+	  
+	  for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
+	    
+	    REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	    REAL8 g1 = (resultsfiles->file[i].logposterior[k]->data[1] - resultsfiles->file[i].logposterior[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp1 = (*combinedresult)->logposterior[k]->data[j];
+	    REAL8 temp2 = resultsfiles->file[i].logposterior[k]->data[0] + z*g1 + log(deltaband[i]) - log(totalband);
+	    REAL8 g2 = (resultsfiles->file[i].logposterior_fixed[k]->data[1] - resultsfiles->file[i].logposterior_fixed[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[j];
+	    REAL8 temp4 = resultsfiles->file[i].logposterior_fixed[k]->data[0] + z*g2  + log(deltaband[i]) - log(totalband);
+	    REAL8 g3 = (resultsfiles->file[i].logprior[k]->data[1] - resultsfiles->file[i].logprior[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp5 = (*combinedresult)->logprior[k]->data[j];
+	    REAL8 temp6 = resultsfiles->file[i].logprior[k]->data[0] + z*g3 + log(deltaband[i]) - log(totalband);
 
+	    (*combinedresult)->logposterior[k]->data[j] = XLALLogSumExp(temp1,temp2);
+	    (*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
+	    (*combinedresult)->logprior[k]->data[j] = XLALLogSumExp(temp5,temp6);
+	  }
 	}
 	else {
+   
 	  REAL8 temp1 = (*combinedresult)->logposterior[k]->data[0];
 	  REAL8 temp2 = resultsfiles->file[i].logposterior[k]->data[0] + log(deltaband[i]) - log(totalband);
 	  REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[0];
 	  REAL8 temp4 = resultsfiles->file[i].logposterior_fixed[k]->data[0] + log(deltaband[i]) - log(totalband);
 	  REAL8 temp5 = (*combinedresult)->logprior[k]->data[0];
 	  REAL8 temp6 = resultsfiles->file[i].logprior[k]->data[0] + log(deltaband[i]) - log(totalband);
-
+	
 	  (*combinedresult)->logposterior[k]->data[0] = XLALLogSumExp(temp1,temp2);
 	  (*combinedresult)->logposterior_fixed[k]->data[0] = XLALLogSumExp(temp3,temp4);
 	  (*combinedresult)->logprior[k]->data[0] = XLALLogSumExp(temp5,temp6);
+	 
 	}
-	
+
 	/* free memory */
 	XLALFree(x);
 	XLALFree(y);
