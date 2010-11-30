@@ -214,6 +214,7 @@ tagLALIFOData
   LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
+  REAL8TimeSeries           *timeDomainNoiseWeights; /* Roughly, InvFFT(Noise PSD). */
   REAL8Window               *window;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8                     fLow, fHigh;	//integration limits;

@@ -260,6 +260,15 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			}
 			
 		}
+                /* Now that the PSD is set up, make the TDW. */
+                IFOdata[i].timeDomainNoiseWeights = 
+                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domian weights", 
+                                                               &(IFOdata[i].oneSidedNoisePowerSpectrum->epoch),
+                                                               0.0,
+                                                               1.0/SampleRate,
+                                                               &lalDimensionlessUnit,
+                                                               seglen);
+                PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan);
 	}
 	
 
