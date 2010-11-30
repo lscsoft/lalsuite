@@ -859,7 +859,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       UINT4 lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
 
       if(lastBinRead) {
+	/* data was actually read */
+
 	if(segments[isft].last == 0) {
+
+	  /* no data was read for this SFT yet: must be first segment */
 	  if(firstBinRead != firstbin) {
 	    XLALPrintError("ERROR: data gap or overlap at first bin of SFT#%u (GPS %lf)"
 			   " expected bin %u, bin %u read from file '%s'\n",
@@ -869,6 +873,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	  }
 	  segments[isft].first = firstBinRead;
 	  segments[isft].epoch = thisSFT->epoch;
+
+	/* if not first segment, segment must fit at the end of previous data */
 	} else if(firstBinRead != segments[isft].last + 1) {
 	  XLALPrintError("ERROR: data gap or overlap in SFT#%u (GPS %lf)"
 			 " between bin %u read from file '%s' and bin %u read from file '%s'\n",
@@ -877,6 +883,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 			 firstBinRead, fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
 	}
+
+	/* consistency checks */
 	if(deltaF != thisSFT->deltaF) {
 	  XLALPrintError("ERROR: deltaF mismatch (%f/%f) in SFT read from file '%s'\n",
 			 thisSFT->deltaF, deltaF, fname);
@@ -887,13 +895,19 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 			 GPS2REAL8(segments[isft].epoch), GPS2REAL8(thisSFT->epoch), fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
 	}
+
+	/* data is ok, add to SFT */
 	segments[isft].last               = lastBinRead;
 	segments[isft].lastfrom           = locator;
 	sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
 	memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 	       thisSFT->data->data,
 	       (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
+
       } else if(!firstBinRead) {
+	/* no needed data had been in this segment */
+
+	/* set epoch if not yet set, if already set, check it */
 	if(GPSZERO(segments[isft].epoch))
 	  segments[isft].epoch = thisSFT->epoch;
 	else if (!GPSEQUAL(segments[isft].epoch, thisSFT->epoch)) {
@@ -901,7 +915,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 			 GPS2REAL8(segments[isft].epoch), GPS2REAL8(thisSFT->epoch), fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
 	}
+
       } else {
+	/* failed to read data */
+
 	XLALPrintError("ERROR: Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
       }
