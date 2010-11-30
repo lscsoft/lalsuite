@@ -106,7 +106,7 @@ void order(qfvars *vars)
    
    INT4 ascend = 0;     //To sort descending, set ascend to zero
    if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
-      XLALPrintError("%s: XLALHeapIndex() failed.\n", fn);
+      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -313,7 +313,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    if (vars->ndtsrt) {
       order(vars);
       if (vars->ndtsrt) {
-         XLALPrintError("%s: order() failed\n.", fn);
+         fprintf(stderr,"%s: order() failed\n.", fn);
          vars->fail = 1;
          return 1.0;
       }
@@ -441,7 +441,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       if (vars->c!=0.0  && almx>0.07*wnstd) {
          REAL8 coeffval = coeff(vars, vars->c);
          if (coeffval == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          tausq = 0.25*acc1/coeffval;
@@ -541,12 +541,12 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          //calculate convergence factor
          REAL8 coeffvalplusx = coeff(vars, vars->c+x);
          if (coeffvalplusx == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          REAL8 coeffvalminusx = coeff(vars, vars->c-x);
          if (coeffvalminusx == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          tausq = (1.0/3.0)*acc1/(1.1*(coeffvalminusx + coeffvalplusx));

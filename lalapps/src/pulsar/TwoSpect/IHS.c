@@ -36,7 +36,7 @@ ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 columns)
    
    ihsMaximaStruct *ihsmaxima = XLALMalloc(sizeof(*ihsmaxima));
    if (ihsmaxima==NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ihsmaxima));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*ihsmaxima));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -49,10 +49,10 @@ ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 columns)
    ihsmaxima->columns = columns;
    
    if (ihsmaxima->maxima==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, fbins*columns-(INT4)numToRemove);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, fbins*columns-(INT4)numToRemove);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if (ihsmaxima->locations==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, fbins);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, fbins);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    }
       
@@ -89,13 +89,13 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
    REAL4Vector *ihss = XLALCreateREAL4Vector((UINT4)numfbins);
    ihsVals *ihsvals = new_ihsVals();
    if (column==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfprbins);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfprbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (ihss==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfbins);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (ihsvals==NULL) {
-      XLALPrintError("%s: new_ihsVals() failed.\n", fn);
+      fprintf(stderr,"%s: new_ihsVals() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -147,7 +147,7 @@ ihsVals * new_ihsVals(void)
    
    ihsVals *ihsvals = XLALMalloc(sizeof(*ihsvals));
    if (ihsvals==NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ihsvals));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*ihsvals));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
 
@@ -205,7 +205,7 @@ ihsfarStruct * new_ihsfarStruct(INT4 columns)
    
    ihsfarStruct *ihsfarstruct = XLALMalloc(sizeof(*ihsfarstruct));
    if (ihsfarstruct == NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ihsfarstruct));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*ihsfarstruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -213,13 +213,13 @@ ihsfarStruct * new_ihsfarStruct(INT4 columns)
    ihsfarstruct->ihsdistMean = XLALCreateREAL4Vector((UINT4)columns);
    ihsfarstruct->ihsdistSigma = XLALCreateREAL4Vector((UINT4)columns);
    if (ihsfarstruct->ihsfar==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if (ihsfarstruct->ihsdistMean==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if( ihsfarstruct->ihsdistSigma==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, columns);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    }
    
@@ -257,14 +257,14 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
    
    REAL4Vector *ihss = XLALCreateREAL4Vector((UINT4)trials);
    if (ihss==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
    //Initialize random number generator
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
-      XLALPrintError("%s: gsl_rng_alloc() failed.\n", fn);
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    //srand(time(NULL));
@@ -274,14 +274,14 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
    
    ihsVals *ihsvals = new_ihsVals();
    if (ihsvals==NULL) {
-      XLALPrintError("%s: new_ihsVals() failed.\n", fn);
+      fprintf(stderr,"%s: new_ihsVals() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
    //Determine IHS values for the number of trials
    noise = XLALCreateREAL4Vector((UINT4)length);
    if (noise==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, length);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<trials; ii++) {
@@ -303,7 +303,7 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
    //Calculate the IHS sum values for the IHS trials
    ihsMaximaStruct *ihsmaxima = new_ihsMaxima(trials, columns);
    if (ihsmaxima==NULL) {
-      XLALPrintError("%s: new_ihsMaxima(%d, %d) failed.\n", fn, trials, columns);
+      fprintf(stderr,"%s: new_ihsMaxima(%d, %d) failed.\n", fn, trials, columns);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -320,7 +320,7 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
       //Temporary vector to hold the trial values of IHS column sums
       tempihsvals = XLALCreateREAL4Vector((UINT4)(trials-(ii-1)));
       if (tempihsvals==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials-(ii-1));
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials-(ii-1));
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
@@ -333,11 +333,11 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
       //Launch insertion sort method to find the threshold value
       topihsvals = XLALCreateREAL4Vector((UINT4)roundf((trials-ii)*threshold)+1);
       if (topihsvals==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf((trials-ii)*threshold)+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf((trials-ii)*threshold)+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       if( (gsl_sort_float_largest((float*)topihsvals->data, topihsvals->length, (float*)tempihsvals->data, 1, tempihsvals->length)) != 0) {
-         XLALPrintError("%s: gsl_sort_float_largest() failed.\n", fn);
+         fprintf(stderr,"%s: gsl_sort_float_largest() failed.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
@@ -405,7 +405,7 @@ REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
    //Create normalized SNR of IHS values
    REAL4Vector *snrs = XLALCreateREAL4Vector(ihss->length);
    if (snrs==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihss->length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihss->length);
       XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii];
@@ -445,7 +445,7 @@ REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
    //Create normalized SNR of IHS values
    REAL4Vector *snrs = XLALCreateREAL4Vector(ihss->length);
    if (snrs==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihss->length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihss->length);
       XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii];
@@ -507,22 +507,22 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       ihsexpect = XLALCreateREAL4Vector((UINT4)(ii+1));
       ihsstddev = XLALCreateREAL4Vector(ihsexpect->length);
       if (ihss==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } else if (locs==NULL) {
-         XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, ii+1);
+         fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, ii+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } else if (avgsinrange==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } else if (rmssinrange==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } else if (ihsexpect==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ii+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } else if (ihsstddev==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihsexpect->length);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihsexpect->length);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       
@@ -540,7 +540,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          
          REAL4 meanNoise = calcMean(avgsinrange);
          if (XLAL_IS_REAL4_FAIL_NAN(meanNoise)) {
-            XLALPrintError("%s: calcMean() failed.\n", fn);
+            fprintf(stderr,"%s: calcMean() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
          
@@ -558,14 +558,14 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             //Compute the IHS FOM
             REAL4 fom = ihsFOM(ihss, locs, ihsstddev);
             if (XLAL_IS_REAL4_FAIL_NAN(fom)) {
-               XLALPrintError("%s: ihsFOM() failed.\n", fn);
+               fprintf(stderr,"%s: ihsFOM() failed.\n", fn);
                XLAL_ERROR_VOID(fn, XLAL_EFUNC);
             }
             
             //Compute the best location
             REAL4 loc = ihsLoc(ihss, locs, ihsstddev);
             if (XLAL_IS_REAL4_FAIL_NAN(loc)) {
-               XLALPrintError("%s: ihsLoc() failed.\n", fn);
+               fprintf(stderr,"%s: ihsLoc() failed.\n", fn);
                XLAL_ERROR_VOID(fn, XLAL_EFUNC);
             }
          
