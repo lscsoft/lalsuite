@@ -297,6 +297,7 @@ void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 SFTCatalog* XLALDestroySFTCatalog ( SFTCatalog **catalog );
 LIGOTimeGPSVector *XLALgetSFTtimestamps ( const SFTVector *sfts );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
