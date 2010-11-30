@@ -34,6 +34,7 @@ check_PROGRAMS = \
 ##	SFTCleanTest \
 ##	NormalizeSFTRngMedTest \
 TESTS = $(check_PROGRAMS)
+EXTRA_PROGRAMS = XLALLoadSFTsTest
 else
 check_PROGRAMS =
 TESTS =
