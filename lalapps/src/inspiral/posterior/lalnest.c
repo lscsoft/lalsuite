@@ -142,7 +142,7 @@ extern const LALUnit strainPerCount;
 INT4 ampOrder=0;
 INT4 phaseOrder=4;
 char *pinned_params=NULL;
-NT4 fLowFlag=0;
+UINT4 fLowFlag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 int checkParamInList(const char *list, const char *param);
@@ -228,7 +228,7 @@ void initialise(int argc, char *argv[]){
 		{"help",no_argument,0,'h'},
 		{"pinparams",required_argument,0,21},
 		{"datadump",required_argument,0,22},
-		{,"flow",required_argument,0,23},
+		{"flow",required_argument,0,23},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
