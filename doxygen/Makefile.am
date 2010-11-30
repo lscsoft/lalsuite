@@ -46,7 +46,7 @@ override pool_size = 4000000
 export doxy_inputdirs lalsuite_version TEXINPUTS pool_size
 
 html: doxygen-html.cfg
-	@echo "***** building doxygen HTML in $(abs_builddir) *****"
+	@echo "===== building doxygen HTML in $(abs_builddir) ======"
 	@echo "DOXYINPUT=$(DOXYINPUT)"
 	rm -f doxygen-html*.log
 	cd $(abs_builddir) && ( \
@@ -57,10 +57,10 @@ html: doxygen-html.cfg
 	      exit 0; \
 	   fi; \
 	)
-	@echo "***** done building doxygen HTML *****"
+	@echo "===== OK: done building doxygen HTML ====="
 
 pdf: doxygen-pdf.cfg
-	@echo "***** building doxygen PDF in $(abs_builddir) *****"
+	@echo "===== building doxygen PDF in $(abs_builddir) ====="
 	@echo "DOXYINPUT=$(DOXYINPUT)"
 	rm -f refman.pdf doxygen-pdf*.log
 	cd $(abs_builddir) && ( \
@@ -72,7 +72,7 @@ pdf: doxygen-pdf.cfg
 	      exit 1; \
 	   fi; \
 	)
-	@echo "***** done building doxygen PDF *****"
+	@echo "===== OK: done building doxygen PDF ====="
 
 clean-local:
 	cd $(abs_builddir) && \
