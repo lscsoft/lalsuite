@@ -32,6 +32,7 @@
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
+#include <lal/LogPrintf.h>
 #include <stdlib.h>
 
 NRCSID (SFTFILEIOTESTC, "$Id$");
@@ -161,15 +162,11 @@ int main(int argc, char *argv[])
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
   SFTVector *sft_vect2 = NULL;
-  /*
-    CHAR detector[2] = "H1";
-    INT4 crc_check;
-  */
-  /* band to read from infile.* SFTs */
-  REAL8 fMin = -1;
-  REAL8 fMax = -1;
+  REAL8 fMin = -1.0;
+  REAL8 fMax = -1.0;
 
   lalDebugLevel = 3;
+  LogSetLevel(LOG_DETAIL);
 
   if(argc != 4) {
     XLALPrintError ( "Usage: %s <files> <fmin> <fmax>\n", argv[0]);
@@ -178,27 +175,25 @@ int main(int argc, char *argv[])
     fMin = atof(argv[2]);
     fMax = atof(argv[3]);
   }
-
+  LogPrintf(LOG_DETAIL, "Calling LALSFTdataFind ...\n");
   SUB ( LALSFTdataFind ( &status, &catalog, argv[1], &constraints ), &status);
+  LogPrintf(LOG_DETAIL, "Calling LALLoadSFTs ...\n");
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
-
+  LogPrintf(LOG_DETAIL, "Calling XLALLoadSFTs ...\n");
   sft_vect2 = XLALLoadSFTs ( catalog, fMin, fMax );
-  if (!sft_vect2)
-    {
-      XLALPrintError ( "ERROR: XLALLoadSFTs() call failed!\n");
-      return SFTFILEIOTESTC_ESUB;
-    }
-
-  /* compare the SFT vectors just read */
+  if (!sft_vect2) {
+    XLALPrintError ( "ERROR: XLALLoadSFTs() call failed!\n");
+    return SFTFILEIOTESTC_ESUB;
+  }
+  LogPrintf(LOG_DETAIL, "Calling CompareSFTVectors() ...\n");
   if(CompareSFTVectors(sft_vect, sft_vect2))
     return SFTFILEIOTESTC_ESUB;
-
+  LogPrintf(LOG_DETAIL, "Freeing Memory ...\n");
   SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-
   LALCheckMemoryLeaks();
-
+  LogPrintf(LOG_DETAIL, "... all ok\n");
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
