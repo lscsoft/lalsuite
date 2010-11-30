@@ -133,7 +133,7 @@ covering the sky area \f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ and
 nonzero), and the spindown volume \f$|f_k|\leq\mathtt{tau}^{-k}\f$ for
 \f$k=1,\ldots,n_s\f$.  The volume boundaries are increased by half the
 maximum patch size in each direction, to ensure total coverage of the
-edges, as described in \ref FlatMeshTest_h.
+edges, as described in FlatMeshTest.c.
 
 \heading{Uses}
 \code
