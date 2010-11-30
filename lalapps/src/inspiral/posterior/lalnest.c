@@ -83,7 +83,7 @@ Optional OPTIONS:\n \
 [--pinparams STRING\t:\tList parameters to be fixed to their injected values (, separated) i.e. --pinparams mchirp,longitude\n \
 [--version\t:\tPrint version information and exit]\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
-[--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)\
+[--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
 [--help\t:\tPrint this message]\n"
 
 #ifdef __GNUC__
