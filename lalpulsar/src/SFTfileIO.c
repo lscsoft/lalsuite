@@ -1344,8 +1344,13 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
   for ( j = 0; j < numifo; j++) {
+#ifdef USEXLALLOADSFTS
+    if( ! ( multSFTVec->data[j] = XLALLoadSFTs ( catalog[j], fMin, fMax ) ) )
+#else
     LALLoadSFTs ( status->statusPtr, multSFTVec->data + j, catalog[j], fMin, fMax );
-    BEGINFAIL ( status ) {
+    BEGINFAIL ( status )
+#endif
+    {
       /* free sft vectors created previously in loop */
       for ( i = 0; (INT4)i < (INT4)j-1; i++)
 	LALDestroySFTVector ( status->statusPtr, multSFTVec->data + i);
@@ -1369,7 +1374,10 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
       LALFree(numsfts);
       LALFree(name);
 
-    } ENDFAIL(status);
+    }
+#ifndef USEXLALLOADSFTS
+      ENDFAIL(status);
+#endif
   }
 
   /* sort final multi-SFT vector by detector-name */
