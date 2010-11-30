@@ -1,29 +1,80 @@
+EXTRA_DIST = \
+	DoxygenLayout-html.xml \
+	DoxygenLayout-pdf.xml \
+	doxy-html-aliases.cfg \
+	doxy-pdf-aliases.cfg \
+	doxy_html_eqns.sty \
+	doxy_pdf_header.tex \
+	doxygen-html.cfg.in \
+	doxygen-pdf.cfg.in
+
+SUBDIRS = src
+
 all: html
 
-.PHONY: getfigs html pdf
+.PHONY: html pdf
 
-export abs_builddir abs_srcdir abs_top_srcdir MKDIR_P LN_S
+DOXYINPUT = lal/packages \
+            lalframe \
+            lalmetaio \
+            lalxml \
+            lalburst \
+            lalinspiral \
+            lalpulsar \
+            lalstochastic \
+            lalapps/src
 
-export TEXINPUTS = .:$(abs_srcdir):
-export pool_size = 4000000
+override doxy_inputdirs = $(abs_srcdir)/src \
+                          $(addprefix $(abs_lalsuite_srcdir)/,$(DOXYINPUT))
 
-getfigs:
-	@echo "$(abs_builddir)/Makefile: Collecting figures from LALSuite ..."
-	$(abs_srcdir)/collect_figures.sh
-	@echo "$(abs_builddir)/Makefile: ... done."
+override lalsuite_version = $(shell \
+   cd $(abs_lalsuite_srcdir) || exit 1; \
+   lsv=$(PACKAGE_VERSION); \
+   if test "x$(GIT)" != x && test -d .git; then \
+      lsv="$$lsv-"`$(GIT) log -1 --format="%h"`; \
+      if $(GIT) diff --quiet HEAD; then \
+         : ; \
+      else \
+         lsv="$$lsv-unclean"; \
+      fi; \
+   fi; \
+   echo $$lsv )
 
-html: getfigs
-	@echo "$(abs_builddir)/Makefile: Running doxygen to produce HTML ..."
-	doxygen $(abs_builddir)/doxygen-html.cfg
-	@echo "$(abs_builddir)/Makefile: ... done."
+override TEXINPUTS = .:$(abs_srcdir):
+override pool_size = 4000000
 
-pdf: getfigs
-	@echo "$(abs_builddir)/Makefile: Running doxygen to produce PDF ..."
-	doxygen $(abs_builddir)/doxygen-pdf.cfg
-	@echo "$(abs_builddir)/Makefile: Compiling the PDF manual 'refman.pdf' ..."
-	cd $(abs_builddir)/latex && $(MAKE)
-	cd $(abs_builddir) && rm -f refman.pdf && $(LN_S) latex/refman.pdf .
-	@echo "$(abs_builddir)/Makefile: ... done."
+export doxy_inputdirs lalsuite_version TEXINPUTS pool_size
+
+html: doxygen-html.cfg
+	@echo "***** building doxygen HTML in $(abs_builddir) *****"
+	@echo "DOXYINPUT=$(DOXYINPUT)"
+	rm -f doxygen-html*.log
+	cd $(abs_builddir) && ( \
+	   if doxygen doxygen-html.cfg; then \
+	      if test -f html/_formulas.log; then \
+	         $(LN_S) html/_formulas.log doxygen-html-eqns.log; \
+	      fi; \
+	      exit 0; \
+	   fi; \
+	)
+	@echo "***** done building doxygen HTML *****"
+
+pdf: doxygen-pdf.cfg
+	@echo "***** building doxygen PDF in $(abs_builddir) *****"
+	@echo "DOXYINPUT=$(DOXYINPUT)"
+	rm -f refman.pdf doxygen-pdf*.log
+	cd $(abs_builddir) && ( \
+	   if doxygen doxygen-pdf.cfg && ( cd latex && $(MAKE) ); then \
+	      $(LN_S) latex/refman.pdf refman.pdf; \
+	      exit 0; \
+	   else \
+	      $(LN_S) latex/refman.log doxygen-pdf-make.log; \
+	      exit 1; \
+	   fi; \
+	)
+	@echo "***** done building doxygen PDF *****"
 
 clean-local:
-	cd $(abs_builddir) && rm -rf html latex figures refman.pdf
+	cd $(abs_builddir) && \
+	   rm -fr html/ latex/ && \
+	   rm -f  refman.pdf doxygen-html*.log doxygen-pdf*.log

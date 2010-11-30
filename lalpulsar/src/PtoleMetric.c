@@ -28,7 +28,7 @@
  * $Id$
  *
 
- \par Description
+ \heading{Description}
 
  This function computes metric components in a way that yields results
  very similar to those of LALCoherentMetric() called with the
@@ -39,7 +39,7 @@
  Taylor series expansion is used to improve the accuracy with which several
  terms are computed.
 
- \par Algorithm
+ \heading{Algorithm}
 
  For speed and checking reasons, a minimum of numerical computation is
  involved. The metric components can be expressed analytically (though not
@@ -56,7 +56,7 @@
  scheme as in LALCoherentMetric(). The order of the parameters is
  \f$(f_0, \alpha, \delta)\f$.
 
- \par Notes
+ \heading{Notes}
 
  The analytic metric components were derived separately by Jones and
  Whitbeck (and partly by Owen) and found to agree.  Also, the output of this

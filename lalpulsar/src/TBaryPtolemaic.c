@@ -26,12 +26,15 @@
 /* Uncomment to remove orbital motion.
 #define LAL_AU_SI 0.0 */
 
+/** \cond DONT_DOXYGEN */
 NRCSID(TBARYPTOLEMAICC,"$Id$");
+/** \endcond */
 
-/** \defgroup TBaryPtolemaic
+/** \file
+    \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Compute the barycentric arrival time of an incoming wavefront using a circular model of the Earth's orbit.
-    \author Creighton, T. D.
+
 
 These routines compute the barycentric time transformation and its derivatives.
 That is, if a signal originating from a right ascension
@@ -67,11 +70,12 @@ Choosing a right-handed coordinate system with \f$\mathbf{\hat{e}}_x\f$
 toward the vernal equinox and \f$\mathbf{\hat{e}}_z\f$ toward celestial
 North, the components of \f$\mathbf{\hat{n}}(\alpha,\delta)\f$ can be
 written as:
+\anchor eq_n-alphadelta
 \f{eqnarray}{
 n_x & = & \cos\alpha\cos\delta \; , \nonumber\\
 n_y & = & \sin\alpha\cos\delta \; , \nonumber\\
 n_z & = & \sin\delta           \; .
-\label{eq:n-alphadelta}
+\label{eq_n-alphadelta}
 \f}
 
 In a first-order Ptolemaic model of the solar system, the rotation of
@@ -131,15 +135,15 @@ Differentiating with respect to \f$\alpha\f$ gives:
 		{\partial\alpha} \; ,
 \f]
 where \f$\partial\mathbf{n}/\partial\alpha\f$ is easily obtained from
-Eqs.\ltxref{eq:n-alphadelta}.  Similarly for \f$\delta\f$.
+Eqs.\eqref{eq_n-alphadelta}.  Similarly for \f$\delta\f$.
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel
 \endcode
 */
 /*@{*/
-/** See documentation in \ref TBaryPtolemaic */
+
 void
 LALTBaryPtolemaic( LALStatus             *stat,
 		   REAL8                 *tBary,
@@ -212,7 +216,6 @@ LALTBaryPtolemaic( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TBaryPtolemaic */
 void
 LALDTBaryPtolemaic( LALStatus             *stat,
 		    REAL8Vector           *dtBary,

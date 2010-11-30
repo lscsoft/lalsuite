@@ -31,19 +31,19 @@ extern "C" {
 
 NRCSID(PULSARTIMESH,"$Id$");
 
-/**\defgroup PulsarTimes_h  Pulsar time transformations
+/**\defgroup PulsarTimes_h  PulsarTimes
    \author Creighton, T. D.
    \ingroup pulsarCommon
+   \brief Provides routines to transform among various time coordinates used in a pulsar search.
 
-   \brief This module covers routines that computes time coordinate
-   transformations, and derivatives of these transformations with respect
-   to their parameters.
+   \heading{Synopsis}
+   \code
+   #include <lal/PulsarTimes.h>
+   \endcode
 
-\par Synopsis
-\code
-#include <lal/PulsarTimes.h>
-\endcode
-
+This module covers routines that computes time coordinate
+transformations, and derivatives of these transformations with respect
+to their parameters.
 The motivation is to provide a number of useful
 transformations for doing pulsar searches.  For instance, one
 transformation might take you from the time measured at a point on
@@ -142,7 +142,7 @@ routines that place different parameters in <tt>*variables</tt> and
 */
 
 /** \name Error Codes */
- /*@{*/
+/*@{*/
 /** \ingroup PulsarTimes_h */
 #define PULSARTIMESH_ENUL 1
 #define PULSARTIMESH_EBAD 2

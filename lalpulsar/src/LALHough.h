@@ -29,7 +29,7 @@
    of  total Hough maps at different frequencies and
    possible residual spin down parameters.
 
-   \par Description
+   \heading{Description}
 
    As we mention before,
    the issue is to build histograms, the Hough map (HM), in the

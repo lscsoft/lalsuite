@@ -21,14 +21,16 @@
 #include<lal/LALStdlib.h>
 #include<lal/PulsarTimes.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID(TSPINC,"$Id$");
+/** \endcond */
 
-/** \defgroup TSpin
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Computes the rotation-synchronized time coordinate for an object with smoothly-varying spin.
 
-\par Description
+\heading{Description}
 
 These routines compute the value and derivatives of a time
 transformation \f$t_s(t)\f$ from a physical (inertial) time coordinate to
@@ -48,7 +50,7 @@ constant parameter field used by these routines is
 <tt>*variables</tt> can be a vector of arbitrary length; for
 consistency, <tt>*dtSpin</tt> must be one element longer.
 
-\par Algorithm
+\heading{Algorithm}
 
 If the frequency of a rotating body is varying in some suitably smooth
 manner, then it can be represented as a Taylor series:
@@ -81,14 +83,14 @@ The derivatives with respect to \f$f_k\f$ are similarly trivial:
 \frac{\partial t_s(t)}{\partial f_k} = \frac{(t-t_0)^{k+1}}{k+1} \; .
 \f]
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel
 \endcode
 
 */
 /*@{*/
-/** See documentation in \ref TSpin */
+
 void
 LALTSpin( LALStatus             *stat,
 	  REAL8                 *tSpin,
@@ -134,7 +136,6 @@ LALTSpin( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TSpin */
 void
 LALDTSpin( LALStatus             *stat,
 	   REAL8Vector           *dtSpin,

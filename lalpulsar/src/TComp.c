@@ -20,14 +20,16 @@
 #include<lal/LALStdlib.h>
 #include<lal/PulsarTimes.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID(TCOMPC,"$Id$");
+/** \endcond */
 
-/** \defgroup TComp
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
     \brief Computes the composition of two time transformations.
 
-\par Description
+\heading{Description}
 
 These routines compute the value and derivatives of a time
 transformation \f$t_c(t)\f$ that is the composition of two other
@@ -76,7 +78,7 @@ unambiguously by setting <tt>variables->length</tt>.  Note however that
 <tt>*dtComp</tt> must always have a length exactly one greater than
 <tt>*variables</tt>.
 
-\par Algorithm
+\heading{Algorithm}
 
 Computing the value of \f$t_c\f$ is trivial:
 \f[
@@ -125,14 +127,14 @@ to code without giving LALDTComp() some way of knowing
 represent the same physical quantity.  Such a scheme is not
 implemented at present.
 
-\par Uses
+\heading{Uses}
 \code
 lalDebugLevel
 \endcode
 
 */
 /*@{*/
-/** See documentation in \ref TComp. */
+
 void
 LALTComp( LALStatus             *stat,
 	  REAL8                 *tComp,
@@ -203,7 +205,6 @@ LALTComp( LALStatus             *stat,
 }
 
 
-/** See documentation in \ref TComp. */
 void
 LALDTComp( LALStatus             *stat,
 	   REAL8Vector           *dtComp,

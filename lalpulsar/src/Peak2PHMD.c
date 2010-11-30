@@ -30,7 +30,7 @@
  *
  *
 
-\par Description
+\heading{Description}
 
 This routine produces a phmd at a certain frequency for a given  peak-gram and
 look-up-table.
@@ -55,7 +55,7 @@ marked, the pointers to the borders in the corresponding
 look-up-table, plus border effects of clipping  on a finite
 patch.
 
-\par Uses
+\heading{Uses}
 \code
 LALHOUGHPeak2PHMD()
 \endcode

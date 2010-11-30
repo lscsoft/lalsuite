@@ -26,7 +26,7 @@
  *
  * $Id$
  *
- \par Description
+ \heading{Description}
 
  This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
  discussed in the header StackMetric.h, under the assumption
@@ -48,7 +48,7 @@
  \a *params stores the remaining parameters for computing the
  metric, as given in the Structures section of StackMetric.h.
 
- \par Algorithm
+ \heading{Algorithm}
 
  Most of what this routine does is set up arguments to be passed to the
  function LALCoherentMetric().  Each metric component in the stack

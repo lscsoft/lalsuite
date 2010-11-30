@@ -25,8 +25,9 @@
 #include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( GETEARTHTIMESC, "$Id$" );
-
+/** \endcond */
 
 #define NEQUINOXES 29
 /** Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
@@ -39,10 +40,10 @@ static const INT4 equinoxes[NEQUINOXES] = {
   1284816613 };
 
 
-/** \defgroup GetEarthTimes
-    \brief Computes the next sidereal midnight and autumnal equinox.
+/** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
+    \brief Computes the next sidereal midnight and autumnal equinox.
 
 This function takes a GPS time from the parameter field
 <tt>times->epoch</tt> and uses it to assign the fields
@@ -56,7 +57,7 @@ and hence the Doppler modulation on an incoming signal.  See
 \ref PulsarTimes_h for more information about the
 PulsarTimesParamStruc structure.
 
-\par Algorithm
+\heading{Algorithm}
 
 The routine first computes the Greenwich mean sidereal time at
 <tt>times->epoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
@@ -79,12 +80,12 @@ a REAL8 time variable whose origin is the time
 <tt>times->epoch</tt>.  If this is too far from the times of interest,
 the REAL8 time variables may suffer loss of precision.
 
-\par Uses
+\heading{Uses}
 \code
 XLALGreenwichMeanSiderealTime()
 \endcode
 */ /*@{*/
-/** See documentation in \ref GetEarthTimes */
+
 void
 LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
 {

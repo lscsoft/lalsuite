@@ -59,7 +59,7 @@
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                     /* the number of binary parameter dimensions */
-#define WINGS_FACTOR 1.05             /* the safety factor in reading extra frequency from SFTs */
+#define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define PCU_AREA 0.13                 /* the collecting area of a single PCU in square metres */
 #define DEFAULT_SOURCE "SCOX1"        /* the default source name */
 #define AMPVECLENGTH 25               /* the fixed number of amplitude values to sample */
@@ -286,7 +286,7 @@ REAL8 BESSCO_LOW[] = {1.0,3.5156229,3.0899424,1.2067492,0.2659732,0.0360768,0.00
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALDefineBinaryParameterSpace(REAL8Space **space,UserInput_t *uvar); 
+int XLALDefineBinaryParameterSpace(REAL8Space **space,LIGOTimeGPS epoch, REAL8 span,UserInput_t *uvar); 
 int XLALComputeAmplitudeParams(REAL8Dimension **ampspace,Grid **ampgrid,REAL8Priors **amppriors,REAL8 ampsigma); 
 int XLALReadSFTs(SFTVector **sfts,SegmentParams **segparams,CHAR *sftbasename, REAL8 freq, REAL8 freqband, INT4 gpsstart, INT4 gpsend,CHAR *obsid_pattern);
 int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,REAL8Space *pspace, SFTVector *sftvec, REAL8 mu);
@@ -360,32 +360,15 @@ int main( int argc, char *argv[] )  {
   }
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
 
-  /**********************************************************************************/
-  /* DEFINE THE BINARY PARAMETER SPACE */
-  /**********************************************************************************/
-
-  /* register and read all user-variables */
-  if (XLALDefineBinaryParameterSpace(&(pspace.space),&uvar)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",fn,xlalErrno);
-    return 1;
-  }
-  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",fn);
-
   /* make crude but safe estimate of the bandwidth required for the source */
-  fmin_read = pspace.space->data[0].min - WINGS_FACTOR*pspace.space->data[0].min*pspace.space->data[1].max*pspace.space->data[3].max;
-  fmax_read = pspace.space->data[0].max + WINGS_FACTOR*pspace.space->data[0].max*pspace.space->data[1].max*pspace.space->data[3].max;
-  fband_read = fmax_read - fmin_read;
-  LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",fn,fmin_read,fmax_read);
- 
-  /**********************************************************************************/
-  /* DEFINE THE AMPLITUDE PARAMETERS IF USING A FIXED AMPLITUDE SIGNAL MODEL */
-  /**********************************************************************************/
-
-  if (uvar.fixedamp) {
-    if (XLALComputeAmplitudeParams(&(pspace.ampspace),&(pspace.ampgrid),&(pspace.amppriors),uvar.sigalpha)) {
-      LogPrintf(LOG_CRITICAL,"%s : XLALComputeAmplitudeParams() failed with error = %d\n",fn,xlalErrno);
-      return 1;
-    }
+ /*  fmin_read = pspace.space->data[0].min - WINGS_FACTOR*pspace.space->data[0].min*pspace.space->data[1].max*pspace.space->data[3].max; */
+/*   fmax_read = pspace.space->data[0].max + WINGS_FACTOR*pspace.space->data[0].max*pspace.space->data[1].max*pspace.space->data[3].max; */
+  {
+    REAL8 wings = LAL_TWOPI*(uvar.asini + uvar.deltaasini*uvar.nsig)/(uvar.orbperiod - uvar.deltaorbperiod*uvar.nsig);
+    fmin_read = uvar.freq - WINGS_FACTOR*uvar.freq*wings;
+    fmax_read = uvar.freq + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings;
+    fband_read = fmax_read - fmin_read;
+    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",fn,fmin_read,fmax_read); 
   }
  
   /**********************************************************************************/
@@ -406,6 +389,28 @@ int main( int argc, char *argv[] )  {
   sprintf(pspace.source,"%s",uvar.source);
   LogPrintf(LOG_DEBUG,"%s : SFT length = %f seconds\n",fn,pspace.tseg);
   LogPrintf(LOG_DEBUG,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",fn,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
+  
+  /**********************************************************************************/
+  /* DEFINE THE BINARY PARAMETER SPACE */
+  /**********************************************************************************/
+  
+  /* register and read all user-variables */
+  if (XLALDefineBinaryParameterSpace(&(pspace.space),pspace.epoch,pspace.span,&uvar)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",fn,xlalErrno);
+    return 1;
+  }
+  LogPrintf(LOG_DEBUG,"%s : defined binary parameter prior space\n",fn);
+
+  /**********************************************************************************/
+  /* DEFINE THE AMPLITUDE PARAMETERS IF USING A FIXED AMPLITUDE SIGNAL MODEL */
+  /**********************************************************************************/
+  
+  if (uvar.fixedamp) {
+    if (XLALComputeAmplitudeParams(&(pspace.ampspace),&(pspace.ampgrid),&(pspace.amppriors),uvar.sigalpha)) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALComputeAmplitudeParams() failed with error = %d\n",fn,xlalErrno);
+      return 1;
+    }
+  }
 
   /**********************************************************************************/
   /* COMPUTE THE FINE GRID PARAMETERS */
@@ -691,12 +696,17 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
  * Gaussian prior and specify the sigma of that prior.
  *
  */
-int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out] the parameter space  */ 
+int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out] the parameter space  */
+				   LIGOTimeGPS epoch,                  /**< [in] the observation start epoch */
+				   REAL8 span,                         /**< [in] the observation span */
 				   UserInput_t *uvar                   /**< [in] the user input variables */
 				   )
 {
   
   const CHAR *fn = __func__;   /* store function name for log output */
+  REAL8 midpoint;              /* the midpoint of the observation */
+  REAL8 newtasc;               /* shifted value of tasc */
+  REAL8 newdeltatasc;          /* updated uncertainty on tasc after shifting */
 
   /* validate input variables */
   if ((*space) != NULL) {
@@ -706,7 +716,15 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   if (uvar == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : Invalid input, input UserInput_t structure = NULL.\n",fn);
     XLAL_ERROR(fn,XLAL_EINVAL);
-  }  
+  }
+  if (epoch.gpsSeconds < 0) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation epoch < 0.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
+  if (span < 0) {
+    LogPrintf(LOG_CRITICAL,"%s : Invalid input, observation span < 0.\n",fn);
+    XLAL_ERROR(fn,XLAL_EINVAL);
+  }
   
   /* allocate memory for the parameter space */
   if ( ((*space) = XLALCalloc(1,sizeof(REAL8Space))) == NULL) {
@@ -719,6 +737,20 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
     XLAL_ERROR(fn,XLAL_ENOMEM);
   }
 
+  /* define observaton midpoint */
+  midpoint = XLALGPSGetREAL8(&epoch) + 0.5*span;
+
+  /* find the closest instance of ascension to the midpoint */
+  /* the midpoint is defined in the detector frame and the time of */
+  /* ascension is in the SSB frame but we only need to be roughly */
+  /* correct in the number of orbits we shift by */
+  {
+    INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/uvar->orbperiod);
+    newtasc = uvar->tasc + n*uvar->orbperiod;
+    newdeltatasc = sqrt(uvar->deltatasc*uvar->deltatasc + n*n*uvar->deltaorbperiod*uvar->deltaorbperiod);
+    LogPrintf(LOG_DEBUG,"%s : shifted tasc by %d orbits, uncertainty equals %f sec\n",fn,n,newdeltatasc);
+  }
+  
   /* this represents a hyper-cubic parameter space */
   /* we make sure that parameter ranges are consistent i.e asini > 0 etc.. */
   /* frequency */
@@ -741,10 +773,10 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   
   /* tasc */
   snprintf((*space)->data[2].name,LALNameLength,"tasc");
-  (*space)->data[2].min = uvar->tasc - fabs(uvar->nsig*uvar->deltatasc);
-  (*space)->data[2].max = uvar->tasc + fabs(uvar->nsig*uvar->deltatasc);
-  (*space)->data[2].mid = uvar->tasc;
-  (*space)->data[2].sig = uvar->deltatasc;
+  (*space)->data[2].min = newtasc - fabs(uvar->nsig*newdeltatasc);
+  (*space)->data[2].max = newtasc + fabs(uvar->nsig*newdeltatasc);
+  (*space)->data[2].mid = newtasc;
+  (*space)->data[2].sig = newdeltatasc;
   (*space)->data[2].span = (*space)->data[2].max - (*space)->data[2].min;
   (*space)->data[2].gaussian = uvar->gaussianpriors;
   
