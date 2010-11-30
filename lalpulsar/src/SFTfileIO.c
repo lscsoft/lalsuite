@@ -77,6 +77,8 @@ NRCSID (SFTFILEIOC, "$Id$");
 
 #define GPSEQUAL(gps1,gps2) (((gps1).gpsSeconds == (gps2).gpsSeconds) && ((gps1).gpsNanoSeconds == (gps2).gpsNanoSeconds))
 
+#define GPSZERO(gps) (((gps).gpsSeconds == 0) && ((gps).gpsNanoSeconds == 0))
+
 /* rounding for positive numbers! */
 #define MYROUND(x) ( floor( (x) + 0.5 ) )
 
@@ -866,6 +868,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	    XLALLOADSFTSERROR(XLAL_EIO);
 	  }
 	  segments[isft].first = firstBinRead;
+	  segments[isft].epoch = thisSFT->epoch;
 	} else if(firstBinRead != segments[isft].last + 1) {
 	  XLALPrintError("ERROR: data gap or overlap in SFT#%u (GPS %lf)"
 			 " between bin %u read from file '%s' and bin %u read from file '%s'\n",
@@ -874,20 +877,30 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 			 firstBinRead, fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
 	}
+	if(deltaF != thisSFT->deltaF) {
+	  XLALPrintError("ERROR: deltaF mismatch (%f/%f) in SFT read from file '%s'\n",
+			 thisSFT->deltaF, deltaF, fname);
+	  XLALLOADSFTSERROR(XLAL_EIO);
+	}
+	if(!GPSEQUAL(segments[isft].epoch, thisSFT->epoch)) {
+	  XLALPrintError("ERROR: GPS epoch mismatch (%f/%f) in SFT read from file '%s'\n",
+			 GPS2REAL8(segments[isft].epoch), GPS2REAL8(thisSFT->epoch), fname);
+	  XLALLOADSFTSERROR(XLAL_EIO);
+	}
 	segments[isft].last               = lastBinRead;
 	segments[isft].lastfrom           = locator;
-	segments[isft].epoch              = thisSFT->epoch;
-	sftVector->data[isft].epoch       = thisSFT->epoch;
-	sftVector->data[isft].deltaF      = thisSFT->deltaF;
 	sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
-	sftVector->data[isft].f0          = 1.0 * firstbin * sftVector->data[isft].deltaF;
 	memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 	       thisSFT->data->data,
 	       (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
-      } else if(firstBinRead == 0) {
-	/* XLALPrintWarning("SFT#%u (GPS %lf) locator(%s:%ld): Bins %u,%u not contained in SFT\n",
-	   isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin); */
-	segments[isft].epoch = thisSFT->epoch;
+      } else if(!firstBinRead) {
+	if(GPSZERO(segments[isft].epoch))
+	  segments[isft].epoch = thisSFT->epoch;
+	else if (!GPSEQUAL(segments[isft].epoch, thisSFT->epoch)) {
+	  XLALPrintError("ERROR: GPS epoch mismatch (%f/%f) in SFT read from file '%s'\n",
+			 GPS2REAL8(segments[isft].epoch), GPS2REAL8(thisSFT->epoch), fname);
+	  XLALLOADSFTSERROR(XLAL_EIO);
+	}
       } else {
 	XLALPrintError("ERROR: Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
@@ -902,8 +915,12 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   }
 
   /* check that all SFTs are complete */
-  for(UINT4 isft = 0; isft < nSFTs; isft++)
-    if(segments[isft].last != lastbin) {
+  for(UINT4 isft = 0; isft < nSFTs; isft++) {
+    if(segments[isft].last == lastbin) {
+      sftVector->data[isft].f0 = 1.0 * firstbin * deltaF;
+      sftVector->data[isft].epoch = segments[isft].epoch;
+      sftVector->data[isft].deltaF = deltaF;
+    } else {
       if (segments[isft].last)
 	XLALPrintError("ERROR: data missing at end of SFT#%u (GPS %lf)"
 		       " expected bin %u, bin %u read from file '%s'\n",
@@ -915,6 +932,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 		       isft, GPS2REAL8(segments[isft].epoch));
       XLALLOADSFTSERROR(XLAL_EIO);
     }
+  }
 
   /* cleanup  */
   XLALFree(segments);
