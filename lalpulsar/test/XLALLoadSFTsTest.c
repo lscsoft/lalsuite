@@ -161,8 +161,10 @@ int main(int argc, char *argv[])
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
   SFTVector *sft_vect2 = NULL;
-  CHAR detector[2] = "H1";
-  INT4 crc_check;
+  /*
+    CHAR detector[2] = "H1";
+    INT4 crc_check;
+  */
   /* band to read from infile.* SFTs */
   REAL8 fMin = -1;
   REAL8 fMax = -1;
