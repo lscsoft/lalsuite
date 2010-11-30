@@ -63,7 +63,7 @@ in the range [\c ra1,\c ra2], in degrees.  If absent,
 absent, <tt>-d 0</tt> is assumed.</li>
 </ul>
 
-\heading{%Grid formats:} The metric grid is stored as a
+\heading{Grid formats:} The metric grid is stored as a
 \c REAL4Grid with physical dimension 2 and data dimesnion 3: for
 each point in the two-dimensional sky grid \f$(\delta,\alpha)\f$,
 representing declination and right ascension, it stores a 3-element
