@@ -39,7 +39,7 @@ farStruct * new_farStruct(void)
    
    farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
    if (farstruct==NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*farstruct));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*farstruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -79,13 +79,13 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    
    REAL4Vector *Rs = XLALCreateREAL4Vector((UINT4)trials);
    if (Rs==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
-      XLALPrintError("%s: gsl_rng_alloc() failed.\n", fn);
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    //srand(time(NULL));
@@ -105,10 +105,10 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    REAL4 mean = calcMean(Rs);
    REAL4 sigma = calcStddev(Rs);
    if (XLAL_IS_REAL4_FAIL_NAN(mean)) {
-      XLALPrintError("%s: calcMean() failed.\n", fn);
+      fprintf(stderr,"%s: calcMean() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (XLAL_IS_REAL4_FAIL_NAN(sigma)) {
-      XLALPrintError("%s: calcStddev() failed.\n", fn);
+      fprintf(stderr,"%s: calcStddev() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -116,12 +116,12 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    if (output->topRvalues == NULL) {
       output->topRvalues = XLALCreateREAL4Vector((UINT4)roundf(thresh*trials)+1);
       if (output->topRvalues==NULL) {
-         XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf(thresh*trials)+1);
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf(thresh*trials)+1);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    }
    if ((gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length)) != 0) {
-      XLALPrintError("%s: gsl_sort_float_largest() failed.\n", fn);
+      fprintf(stderr,"%s: gsl_sort_float_largest() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -172,7 +172,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    
    //Set the solver at the beginning
    if ((gsl_root_fdfsolver_set(s, &FDF, initialroot)) != 0) {
-      XLALPrintError("%s: Unable to initialize root solver to first guess.\n", fn);
+      fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -184,27 +184,27 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    while (status==GSL_CONTINUE && ii<max_iter) {
       ii++;
       status = gsl_root_fdfsolver_iterate(s);
-      if (status!=0) {
-         XLALPrintError("%s: gsl_root_fdfsolver_iterate() failed.\n", fn);
+      if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+         fprintf(stderr,"%s: gsl_root_fdfsolver_iterate() failed with code %d.\n", fn, status);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       prevroot = root;
       root = gsl_root_fdfsolver_root(s);
-      status = gsl_root_test_delta(prevroot, root, 0.0, 0.001);
-      if (status!=0) {
-         XLALPrintError("%s: gsl_root_test_delta() failed.\n", fn);
+      status = gsl_root_test_delta(prevroot, root, 0.0, 0.002);
+      if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+         fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    }
    
    if (status != GSL_SUCCESS) {
-      XLALPrintError("%s: Root finding failed with failure code %d.\n", fn, status);
-      XLAL_ERROR_VOID(fn, XLAL_EFAILED);
+      fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
+      XLAL_ERROR_VOID(fn, XLAL_FAILURE);
    } else if (ii==max_iter) {
-      XLALPrintError("%s: Maximum iterations (%d) reached.\n", fn, max_iter);
+      fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
       XLAL_ERROR_VOID(fn, XLAL_EMAXITER);
    } else if (root<=0.0) {
-      XLALPrintError("%s: Threshold value found (%f) is less than 0.0!\n", fn, root);
+      fprintf(stderr,"%s: Threshold value found (%f) is less than 0.0!\n", fn, root);
       XLAL_ERROR_VOID(fn, XLAL_ERANGE);
    }
    
@@ -224,7 +224,6 @@ REAL8 gsl_probR(REAL8 R, void *param)
    
    REAL8 prob = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, &pars->errcode);
    
-   //REAL8 returnval = prob - pars->threshold;
    REAL8 returnval = prob - log10(pars->threshold);
    
    return returnval;
@@ -235,19 +234,30 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
    
-   REAL8 dR = 0.0025;
-   REAL8 slope = 0.0;
+   REAL8 dR = 0.001;
+   REAL8 slope;
    
    //Explicit computation of slope
-   REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R, &pars->errcode);
-   REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R, &pars->errcode);
-   slope = (prob1-prob2)/(2.0*dR*R);
-   while (slope>-10.0*LAL_REAL4_MIN) {
+   REAL8 R1 = (1.0+dR)*R;
+   REAL8 R2 = (1.0-dR)*R;
+   REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
+   REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
+   while (fabs(prob1-prob2)<10.0*LAL_REAL4_MIN) {
       dR *= 2.0;
-      prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0+dR)*R, &pars->errcode);
-      prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, (1.0-dR)*R, &pars->errcode);
-      slope = (prob1-prob2)/(2.0*dR*R);
+      R1 = (1.0+dR)*R;
+      R2 = (1.0-dR)*R;
+      prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
+      prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
    }
+   slope = (prob1-prob2)/(R1-R2);
+   
+   //One more point
+   dR *= 2.0;
+   REAL8 R3 = (1.0-dR)*R;
+   REAL8 prob3 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R3, &pars->errcode);
+   
+   //Compute average
+   slope = (slope + (prob3-prob1)/(R3-R1) + (prob2-prob3)/(R2-R3))/3.0;
    
    return slope;
    
@@ -285,26 +295,24 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    INT4Vector *dofs = XLALCreateINT4Vector((UINT4)numweights);
    INT4Vector *sorting = XLALCreateINT4Vector((UINT4)numweights);
    if (newweights==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    } else if (noncentrality==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    } else if (dofs==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    } else if (sorting==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    
-   REAL8 sigma = 0.0;
    REAL8 Rpr = R;
    for (ii=0; ii<(INT4)newweights->length; ii++) {
       newweights->data[ii] = 0.5*templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
       noncentrality->data[ii] = 0.0;
       dofs->data[ii] = 2;
-      sigma += 1.0/(templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]/(sumwsq*sumwsq*100.0));
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
    }
    
@@ -316,10 +324,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.sorting = sorting;
    vars.lim = 10000;
    vars.c = Rpr;
-   sigma = sqrt(sigma)*1.0e4;
+   REAL8 sigma = 0.0;
    REAL8 accuracy = 1.0e-5;   //don't change this value
-   
-   sigma = 0.0;
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);
@@ -327,53 +333,63 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
-   REAL8 c1, c2, logprob1, logprob2, probslope, logprobest;
+   REAL8 c1, c2, c3, logprob1, logprob2, logprob3, probslope, logprobest;
    INT4 estimatedTheProb = 0;
    if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
-      INT4 errcode1 = 0, errcode2 = 0;
+      INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0;
       
-      c1 = 0.9*vars.c;
+      c1 = 0.95*vars.c;
       vars.c = c1;
-      REAL8 tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode1);
-      while (tempprob<1.0e-4) {
-         c1 *= 0.9;
+      REAL8 tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
+      while (tempprob<=1.0e-4) {
+         c1 *= 0.95;
          vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode1);
+         tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
       }
       logprob1 = log10(tempprob);
       
-      c2 = 0.9*c1;
+      c2 = 0.95*c1;
       vars.c = c2;
-      logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode2));
-      while ((logprob2-logprob1)<=2.0*1.0e-4) {
-         c2 *= 0.9;
+      REAL8 tempprob2 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2);
+      while (tempprob2-tempprob <= 2.0e-4) {
+         c2 *= 0.95;
          vars.c = c2;
-         logprob2 = log10(1.0-cdfwchisq(&vars, 0.0, accuracy, &errcode2));
+         tempprob2 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2);
       }
+      logprob2 = log10(tempprob2);
+      
+      c3 = 0.95*c2;
+      vars.c = c3;
+      REAL8 tempprob3 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3);
+      while (tempprob3-tempprob2 <= 2.0e-4) {
+         c3 *= 0.95;
+         vars.c = c3;
+         tempprob3 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3);
+      }
+      logprob3 = log10(tempprob3);
       
       //If either point along the slope had a problem at the end, then better fail.
       //Otherwise, set errcode = 0;
-      if (errcode1!=0 || errcode2!=0) {
-         XLALPrintError("%s: cdfwchisq() failed.\n", fn);
+      if (errcode1!=0 || errcode2!=0 || errcode3!=0) {
+         fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       } else {
          *errcode = errcode1;
       }
-
       
       //Calculating slope
-      probslope = (logprob1-logprob2)/(c1-c2);
+      probslope = ((logprob1-logprob2)/(c1-c2) + (logprob1-logprob3)/(c1-c3) + (logprob2-logprob3)/(c2-c3))/3.0;
       
       //Find the log10(prob) of the original Rpr value
-      logprobest = logprob1 - probslope*(c1-Rpr);
+      logprobest = probslope*(Rpr-c2) + logprob2;
       
    }
    
    //If errcode is still 0, better fail
    if (*errcode!=0) {
-      XLALPrintError("%s: cdfwchisq() failed.\n", fn);
+      fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    }
    
@@ -399,7 +415,7 @@ templateStruct * new_templateStruct(INT4 length)
    
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*templatestruct));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*templatestruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -408,16 +424,16 @@ templateStruct * new_templateStruct(INT4 length)
    templatestruct->firstfftfrequenciesofpixels = XLALCreateINT4Vector((UINT4)length);
    templatestruct->secondfftfrequencies = XLALCreateINT4Vector((UINT4)length);
    if (templatestruct->templatedata==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, length);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if (templatestruct->pixellocations==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if (templatestruct->firstfftfrequenciesofpixels==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } else if (templatestruct->secondfftfrequencies==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, length);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    } 
    
@@ -467,7 +483,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Set up frequencies and determine separation in time of peaks for each frequency
    REAL8Vector *phi_actual = XLALCreateREAL8Vector((UINT4)numfbins);
    if (phi_actual==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfbins);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)phi_actual->length; ii++) {
@@ -483,7 +499,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Create second FFT frequencies
    REAL8Vector *fpr = XLALCreateREAL8Vector((UINT4)floor(numffts*0.5)+1);
    if (fpr==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (INT4)floor(numffts*0.5)+1);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (INT4)floor(numffts*0.5)+1);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = (REAL8)ii/params->Tobs;
@@ -492,7 +508,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    REAL8 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
    REAL8Vector *scale = XLALCreateREAL8Vector((UINT4)numfbins);      //the scaling factor
    if (scale==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfbins);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - (INT4)round(params->fmin*params->Tcoh);   //central frequency bin
@@ -536,13 +552,13 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    REAL8Vector *wvals = XLALCreateREAL8Vector((UINT4)floor(2.0*input.period/params->Tcoh));
    REAL8Vector *allsigmas = XLALCreateREAL8Vector(wvals->length * sigmas->length);
    if (sigmas==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (UINT4)(fnumend-fnumstart+1));
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (UINT4)(fnumend-fnumstart+1));
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (wvals==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (UINT4)floor(2.0*input.period/params->Tcoh));
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, (UINT4)floor(2.0*input.period/params->Tcoh));
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (allsigmas==NULL) {
-      XLALPrintError("%s: XLALCreateREAL8Vector(%d) failed.\n", fn, wvals->length * sigmas->length);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, wvals->length * sigmas->length);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)wvals->length; ii++) {         //t = (ii+1)*in->Tcoh*0.5
@@ -629,10 +645,10 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL4Vector *psd1 = XLALCreateREAL4Vector((UINT4)(numfbins*numffts));
    INT4Vector *freqbins = XLALCreateINT4Vector((UINT4)numfbins);
    if (psd1==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfbins*numffts);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numfbins*numffts);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (freqbins==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, numfbins);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numfbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -659,13 +675,13 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL4Window *win = XLALCreateHannREAL4Window(x->length);
    REAL4Vector *psd = XLALCreateREAL4Vector((UINT4)floor(x->length*0.5)+1);
    if (x==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numffts);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, numffts);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (win==NULL) {
-      XLALPrintError("%s: XLALCreateHannREAL4Window(%d) failed.\n", fn, x->length);
+      fprintf(stderr,"%s: XLALCreateHannREAL4Window(%d) failed.\n", fn, x->length);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (psd==NULL) {
-      XLALPrintError("%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (UINT4)floor(x->length*0.5)+1);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (UINT4)floor(x->length*0.5)+1);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    REAL4 winFactor = 8.0/3.0;
@@ -684,17 +700,19 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             jj = (INT4)x->length;  //End the search for bins with power
          }
       }
-      //Obtain and window the time series
-      x = SSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
-      if (xlalErrno!=0) {
-         XLALPrintError("%s, SSVectorMultiply_with_stride_and_offset() failed.\n", fn);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-      }
       
-      //Make the FFT
+      //If there was power in the frequency bin of the template, then do the FFT
       if (doSecondFFT==1) {
+         //Obtain and window the time series
+         x = SSVectorMultiply_with_stride_and_offset(x, psd1, win->data, numfbins, 1, ii, 0);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s, SSVectorMultiply_with_stride_and_offset() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+         
+         //Do the FFT
          if (XLALREAL4PowerSpectrum(psd,x,plan) != 0) {
-            XLALPrintError("%s: XLALREAL4PowerSpectrum() failed.\n", fn);
+            fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
       }

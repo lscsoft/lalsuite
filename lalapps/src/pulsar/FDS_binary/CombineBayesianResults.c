@@ -912,7 +912,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	gsl_interp_accel_free(acc);
 	gsl_interp_accel_free(acc_fixed);
 	gsl_interp_accel_free(acc_prior);
-	if (N>1) {
+	if (N>2) {
 	  gsl_spline_free(spline);
 	  gsl_spline_free(spline_fixed);
 	  gsl_spline_free(spline_prior);
