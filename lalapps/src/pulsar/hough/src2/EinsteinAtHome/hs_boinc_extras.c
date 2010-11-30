@@ -34,6 +34,7 @@
 #ifdef HAVE_BOINC_ZIP
 #include "boinc/boinc_zip.h"
 #endif
+#include "boinc/svn_version.h"
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -149,8 +150,8 @@ static double estimated_flops = -1.0;
 
 
 /** worker() doesn't take arguments, so we have to pass it argv/c as global vars :-( */
-static int global_argc;
-static char **global_argv;
+int global_argc;
+char **global_argv;
 
 
 /** variables for checkpointing */
@@ -752,7 +753,8 @@ static void worker (void) {
 	  boinc_finish(HIERARCHICALSEARCH_EMEM);
 	}
 
-	/* skip the ';' in the original string */
+	/* put back the ';' in the original string and skip it for next iteration */
+	*endc = ';';
 	startc = endc+1;
       }
 
@@ -1015,7 +1017,7 @@ static void worker (void) {
     LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n");
 #endif
 
-  if (output_help || !resultfile_present) {
+  if (output_help || output_version || !resultfile_present) {
     /* CALL WORKER's MAIN()
      */
     res = MAIN(rargc,rargv);
@@ -1046,6 +1048,10 @@ static void worker (void) {
       printf("      --TestSQRT         -       try to calculate sqrt(-1) to test FPE\n");
       boinc_finish(0);
     }
+
+    /* if the program was called to output the version, output the BOINC revision, too */
+    if(output_version)
+      printf("%% BOINC: " SVN_VERSION "\n");
   }
 
 

@@ -31,7 +31,7 @@
  *
  *
 
- \par Description
+ \heading{Description}
 
 This module contains functions for normalizing SFTs.  Currently two normalizations
 are supported.  Given SFT data \f$\tilde{x}_k \f$ where \f$ k\f$ labels a frequency bin,
@@ -45,7 +45,7 @@ estimated using the median, suitably normalized assuming that the power is
 distributed is exponentially.
 
 
-\par Uses
+\heading{Uses}
 \code
 LALSFTtoPeriodogram ()
 LALPeriodoToRngmed ()

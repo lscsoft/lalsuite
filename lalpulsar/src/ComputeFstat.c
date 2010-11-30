@@ -2161,7 +2161,7 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
+ * \f$A_d \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *
  * NOTE: this function modifies the AMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.

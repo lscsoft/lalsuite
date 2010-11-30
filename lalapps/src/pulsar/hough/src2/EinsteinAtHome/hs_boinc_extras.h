@@ -29,7 +29,11 @@
 
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 #include "../HoughFStatToplist.h"
+#else
+#include "GCTtoplist.h"
+#endif
 
 #define HSBOINCEXTRASHRCSID "$Id$"
 

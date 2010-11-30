@@ -23,6 +23,14 @@
 #include "HeapToplist.h"
 #include <lal/LALDatatypes.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern char**global_argv;
+extern int global_argc;
+#ifdef __cplusplus
+}
+#endif
 
 /** Type to hold the fields that will be kept in a "toplist"  */
 typedef struct {

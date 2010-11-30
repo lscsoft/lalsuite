@@ -17,54 +17,101 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="ResampleTestCV">
-Author: Creighton, T. D.
-Revision: $Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup Resample_h
+Tests the routines in \ref Resample_h.
 
-/********************************************************** <lalLaTeX>
+\par Program <tt>ResampleTest.c</tt>
+\latexonly\label{ss:ResampleTest.c}\endlatexonly
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
-\subsection{Program \texttt{ResampleTest.c}}
-\label{ss:ResampleTest.c}
-
-Tests the routines in \verb@Resample.h@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\par Usage
+\code
 ResampleTest [-d debuglevel] [-p psfile] [-t tfile] [-c n a f] [-m dec df fm]
-\end{verbatim}
+\endcode
 
 This program generates a quasiperiodic time series having a sinusoidal
 phase modulation, and generates a piecewise-polynomial fit to the
 phase function.  It then generates and applies stroboscopic resampling
 rules to the time series to produce a monochromatic signal.  The
 following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-d}] Sets the global \verb@lalDebugLevel@ to the
-specified \verb@debuglevel@.
-\item[\texttt{-p}] Power spectra of the time series before and after
-demodulation will be written to the file \verb@psfile@.
-\item[\texttt{-t}] The timing difference function $(\tau-t)/\Delta t$
+<ul>
+<li>[<tt>-d</tt>] Sets the global \c lalDebugLevel to the
+specified \c debuglevel.</li>
+<li>[<tt>-p</tt>] Power spectra of the time series before and after
+demodulation will be written to the file \c psfile.</li>
+<li>[<tt>-t</tt>] The timing difference function \f$(\tau-t)/\Delta t\f$
 computed in three ways (analytically, from a polynomial fit, and from
-the resampling rules), will be written to the file \verb@tfile@.  See
-below for notation.
-\item[\texttt{-c}] Sets parameters for the ``carrier'' signal: the
-number of points \verb@n@, the amplitude \verb@a@, and the frequency
-\verb@f@.
-\item[\texttt{-m}] Sets parameters for the signal modulation and
-resampling: the decimation factor \verb@dec@, the maximum change in
-signal frequency \verb@df@, and the frequency of the modulation
-\verb@fm@.
-\end{itemize}
+the resampling rules), will be written to the file \c tfile.  See
+below for notation.</li>
+<li>[<tt>-c</tt>] Sets parameters for the ``carrier'' signal: the
+number of points \c n, the amplitude \c a, and the frequency
+\c f.</li>
+<li>[<tt>-m</tt>] Sets parameters for the signal modulation and
+resampling: the decimation factor \c dec, the maximum change in
+signal frequency \c df, and the frequency of the modulation
+\c fm.</li>
+</ul>
 All frequencies are in units of the sampling rate, which is an
 arbitrary scale.  With no options, the program runs with
-\verb@lalDebugLevel@=0, produces no output, and uses internally
-\verb@#define@d signal parameters.
+\c lalDebugLevel=0, produces no output, and uses internally
+<tt>#define</tt>d signal parameters.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+\par Algorithm
+
+The modulated signal is of the form \f$s(t)=A\sin[\phi(t)]\f$, where \f$A\f$
+is a rather arbitrary amplitude, and \f$\phi(t)\f$ is a phase function of
+the form:
+\f[
+\phi(t) = 2\pi f_c t + \frac{\Delta f}{f_m}\sin(2\pi f_m t) \; .
+\f]
+Here \f$f_c\f$ is the average ``carrier'' frequency, \f$f_m\f$ is the
+frequency of the modulation, and \f$\Delta f\f$ is the maximum change in
+the ``instantaneous'' frequency of the signal (or, equivalently, the
+separation between the carrier and sidebands in the power spectral
+density).  The canonical (demodulated) time coordinate for this phase
+function is \f$\tau=\phi/2\pi f_c\f$.  The demodulation routines require
+quadratic fits to the function \f$\tau-t\f$ at various times \f$t_0\f$:
+\f{eqnarray}{
+\tau - t & = & \frac{(\Delta f/f_c)}{2\pi f_m}\sin(2\pi f_m t_0)
+		\nonumber\\
+         & + & (\Delta f/f_c)\cos(2\pi f_m t_0)(t-t_0) \nonumber\\
+         & - & \pi f_m (\Delta f/f_c)\sin(2\pi f_m t_0)(t-t_0)^2 \; ,
+\label{eq:polyco-formulae}
+\f}
+with residuals less than \f$(2/3)\pi^2 f_m^2(\Delta f/f_c)(t-t_0)^3\f$.
+We require this residual to be always less than one sample interval
+\f$\Delta t\f$.  This means that a piecewise-quadratic fit to the phase
+function must be evaluated at times \f$t_0\f$ separated by no more than:
+\f{equation}{
+\Delta t_0 \lesssim \sqrt[3]{\frac{12f_c\Delta t}{\pi^2f_m^2\Delta f}}
+	\; ,
+\label{eq:polyco-interval}
+\f}
+noting that each piecewise fit is good for a time interval
+\f$t_0\pm\Delta t_0/2\f$ about each central time \f$t_0\f$.
+
+Thus to create a piecewise-polynomial fit defined by
+\c PolycoStruc, this program simply define a set of fitting times
+<tt>t0[</tt>\f$k\f$<tt>]</tt>\f$=(2k+1)\Delta t_0/2\f$, and computes the
+appropriate components of \c polyco from
+Eq.\ \htmlonly<tt>{eq:polyco-formulae}</tt>\endhtmlonly\latexonly(\ref{eq:polyco-formulae})\endlatexonly, above.
+
+\par Uses
+\code
+lalDebugLevel
+LALPrintError()
+LALSCreateVector()
+LALSDestroyVector()
+LALCreateResampleRules()
+LALApplyResampleRules()
+LALDestroyResampleRules()
+\endcode
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define RESAMPLETESTC_ENORM 0
 #define RESAMPLETESTC_ESUB  1
 #define RESAMPLETESTC_EARG  2
@@ -76,64 +123,7 @@ arbitrary scale.  With no options, the program runs with
 #define RESAMPLETESTC_MSGEARG  "Error parsing arguments"
 #define RESAMPLETESTC_MSGEBAD  "Bad argument value"
 #define RESAMPLETESTC_MSGEFILE "Error opening or writing to output file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-The modulated signal is of the form $s(t)=A\sin[\phi(t)]$, where $A$
-is a rather arbitrary amplitude, and $\phi(t)$ is a phase function of
-the form:
-$$
-\phi(t) = 2\pi f_c t + \frac{\Delta f}{f_m}\sin(2\pi f_m t) \; .
-$$
-Here $f_c$ is the average ``carrier'' frequency, $f_m$ is the
-frequency of the modulation, and $\Delta f$ is the maximum change in
-the ``instantaneous'' frequency of the signal (or, equivalently, the
-separation between the carrier and sidebands in the power spectral
-density).  The canonical (demodulated) time coordinate for this phase
-function is $\tau=\phi/2\pi f_c$.  The demodulation routines require
-quadratic fits to the function $\tau-t$ at various times $t_0$:
-\begin{eqnarray}
-\tau - t & = & \frac{(\Delta f/f_c)}{2\pi f_m}\sin(2\pi f_m t_0)
-		\nonumber\\
-         & + & (\Delta f/f_c)\cos(2\pi f_m t_0)(t-t_0) \nonumber\\
-         & - & \pi f_m (\Delta f/f_c)\sin(2\pi f_m t_0)(t-t_0)^2 \; ,
-\label{eq:polyco-formulae}
-\end{eqnarray}
-with residuals less than $(2/3)\pi^2 f_m^2(\Delta f/f_c)(t-t_0)^3$.
-We require this residual to be always less than one sample interval
-$\Delta t$.  This means that a piecewise-quadratic fit to the phase
-function must be evaluated at times $t_0$ separated by no more than:
-\begin{equation}
-\Delta t_0 \lessim \sqrt[3]{\frac{12f_c\Delta t}{\pi^2f_m^2\Delta f}}
-	\; ,
-\label{eq:polyco-interval}
-\end{equation}
-noting that each piecewise fit is good for a time interval
-$t_0\pm\Delta t_0/2$ about each central time $t_0$.
-
-Thus to create a piecewise-polynomial fit defined by
-\verb@PolycoStruc@, this program simply define a set of fitting times
-\verb@t0[@$k$\verb@]@$=(2k+1)\Delta t_0/2$, and computes the
-appropriate components of \verb@polyco@ from
-Eq.~(\ref{eq:polyco-formulae}), above.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()
-LALSCreateVector()
-LALSDestroyVector()
-LALCreateResampleRules()
-LALApplyResampleRules()
-LALDestroyResampleRules()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ResampleTestCV}}
-
-******************************************************* </lalLaTeX> */
+/*@}*/
 
 #include <stdlib.h>
 #include <math.h>

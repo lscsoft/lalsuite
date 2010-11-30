@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
   REAL8ListElement *phaseList, *phaseHead = NULL, *phaseTail = NULL;
   REAL8 deltaF_SFT, timeBase;
   REAL8  *psi = NULL; 
-  UINT4 counter = 0; 
+  INT8 counter = 0; 
   COMPLEX8FrequencySeries *sft1 = NULL, *sft2 = NULL;
   INT4 sameDet;
   REAL8FrequencySeries *psd1, *psd2;
@@ -161,29 +161,29 @@ int main(int argc, char *argv[]){
   /* skypatch info */
   REAL8  *skyAlpha=NULL, *skyDelta=NULL,
     *skySizeAlpha=NULL, *skySizeDelta=NULL; 
-  INT4   nSkyPatches, skyCounter=0; 
+  INT8   nSkyPatches, skyCounter=0; 
   SkyPatchesInfo skyInfo;
 
   /* frequency loop info */
-  INT4 nfreqLoops=1, freqCounter = 0;
-  INT4 nParams = 0;
+  INT8 nfreqLoops=1, freqCounter = 0;
+  INT8 nParams = 0;
   REAL8 f_current = 0.0;
-  INT4 ualphacounter=0.0;
+  INT8 ualphacounter=0.0;
 
   /* frequency derivative loop info. we can go up to f_doubledot */
-  INT4 nfdotLoops = 1, fdotCounter = 0;
-  INT4 nfddotLoops = 1, fddotCounter = 0;
+  INT8 nfdotLoops = 1, fdotCounter = 0;
+  INT8 nfddotLoops = 1, fddotCounter = 0;
   REAL8 fdot_current = 0.0, delta_fdot = 0.0;
   REAL8 fddot_current = 0.0, delta_fddot = 0.0; 
 
   /* frequency derivative array, if we search over q1, q2, n */
-  INT4 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
-  INT4 q1Counter = 0, q2Counter = 0, nCounter = 0;
+  INT8 nq1Loops = 1, nq2Loops = 1, nnLoops = 1;
+  INT8 q1Counter = 0, q2Counter = 0, nCounter = 0;
   REAL8 q1_current = 0.0, q2_current = 0.0, n_current = 0.0;
   REAL8 delta_q1 = 0.0, delta_q2 = 0.0, delta_n = 0.0;
   REAL8Vector *fdots = NULL;
 
-  INT4 paramCounter = 0;
+  INT8 paramCounter = 0;
 
   static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
@@ -410,7 +410,7 @@ int main(int argc, char *argv[]){
   }
 
   /*get number of frequency loops*/
-  nfreqLoops = ceil(uvar_fBand/uvar_fResolution);
+  nfreqLoops = rint(uvar_fBand/uvar_fResolution);
   /* if we are using spindown parameters, initialise the fdots array */
   if (uvar_QCoeffs) {
 
@@ -418,11 +418,17 @@ int main(int argc, char *argv[]){
     fdots->length = N_SPINDOWN_DERIVS;
     fdots->data = (REAL8 *)LALCalloc(fdots->length, sizeof(REAL8));
 
-    nq1Loops = 1 + (INT4)ceil(uvar_q1Band/uvar_q1Resolution);
+    if (uvar_q1Band > 0) {
+      nq1Loops = rint(uvar_q1Band/uvar_q1Resolution);
+    }
     
-    nq2Loops = 1 + ceil(uvar_q2Band/uvar_q2Resolution);
+    if (uvar_q2Band > 0) {
+      nq2Loops = rint(uvar_q2Band/uvar_q2Resolution);
+    }
 
-    nnLoops = 1 + ceil(uvar_brakingindexBand/uvar_brakingindexResolution);
+    if (uvar_brakingindexBand > 0) {
+      nnLoops = rint(uvar_brakingindexBand/uvar_brakingindexResolution);
+    }
 
     delta_q1 = uvar_q1Resolution;
     
@@ -441,9 +447,13 @@ int main(int argc, char *argv[]){
       uvar_fddotResolution = CUBE(1/tObs);
     }
 
-    nfdotLoops = 1 + ceil(uvar_fdotBand/uvar_fdotResolution);
+    if (uvar_fdotBand > 0) {
+      nfdotLoops = rint(uvar_fdotBand/uvar_fdotResolution);
+    }
 
-    nfddotLoops = 1 + ceil(uvar_fddotBand/uvar_fddotResolution);
+    if (uvar_fddotBand > 0) {
+    nfddotLoops = rint(uvar_fddotBand/uvar_fddotResolution);
+    }
 
     delta_fdot = uvar_fdotResolution;
  
@@ -642,6 +652,8 @@ int main(int argc, char *argv[]){
   slidingcounter = 0;
   
   time(&t1); 
+
+  fprintf(stderr,"beginning main calculations over %ld loops:\n%ld freq, %ld Q1, %ldn\n",nParams, nfreqLoops, nq1Loops, nnLoops);
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
@@ -949,7 +961,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
     } /*end if listLength > 1 */
   } /* finish loop over all sfts */
 
-  printf("finish loop over all sfts\n");
+  fprintf(stderr,"finish loop over all sfts\n");
 
   time(&t2);
 
