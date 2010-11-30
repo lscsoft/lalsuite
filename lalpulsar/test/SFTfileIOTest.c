@@ -134,7 +134,8 @@ SFTConstraints empty_constraints;
 
 /* ----------------------------------------------------------------------*/
 
-int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
+static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2);
+static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 {
   UINT4 sft,bin;
   if (sft_vect->length != sft_vect2->length) {
