@@ -17,94 +17,111 @@
 *  MA  02111-1307  USA
 */
 
-/************************************** <lalVerbatim file="GeneralMeshTestCV">
-Author: Jones, D. I.,   Owen, B. J.
-$Id$
-********************************************************** </lalVerbatim> */
-
-/**************************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{GeneralMeshTest.c}}
-\label{ss:GeneralMeshTest}
-
-Tests and showcases the combination of a LAL metric function (of the
-user's specification) and \texttt{TwoDMesh} modules by producing a
+/**
+\author Jones, D. I.,   Owen, B. J.
+\file
+\ingroup PtoleMetric_h
+\brief Tests and showcases the combination of a LAL metric function (of the
+user's specification) and \ref TwoDMesh_h modules by producing a
 template mesh.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Program <tt>GeneralMeshTest.c</tt>}
+\latexonly\label{ss_GeneralMeshTest}\endlatexonly
+
+\heading{Usage}
+\code
 GeneralMeshTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-The \texttt{-a} option determines which LAL metric code is used.  The
+The <b>-a</b> option determines which LAL metric code is used.  The
 options are:
+<ul>
+<li>1 = LALPtoleMetric() (default),
+<li>2 = (LALCoherentMetric() \& LALDTBaryPtolemaic()),
+<li>3 = (LALCoherentMetric() \& LALDTEphemeris()).
+</ul>
 
-\hspace{1cm} 1 = PtoleMetric (default),
-
-\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic),
-
-\hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
-
-The \texttt{-b} option sets the beginning GPS time of integration to
-the option argument. (Default is $731265908$ seconds, chosen to lie
+The <b>-b</b> option sets the beginning GPS time of integration to
+the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
 within the S2 run).
 
-The \texttt{-c} option determins the center of the patch.  This option
+The <b>-c</b> option determins the center of the patch.  This option
 is hardcoded to use equatorial coordinates and the argument should be
 given in hh:mm:ss:dd:mm:ss format.  (Default is the center of the
 globular cluster 47 Tuc).
 
-The \texttt{-d} option sets the detector to the option argument. The
+The <b>-d</b> option sets the detector to the option argument. The
 options are:
+<ul>
+<li>1 = LIGO Hanford
+<li>2 = LIGO Livingston
+<li>3 = VIRGO
+<li>4 = GEO600 (default)
+<li>5 = TAMA300
+</ul>
 
-\hspace{1cm} 1 = LIGO Hanford
+The <b>-e</b> option sets the LAL debug level to 1.  (The default is 0).
 
-\hspace{1cm} 2 = LIGO Livingston
-
-\hspace{1cm} 3 = VIRGO
-
-\hspace{1cm} 4 = GEO600 (default)
-
-\hspace{1cm} 5 = TAMA300
-
-The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
-
-The \texttt{-f} option sets the maximum frequency of integration (in Hz) to the
+The <b>-f</b> option sets the maximum frequency of integration (in Hz) to the
 option argument. (The default value is 1000.)
 
-The \texttt{-l} option determines, for a rectangular search region, the
+The <b>-l</b> option determines, for a rectangular search region, the
 limits in right ascension and declination of the grid.  The argument should
 be given in degrees as RA(min):RA(max):dec(min):dec(max).  (The default is
-the octant of the sky defined by $0 < {\rm RA} < 90$ and $0< {\rm dec} <
-85$; this avoids the coordinate singularity at the poles.) This option
-automatically overrides whatever is specified by the \texttt{-r} option.
+the octant of the sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} <
+85\f$; this avoids the coordinate singularity at the poles.) This option
+automatically overrides whatever is specified by the <b>-r</b> option.
 
-The \texttt{-m} option sets the maximum mismatch of the mesh to the option
+The <b>-m</b> option sets the maximum mismatch of the mesh to the option
 argument. (Default is 0.02.)
 
 The texttt{-p} option causes the coordinates of the nodes to be written to
-a file \texttt{mesh.dat}, for the benifit of users who don't have
-\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC),
+a file <tt>mesh.dat</tt>, for the benifit of users who don't have
+\c xmgrace installed.  The format is one node per line, (RA, DEC),
 with the angles in degrees.
 
-The \texttt{-r} option sets the radius (in arcminutes) of the circular
+The <b>-r</b> option sets the radius (in arcminutes) of the circular
 sky patch.  If you specify radius zero you will get a search over a
 rectangular region whose limits in RA and dec are specified by the
-\texttt{-l} option.  (The default value is the radius of the globular
+<b>-l</b> option.  (The default value is the radius of the globular
 cluster 47 Tuc).
 
-The \texttt{-t} option sets the duration of integration in seconds. (The
-default is $39600$ seconds $= 11$ hours, which is chosen because it is of
+The <b>-t</b> option sets the duration of integration in seconds. (The
+default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
 the right size for S2 analyses).
 
-The \texttt{-x} option makes a plot of the mesh points on the sky patch using a
-system call to \texttt{xmgrace}. If \texttt{xmgrace} is not installed on your
-system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
+The <b>-x</b> option makes a plot of the mesh points on the sky patch using a
+system call to \c xmgrace. If \c xmgrace is not installed on your
+system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
 
-\subsubsection*{Exit Codes}
-************************************************ </lalLaTeX><lalErrTable> */
+
+\heading{Algorithm}
+
+\heading{Uses}
+
+\code
+lalDebugLevel                LALDCreateVector()
+LALCheckMemoryLeaks()        LALDDestroyVector()
+LALProjectMetric()           LALGetEarthTimes()
+LALPtoleMetric()             LALInitBarycenter()
+LALCreateTwoDMesh()          LALDestroyTwoDMesh()
+LALFree()                    LALCoherentMetric()
+\endcode
+
+
+\heading{Notes}
+
+For most regions of parameter space the three metric codes seem to
+agree well.  However, for short (less than one day) runs, they are all
+capable of returning (unphysical) negative determinant metrics for
+points very close to the equator.
+
+*/
+
+
+/** \name Error Codes */ /*@{*/
 #define GENERALMESHTESTC_EMEM 1
 #define GENERALMESHTESTC_ERNG 2
 #define GENERALMESHTESTC_EFIO 3
@@ -116,34 +133,7 @@ system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
 #define GENERALMESHTESTC_MSGEFIO "file I/O error"
 #define GENERALMESHTESTC_MSGEOPT "unknown command-line option"
 #define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
-/************************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-lalDebugLevel                LALDCreateVector()
-LALCheckMemoryLeaks()        LALDDestroyVector()
-LALProjectMetric()           LALGetEarthTimes()
-LALPtoleMetric()             LALInitBarycenter()
-LALCreateTwoDMesh()          LALDestroyTwoDMesh()
-LALFree()                    LALCoherentMetric()
-\end{verbatim}
-
-
-
-\subsubsection*{Notes}
-
-For most regions of parameter space the three metric codes seem to
-agree well.  However, for short (less than one day) runs, they are all
-capable of returning (unphysical) negative determinant metrics for
-points very close to the equator.
-
-
-\vfill{\footnotesize\input{GeneralMeshTestCV}}
-
-************************************************************* </lalLaTeX> */
+/*@}*/
 
 
 #include <math.h>
@@ -156,7 +146,7 @@ points very close to the equator.
 #include <lal/LALInitBarycenter.h>
 
 
-
+/** \cond DONT_DOXYGEN */
 NRCSID( GENERALMESHTESTC, "$Id$" );
 
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
@@ -600,3 +590,5 @@ void getMetric( LALStatus *stat,
 
 
 } /* getMetric() */
+
+/** \endcond */
