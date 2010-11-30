@@ -133,6 +133,32 @@ SFTConstraints empty_constraints;
 /*---------- Global variables ----------*/
 
 /* ----------------------------------------------------------------------*/
+
+int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
+{
+  UINT4 sft,bin;
+  if (sft_vect->length != sft_vect2->length) {
+    XLALPrintError ( "\nCompareSFTVectors(): vector lengths differ!\n\n");
+    return(-1);
+  }
+  for(sft=0; sft < sft_vect->length; sft++) {
+    SFTtype sft1 = sft_vect->data[sft];
+    SFTtype sft2 = sft_vect2->data[sft];
+    if (sft1.data->length != sft2.data->length) {
+      XLALPrintError ( "\nCompareSFTVectors(): lengths of SFT#%u differ!\n\n", sft);
+      return(-1);
+    }
+    for(bin=0; bin < sft1.data->length; bin++) {
+      if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
+	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
+	XLALPrintError ( "\nCompareSFTVectors(): bins %u of SFT#%u differ!\n\n", sft, bin);
+	return(-1);
+      }
+    }
+  }
+  return(0);
+}
+
 int main(int argc, char *argv[])
 {
   LALStatus status = empty_status;
@@ -140,7 +166,6 @@ int main(int argc, char *argv[])
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
-  SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
@@ -220,9 +245,11 @@ int main(int argc, char *argv[])
 				 TESTDIR "SFT-test7", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
   SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
+
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
-  sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
+
+  SFTVector *sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
   if (!sft_vect2)
     {
       XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
@@ -230,23 +257,8 @@ int main(int argc, char *argv[])
     }
 
   /* compare the SFT vectors just read */
-  {
-    UINT4 sft,bin;
-    if (sft_vect->length != sft_vect2->length) {
-      XLALPrintError ( "\nComparing SFT vector read by LALLoadSFTs() and XLALLoadSFTs(): vector lengths differ!\n\n");
-      return SFTFILEIOTESTC_ESUB;
-    }
-    for(sft=0; sft < sft_vect->length; sft++) {
-      SFTtype sft1 = sft_vect->data[sft];
-      SFTtype sft2 = sft_vect2->data[sft];
-      if (sft1.data->length != sft2.data->length) {
-	XLALPrintError ( "\nComparing SFT vector read by LALLoadSFTs() and XLALLoadSFTs(): lengths of SFT#%u differ!\n\n", sft);
-	return SFTFILEIOTESTC_ESUB;
-      }
-      for(bin=0; bin < sft1.data->length; bin++) {
-      }
-    }
-  }
+  if(CompareSFTVectors(sft_vect, sft_vect2))
+    return SFTFILEIOTESTC_ESUB;
 
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
