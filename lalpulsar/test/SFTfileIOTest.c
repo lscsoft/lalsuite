@@ -166,6 +166,7 @@ int main(int argc, char *argv[])
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_constraints;
   SFTVector *sft_vect = NULL;
+  SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
@@ -248,17 +249,6 @@ int main(int argc, char *argv[])
 
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
-
-  SFTVector *sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
-  if (!sft_vect2)
-    {
-      XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
-      return SFTFILEIOTESTC_ESUB;
-    }
-
-  /* compare the SFT vectors just read */
-  if(CompareSFTVectors(sft_vect, sft_vect2))
-    return SFTFILEIOTESTC_ESUB;
 
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
@@ -374,6 +364,18 @@ int main(int argc, char *argv[])
       if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_*.sft'\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
+
+  sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
+  if (!sft_vect2)
+    {
+      XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+
+  /* compare the SFT vectors just read */
+  if(CompareSFTVectors(sft_vect, sft_vect2))
+    return SFTFILEIOTESTC_ESUB;
+
   /* the data of 'outputsftv2_v2.sft' and 'outputsftv2_v1.sft' should agree, as the normalization
    * should be corrected again when reading-in
    */
@@ -392,6 +394,7 @@ int main(int argc, char *argv[])
 	  }
       } /* for i < numBins */
   }
+  SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
@@ -406,6 +409,18 @@ int main(int argc, char *argv[])
       return SFTFILEIOTESTC_ESUB;
     }
 
+  /* read with XLALLoadSFTs() */
+  sft_vect2 = XLALLoadSFTs ( catalog, fMin, fMax );
+  if (!sft_vect2)
+    {
+      XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
+      return SFTFILEIOTESTC_ESUB;
+    }
+
+  /* compare the SFT vectors just read */
+  if(CompareSFTVectors(sft_vect, sft_vect2))
+    return SFTFILEIOTESTC_ESUB;
+
   /* write v1-SFT to disk */
   SUB ( LALWriteSFTfile (&status, &(sft_vect->data[0]), "outputsft_v1.sft"), &status);
 
@@ -417,6 +432,7 @@ int main(int argc, char *argv[])
   strcpy ( sft_vect->data[0].name, "H1" );
   SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
 
+  SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
