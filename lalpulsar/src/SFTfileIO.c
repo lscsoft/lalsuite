@@ -792,13 +792,13 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin))) {
-    XLALPrintError("Couldn't create sftVector\n");
+    XLALPrintError("ERROR: Couldn't create sftVector\n");
     XLALLOADSFTSERROR(XLAL_ENOMEM);
   }
 
   /* allocate an additional single SFT where SFTs are read in */
   if(!(thisSFT = XLALCreateSFT (lastbin + 1 - firstbin))) {
-    XLALPrintError("Couldn't create thisSFT\n");
+    XLALPrintError("ERROR: Couldn't create thisSFT\n");
     XLALLOADSFTSERROR(XLAL_ENOMEM);
   }
 
@@ -809,7 +809,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   {
     UINT4 size = catalog->length * sizeof(catalog->data[0]);
     if(!(locatalog.data = XLALMalloc(size))) {
-      XLALPrintError("Couldn't allocate locatalog.data\n");
+      XLALPrintError("ERROR: Couldn't allocate locatalog.data\n");
       XLALLOADSFTSERROR(XLAL_ENOMEM);
     }
     memcpy(locatalog.data, catalog->data, size);
@@ -820,7 +820,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
   /* allocate segment vector, one element per final SFT */
   if(!(segments = XLALCalloc(nSFTs, sizeof(SFTReadSegment)))) {
-    XLALPrintError("Couldn't allocate locatalog.data\n");
+    XLALPrintError("ERROR: Couldn't allocate locatalog.data\n");
     XLALLOADSFTSERROR(XLAL_ENOMEM);
   }
 
@@ -836,7 +836,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
       if(!fp) {
-	XLALPrintError("Couldn't open file '%s'\n", fname);
+	XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
       }
     }
@@ -844,7 +844,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     /* seek to the position of the SFT in the file (if necessary) */
     if ( locatalog.data[catPos].locator->offset )
       if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 ) {
-	XLALPrintError("Couldn't seek to position %ld in file '%s'\n",
+	XLALPrintError("ERROR: Couldn't seek to position %ld in file '%s'\n",
 		       locatalog.data[catPos].locator->offset, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
       }
@@ -859,7 +859,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       if(lastBinRead) {
 	if(segments[isft].last == 0) {
 	  if(firstBinRead != firstbin) {
-	    XLALPrintError("data gap or overlap at first bin of SFT#%u (GPS %lf)"
+	    XLALPrintError("ERROR: data gap or overlap at first bin of SFT#%u (GPS %lf)"
 			   " expected bin %u, bin %u read from file '%s'\n",
 			   isft, GPS2REAL8(thisSFT->epoch),
 			   firstbin, firstBinRead, fname);
@@ -867,7 +867,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	  }
 	  segments[isft].first = firstBinRead;
 	} else if(firstBinRead != segments[isft].last + 1) {
-	  XLALPrintError("data gap or overlap in SFT#%u (GPS %lf)"
+	  XLALPrintError("ERROR: data gap or overlap in SFT#%u (GPS %lf)"
 			 " between bin %u read from file '%s' and bin %u read from file '%s'\n",
 			 isft, GPS2REAL8(thisSFT->epoch),
 			 segments[isft].last, segments[isft].lastfrom->fname,
@@ -889,7 +889,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	   isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin); */
 	segments[isft].epoch = thisSFT->epoch;
       } else {
-	XLALPrintError("Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
+	XLALPrintError("ERROR: Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
       }
     }
@@ -905,13 +905,13 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   for(UINT4 isft = 0; isft < nSFTs; isft++)
     if(segments[isft].last != lastbin) {
       if (segments[isft].last)
-	XLALPrintError("data missing at end of SFT#%u (GPS %lf)"
+	XLALPrintError("ERROR: data missing at end of SFT#%u (GPS %lf)"
 		       " expected bin %u, bin %u read from file '%s'\n",
 		       isft, GPS2REAL8(segments[isft].epoch),
 		       lastbin, segments[isft].last,
 		       segments[isft].lastfrom->fname);
       else
-	XLALPrintError("no data could be read for SFT#%u (GPS %lf)\n",
+	XLALPrintError("ERROR: no data could be read for SFT#%u (GPS %lf)\n",
 		       isft, GPS2REAL8(segments[isft].epoch));
       XLALLOADSFTSERROR(XLAL_EIO);
     }
