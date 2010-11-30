@@ -80,6 +80,7 @@ Optional OPTIONS:\n \
 [--pinparams STRING\t:\tList parameters to be fixed to their injected values (, separated) i.e. --pinparams mchirp,longitude\n \
 [--version\t:\tPrint version information and exit]\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
+[--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)\
 [--help\t:\tPrint this message]\n"
 
 #ifdef __GNUC__
@@ -141,7 +142,7 @@ extern const LALUnit strainPerCount;
 INT4 ampOrder=0;
 INT4 phaseOrder=4;
 char *pinned_params=NULL;
-
+NT4 fLowFlag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 int checkParamInList(const char *list, const char *param);
@@ -227,6 +228,7 @@ void initialise(int argc, char *argv[]){
 		{"help",no_argument,0,'h'},
 		{"pinparams",required_argument,0,21},
 		{"datadump",required_argument,0,22},
+		{,"flow",required_argument,0,23},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
@@ -389,6 +391,10 @@ void initialise(int argc, char *argv[]){
 		case 'L':
 			timeslides=1;
 			break;
+		case 23:
+			fLow=atof(optarg);
+			fLowFlag=1;
+			break;
 		default:
 			fprintf(stdout,USAGE); exit(0);
 			break;
@@ -526,9 +532,11 @@ int main( int argc, char *argv[])
 		if(Ninj<event) {fprintf(stderr,"Error reading event %i from %s\n",event,injXMLFile); exit(-1);}
 		i=0;
 		while(i<event) {i++; injTable = injTable->next;} /* Select event */
-		if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
-		else {injTable->f_lower = inputMCMC.fLow;
-		fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
+		if (!fLowFlag){
+			if(injTable->f_lower>0.0) inputMCMC.fLow = injTable->f_lower;
+			else {injTable->f_lower = inputMCMC.fLow;
+				fprintf(stderr,"Warning, injection does not specify f_lower, using default %lf\n",inputMCMC.fLow);}
+		}
 //		InjParams.deltaT=1.0/SampleRate;
 //		InjParams.fStartIn=(REAL4)inputMCMC.fLow;
 //		memset(&InjectGW,0,sizeof(CoherentGW));
