@@ -442,11 +442,10 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  sscanf(line,"%d %d %lf",&((*resultsfiles)->file[i].Bayes_start->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_end->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_perseg->data[k]));
-	  printf("read Bayes factors as %d %d %lf\n",((*resultsfiles)->file[i].Bayes_start->data[k]),
-		 ((*resultsfiles)->file[i].Bayes_end->data[k]),
-		 ((*resultsfiles)->file[i].Bayes_perseg->data[k]));
+	 /*  LogPrintf(LOG_DEBUG,"%s : read Bayes factors as %d %d %lf\n",fn,((*resultsfiles)->file[i].Bayes_start->data[k]), */
+/* 		 ((*resultsfiles)->file[i].Bayes_end->data[k]), */
+/* 		 ((*resultsfiles)->file[i].Bayes_perseg->data[k])); */
 	}
-	printf("***\n");
 
       }
 	
@@ -507,12 +506,12 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 		   &((*resultsfiles)->file[i].logprior[j]->data[k]));
 	    /* log the prior for smother later interpolation */
 	    (*resultsfiles)->file[i].logprior[j]->data[k] = log((*resultsfiles)->file[i].logprior[j]->data[k]);
-	    printf("read input as %lf %lf %lf\n",((*resultsfiles)->file[i].logposterior[j]->data[k]),
-		   ((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]),
-		   ((*resultsfiles)->file[i].logprior[j]->data[k]));
+	   /*  LogPrintf(LOG_DEBUG,"%s : read input as %lf %lf %lf\n",fn,((*resultsfiles)->file[i].logposterior[j]->data[k]), */
+/* 		   ((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]), */
+/* 		   ((*resultsfiles)->file[i].logprior[j]->data[k])); */
 	    
 	  }
-	  printf("***\n");
+	 
 	}
 	
       } /* end loop over parameters */
@@ -522,26 +521,26 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
     /* fill in extra info */
     snprintf((*resultsfiles)->file[i].filename,STRINGLENGTH,"%s",pglob.gl_pathv[i]);
 
-    LogPrintf(LOG_DEBUG,"%s : read tstart as %d\n",fn,((*resultsfiles)->file[i].tstart));
-    LogPrintf(LOG_DEBUG,"%s : read tspan as %f\n",fn,((*resultsfiles)->file[i].tspan));
-    LogPrintf(LOG_DEBUG,"%s : read tobs as %f\n",fn,((*resultsfiles)->file[i].tobs));
-    LogPrintf(LOG_DEBUG,"%s : read nseg as %d\n",fn,((*resultsfiles)->file[i].nseg));
-    LogPrintf(LOG_DEBUG,"%s : read ndim as %d\n",fn,((*resultsfiles)->file[i].ndim));
-    LogPrintf(LOG_DEBUG,"%s : read ampdim as %d\n",fn,((*resultsfiles)->file[i].ampdim));
-    LogPrintf(LOG_DEBUG,"%s : read mismatch as %f\n",fn,((*resultsfiles)->file[i].mm));
-    LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",fn,((*resultsfiles)->file[i].Bayes));
-    LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",fn,((*resultsfiles)->file[i].Bayes_fixed));
+   /*  LogPrintf(LOG_DEBUG,"%s : read tstart as %d\n",fn,((*resultsfiles)->file[i].tstart)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read tspan as %f\n",fn,((*resultsfiles)->file[i].tspan)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read tobs as %f\n",fn,((*resultsfiles)->file[i].tobs)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read nseg as %d\n",fn,((*resultsfiles)->file[i].nseg)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read ndim as %d\n",fn,((*resultsfiles)->file[i].ndim)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read ampdim as %d\n",fn,((*resultsfiles)->file[i].ampdim)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read mismatch as %f\n",fn,((*resultsfiles)->file[i].mm)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read Bayes as %f\n",fn,((*resultsfiles)->file[i].Bayes)); */
+/*     LogPrintf(LOG_DEBUG,"%s : read Bayes_fixed as %f\n",fn,((*resultsfiles)->file[i].Bayes_fixed)); */
   
-    for (j=0;j<NBINMAX+1;j++) {
-      LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",fn,j,((*resultsfiles)->file[i].name[j]));
-      LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",fn,j,((*resultsfiles)->file[i].min[j]));
-      LogPrintf(LOG_DEBUG,"%s : read max[%d] as %f\n",fn,j,((*resultsfiles)->file[i].max[j]));
-      LogPrintf(LOG_DEBUG,"%s : read sig[%d] as %f\n",fn,j,((*resultsfiles)->file[i].sig[j]));
-      LogPrintf(LOG_DEBUG,"%s : read start[%d] as %f\n",fn,j,((*resultsfiles)->file[i].start[j]));
-      LogPrintf(LOG_DEBUG,"%s : read delta[%d] as %f\n",fn,j,((*resultsfiles)->file[i].delta[j]));
-      LogPrintf(LOG_DEBUG,"%s : read length[%d] as %d\n",fn,j,((*resultsfiles)->file[i].length[j]));
-      LogPrintf(LOG_DEBUG,"%s : read prior[%d] as %s\n",fn,j,((*resultsfiles)->file[i].prior[j]));
-    }
+/*     for (j=0;j<NBINMAX+1;j++) { */
+/*       LogPrintf(LOG_DEBUG,"%s : read name[%d] as %s\n",fn,j,((*resultsfiles)->file[i].name[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read min[%d] as %f\n",fn,j,((*resultsfiles)->file[i].min[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read max[%d] as %f\n",fn,j,((*resultsfiles)->file[i].max[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read sig[%d] as %f\n",fn,j,((*resultsfiles)->file[i].sig[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read start[%d] as %f\n",fn,j,((*resultsfiles)->file[i].start[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read delta[%d] as %f\n",fn,j,((*resultsfiles)->file[i].delta[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read length[%d] as %d\n",fn,j,((*resultsfiles)->file[i].length[j])); */
+/*       LogPrintf(LOG_DEBUG,"%s : read prior[%d] as %s\n",fn,j,((*resultsfiles)->file[i].prior[j])); */
+/*     } */
 
     /* close the frame file */
     fclose(fp);
@@ -668,7 +667,6 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
     for (j=0;j<resultsfiles->file[i].ndim;j++) {
       if (strcmp(resultsfiles->file[i].name[j],"nu") == 0) {
 	deltaband[i] = resultsfiles->file[i].max[j]-resultsfiles->file[i].min[j];
-	printf("deltaband = %f\n",deltaband[i]);
 	totalband += deltaband[i];
       }
     }
@@ -784,14 +782,14 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	XLAL_ERROR(fn,XLAL_ENOMEM);
       }
       (*combinedresult)->length[k] = newlen;
-      
+
       /* initialise results */
       for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
 	(*combinedresult)->logprior[k]->data[j] = -1e200;
 	(*combinedresult)->logposterior[k]->data[j] = -1e200;
 	(*combinedresult)->logposterior_fixed[k]->data[j] = -1e200;
       }
-      
+
       /* fill in some header info */
       snprintf((*combinedresult)->name[k],STRINGLENGTH,"%s",resultsfiles->file[0].name[k]);
       snprintf((*combinedresult)->prior[k],STRINGLENGTH,"%s",resultsfiles->file[0].prior[k]);
@@ -815,6 +813,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline,N);
 	gsl_spline *spline_fixed = gsl_spline_alloc(gsl_interp_cspline,N);
 	gsl_spline *spline_prior = gsl_spline_alloc(gsl_interp_cspline,N);
+
 	REAL8 *x = NULL;
 	REAL8 *y = NULL;
 	REAL8 *y_fixed = NULL;
@@ -846,12 +845,13 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	  y_prior[j] = resultsfiles->file[i].logprior[k]->data[j];
 	  /* printf("x = %f y = %f y_fixed = %f\n",x[j],y[j],y_fixed[j]); */
 	}
-	
-	if (N>1) {
+
+	if (N>2) {
+  
 	  gsl_spline_init(spline,x,y,N);
 	  gsl_spline_init(spline_fixed,x,y_fixed,N);
 	  gsl_spline_init(spline_prior,x,y_prior,N);
-
+	 
 	  /* interpolate and add to result */
 	  for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
 	    REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
@@ -866,21 +866,44 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	    (*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
 	    (*combinedresult)->logprior[k]->data[j] = XLALLogSumExp(temp5,temp6);
 	  }
+	 
+	}
+	/* linear interp for 2 points */
+	else if (N==2) {
+	  
+	  for (j=0;j<(*combinedresult)->logposterior_fixed[k]->length;j++) {
+	    
+	    REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+	    REAL8 g1 = (resultsfiles->file[i].logposterior[k]->data[1] - resultsfiles->file[i].logposterior[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp1 = (*combinedresult)->logposterior[k]->data[j];
+	    REAL8 temp2 = resultsfiles->file[i].logposterior[k]->data[0] + z*g1 + log(deltaband[i]) - log(totalband);
+	    REAL8 g2 = (resultsfiles->file[i].logposterior_fixed[k]->data[1] - resultsfiles->file[i].logposterior_fixed[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[j];
+	    REAL8 temp4 = resultsfiles->file[i].logposterior_fixed[k]->data[0] + z*g2  + log(deltaband[i]) - log(totalband);
+	    REAL8 g3 = (resultsfiles->file[i].logprior[k]->data[1] - resultsfiles->file[i].logprior[k]->data[0])/resultsfiles->file[i].delta[k];
+	    REAL8 temp5 = (*combinedresult)->logprior[k]->data[j];
+	    REAL8 temp6 = resultsfiles->file[i].logprior[k]->data[0] + z*g3 + log(deltaband[i]) - log(totalband);
 
+	    (*combinedresult)->logposterior[k]->data[j] = XLALLogSumExp(temp1,temp2);
+	    (*combinedresult)->logposterior_fixed[k]->data[j] = XLALLogSumExp(temp3,temp4);
+	    (*combinedresult)->logprior[k]->data[j] = XLALLogSumExp(temp5,temp6);
+	  }
 	}
 	else {
+   
 	  REAL8 temp1 = (*combinedresult)->logposterior[k]->data[0];
 	  REAL8 temp2 = resultsfiles->file[i].logposterior[k]->data[0] + log(deltaband[i]) - log(totalband);
 	  REAL8 temp3 = (*combinedresult)->logposterior_fixed[k]->data[0];
 	  REAL8 temp4 = resultsfiles->file[i].logposterior_fixed[k]->data[0] + log(deltaband[i]) - log(totalband);
 	  REAL8 temp5 = (*combinedresult)->logprior[k]->data[0];
 	  REAL8 temp6 = resultsfiles->file[i].logprior[k]->data[0] + log(deltaband[i]) - log(totalband);
-
+	
 	  (*combinedresult)->logposterior[k]->data[0] = XLALLogSumExp(temp1,temp2);
 	  (*combinedresult)->logposterior_fixed[k]->data[0] = XLALLogSumExp(temp3,temp4);
 	  (*combinedresult)->logprior[k]->data[0] = XLALLogSumExp(temp5,temp6);
+	 
 	}
-	
+
 	/* free memory */
 	XLALFree(x);
 	XLALFree(y);
@@ -889,7 +912,7 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	gsl_interp_accel_free(acc);
 	gsl_interp_accel_free(acc_fixed);
 	gsl_interp_accel_free(acc_prior);
-	if (N>1) {
+	if (N>2) {
 	  gsl_spline_free(spline);
 	  gsl_spline_free(spline_fixed);
 	  gsl_spline_free(spline_prior);
@@ -897,14 +920,19 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	
       }  /* end the loop over files */
       
-      /* output results to screen */
-      for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
-	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+      /* output results to screen */ 
+      {
+	REAL8 z = (*combinedresult)->start[k];
 	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",fn,
-		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[j],
-		  (*combinedresult)->logposterior_fixed[k]->data[j],(*combinedresult)->logprior[k]->data[j]);
+		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[0],
+		  (*combinedresult)->logposterior_fixed[k]->data[0],(*combinedresult)->logprior[k]->data[0]);
+	LogPrintf(LOG_DEBUG,"%s ...\n");
+	z = (*combinedresult)->start[k] + ((*combinedresult)->logposterior[k]->length-1)*(*combinedresult)->delta[k];
+	LogPrintf(LOG_DEBUG,"%s : combined result on %s %f %f %f %f\n",fn,
+		  (*combinedresult)->name[k],z,(*combinedresult)->logposterior[k]->data[((*combinedresult)->logposterior[k]->length-1)],
+		  (*combinedresult)->logposterior_fixed[k]->data[((*combinedresult)->logposterior[k]->length-1)],(*combinedresult)->logprior[k]->data[((*combinedresult)->logposterior[k]->length-1)]);
       }
-      
+
     }  /* end if statement on whether we are combining nu data */
     else {
 
@@ -1026,12 +1054,18 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
       } /* end interpolation */
        
       /* output results to screen */
-      for (j=0;j<(*combinedresult)->logposterior[k]->length;j++) {
-	REAL8 z = (*combinedresult)->start[k] + j*(*combinedresult)->delta[k];
+      {
+	REAL8 z = (*combinedresult)->start[k];
 	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
-		  z,(*combinedresult)->logposterior[k]->data[j],
-		  (*combinedresult)->logposterior_fixed[k]->data[j],
-		  (*combinedresult)->logprior[k]->data[j]);
+		  z,(*combinedresult)->logposterior[k]->data[0],
+		  (*combinedresult)->logposterior_fixed[k]->data[0],
+		  (*combinedresult)->logprior[k]->data[0]);
+	LogPrintf(LOG_DEBUG,"%s ...\n");
+	z = (*combinedresult)->start[k] + ((*combinedresult)->logposterior[k]->length-1)*(*combinedresult)->delta[k];
+	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
+		  z,(*combinedresult)->logposterior[k]->data[(*combinedresult)->logposterior[k]->length],
+		  (*combinedresult)->logposterior_fixed[k]->data[(*combinedresult)->logposterior[k]->length],
+		  (*combinedresult)->logprior[k]->data[(*combinedresult)->logposterior[k]->length]);
       }
 
     } /* end if statement on nu */

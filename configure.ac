@@ -7,7 +7,8 @@ AC_CONFIG_FILES([
   gnuscripts/Makefile \
   doxygen/Makefile \
   doxygen/doxygen-html.cfg \
-  doxygen/doxygen-pdf.cfg
+  doxygen/doxygen-pdf.cfg \
+  doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
 AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
@@ -15,6 +16,7 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 # for building doxygen
 AC_SUBST([abs_lalsuite_srcdir],[`cd ${srcdir} && pwd`])
 AC_PROG_LN_S
+AC_CHECK_PROGS([GIT], [git], [])
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
@@ -76,6 +78,7 @@ if test "$lalxml" = "true"; then
   LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
   export LALXML_LIBS LALXML_CFLAGS
 fi
+
 
 AC_CONFIG_SUBDIRS([lal])
 

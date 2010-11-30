@@ -48,12 +48,12 @@ void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
       gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh - floor(t0+ii*(Tcoh-SFToverlap)+0.5*Tcoh))*1e9);
       REAL8 gmst = XLALGreenwichMeanSiderealTime(&gpstime);
       if (XLAL_IS_REAL8_FAIL_NAN(gmst)) {
-         XLALPrintError("%s: XLALGreenwichMeanSiderealTime(%.9d.%.9d) failed.\n", fn, gpstime.gpsSeconds, gpstime.gpsNanoSeconds);
+         fprintf(stderr,"%s: XLALGreenwichMeanSiderealTime(%.9d.%.9d) failed.\n", fn, gpstime.gpsSeconds, gpstime.gpsNanoSeconds);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       XLALComputeDetAMResponse(&fplus, &fcross, det.response, ra, dec, 0.0, gmst);
       if (xlalErrno!=0) {
-         XLALPrintError("%s: XLALComputeDetAMResponse() failed.\n", fn);
+         fprintf(stderr,"%s: XLALComputeDetAMResponse() failed.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
@@ -81,7 +81,7 @@ void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
    
       LALDetectorVel(&status, detvel, &gpstime, det, edat);
       if (status.statusCode!=0) {
-         XLALPrintError("%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
+         fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
       output->data[ii] = (REAL4)(detvel[0]*cos(ra)*cos(dec) + detvel[1]*sin(ra)*cos(dec) + detvel[2]*sin(dec));
@@ -113,13 +113,13 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
       if (ii==0) {
          LALDetectorVel(&status, detvel0, &gpstime, det, edat);
          if (status.statusCode!=0) {
-            XLALPrintError("%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
+            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
             XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
          }
       } else {
          LALDetectorVel(&status, detvel, &gpstime, det, edat);
          if (status.statusCode!=0) {
-            XLALPrintError("%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
+            fprintf(stderr,"%s: LALDetectorVel() failed with error code %d.\n", fn, status.statusCode);
             XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
          }
          dv[0] = detvel[0] - detvel0[0];
