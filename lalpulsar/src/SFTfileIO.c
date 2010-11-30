@@ -885,8 +885,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	       thisSFT->data->data,
 	       (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
       } else if(firstBinRead == 0) {
-	XLALPrintWarning("SFT#%u (GPS %lf) locator(%s:%ld): Bins %u,%u not contained in SFT\n",
-			 isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin);
+	/* XLALPrintWarning("SFT#%u (GPS %lf) locator(%s:%ld): Bins %u,%u not contained in SFT\n",
+	   isft, GPS2REAL8(thisSFT->epoch), fname, locator->offset, firstbin, lastbin); */
 	segments[isft].epoch = thisSFT->epoch;
       } else {
 	XLALPrintError("Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
