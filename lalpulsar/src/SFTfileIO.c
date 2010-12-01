@@ -625,7 +625,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
   /* check that requested interval is found in SFT */
   /* return 0 (no bins read) if this isn't the case */
-  if ( firstBin2read >= lastBin2read ) {
+  if ( firstBin2read > lastBin2read ) {
     *firstBinRead = 0;
     return(0);
   }
