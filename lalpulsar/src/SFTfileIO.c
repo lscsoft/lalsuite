@@ -838,7 +838,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       }
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
-      LogPrintf(LOG_DETAIL, "Opening file '%s'\n");
+      LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
       if(!fp) {
 	XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
