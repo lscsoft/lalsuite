@@ -293,12 +293,15 @@ static REAL8 dEp2(REAL8 v, expnCoeffs *ak)
 
 static REAL8 dEp4(REAL8 v, expnCoeffs *ak)
 {
-   REAL8 energy, denergy, Energy, dEnergy, x, y;
+   REAL8 energy, denergy, Energy, dEnergy, denom, x, y;
    x = v*v;
    energy = ep4(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
-   denergy = (1. + 2.*ak->ePa2*x + ((ak->ePa1 + ak->ePa2) * ak->ePa2 * x*x))/pow(1. + (ak->ePa1 + ak->ePa2) * x ,2.);
+
+   denom = 1. + (ak->ePa1 + ak->ePa2) * x;
+   denom = denom * denom;
+   denergy = (1. + 2.*ak->ePa2*x + ((ak->ePa1 + ak->ePa2) * ak->ePa2 * x*x))/denom;
    dEnergy = - v * ak->eta * denergy /((1.+Energy) * y);
    return(dEnergy);
 }
@@ -307,16 +310,19 @@ static REAL8 dEp4(REAL8 v, expnCoeffs *ak)
 
 static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
 {
-   REAL8 energy, denergy, Energy, dEnergy, x, y;
+   REAL8 energy, denergy, Energy, dEnergy, denom, x, y;
    x = v*v;
    energy = ep6(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
+   
+   denom = 1. + (ak->ePa1 + ak->ePa2 + ak->ePa3) * x + ak->ePa1*ak->ePa3*x*x;
+   denom = denom * denom;
+
    denergy = (1. + 2.*(ak->ePa2+ak->ePa3)*x + (ak->ePa1*ak->ePa2
            + ak->ePa2*ak->ePa2 + 2.* ak->ePa2*ak->ePa3
            + ak->ePa3*ak->ePa3) * x*x)
-           /pow(1. + (ak->ePa1 + ak->ePa2 + ak->ePa3) * x
-           + ak->ePa1*ak->ePa3*x*x,2.);
+           /denom;
    dEnergy = - v * ak->eta * denergy /((1.+Energy) * y);
    return(dEnergy);
 }
@@ -925,10 +931,10 @@ LALInspiralChooseModel(
    case TaylorEt:
    case TaylorT4:
    case TaylorN:
-     ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
+     ak->flso = ak->vlso * ak->vlso * ak->vlso/(LAL_PI * ak->totalmass);
 
      if (ak->fn) {
-       vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
+       vn = cbrt(LAL_PI * ak->totalmass * ak->fn);
        ak->vn = (vn < vlso) ? vn :  vlso;
      }
 
@@ -947,7 +953,7 @@ LALInspiralChooseModel(
      CHECKSTATUSPTR(status);
 
      ak->tn = -tofv - ak->samplinginterval;
-     params->fCutoff = ak->fn = pow(ak->vn, 3.)/(LAL_PI * ak->totalmass);
+     params->fCutoff = ak->fn = ak->vn * ak->vn * ak->vn/(LAL_PI * ak->totalmass);
      /*
        for (v=0; v<ak->vn; v+=0.001)
        {
