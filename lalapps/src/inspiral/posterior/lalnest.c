@@ -627,16 +627,9 @@ int main( int argc, char *argv[])
 		INT4 TrigSegStart,TrigSample;
 		inputMCMC.ifoID[i] = IFOnames[i];
 		inputMCMC.deltaF = (REAL8)SampleRate/seglen;
-
-		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
-		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
-		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
-		TrigSegStart=TrigSample+ (2*SampleRate) - seglen; /* Put trigger 2 s before end of segment */
-		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
-
+		datastart=realstart; /* Reset the datastart in case it has been slid previously */
 		segmentStart = datastart;
-		XLALGPSAdd(&segmentStart, (REAL8)TrigSegStart/(REAL8)SampleRate);
-		memcpy(&(inputMCMC.epoch),&segmentStart,sizeof(LIGOTimeGPS));
+
 		/* Check for synthetic data */
 		if(!(strcmp(CacheFileNames[i],"LALLIGO") && strcmp(CacheFileNames[i],"LALVirgo") && strcmp(CacheFileNames[i],"LALGEO") && strcmp(CacheFileNames[i],"LALEGO") && strcmp(CacheFileNames[i],"LALAdLIGO")))
 		{
@@ -652,9 +645,9 @@ int main( int argc, char *argv[])
 			if(!strcmp(CacheFileNames[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
 			if(!strcmp(CacheFileNames[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
 			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",CacheFileNames[i]); exit(-1);}
-			inputMCMC.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&datastart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+			inputMCMC.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&realstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 			for(j=0;j<inputMCMC.invspec[i]->data->length;j++){ PSD(&status,&(inputMCMC.invspec[i]->data->data[j]),j*inputMCMC.deltaF);}
-			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&datastart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
+			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			memcpy(&(inputMCMC.stilde[i]->epoch),&segmentStart,sizeof(LIGOTimeGPS));
 			/*			inputMCMC.stilde[i]->epoch = datastart;
 			 XLALGPSAdd(&(inputMCMC.stilde[i]->epoch), (REAL8)TrigSegStart/(REAL8)SampleRate);*/
@@ -669,32 +662,38 @@ int main( int argc, char *argv[])
 
 		if(timeslides&&!FakeFlag){ /* Set up time slides by randomly offsetting the data */
 			LALCreateRandomParams(&status,&randparam,seed);
-			memcpy(&realstart,&datastart,sizeof(LIGOTimeGPS));
 			LALUniformDeviate(&status,&TSoffset,randparam);
 			TSoffset=(TSoffset-0.5)*TIMESLIDE;
 			datastart = realstart;
 			XLALGPSAdd(&datastart, TSoffset);
-			fprintf(stderr,"Slid %s by %f s\n",IFOnames[i],TSoffset);
+			fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
 			XLALDestroyRandomParams(randparam);
 		}
 		
 		if(specifictimeslides && !FakeFlag){ /* Set up time slides by offsetting the data by user defined value */
 			if( ( !strcmp(IFOnames[i],"H1") && H1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"L1") &&
 					L1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"V1") && V1GPSshift != 0.0 ) ) {
-				memcpy(&realstart,&datastart,sizeof(LIGOTimeGPS));
 				if(!strcmp(IFOnames[i],"H1"))
 					TSoffset=H1GPSshift;
 				else if(!strcmp(IFOnames[i],"L1"))
 					TSoffset=L1GPSshift;
-				else
+				else if(!strcmp(IFOnames[i],"V1"))
 					TSoffset=V1GPSshift;
 				datastart = realstart;
 				XLALGPSAdd(&datastart, TSoffset);
-				fprintf(stderr,"Slid %s by %f s\n",IFOnames[i],TSoffset);
+				fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
 			}
 		}
 		
-		/* set up a Tukey Window with tails of 1s at each end */
+		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
+		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
+		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
+		TrigSegStart=TrigSample+ (2*SampleRate) - seglen; /* Put trigger 2 s before end of segment */
+		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
+		XLALGPSAdd(&segmentStart, (REAL8)TrigSegStart/(REAL8)SampleRate);
+		memcpy(&(inputMCMC.epoch),&segmentStart,sizeof(LIGOTimeGPS));
+		
+		/* set up a Tukey Window */
 		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1 agreed on beta parameter for review */
 		/* if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen); */ /* Original window, commented out for review */
 		/* Read the data from disk into a vector (RawData) */
@@ -725,22 +724,17 @@ int main( int argc, char *argv[])
 				/* POWER SPECTRUM SHOULD HAVE UNITS OF TIME! */
 			}
 
-			if(DEBUG) fprintf(stderr,"populating inputMCMC\n");
-
-			segnum=(ETgpsSeconds - RawData->epoch.gpsSeconds)/strideDur;
+			/* Set up to read trigger time independently */
+			inputMCMC.segment[i]=readTseries(CacheFileNames[i],ChannelNames[i],segmentStart,(REAL8)seglen/SampleRate);
+			if(SampleRate) check=XLALResampleREAL8TimeSeries(inputMCMC.segment[i],1.0/SampleRate);
 
 			if(InjParams.tc>segDur-padding) fprintf(stderr,"Warning, flat-top is shorter than injected waveform!\n");
 			/* Store the appropriate data in the input structure */
 
-			if(DEBUG) fprintf(stderr,"Trigger lies at sample %d, creating segment around it\n",TrigSample);
-			/* Chop out the data segment and store it in the input structure */
-			inputMCMC.segment[i]=(REAL8TimeSeries *)XLALCutREAL8TimeSeries(RawData,TrigSegStart,seglen);
-
 			memcpy(&(inputMCMC.invspec[i]->epoch),&(inputMCMC.segment[i]->epoch),sizeof(LIGOTimeGPS));
-
 			if(DEBUG) fprintf(stderr,"Data segment %d in %s from %f to %f, including padding\n",i,IFOnames[i],((float)TrigSegStart)/((float)SampleRate),((float)(TrigSegStart+seglen))/((float)SampleRate) );
 
-			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&(inputMCMC.segment[i]->epoch),0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
+			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 
 			XLALDestroyREAL8TimeSeries(RawData);
 
@@ -788,7 +782,7 @@ int main( int argc, char *argv[])
 			printf("Finished InjectSignals\n");
 			fprintf(stderr,"Cutting injection buffer from %d to %d\n",bufferlength,seglen);
 
-                	TrigSegStart=(INT4)((segmentStart.gpsSeconds-injWave->epoch.gpsSeconds)*SampleRate);
+			TrigSegStart=(INT4)((segmentStart.gpsSeconds-injWave->epoch.gpsSeconds)*SampleRate);
 			TrigSegStart+=(INT4)((segmentStart.gpsNanoSeconds - injWave->epoch.gpsNanoSeconds)*1e-9*SampleRate);
 
 			injWave=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injWave,TrigSegStart,seglen);
