@@ -67,15 +67,15 @@ point in the space lies further than some maximum proper distance
 The intended purpose of these routines is to place a set of ``target''
 search points over a parameter space, in order to detect signals with
 unknown parameters.  The formalism for defining a proper distance
-metric on the parameter space is defined in the header
-<tt>FlatMesh.h</tt>.  However, whereas the routines under
-<tt>FlatMesh.h</tt> require the metric \f$\mathsf{g}_{ab}\f$ to be constant
+metric on the parameter space is defined in
+\ref FlatMesh_h.  However, whereas the routines under
+\ref FlatMesh_h require the metric \f$\mathsf{g}_{ab}\f$ to be constant
 over the parameter space, the routines under this header only treat
 \f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
 
 \wrapfig{l,\textwidth,fig_tiling}
 \image html pulsar_tiling.png "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns."
-\image latex pulsar_tiling.pdf "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns." \width=\textwidth
+\image latex pulsar_tiling.pdf "Mesh placement using parallelogram tiling. (a) The left and right sides of a tile are required to be vertical; the top and bottom sides can tilt to maximize the tile area. (b) Tiles can be stacked in fixed-width columns, even as the elliptical contours change.  (c) Extra overlapping tiles are sometimes required at the corners of columns." width=\textwidth
 
 Since the metric is treated as constant over distances \f$\lesssim
 m_\mathrm{thresh}\f$, this distance defines an elliptical contour around
