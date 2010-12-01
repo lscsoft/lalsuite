@@ -21,10 +21,9 @@
  * \author Matt Pitkin, Bernd Machenschalk
  * \date 2007
  * \file
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
- * $Id$
  *
  * The main function in this code - <tt>XLALBinaryPulsarDeltaT</tt> - is for
  *  calculating the time delay on a pulsar signal caused by its orbit within a
