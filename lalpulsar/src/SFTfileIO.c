@@ -53,6 +53,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
 #include <lal/ConfigFile.h>
+#include <lal/LogPrintf.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
@@ -837,6 +838,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       }
       fname = locatalog.data[catPos].locator->fname;
       fp = fopen(fname,"rb");
+      LogPrintf(LOG_DETAIL, "Opening file '%s'\n");
       if(!fp) {
 	XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
@@ -857,6 +859,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       UINT4 isft = locator->isft;
       UINT4 firstBinRead;
       UINT4 lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
+
+      LogPrintf(LOG_DETAIL, "Read data from %s:%lu: %u - %u\n",
+		locator->fname, locator->offset, firstBinRead,lastBinRead);
 
       if(lastBinRead) {
 	/* data was actually read */
@@ -906,6 +911,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       } else if(!firstBinRead) {
 	/* no needed data had been in this segment */
+	LogPrintf(LOG_DETAIL, "No data read from %s:%lu\n", locator->fname, locator->offset);
 
 	/* set epoch if not yet set, if already set, check it */
 	if(GPSZERO(segments[isft].epoch))
