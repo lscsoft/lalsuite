@@ -169,7 +169,7 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	FrCache *cache = NULL;
 	FrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
-
+	fprintf(stdout,"Attempting to open %s at time %lf\n",cachefile,start.gpsSeconds+1e-9*start.gpsNanoSeconds);
 	cache  = XLALFrImportCache( cachefile );
 	if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file %s\n",cachefile); exit(-1);}
 	stream = XLALFrCacheOpen( cache );
@@ -482,7 +482,7 @@ int main( int argc, char *argv[])
 		while(i<event) {i++; inputCurrent = inputCurrent->next;}
 	}
 	REAL8 segDur = duration/(REAL8)nSegs;
-
+	realstart=datastart;
 	/* Number of sample in a segment */
 	seglen=(UINT4)(segDur*SampleRate);
 	/*	seglen=(INT4)pow(2.0,ceil(log2((REAL8)seglen)));*/  /* Make it a power of two for the FFT */
