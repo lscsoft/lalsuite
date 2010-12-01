@@ -9,40 +9,40 @@ use Pod::Usage;
 my ($fname, $action, $diffcmd, $diffpipe, $noclean, $nolatex, $printfn);
 while (my $arg = shift @ARGV) {
     if ($arg =~ /^--/p) {
-	my $opt = ${^POSTMATCH};
-	switch ($opt) {
-	    case "diff" {
-		$diffcmd = "diff -y -W 160";
-		$diffpipe = "| less";
-		$action = "diff";
-	    }
-	    case "xxdiff" {
-		$diffcmd = "xxdiff";
-		$diffpipe = "";
-		$action = "diff";
-	    }
-	    case "kompare" {
-		$diffcmd = "diff -u5";
-		$diffpipe = "| kompare -o -";
-		$action = "diff";
-	    }
+        my $opt = ${^POSTMATCH};
+        switch ($opt) {
+            case "diff" {
+                $diffcmd = "diff -y -W 160";
+                $diffpipe = "| less";
+                $action = "diff";
+            }
+            case "xxdiff" {
+                $diffcmd = "xxdiff";
+                $diffpipe = "";
+                $action = "diff";
+            }
+            case "kompare" {
+                $diffcmd = "diff -u5";
+                $diffpipe = "| kompare -o -";
+                $action = "diff";
+            }
 
-	    case "print" {
-		$printfn = 1;
-	    }
-	    case "noclean" {
-		$noclean = 1;
-	    }
-	    case "nolatex" {
-		$nolatex = 2;
-	    }
-	    else {
-		$action = $opt;
-	    }
-	}
+            case "print" {
+                $printfn = 1;
+            }
+            case "noclean" {
+                $noclean = 1;
+            }
+            case "nolatex" {
+                $nolatex = 2;
+            }
+            else {
+                $action = $opt;
+            }
+        }
     }
     else {
-	$fname = $arg;
+        $fname = $arg;
     }
 }
 pod2usage(                            -exitval => 0) if $action eq "help";
@@ -73,7 +73,7 @@ my $ifdef = qr{(?<BLOCK>                          # name this match
                 ^\#\s*?(?:if|ifdef|ifndef).*?\n   # match an #if* directive
                 (?:                               # either:
                  (?:                              #    don't match an #if*/#endif directive
-		  \n|                             #       blank line
+                  \n|                             #       blank line
                   [^\#].*?\n|                     #       any line not beginning with #
                   \#\s*?[^ie].*?\n|               #       any non #i*/#e* directive
                   \#\s*?el.*?\n|                  #       #else/#elif directives
@@ -102,26 +102,26 @@ my $something_else = qr{(?<OTHER>
 sub findIf0Blocks {
     my ($text) = @_;
     $text =~ s{$ifdef|$something_else}{
-	my ($block, $other) = ($+{BLOCK}, $+{OTHER});
-	my $retn;
-	# if pattern BLOCK is defined ...
-	if (defined($block)) {
-	    # get first line, middle, and last line of BLOCK
-	    my ($first, $middle, $last) = ($block =~ m!\A(.*?\n)((?:.*?\n)*)(.*?\n)\Z!sg);
-	    # if BLOCK begins with '#if 0', process it
-	    if ($first =~ m!^#if\s+0\s!) {
-		$retn = cleanupLSD($block);
-	    }
-	    # otherwise look for LSD doc block in middle
-	    else {
-		$retn = $first . findIf0Blocks($middle) . $last;
-	    }
-	}
-	# otherwise print anything else that was matched
-	else {
-	    $retn = $other;
-	}
-	$retn
+        my ($block, $other) = ($+{BLOCK}, $+{OTHER});
+        my $retn;
+        # if pattern BLOCK is defined ...
+        if (defined($block)) {
+            # get first line, middle, and last line of BLOCK
+            my ($first, $middle, $last) = ($block =~ m!\A(.*?\n)((?:.*?\n)*)(.*?\n)\Z!sg);
+            # if BLOCK begins with '#if 0', process it
+            if ($first =~ m!^#if\s+0\s!) {
+                $retn = cleanupLSD($block);
+            }
+            # otherwise look for LSD doc block in middle
+            else {
+                $retn = $first . findIf0Blocks($middle) . $last;
+            }
+        }
+        # otherwise print anything else that was matched
+        else {
+            $retn = $other;
+        }
+        $retn
     }ge;
     return $text;
 }
@@ -140,77 +140,77 @@ switch ($action) {
 
     # replace the original file with the new doxygen one
     case "doit" {
-	open FILE, ">$fname" or die "Could not open '$fname'!: $!";
-	print FILE $file;
-	close FILE;
+        open FILE, ">$fname" or die "Could not open '$fname'!: $!";
+        print FILE $file;
+        close FILE;
     }
 
     # show what changes were made to the file
     case "diff" {
-	if ($file eq $origfile) {
-	    print "No changes were made to '$fname'\n";
-	}
-	else {
-	    open DIFF, "| $diffcmd $fname - $diffpipe" or die "'$diffcmd' failed: $!";
-	    print DIFF $file;
-	    close DIFF;
-	}
+        if ($file eq $origfile) {
+            print "No changes were made to '$fname'\n";
+        }
+        else {
+            open DIFF, "| $diffcmd $fname - $diffpipe" or die "'$diffcmd' failed: $!";
+            print DIFF $file;
+            close DIFF;
+        }
     }
 
     # check that file still generates the same C code
     # when parsed through the C preprocessor
     case ["check", "checkdiff"] {
 
-	# parse the original file through the CPP
-	my ($origcpp, $origcpperr) = parseThruCPP($fname);
+        # parse the original file through the CPP
+        my ($origcpp, $origcpperr) = parseThruCPP($fname);
 
-	# replace it with the doxygenated file
-	open FILE, ">$fname" or die "Could not open '$fname'!: $!";
-	print FILE $file;
-	close FILE;
+        # replace it with the doxygenated file
+        open FILE, ">$fname" or die "Could not open '$fname'!: $!";
+        print FILE $file;
+        close FILE;
 
-	# parse the doxygenated file through the CPP
-	my ($cpp, $cpperr) = parseThruCPP($fname);
+        # parse the doxygenated file through the CPP
+        my ($cpp, $cpperr) = parseThruCPP($fname);
 
-	# restore the original file
-	open FILE, ">$fname" or die "Could not open '$fname'!: $!";
-	print FILE $origfile;
-	close FILE;
+        # restore the original file
+        open FILE, ">$fname" or die "Could not open '$fname'!: $!";
+        print FILE $origfile;
+        close FILE;
 
-	# any differences?
-	if ($origcpp ne $cpp) {
-	    if ($action =~ /diff/) {
+        # any differences?
+        if ($origcpp ne $cpp) {
+            if ($action =~ /diff/) {
 
-		# write processed files to temporary files
-		open FILE, ">$tmp1" or die "Could not open '$tmp1'!: $!";
-		print FILE $origcpp;
-		close FILE;
-		open FILE, ">$tmp2" or die "Could not open '$tmp2'!: $!";
-		print FILE $cpp;
-		close FILE;
+                # write processed files to temporary files
+                open FILE, ">$tmp1" or die "Could not open '$tmp1'!: $!";
+                print FILE $origcpp;
+                close FILE;
+                open FILE, ">$tmp2" or die "Could not open '$tmp2'!: $!";
+                print FILE $cpp;
+                close FILE;
 
-		# print differences
-		system "$diffcmd $tmp1 $tmp2";
+                # print differences
+                system "$diffcmd $tmp1 $tmp2";
 
-	    }
-	    else {
-		print "Code has been modified in '$fname'!\n";
-	    }
-	}
+            }
+            else {
+                print "Code has been modified in '$fname'!\n";
+            }
+        }
 
-	# or errors?
-	my @err;
-	foreach (keys %$cpperr) {
-	    push @err, $_ if !defined($origcpperr->{$_});
-	}
-	if (@err) {
-	    print "Errors in preprocessing '$fname'!\n";
-	    map { print "   $_\n" } @err;
-	}
+        # or errors?
+        my @err;
+        foreach (keys %$cpperr) {
+            push @err, $_ if !defined($origcpperr->{$_});
+        }
+        if (@err) {
+            print "Errors in preprocessing '$fname'!\n";
+            map { print "   $_\n" } @err;
+        }
 
     }
     else {
-	die "Invalid action '$action'!";
+        die "Invalid action '$action'!";
     }
 }
 
@@ -227,13 +227,13 @@ sub parseThruCPP {
     system "cpp -E $fname >$tmp1 2>$tmp2";
     open FILE, "<$tmp1" or die "Could not open '$tmp1'!: $!";
     while (<FILE>) {
-	$cpp .= $_;
+        $cpp .= $_;
     }
     close FILE;
     open FILE, "<$tmp2" or die "Could not open '$tmp2'!: $!";
     while (<FILE>) {
-	chomp;
-	$err->{$_} = 1;
+        chomp;
+        $err->{$_} = 1;
     }
     close FILE;
 
@@ -252,7 +252,7 @@ sub cleanupLSD {
 
     # return if there are no LSD tags
     return $text if
-	(($text =~ m!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!) == 0);
+        (($text =~ m!</?lal(?:LaTeX|Verbatim|ErrTable)[^>]*?>!) == 0);
 
     # get rid of LSD LaTeX and Verbatim tags
     $text =~ s!</?lal(?:LaTeX|Verbatim)[^>]*?>!!sg;
@@ -288,139 +288,156 @@ sub cleanupLSD {
     # try to clean up embedded LaTeX, if asked for
     if (!$nolatex) {
 
-	# regexes for balanced braces and brackets
-	my $bbr  = qr!({(?:[^{}]++|(?-1))*})!;
-	my $wbbr = qr!{((?:[^{}]*$bbr)*[^{}]*)}!;
-	my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
-	my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
+        # regexes for balanced braces and brackets
+        my $bbr  = qr!({(?:[^{}]++|(?-1))*})!;
+        my $wbbr = qr!{((?:[^{}]*$bbr)*[^{}]*)}!;
+        my $bbk  = qr!(\[(?:[^[\]]++|(?-1))*\])!;
+        my $wbbk = qr!\[((?:[^[\]]*$bbk)*[^[\]]*)\]!;
 
-	# remove these LaTeX commands:
-	# environments
-	$text =~ s!\\(?:begin|end)$n*{(?:
+        # regex substitution for illegal \ref characters
+        my $illref = sub { $_[0] =~ s![:.]!_!g; $_[0] };
+
+        # remove these LaTeX commands:
+        # environments
+        $text =~ s!\\(?:begin|end)$n*{(?:
                    center|document|obeylines
                    )}!!mgx;
-	# two arguments
-	$text =~ s!\\(?:
+        # two arguments
+        $text =~ s!\\(?:
                    providecommand
                    )$bbr$bbr!!mgx;
-	# two arguments, first optional
-	$text =~ s!\\(?:
+        # two arguments, first optional
+        $text =~ s!\\(?:
                    idx
                    )$bbk?$bbr!!mgx;
-	# one argument
-	$text =~ s!\\(?:
+        # one argument
+        $text =~ s!\\(?:
                    index|input|vfill|vspace
                    )$bbr!!mgx;
-	# no arguments
-	$text =~ s!\\(?:
+        # no arguments
+        $text =~ s!\\(?:
                    footnotesize|medskip|newpage|noindent
                   )$n*!!mgx;
 
-	# flag these environments for manual intervention
-	$text =~ s!\\(begin|end)$n*{(
+        # flag these environments for manual intervention
+        $text =~ s!\\(begin|end)$n*{(
                    figure|table
                   )}!(MANUAL INTERVENTION $1 $2)!mgpx;
 
-	# convert formulae
-	$text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
-	$text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
-	$text =~ s!\\begin$n*{displaymath}!\\f[!mg;
-	$text =~ s!\\end$n*{displaymath}!\\f]!mg;
-	$_ = 'equation\*?|eqnarray\*?';
-	$text =~ s!\\begin$n*{($_)}!\\f{$1}{!mg;
-	$text =~ s!\\end$n*{($_)}!\\f}!mg;
+        # convert formulae
+        $text =~ s!\$\$(.+?)\$\$!\\f[$1\\f]!sg;
+        $text =~ s!\$(.+?)\$!\\f\$$1\\f\$!sg;
+        $text =~ s!\\begin$n*{displaymath}!\\f[!mg;
+        $text =~ s!\\end$n*{displaymath}!\\f]!mg;
+        $text =~ s{\\begin$n*{(equation\*?|eqnarray\*?)}(.*?)\\end$n*{\1}}{
+            my $env = $1;
+            my $eqn = $2;
+            my $anch = '';
+            $eqn =~ s{\\label$n*$wbbr}{
+                $_ = $1;
+                $anch .= '\anchor ' . &$illref($_) . ' ';
+                '\label{' . $_ . '}'
+            }sge;
+            $anch . '\f{' . $env . '}{' . $eqn . '\f}'
+        }sge;
 
-	# convert descriptions
-	sub desc {
-	    my ($text) = @_;
-	    $text =~ s{\\begin$n*{description}(?<LIST>.*?)\\end$n*{description}}{
-		$_ = $+{LIST};
-		while (/\\item\[/) {
-		    s!\\item$wbbk(?<TEXT>.*?)(?<END>\n*\\item\[|\Z)!<dt>$1</dt><dd>$+{TEXT}</dd>$+{END}!sx;
+        # convert descriptions
+        sub desc {
+            my ($text) = @_;
+            $text =~ s{\\begin$n*{description}(?<LIST>.*?)\\end$n*{description}}{
+                $_ = $+{LIST};
+                while (/\\item\[/) {
+                    s!\\item$wbbk(?<TEXT>.*?)(?<END>\n*\\item\[|\Z)!<dt>$1</dt><dd>$+{TEXT}</dd>$+{END}!sx;
                 }
-		'<dl>' . desc($_) . '</dl>'
-	    }sge;
-	    return $text;
-	}
-	$text = desc($text);
+                '<dl>' . desc($_) . '</dl>'
+            }sge;
+            return $text;
+        }
+        $text = desc($text);
 
-	# convert numbered and unnumbered lists
-	sub list {
-	    my ($text) = @_;
-	    $text =~ s{\\begin$n*{(?<ENV>enumerate|itemize)}(?<LIST>.*?)\\end$n*{\k<ENV>}}{
-		my $e = $+{ENV};
-		$_ = $+{LIST};
-		$e =~ s!enumerate!ol!;
-		$e =~ s!itemize!ul!;
-		while (/\\item/) {
-		    s!\\item(?<TEXT>.*?)(?<END>\n*\\item|\Z)!<li>$+{TEXT}</li>$+{END}!sx;
+        # convert numbered and unnumbered lists
+        sub list {
+            my ($text) = @_;
+            $text =~ s{\\begin$n*{(?<ENV>enumerate|itemize)}(?<LIST>.*?)\\end$n*{\k<ENV>}}{
+                my $e = $+{ENV};
+                $_ = $+{LIST};
+                $e =~ s!enumerate!ol!;
+                $e =~ s!itemize!ul!;
+                while (/\\item/) {
+                    s!\\item(?<TEXT>.*?)(?<END>\n*\\item|\Z)!<li>$+{TEXT}</li>$+{END}!sx;
                 }
-		"<$e>" . list($_) . "</$e>"
-	    }sge;
-	    return $text;
-	}
-	$text = list($text);
+                "<$e>" . list($_) . "</$e>"
+            }sge;
+            return $text;
+        }
+        $text = list($text);
 
-	# convert tables
-	$text =~ s{\\begin$n*{tabular}$bbr?(?<TABLE>.*?)\\end$n*{tabular}}{
-	    $_ = $+{TABLE};
-	    $_ =~ s!\\hline!!sg;
-	    $_ =~ s!$n*\\\\$n*\n!</td></tr>\n<tr><td>!sg;
-	    $_ =~ s|$n*(?<!\\)&$n*|</td><td>|sg;
-	    '<table><tr><td>' . $_ . '</td></tr></table>'
-	}sge;
+        # convert tables
+        $text =~ s{\\begin$n*{tabular}$bbr?(?<TABLE>.*?)\\end$n*{tabular}}{
+            $_ = $+{TABLE};
+            $_ =~ s!\\hline!!sg;
+            $_ =~ s!$n*\\\\$n*\n!</td></tr>\n<tr><td>!sg;
+            $_ =~ s|$n*(?<!\\)&$n*|</td><td>|sg;
+            '<table><tr><td>' . $_ . '</td></tr></table>'
+        }sge;
 
-	# convert verbatim
-	$text =~ s!\\begin$n*{(?:verbatim|quote)}!\\code!mg;
-	$text =~ s!\\end$n*{(?:verbatim|quote)}!\\endcode!mg;
+        # convert verbatim
+        $text =~ s!\\begin$n*{(?:verbatim|quote)}!\\code!mg;
+        $text =~ s!\\end$n*{(?:verbatim|quote)}!\\endcode!mg;
 
-	# can't convert pictures, but save the code
-	$text =~ s!\\begin$n*{picture}!\\verbatim!mg;
-	$text =~ s!\\end$n*{picture}!\\endverbatim!mg;
+        # can't convert pictures, but save the code
+        $text =~ s!\\begin$n*{picture}!\\verbatim!mg;
+        $text =~ s!\\end$n*{picture}!\\endverbatim!mg;
 
-	# replace formatting commands
-	$text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
-	$text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
-	$text =~ s!\\emph!\\textit!sg;
-	$text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
-	$text =~ s{\\text(tt|it)$wbbr}{
-	    my $e = $1;
-	    $_ = $2;
-	    s/\\_/_/g;
-	    /^[\w_:]+$/ ?
-		($e eq 'tt' ? "\\c $_"      : "\\e $_"      ) :
-		($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
-	}sge;
+        # replace formatting commands
+        $text =~ s!\{\\(tt|it|rm|sc|sl|bf|sf)$n*!\\text$1\{!sg;
+        $text =~ s!\\verb(.)(.+?)\1!\\texttt{$2}!mg;
+        $text =~ s!\\emph!\\textit!sg;
+        $text =~ s!\\text(?:sc|sl|bf|sf)!\\texttt!sg;
+        $text =~ s{\\text(tt|it)$wbbr}{
+            my $e = $1;
+            $_ = $2;
+            s/\\_/_/g;
+            /^[\w_:]+$/ ?
+                ($e eq 'tt' ? "\\c $_"      : "\\e $_"      ) :
+                ($e eq 'tt' ? "<tt>$_</tt>" : "<em>$_</em>" )
+        }sge;
 
         # replace subsection commands, preserving labels
-	$text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
-	    $_ = '\\par ' . $1 . "\n";
-	    $_ .= '\\latexonly' . $+{LBL} . '\\endlatexonly' if defined($+{LBL});
-	    $_
-	}sge;
-	$text =~ s!\\paragraph\*?$wbbr!<b>$1</b>!mg;
+        $text =~ s{\\(?:sub)*section\*?$wbbr\n(?<LBL>\\label$bbr)?}{
+            $_ = '\\heading{' . $1 . "}\n";
+            if (defined(my $lbl = $+{LBL})) {
+                $_ .= '\\latexonly' . &$illref($lbl) . '\\endlatexonly';
+            }
+            $_
+        }sge;
+        $text =~ s!\\paragraph\*?$wbbr!\\heading{$1}!mg;
 
         # preserve references
-        $text =~ s![~ ]*\(*\\(?:eq)?ref$wbbr\)*!\\ltxref{$1}!sg;
+        $text =~ s{[~ ]*\(*\\(?:eq)?ref$wbbr\)*}{
+            $_ = $1;
+            '\TODOref{' . &$illref($_) . '}'
+        }sge;
+        $text =~ s![Ee]q(s?)\.?\\TODOref!Eq\1.\\eqref!mg;
 
-	# replace citations
+        # replace citations
         $text =~ s{\\cite$wbbr}{
-	    $_ = $1;
-	    s/://g;
-	    '\ref ' . $_
-	}mge;
+            $_ = $1;
+            s/://g;
+            '\ref ' . $_
+        }mge;
 
-	# replace miscellaneous LaTeX commands
-	$text =~ s!\\lq!`!g;
+        # replace miscellaneous LaTeX commands
+        $text =~ s!\\lq!`!g;
 
     }
 
     # get rid of empty comments
     $text =~ s!\A/\*/\Z!!;
     $text =~ s{/\*+(\s*)\*+/}{
-	my $wsp = $1;
-	$wsp =~ s![^\n]!!g;
-	$wsp
+        my $wsp = $1;
+        $wsp =~ s![^\n]!!g;
+        $wsp
     }sge;
     return $text if $text =~ m!\A\n*\Z!sg;
 

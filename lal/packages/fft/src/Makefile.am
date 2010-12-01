@@ -35,7 +35,7 @@ dvi-local: .dvi-dep
 @DVIMKFILE@
 
 if CUDA
-SUFFIXES = .cu .c
-.cu.c:
-	@nvcc -cuda --host-compilation=c $(INCLUDES) $(CPPFLAGS) --output-file $@ $<
+SUFFIXES = .cu .cpp
+.cu.cpp:
+	nvcc --cuda $(INCLUDES) $(CPPFLAGS) --output-file $@ $<
 endif

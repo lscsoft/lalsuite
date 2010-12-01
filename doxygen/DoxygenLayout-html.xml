@@ -100,7 +100,10 @@
 
   <!-- Layout definition for a file page -->
   <file>
-    <briefdescription visible="no"/>
+    <briefdescription visible="yes"/>
+    <memberdecl>
+      <functions title="Prototypes"/>
+    </memberdecl>
     <detaileddescription title=""/>
     <includes visible="$SHOW_INCLUDE_FILES"/>
     <includegraph visible="$INCLUDE_GRAPH"/>
@@ -112,12 +115,10 @@
       <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
-      <functions title=""/>
       <variables title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
     <memberdef>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <functions title=""/>
@@ -128,19 +129,19 @@
 
   <!-- Layout definition for a group page -->
   <group>
-    <briefdescription visible="yes"/>
+    <briefdescription visible="no"/>
+    <detaileddescription title=""/>
     <groupgraph visible="$GROUP_GRAPHS"/>
     <memberdecl>
       <classes visible="yes" title=""/>
       <namespaces visible="yes" title=""/>
       <dirs visible="yes" title=""/>
       <nestedgroups visible="yes" title=""/>
-      <files visible="yes" title=""/>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
       <functions title=""/>
+      <files visible="yes" title=""/>
       <variables title=""/>
       <signals title=""/>
       <publicslots title=""/>
@@ -151,14 +152,12 @@
       <friends title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title=""/>
     <memberdef>
       <pagedocs/>
-      <defines title=""/>
+      <functions title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <enumvalues title=""/>
-      <functions title=""/>
       <variables title=""/>
       <signals title=""/>
       <publicslots title=""/>

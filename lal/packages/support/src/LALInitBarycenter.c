@@ -18,21 +18,11 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \author Curt Cutler
- * \date 2001
- * \file
- * \ingroup moduleBarycenter
- * \brief Provides a routine for reading Earth and Sun position information from
- * data files.
- *
- * Defines LALInitBarycenter() and XLALInitBarycenter().
- */
-
 #include <lal/FileIO.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID(LALINITBARYCENTERC,"$Id$");
 
 /* ----- defines and macros ---------- */
@@ -40,7 +30,10 @@ NRCSID(LALINITBARYCENTERC,"$Id$");
 #define NORM3D(x) ( SQ( (x)[0]) + SQ( (x)[1] ) + SQ ( (x)[2] ) )
 #define LENGTH3D(x) ( sqrt( NORM3D ( (x) ) ) )
 
+/** \endcond */
+
 /* ----- local type definitions ---------- */
+
 /** Generic ephemeris-vector type, holding one timeseries of pos, vel, acceleration.
  * This is used for the generic ephemeris-reader XLAL-function, at the end the resulting
  * ephemeris-data  will be stored in the 'old type \a EphemerisData for backwards compatibility.
@@ -61,6 +54,129 @@ EphemerisVector * XLALReadEphemerisFile ( const CHAR *fname);
 int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], REAL8 range[3] );
 
 /* ----- function definitions ---------- */
+
+/* ========== exported API ========== */
+
+
+/** XLAL interface to reading ephemeris files 'earth' and 'sun', and return
+ * ephemeris-data in old backwards-compatible type \a EphemerisData
+ *
+ * These ephemeris data files contain arrays
+ * of center-of-mass positions for the Earth and Sun, respectively.
+ *
+ * The tables are derived from the JPL ephemeris.
+ *
+ * Files tabulate positions for one calendar year
+ * (actually, a little more than one year, to deal
+ * with overlaps).  The first line of each table summarizes
+ * what is in it. Subsequent lines give the time (GPS) and the
+ * Earth's position \f$(x,y,z)\f$,
+ * velocity \f$(v_x, v_y, v_z)\f$, and acceleration \f$(a_x, a_y, a_z)\f$
+ * at that instant.  All in units of seconds; e.g. positions have
+ * units of seconds, and accelerations have units 1/sec.
+ *
+ * \ingroup LALBarycenter_h
+ */
+EphemerisData *
+XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containing Earth's position.  */
+                     const CHAR *sunEphemerisFile            /**< File containing Sun's position. */
+                     )
+{
+  const char *fn = __func__;
+
+  /* check user input consistency */
+  if ( !earthEphemerisFile || !sunEphemerisFile ) {
+    XLALPrintError ("%s: invalid NULL input earthEphemerisFile=%p, sunEphemerisFile=%p\n", fn, earthEphemerisFile, sunEphemerisFile );
+    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+  }
+
+  EphemerisVector *ephemV;
+
+  /* ----- read EARTH ephemeris file ---------- */
+  if ( ( ephemV = XLALReadEphemerisFile ( earthEphemerisFile )) == NULL ) {
+    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, earthEphemerisFile );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* typical position, velocity and acceleration and allowed ranged */
+  REAL8 avgE[3] = {499.0,  1e-4, 2e-11 };
+  REAL8 rangeE[3] = {25.0, 1e-5, 3e-12 };
+
+  if ( XLALCheckEphemerisRanges ( ephemV, avgE, rangeE ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Earth-ephemeris range error!\n", fn );
+    XLALDestroyEphemerisVector ( ephemV );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* prepare output ephemeris struct for returning */
+  EphemerisData *edat;
+  if ( ( edat = XLALCalloc ( 1, sizeof(*edat) ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", fn, sizeof(*edat) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  /* store in ephemeris-struct */
+  edat->nentriesE = ephemV->length;
+  edat->dtEtable  = ephemV->dt;
+  edat->ephemE    = ephemV->data;
+  XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
+  ephemV = NULL;
+
+  /* ----- read SUN ephemeris file ---------- */
+  if ( ( ephemV = XLALReadEphemerisFile ( sunEphemerisFile )) == NULL ) {
+    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, sunEphemerisFile );
+    XLALDestroyEphemerisData ( edat );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+
+  /* typical position, velocity and acceleration and allowed ranged */
+  REAL8 avgS[3]   = { 5.5, 5.5e-8, 50.5e-16 };
+  REAL8 rangeS[3] = { 4.5, 4.5e-8, 49.5e-16 };
+
+  if ( XLALCheckEphemerisRanges ( ephemV, avgS, rangeS ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: Sun-ephemeris range error!\n", fn );
+    XLALDestroyEphemerisVector ( ephemV );
+    XLALDestroyEphemerisData ( edat );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+
+  /* store in ephemeris-struct */
+  edat->nentriesS = ephemV->length;
+  edat->dtStable  = ephemV->dt;
+  edat->ephemS    = ephemV->data;
+  XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
+  ephemV = NULL;
+
+
+  /* return resulting ephemeris-data */
+  return edat;
+
+} /* XLALInitBarycenter() */
+
+
+/** Destructor for EphemerisData struct, NULL robust.
+ * \ingroup LALBarycenter_h
+ */
+void
+XLALDestroyEphemerisData ( EphemerisData *edat )
+{
+  if ( !edat )
+    return;
+
+  if ( edat->ephemE )
+    XLALFree ( edat->ephemE );
+
+  if ( edat->ephemS )
+    XLALFree ( edat->ephemS );
+
+  XLALFree ( edat );
+
+  return;
+
+} /* XLALDestroyEphemerisData() */
+
+
+/* ========== internal function definitions ========== */
 
 /** simple creator function for EphemerisVector type */
 EphemerisVector *
@@ -102,27 +218,6 @@ XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
   return;
 
 } /* XLALDestroyEphemerisVector() */
-
-/** Destructor for EphemerisData struct, NULL robust.
- */
-void
-XLALDestroyEphemerisData ( EphemerisData *edat )
-{
-  if ( !edat )
-    return;
-
-  if ( edat->ephemE )
-    XLALFree ( edat->ephemE );
-
-  if ( edat->ephemS )
-    XLALFree ( edat->ephemS );
-
-  XLALFree ( edat );
-
-  return;
-
-} /* XLALDestroyEphemerisData() */
-
 
 
 /** XLAL function to read ephemeris-data from one file, returning a EphemerisVector.
@@ -294,93 +389,15 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
 
 } /* XLALCheckEphemerisRanges() */
 
-
-/** XLAL interface to reading ephemeris files 'earth' and 'sun', and return
- * ephemeris-data in old backwards-compatible type \a EphemerisData
- */
-EphemerisData *
-XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containing Earth's position.  */
-                     const CHAR *sunEphemerisFile            /**< File containing Sun's position. */
-                     )
-{
-  const char *fn = __func__;
-
-  /* check user input consistency */
-  if ( !earthEphemerisFile || !sunEphemerisFile ) {
-    XLALPrintError ("%s: invalid NULL input earthEphemerisFile=%p, sunEphemerisFile=%p\n", fn, earthEphemerisFile, sunEphemerisFile );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
-  }
-
-  EphemerisVector *ephemV;
-
-  /* ----- read EARTH ephemeris file ---------- */
-  if ( ( ephemV = XLALReadEphemerisFile ( earthEphemerisFile )) == NULL ) {
-    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, earthEphemerisFile );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  /* typical position, velocity and acceleration and allowed ranged */
-  REAL8 avgE[3] = {499.0,  1e-4, 2e-11 };
-  REAL8 rangeE[3] = {25.0, 1e-5, 3e-12 };
-
-  if ( XLALCheckEphemerisRanges ( ephemV, avgE, rangeE ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: Earth-ephemeris range error!\n", fn );
-    XLALDestroyEphemerisVector ( ephemV );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  /* prepare output ephemeris struct for returning */
-  EphemerisData *edat;
-  if ( ( edat = XLALCalloc ( 1, sizeof(*edat) ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", fn, sizeof(*edat) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-
-  /* store in ephemeris-struct */
-  edat->nentriesE = ephemV->length;
-  edat->dtEtable  = ephemV->dt;
-  edat->ephemE    = ephemV->data;
-  XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
-  ephemV = NULL;
-
-  /* ----- read SUN ephemeris file ---------- */
-  if ( ( ephemV = XLALReadEphemerisFile ( sunEphemerisFile )) == NULL ) {
-    XLALPrintError ("%s: XLALReadEphemerisFile('%s') failed\n", fn, sunEphemerisFile );
-    XLALDestroyEphemerisData ( edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
-  }
-
-  /* typical position, velocity and acceleration and allowed ranged */
-  REAL8 avgS[3]   = { 5.5, 5.5e-8, 50.5e-16 };
-  REAL8 rangeS[3] = { 4.5, 4.5e-8, 49.5e-16 };
-
-  if ( XLALCheckEphemerisRanges ( ephemV, avgS, rangeS ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: Sun-ephemeris range error!\n", fn );
-    XLALDestroyEphemerisVector ( ephemV );
-    XLALDestroyEphemerisData ( edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
-  }
-
-  /* store in ephemeris-struct */
-  edat->nentriesS = ephemV->length;
-  edat->dtStable  = ephemV->dt;
-  edat->ephemS    = ephemV->data;
-  XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
-  ephemV = NULL;
-
-
-  /* return resulting ephemeris-data */
-  return edat;
-
-} /* XLALInitBarycenter() */
-
-
 /* ============================= deprecated LAL interface ============================== */
-
+/** \cond DONTDOXYGEN */
 #define ERRMSGLEN 512
 CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
+/** \endcond */
 
-/** Reads Earth and Sun ephemeris files.
+/** \ingroup LALBarycenter_h
+ * \brief [DEPRECATED] Reads Earth and Sun ephemeris files.
+ *
  * This function fills the contents of \a edat from data
  * read from data files, see \a EphemerisData for the definition of this data-type.
  *
@@ -398,6 +415,8 @@ CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
  * edat->ephemE and edat->ephemS should be freed with
  * LALFree() near the end.  See the LALBarycenterTest program for an illustration
  * of how this routine is used.
+ *
+ * \deprecated Use XLALInitBarycenter() instead.
  */
 void
 LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */

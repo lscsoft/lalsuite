@@ -17,15 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:DestroyResampleRules.c}\endlatexonly
-
-Destroys an object of type \c ResampleRules.
-*/
-
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
@@ -33,8 +24,9 @@ Destroys an object of type \c ResampleRules.
 NRCSID(DESTROYRESAMPLERULESC,"$Id$");
 
 
-/** This function destroys an object <tt>**rules</tt> of type
- * \c ResampleRules, and sets <tt>*rules</tt> to \c NULL.
+/** \author Creighton, T. D.
+ * \ingroup Resample_h
+ * \brief Destroys an object of type ResampleRules, and sets <tt>*rules</tt> to \c NULL.
  */
 void
 LALDestroyResampleRules( LALStatus     *stat,

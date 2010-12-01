@@ -17,16 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:ApplyResampleRules.c}\endlatexonly
-
-Resamples a time series according to a set of resampling rules.
-
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -35,13 +25,19 @@ Resamples a time series according to a set of resampling rules.
 
 NRCSID(APPLYRESAMPLERULESC,"$Id$");
 
-/** This function sets <tt>output->deltaT</tt> and fills <tt>output->data</tt>
+
+/**
+    \author Creighton, T. D.
+    \ingroup Resample_h
+    \brief Resamples a time series according to a set of resampling rules.
+
+This function sets <tt>output->deltaT</tt> and fills <tt>output->data</tt>
 with data from <tt>*input</tt>, using the resampling rules specified in
 <tt>*rules</tt>.  If the timespan required to fill <tt>output->data</tt>
 is not a subset of the timespan covered by <tt>*input</tt> or
 <tt>*rules</tt>, the data at the nonintersecting times are set to zero.
 
-\par Algorithm
+\heading{Algorithm}
 
 At present this routine is just a stub.  It does not apply or even
 check <tt>*rules</tt>, and instead simply makes <tt>*output</tt>

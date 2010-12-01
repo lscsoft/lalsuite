@@ -66,6 +66,13 @@ typedef struct
 
 typedef struct
 {
+   candidate *data;
+   UINT4 length;
+   UINT4 numofcandidates;
+} candidateVector;
+
+typedef struct
+{
    REAL4Vector *maxima;
    INT4Vector *locations;
    INT4 columns;

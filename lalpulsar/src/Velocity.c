@@ -26,7 +26,7 @@
     time or averaged over a time interval.  This is a wrapper for the
     LALBarycenter routines.
 
-    \par Description
+    \heading{Description}
 
     The function LALDetectorVel() finds the velocity of a given detector at a
     given time. It is basically a wrapper for LALBarycenter.

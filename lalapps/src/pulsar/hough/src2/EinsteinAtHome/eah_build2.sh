@@ -445,17 +445,17 @@ else
     fi
 fi
 
+lalsuite_copts="--disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
+test ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" &&
+    lalsuite_copts="--disable-osx-version-check $lalsuite_copts"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then
     log_and_show "using existing lal"
 else
     log_and_show "compiling LAL"
     log_and_do cd "$SOURCE/lalsuite/lal"
-    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
-        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
-    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lal"
-    log_and_do "$SOURCE/lalsuite/lal/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    log_and_do "$SOURCE/lalsuite/lal/configure" $lalsuite_copts
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -466,12 +466,9 @@ if test -z "$rebuild_lal" && pkg-config --exists lalpulsar; then
 else
     log_and_show "compiling LALPulsar"
     log_and_do cd "$SOURCE/lalsuite/lalpulsar"
-    if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
-        log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
-    fi
     log_and_do ./00boot
     log_and_do cd "$BUILD/lalpulsar"
-    log_and_do "$SOURCE/lalsuite/lalpulsar/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    log_and_do "$SOURCE/lalsuite/lalpulsar/configure" $lalsuite_copts
     log_and_dont_fail make uninstall
     log_and_do make
     log_and_do make install
@@ -482,34 +479,12 @@ fi
 
 log_and_show "configuring LALApps"
 log_and_do cd "$SOURCE/lalsuite/lalapps"
-if [ ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" ]; then
-    log_and_do sed -i~ s/-mmacosx-version-min=10.4// configure.ac
-    if grep ^eah_HierarchSearchGCT_manual: src/pulsar/GCT/Makefile.am >/dev/null; then
-	:
-    else
-	echo '
-## pretty dirty hack, particulary for compiling an E@H Mac OS 10.3 App on 10.4
-eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
-    eah_HierarchSearchGCT-GCTtoplist.o \
-    eah_HierarchSearchGCT-HeapToplist.o \
-    eah_HierarchSearchGCT-Fstat_v3.o \
-    eah_HierarchSearchGCT-ComputeFstat_RS.o \
-    eah_HierarchSearchGCT-hs_boinc_extras.o \
-    eah_HierarchSearchGCT-hs_boinc_options.o \
-    eah_HierarchSearchGCT-win_lib.o \
-    eah_HierarchSearchGCT-LocalComputeFstat.o \
-    libstdc++.a
-	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
-' >> src/pulsar/GCT/Makefile.am
-    fi
-fi
-
 log_and_do ./00boot
 if [ ."$build_win32" = ."true" ] ; then
     sed -i~ 's/test  *"${boinc}"  *=  *"true"/test "true" = "true"/' configure
 fi
 log_and_do cd "$BUILD/lalapps"
-log_and_do "$SOURCE/lalsuite/lalapps/configure" --disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 
 log_and_show "building Apps"
 
@@ -518,14 +493,12 @@ log_and_do cd "$BUILD/lalapps/src/lalapps"
 if [ ."$build_win32" = ."true" ] ; then
     echo '/**/' > processtable.c
 fi
-if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
-    log_and_do make LALAppsVCSInfo.h liblalapps.la
-else
+if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
     log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
-fi
+else
+    log_and_do make LALAppsVCSInfo.h liblalapps.la
 
-if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do cd "$BUILD/lalapps/src/pulsar/hough/src2"
     log_and_dont_fail make gitID
     if [ ".$cuda" = ".true" ] ; then

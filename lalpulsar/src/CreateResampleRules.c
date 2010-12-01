@@ -17,17 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:CreateResampleRules.c}\endlatexonly
-
-Creates an object of type \c ResampleRules according to a
-piecewise polynomial fit to the canonical time \f$\tau(t)\f$.
-
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -74,7 +63,14 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
 static void
 FreeTempRules( INT4 **tempRules, INT4 nSqrt );
 
-/** This function creates an object <tt>**rules</tt> of type
+
+/**
+   \author Creighton, T. D.
+   \ingroup Resample_h
+   \brief Creates an object of type ResampleRules according to a
+   piecewise polynomial fit to the canonical time \f$\tau(t)\f$.
+
+This function creates an object <tt>**rules</tt> of type
 \c ResampleRules, according to the polynomial fit to the canonical
 time function found in <tt>*polyco</tt> and the sampling parameters
 found in <tt>*params</tt>.  See the header Resample.h for a
@@ -82,9 +78,9 @@ description of these datatypes.  Initially the output handle must be a
 valid handle (\c rules\f$\neq\f$\c NULL) but should not point to
 an existing object (<tt>*rules</tt>=\c NULL).
 
-\par Algorithm
+\heading{Algorithm}
 
-<b>Formulae for computing \c ResampleRules:</b>
+\heading{Formulae for computing \c ResampleRules:}
 Since the resampling rules can be expected to be applied to datasets
 with a huge number of sample times, the primary concern when designing
 the algorithm was to maintain a low operation count per sample.  For
@@ -126,7 +122,7 @@ dimensionless parameters:
 A_k & = & a_{k(i)}(d\Delta t)^{k-1}   \; . \nonumber
 \label{eq:dimensionless-params}
 \f}
-Eq.\ltxref{eq:delta-tau,Resample_h} therefore
+Eq.\eqref{eq_delta-tau} therefore
 gives us, for a quadratic fit:
 \f{equation}{
 \label{eq:dimensionless-tau}
@@ -183,7 +179,7 @@ LALCreateResampleRules() routine reverts to a constant fit: a
 shift is computed from the value of \f$n=dA_0\f$ at middle of the fitting
 region (\f$T=0\f$).
 
-<b>Computational details:</b>
+\heading{Computational details:}
 The basic structure of the algorithm is an inner loop and an outer
 loop.  The inner loop is iterated once each time that \f$n\f$ is
 incremented or decremented and a new \f$T\f$ is computed; it terminates

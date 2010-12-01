@@ -33,6 +33,7 @@ ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
+REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
