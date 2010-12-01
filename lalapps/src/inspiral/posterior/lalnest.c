@@ -69,7 +69,10 @@ Optional OPTIONS:\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
 [--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor)]\n \
 [--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
-[--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\
+[--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\n\
+[--H1GPSshift FLOAT\t: Specify timeslide in H1]\n \
+[--L1GPSshift FLOAT\t: Specify timeslide in L1]\n \
+[--V1GPSshift FLOAT\t: Specify timeslide in V1]\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
 [--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
@@ -80,7 +83,7 @@ Optional OPTIONS:\n \
 [--pinparams STRING\t:\tList parameters to be fixed to their injected values (, separated) i.e. --pinparams mchirp,longitude\n \
 [--version\t:\tPrint version information and exit]\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
-[--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)\
+[--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
 [--help\t:\tPrint this message]\n"
 
 #ifdef __GNUC__
@@ -128,6 +131,7 @@ extern INT4 seed;
 int NINJA=0;
 int verbose=0;
 int timeslides=0;
+int specifictimeslides=0;
 int studentt=0;
 int estimatenoise=1;
 int SkyPatch=0;
@@ -135,6 +139,7 @@ int FakeFlag=0;
 int GRBflag=0;
 int SkyLocFlag=0;
 REAL8 SNRfac=1.0;
+REAL4 H1GPSshift = 0.0, L1GPSshift = 0.0, V1GPSshift = 0.0;
 int HighMassFlag=0;
 int decohereflag=0;
 REAL8 offset=0.0;
@@ -212,6 +217,9 @@ void initialise(int argc, char *argv[]){
 		{"verbose",no_argument,0,'v'},
 		{"approximant",required_argument,0,'A'},
 		{"timeslide",no_argument,0,'L'},
+		{"H1GPSshift",required_argument,0,31},
+		{"L1GPSshift",required_argument,0,32},
+		{"V1GPSshift",required_argument,0,33},
 		{"studentt",no_argument,0,'l'},
 		{"ra",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
@@ -258,6 +266,18 @@ void initialise(int argc, char *argv[]){
 			break;
 		case 14:
 			SNRfac=atof(optarg);
+			break;
+		case 31:
+			H1GPSshift = atof(optarg);
+			specifictimeslides=1;
+			break;
+		case 32:
+			L1GPSshift = atof(optarg);
+			specifictimeslides=1;
+			break;
+		case 33:
+			V1GPSshift = atof(optarg);
+			specifictimeslides=1;
 			break;
 		case 16:
 			decohereflag=1;
@@ -446,6 +466,10 @@ int main( int argc, char *argv[])
 	etawindow=1.0;
 	timewindow=0.05;
 	initialise(argc,argv); /* Get the arguments and act on them */
+	if( timeslides && specifictimeslides ){
+		fprintf( stderr, "Error: can not use both random and specific timeslides.\n");
+		exit( 1 );
+	}
 	if(inputXMLFile!=NULL){
 		/* read in the input file */
 		numTmplts = LALSnglInspiralTableFromLIGOLw( &inputCurrent, inputXMLFile, 0, -1);
@@ -653,14 +677,31 @@ int main( int argc, char *argv[])
 			fprintf(stderr,"Slid %s by %f s\n",IFOnames[i],TSoffset);
 			XLALDestroyRandomParams(randparam);
 		}
+		
+		if(specifictimeslides && !FakeFlag){ /* Set up time slides by offsetting the data by user defined value */
+			if( ( !strcmp(IFOnames[i],"H1") && H1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"L1") &&
+					L1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"V1") && V1GPSshift != 0.0 ) ) {
+				memcpy(&realstart,&datastart,sizeof(LIGOTimeGPS));
+				if(!strcmp(IFOnames[i],"H1"))
+					TSoffset=H1GPSshift;
+				else if(!strcmp(IFOnames[i],"L1"))
+					TSoffset=L1GPSshift;
+				else
+					TSoffset=V1GPSshift;
+				datastart = realstart;
+				XLALGPSAdd(&datastart, TSoffset);
+				fprintf(stderr,"Slid %s by %f s\n",IFOnames[i],TSoffset);
+			}
+		}
+		
 		/* set up a Tukey Window with tails of 1s at each end */
-		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1s agreed on beta parameter for review */
+		if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen, 0.1); /* 0.1 agreed on beta parameter for review */
 		/* if (inputMCMC.window==NULL) inputMCMC.window = windowplan = XLALCreateTukeyREAL8Window( seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen); */ /* Original window, commented out for review */
 		/* Read the data from disk into a vector (RawData) */
 		if(!FakeFlag){
 			RawData = readTseries(CacheFileNames[i],ChannelNames[i],datastart,duration); /* This reads the raw data from the cache */
 			if(RawData==NULL){fprintf(stderr,"Error opening %s in %s\n",ChannelNames[i],CacheFileNames[i]); exit(-1);}
-			if(timeslides){
+			if(timeslides || specifictimeslides){
 				memcpy(&(RawData->epoch),&realstart,sizeof(LIGOTimeGPS));
 				memcpy(&datastart,&realstart,sizeof(LIGOTimeGPS));
 			}

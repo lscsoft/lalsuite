@@ -17,69 +17,80 @@
 *  MA  02111-1307  USA
 */
 
-/************************************** <lalVerbatim file="PtoleMeshTestCV">
-Author: Owen, B. J.,   Jones, D. I.
-$Id$
-********************************************************** </lalVerbatim> */
+/**
+\author Owen, B. J.,   Jones, D. I.
+\file
+\ingroup PtoleMetric_h
+\brief Tests and showcases the combination of \ref PtoleMetric_h and \ref TwoDMesh_h modules.
 
-/**************************************************************** <lalLaTeX>
+\heading{Program \c PtoleMeshTest}
+\latexonly\label{ss_PtoleMeshTest}\endlatexonly
 
-\subsection{Program \texttt{PtoleMeshTest}}
-\label{ss:PtoleMeshTest}
-
-Tests and showcases the combination of \texttt{PtoleMetric} and
-\texttt{TwoDMesh} modules.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 PtoleMeshTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-The \texttt{-b} option sets the beginning time of integration to the option
-argument. (Default is $0$ seconds)
+The <tt>-b</tt> option sets the beginning time of integration to the option
+argument. (Default is \f$0\f$ seconds)
 
-The \texttt{-c} option determins the center of the patch. (Default is the
+The <tt>-c</tt> option determins the center of the patch. (Default is the
 center of the globular cluster 47 Tuc.) This option is hardcoded to use
 equatorial coordinates and the argument should be given in hh:mm:ss:dd:mm:ss
 format.
 
-The \texttt{-e} option sets \texttt{lalDebugLevel} to the option argument.
+The <tt>-e</tt> option sets \c lalDebugLevel to the option argument.
 (Default is 1.)
 
-The \texttt{-f} option sets the maximum frequency of integration (in Hz) to the
+The <tt>-f</tt> option sets the maximum frequency of integration (in Hz) to the
 option argument. (The default value is 1000.)
 
-The \texttt{-i} option does not function at this time.
+The <tt>-i</tt> option does not function at this time.
 
-The \texttt{-m} option sets the maximum mismatch of the mesh to the option
+The <tt>-m</tt> option sets the maximum mismatch of the mesh to the option
 argument. (Default is 0.02.)
 
-The \texttt{-n} option sets the maximum number of nodes in the mesh to the
-option argument. (Default is $10^6$.)
+The <tt>-n</tt> option sets the maximum number of nodes in the mesh to the
+option argument. (Default is \f$10^6\f$.)
 
 The texttt{-p} option causes the coordinates of the nodes to be written to
-a file \texttt{mesh.dat}, for the benifit of users who don't have
-\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC),
+a file <tt>mesh.dat</tt>, for the benifit of users who don't have
+\c xmgrace installed.  The format is one node per line, (RA, DEC),
 with the angles in degrees.
 
-The \texttt{-r} option sets the radius (in arcminutes) of the circular
+The <tt>-r</tt> option sets the radius (in arcminutes) of the circular
 sky patch. (The default value is set for the globular cluster 47 Tuc.)
 At the moment there is no option for another patch shape, but if you
 specify radius zero you will get a search over a rectangular region
 whose limits in RA and dec are specified in the code.
 
-The \texttt{-t} option sets the duration of integration, in seconds. (The
-default is $10^5$ seconds, which is of order one day but is not an integer
+The <tt>-t</tt> option sets the duration of integration, in seconds. (The
+default is \f$10^5\f$ seconds, which is of order one day but is not an integer
 multiple of anything astronomically important.)
 
-The \texttt{-x} option makes a plot of the mesh points on the sky patch using a
-system call to \texttt{xmgrace}. If \texttt{xmgrace} is not installed on your
-system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
+The <tt>-x</tt> option makes a plot of the mesh points on the sky patch using a
+system call to \c xmgrace. If \c xmgrace is not installed on your
+system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
 
-\subsubsection*{Exit Codes}
-************************************************ </lalLaTeX><lalErrTable> */
+\heading{Algorithm}
+
+\heading{Uses}
+
+\code
+lalDebugLevel
+LALCheckMemoryLeaks()
+LALProjectMetric()
+LALPtoleMetric()
+LALXMGRPlotMesh()
+\endcode
+
+\heading{Notes}
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define PTOLEMESHTESTC_EMEM 1
 #define PTOLEMESHTESTC_ERNG 2
 #define PTOLEMESHTESTC_EFIO 3
@@ -89,26 +100,7 @@ system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
 #define PTOLEMESHTESTC_MSGERNG "value out of range"
 #define PTOLEMESHTESTC_MSGEFIO "file I/O error"
 #define PTOLEMESHTESTC_MSGEOPT "unknown command-line option"
-/************************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-lalDebugLevel
-LALCheckMemoryLeaks()
-LALProjectMetric()
-LALPtoleMetric()
-LALXMGRPlotMesh()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{PtoleMeshTestCV}}
-
-************************************************************* </lalLaTeX> */
-
+/*@}*/
 
 #include <math.h>
 #include <stdio.h>
@@ -118,6 +110,7 @@ LALXMGRPlotMesh()
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( PTOLEMESHTESTC, "$Id$" );
 
 /* BEN: These aren't used right now, but should be. */
@@ -372,3 +365,5 @@ void getMetric( LALStatus *stat,
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 } /* getMetric() */
+
+/** \endcond */

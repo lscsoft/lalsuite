@@ -17,107 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="FlatMeshCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{FlatMesh.c}}
-\label{ss:FlatMesh.c}
-
-Places a mesh of templates on an $n$-dimensional rectilinear parameter
-space.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FlatMeshCP}
-\idx{LALCreateFlatMesh()}
-\idx{LALRectIntersect()}
-
-\subsubsection*{Description}
-
-\verb@LALFlatMesh()@ lays out a mesh on an $n$-dimensional parameter
-space according to the method discussed in \verb@FlatMesh.h@.  It
-first creates a unit-cube lattice in $\mathsf{y}^a$ over a rectilinear
-region large enough to cover the search area completely, and then
-calls the routine \verb@params->intersection()@ to restrict the list
-to those mesh points that lie inside the search region.  (If this
-function pointer is \verb@NULL@, then no restriction is done.)  The
-list of mesh point locations is returned in \verb@**mesh@; see
-\verb@FlatMesh.h@ for a description of the fields in \verb@*params@.
-
-\verb@LALRectIntersect()@ is a simple routine that restricts a
-parameter mesh \verb@*mesh@ to a rectilinear region defined by the
-first two vectors $\mathsf{x}^a_{(1)}$, $\mathsf{x}^a_{(2)}$ in the
-sequence \verb@*controlPoints@ (other vectors in the sequence are
-ignored): the region is
-$[x^1_{(1)},x^1_{(2)}]\otimes\cdots\otimes[x^n_{(1)},x^n_{(2)}]$.  In
-general the values of \verb@mesh->length@ and the pointer
-\verb@mesh->data@ will be changed when the dataset is reduced.
-
-\subsubsection*{Algorithm}
-
-The algorithm in \verb@LALFlatMesh()@ initially lays a mesh over a
-region much larger than is ultimately required.  First, in the
-$\mathsf{x}^a$ coordinate system, the minimum and maximum parameter
-values \verb@params->xMin@ and \verb@params->xMax@ are used to define
-a rectilinear region $[x^1_\mathrm{min},x^1_\mathrm{max}]\otimes\cdots
-\otimes[x^n_\mathrm{min},x^n_\mathrm{max}]$ that is a superset of the
-desired search region.  Upon transformation to the $\mathsf{y}^a$
-coordinate system, this superset is now a parallelogram; the algorithm
-then defines a super-superset
-$[y^1_\mathrm{min},y^1_\mathrm{max}]\otimes\cdots
-\otimes[y^n_\mathrm{min},y^n_\mathrm{max}]$ that completely encloses
-the parallelogram.  A unit-cube mesh is placed on this super-superset,
-transformed back to $\mathsf{x}^a$ coordinates, and then passed to
-\verb@params->intersect@ to restrict it to the region of interest.
-
-Obviously if the desired region in $\mathsf{x}^a$ coordinates is
-highly elongated along a non-principal axis, and if the transformation
-from $\mathsf{x}^a$ to $\mathsf{y}^a$ involves both rotation and
-elongation of principal axes, then the final intersection may
-eliminate all but a tiny fraction of the mesh points generated
-initially.  However, laying out mesh points is rarely expected to be
-the dominant computational cost in any analysis, so some inefficiency
-can be tolerated.  Furthermore, since the definition of signal
-parameters $\mathsf{x}^a$ is somewhat arbitrary, one can cleverly
-choose an initial coordinate system that is aligned with the preferred
-axes of the desired search area, or with the preferred axes of the
-mismatch metric, whichever will improve performance the most.
-
-\verb@LALRectIntersect()@ performs the dataset reduction ``in place'',
-within the memory block allocated to \verb@mesh->data@, and then uses
-\verb@LALRealloc()@ to reduce the memory storage accordingly.  In most
-cases this will mean allocating a new block, copying the reduced
-dataset over, and then freeing the old block.  However, when debugging
-is turned off, \verb@LALRealloc()@ reverts to the lower-level memory
-management function \verb@realloc()@; this routine can often simply
-deallocate the excess memory without having to touch the reduced
-dataset at the start of the block.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALInfo()                   LALPrintError()
-LALRealloc()
-LALMalloc()                 LALFree()
-LALSCreateVectorSequence()  LALSDestroyVectorSequence()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FlatMeshCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include "LALStdlib.h"
 #include "AVFactories.h"
 #include "SeqFactories.h"
 #include "FlatMesh.h"
 
+/** \cond DONT_DOXYGEN */
 NRCSID(FLATMESHC,"$Id$");
 
 /* Local function prototypes. */
@@ -128,13 +34,57 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
 static void
 Transform( REAL4 *vectorOut, REAL4 *vectorIn, REAL4 *matrix,
 	   UINT4 dim );
+/** \endcond */
 
-/* <lalVerbatim file="FlatMeshCP"> */
+/** \author Creighton, T. D.
+ * \ingroup FlatMesh_h
+ * \brief Places a mesh of templates on an \f$n\f$-dimensional rectilinear parameter space.
+ *
+ * This function lays out a mesh on an \f$n\f$-dimensional parameter
+ * space according to the method discussed in \ref FlatMesh_h.  It
+ * first creates a unit-cube lattice in \f$\mathsf{y}^a\f$ over a rectilinear
+ * region large enough to cover the search area completely, and then
+ * calls the routine <tt>params->intersection()</tt> to restrict the list
+ * to those mesh points that lie inside the search region.  (If this
+ * function pointer is \c NULL, then no restriction is done.)  The
+ * list of mesh point locations is returned in <tt>**mesh</tt>; see
+ * <tt>FlatMesh.h</tt> for a description of the fields in <tt>*params</tt>.
+ *
+ * \heading{Algorithm}
+ *
+ * The algorithm initially lays a mesh over a
+ * region much larger than is ultimately required.  First, in the
+ * \f$\mathsf{x}^a\f$ coordinate system, the minimum and maximum parameter
+ * values <tt>params->xMin</tt> and <tt>params->xMax</tt> are used to define
+ * a rectilinear region \f$[x^1_\mathrm{min},x^1_\mathrm{max}]\otimes\cdots
+ * \otimes[x^n_\mathrm{min},x^n_\mathrm{max}]\f$ that is a superset of the
+ * desired search region.  Upon transformation to the \f$\mathsf{y}^a\f$
+ * coordinate system, this superset is now a parallelogram; the algorithm
+ * then defines a super-superset
+ * \f$[y^1_\mathrm{min},y^1_\mathrm{max}]\otimes\cdots
+ * \otimes[y^n_\mathrm{min},y^n_\mathrm{max}]\f$ that completely encloses
+ * the parallelogram.  A unit-cube mesh is placed on this super-superset,
+ * transformed back to \f$\mathsf{x}^a\f$ coordinates, and then passed to
+ * <tt>params->intersect</tt> to restrict it to the region of interest.
+ *
+ * Obviously if the desired region in \f$\mathsf{x}^a\f$ coordinates is
+ * highly elongated along a non-principal axis, and if the transformation
+ * from \f$\mathsf{x}^a\f$ to \f$\mathsf{y}^a\f$ involves both rotation and
+ * elongation of principal axes, then the final intersection may
+ * eliminate all but a tiny fraction of the mesh points generated
+ * initially.  However, laying out mesh points is rarely expected to be
+ * the dominant computational cost in any analysis, so some inefficiency
+ * can be tolerated.  Furthermore, since the definition of signal
+ * parameters \f$\mathsf{x}^a\f$ is somewhat arbitrary, one can cleverly
+ * choose an initial coordinate system that is aligned with the preferred
+ * axes of the desired search area, or with the preferred axes of the
+ * mismatch metric, whichever will improve performance the most.
+*/
 void
 LALCreateFlatMesh( LALStatus           *stat,
 		   REAL4VectorSequence **mesh,
 		   FlatMeshParamStruc  *params )
-{ /* </lalVerbatim> */
+{
   INT4 code;   /* subroutine return code */
   UINT4 dim;   /* dimension of parameter space */
   UINT4 *nMax; /* max. no. of mesh points in each y direction */
@@ -377,12 +327,36 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
 }
 
 
-/* <lalVerbatim file="FlatMeshCP"> */
+/** \author Creighton, T. D.
+ * \ingroup FlatMesh_h
+ * \brief Simple routine that restricts a parameter mesh <tt>*mesh</tt> to a rectilinear region.
+ *
+ * This routine that restricts a parameter mesh <tt>*mesh</tt> to a
+ * rectilinear region defined by the first two vectors
+ * \f$\mathsf{x}^a_{(1)}\f$, \f$\mathsf{x}^a_{(2)}\f$ in the
+ * sequence <tt>*controlPoints</tt> (other vectors in the sequence are
+ * ignored): the region is
+ * \f$[x^1_{(1)},x^1_{(2)}]\otimes\cdots\otimes[x^n_{(1)},x^n_{(2)}]\f$.  In
+ * general the values of <tt>mesh->length</tt> and the pointer
+ * <tt>mesh->data</tt> will be changed when the dataset is reduced.
+ *
+ * \heading{Algorithm}
+ *
+ * LALRectIntersect() performs the dataset reduction ``in place'',
+ * within the memory block allocated to <tt>mesh->data</tt>, and then uses
+ * LALRealloc() to reduce the memory storage accordingly.  In most
+ * cases this will mean allocating a new block, copying the reduced
+ * dataset over, and then freeing the old block.  However, when debugging
+ * is turned off, LALRealloc() reverts to the lower-level memory
+ * management function <tt>realloc()</tt>; this routine can often simply
+ * deallocate the excess memory without having to touch the reduced
+ * dataset at the start of the block.
+ */
 void
 LALRectIntersect( LALStatus           *stat,
 		  REAL4VectorSequence *mesh,
 		  REAL4VectorSequence *controlPoints )
-{ /* </lalVerbatim> */
+{
   UINT4 j, k, l;               /* indecies */
   UINT4 dim;                   /* dimension of parameter space */
   REAL4 *x1, *x2, *xIn, *xOut; /* local vectors */
