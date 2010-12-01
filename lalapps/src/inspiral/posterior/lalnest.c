@@ -612,12 +612,12 @@ int main( int argc, char *argv[])
 	}
 
 	/* If the trigger is not in the data read in, adjust the time of the data to centre the trigger in it */
-	if(ETgpsSeconds-duration>datastart.gpsSeconds){
+/*	if(ETgpsSeconds-duration>datastart.gpsSeconds){
 		fprintf(stderr,"ERROR: Trigger lies outside specified block\nAdjusting GPSstart to %i for trigger %i\n",ETgpsSeconds-(INT4)duration/2,event);
 		datastart.gpsSeconds=ETgpsSeconds-(INT4)duration/2;
 		datastart.gpsNanoSeconds=0;
 	}
-
+*/
 	if(ETgpsSeconds>datastart.gpsSeconds+duration) {fprintf(stderr,"Error, trigger lies outwith data range %i - %i\n",datastart.gpsSeconds,datastart.gpsSeconds+(INT4)duration); exit(-1);}
 
 	datarandparam=XLALCreateRandomParams(dataseed);
