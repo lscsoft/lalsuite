@@ -17,17 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \author Curt Cutler
- * \date 2001
- * \file
- * \ingroup moduleBarycenter
- * \brief This header defines the API for LALBarycenter.c.
- *
- * <tt>#include <lal/LALBarycenter.h></tt>
- *
- */
-
 #ifndef _LALBARYCENTER_H    /* Protect against double-inclusion */
 #define _LALBARYCENTER_H
 
@@ -42,10 +31,12 @@
 extern "C" {
 #endif
 
+/** \cond DONT_DOXYGEN */
 NRCSID (LALBARYCENTERH,"$Id$");
+/** \endcond */
 
 /** \name Error codes */
-/*@{*/
+/*@{*/ /** \ingroup Barycenter_h */
 #define LALBARYCENTERH_ENULL  2
 #define LALBARYCENTERH_EOUTOFRANGEE  4
 #define LALBARYCENTERH_EOUTOFRANGES  8
@@ -57,8 +48,27 @@ NRCSID (LALBARYCENTERH,"$Id$");
 #define LALBARYCENTERH_MSGEBADSOURCEPOS "source position not in standard range"
 /*@}*/
 
-/** This structure contains two pointers to data files containing arrays
+/**
+ * \defgroup LALBarycenter_h Barycentering
+ * \author Curt Cutler
+ * \date 2001
+ * \ingroup pulsarCommon
+ * \brief Provides routines for transforming from arrival time at detector (GPS) to pulse emission time (TDB); ie
+ * for ``barycentering'' the measured astronomical time series.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALInitBarycenter.h>
+ * #include <lal/LALBarycenter.h>
+ * \endcode
+ *
+ */
+/*@{*/
+
+/** \brief [DEPRECATED] Used as input for LALInitBarycenter(), this structure contains
+ * two pointers to the ephemeris data files containing arrays
  * of center-of-mass positions for the Earth and Sun, respectively.
+ *
  * The tables are derived from the JPL ephemeris.
  *
  * Files tabulate positions for one calendar year
@@ -69,6 +79,8 @@ NRCSID (LALBARYCENTERH,"$Id$");
  * velocity \f$(v_x, v_y, v_z)\f$, and acceleration \f$(a_x, a_y, a_z)\f$
  * at that instant.  All in units of seconds; e.g. positions have
  * units of seconds, and accelerations have units 1/sec.
+ *
+ * \deprecated Use XLALInitBarycenter() instead.
  */
 typedef struct
 {
@@ -182,6 +194,7 @@ typedef struct
 }
 EmissionTime;
 
+/*@}*/
 
 /*Curt: probably best to take 1.0 OUT of tDot--ie., output tDot-1.
 But most users would immediately add back the one anyway.
