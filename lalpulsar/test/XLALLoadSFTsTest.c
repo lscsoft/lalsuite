@@ -164,36 +164,42 @@ int main(int argc, char *argv[])
   SFTVector *sft_vect2 = NULL;
   REAL8 fMin = -1.0;
   REAL8 fMax = -1.0;
+  int loglevel = LOG_DETAIL;
 
   lalDebugLevel = 3;
-  LogSetLevel(LOG_DETAIL);
 
-  if(argc != 4) {
-    XLALPrintError ( "Usage: %s <files> <fmin> <fmax>\n", argv[0]);
+  if((argc != 4) && (argc != 5)) {
+    XLALPrintError ( "Usage: %s <files> <fmin> <fmax> [<debuglevel>]\n", argv[0]);
       return SFTFILEIOTESTC_EARG;
   } else {
     fMin = atof(argv[2]);
     fMax = atof(argv[3]);
   }
-  LogPrintf(LOG_DETAIL, "Calling LALSFTdataFind ...\n");
+  if(argc == 5) {
+    loglevel = atoi(argv[4]);
+  }
+
+  LogSetLevel(loglevel);
+
+  LogPrintf(LOG_DEBUG, "Calling LALSFTdataFind ...\n");
   SUB ( LALSFTdataFind ( &status, &catalog, argv[1], &constraints ), &status);
-  LogPrintf(LOG_DETAIL, "Calling LALLoadSFTs ...\n");
+  LogPrintf(LOG_DEBUG, "Calling LALLoadSFTs ...\n");
   SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
-  LogPrintf(LOG_DETAIL, "Calling XLALLoadSFTs ...\n");
+  LogPrintf(LOG_DEBUG, "Calling XLALLoadSFTs ...\n");
   sft_vect2 = XLALLoadSFTs ( catalog, fMin, fMax );
   if (!sft_vect2) {
     XLALPrintError ( "ERROR: XLALLoadSFTs() call failed!\n");
     return SFTFILEIOTESTC_ESUB;
   }
-  LogPrintf(LOG_DETAIL, "Calling CompareSFTVectors() ...\n");
+  LogPrintf(LOG_DEBUG, "Calling CompareSFTVectors() ...\n");
   if(CompareSFTVectors(sft_vect, sft_vect2))
     return SFTFILEIOTESTC_ESUB;
-  LogPrintf(LOG_DETAIL, "Freeing Memory ...\n");
+  LogPrintf(LOG_DEBUG, "Freeing Memory ...\n");
   SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
   LALCheckMemoryLeaks();
-  LogPrintf(LOG_DETAIL, "... all ok\n");
+  LogPrintf(LOG_DEBUG, "... all ok\n");
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
