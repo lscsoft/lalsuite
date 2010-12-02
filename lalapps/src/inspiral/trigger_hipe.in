@@ -31,6 +31,7 @@ import sys
 import ConfigParser
 import optparse
 import shutil
+import subprocess
 
 import numpy
 
@@ -112,6 +113,13 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   seed = hash_n_bits(hipe_dir, 31)
   numberInjections = injEnd - injStart + 1  # e.g., 1 through 5000 inclusive
 
+  # get the jitter parameters
+  if cpinj.has_option(injrun, "jitter-skyloc"):
+    jitter_sigma_deg = cpinj.getfloat(injrun, "jitter-skyloc")
+    cpinj.remove_option(injrun, "jitter-skyloc")
+  else:
+    jitter_sigma_deg = None
+
   # set all the arguments
   argument = []
   for (opt,value) in cpinj.items(injrun):
@@ -145,6 +153,20 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   # move it into the GRB directory to avoid clutter
   new_injFile = hipe_dir + "/" + injFile
   os.rename(injFile, new_injFile)
+
+  # jitter the sky locations of the injections
+  if jitter_sigma_deg is not None:
+    # rename the original, then have ligolw_cbc_jitter_skyloc create a new one
+    os.rename(new_injFile, new_injFile + ".orig")
+    cmd = ["ligolw_cbc_jitter_skyloc", "--jitter-sigma-deg",
+      str(jitter_sigma_deg), "--output-file", new_injFile,
+      new_injFile + ".orig"]
+    if verbose:
+      print " ".join(cmd)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    if p.returncode != 0:
+      raise subprocess.CalledProcessError, "%s: %s" % (" ".join(cmd), err)
 
   # read in the file and the tables
   doc = utils.load_filename(new_injFile)
@@ -821,7 +843,6 @@ for grb in ext_trigs:
           usertag=usertag, verbose=opts.verbose, exttrig_analyze="off_source",
           dont_run=["datafind", "sire-inspiral", "sire-inspiral-veto",
                     "coire-coincidence"])
-
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."

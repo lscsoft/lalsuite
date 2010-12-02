@@ -785,15 +785,15 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
 {
   
   // Get the 15 waveform parameters from their array:
-  double pMc=0.0,pEta=0.0,pTc=0.0,pLogDl=0.0,pRA=0.0,pLongi=0.0,pSinDec=0.0,pPhase=0.0,pCosI=0.0,pPsi=0.0;
+  double pMc=0.0,pEta=0.0,pTc=0.0,pDl=0.0,pRA=0.0,pLongi=0.0,pSinDec=0.0,pPhase=0.0,pCosI=0.0,pPsi=0.0;
   double pSpin1=0.0,pSpCosTh1=0.0,pSpPhi1=0.0,pSpin2=0.0,pSpCosTh2=0.0,pSpPhi2=0.0,PNorder=0.0;
   
   if(injectionWF==1) {                                               // Then this is an injection waveform template
-    pTc       = par->par[run.injRevID[11]];                                            // 11: t_c
-    pLogDl    = par->par[run.injRevID[22]];                                            // 22: log(d_L)
-    pMc       = par->par[run.injRevID[61]];                                            // 61: Mc
-    pEta      = par->par[run.injRevID[62]];                                            // 62: eta
-    
+	pTc       = par->par[run.injRevID[11]];                                            // 11: t_c
+	pDl       = pow(par->par[run.injRevID[21]],c3rd);                                            // 21: d_L^3
+	pMc       = pow(par->par[run.injRevID[65]],6);                                            // 65: Mc^(1/6)    
+	pEta      = par->par[run.injRevID[62]];                                            // 62: eta
+	  
     pRA       = par->par[run.injRevID[31]];                                            // 31: RA
     pSinDec   = par->par[run.injRevID[32]];                                            // 32: sin(Dec)
     pPhase    = par->par[run.injRevID[41]];                                            // 41: phi_c - GW phase at coalescence
@@ -809,11 +809,11 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
     
     PNorder   = run.injectionPNorder;                                                  // Post-Newtonian order
   } else {                                                           // Then this is an MCMC waveform template
-    pTc       = par->par[run.parRevID[11]];                                            // 11: t_c
-    pLogDl    = par->par[run.parRevID[22]];                                            // 22: log(d_L)
-    pMc       = par->par[run.parRevID[61]];                                            // 61: Mc
-    pEta      = par->par[run.parRevID[62]];                                            // 62: eta
-    
+	pTc       = par->par[run.parRevID[11]];                                            // 11: t_c
+	pDl       = pow(par->par[run.parRevID[21]],c3rd);                                            // 21: d_L^3
+	pMc       = pow(par->par[run.parRevID[65]],6);                                            // 65: Mc^(1/6)    
+	pEta      = par->par[run.parRevID[62]];                                            // 62: eta
+	  
     pRA       = par->par[run.parRevID[31]];                                            // 31: RA
     pSinDec   = par->par[run.parRevID[32]];                                            // 32: sin(Dec)
     pPhase    = par->par[run.parRevID[41]];                                            // 41: phi_c - GW phase at coalescence
@@ -882,7 +882,7 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"%s",waveformApproximant);
   
   // This is given in Mpc:
-  injParams.distance = (float)exp(pLogDl); // d_L;
+  injParams.distance = (float)pDl; // d_L;
   
   injParams.inclination = (float)acos(pCosI);                      // Inclination of the binary
   
@@ -1419,11 +1419,11 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
   int i=0;
   
   // Get the 9 waveform parameters from their array:
-  double pMc=0.0,pEta=0.0,pTc=0.0,pLogDl=0.0,pRA=0.0,pLongi=0.0,pSinDec=0.0,pPhase=0.0,pCosI=0.0,pPsi=0.0,PNorder=0.0;
+  double pMc=0.0,pEta=0.0,pTc=0.0,pDl=0.0,pRA=0.0,pLongi=0.0,pSinDec=0.0,pPhase=0.0,pCosI=0.0,pPsi=0.0,PNorder=0.0;
   if(injectionWF==1) {                                               // Then this is an injection waveform template
     pTc       = par->par[run.injRevID[11]];                                            // 11: t_c
-    pLogDl    = par->par[run.injRevID[22]];                                            // 22: log(d_L)
-    pMc       = par->par[run.injRevID[61]];                                            // 61: Mc
+    pDl       = pow(par->par[run.injRevID[21]],c3rd);                                            // 21: d_L^3
+    pMc       = pow(par->par[run.injRevID[65]],6);                                            // 65: Mc^(1/6)
     pEta      = par->par[run.injRevID[62]];                                            // 62: eta
     
     pRA       = par->par[run.injRevID[31]];                                            // 31: 'longi' := RA (?)
@@ -1435,8 +1435,8 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
     PNorder   = run.injectionPNorder;                                                  // Post-Newtonian order
   } else {                                                           // Then this is an MCMC waveform template
     pTc       = par->par[run.parRevID[11]];                                            // 11: t_c
-    pLogDl    = par->par[run.parRevID[22]];                                            // 22: log(d_L)
-    pMc       = par->par[run.parRevID[61]];                                            // 61: Mc
+    pDl       = pow(par->par[run.parRevID[21]],c3rd);                                            // 21: d_L^3
+    pMc       = pow(par->par[run.parRevID[65]],6);                                            // 65: Mc^(1/6)
     pEta      = par->par[run.parRevID[62]];                                            // 62: eta
     
     pRA       = par->par[run.parRevID[31]];                                            // 31: longi := RA (?)
@@ -1502,7 +1502,7 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
   injParams.mchirp = (float)pMc;  // Get a seg.fault when setting both pairs?!?!?
   injParams.eta = (float)pEta;
   
-  injParams.distance = (float)exp(pLogDl);                                  // Distance in Mpc
+  injParams.distance = (float)pDl;                                  // Distance in Mpc
   injParams.inclination = (float)acos(pCosI);                               // Inclination of the binary
   
   

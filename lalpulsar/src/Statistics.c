@@ -29,7 +29,7 @@
  *  Bug in variance corrected -- Feb 01, 2004
  *  Generalized to handle REAL4 number counts -- Nov 01, 2005
 
-\par Description
+\heading{Description}
 
 The fuction LALHoughStatistics() calculates the maximum number count, minimum
 number count, average and standard deviation of a given total Hough map.

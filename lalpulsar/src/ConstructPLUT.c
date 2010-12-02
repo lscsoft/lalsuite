@@ -28,7 +28,7 @@
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  *
-\par Description
+\heading{Description}
 
 This module is the core of the Hough transform. The LAL function
 LALHOUGHConstructPLUT()
@@ -45,7 +45,7 @@ patch, And  HOUGHParamPLUT  with all the other parameters needed.
 The output is the look up table  HOUGHptfLUT
 
 
-\par Uses
+\heading{Uses}
 \code
 PLUTInitialize(HOUGHptfLUT  *)
 FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *)

@@ -121,7 +121,7 @@ LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
-LAL_WITH_CUDA
+LALSUITE_WITH_CUDA
 LALSUITE_ENABLE_BOINC
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -185,25 +185,7 @@ AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 
 # check for supported mac os x version
-if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS([SW_VERS],[sw_vers])
-  if test "x$SW_VERS" != "x"; then
-    AC_MSG_CHECKING([Mac OS X version])
-    MACOSX_VERSION=`$SW_VERS -productVersion`
-    AC_MSG_RESULT([$MACOSX_VERSION])
-  fi
-  case "$MACOSX_VERSION" in
-    10.0*|10.1*|10.2*|10.3*)
-      AC_MSG_ERROR([This version of Mac OS X is not supported])
-      ;;
-    10.4*|10.5*|10.6*)
-      # supported version
-      ;;
-    *)
-      AC_MSG_WARN([Unknown Mac OS X version])
-      ;;
-  esac
-fi
+LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
@@ -336,6 +318,7 @@ if test "${boinc}" = "true" ; then
     AC_LANG_POP([C++])
   fi
 fi
+LALSUITE_ENABLE_MODULE([BOINC],[boinc])
 
 # define what is being enabled
 if test "${cuda}" = "true"; then
@@ -375,8 +358,6 @@ AC_SUBST([pkgdocdir])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
-AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
-AM_CONDITIONAL([BOINC],[test x$boinc = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
@@ -401,15 +382,13 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-boincenabled="`test x${boinc} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
-                CUDA support is $cudaenabled
-                BOINC support is $boincenabled
+                CUDA support is $CUDA_ENABLE_VAL
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

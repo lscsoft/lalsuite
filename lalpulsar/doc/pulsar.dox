@@ -16,7 +16,7 @@
 
 
 /** \defgroup pulsarHough The Hough transform
-    \ingroup pulsar
+    \ingroup pulsarTODO
     \brief Routines implementing the Hough-transform as a
     search-method for unknown pulsars.
 
@@ -62,7 +62,7 @@ and B. Allen and J. Creighton for their valuable implementation advice.
 */
 
 /** \defgroup amplitudeFolding Amplitude folding routines
-    \ingroup pulsar
+    \ingroup pulsarTODO
     \brief Contains function LALFoldAmplitudes: folds amplitudes into phase bins.
 
 Periodic sources of gravitational radiation will produce measured
@@ -144,7 +144,7 @@ correspond to a sinusoid.
 */
 
 /** \defgroup pulsarCoherent Coherent search routines
-    \ingroup pulsar
+    \ingroup pulsarTODO
     \brief This package provides routines to perform a demodulation on a set of data.
 
 In particular, this routine works with frequency domain data by combining
@@ -167,16 +167,20 @@ here <tt>tdb()</tt>.
 
 
 /** \defgroup pulsarKnown Time-domain search routines for known pulsars
-    \ingroup pulsar
+    \ingroup pulsarTODO
     \brief This package provides routines for a time domain search of
     gravitational wave signals from known pulsars.
     The documentation and functionality of this package is <b>incomplete</b>.
 
 */
 
+/** \defgroup pulsarTODO pulsar doxygen TODO
+ *  \brief doxygen documentation that still needs more work.
+ *  \ingroup pulsar
+ */
 
 /** \defgroup pulsarAntenna Antenna-pattern functions
-    \ingroup pulsarCommon
+    \ingroup pulsarTODO
     \brief Module for antenna-pattern functions and amplitude
     modulation of pulsar signals.
 */

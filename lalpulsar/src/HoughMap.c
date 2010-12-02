@@ -29,7 +29,7 @@
  *            Modified    "    August 6, 2001
  *
 
-\par Description
+\heading{Description}
 
 The function  LALHOUGHInitializeHD() initializes the Hough map derivative
 space  HOUGHMapDeriv *hd to zero. Note that the length of the map

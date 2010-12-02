@@ -18,7 +18,7 @@
  */
 
 /** \file
- *  \ingroup modukeHoughPulsar
+ *  \ingroup moduleHoughPulsar
  *  \author Sintes, A. M.
  *  \date $Date$
  *  \brief Conversion from peaks in a spectrum into a partial Hough map derivative
@@ -30,7 +30,7 @@
  *
  *
 
-\par Description
+\heading{Description}
 
 The Hough map is an histogram, thus additive. It can be seen as the sum of several
 partial Hough maps constructed using just one periodogram, or equivalently, as

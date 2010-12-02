@@ -17,17 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \ingroup pulsarCommon
- * \brief Some common useful data-types for pulsar-searches.
- *
- * $Id$
- *
- */
-
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
 #define _PULSARDATATYPES_H
 
@@ -46,7 +35,23 @@
 extern "C" {
 #endif
 
+/** \cond DONT_DOXYGEN */
 NRCSID( PULSARDATATYPESH, "$Id$");
+/** \endcond */
+
+/**
+ * \author Reinhard Prix
+ * \date 2005
+ * \defgroup PulsarDataTypes_h Pulsar Data Types
+ * \ingroup pulsarCommon
+ * \brief Some common useful data-types for pulsar-searches.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/PulsarDataTypes.h>
+ * \endcode
+ *
+ */ /*@{*/
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
@@ -115,10 +120,11 @@ typedef struct {
 } PulsarCandidate;
 
 
-/** [DEPRECATED] Type defining the parameters of a pulsar-source of Gravitational waves.
- * NOTE: this type is obsolete and should no longer be used [==> use 'PulsarParams' instead]
- * however, it's too entrenched in the the GeneratePulsarSignal() functions and codes using it,
- * so we can't easily get rid of it any more, so we keep it for now....
+/** DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
+ * \note this type is obsolete and should no longer be used,
+ * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
+ * so we can't easily get rid of it and keep it for now....
+ * \deprecated Use #PulsarParams instead.
  */
 typedef struct {
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
@@ -131,8 +137,11 @@ typedef struct {
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
+/*@}*/
+
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
+/** \name empty struct initializers *//* @{ */
+/** \ingroup PulsarDataTypes_h */
 extern const BinaryOrbitParams empty_BinaryOrbitParams;
 extern const PulsarAmplitudeParams empty_PulsarAmplitudeParams;
 extern const PulsarSpinRange empty_PulsarSpinRange;
@@ -145,6 +154,8 @@ extern const LIGOTimeGPS empty_LIGOTimeGPS;
 extern const BarycenterInput empty_BarycenterInput;
 extern const EphemerisData empty_EphemerisData;
 extern const SkyPosition empty_SkyPosition;
+/*@}*/
+
 
 #ifdef  __cplusplus
 }

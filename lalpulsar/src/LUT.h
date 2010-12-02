@@ -29,7 +29,7 @@
  *            Modified by Badri Krishnan Feb 2003
  *
 
-\par Description
+\heading{Description}
 
  Our goal is the construction of Hough maps. In order to produce them
  efficiently, the present implemetation makes use of <tt>lut</tt>s.
@@ -96,7 +96,7 @@ intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\
    -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
    valid for many \f$F_0\f$ values.\\
 
-\par Uses
+\heading{Uses}
 \code
 LALHOUGHComputeSizePar ()
 LALHOUGHComputeNDSizePar ()

@@ -64,11 +64,15 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
+
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
+
+LALAPPS_ENABLE_MPI
+
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
@@ -122,6 +126,12 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # boinc requires a c++ compiler
 AC_PROG_CXX
 
+# check for MPI compiler
+if test "x$mpi" = "xtrue"; then
+  AX_MPI([mpi=true],[mpi=false])
+fi
+LALSUITE_ENABLE_MODULE([MPI],[mpi])
+
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
@@ -160,25 +170,7 @@ AM_PATH_PYTHON([2.4],,[:])
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version
-if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS([SW_VERS],[sw_vers])
-  if test "x$SW_VERS" != "x"; then
-    AC_MSG_CHECKING([Mac OS X version])
-    MACOSX_VERSION=`$SW_VERS -productVersion`
-    AC_MSG_RESULT([$MACOSX_VERSION])
-  fi
-  case "$MACOSX_VERSION" in
-    10.0*|10.1*|10.2*|10.3*)
-      AC_MSG_ERROR([This version of Mac OS X is not supported])
-      ;;
-    10.4*|10.5*|10.6*)
-      # supported version
-      ;;
-    *)
-      AC_MSG_WARN([Unknown Mac OS X version])
-      ;;
-  esac
-fi
+LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
@@ -422,6 +414,7 @@ echo "
                 PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
+                MPI support is $MPI_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps

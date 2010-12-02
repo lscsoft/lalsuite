@@ -18,7 +18,7 @@
  */
 
 /** \defgroup ExtrapolatePulsarSpins Extrapolate Pulsar Spins and Phase
- *  \ingroup pulsarCommon
+ *  \ingroup pulsarTODO
  *  \author Reinhard Prix
  *  \date $Date$
  *  \brief  Extrapolate the Pulsar spin-paramters

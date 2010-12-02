@@ -1,6 +1,9 @@
+package "lalapps_TwoSpect"
+version "1.0.0"
 purpose "TwoSpect analysis program"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
+option "verbosity" v "Verbosity level" int default="0" optional
 option "Tobs"  - "Total observation time" double optional
 option "Tcoh"  - "SFT coherence time" double default="1800" optional
 option "t0"    - "Start time of the search in GPS seconds" double optional
@@ -10,6 +13,7 @@ option "Pmin"  - "Minimum period to be searched" double default="7200.0" optiona
 option "Pmax"  - "Maximum period to be searched" double optional
 option "dfmin" - "Minimum modulation depth to search" double optional
 option "dfmax" - "Maximum modulation depth to search" double optional
+option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
 option "tmplfar"  - "Template FAR threshold" double default="0.01" optional
 option "avesqrtSh"    - "Expected average of square root of Sh" double default="1.0" optional
@@ -21,5 +25,6 @@ option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double defaul
 option "templateLength" - "Maximum number of pixels to use in the template" int default="50" optional
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
+option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden

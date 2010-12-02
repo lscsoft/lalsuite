@@ -36,7 +36,7 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
 
 void ihsSums(REAL4Vector *output, REAL4Vector *ihss, INT4 cols);
 
-void findIHScandidates(candidate *candlist[], INT4 *numofcandidates, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4Vector *fbinrmss);
+void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4Vector *fbinrmss);
 
 REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma);
 REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma);
