@@ -248,7 +248,9 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data, 
 	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
 void COMPLEX16VectorSubtract(COMPLEX16Vector * out, const COMPLEX16Vector * in1, const COMPLEX16Vector * in2);
+
 REAL8 NullLogLikelihood(LALIFOData *data);
+REAL8 TimeDomainNullLogLikelihood(LALIFOData *data);
 
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
                             LALTemplateFunction *template, char *filename);

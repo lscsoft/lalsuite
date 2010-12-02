@@ -135,8 +135,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-	nullLikelihood = NullLogLikelihood(runState->data);
-	//nullLikelihood = 0.0;
+        nullLikelihood = NullLogLikelihood(runState->data);
+        /* nullLikelihood = TimeDomainNullLogLikelihood(runState->data); */
+	/* nullLikelihood = 0.0; */
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	

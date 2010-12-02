@@ -197,8 +197,9 @@ void initializeMCMC(LALInferenceRunState *runState)
 	}
 	else {runState->template=&templateLAL;}
 	
-	//runState->likelihood=&FreqDomainLogLikelihood;
+	/* runState->likelihood=&FreqDomainLogLikelihood; */
 	runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
+        /* runState->likelihood=&TimeDomainLogLikelihood; */
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;

@@ -33,6 +33,8 @@
 #include <lal/Date.h>
 #include <lal/Sequence.h>
 
+#define TIME_DOMAIN_FUDGE_FACTOR 8.0
+
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8),
                      sizeof(UINT4),
@@ -914,12 +916,13 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
         /* Scaling of TimeDomainOverlap is off, so need factor of 2.0 here. */
 	totalChiSquared+=
           2.0*(timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
-               -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
-               +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
+           -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
+           +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
 
     ifoPtr = ifoPtr->next;
   }
-  loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+  loglikeli = -0.5*totalChiSquared; 
+  loglikeli *= TIME_DOMAIN_FUDGE_FACTOR;
   XLALDestroyREAL8TimeSeries(timeModelResponse);
   return(loglikeli);
 }
@@ -1463,6 +1466,22 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	}
 	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
 	return(loglikeli);
+}
+
+REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
+  REAL8 logL = 0.0;
+  LALIFOData *ifoPtr = data;
+
+  while (ifoPtr != NULL) {
+    REAL8 oneLogL = -timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData);
+    fprintf(stderr, "Found oneLogL = %g\n", oneLogL);
+    logL += oneLogL;
+    ifoPtr = ifoPtr->next;
+  }
+
+  logL *= TIME_DOMAIN_FUDGE_FACTOR;
+  
+  return logL;
 }
 
 /* The time-domain weight corresponding to the (two-sided) noise power
