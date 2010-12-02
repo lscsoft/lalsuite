@@ -154,8 +154,6 @@ static int compareDetName(const void *ptr1, const void *ptr2);
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 
-void _LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax );
-
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
