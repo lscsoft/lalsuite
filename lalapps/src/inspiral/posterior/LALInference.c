@@ -869,6 +869,60 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   return(loglikeli);
 }
 
+REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template)
+/***************************************************************/
+/* (log-) likelihood function.                                 */
+/* Returns the non-normalised logarithmic likelihood.          */
+/* Slightly slower but cleaner than							   */
+/* UndecomposedFreqDomainLogLikelihood().          `		   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/
+{
+  REAL8 loglikeli, totalChiSquared=0.0;
+  LALIFOData *ifoPtr=data;
+  REAL8TimeSeries *timeModelResponse=NULL;
+
+  /* loop over data (different interferometers): */
+  while (ifoPtr != NULL) {
+	if(timeModelResponse==NULL)
+          timeModelResponse = 
+                  XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
+                                            0.0, ifoPtr->timeData->deltaT,
+                                            &lalDimensionlessUnit,
+                                            ifoPtr->timeData->data->length);
+	else if (timeModelResponse->data->length != ifoPtr->timeData->data->length) {
+          /* Cannot resize *up* a time series, so just dealloc and reallocate it. */
+          XLALDestroyREAL8TimeSeries(timeModelResponse);
+          timeModelResponse =                   
+            XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
+                                      0.0, ifoPtr->timeData->deltaT,
+                                      &lalDimensionlessUnit,
+                                      ifoPtr->timeData->data->length);
+        }
+        
+        /*compute the response*/
+	ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
+
+        /* Scaling of TimeDomainOverlap is off, so need factor of 2.0 here. */
+	totalChiSquared+=
+          2.0*(timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
+               -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
+               +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
+
+    ifoPtr = ifoPtr->next;
+  }
+  loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
+  XLALDestroyREAL8TimeSeries(timeModelResponse);
+  return(loglikeli);
+}
+
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                               LALTemplateFunction *template, COMPLEX16Vector *freqWaveform)
 /***************************************************************/

@@ -241,6 +241,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                               LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);	
 
+REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template);
 void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                                LALTemplateFunction *template, REAL8TimeSeries *timeWaveform);						  
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * data, 
