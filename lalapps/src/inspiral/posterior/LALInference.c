@@ -1252,8 +1252,8 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
-/* The time-domain weight corresponding to the noise power spectrum
-   S(f) is defined to be:
+/* The time-domain weight corresponding to the (two-sided) noise power
+   spectrum S(f) is defined to be:
 
    s(tau) == \int_{-infty}^\infty df \frac{\exp(2 \pi i f tau)}{S(f)}
 
