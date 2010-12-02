@@ -12,8 +12,8 @@ Most of these routines are discussed in Sec.\ 5.1 of \ref Lang_K1999; we reprodu
 some of the essential elements of this discussion.
 
 \wrapfig{r,0.55\textwidth,fig_lat_long}
-\image html  inject_lat_long.png "Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
-\image latex inject_lat_long.eps "Fig.\ [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
+\image html  inject_lat_long.png "Fig. [fig_lat_long]: Definition of latitude phi and longitude lambda for an arbitrary coordinate system."
+\image latex inject_lat_long.eps "Definition of latitude phi and longitude lambda for an arbitrary coordinate system." width=0.5\textwidth
 A general spatial coordinate system is shown in Fig.\figref{fig_lat_long}.
 It is defined by six parameters: three
 positions specifying the location of the origin \f$O\f$, two angles
@@ -59,8 +59,8 @@ The coordinate systems that we consider are defined as follows:
 \latexonly \newpage \endlatexonly
 
 \wrapfig{r,0.63\textwidth,fig_horizon}
-\image html  inject_horizon.png "Definition of the horizon coordinate system."
-\image latex inject_horizon.eps "Fig.\ [fig_horizon]: Definition of the horizon coordinate system." width=0.58\textwidth
+\image html  inject_horizon.png "Fig. [fig_horizon]: Definition of the horizon coordinate system."
+\image latex inject_horizon.eps "Definition of the horizon coordinate system." width=0.58\textwidth
 \latexonly\textbf{Horizon coordinates:}\endlatexonly
 \htmlonly      <b>Horizon coordinates:</b>\endhtmlonly
 This is a local coordinate system for
@@ -80,7 +80,7 @@ This coordinate system is related to the geographic coordinate system
 of the observer's \f$z\f$-axis direction.
 
 \wrapfig{l,0.43\textwidth,fig_geographic}
-\image html  inject_geographic.png "Fig.\ [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
+\image html  inject_geographic.png "Fig. [fig_geographic]: Definition of the geographic (Earth-fixed) coordinate system."
 \image latex inject_geographic.eps "Definition of the geographic (Earth-fixed) coordinate system." width=0.38\textwidth
 \latexonly\textbf{Geographic coordinates:}\endlatexonly
 \htmlonly      <b>Geographic coordinates:</b>\endhtmlonly
@@ -119,7 +119,7 @@ Mean Sidereal Time (GMST), and is often specified in hours, minutes,
 and seconds.
 
 \wrapfig{r,0.46\textwidth,fig_ecliptic}
-\image html  inject_ecliptic.png "Fig.\ [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
+\image html  inject_ecliptic.png "Fig. [fig_ecliptic]: Definition of the ecliptic sky-fixed coordinate systems."
 \image latex inject_ecliptic.eps "Definition of the ecliptic sky-fixed coordinate systems." width=0.41\textwidth
 \latexonly\textbf{Equatorial coordinates:}\endlatexonly
 \htmlonly      <b>Equatorial coordinates:</b>\endhtmlonly
@@ -150,7 +150,7 @@ orbital axis).  Ecliptic latitude is normally denoted as \f$\beta\f$ and
 ecliptic longitude as \f$\lambda\f$.
 
 \wrapfig{l,0.505\textwidth,fig_galactic}
-\image html  inject_galactic.png "Fig.\ [fig_galactic]: Definition of the Galactic coordinate system."
+\image html  inject_galactic.png "Fig. [fig_galactic]: Definition of the Galactic coordinate system."
 \image latex inject_galactic.eps "Definition of the Galactic coordinate system." width=0.455\textwidth
 \latexonly\textbf{Galactic coordinates:}\endlatexonly
 \htmlonly      <b>Galactic coordinates:</b>\endhtmlonly
