@@ -52,6 +52,7 @@
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
+#include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
@@ -2366,7 +2367,7 @@ LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure 
 
 	      /* this should not happen, but just in case: free data-entry in SFT-header */
 	      if ( ptr->header.data )
-		LALFree ( ptr->header.data );
+		XLALDestroyCOMPLEX8Sequence (ptr->header.data);
 	    } /* for i < length */
 
 	  LALFree ( (*catalog)->data );
@@ -2408,7 +2409,7 @@ XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
 
 	      /* this should not happen, but just in case: free data-entry in SFT-header */
 	      if ( ptr->header.data )
-		XLALFree ( ptr->header.data );
+		XLALDestroyCOMPLEX8Sequence (ptr->header.data);
 	    } /* for i < length */
 
 	  XLALFree ( (*catalog)->data );
