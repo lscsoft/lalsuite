@@ -706,7 +706,8 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
   distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 
   /* figure out GMST: */
-  XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+  //XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+  XLALGPSSetREAL8(&GPSlal, GPSdouble);
   //UandA.units    = MST_RAD;
   //UandA.accuracy = LALLEAPSEC_LOOSE;
   //LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
@@ -984,7 +985,8 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 		
 	/* figure out GMST: */
-	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+	//XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+	XLALGPSSetREAL8(&GPSlal, GPSdouble);
 	//UandA.units    = MST_RAD;
 	//UandA.accuracy = LALLEAPSEC_LOOSE;
 	//LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
@@ -1150,7 +1152,7 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
 		
 	/* figure out GMST: */
-	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+	XLALGPSSetREAL8(&GPSlal, GPSdouble);
 	//UandA.units    = MST_RAD;
 	//UandA.accuracy = LALLEAPSEC_LOOSE;
 	//LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
@@ -1223,10 +1225,10 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 		exit(1);
 	}
 	
-	timeWaveform->deltaT = dataPtr->timeData->deltaT;
+	timeWaveform->deltaT = dataPtr->timeModelhPlus->deltaT;
         
         /* Shift to correct start time. */
-        timeWaveform->epoch = GPSlal;
+        timeWaveform->epoch = dataPtr->timeModelhPlus->epoch;
         XLALGPSAdd(&(timeWaveform->epoch), timeshift);
 
 #ifdef DEBUG
