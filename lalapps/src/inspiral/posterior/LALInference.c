@@ -1036,7 +1036,164 @@ fclose(file);
 	destroyVariables(&intrinsicParams);
 }
 
+void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
+                               LALTemplateFunction *template, REAL8TimeSeries *timeWaveform)
+/***************************************************************/
+/* Based on ComputeFreqDomainResponse above.                   */
+/* Time-domain single-IFO response computation.                */
+/* Computes response for a given template.                     */
+/* Will re-compute template only if necessary                  */
+/* (i.e., if previous, as stored in data->timeModelhCross,     */
+/* was based on different parameters or template function).    */
+/* Carries out timeshifting for a given detector               */
+/* and projection onto this detector.                          */
+/* Result stored in timeResponse, assumed to be correctly      */
+/* initialized												   */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/							  
+{
+	double ra, dec, psi, distMpc, gmst;
 	
+	double GPSdouble;
+	double timeTmp;
+	LIGOTimeGPS GPSlal;
+	double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
+	double timeshift;  /* time shift (not necessarily same as above)                   */
+
+	int different;
+	LALVariables intrinsicParams;
+	LALStatus status;
+	memset(&status,0,sizeof(status));
+
+	double Fplus, Fcross;
+	double FplusScaled, FcrossScaled;
+	UINT4 i;
+	REAL8 mc;
+	
+	/* Fill in derived parameters if necessary */
+	if(checkVariable(currentParams,"logdistance")){
+		distMpc=exp(*(REAL8 *) getVariable(currentParams,"logdistance"));
+		addVariable(currentParams,"distance",&distMpc,REAL8_t,PARAM_OUTPUT);
+	}
+
+	if(checkVariable(currentParams,"logmc")){
+		mc=exp(*(REAL8 *)getVariable(currentParams,"logmc"));
+		addVariable(currentParams,"chirpmass",&mc,REAL8_t,PARAM_OUTPUT);
+	}
+		
+	
+	/* determine source's sky location & orientation parameters: */
+	ra        = *(REAL8*) getVariable(currentParams, "rightascension"); /* radian      */
+	dec       = *(REAL8*) getVariable(currentParams, "declination");    /* radian      */
+	psi       = *(REAL8*) getVariable(currentParams, "polarisation");   /* radian      */
+	GPSdouble = *(REAL8*) getVariable(currentParams, "time");           /* GPS seconds */
+	distMpc   = *(REAL8*) getVariable(currentParams, "distance");       /* Mpc         */
+		
+	/* figure out GMST: */
+	XLALINT8NSToGPS(&GPSlal, floor(1e9 * GPSdouble + 0.5));
+	//UandA.units    = MST_RAD;
+	//UandA.accuracy = LALLEAPSEC_LOOSE;
+	//LALGPStoGMST1(&status, &gmst, &GPSlal, &UandA);
+	gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
+	intrinsicParams.head      = NULL;
+	intrinsicParams.dimension = 0;
+	copyVariables(currentParams, &intrinsicParams);
+	removeVariable(&intrinsicParams, "rightascension");
+	removeVariable(&intrinsicParams, "declination");
+	removeVariable(&intrinsicParams, "polarisation");
+	removeVariable(&intrinsicParams, "time");
+	removeVariable(&intrinsicParams, "distance");
+	// TODO: add pointer to template function here.
+	// (otherwise same parameters but different template will lead to no re-computation!!)
+      
+	/* The parameters the response function can handle by itself     */
+    /* (and which shouldn't affect the template function) are        */
+    /* sky location (ra, dec), polarisation and signal arrival time. */
+    /* Note that the template function shifts the waveform to so that*/
+	/* t_c corresponds to the "time" parameter in                    */
+	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
+    
+    /* Compare parameter values with parameter values corresponding  */
+    /* to currently stored template; ignore "time" variable:         */
+    if (checkVariable(dataPtr->modelParams, "time")) {
+      timeTmp = *(REAL8 *) getVariable(dataPtr->modelParams, "time");
+      removeVariable(dataPtr->modelParams, "time");
+    }
+    else timeTmp = GPSdouble;
+    different = compareVariables(dataPtr->modelParams, &intrinsicParams);
+    /* "different" now may also mean that "dataPtr->modelParams" */
+    /* wasn't allocated yet (as in the very 1st iteration).      */
+
+    if (different) { /* template needs to be re-computed: */
+      copyVariables(&intrinsicParams, dataPtr->modelParams);
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+      template(dataPtr);
+      if (dataPtr->modelDomain == frequencyDomain)
+        executeInvFT(dataPtr);
+      /* note that the dataPtr->modelParams "time" element may have changed here!! */
+      /* (during "template()" computation)                                      */
+    }
+    else { /* no re-computation necessary. Return back "time" value, do nothing else: */
+      addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
+    }
+
+    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
+    /*-- (Either freshly computed or inherited.)                            --*/
+
+    /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
+    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response,
+			     ra, dec, psi, gmst);
+		 
+    /* signal arrival time (relative to geocenter); */
+    timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location,
+                                             ra, dec, &GPSlal);
+    /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
+
+    /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
+    timeshift =  (GPSdouble - (*(REAL8*) getVariable(dataPtr->modelParams, "time"))) + timedelay;
+
+    /* include distance (overall amplitude) effect in Fplus/Fcross: */
+    FplusScaled  = Fplus  / distMpc;
+    FcrossScaled = Fcross / distMpc;
+
+
+	if(timeWaveform->data->length!=dataPtr->timeModelhPlus->data->length){
+		printf("fW%d data%d\n", timeWaveform->data->length, dataPtr->freqModelhPlus->data->length);
+		printf("Error!  Frequency data vector must be same length as original data!\n");
+		exit(1);
+	}
+	
+	timeWaveform->deltaT = dataPtr->timeData->deltaT;
+        
+        /* Shift to correct start time. */
+        timeWaveform->epoch = GPSlal;
+        XLALGPSAdd(&(timeWaveform->epoch), timeshift);
+
+#ifdef DEBUG
+FILE* file=fopen("TempSignal.dat", "w");	
+#endif
+	for(i=0; i<timeWaveform->data->length; i++){
+#ifdef DEBUG
+          double t = timeWaveform->deltaT*i + XLALGPSGetREAL8(&(timeWaveform->epoch));
+#endif
+                timeWaveform->data->data[i] = 
+                  FplusScaled*dataPtr->timeModelhPlus->data->data[i] + 
+                  FcrossScaled*dataPtr->timeModelhCross->data->data[i];
+#ifdef DEBUG
+		fprintf(file, "%lg %lg\n", t, timeWaveform->data[i]);
+#endif
+	}
+#ifdef DEBUG
+fclose(file);
+#endif
+	destroyVariables(&intrinsicParams);
+}	
 							  						  
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
 	//gsl_vector * freqData1, gsl_vector * freqData2
