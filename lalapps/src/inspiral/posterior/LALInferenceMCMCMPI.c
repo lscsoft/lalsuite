@@ -86,16 +86,16 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			 in model waveform generation in the future*/
 			LALIFOData * ifoPtrCompare=ifoListStart;
 			int foundIFOwithSameSampleRate=0;
-			while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-				if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-					ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-					ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-					ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-					ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-					ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-					foundIFOwithSameSampleRate=1;	
-					break;
-				}
+			if (ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
+                          if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
+                            ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
+                            ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
+                            ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
+                            ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
+                            ifoPtr->modelParams=ifoPtrCompare->modelParams;	
+                            foundIFOwithSameSampleRate=1;	
+                            break;
+                          }
 			}
 			if(!foundIFOwithSameSampleRate){
 				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",
