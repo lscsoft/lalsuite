@@ -276,13 +276,31 @@ LALGetOrderFromString(
     )
 
 {
-  CHAR  warnMsg[1024];
 
   INITSTATUS( status, "LALGetOrderFromString", GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
 
-  ASSERT( thisEvent, status,
-      GENERATEINSPIRALH_ENULL, GENERATEINSPIRALH_MSGENULL );
+  XLALPrintDeprecationWarning( "LALGetOrderFromString", "XLALGetOrderFromString" );
+
+  if ( XLALGetOrderFromString( thisEvent, order ) == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGetOrderFromString(
+    CHAR       * restrict thisEvent,
+    LALPNOrder * restrict order
+    )
+{
+
+#ifndef LAL_NDEBUG
+  if ( !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+
+  if ( !order )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   if ( strstr(thisEvent, "newtonian") )
   {
@@ -312,24 +330,21 @@ LALGetOrderFromString(
   {
     *order = LAL_PNORDER_THREE;
   }
-  else if ( strstr(thisEvent, 	"threePointFivePN") )
+  else if ( strstr(thisEvent, "threePointFivePN") )
   {
     *order = LAL_PNORDER_THREE_POINT_FIVE;
   }
-  else if ( strstr(thisEvent, 	"pseudoFourPN") )
+  else if ( strstr(thisEvent, "pseudoFourPN") )
   {
     *order = LAL_PNORDER_PSEUDO_FOUR;
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Cannot parse order from string: %s\n", thisEvent );
-    LALInfo( status, warnMsg );
-    ABORT(status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+    XLALPrintError( "Cannot parse order from string: %s\n", thisEvent );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 int XLALGetSpinInteractionFromString(LALSpinInteraction *inter, CHAR *thisEvent) {
@@ -399,15 +414,34 @@ LALGetApproximantFromString(
     )
 
 {
-  /* Function to search for the approximant into a string */
-  CHAR warnMsg[1024];
 
   INITSTATUS( status, "LALGenerateInspiralGetApproxFromString",
       GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
 
-  ASSERT( thisEvent, status,
-      GENERATEINSPIRALH_ENULL, GENERATEINSPIRALH_MSGENULL );
+  XLALPrintDeprecationWarning("LALGetApproximantFromString", "XLALGetApproximantFromString");
+
+  if ( XLALGetApproximantFromString( thisEvent, approximant) == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGetApproximantFromString(
+    CHAR        * restrict thisEvent,
+    Approximant * restrict approximant
+    )
+{
+  /* Function to search for the approximant into a string */
+
+
+#ifndef LAL_NDEBUG
+  if ( !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+
+  if ( !approximant )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   if ( strstr(thisEvent, "TaylorT1" ) )
   {
@@ -487,14 +521,11 @@ LALGetApproximantFromString(
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Cannot parse approximant from string: %s \n", thisEvent );
-    LALInfo( status, warnMsg );
-    ABORT( status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT );
+    XLALPrintError( "Cannot parse approximant from string: %s \n", thisEvent );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 
@@ -507,10 +538,29 @@ LALGenerateInspiralPopulatePPN(
     )
 
 {
-  CHAR warnMsg[1024];
 
   INITSTATUS( status, "LALGenerateInspiralPopulatePPN", GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
+
+  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulatePPN", 
+      "XLALGenerateInspiralPopulatePPN" );
+
+  if ( XLALGenerateInspiralPopulatePPN( ppnParams, thisEvent )
+       == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+int
+XLALGenerateInspiralPopulatePPN(
+    PPNParamStruc    * restrict ppnParams,
+    SimInspiralTable * restrict thisEvent
+    )
+{
+#ifndef LAL_NDEBUG
+  if ( !ppnParams || !thisEvent )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   /* input fields */
   ppnParams->mTot     = thisEvent->mass1 + thisEvent->mass2;
@@ -527,13 +577,12 @@ LALGenerateInspiralPopulatePPN(
   }
   else
   {
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    XLALPrintError( 
         "f_lower must be specified in the injection file generation.\n" );
-    LALInfo( status, warnMsg );
-    ABORT( status, LALINSPIRALH_EFLOWERINJ, LALINSPIRALH_MSGEFLOWERINJ );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
   ppnParams->fStopIn  = -1.0 /
-    (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
+    ( sqrt(216.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
 
   /* passed fields */
   ppnParams->position.longitude   = thisEvent->longitude;
@@ -543,8 +592,7 @@ LALGenerateInspiralPopulatePPN(
   ppnParams->epoch.gpsSeconds     = 0;
   ppnParams->epoch.gpsNanoSeconds = 0;
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 
@@ -561,7 +609,30 @@ LALGenerateInspiralPopulateInspiral(
 {
   INITSTATUS( status, "LALGenerateInspiralPopulateInspiral",
       GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
+
+  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulateInspiral",
+     "XLALGenerateInspiralPopulateInspiral" );
+
+  if ( XLALGenerateInspiralPopulateInspiral( inspiralParams, thisEvent, ppnParams )
+         == XLAL_FAILURE )
+    ABORTXLAL( status );
+
+  RETURN( status );
+}
+
+
+int
+XLALGenerateInspiralPopulateInspiral(
+    InspiralTemplate * restrict inspiralParams,
+    SimInspiralTable * restrict thisEvent,
+    PPNParamStruc    * restrict ppnParams
+    )
+{
+
+#ifndef LAL_NDEBUG
+  if ( !inspiralParams || !thisEvent || !ppnParams )
+    XLAL_ERROR( __func__, XLAL_EFAULT );
+#endif
 
   /* --- Let's fill the inspiral structure now --- */
   inspiralParams->mass1	  =  thisEvent->mass1;  	/* masses 1 */
@@ -594,7 +665,8 @@ LALGenerateInspiralPopulateInspiral(
   /* inclination cannot be equal to zero for SpinTaylor injections */
   if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
   {
-    ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
+    XLALPrintError( "Inclination cannot be exactly zero for SpinTaylor approximant.\n");
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
   inspiralParams->inclination =  thisEvent->inclination;
 
@@ -621,6 +693,5 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->qmParameter[0] = thisEvent->qmParameter1;
   inspiralParams->qmParameter[1] = thisEvent->qmParameter2;
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
