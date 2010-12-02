@@ -1429,7 +1429,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
   /* cleanup & return */
   DETATCHSTATUSPTR (status);
   RETURN(status);
-}
+} /* LALLoadSFTs() */
 
 
 /** Function to load a catalog of SFTs from possibly different detectors.
