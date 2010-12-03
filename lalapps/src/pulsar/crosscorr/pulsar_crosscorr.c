@@ -653,7 +653,7 @@ int main(int argc, char *argv[]){
   
   time(&t1); 
 
-  fprintf(stderr,"beginning main calculations over %ld loops:\n%ld freq, %ld Q1, %ldn\n",nParams, nfreqLoops, nq1Loops, nnLoops);
+  fprintf(stderr,"beginning main calculations over %" LAL_INT8_FORMAT " loops:\n%" LAL_INT8_FORMAT " freq, %" LAL_INT8_FORMAT " Q1, %" LAL_INT8_FORMAT "n\n",nParams, nfreqLoops, nq1Loops, nnLoops);
  /***********start main calculations**************/
   /*outer loop over all sfts in catalog, so that we load only the relevant sfts each time*/
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
