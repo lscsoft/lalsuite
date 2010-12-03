@@ -31,107 +31,31 @@
 
 \heading{Description}
 
-The function  LALHOUGHInitializeHD() initializes the Hough map derivative
-space  HOUGHMapDeriv *hd to zero. Note that the length of the map
-hd->map should be hd->ySide * (hd->xSide + 1).
 
-The function  LALHOUGHInitializeHT() initializes the total Hough map
-HOUGHMapTotal *ht  to zero and checks consistency between
-the number of physical pixels in the
-map  and  those given by the grid information structure
-HOUGHPatchGrid *patch.
-
-Given an initial Hough map derivative HOUGHMapDeriv *hd and a representation
-of a phmd HOUGHphmd *phmd, the function  LALHOUGHAddPHMD2HD() accumulates
-the partial Hough map derivative *phmd to *hd by adding +1 or
--1 to the pixels corresponding to the left or right borders respectively.
-It takes into account corrections due to border effects as well.
-
-The function  LALHOUGHIntegrHD2HT() constructs a total Hough map
-HOUGHMapTotal *ht from its derivative HOUGHMapDeriv *hd by
-integrating each row (x-direction).
 
 
  */
 
-/************************************ <lalVerbatim file="HoughMapCV">
-Author: Sintes, A. M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
-
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{HoughMap.c}}
-\label{ss:HoughMap.c}
-Subroutines for
-initialization and construction of Hough-map derivatives and total Hough-maps.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{HoughMapD}
-\index{\verb&LALHOUGHInitializeHD()&}
-\index{\verb&LALHOUGHInitializeHT()&}
-\index{\verb&LALHOUGHAddPHMD2HD()&}
-\index{\verb&LALHOUGHIntegrHD2HT()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-${}$
-
-
-The function \verb&LALHOUGHInitializeHD()& initializes the Hough map derivative
-space \verb&HOUGHMapDeriv *hd& to zero. Note that the length of the map
-\verb@hd->map@ should be \verb@hd->ySide * (hd->xSide + 1)@.\\
-
-The function \verb&LALHOUGHInitializeHT()& initializes the total Hough map
-\verb&HOUGHMapTotal *ht&  to zero and checks consistency between
-the number of physical pixels in the
-map  and  those given by the grid information structure
-\verb&HOUGHPatchGrid *patch&.\\
-
- Given an initial Hough map derivative \verb@HOUGHMapDeriv *hd@ and a representation
-  of a {\sc phmd}
- \verb@HOUGHphmd *phmd@, the function \verb&LALHOUGHAddPHMD2HD()& accumulates
- the partial Hough map derivative \verb@*phmd@ to \verb@*hd@ by adding $+1$ or
- $-1$ to
- the pixels corresponding to the {\it left} or {\it right} borders respectively.
- It takes into account corrections due to {\it border} effects as well.\\
-
-The function \verb&LALHOUGHIntegrHD2HT()& constructs a total Hough map
-\verb&HOUGHMapTotal *ht& from its derivative \verb@HOUGHMapDeriv *hd@ by
-integrating each row (x-direction).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%%\begin{verbatim}
-%%LALZDestroyVector()
-%%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{HoughMapCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
-
-
-
 #include <lal/HoughMap.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID (HOUGHMAPC, "$Id$");
-
+/** \endcond */
 
 /*
  * The functions that make up the guts of this module
  */
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
+/** \addtogroup HoughMap_h */
+/*@{*/
+
+/** This function initializes the Hough map derivative
+ * space  HOUGHMapDeriv *hd to zero. Note that the length of the map
+ * hd->map should be hd->ySide * (hd->xSide + 1).
+ */
 void LALHOUGHInitializeHD (LALStatus      *status,
 			  HOUGHMapDeriv   *hd) /* the Hough map derivative */
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   INT4     k, maxk;
   HoughDT  *pointer;
@@ -165,12 +89,16 @@ void LALHOUGHInitializeHD (LALStatus      *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
+/** This function initializes the total Hough map
+ * HOUGHMapTotal *ht  to zero and checks consistency between
+ * the number of physical pixels in the
+ * map  and  those given by the grid information structure
+ * HOUGHPatchGrid *patch.
+ */
 void LALHOUGHInitializeHT (LALStatus      *status,
 			   HOUGHMapTotal   *ht,     /* the total Hough map */
 			   HOUGHPatchGrid  *patch) /* patch information */
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   INT4     k,maxk;
   HoughTT  *pointer;
@@ -209,14 +137,16 @@ void LALHOUGHInitializeHT (LALStatus      *status,
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** Adds a hough map derivative into a total hough map derivative WITHOUT
-    taking into account the weight of the partial hough map */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
-void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
-			 HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			 HOUGHphmd      *phmd) /**< info from a partial map */
-{ /*   *********************************************  </lalVerbatim> */
+/** Given an initial Hough map derivative HOUGHMapDeriv *hd and a representation
+ * of a phmd HOUGHphmd *phmd, the function  LALHOUGHAddPHMD2HD() accumulates
+ * the partial Hough map derivative *phmd to *hd by adding +1 or
+ * -1 to the pixels corresponding to the left or right borders respectively.
+ * It takes into account corrections due to border effects as well.
+ */
+void LALHOUGHAddPHMD2HD (LALStatus      *status, 	/**< the status pointer */
+			 HOUGHMapDeriv  *hd,  		/**< the Hough map derivative */
+			 HOUGHphmd      *phmd) 		/**< info from a partial map */
+{
 
   INT2     k,j;
   INT2     yLower, yUpper;
@@ -317,14 +247,12 @@ void LALHOUGHAddPHMD2HD (LALStatus      *status, /**< the status pointer */
 }
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /** Adds a hough map derivative into a total hough map derivative taking into
-    account the weight of the partial hough map */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
-void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
-			   HOUGHMapDeriv  *hd,  /**< the Hough map derivative */
-			   HOUGHphmd      *phmd) /**< info from a partial map */
-{ /*   *********************************************  </lalVerbatim> */
+ * account the weight of the partial hough map */
+void LALHOUGHAddPHMD2HD_W (LALStatus      *status, 	/**< the status pointer */
+			   HOUGHMapDeriv  *hd,  	/**< the Hough map derivative */
+			   HOUGHphmd      *phmd) 	/**< info from a partial map */
+{
 
   INT2     k,j;
   INT2     yLower, yUpper;
@@ -438,14 +366,14 @@ void LALHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   RETURN (status);
 }
 
-
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
+/** This function constructs a total Hough map
+ * HOUGHMapTotal *ht from its derivative HOUGHMapDeriv *hd by
+ * integrating each row (x-direction).
+ */
 void LALHOUGHIntegrHD2HT (LALStatus       *status,
-			  HOUGHMapTotal   *ht,     /* the total Hough map */
-			  HOUGHMapDeriv   *hd) /* the Hough map derivative */
-{ /*   *********************************************  </lalVerbatim> */
+			  HOUGHMapTotal   *ht,     	/* the total Hough map */
+			  HOUGHMapDeriv   *hd) 		/* the Hough map derivative */
+{
 
   INT2    i,j;
   UINT2   xSide,ySide;
@@ -493,8 +421,6 @@ void LALHOUGHIntegrHD2HT (LALStatus       *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="HoughMapD"> */
 /**  Find source sky location given stereographic coordinates indexes */
 void LALStereo2SkyLocation (LALStatus  *status,
          REAL8UnitPolarCoor *sourceLocation, /* output*/
@@ -502,7 +428,7 @@ void LALStereo2SkyLocation (LALStatus  *status,
 	 UINT2              yPos,
 	 HOUGHPatchGrid    *patch,
 	 HOUGHDemodPar     *parDem)
-{  /*   *********************************************  </lalVerbatim> */
+{
 
   REAL8Cart2Coor        sourceProjected;
   REAL8UnitPolarCoor    sourceRotated;
@@ -533,3 +459,5 @@ void LALStereo2SkyLocation (LALStatus  *status,
   /* normal exit */
   RETURN (status);
 }
+
+/*@}*/

@@ -139,10 +139,11 @@ NRCSID (PHMDH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-/*  Hough Map derivative pixel type */
+/**  Hough Map derivative pixel type */
+typedef REAL8 HoughDT; /* for weighted hough maps */
 /* typedef CHAR  HoughDT; */
 /*  typedef INT2  HoughDT; */
-  typedef REAL8 HoughDT; /* for weighted hough maps */
+
 
 /** \brief This structure stores the ``peak-gram''
  * \ingroup PHMD_h
