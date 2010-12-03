@@ -17,103 +17,27 @@
  *  MA  02111-1307  USA
  */
 
-/**
- *
- *  \file Velocity.c
- *  \author Badri Krishnan and Alicia Sintes
-    \ingroup pulsarHough
-    \brief Functions for calculating detector velocity and positions at a given
-    time or averaged over a time interval.  This is a wrapper for the
-    LALBarycenter routines.
-
-    \heading{Description}
-
-    The function LALDetectorVel() finds the velocity of a given detector at a
-    given time. It is basically a wrapper for LALBarycenter.
-    The output is of the form REAL8 vector v[3] and the input is a
-    time LIGOTimeGPS , the detector LALDetector,
-    and the ephemeris EphemerisData from LALInitBarycenter.
-
-    The function LALAvgDetectorVel() outputs the
-    average velocity REAL8 v[3] of the detector during a time interval.
-    The input structure is of type VelocityPar
-    containing all the required parmaters.
-
-    The analogous functions for calculating the average position and
-    position are LALAvgDetectorPos() and LALDetectorPos().  The average
-    position is calculated by a numerical integration using the
-    trapezoidal rule with a user-specified fractional accuracy.
-
-
- *
- *
- */
-
-/************************************<lalVerbatim file="VelocityCV">
-Authors: Krishnan, B., Sintes, A.M.
-$Id$
-*************************************</lalVerbatim> */
-
-/* <lalLaTeX>  **********************************************
-
-\subsection{Module \texttt{Velocity.c}}
-\label{ss:Velocity.c}
-Computation of instant and averaged velocities of a given detector and the
-like.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{VelocityD}
-\index{\verb&LALDetectorVel()&}
-\index{\verb&LALAvgDetectorVel()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-The function \verb@LALDetectorVel@ finds the velocity of a given detector at a
-given time. It is basically a wrapper for LALBarycenter.
-The output is of the form \verb@REAL8  v[3]@, and the input is a
-time \verb@LIGOTimeGPS  *time@, the detector \verb@LALDetector detector@,
-and the ephemeris \verb@EphemerisData *edat@ from LALInitBarycenter
-
-The function \verb@LALAvgDetectorVel@ outputs the
-average velocity \verb@REAL8 v[3]@ of the detector during a time interval by using
-the trapeziodal rule. The input structure is of type \verb@VelocityPar *in@
-containing all the required parmaters.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()
-LALBarycenterEarth()
-LALBarycenter()
-LALFree()
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%
-\vfill{\footnotesize\input{VelocityCV}}
-********************************************** </lalLaTeX> */
-
-
 #include <lal/Velocity.h>
-/* #include "./Velocity.h" */
 
+/** \cond DONT_DOXYGEN */
 NRCSID (VELOCITYC, "$Id$");
+/** \endcond */
 
 /*
  * The functions that make up the guts of this module
  */
 
+/** \addtogroup Velocity_h */
+/*@{*/
 
-/** Given a detector and a time interval, this function outputs the
- *   average velocity of the detector delta x/delta t during the interval
+/** This function outputs the
+ * average velocity REAL8 v[3] of the detector during a time interval.
+ * The input structure is of type VelocityPar containing all the required parmaters.
  */
-/* *******************************  <lalVerbatim file="VelocityD"> */
 void LALAvgDetectorVel( LALStatus *status,	/**< pointer to LALStatus structure */
-		        REAL8 v[3], /**< [out] velocity vector */
-		        VelocityPar *in /**< [in] input parameter structure */ )
-{ /*-------------------------------------------------</lalVerbatim> */
+		        REAL8 v[3], 		/**< [out] velocity vector */
+		        VelocityPar *in 	/**< [in] input parameter structure */ )
+{
 
   REAL8           pos1[3], pos2[3];
   REAL8           tBase;
@@ -171,11 +95,10 @@ void LALAvgDetectorVel( LALStatus *status,	/**< pointer to LALStatus structure *
  *  average position of the detector during the interval by using
  *  the trapeziodal rule for a given fractional accuracy.
  */
-/* *******************************  <lalVerbatim file="VelocityD"> */
 void LALAvgDetectorPos( LALStatus *status,
 		        REAL8 x[3],
 		        VelocityPar *in)
-{ /*-------------------------------------------------</lalVerbatim> */
+{
 
   REAL8           trapSum[3], average[3], tempVel[3];
   REAL8           tBase, vTol, rTol, oldVeloMod, newVeloMod;
@@ -267,18 +190,18 @@ void LALAvgDetectorPos( LALStatus *status,
   RETURN (status);
 }
 
-
-
-
-/** This finds velocity of a given detector at a given time
-*/
-/* *******************************  <lalVerbatim file="VelocityD"> */
+/** This function finds the velocity of a given detector at a
+ * given time. It is basically a wrapper for LALBarycenter().
+ * The output is of the form REAL8 vector v[3] and the input is a
+ * time LIGOTimeGPS , the detector LALDetector,
+ * and the ephemeris EphemerisData from LALInitBarycenter().
+ */
 void LALDetectorVel(LALStatus    *status,
 		    REAL8        v[3],
 		    LIGOTimeGPS  *time0,
 		    LALDetector  detector,
 		    EphemerisData *edat)
-{ /*-------------------------------------------------</lalVerbatim> */
+{
 
   INT4  i;
   EmissionTime     *emit=NULL;
@@ -328,15 +251,13 @@ void LALDetectorVel(LALStatus    *status,
 
 
 
-/**< This finds velocity of a given detector at a given time
- */
-/* *******************************  <lalVerbatim file="VelocityD"> */
+/** This finds velocity of a given detector at a given time */
 void LALDetectorPos(LALStatus    *status,
 		    REAL8        x[3],
 		    LIGOTimeGPS  *time0,
 		    LALDetector  detector,
 		    EphemerisData *edat)
-{ /*-------------------------------------------------</lalVerbatim> */
+{
 
   INT4  i;
   EmissionTime     *emit=NULL;
@@ -384,11 +305,4 @@ void LALDetectorPos(LALStatus    *status,
   RETURN (status);
 }
 
-
-
-
-
-
-
-
-
+/*@}*/
