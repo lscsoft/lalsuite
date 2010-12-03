@@ -42,6 +42,7 @@ templateStruct * new_templateStruct(INT4 length);
 void free_templateStruct(templateStruct *nameoftemplate);
 void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsStruct *params);
 void makeTemplate(templateStruct *output, candidate intput, inputParamsStruct *params, REAL4FFTPlan *plan);
+void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq);
 
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, INT4 *errcode);
 REAL8 sincxoverxsqminusone(REAL8 overage);
