@@ -33,8 +33,6 @@
 #include <lal/Date.h>
 #include <lal/Sequence.h>
 
-#define TIME_DOMAIN_FUDGE_FACTOR 8.0
-
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8),
                      sizeof(UINT4),
@@ -913,16 +911,14 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
         /*compute the response*/
 	ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
 
-        /* Scaling of TimeDomainOverlap is off, so need factor of 2.0 here. */
 	totalChiSquared+=
-          2.0*(timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
+          (timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
            -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
            +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
 
     ifoPtr = ifoPtr->next;
   }
   loglikeli = -0.5*totalChiSquared; 
-  loglikeli *= TIME_DOMAIN_FUDGE_FACTOR;
   XLALDestroyREAL8TimeSeries(timeModelResponse);
   return(loglikeli);
 }
@@ -1474,12 +1470,11 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
 
   while (ifoPtr != NULL) {
     REAL8 oneLogL = -timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData);
-    fprintf(stderr, "Found oneLogL = %g\n", oneLogL);
     logL += oneLogL;
     ifoPtr = ifoPtr->next;
   }
 
-  logL *= TIME_DOMAIN_FUDGE_FACTOR;
+  logL *= 0.5;
   
   return logL;
 }
@@ -1505,7 +1500,7 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
+    CPSD->data->data[i].re = 2.0 / PSD->data->data[i]; /* 2.0 for two-sided */
     CPSD->data->data[i].im = 0.0;
   }
 
@@ -1755,5 +1750,5 @@ REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, co
 
   XLALDestroyREAL8TimeSeries(Bconv);
 
-  return overlap;
+  return overlap; /* This is the overlap definition. */
 }

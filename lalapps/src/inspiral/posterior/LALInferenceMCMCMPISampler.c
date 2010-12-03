@@ -135,9 +135,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	
 	
-        nullLikelihood = NullLogLikelihood(runState->data);
-        /* nullLikelihood = TimeDomainNullLogLikelihood(runState->data); */
-	/* nullLikelihood = 0.0; */
+        if (runState->likelihood==&TimeDomainLogLikelihood) {
+          fprintf(stderr, "Computing null likelihood in time domain.\n");
+          nullLikelihood = TimeDomainNullLogLikelihood(runState->data);
+        } else if (runState->likelihood==&UndecomposedFreqDomainLogLikelihood ||
+                   runState->likelihood==&FreqDomainLogLikelihood) {
+          nullLikelihood = NullLogLikelihood(runState->data);
+        } else {
+          fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n", 
+                  __FILE__, __LINE__);
+          exit(1);
+        }
+
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
 	

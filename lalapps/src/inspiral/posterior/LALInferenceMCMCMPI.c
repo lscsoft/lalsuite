@@ -149,7 +149,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	[--Niter] N\tNumber of iterations(2*10^6)\n\
 	[--Nskip] n\tNumber of iterations between disk save(100)\n\
 	[--tempMax T]\tHighest temperature for parallel tempering(40.0)\n\
-	[--randomseed seed]\tRandom seed of sampling distribution\n";
+	[--randomseed seed]\tRandom seed of sampling distribution\n\
+        [--tdlike]\tCompute likelihood in the time domain\n";
 	
 	INT4 verbose=0,tmpi=0;
 	unsigned int randomseed=0;
@@ -197,9 +198,17 @@ void initializeMCMC(LALInferenceRunState *runState)
 		
 	}
 	else {runState->template=&templateLAL;}
-	
+
+        ppt=getProcParamVal(commandLine,"--tdlike");
+        if (ppt) {
+          fprintf(stderr, "Computing likelihood in the time domain.\n");
+          runState->likelihood=&TimeDomainLogLikelihood;
+        } else {
+          runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
+        }
+
 	/* runState->likelihood=&FreqDomainLogLikelihood; */
-	runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
+	/* runState->likelihood=&UndecomposedFreqDomainLogLikelihood; */
         /* runState->likelihood=&TimeDomainLogLikelihood; */
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;

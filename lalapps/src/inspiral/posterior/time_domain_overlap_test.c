@@ -42,11 +42,11 @@ int main() {
     A->data->data[i] = t*cos(2.0*M_PI*(Af0 + Afdot0*t)*t);
   }
 
-  PSD->data->data[0] = 1.0;
+  PSD->data->data[0] = dF;
   for (i = 1; i < NPSD; i++) {
     REAL8 f = i*dF;
 
-    PSD->data->data[i] = 1.0/f; /* 1/f noise. */
+    PSD->data->data[i] = dF/f; /* 1/f noise. */
   }
 
   PSDToTDW(TDW, PSD, rev);
@@ -59,7 +59,7 @@ int main() {
     REAL8 re = Af->data->data[i].re;
     REAL8 im = Af->data->data[i].im;
 
-    sum += 2.0*(re*re + im*im)/PSD->data->data[i];
+    sum += 4.0*dF*(re*re + im*im)/PSD->data->data[i];
   }
 
   fprintf(stderr, "Time domian overlap = %g, freq domain sum = %g, ratio = %g\n",
