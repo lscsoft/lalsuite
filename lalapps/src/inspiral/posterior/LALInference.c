@@ -1509,6 +1509,18 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
   for (i = 0; i < TDW->data->length; i++) {
     TDW->data->data[i] /= TDW->data->length; /* Normalize correctly. */
   }
+
+  /* FILE *PSDf = fopen("PSD.dat", "w"); */
+  /* for (i = 0; i < PSD->data->length; i++) { */
+  /*   fprintf(PSDf, "%g %g\n", i*PSD->deltaF, PSD->data->data[i]); */
+  /* } */
+  /* fclose(PSDf); */
+
+  /* FILE *TDWf = fopen("TDW.dat", "w"); */
+  /* for (i = 0; i < TDW->data->length; i++) { */
+  /*   fprintf(TDWf, "%g %g\n", i*TDW->deltaT, TDW->data->data[i]); */
+  /* } */
+  /* fclose(TDWf); */
 }
 
 UINT4 nextPowerOfTwo(const UINT4 n) {
