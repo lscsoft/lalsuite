@@ -1500,14 +1500,14 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 2.0 / PSD->data->data[i]; /* 2.0 for two-sided */
+    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
     CPSD->data->data[i].im = 0.0;
   }
 
   XLALREAL8FreqTimeFFT(TDW, CPSD, plan);
 
   for (i = 0; i < TDW->data->length; i++) {
-    TDW->data->data[i] /= TDW->data->length; /* Normalize correctly. */
+    TDW->data->data[i] /= 2.0*TDW->data->length; /* Normalize correctly. */
   }
 
   /* FILE *PSDf = fopen("PSD.dat", "w"); */
@@ -1762,5 +1762,5 @@ REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, co
 
   XLALDestroyREAL8TimeSeries(Bconv);
 
-  return overlap; /* This is the overlap definition. */
+  return 4.0*overlap; /* This is the overlap definition. */
 }

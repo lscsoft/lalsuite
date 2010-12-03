@@ -5,7 +5,7 @@
 #include <lal/TimeFreqFFT.h>
 
 int main() {
-  const UINT4 N = 256;
+  const UINT4 N = 512;
   const UINT4 NPSD = N/2+1;
   const REAL8 T = 1.0;
   const REAL8 dT = T/(N-1);
@@ -42,11 +42,11 @@ int main() {
     A->data->data[i] = t*cos(2.0*M_PI*(Af0 + Afdot0*t)*t);
   }
 
-  PSD->data->data[0] = dF;
+  PSD->data->data[0] = 1.0;
   for (i = 1; i < NPSD; i++) {
     REAL8 f = i*dF;
 
-    PSD->data->data[i] = dF/f; /* 1/f noise. */
+    PSD->data->data[i] = 1.0/f; /* 1/f noise. */
   }
 
   PSDToTDW(TDW, PSD, rev);
