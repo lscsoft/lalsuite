@@ -50,7 +50,7 @@
 
 \heading{Description}
 
-\indent The function LALRotatePolarU() rotates the celestial sphere so that
+The function LALRotatePolarU() rotates the celestial sphere so that
 a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).
 The inputs are:
 <tt>*par</tt> the reference point (e.g., the center of the sky-patch) of type
