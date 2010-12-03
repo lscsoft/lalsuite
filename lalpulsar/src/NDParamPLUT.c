@@ -17,14 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Alicia Sintes, Badri Krishnan
- * \ingroup pulsarHough
- * \file
- * \brief Routines for creating the parameters required to build the
-    Hough Look-Up-Tables for non-demodulated (SFT) data
- */
-
 /*-----------------------------------------------------------------------
  *
  * File Name: NDParamPLUT.c
@@ -50,104 +42,41 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="NDParamPLUTCV">
-Author: Sintes, A. M. and Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M. and Krishnan, B.
+\file
+\ingroup LUT_h
+\brief Function that calculates the parameters needed for generating the look-up-table.
 
-
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{NDParamPLUT.c}}
-\label{ss:NDParamPLUT.c}
-Function that calculates the parameters needed for generating the look-up-table.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{NDParamPLUTD}
-\index{\verb&LALNDHOUGHParamPLUT()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Description}
 This routine calculates the parameters needed for generating the look-up-table.
 It is valid for all cases in which the Hough transform
  master equation is of the form:
-$f(t)$-\verb@f0@ = $\vec\xi \cdot \hat n$, or
+\f$f(t)\f$-\c f0 = \f$\vec\xi \cdot \hat n\f$, or
 equivalently,
-$\cos(\phi)$ = ($f(t)-$\verb@f0@)/$\vert\vec\xi\vert$.
-$\vec\xi$, hereafter \verb@xi@, is calculated according to the demodulation procedure used in a
+\f$\cos(\phi)\f$ = (\f$f(t)-\f$\c f0)/\f$\vert\vec\xi\vert\f$.
+\f$\vec\xi\f$, hereafter \c xi, is calculated according to the demodulation procedure used in a
  first stage.\\
 
-
-
-The inputs are:
-\begin{description}
-\item[\texttt{INT8   f0Bin}]: The frequency bin to construct the {\sc lut}.
-\item[\texttt{HOUGHDemodPar  *par}]:  The demodulation parameters:
-\begin{description}
-\item[\texttt{par->deltaF }]: Frequency resolution: \texttt{df=1/TCOH}.
-\item[\texttt{par->skyPatch }]:  $N_{center}$ (alpha, delta):
-position of the center of the patch.
-\item[\texttt{par->patchSizeX }]: Size of sky patch along x-axis measured in radians.
-\item[\texttt{par->patchSizeY }]: Size of sky patch along y-axis measured in radians.
-\item[\texttt{par->veloC }]:  $v(t)/c$ (x,y,z): relative detector
-velocity.
-\item[\texttt{par->positC }]: $(\vec x(t)-\vec x(\hat t_0))/c$ (x,y,z). Position
-of the detector.
-\item[\texttt{par->timeDiff }]:  $T_{\hat N}(t)-T_{\hat N}(\hat t_0)$: Time difference.
-\item[\texttt{par->spin }]:  \texttt{length}: Maximum order of
-spin-down parameter.
- \texttt{*data}: Pointer to spin-down parameter set $F_k$.
-\end{description}
-\end{description}
-
-The output \verb@*out@ of type \verb@NDHOUGHParamPLUT@ contains
-all the parameters needed to build the look-up-table for constructing
-the partial Hough maps. Those are:
-\begin{description}
-\item[\texttt{out->f0Bin }]: Frequency  bin for which it has been constructed.
-\item[\texttt{out->deltaF }]: Frequency resolution: \texttt{df=1/TCOH}.
-\item[\texttt{out->xi }]: Center of the circle on the celestial
-sphere, xi(alpha,delta) in the rotated coordinates.
-\item[\texttt{out->cosDelta }]: $\Delta \cos(\phi)$ corresponding to
-one annulus: \verb@deltaF/|xi|@.
-\item[\texttt{out->offset}]: Frequency bin corresponding to center of patch
-(it is zero in the demodulated case).
-\item[\texttt{out->nFreqValid}]: Number offrequency bins for which LUT is valid.
-\item[\texttt{out->cosPhiMax0 }]: $\max(\cos(\phi))$ of the
-\texttt{f0Bin}  : \verb@(xi*N +deltaF/2)/|xi|@.
-\item[\texttt{out->cosPhiMin0 }]:  $\min(\cos(\phi))$ of the
-\texttt{f0Bin}  : \verb@cosPhiMax0-cosDelta@.
-\item[\texttt{out->epsilon }]: Maximum angle (distance in radians) from the pole
-to consider  a circle as a line in the projected plane:
-\verb@8.* LINERR * f0Bin* VEPI * VEPI / VTOT@. For explanations see Sintes'
-notes.
-\end{description}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALRotatePolarU()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{NDParamPLUTCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
+\endcode
+
+*/
 
 
 #include <lal/LUT.h>
 
-
+/** \cond DONT_DOXYGEN */
 NRCSID (NDPARAMPLUTC, "$Id$");
+/** \endcond */
 
-/* <lalVerbatim file="NDParamPLUTD"> */
 void LALNDHOUGHParamPLUT (LALStatus  *status,
                    HOUGHParamPLUT  *out,  /* parameters needed build LUT*/
                    HOUGHSizePar    *size,
                    HOUGHDemodPar   *par)  /* demodulation parameters */
-{ /* </lalVerbatim> */
+{
 
   /* --------------------------------------------- */
 
