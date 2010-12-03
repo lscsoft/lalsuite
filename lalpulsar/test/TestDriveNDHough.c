@@ -35,69 +35,49 @@
  * 1.  An author and Id block
  */
 
-/************************************ <lalVerbatim file="TestDriveNDHoughCV">
-Author: Sintes, A. M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M., Krishnan, B.
+\file
+\ingroup LALHough_h
+\brief Tests the construction
 
-/*
- * 2. Commented block with the documetation of this module
- */
+\heading{Program \ref TestDriveNDHough.c}
 
-
-/* ************************************************ <lalLaTeX>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \ \texttt{TestDriveNDHough.c}}
-\label{s:TestDriveNDHough.c}
-Tests the construction
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 TestDriveNDHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-%TO BE CHANGED
+\endcode
 
 
-This program generates  a patch grid, a vector of  {\sc lut}s by changing the
+\heading{Description}
+
+\%TO BE CHANGED
+
+This program generates  a patch grid, a vector of  \c luts by changing the
 alpha component of the velocity orientation of the detector by a fixed amount
 in each of them, and a vector of
 peak-grams (all of them containing the same information). Similar to the previous
-test codes the patch is set at the south pole. \\
+test codes the patch is set at the south pole.
 
 Then the program builds the set
-of {\sc phmd}, updates the cylinder and computes a Hough map at a given
-frequency using only one horizontal line set of {\sc phmd}, and outputs the
-result into a file. \\
+of \c phmd, updates the cylinder and computes a Hough map at a given
+frequency using only one horizontal line set of \c phmd, and outputs the
+result into a file.
 
 
- By default, running this program with no arguments simply tests the subroutines,
-producing an output file called \verb@OutHough.asc@.  All default parameters are set from
-\verb@#define@d constants.\\
+By default, running this program with no arguments simply tests the subroutines,
+producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
+<tt>#define</tt>d constants.
 
+The <b>-d</b> option sets the debug level to the specified value
+\c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
+derivative  to the specified data file \c outfile.  The
+<b>-f</b> option sets the intrinsic frequency \c f0 at which build the <tt>lut</tt>.
+The <b>-p</b> option sets the velocity orientation of the detector
+\c alpha, \c delta (in radians) for the first \c lut (time-stamp).
 
-The \verb@-d@ option sets the debug level to the specified value
-\verb@debuglevel@.  The \verb@-o@ flag tells the program to print the partial Hough map
-derivative  to the specified data file \verb@outfile@.  The
-\verb@-f@ option sets the intrinsic frequency \verb@f0@ at which build the {\sc
-lut}.   The \verb@-p@ option sets the velocity orientation of the detector
-\verb@alpha@, \verb@delta@ (in radians) for the first {\sc lut} (time-stamp).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Exit codes}
-\vspace{0.1in}
-\input{TESTDRIVENDHOUGHCErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHOUGHPatchGrid()
+\heading{Uses}
+\code
 LALNDHOUGHParamPLUT()
 LALHOUGHConstructPLUT()
 LALHOUGHConstructSpacePHMD()
@@ -108,28 +88,15 @@ LALPrintError()
 LALMalloc()
 LALFree()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection*{Notes}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{TestDriveNDHoughCV}}
-
-********************************************   </lalLaTeX> */
-
-
+*/
 
 #include <lal/LALHough.h>
 
-
-NRCSID (TESTDRIVENDHOUGHC, "$Id$");
-
-
 /* Error codes and messages */
 
-/************** <lalErrTable file="TESTDRIVENDHOUGHCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define TESTDRIVENDHOUGHC_ENORM 0
 #define TESTDRIVENDHOUGHC_ESUB  1
 #define TESTDRIVENDHOUGHC_EARG  2
@@ -141,8 +108,11 @@ NRCSID (TESTDRIVENDHOUGHC, "$Id$");
 #define TESTDRIVENDHOUGHC_MSGEARG  "Error parsing arguments"
 #define TESTDRIVENDHOUGHC_MSGEBAD  "Bad argument values"
 #define TESTDRIVENDHOUGHC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
+
+/** \cond DONT_DOXYGEN */
+NRCSID (TESTDRIVENDHOUGHC, "$Id$");
 
 /* Default parameters. */
 
@@ -567,3 +537,4 @@ int main(int argc, char *argv[]){
 
 
 
+/** \endcond */
