@@ -18,10 +18,10 @@
 */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "SeqFactories.h"
-#include "FlatMesh.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/FlatMesh.h>
 
 /** \cond DONT_DOXYGEN */
 NRCSID(FLATMESHC,"$Id$");

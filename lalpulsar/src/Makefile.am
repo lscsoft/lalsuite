@@ -14,6 +14,7 @@ lalpulsarinclude_HEADERS = \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
 	FlatLatticeTilingPulsar.h \
+	FlatMesh.h \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
@@ -67,6 +68,7 @@ liblalpulsar_la_SOURCES = \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
 	FlatLatticeTilingPulsar.c \
+	FlatMesh.c \
 	FlatPulsarMetric.c \
 	FoldAmplitudes.c \
 	GenerateEllipticSpinOrbitCW.c \

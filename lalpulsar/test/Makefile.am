@@ -5,6 +5,7 @@ if LALSUPPORT
 check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
+	FlatMeshTest \
 	FoldAmplitudesTest \
 	GeneralMeshTest \
 	GeneralMetricTest \
