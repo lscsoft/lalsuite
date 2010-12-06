@@ -260,6 +260,9 @@ LALprInit(
 			r3,  /* temp variable */
 			cr;
 
+   /* Temp variable to avoid the use of pow */
+  REAL8 tmpVar;
+
    eta = ak->coeffs->eta;
    r2 = r*r;
    r3 = r2*r;
@@ -268,11 +271,13 @@ LALprInit(
    z = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
    omega = sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
    jadiab = sqrt (r2 * (r2 - 3.*eta)/(r3 - 3.*r2 + 5.*eta));
+
+   tmpVar    = r3 - 3.*r2 + 5.*eta;
    djadiabdr = (r3*r3 - 6.*r3*r2 + 3.*eta*r2*r2 +20.*eta*r3-30.*eta*eta*r)/
-               (pow(r3 - 3.*r2 + 5.*eta, 2.)*2.*jadiab);
+               (tmpVar * tmpVar * 2. * jadiab);
    H0cap = sqrt(1. + 2.*eta*(-1. + sqrt(z)))/eta;
    cr = A*A/((1.-6.*eta/r2) * eta * H0cap * sqrt(z));
-   v = pow(omega,oneby3);
+   v = cbrt(omega);
    FDIS = -ak->flux(v, ak->coeffs)/(eta * omega);
    *pr = FDIS/(djadiabdr*cr);
 }
@@ -288,7 +293,7 @@ LALpphiInit(
    REAL8 r2, r3;
    r2 = r*r;
    r3 = r2*r;
-   *phase = pow(r2 * (r2 - 3.*eta) / (r3 - 3.* r2 + 5.*eta), 0.5);
+   *phase = sqrt(r2 * (r2 - 3.*eta) / (r3 - 3.* r2 + 5.*eta));
 }
 
 /*--------------------------------------------------------------------*/
@@ -352,14 +357,15 @@ LALlightRingRadius(
    void *params
    )
 {
-   REAL8 eta;
+   REAL8 eta, r2;
    rOfOmegaIn *rofomegain;
 
    INITSTATUS(status, "LALlightRingRadius", LALLIGHTRINGRADIUSC);
    ATTATCHSTATUSPTR(status);
    rofomegain = (rOfOmegaIn *) params;
    eta = rofomegain->eta;
-   *x = pow(r,3.) - 3.*r*r + 5.* eta;
+   r2 = r*r;
+   *x = r2*r - 3.*r2 + 5.* eta;
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
@@ -390,16 +396,16 @@ LALHCapDerivatives(
    q2 = q*q;
    A = 1. - 2./r + 2.*eta/r3;
    B = (1. - 6.*eta/r2)/A;
-   dA = 2./r2 - 6.*eta/pow(r,4.);
+   dA = 2./r2 - 6.*eta/(r3*r);
    dB = (-dA * B + 12.*eta/r3)/A;
-   hcap = pow (A*(1. + p2/B + q2/r2), 0.5);
-   Hcap = pow (1. + 2.*eta*(hcap - 1.), 0.5) / eta;
+   hcap = sqrt(A*(1. + p2/B + q2/r2));
+   Hcap = sqrt(1. + 2.*eta*(hcap - 1.)) / eta;
    etahH = eta*hcap*Hcap;
 
    dvalues->data[0] = A*A*p/((1. - 6.*eta/r2) * etahH);
    dvalues->data[1] = omega = A * q / (r2 * etahH);
 
-   v = pow(omega,oneby3);
+   v = cbrt(omega);
 
    dvalues->data[2] = -0.5 * (dA * hcap * hcap/A - p2 * A * dB/(B*B)
    		    - 2. * A * q2/r3) / etahH;
@@ -485,8 +491,8 @@ LALprInit3PN(
    onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3;
    AbyD = A * onebyD;
 
-   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   Heff = sqrt(A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2));
+   HReal = sqrt(1. + 2.*eta*(Heff - 1.)) / eta;
    etahH = eta*Heff*HReal;
 
    *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH;
@@ -522,7 +528,7 @@ omegaofr3PN (
    A = NA/DA;
    dA = ( (a4 - 16. + 8. * eta) * DA - NA
       * (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2))/(DA*DA);
-   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+   *x =  sqrt ( -u3 * 0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
 
 }
 
@@ -626,9 +632,9 @@ LALHCapDerivatives3PN(
 
    onebyD = 1. + 6.*eta*u2 + (2. * ( 26. - 3. * eta) * eta - z2)* u3;
    AbyD = Apot * onebyD;
-   Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z30 * (p4 + zeta2*(-0.25*p4
-        + 0.75  * p2 * q2 * u2 )) * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   Heff = sqrt(Apot*(1. + AbyD * p2 + q*q * u2 + z30 * (p4 + zeta2*(-0.25*p4
+        + 0.75  * p2 * q2 * u2 )) * u2));
+   HReal = sqrt(1. + 2.*eta*(Heff - 1.)) / eta;
 
    dA = -u2/(DA*DA) * (n1*DA - NA * (d1 + 2.*d2*u + 3.*d3*u2));
 
@@ -638,7 +644,7 @@ LALHCapDerivatives3PN(
    dvalues->data[0] = Apot*(AbyD*p +  z30 * u2 *(2.* p3
               + zeta2*(-0.5*p3 + 0.75*p*q2*u2)))/etahH;
    dvalues->data[1] = omega = Apot * q * u2 * (1. + 0.75*z30*zeta2*p2*u2)/ etahH;
-   v = pow(omega,oneby3);
+   v = cbrt(omega);
 
    dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3
               + (dA * onebyD + Apot * DonebyD) * p2
@@ -654,9 +660,12 @@ LALHCapDerivatives3PN(
 /*----------------------------------------------------------------------*/
  void LALvr3PN(REAL8 *vr, void *params )
 {
-  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA;
+  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA, DA2;
   REAL8 u, u2, u3, v, x1;
   REAL8 eta,a4, a4p4eta, a4peta2, FDIS;
+
+  /* Temp variable to avoid use of pow */
+  REAL8 x1Bit;
 
   pr3In *pr3in;
   pr3in = (pr3In *)params;
@@ -673,16 +682,19 @@ LALHCapDerivatives3PN(
   a4peta2 = a4 + eta * eta;
   NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
   DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  DA2 = DA * DA;
   A = NA/DA;
   dNA = (a4 - 16. + 8. * eta);
   dDA = (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2);
   d2DA = 4. * a4p4eta + 24. * a4peta2 * u;
 
-  dA = (dNA * DA - NA * dDA)/ (DA*DA);
-  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
-  v = pow(pr3in->omega,oneby3);
+  dA = (dNA * DA - NA * dDA)/ DA2;
+  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DA2*DA);
+  v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
-  x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) )
+
+  x1Bit = 2.* u * A + u2 * dA;
+  x1    = -1./u2 * sqrt (-dA * x1Bit*x1Bit*x1Bit )
   		/ (2.* u * dA * dA + A*dA - u * A * d2A);
   *vr = FDIS * x1;
 }
@@ -765,8 +777,8 @@ LALprInitP4PN(
    onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3 + 36.*eta2*u4;
    AbyD = A * onebyD;
 
-   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   Heff = sqrt(A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2));
+   HReal = sqrt(1. + 2.*eta*(Heff - 1.)) / eta;
    etahH = eta*Heff*HReal;
 
    *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH;
@@ -808,7 +820,7 @@ omegaofrP4PN (
            - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
            + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u3))/(DA*DA);
 
-   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+   *x = sqrt ( - u3 * 0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
 
 }
 
@@ -916,8 +928,8 @@ LALHCapDerivativesP4PN(
 
    onebyD = 1. + 6.*eta*u2 + (2.*eta * ( 26. - 3.*eta ) - z2)* u3 + 36.*eta2*u4;
    AbyD = Apot * onebyD;
-   Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   Heff = sqrt(Apot*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2));
+   HReal = sqrt(1. + 2.*eta*(Heff - 1.)) / eta;
    dA = -u2 * ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
           ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
           - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
@@ -929,7 +941,7 @@ LALHCapDerivativesP4PN(
    dr = dvalues->data[0] = Apot*(AbyD*p +  z30 * u2 *(2.* p3
               + zeta2*(-0.5*p3 + 0.75*p*q2*u2)))/etahH;
    ds = dvalues->data[1] = omega = Apot * q * u2 * (1. + 0.75*z30*zeta2*p2*u2)/ etahH;
-   v = pow(omega,oneby3);
+   v = cbrt(omega);
 
    dp = dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3
               + (dA * onebyD + Apot * DonebyD) * p2
@@ -944,9 +956,12 @@ LALHCapDerivativesP4PN(
 /*-------------------------------------------------------------------*/
  void LALvrP4PN(REAL8 *vr, void *params )
 {
-  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA;
+  REAL8 A, dA, d2A, NA, DA, DA2, dDA, dNA, d2DA;
   REAL8 u, u2, u3, u4, v, x1;
   REAL8 eta, eta2, a4, a5, FDIS;
+
+  /* Temporary variable to avoid the use of pow */
+  REAL8 x1Bit;
 
   pr3In *pr3in;
   pr3in = (pr3In *)params;
@@ -966,6 +981,7 @@ LALHCapDerivativesP4PN(
   DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
        - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
        + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
+  DA2 = DA * DA;
   A = NA/DA;
   dNA = (32. - 24.*eta - 4.*a4 - a5*eta);
   dDA = - (2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
@@ -975,11 +991,13 @@ LALHCapDerivativesP4PN(
        - 6.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u
        + 12.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u2;
 
-  dA = (dNA * DA - NA * dDA)/ (DA*DA);
-  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
-  v = pow(pr3in->omega,oneby3);
+  dA = (dNA * DA - NA * dDA)/ DA2;
+  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DA2 * DA);
+  v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
-  x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) )
+
+  x1Bit = 2.* u * A + u2 * dA;
+  x1    = -1./u2 * sqrt (-dA * x1Bit * x1Bit * x1Bit )
                 / (2.* u * dA * dA + A*dA - u * A * d2A);
   *vr = FDIS * x1;
 }
@@ -1390,7 +1408,7 @@ LALEOBWaveformEngine (
 
    void                    *funcParams1, *funcParams2, *funcParams3;
 
-   REAL8Vector             dummy, values, dvalues, newvalues, yt, dym, dyt;
+   REAL8Vector             *values, *dvalues, *newvalues, *yt, *dym, *dyt;
    TofVIn                  in1;
    InspiralPhaseIn         in2;
    InspiralDerivativesIn   in3;
@@ -1459,24 +1477,23 @@ LALEOBWaveformEngine (
 
    if (signalvec1) length = signalvec1->length; else if (ff) length = ff->length;
 
-/* Allocate all the memory required to dummy and then point the various
-   arrays to dummy - this makes it easier to handle memory failures */
+   values    = XLALCreateREAL8Vector( nn );
+   dvalues   = XLALCreateREAL8Vector( nn );
+   newvalues = XLALCreateREAL8Vector( nn );
+   yt        = XLALCreateREAL8Vector( nn );
+   dym       = XLALCreateREAL8Vector( nn );
+   dyt       = XLALCreateREAL8Vector( nn );
 
-   dummy.length = nn * 6;
-
-   values.length = dvalues.length = newvalues.length =
-   yt.length = dym.length = dyt.length = nn;
-
-   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
-      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+   if ( !values || !dvalues || !newvalues || !yt || !dym || !dyt )
+   {
+     if ( values )  XLALDestroyREAL8Vector( values );
+     if ( dvalues ) XLALDestroyREAL8Vector( dvalues );
+     if ( newvalues ) XLALDestroyREAL8Vector( newvalues );
+     if ( yt )      XLALDestroyREAL8Vector( yt );
+     if ( dym )     XLALDestroyREAL8Vector( dym );
+     if ( dyt )     XLALDestroyREAL8Vector( dyt );
+     ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
    }
-
-   values.data = &dummy.data[0];
-   dvalues.data = &dummy.data[nn];
-   newvalues.data = &dummy.data[2*nn];
-   yt.data = &dummy.data[3*nn];
-   dym.data = &dummy.data[4*nn];
-   dyt.data = &dummy.data[5*nn];
 
    /* Set dt to sampling interval specified by user */
    /* But this is changed to 1/16 kHz if the approximant is EOBNR */
@@ -1542,7 +1559,7 @@ LALEOBWaveformEngine (
    LALInspiralVelocity(status->statusPtr, &v, &in1);
    CHECKSTATUSPTR(status);
 
-   omega = pow(v,3.);
+   omega = v*v*v;
    f = omega/(LAL_PI*m);
 
    /* Then the initial phase */
@@ -1610,7 +1627,12 @@ LALEOBWaveformEngine (
      default:
        snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
-       LALFree(dummy.data);
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
+       XLALDestroyREAL8Vector( newvalues );
+       XLALDestroyREAL8Vector( yt );
+       XLALDestroyREAL8Vector( dym );
+       XLALDestroyREAL8Vector( dyt );
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn1, funcParams1);
@@ -1684,25 +1706,30 @@ LALEOBWaveformEngine (
      default:
        snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
        LALError( status, message );
-       LALFree(dummy.data);
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
+       XLALDestroyREAL8Vector( newvalues );
+       XLALDestroyREAL8Vector( yt );
+       XLALDestroyREAL8Vector( dym );
+       XLALDestroyREAL8Vector( dyt );
        ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
 
-   values.data[0] = r;
-   values.data[1] = s;
-   values.data[2] = p;
-   values.data[3] = q;
+   values->data[0] = r;
+   values->data[1] = s;
+   values->data[2] = p;
+   values->data[3] = q;
 #if 0
    sprintf(message, "In EOB Initial values of r=%10.5e p=%10.5e q=%10.5e\n", r, p, q);
    LALInfo(status, message);
 #endif
 
-   in4.y = &values;
+   in4.y = values;
    in4.h = dt/m;
    in4.n = nn;
-   in4.yt = &yt;
-   in4.dym = &dym;
-   in4.dyt = &dyt;
+   in4.yt = yt;
+   in4.dym = dym;
+   in4.dyt = dyt;
 
    /* Allocate memory for temporary arrays */
    sig1 = XLALCreateREAL4Vector ( length );
@@ -1718,7 +1745,12 @@ LALEOBWaveformEngine (
      if ( ampl ) XLALDestroyREAL4Vector( ampl );
      if ( freq ) XLALDestroyREAL4Vector( freq );
      if ( phse ) XLALDestroyREAL8Vector( phse );
-     LALFree( dummy.data );
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
+     XLALDestroyREAL8Vector( newvalues );
+     XLALDestroyREAL8Vector( yt );
+     XLALDestroyREAL8Vector( dym );
+     XLALDestroyREAL8Vector( dyt );
      ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
    }
 
@@ -1736,7 +1768,12 @@ LALEOBWaveformEngine (
      XLALDestroyREAL4Vector( ampl );
      XLALDestroyREAL4Vector( freq );
      XLALDestroyREAL8Vector( phse );
-     LALFree(dummy.data);
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
+     XLALDestroyREAL8Vector( newvalues );
+     XLALDestroyREAL8Vector( yt );
+     XLALDestroyREAL8Vector( dym );
+     XLALDestroyREAL8Vector( dyt );
      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
    }
 
@@ -1747,8 +1784,8 @@ LALEOBWaveformEngine (
    count = params->nStartPad;
 
    /* Calculate the initial value of omega */
-   in4.function(&values, &dvalues, funcParams3);
-   omega = dvalues.data[1];
+   in4.function(values, dvalues, funcParams3);
+   omega = dvalues->data[1];
 
    /* Begin integration loop here */
    t = 0.0;
@@ -1766,7 +1803,12 @@ LALEOBWaveformEngine (
         XLALDestroyREAL4Vector( ampl );
         XLALDestroyREAL4Vector( freq );
         XLALDestroyREAL8Vector( phse );
-	LALFree(dummy.data);
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( newvalues );
+        XLALDestroyREAL8Vector( yt );
+        XLALDestroyREAL8Vector( dym );
+        XLALDestroyREAL8Vector( dyt );
 	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       }
 
@@ -1782,7 +1824,7 @@ LALEOBWaveformEngine (
         }
       }
 
-      v = pow(omega, oneby3);
+      v = cbrt(omega);
       v2 = v*v;
 
       if (writeToWaveform)
@@ -1808,9 +1850,9 @@ LALEOBWaveformEngine (
       }
 
       /* Integrate one step forward */
-      in4.dydx = &dvalues;
+      in4.dydx = dvalues;
       in4.x = t/m;
-      LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams3);
+      LALRungeKutta4(status->statusPtr, newvalues, integrator, funcParams3);
       BEGINFAIL( status )
       {
         XLALRungeKutta4Free( integrator );
@@ -1819,7 +1861,12 @@ LALEOBWaveformEngine (
         XLALDestroyREAL4Vector( ampl );
         XLALDestroyREAL4Vector( freq );
         XLALDestroyREAL8Vector( phse );
-        LALFree(dummy.data);
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( newvalues );
+        XLALDestroyREAL8Vector( yt );
+        XLALDestroyREAL8Vector( dym );
+        XLALDestroyREAL8Vector( dyt );
       }
       ENDFAIL( status );
 
@@ -1839,21 +1886,21 @@ LALEOBWaveformEngine (
       qpr1=q;
 
       /* Update the values of the dynamical variables */
-      r = values.data[0] = newvalues.data[0];
-      s = values.data[1] = newvalues.data[1];
-      p = values.data[2] = newvalues.data[2];
-      q = values.data[3] = newvalues.data[3];
+      r = values->data[0] = newvalues->data[0];
+      s = values->data[1] = newvalues->data[1];
+      p = values->data[2] = newvalues->data[2];
+      q = values->data[3] = newvalues->data[3];
 
       /* Compute the derivaties at the new location */
-      in4.function(&values, &dvalues, funcParams3);
-      omega = dvalues.data[1];
+      in4.function(values, dvalues, funcParams3);
+      omega = dvalues->data[1];
 
       /*----------------------------------------------------------------------*/
       /* We are going to terminate waveform generation if omega is greater    */
       /* than omegamatch - the frequency at which the ringdown is matched to  */
       /* merger waveform                                                      */
       /*----------------------------------------------------------------------*/
-      if ( (omega > omegamatch && params->approximant == EOBNR && !higherSR) || (r < rn && !higherSR) )
+      if (  params->approximant == EOBNR && (r < rn || omega > omegamatch ) && !higherSR)
       {
 	/* We are now going to work with a higher sampling rate */
 	/* Sometime in the future we might change code so that  */
@@ -1873,10 +1920,10 @@ LALEOBWaveformEngine (
         t -= dt;
         in4.h = dt/m;
 
-        r = values.data[0] = rpr2;
-        s = values.data[1] = spr2;
-        p = values.data[2] = ppr2;
-        q = values.data[3] = qpr2;
+        r = values->data[0] = rpr2;
+        s = values->data[1] = spr2;
+        p = values->data[2] = ppr2;
+        q = values->data[3] = qpr2;
 
         /*----------------------------------------------------------------------*/
 	/* Integration will stop if rOld is not reset to a value greater than r */
@@ -1884,8 +1931,8 @@ LALEOBWaveformEngine (
 
         rOld = r+0.1;
 
-        in4.function(&values, &dvalues, funcParams3);
-        omega = dvalues.data[1];
+        in4.function(values, dvalues, funcParams3);
+        omega = dvalues->data[1];
         fCurrent = omega/(LAL_PI*m);
       }
 
@@ -1910,7 +1957,7 @@ LALEOBWaveformEngine (
    if (signalvec1 && !signalvec2) params->tC = t;
    if (params->approximant == EOB)
    {
-     params->fFinal = pow(v,3.)/(LAL_PI*m);
+     params->fFinal = v*v*v/(LAL_PI*m);
    }
    else
    {
@@ -1926,8 +1973,12 @@ LALEOBWaveformEngine (
    *countback = count;
 
    XLALRungeKutta4Free( integrator );
-   LALFree(dummy.data);
-
+   XLALDestroyREAL8Vector( values );
+   XLALDestroyREAL8Vector( dvalues );
+   XLALDestroyREAL8Vector( newvalues );
+   XLALDestroyREAL8Vector( yt );
+   XLALDestroyREAL8Vector( dym );
+   XLALDestroyREAL8Vector( dyt );
    /*--------------------------------------------------------------
     * Attach the ringdown waveform to the end of inspiral if
     * the approximant is EOBNR
@@ -1936,6 +1987,21 @@ LALEOBWaveformEngine (
    {
      REAL8 tmpSamplingRate = params->tSampling;
      params->tSampling *= resampFac;
+
+     /* Check that we have enough points to perform the attachment */
+     /* at the higher sample rate. If not, we bail out here */
+     /* Hard coded for now... */
+     if ( count - hiSRndx < 7 )
+     {
+       XLALPrintError( " We do not have enough points at a higher SR.\n" );
+       XLALDestroyREAL4Vector( sig1 );
+       XLALDestroyREAL4Vector( sig2 );
+       XLALDestroyREAL4Vector( ampl );
+       XLALDestroyREAL4Vector( freq );
+       XLALDestroyREAL8Vector( phse );
+       ABORT( status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE );
+     }
+
      xlalStatus = XLALInspiralAttachRingdownWave( freq, sig1, sig2, params );
      if (xlalStatus != XLAL_SUCCESS )
      {
