@@ -116,7 +116,6 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_LIB([LALPulsar],[1.0.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
 
 # add gcc specific flags
 if test "$GCC" = yes; then

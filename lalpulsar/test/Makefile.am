@@ -1,6 +1,10 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
+if LALXML
+XMLTEST = LALPulsarXMLTest
+endif
+
 if LALSUPPORT
 check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
@@ -31,7 +35,8 @@ check_PROGRAMS = \
 	TestStatistics \
 	TestVelocity \
 	TwoDMeshTest \
-	UniversalDopplerMetricTest
+	UniversalDopplerMetricTest \
+	$(XMLTEST)
 ##	SFTCleanTest \
 ##	NormalizeSFTRngMedTest \
 TESTS = $(check_PROGRAMS)
