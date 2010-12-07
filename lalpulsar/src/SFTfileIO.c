@@ -834,36 +834,83 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     UINT4 firstBinRead;
     UINT4 lastBinRead;
 
-    /* open and close a file only when necessary, i.e. reading a different file */
-    if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
-      if(fp) {
-	fclose(fp);
-	fp = NULL;
-      }
-      fname = locatalog.data[catPos].locator->fname;
-      fp = fopen(fname,"rb");
-      LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
-      if(!fp) {
-	XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
-	XLALLOADSFTSERROR(XLAL_EIO);
-      }
-    }
+    if (locatalog.data[catPos].header.data) {
+      /* the SFT data has already been read into the catalog,
+	 copy the relevant part to thisSFT */
 
-    /* seek to the position of the SFT in the file (if necessary) */
-    if ( locatalog.data[catPos].locator->offset )
-      if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 ) {
-	XLALPrintError("ERROR: Couldn't seek to position %ld in file '%s'\n",
-		       locatalog.data[catPos].locator->offset, fname);
-	XLALLOADSFTSERROR(XLAL_EIO);
+      volatile REAL8 tmp = locatalog.data[catPos].header.f0 / locatalog.data[catPos].header.deltaF;
+      UINT4 firstSFTbin = MYROUND ( tmp );
+      UINT4 lastSFTbin = firstSFTbin + locatalog.data[catPos].numBins - 1;
+      UINT4 firstBin2read = firstbin;
+      UINT4 lastBin2read = lastbin;
+      UINT4 numBins2read, offsetBins;
+
+      /* limit the interval to be read to what's actually in the SFT */
+      if ( firstBin2read < firstSFTbin )
+	firstBin2read = firstSFTbin;
+      if ( lastBin2read > lastSFTbin )
+	lastBin2read = lastSFTbin;
+
+      /* check that requested interval is found in SFT */
+      if ( firstBin2read <= lastBin2read ) {
+
+	COMPLEX8Sequence*data = thisSFT->data; /* keep a copy of the data pointer */
+
+	firstBinRead = firstBin2read;
+	lastBinRead = lastBin2read;
+
+	offsetBins = firstBin2read - firstSFTbin;
+	numBins2read = lastBin2read - firstBin2read + 1;
+
+	*thisSFT = locatalog.data[catPos].header;
+	thisSFT->data = data; /* restore data pointer */
+	memcpy(thisSFT->data->data,
+	       locatalog.data[catPos].header.data + offsetBins,
+	       numBins2read * sizeof(COMPLEX8));
+
+	/* update the start-frequency entry in the SFT-header to the new value */
+	thisSFT->f0 = 1.0 * firstBin2read * thisSFT->deltaF;
+
+      } else {
+	/* no data was needed from this SFT (segment) */
+	firstBinRead = 0;
+	lastBinRead = 0;
       }
 
-    /* read SFT data */
-    {
+    } else {
+      /* SFT data had not yet been read - read it */
+
+      /* open and close a file only when necessary, i.e. reading a different file */
+      if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
+	if(fp) {
+	  fclose(fp);
+	  fp = NULL;
+	}
+	fname = locatalog.data[catPos].locator->fname;
+	fp = fopen(fname,"rb");
+	LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
+	if(!fp) {
+	  XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
+	  XLALLOADSFTSERROR(XLAL_EIO);
+	}
+      }
+
+      /* seek to the position of the SFT in the file (if necessary) */
+      if ( locatalog.data[catPos].locator->offset )
+	if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 ) {
+	  XLALPrintError("ERROR: Couldn't seek to position %ld in file '%s'\n",
+			 locatalog.data[catPos].locator->offset, fname);
+	  XLALLOADSFTSERROR(XLAL_EIO);
+	}
+
+      /* read SFT data */
       lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
       LogPrintf(LOG_DETAIL, "Read data from %s:%lu: %u - %u\n",
 		locator->fname, locator->offset, firstBinRead,lastBinRead);
+    }
+    /* SFT data has been read from file or taken from catalog */
 
-      if(lastBinRead) {
+    if(lastBinRead) {
 	/* data was actually read */
 
 	if(segments[isft].last == 0) {
@@ -928,7 +975,6 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	XLALPrintError("ERROR: Error (%u) reading SFT from file '%s'\n", firstBinRead, fname);
 	XLALLOADSFTSERROR(XLAL_EIO);
       }
-    }
   }
 
   /* close the last file */
