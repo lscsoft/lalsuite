@@ -47,7 +47,8 @@ farStruct * new_farStruct(void)
 
    return farstruct;
 
-}
+} /* new_farStruct() */
+
 
 //////////////////////////////////////////////////////////////
 // Destroy farStruct struct  -- done
@@ -59,7 +60,7 @@ void free_farStruct(farStruct *farstruct)
    
    XLALFree((farStruct*)farstruct);
 
-}
+} /* free_farStruct() */
 
 
 //////////////////////////////////////////////////////////////
@@ -101,7 +102,7 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
          R += (noise - ffplanenoise->data[ templatestruct->secondfftfrequencies->data[jj] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[jj] ])*templatestruct->templatedata->data[jj];
       }
       Rs->data[ii] = (REAL4)(R*sumofsqweightsinv);
-   }
+   } /* for ii < trials */
    REAL4 mean = calcMean(Rs);
    REAL4 sigma = calcStddev(Rs);
    if (XLAL_IS_REAL4_FAIL_NAN(mean)) {
@@ -133,10 +134,11 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    XLALDestroyREAL4Vector(Rs);
    gsl_rng_free(rng);
 
-}
+} /* estimateFAR() */
 
 
-
+//////////////////////////////////////////////////////////////
+// Numerically solve for the FAR of the R statistic from the weights
 void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
 {
    
@@ -195,7 +197,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
          fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-   }
+   } /* while status==GSL_CONTINUE && ii < max_iter */
    
    if (status != GSL_SUCCESS) {
       fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
@@ -216,7 +218,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    //Cleanup
    gsl_root_fdfsolver_free(s);
    
-}
+} /* numericFAR() */
 REAL8 gsl_probR(REAL8 R, void *param)
 {
    
@@ -228,7 +230,7 @@ REAL8 gsl_probR(REAL8 R, void *param)
    
    return returnval;
    
-}
+} /* gsl_probR() */
 REAL8 gsl_dprobRdR(REAL8 R, void *param)
 {
    
@@ -261,7 +263,7 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    
    return slope;
    
-}
+} /* gsl_dprobRdR() */
 void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
    
@@ -271,7 +273,7 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
    
    *dprobRdR = gsl_dprobRdR(R, pars);
    
-}
+} /* gsl_probRandDprobRdR() */
 
 
 //////////////////////////////////////////////////////////////
@@ -385,7 +387,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       //Find the log10(prob) of the original Rpr value
       logprobest = probslope*(Rpr-c2) + logprob2;
       
-   }
+   } /* if prob <= 1e-4 */
    
    //If errcode is still 0, better fail
    if (*errcode!=0) {
@@ -403,7 +405,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    if (estimatedTheProb==1) return logprobest;
    else return log10(prob);
    
-}
+} /* probR() */
 
 
 templateStruct * new_templateStruct(INT4 length)
@@ -446,7 +448,7 @@ templateStruct * new_templateStruct(INT4 length)
    
    return templatestruct;
    
-}
+} /* new_templateStruct() */
 
 
 void free_templateStruct(templateStruct *nameoftemplate)
@@ -459,9 +461,7 @@ void free_templateStruct(templateStruct *nameoftemplate)
    
    XLALFree((templateStruct*)nameoftemplate);
    
-}
-
-
+} /* free_templateStruct() */
 
 
 //////////////////////////////////////////////////////////////
@@ -472,7 +472,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj, kk, numfbins, numffts, N;
+   INT4 ii, jj, numfbins, numffts, N;
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
@@ -480,21 +480,20 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    
    REAL8 periodf = 1.0/input.period;
    
-   //Set up frequencies and determine separation in time of peaks for each frequency
+   //Determine separation in time of peaks for each frequency
    REAL8Vector *phi_actual = XLALCreateREAL8Vector((UINT4)numfbins);
    if (phi_actual==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numfbins);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)phi_actual->length; ii++) {
-      //out->f->data[ii] = in->fmin + ii/in->Tcoh;
       if ( fabs(params->fmin + ii/params->Tcoh - input.fsig)/input.moddepth <= 1.0 ) {
          phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin + ii/params->Tcoh - input.fsig)/
             input.moddepth)*LAL_1_PI*input.period;
       } else {
          phi_actual->data[ii] = 0.0;
       }
-   }
+   } /* for ii < phi_actual->length */
    
    //Create second FFT frequencies
    REAL8Vector *fpr = XLALCreateREAL8Vector((UINT4)floor(numffts*0.5)+1);
@@ -537,14 +536,17 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          } else {
             scale->data[ii] = 1.0;
          }
-      }
-   }
+      } /* if mextent!=0 else ... */
+   } /* for ii < scale->length */
    for (ii=0; ii<(INT4)scale->length; ii++) {
       if (scale->data[ii] != 0.0 && fnumstart == -1) fnumstart = ii;
       if (scale->data[ii] == 0.0 && fnumstart != -1 && fnumend==-1) fnumend = ii-1;
    }
+   
+   //Exit with failure if there is a problem
    if (fnumend==-1) {
-      exit(-1);
+      fprintf(stderr, "%s: Failed because fnumend was -1.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFAILED);
    }
    
    //Make sigmas for each frequency
@@ -568,7 +570,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       for (jj=0; jj<(INT4)sigmas->length; jj++) {
          allsigmas->data[ii*sigmas->length + jj] = sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sincxoverxsqminusone(sigbin-round(params->fmin*params->Tcoh+jj+fnumstart))*sigma;
       }
-   }
+   } /* for ii < wvals->length */
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length]*allsigmas->data[ii + jj*sigmas->length];
       sigmas->data[ii] = sqrt(calcMeanD(wvals));
@@ -599,22 +601,10 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
          if (jj>1 && dataval > output->templatedata->data[output->templatedata->length-1]) {
-            INT4 insertionpoint = (INT4)output->templatedata->length-1;
-            while (insertionpoint > 0 && dataval > output->templatedata->data[insertionpoint-1]) insertionpoint--;
-            
-            for (kk=output->templatedata->length-1; kk>insertionpoint; kk--) {
-               output->templatedata->data[kk] = output->templatedata->data[kk-1];
-               output->pixellocations->data[kk] = output->pixellocations->data[kk-1];
-               output->firstfftfrequenciesofpixels->data[kk] = output->firstfftfrequenciesofpixels->data[kk-1];
-               output->secondfftfrequencies->data[kk] = output->secondfftfrequencies->data[kk-1];
-            }
-            output->templatedata->data[insertionpoint] = (REAL4)dataval;
-            output->pixellocations->data[insertionpoint] = (ii+fnumstart)*fpr->length + jj;
-            output->firstfftfrequenciesofpixels->data[insertionpoint] = ii+fnumstart;
-            output->secondfftfrequencies->data[insertionpoint] = jj;
+            insertionSort_template(output, (REAL4)dataval, (ii+fnumstart)*fpr->length+jj, ii+fnumstart, jj);
          }
-      }
-   }
+      } /* for jj < fpr->legnth */
+   } /* for ii < sigmas->length */
    
    //Normalize
    for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] /= (REAL4)sum;
@@ -627,7 +617,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLALDestroyREAL8Vector(wvals);
    XLALDestroyREAL8Vector(fpr);
 
-}
+} /* mateTemplateGaussians() */
 
 
 //////////////////////////////////////////////////////////////
@@ -637,7 +627,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj, kk, numfbins, numffts;
+   INT4 ii, jj, numfbins, numffts;
    
    numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
    numffts = (INT4)floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1);   //Number of FFTs
@@ -667,8 +657,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          //Create windowed PSD values
          if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
          else psd1->data[ii*numfbins + jj] = 0.0;
-      }
-   }
+      } /* for jj < numfbins */
+   } /* for ii < numffts */
    
    //Do the second FFT
    REAL4Vector *x = XLALCreateREAL4Vector((UINT4)numffts);
@@ -715,7 +705,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
-      }
+      } /* if doSecondFFT */
       
       //Scale the data points by 1/N and window factor and (1/fs)
       //Order of vector is by second frequency then first frequency
@@ -730,24 +720,12 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             
             //Sort the weights, insertion sort technique
             if (jj>1 && correctedValue > output->templatedata->data[output->templatedata->length-1]) {
-               INT4 insertionpoint = (INT4)output->templatedata->length-1;
-               while (insertionpoint > 0 && correctedValue > output->templatedata->data[insertionpoint-1]) insertionpoint--;
-               
-               for (kk=output->templatedata->length-1; kk>insertionpoint; kk--) {
-                  output->templatedata->data[kk] = output->templatedata->data[kk-1];
-                  output->pixellocations->data[kk] = output->pixellocations->data[kk-1];
-                  output->firstfftfrequenciesofpixels->data[kk] = output->firstfftfrequenciesofpixels->data[kk-1];
-                  output->secondfftfrequencies->data[kk] = output->secondfftfrequencies->data[kk-1];
-               }
-               output->templatedata->data[insertionpoint] = correctedValue;
-               output->pixellocations->data[insertionpoint] = ii*psd->length + jj;
-               output->firstfftfrequenciesofpixels->data[insertionpoint] = ii;
-               output->secondfftfrequencies->data[insertionpoint] = jj;
+               insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
             }
-         }
-      }
+         } /* for jj < psd->length */
+      } /* if(doSecondFFT) */
       
-   }
+   } /* if ii < numfbins */
    
    //Normalize
    for (ii=0; ii<(INT4)output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] /= (REAL4)sum;
@@ -761,6 +739,30 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
 }
 
+
+//////////////////////////////////////////////////////////////
+// Does the insertion sort for the template weights
+void insertionSort_template(templateStruct *output, REAL4 weight, INT4 pixelloc, INT4 firstfftfreq, INT4 secfftfreq)
+{
+   
+   INT4 ii;
+   
+   INT4 insertionpoint = (INT4)output->templatedata->length-1;
+   while (insertionpoint > 0 && weight > output->templatedata->data[insertionpoint-1]) insertionpoint--;
+   
+   for (ii=output->templatedata->length-1; ii>insertionpoint; ii--) {
+      output->templatedata->data[ii] = output->templatedata->data[ii-1];
+      output->pixellocations->data[ii] = output->pixellocations->data[ii-1];
+      output->firstfftfrequenciesofpixels->data[ii] = output->firstfftfrequenciesofpixels->data[ii-1];
+      output->secondfftfrequencies->data[ii] = output->secondfftfrequencies->data[ii-1];
+   }
+   
+   output->templatedata->data[insertionpoint] = weight;
+   output->pixellocations->data[insertionpoint] = pixelloc;
+   output->firstfftfrequenciesofpixels->data[insertionpoint] = firstfftfreq;
+   output->secondfftfrequencies->data[insertionpoint] = secfftfreq;
+   
+} /* insertionSort_template() */
 
 
 
@@ -776,7 +778,7 @@ REAL8 sincxoverxsqminusone(REAL8 x)
    
    return val;
    
-}
+} /* sincxoverxsqminusone() */
 
 
 

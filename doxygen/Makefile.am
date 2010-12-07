@@ -10,8 +10,6 @@ EXTRA_DIST = \
 
 SUBDIRS = src
 
-all: html
-
 .PHONY: html pdf
 
 DOXYINPUT = lal/packages \

@@ -186,7 +186,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             loc++;
             if (foundany==0) foundany = 1;
          }
-      }
+      } /* for jj < input->numofcandidates */
       //Keep checking as long as there are more connected frequencies going higher in frequency
       while (foundany==1) {
          foundany = 0;
@@ -197,8 +197,8 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                loc++;
                if (foundany==0) foundany = 1;
             }
-         }
-      }
+         } /* for jj < input->numofcandidates */
+      } /* while foundany==1 */
       //Now check frequencies 1/2 bin below and keep going as long as there are more connected frequencies
       foundany = 1;
       iter = 0;
@@ -211,8 +211,8 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                loc++;
                if (foundany==0) foundany = 1;
             }
-         }
-      }
+         } /* for jj < input->numofcandidates */
+      } /* while foundany==1 */
       
       
       
@@ -333,7 +333,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                   free_farStruct(farval);
                   farval = NULL;
                } /* for kk < numofmoddepths */
-            }
+            } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
                loadCandidateData(&output->data[output->numofcandidates], avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization);
