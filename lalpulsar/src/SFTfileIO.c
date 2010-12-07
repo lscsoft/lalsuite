@@ -829,6 +829,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* loop over all files (actually locators) in the catalog */
   for(catPos = 0; catPos < catalog->length; catPos++) {
 
+    struct tagSFTLocator*locator = locatalog.data[catPos].locator;
+    UINT4 isft = locator->isft;;
+    UINT4 firstBinRead;
+    UINT4 lastBinRead;
+
     /* open and close a file only when necessary, i.e. reading a different file */
     if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
       if(fp) {
@@ -854,11 +859,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
     /* read SFT data */
     {
-      struct tagSFTLocator*locator = locatalog.data[catPos].locator;
-      UINT4 isft = locator->isft;
-      UINT4 firstBinRead;
-      UINT4 lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
-
+      lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
       LogPrintf(LOG_DETAIL, "Read data from %s:%lu: %u - %u\n",
 		locator->fname, locator->offset, firstBinRead,lastBinRead);
 
