@@ -302,17 +302,6 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 	  mprev_version = this_version;
 	  mprev_nsamples = this_nsamples;
 
-	  /* seek to end of SFT data-entries in file  */
-	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
-	    {
-	      XLALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
-	      if ( this_comment ) LALFree ( this_comment );
-	      XLALDestroyStringVector ( fnames );
-	      LALDestroySFTCatalog ( status->statusPtr, &ret );
-	      fclose(fp);
-	      ABORT ( status, SFTFILEIO_ESFTFORMAT, SFTFILEIO_MSGESFTFORMAT);
-	    }
-
 	  want_this_block = TRUE;	/* default */
 	  /* but does this SFT-block satisfy the user-constraints ? */
 	  if ( constraints )
@@ -393,6 +382,17 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
 	  else
 	    {
 	      if ( this_comment ) LALFree ( this_comment );
+	    }
+
+	  /* seek to end of SFT data-entries in file  */
+	  if ( fseek ( fp, this_nsamples * 8 , SEEK_CUR ) == -1 )
+	    {
+	      XLALPrintError ( "\nFailed to skip DATA field for SFT '%s': %s\n", fname, strerror(errno) );
+	      if ( this_comment ) LALFree ( this_comment );
+	      XLALDestroyStringVector ( fnames );
+	      LALDestroySFTCatalog ( status->statusPtr, &ret );
+	      fclose(fp);
+	      ABORT ( status, SFTFILEIO_ESFTFORMAT, SFTFILEIO_MSGESFTFORMAT);
 	    }
 
 	  mfirst_block = FALSE;
