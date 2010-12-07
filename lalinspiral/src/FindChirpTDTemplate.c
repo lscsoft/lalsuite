@@ -362,7 +362,7 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    if ( params->approximant == EOBNR )
+    if ( params->approximant == EOBNR || params->approximant == IMRPhenomB)
     {
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
@@ -387,7 +387,7 @@ LALFindChirpTDTemplate (
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
-  else if ( params->approximant == EOBNR )
+  else if ( params->approximant == EOBNR || params->approximant == IMRPhenomB)
   {
     /* For EOBNR we shift so that tC is at the end of the vector */
     if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
@@ -411,6 +411,14 @@ LALFindChirpTDTemplate (
     memset( xfac, 0, ( numPoints - j ) * sizeof( *xfac ) );
   }
 
+  // THIS IS A HACK!! Currently IMRPhenomB generates waveforms prepadded by 0s
+  // This causes inspiral to think the template is too long and crash.
+  // This line avoids this crash and causes nothing else to break, except
+  // template length will not be recorded correctly. This should be fixed!
+  if ( params->approximant == IMRPhenomB )
+  {
+    tmplt->tC = 4.;
+  }
   /*
    *
    * create the frequency domain findchirp template
