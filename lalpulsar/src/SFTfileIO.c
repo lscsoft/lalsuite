@@ -838,7 +838,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       /* the SFT data has already been read into the catalog,
 	 copy the relevant part to thisSFT */
 
-      volatile REAL8 tmp = locatalog.data[catPos].header.f0 / locatalog.data[catPos].header.deltaF;
+      volatile REAL8 tmp = locatalog.data[catPos].header.f0 / deltaF;
       UINT4 firstSFTbin = MYROUND ( tmp );
       UINT4 lastSFTbin = firstSFTbin + locatalog.data[catPos].numBins - 1;
       UINT4 firstBin2read = firstbin;
