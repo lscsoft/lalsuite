@@ -117,12 +117,6 @@ NRCSID( LALSTDIOH, "$Id$" );
 #define LAL_REAL4_FORMAT "g"
 #define LAL_REAL8_FORMAT "lg"
 
-int
-LALSnprintf( char *, size_t, const char *, ... );
-
-int
-LALVsnprintf( char *, size_t, const char *, va_list );
-
 #ifdef __cplusplus
 }
 #endif

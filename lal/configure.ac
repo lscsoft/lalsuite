@@ -368,8 +368,6 @@ AC_HEADER_TIME
 # checks for library functions
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getopt_long])
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([vsnprintf])
 AC_CHECK_FUNCS([putenv])
 
 # set package documentation install path
