@@ -663,10 +663,10 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
           rholmPwrl *= rholm;
         }
 
-
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
 				     Slm*rholmPwrl );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
+
 	return XLAL_SUCCESS;
 }
 
@@ -1006,7 +1006,6 @@ LALHCapDerivativesP4PN(
    dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * ( 2.0 * ( q2 + p4 * z3) * A
                       - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / Heff;
    dq = dvalues->data[3] = - omega * ak->flux(vPhi,ak->coeffs)/(eta * vPhi6);
-  /*fprintf(stdout, "Hcapd: %e %e %e %e %e %e %e %e\n", r, s, p, q, dr, ds, dp, dq);*/
 }
 
 /* Version which uses the factorized flux */
@@ -1048,7 +1047,6 @@ LALHCapDerivativesP4PNFF(
 
   dq = dvalues->data[3] = - dq / (eta * omega);
   
-  fprintf(stdout, "Hcapd: %e %e %e %e %e %e %e %e\n", r, s, p, q, dr, ds, dp, dq);
 }
 
 
