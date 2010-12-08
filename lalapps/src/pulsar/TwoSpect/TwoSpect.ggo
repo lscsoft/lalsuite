@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.0.0"
+version "1.0.1"
 purpose "TwoSpect analysis program"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional

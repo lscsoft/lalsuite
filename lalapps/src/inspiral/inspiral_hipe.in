@@ -2095,22 +2095,6 @@ if not gps_end_time:
 ##############################################################################
 #   Step 2: determine analyzable times
 
-# Select on-source vs off-source (for triggered searches)
-if doExtTrig:
-  exttrig_analyze = cp.get('input', 'exttrig-analyze')
-else:
-  exttrig_analyze = None
-
-# Read segments for external trigger analysis
-exttrig_segments = pipeline.ScienceData()
-if doExtTrig:
-  exttrig_segments.read(cp.get('input', 'exttrig-segments'), 0)
-else:
-  assert (exttrig_analyze == 'all') or (exttrig_analyze is None), \
-    "To use exttrig-analyze, exttrig-segments must point to a valid "\
-    "segment file."
-
-
 data_out = {}
 not_data_out = {}
 for ifo in ifo_list:
@@ -2123,24 +2107,6 @@ for ifo in ifo_list:
 
   if playground_only:
     data_out[ifo].play()
-
-  # set the exttrig segments
-  if exttrig_analyze is None or exttrig_analyze == "all":
-    pass  # Explicitly do nothing
-  elif exttrig_analyze == "on_source":
-    for seg in data_out[ifo]:
-      print 'before',seg
-    data_out[ifo].intersection(exttrig_segments)
-    for seg in data_out[ifo]:
-      print 'after',seg
-
-  elif exttrig_analyze == "off_source":
-    temp = copy.deepcopy(exttrig_segments)  # don't mutate exttrig_segments
-    temp.invert()
-    data_out[ifo].intersection(temp)
-  else:
-    raise ValueError, "exttrig-analyze has been set to a bad value.  It "\
-      "must be {on_source | off_source | all} or omitted."
 
   not_data_out[ifo] = copy.deepcopy(data_out[ifo])
   not_data_out[ifo].coalesce()
@@ -2842,6 +2808,4 @@ for ifos in ifo_coincs:
       f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
         seg.dur()))
     f.close()
-
-sys.exit(0)
 

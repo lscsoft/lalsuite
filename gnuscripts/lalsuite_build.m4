@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 12
+# serial 13
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -154,6 +154,18 @@ if test "$metaio" = "false"; then
 fi
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_LALXML],
+[AC_ARG_ENABLE(
+  [lalxml],
+  AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
+  [ case "${enableval}" in
+      yes) lalxml=true;;
+      no) lalxml=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
+    esac
+  ], [ lalxml=false ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_ARG_ENABLE(
   [lalburst],
@@ -207,21 +219,6 @@ AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
   ], [ lalstochastic=true ] )
 if test "$lalmetaio" = "false"; then
   lalstochastic=false
-fi
-])
-
-AC_DEFUN([LALSUITE_ENABLE_LALXML],
-[AC_ARG_ENABLE(
-  [lalxml],
-  AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
-  [ case "${enableval}" in
-      yes) lalxml=true;;
-      no) lalxml=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
-    esac
-  ], [ lalxml=false ] )
-if test "$lalpulsar" = "false"; then
-  lalxml=false
 fi
 ])
 

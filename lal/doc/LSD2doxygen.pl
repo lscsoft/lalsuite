@@ -420,6 +420,9 @@ sub cleanupLSD {
         }sge;
         $text =~ s![Ee]q(s?)\.?\\TODOref!Eq\1.\\eqref!mg;
 
+        # replace probable filenames with references
+        $text =~ s!<tt>(.*?\.[ch])</tt>!\\ref \1!mg;
+
         # replace citations
         $text =~ s{\\cite$wbbr}{
             $_ = $1;
