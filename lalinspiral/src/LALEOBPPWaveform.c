@@ -196,10 +196,10 @@ NRCSID (LALEOBPPWAVEFORMC,
 "$Id$");
 
 
-INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
-				REAL8Vector           *values,
-				REAL8Vector		  *dvalues,
-                                InspiralDerivativesIn *ak,
+INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
+				REAL8Vector           * restrict values,
+				REAL8Vector           * restrict dvalues,
+                                InspiralDerivativesIn * restrict ak,
                                 const INT4            l,
                                 const INT4            m
                                 )
@@ -208,10 +208,11 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 
         /* Status of function calls */
         INT4 status;
+        INT4 i;
 	
-	REAL8 eta, eta2, eta3, dM, chiS, chiA, a, a2, a3;
+ 	REAL8 eta, eta2, eta3, dM, dM2, dM3, chiS, chiA, a, a2, a3;
 	REAL8 r, pr, pp, Omega, v, v2, vh, vh3, k, hathatk, eulerlogxabs;
-	REAL8 NQC, Hreal, Heff, Slm, deltalm, rholm;
+	REAL8 NQC, Hreal, Heff, Slm, deltalm, rholm, rholmPwrl;
         REAL8 aNQC1, aNQC2, aNQC3;
 	COMPLEX16 Tlm;
         COMPLEX16 hNewton;
@@ -219,6 +220,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 
         /* Non-Keplerian velocity */
         REAL8 vPhi;
+
+        /* Expressions which come up in a lot of places */
 
         pr3In  pr3in;
         
@@ -231,7 +234,17 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	eta	= ak->coeffs->eta;
 	eta2	= eta * eta;
 	eta3	= eta * eta2;
-	dM	= sqrt(1 - 4*eta);
+	dM2     = 1. - 4.*eta;
+
+        /* Check our eta was sensible */
+        if ( dM2 < 0 )
+        {
+          XLALPrintError("Eta seems to be > 0.25 - this isn't allowed!\n" );
+          XLAL_ERROR( func, XLAL_EINVAL );
+        }
+        
+        dM      = sqrt( dM2 );
+        dM3     = dM2 * dM;
 	
 	chiS	= 0.0;
 	chiA	= 0.0;
@@ -318,7 +331,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 			- 24*eta*v*v2*v2;
 		rholm	= 1 + v2*(-43./42. + (55*eta)/84. + v*((-2*(chiS + chiA*dM 
 			- chiS*eta))/3. + v*(-20555./10584. + (chiS*chiS + 2*chiA*chiS*dM 
-			+ chiA*chiA*(1 - 4*eta))/2. - (33025*eta)/21168. + (19583*eta2)/42336. 
+			+ chiA*chiA*dM2)/2. - (33025*eta)/21168. + (19583*eta2)/42336. 
 			+ v*((-34*a)/21. + v*(1556919113./122245200. + (89*a2)/252. 
 			- (48993925*eta)/9779616. - (6292061*eta2)/3259872. 
 			+ (10620745*eta3)/39118464. - (428*eulerlogxabs)/105. 
@@ -328,15 +341,17 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 			+ (439877*eulerlogxabs)/55566.)*v2)))))));
 	        break;
 	      case 1:
+                {
+                REAL8 chiAPlusChiSdM = chiA + chiS*dM;
 	        deltalm = vh3*(2./3. + vh3*((-17*a)/35. + (107*LAL_PI)/105. 
 			+ vh*((3*a2)/140. + (-272./81. + (214*LAL_PI*LAL_PI)/315.)*vh*vh))) 
 			- (493*eta*v*v2*v2)/42.;
-		rholm	= 1 + v*((-3*(chiA + chiS*dM))/(4.*dM) 
-			+ v*(-59./56 - (9*pow(chiA + chiS*dM,2))/(32.*(1 - 4*eta)) 
+		rholm	= 1 + v*((-3*chiAPlusChiSdM)/(4.*dM) 
+			+ v*(-59./56 - (9*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) 
 			+ (23*eta)/84. + v*((-567*chiA*chiA*chiA - 1701*chiA*chiA*chiS*dM 
 			+ chiA*(-4708 + 1701*chiS*chiS - 2648*eta)*(-1 + 4*eta) 
-			+ chiS*pow(1 - 4*eta,1.5)*(4708 - 567*chiS*chiS 
-			+ 1816*eta))/(2688.*pow(1 - 4*eta,1.5)) + v*(-47009./56448. 
+			+ chiS* dM3 *(4708 - 567*chiS*chiS 
+			+ 1816*eta))/(2688.*dM3) + v*(-47009./56448. 
 			- (865*a2)/1792. - (405*a2*a2)/2048. - (10993*eta)/14112. 
 			+ (617*eta2)/4704. + v*((-98635*a)/75264. + (2031*a*a2)/7168. 
 			- (1701*a2*a3)/8192. + v*(7613184941./2607897600. 
@@ -347,6 +362,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 			+ (107*a*eulerlogxabs)/140. + v*(-1168617463883./911303737344. 
 			+ (6313*eulerlogxabs)/5880. + (-63735873771463./16569158860800. 
 			+ (5029963*eulerlogxabs)/5927040.)*v2))))))));
+                }
 	        break;
 	      default:
                 XLAL_ERROR( func, XLAL_EINVAL );
@@ -356,6 +372,10 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	  case 3:
 	    switch (m)
 	    {
+              REAL8 m1Plus3eta;
+              REAL8 m1Plus3eta2;
+              REAL8 m1Plus3eta3;
+
 	      case 3:
 	        deltalm = vh3*(13./10. + vh3*((-81*a)/20. + (39*LAL_PI)/7. + (-227827./3000. 
 			+ (78*LAL_PI*LAL_PI)/7.)*vh3)) - (80897*eta*v*v2*v2)/2430.;
@@ -367,15 +387,18 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 			+ (13*eulerlogxabs)/3.)*v))))));
 	        break;
 	      case 2:
-		deltalm = vh3*((10 + 33*eta)/(15.*(1 - 3*eta)) + vh*(4*a + vh*vh*((-136.*a)/45. 
+                m1Plus3eta  = -1. + 3.*eta;
+                m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
+                m1Plus3eta3 = m1Plus3eta2 * m1Plus3eta;
+		deltalm = vh3*((10 + 33*eta)/(-15.*m1Plus3eta) + vh*(4*a + vh*vh*((-136.*a)/45. 
 			+ (52.*LAL_PI)/21. + (-9112./405. + (208.*LAL_PI*LAL_PI)/63.)*vh3)));
-		rholm	= 1 + v*((4*chiS*eta)/(3.*(1 - 3*eta)) 
-			+ v*((-4*a2*eta2)/(9.*(1.-3.*eta)*(1.-3.*eta)) + (328. - 1115.*eta 
-			+ 320.*eta2)/(270.*(-1 + 3*eta)) + v*((2*(45*a*pow(-1 + 3*eta,3) 
+		rholm	= 1 + v*((4*chiS*eta)/(-3.*m1Plus3eta) 
+			+ v*((-4*a2*eta2)/(9.*m1Plus3eta2) + (328. - 1115.*eta 
+			+ 320.*eta2)/(270.*m1Plus3eta) + v*((2*(45*a*m1Plus3eta3
 			- a*eta*(328 - 2099*eta + 5*(733 + 20*a2)*eta2 
-			- 960*eta3)))/(405.*pow(-1 + 3*eta,3)) + v*(a2/3. + (-1444528. 
+			- 960*eta3)))/(405.*m1Plus3eta3) + v*(a2/3. + (-1444528. 
 			+ 8050045.*eta - 4725605.*eta2 - 20338960.*eta3 
-			+ 3085640.*eta2*eta2)/(1603800.*(1.-3.*eta)*(1.-3.*eta)) + v*((-2788*a)/1215. 
+			+ 3085640.*eta2*eta2)/(1603800.*m1Plus3eta2) + v*((-2788*a)/1215. 
 			+ v*(5849948554./940355325. + (488*a2)/405. - (104*eulerlogxabs)/63. 
 			+ (-10607269449358./3072140846775. + (17056.*eulerlogxabs)/8505.)*v2))))));
 		break;
@@ -398,14 +421,19 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	  case 4:
 	    switch (m)
 	    {
+              REAL8 m1Plus3eta;
+              REAL8 m1Plus3eta2;
 	      case 4:
-	        deltalm = vh3*((112 + 219*eta)/(120.*(1 - 3*eta)) + ((-464*a)/75. 
+                
+                m1Plus3eta  = -1. + 3.*eta;
+                m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
+	        deltalm = vh3*((112 + 219*eta)/(-120.*m1Plus3eta) + ((-464*a)/75. 
 			+ (25136*LAL_PI)/3465.)*vh3);
-		rholm	= 1 + v2*((1614 - 5870*eta + 2625*eta2)/(1320.*(-1 + 3*eta)) 
+		rholm	= 1 + v2*((1614 - 5870*eta + 2625*eta2)/(1320.*m1Plus3eta) 
 			+ v*((chiA*(10 - 39*eta)*dM + chiS*(10 - 41*eta 
-			+ 42*eta2))/(-15 + 45*eta) + v*(a2/2. + (-511573572 
+			+ 42*eta2))/(15*m1Plus3eta) + v*(a2/2. + (-511573572 
 			+ 2338945704*eta - 313857376*eta2 - 6733146000*eta3 
-			+ 1252563795*eta2*eta2)/(317116800.*(1.-3.*eta)*(1.-3.*eta)) 
+			+ 1252563795*eta2*eta2)/(317116800.*m1Plus3eta2) 
 			+ v*((-69*a)/55. + (16600939332793./1098809712000. + (217*a2)/3960. 
 			- (12568*eulerlogxabs)/3465.)*v))));
 	        break;
@@ -418,13 +446,15 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 			+ (1664224207351./195343948800. - (1571*eulerlogxabs)/770.)*v))));
 	        break;
 	      case 2:
-		deltalm = vh3*((7*(1 + 6*eta))/(15.*(1 - 3*eta)) + ((212*a)/75. 
+                m1Plus3eta  = -1. + 3.*eta;
+                m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
+		deltalm = vh3*((7*(1 + 6*eta))/(-15.*m1Plus3eta) + ((212*a)/75. 
 			+ (6284*LAL_PI)/3465.)*vh3);
-		rholm	= 1 + v2*((1146 - 3530*eta + 285*eta2)/(1320.*(-1 + 3*eta)) 
+		rholm	= 1 + v2*((1146 - 3530*eta + 285*eta2)/(1320.*m1Plus3eta) 
 			+ v*((chiA*(10 - 21*eta)*dM + chiS*(10 - 59*eta 
-			+ 78*eta2))/(-15 + 45*eta) + v*(a2/2. + (-114859044 
+			+ 78*eta2))/(15*m1Plus3eta) + v*(a2/2. + (-114859044 
 			+ 295834536*eta + 1204388696*eta2 - 3047981160*eta3 
-			- 379526805*eta2*eta2)/(317116800.*(1.-3.*eta)*(1.-3.*eta)) + v*((-7*a)/110. 
+			- 379526805*eta2*eta2)/(317116800.*m1Plus3eta2) + v*((-7*a)/110. 
 			+ (848238724511./219761942400. + (2323*a2)/3960. 
 			- (3142*eulerlogxabs)/3465.)*v))));
 		break;
@@ -489,7 +519,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 5:
 		deltalm = (10*vh3)/21.;
 		rholm	= 1 + v2*((-185 + 838*eta - 910*eta2 
-			+ 220*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+			+ 220*eta3)/(144.*(dM2 + 3*eta2)) - (2*a*v)/9.);
 		break;
 	      case 4:
 		deltalm = (43*vh3)/105.;
@@ -500,7 +530,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 3:
 	        deltalm = (2*vh3)/7.;
 		rholm	= 1 + v2*((-169 + 742*eta - 750*eta2 
-			+ 156*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+			+ 156*eta3)/(144.*(dM2 + 3*eta2)) - (2*a*v)/9.);
 	        break;
 	      case 2:
 		deltalm = (43*vh3)/210.;
@@ -511,7 +541,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 1:
 		deltalm = (2*vh3)/21.;
 		rholm	= 1 + v2*((-161 + 694*eta - 670*eta2 
-			+ 124*eta3)/(144.*(1 - 4*eta + 3*eta2)) - (2*a*v)/9.);
+			+ 124*eta3)/(144.*(dM2 + 3*eta2)) - (2*a*v)/9.);
 		break;
 	      default:
                 XLAL_ERROR( func, XLAL_EINVAL );
@@ -524,7 +554,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 7:
 	        deltalm = (19*vh3)/36.;
 		rholm	= 1 + v2*((-906 + 4246*eta - 4963*eta2 
-			+ 1380*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+			+ 1380*eta3)/(714.*(dM2 + 3*eta2)) - (2*a*v)/3.);
 	        break;
 	      case 6:
 	        deltalm = 0.0;
@@ -535,7 +565,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 5:
 		deltalm = (95*vh3)/252.;
 		rholm	= 1 + v2*((-762 + 3382*eta - 3523*eta2 
-			+ 804*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+			+ 804*eta3)/(714.*(dM2 + 3*eta2)) - (2*a*v)/3.);
 		break;
 	      case 4:
 		deltalm = 0.0;
@@ -546,7 +576,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 3:
 	        deltalm = (19*vh3)/84.;
 		rholm	= 1 + v2*((-666 + 2806*eta - 2563*eta2 
-			+ 420*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+			+ 420*eta3)/(714.*(dM2 + 3*eta2)) - (2*a*v)/3.);
 	        break;
 	      case 2:
 		deltalm = 0.0;
@@ -557,7 +587,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
 	      case 1:
 		deltalm = (19*vh3)/252.;
 		rholm	= 1 + v2*((-618 + 2518*eta - 2083*eta2 
-			+ 228*eta3)/(714.*(1 - 4*eta + 3*eta2)) - (2*a*v)/3.);
+			+ 228*eta3)/(714.*(dM2 + 3*eta2)) - (2*a*v)/3.);
 		break;
 	      default:
                 XLAL_ERROR( func, XLAL_EINVAL );
@@ -625,8 +655,17 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16		*hlm,
             break; 
 	}
 
+        /* Raise rholm to the lth power */
+        rholmPwrl = 1.0;
+        i = l;
+        while ( i-- )
+        {
+          rholmPwrl *= rholm;
+        }
+
+
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
-				     Slm*pow(rholm,l) );
+				     Slm*rholmPwrl );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
 	return XLAL_SUCCESS;
 }
@@ -1009,7 +1048,7 @@ LALHCapDerivativesP4PNFF(
 
   dq = dvalues->data[3] = - dq / (eta * omega);
   
-  /*fprintf(stdout, "Hcapd: %e %e %e %e %e %e %e %e\n", r, s, p, q, dr, ds, dp, dq);*/
+  fprintf(stdout, "Hcapd: %e %e %e %e %e %e %e %e\n", r, s, p, q, dr, ds, dp, dq);
 }
 
 
@@ -1019,6 +1058,7 @@ LALHCapDerivativesP4PNFF(
   REAL8 A, dA, d2A, NA, DA, DASq, dDA, dNA, d2DA;
   REAL8 u, u2, u3, u4, v, x1;
   REAL8 eta, eta2, a4, a5, FDIS;
+  REAL8 twoUAPlusu2dA;
 
   pr3In *pr3in;
   pr3in = (pr3In *)params;
@@ -1053,7 +1093,9 @@ LALHCapDerivativesP4PNFF(
   d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DASq * DA);
   v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
-  x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) )
+
+  twoUAPlusu2dA = 2.* u * A + u2 * dA;
+  x1 = -1./u2 * sqrt (-dA * twoUAPlusu2dA * twoUAPlusu2dA * twoUAPlusu2dA )
                 / (2.* u * dA * dA + A*dA - u * A * d2A);
   *vr = FDIS * x1;
 }
@@ -1484,6 +1526,7 @@ LALEOBPPWaveformEngine (
    /* Used for EOBNR */
    COMPLEX8Vector *modefreqs;
    UINT4 resampFac;
+   UINT4 resampPwr; /* Power of 2 for resampling */
    REAL8 resampEstimate;
 
    CHAR message[256];
@@ -1620,8 +1663,18 @@ LALEOBPPWaveformEngine (
 
    /* Calculate the resample factor for attaching the ringdown */
    /* We want it to be a power of 2 */
+   /* Of course, we only want to do this if the required SR > current SR... */
    resampEstimate = 20. / ( params->totalMass * LAL_MTSUN_SI * params->tSampling );
-   resampFac = (UINT4) pow( 2.0, ceil(log2(resampEstimate) ) );
+   resampFac      = 1;
+
+   if ( resampEstimate > 1 )
+   {
+     resampPwr = (UINT4)ceil(log2(resampEstimate));
+     while ( resampPwr-- )
+     {
+       resampFac *= 2u;
+     }
+   }
 
    /* The length of the vectors at the higher sample rate will be */
    /* the step back time plus the ringdown */
@@ -2029,7 +2082,7 @@ LALEOBPPWaveformEngine (
 	/* We are now going to work with a higher sampling rate */
 	/* Sometime in the future we might change code so that  */
 	/* a higher sampling rate is used only if required */
-        printf( "Higher sampling rate\n" );
+        printf( "Higher sampling rate at count %d.\n", count );
 	higherSR = 1;
         /*------------------------------------------------------------- */
 	/* We are going to decrease the number of points by nStepBack+1 */
@@ -2065,7 +2118,7 @@ LALEOBPPWaveformEngine (
       }
       if ( isnan( omega ) && higherSR )
       {
-        printf( "Triggered omega NaN condition\n");
+        printf( "Triggered omega NaN condition\n" );
         finalIdx = --count;
       }
 
@@ -2115,7 +2168,7 @@ LALEOBPPWaveformEngine (
    rdMatchPoint = XLALCreateUINT4Vector( 3 );
 
    /* Check the first matching point is sensible */
-   if ( ceil( tStepBack / ( 2.0 * params->tSampling )) > peakIdx )
+   if ( ceil( tStepBack * params->tSampling / 2.0 ) > peakIdx )
    {
      XLALPrintError( "Invalid index for first ringdown matching point.\n" );
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
