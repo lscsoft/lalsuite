@@ -931,7 +931,7 @@ LALInspiralChooseModel(
    case TaylorEt:
    case TaylorT4:
    case TaylorN:
-     ak->flso = ak->vlso * ak->vlso * ak->vlso/(LAL_PI * ak->totalmass);
+     ak->flso = vlso * vlso * vlso/(LAL_PI * ak->totalmass);
 
      if (ak->fn) {
        vn = cbrt(LAL_PI * ak->totalmass * ak->fn);
@@ -979,7 +979,7 @@ LALInspiralChooseModel(
    /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
     * the duration are longer than non eccentric waveform and starts at 2fl/3*/
    ak->tn = 5.*ak->totalmass/256./ak->eta/pow(LAL_PI*ak->totalmass*params->fLower/3.*2.,8./3.);
-   ak->flso = pow(ak->vlso,3.)/(LAL_PI * ak->totalmass);
+   ak->flso = vlso * vlso * vlso /(LAL_PI * ak->totalmass);
    break;
  default:
    ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
