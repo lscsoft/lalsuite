@@ -130,7 +130,7 @@ NRCSID( PTOLEMESHTESTC, "$Id$" );
 
 
 
-char *optarg = NULL;     /* option argument for getopt() */
+extern char *optarg;     /* option argument for getopt() */
 int  lalDebugLevel = 1;  /* default value */
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );

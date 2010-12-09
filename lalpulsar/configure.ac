@@ -1,4 +1,4 @@
-AC_INIT([lalpulsar],[1.0.0.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.0.0.4],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -42,6 +42,9 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lalpulsar])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
+
+# enable LALXML support
+LALSUITE_ENABLE_LALXML
 
 # put version/configure info in config header
 lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -110,6 +113,14 @@ AC_CHECK_LIB([gsl],[gsl_strerror],,[AC_MSG_ERROR([could not find the gsl library
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
+if test "$lalxml" = "true"; then
+  # check for libxml2
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
+fi
+
 # for boinc enabled build do checks for lal in c++ mode
 if test "${boinc}" = "true" ; then
   AC_LANG_PUSH([C++])
@@ -131,6 +142,9 @@ if test "${boinc}" = "true" ; then
   AC_LANG_POP([C++])
 fi
 
+# check for lalxml
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.0.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+
 # add gcc specific flags
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
@@ -149,7 +163,10 @@ AC_OUTPUT
 echo "
 ================================================================
 
-        LALPulsar has now been successfully configured
+        LALPulsar has now been successfully configured:
+
+                LAL XML library support is $LALXML_ENABLE_VAL
+
         and will be installed under the directory:
 
           ${prefix}

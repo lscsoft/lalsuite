@@ -32,6 +32,7 @@
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
+#include <lal/Units.h>
 
 NRCSID (SFTFILEIOTESTC, "$Id$");
 
@@ -126,6 +127,7 @@ do { 											\
    }											\
 } while(0)
 
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 /*---------- empty initializers ---------- */
 LALStatus empty_status;
@@ -139,20 +141,50 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 {
   UINT4 sft,bin;
   if (sft_vect->length != sft_vect2->length) {
-    XLALPrintError ( "\nCompareSFTVectors(): vector lengths differ!\n\n");
+    XLALPrintError ( "CompareSFTVectors(): vector lengths differ!\n");
     return(-1);
   }
   for(sft=0; sft < sft_vect->length; sft++) {
     SFTtype sft1 = sft_vect->data[sft];
     SFTtype sft2 = sft_vect2->data[sft];
+    if ((sft1.epoch.gpsSeconds != sft1.epoch.gpsSeconds) ||
+	(sft1.epoch.gpsNanoSeconds != sft1.epoch.gpsNanoSeconds)) {
+      XLALPrintError ( "CompareSFTVectors(): SFT#%u epochs differ (%f/%f)!\n",
+		       sft, GPS2REAL8(sft1.epoch), GPS2REAL8(sft2.epoch) );
+      return(-1);
+    }
+    if (!sft1.name || !sft2.name || strcmp(sft1.name,sft2.name)) {
+      XLALPrintError ( "CompareSFTVectors(): SFT#%u names differ!\n", sft);
+      return(-1);
+    }
+    if (sft1.f0 != sft2.f0) {
+      XLALPrintError ( "CompareSFTVectors(): f0 of SFT#%u differ (%f/%f)!\n",
+		       sft, sft1.f0, sft2.f0 );
+      return(-1);
+    }
+    if (sft1.deltaF != sft2.deltaF) {
+      XLALPrintError ( "CompareSFTVectors(): deltaF of SFT#%u differ (%f/%f)!\n",
+		       sft, sft1.deltaF, sft2.deltaF );
+      return(-1);
+    }
+    if (XLALUnitCompare(&sft1.sampleUnits,&sft2.sampleUnits)) {
+      CHAR buf1[256], buf2[256];
+      if(!XLALUnitAsString(buf1,256,&sft1.sampleUnits))
+	*buf1 = '\0';
+      if(!XLALUnitAsString(buf2,256,&sft2.sampleUnits))
+	*buf2 = '\0';
+      XLALPrintError ( "CompareSFTVectors(): Units of SFT#%u differ (%s/%s)!\n",
+		       sft,buf1,buf2 );
+      return(-1);
+    }
     if (sft1.data->length != sft2.data->length) {
-      XLALPrintError ( "\nCompareSFTVectors(): lengths of SFT#%u differ!\n\n", sft);
+      XLALPrintError ( "CompareSFTVectors(): lengths of SFT#%u differ!\n", sft);
       return(-1);
     }
     for(bin=0; bin < sft1.data->length; bin++) {
       if((sft1.data->data[bin].re != sft2.data->data[bin].re) ||
 	 (sft1.data->data[bin].im != sft2.data->data[bin].im)) {
-	XLALPrintError ( "\nCompareSFTVectors(): bins %u of SFT#%u differ!\n\n", sft, bin);
+	XLALPrintError ( "CompareSFTVectors(): bins %u of SFT#%u differ!\n", sft, bin);
 	return(-1);
       }
     }

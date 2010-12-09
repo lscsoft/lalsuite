@@ -163,7 +163,7 @@ REAL4 dec_min;
 REAL4 dec_max;
 
 
-char *optarg = NULL;     /* option argument for getopt() */
+extern char *optarg;     /* option argument for getopt() */
 int  lalDebugLevel = 0;  /* default value */
 int  metric_code;        /* Which metric code to use: */
                          /* 1 = Ptolemetric */

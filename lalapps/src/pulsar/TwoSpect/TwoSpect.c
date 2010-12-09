@@ -191,6 +191,20 @@ int main(int argc, char *argv[])
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
+   //TEST! REMOVE THIS!
+   while (dopplerpos.Delta<0.80) {
+      if ((XLALNextDopplerSkyPos(&dopplerpos, &scan))!=0) {
+         fprintf(stderr, "%s: XLALNextDopplerSkyPos() failed.\n", fn);
+         XLAL_ERROR(fn, XLAL_EFUNC);
+      }
+   }
+   /* while (dopplerpos.Alpha<1.29) {
+      if ((XLALNextDopplerSkyPos(&dopplerpos, &scan))!=0) {
+         fprintf(stderr, "%s: XLALNextDopplerSkyPos() failed.\n", fn);
+         XLAL_ERROR(fn, XLAL_EFUNC);
+      }
+   } */
+   
    //Basic units
    REAL4 tempfspan = inputParams->fspan + (inputParams->blksize-1)/inputParams->Tcoh;
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;
@@ -249,7 +263,7 @@ int main(int argc, char *argv[])
    INT4 maxcols = (INT4)floor(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
    
    //Assume maximum bin shift possible
-   inputParams->maxbinshift = (INT4)round(detectorVmax * inputParams->fmin * inputParams->Tcoh)+1; //TODO: better way to do this?
+   inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+inputParams->fspan*0.5) * inputParams->Tcoh)+1; //TODO: better way to do this?
    
    //Read in the T-F data from SFTs
    fprintf(LOG, "Loading in SFTs... ");
@@ -352,6 +366,7 @@ int main(int argc, char *argv[])
    
    //Search over the sky region
    while (scan.state != STATE_FINISHED) {
+      if (dopplerpos.Delta>0.93) scan.state = STATE_FINISHED;  //TEST! REMOVE THIS!
       fprintf(LOG, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       

@@ -99,7 +99,6 @@
 
 #include <math.h>
 #include <lal/AVFactories.h>
-#include <lal/FlatMesh.h>
 #include <lal/LALConfig.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>

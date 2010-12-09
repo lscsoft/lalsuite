@@ -817,7 +817,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     memcpy(locatalog.data, catalog->data, size);
   }
 
-  /* sort catalog by locator */
+  /* sort catalog by f0, locator */
   qsort( (void*)locatalog.data, locatalog.length, sizeof( locatalog.data[0] ), compareSFTloc );
 
   /* allocate segment vector, one element per final SFT */
@@ -838,7 +838,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       /* the SFT data has already been read into the catalog,
 	 copy the relevant part to thisSFT */
 
-      volatile REAL8 tmp = locatalog.data[catPos].header.f0 / locatalog.data[catPos].header.deltaF;
+      volatile REAL8 tmp = locatalog.data[catPos].header.f0 / deltaF;
       UINT4 firstSFTbin = MYROUND ( tmp );
       UINT4 lastSFTbin = firstSFTbin + locatalog.data[catPos].numBins - 1;
       UINT4 firstBin2read = firstbin;
@@ -854,16 +854,19 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       /* check that requested interval is found in SFT */
       if ( firstBin2read <= lastBin2read ) {
 
-	COMPLEX8Sequence*data = thisSFT->data; /* keep a copy of the data pointer */
+	 /* keep a copy of the data pointer */
+	COMPLEX8Sequence*data = thisSFT->data;
 
 	firstBinRead = firstBin2read;
 	lastBinRead = lastBin2read;
-
 	offsetBins = firstBin2read - firstSFTbin;
 	numBins2read = lastBin2read - firstBin2read + 1;
 
+	/* copy the header */
 	*thisSFT = locatalog.data[catPos].header;
-	thisSFT->data = data; /* restore data pointer */
+	/* restore data pointer */
+	thisSFT->data = data;
+	/* copy the data */
 	memcpy(thisSFT->data->data,
 	       locatalog.data[catPos].header.data + offsetBins,
 	       numBins2read * sizeof(COMPLEX8));
@@ -881,12 +884,12 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       /* SFT data had not yet been read - read it */
 
       /* open and close a file only when necessary, i.e. reading a different file */
-      if(strcmp(fname, locatalog.data[catPos].locator->fname)) {
+      if(strcmp(fname, locator->fname)) {
 	if(fp) {
 	  fclose(fp);
 	  fp = NULL;
 	}
-	fname = locatalog.data[catPos].locator->fname;
+	fname = locator->fname;
 	fp = fopen(fname,"rb");
 	LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
 	if(!fp) {
@@ -896,10 +899,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       }
 
       /* seek to the position of the SFT in the file (if necessary) */
-      if ( locatalog.data[catPos].locator->offset )
-	if ( fseek( fp, locatalog.data[catPos].locator->offset, SEEK_SET ) == -1 ) {
+      if ( locator->offset )
+	if ( fseek( fp, locator->offset, SEEK_SET ) == -1 ) {
 	  XLALPrintError("ERROR: Couldn't seek to position %ld in file '%s'\n",
-			 locatalog.data[catPos].locator->offset, fname);
+			 locator->offset, fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
 	}
 
@@ -951,7 +954,9 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	/* data is ok, add to SFT */
 	segments[isft].last               = lastBinRead;
 	segments[isft].lastfrom           = locator;
-	sftVector->data[isft].sampleUnits = thisSFT->sampleUnits;
+	if(locatalog.data[catPos].header.name && *(locatalog.data[catPos].header.name))
+	  strcpy(sftVector->data[isft].name, locatalog.data[catPos].header.name);
+	sftVector->data[isft].sampleUnits = locatalog.data[catPos].header.sampleUnits;
 	memcpy(sftVector->data[isft].data->data + (firstBinRead - firstbin),
 	       thisSFT->data->data,
 	       (lastBinRead - firstBinRead + 1) * sizeof(COMPLEX8));
