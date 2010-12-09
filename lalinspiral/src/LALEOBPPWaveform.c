@@ -242,6 +242,12 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
           XLALPrintError("Eta seems to be > 0.25 - this isn't allowed!\n" );
           XLAL_ERROR( func, XLAL_EINVAL );
         }
+        else if ( dM2 == 0 && m % 2 )
+        {
+          /* If m is odd and dM = 0, hLM will be zero */
+          memset( hlm, 0, sizeof( COMPLEX16 ) );
+          return XLAL_SUCCESS;
+        }
         
         dM      = sqrt( dM2 );
         dM3     = dM2 * dM;
@@ -261,9 +267,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	Omega	= dvalues -> data[1];
 	v	= cbrt( Omega );
 	v2	= v * v;
-	vh	= cbrt(Hreal * Omega);
-	vh3	= vh * vh * vh;
-	eulerlogxabs = LAL_GAMMA + log( 2*m ) + log( v );
+        vh3     = Hreal * Omega;
+	vh	= cbrt(vh3);
+	eulerlogxabs = LAL_GAMMA + log( 2.0 * (REAL8)m * v );
 	
         /* Calculate the non-Keplerian velocity */
         memset( &pr3in, 0, sizeof( pr3In ) );
