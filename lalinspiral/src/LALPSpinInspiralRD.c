@@ -881,7 +881,6 @@ void LALPSpinInspiralRDEngine (
   REAL4           x0, x1, x2, x3;
 
   REAL4 inc;
-  REAL4 sqrtOneMinus4Eta;
 
   REAL4 fracRD=0.55;
 
@@ -928,8 +927,6 @@ void LALPSpinInspiralRDEngine (
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
   //omegamatch = params->fCutoff *unitHz;
-  if ((4.*params->eta)>=1.) sqrtOneMinus4Eta=0.;
-  else                      sqrtOneMinus4Eta=sqrt(1.-4.*params->eta);
   omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta;
 
   while ((omegamatch * 16./unitHz) >  (REAL4)(subsampling)*params->tSampling ) subsampling*=2; 
@@ -1730,7 +1727,10 @@ void LALPSpinInspiralRDEngine (
       
       count++;
       t+=dt;    
-      
+
+      /*aggiungere la formula per frac*/
+
+
     } while ((omega < fracRD*omegaRD));
     
   }
