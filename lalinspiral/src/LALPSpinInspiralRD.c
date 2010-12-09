@@ -881,12 +881,27 @@ void LALPSpinInspiralRDEngine (
   REAL4           x0, x1, x2, x3;
 
   REAL4 inc;
-
-  REAL4 fracRD=0.55;
+  REAL4 fracRD;
+  REAL4 sqrtOneMinus4Eta;
 
   /* switch to keep track of matching of the linear frequency growth phase*/
   INT4 rett=0;
 
+  const double omM0   =  0.0595;
+  const double omMz1p2= -2.38e-03;
+  const double omMz1m2= -4.71e-03;
+  const double omM12  = -2.36e-04;
+  const double omMsq  =  4.89e-03;
+  const double omMz12 = -3.89e-03;
+  const double omMzsq = -6.09e-03;
+
+  const double frac0   =  0.57;
+  const double frac1p2 =  7.36e-03;
+  const double frac1m2 =  1.095e-02;
+  const double frac12  =  1.963e-03;
+  const double fracsq  = -8.35e-03;
+  const double fracz12 =  5.06e-03;
+  const double fraczsq = -3.11e-02;
 
   INITSTATUS(status, "LALPSpinInspiralRDEngine", LALPSPININSPIRALRDENGINEC);
   ATTATCHSTATUSPTR(status);
@@ -916,6 +931,8 @@ void LALPSpinInspiralRDEngine (
   /*    tSampling is in Hz, so dt is in seconds*/
   dt = 1.0/params->tSampling;
 
+  //  printf("********fLower %11.4e\n",params->fLower);
+
   /* -- length in seconds from Newtonian formula; */
   lengths = (5.0/256.0)/LAL_PI * pow(LAL_PI * params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0/3.0) / params->fLower;
 
@@ -927,7 +944,9 @@ void LALPSpinInspiralRDEngine (
      omegamatch can be controlled by fCutoff by un-commenting the following
      line and commenting the definition of omegamatch in the loop.*/
   //omegamatch = params->fCutoff *unitHz;
-  omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta;
+  if (params->eta>=0.25) sqrtOneMinus4Eta=0.;
+  else                   sqrtOneMinus4Eta=sqrt(1.-4.*params->eta);
+  omegamatch = omM0 +6.05e-3*sqrtOneMinus4Eta;
 
   while ((omegamatch * 16./unitHz) >  (REAL4)(subsampling)*params->tSampling ) subsampling*=2; 
   dt/= (REAL4)(subsampling);
@@ -1049,11 +1068,10 @@ void LALPSpinInspiralRDEngine (
     else length=0;
   }
 
-  /*  printf("Check L =(%8.4f  %8.4f  %8.4f)\n",initLNh[0],initLNh[1],initLNh[2]);
-  printf("      S1=(%8.4f  %8.4f  %8.4f)\n",initS1[0],initS1[1],initS1[2]);
-  printf("      S2=(%8.4f  %8.4f  %8.4f)\n",initS2[0],initS2[1],initS2[2]);
-  printf("      L=%11.3e %11.3e  S1=%11.3e  S2=%11.3e\n",LNmag,sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]+initLNh[2]*initLNh[2]),sqrt(initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS1[2]*initS1[2]),sqrt(initS2[0]*initS2[0]+initS2[1]*initS2[1]+initS2[2]*initS2[2]));
-  */
+  //printf("Check L =(%8.4f  %8.4f  %8.4f)\n",initLNh[0],initLNh[1],initLNh[2]);
+  //printf("      S1=(%8.4f  %8.4f  %8.4f)\n",initS1[0],initS1[1],initS1[2]);
+  //printf("      S2=(%8.4f  %8.4f  %8.4f)\n",initS2[0],initS2[1],initS2[2]);
+  //printf("      L=%11.3e %11.3e  S1=%11.3e  S2=%11.3e\n",LNmag,sqrt(initLNh[0]*initLNh[0]+initLNh[1]*initLNh[1]+initLNh[2]*initLNh[2]),sqrt(initS1[0]*initS1[0]+initS1[1]*initS1[1]+initS1[2]*initS1[2]),sqrt(initS2[0]*initS2[0]+initS2[1]*initS2[1]+initS2[2]*initS2[2]));
 
   /*  if (estlength>length) fprintf(stdout,"** LALPSpinInspiralRD WARNING : waveform is assigned a length %d shorter than estimated %d\n",length,estlength);*/
   dummy.length = nn * 6;
@@ -1505,7 +1523,10 @@ void LALPSpinInspiralRDEngine (
     t = (++count - params->nStartPad) * dt;
 
     //adjourn ommatch
-    omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);
+
+    omegamatch= omM0 + 6.05e-3*sqrtOneMinus4Eta + omMz1p2*(S1dotL+S2dotL) + omMz1m2*(S1dotL-S2dotL) + omM12*(S1dotS2-S1dotL*S2dotL) + omMsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + omMz12*(S1dotL*S2dotL) +omMzsq*(S1dotL*S1dotL+S2dotL*S2dotL);
+
+    //omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);
     //omegamatch= 0.0548 +0.04*(0.25-mparams->eta) - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
   
   }
@@ -1513,6 +1534,8 @@ void LALPSpinInspiralRDEngine (
  /* Test that omega/unitHz < NYQUIST */
   
   while ( (energy <= 0.99*enold) && (omega >= 0.99*omegaold) && (omega/unitHz < params->tSampling) && (!(isnan(omega))) && (omega < omegamatch) );
+
+  //printf("****** omM=%11.3e*****\n",omegamatch);
 
  /* if code stopped since evolving quantities became nan write an error message */
   if ( omega/unitHz >= params->tSampling ) {
@@ -1730,9 +1753,13 @@ void LALPSpinInspiralRDEngine (
 
       /*aggiungere la formula per frac*/
 
+      fracRD = frac0 + frac1p2*(S1dotL+S2dotL) + frac1m2*(S1dotL-S2dotL) + frac12*(S1dotS2-S1dotL*S2dotL) + fracsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + fracz12*(S1dotL*S2dotL) + fraczsq*(S1dotL*S1dotL+S2dotL*S2dotL);
+
 
     } while ((omega < fracRD*omegaRD));
     
+    //printf("fracrd %11.4e\n",fracRD);
+
   }
   else {
     fprintf(stdout,"** LALPhenSpinInspiralRD ERROR **: No phen part added\n");
