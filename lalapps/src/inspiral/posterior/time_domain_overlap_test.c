@@ -5,9 +5,9 @@
 #include <lal/TimeFreqFFT.h>
 
 int main() {
-  const UINT4 N = 256;
+  const UINT4 N = 512;
   const UINT4 NPSD = N/2+1;
-  const REAL8 T = 1.0;
+  const REAL8 T = 5.12;
   const REAL8 dT = T/(N-1);
   const REAL8 fNy = 1.0/(2.0*dT);
   const REAL8 dF = fNy/(NPSD-1);
@@ -58,8 +58,9 @@ int main() {
   for (i = 0; i < NPSD; i++) {
     REAL8 re = Af->data->data[i].re;
     REAL8 im = Af->data->data[i].im;
+    REAL8 dFLocal = Af->deltaF;
 
-    sum += 2.0*(re*re + im*im)/PSD->data->data[i];
+    sum += 4.0*dFLocal*(re*re + im*im)/PSD->data->data[i];
   }
 
   fprintf(stderr, "Time domian overlap = %g, freq domain sum = %g, ratio = %g\n",

@@ -33,8 +33,6 @@
 #include <lal/Date.h>
 #include <lal/Sequence.h>
 
-#define TIME_DOMAIN_FUDGE_FACTOR 8.0
-
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8),
                      sizeof(UINT4),
@@ -913,16 +911,14 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
         /*compute the response*/
 	ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
 
-        /* Scaling of TimeDomainOverlap is off, so need factor of 2.0 here. */
 	totalChiSquared+=
-          2.0*(timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
+          (timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
            -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
            +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
 
     ifoPtr = ifoPtr->next;
   }
   loglikeli = -0.5*totalChiSquared; 
-  loglikeli *= TIME_DOMAIN_FUDGE_FACTOR;
   XLALDestroyREAL8TimeSeries(timeModelResponse);
   return(loglikeli);
 }
@@ -1255,34 +1251,26 @@ fclose(file);
 }	
 							  						  
 REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
-	//gsl_vector * freqData1, gsl_vector * freqData2
-	COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2)
+                                    COMPLEX16Vector * freqData1, 
+                                    COMPLEX16Vector * freqData2)
 {
-    int lower, upper, i;
-	double deltaT, deltaF;
+  int lower, upper, i;
+  double deltaT, deltaF;
+  
+  double overlap=0.0;
+  
+  /* determine frequency range & loop over frequency bins: */
+  deltaT = dataPtr->timeData->deltaT;
+  deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+  lower = ceil(dataPtr->fLow / deltaF);
+  upper = floor(dataPtr->fHigh / deltaF);
+	
+  for (i=lower; i<=upper; ++i){  	  	  
+    overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
+                 / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+  }
 
-	double overlap=0.0;
-	
-	/* determine frequency range & loop over frequency bins: */
-    deltaT = dataPtr->timeData->deltaT;
-    deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
-    // printf("deltaF %g, Nt %d, deltaT %g\n", deltaF, dataPtr->timeData->data->length, dataPtr->timeData->deltaT);
-    lower = ceil(dataPtr->fLow / deltaF);
-    upper = floor(dataPtr->fHigh / deltaF);
-	
-	//for(i=1; i<=1; i++){
-//fprintf(stdout, "freqData1->data[1].re %lg, freqData1->data[1].im %lg, noise[1] %lg\n", 
-//freqData1->data[1].re, freqData1->data[1].im, dataPtr->oneSidedNoisePowerSpectrum->data->data[1]);
-    for (i=lower; i<=upper; ++i){  	  	  
-      /* compute squared difference & 'chi-squared': */
-      //diffRe       = data1re - data2re;         // Difference in real parts...
-      //diffIm       = data1im - data2im;         // ...and imaginary parts, and...
-      //diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-	  overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
-		/ dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-	}
-//fprintf(stdout, "Overlap %lg, lower %d upper %d\n", overlap, lower, upper);
-	return overlap;
+  return overlap;
 }
 
 void dumptemplateFreqDomain(LALVariables *currentParams, LALIFOData * data, 
@@ -1474,12 +1462,11 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
 
   while (ifoPtr != NULL) {
     REAL8 oneLogL = -timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData);
-    fprintf(stderr, "Found oneLogL = %g\n", oneLogL);
     logL += oneLogL;
     ifoPtr = ifoPtr->next;
   }
 
-  logL *= TIME_DOMAIN_FUDGE_FACTOR;
+  logL *= 0.5;
   
   return logL;
 }
@@ -1505,15 +1492,23 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 1.0 / PSD->data->data[i];
+    CPSD->data->data[i].re = 1.0 / (2.0*PSD->data->data[i]);
     CPSD->data->data[i].im = 0.0;
   }
 
   XLALREAL8FreqTimeFFT(TDW, CPSD, plan);
 
-  for (i = 0; i < TDW->data->length; i++) {
-    TDW->data->data[i] /= TDW->data->length; /* Normalize correctly. */
-  }
+  /* FILE *PSDf = fopen("PSD.dat", "w"); */
+  /* for (i = 0; i < PSD->data->length; i++) { */
+  /*   fprintf(PSDf, "%g %g\n", i*PSD->deltaF, PSD->data->data[i]); */
+  /* } */
+  /* fclose(PSDf); */
+
+  /* FILE *TDWf = fopen("TDW.dat", "w"); */
+  /* for (i = 0; i < TDW->data->length; i++) { */
+  /*   fprintf(TDWf, "%g %g\n", i*TDW->deltaT, TDW->data->data[i]); */
+  /* } */
+  /* fclose(TDWf); */
 }
 
 UINT4 nextPowerOfTwo(const UINT4 n) {
@@ -1663,7 +1658,7 @@ void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, cons
 
   memset(conv->data->data, 0, conv->data->length*sizeof(conv->data->data[0]));
   for (i = 0; i < data->data->length; i++) {
-    conv->data->data[i] = paddedConv->data[i]/paddedConv->length; /* Normalize */
+    conv->data->data[i] = conv->deltaT*paddedConv->data[i]/paddedConv->length; /* Normalize */
   }
 
   strncpy(conv->name, "convolved", LALNameLength);
@@ -1755,5 +1750,5 @@ REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, co
 
   XLALDestroyREAL8TimeSeries(Bconv);
 
-  return overlap;
+  return 4.0*overlap; /* This is the overlap definition. */
 }
