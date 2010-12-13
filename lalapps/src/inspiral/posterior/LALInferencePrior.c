@@ -23,8 +23,8 @@
 #include "LALInferencePrior.h"
 #include <math.h>
 
-/* Return the log Prior of the variables specified, for the (non-)spinning inspiral signal case */
-REAL8 LALInferenceInspiralPriorNonSpinning(LALInferenceRunState *runState, LALVariables *params)
+/* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
+REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALVariables *params)
 {
 	REAL8 logPrior=0.0;
 	
@@ -115,3 +115,86 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 	}	
 	return;
 }
+
+
+/* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
+REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVariables *params)
+{
+	REAL8 logPrior=0.0;
+	
+	(void)runState;
+	LALVariableItem *item=params->head;
+	LALVariables *priorParams=runState->priorArgs;
+	REAL8 min, max;
+	REAL8 logmc=0.0;
+	REAL8 m1,m2,eta=0.0;
+	/* Check boundaries */
+	for(;item;item=item->next)
+	{
+		//if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
+		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT) continue;
+		else
+		{
+			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
+			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+		}
+		
+
+		if ( strstr(item->name, "logdistance") )
+		{
+			logPrior+=3.0* *(REAL8 *)getVariable(params,"logdistance")+1.38629436112-log(max*max*max*max-min*min*min*min);
+		}
+		else if ( strstr(item->name, "distance") )
+		{
+			logPrior+=2.0*log(*(REAL8 *)getVariable(params,"distance"))+1.09861228867-log(max*max*max-min*min*min);
+		}
+		else if ( strstr(item->name, "inclination") )
+		{
+			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"inclination"))));//-log(cos(min)-cos(max));
+		}
+		else if ( strstr(item->name, "declination") )
+		{
+			logPrior+=log(fabs(cos(*(REAL8 *)getVariable(params,"declination"))));//-log(sin(min)-sin(max));
+		}
+		else if ( strstr(item->name, "theta_spin1") )
+		{
+			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin1"))));//-log(cos(min)-cos(max));
+		}
+		else if ( strstr(item->name, "theta_spin2") )
+		{
+			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin2"))));//-log(cos(min)-cos(max));
+		}
+		else if (strstr(item->name, "logmc") )
+		{
+			logmc=*(REAL8 *)getVariable(params,"logmc");
+			logPrior+=-(5./6.)*logmc-1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+		}
+		else if ( strstr(item->name, 	"chirpmass") )
+		{
+			logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
+			logPrior+=-(5./6.)*logmc-1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+		}
+	
+		//printf("logPrior=%f\n",logPrior);
+	}
+	
+	if(checkVariable(params,"massratio"))
+	{
+		eta=*(REAL8 *)getVariable(params,"massratio");
+		mc2masses(exp(logmc),eta,&m1,&m2);
+	}
+	
+	/* Check for component masses in range, if specified */
+	if(checkVariable(priorParams,"component_min"))
+		if(*(REAL8 *)getVariable(priorParams,"component_min") > m1
+		   || *(REAL8 *)getVariable(priorParams,"component_min") > m2)
+			return -DBL_MAX;
+	
+	if(checkVariable(priorParams,"component_max"))
+		if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
+		   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
+			return -DBL_MAX;
+
+	return(logPrior);
+}
+

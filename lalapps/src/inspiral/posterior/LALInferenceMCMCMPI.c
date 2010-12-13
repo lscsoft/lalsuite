@@ -213,7 +213,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;
-	runState->prior=&LALInferenceInspiralPriorNonSpinning;
+	runState->prior=&LALInferenceInspiralPrior;
+	//runState->prior=&LALInferenceInspiralPriorNormalised;
 	//runState->prior=PTUniformGaussianPrior;
 
 	
