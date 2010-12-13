@@ -229,7 +229,7 @@ void LALPSpinInspiralRDderivatives(REAL8Vector *values, REAL8Vector *dvalues, vo
   S2S2= (S2x*S2x + S2y*S2y + S2z*S2z);
   S1S2 = (S1x*S2x + S1y*S2y + S1z*S2z);
   domega+= params->wdotspin20S1S2 * v4 * ( 247.0 * S1S2 - 721.0 * LNhS1 * LNhS2 );                // see e.g. Buonanno et al. arXiv:0810.5336
-  // domega+= params->wdotspin20S1S1 * v4 * (719.*( LNhS1*LNhS1 + LNhS2*LNhS2 ) - 233.*(S1S1+S2S2)); // see Racine et al. arXiv:0812.4413
+  domega+= params->wdotspin20S1S1 * v4 * (719.*( LNhS1*LNhS1 + LNhS2*LNhS2 ) - 233.*(S1S1+S2S2)); // see Racine et al. arXiv:0812.4413
 
   energy+= v4 * ( params->epnspin20S1S2*S1S2 + params->epnspin20S1S2dotLNh * LNhS1 * LNhS2);      // see e.g. Buonanno et al. as above
   energy+= v4 * ( params->epnspin20S1S1*S1S1 + params->epnspin20S2S2*S2S2 + params->epnspin20S1S1dotLNh * LNhS1*LNhS1 + params->epnspin20S2S2 * LNhS2*LNhS2 );      // see Racine et al. as above
@@ -888,20 +888,18 @@ void LALPSpinInspiralRDEngine (
   INT4 rett=0;
 
   const double omM0   =  0.0595;
-  const double omMz1p2= -2.38e-03;
-  const double omMz1m2= -4.71e-03;
-  const double omM12  = -2.36e-04;
-  const double omMsq  =  4.89e-03;
-  const double omMz12 = -3.89e-03;
-  const double omMzsq = -6.09e-03;
+  const double omMz1p2= -5.07e-3;
+  const double omM12  = -3.63e-4;
+  const double omMsq  =  5.56e-3;
+  const double omMz12 = -3.36e-3;
+  const double omMzsq = -8.94e-3;
 
   const double frac0   =  0.57;
-  const double frac1p2 =  7.36e-03;
-  const double frac1m2 =  1.095e-02;
-  const double frac12  =  1.963e-03;
-  const double fracsq  = -8.35e-03;
-  const double fracz12 =  5.06e-03;
-  const double fraczsq = -3.11e-02;
+  const double frac1p2 =  1.36e-2;
+  const double frac12  =  2.26e-3;
+  const double fracsq  = -9.90e-3;
+  const double fracz12 = -1.18e-2;
+  const double fraczsq = -2.45e-2;
 
   INITSTATUS(status, "LALPSpinInspiralRDEngine", LALPSPININSPIRALRDENGINEC);
   ATTATCHSTATUSPTR(status);
@@ -1524,7 +1522,7 @@ void LALPSpinInspiralRDEngine (
 
     //adjourn ommatch
 
-    omegamatch= omM0 + 6.05e-3*sqrtOneMinus4Eta + omMz1p2*(S1dotL+S2dotL) + omMz1m2*(S1dotL-S2dotL) + omM12*(S1dotS2-S1dotL*S2dotL) + omMsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + omMz12*(S1dotL*S2dotL) +omMzsq*(S1dotL*S1dotL+S2dotL*S2dotL);
+    omegamatch= omM0 + 6.05e-3*sqrtOneMinus4Eta + omMz1p2*(S1dotL+S2dotL) + omM12*(S1dotS2-S1dotL*S2dotL) + omMsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + omMz12*(S1dotL*S2dotL) +omMzsq*(S1dotL*S1dotL+S2dotL*S2dotL);
 
     //omegamatch = 0.0560 +6.05e-3*sqrtOneMinus4Eta - 3.93e-03*(S1dotL+S2dotL) + 1.06e-3*(S1dotS2-S1dotL*S2dotL) + 3.01e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) -2.53e-3*(S1dotL*S1dotL+S2dotL*S2dotL) + -4.4e-4*(S1dotL*S2dotL);
     //omegamatch= 0.0548 +0.04*(0.25-mparams->eta) - 9.7e-03*(S1dotL+S2dotL) + 0.83e-3*(S1dotS2-S1dotL*S2dotL) + 4.7e-3*(S1dotS1-S1dotL*S1dotL+S2dotS2-S2dotL*S2dotL) + 8.0e-3*(S1dotL*S1dotL);
@@ -1534,8 +1532,6 @@ void LALPSpinInspiralRDEngine (
  /* Test that omega/unitHz < NYQUIST */
   
   while ( (energy <= 0.99*enold) && (omega >= 0.99*omegaold) && (omega/unitHz < params->tSampling) && (!(isnan(omega))) && (omega < omegamatch) );
-
-  //printf("****** omM=%11.3e*****\n",omegamatch);
 
  /* if code stopped since evolving quantities became nan write an error message */
   if ( omega/unitHz >= params->tSampling ) {
@@ -1683,6 +1679,8 @@ void LALPSpinInspiralRDEngine (
   
   omegaRD=modefreqs->data[0].re * unitHz / LAL_PI /2.;
 
+  fracRD = frac0 + frac1p2*(S1dotL+S2dotL) + frac12*(S1dotS2-S1dotL*S2dotL) + fracsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + fracz12*(S1dotL*S2dotL) + fraczsq*(S1dotL*S1dotL+S2dotL*S2dotL);
+
   /* Now the phenomenological part is added */
   if (rett==1) {
 
@@ -1753,12 +1751,10 @@ void LALPSpinInspiralRDEngine (
 
       /*aggiungere la formula per frac*/
 
-      fracRD = frac0 + frac1p2*(S1dotL+S2dotL) + frac1m2*(S1dotL-S2dotL) + frac12*(S1dotS2-S1dotL*S2dotL) + fracsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + fracz12*(S1dotL*S2dotL) + fraczsq*(S1dotL*S1dotL+S2dotL*S2dotL);
-
 
     } while ((omega < fracRD*omegaRD));
     
-    //printf("fracrd %11.4e\n",fracRD);
+    //printf("omM %11.4e  fracrd %11.4e  omRD %11.4e\n",omegamatch,fracRD,omegaRD);
 
   }
   else {
