@@ -1256,10 +1256,12 @@ int MAIN( int argc, char *argv[]) {
 #else
 	    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
 	      fgrid2F[0] += cgrid2F[0];
+#ifndef OMIT_NC
 	      fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
+	      fgridnc++;
+#endif
 	      fgrid2F++;
 	      cgrid2F++;
-	      fgridnc++;
 	    }
 #endif
 
