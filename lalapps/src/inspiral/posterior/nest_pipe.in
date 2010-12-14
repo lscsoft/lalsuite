@@ -597,6 +597,7 @@ if opts.enable_pages_alltimes is True:
                 results_page_node.add_var_arg('--inj '+os.path.abspath(opts.inj))
         results_page_node.add_parent(combine_each_time_nodes[time])
         results_page_node.add_var_opt('bsn',bayesfiles_by_time[time])
+	dag.add_node(results_page_node)
 
         if opts.coherence_test and (time in coherence_inspnest_nodes.keys()):
             results_page_node.add_var_arg('--bci '+coherence_test_outfiles[time])
