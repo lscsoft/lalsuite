@@ -57,25 +57,6 @@ void counter(qfvars *vars)
 REAL8 log1(REAL8 x, INT4 first)
 {
    
-   /* if (fabs(x) > 0.1) {
-      if (first) return log(1.0 + x);
-      else return (log(1.0 + x) - x);
-   } else {
-      REAL8 s, s1, term, y, k;
-      y = x / (2.0 + x);
-      term = 2.0 * y*y*y;
-      k = 3.0;
-      if (first) s = 2.0*y;
-      else s = -x*y;
-      y = y*y;
-      for (s1=s+term/k; s1!=s; s1=s+term/k) { 
-         k += 2.0; 
-         term *= y; 
-         s = s1;
-      }
-      return s;
-   } */
-   
    if (first) return gsl_sf_log_1plusx(x);
    else return gsl_sf_log_1plusx_mx(x);
    
@@ -87,26 +68,9 @@ void order(qfvars *vars)
    
    const CHAR *fn = __func__;
    
-   //INT4 ii, jj;
-   
-   //Determine which values are largest to and place element numbers in th[]
-   /* for (ii=0; ii<(INT4)vars->weights->length; ii++) {
-      INT4 insertionpoint = ii;
-      if (ii==0) {
-         vars->sorting->data[insertionpoint] = 0;
-      } else {
-         while (insertionpoint>0 && fabs(vars->weights->data[ii])>fabs(vars->weights->data[vars->sorting->data[insertionpoint-1]])) insertionpoint--;
-         
-         for (jj=ii; jj>insertionpoint; jj--) {
-            vars->sorting->data[jj] = vars->sorting->data[jj-1];
-         }
-         vars->sorting->data[insertionpoint] = ii;
-      }
-   } */
-   
    INT4 ascend = 0;     //To sort descending, set ascend to zero
    if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
-      XLALPrintError("%s: XLALHeapIndex() failed.\n", fn);
+      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -313,7 +277,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    if (vars->ndtsrt) {
       order(vars);
       if (vars->ndtsrt) {
-         XLALPrintError("%s: order() failed\n.", fn);
+         fprintf(stderr,"%s: order() failed\n.", fn);
          vars->fail = 1;
          return 1.0;
       }
@@ -441,7 +405,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       if (vars->c!=0.0  && almx>0.07*wnstd) {
          REAL8 coeffval = coeff(vars, vars->c);
          if (coeffval == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          tausq = 0.25*acc1/coeffval;
@@ -541,12 +505,12 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          //calculate convergence factor
          REAL8 coeffvalplusx = coeff(vars, vars->c+x);
          if (coeffvalplusx == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          REAL8 coeffvalminusx = coeff(vars, vars->c-x);
          if (coeffvalminusx == 1.0) {
-            XLALPrintError("%s: coeff() failed.\n", fn);
+            fprintf(stderr,"%s: coeff() failed.\n", fn);
             XLAL_ERROR_REAL8(fn, XLAL_REAL8_FAIL_NAN);
          }
          tausq = (1.0/3.0)*acc1/(1.1*(coeffvalminusx + coeffvalplusx));

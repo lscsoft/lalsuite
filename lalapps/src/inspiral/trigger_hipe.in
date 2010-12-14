@@ -1,25 +1,12 @@
 #!@PYTHONPROG@
 # coding=utf-8
 """
-trigger_hipe.in - external-trigger inspiral pipeline driver script
-
-$Id$
-
-This script uses master segment lists to determine a set of segment
-lists appropriate to running inspiral_hipe on time around a GRB. At
-present, the script only sets up directories and writes appropriate
-segment files to those directories.
-
-It uses the same configuration file as the inspiral_hipe script to
-determine various parameters and then set up analysis and injection
-runs.
-
+trigger_hipe.in - externally triggered hierarchical inspiral pipeline driver
+script
 """
 from __future__ import division
 
-__author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>, Nickolas Fotopoulos <foton@caltech.edu>, Ian Harry <ian.harry@astro.cf.ac.uk>'
 
 ##############################################################################
 import copy
@@ -62,36 +49,36 @@ def hash_n_bits(input_string, n_bits, hash_lib=sha):
   """
   Return the first n_bits (as an integer) of a hash on input_string.  Defaults
   to SHA-1.
-  
+
   n_bits=31 is useful for, say, random seeds that must fit into a LAL INT4.
   """
   # Some test examples:
   #
   # In [30]: hex(hash_n_bits("test", 28) << (32 - 28))
   # Out[30]: '0xa94a8fe0L'
-  # 
+  #
   # In [31]: hex(hash_n_bits("test", 29) << (32 - 29))
   # Out[31]: '0xa94a8fe0L'
-  # 
+  #
   # In [32]: hex(hash_n_bits("test", 30) << (32 - 30))
   # Out[32]: '0xa94a8fe4L'
-  # 
+  #
   # In [33]: hex(hash_n_bits("test", 31) << (32 - 31))
   # Out[33]: '0xa94a8fe4L'
-  # 
+  #
   # In [34]: hex(hash_n_bits("test", 32))
   # Out[34]: '0xa94a8fe5L'
-  
+
   hashed_string = hash_lib.new(input_string).digest()
   n_bytes = int(math.ceil(n_bits / 8))
-  
+
   def bytes2int(byte_string):
     result = 0
     for byte in byte_string:
       result <<= 8
       result += ord(byte)
     return result
-  
+
   return bytes2int(hashed_string[:n_bytes]) >> (8*n_bytes - n_bits)
 
 def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
@@ -108,7 +95,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
     cpinj.remove_option(injrun,opt)
     if 'start' in opt:
       injStart = value
-    else: 
+    else:
       injEnd = value
   seed = hash_n_bits(hipe_dir, 31)
   numberInjections = injEnd - injStart + 1  # e.g., 1 through 5000 inclusive
@@ -143,13 +130,13 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   arguments = " ".join(argument)
   inspiralutils.make_external_call(executable + " " + arguments,
     show_command=verbose)
-    
+
   # recreate the output filename
   injFile = "HL-INJECTIONS_" + str(seed)
   if usertag is not None:
     injFile += "_" + usertag
   injFile += "-%d-%d.xml" % (injection_segment[0], abs(injection_segment))
-  
+
   # move it into the GRB directory to avoid clutter
   new_injFile = hipe_dir + "/" + injFile
   os.rename(injFile, new_injFile)
@@ -172,7 +159,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   doc = utils.load_filename(new_injFile)
   sims = table.get_table(doc, lsctables.SimInspiralTable.tableName)
 
-  return sims, injInterval, numberInjections
+  return sims, injInterval, numberInjections, new_injFile
 
 def fix_numrel_columns(sims):
    """
@@ -194,7 +181,7 @@ class hipe_run(object):
   This class is intended to represent single run of lalapps_inspiral_hipe.
   """
   def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file,
-               dag_base_name, span, exttrig_analyze=None, exttrig_seg=None, 
+               dag_base_name, span,
                usertag=None, verbose=False, only_run=None, dont_run=None,
                do_coh_PTF=False):
     self._hipe_dir = hipe_dir
@@ -203,22 +190,22 @@ class hipe_run(object):
     self._ifos = ifos
     self._verbose = verbose
     self._span = span
-    
+
     self.dag_base_name = dag_base_name
     self.set_span(span)
-    
+
     # create directory here
     mkdir(self._hipe_dir, overwrite=True)
- 
+
     ## Determine arguments to inspiral_hipe
     self._hipe_args = ["--output-segs", "--log-path=%s" % log_path,
-      "--config-file=%s", "--write-script", "--noop-inspinj"]
+      "--config-file=%s", "--write-script"]
     if do_coh_PTF:
       self._hipe_args.append("--ringdown")
-    
+
     # decide what stages to run
     self.determine_stages(only_run, dont_run)
-    
+
     # determine how many ifos to analyze
     n = len(self._ifos)
     if n < 1 or n > 4:
@@ -226,8 +213,8 @@ class hipe_run(object):
     number_words = {1: "one", 2: "two", 3: "three", 4: "four"}
     for i in range(n):
       self._hipe_args.append("--%s-ifo" % number_words[i+1])
-    
-	    # set individual ifos to analyze
+
+    # set individual ifos to analyze
     for ifo in self._ifos:
       self._cp.set("input", "%s-segments" % ifo.lower(), "../offSourceSeg.txt")
       self._hipe_args.append("--%s-data" % ifo.lower())
@@ -236,26 +223,19 @@ class hipe_run(object):
     if not do_coh_PTF:
       self._cp.set('thinca','exttrig','../../'+source_file)
 
-    # set the on-source segment
-    if exttrig_analyze is not None:
-      self._cp.set('input','exttrig-segments', exttrig_seg)
-      self._cp.set('input','exttrig-analyze', exttrig_analyze)
-    else:
-      self._cp.set('input', 'exttrig-analyze', 'all')
-    
     # set the usertag
     self.set_usertag(usertag)
 
   def get_usertag(self):
     return self.usertag
-      
+
   def set_usertag(self, usertag):
     self.usertag = usertag
     if usertag is not None:
       self._cp.set("pipeline", "user-tag", usertag)
     else:
       self._cp.remove_option("pipeline", "user-tag")
-      
+
   def determine_stages(self, only_run=None, dont_run=None):
     """
     Determine what stages should inspiral_hipe should construct.  Store them
@@ -263,9 +243,9 @@ class hipe_run(object):
     dont_run is specified, the given stages will not be run.
     """
     allowed_stages = set(["datafind", "template-bank", "inspiral",
-      "coincidence", "trigbank", "inspiral-veto", "second-coinc", 
+      "coincidence", "trigbank", "inspiral-veto", "second-coinc",
       "sire-inspiral", "sire-inspiral-veto", "coire-coinc",
-      "coire-second-coinc", "coherent-bank", "coherent-inspiral", 
+      "coire-second-coinc", "coherent-bank", "coherent-inspiral",
       "cohire", "summary-coherent-inspiral-triggers" ])
 
     if only_run is not None:
@@ -298,6 +278,7 @@ class hipe_run(object):
     self._cp.set('pipeline', 'exttrig-inj-start', 1)
     self._cp.set('pipeline', 'exttrig-inj-stop', numberInjFiles)
     self._cp.set("condor", "inspinj", "/bin/true")
+    self._hipe_args.append("--noop-inspinj")
 
   def write_dag(self):
     """
@@ -314,46 +295,46 @@ class hipe_run(object):
 
     arguments = " ".join(self._hipe_args)
     arguments += " " + " ".join(["--" + stage for stage in self._stages])
-    
+
     # run inspiral_hipe
     inspiralutils.make_external_call(\
       " ".join((self._cp.get("condor", "inspiral_hipe"),
                arguments % ini_file_name)),
       show_stdout=False, show_command=self._verbose)
-    
+
     # create link to datafind directory's cache directory
     if self._stages != ["datafind"]:
       if os.path.isdir("cache") and not os.path.islink("cache"):
         os.rmdir("cache")
       if not os.path.exists("cache"):
         os.symlink("../datafind/cache", "cache")
-    
+
     # set inspinj jobs to run in the local universe
     inspinj_sub_files = glob.glob("*inspinj*.sub")
     for sub_file in inspinj_sub_files:
       contents = open(sub_file).read().replace("universe = standard", "universe = local")
       open(sub_file, "w").write(contents)
-    
+
     os.chdir("../../")
-  
+
   def get_cache_name(self):
     return self._hipe_dir + "/" + \
       inspiralutils.hipe_cache(self._ifos, self.usertag, self._span[0],
                                self._span[1])
-  
+
   def get_dag_name(self):
     dag_name = self.dag_base_name
     if self.usertag is not None:
       dag_name = dag_name + "." + self.usertag
     dag_name = dag_name + ".dag"
     return dag_name
-  
+
   def get_dag_path(self):
     """
     Determine the full path of the DAG
     """
     return self._hipe_dir + "/" + self.get_dag_name()
-  
+
   def create_dag_node(self):
     """
     Return a CondorDAGNode that represents this entire DAG.
@@ -362,7 +343,7 @@ class hipe_run(object):
     job = pipeline.CondorDAGManJob(fname, dir)
     node = pipeline.CondorDAGNode(job)
     return node
-  
+
   def finalize(self, uberdag=None, parent=None):
     """
     Write the DAG and its sub_file.  Add node to uberdag and add dependency
@@ -385,10 +366,10 @@ class ptf_run(hipe_run):
   This class is intended to represent a single run of lalapps_cohPTF_hipe
   """
   def __init__(self, hipe_dir, base_cp, ifos, log_path, source_file,
-               dag_base_name, span,usertag=None, verbose=False, 
+               dag_base_name, span,usertag=None, verbose=False,
                only_run=None, dont_run=None):
     hipe_run.__init__(self, hipe_dir, base_cp, ifos, log_path, source_file,
-               dag_base_name, span, exttrig_analyze=None, exttrig_seg=None,
+               dag_base_name, span,
                usertag=usertag, verbose=verbose, only_run=only_run,
                dont_run=dont_run,do_coh_PTF=True)
 
@@ -479,6 +460,7 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
 
   if ligolw_job is None:
     ligolw_job = pipeline.LigolwAddJob(logdir, cp)
+    ligolw_job.set_universe("local")
 
   node = pipeline.LigolwAddNode(ligolw_job)
   node.add_output_file(outfile)
@@ -495,52 +477,24 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
 # define usage and command line options and arguments - parse
 usage = """usage: %prog ...
 
-Lay down a directory hierarchy appropriate to analyzing the data
-around the time of GRB using the inspiral pipeline. It determines an
-appropriate amount of data on each side of the reported GRB trigger.
+Set up a some Condor DAGs to generate CBC candidates associated with an
+external trigger, plus the off-source and time-slide triggers required for
+background estimation and software injections for efficiency measurements.
 
-As of now, the code appears to do the right thing.  This code also
-uses the inspiral_hipe config file to determine information about
-segments and to ensure that appropriate overlaps, etc are being done.  
+Directory structure:
 
-
-DIRECTORY HIERARCHY:
-
-The directory hierarchy that a search would have then follows:
-
-searchdir
-  GRB<grb.number>
-    onsource
-    offsource
-    injectionNNN
-    injectionNNN
-    ....
-    injectionNNN
-  .
-  .
-  .
-
-METADATA FILES:
-
-The script currently writes ....
-
-
-RELATED TOOLS AND REQUIRED TOOLS:
-
-With a structure like this, a host of other tools can be developed to
-make the whole analysis engine work well. Here is a list of things
-that we need with a note about its current status:
-
-* inspiral_hipe:  exists and meta-stable
-* grb_hipe: exists, but developmental
-* grb_summary: exists, but developmental
-
+GRBXXXXXX/
+  datafind/
+  injectionXX/
+  injectionYY/
+  ...
+  onoff/
 """
 parser = optparse.OptionParser(usage, version="$Id$")
 
 parser.add_option("-v", "--verbose", action="store_true",default=False,\
   help="make things verbose" )
-  
+
 # what data?
 parser.add_option("-G","--g1-segments",action="store",type="string",\
   default=None, metavar=" G1_SEGMENTS", help="G1 input segment to read" )
@@ -585,8 +539,6 @@ parser.add_option("-s", "--symmetric", action="store_true", default=False,
 parser.add_option("-o", "--overwrite-dir", action="store_true",default=False,\
   help="overwrite contents in already existing directories" )
 
-
-
 # read in the config file
 parser.add_option("-f","--config-file",action="store",type="string",\
   default=None, metavar=" FILE", help="use configuration file FILE" )
@@ -601,10 +553,8 @@ parser.add_option("-u","--user-tag",action="store",type="string",\
 parser.add_option("", "--skip-datafind", action="store_false", default=True,
   dest="do_datafind", help="skip a query for data file locations (place "\
   "the file caches in ./GRBxxxxxx/datafind/cache).")
-parser.add_option("", "--skip-onsource", action="store_false", default=True,
-  dest="do_onsource", help="skip the onsource DAG")
-parser.add_option("", "--skip-offsource", action="store_false", default=True,
-  dest="do_offsource", help="skip the offsource DAG")
+parser.add_option("", "--skip-onoff", action="store_false", default=True,
+  dest="do_onoff", help="skip the onoff DAG")
 parser.add_option("", "--do-coh-PTF", action="store_true", default=False,
   dest="do_coh_PTF", help="Use this flag if doing a coh PTF analysis")
 
@@ -628,17 +578,17 @@ ext_trigs = grbsummary.load_external_triggers(opts.list)
 if ext_trigs is None:
   print >>sys.stderr, "No external triggers found.  Nothing to do."
   sys.exit()
-  
+
 if len(opts.grb) > 0:
   temp_list = filter(lambda row: row.event_number_grb in opts.grb, ext_trigs)
   ext_trigs = table.new_from_template(ext_trigs)
   ext_trigs.extend(temp_list)
-  
+
   if len(ext_trigs) != len(opts.grb):
     missing = set(opts.grb) - set([row.event_number_grb for row in ext_trigs])
     raise ValueError, "could not find the following requested GRBs: " \
       + "".join(missing)
-  
+
 if opts.verbose:
   print "Will construct workflows to analyze:", \
     ", ".join(["GRB" + trig.event_number_grb for trig in ext_trigs])
@@ -666,7 +616,7 @@ elif cp.has_option('data','block-duration'):
   overlap = int(cp.get('data','segment-duration'))/2
 else:
   raise NameError("Cannot find segment-length or block-duration in data section")
-  
+
 minsciseg = length + 2 * paddata
 
 trial_len = opts.onsource_left + opts.onsource_right
@@ -695,8 +645,6 @@ if opts.user_tag:
   tag += '_'+opts.user_tag
 uberdag = pipeline.CondorDAG("%s/%s_uberdag.log" % (opts.log_path, tag))
 uberdag.set_dag_file("%s_uberdag" % tag)
-ligolwdag = pipeline.CondorDAG("%s/%s_ligolwdag.log" % (opts.log_path, tag))
-ligolwdag.set_dag_file("%s_ligolwdag" % tag)
 
 ##############################################################################
 # loop over the GRBs and construct their required sub-DAGs
@@ -751,7 +699,7 @@ for grb in ext_trigs:
   buffer_segfile = idirectory + "/bufferSeg.txt"
   segmentsUtils.tosegwizard(file(buffer_segfile, "w"),
                             segments.segmentlist([bufferSegment]))
-  
+
   if opts.verbose:
     print "on-source segment: ", onSourceSegment
     print "off-source segment: ", offSourceSegment
@@ -759,25 +707,24 @@ for grb in ext_trigs:
   ############################################################################
   # set up the analysis dag for this interval
   #
-  # In doing this, we simply copy the configuration file into the
+  # In doing this, we simply drop the configuration file into the
   # sub-directory, modify as needed, and then run the appropriate DAG
   # generation script.  In slightly more detail, steps are:
   #
   # 1. datafind
-  # 2. off-source analysis
-  # 3. on-source analysis
-  # 4. injection runs
+  # 3. onoff-source analysis
+  # 3. injection runs
   #    a. generate injections
   #    b. split injections into files so they are safely separated
   #    c. generate DAG
-  
+
   hipe_caches = []
-  
+
   if opts.do_datafind:
     if opts.verbose: print "Creating datafind DAG"
     datafind_dag = hipe_run(idirectory + "/datafind", cp, grb_ifolist,
                             opts.log_path, source_file, "datafind",
-                            offSourceSegment, exttrig_seg = '../../'+onsource_segfile,
+                            offSourceSegment,
                             usertag=idirectory + "_DATAFIND",
                             verbose=opts.verbose, only_run=["datafind"],
                             do_coh_PTF=opts.do_coh_PTF)
@@ -785,71 +732,57 @@ for grb in ext_trigs:
   else:
     # the other nodes will try to use datafind_node as a parent; set to None.
     datafind_node = None
-  
-  if opts.do_offsource:
-    if opts.verbose: print "Creating DAG for offsource analysis"
+
+  if opts.do_onoff:
+    if opts.verbose: print "Creating DAG for onoff analysis"
     if opts.do_coh_PTF:
-      offsource_analysis = ptf_run(idirectory + "/offsource", cp, grb_ifolist,
+      onoff_analysis = ptf_run(idirectory + "/onoff", cp, grb_ifolist,
                         opts.log_path, source_file, "zero_lag",
-                        offSourceSegment, 
+                        offSourceSegment,
                         usertag=idirectory + "_ZERO_LAG_CATEGORY_1",
                         verbose=opts.verbose)
     else:
-      offsource_analysis = hipe_run(idirectory + "/offsource", cp, grb_ifolist,
-                        opts.log_path, source_file, "offsource",
-                        offSourceSegment, exttrig_seg = '../../'+buffer_segfile,
-                        usertag=idirectory + "_OFFSOURCE_CATEGORY_1",
-                        exttrig_analyze="off_source", verbose=opts.verbose,
+      onoff_analysis = hipe_run(idirectory + "/onoff", cp, grb_ifolist,
+                        opts.log_path, source_file, "onoff",
+                        offSourceSegment,
+                        usertag=idirectory + "_ONOFF_CATEGORY_1",
+                        verbose=opts.verbose,
                         dont_run=["datafind"])
 
-    offsource_node = offsource_analysis.finalize(uberdag=uberdag,
-                                                 parent=datafind_node)
-    hipe_caches.append(offsource_analysis.get_cache_name())
- 
-  if opts.do_onsource and (not opts.do_coh_PTF):
-    if opts.verbose: print "Creating DAG for onsource analysis"
-    onsource_analysis = hipe_run(idirectory + "/onsource", cp, grb_ifolist,
-                               opts.log_path, source_file, "onsource",
-                               onSourceSegment, exttrig_analyze="on_source",
-                               exttrig_seg = '../../'+onsource_segfile,
-                               usertag=idirectory + "_ONSOURCE_CATEGORY_1",
-                               verbose=opts.verbose, dont_run=["datafind"])
-    onsource_node = onsource_analysis.finalize(uberdag=uberdag,
-                                               parent=datafind_node)
-    onsource_analysis.set_numslides(0)
-    hipe_caches.append(onsource_analysis.get_cache_name())
+    onoff_node = onoff_analysis.finalize(uberdag=uberdag, parent=datafind_node)
+    hipe_caches.append(onoff_analysis.get_cache_name())
 
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
     cpinj = ConfigParser.ConfigParser()
     cpinj.read(opts.injection_config)
-  
+
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
       if opts.verbose: print "Creating DAG for", injrun
       hipe_dir = os.path.join(idirectory, injrun)
       usertag = idirectory + "_" + injrun
-      
+
       if opts.do_coh_PTF:
         injection_analysis = ptf_run(hipe_dir, cp, grb_ifolist,
-          opts.log_path, source_file, injrun, offSourceSegment, 
+          opts.log_path, source_file, injrun, offSourceSegment,
           usertag=usertag, verbose=opts.verbose)
       else:
         injection_analysis = hipe_run(hipe_dir, cp, grb_ifolist,
-          opts.log_path, source_file, injrun, offSourceSegment, 
-          exttrig_seg = '../../'+buffer_segfile,
-          usertag=usertag, verbose=opts.verbose, exttrig_analyze="off_source",
+          opts.log_path, source_file, injrun, offSourceSegment,
+          usertag=usertag, verbose=opts.verbose,
           dont_run=["datafind", "sire-inspiral", "sire-inspiral-veto",
                     "coire-coincidence"])
 
       # create the master injection file and gets its content
       if opts.verbose: print "  Creating injections..."
-      sims, injInterval, numberInjections = createInjectionFile(hipe_dir, cp,
+      sims, injInterval, numberInjections, injFile = createInjectionFile(hipe_dir, cp,
         cpinj, injrun, offSourceSegment.contract(opts.padding_time),
         source_file, usertag, opts.verbose)
-        
+      new_injfiles = [injFile]
+
       # XXX: hack since glue is having trouble with empty columns
       fix_numrel_columns(sims)
 
@@ -863,6 +796,7 @@ for grb in ext_trigs:
                abs(offSourceSegment))
           sims_chunk = sims[i:numberInjections:deltaIndex]
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
+          new_injfiles.append(inj_file_name)
 
       # set the needed parameters
       if opts.verbose: print "  Writing DAG..."
@@ -871,7 +805,7 @@ for grb in ext_trigs:
       injection_analysis.set_injections(injrun, deltaIndex)
       injection_node = injection_analysis.finalize(uberdag=uberdag,
                                                    parent=datafind_node)
-      
+
       if not opts.do_coh_PTF:
         # ligolw_add FOUND and MISSED files
         injection_cache_filename = injection_analysis.get_cache_name()
@@ -887,25 +821,26 @@ for grb in ext_trigs:
                                        "COIRE_*_FOUND_SECOND", found_filename,
                                        opts.log_path, cp)
         ligolw_add_1.add_parent(injection_node)
-        ligolwdag.add_node(ligolw_add_1)
- 
+        uberdag.add_node(ligolw_add_1)
+
         # add a ligolw_add command to concatenate all the missed injections
         missed_filename = found_filename.replace("FOUND", "MISSED")
         ligolw_add_2, new_cache = make_ligolw_add(new_cache,
                                   "COIRE_*_MISSED_SECOND", missed_filename,
                                   opts.log_path, cp)
         ligolw_add_2.add_parent(injection_node)
- 
+
         # Create a temporay cache-file containing two files (F/M)
         # which will be created by the ligolw_add step
+        new_cache.extend(lal.Cache.from_urls(new_injfiles, coltype=int))
         new_cache.tofile(open(ligolw_added_cache_filename, "w"))
-        ligolwdag.add_node(ligolw_add_2)
+        uberdag.add_node(ligolw_add_2)
 
-        # add these two files to the regular main cache 
+        # add these two files to the regular main cache
         hipe_caches.append(ligolw_added_cache_filename)
-  
+
   if opts.user_tag:
-    grb_cache_name = idirectory + "/" + idirectory +"_"+ opts.user_tag+".cache"	
+    grb_cache_name = idirectory + "/" + idirectory +"_"+ opts.user_tag+".cache"
   else:
     grb_cache_name = idirectory + "/" + idirectory + ".cache"
   concatenate_files(hipe_caches, grb_cache_name)
@@ -914,9 +849,6 @@ for grb in ext_trigs:
 if opts.verbose: print "Writing sub files and uber-DAG..."
 uberdag.write_sub_files()
 uberdag.write_dag()
-ligolwdag.write_sub_files()
-ligolwdag.write_dag()
-ligolwdag.write_script()
 
 concatenate_files(grb_caches, tag + ".cache")
 

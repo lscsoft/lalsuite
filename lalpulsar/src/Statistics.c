@@ -17,90 +17,26 @@
  *  MA  02111-1307  USA
  */
 
-/**
- *
- *  \file Statistics.c
- *  \author Krishnan, B
- *  \ingroup pulsarHough
- *  \brief Module for calculating statistics and histogram of a total Hough map.
- *
- *  $Id$
- *
- *  Bug in variance corrected -- Feb 01, 2004
- *  Generalized to handle REAL4 number counts -- Nov 01, 2005
-
-\heading{Description}
-
-The fuction LALHoughStatistics() calculates the maximum number count, minimum
-number count, average and standard deviation of a given total Hough map.
-The input HOUGHMapTotal *in is  a total Hough map and the output is a
-structure HoughStats *out.
-
-LALHoughHistogram@ produces a histogram of the number counts in a total Hough map.
-The input is of type HOUGHMapTotal *in and the output UINT4Vector *out.
-
-*/
-
-/************************************<lalVerbatim file="StatisticsCV">
-Authors: Krishnan, B., Sintes, A.M.
-$Id$
-*************************************</lalVerbatim> */
-
-/* <lalLaTeX>  **********************************************
-
-\subsection{Module \texttt{Statistics.c}}
-\label{ss:Statistics.c}
-Calculation of statistical quantities of the Hough map and a histogram of the
-number counts.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StatisticsD}
-\index{\verb&LALHoughStatistics()&}
-\index{\verb&LALHoughHistogram()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-The fuction \verb@LALHoughStatistics@ calculates the maximum number count, minimum
-   number count, average and standard deviation of a given total Hough map.
-The input \verb@HOUGHMapTotal *in@ is  a total Hough map
-and the output is a structure \verb@HoughStats *out@.
-
-The \verb@LALHoughHistogram@ produces a histogram of
-   the number counts in a total Hough map. The input is of type \verb@HOUGHMapTotal *in@
-and the output \verb@UINT4Vector *out@.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%\begin{verbatim}
-%LALZDestroyVector()
-%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%
-\vfill{\footnotesize\input{StatisticsCV}}
-********************************************** </lalLaTeX> */
-
-
 #include <lal/Statistics.h>
-/* #include "./Statistics.h" */
 
+/** \cond DONT_DOXYGEN */
 NRCSID (STATISTICSC, "$Id$");
+/** \endcond */
 
 /*
  * The functions that make up the guts of this module
  */
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** Given a total hough map, this calculates the maximum number count, minimum
-   number count, average and standard deviation */
-
-/* *******************************  <lalVerbatim file="StatisticsD"> */
+/** \ingroup Statistics_h
+ * This function calculates the maximum number count, minimum
+ * number count, average and standard deviation of a given total Hough map.
+ * The input HOUGHMapTotal *in is  a total Hough map and the output is a
+ * structure HoughStats *out.
+ */
 void LALHoughStatistics( LALStatus     *status,
 			 HoughStats    *out,
 		         HOUGHMapTotal *in)
-{ /*-------------------------------------------------</lalVerbatim> */
+{
 
   INT4   i,j, xSide, ySide;
   INT4   maxIndexX, maxIndexY, minIndexX, minIndexY;
@@ -194,7 +130,7 @@ void LALHoughmapMeanVariance( LALStatus     *status,
 			      REAL8         *mean,
 			      REAL8         *variance,
 			      HOUGHMapTotal *in)
-{ /*-------------------------------------------------</lalVerbatim> */
+{
 
   INT4   i,j, xSide, ySide, nPixel;
   REAL8  sum, tempVariance, tempMean, ep, temp;
@@ -241,16 +177,14 @@ void LALHoughmapMeanVariance( LALStatus     *status,
   RETURN (status);
 }
 
-
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/** given a total hough map, this function produces a histogram of
-   the number counts */
-/* *******************************  <lalVerbatim file="StatisticsD"> */
+/** \ingroup Statistics_h
+ * \brief Produces a histogram of the number counts in a total Hough map.
+ * The input is of type <tt>HOUGHMapTotal *in</tt> and the output <tt>UINT4Vector *out</tt>.
+ */
 void LALHoughHistogram(LALStatus      *status,
 		       UINT8Vector    *out,
 		       HOUGHMapTotal  *in)
-{ /* *********************************************  </lalVerbatim> */
+{
 
 
   INT4   i, j, length, xSide, ySide, temp;

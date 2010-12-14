@@ -59,7 +59,7 @@
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                     /* the number of binary parameter dimensions */
-#define WINGS_FACTOR 1.1              /* the safety factor in reading extra frequency from SFTs */
+#define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define PCU_AREA 0.13                 /* the collecting area of a single PCU in square metres */
 #define DEFAULT_SOURCE "SCOX1"        /* the default source name */
 #define AMPVECLENGTH 25               /* the fixed number of amplitude values to sample */

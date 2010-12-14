@@ -17,21 +17,22 @@
  *  MA  02111-1307  USA
  */
 
-/** \file  ConstructPLUT.c
- * \ingroup pulsarHough
- * \author Sintes, A and Krishnan, B
- * \brief Core routines for constructing the Hough Look-Up-Tables
- * \date $Date$
- * Revision: $Id$
+/*
  *
  * History:   Created by Sintes June 7, 2001
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
- *
+ */
+
+/** \file
+ * \ingroup LUT_h
+ * \author Sintes, A and Krishnan, B
+ * \brief Construction of the look up table for generating partial Hough maps assuming the
+ * use of the stereographic projection.
+
 \heading{Description}
 
-This module is the core of the Hough transform. The LAL function
-LALHOUGHConstructPLUT()
+This module is the core of the Hough transform. The LAL function LALHOUGHConstructPLUT()
 constructs the look up tables that will be used to build the so-called
 partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
 frequency range around a certain \a f0 value. The look up table contains
@@ -40,195 +41,13 @@ the projected' two dimensional sky-patch.
 
 The inputs are:  HOUGHPatchGrid   containing the grid patch
 information. This is independent of the sky location of the
-patch, And  HOUGHParamPLUT  with all the other parameters needed.
+patch, and HOUGHParamPLUT  with all the other parameters needed.
 
 The output is the look up table  HOUGHptfLUT
 
-
-\heading{Uses}
-\code
-PLUTInitialize(HOUGHptfLUT  *)
-FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *)
-CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                HOUGHPatchGrid *)
-CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                 HOUGHPatchGrid *)
-DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
-                HOUGHPatchGrid *)
-DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
-               HOUGHPatchGrid *)
-CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *)
-FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *)
-FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *)
-CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                      HOUGHPatchGrid *)
-DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *)
-Fill1Column(INT4, UINT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN4(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN5(INT4, INT4, INT4, HOUGHptfLUT *)
-FillCaseN6(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN7(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseN8(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *)
-FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *)
-FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialCircleCase(UINT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
-                  HOUGHptfLUT *, HOUGHPatchGrid *)
-SecondCircleCase(INT4, UINT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
-                 INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *)
-FollowCircleCase(INT4,UINT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
-                 INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *)
-InitialLineCase(UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
-                HOUGHPatchGrid *)
-SecondLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
-               HOUGHPatchGrid *)
-FollowLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
-                           HOUGHptfLUT *, HOUGHPatchGrid *)
-\endcode
-
-
-*/
-
-
-/*
- * 1.  An author and Id block
- */
-
-/************************************ <lalVerbatim file="ConstructPLUTCV">
-Author: Sintes, A. M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
-/*
- * 2. Commented block with the documetation of this module
- */
-
-
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{ConstructPLUT.c}}
-\label{ss:ConstructPLUT.c}
-Construction of the look up table for generating partial Hough maps assuming the
-use of the stereographic projection.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ConstructPLUTD}
-\index{\verb&LALHOUGHConstructPLUT()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Macros (used only internally)}
-
-\begin{verbatim}
-#define MAX(A, B)  (((A) < (B)) ? (B) : (A))
-#define MIN(A, B)  (((A) < (B)) ? (A) : (B))
-#define cot(A)  (1./tan(A))
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Static function declarations}
-\begin{verbatim}
-static void PLUTInitialize(HOUGHptfLUT  *);
-static void FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                            HOUGHPatchGrid *);
-static void CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                             HOUGHPatchGrid *);
-static void DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
-                            HOUGHPatchGrid *);
-static void DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *,
-                           HOUGHPatchGrid *);
-static void CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *);
-static void FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *);
-static void FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *);
-static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *,
-                                  HOUGHPatchGrid *);
-static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
-static void Fill1Column(INT4, UINT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN4(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN5(INT4, INT4, INT4, HOUGHptfLUT *);
-static void FillCaseN6(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN7(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseN8(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
-static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
-static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialCircleCase(UINT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *,
-                              HOUGHptfLUT *, HOUGHPatchGrid *);
-static void SecondCircleCase(INT4, UINT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
-                             INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void FollowCircleCase(INT4,UINT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
-                             INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
-static void InitialLineCase(UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
-                            HOUGHPatchGrid *);
-static void SecondLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *,
-                           HOUGHPatchGrid *);
-static void FollowLineCase(INT4, UINT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *,
-                           HOUGHptfLUT *, HOUGHPatchGrid *);
-\end{verbatim}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-This module is the core of the Hough transform. The LAL function \verb&LALHOUGHConstructPLUT()&
-constructs the look up tables that will be used to build the so-called
-partial-Hough maps. Each look up table is valid for a given sky-patch, time, and
-frequency range around a certain  \verb@f0@ value. The look up table contains
-all the necessary information regarding the borders of the annuli clipped on
-the \lq projected' two dimensional sky-patch.
-
-The inputs are:  \verb@HOUGHPatchGrid  *patch@ containing the grid patch
-information. This is independent of the sky location of the
-patch. And  \verb@HOUGHParamPLUT  *par@ with all the other parameters needed.
-
-The output is:  \verb@HOUGHptfLUT   *lut@. The fields are:
-
-\begin{description}
-\item[\texttt{lut-> timeIndex }]  Time index of the {\sc lut}.
-\item[\texttt{lut->f0Bin }]  Frequency bin for which it has been
-constructed.
-\item[\texttt{lut->deltaF }]  Frequency resolution: \texttt{df=1/TCOH}
-\item[\texttt{lut->nFreqValid }]  \verb@ = PIXERR * f0Bin * VEPI / VTOT@:
-Number of frequencies where the {\sc lut} is
-valid.
-\item[\texttt{lut->iniBin }]  First bin affecting the patch with respect to
-\verb@f0@.
-\item[\texttt{lut->nBin }]  Exact number of bins affecting the patch.
-\item[\texttt{lut->maxNBins }] Maximum number of bins affecting the patch (for
-memory allocation purposes), i.e. length of \texttt{lut->bin}.
-\item[\texttt{lut->maxNorders }] Maximum number of borders affecting the patch (for
-memory allocation purposes), i.e. length of \texttt{lut->border}.
-\item[\texttt{lut->border} ]  The annulus borders.
-\item[\texttt{lut->bin} ]  Bin to border correspondence.
-\end{description}
-
-
-
 More detailed documentation can be found in the source code itself.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%\begin{verbatim}
-%LALZDestroyVector()
-%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{ConstructPLUTCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
-
+*/
 
 /*
  * 3. Includes. These should appear in the following order:
@@ -245,8 +64,8 @@ More detailed documentation can be found in the source code itself.
  * 4. Assignment of Id string using NRCSID()
  */
 
+/** \cond DONT_DOXYGEN */
 NRCSID (CONSTRUCTPLUTC, "$Id$");
-
 
 
 /*
@@ -265,6 +84,7 @@ NRCSID (CONSTRUCTPLUTC, "$Id$");
 #define MIN(A, B)  (((A) < (B)) ? (A) : (B))
 #define cot(A)  (1./tan(A))
 
+/** \endcond */
 
 /*
  * 5.d) Extern global variable declarations (strongly discouraged)

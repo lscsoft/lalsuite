@@ -4,7 +4,6 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
 if LALSUPPORT
 check_PROGRAMS = \
 	BCVTemplates \
-	BCVTemplatesFlatMesh \
 	BasicInjectTest \
 	CoarseTest \
 	CoarseTest2 \
@@ -51,6 +50,9 @@ endif
 # requires lalstochastic
 # CoherentInspiralFilterTest
 # CoherentInspiralInputTest
+
+# requires lalpulsar
+# BCVTemplatesFlatMesh
 
 EXTRA_DIST = \
 	NRWaveIOTest.cfg \
