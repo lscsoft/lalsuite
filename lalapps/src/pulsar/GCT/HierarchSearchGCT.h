@@ -24,10 +24,6 @@
 #ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
 #define _HIERARCHSEARCHGCTH
 
-#if defined(__SSE2__) && defined(EAH_BOINC)
-#define GC_SSE2_OPT 1
-#endif
-
 /* standard includes */
 #include <unistd.h>
 #include <sys/types.h>
