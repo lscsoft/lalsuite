@@ -162,7 +162,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
 		if (MPIrank == 0) {
 			chainoutput[t] = fopen(outfileName[t],"w");
-			fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
+			fprintf(chainoutput[t], "  LALInference version:%8.2f\n\n",1.0);
 			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 			fprintf(chainoutput[t], "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
@@ -180,11 +180,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 			//fprintf(chainoutput[t], " %9i",185);
 			fprintf(chainoutput[t],"\n");
-			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
+			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","log_Prior");
 			fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","R.A.","dist","phi_orb","t_c","eta","Mc");
 			//fprintf(chainoutput[t], " %9s","x1");
 			fprintf(chainoutput[t],"\n");
-			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,runState->currentLikelihood - nullLikelihood,1.0);
+			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
 			fprintSampleNonFixed(chainoutput[t],runState->currentParams);
 			fprintf(chainoutput[t],"%f\t",tempLadder[t]);
 			fprintf(chainoutput[t],"%d\t",MPIrank);
@@ -593,7 +593,7 @@ top:
 			}
 		}
 	}
-	
+
 }
 
 

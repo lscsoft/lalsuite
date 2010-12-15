@@ -128,6 +128,10 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1,m2,eta=0.0;
+	char normName[VARNAME_MAX];
+	REAL8 norm=0.0;
+
+	
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
@@ -137,45 +141,140 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 		{
 			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
+			else
+			{
+				if(!strcmp(item->name, "chirpmass")){
+					if(checkVariable(priorParams,"chirpmass_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"chirpmass_norm");
+					}
+					else
+					{
+						norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+						addVariable(priorParams, "chirpmass_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
+					logPrior += -(5./6.)*logmc+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "logmc")){
+					if(checkVariable(priorParams,"logmc_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"logmc_norm");
+					}
+					else
+					{
+						norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+						addVariable(priorParams, "logmc_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logmc=(*(REAL8 *)getVariable(params,"logmc"));
+					logPrior += -(5./6.)*logmc+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}				
+				else if(!strcmp(item->name, "distance")){
+					if(checkVariable(priorParams,"distance_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"distance_norm");
+					}
+					else
+					{
+						norm = +1.09861228867-log(max*max*max-min*min*min);
+						addVariable(priorParams, "distance_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += 2.0*log(*(REAL8 *)getVariable(params,"distance"))+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "logdistance")){
+					if(checkVariable(priorParams,"logdistance_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"logdistance_norm");
+					}
+					else
+					{
+						norm = 1.38629436112-log(max*max*max*max-min*min*min*min);
+						addVariable(priorParams, "logdistance_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += 3.0* *(REAL8 *)getVariable(params,"logdistance")+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "inclination")){
+					if(checkVariable(priorParams,"inclination_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"inclination_norm");
+					}
+					else
+					{
+						REAL8 intpart_min=0.0;
+						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+						REAL8 intpart_max=0.0;
+						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
+						addVariable(priorParams, "inclination_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += log(fabs(sin(*(REAL8 *)getVariable(params,"inclination"))))+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "declination")){
+					if(checkVariable(priorParams,"declination_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"declination_norm");
+					}
+					else
+					{
+						REAL8 intpart_min=0.0;
+						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+						REAL8 intpart_max=0.0;
+						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+						norm = -sin(LAL_PI*fractpart_min)+sin(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
+						addVariable(priorParams, "declination_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += log(fabs(cos(*(REAL8 *)getVariable(params,"declination"))))+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "theta_spin1")){
+					if(checkVariable(priorParams,"theta_spin1_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"theta_spin1_norm");
+					}
+					else
+					{
+						REAL8 intpart_min=0.0;
+						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+						REAL8 intpart_max=0.0;
+						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
+						addVariable(priorParams, "theta_spin1_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin1"))))+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				else if(!strcmp(item->name, "theta_spin2")){
+					if(checkVariable(priorParams,"theta_spin2_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"theta_spin2_norm");
+					}
+					else
+					{
+						REAL8 intpart_min=0.0;
+						REAL8 fractpart_min = modf(min/LAL_PI , &intpart_min);
+						REAL8 intpart_max=0.0;
+						REAL8 fractpart_max = modf(max/LAL_PI , &intpart_max);
+						norm = cos(LAL_PI*fractpart_min)-cos(LAL_PI*fractpart_max)+2.0*(intpart_max-intpart_min);
+						addVariable(priorParams, "theta_spin2_norm", &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin2"))))+norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}
+				
+				else{
+					sprintf(normName,"%s_norm",item->name);
+					if(checkVariable(priorParams,normName)) {
+						norm = *(REAL8 *)getVariable(priorParams,normName);
+					}
+					else
+					{
+						norm = -log(max-min);
+						addVariable(priorParams, normName, &norm, REAL8_t, PARAM_FIXED);
+					}
+					logPrior += norm;
+					//printf("logPrior@%s=%f\n",item->name,logPrior);
+				}						
+										
+			}
+			
 		}
-		
-
-		if ( strstr(item->name, "logdistance") )
-		{
-			logPrior+=3.0* *(REAL8 *)getVariable(params,"logdistance")+1.38629436112-log(max*max*max*max-min*min*min*min);
-		}
-		else if ( strstr(item->name, "distance") )
-		{
-			logPrior+=2.0*log(*(REAL8 *)getVariable(params,"distance"))+1.09861228867-log(max*max*max-min*min*min);
-		}
-		else if ( strstr(item->name, "inclination") )
-		{
-			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"inclination"))));//-log(cos(min)-cos(max));
-		}
-		else if ( strstr(item->name, "declination") )
-		{
-			logPrior+=log(fabs(cos(*(REAL8 *)getVariable(params,"declination"))));//-log(sin(min)-sin(max));
-		}
-		else if ( strstr(item->name, "theta_spin1") )
-		{
-			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin1"))));//-log(cos(min)-cos(max));
-		}
-		else if ( strstr(item->name, "theta_spin2") )
-		{
-			logPrior+=log(fabs(sin(*(REAL8 *)getVariable(params,"theta_spin2"))));//-log(cos(min)-cos(max));
-		}
-		else if (strstr(item->name, "logmc") )
-		{
-			logmc=*(REAL8 *)getVariable(params,"logmc");
-			logPrior+=-(5./6.)*logmc-1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
-		}
-		else if ( strstr(item->name, 	"chirpmass") )
-		{
-			logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
-			logPrior+=-(5./6.)*logmc-1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
-		}
-	
-		//printf("logPrior=%f\n",logPrior);
 	}
 	
 	if(checkVariable(params,"massratio"))
@@ -194,7 +293,9 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 		if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
 		   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
 			return -DBL_MAX;
-
+	
+	
 	return(logPrior);
 }
+
 
