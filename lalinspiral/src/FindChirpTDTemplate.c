@@ -411,14 +411,6 @@ LALFindChirpTDTemplate (
     memset( xfac, 0, ( numPoints - j ) * sizeof( *xfac ) );
   }
 
-  // THIS IS A HACK!! Currently IMRPhenomB generates waveforms prepadded by 0s
-  // This causes inspiral to think the template is too long and crash.
-  // This line avoids this crash and causes nothing else to break, except
-  // template length will not be recorded correctly. This should be fixed!
-  if ( params->approximant == IMRPhenomB )
-  {
-    tmplt->tC = 4.;
-  }
   /*
    *
    * create the frequency domain findchirp template

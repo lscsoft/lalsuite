@@ -317,6 +317,7 @@ static void XLALComputePhenomParams2( BBHPhenomParams  *phenParams,
             phenParams->psi5    = 0.;
     }
 
+
     return;
 
 }
@@ -589,11 +590,10 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
 
   REAL8 fLower;
   REAL8 fCut, fRes, f, totalMass, softWin;
-  REAL8 fLowerOrig, eta, tau0,peakAmp;
+  REAL8 fLowerOrig, eta, tau0;
   REAL8 winFLo, sigLo, sigHi;
-  REAL8 dt = 1./insp_template->tSampling;
   REAL4 windowLength;
-  INT4 i, k, n,peakAmpIdx;
+  INT4 i, k, n;
   /* INT4 kMin, kMax; */
   /* REAL8 dfM;*/
   REAL4Vector *signalFD1 = NULL;
@@ -723,19 +723,6 @@ void LALBBHPhenWaveTimeDom ( LALStatus        *status,
    for (i=0; i< windowLength; i++){
         signalvec->data[i] *= i/windowLength;
    }
-
-   peakAmp = 0.;
-   peakAmpIdx = 0;
-
-   /* find the peak amplitude of the waveform and store tC*/
-   for (i=0; i<n; i++){
-     /* find the peak amplitude*/
-     if (sqrt(pow(signalvec->data[i],2)) > peakAmp) {
-       peakAmp = signalvec->data[i];
-       peakAmpIdx = i;
-     }
-   }
-   insp_template->tC = peakAmpIdx*dt;
 
    /* reassign the original value of fLower */
    insp_template->fLower = fLowerOrig;
