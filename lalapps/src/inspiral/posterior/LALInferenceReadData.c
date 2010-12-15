@@ -187,7 +187,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	}
 	
 	
-	/* Trigger time = 2 seconds before end of segment (was 1 seconds, but Common Inputs for The Events are -6 +2*/
+	/* Trigger time = 2 seconds before end of segment (was 1 second, but Common Inputs for The Events are -6 +2*/
 	memcpy(&segStart,&GPStrig,sizeof(LIGOTimeGPS));
 	XLALGPSAdd(&segStart,-SegmentLength+2);
 	
