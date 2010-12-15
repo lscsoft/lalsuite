@@ -246,14 +246,14 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			/* Read the data segment */
 			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
 
-                        FILE *out;
-                        char fileName[256];
-                        snprintf(fileName, 256, "readTimeData-%d.dat", i);
-                        out = fopen(fileName, "w");
-                        for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
-                          fprintf(out, "%g %g\n", j*IFOdata[i].timeData->deltaT, IFOdata[i].timeData->data->data[j]);
-                        }
-                        fclose(out);
+                        /* FILE *out; */
+                        /* char fileName[256]; */
+                        /* snprintf(fileName, 256, "readTimeData-%d.dat", i); */
+                        /* out = fopen(fileName, "w"); */
+                        /* for (j = 0; j < IFOdata[i].timeData->data->length; j++) { */
+                        /*   fprintf(out, "%g %g\n", j*IFOdata[i].timeData->deltaT, IFOdata[i].timeData->data->data[j]); */
+                        /* } */
+                        /* fclose(out); */
                         
 			if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s at %i\n",IFOnames[i],segStart.gpsSeconds); exit(1);}
 			XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 

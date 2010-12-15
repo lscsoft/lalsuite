@@ -46,19 +46,18 @@ int main() {
     REAL8 t = i*dT;
     const REAL8 sigAmp = 0.0;
 
-    A->data->data[i] = sigAmp*t*cos(2.0*M_PI*(Af0 + Afdot0*t)*t); /* Uncomment for signal instead of noise. */
+    A->data->data[i] = sigAmp*t*cos(2.0*M_PI*(Af0 + Afdot0*t)*t);
   }
 
   PSD->data->data[0] = 1.0;
   for (i = 1; i < NPSD; i++) {
     REAL8 f = i*dF;
 
-    PSD->data->data[i] = fabs(1.0/f);
-
+    PSD->data->data[i] = fabs(1.0/f) + 100000.0*exp(-(f-20.0)*(f-20.0)/(2.0*0.1)); /* Generally 1/f, but *big* spike at f = 20. */
 
     /* Make some noise. */
-    noiseF->data->data[i].re = PSD->data->data[i]*XLALNormalDeviate(params);
-    noiseF->data->data[i].im = PSD->data->data[i]*XLALNormalDeviate(params);
+    noiseF->data->data[i].re = 0.5*sqrt(PSD->data->data[i]/dF)*XLALNormalDeviate(params);
+    noiseF->data->data[i].im = 0.5*sqrt(PSD->data->data[i]/dF)*XLALNormalDeviate(params);
   }
 
   XLALREAL8FreqTimeFFT(noiseT, noiseF, rev);
