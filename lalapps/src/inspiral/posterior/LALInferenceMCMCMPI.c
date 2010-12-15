@@ -495,7 +495,7 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_FIXED);
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
-	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
+	tmpMin=endtime-dt; tmpMax=endtime+dt;
 	endtime=endtime+gsl_ran_gaussian(GSLrandom,0.01);
     addVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
