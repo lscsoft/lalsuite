@@ -395,7 +395,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-4) {
+   if (prob<=2.0e-4) {
       estimatedTheProb = 1;
       
       //INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0, errcode4 = 0, errcode5 = 0;
@@ -403,11 +403,11 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       INT4 errcode1 = 0, errcode2 = 0;
       REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
       
-      REAL8 dR = 0.975;
+      REAL8 dR = 0.99;
       
       c1 = dR*vars.c;
       vars.c = c1;
-      while ( (tempprob=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1)) <= 1.0e-4 ) {
+      while ( (tempprob=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1)) <= 2.0e-4 ) {
          c1 *= dR;
          vars.c = c1;
       }
@@ -416,7 +416,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       c2 = dR*c1;
       vars.c = c2;
       REAL8 deltac = c1 - c2;
-      while ( ((tempprob2=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2))-tempprob) <= 2.5e-4 ) {
+      while ( ((tempprob2=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2))-tempprob) < 5.0e-4 ) {
          c2 -= deltac;
          vars.c = c2;
       }
