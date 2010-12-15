@@ -1460,55 +1460,57 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
   REAL8 logL = 0.0;
   LALIFOData *ifoPtr = data;
   UINT4 ifoIndex = 0;
-  UINT4 i;
-  char fileName[256];
-  FILE *out;
+  /* UINT4 i; */
+  /* char fileName[256]; */
+  /* FILE *out; */
   
   while (ifoPtr != NULL) {
     REAL8 oneLogL = -timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData);
     logL += oneLogL;
   
-    snprintf(fileName, 256, "TDW-%d.dat", ifoIndex);
-    out = fopen(fileName, "w");
-    for (i = 0; i < ifoPtr->timeDomainNoiseWeights->data->length; i++) {
-      fprintf(out, "%g %g\n", i*ifoPtr->timeDomainNoiseWeights->deltaT, ifoPtr->timeDomainNoiseWeights->data->data[i]);
-    }
-    fclose(out);
+    /* snprintf(fileName, 256, "TDW-%d.dat", ifoIndex); */
+    /* out = fopen(fileName, "w"); */
+    /* for (i = 0; i < ifoPtr->timeDomainNoiseWeights->data->length; i++) { */
+    /*   fprintf(out, "%g %g\n", i*ifoPtr->timeDomainNoiseWeights->deltaT, ifoPtr->timeDomainNoiseWeights->data->data[i]); */
+    /* } */
+    /* fclose(out); */
 
-    snprintf(fileName, 256, "timeData-%d.dat", ifoIndex);
-    out = fopen(fileName, "w");
-    for (i = 0; i < ifoPtr->timeData->data->length; i++) {
-      fprintf(out, "%g %g\n", i*ifoPtr->timeData->deltaT, ifoPtr->timeData->data->data[i]);
-    }
-    fclose(out);
+    /* snprintf(fileName, 256, "timeData-%d.dat", ifoIndex); */
+    /* out = fopen(fileName, "w"); */
+    /* for (i = 0; i < ifoPtr->timeData->data->length; i++) { */
+    /*   fprintf(out, "%g %g\n", i*ifoPtr->timeData->deltaT, ifoPtr->timeData->data->data[i]); */
+    /* } */
+    /* fclose(out); */
 
-    snprintf(fileName, 256, "freqData-%d.dat", ifoIndex);
-    out = fopen(fileName, "w");
-    for (i = 0; i < ifoPtr->freqData->data->length; i++) {
-      fprintf(out, "%g %g %g\n", i*ifoPtr->freqData->deltaF, ifoPtr->freqData->data->data[i].re,
-              ifoPtr->freqData->data->data[i].im);
-    }
-    fclose(out);
+    /* snprintf(fileName, 256, "freqData-%d.dat", ifoIndex); */
+    /* out = fopen(fileName, "w"); */
+    /* for (i = 0; i < ifoPtr->freqData->data->length; i++) { */
+    /*   fprintf(out, "%g %g %g\n", i*ifoPtr->freqData->deltaF, ifoPtr->freqData->data->data[i].re, */
+    /*           ifoPtr->freqData->data->data[i].im); */
+    /* } */
+    /* fclose(out); */
 
     REAL8TimeSeries *invFreqData = 
       XLALCreateREAL8TimeSeries("inv Freq data", &(ifoPtr->freqData->epoch), 
                                 0.0, ifoPtr->timeData->deltaT, &lalDimensionlessUnit,
                                 ifoPtr->timeData->data->length);
     XLALREAL8FreqTimeFFT(invFreqData, ifoPtr->freqData, ifoPtr->freqToTimeFFTPlan);
-    snprintf(fileName, 256, "invFreqData-%d.dat", ifoIndex);
-    out = fopen(fileName, "w");
-    for (i = 0; i < invFreqData->data->length; i++) {
-      fprintf(out, "%g %g\n", i*invFreqData->deltaT, invFreqData->data->data[i]);
-    }
-    fclose(out);
+
+    /* snprintf(fileName, 256, "invFreqData-%d.dat", ifoIndex); */
+    /* out = fopen(fileName, "w"); */
+    /* for (i = 0; i < invFreqData->data->length; i++) { */
+    /*   fprintf(out, "%g %g\n", i*invFreqData->deltaT, invFreqData->data->data[i]); */
+    /* } */
+    /* fclose(out); */
+
     XLALDestroyREAL8TimeSeries(invFreqData);
 
-    snprintf(fileName, 256, "PSD-%d.dat", ifoIndex);
-    out = fopen(fileName, "w");
-    for (i = 0; i < ifoPtr->oneSidedNoisePowerSpectrum->data->length; i++) {
-      fprintf(out, "%g %g\n", i*ifoPtr->oneSidedNoisePowerSpectrum->deltaF, ifoPtr->oneSidedNoisePowerSpectrum->data->data[i]);
-    }
-    fclose(out);
+    /* snprintf(fileName, 256, "PSD-%d.dat", ifoIndex); */
+    /* out = fopen(fileName, "w"); */
+    /* for (i = 0; i < ifoPtr->oneSidedNoisePowerSpectrum->data->length; i++) { */
+    /*   fprintf(out, "%g %g\n", i*ifoPtr->oneSidedNoisePowerSpectrum->deltaF, ifoPtr->oneSidedNoisePowerSpectrum->data->data[i]); */
+    /* } */
+    /* fclose(out); */
 
     ifoPtr = ifoPtr->next;
     ifoIndex++;
