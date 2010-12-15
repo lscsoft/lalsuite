@@ -186,7 +186,7 @@ void initializeNS(LALInferenceRunState *runState)
 	/* This is the LAL template generator for inspiral signals */
 	runState->template=&templateLAL;
 	runState->likelihood=&FreqDomainLogLikelihood;
-	runState->prior = &LALInferenceInspiralPriorNonSpinning;
+	runState->prior = &LALInferenceInspiralPrior;
 	
 	ppt=getProcParamVal(commandLine,"--verbose");
 	if(ppt) {

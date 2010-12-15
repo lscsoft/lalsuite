@@ -36,7 +36,7 @@
 #include "LALInferenceMCMCMPISampler.h"
 #include "LALInferencePrior.h"
 
-
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 
 RCSID("$Id$");
@@ -118,7 +118,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 //	}
 	
 	
-	if (nChain==1) tempLadder[0]=1.0;
+	if (nChain==1){ 
+		tempLadder[0]=1.0;
+		tempMax=1.0;
+	}
 	else {
 		tempDelta = log(tempMax)/(REAL8)(nChain-1);
 		for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
@@ -149,7 +152,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
-	
+	runState->currentPrior = runState->prior(runState, runState->currentParams);
 	
 	
 	FILE **chainoutput = (FILE**)calloc(nChain,sizeof(FILE*));
@@ -157,34 +160,39 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	char **outfileName = (char**)calloc(nChain,sizeof(char*));
 	
+	//"waveform" and "pnorder" are ints to label the template used. Just to comform to SPINspiral output format. Should be temporary, and replaced by the command line used.
+	
+	int waveform= *(INT4 *)getVariable(runState->currentParams,"LAL_APPROXIMANT");
+	int pnorder = *(INT4 *)getVariable(runState->currentParams,"LAL_PNORDER");
+	
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
 		sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
 		if (MPIrank == 0) {
 			chainoutput[t] = fopen(outfileName[t],"w");
-			fprintf(chainoutput[t], "  SPINspiral version:%8.2f\n\n",1.0);
+			fprintf(chainoutput[t], "  LALInference version:%s,%s,%s,%s,%s\n\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
 			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 			fprintf(chainoutput[t], "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-					Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,tempLadder[t],50.0,4,2.0,nPar);
+					Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,tempLadder[t],0.0,waveform,(double)pnorder,nPar);
 			fprintf(chainoutput[t], "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
 					"Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
 			ifodata1=runState->data;
 			while(ifodata1){
 				fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
-							ifodata1->detector->frDetector.name,0.0,ifodata1->fLow,ifodata1->fHigh,6.00,1.00,
-							864162757.00000,8.00,1024,9152,4577);
+							ifodata1->detector->frDetector.name,0.0,ifodata1->fLow,ifodata1->fHigh,atof(getProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
+							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(getProcParamVal(runState->commandLine,"--seglen")->value),atoi(getProcParamVal(runState->commandLine,"--srate")->value),(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value),(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value));
 				ifodata1=ifodata1->next;
 			}
 			fprintf(chainoutput[t], "\n\n%31s","");
 			fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 			//fprintf(chainoutput[t], " %9i",185);
 			fprintf(chainoutput[t],"\n");
-			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","Prior");
+			fprintf(chainoutput[t], "%8s %12s %9s","Cycle","log_Post.","log_Prior");
 			fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","R.A.","dist","phi_orb","t_c","eta","Mc");
 			//fprintf(chainoutput[t], " %9s","x1");
 			fprintf(chainoutput[t],"\n");
-			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,runState->currentLikelihood - nullLikelihood,1.0);
+			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
 			fprintSampleNonFixed(chainoutput[t],runState->currentParams);
 			fprintf(chainoutput[t],"%f\t",tempLadder[t]);
 			fprintf(chainoutput[t],"%d\t",MPIrank);
@@ -250,7 +258,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		if ((i % Nskip) == 0){
 			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 			//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-			fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,runState->currentLikelihood - nullLikelihood,1.0);
+			fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
 			/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
 			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
 			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
@@ -593,7 +601,7 @@ top:
 			}
 		}
 	}
-	
+
 }
 
 

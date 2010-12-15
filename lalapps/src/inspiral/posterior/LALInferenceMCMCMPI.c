@@ -213,7 +213,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 	//runState->likelihood=&UnityLikelihood;
 	//runState->likelihood=GaussianLikelihood;
 	//runState->prior=&PTUniformLALPrior;
-	runState->prior=&LALInferenceInspiralPriorNonSpinning;
+	//runState->prior=&LALInferenceInspiralPrior;
+	runState->prior=&LALInferenceInspiralPriorNormalised;
 	//runState->prior=PTUniformGaussianPrior;
 
 	
@@ -234,7 +235,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 		//fprintf(stderr,"Error, must specify iteration number\n");
 		//MPI_Finalize();
 		//exit(1);
-		tmpi=2000000;
+		tmpi=20000000;
 	}
 	addVariable(runState->algorithmParams,"Niter",&tmpi, INT4_t,PARAM_FIXED);
 	
@@ -331,7 +332,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 start_phase		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
 	REAL8 start_dist		=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
 	REAL8 start_ra			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
-	REAL8 start_dec			=-LAL_PI/2.0+gsl_rng_uniform(GSLrandom)*(LAL_PI/2.0-(-LAL_PI/2.0));
+	REAL8 start_dec			=-LAL_PI/2.0+gsl_rng_uniform(GSLrandom)*(LAL_PI_2-(-LAL_PI_2));
 	REAL8 start_psi			=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
 	REAL8 start_iota		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
 	REAL8 start_a_spin1		=0.0+gsl_rng_uniform(GSLrandom)*(1.0-0.0);
@@ -486,7 +487,7 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
 	//logmcMin=log(mcMin); logmcMax=log(mcMax);
 	//addMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		REAL8_t);
-	
+
 	//tmpVal=0.244;
 	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
@@ -494,7 +495,7 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_FIXED);
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
-	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
+	tmpMin=endtime-dt; tmpMax=endtime+dt;
 	endtime=endtime+gsl_ran_gaussian(GSLrandom,0.01);
     addVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
@@ -514,6 +515,7 @@ void initVariables(LALInferenceRunState *state)
 	addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_LINEAR);
 	//addVariable(currentParams,"distance", &tmpVal, REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   REAL8_t);
+
 	
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	//tmpVal=4.5500;//1.0;
