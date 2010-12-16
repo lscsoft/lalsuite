@@ -96,6 +96,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	ProcessParamsTable *procparam=NULL;
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
+        const REAL8 defaultFLow = 40.0;
+        const REAL8 defaultFHigh = SampleRate/2.0;
 	int nSegs=0;
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
@@ -150,7 +152,11 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	
-	for(i=0;i<Nifo;i++) {IFOdata[i].fLow=fLows?atof(fLows[i]):40.0; IFOdata[i].fHigh=fHighs?atof(fHighs[i]):SampleRate/2.0;}
+	for(i=0;i<Nifo;i++) {
+          IFOdata[i].fLow=fLows?atof(fLows[i]):defaultFLow; 
+          IFOdata[i].fHigh=fHighs?atof(fHighs[i]):defaultFHigh;
+        }
+
 	/* Only allocate this array if there weren't channels read in from the command line */
 	if(!Nchannel) channels=calloc(Nifo,sizeof(char *));
 	for(i=0;i<Nifo;i++) {
@@ -278,7 +284,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                                                                1.0/SampleRate,
                                                                &lalDimensionlessUnit,
                                                                seglen);
-                PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan);
+                PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
+                         IFOdata[i].fLow, IFOdata[i].fHigh);
 	}
 	
 

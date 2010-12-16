@@ -25,7 +25,7 @@ int main() {
     PSD->data->data[i] = 2.0/(i*PSDDF); /* Flat two-sided PSD between -100 and 100 would be 1.0 */
   }
 
-  PSDToTDW(TDW, PSD, plan);
+  PSDToTDW(TDW, PSD, plan, 0.0, 1.0/0.0);
 
   for (i = 0; i < TDW->data->length; i++) {
     double t = XLALGPSGetREAL8(&TDW->epoch) + i*TDW->deltaT;

@@ -1527,7 +1527,8 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
    s(tau) == \int_{-infty}^\infty df \frac{\exp(2 \pi i f tau)}{S(f)}
 
 */
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan) {
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
+              const REAL8 fMin, const REAL8 fMax) {
   COMPLEX16FrequencySeries *CPSD = NULL;
   UINT4 i;
   UINT4 PSDLength = TDW->data->length/2 + 1;
@@ -1542,8 +1543,15 @@ void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8
     XLALCreateCOMPLEX16FrequencySeries(PSD->name, &(PSD->epoch), PSD->f0, PSD->deltaF, &(PSD->sampleUnits), PSD->data->length);
 
   for (i = 0; i < PSD->data->length; i++) {
-    CPSD->data->data[i].re = 1.0 / (2.0*PSD->data->data[i]);
-    CPSD->data->data[i].im = 0.0;
+    REAL8 f = PSD->f0 + i*PSD->deltaF;
+
+    if (fMin <= f && f <= fMax) {
+      CPSD->data->data[i].re = 1.0 / (2.0*PSD->data->data[i]);
+      CPSD->data->data[i].im = 0.0;
+    } else {
+      CPSD->data->data[i].re = 0.0;
+      CPSD->data->data[i].im = 0.0;
+    }
   }
 
   XLALREAL8FreqTimeFFT(TDW, CPSD, plan);

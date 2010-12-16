@@ -53,7 +53,7 @@ int main() {
   for (i = 1; i < NPSD; i++) {
     REAL8 f = i*dF;
 
-    PSD->data->data[i] = fabs(1.0/f) + 100000.0*exp(-(f-20.0)*(f-20.0)/(2.0*0.1)); /* Generally 1/f, but *big* spike at f = 20. */
+    PSD->data->data[i] = fabs(1.0/f); /* Generally 1/f, but *big* spike at f = 20. */
 
     /* Make some noise. */
     noiseF->data->data[i].re = 0.5*sqrt(PSD->data->data[i]/dF)*XLALNormalDeviate(params);
@@ -66,7 +66,7 @@ int main() {
     A->data->data[i] += noiseT->data->data[i];
   }
 
-  PSDToTDW(TDW, PSD, rev);
+  PSDToTDW(TDW, PSD, rev, 0.0, 1.0/0.0);
 
   XLALREAL8TimeFreqFFT(Af, A, fwd);
 

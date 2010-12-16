@@ -284,7 +284,8 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 void mc2masses(double mc, double eta, double *m1, double *m2);
 
 /* Time-Domain Likelihood Utility Functions. */
-void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan);
+void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
+              const REAL8 fMin, const REAL8 fMax);
 UINT4 nextPowerOfTwo(const UINT4 n);
 void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
 void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
