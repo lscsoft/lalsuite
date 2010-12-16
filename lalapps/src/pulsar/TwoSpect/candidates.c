@@ -303,7 +303,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                      fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
-                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
+                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
                   if (xlalErrno!=0) {
                      fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);

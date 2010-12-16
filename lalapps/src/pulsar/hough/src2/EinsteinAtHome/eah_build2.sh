@@ -170,6 +170,8 @@ BUILD="$EAH/build$acc"
 INSTALL="$EAH/install$acc"
 
 if [ ."$build_win32" = ."true" ] ; then
+    BUILD="${BUILD}_win32"
+    INSTALL="${INSTALL}_win32"
     export CC=i586-mingw32msvc-gcc
     export CXX=i586-mingw32msvc-g++
     export AR=i586-mingw32msvc-ar

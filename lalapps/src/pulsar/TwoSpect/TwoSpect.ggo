@@ -26,5 +26,6 @@ option "templateLength" - "Maximum number of pixels to use in the template" int 
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off
+option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
