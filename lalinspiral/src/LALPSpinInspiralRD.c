@@ -888,18 +888,31 @@ void LALPSpinInspiralRDEngine (
   INT4 rett=0;
 
   const double omM0   =  0.0595;
-  const double omMz1p2= -5.07e-3;
+  /*const double omMz1p2= -5.07e-3;
   const double omM12  = -3.63e-4;
   const double omMsq  =  5.56e-3;
   const double omMz12 = -3.36e-3;
-  const double omMzsq = -8.94e-3;
+  const double omMzsq = -8.94e-3;*/
+
+  const double omMz1p2 = -5.02e-3;
+  const double omM12   = -4.29e-4;
+  const double omMsq   =  5.78e-3;
+  const double omMz12  =  2.66e-3;
+  const double omMzsq  = -9.27e-3;
 
   const double frac0   =  0.57;
-  const double frac1p2 =  1.36e-2;
+  /*const double frac1p2 =  1.36e-2;
   const double frac12  =  2.26e-3;
   const double fracsq  = -9.90e-3;
   const double fracz12 = -1.18e-2;
-  const double fraczsq = -2.45e-2;
+  const double fraczsq = -2.45e-2;*/
+
+  const double frac1p2 = 1.42e-2;
+  const double frac12  = -3.71e-3;
+  const double fracsq  = -1.201e-2;
+  const double fracz12 = -2.447e-2;
+  const double fraczsq = -1.930e-2;
+
 
   INITSTATUS(status, "LALPSpinInspiralRDEngine", LALPSPININSPIRALRDENGINEC);
   ATTATCHSTATUSPTR(status);
@@ -1483,11 +1496,11 @@ void LALPSpinInspiralRDEngine (
 
     alpha = atan2(LNhy,LNhx);
     
-    S1dotL=S1x*LNhx+S1y*LNhy+S1z*LNhz;
-    S2dotL=S2x*LNhx+S2y*LNhy+S2z*LNhz;
-    S1dotS1=S1x*S1x+S1y*S1y+S1z*S1z;
-    S2dotS2=S2x*S2x+S2y*S2y+S2z*S2z;
-    S1dotS2=S1x*S2x+S1y*S2y+S1z*S2z;
+    S1dotL=(S1x*LNhx+S1y*LNhy+S1z*LNhz)*params->totalMass*params->totalMass/params->mass1/params->mass1;
+    S2dotL=(S2x*LNhx+S2y*LNhy+S2z*LNhz)*params->totalMass*params->totalMass/params->mass2/params->mass2;
+    S1dotS1=(S1x*S1x+S1y*S1y+S1z*S1z)*params->totalMass*params->totalMass*params->totalMass*params->totalMass/params->mass1/params->mass1/params->mass1/params->mass1;
+    S2dotS2=(S2x*S2x+S2y*S2y+S2z*S2z)*params->totalMass*params->totalMass*params->totalMass*params->totalMass/params->mass2/params->mass2/params->mass2/params->mass2;
+    S1dotS2=(S1x*S2x+S1y*S2y+S1z*S2z)*params->totalMass*params->totalMass*params->totalMass*params->totalMass/params->mass1/params->mass1/params->mass2/params->mass2;
 
     LALPSpinInspiralRDderivatives(&values,&dvalues,(void*)mparams);
 
@@ -1619,6 +1632,7 @@ void LALPSpinInspiralRDEngine (
     rett=1;
   }
 
+
   //  printf("t fine insiral %8.3f\n",t);
 
   t0=t-dt;
@@ -1680,6 +1694,8 @@ void LALPSpinInspiralRDEngine (
   omegaRD=modefreqs->data[0].re * unitHz / LAL_PI /2.;
 
   fracRD = frac0 + frac1p2*(S1dotL+S2dotL) + frac12*(S1dotS2-S1dotL*S2dotL) + fracsq*(S1dotS1+S2dotS2-S1dotL*S1dotL-S2dotL*S2dotL) + fracz12*(S1dotL*S2dotL) + fraczsq*(S1dotL*S1dotL+S2dotL*S2dotL);
+
+  //printf("OmM %11.4e  fracRD %11.4e  omRD %11.4e\n",omegamatch,fracRD,omegaRD);
 
   /* Now the phenomenological part is added */
   if (rett==1) {
