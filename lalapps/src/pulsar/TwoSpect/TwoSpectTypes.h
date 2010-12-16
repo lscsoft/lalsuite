@@ -50,6 +50,7 @@ typedef struct
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
+   INT4 rootFindingMethod;
    LALDetector *det;
 } inputParamsStruct;
 
@@ -109,6 +110,9 @@ typedef struct
    INT4Vector *pixellocations;      //pixel locations
    INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
    INT4Vector *secondfftfrequencies;   //pixel second frequency values
+   REAL8 f0;
+   REAL8 period;
+   REAL8 moddepth;
 } templateStruct;
 
 

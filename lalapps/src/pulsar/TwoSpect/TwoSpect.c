@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
    INT4 maxcols = (INT4)floor(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
    
    //Assume maximum bin shift possible
-   inputParams->maxbinshift = (INT4)round(detectorVmax * inputParams->fmin * inputParams->Tcoh)+1; //TODO: better way to do this?
+   inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+inputParams->fspan*0.5) * inputParams->Tcoh)+1; //TODO: better way to do this?
    
    //Read in the T-F data from SFTs
    fprintf(LOG, "Loading in SFTs... ");
@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
                   fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC); 
                }
-               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
@@ -689,7 +689,11 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
@@ -723,7 +727,11 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        }
                         R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
@@ -968,7 +976,7 @@ int main(int argc, char *argv[])
                      fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                      XLAL_ERROR(fn, XLAL_EFUNC); 
                   }
-                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                   if (xlalErrno!=0) {
                      fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                      XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1087,7 +1095,7 @@ int main(int argc, char *argv[])
                XLAL_ERROR(fn, XLAL_EFUNC); 
             }
             
-            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
             if (xlalErrno!=0) {
                fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1202,7 +1210,7 @@ int main(int argc, char *argv[])
                      fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                      XLAL_ERROR(fn, XLAL_EFUNC); 
                   }
-                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio);
+                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                   if (xlalErrno!=0) {
                      fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                      XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1520,11 +1528,17 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts)
 {
    
+   const CHAR *fn = __func__;
+   
    INT4 ii, jj;
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
    INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);
    
    for (ii=0; ii<numffts; ii++) {
+      if (binshifts->data[ii]>input->maxbinshift) {
+         fprintf(stderr, "%s: SFT slide value %d is greater than maximum value predicted (%d)", fn, binshifts->data[ii], input->maxbinshift);
+         XLAL_ERROR_VOID(fn, XLAL_EFAILED);
+      }
       for (jj=0; jj<numfbins; jj++) output->data[ii*numfbins + jj] = tfdata->data[ii*(numfbins+2*input->maxbinshift) + jj + input->maxbinshift + binshifts->data[ii]];
    }
    
@@ -1998,7 +2012,7 @@ REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vecto
    REAL8 sumofsqweights = 0.0;
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) if (templatestruct->templatedata->data[ii]!=0.0) sumofsqweights += (templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]);
    if (sumofsqweights==0.0) {
-      fprintf(stderr,"%s: Sum of weights squared = 0.\n", fn);
+      fprintf(stderr,"%s: Sum of weights squared = 0.0\n", fn);
       XLAL_ERROR_REAL8(fn, XLAL_EFPDIV0);
    }
    REAL8 sumofsqweightsinv = 1.0/sumofsqweights;
@@ -2007,7 +2021,6 @@ REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vecto
    for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) {
       if (templatestruct->templatedata->data[ii]!=0.0) {
          R += (ffdata->data[ templatestruct->pixellocations->data[ii] ] - noise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ])*templatestruct->templatedata->data[ii]*sumofsqweightsinv;
-         //fprintf(stderr,"%g %g %g %g\n", templatestruct->templatedata->data[ii]*sumofsqweightsinv, ffdata->data[ templatestruct->pixellocations->data[ii] ], noise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ], R);
       }
    }
    
@@ -2154,6 +2167,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->blksize = args_info.blksize_arg;
    params->dopplerMultiplier = args_info.dopplerMultiplier_arg;
    params->templatelength = args_info.templateLength_arg;
+   params->rootFindingMethod = args_info.BrentsMethod_given;
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;
@@ -2250,6 +2264,15 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"dfmin = %f Hz\n",params->dfmin);
    fprintf(stderr,"dfmax = %f Hz\n",params->dfmax);
    fprintf(stderr,"Running median blocksize = %d\n",params->blksize);
+   
+   if (args_info.BrentsMethod_given == 0) {
+      fprintf(LOG,"Using Newton's method for root finding.\n");
+      fprintf(stderr,"Using Newton's method for root finding.\n");
+   } else {
+      fprintf(LOG,"Using Brent's method for root finding.\n");
+      fprintf(stderr,"Using Brent's method for root finding.\n");
+   }
+
    
    return 0;
    

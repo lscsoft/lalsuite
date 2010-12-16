@@ -43,8 +43,8 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S5GC1HF
 test ".$appversion" = "." && appversion=0.00
-boinc_rev=-r22794
-#previous:-r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
+boinc_rev=-r22825
+#previous:-r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
 for i; do
     case "$i" in
@@ -170,6 +170,8 @@ BUILD="$EAH/build$acc"
 INSTALL="$EAH/install$acc"
 
 if [ ."$build_win32" = ."true" ] ; then
+    BUILD="${BUILD}_win32"
+    INSTALL="${INSTALL}_win32"
     export CC=i586-mingw32msvc-gcc
     export CXX=i586-mingw32msvc-g++
     export AR=i586-mingw32msvc-ar
@@ -177,6 +179,8 @@ if [ ."$build_win32" = ."true" ] ; then
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
+    fftw_copts_single="$fftw_copts_single --with-our-malloc16"
+    fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     ext=".exe"
     platform=windows_intelx86
     wine=`which wine`
@@ -230,8 +234,13 @@ if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
 else
     export CFLAGS="-g $CFLAGS"
 fi
+LDFLAGS="-L$INSTALL/lib $LDFLAGS"
+if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
+    LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
+fi
+
 export CPPFLAGS="-DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
-export LDFLAGS="-L$INSTALL/lib $LDFLAGS"
+export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$INSTALL/lib/pkgconfig:$PKG_CONFIG_PATH"

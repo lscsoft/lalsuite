@@ -1208,8 +1208,14 @@ int MAIN( int argc, char *argv[]) {
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
 
-            if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
-              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+            if (U1idx < 0) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d)! \n", U1idx);
+              return(HIERARCHICALSEARCH_ECG);
+            }
+
+            if (U1idx + finegrid.freqlength >= fveclength) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d:%d:%d:%d)! \n",
+		      U1idx, finegrid.freqlength, U1idx + finegrid.freqlength, fveclength);
               return(HIERARCHICALSEARCH_ECG);
             }
 

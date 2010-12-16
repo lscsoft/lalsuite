@@ -6,7 +6,6 @@ check_PROGRAMS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
-	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \
@@ -45,11 +44,6 @@ DirichletTest_LDADD = \
 
 EigenTest_SOURCES = EigenTest.c
 EigenTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-FlatMeshTest_SOURCES = FlatMeshTest.c
-FlatMeshTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -122,7 +116,6 @@ TESTS = \
 	DetInverseTest \
 	DirichletTest \
 	EigenTest \
-	FlatMeshTest \
 	FindRootTest \
 	IntegrateTest \
 	InterpolateTest \

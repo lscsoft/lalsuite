@@ -139,44 +139,60 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 
 //////////////////////////////////////////////////////////////
 // Numerically solve for the FAR of the R statistic from the weights
-void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
+void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 method)
 {
    
    const CHAR *fn = __func__;
    
    INT4 ii;
    
-   INT4 numweights = 0;
-   for (ii=0; ii<(INT4)templatestruct->templatedata->length; ii++) if (templatestruct->templatedata->data[ii]!=0) numweights++;
-   
-   REAL8 sumwsq = 0.0;
-   for (ii=0; ii<numweights; ii++) sumwsq += templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii];
-   
    INT4 errcode = 0;
    
-   //Set up solver
-   const gsl_root_fdfsolver_type *T = gsl_root_fdfsolver_newton;
-   gsl_root_fdfsolver *s = gsl_root_fdfsolver_alloc(T);
+   //Set up solver: method 0 is Brent's method, method 1 is Newton's method
+   const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
+   gsl_root_fsolver *s1;
+   gsl_function F;
+   const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
+   gsl_root_fdfsolver *s0;
    gsl_function_fdf FDF;
+   if (method != 0) {
+      s1 = gsl_root_fsolver_alloc(T1);
+   } else {
+      s0 = gsl_root_fdfsolver_alloc(T0);
+   }
+   
    
    //Include the various parameters in the struct required by GSL
    struct gsl_probR_pars params = {templatestruct, ffplanenoise, fbinaveratios, thresh, errcode};
    
    //Assign GSL function the necessary parts
-   FDF.f = &gsl_probR;
-   FDF.df = &gsl_dprobRdR;
-   FDF.fdf = &gsl_probRandDprobRdR;
-   FDF.params = &params;
-   
-   //Start off with an initial guess
-   REAL8 root = 10.0;
-   REAL8 initialroot = root;
-   
-   //Set the solver at the beginning
-   if ((gsl_root_fdfsolver_set(s, &FDF, initialroot)) != 0) {
-      fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
-      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   if (method != 0) {
+      F.function = &gsl_probR;
+      F.params = &params;
+   } else {
+      FDF.f = &gsl_probR;
+      FDF.df = &gsl_dprobRdR;
+      FDF.fdf = &gsl_probRandDprobRdR;
+      FDF.params = &params;
    }
+   
+   
+   //Start off with an initial guess and set the solver at the beginning
+   REAL8 Rlow = 0.0, Rhigh = 1000.0, root = 10.0;
+   REAL8 initialroot = root;
+   if (method != 0) {
+      if ( (gsl_root_fsolver_set(s1, &F, Rlow, Rhigh)) != 0 ) {
+         fprintf(stderr,"%s: Unable to initialize root solver to bracketed positions.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      }
+   } else {
+      if ( (gsl_root_fdfsolver_set(s0, &FDF, initialroot)) != 0 ) {
+         fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
+         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      } 
+   }
+   
+   
    
    //And now find the root
    ii = 0;
@@ -184,31 +200,68 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    INT4 status = GSL_CONTINUE;
    REAL8 prevroot;
    while (status==GSL_CONTINUE && ii<max_iter) {
+      
       ii++;
-      status = gsl_root_fdfsolver_iterate(s);
-      if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-         fprintf(stderr,"%s: gsl_root_fdfsolver_iterate() failed with code %d.\n", fn, status);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      
+      if (method != 0) {
+         status = gsl_root_fsolver_iterate(s1);
+         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+            fprintf(stderr,"%s: gsl_root_fsolver_iterate() failed with code %d.\n", fn, status);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+         if (ii>0) prevroot = root;
+         root = gsl_root_fsolver_root(s1);
+         Rlow = gsl_root_fsolver_x_lower(s1);
+         Rhigh = gsl_root_fsolver_x_upper(s1);
+         status = gsl_root_test_interval(Rlow, Rhigh, 0.0, 0.001);
+         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+            fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", fn, status);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+      } else {
+         status = gsl_root_fdfsolver_iterate(s0);
+         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+            fprintf(stderr,"%s: gsl_root_fdfsolver_iterate() failed with code %d.\n", fn, status);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+         prevroot = root;
+         root = gsl_root_fdfsolver_root(s0);
+         status = gsl_root_test_delta(prevroot, root, 0.0, 0.001);
+         if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
+            fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
       }
-      prevroot = root;
-      root = gsl_root_fdfsolver_root(s);
-      status = gsl_root_test_delta(prevroot, root, 0.0, 0.002);
-      if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
-         fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-      }
+      
    } /* while status==GSL_CONTINUE && ii < max_iter */
    
-   if (status != GSL_SUCCESS) {
-      fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
-      XLAL_ERROR_VOID(fn, XLAL_FAILURE);
-   } else if (ii==max_iter) {
-      fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
-      XLAL_ERROR_VOID(fn, XLAL_EMAXITER);
-   } else if (root<=0.0) {
-      fprintf(stderr,"%s: Threshold value found (%f) is less than 0.0!\n", fn, root);
-      XLAL_ERROR_VOID(fn, XLAL_ERANGE);
+   if (method != 0) {
+      if (status != GSL_SUCCESS) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
+         XLAL_ERROR_VOID(fn, XLAL_FAILURE);
+      } else if (ii==max_iter) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
+         XLAL_ERROR_VOID(fn, XLAL_EMAXITER);
+      } else if (root == 0.0) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) converged to 0.0.\n", fn, ii, max_iter);
+         XLAL_ERROR_VOID(fn, XLAL_ERANGE);
+      } else if (root == 1000.0) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) converged to 1000.0.\n", fn, ii, max_iter);
+         XLAL_ERROR_VOID(fn, XLAL_ERANGE);
+      }
+   } else {
+      if (status != GSL_SUCCESS) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
+         XLAL_ERROR_VOID(fn, XLAL_FAILURE);
+      } else if (ii==max_iter) {
+         fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", fn, ii, max_iter, status, prevroot, root);
+         XLAL_ERROR_VOID(fn, XLAL_EMAXITER);
+      } else if (root<=0.0) {
+         fprintf(stderr,"%s: Threshold value found (%f) is less than 0.0!\n", fn, root);
+         XLAL_ERROR_VOID(fn, XLAL_ERANGE);
+      }
    }
+   
    
    output->far = root;
    output->distMean = 0.0;
@@ -216,7 +269,12 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    output->farerrcode = errcode;
    
    //Cleanup
-   gsl_root_fdfsolver_free(s);
+   if (method != 0) {
+      gsl_root_fsolver_free(s1);
+   } else {
+      gsl_root_fdfsolver_free(s0);
+   }
+   
    
 } /* numericFAR() */
 REAL8 gsl_probR(REAL8 R, void *param)
@@ -237,29 +295,29 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
    
    REAL8 dR = 0.001;
-   REAL8 slope;
    
    //Explicit computation of slope
    REAL8 R1 = (1.0+dR)*R;
-   REAL8 R2 = (1.0-dR)*R;
+   REAL8 R2 = R-(R1-R);
    REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
    REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
    while (fabs(prob1-prob2)<10.0*LAL_REAL4_MIN) {
       dR *= 2.0;
       R1 = (1.0+dR)*R;
-      R2 = (1.0-dR)*R;
+      R2 = R-(R1-R);
       prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
       prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
    }
-   slope = (prob1-prob2)/(R1-R2);
+   REAL8 diffR = R1 - R2;
+   REAL8 slope = (prob1-prob2)/diffR;
    
-   //One more point
-   dR *= 2.0;
-   REAL8 R3 = (1.0-dR)*R;
+   //Added for improved resolution:
+   /* REAL8 R3 = R-2.0*diffR;
    REAL8 prob3 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R3, &pars->errcode);
+   REAL8 R4 = R+2.0*diffR;
+   REAL8 prob4 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R4, &pars->errcode);
    
-   //Compute average
-   slope = (slope + (prob3-prob1)/(R3-R1) + (prob2-prob3)/(R2-R3))/3.0;
+   slope = (8.0*(prob1-prob2)+prob3-prob4)/(12.0*diffR); */
    
    return slope;
    
@@ -335,46 +393,52 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
-   REAL8 c1, c2, c3, logprob1, logprob2, logprob3, probslope, logprobest;
+   REAL8 logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-4) {
+   if (prob<=2.0e-4) {
       estimatedTheProb = 1;
       
-      INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0;
+      //INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0, errcode4 = 0, errcode5 = 0;
+      //REAL8 c1, c2, c3, c4, c5, logprob1, logprob2, logprob3, logprob4, logprob5, probslope, tempprob, tempprob2;
+      INT4 errcode1 = 0, errcode2 = 0;
+      REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
       
-      c1 = 0.95*vars.c;
+      REAL8 dR = 0.99;
+      
+      c1 = dR*vars.c;
       vars.c = c1;
-      REAL8 tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
-      while (tempprob<=1.0e-4) {
-         c1 *= 0.95;
+      while ( (tempprob=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1)) <= 2.0e-4 ) {
+         c1 *= dR;
          vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
       }
       logprob1 = log10(tempprob);
       
-      c2 = 0.95*c1;
+      c2 = dR*c1;
       vars.c = c2;
-      REAL8 tempprob2 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2);
-      while (tempprob2-tempprob <= 2.0e-4) {
-         c2 *= 0.95;
+      REAL8 deltac = c1 - c2;
+      while ( ((tempprob2=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2))-tempprob) < 5.0e-4 ) {
+         c2 -= deltac;
          vars.c = c2;
-         tempprob2 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2);
       }
+      deltac = c1 - c2;
       logprob2 = log10(tempprob2);
       
-      c3 = 0.95*c2;
+      /* c3 = c2-deltac;
       vars.c = c3;
-      REAL8 tempprob3 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3);
-      while (tempprob3-tempprob2 <= 2.0e-4) {
-         c3 *= 0.95;
-         vars.c = c3;
-         tempprob3 = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3);
-      }
-      logprob3 = log10(tempprob3);
+      logprob3 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3));
+      
+      c4 = c3-deltac;
+      vars.c = c4;
+      logprob4 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode4));
+      
+      c5 = c4-deltac;
+      vars.c = c5;
+      logprob5 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode5)); */
       
       //If either point along the slope had a problem at the end, then better fail.
       //Otherwise, set errcode = 0;
-      if (errcode1!=0 || errcode2!=0 || errcode3!=0) {
+      //if (errcode1!=0 || errcode2!=0 || errcode3!=0 || errcode4!=0 || errcode5!=0) {
+      if (errcode1!=0 || errcode2!=0) {
          fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       } else {
@@ -382,14 +446,17 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
       
       //Calculating slope
-      probslope = ((logprob1-logprob2)/(c1-c2) + (logprob1-logprob3)/(c1-c3) + (logprob2-logprob3)/(c2-c3))/3.0;
+      probslope = (logprob1-logprob2)/deltac;
+      //probslope = (8.0*(logprob2-logprob4)-logprob1+logprob5)/(12.0*deltac);
       
       //Find the log10(prob) of the original Rpr value
-      logprobest = probslope*(Rpr-c2) + logprob2;
+      logprobest = probslope*(Rpr-c1) + logprob1;
+      //logprobest = probslope*(Rpr-c2) + logprob2;
+      //logprobest = probslope*(Rpr-c3) + logprob3;
       
    } /* if prob <= 1e-4 */
    
-   //If errcode is still 0, better fail
+   //If errcode is still != 0, better fail
    if (*errcode!=0) {
       fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
@@ -446,6 +513,10 @@ templateStruct * new_templateStruct(INT4 length)
       templatestruct->secondfftfrequencies->data[ii] = 0;
    }
    
+   templatestruct->f0 = 0.0;
+   templatestruct->period = 0.0;
+   templatestruct->moddepth = 0.0;
+   
    return templatestruct;
    
 } /* new_templateStruct() */
@@ -471,6 +542,11 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
 {
    
    const CHAR *fn = __func__;
+   
+   //Set data for output template
+   output->f0 = input.fsig;
+   output->period = input.period;
+   output->moddepth = input.moddepth;
    
    INT4 ii, jj, numfbins, numffts, N;
    

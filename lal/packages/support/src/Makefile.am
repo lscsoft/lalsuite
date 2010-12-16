@@ -29,6 +29,7 @@ liblalsupport_la_SOURCES = \
 	getopt.h \
 	getopt1.c
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
+liblalsupport_la_LDFLAGS = -version-info $(LIBVERSION_SUPPORT)
 
 MAINTAINERCLEANFILES = \
 	PrintFrequencySeries.c \
