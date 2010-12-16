@@ -205,16 +205,18 @@ typedef struct
 tagLALIFOData
 {
   REAL8TimeSeries           *timeData, 
-                            *timeModelhPlus, *timeModelhCross;
+                            *timeModelhPlus, *timeModelhCross,
+                            *whiteTimeData, *windowedTimeData; /* white is not really white, but over-white. */
   COMPLEX16FrequencySeries  *freqData, 
-                            *freqModelhPlus, *freqModelhCross;
+                            *freqModelhPlus, *freqModelhCross,
+                            *whiteFreqData; /* Over-white. */
   COMPLEX16TimeSeries       *compTimeData, *compModelData;
   LIGOTimeGPSVector         *dataTimes;
   LALVariables              *modelParams;
   LALVariables				*dataParams; /* Optional data parameters */
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
-  REAL8TimeSeries           *timeDomainNoiseWeights; /* Roughly, InvFFT(Noise PSD). */
+  REAL8TimeSeries           *timeDomainNoiseWeights; /* Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan;
   REAL8                     fLow, fHigh;	//integration limits;

@@ -100,7 +100,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
         const REAL8 defaultFHigh = SampleRate/2.0;
 	int nSegs=0;
 	size_t seglen=0;
-	REAL8TimeSeries *PSDtimeSeries=NULL,*windowedTimeData=NULL;
+	REAL8TimeSeries *PSDtimeSeries=NULL;
 	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
 	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
@@ -265,20 +265,20 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			XLALResampleREAL8TimeSeries(IFOdata[i].timeData,1.0/SampleRate);	 
 			if(!IFOdata[i].timeData) {fprintf(stderr,"Error reading segment data for %s\n",IFOnames[i]); exit(1);}
 			IFOdata[i].freqData=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata[i].timeData->epoch),0.0,1.0/SegmentLength,&lalDimensionlessUnit,seglen/2+1);
-			windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("temp buffer",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
-			XLALDDVectorMultiply(windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);
-			XLALREAL8TimeFreqFFT(IFOdata[i].freqData,windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
-			XLALDestroyREAL8TimeSeries(windowedTimeData);
+			IFOdata[i].windowedTimeData=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("windowed time data",&(IFOdata[i].timeData->epoch),0.0,1.0/SampleRate,&lalDimensionlessUnit,seglen);
+			XLALDDVectorMultiply(IFOdata[i].windowedTimeData->data,IFOdata[i].timeData->data,IFOdata[i].window->data);
+			XLALREAL8TimeFreqFFT(IFOdata[i].freqData,IFOdata[i].windowedTimeData,IFOdata[i].timeToFreqFFTPlan);
 			
 			for(j=0;j<IFOdata[i].freqData->data->length;j++){
 				IFOdata[i].freqData->data->data[j].re/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
 				IFOdata[i].freqData->data->data[j].im/=sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
+                                IFOdata[i].windowedTimeData->data->data[j] /= sqrt(IFOdata[i].window->sumofsquares / IFOdata[i].window->data->length);
 			}
 			
 		}
                 /* Now that the PSD is set up, make the TDW. */
                 IFOdata[i].timeDomainNoiseWeights = 
-                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domian weights", 
+                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domain weights", 
                                                                &(IFOdata[i].oneSidedNoisePowerSpectrum->epoch),
                                                                0.0,
                                                                1.0/SampleRate,
@@ -286,6 +286,55 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                                                                seglen);
                 PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
                          IFOdata[i].fLow, IFOdata[i].fHigh);
+
+                /* Whitened data */
+                IFOdata[i].whiteFreqData = 
+                  (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("whitened freq data",
+                                                                                 &(IFOdata[i].freqData->epoch),
+                                                                                 0.0,
+                                                                                 IFOdata[i].freqData->deltaF,
+                                                                                 &lalDimensionlessUnit,
+                                                                                 IFOdata[i].freqData->data->length);
+                REAL8 sumOfSquares = 0.0;
+                REAL8 frac;
+                for (j = 0; j < IFOdata[i].whiteFreqData->data->length; j++) {
+                  IFOdata[i].whiteFreqData->data->data[j].re = 
+                    IFOdata[i].freqData->data->data[j].re / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
+                  IFOdata[i].whiteFreqData->data->data[j].im = 
+                    IFOdata[i].freqData->data->data[j].im / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
+
+                  frac = ((REAL8) j) / IFOdata[i].whiteFreqData->data->length;
+                  
+                  if (frac > 0.95) {
+                    /* Taper the last 5% of the data *in frequency space* with a cos (i.e. Tukey) window. */
+                    REAL8 weight = 0.5*(1.0+cos(M_PI*(frac-0.95)/0.05));
+                    
+                    sumOfSquares += weight*weight;
+                    IFOdata[i].whiteFreqData->data->data[j].re *= weight;
+                    IFOdata[i].whiteFreqData->data->data[j].im *= weight;                      
+                  } else {
+                    sumOfSquares += 1.0;
+                  }
+                }
+                /* Now re-normalize, taking into account the window norm. */
+                REAL8 norm = sqrt(IFOdata[i].whiteFreqData->data->length / sumOfSquares);
+                for (j = 0; j < IFOdata[i].whiteFreqData->data->length; j++) {
+                  IFOdata[i].whiteFreqData->data->data[i].re *= norm;
+                  IFOdata[i].whiteFreqData->data->data[i].im *= norm;
+                }
+                /* Zero out the f=0 component */
+                IFOdata[i].whiteFreqData->data->data[0].re = 0.0;
+                IFOdata[i].whiteFreqData->data->data[1].im = 0.0;
+                
+                /* Construct white time data from the white freq data. */
+                IFOdata[i].whiteTimeData = 
+                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("whitened time data",
+                                                               &(IFOdata[i].timeData->epoch),
+                                                               0.0,
+                                                               IFOdata[i].timeData->deltaT,
+                                                               &lalDimensionlessUnit,
+                                                               IFOdata[i].timeData->data->length);
+                XLALREAL8FreqTimeFFT(IFOdata[i].whiteTimeData, IFOdata[i].whiteFreqData, IFOdata[i].freqToTimeFFTPlan);
 	}
 	
 
