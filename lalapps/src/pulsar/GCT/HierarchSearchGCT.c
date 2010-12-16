@@ -470,7 +470,10 @@ int MAIN( int argc, char *argv[]) {
   {
     INT4 maxseg = ((unsigned long)1 << (8*sizeof(FINEGRID_NC_T))) - 1;
     if ( uvar_nStacksMax > maxseg) {
-      fprintf(stderr, "Number of segments exceeds %d!\n", maxseg);
+      fprintf(stderr,
+	      "Number of segments exceeds %d!\n"
+	      "Compile without GC_SSE2_OPT to extend the available segment range\n",
+	      maxseg);
       return( HIERARCHICALSEARCH_EBAD );
     }
   }
