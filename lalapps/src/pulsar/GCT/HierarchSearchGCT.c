@@ -1252,24 +1252,14 @@ int MAIN( int argc, char *argv[]) {
             FINEGRID_NC_T * fgridnc = finegrid.nc+ifine;
 
 #ifdef GC_SSE2_OPT
-#ifdef AUTOVECT
-#warning "here"
-	    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg+=4) {
-	      // fgrid2F[ifreq_fg] += cgrid2F[ifreq_fg];
-#pragma ivdep
-	      for(int ve=0;ve<4;ve++)
-		fgrid2F[ve] += cgrid2F[ve];
-	      fgrid2F+=4;
-	      cgrid2F+=4;
-	    }
-#else // AUTOVECT
             gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
-#endif // AUTOVECT
 #else // GC_SSE2_OPT
 	    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
 	      fgrid2F[0] += cgrid2F[0];
+#ifndef EXP_NO_NUM_COUNT	    
 	      fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
 	      fgridnc++;
+#endif // EXP_NO_NUM_COUNT	    
 	      fgrid2F++;
 	      cgrid2F++;
 	    }
