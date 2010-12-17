@@ -944,6 +944,8 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/							  
 {
+  static int timeDomainWarning = 0;
+
 	double ra, dec, psi, distMpc, gmst;
 	
 	double GPSdouble;
@@ -1023,10 +1025,15 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
       copyVariables(&intrinsicParams, dataPtr->modelParams);
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == timeDomain)
-        executeFT(dataPtr);
+      if (dataPtr->modelDomain == timeDomain) {
+	if (!timeDomainWarning) {
+	  timeDomainWarning = 1;
+	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
+	}
+	executeFT(dataPtr);
       /* note that the dataPtr->modelParams "time" element may have changed here!! */
       /* (during "template()" computation)                                      */
+      }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
