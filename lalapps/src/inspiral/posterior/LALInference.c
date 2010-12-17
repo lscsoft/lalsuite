@@ -1636,9 +1636,9 @@ UINT4 LIGOTimeGPSToNearestIndex(const LIGOTimeGPS *tm, const REAL8TimeSeries *se
 REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2) {
   LIGOTimeGPS start, stop;
   LIGOTimeGPS stopS1, stopS2;
-  LIGOTimeGPS current;
   UINT4 i1, i2;
   REAL8 sum = 0.0;
+  REAL8 t1Start, t2Start, t, tStop;
 
   /* Compute stop times. */
   stopS1 = s1->epoch;
@@ -1651,36 +1651,37 @@ REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s
   start = (XLALGPSCmp(&(s1->epoch), &(s2->epoch)) <= 0 ? s2->epoch : s1->epoch); /* Start at max start time. */
   stop = (XLALGPSCmp(&stopS1, &stopS2) <= 0 ? stopS1 : stopS2); /* Stop at min end time. */
 
-  current = start;
-  i1 = LIGOTimeGPSToNearestIndex(&current, s1);
-  i2 = LIGOTimeGPSToNearestIndex(&current, s2);
+  t = 0;
+  tStop = XLALGPSDiff(&stop, &start);
+  t1Start = XLALGPSDiff(&(s1->epoch), &start);
+  t2Start = XLALGPSDiff(&(s2->epoch), &start);
+  i1 = LIGOTimeGPSToNearestIndex(&start, s1);
+  i2 = LIGOTimeGPSToNearestIndex(&start, s2);
   do {
-    LIGOTimeGPS nextTime1, nextTime2, nextTime;
+    REAL8 nextTime1, nextTime2, nextTime;
     REAL8 dt;
-    nextTime1 = s1->epoch;
-    nextTime2 = s2->epoch;
-    XLALGPSAdd(&nextTime1, (i1+0.5)*s1->deltaT);
-    XLALGPSAdd(&nextTime2, (i2+0.5)*s2->deltaT);
+    nextTime1 = t1Start + (i1+0.5)*s1->deltaT;
+    nextTime2 = t2Start + (i2+0.5)*s2->deltaT;
 
     /* Whichever series needs updating first gives us the next time. */
-    nextTime = (XLALGPSCmp(&nextTime1, &nextTime2) <= 0 ? nextTime1 : nextTime2);
+    nextTime = (nextTime1 <= nextTime2 ? nextTime1 : nextTime2);
 
     /* Ensure we don't go past the stop time. */
-    nextTime = (XLALGPSCmp(&nextTime, &stop) <= 0 ? nextTime : stop);
+    nextTime = (tStop < nextTime ? tStop : nextTime);
 
-    dt = XLALGPSDiff(&nextTime, &current);
+    dt = nextTime - t;
 
     sum += dt*s1->data->data[i1]*s2->data->data[i2];
 
-    if (XLALGPSCmp(&nextTime, &nextTime1) == 0) {
+    if (nextTime1 == nextTime) {
       i1++;
     }
-    if (XLALGPSCmp(&nextTime, &nextTime2) == 0) {
+    if (nextTime2 == nextTime) {
       i2++;
     }
 
-    current = nextTime;    
-  } while (XLALGPSCmp(&current, &stop) < 0);
+    t = nextTime;    
+  } while (t < tStop);
 
   return sum;
 }
