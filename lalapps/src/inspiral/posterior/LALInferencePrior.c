@@ -22,6 +22,7 @@
 
 #include "LALInferencePrior.h"
 #include <math.h>
+#include<gsl/gsl_integration.h>
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */
 REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALVariables *params)
@@ -296,6 +297,105 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 	
 	
 	return(logPrior);
+}
+
+
+
+typedef struct {
+	double M1;
+	double McMin;
+	double McMax;
+	double etaMin;
+	double etaMax;
+} innerData;
+
+#define SQR(x) ((x)*(x))
+
+double innerIntegrand(double M2, void *viData) {
+	innerData *iData = (innerData *)viData;
+	double Mc = pow(M2*iData->M1, 3.0/5.0)/pow(M2+iData->M1, 1.0/5.0);
+	double eta = M2*iData->M1/SQR(M2+iData->M1);
+	if (Mc < iData->McMin || Mc > iData->McMax || eta < iData->etaMin || eta > iData->etaMax) {
+		return 0.0;
+	} else {
+		return pow(Mc, -5.0/6.0);
+	}
+}
+
+#undef SQR
+
+typedef struct {
+	gsl_integration_workspace *wsInner;
+	size_t wsInnerSize;
+	double McMin;
+	double McMax;
+	double etaMin;
+	double etaMax;
+	double MTotMax;
+	double MMin;
+	double epsabs;
+	double epsrel;
+} outerData;
+
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
+double outerIntegrand(double M1, void *voData) {
+	outerData *oData = (outerData *)voData;
+	gsl_function f;
+	innerData iData;
+	double result, err;
+	
+	iData.M1 = M1;
+	iData.McMin = oData->McMin;
+	iData.McMax = oData->McMax;
+	iData.etaMin = oData->etaMin;
+	iData.etaMax = oData->etaMax;
+	
+	f.function = &innerIntegrand;
+	f.params = &iData;
+	
+	gsl_integration_qag(&f, oData->MMin, MIN(M1, oData->MTotMax-M1), oData->epsabs, oData->epsrel, 
+						oData->wsInnerSize, GSL_INTEG_GAUSS61, oData->wsInner, &result, &err);
+	
+	return result;
+}
+
+#undef MIN
+
+double computePrior(const double MMin, const double MMax, const double MTotMax, 
+                    const double McMin, const double McMax,
+                    const double etaMin, const double etaMax) {
+	const double epsabs = 1e-8;
+	const double epsrel = 1e-8;
+	const size_t wsSize = 10000;
+	double result, err;
+	outerData oData;
+	gsl_function f;
+	
+	gsl_integration_workspace *wsOuter = gsl_integration_workspace_alloc(wsSize);
+	gsl_integration_workspace *wsInner = gsl_integration_workspace_alloc(wsSize);
+	
+	oData.wsInnerSize = wsSize;
+	oData.wsInner = wsInner;
+	oData.McMin = McMin;
+	oData.McMax = McMax;
+	oData.etaMin = etaMin;
+	oData.etaMax = etaMax;
+	oData.MTotMax = MTotMax;
+	oData.epsabs = epsabs;
+	oData.epsrel = epsrel;
+	oData.MMin = MMin;
+	
+	f.function = &outerIntegrand;
+	f.params = &oData;
+	
+	gsl_integration_qag(&f, MMin, MMax, epsabs, epsrel, wsSize, GSL_INTEG_GAUSS61, wsOuter, 
+						&result, &err);
+	
+	gsl_integration_workspace_free(wsOuter);
+	gsl_integration_workspace_free(wsInner);
+	
+	return result;
 }
 
 
