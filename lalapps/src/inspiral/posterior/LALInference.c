@@ -892,30 +892,30 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
-	if(timeModelResponse==NULL)
-          timeModelResponse = 
-                  XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
-                                            0.0, ifoPtr->timeData->deltaT,
-                                            &lalDimensionlessUnit,
-                                            ifoPtr->timeData->data->length);
-	else if (timeModelResponse->data->length != ifoPtr->timeData->data->length) {
-          /* Cannot resize *up* a time series, so just dealloc and reallocate it. */
-          XLALDestroyREAL8TimeSeries(timeModelResponse);
-          timeModelResponse =                   
-            XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
-                                      0.0, ifoPtr->timeData->deltaT,
-                                      &lalDimensionlessUnit,
-                                      ifoPtr->timeData->data->length);
-        }
-        
-        /*compute the response*/
-	ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
+    if(timeModelResponse==NULL) {
+      timeModelResponse = 
+	XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
+				  0.0, ifoPtr->timeData->deltaT,
+				  &lalDimensionlessUnit,
+				  ifoPtr->timeData->data->length);
+    } else if (timeModelResponse->data->length != ifoPtr->timeData->data->length) {
+      /* Cannot resize *up* a time series, so just dealloc and reallocate it. */
+      XLALDestroyREAL8TimeSeries(timeModelResponse);
+      timeModelResponse =                   
+	XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
+				  0.0, ifoPtr->timeData->deltaT,
+				  &lalDimensionlessUnit,
+				  ifoPtr->timeData->data->length);
+    }
+     
+    /*compute the response*/
+    ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
 
-	totalChiSquared+=
-          (WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData)
-           -2.0*WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, timeModelResponse)
-           +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
-
+    totalChiSquared+=
+      (WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData)
+       -2.0*WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, timeModelResponse)
+       +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
+    
     ifoPtr = ifoPtr->next;
   }
   loglikeli = -0.5*totalChiSquared; 
@@ -1113,6 +1113,7 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/							  
 {
+  static int freqDomainWarning = 0;
 	double ra, dec, psi, distMpc, gmst;
 	
 	double GPSdouble;
@@ -1130,7 +1131,7 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 	double FplusScaled, FcrossScaled;
 	UINT4 i;
 	REAL8 mc;
-	
+
 	/* Fill in derived parameters if necessary */
 	if(checkVariable(currentParams,"logdistance")){
 		distMpc=exp(*(REAL8 *) getVariable(currentParams,"logdistance"));
@@ -1189,10 +1190,15 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
       copyVariables(&intrinsicParams, dataPtr->modelParams);
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == frequencyDomain)
+      if (dataPtr->modelDomain == frequencyDomain) {
+	if (!freqDomainWarning) {
+	  freqDomainWarning = 1;
+	  fprintf(stderr, "WARNING: frequency domain template used with time domain calculation (in %s, line %d)\n", __FILE__, __LINE__);
+	}
         executeInvFT(dataPtr);
-      /* note that the dataPtr->modelParams "time" element may have changed here!! */
-      /* (during "template()" computation)                                      */
+	/* note that the dataPtr->modelParams "time" element may have changed here!! */
+	/* (during "template()" computation)  */
+      }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);

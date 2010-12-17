@@ -31,6 +31,7 @@
 #include <lal/LALStatusMacros.h>
 #include "LALInference.h"
 #include <lalapps.h>
+#include <lal/XLALError.h>
 
 RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceTemplate.c"
@@ -749,7 +750,8 @@ void templateLAL(LALIFOData *IFOdata)
     }
   }
 
-  IFOdata->modelDomain = frequencyDomain;
+  /* Why was this here?  Weird. */
+  /* IFOdata->modelDomain = frequencyDomain; */
   return;
 }
 
