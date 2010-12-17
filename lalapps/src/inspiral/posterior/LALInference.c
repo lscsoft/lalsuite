@@ -1198,7 +1198,7 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
       addVariable(dataPtr->modelParams, "time", &timeTmp, REAL8_t,PARAM_LINEAR);
     }
 
-    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
+    /*-- Template is now in dataPtr->timeModelhPlus and dataPtr->timeModelhCross. --*/
     /*-- (Either freshly computed or inherited.)                            --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
@@ -1220,7 +1220,7 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
 
 	if(timeWaveform->data->length!=dataPtr->timeModelhPlus->data->length){
 		printf("fW%d data%d\n", timeWaveform->data->length, dataPtr->freqModelhPlus->data->length);
-		printf("Error!  Frequency data vector must be same length as original data!\n");
+		printf("Error!  Time data vector must be same length as original data!\n");
 		exit(1);
 	}
 	
