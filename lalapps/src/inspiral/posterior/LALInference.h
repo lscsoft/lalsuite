@@ -286,6 +286,7 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 void mc2masses(double mc, double eta, double *m1, double *m2);
 
 /* Time-Domain Likelihood Utility Functions. */
+void makeWhiteData(LALIFOData *IFOdata);
 REAL8 WhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
 void PSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
               const REAL8 fMin, const REAL8 fMax);

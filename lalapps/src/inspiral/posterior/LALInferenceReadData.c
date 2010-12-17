@@ -287,54 +287,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                 PSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
                          IFOdata[i].fLow, IFOdata[i].fHigh);
 
-                /* Whitened data */
-                IFOdata[i].whiteFreqData = 
-                  (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("whitened freq data",
-                                                                                 &(IFOdata[i].freqData->epoch),
-                                                                                 0.0,
-                                                                                 IFOdata[i].freqData->deltaF,
-                                                                                 &lalDimensionlessUnit,
-                                                                                 IFOdata[i].freqData->data->length);
-                REAL8 sumOfSquares = 0.0;
-                REAL8 frac;
-                for (j = 0; j < IFOdata[i].whiteFreqData->data->length; j++) {
-                  IFOdata[i].whiteFreqData->data->data[j].re = 
-                    IFOdata[i].freqData->data->data[j].re / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
-                  IFOdata[i].whiteFreqData->data->data[j].im = 
-                    IFOdata[i].freqData->data->data[j].im / IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
-
-                  frac = ((REAL8) j) / IFOdata[i].whiteFreqData->data->length;
-                  
-                  if (frac > 0.95) {
-                    /* Taper the last 5% of the data *in frequency space* with a cos (i.e. Tukey) window. */
-                    REAL8 weight = 0.5*(1.0+cos(M_PI*(frac-0.95)/0.05));
-                    
-                    sumOfSquares += weight*weight;
-                    IFOdata[i].whiteFreqData->data->data[j].re *= weight;
-                    IFOdata[i].whiteFreqData->data->data[j].im *= weight;                      
-                  } else {
-                    sumOfSquares += 1.0;
-                  }
-                }
-                /* Now re-normalize, taking into account the window norm. */
-                REAL8 norm = sqrt(IFOdata[i].whiteFreqData->data->length / sumOfSquares);
-                for (j = 0; j < IFOdata[i].whiteFreqData->data->length; j++) {
-                  IFOdata[i].whiteFreqData->data->data[j].re *= norm;
-                  IFOdata[i].whiteFreqData->data->data[j].im *= norm;
-                }
-                /* Zero out the f=0 component */
-                IFOdata[i].whiteFreqData->data->data[0].re = 0.0;
-                IFOdata[i].whiteFreqData->data->data[1].im = 0.0;
-                
-                /* Construct white time data from the white freq data. */
-                IFOdata[i].whiteTimeData = 
-                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("whitened time data",
-                                                               &(IFOdata[i].timeData->epoch),
-                                                               0.0,
-                                                               IFOdata[i].timeData->deltaT,
-                                                               &lalDimensionlessUnit,
-                                                               IFOdata[i].timeData->data->length);
-                XLALREAL8FreqTimeFFT(IFOdata[i].whiteTimeData, IFOdata[i].whiteFreqData, IFOdata[i].freqToTimeFFTPlan);
+                makeWhiteData(&(IFOdata[i]));
 	}
 	
 
@@ -354,6 +307,78 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	if(fHighs) free(fHighs);
 	
 	return headIFO;
+}
+
+void makeWhiteData(LALIFOData *IFOdata) {
+  REAL8 deltaF = IFOdata->freqData->deltaF;
+  REAL8 deltaT = IFOdata->timeData->deltaT;
+
+  IFOdata->whiteFreqData = 
+    XLALCreateCOMPLEX16FrequencySeries("whitened frequency data", 
+                                       &(IFOdata->freqData->epoch),
+                                       0.0,
+                                       deltaF,
+                                       &lalDimensionlessUnit,
+                                       IFOdata->freqData->data->length);
+  IFOdata->whiteTimeData = 
+    XLALCreateREAL8TimeSeries("whitened time data",
+                              &(IFOdata->timeData->epoch),
+                              0.0,
+                              deltaT,
+                              &lalDimensionlessUnit,
+                              IFOdata->timeData->data->length);
+
+
+  REAL8 iLow = IFOdata->fLow / deltaF;
+  REAL8 iHighDefaultCut = 0.95 * IFOdata->freqData->data->length;
+  REAL8 iHighFromFHigh = IFOdata->fHigh / deltaF;
+  REAL8 iHigh = (iHighDefaultCut < iHighFromFHigh ? iHighDefaultCut : iHighFromFHigh);
+  REAL8 windowSquareSum = 0.0;
+
+  UINT4 i;
+
+  for (i = 0; i < IFOdata->freqData->data->length; i++) {
+    IFOdata->whiteFreqData->data->data[i].re = IFOdata->freqData->data->data[i].re / IFOdata->oneSidedNoisePowerSpectrum->data->data[i];
+    IFOdata->whiteFreqData->data->data[i].im = IFOdata->freqData->data->data[i].im / IFOdata->oneSidedNoisePowerSpectrum->data->data[i];
+
+    if (i == 0) {
+      /* Cut off the average trend in the data. */
+      IFOdata->whiteFreqData->data->data[i].re = 0.0;
+      IFOdata->whiteFreqData->data->data[i].im = 0.0;
+    }
+    if (i <= iLow) {
+      /* Need to taper to implement the fLow cutoff.  Tukey window
+         that starts at zero, and reaches 100% at fLow. */
+      REAL8 weight = 0.5*(1.0 + cos(M_PI*(i-iLow)/iLow)); /* Starts at -Pi, runs to zero at iLow. */
+
+      IFOdata->whiteFreqData->data->data[i].re *= weight;
+      IFOdata->whiteFreqData->data->data[i].im *= weight;
+
+      windowSquareSum += weight*weight;
+    } else if (i >= iHigh) {
+      /* Also taper at high freq end, Tukey window that starts at 100%
+         at fHigh, then drops to zero at Nyquist.  Except that we
+         always taper at least 5% of the data at high freq to avoid a
+         sharp edge in freq space there. */
+      REAL8 NWind = IFOdata->whiteFreqData->data->length - iHigh;
+      REAL8 weight = 0.5*(1.0 + cos(M_PI*(i-iHigh)/NWind)); /* Starts at 0, runs to Pi at i = length */
+
+      IFOdata->whiteFreqData->data->data[i].re *= weight;
+      IFOdata->whiteFreqData->data->data[i].im *= weight;
+
+      windowSquareSum += weight*weight;
+    } else {
+      windowSquareSum += 1.0;
+    }
+  }
+
+  REAL8 norm = sqrt(IFOdata->whiteFreqData->data->length / windowSquareSum);
+  for (i = 0; i < IFOdata->whiteFreqData->data->length; i++) {
+    IFOdata->whiteFreqData->data->data[i].re *= norm;
+    IFOdata->whiteFreqData->data->data[i].im *= norm;
+  }
+
+  XLALREAL8FreqTimeFFT(IFOdata->whiteTimeData, IFOdata->whiteFreqData, IFOdata->freqToTimeFFTPlan);
 }
 
 void injectSignal(LALIFOData *IFOdata, ProcessParamsTable *commandLine)
