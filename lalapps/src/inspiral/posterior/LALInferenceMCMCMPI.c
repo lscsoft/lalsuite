@@ -321,6 +321,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 mcMax=20.5;
 	//REAL8 logmcMax,logmcMin;
 	REAL8 mMin=1.0,mMax=30.0;
+	REAL8 MTotMax=35.0;
 	REAL8 etaMin=0.0312;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -358,7 +359,8 @@ void initVariables(LALInferenceRunState *state)
 	[--Dmax dist]\tMaximum distance in Mpc (100)\
 	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
 	[--mincomp min]\tMinimum component mass (1.0)\
-	[--maxcomp max]\tMaximum component mass (30.0)";
+	[--maxcomp max]\tMaximum component mass (30.0)\
+	[--MTotMax] \t Maximum total mass (35.0)";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
@@ -466,6 +468,9 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
 	addVariable(priorArgs,"component_max",&mMax,REAL8_t,PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--MTotMax");
+	if(ppt)	MTotMax=atof(ppt->value);
+	addVariable(priorArgs,"MTotMax",&MTotMax,REAL8_t,PARAM_FIXED);
 	
 	
 	printf("Read end time %f\n",endtime);

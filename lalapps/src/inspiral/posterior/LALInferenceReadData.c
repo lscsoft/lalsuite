@@ -96,6 +96,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	ProcessParamsTable *procparam=NULL;
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
+	if(getProcParamVal(commandLine,"--srate")) SampleRate=atof(getProcParamVal(commandLine,"--srate")->value);
         const REAL8 defaultFLow = 40.0;
         const REAL8 defaultFHigh = SampleRate/2.0;
 	int nSegs=0;
@@ -148,7 +149,6 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
 	PSDdatalength=atof(getProcParamVal(commandLine,"--PSDlength")->value);
 	SegmentLength=atof(getProcParamVal(commandLine,"--seglen")->value);
-	if(getProcParamVal(commandLine,"--srate")) SampleRate=atof(getProcParamVal(commandLine,"--srate")->value);
 	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
 	

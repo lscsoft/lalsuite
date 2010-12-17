@@ -129,9 +129,15 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 	REAL8 min, max;
 	REAL8 logmc=0.0;
 	REAL8 m1,m2,eta=0.0;
+	REAL8 etaMin=0.0, etaMax=0.0;
+	REAL8 MTotMax=0.0;
 	char normName[VARNAME_MAX];
 	REAL8 norm=0.0;
-
+	
+	if(checkVariable(params,"massratio")){
+		eta=*(REAL8 *)getVariable(params,"massratio");
+		getMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+	}
 	
 	/* Check boundaries */
 	for(;item;item=item->next)
@@ -144,32 +150,59 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 			else
 			{
-				if(!strcmp(item->name, "chirpmass")){
-					if(checkVariable(priorParams,"chirpmass_norm")) {
-						norm = *(REAL8 *)getVariable(priorParams,"chirpmass_norm");
+				if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
+					if(checkVariable(priorParams,"mass_norm")) {
+						norm = *(REAL8 *)getVariable(priorParams,"mass_norm");
 					}
 					else
 					{
-						norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
-						addVariable(priorParams, "chirpmass_norm", &norm, REAL8_t, PARAM_FIXED);
+						if(checkVariable(priorParams,"component_max") && checkVariable(priorParams,"component_min") 
+						   && checkVariable(params,"massratio")){
+							if(checkVariable(priorParams,"MTotMax")) 
+								MTotMax=*(REAL8 *)getVariable(priorParams,"MTotMax");
+							else 
+								MTotMax=2.0*(*(REAL8 *)getVariable(priorParams,"component_max"));
+
+							getMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
+							norm = -log(computePriorMassNorm(*(REAL8 *)getVariable(priorParams,"component_min"),
+														*(REAL8 *)getVariable(priorParams,"component_max"),
+														MTotMax, min, max, etaMin, etaMax));
+						}
+						else {
+							norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
+						}
+						addVariable(priorParams, "mass_norm", &norm, REAL8_t, PARAM_FIXED);
 					}
-					logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
+					if(!strcmp(item->name, "chirpmass")){
+						logmc=log(*(REAL8 *)getVariable(params,"chirpmass"));
+					}
+					else if(!strcmp(item->name, "logmc")){
+						logmc=(*(REAL8 *)getVariable(params,"logmc"));
+					}
+					
+					if(checkVariable(params,"massratio")){
+						mc2masses(exp(logmc),*(REAL8 *)getVariable(params,"massratio"),&m1,&m2);
+					
+						if(checkVariable(priorParams,"component_min"))
+							if(*(REAL8 *)getVariable(priorParams,"component_min") > m1
+							   || *(REAL8 *)getVariable(priorParams,"component_min") > m2)
+								return -DBL_MAX;
+					
+						if(checkVariable(priorParams,"component_max"))
+							if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
+							   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
+								return -DBL_MAX;
+
+						if(checkVariable(priorParams,"MTotMax"))
+							if(*(REAL8 *)getVariable(priorParams,"MTotMax") < m1+m2)
+								return -DBL_MAX;
+					}
+					
 					logPrior += -(5./6.)*logmc+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
-				else if(!strcmp(item->name, "logmc")){
-					if(checkVariable(priorParams,"logmc_norm")) {
-						norm = *(REAL8 *)getVariable(priorParams,"logmc_norm");
-					}
-					else
-					{
-						norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
-						addVariable(priorParams, "logmc_norm", &norm, REAL8_t, PARAM_FIXED);
-					}
-					logmc=(*(REAL8 *)getVariable(params,"logmc"));
-					logPrior += -(5./6.)*logmc+norm;
-					//printf("logPrior@%s=%f\n",item->name,logPrior);
-				}				
+				else if(!strcmp(item->name, "massratio")) continue;
+
 				else if(!strcmp(item->name, "distance")){
 					if(checkVariable(priorParams,"distance_norm")) {
 						norm = *(REAL8 *)getVariable(priorParams,"distance_norm");
@@ -362,7 +395,7 @@ double outerIntegrand(double M1, void *voData) {
 
 #undef MIN
 
-double computePrior(const double MMin, const double MMax, const double MTotMax, 
+double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
                     const double McMin, const double McMax,
                     const double etaMin, const double etaMax) {
 	const double epsabs = 1e-8;
