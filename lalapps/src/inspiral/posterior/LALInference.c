@@ -1657,6 +1657,10 @@ REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s
   t2Start = XLALGPSDiff(&(s2->epoch), &start);
   i1 = LIGOTimeGPSToNearestIndex(&start, s1);
   i2 = LIGOTimeGPSToNearestIndex(&start, s2);
+  
+  REAL8 *data1 = s1->data->data;
+  REAL8 *data2 = s2->data->data;
+
   do {
     REAL8 nextTime1, nextTime2, nextTime;
     REAL8 dt;
@@ -1671,7 +1675,7 @@ REAL8 integrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s
 
     dt = nextTime - t;
 
-    sum += dt*s1->data->data[i1]*s2->data->data[i2];
+    sum += dt*data1[i1]*data2[i2];
 
     if (nextTime1 == nextTime) {
       i1++;
