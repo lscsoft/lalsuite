@@ -656,10 +656,9 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in a parameter
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in a parameter
 	
-	paraHead=proposedParams->head;
-	while((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT)){
-		paraHead=getItemNr(proposedParams,1+(int)gsl_rng_uniform_int(GSLrandom,proposedParams->dimension));
-	}
+	do {
+          paraHead=getItemNr(proposedParams,1+(int)gsl_rng_uniform_int(GSLrandom,proposedParams->dimension));
+	} while ((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT));
 	//printf("%s\n",paraHead->name);
 		
 	if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
