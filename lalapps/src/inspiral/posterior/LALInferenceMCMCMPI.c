@@ -288,6 +288,17 @@ void initializeMCMC(LALInferenceRunState *runState)
 	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
 	addVariable(runState->algorithmParams,"random_seed",&randomseed, UINT4_t,PARAM_FIXED);
 	gsl_rng_set(runState->GSLrandom, randomseed);
+
+        
+        /* Now make sure that everyone is running with un-correlated
+           jumps!  We re-seed rank i process with the ith output of
+           the RNG stream from the rank 0 process. Otherwise the
+           random stream is the same across all processes. */
+        INT4 i;
+        for (i = 0; i < MPIrank; i++) {
+          randomseed = gsl_rng_get(runState->GSLrandom);
+        }
+        gsl_rng_set(runState->GSLrandom, randomseed);
 	
 	return;
 	
