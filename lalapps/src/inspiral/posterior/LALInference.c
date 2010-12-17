@@ -912,8 +912,8 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 	ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
 
 	totalChiSquared+=
-          (timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, ifoPtr->timeData)
-           -2.0*timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, ifoPtr->timeData, timeModelResponse)
+          (WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData)
+           -2.0*WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, timeModelResponse)
            +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
 
     ifoPtr = ifoPtr->next;
@@ -1456,18 +1456,20 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	return(loglikeli);
 }
 
+REAL8 WhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data) {
+  return 2.0*integrateSeriesProduct(whitenedData, data);
+}
+
 REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
   REAL8 logL = 0.0;
   LALIFOData *ifoPtr = data;
   UINT4 ifoIndex = 0;
-  UINT4 i;
+  /* UINT4 i; */
   /* char fileName[256]; */
   /* FILE *out; */
   
   while (ifoPtr != NULL) {
-    for (i = 0; i < ifoPtr->whiteTimeData->data->length; i++) {
-      logL += 2.0*ifoPtr->whiteTimeData->deltaT * ifoPtr->windowedTimeData->data->data[i] * ifoPtr->whiteTimeData->data->data[i];
-    }
+    logL += WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData);
   
     /* snprintf(fileName, 256, "TDW-%d.dat", ifoIndex); */
     /* out = fopen(fileName, "w"); */
