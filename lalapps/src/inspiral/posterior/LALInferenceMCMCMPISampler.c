@@ -611,8 +611,10 @@ void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *propos
 	LALVariableItem *paraHead=NULL;
 	INT4 i;
 	copyVariables(runState->currentParams, proposedParams);
+
+        REAL8 T = *(REAL8 *)getVariable(runState->proposalArgs, "temperature");
 	
-	REAL8 sigma = 0.1;
+	REAL8 sigma = 0.1*sqrt(T); /* Adapt temperature. */
 	REAL8 big_sigma = 1.0;
 	
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in all parameters
