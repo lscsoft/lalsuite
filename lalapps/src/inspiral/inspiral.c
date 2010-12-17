@@ -2662,8 +2662,6 @@ int main( int argc, char *argv[] )
         /* If doing bank veto compute CC Matrix */
         if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
-	  
-          if (vrbflg) fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, 
 			     fcDataParams->ampVec,
 			     subBankCurrent->subBankSize, 
