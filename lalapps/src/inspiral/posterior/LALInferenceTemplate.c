@@ -540,7 +540,7 @@ void templateLAL(LALIFOData *IFOdata)
   /* shift the start time to match the coalescence time,            */
   /* and eventually re-do parameter calculations:                   */
   /* Reset errno. */
-  XLALClearErrno();
+
   LAL_CALL(LALInspiralParameterCalc(&status, &params),&status);
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
