@@ -164,9 +164,9 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 								MTotMax=2.0*(*(REAL8 *)getVariable(priorParams,"component_max"));
 
 							getMinMaxPrior(priorParams, "massratio", (void *)&etaMin, (void *)&etaMax);
-							norm = computePriorMassNorm(*(REAL8 *)getVariable(priorParams,"component_min"),
+							norm = -log(computePriorMassNorm(*(REAL8 *)getVariable(priorParams,"component_min"),
 														*(REAL8 *)getVariable(priorParams,"component_max"),
-														MTotMax, min, max, etaMin, etaMax);
+														MTotMax, min, max, etaMin, etaMax));
 						}
 						else {
 							norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
