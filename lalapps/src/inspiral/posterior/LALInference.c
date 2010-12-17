@@ -1463,7 +1463,7 @@ REAL8 WhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8
 REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
   REAL8 logL = 0.0;
   LALIFOData *ifoPtr = data;
-  UINT4 ifoIndex = 0;
+  /* UINT4 ifoIndex = 0; */
   /* UINT4 i; */
   /* char fileName[256]; */
   /* FILE *out; */
@@ -1531,7 +1531,7 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
     /* fclose(out); */
 
     ifoPtr = ifoPtr->next;
-    ifoIndex++;
+    /* ifoIndex++; */
   }
 
   logL *= -0.5;

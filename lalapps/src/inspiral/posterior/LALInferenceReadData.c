@@ -319,8 +319,8 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                 /* Now re-normalize, taking into account the window norm. */
                 REAL8 norm = sqrt(IFOdata[i].whiteFreqData->data->length / sumOfSquares);
                 for (j = 0; j < IFOdata[i].whiteFreqData->data->length; j++) {
-                  IFOdata[i].whiteFreqData->data->data[i].re *= norm;
-                  IFOdata[i].whiteFreqData->data->data[i].im *= norm;
+                  IFOdata[i].whiteFreqData->data->data[j].re *= norm;
+                  IFOdata[i].whiteFreqData->data->data[j].im *= norm;
                 }
                 /* Zero out the f=0 component */
                 IFOdata[i].whiteFreqData->data->data[0].re = 0.0;
