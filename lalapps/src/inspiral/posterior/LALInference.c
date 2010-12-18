@@ -1413,12 +1413,24 @@ void executeInvFT(LALIFOData *IFOdata)
     if (IFOdata->freqModelhPlus==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhPlus'.\n");
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhPlus, IFOdata->freqModelhPlus, IFOdata->freqToTimeFFTPlan);
+
+    if (xlalErrno) {
+      fprintf(stderr, "XLAL Error: %s (in %s, line %d)\n",
+              XLALErrorString(xlalErrno), __FILE__, __LINE__);
+      exit(1);
+    }
     
     /*  hx :  */
     if (IFOdata->timeModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'timeModelhCross'.\n");
     if (IFOdata->freqModelhCross==NULL) die(" ERROR in executeInvFT(): encountered unallocated 'freqModelhCross'.\n");
     
     XLALREAL8FreqTimeFFT(IFOdata->timeModelhCross, IFOdata->freqModelhCross, IFOdata->freqToTimeFFTPlan);
+
+    if (xlalErrno) {
+      fprintf(stderr, "XLAL Error: %s (in %s, line %d)\n",
+              XLALErrorString(xlalErrno), __FILE__, __LINE__);
+      exit(1);
+    }
     
     IFOdata=IFOdata->next;
   }

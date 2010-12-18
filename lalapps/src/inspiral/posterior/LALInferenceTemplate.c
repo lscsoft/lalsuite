@@ -607,6 +607,8 @@ void templateLAL(LALIFOData *IFOdata)
   }
 
   if (! FDomain) {   /*  (LAL function returns TIME-DOMAIN template)       */
+    IFOdata->modelDomain = timeDomain;
+
     /* copy over, normalise: */
     for (i=0; i<n; ++i) {
       IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
@@ -620,9 +622,9 @@ void templateLAL(LALIFOData *IFOdata)
     if (IFOdata->timeToFreqFFTPlan==NULL)
       die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->timeToFreqFFTPlan'.\n");
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
-  }
+  }  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
+    IFOdata->modelDomain = frequencyDomain;
 
-  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
     /* copy over: */
     IFOdata->freqModelhPlus->data->data[0].re = ((REAL8) LALSignal->data[0]);
     IFOdata->freqModelhPlus->data->data[0].im = 0.0;
@@ -750,8 +752,7 @@ void templateLAL(LALIFOData *IFOdata)
     }
   }
 
-  /* Why was this here?  Weird. */
-  /* IFOdata->modelDomain = frequencyDomain; */
+  IFOdata->modelDomain = frequencyDomain;
   return;
 }
 
