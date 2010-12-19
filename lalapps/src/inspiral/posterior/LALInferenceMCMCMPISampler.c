@@ -190,10 +190,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%8s %12s %9s %9s","Cycle","logPost","logL", "logPrior");
                         if (waveform == SpinTaylor) {
-                          fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-                                  "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc");
+                          fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+                                  "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "temp", "mpirank");
                         } else {
-                          fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc");
+                          fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc", "temp", "mpirank");
                         }
 			//fprintf(chainoutput[t], " %9s","x1");
 			fprintf(chainoutput[t],"\n");
