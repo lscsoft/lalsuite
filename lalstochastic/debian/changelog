@@ -1,3 +1,9 @@
+lalstochastic (1.1.1-1lscsoft1) unstable; urgency=low
+
+  * LALStochastic 1.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 20 Dec 2010 13:14:24 -0600
+
 lalstochastic (1.1.0-1lscsoft1) unstable; urgency=low
 
   * LALStochastic 1.1.0
