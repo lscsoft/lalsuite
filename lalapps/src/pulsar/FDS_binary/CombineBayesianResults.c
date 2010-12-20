@@ -1063,9 +1063,9 @@ int XLALCombineBayesianResults(BayesianResultsFile **combinedresult,
 	LogPrintf(LOG_DEBUG,"%s ...\n");
 	z = (*combinedresult)->start[k] + ((*combinedresult)->logposterior[k]->length-1)*(*combinedresult)->delta[k];
 	LogPrintf(LOG_DEBUG,"%s : combined results on %s %f %f %f %f\n",fn,(*combinedresult)->name[k],
-		  z,(*combinedresult)->logposterior[k]->data[(*combinedresult)->logposterior[k]->length],
-		  (*combinedresult)->logposterior_fixed[k]->data[(*combinedresult)->logposterior[k]->length],
-		  (*combinedresult)->logprior[k]->data[(*combinedresult)->logposterior[k]->length]);
+		  z,(*combinedresult)->logposterior[k]->data[(*combinedresult)->logposterior[k]->length-1],
+		  (*combinedresult)->logposterior_fixed[k]->data[(*combinedresult)->logposterior[k]->length-1],
+		  (*combinedresult)->logprior[k]->data[(*combinedresult)->logposterior[k]->length-1]);
       }
 
     } /* end if statement on nu */
