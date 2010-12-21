@@ -150,16 +150,11 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
    const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
-   gsl_root_fsolver *s1;
+   gsl_root_fsolver *s1 = gsl_root_fsolver_alloc(T1);
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
-   gsl_root_fdfsolver *s0;
+   gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
    gsl_function_fdf FDF;
-   if (method != 0) {
-      s1 = gsl_root_fsolver_alloc(T1);
-   } else {
-      s0 = gsl_root_fdfsolver_alloc(T0);
-   }
    
    
    //Include the various parameters in the struct required by GSL
@@ -269,11 +264,8 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    output->farerrcode = errcode;
    
    //Cleanup
-   if (method != 0) {
-      gsl_root_fsolver_free(s1);
-   } else {
-      gsl_root_fdfsolver_free(s0);
-   }
+   gsl_root_fsolver_free(s1);
+   gsl_root_fdfsolver_free(s0);
    
    
 } /* numericFAR() */
@@ -382,10 +374,10 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.noncentrality = noncentrality;
    vars.dofs = dofs;
    vars.sorting = sorting;
-   vars.lim = 10000;
+   vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 1.0e-5;   //don't change this value
+   REAL8 accuracy = 5.0e-6;   //(1e-5) don't change this value
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);
@@ -395,7 +387,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=2.0e-4) {
+   if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
       //INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0, errcode4 = 0, errcode5 = 0;
@@ -403,24 +395,27 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       INT4 errcode1 = 0, errcode2 = 0;
       REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
       
-      REAL8 dR = 0.99;
+      REAL8 dR = 0.999;
       
       c1 = dR*vars.c;
       vars.c = c1;
-      while ( (tempprob=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1)) <= 2.0e-4 ) {
+      tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
+      while ( tempprob <= 1.0e-4 ) {
          c1 *= dR;
          vars.c = c1;
+         tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
       }
       logprob1 = log10(tempprob);
       
       c2 = dR*c1;
       vars.c = c2;
-      REAL8 deltac = c1 - c2;
-      while ( ((tempprob2=1.0-cdfwchisq(&vars, sigma, accuracy, &errcode2))-tempprob) < 5.0e-4 ) {
-         c2 -= deltac;
+      tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
+      while ( (tempprob2 - tempprob) < 4.0e-4 ) {
+         c2 *= dR;
          vars.c = c2;
+         tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
       }
-      deltac = c1 - c2;
+      REAL8 deltac = c1 - c2;
       logprob2 = log10(tempprob2);
       
       /* c3 = c2-deltac;
@@ -448,11 +443,19 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       //Calculating slope
       probslope = (logprob1-logprob2)/deltac;
       //probslope = (8.0*(logprob2-logprob4)-logprob1+logprob5)/(12.0*deltac);
+      if (probslope>=0.0) {
+         fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
+         XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
+      }
       
       //Find the log10(prob) of the original Rpr value
       logprobest = probslope*(Rpr-c1) + logprob1;
       //logprobest = probslope*(Rpr-c2) + logprob2;
       //logprobest = probslope*(Rpr-c3) + logprob3;
+      if (logprobest>-0.5) {
+         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      }
       
    } /* if prob <= 1e-4 */
    
