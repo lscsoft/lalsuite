@@ -47,6 +47,8 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+int LALwaveformToSPINspiralwaveform(int waveform);
+
 //Test LALAlgorithm
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
@@ -162,8 +164,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	//"waveform" and "pnorder" are ints to label the template used. Just to comform to SPINspiral output format. Should be temporary, and replaced by the command line used.
 	
-	int waveform= *(INT4 *)getVariable(runState->currentParams,"LAL_APPROXIMANT");
-	int pnorder = *(INT4 *)getVariable(runState->currentParams,"LAL_PNORDER");
+	int waveform= LALwaveformToSPINspiralwaveform(*(INT4 *)getVariable(runState->currentParams,"LAL_APPROXIMANT"));
+	double pnorder = ((double)(*(INT4 *)getVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
 	
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
@@ -181,11 +183,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			while(ifodata1){
 				fprintf(chainoutput[t], "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %12d  %12d  %12d\n",
 							ifodata1->detector->frDetector.name,0.0,ifodata1->fLow,ifodata1->fHigh,atof(getProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
-							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(getProcParamVal(runState->commandLine,"--seglen")->value),atoi(getProcParamVal(runState->commandLine,"--srate")->value),(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value),(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value));
+							XLALGPSGetREAL8(&(ifodata1->epoch)),atof(getProcParamVal(runState->commandLine,"--seglen")->value),atoi(getProcParamVal(runState->commandLine,"--srate")->value),
+							(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value),
+							(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value));
 				ifodata1=ifodata1->next;
 			}
 			fprintf(chainoutput[t], "\n\n%31s","");
-			if (waveform == SpinTaylor) {
+			if (waveform == 3) {
 				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",83,84,81,73,74,71,55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
@@ -1371,5 +1375,15 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 }
 
 
-
+int LALwaveformToSPINspiralwaveform(int waveform)
+{
+	switch (waveform) {
+		case 11:
+			return 3;
+			break;
+		default:
+			return 4;
+			break;
+	}
+}
 

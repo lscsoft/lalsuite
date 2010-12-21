@@ -311,6 +311,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 void initVariables(LALInferenceRunState *state)
 {
 	LALStatus status;
+	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
 	LALVariables *priorArgs=state->priorArgs;
 	state->currentParams=XLALCalloc(1,sizeof(LALVariables));
@@ -401,9 +402,9 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
-		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}
-		if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
-		if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
+		//if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}
+		//if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
+		//if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
