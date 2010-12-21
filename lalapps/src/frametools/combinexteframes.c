@@ -63,11 +63,12 @@
 #define MIN_DT 0.000244140625         /* the minimum sample time we will use (equiv max freq 2048 Hz) */
 #define APIDLENGTH 5                  /* the length of APID HEX strings */
 #define STRINGLENGTH 256              /* the length of general string */
+#define APIDLENGTH 5                  /* the length of an APID string */
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NAPID 6                       /* the number of valid APIDs we can currently read */
 #define MINFRAMELENGTH 10             /* the minimum duration of output frame file in seconds */
 #define NPCU 5                        /* the number of PCUs on XTE */
-#define PCUCOUNTTHRESH 50             /* threshold on the counts per PCU that determine operational status */
+#define PCUCOUNTTHRESH 5              /* threshold on the counts per PCU that determine operational status */
 #define ARRAY 0                       /* data type codes */
 #define EVENT 1                       /* data type codes */
 #define PCU_AREA 0.13                 /* the collecting area of a single PCU in square metres */
@@ -434,6 +435,7 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   FrStream *fs = NULL;            /* frame stream pointer */
   glob_t pglob;
   CHAR glob_pattern[STRINGLENGTH];
+  CHAR apid[APIDLENGTH];
 
   /* check input arguments */
   if ((*framechannels) != NULL) {
@@ -452,7 +454,8 @@ int XLALReadFrameDir(FrameChannelList **framechannels,    /**< [out] a structure
   }
 
   /* if we have a filename patttern then set the global variable */
-  if (pattern != NULL) snprintf(glob_pattern,STRINGLENGTH,"%s/*%s*.gwf",inputdir,pattern); 
+  snprintf(apid,APIDLENGTH,"%s",pattern);
+  if (pattern != NULL) snprintf(glob_pattern,STRINGLENGTH,"%s/*%s*.gwf",inputdir,apid); 
   else snprintf(glob_pattern,STRINGLENGTH,"%s/*.gwf",inputdir); 
   LogPrintf(LOG_DEBUG,"%s : searching for file pattern %s\n",fn,glob_pattern);
   

@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2010 Chris Messenger
+/** Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -56,9 +55,11 @@
 /* some global constants */
 
 #define STRINGLENGTH 256              /* the length of general string */
+#define APIDLENGTH 5                  /* the length of an APID string */
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
 #define NBINMAX 4                     /* the number of binary parameter dimensions */
+#define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define PCU_AREA 0.13                 /* the collecting area of a single PCU in square metres */
 #define DEFAULT_SOURCE "SCOX1"        /* the default source name */
@@ -1184,6 +1185,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   LIGOTimeGPS gpsstart, gpsend;
   UINT4 i;                                    /* counters */
   INT4 count = 0;
+  CHAR apid[APIDLENGTH];
   LALStatus status = blank_status;              /* for use wih non-XLAL functions */
   
   /* validate input variables */
@@ -1230,7 +1232,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   freqmax = freqmin + freqband;
 
   /* allocate memory for the temporary catalog */
-  if (obsid_pattern != NULL) { 
+  if (obsid_pattern != NULL) {
+    snprintf(apid,APIDLENGTH,"%s",obsid_pattern); 
     if ( (newcat = XLALCalloc(1,sizeof(SFTCatalog))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: XLALCalloc() failed with error = %d\n",fn,xlalErrno);
       XLAL_ERROR(fn,XLAL_ENOMEM);
@@ -1262,7 +1265,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
       snprintf(obsid_string,strlen(s_obsid) - strlen(e_obsid) + 1,"%s",s_obsid);
 
       /* if the obsid is not consistent with the requested pattern then we ignore this SFT */
-      if (strstr(obsid_string,obsid_pattern) != NULL) {
+      if (strstr(obsid_string,apid) != NULL) {
 	if (!((sft_fmin>freqmax) || (sft_fmax<freqmin))) {
 	  memcpy(&(newcat->data[newcat->length]),&(catalog->data[i]),sizeof(SFTDescriptor));
 	  newcat->length++;
@@ -1690,8 +1693,8 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      REAL8 deltafn = 2.0*sqrt(mu/(ndim*gnn));
 
      /* compute number of grid points in this dimension and enforce a grid centered on the middle of the parameter space */
-     INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn);
-     REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;
+     INT4 length = (INT4)ceil((fnmax[n]-fnmin[n])/deltafn) + 2*NBINS;                      /* add bins at each end for safety */
+     REAL8 minfn = 0.5*(fnmin[n]+fnmax[n]) - 0.5*(length-1)*deltafn;  
      
      (*gridparams)->grid[n].delta = deltafn;
      (*gridparams)->grid[n].oneoverdelta = 1.0/deltafn;
@@ -2270,7 +2273,8 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
       GridParameters *fdotgrid = power->segment[i]->gridparams;
       REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
       LikelihoodParams Lparams = Lparamsvec->data[i];
-      UINT4 idx = 0;
+      /* UINT4 idx = 0; */
+      INT4 idx = 0;
       REAL8 logLratio = 0.0;
       
       /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
@@ -2281,6 +2285,15 @@ int XLALComputeBayesFactor(BayesianProducts **Bayes,                /**< [out] t
 	UINT4 tempidx = 0.5 + (fdots.x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
 	idx += tempidx*fdotgrid->prod[j];
       }
+
+      /** DEBUGGING - remove me **/
+      /* if ((idx>=(INT4)currentpower->data->length)||(idx<0)) { 
+        printf("segment number %d start time = %d %d\n",i,power->segment[i]->epoch.gpsSeconds,power->segment[i]->epoch.gpsNanoSeconds);
+        printf("idx = %d\n",idx);
+	printf("binary template params (nu = %6.12f asini = %6.12f tasc = %6.12f W = %6.12f)\n",bintemp->x[0],bintemp->x[1],bintemp->x[2],bintemp->x[3]);
+        printf("freq derivitives (f0 = %6.12f)\n",fdots.x[0]);
+        printf("data boundaries (fstart = %6.12f fend = %6.12f delta = %6.12f length = %d)\n",power->segment[i]->gridparams->grid[0].min,power->segment[i]->gridparams->grid[0].min+power->segment[i]->gridparams->grid[0].delta*power->segment[i]->gridparams->grid[0].length,power->segment[i]->gridparams->grid[0].delta,power->segment[i]->gridparams->grid[0].length);
+      } */
       
       /* define the power at this location in this segment */
       Lparamsvec->power->data[i] = currentpower->data->data[idx];
