@@ -329,7 +329,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 Dmin=1.0;
 	REAL8 Dmax=100.0;
 	REAL8 mcMin=1.0;
-	REAL8 mcMax=20.5;
+	REAL8 mcMax=15.3;
 	//REAL8 logmcMax,logmcMin;
 	REAL8 mMin=1.0,mMax=30.0;
 	REAL8 MTotMax=35.0;
