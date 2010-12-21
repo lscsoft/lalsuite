@@ -3338,7 +3338,6 @@ int main( int argc, char *argv[] )
       snprintf( runpath, FILENAME_MAX, "%s/%s.xml",
                 runpathTmp, fileName );
     }
-    printf("%s\n", runpath);
     remove(runpath);
     unlink(runpath);
     if ( outputPath[0] && username[0] ) {
