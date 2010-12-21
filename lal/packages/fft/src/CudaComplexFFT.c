@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2010 Karsten Wiesner, Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -69,12 +69,15 @@ COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measure
   else createSize = size;
   cufftPlan1d( &plan->plan, createSize, CUFFT_C2C, 1 );
   /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
-  /* check to see success of plan creation */
-  if ( ! plan->plan )
-  {
+
+  /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
+      So checking against 0 and occasionaly destroy the plan is a bug.
+    if ( ! plan->plan )
+   {
     XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
+  */
 
   plan->d_input = XLALCudaMallocComplex(size);
   plan->d_output = XLALCudaMallocComplex(size);
@@ -113,8 +116,10 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan )
   static const char *func = "XLALDestroyCOMPLEX8FFTPlan";
   if ( ! plan )
     XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  /* Plan=0 Bugfix
+   if ( ! plan->plan )
+      XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  */
   //LAL_FFTW_PTHREAD_MUTEX_LOCK;
   cufftDestroy( plan->plan );
   XLALCudaFree(plan->d_input);
@@ -132,7 +137,10 @@ int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
   static const char *func = "XLALCOMPLEX8VectorFFT";
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
+  /* Plan=0 Bugfix
+     if ( ! plan->plan || ! plan->size )
+  */
+  if (! plan->size )
     XLAL_ERROR( func, XLAL_EINVAL );
   if ( ! output->data || ! input->data || output->data == input->data )
     XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */
@@ -214,12 +222,13 @@ COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measu
   XLALFree( tmp2 );
   XLALFree( tmp1 );
 
-  /* check to see success of plan creation */
+  /* Plan=0 Bugfix
   if ( ! plan->plan )
   {
     XLALFree( plan );
     XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
+  */
 
   /* now set remaining plan fields */
   plan->size = size;
@@ -256,8 +265,10 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan )
   static const char *func = "XLALDestroyCOMPLEX16FFTPlan";
   if ( ! plan )
     XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  /*Plan=0 Bugfix
+    if ( ! plan->plan )
+     XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  */
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
   fftw_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
@@ -273,7 +284,10 @@ int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
   static const char *func = "XLALCOMPLEX16VectorFFT";
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
+  /* Plan=0 Bugfix
+     if ( ! plan->plan || ! plan->size )
+  */
+  if ( ! plan->size )
     XLAL_ERROR( func, XLAL_EINVAL );
   if ( ! output->data || ! input->data || output->data == input->data )
     XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, Duncan Brown, Eirini Messaritaki, Jolien Creighton, Reinhard Prix, Craig Robinson
+*  Copyright (C) 2010 Karsten Wiesner, Stas Babak, Duncan Brown, Eirini Messaritaki, Jolien Creighton, Reinhard Prix, Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *
  * File Name: FindChirpChisq.c
  *
- * Author: Anderson, W. G., and Brown, D. A.
+ * Author: Wiesner, K., Anderson, W. G., and Brown, D. A.
  *
  *-----------------------------------------------------------------------
  */
@@ -68,6 +68,13 @@ LALCOMPLEX8VectorFFT()
 
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
+#define CHISQ_TEST_GPU
+
+#ifdef CHISQ_TEST_GPU
+#include "Chisq_GPU.h"
+#else
+#include "Chisq_CPU.h"
+#endif
 
 
 void
@@ -187,20 +194,6 @@ LALFindChirpChisqVeto (
     )
 
 {
-  UINT4                 j, l;
-  UINT4                 numPoints;
-
-  REAL4                *chisq;
-
-  COMPLEX8             *q;
-  COMPLEX8             *qtilde;
-
-  UINT4                 numChisqPts;
-  UINT4                 numChisqBins;
-  UINT4                *chisqBin;
-  REAL4                 chisqNorm;
-
-  COMPLEX8             *qtildeBin;
 
   INITSTATUS( status, "LALFindChirpChisqVeto", FINDCHIRPCHISQC );
   ATTATCHSTATUSPTR( status );
@@ -276,70 +269,17 @@ LALFindChirpChisqVeto (
   }
 
 
-  /*
-   *
-   * point local pointers to structure pointers
-   *
-   */
+#ifdef CHISQ_TEST_GPU
 
+  Chisq_GPU(chisqVec->data, input->qVec->data, input->qtildeVec->data, params->chisqBinVec->data, 
+	    input->qVec->length, params->chisqBinVec->length - 1, sqrt( params->norm ));
+#else
 
-  chisq     = chisqVec->data;
+  Chisq_CPU(chisqVec->data, input->qVec->data, input->qtildeVec->data, params, 
+	    input->qVec->length, params->chisqBinVec->length - 1, 
+	    sqrt( params->norm ), status);
 
-  numPoints = input->qVec->length;
-  q         = input->qVec->data;
-  qtilde    = input->qtildeVec->data;
-
-  numChisqPts  = params->chisqBinVec->length;
-  numChisqBins = numChisqPts - 1;
-  chisqBin     = params->chisqBinVec->data;
-  chisqNorm    = sqrt( params->norm );
-
-  qtildeBin = params->qtildeBinVec->data;
-
-
-  /*
-   *
-   * fill the numBins time series vectors for the chi-squared statistic
-   *
-   */
-
-
-  for ( l = 0; l < numChisqBins; ++l )
-  {
-    memset( qtildeBin, 0, numPoints * sizeof(COMPLEX8) );
-
-    memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l],
-        (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
-
-    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
-        params->qtildeBinVec, params->plan );
-    CHECKSTATUSPTR( status );
-  }
-
-
-  /*
-   *
-   * calculate the chi-squared value at each time
-   *
-   */
-
-
-  memset( chisq, 0, numPoints * sizeof(REAL4) );
-
-  for ( j = 0; j < numPoints; ++j )
-  {
-    for ( l = 0; l < numChisqBins; ++l )
-    {
-      REAL4 Xl = params->qBinVecPtr[l]->data[j].re;
-      REAL4 Yl = params->qBinVecPtr[l]->data[j].im;
-      REAL4 deltaXl = chisqNorm * Xl -
-        (chisqNorm * q[j].re / (REAL4) (numChisqBins));
-      REAL4 deltaYl = chisqNorm * Yl -
-        (chisqNorm * q[j].im / (REAL4) (numChisqBins));
-
-      chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
-    }
-  }
+#endif
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

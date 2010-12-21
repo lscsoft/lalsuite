@@ -2,6 +2,7 @@ INCLUDES = -I$(top_builddir)/include
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
+	Chisq_GPU.h \
 	BBHPhenomCoeffs.h \
 	BlackHoleMode.h \
 	CoherentInspiral.h \
@@ -51,6 +52,7 @@ lalinspiralinclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
+	Chisq_GPU.cpp \
 	BandPassInspiralTemplate.c \
 	BlackHoleMode.c \
 	CoherentInspiralFilter.c \
