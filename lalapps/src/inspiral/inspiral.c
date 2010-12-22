@@ -1947,6 +1947,7 @@ int main( int argc, char *argv[] )
       case EOB:
       case EOBNR:
       case FindChirpPTF:
+      case IMRPhenomB:
         if ( vrbflg )
           fprintf( stdout, "findchirp conditioning data for TD or PTF\n" );
         LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec,
@@ -2230,6 +2231,7 @@ int main( int argc, char *argv[] )
           case PadeT1:
           case EOB:
           case EOBNR:
+          case IMRPhenomB:
             LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt,
                   bankCurrent, fcTmpltParams ), &status );
             break;
@@ -2419,6 +2421,7 @@ int main( int argc, char *argv[] )
               case PadeT1:
               case EOB:
               case EOBNR:
+              case IMRPhenomB:
                 /* construct normalization for time domain templates... */
                 LAL_CALL( LALFindChirpTDNormalize( &status,
                       fcFilterInput->fcTmplt, fcFilterInput->segment,
@@ -2696,6 +2699,7 @@ int main( int argc, char *argv[] )
               case PadeT1:
               case EOB:
               case EOBNR:
+              case IMRPhenomB:
                 /* recompute the template norm since it has been over written */
                 /* ( When doing the chisq test and the bank veto for          */
                 /* time domain searches that don't use the                    */
@@ -2805,6 +2809,7 @@ int main( int argc, char *argv[] )
         case EOB:
         case EOBNR:
         case FindChirpSP:
+        case IMRPhenomB:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
           {
@@ -3628,7 +3633,7 @@ fprintf( a, "  --inverse-spec-length T      set length of inverse spectrum to T 
 fprintf( a, "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n");\
 fprintf( a, "\n");\
 fprintf( a, "  --approximant APPROX         set approximant of the waveform to APPROX\n");\
-fprintf( a, "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n");\
+fprintf( a, "                               (FindChirpSP|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|IMRPhenomB\n");\
 fprintf( a, "                                  TaylorT3|PadeT1|EOB|GeneratePPN|FindChirpPTF) \n");\
 fprintf( a, "  --order ORDER                set the pN order of the waveform to ORDER\n");\
 fprintf( a, "                               (twoPN|twoPointFivePN|threePN|threePointFivePN|\n");\
@@ -4414,12 +4419,17 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = FindChirpPTF;
         }
+        else if ( ! strcmp( "IMRPhenomB", optarg ) )
+        {
+          approximant = IMRPhenomB;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either FindChirpSP, BCV, BCVC, BCVSpin, FindChirpPTF\n"
-              "TaylorT1, TaylorT2, TaylorT3, GeneratePPN, PadeT1 or EOB)\n",
+              "%s (must be either FindChirpSP, BCV, BCVC, BCVSpin, \n"
+              "FindChirpPTF,TaylorT1, TaylorT2, TaylorT3, GeneratePPN,\n"
+              "IMRPhenomB, PadeT1 or EOB)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }

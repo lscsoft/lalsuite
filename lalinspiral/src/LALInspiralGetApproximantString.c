@@ -194,6 +194,11 @@ int XLALInspiralGetApproximantString( CHAR        *output,
     case PhenSpinTaylorRD:
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "PhenSpinTaylorRD" );
+
+    case IMRPhenomB:
+      snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "IMRPhenomB" );
+
       break;
 
     default:
