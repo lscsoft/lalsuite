@@ -62,12 +62,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	memset(&status,0,sizeof(status));
 	//REAL8 dummyR8 = 0.0;
 	REAL8 temperature = 1.0;
+	INT4 acceptanceCount = 0;
 	REAL8 nullLikelihood;
 	REAL8 logChainSwap = 0.0;
 	int tempIndex;
 	int *tempIndexVec = NULL;
 	int dummyTemp;
 	REAL8 *tempLadder = NULL;			//the temperature ladder
+	INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
 	double *TcurrentLikelihood = NULL; //the current likelihood for each chain
 	REAL8 *sigmaVec = NULL;
 	//LALVariables* TcurrentParams = malloc(sizeof(LALVariables));	//the current parameters for each chains
@@ -126,15 +128,19 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	}
 	else {
 		tempDelta = log(tempMax)/(REAL8)(nChain-1);
-		for (t=0; t<nChain; ++t) tempLadder[t]=exp(t*tempDelta);
+		for (t=0; t<nChain; ++t) {
+			tempLadder[t]=exp(t*tempDelta);
+			}
 		}
 	
 	if (MPIrank == 0) {
 		tempIndexVec = (int*) malloc(sizeof(int)*nChain);	//initialize temp index
 		TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
+		acceptanceCountLadder = (int*) malloc(sizeof(int)*nChain);		//array of acceptance counts to compute the acceptance ratios.
 
 		for (t=0; t<nChain; ++t) {
 			tempIndexVec[t] = t;
+			acceptanceCountLadder[t] = 0;
 			printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
 		}
 	}
@@ -193,13 +199,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",83,84,81,73,74,71,55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-                                  "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl", "temp", "mpirank");
+				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+                                  "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl", "temp", "mpirank", "acceptance_ratio");
 			} else {
 				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc", "logl", "temp", "mpirank");
+				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc", "logl", "temp", "mpirank", "acceptance_ratio");
 			}
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
@@ -207,6 +213,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[t],"%f\t",runState->currentLikelihood - nullLikelihood);
 			fprintf(chainoutput[t],"%f\t",tempLadder[t]);
 			fprintf(chainoutput[t],"%d\t",MPIrank);
+			fprintf(chainoutput[t],"%d\t",acceptanceCount);
 			fprintf(chainoutput[t],"\n");
 			fclose(chainoutput[t]);
 		}	
@@ -228,7 +235,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	copyVariables(runState->currentParams,&(dummyLALVariable));
 	*/
 	INT4 parameter=0;
-	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);	
+	addVariable(runState->proposalArgs, "temperature", &temperature,  REAL8_t, PARAM_LINEAR);
+	addVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  INT4_t, PARAM_LINEAR);
 	//addVariable(runState->proposalArgs, "sigma", sigma,  gslMatrix_t, PARAM_LINEAR);
 	addVariable(runState->proposalArgs, "sigma", &sigma,  REAL8Vector_t, PARAM_LINEAR);
 	addVariable(runState->proposalArgs, "s_gamma", &s_gamma, REAL8_t, PARAM_LINEAR);
@@ -254,6 +262,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//printf(" MCMC iteration: %d\t", i+1);
 		//copyVariables(&(TcurrentParams),runState->currentParams);
 		setVariable(runState->proposalArgs, "temperature", &(tempLadder[tempIndex]));  //update temperature of the chain
+		setVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 		setVariable(runState->proposalArgs, "tempIndex", &(tempIndex));
 		//s_gamma=10.0*exp(-(1.0/6.0)*log((double)i));
 		//setVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
@@ -266,10 +275,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//copyVariables(runState->currentParams,&(TcurrentParams));
 		//TcurrentLikelihood[t] = runState->currentLikelihood; // save the parameters and temperature.
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
+		acceptanceCount = *(INT4*) getVariable(runState->proposalArgs, "acceptanceCount");
+		
 		if ((i % Nskip) == 0){
 			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 			//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-                  fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
+			fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
 			/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
 			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
 			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
@@ -284,6 +295,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[tempIndex],"%f\t",runState->currentLikelihood - nullLikelihood);
 			fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
 			fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
+			fprintf(chainoutput[tempIndex],"%f\t",((double)acceptanceCount)/((double)i));
 			fprintf(chainoutput[tempIndex],"\n");
 			fflush(chainoutput[tempIndex]);
 			//fclose(chainoutput[tempIndex]);
@@ -308,6 +320,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		//	fprintf(stdout,"\n");
 		//}
 		MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		//MPI_Gather(sigma->data,nPar,MPI_DOUBLE,sigmaVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);	
 			
@@ -331,6 +344,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 						tempIndexVec[upperRank] = tempIndexVec[lowerRank];
 						tempIndexVec[lowerRank] = dummyTemp;
 						++tempSwapCount;
+						
+						dummyTemp = acceptanceCountLadder[upperRank];
+						acceptanceCountLadder[upperRank]=acceptanceCountLadder[lowerRank];
+						acceptanceCountLadder[lowerRank] = dummyTemp;
 						/*
 						dummyR8 = TcurrentLikelihood[tempj];
 						TcurrentLikelihood[tempj] = TcurrentLikelihood[tempi];
@@ -347,6 +364,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			} //lowerRank
 		} //MPIrank==0
 		MPI_Scatter(tempIndexVec, 1, MPI_INT, &tempIndex, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Scatter(acceptanceCountLadder, 1, MPI_INT, &acceptanceCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		//MPI_Scatter(sigmaVec,nPar,MPI_DOUBLE,sigma->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
 		MPI_Barrier(MPI_COMM_WORLD);
 		//printf("%d\n",count);
@@ -368,10 +386,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	free(outfileName);
 
 	free(tempLadder);
+	
 
 	if (MPIrank == 0) {
 		free(tempIndexVec);
 		free(TcurrentLikelihood);
+		free(acceptanceCountLadder);
 	}
 }
 
@@ -386,12 +406,14 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
 	REAL8 logAcceptanceProbability;
 	REAL8 temperature;
+	INT4 acceptanceCount;
 	
 	// current values:
 	//logPriorCurrent      = runState->prior(runState, runState->currentParams);
 	logPriorCurrent      = runState->currentPrior;
 	logLikelihoodCurrent = runState->currentLikelihood;
 	temperature = *(REAL8*) getVariable(runState->proposalArgs, "temperature");
+	acceptanceCount = *(INT4*) getVariable(runState->proposalArgs, "acceptanceCount");
 //	REAL8 nullLikelihood = *(REAL8*) getVariable(runState->proposalArgs, "nullLikelihood");
 	
 	// generate proposal:
@@ -423,10 +445,11 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
 		runState->currentPrior = logPriorProposed;
+		acceptanceCount++;
+		setVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
 		//}
 	}
 	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
-	
 	destroyVariables(&proposedParams);	
 }
 
