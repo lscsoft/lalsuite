@@ -167,6 +167,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 							norm = -log(computePriorMassNorm(*(REAL8 *)getVariable(priorParams,"component_min"),
 														*(REAL8 *)getVariable(priorParams,"component_max"),
 														MTotMax, min, max, etaMin, etaMax));
+							//printf("norm@%s=%f\n",item->name,norm);
 						}
 						else {
 							norm = -1.79175946923-log(pow(max,0.166666666667)-pow(min,0.166666666667));
@@ -310,24 +311,6 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 			
 		}
 	}
-	
-	if(checkVariable(params,"massratio"))
-	{
-		eta=*(REAL8 *)getVariable(params,"massratio");
-		mc2masses(exp(logmc),eta,&m1,&m2);
-	}
-	
-	/* Check for component masses in range, if specified */
-	if(checkVariable(priorParams,"component_min"))
-		if(*(REAL8 *)getVariable(priorParams,"component_min") > m1
-		   || *(REAL8 *)getVariable(priorParams,"component_min") > m2)
-			return -DBL_MAX;
-	
-	if(checkVariable(priorParams,"component_max"))
-		if(*(REAL8 *)getVariable(priorParams,"component_max") < m1
-		   || *(REAL8 *)getVariable(priorParams,"component_max") < m2)
-			return -DBL_MAX;
-	
 	
 	return(logPrior);
 }
