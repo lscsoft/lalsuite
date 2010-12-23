@@ -1648,17 +1648,22 @@ int XLALREAL4TimeSeriesToFrame(CHAR *outputdir,               /**< [in] name of 
     /* first we need to extract parts of the original filenames */
     {
       CHAR originalfile[STRINGLENGTH];
-      CHAR *c1,*c2;
+      CHAR *c1,*c2,*c3;
       INT4 j;
       INT4 n;
       snprintf(originalfile,STRINGLENGTH,"%s",plan->channellist.channel[0].filename);
-      c1 = strstr(originalfile,"-");
+      if (!(c1 = strrchr(originalfile,'/'))) c1 = originalfile;
       c2 = c1;
-      for (j=0;j<4;j++) {
-	CHAR *temp = strstr(c2+1,"_");
+      for (j=0;j<3;j++) {
+	CHAR *temp = strstr(c1+1,"-");
 	c2 = temp;
       }
-      n = strlen(c1) - strlen(c2);
+      c3 = c2;
+      for (j=0;j<4;j++) {
+	CHAR *temp = strstr(c3+1,"_");
+	c3 = temp;
+      }
+      n = strlen(c2) - strlen(c3);
       snprintf(filecomment,n,"%s",c1+1);
     }
     
