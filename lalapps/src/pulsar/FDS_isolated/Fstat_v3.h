@@ -18,7 +18,7 @@
  */
 
 /** \defgroup CFSv3 F-statistic (v3)
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \author Reinhard Prix
  * \brief Module for FFT-based F-statistic calculation
  *

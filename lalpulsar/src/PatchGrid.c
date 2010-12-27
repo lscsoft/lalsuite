@@ -17,13 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Alicia Sintes, Badri Krishnan
- * \ingroup pulsarHough
- * \file DriveHough.c
- * \brief Routines for creating the Hough skypatch
- */
-
 /*-----------------------------------------------------------------------
  *
  * File Name: PatchGrid.c
@@ -50,119 +43,63 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="PatchGridCV">
-Author: Sintes, A. M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+ * \author Alicia Sintes, Badri Krishnan
+ * \file
+ * \ingroup LUT_h
+ * \brief Function for tiling  the sky-patch (on the projected plane).
 
+\heading{Description}
 
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{PatchGrid.c}}
-\label{ss:PatchGrid.c}
-Function for tiling  the sky-patch (on the projected plane).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PatchGridD}
-\index{\verb&LALHOUGHComputeSizePar()&}
-\index{\verb&LALHOUGHComputeNDSizePar()&}
-\index{\verb&LALHOUGHFillPatchGrid()&}
-%\index{\verb&LALHOUGHPatchGrid()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-This  is a {\sc provisional}final now ? routine for tiling a  sky-pacth
+This  is a \c provisionalfinal now ? routine for tiling a  sky-pacth
 on the projected plane.
 
 Patch size specified by user
 
-==doc needs to be updated ==
+== doc needs to be updated ==
 
-The reason to call it  {\sc provisional}  is because
+The reason to call it  \c provisional  is because
 the size of the patch depends on the grid used in the
 demodulation stage. Neighbour sky-patches should not be separated
 nor overlapping too much.
-Here for setting the patch size, we  consider only $v_{epicycle}$,
-the frequency \verb@f0@ and  \verb@deltaF@ so that the \lq longitudinal'  size
-of the patch is given by \verb@side == deltaF/f0 * c/v_epi@.
- By taking \verb@f0@ to be the maximun frequency considered in that step,
- the patch-size is valid for a whole frequency range.\\
+Here for setting the patch size, we  consider only \f$v_{epicycle}\f$,
+the frequency \c f0 and  \c deltaF so that the ` longitudinal'  size
+of the patch is given by <tt>side == deltaF/f0 * c/v_epi</tt>.
+By taking \c f0 to be the maximun frequency considered in that step,
+the patch-size is valid for a whole frequency range.\   \
 
 
- Given input parameters,  the function \verb&LALHOUGHPatchGrid()& provides
-  patch information.
+Given input parameters,  the function LALHOUGHPatchGrid() provides
+patch information.
 
- The input \verb@*in1@ is a structure of type  \verb@HOUGHResolutionPar@
- containing
-  some resolution parameters such as:
- \texttt{in1->f0} a frequency, \texttt{in1->deltaF} the frequency resolution, and
- \texttt{in1->minWidthRatio}  the ratio between the minimum  annulus width
+The input <tt>*in1</tt> is a structure of type  \c HOUGHResolutionPar containing
+some resolution parameters such as:
+<tt>in1->f0</tt> a frequency, <tt>in1->deltaF</tt> the frequency resolution, and
+<tt>in1->minWidthRatio</tt>  the ratio between the minimum  annulus width
 for this search and the minimun  annulus width for  1 year integration time.
 This value should be in the interval  [1.0, 25.0].
 
- The output structure \verb@*out@  of type \verb@HOUGHPatchGrid@
- stores patch grid information. The fields are:
-\begin{description}
-\item[\texttt{out->f0 }]  The frequency to construct grid
-\item[\texttt{out->deltaF }]  The frequency resolution: \texttt{df=1/TCOH}
-\item[\texttt{out->minWidthRatio }]  Same as \texttt{in1->minWidthRatio}
-\item[\texttt{out->deltaX }] Space discretization in the  x-direction
-\verb@=deltaF * minWidthRatio/(f0 * VTOT * PIXELFACTORX)@.
-\item[\texttt{out->xMin }]  Minimum  x value allowed, given as the  center of the first pixel.
-\item[\texttt{out->xMax }] Maximun x value allowed, given as the  center of the last pixel.
-\item[\texttt{out->xSide }] Real number of pixels in the x direction (in the
-projected plane). It should be smaller or equal to \texttt{xSideMax}
-(\verb@xSide = VTOT * PIXELFACTORX / (VEPI * minWidthRatio)@ ).
-\item[\texttt{out->xSideMax }]  Length of \texttt{xCoor}.
-\item[\texttt{out->xCoor }] Coordinates of the pixel centers in the
-x-direction.
-\item[\texttt{out->deltaY }] Space resolution in the  y-direction
-\verb@=deltaF * minWidthRatio/(f0 * VTOT * PIXELFACTORY)@.
-\item[\texttt{out->yMin }]  Minimum  y value allowed, given as the  center of the first pixel.
-\item[\texttt{out->yMax }]  Maximun y value allowed, given as the  center of the last pixel.
-\item[\texttt{out->ySide }] Real number of pixels in the y-direction. It should
-be smaller or  equal to \texttt{ySideMax}
- (\verb@ySide = VTOT * PIXELFACTORY / (VEPI * minWidthRatio)@ ).
-\item[\texttt{out->ySideMax }]  Length of \texttt{yCoor}.
-\item[\texttt{out->yCoor }] Coordinates of the pixel centers in the
-y-direction.
-\end{description}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%%\begin{verbatim}
-%%LALZDestroyVector()
-%%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{PatchGridCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
+*/
 
 
 #include <lal/LUT.h>
 
 
-
+/** \cond DONT_DOXYGEN */
 NRCSID (PATCHGRIDC, "$Id$");
-
+/** \endcond */
 
 /*
  * The functions that make up the guts of this module
  */
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* ******************************* <lalVerbatim file="PatchGridD"> */
+
 void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
                    HOUGHSizePar        *out,
                    HOUGHResolutionPar  *in1
                    )
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
 
   INT8    f0Bin;        /* corresponding freq. bin  */
@@ -269,12 +206,12 @@ void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* ******************************* <lalVerbatim file="PatchGridD"> */
+
 void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
                    HOUGHSizePar        *out,
                    HOUGHResolutionPar  *in1
                    )
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT8    f0Bin;        /* corresponding freq. bin  */
   REAL8   deltaF;    /* frequency resolution  df=1/TCOH*/
@@ -397,11 +334,11 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  *********************************<lalVerbatim file="PatchGridD"> */
+
 void LALHOUGHFillPatchGrid (LALStatus      *status,
                    HOUGHPatchGrid      *out,  /* */
                    HOUGHSizePar        *in1)
-{ /* ***********************************************</lalVerbatim> */
+{ 
 
   REAL8   deltaX;
   REAL8   deltaY;

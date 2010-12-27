@@ -20,12 +20,10 @@
 #ifndef __TWOSPECT_H__
 #define __TWOSPECT_H__
 
-
-#include <time.h>
-
 #include <lal/RealFFT.h>
 
 #include <gsl/gsl_rng.h>
+#include "cmdline.h"
 #include "TwoSpectTypes.h"
 
 
@@ -35,13 +33,14 @@ void free_inputParams(inputParamsStruct *input);
 ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
-REAL4Vector * readInSFTs(inputParamsStruct *input, REAL4 *normalization);
+REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
+REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
 void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-void makeSecondFFT(REAL4Vector *output, REAL4 normalization, REAL4Vector *tfdata, inputParamsStruct *input, REAL4FFTPlan *plan);
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4 *normalization);
+void makeSecondFFT(ffdataStruct *ffdata, REAL4Vector *tfdata, REAL4FFTPlan *plan);
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL8 *normalization);
 
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
@@ -55,6 +54,8 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
+
+INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info);
 
 #endif
 

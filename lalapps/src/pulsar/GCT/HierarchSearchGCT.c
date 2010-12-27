@@ -54,9 +54,23 @@ RCSID( "$Id$");
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
 #define FOPEN fopen
+#ifdef HS_OPTIMIZATION
+extern void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+#define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#else
 #define COMPUTEFSTATFREQBAND ComputeFStatFreqBand
-#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #endif
+#define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
+char**global_argv;
+int global_argc;
+#endif /* EAH_BOINC */
 
 #define EARTHEPHEMERIS  "earth05-09.dat"
 #define SUNEPHEMERIS 	"sun05-09.dat"
@@ -331,6 +345,10 @@ int MAIN( int argc, char *argv[]) {
 
   global_status = &status;
 
+#ifndef EAH_BOINC
+  global_argv = argv;
+  global_argc = argc;
+#endif
 
   /* LALDebugLevel must be called before any LALMallocs have been used */
   lalDebugLevel = 0;
@@ -1190,8 +1208,14 @@ int MAIN( int argc, char *argv[]) {
             /* compute the global-correlation coordinate indices */
             U1idx = ComputeU1idx ( freq_tmp, f1dot_eventB1, A1, u1start, u1winInv );
 
-            if ( (U1idx < 0) || (U1idx + finegrid.freqlength >= fveclength) ) {
-              fprintf(stderr,"ERROR: Stepped outside the coarse grid! \n");
+            if (U1idx < 0) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d)! \n", U1idx);
+              return(HIERARCHICALSEARCH_ECG);
+            }
+
+            if (U1idx + finegrid.freqlength >= fveclength) {
+              fprintf(stderr,"ERROR: Stepped outside the coarse grid (%d:%d:%d:%d)! \n",
+		      U1idx, finegrid.freqlength, U1idx + finegrid.freqlength, fveclength);
               return(HIERARCHICALSEARCH_ECG);
             }
 

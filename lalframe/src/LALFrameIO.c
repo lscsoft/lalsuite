@@ -210,6 +210,12 @@ FrDetector * XLALFrDetectorNew( int detector )
 }
 
 
+void XLALFrameFree( FrameH *frame )
+{
+  FrameFree( frame );
+}
+
+
 FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     const char *project, int run, int frnum, int detectorFlags )
 {

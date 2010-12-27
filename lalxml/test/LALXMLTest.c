@@ -29,6 +29,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
+#include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALXML.h>
 #include <lal/LALXMLVOTableCommon.h>
@@ -63,7 +64,6 @@
 
 /* private test prototypes */
 int testLIGOTimeGPS(void);
-int testPulsarDopplerParams(void);
 int test_gsl_vector(void);
 int test_gsl_matrix(void);
 int testTable ( void );
@@ -90,17 +90,7 @@ int main(void)
 
     printf( "\n" );
     printf( "======================================================================\n");
-    printf( "2: Test PulsarDopplerParams (de)serialization...\n");
-    printf( "======================================================================\n");
-    result = testPulsarDopplerParams();
-    if(result != LALXMLC_ENOM) {
-      LogPrintf (LOG_CRITICAL, "testPulsarDopplerParams() failed. ret = %d\n", result );
-      return result;
-    }
-
-    printf( "\n" );
-    printf( "======================================================================\n");
-    printf( "3: Test gsl_vector (de)serialization...\n");
+    printf( "2: Test gsl_vector (de)serialization...\n");
     printf( "======================================================================\n");
     if ( (result = test_gsl_vector()) != LALXMLC_ENOM ) {
       LogPrintf (LOG_CRITICAL, "test_gsl_vector() failed. ret = %d\n", result );
@@ -109,7 +99,7 @@ int main(void)
 
     printf( "\n" );
     printf( "======================================================================\n");
-    printf( "4: Test gsl_matrix (de)serialization...\n");
+    printf( "3: Test gsl_matrix (de)serialization...\n");
     printf( "======================================================================\n");
     if ( (result = test_gsl_matrix()) != LALXMLC_ENOM ) {
       LogPrintf (LOG_CRITICAL, "test_gsl_matrix() failed. ret = %d\n", result );
@@ -118,7 +108,7 @@ int main(void)
 
     printf( "\n" );
     printf( "======================================================================\n");
-    printf( "5: Test table (de)serialization...\n");
+    printf( "4: Test table (de)serialization...\n");
     printf( "======================================================================\n");
     if ( ( result = testTable()) != LALXMLC_ENOM ) {
       LogPrintf (LOG_CRITICAL, "testTable() failed. ret = %d\n", result );
@@ -216,155 +206,6 @@ int testLIGOTimeGPS(void)
 
 } /* testLIGOTimeGPS() */
 
-
-int testPulsarDopplerParams(void)
-{
-    static BinaryOrbitParams bopSource;
-    static PulsarDopplerParams pdpSource;
-    static BinaryOrbitParams bopDestination;
-    static PulsarDopplerParams pdpDestination;
-    xmlNodePtr xmlFragment = NULL;
-    xmlDocPtr xmlDocument = NULL;
-    char *xmlString = NULL;
-    int result;
-
-    /* initialize test data */
-    bopSource.tp.gpsSeconds = 913399939;
-    bopSource.tp.gpsNanoSeconds = 15;
-    bopSource.argp = 0.5;
-    bopSource.asini = 500;
-    bopSource.ecc = 0.0167;
-    bopSource.period = 31536000;
-    pdpSource.refTime.gpsSeconds = 913399939;
-    pdpSource.refTime.gpsNanoSeconds = 15;
-    pdpSource.Alpha = 3.1452;
-    pdpSource.Delta = -0.15;
-    pdpSource.fkdot[0] = 100.5;
-    pdpSource.fkdot[1] = -1.7e-8;
-    pdpSource.fkdot[2] = 0.0;
-    pdpSource.fkdot[3] = 0.0;
-    pdpSource.orbit = &bopSource;
-
-    pdpDestination.orbit = &bopDestination;
-
-    printf( "--> Initial PulsarDopplerParams struct: ");
-    printf( "%s = { \n"
-            "\trefTime: {%d, %d}\n"
-            "\tAlpha: %g\n"
-            "\tDelta: %g\n"
-            "\tfkdot: {%g, %g, %g, %g}\n"
-            "\torbit.tp: {%d, %d}\n"
-            "\torbit.argp: %g\n"
-            "\torbit.asini: %g\n"
-            "\torbit.ecc: %g\n"
-            "\torbit.period: %g}\n",
-            LALXMLC_NAMETEST2,
-            pdpSource.refTime.gpsSeconds, pdpSource.refTime.gpsNanoSeconds,
-            pdpSource.Alpha,
-            pdpSource.Delta,
-            pdpSource.fkdot[0], pdpSource.fkdot[1], pdpSource.fkdot[2], pdpSource.fkdot[3],
-            pdpSource.orbit->tp.gpsSeconds, pdpSource.orbit->tp.gpsNanoSeconds,
-            pdpSource.orbit->argp,
-            pdpSource.orbit->asini,
-            pdpSource.orbit->ecc,
-            pdpSource.orbit->period);
-
-    /* serialize structure into VOTable fragment */
-    printf( "--> Serializing into XML string ... ");
-    if ( (xmlFragment = XLALPulsarDopplerParams2VOTNode(&pdpSource, LALXMLC_NAMETEST2)) == NULL ) {
-      XLALPrintError( "%s: XLALPulsarDopplerParams2VOTNode() failed. err = %d\n", __func__, xlalErrno );
-      return LALXMLC_EFUN;
-    }
-    /* convert VOTable tree into XML string */
-    if( (xmlString = XLALCreateVOTStringFromTree ( xmlFragment )) == NULL ) {
-      XLALPrintError( "%s: XLALCreateVOTStringFromTree() failed. err = %d\n", __func__, xlalErrno );
-      return LALXMLC_EFUN;
-    }
-    printf ("ok.\n");
-
-    /* display serialized structure */
-    printf( "----------------------------------------------------------------------\n");
-    printf( "%s", xmlString );
-    printf( "----------------------------------------------------------------------\n");
-
-    /* convert XML string back into VOTable document */
-    printf ("--> Parsing XML string into xmlDoc ... ");
-    if( ( xmlDocument = XLALXMLString2Doc ( xmlString )) == NULL ) {
-      XLALPrintError( "%s: XLALXMLString2Doc() failed. err = %d\n", __func__, xlalErrno );
-      return LALXMLC_EFUN;
-    }
-    printf ("ok.\n");
-
-    /* validate XML document */
-    printf ("--> Validating xmlDoc against VOTable schema ... ");
-    if ( (result = validateDocument(xmlDocument)) != XLAL_SUCCESS ) {
-      XLALPrintError("%s: validateDocument failed. ret = %d\n", __func__, result );
-      if ( result == XLAL_FAILURE )
-        return LALXMLC_EVAL;
-      else
-        return LALXMLC_EFUN;
-    }
-    printf ("ok.\n");
-
-    /* parse VOTable document back into C-structure */
-    printf ("--> Read out PulsarDopplerParams struct ... ");
-    if ( XLALVOTDoc2PulsarDopplerParamsByName ( xmlDocument, LALXMLC_NAMETEST2, &pdpDestination)) {
-      XLALPrintError ( "%s: XLALVOTDoc2LIGOTimeGPSByName() failed. errno = %d\n", __func__, xlalErrno );
-      return LALXMLC_EFUN;
-    }
-
-    printf ( "ok: %s = {\n"
-            "\trefTime: {%d, %d}\n"
-            "\tAlpha: %g\n"
-            "\tDelta: %g\n"
-            "\tfkdot: {%g, %g, %g, %g}\n"
-            "\torbit.tp: {%d, %d}\n"
-            "\torbit.argp: %g\n"
-            "\torbit.asini: %g\n"
-            "\torbit.ecc: %g\n"
-            "\torbit.period: %g}\n",
-            LALXMLC_NAMETEST2,
-            pdpDestination.refTime.gpsSeconds, pdpDestination.refTime.gpsNanoSeconds,
-            pdpDestination.Alpha,
-            pdpDestination.Delta,
-            pdpDestination.fkdot[0], pdpDestination.fkdot[1], pdpDestination.fkdot[2], pdpDestination.fkdot[3],
-            pdpDestination.orbit->tp.gpsSeconds, pdpDestination.orbit->tp.gpsNanoSeconds,
-            pdpDestination.orbit->argp,
-            pdpDestination.orbit->asini,
-            pdpDestination.orbit->ecc,
-            pdpDestination.orbit->period);
-
-    /* validate test results */
-    if(
-            pdpSource.refTime.gpsSeconds != pdpDestination.refTime.gpsSeconds ||
-            pdpSource.refTime.gpsNanoSeconds != pdpDestination.refTime.gpsNanoSeconds ||
-            pdpSource.Alpha != pdpDestination.Alpha ||
-            pdpSource.Delta != pdpDestination.Delta ||
-            pdpSource.fkdot[0] != pdpDestination.fkdot[0] ||
-            pdpSource.fkdot[1] != pdpDestination.fkdot[1] ||
-            pdpSource.fkdot[2] != pdpDestination.fkdot[2] ||
-            pdpSource.fkdot[3] != pdpDestination.fkdot[3] ||
-            pdpSource.orbit->tp.gpsSeconds != pdpDestination.orbit->tp.gpsSeconds ||
-            pdpSource.orbit->tp.gpsNanoSeconds != pdpDestination.orbit->tp.gpsNanoSeconds ||
-            pdpSource.orbit->argp != pdpDestination.orbit->argp ||
-            pdpSource.orbit->asini != pdpDestination.orbit->asini ||
-            pdpSource.orbit->ecc != pdpDestination.orbit->ecc ||
-            pdpSource.orbit->period != pdpDestination.orbit->period)
-    {
-      XLALPrintError ( "%s: PulsarDopplerParams structure differs before and after XML serialization!\n", __func__);
-      return LALXMLC_EVAL;
-    }
-
-    printf ( "--> Final struct agrees with input struct. Test PASSED.\n");
-
-    /* clean up */
-    xmlFreeDoc(xmlDocument);
-    xmlFreeNode ( xmlFragment );
-    XLALFree ( xmlString );
-
-    return LALXMLC_ENOM;
-
-} /* testPulsarDopplerParams() */
 
 /* test (de-)serialization of a gsl_vector type */
 int

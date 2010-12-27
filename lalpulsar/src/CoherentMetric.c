@@ -17,15 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/**
-   \author Creighton, T. D., Jolien Creighton
-   \date 2000 - 2003
-   \file
-   \ingroup PulsarMetric
-   \brief Computes the parameter space metric for a coherent pulsar search.
 
- This function. computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
- discussed in the header <tt>StackMetric.h</tt>, under the assumption
+#include<math.h>
+#include<lal/LALStdlib.h>
+#include<lal/LALConstants.h>
+#include<lal/AVFactories.h>
+#include<lal/SeqFactories.h>
+#include<lal/StackMetric.h>
+
+NRCSID(COHERENTMETRICC,"$Id$");
+
+#define COHERENTMETRICC_NPTS 100000	/** Number of points to average per time interval. */
+
+
+/* #define APPROXIMATE Whether to use the approximation in the last
+		       form of the averaging integral */
+
+/** Local function to perform the averaging. */
+static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
+
+
+/** \brief Computes the parameter space metric for a coherent pulsar search.
+    \author Creighton, T. D., Jolien Creighton
+    \date 2000 - 2003
+    \ingroup StackMetric_h
+
+ This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
+ discussed in \ref StackMetric_h, under the assumption
  that the search consists of scanning the Fourier power spectrum
  constructed from a single time interval \f$\Delta t\f$.  The indecies
  \f$\alpha\f$ and \f$\beta\f$ are assumed to run from 0 to \f$n\f$, where \f$n\f$ is
@@ -35,7 +53,7 @@
  \f$g_{\alpha\beta}\f$.  The indexing scheme is as follows: Let us assume
  that \f$\alpha\geq\beta\f$.  Then
  \f$g_{\alpha\beta} = g_{\beta\alpha} = \f$metric->data[\f$\beta + \alpha(\alpha+1)/2]\f$.
- If \a params->errors is nonzero, then \a *metric must be double
+ If <tt>params->errors</tt> is nonzero, then \a *metric must be double
  this length, and LALCoherentMetric() will store metric
  components and their estimated uncertainty in alternate slots; i.e.
  the metric component
@@ -49,10 +67,10 @@
  The argument \a *params stores the remaining parameters for
  computing the metric, as given in the Structures section of StackMetric.h.
 
- \par Algorithm
+ \heading{Algorithm}
 
- This routne simply computes the function given in \ref eq_gab_phi "Eq.(1)"
- of header StackMetric.h.  Most of the work is done by the
+ This routine simply computes the function given in Eq.\eqref{eq_gab_phi}
+ of \ref StackMetric_h.  Most of the work is done by the
  function \a params->dtCanon(), which computes the value and
  parameter derivatives of the canonical time coordinate
  \f$\tau[t;\vec{\lambda}]\f$.  Since the phase function is simply
@@ -131,28 +149,7 @@ some point in the interval; we liberally estimate the error to be:
 Other more sophisticated integration techniques may be considered in
 future.  To save on recomputing costs, the derivatives of \f$\tau\f$ at
 all times are stored in a large vector sequence.
-
 */
-
-#include<math.h>
-#include<lal/LALStdlib.h>
-#include<lal/LALConstants.h>
-#include<lal/AVFactories.h>
-#include<lal/SeqFactories.h>
-#include<lal/StackMetric.h>
-
-NRCSID(COHERENTMETRICC,"$Id$");
-
-#define COHERENTMETRICC_NPTS 100000	/** Number of points to average per time interval. */
-
-
-/* #define APPROXIMATE Whether to use the approximation in the last
-		       form of the averaging integral */
-
-/** Local function to perform the averaging. */
-static REAL8 Average(REAL8Vector *integrand, REAL8 *uncertainty);
-
-
 void
 LALCoherentMetric( LALStatus        *stat,
 		   REAL8Vector      *metric,

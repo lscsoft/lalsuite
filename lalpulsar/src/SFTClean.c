@@ -22,7 +22,7 @@
  * \file SFTClean.c
  * \brief Module containing routines for dealing with spectral disturbances in SFTs
 
-   \par Description
+   \heading{Description}
 
    This module contains routines for dealing with lists of known spectral disturbances
    in the frequency domain, and using them to clean SFTs.
@@ -47,7 +47,7 @@
    be used for cleaning SFTs, then certain features which the user must be aware of
    are explained in the documentation of the function LALCleanCOMPLEX8SFT().
 
-   \par Uses
+   \heading{Uses}
    \code
    void LALFindNumberHarmonics (LALStatus, LineHarmonicsInfo, CHAR)
    void LALReadHarmonicsInfo (LALStatus, LineHarmonicsInfo, CHAR)
@@ -570,7 +570,7 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
  * to set this sufficiently large (larger that any wing size in bins) so that
  * it has no effect.
 
- \par Some "features" that must be kept in mind
+ \heading{Some "features" that must be kept in mind}
 
  The following is part of a email sent to pulgroup on 4/10/05.  Some of these points
  have already been mentioned above.
