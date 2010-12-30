@@ -235,6 +235,8 @@ void parseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 ProcessParamsTable *parseCommandLine(int argc, char *argv[]);
 
+void printCommandLine(ProcessParamsTable *procparams, char *str);
+
 REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
                               LALTemplateFunction *template);
 

@@ -172,13 +172,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	
 	int waveform= LALwaveformToSPINspiralwaveform(*(INT4 *)getVariable(runState->currentParams,"LAL_APPROXIMANT"));
 	double pnorder = ((double)(*(INT4 *)getVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
+	char str[999];
+	printCommandLine(runState->commandLine, str);
 	
 	for (t=0; t<nChain; ++t) {
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
 		sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
 		if (MPIrank == 0) {
 			chainoutput[t] = fopen(outfileName[t],"w");
-			fprintf(chainoutput[t], "  LALInference version:%s,%s,%s,%s,%s\n\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
+			fprintf(chainoutput[t], "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
+			fprintf(chainoutput[t],"  %s\n",str);
 			fprintf(chainoutput[t], "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
 					"nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
 			fprintf(chainoutput[t], "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
@@ -199,21 +202,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",83,84,81,73,74,71,55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-                                  "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl", "temp", "mpirank", "acceptance_ratio");
+				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+						"phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			} else {
 				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc", "logl", "temp", "mpirank", "acceptance_ratio");
+				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","Mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			}
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
 			fprintSampleNonFixed(chainoutput[t],runState->currentParams);
 			fprintf(chainoutput[t],"%f\t",runState->currentLikelihood - nullLikelihood);
-			fprintf(chainoutput[t],"%f\t",tempLadder[t]);
-			fprintf(chainoutput[t],"%d\t",MPIrank);
-			fprintf(chainoutput[t],"%d\t",acceptanceCount);
+			//fprintf(chainoutput[t],"%f\t",tempLadder[t]);
+			//fprintf(chainoutput[t],"%d\t",MPIrank);
+			//fprintf(chainoutput[t],"%d\t",acceptanceCount);
 			fprintf(chainoutput[t],"\n");
 			fclose(chainoutput[t]);
 		}	
@@ -293,9 +296,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
 			fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
 			fprintf(chainoutput[tempIndex],"%f\t",runState->currentLikelihood - nullLikelihood);
-			fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
-			fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
-			fprintf(chainoutput[tempIndex],"%f\t",((double)acceptanceCount)/((double)i));
+			//fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
+			//fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
+			//fprintf(chainoutput[tempIndex],"%f\t",((double)acceptanceCount)/((double)i));
 			fprintf(chainoutput[tempIndex],"\n");
 			fflush(chainoutput[tempIndex]);
 			//fclose(chainoutput[tempIndex]);

@@ -657,6 +657,20 @@ ProcessParamsTable *parseCommandLine(int argc, char *argv[])
 }
 
 
+void printCommandLine(ProcessParamsTable *procparams, char *str)
+{
+	ProcessParamsTable *this=procparams;
+	strcpy (str,"Command line: ");
+	strcat (str,this->program);
+	while (this!=NULL) { 
+		strcat (str," ");
+		strcat (str,this->param);
+		strcat (str," ");
+		strcat (str,this->value);
+		this=this->next;
+	}
+}
+
 
 /* ============ Likelihood computations: ========== */
 
