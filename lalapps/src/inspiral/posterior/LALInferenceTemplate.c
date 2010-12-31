@@ -592,11 +592,11 @@ void templateLAL(LALIFOData *IFOdata)
     REPORTSTATUS(&status);
     exit(1);
   }
-	/* lal_errhandler = LAL_ERR_RTRN;
-    REPORTSTATUS(&status); */
+	// lal_errhandler = LAL_ERR_RTRN;
+    // REPORTSTATUS(&status); 
   LAL_CALL(LALInspiralWave(&status, LALSignal, &params),&status);
-    /* REPORTSTATUS(&status); 
-	lal_errhandler = LAL_ERR_DFLT; */
+    // REPORTSTATUS(&status); 
+	// lal_errhandler = LAL_ERR_DFLT; 
   if (status.statusCode != 0) {
     fprintf(stderr, "\n ERROR in templateLAL(): \"LALInspiralWave()\" call returned with non-zero status.\n");
     fprintf(stderr, " Template parameters:\n");

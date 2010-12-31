@@ -402,7 +402,8 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
 		LALGetApproximantFromString(&status,ppt->value,&approx);
-		//if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}
+		//printf("%d\n",approx);
+		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}		LALGetApproximantFromString DOES NOT HAVE TaylorF2 !!!!!!
 		//if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}
 		//if(strstr(ppt->value,"SpinTaylor")) {approx=SpinTaylor;}//numberI4 = SpinTaylor;}
 		fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
@@ -626,7 +627,7 @@ int main(int argc, char *argv[]){
   
 	/* Set up structures for MCMC */
 	initializeMCMC(runState);
-	
+
 	/* Set up currentParams with variables to be used */
 	initVariables(runState);
 	
