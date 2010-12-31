@@ -661,7 +661,7 @@ void printCommandLine(ProcessParamsTable *procparams, char *str)
 {
 	ProcessParamsTable *this=procparams;
 	strcpy (str,"Command line: ");
-	strcat (str,this->program);
+	//strcat (str,this->program);
 	while (this!=NULL) { 
 		strcat (str," ");
 		strcat (str,this->param);
