@@ -1,13 +1,18 @@
 static inline void gc_hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
 
 #ifdef __APPLE__
+
 /* Apple's gcc aligns ok */
 #define ALRealloc LALRealloc
 #define ALFree LALFree
+
 #elif defined (__MINGW32__)
+
 #define ALRealloc(p,s) __mingw_aligned_realloc(p,s,16)
 #define ALFree __mingw_aligned_free
-#else
+
+#else // neither APPLE nor MinGW
+
 #define ALFree free
 
 static void *ALRealloc(void *ptr, size_t size);
@@ -15,13 +20,15 @@ static void *ALRealloc(void *ptr, size_t size);
 /* in our case there is no need to keep the data,
    so we can simply do a free() and malloc() */
 void *ALRealloc(void *ptr, size_t size) {
-  if(!ptr)
+  if(ptr)
     free(ptr);
   if(posix_memalign(&ptr, 16, size))
     return(NULL);
   return(ptr);
 }
+
 #endif
+
 
 void gc_hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  )  {
   UINT4 ifreq_fg;
