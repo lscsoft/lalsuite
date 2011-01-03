@@ -339,7 +339,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax;//,tmpVal;
 	gsl_rng * GSLrandom=state->GSLrandom;
-	REAL8 endtime;
+	REAL8 endtime=0.0, timeParam=0.0;
 	REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
 	REAL8 start_eta			=etaMin+gsl_rng_uniform(GSLrandom)*(etaMax-etaMin);
 	REAL8 start_phase		=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
@@ -367,6 +367,17 @@ void initVariables(LALInferenceRunState *state)
 	[--eta eta]\tTrigger eta to use\
 	[--phi phase]\tTrigger phase to use\
 	[--iota inclination]\tTrigger inclination to use\
+        [--dist dist]\tTrigger distance\
+        [--ra ra]\tTrigger RA\
+        [--dec dec]\tTrigger declination\
+        [--psi psi]\tTrigger psi\
+        [--a1 a1]\tTrigger a1\
+        [--theta1 theta1]\tTrigger theta1\
+        [--phi1 phi1]\tTrigger phi1\
+        [--a2 a2]\tTrigger a2\
+        [--theta2 theta2]\tTrigger theta2\
+        [--phi2 phi2]\tTrigger phi2\
+        [--time time]\tWaveform time (overrides random about trigtime)\
 	[--Dmin dist]\tMinimum distance in Mpc (1)\
 	[--Dmax dist]\tMaximum distance in Mpc (100)\
 	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
@@ -421,7 +432,7 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		endtime=atof(ppt->value);
 	}
-	
+
 	/* Over-ride chirp mass if specified */
 	ppt=getProcParamVal(commandLine,"--mc");
 	if(ppt){
@@ -445,6 +456,57 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		start_iota=atof(ppt->value);
 	}
+
+        /* Over-ride distance if specified */
+        ppt=getProcParamVal(commandLine,"--dist");
+        if (ppt) {
+          start_dist = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--ra");
+        if (ppt) {
+          start_ra = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--dec");
+        if (ppt) {
+          start_dec = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--psi");
+        if (ppt) {
+          start_psi = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--a1");
+        if (ppt) {
+          start_a_spin1 = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--theta1");
+        if (ppt) {
+          start_theta_spin1 = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--phi1");
+        if (ppt) {
+          start_phi_spin1 = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--a2");
+        if (ppt) {
+          start_a_spin2 = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--theta2");
+        if (ppt) {
+          start_theta_spin2 = atof(ppt->value);
+        }
+
+        ppt=getProcParamVal(commandLine,"--phi2");
+        if (ppt) {
+          start_phi_spin2 = atof(ppt->value);
+        }
 	
 	/* Over-ride time prior if specified */
 	ppt=getProcParamVal(commandLine,"--dt");
@@ -514,8 +576,17 @@ void initVariables(LALInferenceRunState *state)
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
 	tmpMin=endtime-dt; tmpMax=endtime+dt;
-	endtime=endtime+gsl_ran_gaussian(GSLrandom,0.01);
-    addVariable(currentParams, "time",            &endtime   ,           REAL8_t, PARAM_LINEAR); 
+
+        /* Set up start time. */
+        ppt=getProcParamVal(commandLine, "--time");
+        if (ppt) {
+          /* User has specified start time. */
+          timeParam = atof(ppt->value);
+        } else {
+          timeParam = endtime+gsl_ran_gaussian(GSLrandom,0.01);          
+        }
+
+        addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_LINEAR); 
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
 
 	//tmpVal=1.5;
