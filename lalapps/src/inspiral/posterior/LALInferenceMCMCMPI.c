@@ -686,9 +686,79 @@ int main(int argc, char *argv[]){
 
 	LALInferenceRunState *runState;
 	ProcessParamsTable *procParams=NULL;
+	ProcessParamsTable *ppt=NULL;
+	char *infileName;
+	infileName = (char*)calloc(99,sizeof(char*));
+	char str [999];
+	FILE * infile;
+	int n;
+	char * pch;
+	int fileargc = 1;
+	char *fileargv[99];
+	//char **fileargv[99][999] = NULL;
+	char buffer [99];
+	
+//	for (i=0; i<argc; i++) {
+//		printf("%s\n",argv[i]);
+//	}
+//	printf("%d\n",argc);
 	
 	/* Read command line and parse */
 	procParams=parseCommandLine(argc,argv);
+	
+	ppt=getProcParamVal(procParams,"--continue-run");
+	if (ppt) {
+		infileName = ppt->value;
+		infile = fopen(infileName,"r");
+		if (infile==NULL) {fprintf(stderr,"Cannot read %s/n",infileName); exit (1);}
+		n=sprintf(buffer,"lalinference_mcmcmpi_from_file_%s",infileName);
+		fileargv[0] = (char*)calloc((n+1),sizeof(char*));
+		fileargv[0] = buffer;
+		fgets(str, 999, infile);
+		fgets(str, 999, infile);
+		fclose(infile);
+		pch = strtok (str," ");
+		while (pch != NULL)
+		{
+			if(strcmp(pch,"Command")!=0 && strcmp(pch,"line:")!=0)
+			{
+				n = strlen(pch);
+				fileargv[fileargc] = (char*)calloc((n+1),sizeof(char*));
+				fileargv[fileargc] = pch;
+				fileargc++;
+				if(fileargc>=99) {fprintf(stderr,"Too many arguments in file %s\n",infileName); exit (1);}
+			}
+			pch = strtok (NULL, " ");
+
+		}
+		//pch = strstr (fileargv[fileargc-1],"\n");
+		//strncpy (pch,"",1);
+		fileargv[fileargc-1][strlen(fileargv[fileargc-1])-1]='\0'; //in order to get rid of the '\n' than fgets returns when reading the command line.
+
+		//for (i=0; i<fileargc; i++) {
+		//	printf("%s\n",fileargv[i]);
+		//}
+		//printf("%d\n",fileargc);
+
+		procParams=parseCommandLine(fileargc,fileargv);
+		//ppt = getProcParamVal(procParams, "--randomseed");
+		//if (ppt == NULL){
+		//	ProcessParamsTable *this = procParams;
+		//	ProcessParamsTable *previous = procParams;
+		//	while (this != NULL) {
+		//		previous = this;
+		//		this = this->next;
+		//	}
+		//	previous->next = (ProcessParamsTable*) calloc(1, sizeof(ProcessParamsTable));
+		//	previous = previous->next;
+		//	strcpy(previous->program, fileargv[0]);
+		//	strcpy(previous->param, "--randomseed");
+		//	strcpy(previous->type, "string");
+		//	strcpy(previous->value, "11111111");
+		//}
+	}
+	
+	
 
 	/* initialise runstate based on command line */
 	/* This includes reading in the data */
