@@ -30,7 +30,7 @@ candidateVector * new_candidateVector(UINT4 length)
    
    candidateVector *vector = XLALMalloc(sizeof(*vector));
    if (vector==NULL) {
-      XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*vector));
+      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*vector));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
       
@@ -41,7 +41,7 @@ candidateVector * new_candidateVector(UINT4 length)
       vector->data = XLALMalloc( length*sizeof(*vector->data) );
       if (vector->data==NULL) {
          XLALFree((candidateVector*)vector);
-         XLALPrintError("%s: XLALMalloc(%d) failed.\n", fn, length*sizeof(*vector->data));
+         fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
          XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
       }
    }
@@ -66,7 +66,7 @@ candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length)
    vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data));
    if (vector->data==NULL) {
       vector->length = 0;
-      XLALPrintError("%s: XLALRealloc(%d) failed.\n", fn, length*sizeof(*vector->data));
+      fprintf(stderr,"%s: XLALRealloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    vector->length = length;
@@ -129,13 +129,13 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    INT4Vector *locs2 = XLALCreateINT4Vector((UINT4)input->numofcandidates);
    INT4Vector *usedcandidate = XLALCreateINT4Vector((UINT4)input->numofcandidates);
    if (locs==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (locs2==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    } else if (usedcandidate==NULL) {
-      XLALPrintError("%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
+      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, input->numofcandidates);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
@@ -150,7 +150,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    if (output->length < input->length) {
       output = resize_candidateVector(output, input->length);
       if (output->length < input->length) {
-         XLALPrintError("%s: resize_candidateVector(%d) failed.\n", fn, input->length);
+         fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, input->length);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    }
@@ -163,7 +163,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    if (option==1) {
       plan = XLALCreateForwardREAL4FFTPlan((UINT4)floor(2*(params->Tobs/params->Tcoh)-1), 0);
       if (plan==NULL) {
-         XLALPrintError("%s: XLALCreateForwardREAL4FFTPlan(%d, 0) failed.\n", fn, (INT4)floor(2*(params->Tobs/params->Tcoh)-1));
+         fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 0) failed.\n", fn, (INT4)floor(2*(params->Tobs/params->Tcoh)-1));
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    }
@@ -186,7 +186,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             loc++;
             if (foundany==0) foundany = 1;
          }
-      }
+      } /* for jj < input->numofcandidates */
       //Keep checking as long as there are more connected frequencies going higher in frequency
       while (foundany==1) {
          foundany = 0;
@@ -197,8 +197,8 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                loc++;
                if (foundany==0) foundany = 1;
             }
-         }
-      }
+         } /* for jj < input->numofcandidates */
+      } /* while foundany==1 */
       //Now check frequencies 1/2 bin below and keep going as long as there are more connected frequencies
       foundany = 1;
       iter = 0;
@@ -211,8 +211,8 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                loc++;
                if (foundany==0) foundany = 1;
             }
-         }
-      }
+         } /* for jj < input->numofcandidates */
+      } /* while foundany==1 */
       
       
       
@@ -281,41 +281,41 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                   
                   templateStruct *template = new_templateStruct(params->templatelength);
                   if (template==NULL) {
-                     XLALPrintError("%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
+                     fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
                   if (option==1) {
                      makeTemplate(template, cand, params, plan);
                      if (xlalErrno!=0) {
-                        XLALPrintError("%s: makeTemplate() failed.\n", fn);
+                        fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
                   } else {
                      makeTemplateGaussians(template, cand, params);
                      if (xlalErrno!=0) {
-                        XLALPrintError("%s: makeTemplateGaussians() failed.\n", fn);
+                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
                   }
                   
                   farStruct *farval = new_farStruct();
                   if (farval==NULL) {
-                     XLALPrintError("%s: new_farStruct() failed.\n", fn);
+                     fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
-                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios);
+                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
                   if (xlalErrno!=0) {
-                     XLALPrintError("%s: numericFAR() failed.\n", fn);
+                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
                   
                   REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                   REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, &proberrcode);
                   if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     XLALPrintError("%s: calculateR() failed.\n", fn);
+                     fprintf(stderr,"%s: calculateR() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     XLALPrintError("%s: probR() failed.\n", fn);
+                     fprintf(stderr,"%s: probR() failed.\n", fn);
                      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                   }
                   REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
@@ -333,7 +333,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                   free_farStruct(farval);
                   farval = NULL;
                } /* for kk < numofmoddepths */
-            }
+            } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
                loadCandidateData(&output->data[output->numofcandidates], avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization);

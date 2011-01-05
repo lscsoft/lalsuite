@@ -2,7 +2,7 @@ Source: lal
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), m4, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libcfitsio3-dev, git-core (>= 1.5), pkg-config, python (>= 2.4)
+Build-Depends: debhelper (>= 5), m4, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), fftw3-dev, zlib1g-dev, libcfitsio3-dev, pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lal

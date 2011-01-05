@@ -17,76 +17,62 @@
 *  MA  02111-1307  USA
 */
 
-/******************************* <lalVerbatim file="TwoDMeshRangesCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup TwoDMesh_h
+\brief Some range computation routines suitable for use in LALCreateTwoDMesh()
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{TwoDMeshRanges.c}}
-\label{ss:TwoDMeshRanges.c}
-
-Some range computation routines suitable for use in
-\verb@LALCreateTwoDMesh()@.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TwoDMeshRangesCP}
-\idx{LALInterpolateRangePolygon()}
-\idx{LALInterpolateRangeGrid()}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This module contains range computation routines suitable for passing
-into \verb@LALCreateTwoDMesh()@ via the \verb@params->getRange@
+into LALCreateTwoDMesh() via the <tt>params->getRange</tt>
 function parameter.
 
-The routine \verb@LALInterpolateRangePolygon()@ takes as its parameter
-a \verb@(void *)@ pointer to a \verb@REAL4VectorSequence@ structure,
-containing a list of 2-dimensional vectors $(x,y)$ giving the
+The routine LALInterpolateRangePolygon() takes as its parameter
+a <tt>(void *)</tt> pointer to a \c REAL4VectorSequence structure,
+containing a list of 2-dimensional vectors \f$(x,y)\f$ giving the
 locations of points on the boundary of a polygonal region.  The
-function returns in \verb@range@ the points where a vertical line at
-the specified $x$-value crosses the edge of the polygon, in ascending
+function returns in \c range the points where a vertical line at
+the specified \f$x\f$-value crosses the edge of the polygon, in ascending
 order.  If no intersections are found, then both range values are set
 equal to (one of) the nearest point(s) on the boundary.
 
-The routine \verb@LALInterpolateRangeGrid()@ takes as its parameter a
-\verb@(void *)@ pointer to a \verb@REAL4Grid@ structure with physical
-dimension 1 and data dimension 2: for each point $x$ along the
+The routine LALInterpolateRangeGrid() takes as its parameter a
+<tt>(void *)</tt> pointer to a \c REAL4Grid structure with physical
+dimension 1 and data dimension 2: for each point \f$x\f$ along the
 physical dimension, the grid stores a vector of length 2, giving the
-lower and upper range values $y_1(x)$ and $y_2(x)$.  The routine
+lower and upper range values \f$y_1(x)\f$ and \f$y_2(x)\f$.  The routine
 linearly interpolates these two sampled functions to compute the range
-interval for any specified $x$.  If the specified $x$ is outside the
+interval for any specified \f$x\f$.  If the specified \f$x\f$ is outside the
 grid, then both range values are set equal to the average of the range
 points at the nearest endpoint of the grid.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The \verb@LALInterpolateRangePolygon()@ function is just a stub at
+The LALInterpolateRangePolygon() function is just a stub at
 present; it returns [0,1] as its range regardless of inputs.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{TwoDMeshRangesCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>
 #include <lal/TwoDMesh.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( TWODMESHRANGESC, "$Id$" );
+/** \endcond */
 
-/* <lalVerbatim file="TwoDMeshRangesCP"> */
 void
 LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
-{ /* </lalVerbatim> */
+{
   REAL4VectorSequence *p; /* params cast to a REAL4VectorSequence */
 
   INITSTATUS( stat, "LALGetNearestRange", TWODMESHRANGESC );
@@ -110,10 +96,10 @@ LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *para
 }
 
 
-/* <lalVerbatim file="TwoDMeshRangesCP"> */
+
 void
 LALInterpolateRangeGrid( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
-{ /* </lalVerbatim> */
+{
   REAL4Grid *p; /* params cast to a REAL4Grid */
   REAL4 *data;  /* pointer to p->data->data */
   UINT4 iMax;   /* dimension of x grid */

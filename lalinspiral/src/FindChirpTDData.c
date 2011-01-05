@@ -103,6 +103,7 @@ LALFindChirpTDData (
     case EOBNR:
     case BCVSpin:
     case FindChirpPTF:
+    case IMRPhenomB:
     case AmpCorPPN:
       /* store the input approximant */
       approx = params->approximant;

@@ -17,108 +17,93 @@
 *  MA  02111-1307  USA
 */
 
-/************************************* <lalVerbatim file="TwoDMeshCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup TwoDMesh_h
+\brief Creates or destroys a hierarchical mesh of templates on an 2-dimensional parameter space.
 
-/********************************************************** <lalLaTeX>
+\heading{Description}
 
-\subsection{Module \texttt{TwoDMesh.c}}
-\label{ss:TwoDMesh.c}
-
-Creates or destroys a hierarchical mesh of templates on an
-2-dimensional parameter space.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TwoDMeshCP}
-\idx{LALCreateTwoDMesh()}
-\idx{LALDestroyTwoDMesh()}
-\idx{LALRefineTwoDMesh()}
-
-\subsubsection*{Description}
-
-The routine \verb@LALCreateTwoDMesh()@ lays out an unevenly-spaced
+The routine <tt>LALCreateTwoDMesh()</tt> lays out an unevenly-spaced
 mesh on a 2-dimensional parameter space, according to the method
-presented in \verb@TwoDMesh.h@ and detailed in
-\verb@TwoDMeshInternal.c@.  The parameter \verb@mesh@ is a handle to
+presented in \ref TwoDMesh_h and detailed in
+TwoDMeshInternal.c.  The parameter \c mesh is a handle to
 the head of the newly-created linked list of mesh points, while
-\verb@params@ points to the parameter structure used to create the
-list.  On completion, \verb@params->nOut@ is set to the number of mesh
+\c params points to the parameter structure used to create the
+list.  On completion, <tt>params->nOut</tt> is set to the number of mesh
 points created.
 
-The routine \verb@LALDestroyTwoDMesh()@ destroys the list pointed to
-by \verb@*mesh@, including all sub-meshes, and sets
-\verb@*mesh@=\verb@NULL@.  If \verb@*mesh@ is already \verb@NULL@,
-nothing is done (this is \emph{not} an erroneous usage).  If
-\verb@nFree@$\neq$\verb@NULL@, then \verb@*nFree@ is set to the number
+The routine <tt>LALDestroyTwoDMesh()</tt> destroys the list pointed to
+by <tt>*mesh</tt>, including all sub-meshes, and sets
+<tt>*mesh</tt>=\c NULL.  If <tt>*mesh</tt> is already \c NULL,
+nothing is done (this is \e not an erroneous usage).  If
+\c nFree\f$\neq\f$\c NULL, then <tt>*nFree</tt> is set to the number
 of nodes freed.
 
-The routine \verb@LALRefineTwoDMesh()@ creates a heirarchical search
+The routine <tt>LALRefineTwoDMesh()</tt> creates a heirarchical search
 mesh by inserting copies of the nodes in the list pointed to by
-\verb@fineMesh@ into the \verb@subMesh@ fields of appropriate nodes in
-the list pointed to by \verb@coarseMesh@.  The contents of the
-\verb@fineMesh@ list are untouched.  If a \verb@fineMesh@ tile does
-not overlap with any \verb@cosarseMesh@ tile, a warning is generated,
+\c fineMesh into the \c subMesh fields of appropriate nodes in
+the list pointed to by \c coarseMesh.  The contents of the
+\c fineMesh list are untouched.  If a \c fineMesh tile does
+not overlap with any \c cosarseMesh tile, a warning is generated,
 but this is not treated as an error.  If an internal error does occur,
 the refinement will be left in a state of partial completion; there is
 just too much overhead involved in maintaining an uncorrupted copy of
-the \verb@coarseMesh@ list for it to be worthwhile.
+the \c coarseMesh list for it to be worthwhile.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\verb@LALCreateTwoDMesh@ simply creates a dummy node to serve as the
-head of the linked list, and calls \verb@LALTwoDMesh()@ in
-\verb@TwoDMeshInternal.c@ to attach a mesh to it.  The details of the
-algorithm are given in \verb@TwoDMeshInternal.c@.
+\c LALCreateTwoDMesh() simply creates a dummy node to serve as the
+head of the linked list, and calls <tt>LALTwoDMesh()</tt> in
+TwoDMeshInternal.c to attach a mesh to it.  The details of the
+algorithm are given in TwoDMeshInternal.c.
 
-\verb@LALDestroyTwoDMesh()@ navigates down the linked list of mesh
+<tt>LALDestroyTwoDMesh()</tt> navigates down the linked list of mesh
 points, destroying them as it goes.  It calls itself recursively on
 any non-empty sub-meshes to destroy them too.
 
-\verb@LALRefineTwoDMesh()@ moves along the \verb@fineMesh@ list; for
-each node in the list, it searches the \verb@coarseMesh@ list for the
-any tile that overlaps with the fine mesh tile.  It then \emph{copies}
+<tt>LALRefineTwoDMesh()</tt> moves along the \c fineMesh list; for
+each node in the list, it searches the \c coarseMesh list for the
+any tile that overlaps with the fine mesh tile.  It then \e copies
 the fine mesh node (and its submesh, if any) into the coarse mesh
-node's \verb@subMesh@ list, using \verb@LALTwoDNodeCopy()@ in
-\verb@TwoDMeshInternal.c@.  Although it uses more memory, this
+node's \c subMesh list, using <tt>LALTwoDNodeCopy()</tt> in
+TwoDMeshInternal.c.  Although it uses more memory, this
 recursive copy routine is preferred over simple relinking, so as to
 avoid any possible memory leaks: destroying the coarse mesh list will
 leave the fine mesh list intact, and vice-versa.
 
-To create a $>2$~level hierarchical search mesh, build it from the
-bottom up: call \verb@LALRefineTwoDMesh()@ to add the finest mesh to
+To create a \f$>2\f$~level hierarchical search mesh, build it from the
+bottom up: call <tt>LALRefineTwoDMesh()</tt> to add the finest mesh to
 the next finest, add that to the next finest, and so on up to the
 coarsest mesh.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel               XLALPrintError()
 LALWarning()                LALInfo()
 LALTwoDMesh()               LALTwoDNodeCopy()
 LALFree()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{TwoDMeshCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/TwoDMesh.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( TWODMESHC, "$Id$" );
+/** \endcond */
 
-/* <lalVerbatim file="TwoDMeshCP"> */
 void
 LALCreateTwoDMesh( LALStatus          *stat,
 		   TwoDMeshNode       **mesh,
 		   TwoDMeshParamStruc *params )
-{ /* </lalVerbatim> */
+{
   TwoDMeshNode head;     /* dummy head node */
   TwoDMeshNode *headPtr; /* pointer to above */
 
@@ -169,12 +154,12 @@ LALCreateTwoDMesh( LALStatus          *stat,
 }
 
 
-/* <lalVerbatim file="TwoDMeshCP"> */
+
 void
 LALDestroyTwoDMesh( LALStatus    *stat,
 		    TwoDMeshNode **mesh,
 		    UINT4        *nFree )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( stat, "LALDestroyTwoDMesh", TWODMESHC );
   ATTATCHSTATUSPTR( stat );
 
@@ -203,12 +188,12 @@ LALDestroyTwoDMesh( LALStatus    *stat,
 }
 
 
-/* <lalVerbatim file="TwoDMeshCP"> */
+
 void
 LALRefineTwoDMesh( LALStatus    *stat,
 		   TwoDMeshNode *coarseMesh,
 		   TwoDMeshNode *fineMesh )
-{ /* </lalVerbatim> */
+{
   BOOLEAN found;      /* whether a fine point is in any coarse tile */
   UINT4 lost = 0;     /* number of fine points not found */
   TwoDMeshNode *here; /* pointer to coarse mesh list */

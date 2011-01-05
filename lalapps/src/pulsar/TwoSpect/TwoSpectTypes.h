@@ -29,6 +29,9 @@ typedef struct
    REAL4Vector *ffdata;    //Doubly Fourier transformed data
    REAL8 tfnormalization;
    REAL8 ffnormalization;
+   INT4 numffts;
+   INT4 numfbins;
+   INT4 numfprbins;
 } ffdataStruct;
 
 typedef struct
@@ -47,6 +50,7 @@ typedef struct
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
+   INT4 rootFindingMethod;
    LALDetector *det;
 } inputParamsStruct;
 
@@ -106,6 +110,9 @@ typedef struct
    INT4Vector *pixellocations;      //pixel locations
    INT4Vector *firstfftfrequenciesofpixels;  //pixel first frequency values
    INT4Vector *secondfftfrequencies;   //pixel second frequency values
+   REAL8 f0;
+   REAL8 period;
+   REAL8 moddepth;
 } templateStruct;
 
 

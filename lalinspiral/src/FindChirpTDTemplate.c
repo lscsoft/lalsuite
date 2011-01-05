@@ -153,6 +153,7 @@ LALFindChirpTDTemplate (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case IMRPhenomB:
       break;
 
     default:
@@ -261,6 +262,11 @@ LALFindChirpTDTemplate (
     tmplt->fLower          = params->fLow;
     tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
     tmplt->signalAmplitude = 1.0;
+    if (params->approximant == IMRPhenomB)
+    {
+      tmplt->spin1[2] = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
+      tmplt->distance = 1.;
+    }
 
     /* compute the tau parameters from the input template */
     LALInspiralParameterCalc( status->statusPtr, tmplt );
@@ -356,7 +362,7 @@ LALFindChirpTDTemplate (
       ABORTXLAL( status );
     }
 
-    if ( params->approximant == EOBNR )
+    if ( params->approximant == EOBNR || params->approximant == IMRPhenomB)
     {
       /* We need to do something slightly different for EOBNR */
       UINT4 endIndx = (UINT4) (tmplt->tC * sampleRate);
@@ -381,7 +387,7 @@ LALFindChirpTDTemplate (
     XLALDestroyREAL4Vector( tmpxfac );
     tmpxfac = NULL;
   }
-  else if ( params->approximant == EOBNR )
+  else if ( params->approximant == EOBNR || params->approximant == IMRPhenomB)
   {
     /* For EOBNR we shift so that tC is at the end of the vector */
     if ( ( tmpxfac = XLALCreateREAL4Vector( numPoints ) ) == NULL )
@@ -474,6 +480,7 @@ LALFindChirpTDNormalize(
     case PadeT1:
     case EOB:
     case EOBNR:
+    case IMRPhenomB:
       break;
     default:
       ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
