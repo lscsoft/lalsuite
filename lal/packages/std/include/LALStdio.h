@@ -36,10 +36,7 @@ Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 #include <lal/FileIO.h>
 \end{verbatim}
 
-\noindent This header provides the LALsnprintf function.
-
 \vfill{\footnotesize\input{LALStdioHV}}
-\newpage\input{LALStdC}
 </lalLaTeX>
 #endif /* autodoc block */
 
