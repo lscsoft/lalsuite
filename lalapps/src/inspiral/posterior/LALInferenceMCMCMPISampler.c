@@ -719,7 +719,6 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
       exit(1);
     } 
 
-    fprintf(stderr, "Jumping in parameter %d\n", i);
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
