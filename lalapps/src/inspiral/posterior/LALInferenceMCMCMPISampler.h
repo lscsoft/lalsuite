@@ -7,6 +7,10 @@
 
 #include "LALInference.h"
 
+#define COVMATRIXNAME "covarainceMatrix"
+#define UNCORRSAMPNAME "uncorrelatedSample"
+#define SIGMAVECTORNAME "sigmaJump"
+
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 void PTMCMCOneStep(LALInferenceRunState *runState);
 void PTMCMCAdaptationOneStep(LALInferenceRunState *runState);
@@ -15,6 +19,11 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 //void PTMCMCLALProposaltemp(LALInferenceRunState *runState, LALVariables *proposedParams);
+
+/* Makes correlated jumps if the square root (Cholesky decomp) of a
+   covariance matrix has been specified; if not, falls back to PTMCMCLALBlockProposal. */
+void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 
 //REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);

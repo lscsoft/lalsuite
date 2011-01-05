@@ -612,16 +612,16 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	UINT4 nIFO=0;
 	LALIFOData *ifo=runState->data;
 	REAL8 randnum;
-	REAL8 BLOCKFRAC=0.05,
-	SINGLEFRAC=0.9,
+	REAL8 BLOCKFRAC=0.20,
+	SINGLEFRAC=0.75,
 	SKYFRAC=0.05;
 top:
 	randnum=gsl_rng_uniform(runState->GSLrandom);
 	/* Choose a random type of jump to propose */
 	if(randnum<BLOCKFRAC)
-		PTMCMCLALBlockProposal(runState, proposedParams);
+          PTMCMCLALBlockCorrelatedProposal(runState, proposedParams); /* Try to propose from correlated jumps; fall back on Block proposal if no covariance matrix specified. */
 	else if(randnum<BLOCKFRAC + SINGLEFRAC)
-		PTMCMCLALSingleProposal(runState,proposedParams);
+		PTMCMCLALSingleCorrelatedProposal(runState,proposedParams);
 	else if(randnum<BLOCKFRAC + SINGLEFRAC + SKYFRAC){
 		/* Check number of detectors */
 		while(ifo){ifo=ifo->next; nIFO++;}
@@ -678,7 +678,53 @@ void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *propos
 	
 }
 
+void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  LALVariables *args = runState->proposalArgs;
 
+  if (!checkVariable(args, SIGMAVECTORNAME)) {
+    PTMCMCLALSingleProposal(runState, proposedParams);
+  } else {
+    gsl_rng *rng = runState->GSLrandom;
+    LALVariableItem *param = NULL, *dummyParam = NULL;
+    REAL8 T = *(REAL8 *)getVariable(args, "temperature");
+    REAL8 sqrtT = sqrt(T);
+    UINT4 dim;
+    UINT4 i;
+    REAL8Vector *sigmas = *(REAL8Vector **) getVariable(args, SIGMAVECTORNAME);
+
+    copyVariables(runState->currentParams, proposedParams);
+
+    dim = proposedParams->dimension;
+
+    do {
+      param = getItemNr(proposedParams, 1+gsl_rng_uniform_int(rng, dim));
+    } while (param->vary == PARAM_FIXED || param->vary == PARAM_OUTPUT);
+
+    for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
+      if (!strcmp(dummyParam->name, param->name)) {
+        /* Found it; i = index into sigma vector. */
+        break;
+      } else if (dummyParam->vary == PARAM_FIXED || dummyParam->vary == PARAM_OUTPUT) {
+        /* Don't increment i, since we're not dealing with a "real" parameter. */
+        continue;
+      } else {
+        i++;
+        continue;
+      }
+    }
+
+    if (param->type != REAL8_t) {
+      fprintf(stderr, "Attempting to set non-REAL8 parameter with numerical sigma (in %s, %d)\n",
+              __FILE__, __LINE__);
+      exit(1);
+    } 
+
+    fprintf(stderr, "Jumping in parameter %d\n", i);
+    *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
+
+    LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+  }
+}
 
 void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
@@ -709,6 +755,59 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 	
 	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
 	
+}
+
+void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  LALVariables *args = runState->proposalArgs;
+
+  if (!checkVariable(args, COVMATRIXNAME) || !checkVariable(args, UNCORRSAMPNAME)) {
+    /* No correlation matrix! */
+    PTMCMCLALBlockProposal(runState, proposedParams);
+  } else {
+    gsl_rng *rng = runState->GSLrandom;
+    REAL8 T = *(REAL8 *)getVariable(args, "temperature");
+    REAL8 sqrtT = sqrt(T);
+    gsl_matrix *covarianceMatrix = *(gsl_matrix **)getVariable(args, COVMATRIXNAME);
+    REAL8Vector *uncorrelatedSample = *(REAL8Vector **)getVariable(args, UNCORRSAMPNAME);
+    UINT4 i;
+    UINT4 N = uncorrelatedSample->length;
+    REAL8 sqrtN = sqrt(N);
+    LALVariableItem *param = NULL;
+
+    copyVariables(runState->currentParams, proposedParams);
+
+    if (covarianceMatrix->size1 != N || covarianceMatrix->size2 != N) {
+      fprintf(stderr, "ERROR: covariance matrix and sample vector sizes do not agree (in %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(1);
+    }
+    
+    for (i = 0; i < N; i++) {
+      uncorrelatedSample->data[i] = gsl_ran_ugaussian(rng)*sqrtT/sqrtN; /* Normalized to magnitude sqrt(T) */
+    }
+
+    for (i = 0, param = proposedParams->head; param != NULL; param = param->next) {
+      if (param->vary != PARAM_FIXED && param->vary != PARAM_OUTPUT) {
+        /* Then it's a parameter to set. */
+        UINT4 j;
+        REAL8 sum;
+
+        for (j = 0, sum = 0.0; j < N; j++) {
+          sum += gsl_matrix_get(covarianceMatrix, i, j)*uncorrelatedSample->data[j];
+        }
+
+        if (param->type != REAL8_t) {
+          fprintf(stderr, "Trying to use covariance matrix to set non-REAL8 parameter (in %s, line %d)\n",
+                  __FILE__, __LINE__);
+          exit(1);
+        } else {
+          *((REAL8 *)param->value) += sum;
+        }
+      }
+    }
+
+    LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+  }
 }
 
 

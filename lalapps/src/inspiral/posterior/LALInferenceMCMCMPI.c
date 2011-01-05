@@ -304,6 +304,29 @@ void initializeMCMC(LALInferenceRunState *runState)
 	
 }
 
+static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
+  UINT4 i, j;
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+      REAL8 value;
+      INT4 nread;
+
+      nread = fscanf(inp, " %lg ", &value);
+
+      if (nread != 1) {
+        fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
+                __FILE__, __LINE__);
+        exit(1);
+      }
+
+      gsl_matrix_set(m, i, j, value);
+    }
+  }
+
+  return 0;
+}
+
 
 /* Setup the variables to control template generation */
 /* Includes specification of prior ranges */
@@ -383,7 +406,8 @@ void initVariables(LALInferenceRunState *state)
 	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
 	[--mincomp min]\tMinimum component mass (1.0)\
 	[--maxcomp max]\tMaximum component mass (30.0)\
-	[--MTotMax] \t Maximum total mass (35.0)";
+	[--MTotMax] \t Maximum total mass (35.0)\
+        [--covarianceMatrix file]\tFind the Cholesky decomposition of the covariance matrix for jumps in file";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
@@ -669,6 +693,44 @@ void initVariables(LALInferenceRunState *state)
 	
 	//REAL8 x0 = 0.9;
 	//addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
+
+
+        /* Init covariance matrix, if specified.  The given file
+           should contain the desired covariance matrix for the jump
+           proposal, in row-major (i.e. C) order. */
+        ppt=getProcParamVal(commandLine, "--covarianceMatrix");
+        if (ppt) {
+          FILE *inp = fopen(ppt->value, "r");
+          UINT4 N = (approx == SpinTaylor ? 15 : 9);
+          gsl_matrix *covM = gsl_matrix_alloc(N,N);
+          REAL8Vector *unCorrVec = XLALCreateREAL8Vector(N), *sigmaVec = XLALCreateREAL8Vector(N);
+          UINT4 i, j;
+
+
+          if (readSquareMatrix(covM, N, inp)) {
+            fprintf(stderr, "Error reading covariance matrix (in %s, line %d)\n",
+                    __FILE__, __LINE__);
+            exit(1);
+          }
+
+          for (i = 0; i < N; i++) {
+            sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
+          }
+
+          gsl_linalg_cholesky_decomp(covM);
+
+          for (i = 0; i < N; i++) {
+            for (j = i+1; j < N; j++) {
+              gsl_matrix_set(covM, i, j, 0.0); /* Zero upper triangular components. */
+            }
+          }
+
+          addVariable(state->proposalArgs, COVMATRIXNAME, &covM, gslMatrix_t, PARAM_FIXED);
+          addVariable(state->proposalArgs, UNCORRSAMPNAME, &unCorrVec, REAL8Vector_t, PARAM_FIXED);
+          addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
+
+          fclose(inp);
+        }
 
 	
 	return;
