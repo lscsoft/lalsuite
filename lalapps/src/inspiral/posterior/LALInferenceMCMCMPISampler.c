@@ -719,6 +719,12 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
       exit(1);
     } 
 
+    if (i >= sigmas->length) {
+      fprintf(stderr, "Attempting to draw single-parameter jump past the end of sigma array.\n(Maybe you used a non-spinning correlation matrix for a spinning run?)\nError in %s, line %d.\n",
+              __FILE__, __LINE__);
+      exit(1);
+    }
+
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
