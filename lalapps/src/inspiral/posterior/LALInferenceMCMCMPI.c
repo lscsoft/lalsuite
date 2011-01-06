@@ -729,6 +729,9 @@ void initVariables(LALInferenceRunState *state)
           addVariable(state->proposalArgs, UNCORRSAMPNAME, &unCorrVec, REAL8Vector_t, PARAM_FIXED);
           addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
 
+          fprintf(stderr, "Jumping with correlated jumps in %d dimensions from file %s.\n",
+                  N, ppt->value);
+
           fclose(inp);
         }
 
