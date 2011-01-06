@@ -25,6 +25,12 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 
+/* Flip inclination about observing plane (iota -> Pi - iota) */
+void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams);
+
+/* Increment orbital phase by Pi */
+void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALVariables *proposedParams);
+
 //REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params);

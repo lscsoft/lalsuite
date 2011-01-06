@@ -613,8 +613,11 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 	LALIFOData *ifo=runState->data;
 	REAL8 randnum;
 	REAL8 BLOCKFRAC=0.20,
-	SINGLEFRAC=0.75,
-	SKYFRAC=0.05;
+          SINGLEFRAC=0.65,
+          SKYFRAC=0.05,
+          INCFRAC=0.05,
+          PHASEFRAC=0.05;
+        
 top:
 	randnum=gsl_rng_uniform(runState->GSLrandom);
 	/* Choose a random type of jump to propose */
@@ -638,10 +641,13 @@ top:
 				PTMCMCLALBlockProposal(runState,proposedParams);
 			}
 		}
-	}
+	} else if (randnum < BLOCKFRAC + SINGLEFRAC + SKYFRAC + INCFRAC) {
+          PTMCMCLALInferenceInclinationFlip(runState, proposedParams);
+        } else if (randnum < BLOCKFRAC + SINGLEFRAC + SKYFRAC + INCFRAC + PHASEFRAC) {
+          PTMCMCLALInferenceOrbitalPhaseJump(runState, proposedParams);
+        }
 
 }
-
 
 void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
@@ -815,7 +821,35 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
   }
 }
 
+/* Reflect the inclination about the observing plane, iota -> Pi - iota */
+void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  REAL8 iota;
+  copyVariables(runState->currentParams, proposedParams);
 
+  iota = *((REAL8 *) getVariable(proposedParams, "inclination"));
+
+  iota = M_PI - iota;
+
+  setVariable(proposedParams, "inclination", &iota);
+
+  /* Not really needed (probably), but let's be safe. */
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs); 
+}
+
+void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  REAL8 phi;
+
+  copyVariables(runState->currentParams, proposedParams);
+  
+  phi = *((REAL8 *) getVariable(proposedParams, "phase"));
+
+  phi = fmod(phi+M_PI, 2.0*M_PI);
+
+  setVariable(proposedParams, "phase", &phi);
+
+  /* Probably not needed, but play it safe. */
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+}
 
 
 //Test LALProposalFunction
