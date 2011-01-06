@@ -37,6 +37,7 @@
 #include "LALInferenceMCMCMPISampler.h"
 #include "LALInferencePrior.h"
 
+
 #include <mpi.h>
 //#include "mpi.h"
 
@@ -347,7 +348,7 @@ void initVariables(LALInferenceRunState *state)
 	//INT4 numberI4 = TaylorF2;
 	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
-	InspiralApplyTaper bookends = INSPIRAL_TAPER_NONE;
+	LALInferenceApplyTaper bookends = INFERENCE_TAPER_NONE;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
 	REAL8 Dmin=1.0;
@@ -448,9 +449,13 @@ void initVariables(LALInferenceRunState *state)
 	/* Over-ride taper if specified */
 	ppt=getProcParamVal(commandLine,"--taper");
 	if(ppt){
-		if(strstr(ppt->value,"STARTEND")) bookends=INSPIRAL_TAPER_STARTEND;
+		if(strstr(ppt->value,"STARTEND")) bookends=INFERENCE_TAPER_STARTEND;
+		if(strstr(ppt->value,"STARTONLY")) bookends=INFERENCE_TAPER_START;
+		if(strstr(ppt->value,"ENDONLY")) bookends=INFERENCE_TAPER_END;
+		if(strstr(ppt->value,"RING")) bookends=INFERENCE_RING;
+		if(strstr(ppt->value,"SMOOTH")) bookends=INFERENCE_SMOOTH;
 	}
-	
+
 	/* Over-ride end time if specified */
 	ppt=getProcParamVal(commandLine,"--trigtime");
 	if(ppt){
@@ -580,8 +585,10 @@ void initVariables(LALInferenceRunState *state)
     addVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        INT4_t, PARAM_FIXED);	
 	//addVariable(currentParams, "LAL_PNORDER",     &numberI4,        INT4_t, PARAM_FIXED);
 	
-	addVariable(currentParams, "INSPIRAL_TAPER",     &bookends,        INT4_t, PARAM_FIXED);
-	
+	ppt=getProcParamVal(commandLine,"--taper");
+	if(ppt){
+		addVariable(currentParams, "INFERENCE_TAPER",     &bookends,        INT4_t, PARAM_FIXED);
+	}
 	/* Set up the variable parameters */
 	//tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);
 	//tmpVal=7.86508;

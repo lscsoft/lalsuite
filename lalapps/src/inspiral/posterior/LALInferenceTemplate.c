@@ -28,10 +28,12 @@
 #include <lal/VectorOps.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/GenerateInspRing.h>
 #include <lal/LALStatusMacros.h>
 #include "LALInference.h"
 #include <lalapps.h>
 #include <lal/XLALError.h>
+#include <lal/LIGOMetadataRingdownUtils.h>
 
 RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceTemplate.c"
@@ -1179,6 +1181,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	newswitch = 0; //temporay global variable to use the new LALSTPN
 	
 	REAL8 m1,m2,mc,eta;
+	REAL8 chirplength;
 	mc  = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
 	eta = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
 	
@@ -1270,8 +1273,10 @@ void templateLALSTPN(LALIFOData *IFOdata)
 			fprintf(stderr, " ERROR in templateLALSTPN():  pN order%4.1f is not (yet) supported.\n",PNorder);
 			exit(1);
 	}*/
-
-    LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
+	//REPORTSTATUS(&status);
+    LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status);
+	//REPORTSTATUS(&status);
+	
     if ( status.statusCode )
     {
 		fprintf( stderr, " ERROR in templateLALSTPN(): error generating waveform.\n" );
@@ -1284,7 +1289,39 @@ void templateLALSTPN(LALIFOData *IFOdata)
 		return;
     }
 	
-	REAL8 chirplength=ppnParams.tc;	/*The waveform duration up to tc */
+	
+	
+	
+	//printf("/n/n waveform: %s/ /n/n","waveform");
+	
+	if(checkVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
+		if (*(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")==5){
+		
+			SimRingdownTable          thisRingdownEvent;
+			memset( &thisRingdownEvent, 0, sizeof(SimRingdownTable) );
+			int injectSignalType = LALRINGDOWN_IMR_INJECT;
+			CoherentGW *wfm;
+			wfm = XLALGenerateInspRing( &waveform, &injParams, &thisRingdownEvent, injectSignalType );
+		
+			if ( !wfm )
+			{
+				fprintf( stderr, "Failed to generate the waveform \n" );
+				if (xlalErrno == XLAL_EFAILED)
+				{
+					fprintf( stderr, "Too much merger\n");     
+					xlalErrno = XLAL_SUCCESS;
+					return;
+				}
+				else return;
+			}
+		
+		waveform = *wfm;
+		
+	}
+	}	
+//bottom:
+	
+	chirplength=ppnParams.tc;	/*The waveform duration up to tc */
 	REAL8 timeShift = desired_tc - (chirplength + IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);   /* This is the difference between the desired start time and the actual start time */
 	INT4 integerLeftShift = ceil(-timeShift/deltaT);
 	REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
@@ -1310,28 +1347,33 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	
 	//TAPERING. This routine can and should be optimized. Allocation is happening at EVERY iteration
 	
-	if(checkVariable(IFOdata->modelParams, "INSPIRAL_TAPER")){
-		InspiralApplyTaper bookends = *(InspiralApplyTaper*) getVariable(IFOdata->modelParams, "INSPIRAL_TAPER");
+	if(checkVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
 		
-		REAL4Vector *tempVec = NULL;
-		tempVec = (REAL4Vector *)XLALCreateREAL4Vector(IFOdata->timeData->data->length);
+		if(*(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")<5 && *(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")>0){
+			
+			InspiralApplyTaper bookends = *(InspiralApplyTaper*) getVariable(IFOdata->modelParams, "INFERENCE_TAPER");
 		
-		for (i=0; i<IFOdata->timeData->data->length; i++){
-			tempVec->data[i]=(REAL4) IFOdata->timeModelhPlus->data->data[i];
-		}
-		XLALInspiralWaveTaper(tempVec,bookends);
-		for (i=0; i<IFOdata->timeData->data->length; i++){
-			IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
-		}
+			REAL4Vector *tempVec = NULL;
+			tempVec = (REAL4Vector *)XLALCreateREAL4Vector(IFOdata->timeData->data->length);
 		
-		for (i=0; i<IFOdata->timeData->data->length; i++){
-			tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				tempVec->data[i]=(REAL4) IFOdata->timeModelhPlus->data->data[i];
+			}
+			XLALInspiralWaveTaper(tempVec,bookends);
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
+			}
+		
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
+			}
+			XLALInspiralWaveTaper(tempVec,bookends);
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
+			}
+			XLALDestroyREAL4Vector(tempVec);
+			
 		}
-		XLALInspiralWaveTaper(tempVec,bookends);
-		for (i=0; i<IFOdata->timeData->data->length; i++){
-			IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
-		}
-		XLALDestroyREAL4Vector(tempVec);
 	}
 	
 	IFOdata->modelDomain = timeDomain;

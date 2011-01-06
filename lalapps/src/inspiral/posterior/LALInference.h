@@ -99,6 +99,19 @@ typedef enum {
 	PARAM_OUTPUT    /* Changed by the inner code and passed out */
 } ParamVaryType;
 
+
+typedef enum
+{
+	INFERENCE_TAPER_NONE,
+	INFERENCE_TAPER_START,
+	INFERENCE_TAPER_END,
+	INFERENCE_TAPER_STARTEND,
+	INFERENCE_TAPER_NUM_OPTS,
+	INFERENCE_RING,
+	INFERENCE_SMOOTH
+}  LALInferenceApplyTaper;
+
+
 extern size_t typeSize[];
 
 //VariableItem should NEVER be accessed directly, only through special
