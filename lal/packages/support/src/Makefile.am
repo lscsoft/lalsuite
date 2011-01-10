@@ -70,9 +70,7 @@ EXTRA_DIST = \
 	StreamSeriesOutput.m4 \
 	StreamSequenceInput.m4 \
 	StreamVectorInput.m4 \
-	StreamVectorSequenceInput.m4 \
-	snprintf_LICENSE.txt \
-	snprintf_README
+	StreamVectorSequenceInput.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 

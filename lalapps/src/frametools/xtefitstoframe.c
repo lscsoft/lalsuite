@@ -63,7 +63,7 @@
 #define ARRAY 0                       /* data type codes */
 #define EVENT 1                       /* data type codes */
 #define NPCU 5                        /* the number of PCUs on XTE */
-#define MAXZEROCOUNT 10               /* the maximum number of consecutive zeros alowed in the data */
+#define MAXZEROCOUNT 1000             /* the maximum number of consecutive zeros alowed in the data */
 
 /***********************************************************************************************/
 /* error codes */
@@ -1545,6 +1545,7 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
   
   /* define number of elements to read in (each of size char) - this is the total number of expected data values */
   (*event)->channeldata[0].nevents = header->nrows;
+  (*event)->channeldata[0].rowlength = header->rowlength[0];
   (*event)->channeldata[0].length = (INT8)(header->rowlength[0]*header->nrows);
   LogPrintf(LOG_DEBUG,"%s : preparing to read in %ld events\n",fn,(*event)->channeldata[0].nevents);
   LogPrintf(LOG_DEBUG,"%s : this corresponds to %ld CHARS\n",fn,(*event)->channeldata[0].length);
@@ -1555,7 +1556,8 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
     XLAL_ERROR(fn,XLAL_ENOMEM);
   }
   LogPrintf(LOG_DEBUG,"%s : allocated memory for %ld CHARS\n",fn,(*event)->channeldata[0].length);
-  
+  LogPrintf(LOG_DEBUG,"%s : reading column %d\n",fn,col);
+
   /* read the complete data set - we must remember that any event with the most significant bit = 0 is not a real event !! */
   /* IMPORTANT : we read in rowlength chars for each event and the first char in each row defines whether the event is real */
   if (fits_read_col_bit(fptr,col,1,1,(*event)->channeldata[0].length,(*event)->channeldata[0].data,&status)) {
@@ -1564,12 +1566,13 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
     XLAL_ERROR(fn,XLAL_EFAULT);
   }
   LogPrintf(LOG_DEBUG,"%s : read in %ld events\n",fn,(*event)->channeldata[0].nevents);
-  
+  LogPrintf(LOG_DEBUG,"%s : read rowlength as %d\n",fn,(*event)->channeldata[0].rowlength);
+
   /* output debugging information */
   {
     int i;
     char temp1[STRINGLENGTH],temp2[STRINGLENGTH];
-    int M = (*event)->channeldata[0].nevents > 10 ? 10 : (*event)->channeldata[0].nevents;
+    int M = (*event)->channeldata[0].nevents > 100 ? 100 : (*event)->channeldata[0].nevents;
     sprintf(temp1,"");
     sprintf(temp2,"");
     for (i=0;i<M;i++) {
