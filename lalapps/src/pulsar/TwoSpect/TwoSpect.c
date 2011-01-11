@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
    scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
    scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
-   scanInit.Freq = args_info.fmin_arg;  //From the minimum frequency
+   scanInit.Freq = args_info.fmin_arg+args_info.fspan*0.5;  //Mid-point of the frequency band
    
    //Initialize ephemeris data structure
    EphemerisData *edat = XLALInitBarycenter(earth_ephemeris, sun_ephemeris);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
    REAL4 detectorVmax = 9.93e-5;
    
    //Initialize the sky-grid
-   scanInit.dAlpha = 0.5/(inputParams->fmin * inputParams->Tcoh * detectorVmax);
+   scanInit.dAlpha = 0.5/((inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh * detectorVmax);
    scanInit.dDelta = scanInit.dAlpha;
    InitDopplerSkyScan(&status, &scan, &scanInit);
    if (status.statusCode!=0) {
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
    INT4 maxcols = (INT4)floor(2.0*inputParams->dfmax*inputParams->Tcoh)+1;
    
    //Assume maximum bin shift possible
-   inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+inputParams->fspan*0.5) * inputParams->Tcoh)+1; //TODO: better way to do this?
+   inputParams->maxbinshift = (INT4)round(detectorVmax * (inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh)+1; //TODO: better way to do this?
    
    //Read in the T-F data from SFTs
    fprintf(LOG, "Loading in SFTs... ");
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
       }
       
       //Compute the bin shifts for each SFT
-      CompBinShifts(binshifts, inputParams->fmin+inputParams->fspan*0.5, detectorVelocities, inputParams->Tcoh, inputParams->dopplerMultiplier);
+      CompBinShifts(binshifts, inputParams->fmin+0.5*inputParams->fspan, detectorVelocities, inputParams->Tcoh, inputParams->dopplerMultiplier);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompBinShifts() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
