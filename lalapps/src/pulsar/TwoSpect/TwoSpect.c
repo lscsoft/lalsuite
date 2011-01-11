@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
    scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
    scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
-   scanInit.Freq = args_info.fmin_arg+args_info.fspan*0.5;  //Mid-point of the frequency band
+   scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
    
    //Initialize ephemeris data structure
    EphemerisData *edat = XLALInitBarycenter(earth_ephemeris, sun_ephemeris);
