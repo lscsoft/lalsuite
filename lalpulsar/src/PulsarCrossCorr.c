@@ -22,7 +22,7 @@
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \file
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \brief LAL routines for CW cross-correlation searches
  *
  * $Id$

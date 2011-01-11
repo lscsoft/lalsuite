@@ -17,16 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D.
-\file
-\ingroup Resample_h
-\latexonly\label{ss:RulesToTimingDifference.c}\endlatexonly
-
-Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a
-set of resampling rules.
-*/
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -35,7 +25,11 @@ set of resampling rules.
 
 NRCSID(RULESTOTIMINGDIFFERENCEC,"$Id$");
 
-/** This function fills a time series <tt>*difference</tt> with the values
+/** \author Creighton, T. D.
+    \ingroup Resample_h
+    \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a set of resampling rules.
+
+This function fills a time series <tt>*difference</tt> with the values
 of the normalized timing difference \f$(\tau-t)/\Delta t\f$ between the
 detector time \f$t\f$ and some canonical time \f$\tau(t)\f$, sampled as a
 function of \f$t\f$.  This is computed using the resampling rules
@@ -46,7 +40,7 @@ resampling rules, \e not necessarily the sampling interval of the
 time series.  Thus a shift of \f$\pm1\f$ in the resampling rules
 corresponds to a change of \f$\pm1\f$ in the normalized timing difference.
 
-\par Algorithm
+\heading{Algorithm}
 
 This routine is quite simple: it increments a time counter
 \c tNext by resampling rule intervals until it finds the next

@@ -17,99 +17,9 @@
  *  MA  02111-1307  USA
  */
 
-
-/**
- * \author Alicia Sintes, Badri Krishnan
- * \ingroup pulsarHough
- * \file DriveHough.c
- * \brief Routines for building and updating the space of partial Hough map
- *  derivatives and related functions needed for the
- *  construction of total Hough maps
- */
-
-/************************************ <lalVerbatim file="DriveHoughCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
-
-
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{DriveHough.c}}
-\label{ss:DriveHough.c}
-
-Routines for building and updating the space of partial Hough map derivatives
-({\sc phmd}),
-and related functions needed for the construction of  total Hough maps at
-different frequencies and possible residual spin down parameters.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DriveHoughD}
-\index{\verb&LALHOUGHConstructSpacePHMD()&}
-\index{\verb&LALHOUGHupdateSpacePHMDup()&}
-\index{\verb&LALHOUGHupdateSpacePHMDdn()&}
-\index{\verb&LALHOUGHConstructHMT()&}
-\index{\verb&LALHOUGHComputeFBinMap()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-${}$
-
-The function \verb&LALHOUGHConstructSpacePHMD()& constructs the space of {\sc
-phmd} \verb&PHMDVectorSequence *phmdVS&, given a
-\verb&HOUGHPeakGramVector *pgV& and \verb&HOUGHptfLUTVector *lutV&.
-The minimum frequency bin present corresponds to \verb&phmdVS->fBinMin& and the
-total number of different frequencies is
-\verb&phmdVS->nfSize&. At this moment the \verb@fBinMin@ line corresponds to the
-first row of the cylinder and \verb&phmdVS->breakLine& is set to zero.
-\verb&phmdVS->breakLine&
- $\in\, [0,$\verb&nfSize&) is {\it the pointer} which
- identifies the position of the  \verb@fBinMin@ row in the circular-cylinder
- buffer. \\
-
-
- The function \verb&LALHOUGHupdateSpacePHMDup()& updates the space of {\sc
-phmd} increasing the frequency \verb&phmdVS->fBinMin& by one.\\
-
-  The function \verb&LALHOUGHupdateSpacePHMDdn()& updates the space of {\sc
-phmd} decreasing the frequency \verb&phmdVS->fBinMin& by one.\\
-
-Given \verb@PHMDVectorSequence *phmdVS@, the space of {\sc phmd}, and
-\verb&UINT8FrequencyIndexVector *freqInd&, a structure containing the frequency
-indices  of the   {\sc phmd} at different time stamps that have to be combined
-to form a Hough map, the function \verb&LALHOUGHConstructHMT()& produces the
-total Hough map.\\
-
-  The function \verb&LALHOUGHComputeFBinMap()& computes the corresponding frequency bin of
-  a  {\sc phmd} \verb&UINT8 *fBinMap& for a given  intrinsic
-  frequency bin of a source \verb&UINT8 *f0Bin&, and information regarding the
-  time and the
-  residual spin down parameters \verb&HOUGHResidualSpinPar *rs&.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHOUGHPeak2PHMD()
-LALHOUGHAddPHMD2HD()
-LALHOUGHIntegrHD2HT()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{DriveHoughCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
-
-
-
 #include <lal/LALHough.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID (DRIVEHOUGHC, "$Id$");
 
 #ifdef __GNUC__
@@ -118,25 +28,30 @@ NRCSID (DRIVEHOUGHC, "$Id$");
 #define UNUSED
 #endif
 
+/** \endcond */
+
 /*
  * The functions that make up the guts of this module
  */
 
+/** \addtogroup LALHough_h */
+/*@{*/
 
-/** Constructs cylindrical buffer of partial hough map derivatives.
-    For each timestamp, there are nfsize number of look up tables.
-    The input is a vector of peakgrams and a set of look up tables
-    for each timestamp.  A partial hough map derivative basically
-    contains pointers to a left and right border in a look up table.
-    For every selected peak, we get an annulus bounded by a left and
-    right border, and this function figures out what the borders are
-    and constructs pointers to them */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+/** constructs the space of <tt>phmd</tt> <tt>PHMDVectorSequence *phmdVS</tt>, given a
+ * HOUGHPeakGramVector *pgV and HOUGHptfLUTVector *lutV.
+ * The minimum frequency bin present corresponds to <tt>phmdVS->fBinMin</tt> and the
+ * total number of different frequencies is
+ * <tt>phmdVS->nfSize</tt>. At this moment the \c fBinMin line corresponds to the
+ * first row of the cylinder and <tt>phmdVS->breakLine</tt> is set to zero.
+ * <tt>phmdVS->breakLine</tt>
+ * \f$\in\, [0,\f$\c nfSize) is <em>the pointer</em> which
+ * identifies the position of the  \c fBinMin row in the circular-cylinder buffer.
+ */
 void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
 				  PHMDVectorSequence   *phmdVS, /**< Cylindrical buffer of PHMDs */
 				  HOUGHPeakGramVector  *pgV, 	/**< Vetor of peakgrams */
 				  HOUGHptfLUTVector    *lutV 	/**< vector of look up tables */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4    k,j;
   UINT4    nfSize;    /* number of different frequencies */
@@ -207,16 +122,13 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
   RETURN (status);
 }
 
-
-/** Function for shifting the cylindrical buffer of PHMDs up by one
-    frequency bin -- the lowest frequency bin is dropped and an
-    extra frequency bin is added at the highest frequency */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+/** This function updates the space of <tt>phmd</tt> increasing the frequency <tt>phmdVS->fBinMin</tt> by one.
+ */
 void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 				  PHMDVectorSequence   *phmdVS,
 				  HOUGHPeakGramVector  *pgV,
 				  HOUGHptfLUTVector    *lutV)
-{ /*   *********************************************  </lalVerbatim> */
+{
   UINT4    k,breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
@@ -297,12 +209,11 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 /** Function for shifting the cylindrical buffer of PHMDs down by one
     frequency bin -- the highest frequency bin is dropped and an
     extra frequency bin is added at the lowest frequency */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 				 PHMDVectorSequence   *phmdVS,
 				 HOUGHPeakGramVector  *pgV,
 				 HOUGHptfLUTVector    *lutV)
-{ /*   *********************************************  </lalVerbatim> */
+{
   UINT4    k,breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
@@ -380,16 +291,17 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 }
 
 
-/** Calculates the total hough map for a given trajectory in the
-    time-frequency plane and a set of partial hough map derivatives
-    -- this is the top level function to be called for constructing
-    a total hough map.*/
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+/** Given PHMDVectorSequence *phmdVS, the space of \c phmd, and
+ * UINT8FrequencyIndexVector *freqInd, a structure containing the frequency
+ * indices  of the   \c phmd at different time stamps that have to be combined
+ * to form a Hough map, the function LALHOUGHConstructHMT() produces the
+ * total Hough map.
+ */
 void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to LALStatus structure */
 			    HOUGHMapTotal              *ht, 	/**< The output hough map */
 			    UINT8FrequencyIndexVector  *freqInd,/**< time-frequency trajectory */
 			    PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
 
   UINT4    k,j;
@@ -486,12 +398,16 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to 
 
 
 
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+/** This function computes the corresponding frequency bin of
+ * a  \c phmd <tt>UINT8 *fBinMap</tt> for a given  intrinsic
+ * frequency bin of a source <tt>UINT8 *f0Bin</tt>, and information regarding the
+ * time and the residual spin down parameters HOUGHResidualSpinPar *rs.
+ */
 void LALHOUGHComputeFBinMap (LALStatus             *status,
 			     UINT8                 *fBinMap,
 			     UINT8                 *f0Bin,
 			     HOUGHResidualSpinPar  *rs)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4    i;
   INT4    shiftFBin;
@@ -550,12 +466,12 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
     time-frequency plane and a set of partial hough map derivatives allowing
     each PHMD to have a different weight factor to account for varying
     sensitivity at different sky-locations. */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+
 void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to LALStatus structure */
 			     HOUGHMapTotal              *ht, 		/**< The output hough map */
 			     UINT8FrequencyIndexVector  *freqInd, 	/**< time-frequency trajectory */
 			     PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
 
   UINT4    k,j;
@@ -654,11 +570,11 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to
 
 /** Adds weight factors for set of partial hough map derivatives -- the
     weights must be calculated outside this function.  */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+
 void LALHOUGHWeighSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
 			      PHMDVectorSequence   *phmdVS, 	/**< partial hough map derivatives */
 			      REAL8Vector *weightV 		/**< vector of weights */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4    k,j;
   UINT4    nfSize;    /* number of different frequencies */
@@ -707,10 +623,10 @@ void LALHOUGHWeighSpacePHMD  (LALStatus            *status,	/**< pointer to LALS
 
 
 /** Initializes weight factors to unity */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+
 void LALHOUGHInitializeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
 				REAL8Vector *weightV 	/**< vector of weights */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4 j, length;
 
@@ -742,10 +658,10 @@ void LALHOUGHInitializeWeights  (LALStatus  *status,	/**< pointer to LALStatus s
 
 
 /** Normalizes weight factors so that their sum is N */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
+
 void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
 				REAL8Vector *weightV 	/**< vector of weights */)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4 j, length;
   REAL8 sum;
@@ -785,7 +701,6 @@ void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus st
 
 /** Computes weight factors arising from amplitude modulation -- it multiplies
     an existing weight vector */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHComputeAMWeights  (LALStatus          *status,
 				REAL8Vector        *weightV,
 				LIGOTimeGPSVector  *timeV,
@@ -793,7 +708,7 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 				EphemerisData      *edat,
 				REAL8              alpha,
 				REAL8              delta)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   UINT4 length, j;
 
@@ -937,14 +852,13 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 
 /** Computes weight factors arising from amplitude modulation -- it multiplies
     an existing weight vector */
-/* *******************************  <lalVerbatim file="DriveHoughD"> */
 void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					REAL8Vector        *weightV,
 					SFTCatalog         *catalog,
 					EphemerisData      *edat,
 					REAL8              UNUSED alpha,
 					REAL8              UNUSED delta)
-{ /*   *********************************************  </lalVerbatim> */
+{
 
   /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHComputeAMWeights", DRIVEHOUGHC);
@@ -971,3 +885,4 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 
 
 
+/*@}*/

@@ -11,3 +11,5 @@ configure
 lalsuite-*.tar.gz
 lalsuite.spec
 libtool
+TAGS
+auto/

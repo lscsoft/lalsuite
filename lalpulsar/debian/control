@@ -2,12 +2,12 @@ Source: lalpulsar
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), libgsl0-dev (>= 1.9), lal-dev (>= 6.4), pkg-config, python (>= 2.4)
+Build-Depends: debhelper (>= 5), libgsl0-dev (>= 1.9), lal-dev (>= 6.5), pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalpulsar
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.5)
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -15,7 +15,7 @@ Description: LSC Algorithm Library Pulsar
 
 Package: lalpulsar-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lalpulsar (= ${binary:Version}), libgsl0-dev (>= 1.9), lal-dev (>= 6.4)
+Depends: ${shlibs:Depends}, ${misc:Depends}, lalpulsar (= ${binary:Version}), libgsl0-dev (>= 1.9), lal-dev (>= 6.5)
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL

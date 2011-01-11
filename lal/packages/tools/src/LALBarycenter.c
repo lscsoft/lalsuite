@@ -17,23 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \author Curt Cutler
- * \date 2001
- * \file
- * \ingroup moduleBarycenter
- * \brief Converts from detector arrival time (recorded by GPS clock) to
- * pulse emission time, in TDB.
- *
- */
-
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID(LALBARYCENTERC, "$Id$");
+/** \endcond */
 
-/** Computes the position and orientation of the Earth, at some arrival time
+/** \author Curt Cutler
+ * \ingroup LALBarycenter_h
+ * \brief Computes the position and orientation of the Earth, at some arrival time
  * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
+ *
  * The Einstein delay is also calculated. The results are stored in the
  * <tt>EarthState</tt> output structure, which can then be fed as input to
  * <tt>LALBarycenter()</tt>.
@@ -440,11 +435,11 @@ LALBarycenterEarth(LALStatus *stat,		/**< pointer to LALStatus structure */
 } /* LALBarycenterEarth() */
 
 
-
-
-/** Transforms from detector arrival time \f$t_a\f$
- * in GPS (as specified in the LIGOTimeGPS structure) to pulse
- * emission time \f$t_e\f$, in TDB.
+/** \author Curt Cutler
+ * \ingroup LALBarycenter_h
+ * \brief Transforms from detector arrival time \f$t_a\f$ in GPS (as specified in the
+ * LIGOTimeGPS structure) to pulse emission time \f$t_e\f$, in TDB.
+ *
  * Actually, the returned \f$t_e\f$ is
  * the emission time plus the constant light-travel-time from
  * source to SSB.) The inputs to LALBarycenter(), through

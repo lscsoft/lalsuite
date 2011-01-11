@@ -17,148 +17,126 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="DirectedMeshTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup FlatMesh_h
+\brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
 
-/********************************************************** <lalLaTeX>
+\heading{Program <tt>DirectedMeshTest.c</tt>}
+\latexonly\label{ss_DirectedMeshTest_c}\endlatexonly
 
-\subsection{Program \texttt{DirectedMeshTest.c}}
-\label{ss:DirectedMeshTest.c}
-
-Computes the sky-position metric for a coherent or semicoherent pulsar
-search.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 DirectedMeshTest [-o outfile] [-d debuglevel] [-p n dt t0 f0] [-l lat lon]
                  [-s ra dec] [-r dra ddec] [-t tau] [-m mismatch]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test program computes template meshes for directed pulsar
 searches with spindown, where it is assumed that the parameter metric
 is constant over the search space.  The following option flags are
 accepted:
-\begin{itemize}
-\item[\texttt{-o}] Prints the template mesh to the file
-\verb@outfile@: each line consists of a sequence of
+<ul>
+<li><b>-o</b> Prints the template mesh to the file
+\c outfile: each line consists of a sequence of
 whitespace-separated numbers representing the coordinates of the
 template.  If absent, the routines are exercised, but no output is
-written.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@; if
-absent, \verb@-d 0@ is assumed.
-\item[\texttt{-p}] Sets the search parameters: the number of stacks
-\verb@n@, the length of each stack \verb@dt@ (in seconds), and the
-start time of the first stack \verb@t0@ (in seconds of GPS time), and
-the maximum source frequency \verb@f0@ (in Hz).  If absent,
-\verb@-t 1 86400 0 1000@ is assumed.
-\item[\texttt{-l}] Sets the detector latitude to \verb@lat@ (in
-degrees north from the equator) and longitude to \verb@lon@ (in
+written.</li>
+<li><b>-d</b> Sets the debug level to \c debuglevel; if
+absent, <b>-d 0</b> is assumed.</li>
+<li><b>-p</b> Sets the search parameters: the number of stacks
+\c n, the length of each stack \c dt (in seconds), and the
+start time of the first stack \c t0 (in seconds of GPS time), and
+the maximum source frequency \c f0 (in Hz).  If absent,
+<b>-t 1 86400 0 1000</b> is assumed.</li>
+<li><b>-l</b> Sets the detector latitude to \c lat (in
+degrees north from the equator) and longitude to \c lon (in
 degrees east of the prime meridian).  If absent,
-\verb@-l 52.247 9.822@ (GEO600) is assumed.
-\item[\texttt{-s}] Sets the right ascension and declination of the
-target to \verb@ra@ and \verb@dec@ degrees, respectively.  If absent,
-\verb@-r 192.8594813 27.1282511@ is assumed (the Galactic core).
-\item[\texttt{-r}] Sets the range of the sky search to $\pm$\verb@dra@
-degrees in right ascension and $\pm$\verb@ddec@ degrees in declination
-about the target point.  If absent, \verb@-s 0 0@ is assumed (no
-search over sky position).
-\item[\texttt{-t}] Sets the range of the spindown search according to
-the spindown timescale \verb@tau@, in seconds: the spindown parameter
-$f_k$ is constrained by $|f_k|\leq$\verb@tau@${}^{-k}$.  If absent,
-\verb@-t 3.16e9@ (century-long spindown) is assumed.
-\item[\texttt{-m}] Sets the maximum mismatch threshold of the mesh to
-\verb@mismatch@.  If absent, \verb@-m 0.25@ is assumed.
-\end{itemize}
+<b>-l 52.247 9.822</b> (GEO600) is assumed.</li>
+<li><b>-s</b> Sets the right ascension and declination of the
+target to \c ra and \c dec degrees, respectively.  If absent,
+<b>-r 192.8594813 27.1282511</b> is assumed (the Galactic core).</li>
+<li><b>-r</b> Sets the range of the sky search to \f$\pm\f$\c dra
+degrees in right ascension and \f$\pm\f$\c ddec degrees in declination
+about the target point.  If absent, <b>-s 0 0</b> is assumed (no
+search over sky position).</li>
+<li><b>-t</b> Sets the range of the spindown search according to
+the spindown timescale \c tau, in seconds: the spindown parameter
+\f$f_k\f$ is constrained by \f$|f_k|\leq\f$\c tau\f${}^{-k}\f$.  If absent,
+<b>-t 3.16e9</b> (century-long spindown) is assumed.</li>
+<li><b>-m</b> Sets the maximum mismatch threshold of the mesh to
+\c mismatch.  If absent, <b>-m 0.25</b> is assumed.</li>
+</ul>
 
 The program automatically determines how many spindown terms are
 required to cover the parameter space, by starting with none (or one
-if the search is \emph{only} over spindown), computing the local
+if the search is \e only over spindown), computing the local
 template density from the parameter metric, and estimating the number
 of templates required to cover the search volume.  The number of
 spindown parameters is then increased and the number of templates
 re-estimated.  Eventually the estimated number of templates will start
-to \emph{decrease}, as the proper width of the parameter space in the
+to \e decrease, as the proper width of the parameter space in the
 new dimensions is less than one template width.  The last dimension
 before that happens is the correct dimension to use.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define DIRECTEDMESHTESTC_ENORM 0
-#define DIRECTEDMESHTESTC_ESUB  1
-#define DIRECTEDMESHTESTC_EARG  2
-#define DIRECTEDMESHTESTC_EVAL  3
-#define DIRECTEDMESHTESTC_EMEM  4
-#define DIRECTEDMESHTESTC_EDET  5
-#define DIRECTEDMESHTESTC_EFILE 6
 
-#define DIRECTEDMESHTESTC_MSGENORM "Normal exit"
-#define DIRECTEDMESHTESTC_MSGESUB  "Subroutine failed"
-#define DIRECTEDMESHTESTC_MSGEARG  "Error parsing arguments"
-#define DIRECTEDMESHTESTC_MSGEVAL  "Input argument out of valid range"
-#define DIRECTEDMESHTESTC_MSGEMEM  "Memory allocation error"
-#define DIRECTEDMESHTESTC_MSGEDET  "Non-positive metric determinant"
-#define DIRECTEDMESHTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 The program is fairly straightforward.  It uses
-\verb@LALStackMetric()@ to compute the parameter metric, passing it a
-canonical time function \verb@LALDTComp()@ that composites the
-\verb@LALDTSpin()@ and \verb@LALDTBaryPtolemaic()@ time
+<tt>LALStackMetric()</tt> to compute the parameter metric, passing it a
+canonical time function <tt>LALDTComp()</tt> that composites the
+<tt>LALDTSpin()</tt> and <tt>LALDTBaryPtolemaic()</tt> time
 transformations.  It starts with a single spindown parameter.  (If a
-\emph{search} over sky position is also indicated, it will start with
-\emph{no} spindown parameters, using only the barycentric time
+\e search over sky position is also indicated, it will start with
+\e no spindown parameters, using only the barycentric time
 transformation rather than the composite transformation.)  The
 determinant of the metric is computed, and the number of patches
 estimated as:
-\begin{equation}
+\f{equation}{
 N_\mathrm{patches} \approx \frac{\sqrt{|\mathsf{g}_{ab}|}}
 	{(\mathrm{mismatch}/n)^{n/2}}
 	\left\{\Delta\alpha\Delta\delta\right\}
 	\tau^{-n_s(n_s+1)/2}
-\end{equation}
-where $\mathsf{g}_{ab}$ is the parameter metric (spindown sector only
-if the sky search space is a single point), $n$ is the number of
-dimensions in the search, $n_s$ is the number of spindown terms, and
-$\Delta\alpha$ and $\Delta\delta$ are the half-ranges of the search in
+\f}
+where \f$\mathsf{g}_{ab}\f$ is the parameter metric (spindown sector only
+if the sky search space is a single point), \f$n\f$ is the number of
+dimensions in the search, \f$n_s\f$ is the number of spindown terms, and
+\f$\Delta\alpha\f$ and \f$\Delta\delta\f$ are the half-ranges of the search in
 right ascension and declination, respectively (assuming these ranges
 are nonzero).  For the first round we are considering a search
-\emph{only} over sky position ($n=2$, $n_s=0$) or a single spindown
-search ($n=n_s=1$, ignore the term in braces).  The determinant is
-computed using \verb@LALDMatrixDeterminantErr()@, repacking into
-\verb@REAL8Array@s the metric components and uncertainties returned by
-\verb@LALStackMetric()@.  An error is generated if the determinant is
+\e only over sky position (\f$n=2\f$, \f$n_s=0\f$) or a single spindown
+search (\f$n=n_s=1\f$, ignore the term in braces).  The determinant is
+computed using <tt>LALDMatrixDeterminantErr()</tt>, repacking into
+\ref REAL8Array "REAL8Arrays" the metric components and uncertainties returned by
+<tt>LALStackMetric()</tt>.  An error is generated if the determinant is
 non-positive, or a warning if it is smaller than its estimated
 uncertainty.
 
-In subsequent trials, we increase $n_s$ successivlely by 1, and
-recompute $\mathsf{g}_{ab}$ and $N_\mathrm{patches}$.  Eventually,
+In subsequent trials, we increase \f$n_s\f$ successivlely by 1, and
+recompute \f$\mathsf{g}_{ab}\f$ and \f$N_\mathrm{patches}\f$.  Eventually,
 when the width of the added dimension is less than one patch witdh,
-$N_\mathrm{patches}$ will decrease.  When this happend, we back up to
-the value of $n_s$ that gave the largest number of patches, and use
+\f$N_\mathrm{patches}\f$ will decrease.  When this happend, we back up to
+the value of \f$n_s\f$ that gave the largest number of patches, and use
 that parameter metric.
 
-The program then uses \verb@LALDSymmetricEigenVectors()@ to compute
+The program then uses <tt>LALDSymmetricEigenVectors()</tt> to compute
 the eigenvalues and eigenvectors of the metric; these are combined and
-repacked into a \verb@REAL4VectorSequence@ used by
-\verb@LALFlatMesh()@, as described in \verb@FlatMesh.h@.  The inverse
-transformation is computed using \verb@LALDMatrixInverse()@, and again
-repacked into a \verb@REAL4VectorSequence@.  The search area is taken
-to be a rectangular space controled by \verb@LALRectIntersect()@,
-covering the sky area $|\alpha-\mathtt{ra}|\leq\mathtt{dra}$ and
-$|\alpha-\mathtt{ra}|\leq\mathtt{dra}$ (provided these ranges are
-nonzero), and the spindown volume $|f_k|\leq\mathtt{tau}^{-k}$ for
-$k=1,\ldots,n_s$.  The volume boundaries are increased by half the
+repacked into a \c REAL4VectorSequence used by
+LALCreateFlatMesh(), as described in <tt>FlatMesh.h</tt>.  The inverse
+transformation is computed using <tt>LALDMatrixInverse()</tt>, and again
+repacked into a \c REAL4VectorSequence.  The search area is taken
+to be a rectangular space controled by <tt>LALRectIntersect()</tt>,
+covering the sky area \f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ and
+\f$|\alpha-\mathtt{ra}|\leq\mathtt{dra}\f$ (provided these ranges are
+nonzero), and the spindown volume \f$|f_k|\leq\mathtt{tau}^{-k}\f$ for
+\f$k=1,\ldots,n_s\f$.  The volume boundaries are increased by half the
 maximum patch size in each direction, to ensure total coverage of the
-edges, as described in \verb@FlatMeshTest.c@.
+edges, as described in FlatMeshTest.c.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALCalloc()                     LALFree()
@@ -174,13 +152,30 @@ LALCreateFlatMesh()             LALRectIntersect()
 LALStackMetric()                LALProjectMetric()
 LALDMatrixDeterminantErr()      LALDMatrixInverse()
 LALDSymmetricEigenVectors()     snprintf()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{DirectedMeshTestCV}}
+*/
 
-******************************************************* </lalLaTeX> */
+
+/** \name Error Codes */ /*@{*/
+#define DIRECTEDMESHTESTC_ENORM 0
+#define DIRECTEDMESHTESTC_ESUB  1
+#define DIRECTEDMESHTESTC_EARG  2
+#define DIRECTEDMESHTESTC_EVAL  3
+#define DIRECTEDMESHTESTC_EMEM  4
+#define DIRECTEDMESHTESTC_EDET  5
+#define DIRECTEDMESHTESTC_EFILE 6
+
+#define DIRECTEDMESHTESTC_MSGENORM "Normal exit"
+#define DIRECTEDMESHTESTC_MSGESUB  "Subroutine failed"
+#define DIRECTEDMESHTESTC_MSGEARG  "Error parsing arguments"
+#define DIRECTEDMESHTESTC_MSGEVAL  "Input argument out of valid range"
+#define DIRECTEDMESHTESTC_MSGEMEM  "Memory allocation error"
+#define DIRECTEDMESHTESTC_MSGEDET  "Non-positive metric determinant"
+#define DIRECTEDMESHTESTC_MSGEFILE "Could not open file"
+/*@}*/
 
 #include <math.h>
 #include <stdlib.h>
@@ -194,6 +189,7 @@ LALDSymmetricEigenVectors()     snprintf()
 #include <lal/PulsarTimes.h>
 #include <lal/FlatMesh.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( DIRECTEDMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
@@ -857,3 +853,5 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
 	       lsd );
   return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }
+
+/** \endcond */

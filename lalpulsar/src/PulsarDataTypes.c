@@ -17,11 +17,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix
- * \file
- * \brief
- * Provides empty initializers for pulsar struct data-types.
- *
+/**
+ * \cond DONT_DOXYGEN
  */
 
 /*---------- INCLUDES ----------*/
@@ -62,3 +59,5 @@ const BarycenterInput empty_BarycenterInput = { {0,0},
 /*---------- internal prototypes ----------*/
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+/** \endcond */

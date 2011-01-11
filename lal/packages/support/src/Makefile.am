@@ -29,6 +29,7 @@ liblalsupport_la_SOURCES = \
 	getopt.h \
 	getopt1.c
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
+liblalsupport_la_LDFLAGS = -version-info $(LIBVERSION_SUPPORT)
 
 MAINTAINERCLEANFILES = \
 	PrintFrequencySeries.c \
@@ -69,9 +70,7 @@ EXTRA_DIST = \
 	StreamSeriesOutput.m4 \
 	StreamSequenceInput.m4 \
 	StreamVectorInput.m4 \
-	StreamVectorSequenceInput.m4 \
-	snprintf_LICENSE.txt \
-	snprintf_README
+	StreamVectorSequenceInput.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
