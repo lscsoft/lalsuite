@@ -116,7 +116,7 @@ REAL4 fLow=40.0; /* Low-frequency cutoff */
 UINT4 Nlive=1000;
 CHAR *inputXMLFile;
 CHAR *injXMLFile=NULL;
-CHAR approx[20]="TaylorF2";
+CHAR approx[128]="TaylorF2";
 UINT4 event=0;
 REAL8 manual_end_time=0;
 REAL8 manual_mass_low=2.0;
@@ -317,7 +317,7 @@ void initialise(int argc, char *argv[]){
 			SkyPatch=1;
 			break;
 		case 'A':
-			strncpy(approx,optarg,20);
+			strncpy(approx,optarg,128);
 			break;
 		case 'l':
 			studentt=1;
@@ -871,7 +871,7 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRB[]="IMRPhenomFB_Chi_lowmass";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
@@ -882,6 +882,7 @@ int main( int argc, char *argv[])
     else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
     else if(!strcmp(approx,BBHSpin2)) inputMCMC.approximant=IMRPhenomFB;
     else if(!strcmp(approx,BBHSpin3)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,LowMassIMRB)) inputMCMC.approximant=IMRPhenomFB;
     else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
 	else if(!strcmp(approx,ST)) inputMCMC.approximant=SpinTaylor;
@@ -984,6 +985,11 @@ doneinit:
         inputMCMC.funcPrior = NestPriorHighMass;
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManualIMRBChi;
+    }
+    if(!strcmp(approx,LowMassIMRB)){
+	inputMCMC.funcPrior = NestPrior;
+	inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
+	inputMCMC.funcInit = NestInitManualIMRBChi;
     }
 
 	/* Live is an array of LALMCMCParameter * types */
