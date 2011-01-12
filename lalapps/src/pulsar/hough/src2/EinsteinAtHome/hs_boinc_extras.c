@@ -1017,6 +1017,10 @@ static void worker (void) {
     LogPrintf (LOG_DEBUG, "Set up communication with graphics process.\n");
 #endif
 
+  /* if the program was called to output the version, output the BOINC revision, too */
+  if(output_version)
+    printf("%%%% BOINC: " SVN_VERSION "\n");
+
   if (output_help || output_version || !resultfile_present) {
     /* CALL WORKER's MAIN()
      */
@@ -1049,9 +1053,6 @@ static void worker (void) {
       boinc_finish(0);
     }
 
-    /* if the program was called to output the version, output the BOINC revision, too */
-    if(output_version)
-      printf("%% BOINC: " SVN_VERSION "\n");
   }
 
 
