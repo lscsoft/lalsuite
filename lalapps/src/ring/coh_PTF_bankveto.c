@@ -1,9 +1,4 @@
 #include "coh_PTF.h"
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <time.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -11,7 +6,7 @@
 #define UNUSED
 #endif
 
-UINT4 read_sub_bank(
+UINT4 coh_PTF_read_sub_bank(
 struct coh_PTF_params   *params,
 InspiralTemplate        **PTFBankTemplates)
 {
@@ -33,7 +28,7 @@ InspiralTemplate        **PTFBankTemplates)
 }
 
 /* FIXME: parameter spinBank is unused */
-void initialise_sub_bank(
+void coh_PTF_initialise_sub_bank(
 struct coh_PTF_params   *params,
 InspiralTemplate        *PTFBankTemplates,
 FindChirpTemplate       *bankFcTmplts,
@@ -75,7 +70,7 @@ UINT4                    UNUSED spinBank)
   }
 }
 
-REAL4 calculate_bank_veto(
+REAL4 coh_PTF_calculate_bank_veto(
 UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
@@ -268,7 +263,7 @@ UINT4           singleDetector )
 
 }
 
-REAL4 calculate_bank_veto_max_phase(
+REAL4 coh_PTF_calculate_bank_veto_max_phase(
 UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
@@ -421,7 +416,7 @@ INT4            timeOffsetPoints[LAL_NUM_IFO]
 
 }
 
-REAL4 calculate_bank_veto_max_phase_coherent(
+REAL4 coh_PTF_calculate_bank_veto_max_phase_coherent(
 UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
@@ -472,7 +467,7 @@ gsl_vector *Bankeigenvals[50]
   }
 
   /* Begin by calculating the components of the SNR */
-  calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
+  coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
       timeOffsetPoints,Bankeigenvecs[subBankSize],Bankeigenvals[subBankSize],
       numPoints,position,1,2);
   
@@ -485,7 +480,7 @@ gsl_vector *Bankeigenvals[50]
     rotImOverlaps = cohBankOverlaps[ui].rotImOverlaps;
     /* Calculate the components of subBank template with data */
 
-    calculate_rotated_vectors(params,dataOverlaps[ui].PTFqVec,TjwithS1,
+    coh_PTF_calculate_rotated_vectors(params,dataOverlaps[ui].PTFqVec,TjwithS1,
         TjwithS2,a,b,calTimeOffsetPoints,Bankeigenvecs[ui],
         Bankeigenvals[ui],halfNumPoints,position-numPoints/4+5000,1,2);
     for (uj = 0; uj < 4; uj++)
@@ -536,7 +531,7 @@ gsl_vector *Bankeigenvals[50]
   return BankVeto;
 }
  
-REAL4 calculate_auto_veto_max_phase_coherent(
+REAL4 coh_PTF_calculate_auto_veto_max_phase_coherent(
 UINT4           numPoints,
 UINT4           position,
 REAL4           a[LAL_NUM_IFO],
@@ -566,7 +561,7 @@ gsl_vector *Autoeigenvals
   TjwithS2 = LALCalloc(4,sizeof(REAL4));
 
   /* Begin by calculating the components of the SNR */
-  calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
+  coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
       timeOffsetPoints,Autoeigenvecs,Autoeigenvals,
       numPoints,position,1,2);
 
@@ -576,7 +571,7 @@ gsl_vector *Autoeigenvals
     rotImOverlaps = cohAutoOverlaps[ui].rotImOverlaps;
     /* Calculate the components of subBank template with data */
 
-    calculate_rotated_vectors(params,PTFqVec,TjwithS1,
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,TjwithS1,
         TjwithS2,a,b,timeOffsetPoints,Autoeigenvecs,
         Autoeigenvals,numPoints,position-((ui+1) * timeStepPoints),1,2);
     for (uj = 0; uj < 4; uj++)
@@ -629,8 +624,7 @@ gsl_vector *Autoeigenvals
   return AutoVeto;
 }
 
-
-void free_bank_veto_memory(
+void coh_PTF_free_bank_veto_memory(
   struct bankTemplateOverlaps *bankNormOverlaps,
   InspiralTemplate        *PTFBankTemplates,
   FindChirpTemplate       *bankFcTmplts,
@@ -675,7 +669,7 @@ void free_bank_veto_memory(
 }
 
 
-void calculate_coherent_bank_overlaps(
+void coh_PTF_calculate_coherent_bank_overlaps(
   struct coh_PTF_params   *params,
   struct bankComplexTemplateOverlaps bankOverlaps,
   struct bankCohTemplateOverlaps cohBankOverlaps,
@@ -750,7 +744,7 @@ void calculate_coherent_bank_overlaps(
 
 }
 
-void calculate_standard_chisq_freq_ranges(
+void coh_PTF_calculate_standard_chisq_freq_ranges(
     struct coh_PTF_params   *params,
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
@@ -872,7 +866,7 @@ void calculate_standard_chisq_freq_ranges(
 //  fprintf(stderr,"%e %e \n", SNRtemp,SNRmax);
 }
 
-void calculate_standard_chisq_power_bins(
+void coh_PTF_calculate_standard_chisq_power_bins(
     struct coh_PTF_params   *params,
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
@@ -1003,7 +997,7 @@ void calculate_standard_chisq_power_bins(
 
         
 
-REAL4 calculate_chi_square(
+REAL4 coh_PTF_calculate_chi_square(
 struct coh_PTF_params   *params,
 UINT4           numPoints,
 UINT4           position,
@@ -1032,7 +1026,7 @@ REAL4 *powerBinsCross
 
   chiSq = 0;
 
-  calculate_rotated_vectors(params,PTFqVec,v1full,v2full,a,b,
+  coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1full,v2full,a,b,
         timeOffsetPoints,eigenvecs,eigenvals,numPoints,
         position,1,2);
 
@@ -1043,7 +1037,7 @@ REAL4 *powerBinsCross
   for (i = 0; i < numChiSquareBins; i++ )
   {
     /* calculate SNR in this frequency bin */
-    calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1,v2,a,b,
+    coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1,v2,a,b,
         timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
         position-numPoints/4+5000,1,2);
 
