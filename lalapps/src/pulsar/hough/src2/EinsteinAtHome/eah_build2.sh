@@ -43,8 +43,8 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S5GC1HF
 test ".$appversion" = "." && appversion=0.00
-boinc_rev=-r22825
-#previous:-r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
+boinc_rev=-r22844
+#previous:-r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
 for i; do
     case "$i" in
