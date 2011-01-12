@@ -29,8 +29,6 @@
 extern "C" {
 #endif
 
-NRCSID(PULSARTIMESH,"$Id$");
-
 /**\defgroup PulsarTimes_h  PulsarTimes
    \author Creighton, T. D.
    \ingroup pulsarCommon
@@ -205,9 +203,11 @@ typedef struct tagPulsarTimesParamStruc {
   /*@} */
 } PulsarTimesParamStruc;
 
+/** \cond DONT_DOXYGEN */
+
+NRCSID(PULSARTIMESH,"$Id$");
 
 /* Function prototypes. */
-
 void
 LALGetEarthTimes( LALStatus *, PulsarTimesParamStruc *times );
 
@@ -270,6 +270,8 @@ LALTEphemeris(LALStatus *,
 	      REAL8 *tBary,
 	      REAL8Vector *variables,
 	      PulsarTimesParamStruc *constants);
+
+/** \endcond */
 
 #ifdef __cplusplus
 }

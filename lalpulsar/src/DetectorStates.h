@@ -22,7 +22,7 @@
  * \ingroup pulsarCommon
  * \date 2005
  * \file
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \brief API for the DetectorStates.c functions.
  *
  * $Id$

@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.4.1.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.5.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -94,7 +94,7 @@ AH_BOTTOM([
 
 AC_CANONICAL_HOST
 
-# set library api info
+# set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library
 # 2. update the version information only immediately before a public
 #    release of your software. More frequent updates are unnecessary,
@@ -108,10 +108,30 @@ AC_CANONICAL_HOST
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[0])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[1])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
+# set library api info - liblalsupport
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT_SUPPORT],[0])
+AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[0])
+AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
+
 
 LAL_WITH_CC
 LAL_WITH_CFLAGS
@@ -348,8 +368,6 @@ AC_HEADER_TIME
 # checks for library functions
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getopt_long])
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([vsnprintf])
 AC_CHECK_FUNCS([putenv])
 
 # set package documentation install path

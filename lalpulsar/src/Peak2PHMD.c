@@ -17,117 +17,57 @@
  *  MA  02111-1307  USA
  */
 
-/** \file Peak2PHMD.c
- *  \ingroup pulsarHough
- *  \date $Date$
- *  \brief Construction of Partial-Hough-Map-Derivatives given a peak-gram and the look-up-table.
- *  \author Sintes, A.M.
- *
+/*
  * Revision: $Id$
  *
  * History:   Created by Sintes June 20, 2001
  *            Modified...
  *
  *
+*/
+
+#include <lal/PHMD.h>
+
+/** \cond DONT_DOXYGEN */
+NRCSID (PEAK2PHMDC, "$Id$");
+/** \endcond */
+
+
+/**
+\author Sintes, A. M.
+\brief Construction of Partial-Hough-Map-Derivatives (\c phmd) given a peak-gram and the look-up-table.
+\ingroup PHMD_h
 
 \heading{Description}
 
-This routine produces a phmd at a certain frequency for a given  peak-gram and
+This routine produces a \c phmd at a certain frequency for a given  peak-gram and
 look-up-table.
 
 The inputs are:
 
-phmd->fBin: The frequency bin of this phmd.
+<tt>phmd->fBin</tt>: The frequency bin of this \c phmd.
 
-lut : The look-up-table HOUGHptfLUT
+<tt>*lut</tt>: The look-up-table (of type  \c HOUGHptfLUT)
 
-pg : The peak-gram HOUGHPeakGram
+<tt>*pg</tt>: The peak-gram  (of type  \c HOUGHPeakGram)
 
-
-The function LALHOUGHPeak2PHMD() makes sure that the  lut the
-peak-gram and also the frequency of the phmd
+The function LALHOUGHPeak2PHMD() makes sure that the  \c lut, the
+peak-gram and also the frequency of the \c phmd
 are compatible.
 
-The output HOUGHphmd is  a structure
-containing the frequency bin of this phmd
-the total number of borders of each type Left and Right to be
+The output <tt>HOUGHphmd  *phmd</tt> is  a structure
+containing the frequency bin of this \c phmd,
+the total number of borders of each type (<em>Left and Right</em>) to be
 marked, the pointers to the borders in the corresponding
-look-up-table, plus border effects of clipping  on a finite
+look-up-table, plus  \e border effects of clipping  on a finite
 patch.
-
-\heading{Uses}
-\code
-LALHOUGHPeak2PHMD()
-\endcode
 
 */
-
-/************************************ <lalVerbatim file="Peak2PHMDCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
-
-
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{Peak2PHMD.c}}
-\label{ss:Peak2PHMD.c}
-Construction of Partial-Hough-Map-Derivatives ({\sc phmd}) given a peak-gram
-and the look-up-table.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{Peak2PHMDD}
-\index{\verb&LALHOUGHPeak2PHMD()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-This routine produces a {\sc phmd} at a certain frequency for a given  peak-gram and
-look-up-table.\\
-
-The inputs are:
-
-\verb@phmd->fBin@: The frequency bin of this {\sc phmd}.
-
-\verb@*lut@: The look-up-table (of type  \verb@HOUGHptfLUT@)
-
-\verb@*pg@: The peak-gram  (of type  \verb@HOUGHPeakGram@)\\
-
-
-The function \verb@LALHOUGHPeak2PHMD@ makes sure that the  {\sc lut}, the
-peak-gram and also the frequency of the {\sc phmd}
-are compatible.\\
-
-The output \verb@HOUGHphmd  *phmd@ is  a structure
-containing the frequency bin of this {\sc phmd},
-the total number of borders of each type ({\it Left and Right}) to be
-marked, the pointers to the borders in the corresponding
-look-up-table, plus  {\it border} effects of clipping  on a finite
-patch.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%\begin{verbatim}
-%LALZDestroyVector()
-%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{Peak2PHMDCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
-
-#include <lal/PHMD.h>
-
-NRCSID (PEAK2PHMDC, "$Id$");
-
-/* *******************************  <lalVerbatim file="Peak2PHMDD"> */
 void LALHOUGHPeak2PHMD (LALStatus    *status,
 			HOUGHphmd    *phmd, /* partial Hough map derivative */
 			HOUGHptfLUT  *lut, /* Look up table */
 			HOUGHPeakGram *pg)  /* peakgram */
-{ /* *********************************************  </lalVerbatim> */
+{
 
   INT2    i,j;
   UCHAR   *column1P;

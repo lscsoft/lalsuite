@@ -2,12 +2,12 @@ Source: lalburst
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), zlib1g-dev, libgsl0-dev (>= 1.9), libgsl0ldbl (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.4), lalmetaio-dev (>= 1.0), pkg-config, python (>= 2.4)
+Build-Depends: debhelper (>= 5), zlib1g-dev, libgsl0-dev (>= 1.9), libgsl0ldbl (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.5), lalmetaio-dev (>= 1.0.1), pkg-config, python (>= 2.4)
 Standards-Version: 3.7.2
 
 Package: lalburst
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, lal (>= 6.4), lalmetaio (>= 1.0), libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libmetaio1 (>= 8.2)
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, lal (>= 6.5), lalmetaio (>= 1.0.1), libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libmetaio1 (>= 8.2)
 Description: LSC Algorithm Library Burst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -15,7 +15,7 @@ Description: LSC Algorithm Library Burst
 
 Package: lalburst-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, lalburst (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.4), lalmetaio-dev (>= 1.0), libmetaio-dev (>= 8.2)
+Depends: ${shlibs:Depends}, ${misc:Depends}, lalburst (= ${binary:Version}), zlib1g, libgsl0-dev (>= 1.9), lal-dev (>= 6.5), lalmetaio-dev (>= 1.0.1), libmetaio-dev (>= 8.2)
 Description: LSC Algorithm Library Burst Developers
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL

@@ -17,72 +17,129 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="SkyMetricTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup StackMetric_h
 
-/********************************************************** <lalLaTeX>
+\heading{Program <tt>SkyMetricTest.c</tt>}
+\latexonly\label{ss_SkyMetricTest_c}\endlatexonly
 
-\subsection{Program \texttt{SkyMetricTest.c}}
-\label{ss:SkyMetricTest.c}
+\brief Computes the sky-position metric for a coherent or semicoherent pulsar search.
 
-Computes the sky-position metric for a coherent or semicoherent pulsar
-search.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 SkyMetricTest [-o metricfile rangefile] [-p n dt t0 f0] [-l lat lon]
               [-r ra1 ra2 dec1 dec2] [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test program computes the parameter metric for the
 two-dimensional sky-position pulsar stack search, over a grid of
 points on the sky.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-o}] Prints the metric grid and a grid specifying the
-parameter ranges to the files \verb@metricfile@ and \verb@rangefile@,
+<ul>
+<li>[<tt>-o</tt>] Prints the metric grid and a grid specifying the
+parameter ranges to the files \c metricfile and \c rangefile,
 respectively, using the standard formatting routine
-\verb@LALSWriteGrid()@ in the \verb@support@ package.  See below for a
+<tt>LALSWriteGrid()</tt> in the \c support package.  See below for a
 description of these two grids.  If absent, the routines are
-exercised, but no output is written.
-\item[\texttt{-p}] Sets the search parameters: the number of stacks
-\verb@n@, the length of each stack \verb@dt@ (in seconds), and the
-start time of the first stack \verb@t0@ (in seconds of GPS time), and
-the maximum source frequency \verb@f0@ (in Hz).  If absent,
-\verb@-t 1 86400 0 1000@ is assumed.
-\item[\texttt{-l}] Sets the detector latitude to \verb@lat@ (in
-degrees north from the equator) and longitude to \verb@lon@ (in
+exercised, but no output is written.</li>
+<li>[<tt>-p</tt>] Sets the search parameters: the number of stacks
+\c n, the length of each stack \c dt (in seconds), and the
+start time of the first stack \c t0 (in seconds of GPS time), and
+the maximum source frequency \c f0 (in Hz).  If absent,
+<tt>-t 1 86400 0 1000</tt> is assumed.</li>
+<li>[<tt>-l</tt>] Sets the detector latitude to \c lat (in
+degrees north from the equator) and longitude to \c lon (in
 degrees east of the prime meridian).  If absent,
-\verb@-l 52.247 9.822@ (GEO600) is assumed.
-\item[\texttt{-r}] Sets the ``box'' on the sky to be covered: with
-right ascension in the range [\verb@ra1@,\verb@ra2@] and declination
-in the range [\verb@ra1@,\verb@ra2@], in degrees.  If absent,
-\verb@-r 188.8594813 196.8594813 23.1282511 31.1282511@ is assumed (an
-$8^\circ$ square centred on the Galactic core).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@; if
-absent, \verb@-d 0@ is assumed.
-\end{itemize}
+<tt>-l 52.247 9.822</tt> (GEO600) is assumed.</li>
+<li>[<tt>-r</tt>] Sets the ``box'' on the sky to be covered: with
+right ascension in the range [\c ra1,\c ra2] and declination
+in the range [\c ra1,\c ra2], in degrees.  If absent,
+<tt>-r 188.8594813 196.8594813 23.1282511 31.1282511</tt> is assumed (an
+\f$8^\circ\f$ square centred on the Galactic core).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
+absent, <tt>-d 0</tt> is assumed.</li>
+</ul>
 
-\paragraph{Grid formats:} The metric grid is stored as a
-\verb@REAL4Grid@ with physical dimension 2 and data dimesnion 3: for
-each point in the two-dimensional sky grid $(\delta,\alpha)$,
+\heading{Grid formats:} The metric grid is stored as a
+\c REAL4Grid with physical dimension 2 and data dimesnion 3: for
+each point in the two-dimensional sky grid \f$(\delta,\alpha)\f$,
 representing declination and right ascension, it stores a 3-element
-vector consisting of the three metric components $g_{\delta\delta}$,
-$g_{\alpha\alpha}$, and $g_{\alpha\delta}$, in that order.  The
+vector consisting of the three metric components \f$g_{\delta\delta}\f$,
+\f$g_{\alpha\alpha}\f$, and \f$g_{\alpha\delta}\f$, in that order.  The
 coordinates are given in degrees, and the metric components in
-$\mathrm{degrees}^{-2}$.
+\f$\mathrm{degrees}^{-2}\f$.
 
 The range grid stores the parameter space boundaries as a
-\verb@REAL4Grid@ with physical dimension 1 and data dimension 2: for
+\c REAL4Grid with physical dimension 1 and data dimension 2: for
 each grid point in the right ascension, it stores a 2-element vector
 consisting of the lower and upper values of declination for that right
 ascension.  Both coordinates are given in degrees.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
+
+\heading{Algorithm}
+
+After parsing the command-line inputs, this program defines a grid
+covering the desired space, and determines the metric using the
+routines LALStackMetric() and LALProjectMetric() with
+the canonical time routine LALDTBaryPtolemaic().  These
+routines return uncertainties along with their best-estimate
+components, so we adopt a (perhaps overly) conservative approach: each
+component is adjusted up or down by up to \f$1\sigma\f$ of estimated
+uncertainty, in such a way as to maximize the metric determinant.
+This will tend to give \e overcoverage of the parameter space.  If
+the uncertainty in a component is larger than the component itself,
+then a warning is generated.  If the final metric has non-positive
+diagonal components or determinant, then the parameter space range is
+shortened to exclude these points.  These degeneracies usually occur
+at points near the poles for very short observation times, where there
+is almost no modulation of the signal; usually in these cases an
+unmodulated template will suffice to cover the excluded regions of the
+parameter space.
+
+The metric and range grids are written to the output file by the
+routine <tt>LALSWriteGrid()</tt>, from which they can be read using
+<tt>LALSReadGrid()</tt> in template-placement programs such as
+\c TwoDMeshTest.c
+
+\heading{Note:} This program, like the LALDTBaryPtolemaic()
+phase model it relies on, uses right ascension and declination as its
+parameter basis.  Since these are polar coordinates, they will go
+singular at the poles regardless of the actual Doppler phase
+modulation: specifically, the \f$g_{\alpha\alpha}\f$ and
+\f$g_{\alpha\delta}\f$ metric components will go to zero, leading to
+equimatch ellipses that are highly elongated in the \f$\alpha\f$
+direction.
+
+This gives rise to problems in template placement using the routines
+in TwoDMesh.h, \e if columns are arranged along the
+declination axis, since ellipse size and shape varies greatly along
+the length of a column.  The problems largely go away if the columns
+are arranged along the right ascension axis, where ellipse variations
+are less severe.  This routine therefore orients the sky parameter
+space so that declination runs along the first (\f$x\f$) axis and right
+ascension along the second (\f$y\f$) axis.
+
+\heading{Uses}
+\code
+lalDebugLevel
+LALPrintError()                 LALCheckMemoryLeaks()
+LALMalloc()                     LALFree()
+LALDCreateVector()              LALDDestroyVector()
+LALU4CreateVector()             LALU4DestroyVector()
+LALSCreateGrid()                LALSDestroyGrid()
+LALSWriteGrid()                 snprintf()
+LALStackMetric()                LALProjectMetric()
+LALDTBaryPtolemaic()            LALGetEarthTimes()
+\endcode
+
+\heading{Notes}
+
+*/
+
+/** \name Error Codes */ /*@{*/
 #define SKYMETRICTESTC_ENORM 0
 #define SKYMETRICTESTC_ESUB  1
 #define SKYMETRICTESTC_EARG  2
@@ -98,70 +155,10 @@ ascension.  Both coordinates are given in degrees.
 #define SKYMETRICTESTC_MSGEMEM  "Memory allocation error"
 #define SKYMETRICTESTC_MSGERNG  "Could not find area with valid metric"
 #define SKYMETRICTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*/
 
-\subsubsection*{Algorithm}
 
-After parsing the command-line inputs, this program defines a grid
-covering the desired space, and determines the metric using the
-routines \verb@LALStackMetric()@ and \verb@LALProjectMetric()@ with
-the canonical time routine \verb@LALDTBaryPtolemaic()@.  These
-routines return uncertainties along with their best-estimate
-components, so we adopt a (perhaps overly) conservative approach: each
-component is adjusted up or down by up to $1\sigma$ of estimated
-uncertainty, in such a way as to maximize the metric determinant.
-This will tend to give \emph{over}coverage of the parameter space.  If
-the uncertainty in a component is larger than the component itself,
-then a warning is generated.  If the final metric has non-positive
-diagonal components or determinant, then the parameter space range is
-shortened to exclude these points.  These degeneracies usually occur
-at points near the poles for very short observation times, where there
-is almost no modulation of the signal; usually in these cases an
-unmodulated template will suffice to cover the excluded regions of the
-parameter space.
-
-The metric and range grids are written to the output file by the
-routine \verb@LALSWriteGrid()@, from which they can be read using
-\verb@LALSReadGrid()@ in template-placement programs such as
-\verb@TwoDMeshTest@.
-
-\paragraph{Note:} This program, like the \verb@DTBaryPtolemaic()@
-phase model it relies on, uses right ascension and declination as its
-parameter basis.  Since these are polar coordinates, they will go
-singular at the poles regardless of the actual Doppler phase
-modulation: specifically, the $g_{\alpha\alpha}$ and
-$g_{\alpha\delta}$ metric components will go to zero, leading to
-equimatch ellipses that are highly elongated in the $\alpha$
-direction.
-
-This gives rise to problems in template placement using the routines
-in \verb@TwoDMesh.h@, \emph{if} columns are arranged along the
-declination axis, since ellipse size and shape varies greatly along
-the length of a column.  The problems largely go away if the columns
-are arranged along the right ascension axis, where ellipse variations
-are less severe.  This routine therefore orients the sky parameter
-space so that declination runs along the first ($x$) axis and right
-ascension along the second ($y$) axis.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALMalloc()                     LALFree()
-LALDCreateVector()              LALDDestroyVector()
-LALU4CreateVector()             LALU4DestroyVector()
-LALSCreateGrid()                LALSDestroyGrid()
-LALSWriteGrid()                 snprintf()
-LALStackMetric()                LALProjectMetric()
-LALDTBaryPtolemaic()            LALGetEarthTimes()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SkyMetricTestCV}}
-
-******************************************************* </lalLaTeX> */
-
+/** \cond DONT_DOXYGEN */
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -665,3 +662,5 @@ main(int argc, char **argv)
   INFO( SKYMETRICTESTC_MSGENORM );
   return SKYMETRICTESTC_ENORM;
 }
+
+/** \endcond */

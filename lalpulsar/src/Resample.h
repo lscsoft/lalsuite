@@ -73,8 +73,9 @@ piecewise expanded as a Taylor series in \f$t\f$.  That is, one defines a
 set of fitting \e regions \f$T_i=[t_{\mathrm{bound}(i-1)},
 t_{\mathrm{bound}(i)}]\f$, and a set of fitting \e points
 \f$t_{(i)}\in T_i\f$.  In each region one then writes:
+\anchor eq_tau
 \f{equation}{
-\label{eq:tau}
+\label{eq_tau}
 \tau(t) = \sum_{k=0} \frac{1}{k!}c_{k(i)}(t-t_{(i)})^k \; .
 \f}
 Since one is normally interested in tracking the difference
@@ -85,11 +86,12 @@ Since one is normally interested in tracking the difference
 \tau(t)-t = \sum_{k=0} a_{k(i)}(t-t_{(i)})^k \; ,
 \f}
 where
+\anchor eq_a_c
 \f{eqnarray}{
 a_{0(i)} & = & c_{0(i)}-t_{(i)}           \; , \nonumber\\
 a_{1(i)} & = & c_{1(i)}-1                 \; , \nonumber\\
 a_{k(i)} & = & c_{k(i)}/k! \; , \; k\geq2 \; . \nonumber
-\label{eq:a_c}
+\label{eq_a_c}
 \f}
 These are the polynomial coefficients normally assumed in the modules
 under this header.

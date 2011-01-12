@@ -59,6 +59,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
+  "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
     0
@@ -94,11 +95,12 @@ init_help_array(void)
   gengetopt_args_info_help[24] = gengetopt_args_info_full_help[24];
   gengetopt_args_info_help[25] = gengetopt_args_info_full_help[25];
   gengetopt_args_info_help[26] = gengetopt_args_info_full_help[26];
-  gengetopt_args_info_help[27] = 0; 
+  gengetopt_args_info_help[27] = gengetopt_args_info_full_help[27];
+  gengetopt_args_info_help[28] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[28];
+const char *gengetopt_args_info_help[29];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -174,6 +176,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->skyRegion_given = 0 ;
   args_info->SFToverlap_given = 0 ;
   args_info->IHSonly_given = 0 ;
+  args_info->BrentsMethod_given = 0 ;
   args_info->antennaOff_given = 0 ;
   args_info->gaussTemplatesOnly_given = 0 ;
 }
@@ -222,6 +225,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
   args_info->IHSonly_flag = 0;
+  args_info->BrentsMethod_flag = 0;
   args_info->antennaOff_flag = 0;
   args_info->gaussTemplatesOnly_flag = 0;
   
@@ -259,8 +263,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->skyRegion_help = gengetopt_args_info_full_help[24] ;
   args_info->SFToverlap_help = gengetopt_args_info_full_help[25] ;
   args_info->IHSonly_help = gengetopt_args_info_full_help[26] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[27] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[28] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[27] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[28] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[29] ;
   
 }
 
@@ -463,6 +468,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
+  if (args_info->BrentsMethod_given)
+    write_into_file(outfile, "BrentsMethod", 0, 0 );
   if (args_info->antennaOff_given)
     write_into_file(outfile, "antennaOff", 0, 0 );
   if (args_info->gaussTemplatesOnly_given)
@@ -752,6 +759,7 @@ cmdline_parser_internal (
         { "skyRegion",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
+        { "BrentsMethod",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
         { "gaussTemplatesOnly",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -1109,6 +1117,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->IHSonly_flag), 0, &(args_info->IHSonly_given),
                 &(local_args_info.IHSonly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "IHSonly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Use Brent's method in the root finding algorithm..  */
+          else if (strcmp (long_options[option_index].name, "BrentsMethod") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->BrentsMethod_flag), 0, &(args_info->BrentsMethod_given),
+                &(local_args_info.BrentsMethod_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "BrentsMethod", '-',
                 additional_error))
               goto failure;
           

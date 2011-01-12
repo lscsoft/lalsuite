@@ -17,118 +17,105 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="TwoDMeshInternalCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup TwoDMesh_h
+\brief Low-level routines to place a mesh of templates on an 2-dimensional parameter space.
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{TwoDMeshInternal.c}}
-\label{ss:TwoDMeshInternal.c}
-
-Low-level routines to place a mesh of templates on an 2-dimensional
-parameter space.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TwoDMeshInternalCP}
-\idx{LALTwoDMesh()}
-\idx{LALTwoDColumn()}
-
-\subsubsection*{Description}
+\heading{Description}
 
 These are low-level ``internal'' routines called by
-\verb@LALCreateTwoDMesh()@ to lay out an unevenly-spaced mesh on a
+LALCreateTwoDMesh() to lay out an unevenly-spaced mesh on a
 2-dimensional parameter space, according to the method discussed in
-\verb@TwoDMesh.h@.  They are made globally available to allow greater
+\ref TwoDMesh_h.  They are made globally available to allow greater
 control to users attempting to tile complicated parameter spaces.
 
-\verb@LALTwoDMesh()@ places a mesh on the parameter space specified by
-\verb@*params@.  On successful completion, the linked list of mesh
-points is attached to \verb@(*tail)->next@ (which must previously have
-been \verb@NULL@), updates \verb@*tail@ to point to the new tail of
-the list, and increases \verb@params->nOut@ by the number of mesh
+LALTwoDMesh() places a mesh on the parameter space specified by
+<tt>*params</tt>.  On successful completion, the linked list of mesh
+points is attached to <tt>(*tail)->next</tt> (which must previously have
+been \c NULL), updates <tt>*tail</tt> to point to the new tail of
+the list, and increases <tt>params->nOut</tt> by the number of mesh
 points added.  (This is useful for tiling several parameter regions
-independently with successive calls to \verb@LALTwoDMesh()@.)  On an
-error, \verb@**tail@ is left unchanged, and \verb@params->nOut@
+independently with successive calls to LALTwoDMesh().)  On an
+error, <tt>**tail</tt> is left unchanged, and <tt>params->nOut</tt>
 indicates where the error occurred.
 
-\verb@LALTwoDColumn()@ places a single column of such a mesh,
-according to the additional column restrictions in \verb@*column@.
+LALTwoDColumn() places a single column of such a mesh,
+according to the additional column restrictions in <tt>*column</tt>.
 Again, on success, the mesh points are attached to
-\verb@(*tail)->next@, \verb@*tail@ is updated, and \verb@params->nOut@
-increased.  If the column specified by \verb@*column@ is deemed to be
-too wide for a single column of templates, then \verb@column->tooWide@
-is set to 1, \verb@*tail@ and \verb@params->nOut@ are \emph{not}
+<tt>(*tail)->next</tt>, <tt>*tail</tt> is updated, and <tt>params->nOut</tt>
+increased.  If the column specified by <tt>*column</tt> is deemed to be
+too wide for a single column of templates, then <tt>column->tooWide</tt>
+is set to 1, <tt>*tail</tt> and <tt>params->nOut</tt> are \e not
 updated, and the function returns normally (i.e.\ not with an error
 code set).  Other more fatal errors are treated as for
-\verb@LALTwoDMesh()@, above.
+LALTwoDMesh(), above.
 
-\verb@LALTwoDNodeCopy()@ creates a copy of the node \verb@*old@ and
-points \verb@*new@ to the copy.  If \verb@old->subMesh@ exists, each
+LALTwoDNodeCopy() creates a copy of the node <tt>*old</tt> and
+points <tt>*new</tt> to the copy.  If <tt>old->subMesh</tt> exists, each
 node in the submesh is copied into its corresponding place by
-recursive calls to \verb@LALTwoDNodeCopy()@.  On an error, the copy is
-destroyed and \verb@*new@ left unchanged.
+recursive calls to LALTwoDNodeCopy().  On an error, the copy is
+destroyed and <tt>*new</tt> left unchanged.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\paragraph{\texttt{LALTwoDMesh()}:} This routine starts placing mesh
-points at the left side of the parameter region, $x=x_\mathrm{min}$.
-It calls \verb@params->getRange()@ to get the bottom and top of the
-left edge of the first column.  It also calls \verb@params->getMetric@
+\heading{LALTwoDMesh():} This routine starts placing mesh
+points at the left side of the parameter region, \f$x=x_\mathrm{min}\f$.
+It calls <tt>params->getRange()</tt> to get the bottom and top of the
+left edge of the first column.  It also calls <tt>params->getMetric</tt>
 at these two corners, estimates the optimum width for the first
-column, and uses \verb@params->getRange()@ again to get the two
+column, and uses <tt>params->getRange()</tt> again to get the two
 corners of the right edge of the column.  It then calls the subroutine
-\verb@LALTwoDColumn()@ (below) to place the mesh points in this
+LALTwoDColumn() (below) to place the mesh points in this
 column.
 
-If \verb@LALTwoDColumn()@ reports that the estimated column width was
-too large, \verb@LALCreateTwoDMesh()@ tries again with the width
-reduced by the factor \verb@params->widthRetryFac@.  This continues
+If LALTwoDColumn() reports that the estimated column width was
+too large, LALCreateTwoDMesh() tries again with the width
+reduced by the factor <tt>params->widthRetryFac</tt>.  This continues
 until the estimated number of columns exceeds
-\verb@params->maxColumns@; i.e.\ until the current column width is
-less than $(x_\mathrm{max}-x_\mathrm{min})/$\verb@params->maxColumns@.
+<tt>params->maxColumns</tt>; i.e.\ until the current column width is
+less than \f$(x_\mathrm{max}-x_\mathrm{min})/\f$<tt>params->maxColumns</tt>.
 If this occurs, the linked list is destroyed using
-\verb@LALDestroyTwoDMesh()@, and an error is returned.
+LALDestroyTwoDMesh(), and an error is returned.
 
-Otherwise, if \verb@LALTwoDColumn()@ returns success (and does not
-complain about the column width), \verb@LALCreateTwoDMesh()@ gets the
-width and heights of the next column, and calls \verb@LALTwoDColumn()@
+Otherwise, if LALTwoDColumn() returns success (and does not
+complain about the column width), LALCreateTwoDMesh() gets the
+width and heights of the next column, and calls LALTwoDColumn()
 again.  This continues until eventually the right edge of a column
-lies beyond $x_\mathrm{max}$.  This last column is squeezed so that
-its right edge lies exactly at $x_\mathrm{max}$; once it is filled,
+lies beyond \f$x_\mathrm{max}\f$.  This last column is squeezed so that
+its right edge lies exactly at \f$x_\mathrm{max}\f$; once it is filled,
 the mesh is deemed complete, and no further columns are generated.
 
-\paragraph{\texttt{LALTwoDColumn()}:} This routine first locates the
-centreline of the column, and uses \verb@params->getRange()@ to see
+\heading{LALTwoDColumn():} This routine first locates the
+centreline of the column, and uses <tt>params->getRange()</tt> to see
 how much of this centreline is taken up by the requested parameter
-region, restricted by any clipping area specified in \verb@*column@.
+region, restricted by any clipping area specified in <tt>*column</tt>.
 If any region of this centreline remains uncovered,
-\verb@LALTwoDColumn()@ places a tile at the bottom of the uncovered
+LALTwoDColumn() places a tile at the bottom of the uncovered
 portion, and stacks more tiles upward until it reaches the top of the
 uncovered line.  The sizes and orientations of each tile are
-determined from calls to \verb@params->getMetric@.
+determined from calls to <tt>params->getMetric</tt>.
 
-While it is doing this, \verb@LALTwoDColumn()@ keeps track of the
+While it is doing this, LALTwoDColumn() keeps track of the
 bottom and top corners of the newly-covered region.  If it finds that
 the top corners are not increasing monotonically, this is usually an
 indication that the metric is changing too rapidly, or that the tiles
 are getting too thin and tilted.  Often this can be corrected by using
-narrower (and taller) tiles, so \verb@LALTwoDColumn()@ reports this as
-a ``column too wide'' result: it sets \verb@column->tooWide@, frees
-everythin attached to \verb@**tail@ and reduced \verb@params->nOut@
+narrower (and taller) tiles, so LALTwoDColumn() reports this as
+a ``column too wide'' result: it sets <tt>column->tooWide</tt>, frees
+everythin attached to <tt>**tail</tt> and reduced <tt>params->nOut</tt>
 accordingly, then returns.  This is also done if
-\verb@LALTwoDColumn()@ ever determines that the maximum width of a
-mismatch ellipse is less than \verb@params->widthMaxFac@ times the
+LALTwoDColumn() ever determines that the maximum width of a
+mismatch ellipse is less than <tt>params->widthMaxFac</tt> times the
 current column width.
 
 Having successfully stacked up the centreline of the current column,
-\verb@LALTwoDColumn()@ then checks to see whether corners of the
+LALTwoDColumn() then checks to see whether corners of the
 parameter region extend above or below the top and bottom of the
 newly-tiled region on either side of the centreline, by looking at the
-values in \verb@column->leftRange@ and \verb@column->rightRange@.  If
-a corner remains uncovered, \verb@LALTwoDColumn()@ calls itself
+values in <tt>column->leftRange</tt> and <tt>column->rightRange</tt>.  If
+a corner remains uncovered, LALTwoDColumn() calls itself
 recursively on a half-width column on the appropriate side, setting
 the clipping area of the subroutine call to exclude the region already
 covered.  In principle it could call itself up to four times (once for
@@ -136,59 +123,59 @@ each column), and each recursive call could in turn call itself
 recursively in order to cover a particularly steep or complicated
 boundary.  However, in most cases at most two additional tiles need to
 be placed (one on a top corner, one on a bottom corner).  If you're
-concerned about a runaway process, set \verb@params->nIn@ to stop
+concerned about a runaway process, set <tt>params->nIn</tt> to stop
 generation after a given number of tiles.  If a recursive call reports
 the column is too wide, this information is passed up the calling
 chain.
 
 Once the centreline and any corners have been successfully covered,
-\verb@LALTwoDColumn()@ updates \verb@*tail@ to the new tail of the
+LALTwoDColumn() updates <tt>*tail</tt> to the new tail of the
 list, and returns.
 
-\paragraph{\texttt{LALTwoDNodeCopy()}:} This routine works by a simple
+\heading{LALTwoDNodeCopy():} This routine works by a simple
 recursive algorithm.  First, a copy of the node is allocated and the
 output handle is pointed to it.  Next, all non-pointer fields are
-copied over.  Then, if \verb@new->subMesh@ exists,
-\verb@LALTwoDNodeCopy()@ navigates its way along the list, calling
+copied over.  Then, if <tt>new->subMesh</tt> exists,
+LALTwoDNodeCopy() navigates its way along the list, calling
 itself recursively on each node, and attaching copies of each node to
-a corresponding list in \verb@(*new)->subMesh@.  If any errors are
-detected, \verb@*new@ is destroyed via \verb@LALDestroyTwoDMesh()@,
-restoring it to \verb@NULL@.
+a corresponding list in <tt>(*new)->subMesh</tt>.  If any errors are
+detected, <tt>*new</tt> is destroyed via LALDestroyTwoDMesh(),
+restoring it to \c NULL.
 
-\paragraph{Computing tile sizes:} Given a positive-definite
-2-dimensional metric $\mathsf{g}_{ab}$, the elliptical contour
-corresponding to a maximum mismatch $m_\mathrm{thresh}$ is given by
-the set of points offset from the centre point by amounts $(\Delta
-x,\Delta y)$, where:
-$$
+\heading{Computing tile sizes:} Given a positive-definite
+2-dimensional metric \f$\mathsf{g}_{ab}\f$, the elliptical contour
+corresponding to a maximum mismatch \f$m_\mathrm{thresh}\f$ is given by
+the set of points offset from the centre point by amounts \f$(\Delta
+x,\Delta y)\f$, where:
+\f[
 m_\mathrm{thresh} = g_{xx}(\Delta x)^2 + g_{yy}(\Delta y)^2
 	+ 2g_{xy}\Delta x\Delta y \; .
-$$
-Thus for a tile of some half-width $\Delta x$, the heights of the two
+\f]
+Thus for a tile of some half-width \f$\Delta x\f$, the heights of the two
 right-hand corners of the tile relative to its centre are:
-$$
+\f[
 \Delta y = \frac{-g_{xy}\Delta x \pm\sqrt{g_{yy}m_\mathrm{thresh} -
 	( g_{xx}g_{yy} - g_{xy}^2 )(\Delta x)^2}}{g_{yy}} \; ,
-$$
+\f]
 and the maximum half-width of a tile is:
-$$
+\f[
 \Delta x_\mathrm{max} = \sqrt{\frac{g_{yy}m_\mathrm{thresh}}
 	{g_{xx}g_{yy} - g_{xy}^2}} \; .
-$$
-The positive-definiteness of the metric ensures that $g_{xx}>0$,
-$g_{yy}>0$, and $g_{xx}g_{yy}>g_{xy}^2$.  Furthermore, if one
-maximizes the proper area of a tile with respect to $\Delta x$, one
-finds that the \emph{optimal} tile half-width is:
-$$
+\f]
+The positive-definiteness of the metric ensures that \f$g_{xx}>0\f$,
+\f$g_{yy}>0\f$, and \f$g_{xx}g_{yy}>g_{xy}^2\f$.  Furthermore, if one
+maximizes the proper area of a tile with respect to \f$\Delta x\f$, one
+finds that the \e optimal tile half-width is:
+\f[
 \Delta x_\mathrm{opt} = \frac{\Delta x_\mathrm{max}}{\sqrt{2}} \; .
-$$
+\f]
 
-When estimating the width for the next column, \verb@LALTwoDMesh()@
-computes $\Delta x_\mathrm{opt}$ at both the bottom and the top of the
+When estimating the width for the next column, LALTwoDMesh()
+computes \f$\Delta x_\mathrm{opt}\f$ at both the bottom and the top of the
 column and uses the smaller value (it is almost always better to
-underestimate $\Delta x$ than to overestimate it).  In
-\verb@LALTwoDColumn()@, tile heights are computed using the column
-half-width $\Delta x$ and the value of the metric components at its
+underestimate \f$\Delta x\f$ than to overestimate it).  In
+LALTwoDColumn(), tile heights are computed using the column
+half-width \f$\Delta x\f$ and the value of the metric components at its
 particular location.
 
 We also note that the width of a column is computed using the metric
@@ -204,24 +191,23 @@ function is breaking down, and we shouldn't be treating the
 constant-mismatch contour as an ellipse.  The routines here do not do
 any sophisticated sanity-checking, though.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALInfo()                   XLALPrintError()
 LALMalloc()                 LALDestroyTwoDMesh()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{TwoDMeshInternalCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/TwoDMesh.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( TWODMESHINTERNALC, "$Id$" );
 
 /* Whether or not to track progress internally. */
@@ -325,13 +311,13 @@ do {                                                                 \
   (dy)[1] = ( -metric[2]*dx + disc ) / metric[1];                    \
 } while (0)
 
+/** \endcond */
 
-/* <lalVerbatim file="TwoDMeshInternalCP"> */
 void
 LALTwoDMesh( LALStatus          *stat,
 	     TwoDMeshNode       **tail,
 	     TwoDMeshParamStruc *params )
-{ /* </lalVerbatim> */
+{
   TwoDColumnParamStruc column; /* parameters for current column */
   TwoDMeshNode *here;          /* current tail of linked list */
 
@@ -470,13 +456,13 @@ LALTwoDMesh( LALStatus          *stat,
 }
 
 
-/* <lalVerbatim file="TwoDMeshInternalCP"> */
+
 void
 LALTwoDColumn( LALStatus            *stat,
 	       TwoDMeshNode         **tail,
 	       TwoDColumnParamStruc *column,
 	       TwoDMeshParamStruc   *params )
-{ /* </lalVerbatim> */
+{
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
   REAL4 dx;             /* half-width of column */
@@ -766,12 +752,12 @@ LALTwoDColumn( LALStatus            *stat,
 }
 
 
-/* <lalVerbatim file="TwoDMeshInternalCP"> */
+
 void
 LALTwoDNodeCopy( LALStatus    *stat,
 		 TwoDMeshNode **new,
 		 TwoDMeshNode *old )
-{ /* </lalVerbatim> */
+{
   TwoDMeshNode *tail;      /* current tail of old->subMesh */
   TwoDMeshNode **tailCopy; /* pointer to copy of *tail */
 

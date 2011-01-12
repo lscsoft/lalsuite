@@ -100,7 +100,10 @@
 
   <!-- Layout definition for a file page -->
   <file>
-    <briefdescription visible="no"/>
+    <briefdescription visible="yes"/>
+    <memberdecl>
+      <functions title="Prototypes"/>
+    </memberdecl>
     <detaileddescription title=""/>
     <includes visible="$SHOW_INCLUDE_FILES"/>
     <includegraph visible="$INCLUDE_GRAPH"/>
@@ -112,12 +115,10 @@
       <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
-      <functions title=""/>
       <variables title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
     <memberdef>
-      <defines title=""/>
       <typedefs title=""/>
       <enums title=""/>
       <functions title=""/>
