@@ -137,6 +137,9 @@ INT4 XLALInspiralHybridRingdownWave (
   dt = 1.0 / params -> tSampling;
   t3 = ((int)matchrange->data[0] - (int)matchrange->data[1]) * dt;
   rt = -t3 / 3.;
+
+  printf( "Ringdown rt = %e\n", rt );
+
   t2 = t3 + rt;
   t1 = t2 + rt;
   
@@ -282,6 +285,18 @@ INT4 XLALInspiralHybridRingdownWave (
   gsl_permutation_free(p);
 
   /* Build ring-down waveforms */
+  {
+
+  REAL8 rdDeriv = 0;
+
+  for (i = 0; i < nmodes; i++ )
+  {
+     rdDeriv += ( - modefreqs->data[i].im - modefreqs->data[i].re ) * modeamps->data[i]
+                + ( - modefreqs->data[i].im + modefreqs->data[i].re ) * modeamps->data[i + nmodes ];
+  }
+  for (i=0; i < inspwave1->length * inspwave1->vectorLength; i++)
+    printf( "ringdown derivative = %e, inspiralDerivative = %e\n", rdDeriv, inspwave1->data[i] );
+  }
   for (j = 0; j < rdwave1->length; ++j)
   {
 	tj = j * dt;
@@ -468,6 +483,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
   INT4 gslStatus;
 
   UINT4 j;
+  UINT4 vecLength;
   REAL8 dt;
   double *x, *y;
   double ry, dy, dy2;
@@ -486,10 +502,15 @@ INT4 XLALGenerateHybridWaveDerivatives (
   tlist[2] = tlist[1] + rt;
   tlist[3] = matchrange->data[1];
 
+  printf( "Derivatives rt = %e\n", rt * dt );
+
+  /* Set the length of the interpolation vectors */
+  vecLength = matchrange->data[2] + 1;
+
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initiate arrays and supporting variables for gsl */
-  x = (double *) LALMalloc(wave->length * sizeof(double));
-  y = (double *) LALMalloc(wave->length * sizeof(double));
+  x = (double *) LALMalloc(vecLength * sizeof(double));
+  y = (double *) LALMalloc(vecLength * sizeof(double));
 
   if ( !x || !y )
   {
@@ -498,7 +519,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
-  for (j = 0; j < wave->length; ++j)
+  for (j = 0; j < vecLength; ++j)
   {
 	x[j] = j;
 	y[j] = wave->data[j];
@@ -506,7 +527,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
 
 
   XLAL_CALLGSL( acc = (gsl_interp_accel*) gsl_interp_accel_alloc() );
-  XLAL_CALLGSL( spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, wave->length) );
+  XLAL_CALLGSL( spline = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, vecLength) );
   if ( !acc || !spline )
   {
     if ( acc )    gsl_interp_accel_free(acc);
@@ -517,7 +538,7 @@ INT4 XLALGenerateHybridWaveDerivatives (
   }
 
   /* Gall gsl spline interpolation */
-  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, y, wave->length) );
+  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, y, vecLength) );
   if ( gslStatus != GSL_SUCCESS )
   { 
     gsl_spline_free(spline);
@@ -882,6 +903,12 @@ INT4 XLALInspiralHybridAttachRingdownWave (
         XLALDestroyREAL4VectorSequence( inspwaves2 );
         XLAL_ERROR( func, XLAL_EFUNC );
       }
+
+      /* Check that waveform values agree at the appropriate matching point */
+      printf( "Inspwave1 = %e, rd1 = %e, inspwave2 = %e, rd2 = %e\n",
+        signal1->data[matchrange->data[1]], rdwave1->data[0],
+        signal2->data[matchrange->data[1]], rdwave2->data[0] );
+
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
       for (j = 1; j < Nrdwave; ++j)
       {
