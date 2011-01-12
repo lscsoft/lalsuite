@@ -1133,7 +1133,7 @@ LALSTPNWaveformEngine (
 
   }
  /* Test that omega/unitHz < NYQUIST */
- while(test < 0.0 && omegadot > 0 && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
+ while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < params->tSampling/2. && !(isnan(omega))) ;
 
  /* if code stopped since evolving quantities became nan write an error message */
  if (isnan(omega)){
