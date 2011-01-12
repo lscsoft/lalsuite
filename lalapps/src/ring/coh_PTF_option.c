@@ -17,27 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <getopt.h>
-
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "errutil.h"
-#include "gpstime.h"
-#include "injsgnl.h"
-#include "processtable.h"
-
 RCSID( "$Id$" );
-
-extern int vrbflg;
-static int coh_PTF_usage( const char *program );
-static int coh_PTF_default_params( struct coh_PTF_params *params );
-
 
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
@@ -306,7 +288,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 }
 
 /* sets default values for parameters */
-static int coh_PTF_default_params( struct coh_PTF_params *params )
+int coh_PTF_default_params( struct coh_PTF_params *params )
 {
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
@@ -342,10 +324,6 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
 
   return 0;
 }
-
-/* macro for testing validity of a condition that prints an error if invalid */
-#define sanity_check( condition ) \
-  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
 
 /* check sanity of parameters and sets appropriate values of unset parameters */
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
@@ -475,7 +453,7 @@ int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params )
 
 
 /* prints a help message */
-static int coh_PTF_usage( const char *program )
+int coh_PTF_usage( const char *program )
 {
   fprintf( stderr, "usage: %s options\n", program );
   fprintf( stderr, "\ngeneral options:\n" );

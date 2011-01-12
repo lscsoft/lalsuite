@@ -69,39 +69,21 @@ LALDestroyVector()
 
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "errutil.h"
-
 RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
-#define sanity_check( condition ) \
-  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
-
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
 void
-cohPTFTemplate (
+coh_PTF_template (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
 {
 
   // This function generates Q_{1-5} as a function of time and then FFTs
   // them before returning Q(f) in fcTmplt->PTFQtilde
-
-
   // It would be nice to use the stuff in LAL to do most of this ....
-/*  LALStatus status;
-  LAL_CALL (LALFindChirpPTFTemplate( &status,fcTmplt,InspTmplt,params), &status);*/
 
   UINT4 errcode;
   /* local variables */
@@ -245,9 +227,7 @@ cohPTFTemplate (
 }
 
 
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
-void
-cohPTFNormalize(
+void coh_PTF_normalize(
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
@@ -261,8 +241,6 @@ cohPTFNormalize(
  * the same as Diego's B matrix (Q_0 | Q_0). We also have
  * A = ( Q_0 | s ) and B = ( Q_{\pi/2} | s ) Diego's A matrix is equal to
  * sqrt(A**2 + B**2) in this notation. */
-
-/* </lalVerbatim> */
 {
   // This function calculates the various filters used to calculate SNR
   // It calculates (Q_0 | Q_0), (Q | s) and if necessary it will calculate
@@ -462,8 +440,7 @@ cohPTFNormalize(
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }
 
-void
-cohPTFTemplateOverlaps(
+void coh_PTF_template_overlaps(
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -539,8 +516,7 @@ cohPTFTemplateOverlaps(
 
 }
 
-void
-cohPTFComplexTemplateOverlaps(
+void coh_PTF_complex_template_overlaps(
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -605,7 +581,7 @@ cohPTFComplexTemplateOverlaps(
 
 }
 
-void cohPTFBankFilters(
+void coh_PTF_bank_filters(
     FindChirpTemplate          *fcTmplt,
     UINT4                      spinBank,
     COMPLEX8FrequencySeries    *sgmnt,
@@ -711,39 +687,7 @@ void cohPTFBankFilters(
 
 }
 
-
-REAL4 cohPTFDataNormalize(
-    COMPLEX8FrequencySeries    *sgmnt,
-    REAL4FrequencySeries       *invspec)
-{
-  // This function is not used and will be removed
-
-  REAL4 overlap = 0;
-  UINT4 k,kmin,kmax,len;
-  REAL8 f_min, fFinal,deltaF;
-
-  deltaF    = sgmnt->deltaF;
-  len       = sgmnt->data->length;
-  f_min     = 40;
-  fFinal    = 1000;
-  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
-
-
-  for ( k = kmin; k < kmax ; ++k )
-  {
-    overlap += (sgmnt->data->data[k].re *
-        sgmnt->data->data[k].re +
-        sgmnt->data->data[k].im *
-        sgmnt->data->data[k].im )
-        / invspec->data->data[k] ;
-  }
-  overlap = overlap * deltaF;
-  return overlap;
- 
-}
-
-void autoVetoOverlaps(
+void coh_PTF_auto_veto_overlaps(
     FindChirpTemplate          *fcTmplt,
     struct bankComplexTemplateOverlaps *autoTempOverlaps,
     REAL4FrequencySeries       *invspec,
