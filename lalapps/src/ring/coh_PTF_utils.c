@@ -1,8 +1,11 @@
 #include "coh_PTF.h"
 
 /* gets the data, performs any injections, and conditions the data */
-REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-               const char *ifoChannel, const char *dataCache, UINT4 ifoNumber  )
+REAL4TimeSeries *coh_PTF_get_data(
+              struct coh_PTF_params *params,
+              const char *ifoChannel, 
+              const char *dataCache,
+              UINT4 ifoNumber  )
 {
   int stripPad = 0;
   REAL4TimeSeries *channel = NULL;
@@ -234,7 +237,8 @@ RingDataSegments *coh_PTF_get_segments(
     }
   }
 
- /* TODO: trig start/end time condition */
+ /* FIXME: For all sky mode trig start/end time needs to be implemented */
+ /* these probably work in the ring code! */
 
   /* if todo list is empty then do them all */
   if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
@@ -318,13 +322,18 @@ void coh_PTF_calculate_bmatrix(
 {
   // This function calculates the eigenvectors and eigenvalues of the
   // coherent "B" matrix. This is the matrix that appears as B^{-1} in the
-  // original definition of SNR.
+  // original definition of SNR for spin.
+  // For non spin, the eigenvalues can be used to rotate to the dominant
+  // polarization frame.
   UINT4 i,j,k;
   UINT4 vecLengthSquare = vecLength*vecLength;
   REAL4 zh[vecLengthSquare],sh[vecLengthSquare],yu[vecLengthSquare];
   gsl_matrix *B2 = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc (vecLengthTwo);
   /* Create and invert the Bmatrix */
+  /* Note for nonSpin PTFM contains one entry per ifo, this is loop is then
+     a lot simpler than it looks! For PTF there are 25 entries in PTFM! 
+     For non spin this stores (h_0|h_0)*/
   for (i = 0; i < vecLength; i++ )
   {
     for (j = 0; j < vecLength; j++ )
@@ -344,6 +353,7 @@ void coh_PTF_calculate_bmatrix(
     }
   }
 
+  /* GSL is used to do the rotation */
   for (i = 0; i < vecLengthTwo; i++ )
   {
     for (j = 0; j < vecLengthTwo; j++ )
@@ -395,6 +405,7 @@ void coh_PTF_calculate_rotated_vectors(
 {
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
+  // This is the dominant polarization frame with some normalization
   
   UINT4 j,k;  
   REAL4 v1[vecLengthTwo],v2[vecLengthTwo];
@@ -423,7 +434,7 @@ void coh_PTF_calculate_rotated_vectors(
 
   /* Now we rotate the v1 and v2 to be in orthogonal basis */
   /* We can use gsl multiplication stuff to do this */
-  /* BLAS stuff is stupid so we'll do it explicitly! */
+  /* BLAS stuff is complicated so we'll do it explicitly! */
 
   for ( j = 0 ; j < vecLengthTwo ; j++ )
   {
@@ -461,6 +472,7 @@ void coh_PTF_cleanup(
     REAL8                   *Fcross
     )
 {
+  /* Clean up memory usage */
   UINT4 ifoNumber;
   while ( events )
   {

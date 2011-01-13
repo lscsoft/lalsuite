@@ -441,30 +441,9 @@ void coh_PTF_initialise_sub_bank(
     InspiralTemplate        *PTFBankTemplates,
     FindChirpTemplate       *bankFcTmplts,
     UINT4                    subBankSize,
-    UINT4                    numPoints,
-    UINT4                    spinBank
+    UINT4                    numPoints
 );
 
-REAL4 coh_PTF_calculate_bank_veto(
-    UINT4           numPoints,
-    UINT4           position,
-    UINT4           subBankSize,
-    UINT4           vecLength,
-    REAL4           a[LAL_NUM_IFO],
-    REAL4           b[LAL_NUM_IFO],
-    REAL4           SNR,
-    REAL8Array      *PTFM[LAL_NUM_IFO+1],
-    struct coh_PTF_params      *params,
-    struct bankComplexTemplateOverlaps *bankOverlaps,
-    struct bankTemplateOverlaps *bankNormOverlaps,
-    struct bankDataOverlaps *dataOverlaps,
-    REAL4TimeSeries         *pValues[10],
-    REAL4TimeSeries         *gammaBeta[2],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    INT4            timeOffsetPoints[LAL_NUM_IFO],
-    UINT4           singleDetector
-);
-  
 REAL4 coh_PTF_calculate_bank_veto_max_phase(
     UINT4           numPoints,
     UINT4           position,
@@ -478,7 +457,7 @@ REAL4 coh_PTF_calculate_bank_veto_max_phase(
     INT4            timeOffsetPoints[LAL_NUM_IFO]
 );
     
-REAL4 coh_PTF_calculate_bank_veto_max_phase_coherent(
+REAL4 coh_PTF_calculate_bank_veto(
     UINT4           numPoints,
     UINT4           position,
     UINT4           subBankSize,
@@ -493,7 +472,7 @@ REAL4 coh_PTF_calculate_bank_veto_max_phase_coherent(
     gsl_vector *Bankeigenvals[50]
 );
 
-REAL4 coh_PTF_calculate_auto_veto_max_phase_coherent(
+REAL4 coh_PTF_calculate_auto_veto(
     UINT4           numPoints,
     UINT4           position,
     REAL4           a[LAL_NUM_IFO],
