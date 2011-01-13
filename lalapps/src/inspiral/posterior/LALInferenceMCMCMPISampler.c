@@ -82,6 +82,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	UINT4 randomseed = *(UINT4*) getVariable(runState->algorithmParams,"random_seed");
 	UINT4 nIFO=0;
 	LALIFOData *ifodata1=runState->data;
+        const char *USAGE = 
+          "[--appendOutput fname\tBasename of the file to append outputs to.]";
 	while(ifodata1){
 		nIFO++;
 		ifodata1=ifodata1->next;
@@ -176,9 +178,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printCommandLine(runState->commandLine, str);
 	
 	for (t=0; t<nChain; ++t) {
+          ProcessParamsTable *ppt;
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
-		sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
-		if (MPIrank == 0) {
+                ppt = getProcParamVal(runState->commandLine, "--appendOutput");
+                if (ppt) {
+                  sprintf(outfileName[t], "%s.%2.2d", ppt->value, t);
+                } else {
+                  sprintf(outfileName[t],"PTMCMC.output.%u.%2.2d",randomseed,t);
+                }
+		if (MPIrank == 0 && !ppt) { /* Skip header output if we are appending. */
 			chainoutput[t] = fopen(outfileName[t],"w");
 			fprintf(chainoutput[t], "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
 			fprintf(chainoutput[t],"  %s\n",str);
