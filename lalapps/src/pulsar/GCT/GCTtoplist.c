@@ -30,6 +30,7 @@
 #include <lalapps.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
+#include "hs_boinc_options.h"
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
@@ -368,6 +369,14 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
       else
 	length += ret;
     }
+
+    /* write BOINC user & host info */
+#ifdef EAH_BOINC
+    fprintf(fpnew,"%%%% UserID: %d\n", eah_userid);
+    fprintf(fpnew,"%%%% Username: '%s'\n", eah_username);
+    fprintf(fpnew,"%%%% HostID: %d\n", eah_hostid);
+    fprintf(fpnew,"%%%% HostCPID: '%s'\n", eah_hostcpid);
+#endif
 
     /* write the command-line */
     if (length >= 0) {
