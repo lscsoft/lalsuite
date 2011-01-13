@@ -98,6 +98,15 @@ LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
 		      const SSBtimes*, const AMCoeffs*, const ComputeFParams*);
 
 
+void
+LocalComputeFStatFreqBand ( LALStatus *status, 
+                            REAL4FrequencySeries *FstatVector,
+                            const PulsarDopplerParams *doppler,
+                            const MultiSFTVector *multiSFTs, 
+                            const MultiNoiseWeights *multiWeights,
+                            const MultiDetectorStateSeries *multiDetStates,
+                            const ComputeFParams *params);
+
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
@@ -109,7 +118,7 @@ LocalXLALComputeFaFb (Fcomponents*, const SFTVector*, const PulsarSpins,
     to be calculated are read from fstatVector.  The other parameters are not checked and 
     they must be correctly set outside this function. 
 */
-void LocalComputeFStatFreqBand ( LALStatus *status, 
+void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus structure */
 				 REAL4FrequencySeries *fstatVector, /**< [out] Vector of Fstat values */
 				 const PulsarDopplerParams *doppler,/**< parameter-space point to compute F for */
 				 const MultiSFTVector *multiSFTs, /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
@@ -201,7 +210,7 @@ void LocalComputeFStatFreqBand ( LALStatus *status,
  *
  */
 static void
-LocalComputeFStat ( LALStatus *status, 
+LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 		    Fcomponents *Fstat,                 /**< [out] Fstatistic + Fa, Fb */
 		    const PulsarDopplerParams *doppler, /**< parameter-space point to compute F for */
 		    const MultiSFTVector *multiSFTs,    /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */

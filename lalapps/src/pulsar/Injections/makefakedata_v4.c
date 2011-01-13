@@ -1646,7 +1646,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */
 void
-LoadTransferFunctionFromActuation(LALStatus *status,
+LoadTransferFunctionFromActuation(LALStatus *status,		/**< pointer to LALStatus structure */
 				  COMPLEX8FrequencySeries **transfer, /**< [out] transfer-function */
 				  REAL8 actuationScale, 	/**< overall scale-factor to actuation*/
 				  const CHAR *fname)		/**< file containing actuation-function*/

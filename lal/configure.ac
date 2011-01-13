@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.4.1.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.5.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -94,7 +94,7 @@ AH_BOTTOM([
 
 AC_CANONICAL_HOST
 
-# set library api info
+# set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library
 # 2. update the version information only immediately before a public
 #    release of your software. More frequent updates are unnecessary,
@@ -108,10 +108,30 @@ AC_CANONICAL_HOST
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[0])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[1])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
+# set library api info - liblalsupport
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT_SUPPORT],[0])
+AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[0])
+AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
+
 
 LAL_WITH_CC
 LAL_WITH_CFLAGS
@@ -121,7 +141,7 @@ LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
-LAL_WITH_CUDA
+LALSUITE_WITH_CUDA
 LALSUITE_ENABLE_BOINC
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -185,25 +205,7 @@ AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 
 # check for supported mac os x version
-if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS([SW_VERS],[sw_vers])
-  if test "x$SW_VERS" != "x"; then
-    AC_MSG_CHECKING([Mac OS X version])
-    MACOSX_VERSION=`$SW_VERS -productVersion`
-    AC_MSG_RESULT([$MACOSX_VERSION])
-  fi
-  case "$MACOSX_VERSION" in
-    10.0*|10.1*|10.2*|10.3*)
-      AC_MSG_ERROR([This version of Mac OS X is not supported])
-      ;;
-    10.4*|10.5*|10.6*)
-      # supported version
-      ;;
-    *)
-      AC_MSG_WARN([Unknown Mac OS X version])
-      ;;
-  esac
-fi
+LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
@@ -336,6 +338,7 @@ if test "${boinc}" = "true" ; then
     AC_LANG_POP([C++])
   fi
 fi
+LALSUITE_ENABLE_MODULE([BOINC],[boinc])
 
 # define what is being enabled
 if test "${cuda}" = "true"; then
@@ -365,8 +368,6 @@ AC_HEADER_TIME
 # checks for library functions
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getopt_long])
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([vsnprintf])
 AC_CHECK_FUNCS([putenv])
 
 # set package documentation install path
@@ -375,8 +376,6 @@ AC_SUBST([pkgdocdir])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
-AM_CONDITIONAL([CUDA],[test x$cuda = xtrue])
-AM_CONDITIONAL([BOINC],[test x$boinc = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
@@ -401,15 +400,13 @@ AC_SUBST_FILE([INCLUDEMKFILE])
 AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
-cudaenabled="`test x${cuda} = xtrue && echo "ENABLED" || echo "DISABLED"`"
-boincenabled="`test x${boinc} = xtrue && echo "ENABLED" || echo "DISABLED"`"
 echo "
 ================================================================
 
         LAL has now been successfully configured:
 
-                CUDA support is $cudaenabled
-                BOINC support is $boincenabled
+                CUDA support is $CUDA_ENABLE_VAL
+                BOINC support is $BOINC_ENABLE_VAL
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL

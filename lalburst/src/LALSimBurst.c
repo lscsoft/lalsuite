@@ -81,13 +81,12 @@ static void gaussian_noise(REAL8TimeSeries * series, REAL8 rms, gsl_rng * rng)
 
 REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 {
-	static const char func[] = "XLALMeasureHPeak";
 	double hpeak;
 	unsigned i;
 
 	if(!series->data->length) {
-		XLALPrintError("%s(): length must be > 0\n", func);
-		XLAL_ERROR_REAL8(func, XLAL_EBADLEN);
+		XLALPrintError("%s(): length must be > 0\n", __func__);
+		XLAL_ERROR_REAL8(__func__, XLAL_EBADLEN);
 	}
 
 	hpeak = series->data->data[0];
@@ -102,13 +101,12 @@ REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
 /**
  * From two time series, s1 and s2, computes and returns
  *
- * \f$\int s1(t) s2(t) \diff t\f$
+ * \f$\int s1(t) s2(t) d t\f$
  */
 
 
 REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
 {
-	static const char func[] = "XLALMeasureIntS1S2DT";
 	double e = 0.0;
 	double sum = 0.0;
 	unsigned i;
@@ -143,7 +141,7 @@ REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2)
  *
  * which is an approximation of
  *
- * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) \diff t}.\f$
+ * \f$\sqrt{\int (h_{+}^{2} + h_{x}^{2}) d t}.\f$
  */
 
 
@@ -160,7 +158,7 @@ REAL8 XLALMeasureHrss(
  * Given the Fourier transform of a real-valued function h(t), compute and
  * return the integral of the square of its derivative:
  *
- * \f$\int \stackrel{.}{h}^{2} \diff t\f$.
+ * \f$\int \stackrel{.}{h}^{2} d t\f$.
  *
  * The normalization factors in this function assume that
  * XLALREAL8FreqTimeFFT() will be used to convert the frequency series to
@@ -212,15 +210,14 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
  * Given h+ and hx in the waveframe, compute and return E/r^2.  The return
  * value is in LAL's native units, computed by evaluating
  *
- * \f$\int [ \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\cross}^{2} ] \diff t\f$
+ * \f$\int [ \stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2} ] d t\f$
  *
- * and multiplying by LAL_C_SI\f$^{3} / (4 LAL_G_SI).\f$
+ * and multiplying by LAL_C_SI\f$^{3}\f$ / (4 LAL_G_SI).
  */
 
 
 REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 {
-	static const char func[] = "XLALMeasureEoverRsquared";
 	REAL8FFTPlan *plan;
 	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
 	double e_over_rsquared;
@@ -239,7 +236,7 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
 		XLALDestroyREAL8FFTPlan(plan);
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	i = XLALREAL8TimeFreqFFT(tilde_hplus, hplus, plan);
 	i |= XLALREAL8TimeFreqFFT(tilde_hcross, hcross, plan);
@@ -247,7 +244,7 @@ REAL8 XLALMeasureEoverRsquared(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 	if(i) {
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* measure E / r^2 */
@@ -294,7 +291,6 @@ int XLALGenerateImpulseBurst(
 	REAL8 delta_t
 )
 {
-	static const char func[] = "XLALGenerateImpulseBurst";
 	int length;
 	LIGOTimeGPS epoch;
 
@@ -315,7 +311,7 @@ int XLALGenerateImpulseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* set to zero */
@@ -353,7 +349,7 @@ int XLALGenerateImpulseBurst(
  * 	frequency domain Gaussian envelope is \f$\propto \exp ( -\frac{1}{2} (f - f_{0})^{2} / bandwidth^{2} )\f$
  *      where f and bandwidth are in Hertz.
  * int_hdot_squared
- * 	waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \diff t\f$
+ * 	waveform is normalized so that \f$\int (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) d t\f$
  *       equals this
  * delta_t
  * 	the sample rate of the time series to construct
@@ -389,7 +385,6 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	gsl_rng *rng
 )
 {
-	static const char func[] = "XLALGenerateBandAndTimeLimitedWhiteNoiseBurst";
 	int length;
 	LIGOTimeGPS epoch;
 	COMPLEX16FrequencySeries *tilde_hplus, *tilde_hcross;
@@ -406,9 +401,9 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * checking if duration * bandwidth < LAL_2_PI */
 
 	if(duration < 0 || bandwidth < 0 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
-		XLALPrintError("%s(): invalid input parameters\n", func);
+		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLAL_ERROR(__func__, XLAL_EINVAL);
 	}
 
 	/* length of the injection time series is 30 * duration, rounded to
@@ -429,7 +424,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* fill with independent zero-mean unit variance Gaussian random
@@ -448,7 +443,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -468,7 +463,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	i = XLALREAL8TimeFreqFFT(tilde_hplus, *hplus, plan);
 	i |= XLALREAL8TimeFreqFFT(tilde_hcross, *hcross, plan);
@@ -479,7 +474,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* apply the frequency-domain Gaussian window.  the window
@@ -496,7 +491,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
@@ -527,7 +522,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	i = XLALREAL8FreqTimeFFT(*hplus, tilde_hplus, plan);
 	i |= XLALREAL8FreqTimeFFT(*hcross, tilde_hcross, plan);
@@ -538,7 +533,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* force the sample rate incase round-off has shifted it a bit */
@@ -554,7 +549,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -619,7 +614,6 @@ int XLALSimBurstSineGaussian(
 	REAL8 delta_t
 )
 {
-	static const char func[] = "XLALSimBurstSineGaussian";
 	REAL8Window *window;
 	/* semimajor and semiminor axes of waveform ellipsoid */
 	const double a = 1.0 / sqrt(2.0 - eccentricity * eccentricity);
@@ -657,7 +651,7 @@ int XLALSimBurstSineGaussian(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* populate */
@@ -679,7 +673,7 @@ int XLALSimBurstSineGaussian(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	for(i = 0; i < window->data->length; i++) {
 		(*hplus)->data->data[i] *= window->data->data[i];
@@ -725,7 +719,6 @@ int XLALGenerateStringCusp(
 	REAL8 delta_t
 )
 {
-	static const char func[] = "XLALGenerateStringCusp";
 	COMPLEX16FrequencySeries *tilde_h;
 	REAL8FFTPlan *plan;
 	LIGOTimeGPS epoch;
@@ -737,9 +730,9 @@ int XLALGenerateStringCusp(
 	/* check input */
 
 	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
-		XLALPrintError("%s(): invalid input parameters\n", func);
+		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EINVAL);
+		XLAL_ERROR(__func__, XLAL_EINVAL);
 	}
 
 	/* length of the injection time series is 15 / f_low, rounded to
@@ -764,7 +757,7 @@ int XLALGenerateStringCusp(
 		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
 		XLALDestroyREAL8FFTPlan(plan);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
 
@@ -804,7 +797,7 @@ int XLALGenerateStringCusp(
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
 		*hplus = *hcross = NULL;
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(__func__, XLAL_EFUNC);
 	}
 
 	/* force the sample rate incase round-off has shifted it a bit */

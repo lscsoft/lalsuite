@@ -105,9 +105,9 @@ int nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *sca
  *
  */
 void
-InitDopplerFullScan(LALStatus *status,
-		    DopplerFullScanState **scan,		/**< [out] initialized Doppler scan state */
-		    const DopplerFullScanInit *init		/**< [in] initialization parameters */
+InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
+		    DopplerFullScanState **scan,	/**< [out] initialized Doppler scan state */
+		    const DopplerFullScanInit *init	/**< [in] initialization parameters */
 		    )
 {
   DopplerFullScanState *thisScan;
@@ -285,7 +285,7 @@ InitDopplerFullScan(LALStatus *status,
  *  This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
  */
 void
-initFactoredGrid (LALStatus *status,
+initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
 		  DopplerFullScanState *scan,			/**< [bout] initialized Doppler scan state */
 		  const DopplerFullScanInit *init		/**< [in] initialization parameters */
 		  )

@@ -907,8 +907,9 @@ XLALDestroySSBtimesREAL4 ( SSBtimesREAL4 *tSSB )
  */
 MultiSSBtimesREAL4 *
 XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
-                            REAL8 Alpha, REAL8 Delta,				/**< source sky-location, in equatorial coordinates  */
-                            LIGOTimeGPS refTime
+                            REAL8 Alpha,			/**< source sky-location, in equatorial coordinates RA, in radians  */
+                            REAL8 Delta,			/**< source sky-location, in equatorial coordinates DEC, in radians  */
+                            LIGOTimeGPS refTime			/**< reference time to be used for the returned SSB timings */
                             )
 {
   static const char *fn = "XLALGetMultiSSBtimesREAL4()";
@@ -964,8 +965,9 @@ XLALGetMultiSSBtimesREAL4 ( const MultiDetectorStateSeries *multiDetStates, 	/**
  */
 SSBtimesREAL4 *
 XLALGetSSBtimesREAL4 ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
-                       REAL8 Alpha, REAL8 Delta,			/**< source sky-location, in equatorial coordinates  */
-                       LIGOTimeGPS refTime
+                       REAL8 Alpha,		/**< source sky-location, in equatorial coordinates RA, in radians  */
+                       REAL8 Delta,		/**< source sky-location, in equatorial coordinates DEC, in radians  */
+                       LIGOTimeGPS refTime	/**< reference time to be used for the returned SSB timings */
                        )
 {
   static const char *fn = "XLALGetSSBtimesREAL4()";

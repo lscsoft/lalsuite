@@ -129,6 +129,20 @@ XLALDestroySimBurstTable(
 	SimBurst *head
 );
 
+int XLALCompareSimBurstByGeocentTimeGPS(
+	const SimBurst * const *a,
+	const SimBurst * const *b
+);
+
+int XLALSimBurstTableLength(
+	SimBurst *head
+);
+
+SimBurst **XLALSortSimBurst(
+	SimBurst **head,
+	int (*comparefunc)(const SimBurst * const *, const SimBurst * const *)
+);
+
 long
 XLALSimBurstAssignIDs(
 	SimBurst *head,

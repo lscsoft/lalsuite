@@ -121,7 +121,7 @@ int main( int argc, char *argv[] )  {
   DFindRootIn input;                            /* the input structure for the root finding procedure */
   REAL8 helio_gps;                              /* the gps version of the input HJD time */
   REAL8 te;                                     /* the GPS emission time at the earth */
-  REAL8 ra,dec;                                 /* the sky position angles in radians */
+  REAL8 alpha,delta;                            /* the sky position angles in radians */
 
   lalDebugLevel = 1;
   vrbflg = 1;	                        /* verbose error-messages */
@@ -144,15 +144,17 @@ int main( int argc, char *argv[] )  {
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
  
   /* if coordinates input in hh:mm:ss.s format then convert to radians */
-  if (XLALUserVarWasSet(&(uvar.ra))) ra = LALDegsToRads(uvar.ra,"ra");
-  else ra = uvar.ra_rads;
-  if (XLALUserVarWasSet(&(uvar.dec))) dec = LALDegsToRads(uvar.dec,"dec");
-  else dec = uvar.dec_rads;
- 
-  /* define cartesian components of the sky position vector */
-  n[0] = cos(ra)*cos(dec);
-  n[1] = sin(ra)*cos(dec);
-  n[2] = sin(dec);
+  if (XLALUserVarWasSet(&(uvar.ra))) alpha = LALDegsToRads(uvar.ra,"ra");
+  else alpha = uvar.ra_rads;
+  if (XLALUserVarWasSet(&(uvar.dec))) delta = LALDegsToRads(uvar.dec,"dec");
+  else delta = uvar.dec_rads;
+
+  {
+    REAL8 sinTheta = sin(LAL_PI/2.0-delta);
+    n[2]=cos(LAL_PI/2.0-delta);   /* n is vector that points towards source */
+    n[1]=sinTheta*sin(alpha);     /* in Cartesian coords based on J2000 */
+    n[0]=sinTheta*cos(alpha);     /* 0=x,1=y,2=z */
+  }
 
   /* convert MJD to TT GPS time */
   if (strstr(uvar.HJDconv,"TT")) {
@@ -230,8 +232,16 @@ int main( int argc, char *argv[] )  {
   
   /* bisect domain to find eccentric anomoly E corresponding to the SSB time of the midpoint of this SFT */
   LALDBisectionFindRoot(&status,&te,&input,&helio_gps);
-  LogPrintf(LOG_NORMAL,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",fn,te);
- 
+
+  /* check if result is within original ephemeris boundaries */
+  if ((te>=t[0]) && (te<=t[ephemeris->nentriesS-1])) {
+    LogPrintf(LOG_NORMAL,"%s : solved to find SSB time = %6.2f +/- 0.01 (sec)\n",fn,te); 
+  }
+  else {
+    LogPrintf(LOG_CRITICAL,"%s : input ephemeris files do not span desired epoch.  Exptroplated result is unreliable.\n",fn,te); 
+    return 1;
+  }
+
   /* free ephemeris info */
   XLALDestroyEphemerisData(ephemeris);
  

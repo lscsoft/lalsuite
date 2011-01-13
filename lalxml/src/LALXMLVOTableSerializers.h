@@ -34,25 +34,13 @@ extern "C" {
 
 
 #include <libxml/tree.h>
+#include <gsl/gsl_matrix.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/PulsarDataTypes.h>
 
 
 xmlNodePtr XLALLIGOTimeGPS2VOTNode(const LIGOTimeGPS *const ltg, const char *name);
 INT4 XLALVOTDoc2LIGOTimeGPSByName(const xmlDocPtr xmlDocument, const char *name, LIGOTimeGPS *ltg);
-
-xmlNodePtr XLALBinaryOrbitParams2VOTNode(const BinaryOrbitParams *const bop, const char *name);
-INT4 XLALVOTDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
-
-xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *name);
-INT4 XLALVOTDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
-                                  const char *resourcePath,
-                                  const char *paramName,
-                                  PulsarSpins spins);
-
-xmlNodePtr XLALPulsarDopplerParams2VOTNode(const PulsarDopplerParams *const pdp, const char *name);
-INT4 XLALVOTDoc2PulsarDopplerParamsByName(const xmlDocPtr xmlDocument, const char *name, PulsarDopplerParams *pdp);
 
 xmlNodePtr XLALgsl_vector2VOTNode(const gsl_vector *vect, const char *name, const CHAR *unitName );
 

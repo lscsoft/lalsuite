@@ -224,8 +224,6 @@ int main( int argc, char *argv[] )
 
   REAL4FrequencySeries     dummyOutput;
 
-  REAL4                *tempPtr;
-
   UINT4 i;
   REAL4 omega, f;
   INT4 code;
@@ -307,6 +305,7 @@ int main( int argc, char *argv[] )
     {
       return code;
     }
+    REAL4                *tempPtr;
     tempPtr = dummyOutput.data->data;
     dummyOutput.data->data = NULL;
 

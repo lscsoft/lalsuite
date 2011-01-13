@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include <lal/LALConstants.h>
+#include <lal/Sort.h>
 
 #include <gsl/gsl_sf_log.h>
 
@@ -56,25 +57,6 @@ void counter(qfvars *vars)
 REAL8 log1(REAL8 x, INT4 first)
 {
    
-   /* if (fabs(x) > 0.1) {
-      if (first) return log(1.0 + x);
-      else return (log(1.0 + x) - x);
-   } else {
-      REAL8 s, s1, term, y, k;
-      y = x / (2.0 + x);
-      term = 2.0 * y*y*y;
-      k = 3.0;
-      if (first) s = 2.0*y;
-      else s = -x*y;
-      y = y*y;
-      for (s1=s+term/k; s1!=s; s1=s+term/k) { 
-         k += 2.0; 
-         term *= y; 
-         s = s1;
-      }
-      return s;
-   } */
-   
    if (first) return gsl_sf_log_1plusx(x);
    else return gsl_sf_log_1plusx_mx(x);
    
@@ -84,24 +66,34 @@ REAL8 log1(REAL8 x, INT4 first)
 void order(qfvars *vars)
 {
    
-   INT4 ii, jj; 
+   const CHAR *fn = __func__;
    
-   //Determine which values are largest to and place element numbers in th[]
-   for (ii=0; ii<(INT4)vars->weights->length; ii++) {
-      INT4 insertionpoint = ii;
-      if (ii==0) {
-         vars->sorting->data[insertionpoint] = 0;
-      } else {
-         while (insertionpoint>0 && fabs(vars->weights->data[ii])>fabs(vars->weights->data[vars->sorting->data[insertionpoint-1]])) insertionpoint--;
-         
-         for (jj=ii; jj>insertionpoint; jj--) {
-            vars->sorting->data[jj] = vars->sorting->data[jj-1];
-         }
-         vars->sorting->data[insertionpoint] = ii;
-      }
+   INT4 ascend = 0;     //To sort descending, set ascend to zero
+   if ( XLALHeapIndex(vars->sorting->data, vars->weights->data, vars->weights->length, sizeof(REAL8), &ascend, compar) != 0) {
+      fprintf(stderr,"%s: XLALHeapIndex() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    
    vars->ndtsrt = 0; //Signify that we have done the sorting
+   
+}
+
+//Comparison routine for sorting algorithm (NOTE: Ascending order p=1, descending p=0)
+int compar(void *p, const void *a, const void *b)
+{
+   REAL8 x = *((const REAL8 *)a);
+   REAL8 y = *((const REAL8 *)b);
+   int ascend = *(int *)p;
+   
+   if (ascend) {
+      if (x < y) return -1;
+      if (x > y) return 1;
+      return 0;
+   }
+   
+   if (x > y) return -1;
+   if (x < y) return 1;
+   return 0;
    
 }
 
@@ -116,7 +108,7 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    
    xconst = u * vars->sigsq;
    sum1 = u * xconst;
-   u = 2.0 * u;
+   u *= 2.0;
    for (ii=vars->weights->length-1; ii>=0; ii--) {
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
@@ -141,13 +133,20 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
    if (u2>0.0) rb = 2.0*vars->wnmax;
    else rb = 2.0*vars->wnmin;
    
-   for (u=u2/(1.0+u2*rb); errbound(vars, u, &c2)>accx; u=u2/(1.0+u2*rb)) {
+   /* for (u=u2/(1.0+u2*rb); errbound(vars, u, &c2)>accx; u=u2/(1.0+u2*rb)) {
       u1 = u2;
       c1 = c2;
       u2 *= 2.0;
+   } */
+   u = u2/(1.0 + u2*rb);
+   while (errbound(vars, u, &c2)>accx) {
+      u1 = u2;
+      c1 = c2;
+      u2 *= 2.0;
+      u = u2/(1.0 + u2*rb);
    }
    
-   for (u=(c1-vars->wnmean)/(c2-vars->wnmean); u<0.9; u=(c1-vars->wnmean)/(c2-vars->wnmean)) {
+   /* for (u=(c1-vars->wnmean)/(c2-vars->wnmean); u<0.9; u=(c1-vars->wnmean)/(c2-vars->wnmean)) {
       u = 0.5*(u1 + u2);
       if (errbound(vars, u/(1.0+u*rb), &xconst)>accx) {
          u1 = u; 
@@ -156,6 +155,18 @@ REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn)
          u2 = u;
          c2 = xconst;
       }
+   } */
+   u = (c1-vars->wnmean)/(c2-vars->wnmean);
+   while (u<0.9) {
+      u = 0.5*(u1 + u2);
+      if (errbound(vars, u/(1.0+u*rb), &xconst)>accx) {
+         u1 = u; 
+         c1 = xconst;
+      } else {
+         u2 = u;
+         c2 = xconst;
+      }
+      u = (c1-vars->wnmean)/(c2-vars->wnmean);
    }
    *upn = u2;
    
@@ -175,19 +186,22 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
    prod2 = 0.0;
    prod3 = 0.0;
    s = 0;
+   
    sum2 = (vars->sigsq + tausq) * u*u;
    prod1 = 2.0 * sum2;
-   u = 2.0 * u;
+   u *= 2.0;
+   
    for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
       sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);
       if (x > 1.0) {
-         prod2 += + vars->dofs->data[ii] * log(x);
-         prod3 += + vars->dofs->data[ii] * log1(x, 1 );
+         prod2 += vars->dofs->data[ii] * log(x);
+         prod3 += vars->dofs->data[ii] * log1(x, 1 );
          s += vars->dofs->data[ii];
       }
-      else  prod1 += vars->dofs->data[ii] * log1(x, 1 );
-   }
+      else prod1 += vars->dofs->data[ii] * log1(x, 1 );
+   } /* for ii < vars->weights->length */
+   
    sum1 *= 0.5;
    prod2 += prod1;
    prod3 += prod1;
@@ -223,15 +237,27 @@ void findu(qfvars *vars, REAL8* utx, REAL8 accx)
    ut = *utx;
    u = 0.25*ut;
    if ( truncation(vars, u, 0.0)>accx ) {
-      for ( u=ut; truncation(vars, u, 0.0)>accx; u=ut) ut *= 4.0;
+      //for ( u=ut; truncation(vars, u, 0.0)>accx; u=ut) ut *= 4.0;
+      u = ut;
+      while (truncation(vars, u, 0.0)>accx) {
+         ut *= 4.0;
+         u = ut;
+      }
    } else {
       ut = u;
-      for ( u=u/4.0; truncation(vars, u, 0.0) <=  accx; u=u/4.0 ) ut = u;
+      //for ( u=0.25*u; truncation(vars, u, 0.0) <=  accx; u=0.25*u ) ut = u;
+      u *= 0.25;
+      while (truncation(vars, u, 0.0) <=  accx) {
+         ut = u;
+         u *= 0.25;
+      }
    }
+   
    for (ii=0; ii<4; ii++) {
       u = ut/divis[ii]; 
       if ( truncation(vars, u, 0.0)<=accx )  ut = u; 
    }
+   
    *utx = ut;
    
 }
@@ -251,23 +277,25 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
       sum1 = - 2.0*u*vars->c;
       sum2 = fabs(sum1);
       sum3 = -0.5*vars->sigsq * u*u;
+      
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
          y = x*x;
-         sum3 = sum3 - 0.25 * vars->dofs->data[jj] * log1(y, 1 );
+         sum3 -= 0.25 * vars->dofs->data[jj] * log1(y, 1 );
          y = vars->noncentrality->data[jj] * x / (1.0 + y);
          z = vars->dofs->data[jj] * atan(x) + y;
          sum1 += z;
          sum2 += fabs(z);
          sum3 -= 0.5 * x * y;
-      }
+      } /* for jj=vars->weights->length-1 --> 0 */
+      
       x = inpi * exp1(sum3) / u;
-      if ( !  mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));
+      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));
       sum1 = sin(0.5 * sum1) * x;
       sum2 *= 0.5*x;
       vars->intl += sum1;
       vars->ersm += sum2;
-   }
+   } /* for ii=nterm --> 0 */
    
 }
 
@@ -275,12 +303,21 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 REAL8 coeff(qfvars *vars, REAL8 x)
 {
    
+   const CHAR *fn = __func__;
+   
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
    
    counter(vars);
    
-   if (vars->ndtsrt) order(vars);
+   if (vars->ndtsrt) {
+      order(vars);
+      if (vars->ndtsrt) {
+         fprintf(stderr,"%s: order() failed\n.", fn);
+         vars->fail = 1;
+         return 1.0;
+      }
+   }
    axl = fabs(x);
    
    if (x>0.0) sxl = 1.0;
@@ -307,7 +344,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
             }
          }
       }
-   }
+   } /* for ii=vars->weights->length-1 --> 0 */
    
    if (sum1 > 100.0) { 
       vars->fail = 1; 
@@ -336,92 +373,94 @@ output:
 
 REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
 {
-      INT4 ii, nt, ntm;
-      REAL8 acc1, almx, xlim, xnt, xntm;
-      REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
-      REAL8 qfval;
-      INT4 rats[] = {1, 2, 4, 8};
-      
-      //for ( ii = 0; ii<7; ii++ ) trace[ii] = 0.0;
-      
-      *ifault = 0;
-      vars->count = 0;
-      vars->intl = 0.0;
-      vars->ersm = 0.0;
-      qfval = -1.0;
-      acc1 = acc;
-      vars->ndtsrt = 1;  
-      vars->fail = 0;
-      xlim = (REAL8)vars->lim;
+   
+   //const CHAR *fn = __func__;
 
-      /* find wnmean, wnstd, wnmax and wnmin of weights, check that parameter values are valid */
-      vars->sigsq = sigma*sigma;
-      wnstd = vars->sigsq;
-      vars->wnmax = 0.0;
-      vars->wnmin = 0.0;
-      vars->wnmean = 0.0;
-      for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
-         if ( vars->dofs->data[ii] < 0  ||  vars->noncentrality->data[ii] < 0.0 ) { 
-            *ifault = 3;
-            //trace[6] = (REAL8)vars->count;
-            return qfval;
-         }
-         wnstd += vars->weights->data[ii]*vars->weights->data[ii] * (2 * vars->dofs->data[ii] + 4.0 * vars->noncentrality->data[ii]);
-         vars->wnmean += vars->weights->data[ii] * (vars->dofs->data[ii] + vars->noncentrality->data[ii]);
-         if (vars->wnmax < vars->weights->data[ii]) vars->wnmax = vars->weights->data[ii];
-         else if (vars->wnmin > vars->weights->data[ii]) vars->wnmin = vars->weights->data[ii];
-      }
-      
-      if ( wnstd == 0.0  ) {  
-         if (vars->c>0.0) qfval = 1.0;
-         else qfval = 0.0;
-         //trace[6] = (REAL8)vars->count;
-         return qfval;
-      }
-      
-      if ( vars->wnmin == 0.0 && vars->wnmax == 0.0 && sigma == 0.0 ) {
+   INT4 ii, nt, ntm;
+   REAL8 acc1, almx, xlim, xnt, xntm;
+   REAL8 utx, tausq, wnstd, intv, intv1, x, up, un, d1, d2;
+   REAL8 qfval;
+   INT4 rats[] = {1, 2, 4, 8};
+   
+   *ifault = 0;
+   vars->count = 0;
+   vars->intl = 0.0;
+   vars->ersm = 0.0;
+   qfval = -1.0;
+   acc1 = acc;
+   vars->ndtsrt = 1;  
+   vars->fail = 0;
+   xlim = (REAL8)vars->lim;
+
+   /* find wnmean, wnstd, wnmax and wnmin of weights, check that parameter values are valid */
+   vars->sigsq = sigma*sigma;    //Sigma squared
+   wnstd = vars->sigsq;          //weights*noise standard deviation initial value
+   vars->wnmax = 0.0;            //Initial value for weights*noise maximum
+   vars->wnmin = 0.0;            //Initial value for weights*noise minimum
+   vars->wnmean = 0.0;           //Initial value for weights*noise 'mean'
+   for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
+      if ( vars->dofs->data[ii] < 0  ||  vars->noncentrality->data[ii] < 0.0 ) { 
          *ifault = 3;
-         //trace[6] = (REAL8)vars->count;
          return qfval;
-      }
+      } /* return error if any degrees of freedom is less than 0 or noncentrality parameter is less than 0.0 */
       
-      wnstd = sqrt(wnstd);
-      if (vars->wnmax < - vars->wnmin) almx = -vars->wnmin;
-      else almx = vars->wnmax;
+      wnstd += vars->weights->data[ii]*vars->weights->data[ii] * (2 * vars->dofs->data[ii] + 4.0 * vars->noncentrality->data[ii]);
+      vars->wnmean += vars->weights->data[ii] * (vars->dofs->data[ii] + vars->noncentrality->data[ii]);
+      
+      //Find maximum and minimum values
+      if (vars->wnmax < vars->weights->data[ii]) {
+         vars->wnmax = vars->weights->data[ii];
+      } else if (vars->wnmin > vars->weights->data[ii]) {
+         vars->wnmin = vars->weights->data[ii];
+      }
+   }
 
-      /* starting values for findu, cutoff */
-      utx = 16.0/wnstd;
-      up = 4.5/wnstd;
-      un = -up;
-      
-      /* truncation point with no convergence factor */
-      findu(vars, &utx, 0.5*acc1);
-      
-      /* does convergence factor help */
-      if (vars->c!=0.0  && almx>0.07*wnstd) {
-         tausq = 0.25*acc1/coeff(vars, vars->c);
-         if (vars->fail) vars->fail = 0 ;
-         else if (truncation(vars, utx, tausq) < 0.2*acc1) {
-            vars->sigsq += tausq;
-            findu(vars, &utx, 0.25*acc1);
-            //trace[5] = sqrt(tausq);
-         }
+   if ( wnstd == 0.0  ) {  
+      if (vars->c>0.0) qfval = 1.0;
+      else qfval = 0.0;
+      return qfval;
+   }
+   
+   if ( vars->wnmin == 0.0 && vars->wnmax == 0.0 && sigma == 0.0 ) {
+      *ifault = 3;
+      return qfval;
+   }
+   
+   wnstd = sqrt(wnstd);
+   
+   //almx is absolute value maximum of weights
+   if (vars->wnmax < -vars->wnmin) almx = -vars->wnmin;
+   else almx = vars->wnmax;
+
+   /* starting values for findu, cutoff */
+   utx = 16.0/wnstd;
+   up = 4.5/wnstd;
+   un = -up;
+   
+   /* truncation point with no convergence factor */
+   findu(vars, &utx, 0.5*acc1);
+   
+   /* does convergence factor help */
+   if (vars->c!=0.0  && almx>0.07*wnstd) {
+      tausq = 0.25*acc1/coeff(vars, vars->c);
+      if (vars->fail) vars->fail = 0;
+      else if (truncation(vars, utx, tausq) < 0.2*acc1) {
+         vars->sigsq += tausq;
+         findu(vars, &utx, 0.25*acc1);
       }
-      //trace[4] = utx;
-      acc1 = 0.5*acc1;
+   }
+   acc1 = 0.5*acc1;
 
       /* find RANGE of distribution, quit if outside this */
    l1:
       d1 = cutoff(vars, acc1, &up) - vars->c;
       if (d1 < 0.0) {
          qfval = 1.0;
-         //trace[6] = (REAL8)vars->count;
          return qfval;
       }
       d2 = vars->c - cutoff(vars, acc1, &un);
       if (d2 < 0.0) {
          qfval = 0.0;
-         //trace[6] = (REAL8)vars->count;
          return qfval;
       }
       
@@ -433,59 +472,10 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       xnt = utx/intv;
       xntm = 3.0/sqrt(acc1);
       
-      /* if (xntm>xlim) {
-         *ifault = 1;
-         trace[6] = (REAL8)vars->count;
-         return qfval;
-      }
-      ntm = (INT4)round(xntm);
-      intv1 = utx/ntm;
-      x = LAL_TWOPI/intv1;
-      
-      if (x>fabs(vars->c)) tausq = 0.33*acc1/(1.1*(coeff(vars, vars->c-x) + coeff(vars, vars->c+x)));
-      
-      while (xnt>1.5*xntm && x>fabs(vars->c) && vars->fail!=1) {
-         acc1 = 0.67*acc1;
-         integrate(vars, ntm, intv1, tausq, 0 );
-         xlim -= xntm;
-         vars->sigsq += tausq;
-         trace[2] = trace[2] + 1; 
-         trace[1] = trace[1] + ntm + 1;
-         findu(vars, &utx, 0.25*acc1);
-         acc1 = 0.75*acc1;
-         
-         d1 = cutoff(vars, acc1, &up) - vars->c;
-         if (d1 < 0.0) {
-            qfval = 1.0;
-            trace[6] = (REAL8)vars->count;
-            return qfval;
-         }
-         d2 = vars->c - cutoff(vars, acc1, &un);
-         if (d2 < 0.0) {
-            qfval = 0.0;
-            trace[6] = (REAL8)vars->count;
-            return qfval;
-         }
-         if (d1>d2) intv = LAL_TWOPI/d1;
-         else intv = LAL_TWOPI/d2;
-         xnt = utx/intv;
-         xntm = 3.0/sqrt(acc1);
-         if (xntm>xlim) {
-            *ifault = 1;
-            trace[6] = (REAL8)vars->count;
-            return qfval;
-         }
-         ntm = (INT4)round(xntm);
-         intv1 = utx/ntm;
-         x = LAL_TWOPI/intv1;
-         if (x>fabs(vars->c)) tausq = 0.33*acc1/(1.1*(coeff(vars, vars->c-x) + coeff(vars, vars->c+x)));
-      } */
-      
       if (xnt>xntm*1.5) {
          //parameters for auxillary integration
          if (xntm>xlim) {
             *ifault = 1;
-            //trace[6] = (REAL8)vars->count;
             return qfval;
          }
          ntm = (INT4)round(xntm);
@@ -494,37 +484,34 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
          if (x<=fabs(vars->c)) goto l2;
          
          //calculate convergence factor
-         tausq = (1.0/3.0)*acc1/(1.1*(coeff(vars, vars->c-x) + coeff(vars, vars->c+x)));
+         REAL8 coeffvalplusx = coeff(vars, vars->c+x);
+         REAL8 coeffvalminusx = coeff(vars, vars->c-x);
+         tausq = (1.0/3.0)*acc1/(1.1*(coeffvalminusx + coeffvalplusx));
          if (vars->fail) goto l2;
          acc1 = (2.0/3.0)*acc1;
          
          //auxillary integration
-         integrate(vars, ntm, intv1, tausq, 0 );
+         //fprintf(stderr,"Num terms in auxillary integration %d\n", ntm);
+         integrate(vars, ntm, intv1, tausq, 0);
          xlim -= xntm;
          vars->sigsq += tausq;
-         //trace[2] = trace[2] + 1; 
-         //trace[1] = trace[1] + ntm + 1;
          
          //find truncation point with new convergence factor
          findu(vars, &utx, 0.25*acc1);
-         acc1 = 0.75*acc1;
+         acc1 *= 0.75;
          goto l1;
       }
 
       /* main integration */
    l2:
-      //trace[3] = intv;
       if (xnt > xlim) {
          *ifault = 1;
-         //trace[6] = (REAL8)vars->count;
          return qfval;
       }
       nt = (INT4)round(xnt);
-      integrate(vars, nt, intv, 0.0, 1 );
-      //trace[2] = trace[2] + 1;
-      //trace[1] = trace[1] + nt + 1;
+      //fprintf(stderr,"Num terms in main integration %d\n", nt);
+      integrate(vars, nt, intv, 0.0, 1);
       qfval = 0.5 - vars->intl;
-      //trace[0] = vars->ersm;
 
       /* test whether round-off error could be significant allow for radix 8 or 16 machines */
       up = vars->ersm;
@@ -532,8 +519,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
       for (ii=0; ii<4; ii++) {
          if (rats[ii] * x == rats[ii] * up) *ifault = 2;
       }
-
-      //trace[6] = (REAL8)vars->count;
+   
       return qfval;
 }
 

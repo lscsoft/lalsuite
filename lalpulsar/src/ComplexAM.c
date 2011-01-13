@@ -18,7 +18,7 @@
  */
 
 /** \author J. T. Whelan, Reinhard Prix
- * \ingroup pulsarAntenna
+ * \ingroup pulsarTODO
  * \file
  * \brief
  * Functions related to F-statistic calculation when the AM coefficients are complex.
@@ -76,7 +76,7 @@ NRCSID( COMPLEXAMC, "$Id$");
  *
  */
 void
-LALGetCmplxAMCoeffs(LALStatus *status,
+LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
 		    CmplxAMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(f_0,t_i), b(f_0,t_i)} */
 		    const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
 		    const FreqSkypos_t *freq_skypos		/**< Frequency and skyposition information */
@@ -137,10 +137,10 @@ LALGetCmplxAMCoeffs(LALStatus *status,
  * use XLALDestroyMultiCmplxAMCoeffs() to free this.
  */
 void
-LALGetMultiCmplxAMCoeffs (LALStatus *status,
-		     MultiCmplxAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
-		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-		     PulsarDopplerParams doppler		     /**< source sky-position [in equatorial coords!], freq etc. */
+LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus structure */
+		     MultiCmplxAMCoeffs **multiAMcoef,			/**< [out] AM-coefficients for all input detector-state series */
+		     const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
+		     PulsarDopplerParams doppler		     	/**< source sky-position [in equatorial coords!], freq etc. */
 		     )
 {
   UINT4 X, numDetectors;
@@ -281,7 +281,7 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
  * compute the resulting \f$A_d, B_d, C_d, E_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
+ * \f$A_d \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *
  * NOTE: this function modifies the CmplxAMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.

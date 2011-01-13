@@ -12,7 +12,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python
-Requires: gsl lal lalpulsar
+Requires: gsl libxml2 lal
 Prefix: %{_prefix}
 
 %description
@@ -24,7 +24,7 @@ that use the LAL XML library.
 Summary: Files and documentation needed for compiling programs that use LAL XML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel lal-devel lalpulsar-devel
+Requires: gsl-devel libxml2-devel lal-devel
 %description devel
 The LSC Algorithm XML Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL XML
