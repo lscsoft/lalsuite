@@ -315,10 +315,10 @@ int main( int argc, char **argv )
   fcTmplt = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams = LALCalloc ( 1, sizeof( *fcTmpltParams ) );
   fcTmpltParams->approximant = FindChirpPTF;
+  /* Note that although non-spinning only uses Q1, the PTF
+  generator still generates Q1-5, thus size of these vectors */
   fcTmplt->PTFQtilde =
       XLALCreateCOMPLEX8VectorSequence( 5, numPoints / 2 + 1 );
-/*  fcTmplt->PTFBinverse = XLALCreateArrayL( 2, 5, 5 );
-  fcTmplt->PTFB = XLALCreateArrayL( 2, 5, 5 );*/
   fcTmpltParams->PTFQ = XLALCreateVectorSequence( 5, numPoints );
   fcTmpltParams->PTFphi = XLALCreateVector( numPoints );
   fcTmpltParams->PTFomega_2_3 = XLALCreateVector( numPoints );
@@ -418,7 +418,7 @@ int main( int argc, char **argv )
       coh_PTF_template(fcTmplt,PTFBankTemplates,
           fcTmpltParams);
       PTFBankTemplates = PTFBankTemplates->next;
-      /* Only store Q1 */
+      /* Only store Q1. Structures used in fcTmpltParams will be overwritten */
       for ( uj = 0 ; uj < (numPoints/2 +1) ; uj++ )
       {
         bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
@@ -431,21 +431,10 @@ int main( int argc, char **argv )
       {
         if ( params->haveTrig[ifoNumber] )
         {
-/*          if ( spinBank )
-          {
-            bankNormOverlaps[ui].PTFM[ifoNumber]=
-                XLALCreateREAL8ArrayL( 2, 5, 5 );
-            memset( bankNormOverlaps[ui].PTFM[ifoNumber]->data,
-                0, 25 * sizeof(REAL8) );
-          }
-          else
-          {*/
-          /* Initialize and zero out the structures */
           bankNormOverlaps[ui].PTFM[ifoNumber]=
               XLALCreateREAL8ArrayL( 2, 1, 1 );
           memset( bankNormOverlaps[ui].PTFM[ifoNumber]->data,
               0, 1 * sizeof(REAL8) );
-//          }
           /* This function calculates the overlaps between templates */
           /* This returns a REAL4 as the overlap between identical templates*/
           /* must be real. */
@@ -511,19 +500,10 @@ int main( int argc, char **argv )
         {
           if ( params->haveTrig[ifoNumber] )
           {
-/*            if (spinBank)
-            {
-              dataOverlaps[ui].PTFqVec[ifoNumber] =
-                  XLALCreateCOMPLEX8VectorSequence ( 5, 3*numPoints/4 - numPoints/4 + 10000);
-              bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,5,5);
-            }
-            else
-            {*/
             dataOverlaps[ui].PTFqVec[ifoNumber] =
                 XLALCreateCOMPLEX8VectorSequence ( 1, 
                 3*numPoints/4 - numPoints/4 + 10000);
             bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,1,1);
-//            }
             /* This function calculates the overlap */
             coh_PTF_bank_filters(&(bankFcTmplts[ui]),0,
                 &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
@@ -543,10 +523,23 @@ int main( int argc, char **argv )
         spinTemplate = 1;
       else
         spinTemplate = 0;
+
+      /* Currently we can only run PTF. It would be nice to be able to run
+         other stuff */    
+
       PTFtemplate->approximant = FindChirpPTF;
       PTFtemplate->order = LAL_PNORDER_TWO;
+   
+     /* FIXME: fLower should not be hardcoded */
+     /* This value is used for template generation */
+
       PTFtemplate->fLower = 38.;
+
       /* Generate the template */
+      /* PTF generator called here. For non spin Q1-5 is generated and stored
+         only Q1 will be used. This would need some alteration if we planned to
+         use other templates. */
+       
       coh_PTF_template(fcTmplt,PTFtemplate,fcTmpltParams);
 
       if (spinTemplate)
@@ -561,11 +554,12 @@ int main( int argc, char **argv )
           break;
         }
       }
-      /* Here we figure out the start time for the segment */
+      /* We only analyse middle half so add duration/4 to epoch */
       XLALGPSAdd(&segStartTime,params->segmentDuration/4.0);
 
       /* Generate the various time series as needed*/
       /* Need to zero these out */
+      /* We only want to store data from middle half of segment */
       cohSNR = XLALCreateREAL4TimeSeries("cohSNR",
           &segStartTime,PTFtemplate->fLower,
           (1.0/params->sampleRate),&lalDimensionlessUnit,
@@ -635,14 +629,7 @@ int main( int argc, char **argv )
           {
           for ( ui = 0 ; ui < subBankSize ; ui++ )
           {
-            /*if ( spinBank )
-            {
-              memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,25*sizeof(COMPLEX8));
-            }
-            else
-            {*/
             memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,1*sizeof(COMPLEX8));
-//            }
             coh_PTF_complex_template_overlaps(&(bankFcTmplts[ui]),fcTmplt,
                 invspec[ifoNumber],0,
                 bankOverlaps[ui].PTFM[ifoNumber]);
@@ -672,6 +659,9 @@ int main( int argc, char **argv )
               j,i,time(NULL)-startTime);
       }
       
+      /* FIXME: Sky location looping should go here.
+         Clustering may be required if we are doing this! */
+
       // This function calculates the cohSNR time series and all of the
       // signal based vetoes as appropriate
       coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
@@ -821,31 +811,20 @@ void coh_PTF_statistic(
   UINT4 numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
 
   // Code works slightly differently if spin/non spin and single/coherent
-  vecLength = 5;
-  vecLengthTwo = 10;
-  vecLengthSquare = 25;
-  vecLengthTwoSquare = 100;
-  if (spinTemplate == 0 && singleDetector == 1)
-  {
-    vecLength = 2;
-    vecLengthTwo = 2;
-    vecLengthSquare = 4;
-    vecLengthTwoSquare = 4;
-  }
-  else if (spinTemplate == 0)
-  {
-    vecLength = 2;
-    vecLengthTwo = 4;
-    vecLengthSquare = 4;
-    vecLengthTwoSquare = 16;
-  }
-  else if (singleDetector == 1)
-  {
-    vecLengthTwo = 5;
-    vecLengthTwoSquare = 25;
-  }
+  if (spinTemplate)
+    vecLength = 5;
+  else
+    vecLength = 1;
+  if (singleDetector)
+    vecLengthTwo = vecLength;
+  else
+    vecLengthTwo = 2* vecLength;
+  vecLengthSquare = vecLength*vecLength;
+  vecLengthTwoSquare = vecLengthTwo * vecLengthTwo;
 
-  // These arrays would store the maximized quantities if necessary
+  // These arrays are used to store the maximized quantities
+  // For non spin these are the 4 F-stat parameters (only 2 for one detector)
+  // For spin these are the P values
   for ( i = 0 ; i < vecLengthTwo ; i++ )
   {
     pValues[i] = XLALCreateREAL4TimeSeries("Pvalue",
@@ -859,9 +838,9 @@ void coh_PTF_statistic(
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
 
+  /* FIXME: All the time series should be outputtable */
   FILE UNUSED *outfile;
   outfile = NULL;
-/*  REAL8Array  *B, *Binv;*/
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 *v1p,*v2p;
   REAL4 u1N[vecLength],u2N[vecLength],v1N[vecLength],v2N[vecLength];
@@ -874,6 +853,9 @@ void coh_PTF_statistic(
 
   gsl_matrix *BNull = gsl_matrix_alloc(vecLength,vecLength);
   gsl_matrix *B2Null = gsl_matrix_alloc(vecLength,vecLength);
+  /* FIXME: the 50s below seem to hardcode a limit on the number of templates
+     this should not be hardcoded. Note that this value is hardcoded in some
+     function declarations as well as here! */
   gsl_matrix *Bankeigenvecs[50];
   gsl_vector *Bankeigenvals[50];
   gsl_matrix *Autoeigenvecs = NULL;
@@ -892,6 +874,7 @@ void coh_PTF_statistic(
   gsl_vector *eigenvalsNull = gsl_vector_alloc(vecLength);
 
   // a = Fplus , b = Fcross
+  /* FIXME: Replace all instances with a and b with Fplus and Fcross */
   for (i = 0; i < LAL_NUM_IFO; i++)
   {
     a[i] = Fplus[i];
@@ -902,6 +885,7 @@ void coh_PTF_statistic(
   // and returns the eigenvalues and eigenvectors of this new matrix.
   // We later rotate and rescale the (Q_i|s) values such that in the new basis
   // this matrix will be the identity matrix.
+  // For non-spin this describes the rotation into the dominant polarization
   coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,a,b,PTFM,vecLength,vecLengthTwo,5);
 
   // If required also calculate these eigenvalues/vectors for the null stream 
@@ -917,26 +901,6 @@ void coh_PTF_statistic(
     }
     gsl_eigen_symmv(B2Null,eigenvalsNull,eigenvecsNull,matTempNull); 
   }
-
-  /*fprintf(stdout,"\n \n");*/
-
-  /*for (i = 0; i < vecLengthTwo; i++ )
-  {
-    for (j = 0; j < vecLengthTwo; j++ )
-    {
-      fprintf(stdout,"%f ",gsl_matrix_get(eigenvecs,i,j));
-    }
-    fprintf(stdout,"\n");
-  }
-
-  fprintf(stdout,"\n \n");*/
-
-  /*for (i = 0; i < vecLengthTwo; i++ )
-  {
-    fprintf(stdout,"%f ",gsl_vector_get(eigenvals,i));
-  }
-
-  fprintf(stdout,"\n \n");*/
 
   /* This loop takes the time offset in seconds and converts to time offset
   * in data points */
@@ -965,6 +929,11 @@ void coh_PTF_statistic(
       v2_dot_u2 += v2p[j] * v2p[j];
     }
     // And SNR is calculated
+    // For non spin: v1_dot_u1 = ( \bf{h}_0       | \bf{s})
+    //               v2_dot_u2 = ( \bf{h}_{\pi/2} | \bf{s})
+    //               v1_dot_u2 = 0
+    //
+    // For spin this follows Diego's notation
     if (spinTemplate == 0)
     {
       max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 );
@@ -1222,6 +1191,7 @@ void coh_PTF_statistic(
             {
               if (! Bankeigenvecs[j] )
               {
+                // FIXME: Lots of hardcoded vector lengths under here
                 Bankeigenvecs[j] = gsl_matrix_alloc(2,2);
                 Bankeigenvals[j] = gsl_vector_alloc(2);
                 // Here we calculate the eigenvectors for each bank template
@@ -1254,10 +1224,12 @@ void coh_PTF_statistic(
             }
             // In this function all the filters are combined to produce the
             // value of the bank veto.
-            bankVeto->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto_max_phase_coherent(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
+            bankVeto->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints,Bankeigenvecs,Bankeigenvals);
           }
-//          autoVeto->data->data[i-numPoints/4] =calculate_bank_veto(numPoints,i,subBankSize,vecLength,a,b,cohSNR->data->data[i-numPoints/4],PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,pValues,gammaBeta,PTFqVec,timeOffsetPoints,singleDetector);
           // The single detector function is a little messy at the moment
+          // FIXME: Chisq single detector stuff doesn't really work at all
+          // currently we can produce a bank veto value only but the function
+          // is terribly written! This needs merging into the main functions
           if (singleDetector)
             bankVeto->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto_max_phase(numPoints,i,subBankSize,PTFM,params,bankOverlaps,bankNormOverlaps,dataOverlaps,PTFqVec,timeOffsetPoints);
         }   
@@ -1272,10 +1244,10 @@ void coh_PTF_statistic(
               Autoeigenvecs = gsl_matrix_alloc(2,2);
               Autoeigenvals = gsl_vector_alloc(2);
               // Again the eigenvectors/values are calculated
+              /* FIXME: I think these vectors are the same as the ones used
+                 for the SNR! */
               coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
                   a,b,PTFM,1,2,5);
-//              fprintf(stderr,"Eigenvecs %e %e %e %e\n",gsl_matrix_get(Autoeigenvecs,0,0),gsl_matrix_get(Autoeigenvecs,1,0),gsl_matrix_get(Autoeigenvecs,0,1),gsl_matrix_get(Autoeigenvecs,1,1));
-//              fprintf(stderr,"Eigenvals %e %e \n",gsl_vector_get(Autoeigenvals,0),gsl_vector_get(Autoeigenvals,1));
             }
 
             if (! autoCohOverlaps)
@@ -1294,7 +1266,7 @@ void coh_PTF_statistic(
             }
           }
           // Auto veto is calculated
-          autoVeto->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto_max_phase_coherent(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
+          autoVeto->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,autoCohOverlaps,PTFqVec,timeOffsetPoints,Autoeigenvecs,Autoeigenvals);
         }
       }
     }
@@ -1371,6 +1343,7 @@ void coh_PTF_statistic(
           
           bestNR = cohSNR->data->data[i-numPoints/4];
 
+          /* IS the null stream too large? */
           if (params->doNullStream)
           {
             if (nullSNR->data->data[i-numPoints/4] > params->nullStatThreshold \
@@ -1387,6 +1360,7 @@ void coh_PTF_statistic(
             }
           }
   
+          /* Is bank new SNR too large? */
           if (params->doBankVeto)
           {
             if (bankVeto->data->data[i-numPoints/4] > 40)
@@ -1397,6 +1371,7 @@ void coh_PTF_statistic(
 
           bestNR = cohSNR->data->data[i-numPoints/4];
 
+          /* Is auto new SNR too large */
           if (params->doAutoVeto)
           {
             if (autoVeto->data->data[i-numPoints/4] > 40)
@@ -1408,13 +1383,16 @@ void coh_PTF_statistic(
         else
           chisqCheck = 1;
 
+        /* If no problems then calculate chi squared */
         if (params->doChiSquare && chisqCheck )
         {
           if (! Autoeigenvecs )
           {
+            /* FIXME: Again hardcoded vector lengths */
             Autoeigenvecs = gsl_matrix_alloc(2,2);
             Autoeigenvals = gsl_vector_alloc(2);
             // Again the eigenvectors/values are calculated
+            /* FIXME: Again these are the same as the SNR vecs.*/
             coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
                 a,b,PTFM,1,2,5);
           }
@@ -1513,92 +1491,6 @@ void coh_PTF_statistic(
 
   }
 
-/*  outfile = fopen("cohSNR_timeseries.dat","w");
-  for ( i = 0; i < cohSNR->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,cohSNR->data->data[i]);
-  }
-  fclose(outfile);*/
-
-
-/*  outfile = fopen("bank_veto_timeseries.dat","w");
-  for ( i = 0; i < bankVeto->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,bankVeto->data->data[i]);
-  }
-  fclose(outfile);*/
-
-/*  outfile = fopen("auto_veto_timeseries.dat","w");
-  for ( i = 0; i < autoVeto->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,autoVeto->data->data[i]);
-  }
-  fclose(outfile);*/
-
-/*  outfile = fopen("chi_square_timeseries.dat","w");
-  for ( i = 0; i < chiSquare->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,chiSquare->data->data[i]);
-  }
-  fclose(outfile);*/
-
-  
-/*  outfile = fopen("nullSNR_timeseries.dat","w");
-  for ( i = 0; i < nullSNR->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,nullSNR->data->data[i]);
-  }
-  fclose(outfile);*/
-  
-
-  
-/*  outfile = fopen("traceSNR_timeseries.dat","w");
-  for ( i = 0; i < traceSNR->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,traceSNR->data->data[i]);
-  }
-  fclose(outfile);*/
-  
-/*  outfile = fopen("h1SNR_timeseries.dat","w");
-  for ( i = 0; i < snrComps[1]->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[1]->data->data[i]);
-  }
-  fclose(outfile);*/
-
-/*  outfile = fopen("l1SNR_timeseries.dat","w");
-  for ( i = 0; i < snrComps[3]->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[3]->data->data[i]);
-  }
-  fclose(outfile);*/
-
-/*  outfile = fopen("v1SNR_timeseries.dat","w");
-  for ( i = 0; i < snrComps[5]->data->length; ++i)
-  {
-    fprintf (outfile,"%f %f \n",deltaT*i,snrComps[5]->data->data[i]);
-  }
-  fclose(outfile);*/
-
-  /*
-  outfile = fopen("rebased_timeseries.dat","w");
-  if (spinTemplate == 1 && singleDetector == 1 )
-  {
-    for ( i = 0; i < cohSNR->data->length; ++i)
-    {
-      fprintf (outfile,"%f %f %f %f %f %f %f %f %f %f %f\n",deltaT*i,testing1[i],testing2[i],testing3[i],testing4[i],testing5[i],testing6[i],testing7[i],testing8[i],testing9[i],testing10[i]);
-    }
-  }
-  else if (singleDetector == 1 )
-  {
-    for ( i = 0; i < cohSNR->data->length; ++i)
-    {
-      fprintf (outfile,"%f %f %f %f %f \n",deltaT*i,testing1[i],testing2[i],testing6[i],testing7[i]);
-    }
-  }
-  fclose(outfile);
-  */
-
   gsl_matrix_free(BNull);
   gsl_matrix_free(B2Null);
   gsl_permutation_free(p);
@@ -1695,7 +1587,7 @@ UINT8 coh_PTF_add_triggers(
         if (params->doBankVeto)
         {
           currEvent->bank_chisq = bankVeto->data->data[i];
-          /* NOTE: For now only coherent non-spin bank chisq
+          /* FIXME: For now only coherent non-spin bank chisq
           is implemented. When other versions are implemented
           this should be changed. Same for auto and chisq */
           currEvent->bank_chisq_dof = 4. * params->BVsubBankSize;
@@ -1703,7 +1595,6 @@ UINT8 coh_PTF_add_triggers(
         if (params->doAutoVeto)
         {
           currEvent->cont_chisq = autoVeto->data->data[i];
-//          fprintf(stderr, "Auto Veto %e \n",currEvent->cont_chisq);
           currEvent->cont_chisq_dof = 4. * params->numAutoPoints;
         }
         if (params->doChiSquare)
@@ -1794,6 +1685,8 @@ void coh_PTF_cluster_triggers(
   MultiInspiralTable      **thisEvent
 )
 {
+  /* This clustering function is currently unused. Currently clustering is
+     done in post-processing, though this may need to be changed. */
   MultiInspiralTable *currEvent = *eventList;
   MultiInspiralTable *currEvent2 = NULL;
   MultiInspiralTable *newEvent = NULL;
