@@ -2,6 +2,14 @@
 
 c=1
 
+awk '{print $2,$3}' ../S5-H1segments-cat1.txt > S5h1.seg
+awk '{print $2,$3}' ../S5-H2segments-cat1.txt > S5h2.seg
+awk '{print $2,$3}' ../S5-L1segments-cat1.txt > S5l1.seg
+awk '{print $2,$3}' ../S5-V1segments-cat1.txt > S5v1.seg
+awk '{print $2,$3}' ../S6-H1segments-cat1.txt > S6h1.seg
+awk '{print $2,$3}' ../S6-L1segments-cat1.txt > S6l1.seg
+awk '{print $2,$3}' ../S6-V1segments-cat1.txt > S6v1.seg
+
 while read line; do
     chunk_start=`echo $line | awk '{print $2}'`
     chunk_end=`echo $line | awk '{print $3}'`
@@ -12,10 +20,10 @@ while read line; do
 
     # S5 case
     if [ $chunk_end -lt 920000000 ]; then
-	segexpr 'intersection(tmp,h1.seg)' -include index,duration > ./S5-H1segments-cat1_c${c}.txt
-	segexpr 'intersection(tmp,h2.seg)' -include index,duration > ./S5-H2segments-cat1_c${c}.txt
-	segexpr 'intersection(tmp,l1.seg)' -include index,duration > ./S5-L1segments-cat1_c${c}.txt
-	segexpr 'intersection(tmp,v1.seg)' -include index,duration > ./S5-V1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S5h1.seg)' -include index,duration > ./S5-H1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S5h2.seg)' -include index,duration > ./S5-H2segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S5l1.seg)' -include index,duration > ./S5-L1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S5v1.seg)' -include index,duration > ./S5-V1segments-cat1_c${c}.txt
         
 	h1_lt=`segsum ./S5-H1segments-cat1_c${c}.txt`
 	h2_lt=`segsum ./S5-H2segments-cat1_c${c}.txt`
@@ -24,9 +32,9 @@ while read line; do
 
     # S6 case
     else
-	segexpr 'intersection(tmp,h1.seg)' -include index,duration > ./S6-H1segments-cat1_c${c}.txt
-	segexpr 'intersection(tmp,l1.seg)' -include index,duration > ./S6-L1segments-cat1_c${c}.txt
-	segexpr 'intersection(tmp,v1.seg)' -include index,duration > ./S6-V1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S6h1.seg)' -include index,duration > ./S6-H1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S6l1.seg)' -include index,duration > ./S6-L1segments-cat1_c${c}.txt
+	segexpr 'intersection(tmp,S6v1.seg)' -include index,duration > ./S6-V1segments-cat1_c${c}.txt
         
 	h1_lt=`segsum ./S6-H1segments-cat1_c${c}.txt`
 	l1_lt=`segsum ./S6-L1segments-cat1_c${c}.txt`
