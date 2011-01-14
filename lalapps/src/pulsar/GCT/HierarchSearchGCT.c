@@ -292,6 +292,7 @@ int MAIN( int argc, char *argv[]) {
   /* user variables */
   BOOLEAN uvar_help = FALSE; 	/* true if -h option is given */
   BOOLEAN uvar_log = FALSE; 	/* logging done if true */
+  INT4 uvar_loglevel = 0;
 
   BOOLEAN uvar_printCand1 = FALSE; 	/* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
@@ -352,9 +353,16 @@ int MAIN( int argc, char *argv[]) {
 
   /* LALDebugLevel must be called before any LALMallocs have been used */
   lalDebugLevel = 0;
-  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 #ifdef EAH_LALDEBUGLEVEL
   lalDebugLevel = EAH_LALDEBUGLEVEL;
+#endif
+  LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+
+  /* set log-level */
+#ifdef EAH_LOGLEVEL
+  uvar_loglevel = EAH_LOGLEVEL;
+#else
+  uvar_loglevel = lalDebugLevel;
 #endif
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
@@ -378,6 +386,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_OPTIONAL, "Set logLevel", &uvar_loglevel), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print toplist of semicoherent candidates", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
@@ -427,13 +436,9 @@ int MAIN( int argc, char *argv[]) {
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-	/* set log-level */
-#ifdef EAH_LOGLEVEL
-  LogSetLevel ( EAH_LOGLEVEL );
-#else
-  LogSetLevel ( lalDebugLevel );
-#endif
-  
+  /* set log level */
+  LogSetLevel(uvar_loglevel);
+
   /* assemble version string */
   CHAR *VCSInfoString;
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
