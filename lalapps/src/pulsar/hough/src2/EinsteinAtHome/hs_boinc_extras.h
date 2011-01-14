@@ -37,8 +37,12 @@
 
 #define HSBOINCEXTRASHRCSID "$Id$"
 
+#ifndef EAH_LOGLEVEL
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */
+#endif
+#ifndef EAH_LALDEBUGLEVEL
 #define EAH_LALDEBUGLEVEL 33  /* DebugLevel = 1, but without time-consuming memory debugging */
+#endif
 
 /* linking proper functions to the hooks in HierarchicalSearch.c */
 
