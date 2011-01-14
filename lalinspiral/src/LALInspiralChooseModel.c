@@ -859,7 +859,6 @@ LALInspiralChooseModel(
          break;
    }
 
-
    switch (params->approximant){
    case AmpCorPPN:
    case TaylorT1:

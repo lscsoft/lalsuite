@@ -302,9 +302,9 @@ description (above).
 
 /* <lalVerbatim file="LALInputAxisH">  */
 typedef enum {
+  View,
   OrbitalL,
-  TotalJ,
-  View
+  TotalJ
  } InputAxis;
 /* </lalVerbatim>  */
 

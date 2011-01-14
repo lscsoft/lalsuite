@@ -401,7 +401,7 @@ LALInspiralWaveForInjection(
            CHECKSTATUSPTR(status);
            break;
       case PhenSpinTaylorRD:
-    	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
 	   break;
       case AmpCorPPN:
