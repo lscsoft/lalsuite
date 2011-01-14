@@ -48,8 +48,7 @@ $Id$
 
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
-waveform generated either by the \texttt{inspiral} package (EOB,
-EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor) or the
+waveform generated either by the \texttt{inspiral} package (EOB, EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD) or the
 \texttt{inject} package	(GeneratePPN).	It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
 
@@ -92,7 +91,7 @@ inspiral package.
 
 \subsubsection*{Notes}
 Inject only time-domain waveforms for the time being such as GeneratePPN,
-TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , Spintaylor..
+  TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
 \subsubsection*{Uses}
 \begin{verbatim}
 None.
@@ -207,8 +206,8 @@ LALGenerateInspiral(
     CHECKSTATUSPTR(status);
   }
 
-  /* If no waveform has been generated. (AmpCorPPN fills waveform.h) */
-  if ( waveform->a == NULL && approximant != AmpCorPPN )
+  /* If no waveform has been generated. (AmpCorPPN and PhenSpinTaylorRD fill waveform.h) */
+  if ( waveform->a == NULL && approximant != AmpCorPPN && approximant != PhenSpinTaylorRD )
   {
     snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "No waveform generated (check lower frequency)\n");
@@ -372,6 +371,10 @@ LALGetApproximantFromString(
   {
     *approximant = EOB;
   }
+  else if ( strstr(thisEvent, "PhenSpinTaylorRD" ) )
+  {
+    *approximant = PhenSpinTaylorRD;
+  }
   else if ( strstr(thisEvent, "SpinTaylor" ) )
   {
     *approximant = SpinTaylor;
@@ -524,6 +527,7 @@ LALGenerateInspiralPopulateInspiral(
   inspiralParams->nEndPad   =  16384;
 
   inspiralParams->massChoice  = m1Andm2;
+  inspiralParams->axisChoice  = ppnParams->axisChoice;
 
   /* spin parameters */
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;
