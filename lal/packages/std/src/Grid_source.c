@@ -1,24 +1,20 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')dnl
-define(`GTYPE',`format(`%sGrid',TYPE)')dnl
-define(`CFUNC',`format(`LAL%sCreateGrid',TYPECODE)')dnl
-define(`DFUNC',`format(`LAL%sDestroyGrid',TYPECODE)')dnl
-define(`CREATEFUNC',`format(`LAL%sCreateArray',TYPECODE)')dnl
-define(`DESTROYFUNC',`format(`LAL%sDestroyArray',TYPECODE)')dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define GTYPE CONCAT2(TYPE,Grid)
+#define FUNC(f) CONCAT3(LAL,TYPECODE,f)
+#define CFUNCGRID FUNC(CreateGrid)
+#define DFUNCGRID FUNC(DestroyGrid)
+#define CFUNCARRAY FUNC(CreateArray)
+#define DFUNCARRAY FUNC(DestroyArray)
 
 void
-CFUNC ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
+CFUNCGRID ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
 {
-  INITSTATUS( stat, "CFUNC", GRIDC );
+  INITSTATUS( stat, STRING(CFUNCGRID), GRIDC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -60,7 +56,7 @@ CFUNC ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
   } ENDFAIL( stat );
 
   /* Allocate the data array. */
-  CREATEFUNC ( stat->statusPtr, &((*grid)->data), dimLength );
+  CFUNCARRAY ( stat->statusPtr, &((*grid)->data), dimLength );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->interval) ), stat );
     TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->offset) ), stat );
@@ -76,9 +72,9 @@ CFUNC ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
 
 
 void
-DFUNC ( LALStatus *stat, GTYPE **grid )
+DFUNCGRID ( LALStatus *stat, GTYPE **grid )
 {
-  INITSTATUS( stat, "DFUNC", GRIDC );
+  INITSTATUS( stat, STRING(DFUNCGRID), GRIDC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input argument. */
@@ -86,7 +82,7 @@ DFUNC ( LALStatus *stat, GTYPE **grid )
   ASSERT( *grid, stat, GRIDH_ENUL, GRIDH_MSGENUL );
 
   /* Destroy the internal arrays and vectors. */
-  TRY( DESTROYFUNC ( stat->statusPtr, &((*grid)->data) ), stat );
+  TRY( DFUNCARRAY ( stat->statusPtr, &((*grid)->data) ), stat );
   TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->interval) ), stat );
   TRY( LALDDestroyVector( stat->statusPtr, &((*grid)->offset) ), stat );
   LALFree( (*grid)->dimUnits );

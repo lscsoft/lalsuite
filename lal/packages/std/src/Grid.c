@@ -1,4 +1,3 @@
-dnl $Id$
 /***************************************** <lalVerbatim file="GridCV">
 Author: Creighton, T. D.
 $Id$
@@ -102,32 +101,62 @@ LAL<typecode>CreateArray()      LAL<typecode>DestroyArray()
 
 NRCSID( GRIDC, "$Id$" );
 
-define(`TYPECODE',`I2')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I4')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE C
+#define TYPE COMPLEX8
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`I8')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE D
+#define TYPE REAL8
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U2')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE S
+#define TYPE REAL4
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U4')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE I2
+#define TYPE INT2
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`U8')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE I4
+#define TYPE INT4
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`S')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE I8
+#define TYPE INT8
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`D')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE U2
+#define TYPE UINT2
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`C')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE U4
+#define TYPE UINT4
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`Z')dnl
-include(`LALCreateDestroyGrid.m4')dnl
+#define TYPECODE U8
+#define TYPE UINT8
+#include "Grid_source.c"
+#undef TYPECODE
+#undef TYPE

@@ -125,7 +125,6 @@ packages/slopefilters/test/SlopeDetectorFilterTest
 packages/stats/src/LALMoment.c
 packages/stats/test/LALCorrelationTest
 packages/stats/test/LALMomentTest
-packages/std/src/Grid.c
 packages/std/test/LALGSLTest
 packages/std/test/LALMallocTest
 packages/std/test/LALVersionTest
