@@ -1,4 +1,3 @@
-dnl $Id$
 /************************************ <lalVerbatim file="PrintVectorCV">
 Author: Allen, B.; generalized by J.T. Whelan
 $Id$
@@ -80,44 +79,128 @@ imaginary part of the element.
 NRCSID( PRINTVECTORC, "$Id$" );
 /* </lalVerbatim> */
 
-define(`TYPECODE',`Z')
-include(`LALPrintVector.m4')
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%i %g %g\n"
+#define ARG vector->data[i].re,vector->data[i].im
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`C')
-include(`LALPrintVector.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%i %g %g\n"
+#define ARG vector->data[i].re,vector->data[i].im
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`D')
-include(`LALPrintVector.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%i %g\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`S')
-include(`LALPrintVector.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%i %g\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`I2')
-include(`LALPrintVector.m4')
+#define TYPECODE I2
+#define TYPE INT2
+#define FMT "%i %i\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`I4')
-include(`LALPrintVector.m4')
+#define TYPECODE I4
+#define TYPE INT4
+#define FMT "%i %i\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`I8')
-include(`LALPrintVector.m4')
 /* Note that LALI8PrintVector does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
+#define TYPECODE I8
+#define TYPE INT8
+#define FMT "%i %0.0f\n"
+#define ARG (REAL8)vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`U2')
-include(`LALPrintVector.m4')
+#define TYPECODE U2
+#define TYPE UINT2
+#define FMT "%i %i\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`U4')
-include(`LALPrintVector.m4')
+#define TYPECODE U4
+#define TYPE UINT4
+#define FMT "%i %i\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`U8')
-include(`LALPrintVector.m4')
 /* Note that LALU8PrintVector does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
+#define TYPECODE U8
+#define TYPE UINT8
+#define FMT "%i %0.0f\n"
+#define ARG (REAL8)vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`CHAR')
-include(`LALPrintVector.m4')
+#define TYPECODE CHAR
+#define TYPE CHAR
+#define FMT "%i %c\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
 
-define(`TYPECODE',`')
-include(`LALPrintVector.m4')
+#define TYPECODE
+#define TYPE REAL4
+#define FMT "%i %f\n"
+#define ARG vector->data[i]
+#include "PrintVector_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG

@@ -30,10 +30,12 @@ liblalsupport_la_SOURCES = \
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
 liblalsupport_la_LDFLAGS = -version-info $(LIBVERSION_SUPPORT)
 
+noinst_HEADERS = \
+	PrintVector_source.c
+
 MAINTAINERCLEANFILES = \
 	PrintFrequencySeries.c \
 	PrintTimeSeries.c \
-	PrintVector.c \
 	ReadFrequencySeries.c \
 	ReadTimeSeries.c \
 	StreamGridInput.c \
@@ -47,7 +49,6 @@ MAINTAINERCLEANFILES = \
 EXTRA_DIST = \
 	LALPrintFrequencySeries.m4 \
 	LALPrintTimeSeries.m4 \
-	LALPrintVector.m4 \
 	LALReadComplexSequence.m4 \
 	LALReadFrequencySeries.m4 \
 	LALReadGrid.m4 \
@@ -60,7 +61,6 @@ EXTRA_DIST = \
 	LALWriteSeries.m4 \
 	PrintFrequencySeries.m4 \
 	PrintTimeSeries.m4 \
-	PrintVector.m4 \
 	ReadFrequencySeries.m4 \
 	ReadTimeSeries.m4 \
 	StreamGridInput.m4 \
@@ -72,9 +72,6 @@ EXTRA_DIST = \
 	StreamVectorSequenceInput.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-PrintVector.c: PrintVector.m4 LALPrintVector.m4
-	cd $(srcdir) && @M4@ PrintVector.m4 > PrintVector.c
 
 PrintTimeSeries.c: PrintTimeSeries.m4 LALPrintTimeSeries.m4
 	cd $(srcdir) && @M4@ PrintTimeSeries.m4 > PrintTimeSeries.c
