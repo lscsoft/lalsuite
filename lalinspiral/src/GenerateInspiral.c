@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer, Riccardo Sturani
+*  Copyright (C) 2007 Stas Babak, Drew Keppel, Duncan Brown, Eirini Messaritaki, Gareth Jones, Thomas Cokelaer
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -514,10 +514,10 @@ LALGenerateInspiralPopulateInspiral(
 
   /* inclination of the binary */
   /* inclination cannot be equal to zero for SpinTaylor injections */
-  /*if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
+  if ( inspiralParams->approximant == SpinTaylor && thisEvent->inclination == 0 )
   {
     ABORT( status, GENERATEINSPIRALH_EZERO, GENERATEINSPIRALH_MSGEZERO );
-    }*/
+  }
   inspiralParams->inclination =  thisEvent->inclination;
 
   inspiralParams->ieta	    =  1;
