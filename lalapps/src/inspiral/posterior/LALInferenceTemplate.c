@@ -44,7 +44,7 @@ RCSID("$Id$");
 #define CVS_NAME_STRING "$Name$"
 
 extern int newswitch; //temporay global variable to use the new LALSTPN
-
+static void destroyCoherentGW( CoherentGW *waveform );
 
 void LALTemplateGeneratePPN(LALIFOData *IFOdata){
 
@@ -1300,7 +1300,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 			SimRingdownTable          thisRingdownEvent;
 			memset( &thisRingdownEvent, 0, sizeof(SimRingdownTable) );
 			int injectSignalType = LALRINGDOWN_IMR_INJECT;
-			CoherentGW *wfm;
+			CoherentGW *wfm = NULL;
 			wfm = XLALGenerateInspRing( &waveform, &injParams, &thisRingdownEvent, injectSignalType );
 		
 			if ( !wfm )
@@ -1310,9 +1310,22 @@ void templateLALSTPN(LALIFOData *IFOdata)
 				{
 					fprintf( stderr, "Too much merger\n");     
 					xlalErrno = XLAL_SUCCESS;
+					for (i=0; i<IFOdata->timeData->data->length; i++){
+						
+						IFOdata->timeModelhPlus->data->data[i] = 0.0;
+						IFOdata->timeModelhPlus->data->data[i] = 0.0;
+					}
+					
 					return;
 				}
-				else return;
+				else {
+					for (i=0; i<IFOdata->timeData->data->length; i++){
+						
+						IFOdata->timeModelhPlus->data->data[i] = 0.0;
+						IFOdata->timeModelhPlus->data->data[i] = 0.0;
+					}
+					return;
+				}
 			}
 		
 		waveform = *wfm;
@@ -1377,19 +1390,55 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	}
 	
 	IFOdata->modelDomain = timeDomain;
+
+
+	destroyCoherentGW( &waveform );
 	
-	LALSDestroyVectorSequence(&status, &( waveform.a->data ));
-	LALSDestroyVector(&status, &( waveform.f->data ));
-	LALDDestroyVector(&status, &( waveform.phi->data ));
-	LALSDestroyVector(&status, &( waveform.shift->data ));
 	
-	LALFree( waveform.a );
-	LALFree( waveform.f ); 
-	LALFree( waveform.phi) ;
-	LALFree( waveform.shift );
+	//LALSDestroyVectorSequence(&status, &( waveform.a->data ));
+	//LALSDestroyVector(&status, &( waveform.f->data ));
+	//LALDDestroyVector(&status, &( waveform.phi->data ));
+	//LALSDestroyVector(&status, &( waveform.shift->data ));
+	
+	//LALFree( waveform.a );
+	//LALFree( waveform.f ); 
+	//LALFree( waveform.phi) ;
+	//LALFree( waveform.shift );
 	
 	LALCheckMemoryLeaks();
 
+	return;
+}
+
+
+static void destroyCoherentGW( CoherentGW *waveform )
+{
+	if ( waveform->h )
+	{
+		XLALDestroyREAL4VectorSequence( waveform->h->data );
+		LALFree( waveform->a );
+	}
+	if ( waveform->a )
+	{
+		XLALDestroyREAL4VectorSequence( waveform->a->data );
+		LALFree( waveform->a );
+	}
+	if ( waveform->phi )
+	{
+		XLALDestroyREAL8Vector( waveform->phi->data );
+		LALFree( waveform->phi );
+	}
+	if ( waveform->f )
+	{
+		XLALDestroyREAL4Vector( waveform->f->data );
+		LALFree( waveform->f );
+	}
+	if ( waveform->shift )
+	{
+		XLALDestroyREAL4Vector( waveform->shift->data );
+		LALFree( waveform->shift );
+	}
+	
 	return;
 }
 

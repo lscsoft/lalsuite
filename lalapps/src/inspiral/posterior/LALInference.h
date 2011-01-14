@@ -289,6 +289,7 @@ void templateDampedSinusoid(LALIFOData *IFOdata);
 void templateSinc(LALIFOData *IFOdata);
 void templateLALSTPN(LALIFOData *IFOdata);
 void templateASinOmegaT(LALIFOData *IFOdata);
+static void destroyCoherentGW( CoherentGW *waveform );
 
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
