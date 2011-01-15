@@ -1,7 +1,6 @@
 /*
-*  Copyright (C) 2010 Riccardo Sturani, based on LALEOBWaveform.c by
-*  Stas Babak, David Churches, Duncan Brown, David Chin, Jolien Creighton,
-*  B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer, Evan Ochsner
+*  Copyright (C) 2010 Riccardo Sturani, based on LALEOBWaveform.c and 
+*  LALSTPNWaveform
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -26,11 +25,11 @@
 /****  <lalLaTeX>
  *
  * \subsection{Module \texttt{LALPSpinInspiralRD.c},
- * \texttt{LALPSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}} 
+ * \texttt{LALPSpinInspiralTemplates} and \texttt{LALPSpinInspiralForInjection}}
  * \label{ss:LALPSpinInspiralRD.c}
  *
- * Module to generate generic spinning binaries waveforms complete with ring-down 
- * 
+ * Module to generate generic spinning binaries waveforms complete with ring-down
+ *
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
  * \input{LALPSpinInspiralRDCP}
@@ -57,18 +56,18 @@
  *
  * \subsubsection*{Description}
  * This codes provide complete waveforms for generically spinning binary systems.
- * In order to construct the waveforms three phases are joined together: 
+ * In order to construct the waveforms three phases are joined together:
  * an initial inspiral phase, a phenomenological phase encompassing the description
  * of the merger and the ring-down of the final black hole.
  * During the inspiral phase the system is evolved according to the standard
- * PN formulas, valid up to 3.5PN for the orbital motion, 
+ * PN formulas, valid up to 3.5PN for the orbital motion,
  * to 2.5PN level for spin-orbital momentum and to 2PN for spin-spin contributions
  * to the orbital phase.
- * Then a phenomenological phase is added during which the frequency of the 
- * waveform has a pole-like behaviour. The stitching is performed in order to 
- * ensure continuity of the phase, the frequency and its first and second 
+ * Then a phenomenological phase is added during which the frequency of the
+ * waveform has a pole-like behaviour. The stitching is performed in order to
+ * ensure continuity of the phase, the frequency and its first and second
  * derivatives. Finally a ring-down phase is attached.
- * 
+ *
  * \subsubsection*{Algorithm}
  *
  * \subsubsection*{Uses}
@@ -80,14 +79,14 @@
  * \end{verbatim}
  *
  * \subsubsection*{Notes}
- * 
+ *
  * \vfill{\footnotesize\input{LALPSpinInspiralRDCV}}
- * 
+ *
  **** </lalLaTeX>  */
 
 /** \defgroup psird Complete phenomenological spin-inspiral waveforms
- * 
- * This code provides complete waveforms for generically spinning binary 
+ *
+ * This code provides complete waveforms for generically spinning binary
  * systems.
  *
  */
@@ -137,7 +136,7 @@ typedef struct LALPSpinInspiralRDstructparams {
 
 } LALPSpinInspiralRDparams;
 
-/* 
+/*
  *
  * function to set derivatives: values and mparams input, dvalues output
  *
@@ -145,9 +144,9 @@ typedef struct LALPSpinInspiralRDstructparams {
 
 /**
  * \ingroup psird
- * \brief Module to compute detivative of dynamical variables 
+ * \brief Module to compute detivative of dynamical variables
  */
-  
+
 void LALPSpinInspiralRDderivatives(REAL8Vector * values,
 				   REAL8Vector * dvalues, void *mparams)
 {
@@ -158,7 +157,7 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
     REAL8 LNhx, LNhy, LNhz;	// orbital angolar momentum unit vector
     REAL8 S1x, S1y, S1z;	// dimension-less spin variable S/M^2
     REAL8 S2x, S2y, S2z;
-    REAL8 alphadotcosi;		// alpha is the right ascension of L, i(iota) the angle between L and J 
+    REAL8 alphadotcosi;		// alpha is the right ascension of L, i(iota) the angle between L and J
     REAL8 LNhS1, LNhS2;		// scalar products
     REAL8 domega;		// derivative of omega
     REAL8 dLNhx, dLNhy, dLNhz;	// derivatives of \f$\hat L_N\f$ components
@@ -243,10 +242,10 @@ void LALPSpinInspiralRDderivatives(REAL8Vector * values,
     energy += v4 * (params->epnspin20S1S1 * S1S1 + params->epnspin20S2S2 * S2S2 + params->epnspin20S1S1dotLNh * LNhS1 * LNhS1 + params->epnspin20S2S2 * LNhS2 * LNhS2);	// see Racine et al. as above
 
     // wdotspin25SiLNh = see below
-    domega += v5 * (params->wdotspin25S1LNh * LNhS1 + params->wdotspin25S2LNh * LNhS2);	//see (8.3) of Blanchet et al.  
+    domega += v5 * (params->wdotspin25S1LNh * LNhS1 + params->wdotspin25S2LNh * LNhS2);	//see (8.3) of Blanchet et al.
     energy += v5 * (params->epnspin25S1dotLNh * LNhS1 + params->epnspin25S2dotLNh * LNhS2);	//see (7.9) of Blanchet et al.
 
-    // Setting the right pre-factor 
+    // Setting the right pre-factor
     omega2 = omega * omega;
     domega *= 96. / 5. * params->eta * v5 * omega2;
 
@@ -417,7 +416,7 @@ NRCSID(LALPSPININSPIRALRDTEMPLATESC, "$Id$");
 
 /**
  * \ingroup psird
- * \brief Module to produce waveform templates 
+ * \brief Module to produce waveform templates
  */
 
 void LALPSpinInspiralRDTemplates(LALStatus * status,
@@ -474,7 +473,7 @@ NRCSID(LALPSPININSPIRALRDINJECTIONC, "$Id$");
 
 /**
  * \ingroup psird
- * \brief Module to produce injection waveforms  
+ * \brief Module to produce injection waveforms
  */
 
 void LALPSpinInspiralRDForInjection(LALStatus * status,
@@ -760,7 +759,7 @@ NRCSID(LALPSPININSPIRALRDENGINEC, "$Id$");
 
 /**
  * \ingroup psird
- * \brief Module actually computing PSIRD waveforms  
+ * \brief Module actually computing PSIRD waveforms
  */
 
 void LALPSpinInspiralRDEngine(LALStatus * status,
@@ -1070,8 +1069,8 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
 	break;
     }
 
-    /*All the PN formulas used in this code assume that the spin variables 
-       are the physical ones divided by totalmasss^2, here we introduce the 
+    /*All the PN formulas used in this code assume that the spin variables
+       are the physical ones divided by totalmasss^2, here we introduce the
        correct normalization, changing the input one. */
     for (j = 0; j < 3; j++) {
 	initS1[j] /= params->totalMass * params->totalMass;
@@ -1519,7 +1518,7 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
 
 		// amp22= -2.0 * params->mu * LAL_MRSUN_SI/(params->distance) * sqrt( 16.*LAL_PI/5.)*v2;
 		// amp20 = amp22*sqrt(3/2)
-		// Y22 \pm Y2-2= sqrt(5/PI)    ((1+cos^2 t)/4, (cos t)/2) 
+		// Y22 \pm Y2-2= sqrt(5/PI)    ((1+cos^2 t)/4, (cos t)/2)
 		// Y21 \pm Y2-1= sqrt(5/PI)    ((sin t)/2, (sin 2t)/4)
 		// Y20         = sqrt(15/2 PI) (sin^2 t)/4
 

@@ -1,6 +1,5 @@
 /*
 *  Copyright (C) 2010 R. Sturani, adapted from LALInspiralRingdownWave.c
-*  by Yi Pan, B.S. Sathyaprakash
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -49,7 +48,7 @@
  * \item \texttt{wave,} Input, waveform to be differentiated in time
  * \item \texttt{params,} Input, the parameters of the input waveform.
  * \end{itemize}
- * 
+ *
  * \input{XLALPSpinGenerateQNMFreqCP}
  * \idx{XLALPSpinGenerateQNMFreq()}
  * \begin{itemize}
@@ -71,15 +70,15 @@
 
  * \subsubsection*{Description}
  * This module generate ring-down waveforms.
- * 
+ *
  * \subsubsection*{Algorithm}
- * 
+ *
  * \subsubsection*{Uses}
  * \begin{verbatim}
  * LALMalloc
  * LALFree
  * \end{verbatim}
- * 
+ *
  * \subsubsection*{Notes}
  *
  * \vfill{\footnotesize\input{LALPSpinInspiralRingdownWaveCV}}
@@ -150,14 +149,13 @@ INT4 XLALPSpinInspiralRingdownWave (
       if (hderivs) gsl_vector_free(hderivs);
       if (x)       gsl_vector_free(x);
       if (p)       gsl_permutation_free(p);
-      
       XLAL_ERROR( func, XLAL_ENOMEM );
     }
-  
+
   /* Define the linear system Ax=y */
   /* Matrix A (2*nmodes by 2*nmodes) has block symmetry. Define half of A here as "coef" */
   /* Define y here as "hderivs" */
-  
+
   j=0;
   while (j<nmodes) {
     if (j==0) {
@@ -165,7 +163,7 @@ INT4 XLALPSpinInspiralRingdownWave (
 	gsl_matrix_set(coef, j, i, 1.);
 	gsl_matrix_set(coef, j, i+nmodes, 0.);
 	gsl_matrix_set(coef, j+1, i, -modefreqs->data[i].im);
-	gsl_matrix_set(coef, j+1, i+nmodes, modefreqs->data[i].re);	
+	gsl_matrix_set(coef, j+1, i+nmodes, modefreqs->data[i].re);
       }
     }
     else {
@@ -239,12 +237,8 @@ INT4 XLALPSpinInspiralRingdownWave (
 
 	}
 
-      //if (j==0) fprintf(stdout,"** LALPSIRDW: rdw[%d]=%11.3e 1/tau=%11.3e  f=%11.3e\n",j,rdwave->data[j], modefreqs->data[0].im, modefreqs->data[0].re);
-
-      //      if (j==0) fprintf(stdout,"** LALPSIRDW: somma %1.3e  %11.3e\n",rdwave->data[0],rdwave->data[1]);
-
     }
-  
+
   XLALDestroyREAL8Vector(modeamps);
   return errcode;
 } /*End of XLALPSpinInspiralRingdownWave */
@@ -277,7 +271,7 @@ INT4 XLALPSpinGenerateWaveDerivative (
 
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initialize arrays and supporting variables for gsl */
-  
+
   x = (double *) LALMalloc(wave->length * sizeof(double));
   y = (double *) LALMalloc(wave->length * sizeof(double));
 
@@ -330,8 +324,6 @@ INT4 XLALPSpinGenerateWaveDerivative (
     }
     dwave->data[j]  = (REAL4)(dy / dt);
 
-    //    fprintf(stderr," w[%d]=%11.3e  w'[%d]=%11.3e\n",j,wave->data[j],j,dwave->data[j]);
-
   }
 
 
@@ -359,7 +351,7 @@ INT4 XLALPSpinGenerateQNMFreq(
 {
 
   static const char *func = "XLALPSpinGenerateQNMFreq";
-  
+
   /* XLAL error handling */
   INT4 errcode = XLAL_SUCCESS;
   UINT4 i;
@@ -376,7 +368,7 @@ INT4 XLALPSpinGenerateQNMFreq(
 
   REAL4 BCW2m1re[3][3] = { {0.3441, 0.0293, 2.0010}, {0.3165, 0.0301, 2.3415}, {0.2696, 0.0315, 2.7755} };
   REAL4 BCW2m1im[3][3] = { {2.0000, 0.1078, 5.0069}, {0.6100, 0.0276, 13.1683}, {0.2900, 0.0276, 6.4715} };
-  
+
   REAL4 BCW20re[3][3]  = { {0.4437, -0.0739,  0.3350}, {0.4185, -0.0768,  0.4355}, { 0.3734, -0.0794,  0.6306} };
   REAL4 BCW20im[3][3]  = { {4.0000,  -1.9550, 0.1420}, {1.2500,  -0.6359, 0.1614}, {0.5600,  -0.2589, -0.3034} };
 
@@ -386,7 +378,7 @@ INT4 XLALPSpinGenerateQNMFreq(
   REAL4 BCW3m3re[3][3] = { {0.4673, 0.1296, 1.3255}, {0.4413, 0.1387, 1.3178}, {0.3933, 0.1555, 1.3037} };
   REAL4 BCW3m3im[3][3] = { {2.5500, 0.6576, 1.3378}, {0.7900, 0.2381, 1.3706}, {0.4070, 0.1637, 1.3819} };
 
-  /*  
+  /*
   REAL4 BCW32re[3][3]  = { {1.1481, -0.5552, 0.3002}, {1.1226, -0.5471, 0.3264}, {1.0989, -0.5550, 0.3569} };
   REAL4 BCW32im[3][3]  = { {0.8313, 2.3773, -0.3655}, {0.2300, 0.8025, -0.3684}, {0.1000, 0.4804, -0.3784}};
 
@@ -410,10 +402,10 @@ INT4 XLALPSpinGenerateQNMFreq(
 	modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
 	modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
       }
-  } 
+  }
   else {
     if ((l==2)&&(m==-2)) {
-      for (i = 0; i < nmodes; i++) 
+      for (i = 0; i < nmodes; i++)
 	{
 	  modefreqs->data[i].re = BCW2m2re[i][0] + BCW2m2re[i][1] * pow(1.- finalSpin, BCW2m2re[i][2]);
 	  modefreqs->data[i].im = modefreqs->data[i].re / 2.
@@ -424,7 +416,7 @@ INT4 XLALPSpinGenerateQNMFreq(
     }
     else {
       if ((l==2)&&(m==0)) {
-	for (i = 0; i < nmodes; i++) 
+	for (i = 0; i < nmodes; i++)
 	  {
 	    modefreqs->data[i].re = BCW20re[i][0] + BCW20re[i][1] * pow(1.- finalSpin, BCW20re[i][2]);
 	    modefreqs->data[i].im = modefreqs->data[i].re / 2.
@@ -435,7 +427,7 @@ INT4 XLALPSpinGenerateQNMFreq(
       }
       else {
 	if ((l==2)&&(m==1)) {
-	  for (i = 0; i < nmodes; i++) { 
+	  for (i = 0; i < nmodes; i++) {
 	    modefreqs->data[i].re = BCW21re[i][0] + BCW21re[i][1] * pow(1.- finalSpin, BCW21re[i][2]);
 	    modefreqs->data[i].im = modefreqs->data[i].re / 2.
 	      / (BCW21im[i][0] + BCW21im[i][1] * pow(1.- finalSpin, BCW21im[i][2]));
@@ -445,7 +437,7 @@ INT4 XLALPSpinGenerateQNMFreq(
 	}
 	else {
 	  if ((l==2)&&(m==-1)) {
-	    for (i = 0; i < nmodes; i++) { 
+	    for (i = 0; i < nmodes; i++) {
 	      modefreqs->data[i].re = BCW2m1re[i][0] + BCW2m1re[i][1] * pow(1.- finalSpin, BCW2m1re[i][2]);
 	      modefreqs->data[i].im = modefreqs->data[i].re / 2.
 		/ (BCW2m1im[i][0] + BCW2m1im[i][1] * pow(1.- finalSpin, BCW2m1im[i][2]));
@@ -453,9 +445,9 @@ INT4 XLALPSpinGenerateQNMFreq(
 	      modefreqs->data[i].im /= finalMass * totalMass * LAL_MTSUN_SI;
 	    }
 	  }
-	  else { 
+	  else {
 	    if ((l==3)&&(m==3)) {
-	      for (i = 0; i < nmodes; i++) { 
+	      for (i = 0; i < nmodes; i++) {
 		modefreqs->data[i].re = BCW33re[i][0] + BCW33re[i][1] * pow(1.- finalSpin, BCW33re[i][2]);
 		modefreqs->data[i].im = modefreqs->data[i].re / 2.
 		  / (BCW33im[i][0] + BCW33im[i][1] * pow(1.- finalSpin, BCW33im[i][2]));
@@ -465,7 +457,7 @@ INT4 XLALPSpinGenerateQNMFreq(
 	    }
 	    else {
 	      if ((l==3)&&(m==-3)) {
-		for (i = 0; i < nmodes; i++) { 
+		for (i = 0; i < nmodes; i++) {
 		  modefreqs->data[i].re = BCW3m3re[i][0] + BCW3m3re[i][1] * pow(1.- finalSpin, BCW3m3re[i][2]);
 		  modefreqs->data[i].im = modefreqs->data[i].re / 2.
 		    / (BCW3m3im[i][0] + BCW3m3im[i][1] * pow(1.- finalSpin, BCW3m3im[i][2]));
@@ -483,7 +475,7 @@ INT4 XLALPSpinGenerateQNMFreq(
       }
     }
   }
-  
+
   return errcode;
 }
 
@@ -526,12 +518,8 @@ INT4 XLALPSpinFinalMassSpin(
   ma1=sqrt( params->spin1[0]*params->spin1[0] + params->spin1[1]*params->spin1[1] + params->spin1[2]*params->spin1[2] );
   ma2=sqrt( params->spin2[0]*params->spin2[0] + params->spin2[1]*params->spin2[1] + params->spin2[2]*params->spin2[2] );
 
-  /*  fprintf(stdout,"  l=(%11.6f %11.6f  %11.6f)\n",LNhvec[0],LNhvec[1],LNhvec[2]);
-  fprintf(stdout,"  s1=(%11.6f %11.6f  %11.6f)\n",params->spin1[0],params->spin1[1],params->spin1[2]);
-  fprintf(stdout,"  s2=(%11.6f %11.6f  %11.6f)\n",params->spin1[0],params->spin1[1],params->spin2[2]);*/
-
   if (ma1>0.) cosa1 = (params->spin1[0]*LNhvec[0]+params->spin1[1]*LNhvec[1]+params->spin1[2]*LNhvec[2])/ma1;
-  else cosa1=0.;  
+  else cosa1=0.;
   if (ma2>0.) cosa2 = (params->spin2[0]*LNhvec[0]+params->spin2[1]*LNhvec[1]+params->spin2[2]*LNhvec[2])/ma2;
   else cosa2=0.;
   if ((ma1>0.)&&(ma2>0.)) {
@@ -581,7 +569,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
       UINT4              *attpos,
       UINT4              nmodes,
       UINT4              l,
-      INT4               m, 
+      INT4               m,
       REAL8              finalMass,
       REAL8              finalSpin
     )
@@ -617,21 +605,17 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
         XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFUNC );
       }
-      
+
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (10. / modefreqs->data[0].im / dt);
       /* Patch length, centered around the matching point "attpos" */
 
-      //fprintf(stdout,"RD atpos=%d attpos=%d  Nrdwave=%d  f=I%11.3e +%11.3e\n",atpos,*attpos,Nrdwave,modefreqs->data[0].im,modefreqs->data[0].re);
       (*attpos)+=Nrdwave;
       Npatch = 6;
-
-      //      fprintf(stdout,"Value of attpos inconsistent with given value of Npatch: atpos=%d  Npatch=%d, sign->length=%d, m1=%11.5f  m2=%11.5f  s1z=%8.3f  s2z=%8.3f fL=%11.3e\n",atpos,Npatch,sigl->length,params->mass1,params->mass2,params->spin1[2],params->spin2[2],params->fLower);
 
       /* Check the value of attpos, to prevent memory access problems later */
       if ( atpos < Npatch || atpos + Npatch >= sigl->length )
       {
-
         XLALPrintError( "Value of attpos inconsistent with given value of Npatch: atpos=%d  Npatch=%d, sign->length=%d, m1=%11.5f  m2=%11.5f  s1z=%8.3f  s2z=%8.3f  fL=%11.3e\n",atpos,Npatch,sigl->length,params->mass1,params->mass2,params->spin1[2],params->spin2[2],params->fLower);
         XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFAILED );
@@ -639,12 +623,10 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 
       /* Create memory for the ring-down and full waveforms, and eventual derivatives of inspirals */
 
-      //fprintf(stdout,"RD atpos=%d attpos=%d  Nrdwave=%d\n",atpos,*attpos,Nrdwave);
       rdwave = XLALCreateREAL4Vector( Nrdwave );
       inspwave = XLALCreateREAL4Vector( Npatch );
       dinspwave = XLALCreateREAL4Vector( Npatch );
       matchinspwave = XLALCreateREAL4Vector( 2*nmodes );
-      //fprintf(stdout,"RD atpos=%d attpos=%d  Nrdwave=%d\n",atpos,*attpos,Nrdwave);
 
       /* Check memory was allocated */
       if ( !rdwave || !inspwave || !dinspwave || !matchinspwave )
@@ -656,7 +638,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
         if (matchinspwave) XLALDestroyREAL4Vector( matchinspwave );
         XLAL_ERROR( func, XLAL_ENOMEM );
       }
-      
+
       /* Generate derivatives of the last part of inspiral waves */
       /* Take the last part of signal1 */
 
@@ -664,7 +646,6 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 
 	for (j = 0; j < Npatch; j++) {
 	  inspwave->data[j]    = sigl->data[2*(atpos - Npatch + j)+i];	
-	  //	  if (j==Npatch-1) printf("l=%d  m=%d  %11.3e  %d %d * ",l,m,inspwave->data[j],2*(atpos-Npatch+j)+i,i);
 	}
 
 	for (k=0;k<2*nmodes;k++) {
@@ -712,4 +693,3 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
 
       return errcode;
 }
-
