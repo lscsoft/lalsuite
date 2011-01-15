@@ -914,11 +914,13 @@ LALInspiralChooseModel(
      break;
  case BCV:
  case BCVSpin:
+   ak->tn = 100.;
+   break;
  case IMRPhenomA:
  case IMRPhenomB:
  case IMRPhenomFA:
  case IMRPhenomFB:
-   ak->tn = 100.;
+   ak->tn = 5.*ak->totalmass/(256.*ak->eta*pow(ak->v0,8.)) + 1000.*ak->totalmass;
    break;
  case Eccentricity:
    /* The eccentric waveforms contain harmonic, so similarly to amplitude corrected waveforms
