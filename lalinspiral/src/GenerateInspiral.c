@@ -48,8 +48,9 @@ $Id$
 
 \begin{description}
 \item[\texttt{LALGenerateInspiral()}] create an inspiral binary
-waveform generated either by the \texttt{inspiral} package (EOB, EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD) or the
-\texttt{inject} package	(GeneratePPN).	It is used in the module
+waveform generated either by the \texttt{inspiral} package (EOB,
+EOBNR, PadeT1, TaylorT1, TaylorT2, TaylorT3, SpinTaylor, PhenSpinTaylorRD) 
+or the \texttt{inject} package (GeneratePPN).  It is used in the module
 \texttt{FindChirpSimulation} in \texttt{findchirp} package.
 
 There are three  parsed arguments
