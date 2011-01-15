@@ -2675,6 +2675,8 @@ int main( int argc, char *argv[] )
         /* If doing bank veto compute CC Matrix */
         if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
+	  
+          if (vrbflg) fprintf(stderr, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData, 
 			     fcDataParams->ampVec,
 			     subBankCurrent->subBankSize, 
@@ -3353,6 +3355,7 @@ int main( int argc, char *argv[] )
       snprintf( runpath, FILENAME_MAX, "%s/%s.xml",
                 runpathTmp, fileName );
     }
+    printf("%s\n", runpath);
     remove(runpath);
     unlink(runpath);
     if ( outputPath[0] && username[0] ) {
