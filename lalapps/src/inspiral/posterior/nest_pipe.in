@@ -45,7 +45,8 @@ parser.add_option("-r","--run-path",default="./",action="store",type="string",he
 parser.add_option("-l","--log-path",default=None,action="store",type="string",help="Directory to store log files, defaults to RUNDIR/log/",metavar="LOGDIR")
 parser.add_option("-s","--gps-start-time",action="store",type="string",default=None,help="Start time of analysis")
 parser.add_option("-e","--gps-end-time",action="store",type="string",default=None,help="End time of analysis")
-parser.add_option("-I","--inj",action="store",type="string",default=None,help="List of hardware injections to analyse",metavar="INJFILE.xml")
+parser.add_option("-I","--inj",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
+parser.add_option("-F","--disable-inject",action="store_true",default=False,help="Don't actually inject the signals - useful for hardware injection lists")
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-T","--coinc-triggers",action="store",type="string",default=None,help="CoincInspiralTable trigger list",metavar="COINC_FILE.xml")
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
@@ -349,7 +350,7 @@ inspnest_job=OddsPipeline.InspNestJob(cp,inspnest_subfile,opts.log_path)
 inspnest_job.add_opt('Nlive',cp.get('analysis','nlive'))
 inspnest_job.add_opt('Nmcmc',cp.get('analysis','nmcmc'))
 
-if opts.inj:
+if opts.inj and not opts.disable_inject:
     inspnest_job.add_opt('inj',opts.inj)
 
 nest_path=os.path.join(opts.run_path,'nest')
@@ -378,7 +379,7 @@ for time in times:
 # Set up inspnest jobs, using parallel if needed
 if nparallel==1:
     for time in times:
-        if time_event is not None:
+        if time_event is not None and not opts.disable_inject:
                 thisevent=time_event[time]
         else:
                 thisevent=None
@@ -391,7 +392,7 @@ else:
     merge_sub_file=os.path.join(opts.run_path,'merge.sub')
     merge_job=OddsPipeline.MergeJob(cp,merge_sub_file,opts.log_path)
     for time in times:
-        if time_event is not None:
+        if time_event is not None and not opts.disable_inject:
                 thisevent=time_event[time]
         else:
                 thisevent=None
@@ -439,7 +440,7 @@ if opts.coherence_test:
             coherence_test_bfiles[time][ifo]=os.path.join(combine_dir,'bayesfactor_%.3f_%s.txt'%(time,ifo))
             combine_node.add_file_opt('bayesfactor',coherence_test_bfiles[time][ifo],file_is_output_file=True),
             combine_node.add_file_opt('outpos',coherence_test_posfiles[time][ifo],file_is_output_file=True)
-            if time_event is not None:
+            if time_event is not None and not opts.disable_inject:
                 thisevent=time_event[time]
             else:
                 thisevent=None
