@@ -174,8 +174,9 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       write_REAL4FrequencySeries( invspec );
 
     /* invert spectrum */
+    /* FIXME: What lower frequency should go here? */
     invert_spectrum( invspec, params->sampleRate, params->strideDuration,
-        params->truncateDuration, params->lowCutoffFrequency, fwdplan,
+        params->truncateDuration, params->lowTemplateFrequency, fwdplan,
         revplan );
 
     if ( params->writeInvSpectrum ) /* write inverse calibrated spectrum */

@@ -394,8 +394,8 @@ int main( int argc, char **argv )
           /* This function calculates the overlaps between templates */
           /* This returns a REAL4 as the overlap between identical templates*/
           /* must be real. */
-          coh_PTF_template_overlaps(&(bankFcTmplts[ui]),&(bankFcTmplts[ui]),
-              invspec[ifoNumber],0,
+          coh_PTF_template_overlaps(params,&(bankFcTmplts[ui]),
+              &(bankFcTmplts[ui]),invspec[ifoNumber],0,
               bankNormOverlaps[ui].PTFM[ifoNumber]);
         }
       }
@@ -451,7 +451,7 @@ int main( int argc, char **argv )
                 3*numPoints/4 - numPoints/4 + 10000);
             bankOverlaps[ui].PTFM[ifoNumber]=XLALCreateCOMPLEX8ArrayL(2,1,1);
             /* This function calculates the overlap */
-            coh_PTF_bank_filters(&(bankFcTmplts[ui]),0,
+            coh_PTF_bank_filters(params,&(bankFcTmplts[ui]),0,
                 &segments[ifoNumber]->sgmnt[j],invPlan,PTFqVec[ifoNumber],
                 dataOverlaps[ui].PTFqVec[ifoNumber],0,0);
           }
@@ -476,10 +476,9 @@ int main( int argc, char **argv )
       PTFtemplate->approximant = FindChirpPTF;
       PTFtemplate->order = LAL_PNORDER_TWO;
    
-     /* FIXME: fLower should not be hardcoded */
      /* This value is used for template generation */
 
-      PTFtemplate->fLower = 38.;
+      PTFtemplate->fLower = params->lowTemplateFrequency;
 
       /* Generate the template */
       /* PTF generator called here. For non spin Q1-5 is generated and stored
@@ -565,8 +564,8 @@ int main( int argc, char **argv )
                   5 * numPoints * sizeof(COMPLEX8) );
 
           /* Here (h|s) and (h|h) are calculated */
-          coh_PTF_normalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],NULL,
-              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
+          coh_PTF_normalize(params,fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+              NULL,PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[j],invPlan,
               spinTemplate);
 
           // In this subroutine the overlap between template h and the 
@@ -576,16 +575,16 @@ int main( int argc, char **argv )
           for ( ui = 0 ; ui < subBankSize ; ui++ )
           {
             memset(bankOverlaps[ui].PTFM[ifoNumber]->data,0,1*sizeof(COMPLEX8));
-            coh_PTF_complex_template_overlaps(&(bankFcTmplts[ui]),fcTmplt,
-                invspec[ifoNumber],0,
-                bankOverlaps[ui].PTFM[ifoNumber]);
+            coh_PTF_complex_template_overlaps(params,&(bankFcTmplts[ui]),
+                fcTmplt,invspec[ifoNumber],0,bankOverlaps[ui].PTFM[ifoNumber]);
           }
           }
           // And if necessary the overlap between h(deltaT) and h
           if ( params->doAutoVeto )
           {
-            coh_PTF_auto_veto_overlaps(fcTmplt,autoTempOverlaps,invspec[ifoNumber],
-                invPlan,0,params->numAutoPoints,timeStepPoints,ifoNumber);
+            coh_PTF_auto_veto_overlaps(params,fcTmplt,autoTempOverlaps,
+                invspec[ifoNumber],invPlan,0,params->numAutoPoints,
+                timeStepPoints,ifoNumber);
           }
 
           verbose("Made filters for ifo %d,segment %d, template %d at %ld \n", 
@@ -598,9 +597,9 @@ int main( int argc, char **argv )
         memset( PTFM[LAL_NUM_IFO]->data, 0, 25 * sizeof(REAL8) );
         memset( PTFqVec[LAL_NUM_IFO]->data, 0,
                 5 * numPoints * sizeof(COMPLEX8) );
-        coh_PTF_normalize(fcTmplt,invspec[LAL_NUM_IFO],PTFM[LAL_NUM_IFO],NULL,
-              PTFqVec[LAL_NUM_IFO],&segments[LAL_NUM_IFO]->sgmnt[j],invPlan,
-              spinTemplate);
+        coh_PTF_normalize(params,fcTmplt,invspec[LAL_NUM_IFO],PTFM[LAL_NUM_IFO],
+              NULL,PTFqVec[LAL_NUM_IFO],&segments[LAL_NUM_IFO]->sgmnt[j],
+              invPlan,spinTemplate);
         verbose("Made filters for NULL stream,segmen %d, template %d at %ld\n",
               j,i,time(NULL)-startTime);
       }
@@ -777,16 +776,27 @@ void coh_PTF_statistic(
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
   }
-  gammaBeta[0] = XLALCreateREAL4TimeSeries("Gamma",
+  if (! spinTemplate)
+  {
+    for ( i = vecLengthTwo ; i < 2*vecLengthTwo ; i++ )
+    {
+      pValues[i] = XLALCreateREAL4TimeSeries("Pvalue",
           &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
           &lalDimensionlessUnit,cohSNR->data->length);
-  gammaBeta[1] = XLALCreateREAL4TimeSeries("Beta",
-          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-          &lalDimensionlessUnit,cohSNR->data->length);
+    }
+  }
+  if (spinTemplate)
+  {
+    /* These store a amplitude and phase information for PTF search */
+    gammaBeta[0] = XLALCreateREAL4TimeSeries("Gamma",
+            &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+            &lalDimensionlessUnit,cohSNR->data->length);
+    gammaBeta[1] = XLALCreateREAL4TimeSeries("Beta",
+            &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
+            &lalDimensionlessUnit,cohSNR->data->length);
+  }
 
   /* FIXME: All the time series should be outputtable */
-  FILE UNUSED *outfile;
-  outfile = NULL;
   REAL4 u1[vecLengthTwo],u2[vecLengthTwo],v1[vecLengthTwo],v2[vecLengthTwo];
   REAL4 *v1p,*v2p;
   REAL4 u1N[vecLength],u2N[vecLength],v1N[vecLength],v2N[vecLength];
@@ -875,21 +885,21 @@ void coh_PTF_statistic(
       v2_dot_u2 += v2p[j] * v2p[j];
     }
     // And SNR is calculated
-    // For non spin: v1_dot_u1 = ( \bf{h}_0       | \bf{s})
-    //               v2_dot_u2 = ( \bf{h}_{\pi/2} | \bf{s})
-    //               v1_dot_u2 = 0
+    // For non spin: v1p[0] * v1p[0] = ( \bf{F}_+\bf{h}_0 | \bf{s})^2
+    //               v1p[1] * v1p[1] = ( \bf{F}_x\bf{h}_0 | \bf{s})^2
+    //               v2p[0] * v2p[0] = ( \bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
+    //               v2p[1] * v2p[1] = ( \bf{F}_x\bf{h}_{\pi/2} | \bf{s})^2
     //
     // For spin this follows Diego's notation
     if (spinTemplate == 0)
     {
-      max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 );
+      max_eigen = ( v1_dot_u1 + v2_dot_u2 );
     }
     else
     {
       max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 + sqrt( (v1_dot_u1 - v2_dot_u2)
           * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
     }
-    /*fprintf(stdout,"%f %f %f %f\n",v1_dot_u1,v2_dot_u2,v1_dot_u2,v2_dot_u1);*/
     cohSNR->data->data[i-numPoints/4] = sqrt(max_eigen);
   }
 
@@ -932,6 +942,7 @@ void coh_PTF_statistic(
       {
         // The following block extracts the values of extrinsic parameters.
         // This follows the method set out in Diego's thesis to do this.
+        /* FIXME: This is probably broke for coherent case now! */
         coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,timeOffsetPoints,
         eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo);
         v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
@@ -945,84 +956,95 @@ void coh_PTF_statistic(
           v1_dot_u2 += v1[j]*u2[j];
           v2_dot_u2 += v2[j]*u2[j];
         }
-        if ( spinTemplate == 1 )
+        if (! spinTemplate)
+        {
+          /* This is a lot easier when there is no spin 
+             Note that we output values in the dominant polarization frame
+             for the case of non-spin */
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
+          {
+            pValues[j]->data->data[i - numPoints/4] = sqrt(v1[j]*u1[j]);
+            pValues[j+vecLengthTwo]->data->data[i - numPoints/4] =sqrt(v2[j]*u2[j]);
+          }
+        }
+            
+        /* For PTF it is a bit more tricksy. Here we use the methods given
+           in Diego's thesis.
+           Values are outputted in the original basis */
+        if ( spinTemplate )
         {
           dCee = (max_eigen - v1_dot_u1) / v1_dot_u2;
-        }
-        else
-          dCee = 0;
-        dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
-        dAlpha = pow(dAlpha,0.5);
-        dBeta = dCee*dAlpha;
-        // The p Values are calculated in the rotated frame
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
-        {
-          pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
-          pValues[j]->data->data[i - numPoints/4] = 0.;
-        } 
-        // This loop verifies that the SNR obtained is as before
-        recSNR = 0;
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
-        {
-          for ( k = 0 ; k < vecLengthTwo ; k++ )
+          dAlpha = 1./(v1_dot_u1 + dCee * 2 * v1_dot_u2 + dCee*dCee*v2_dot_u2);
+          dAlpha = pow(dAlpha,0.5);
+          dBeta = dCee*dAlpha;
+          // The p Values are calculated in the rotated frame
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
           {
-            recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
-          }
-        }
-        /*fprintf(stdout,"%e %e \n",max_eigen,recSNR);*/
-        // Then we calculate the two phase/amplitude terms beta and gamma
-        // These are explained in my PDF document
-        betaGammaTemp[0] = 0;
-        betaGammaTemp[1] = 0;
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
-        {
-          betaGammaTemp[0] += pValsTemp[j]*v1[j];
-          betaGammaTemp[1] += pValsTemp[j]*v2[j];
-        }
-        gammaBeta[0]->data->data[i - numPoints/4] = betaGammaTemp[0];
-        gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
-  
-        // The p Values need to be rotated back into the original frame.
-        // Currently we are recording values in rotated frame
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
-        {
-          for ( k = 0 ; k < vecLengthTwo ; k++ )
+            pValsTemp[j] = dAlpha*u1[j] + dBeta*u2[j];  
+            pValues[j]->data->data[i - numPoints/4] = 0.;
+          } 
+          // This loop can be used to verify that the SNR obtained is as before
+          recSNR = 0;
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
           {
-            pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
-          }
-        }
- 
-        // And we check that this still gives the expected SNR in the
-        // unrotated basis.
-        for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
-        {
-          v1[j] = 0.;
-          v2[j] = 0.;
-          for( k = 0; k < LAL_NUM_IFO; k++)
-          {
-            if ( params->haveTrig[k] )
+            for ( k = 0 ; k < vecLengthTwo ; k++ )
             {
-              if (j < vecLength)
+              recSNR += pValsTemp[j]*pValsTemp[k] * (v1[j]*v1[k]+v2[j]*v2[k]);
+            }
+          }
+          // Then we calculate the two phase/amplitude terms beta and gamma
+          // These are explained in Diego's thesis
+          betaGammaTemp[0] = 0;
+          betaGammaTemp[1] = 0;
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
+          {
+            betaGammaTemp[0] += pValsTemp[j]*v1[j];
+            betaGammaTemp[1] += pValsTemp[j]*v2[j];
+          }
+          gammaBeta[0]->data->data[i - numPoints/4] = betaGammaTemp[0];
+          gammaBeta[1]->data->data[i - numPoints/4] = betaGammaTemp[1];
+  
+          // The p Values need to be rotated back into the original frame.
+          // Currently we are recording values in rotated frame
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
+          {
+            for ( k = 0 ; k < vecLengthTwo ; k++ )
+            {
+              pValues[j]->data->data[i-numPoints/4]+=gsl_matrix_get(eigenvecs,j,k)*pValsTemp[k];
+            }
+          }
+ 
+          // And we check that this still gives the expected SNR in the
+          // unrotated basis.
+          for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
+          {
+            v1[j] = 0.;
+            v2[j] = 0.;
+            for( k = 0; k < LAL_NUM_IFO; k++)
+            {
+              if ( params->haveTrig[k] )
               {
-                v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
-                v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
-              }
-              else
-              {
-                v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
-                v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+                if (j < vecLength)
+                {
+                  v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+                  v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+                }
+                else
+                {
+                  v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+                  v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+                }
               }
             }
           }
-        }
-        recSNR = 0;
-        for ( j = 0 ; j < vecLengthTwo ; j++ )
-        {
-          for ( k = 0 ; k < vecLengthTwo ; k++ )
+          recSNR = 0;
+          for ( j = 0 ; j < vecLengthTwo ; j++ )
           {
-            recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
+            for ( k = 0 ; k < vecLengthTwo ; k++ )
+            {
+              recSNR += pValues[j]->data->data[i-numPoints/4]*pValues[k]->data->data[i-numPoints/4] * (v1[j]*v1[k]+v2[j]*v2[k]);
+            }          
           }
-          
         }
 
         // First sbv to be calculated is the null SNR.
@@ -1068,6 +1090,8 @@ void coh_PTF_statistic(
         }
 
         // Next up is Trace SNR and the SNR components
+        /* FIXME: Sngl detector SNRs are only correct for coherent non spin*/
+        /* FIXME: This loop should never be run in single detector mode */
         if (params->doTraceSNR)
         {
           // traceSNR is calculated as normal SNR but cross terms are not added
@@ -1111,7 +1135,7 @@ void coh_PTF_statistic(
               }
               if (spinTemplate == 0)
               {
-                max_eigen = 0.5 * ( v1_dot_u1 + v2_dot_u2 );
+                max_eigen = ( v1_dot_u1 + v2_dot_u2 );
               }
               else
               {
@@ -1119,7 +1143,7 @@ void coh_PTF_statistic(
                 * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2 ));
               }
               // This needs to be converted for spinning case!
-              snglSNRsq = v1[0]*v1[0] + v1[1]*v1[1];
+              snglSNRsq = v1[0]*v1[0] + v2[0]*v2[0];
               snglSNRsq = snglSNRsq/(a[k]*a[k]*PTFM[k]->data[0]);
               traceSNRsq += max_eigen;
               snrComps[k]->data->data[i-numPoints/4]=sqrt(snglSNRsq);
@@ -1389,7 +1413,7 @@ void coh_PTF_statistic(
                   chisqOverlaps[j].PTFqVec[k] =
                       XLALCreateCOMPLEX8VectorSequence ( 1,
                       3*numPoints/4 - numPoints/4 + 10000);
-                  coh_PTF_bank_filters(fcTmplt,0,
+                  coh_PTF_bank_filters(params,fcTmplt,0,
                   &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
                   chisqOverlaps[j].PTFqVec[k],fLow,fHigh);
                 }
@@ -1573,8 +1597,11 @@ UINT8 coh_PTF_add_triggers(
         moved into sane columns! For spin they give Amp*cos(Phi_0) and
         Amp*sin(Phi_0). For non spinning the second is 0 and the
         first is some arbitrary amplitude. */
-        currEvent->g1quad.re = gammaBeta[0]->data->data[i];
-        currEvent->g1quad.im = gammaBeta[1]->data->data[i];
+        if (gammaBeta[0])
+        {
+          currEvent->g1quad.re = gammaBeta[0]->data->data[i];
+          currEvent->g1quad.im = gammaBeta[1]->data->data[i];
+        }
         if (snrComps[LAL_IFO_G1])
         {
           currEvent->snr_g = snrComps[LAL_IFO_G1]->data->data[i];

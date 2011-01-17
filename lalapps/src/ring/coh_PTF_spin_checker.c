@@ -269,10 +269,9 @@ int main( int argc, char **argv )
         memset( PTFN[ifoNumber]->data, 0, 25 * sizeof(REAL8) );
         memset( PTFqVec[ifoNumber]->data, 0,
                   5 * numPoints * sizeof(COMPLEX8) );
-        coh_PTF_normalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
-              PTFN[ifoNumber],
-              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[0],invPlan,
-              1);
+        coh_PTF_normalize(params,fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+              PTFN[ifoNumber],PTFqVec[ifoNumber],
+              &segments[ifoNumber]->sgmnt[0],invPlan,1);
       }
     }
 
