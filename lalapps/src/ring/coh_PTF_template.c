@@ -210,6 +210,7 @@ coh_PTF_template (
 
 
 void coh_PTF_normalize(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
@@ -255,13 +256,9 @@ void coh_PTF_normalize(
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
   deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  /* FIXME: f_min and f_final are hardcoded here! */
-  f_min     = (REAL4) fcTmplt->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -370,6 +367,7 @@ void coh_PTF_normalize(
 }
 
 void coh_PTF_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -390,15 +388,9 @@ void coh_PTF_template_overlaps(
 
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
-  /* FIXME: f_min and f_final hardcoded here */
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
-  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
-    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   vecLen = 5;
@@ -427,6 +419,7 @@ void coh_PTF_template_overlaps(
 }
 
 void coh_PTF_complex_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -447,15 +440,9 @@ void coh_PTF_complex_template_overlaps(
 
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  /* FIXME: Hardcoded f_min and f_final */
-  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
-  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
-    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   vecLen = 5;
@@ -489,6 +476,7 @@ void coh_PTF_complex_template_overlaps(
 }
 
 void coh_PTF_bank_filters(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     UINT4                      spinBank,
     COMPLEX8FrequencySeries    *sgmnt,
@@ -516,18 +504,15 @@ void coh_PTF_bank_filters(
   deltaF    = sgmnt->deltaF;
 //  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
 
-  /* FIXME: f_min and f_max explicitly set here */
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
+  /* F_min and F_max are used to do the chisquared limited filters */
   if (! f_min)
   {
-    f_min     = (REAL4) fcTmplt->tmplt.fLower;
-    f_min     = 40;
+    f_min     = params->lowFilterFrequency;
   }
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   if (! fFinal)
   {
-    fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-    fFinal    = 1000;
+    fFinal    = params->highFilterFrequency;
   }
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
@@ -578,6 +563,7 @@ void coh_PTF_bank_filters(
 }
 
 void coh_PTF_auto_veto_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     struct bankComplexTemplateOverlaps *autoTempOverlaps,
     REAL4FrequencySeries       *invspec,
@@ -602,13 +588,9 @@ void coh_PTF_auto_veto_overlaps(
   deltaF      = invspec->deltaF;
 //  deltaT    = 1.0 / ( deltaF * (REAL4) len);
 
-  /* FIXME: Explicitly setting f_min and f_max (again)! */
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec = XLALCreateCOMPLEX8Vector( numPoints );
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );

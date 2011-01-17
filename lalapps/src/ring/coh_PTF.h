@@ -127,7 +127,9 @@ struct coh_PTF_params {
   REAL8        truncateDuration;
   UINT4        numOverlapSegments;
   REAL4        dynRangeFac;
-  REAL4        lowCutoffFrequency;
+  REAL4        lowTemplateFrequency;
+  REAL4        lowFilterFrequency;
+  REAL4        highFilterFrequency;
   REAL4        highpassFrequency;
   REAL4        invSpecLen;
   REAL4        threshold;
@@ -381,6 +383,7 @@ void coh_PTF_template (
 );
 
 void coh_PTF_normalize(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
@@ -392,6 +395,7 @@ void coh_PTF_normalize(
 );
 
 void coh_PTF_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -400,6 +404,7 @@ void coh_PTF_template_overlaps(
 );
 
 void coh_PTF_complex_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -408,6 +413,7 @@ void coh_PTF_complex_template_overlaps(
 );
 
 void coh_PTF_bank_filters(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     UINT4                      spinBank,
     COMPLEX8FrequencySeries    *sgmnt,
@@ -419,6 +425,7 @@ void coh_PTF_bank_filters(
 );
 
 void coh_PTF_auto_veto_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     struct bankComplexTemplateOverlaps *autoTempOverlaps,
     REAL4FrequencySeries       *invspec,

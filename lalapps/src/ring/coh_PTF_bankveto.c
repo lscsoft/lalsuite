@@ -20,7 +20,7 @@ InspiralTemplate        **PTFBankTemplates)
 
   for (i=0; (i < numTemplates); bankTemplate = bankTemplate->next,i++)
   {
-    bankTemplate->fLower = 38.;
+    bankTemplate->fLower = params->lowTemplateFrequency;
     bankTemplate->approximant = FindChirpPTF;
     bankTemplate->order = LAL_PNORDER_TWO;
   }
@@ -562,10 +562,9 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
   /* This is explicit as I want f_min of template lower than f_min of filter*/
   /* Note that these frequencies are not just hardcoded here, if you change*/
   /* these values you will need to change them in other places as well */
-  /* FIXME: Hardcoded f_min and f_max */
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   numFreqBins = params->numChiSquareBins;
@@ -676,10 +675,9 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   /* This is explicit as I want f_min of template lower than f_min of filter*/
   /* Note that these frequencies are not just hardcoded here, if you change*/
   /* these values you will need to change them in other places as well */
-  /* FIXME: Hardcoded f_min and f_max */
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   numFreqBins = params->numChiSquareBins;
