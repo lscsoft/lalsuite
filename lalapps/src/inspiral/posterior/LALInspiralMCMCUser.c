@@ -1071,12 +1071,12 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
     LALInspiralRestrictedAmplitude(status,template);
 
     if(XLALMCMCCheckParameter(parameter,"chiSpin")) {
-        double spin1z = 0.1;
+        double spin1z = 1.0;
         template->spin1[2] = spin1z ;
         double chiSpin = XLALMCMCGetParameter(parameter,"chiSpin");
-        double delta = ( template->mass1 - template->mass2 ) / (template->mass1 + template->mass2);
+        double delta = sqrt(1.0- 4.0*template->eta);
 
-        template->spin2[2] = (chiSpin*2.0 - (1+delta)*spin1z)/ (1-delta);
+        template->spin2[2] = (chiSpin*2.0 - (1-delta)*spin1z)/ (1+delta);
     }
 
     /* IMRPhenomFB takes distance in metres */
