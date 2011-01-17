@@ -1274,7 +1274,8 @@ void templateLALSTPN(LALIFOData *IFOdata)
 			exit(1);
 	}*/
 	//REPORTSTATUS(&status);
-    LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status);
+        /* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
+        LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
 	//REPORTSTATUS(&status);
 	
     if ( status.statusCode )
@@ -1295,7 +1296,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	//printf("/n/n waveform: %s/ /n/n","waveform");
 	
 	if(checkVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
-		if (*(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")==5){
+		if (*(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")==INFERENCE_RING){
 		
 			SimRingdownTable          thisRingdownEvent;
 			memset( &thisRingdownEvent, 0, sizeof(SimRingdownTable) );
