@@ -84,6 +84,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALIFOData *ifodata1=runState->data;
         const char *USAGE = 
           "[--appendOutput fname\tBasename of the file to append outputs to.]";
+	ProcessParamsTable *ppt;
+
+	ppt=getProcParamVal(runState->commandLine, "--help");
+	if (ppt) {
+	  fprintf(stderr, "%s\n", USAGE);
+	}
+
 	while(ifodata1){
 		nIFO++;
 		ifodata1=ifodata1->next;
@@ -176,9 +183,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	double pnorder = ((double)(*(INT4 *)getVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
 	char str[999];
 	printCommandLine(runState->commandLine, str);
-	
+
 	for (t=0; t<nChain; ++t) {
-          ProcessParamsTable *ppt;
 		outfileName[t] = (char*)calloc(99,sizeof(char*));
                 ppt = getProcParamVal(runState->commandLine, "--appendOutput");
                 if (ppt) {
