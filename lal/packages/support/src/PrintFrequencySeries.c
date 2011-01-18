@@ -1,4 +1,3 @@
-dnl $Id$
 /************************************ <lalVerbatim file="PrintFrequencySeriesCV">
 Author: Whelan, J. T.
 $Id$
@@ -110,41 +109,140 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 NRCSID( PRINTFREQUENCYSERIESC, "$Id$" );
 /* </lalVerbatim> */
 
-define(`TYPECODE',`Z') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%e\t%le\t%le\n"
+#define HEADER "# Freq (Hz)\tRe(Value)\tIm(Value)\n"
+#define ARG data->re,data->im
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`C') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%e\t%e\t%e\n"
+#define HEADER "# Freq (Hz)\tRe(Value)\tIm(Value)\n"
+#define ARG data->re,data->im
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`D') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%e\t%le\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`S') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%e\t%e\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`I2') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE I2
+#define TYPE INT2
+#define FMT "%g\t%i\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`I4') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE I4
+#define TYPE INT4
+#define FMT "%g\t%i\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`I8') dnl
-include(`LALPrintFrequencySeries.m4')
 /* Note that LALI8PrintFrequencySeries does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
+#define TYPECODE I8
+#define TYPE INT8
+#define FMT "%g\t%0.0f\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG (REAL8)*data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`U2') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE U2
+#define TYPE UINT2
+#define FMT "%g\t%i\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`U4') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE U4
+#define TYPE UINT4
+#define FMT "%g\t%i\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`U8') dnl
-include(`LALPrintFrequencySeries.m4')
 /* Note that LALU8PrintFrequencySeries does a typecast to REAL8 and is thus
  * inaccurate for numbers >~ 1e15 
  */
+#define TYPECODE U8
+#define TYPE UINT8
+#define FMT "%g\t%0.0f\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG (REAL8)*data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG
 
-define(`TYPECODE',`') dnl
-include(`LALPrintFrequencySeries.m4')
+#define TYPECODE
+#define TYPE REAL4
+#define FMT "%g\t%f\n"
+#define HEADER "# Freq (Hz)\tValue\n"
+#define ARG *data
+#include "PrintFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef HEADER
+#undef ARG

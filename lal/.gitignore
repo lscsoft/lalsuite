@@ -129,7 +129,6 @@ packages/std/test/LALGSLTest
 packages/std/test/LALMallocTest
 packages/std/test/LALVersionTest
 packages/std/test/StringConvertTest
-packages/support/src/PrintFrequencySeries.c
 packages/support/src/ReadFrequencySeries.c
 packages/support/src/ReadTimeSeries.c
 packages/support/src/StreamGridInput.c
