@@ -1,23 +1,13 @@
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
-define(`STYPE',`format(`%sTimeSeries',TYPE)')
-define(`VTYPE',`format(`%sSequence',TYPE)')
-define(`FUNC',`format(`LAL%sReadTimeSeries',TYPECODE)')
-define(`FMT',`"%g %i\n"')
-ifelse(TYPECODE,`Z',`define(`FMT',`"%lf\t%lf\t%lf\n"')')
-ifelse(TYPECODE,`C',`define(`FMT',`"%lf\t%f\t%f\n"')')
-ifelse(TYPECODE,`D',`define(`FMT',`"%lf\t%lf\n"')')
-ifelse(TYPECODE,`S',`define(`FMT',`"%lf\t%f\n"')')
-ifelse(TYPECODE,`',`define(`FMT',`"%lf\t%f\n"')')
-define(`ARG',`&data')
-define(`NARGS',`1')
-ifelse(TYPECODE,`Z',`define(`ARG',`&(data.re),&(data.im)')')
-ifelse(TYPECODE,`C',`define(`ARG',`&(data.re),&(data.im)')')
-ifelse(TYPECODE,`Z',`define(`NARGS',`2')')
-ifelse(TYPECODE,`C',`define(`NARGS',`2')')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,TimeSeries)
+#define VTYPE CONCAT2(TYPE,Sequence)
+#define FUNC CONCAT3(LAL,TYPECODE,ReadTimeSeries)
+
 /* Maybe for consistent allocation of memory we should include a
 companion function called element counter that will notify the calling
 routine of how large we should allocate the Series to be before
