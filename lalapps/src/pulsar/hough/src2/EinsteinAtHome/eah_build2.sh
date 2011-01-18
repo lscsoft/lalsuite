@@ -218,6 +218,12 @@ else
 	    else
 	        platform=i686-pc-linux-gnu
 	    fi
+	    if [ ".$WITH_SSL" = "." -a -d /usr/local/ssl ]; then
+	        ssldir=/usr/local/ssl
+		CPPFLAGS="$CPPFLAGS -I$ssldir/include"
+		LIBS="$LIBS -L$ssldir/lib"
+		WITH_SSL="--with-ssl=$ssldir"
+	    fi
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
