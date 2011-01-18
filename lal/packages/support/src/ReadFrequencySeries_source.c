@@ -1,23 +1,13 @@
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')') dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')') dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')') dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')') dnl
-ifelse(TYPECODE,`',`define(`TYPE',`REAL4')') dnl
-define(`STYPE',`format(`%sFrequencySeries',TYPE)') dnl
-define(`VTYPE',`format(`%sSequence',TYPE)') dnl
-define(`FUNC',`format(`LAL%sReadFrequencySeries',TYPECODE)') dnl
-define(`FMT',`"%g %i\n"') dnl
-ifelse(TYPECODE,`Z',`define(`FMT',`"%lf\t%lf\t%lf\n"')') dnl
-ifelse(TYPECODE,`C',`define(`FMT',`"%lf\t%f\t%f\n"')') dnl
-ifelse(TYPECODE,`D',`define(`FMT',`"%lf\t%lf\n"')') dnl
-ifelse(TYPECODE,`S',`define(`FMT',`"%lf\t%f\n"')') dnl
-ifelse(TYPECODE,`',`define(`FMT',`"%lf\t%f\n"')') dnl
-define(`ARG',`&data') dnl
-define(`NARGS',`1') dnl
-ifelse(TYPECODE,`Z',`define(`ARG',`&(data.re),&(data.im)')') dnl
-ifelse(TYPECODE,`C',`define(`ARG',`&(data.re),&(data.im)')') dnl
-ifelse(TYPECODE,`Z',`define(`NARGS',`2')') dnl
-ifelse(TYPECODE,`C',`define(`NARGS',`2')') dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,FrequencySeries)
+#define VTYPE CONCAT2(TYPE,Sequence)
+#define FUNC CONCAT3(LAL,TYPECODE,ReadFrequencySeries)
+
 /* Maybe for consistent allocation of memory we should include a
 companion function called element counter that will notify the calling
 routine of how large we should allocate the Series to be before

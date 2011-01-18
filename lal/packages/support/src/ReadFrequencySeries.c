@@ -1,4 +1,3 @@
-dnl $Id$
 /************************************ <lalVerbatim file="ReadFrequencySeriesCV">
 Author: Torres, C. V.
 $Id$
@@ -84,18 +83,62 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
   return 1;
 }
 
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%lf\t%lf\t%lf\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`Z') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%lf\t%f\t%f\n"
+#define ARG &(data.re),&(data.im)
+#define NARGS 2
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`C') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%lf\t%lf\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`D') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
 
-define(`TYPECODE',`S') dnl
-include(`LALReadFrequencySeries.m4')
-
-define(`TYPECODE',`') dnl
-include(`LALReadFrequencySeries.m4')
+#define TYPECODE
+#define TYPE REAL4
+#define FMT "%lf\t%f\n"
+#define ARG &data
+#define NARGS 1
+#include "ReadFrequencySeries_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef ARG
+#undef NARGS
