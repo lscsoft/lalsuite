@@ -528,8 +528,8 @@ int main(int argc, char *argv[])
          farStruct *farval = NULL;
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
             
-            //Now assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum specified and less than or equal to the maximum specified, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
-            if (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh > inputParams->fmin && ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && ihsCandidates->data[ii].moddepth >= inputParams->dfmin && ihsCandidates->data[ii].moddepth <= inputParams->dfmax && ihsCandidates->data[ii].moddepth < maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && ihsCandidates->data[ii].period >= 2.0*3600.0) {
+            //Now assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
+            if ( (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh)>inputParams->fmin && (ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh) && ihsCandidates->data[ii].period>=(2.0*3600.0) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs) ) {
                
                //Allocate memory for template
                templateStruct *template = new_templateStruct(inputParams->templatelength);
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
                if (bestProb == 1.0) {
                   for (jj=0; jj<3; jj++) {
                      REAL8 periodfact = (jj+1.0)/(jj+2.0);
-                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>2.0*3600.0) {
+                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                         ihsCandidates->data[ii].period *= periodfact;
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -637,7 +637,7 @@ int main(int argc, char *argv[])
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift shorter period */
                      periodfact = 1.0/periodfact;
-                     if ( periodfact*ihsCandidates->data[ii].period < 0.2*inputParams->Tobs ) {
+                     if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -715,7 +715,7 @@ int main(int argc, char *argv[])
                         template = NULL;
                         ihsCandidates->data[ii].period *= (REAL8)jj;
                      } /* shorter period harmonics */
-                     if (ihsCandidates->data[ii].period*jj < 0.2*inputParams->Tobs) {
+                     if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                         ihsCandidates->data[ii].period *= (REAL8)jj;
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
                   //Shift period by fractions
                   for (jj=0; jj<10; jj++) {
                      REAL8 periodfact = (jj+1.0)/(jj+2.0);
-                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>2.0*3600.0) {
+                     if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                         ihsCandidates->data[ii].period *= periodfact;
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -792,7 +792,7 @@ int main(int argc, char *argv[])
                         ihsCandidates->data[ii].period /= periodfact;
                      } /* shift to shorter period */
                      periodfact = 1.0/periodfact;
-                     if ( periodfact*ihsCandidates->data[ii].period < 0.2*inputParams->Tobs ) {
+                     if ( periodfact*ihsCandidates->data[ii].period<=0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -933,15 +933,15 @@ int main(int argc, char *argv[])
             
             //Now search over the parameter space. Frequency, then modulation depth, then period
             //Initialze best values as the initial point we are searching around
-            INT4 bestproberrcode;
-            REAL8 bestf, bestp, bestdf, bestR, besth0, bestProb;
-            bestf = gaussCandidates2->data[ii].fsig;
+            INT4 bestproberrcode = 0;
+            REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
+            /* bestf = gaussCandidates2->data[ii].fsig;
             bestp = gaussCandidates2->data[ii].period;
             bestdf = gaussCandidates2->data[ii].moddepth;
             bestR = gaussCandidates2->data[ii].stat;
             besth0 = gaussCandidates2->data[ii].h0;
             bestProb = gaussCandidates2->data[ii].prob;
-            bestproberrcode = gaussCandidates2->data[ii].proberrcode;
+            bestproberrcode = gaussCandidates2->data[ii].proberrcode; */
             for (jj=0; jj<(INT4)trialf->length; jj++) {
                for (kk=0; kk<(INT4)trialb->length; kk++) {
                   //Start with period of the first guess, then determine nearest neighbor from the
@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
                   free_templateStruct(template);
                   template = NULL;
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
-                     if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk] < maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll] > 5.0 && trialp->data[ll] >= 2.0*3600.0) {
+                     if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]>=inputParams->dfmin && trialb->data[kk]<=inputParams->dfmax && trialp->data[ll]<=inputParams->Pmax && trialp->data[ll]>=inputParams->Pmin ) {
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
@@ -1033,8 +1033,6 @@ int main(int argc, char *argv[])
                if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
                loadCandidateData(&gaussCandidates3->data[gaussCandidates3->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, gaussCandidates2->data[0].normalization);
                gaussCandidates3->numofcandidates++;
-            } else {
-               fprintf(stderr,"WTF?!\n");
             }
             
             XLALDestroyREAL8Vector(trialf);
@@ -1164,15 +1162,15 @@ int main(int argc, char *argv[])
             }
             
             //Same as before
-            INT4 bestproberrcode;
-            REAL8 bestf, bestp, bestdf, bestR, besth0, bestProb;
-            bestf = exactCandidates1->data[ii].fsig;
+            INT4 bestproberrcode = 0;
+            REAL8 bestf = 0.0, bestp = 0.0, bestdf = 0.0, bestR = 0.0, besth0 = 0.0, bestProb = 0.0;
+            /* bestf = exactCandidates1->data[ii].fsig;
             bestp = exactCandidates1->data[ii].period;
             bestdf = exactCandidates1->data[ii].moddepth;
             bestR = exactCandidates1->data[ii].stat;
             besth0 = exactCandidates1->data[ii].h0;
             bestProb = exactCandidates1->data[ii].prob;
-            bestproberrcode = exactCandidates1->data[ii].proberrcode;
+            bestproberrcode = exactCandidates1->data[ii].proberrcode; */
             for (jj=0; jj<(INT4)trialf->length; jj++) {
                for (kk=0; kk<(INT4)trialb->length; kk++) {
                   INT4 midposition = (INT4)((nump-1)*0.5);
@@ -1218,7 +1216,9 @@ int main(int argc, char *argv[])
                   free_templateStruct(template);
                   template = NULL;
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
-                     if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>5 && trialp->data[ll] >= 2.0*3600.0) {
+                     //if ( trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh > inputParams->fmin && trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh < inputParams->fmin+inputParams->fspan && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll] > minPeriod(trialb->data[kk], inputParams->Tcoh) && inputParams->Tobs/trialp->data[ll]>=5.0 && trialp->data[ll] >= 2.0*3600.0) {
+                     //We make this more restrictive to be within what the user has input as searchable parameters
+                     if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]<=inputParams->dfmax && trialb->data[kk]>=inputParams->dfmin && trialp->data[ll]>=inputParams->Pmin && trialp->data[ll]<=inputParams->Pmax) {
                         
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
                         template = new_templateStruct(inputParams->templatelength);
@@ -1276,10 +1276,11 @@ int main(int argc, char *argv[])
             } /* for jj < trialf */
             
             //Load candidate
-            if (exactCandidates2->numofcandidates == exactCandidates2->length-1) exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
-            loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
-            
-            exactCandidates2->numofcandidates++;
+            if (bestf!=0.0) {
+               if (exactCandidates2->numofcandidates == exactCandidates2->length-1) exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
+               loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
+               exactCandidates2->numofcandidates++;
+            }
             
             //Destroy parameter space values
             XLALDestroyREAL8Vector(trialf);

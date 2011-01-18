@@ -368,7 +368,6 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
    }
    
-   //INT4 errcode;
    qfvars vars;
    vars.weights = newweights;
    vars.noncentrality = noncentrality;
@@ -387,7 +386,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-4) {
+   if (prob<=1.0e-4 || *errcode!=0) {
       estimatedTheProb = 1;
       
       //INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0, errcode4 = 0, errcode5 = 0;
@@ -472,8 +471,19 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    XLALDestroyINT4Vector(sorting);
    
    //return prob;
-   if (estimatedTheProb==1) return logprobest;
-   else return log10(prob);
+   if (estimatedTheProb==1) {
+      if (logprobest==0.0) {
+         fprintf(stderr, "%s: Failure calculating interpolated value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      }
+      return logprobest;
+   } else {
+      if (log10(prob)==0.0) {
+         fprintf(stderr, "%s: Failure calculating correct false alarm probability value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      }
+      return log10(prob);
+   }
    
 } /* probR() */
 

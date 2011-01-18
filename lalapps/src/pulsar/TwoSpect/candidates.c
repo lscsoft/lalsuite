@@ -251,13 +251,13 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             REAL8 bestProb = 1.0;
             INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
-               avefsig += input->data[locs2->data[kk]].fsig*input->data[locs2->data[kk]].stat;
-               aveperiod += input->data[locs2->data[kk]].period*input->data[locs2->data[kk]].stat;
-               weight += input->data[locs2->data[kk]].stat;
+               avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
+               aveperiod += input->data[locs2->data[kk]].period*(-input->data[locs2->data[kk]].prob);
+               weight += -input->data[locs2->data[kk]].prob;
                if (mindf > input->data[locs2->data[kk]].moddepth || mindf == 0.0) mindf = input->data[locs2->data[kk]].moddepth;
                if (maxdf < input->data[locs2->data[kk]].moddepth) maxdf = input->data[locs2->data[kk]].moddepth;
                
-               if (loc2==1 && aveperiod/weight >= params->Pmin && aveperiod/weight <= params->Pmax) {
+               if (loc2==1 && avefsig/weight>=params->fmin && avefsig/weight<=(params->fmin+params->fspan) && aveperiod/weight >= params->Pmin && aveperiod/weight <= params->Pmax) {
                   besth0 = input->data[locs2->data[kk]].h0;
                   bestmoddepth = input->data[locs2->data[kk]].moddepth;
                   bestR = input->data[locs2->data[kk]].stat;
@@ -276,62 +276,66 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
                for (kk=0; kk<numofmoddepths; kk++) {
                   
-                  candidate cand;
-                  loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0);
-                  
-                  templateStruct *template = new_templateStruct(params->templatelength);
-                  if (template==NULL) {
-                     fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
-                  if (option==1) {
-                     makeTemplate(template, cand, params, plan);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+                  if ((mindf+kk*0.5/params->Tcoh)>=params->dfmin && (mindf+kk*0.5/params->Tcoh)<=params->dfmax) {
+                     
+                     candidate cand;
+                     loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0);
+                     
+                     templateStruct *template = new_templateStruct(params->templatelength);
+                     if (template==NULL) {
+                        fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
-                  } else {
-                     makeTemplateGaussians(template, cand, params);
-                     if (xlalErrno!=0) {
-                        fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                     if (option==1) {
+                        makeTemplate(template, cand, params, plan);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
+                           XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                        }
+                     } else {
+                        makeTemplateGaussians(template, cand, params);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
+                           XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                        }
+                     }
+                     
+                     farStruct *farval = new_farStruct();
+                     if (farval==NULL) {
+                        fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
-                  }
-                  
-                  farStruct *farval = new_farStruct();
-                  if (farval==NULL) {
-                     fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
-                  numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
-                  if (xlalErrno!=0) {
-                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
-                  
-                  REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
-                  REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, &proberrcode);
-                  if (XLAL_IS_REAL8_FAIL_NAN(R)) {
-                     fprintf(stderr,"%s: calculateR() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                     fprintf(stderr,"%s: probR() failed.\n", fn);
-                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                  }
-                  REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
-                  
-                  if (R > farval->far && prob < bestProb) {
-                     besth0 = h0;
-                     bestmoddepth = mindf + kk*0.5/params->Tcoh;
-                     bestR = R;
-                     bestProb = prob;
-                     bestproberrcode = proberrcode;
-                  }
-                  
-                  free_templateStruct(template);
-                  template = NULL;
-                  free_farStruct(farval);
-                  farval = NULL;
+                     numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
+                     if (xlalErrno!=0) {
+                        fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     }
+                     
+                     REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
+                     REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, &proberrcode);
+                     if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+                        fprintf(stderr,"%s: calculateR() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                        fprintf(stderr,"%s: probR() failed.\n", fn);
+                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                     }
+                     REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
+                     
+                     if (R > farval->far && prob < bestProb) {
+                        besth0 = h0;
+                        bestmoddepth = mindf + kk*0.5/params->Tcoh;
+                        bestR = R;
+                        bestProb = prob;
+                        bestproberrcode = proberrcode;
+                     }
+                     
+                     free_templateStruct(template);
+                     template = NULL;
+                     free_farStruct(farval);
+                     farval = NULL;
+                     
+                  } /* if test moddepth is within user specified range */
                } /* for kk < numofmoddepths */
             } /* if loc2 > 1 ... */
             
