@@ -1417,7 +1417,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
 	if ( waveform->h )
 	{
 		XLALDestroyREAL4VectorSequence( waveform->h->data );
-		LALFree( waveform->a );
+		LALFree( waveform->h );
 	}
 	if ( waveform->a )
 	{
