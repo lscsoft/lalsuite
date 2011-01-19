@@ -37,6 +37,7 @@ noinst_HEADERS = \
 	ReadFrequencySeries_source.c \
 	ReadTimeSeries_source.c \
 	StreamGridInput_source.c \
+	StreamGridOutput_source.c \
 	StreamSequenceInput_source.c \
 	StreamSequenceInputComplex_source.c \
 	StreamSeriesInput_source.c \
@@ -44,17 +45,7 @@ noinst_HEADERS = \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c
 
-MAINTAINERCLEANFILES = \
-	StreamGridOutput.c
-
-EXTRA_DIST = \
-	LALWriteGrid.m4 \
-	StreamGridOutput.m4
-
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-StreamGridOutput.c: StreamGridOutput.m4 LALWriteGrid.m4
-	cd $(srcdir) && @M4@ StreamGridOutput.m4 > StreamGridOutput.c
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

@@ -1,4 +1,3 @@
-changecom(`/*',`*/')dnl
 /***************************** <lalVerbatim file="StreamGridOutputCV">
 Author: Creighton, T. D.
 $Id$
@@ -222,32 +221,102 @@ LALWriteLiteral( FILE *stream, const CHAR *string )
 #define fprintf __extension__ fprintf
 #endif
 
-define(`TYPECODE',`I2')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define FMT "%.16e"
+#define COMPLEX 1
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`I4')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define FMT "%.8e"
+#define COMPLEX 1
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`I8')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE D
+#define TYPE REAL8
+#define FMT "%.16e"
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`U2')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE S
+#define TYPE REAL4
+#define FMT "%.8e"
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`U4')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE I2
+#define TYPE INT2
+#define FMT "%"LAL_INT2_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`U8')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE I4
+#define TYPE INT4
+#define FMT "%"LAL_INT4_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`S')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE I8
+#define TYPE INT8
+#define FMT "%"LAL_INT8_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`D')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE U2
+#define TYPE UINT2
+#define FMT "%"LAL_UINT2_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`C')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE U4
+#define TYPE UINT4
+#define FMT "%"LAL_UINT4_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
 
-define(`TYPECODE',`Z')dnl
-include(`LALWriteGrid.m4')dnl
+#define TYPECODE U8
+#define TYPE UINT8
+#define FMT "%"LAL_UINT8_FORMAT
+#define COMPLEX 0
+#include "StreamGridOutput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef FMT
+#undef COMPLEX
