@@ -285,32 +285,86 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
 #define fscanf __extension__ fscanf
 #endif
 
-define(`TYPECODE',`I2')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE I2
+#define TYPE INT2
+#define SIZE 2
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`I4')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE I4
+#define TYPE INT4
+#define SIZE 4
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`I8')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE I8
+#define TYPE INT8
+#define SIZE 8
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U2')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE U2
+#define TYPE UINT2
+#define SIZE 2
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U4')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE U4
+#define TYPE UINT4
+#define SIZE 4
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U8')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE U8
+#define TYPE UINT8
+#define SIZE 8
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`S')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE S
+#define TYPE REAL4
+#define SIZE 4
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`D')dnl
-include(`LALReadSequence.m4')dnl
+#define TYPECODE D
+#define TYPE REAL8
+#define SIZE 8
+#include "StreamSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`C')dnl
-include(`LALReadComplexSequence.m4')dnl
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define SIZE 16
+#define FORMAT LAL_REAL8_FORMAT
+#include "StreamSequenceInputComplex_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef FORMAT
 
-define(`TYPECODE',`Z')dnl
-include(`LALReadComplexSequence.m4')dnl
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define SIZE 8
+#define FORMAT LAL_REAL4_FORMAT
+#include "StreamSequenceInputComplex_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef FORMAT

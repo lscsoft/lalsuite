@@ -36,33 +36,28 @@ noinst_HEADERS = \
 	PrintVector_source.c \
 	ReadFrequencySeries_source.c \
 	ReadTimeSeries_source.c \
+	StreamSequenceInput_source.c \
+	StreamSequenceInputComplex_source.c \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c
 
 MAINTAINERCLEANFILES = \
 	StreamGridInput.c \
 	StreamGridOutput.c \
-	StreamSequenceInput.c \
 	StreamSeriesInput.c \
 	StreamSeriesOutput.c
 
 EXTRA_DIST = \
-	LALReadComplexSequence.m4 \
 	LALReadGrid.m4 \
-	LALReadSequence.m4 \
 	LALReadSeries.m4 \
 	LALWriteGrid.m4 \
 	LALWriteSeries.m4 \
 	StreamGridInput.m4 \
 	StreamGridOutput.m4 \
 	StreamSeriesInput.m4 \
-	StreamSeriesOutput.m4 \
-	StreamSequenceInput.m4
+	StreamSeriesOutput.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-StreamSequenceInput.c: StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexSequence.m4
-	cd $(srcdir) && @M4@ StreamSequenceInput.m4 > StreamSequenceInput.c
 
 StreamSeriesInput.c: StreamSeriesInput.m4 LALReadSeries.m4
 	cd $(srcdir) && @M4@ StreamSeriesInput.m4 > StreamSeriesInput.c

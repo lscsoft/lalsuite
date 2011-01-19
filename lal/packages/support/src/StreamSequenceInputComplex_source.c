@@ -1,15 +1,12 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')dnl
-ifelse(TYPECODE,`Z',`define(`FMT',`LAL_REAL8_FORMAT')')dnl
-ifelse(TYPECODE,`C',`define(`FMT',`LAL_REAL4_FORMAT')')dnl
-define(`VTYPE',`format(`%sSequence',TYPE)')dnl
-define(`FUNC',`format(`LAL%sReadSequence',TYPECODE)')dnl
-define(`CREATEFUNC',`format(`LAL%sCreateVector',TYPECODE)')dnl
-ifelse(TYPECODE,`Z',`define(`SIZE',`16')')dnl
-ifelse(TYPECODE,`C',`define(`SIZE',`8')')dnl
-define(`PARSEDATA',`done = ( ( fscanf( stream, "%" FMT, &(data->re) ) != 1 ) ||
-                ( fscanf( stream, "%" FMT, &(data->im) ) != 1 ) ); data++')dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,Sequence)
+#define FUNC CONCAT3(LAL,TYPECODE,ReadSequence)
+#define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVector)
 
 /* <lalVerbatim file="StreamSequenceInputCP"> */
 void
@@ -21,7 +18,7 @@ FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
   TYPE *data;         /* pointer to vector data */
   size_t nTot = 0;    /* total number of values read */
 
-  INITSTATUS( stat, "FUNC", STREAMSEQUENCEINPUTC );
+  INITSTATUS( stat, STRING(FUNC), STREAMSEQUENCEINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -37,8 +34,10 @@ FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
     size_t n = BUFFSIZE/SIZE + 1;
     data = here->buf.TYPECODE;
     while ( !done && --n ) {
-      PARSEDATA;
-    }
+      done = ( ( fscanf( stream, "%" FORMAT, &(data->re) ) != 1 ) ||
+          ( fscanf( stream, "%" FORMAT, &(data->im) ) != 1 ) );
+      data++;
+          }
     here->size = BUFFSIZE/SIZE - n;
     nTot += here->size;
     if ( !done ) {

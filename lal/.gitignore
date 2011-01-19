@@ -131,7 +131,6 @@ packages/std/test/LALVersionTest
 packages/std/test/StringConvertTest
 packages/support/src/StreamGridInput.c
 packages/support/src/StreamGridOutput.c
-packages/support/src/StreamSequenceInput.c
 packages/support/src/StreamSeriesInput.c
 packages/support/src/StreamSeriesOutput.c
 packages/support/test/?FS*.dat
