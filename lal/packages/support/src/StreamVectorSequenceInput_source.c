@@ -1,31 +1,15 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')dnl
-define(`VTYPE',`format(`%sVectorSequence',TYPE)')dnl
-define(`VTYPECODE',`format(`%sV',TYPECODE)')dnl
-define(`FUNC',`format(`LAL%sReadVectorSequence',TYPECODE)')dnl
-define(`VFUNC',`format(`LAL%sReadVector',TYPECODE)')dnl
-define(`CREATEFUNC',`format(`LAL%sCreateVectorSequence',TYPECODE)')dnl
-define(`DESTROYFUNC',`format(`LAL%sDestroyVector',TYPECODE)')dnl
-define(`FREEMACRO',`format(`FREE%sVECTORLIST',TYPECODE)')dnl
-ifelse(TYPECODE,`Z',`define(`SIZE',`16')')dnl
-ifelse(TYPECODE,`C',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`D',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`S',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I2',`define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`I4',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I8',`define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`U2',`define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`U4',`define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`U8',`define(`SIZE',`8')')dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,VectorSequence)
+#define VTYPECODE CONCAT2(TYPECODE,V)
+#define FUNC CONCAT3(LAL,TYPECODE,ReadVectorSequence)
+#define VFUNC CONCAT3(LAL,TYPECODE,ReadVector)
+#define CREATEFUNC CONCAT3(LAL,TYPECODE,CreateVectorSequence)
+#define DESTROYFUNC CONCAT3(LAL,TYPECODE,DestroyVector)
 
 #define \
 FREEMACRO \
@@ -54,7 +38,7 @@ FUNC ( LALStatus  *stat, VTYPE **sequence, FILE *stream )
   UINT4 nRows, nCols;   /* number and length of lines */
   CreateVectorSequenceIn in; /* parameters for creating sequence */
 
-  INITSTATUS( stat, "FUNC", STREAMVECTORSEQUENCEINPUTC );
+  INITSTATUS( stat, STRING(FUNC), STREAMVECTORSEQUENCEINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Read the first line. */

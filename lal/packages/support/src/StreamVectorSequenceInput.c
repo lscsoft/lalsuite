@@ -1,4 +1,3 @@
-dnl $Id$
 /******************** <lalVerbatim file="StreamVectorSequenceInputCV">
 Author: Creighton, T. D.
 $Id$
@@ -214,26 +213,66 @@ LALCHARReadVectorSequence( LALStatus          *stat,
   RETURN( stat );
 }
 
-define(`TYPECODE',`I2')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE I2
+#define TYPE INT2
+#define SIZE 2
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`I4')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE I4
+#define TYPE INT4
+#define SIZE 4
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`I8')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE I8
+#define TYPE INT8
+#define SIZE 8
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U2')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE U2
+#define TYPE UINT2
+#define SIZE 2
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U4')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE U4
+#define TYPE UINT4
+#define SIZE 4
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`U8')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE U8
+#define TYPE UINT8
+#define SIZE 8
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`S')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE S
+#define TYPE REAL4
+#define SIZE 4
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
 
-define(`TYPECODE',`D')dnl
-include(`LALReadVectorSequence.m4')dnl
+#define TYPECODE D
+#define TYPE REAL8
+#define SIZE 8
+#include "StreamVectorSequenceInput_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
