@@ -50,8 +50,14 @@ Determination of a specific moment of a set of data.
 
 NRCSID( LALMOMENTC, "$Id$");
 
-define(`TYPECODE',`D')
-include(`LALMomentBase.m4')
+#define TYPECODE D
+#define TYPE REAL8
+#include "LALMoment_source.c"
+#undef TYPECODE
+#undef TYPE
 
-define(`TYPECODE',`S')
-include(`LALMomentBase.m4')
+#define TYPECODE S
+#define TYPE REAL4
+#include "LALMoment_source.c"
+#undef TYPECODE
+#undef TYPE

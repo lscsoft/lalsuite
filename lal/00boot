@@ -127,10 +127,6 @@ cd packages/utilities/src || fail "creating sources in packages/vectorops/includ
 ${M4} MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
 cd ../../.. || fail "creating sources in packages/vectorops/include"
 
-cd packages/stats/src || fail "creating sources in packages/stats/src"
-${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
-cd ../../.. || fail "creating sources in packages/stats/src"
-
 cd packages/tools/include || fail "creating sources in packages/tools/include"
 ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
