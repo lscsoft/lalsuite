@@ -169,7 +169,6 @@ packages/tools/test/SequenceTest
 packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
 packages/tools/test/UnitsTest
-packages/utilities/src/MatrixOps.c
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
 packages/utilities/test/DCoarseGrainFrequencySeriesTest
 packages/utilities/test/DetInverseTest

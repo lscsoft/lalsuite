@@ -123,10 +123,6 @@ cd packages/vectorops/include || fail "creating sources in packages/vectorops/in
 ${M4} VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
 cd ../../.. || fail "creating sources in packages/vectorops/include"
 
-cd packages/utilities/src || fail "creating sources in packages/vectorops/include"
-${M4} MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
-cd ../../.. || fail "creating sources in packages/vectorops/include"
-
 cd packages/tools/include || fail "creating sources in packages/tools/include"
 ${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
 ${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"

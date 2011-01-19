@@ -1,4 +1,3 @@
-changecom(`/*',`*/')dnl
 /************************************ <lalVerbatim file="MatrixOpsCV">
 Author: Creighton, T. D.
 $Id$
@@ -153,35 +152,105 @@ multiplication (negating the sign of the imaginary part) per element.
 
 NRCSID( MATRIXOPSC, "$Id$" );
 
-define(`TYPECODE',`I2')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE I2
+#define TYPE INT2
+#define SIZE 2
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`I4')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE I4
+#define TYPE INT4
+#define SIZE 4
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`I8')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE I8
+#define TYPE INT8
+#define SIZE 8
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U2')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE U2
+#define TYPE UINT2
+#define SIZE 2
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U4')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE U4
+#define TYPE UINT4
+#define SIZE 4
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U8')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE U8
+#define TYPE UINT8
+#define SIZE 8
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`S')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE S
+#define TYPE REAL4
+#define SIZE 4
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`D')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE D
+#define TYPE REAL8
+#define SIZE 8
+#define COMPLEX 0
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`C')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE Z
+#define TYPE COMPLEX16
+#define SIZE 8
+#define COMPLEX 1
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`Z')dnl
-include(`LALMatrixOps.m4')dnl
+#define TYPECODE C
+#define TYPE COMPLEX8
+#define SIZE 4
+#define COMPLEX 1
+#include "MatrixOps_source.c"
+#undef TYPECODE
+#undef TYPE
+#undef SIZE
+#undef COMPLEX
 
 /* <lalVerbatim file="MatrixOpsCP"> */
 void
