@@ -1231,8 +1231,8 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=m2mc(manual_mass_low/2.0,manual_mass_low/2.0);
-	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
+	mcmin=manual_mass_low;
+	mcmax=manual_mass_high;
 
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
