@@ -134,7 +134,6 @@ packages/support/src/StreamGridOutput.c
 packages/support/src/StreamSequenceInput.c
 packages/support/src/StreamSeriesInput.c
 packages/support/src/StreamSeriesOutput.c
-packages/support/src/StreamVectorInput.c
 packages/support/src/StreamVectorSequenceInput.c
 packages/support/test/?FS*.dat
 packages/support/test/?TS*.dat
