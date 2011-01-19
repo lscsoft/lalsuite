@@ -1,4 +1,3 @@
-changecom(`/*',`*/')dnl
 /**************************** <lalVerbatim file="StreamSeriesInputCV">
 Author: Creighton, T. D.
 $Id$
@@ -519,32 +518,143 @@ LALLiteralToString( LALStatus  *stat,
 #ifdef __GNUC__
 #define fscanf __extension__ fscanf
 #endif
-define(`TYPECODE',`I2')dnl
-include(`LALReadSeries.m4')dnl
 
-define(`TYPECODE',`I4')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE I2
+#define DATACODE TYPECODE
+#define TYPE INT2
+#define DATA TYPE
+#define SIZE 2
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`I8')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE I4
+#define DATACODE TYPECODE
+#define TYPE INT4
+#define DATA TYPE
+#define SIZE 4
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U2')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE I8
+#define DATACODE TYPECODE
+#define TYPE INT8
+#define DATA TYPE
+#define SIZE 8
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U4')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE U2
+#define DATACODE TYPECODE
+#define TYPE UINT2
+#define DATA TYPE
+#define SIZE 2
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`U8')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE U4
+#define DATACODE TYPECODE
+#define TYPE UINT4
+#define DATA TYPE
+#define SIZE 4
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`S')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE U8
+#define DATACODE TYPECODE
+#define TYPE UINT8
+#define DATA TYPE
+#define SIZE 8
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`D')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE S
+#define DATACODE TYPECODE
+#define TYPE REAL4
+#define DATA TYPE
+#define SIZE 4
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`C')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE D
+#define DATACODE TYPECODE
+#define TYPE REAL8
+#define DATA TYPE
+#define SIZE 8
+#define COMPLEX 0
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
 
-define(`TYPECODE',`Z')dnl
-include(`LALReadSeries.m4')dnl
+#define TYPECODE Z
+#define DATACODE D
+#define TYPE COMPLEX16
+#define DATA REAL8
+#define SIZE 8
+#define COMPLEX 1
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX
+
+#define TYPECODE C
+#define DATACODE S
+#define TYPE COMPLEX8
+#define DATA REAL4
+#define SIZE 4
+#define COMPLEX 1
+#include "StreamSeriesInput_source.c"
+#undef TYPECODE
+#undef DATACODE
+#undef TYPE
+#undef DATA
+#undef SIZE
+#undef COMPLEX

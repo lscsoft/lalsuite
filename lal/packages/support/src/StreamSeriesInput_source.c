@@ -1,34 +1,26 @@
-dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`SIZE',`8')')dnl
-ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')define(`SIZE',`2')')dnl
-ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')define(`SIZE',`4')')dnl
-ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')define(`SIZE',`8')')dnl
-define(`DATACODE',TYPECODE)define(`DATA',TYPE)define(`COMPLEX',`0')dnl
-ifelse(TYPECODE,`Z',`define(`DATACODE',`D')define(`DATA',`REAL8')define(`COMPLEX',`1')')dnl
-ifelse(TYPECODE,`C',`define(`DATACODE',`S')define(`DATA',`REAL4')define(`COMPLEX',`1')')dnl
-define(`STYPE',`format(`%sTimeSeries',TYPE)')dnl
-define(`VTYPE',`format(`%sTimeVectorSeries',TYPE)')dnl
-define(`ATYPE',`format(`%sTimeArraySeries',TYPE)')dnl
-define(`FTYPE',`format(`%sFrequencySeries',TYPE)')dnl
-define(`SFUNC',`format(`LAL%sReadTSeries',TYPECODE)')dnl
-define(`VFUNC',`format(`LAL%sReadTVectorSeries',TYPECODE)')dnl
-define(`AFUNC',`format(`LAL%sReadTArraySeries',TYPECODE)')dnl
-define(`FFUNC',`format(`LAL%sReadFSeries',TYPECODE)')dnl
-define(`SCREATE',`format(`LAL%sCreateVector',TYPECODE)')dnl
-define(`VCREATE',`format(`LAL%sCreateVectorSequence',TYPECODE)')dnl
-define(`ACREATE',`format(`LAL%sCreateArraySequence',TYPECODE)')dnl
-define(`SDESTROY',`format(`LAL%sDestroyVector',TYPECODE)')dnl
-define(`VDESTROY',`format(`LAL%sDestroyVectorSequence',TYPECODE)')dnl
-define(`ADESTROY',`format(`LAL%sDestroyArraySequence',TYPECODE)')dnl
-define(`FMT',`format(`LAL_%s_FORMAT',DATA)')dnl
-define(`STRINGTODATA',`format(`LALStringTo%s',DATACODE)')dnl
-dnl
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
+
+#define STYPE CONCAT2(TYPE,TimeSeries)
+#define VTYPE CONCAT2(TYPE,TimeVectorSeries)
+#define ATYPE CONCAT2(TYPE,TimeArraySeries)
+#define FTYPE CONCAT2(TYPE,FrequencySeries)
+#define SFUNC CONCAT3(LAL,TYPECODE,ReadTSeries)
+#define VFUNC CONCAT3(LAL,TYPECODE,ReadTVectorSeries)
+#define AFUNC CONCAT3(LAL,TYPECODE,ReadTArraySeries)
+#define FFUNC CONCAT3(LAL,TYPECODE,ReadFSeries)
+#define SCREATE CONCAT3(LAL,TYPECODE,CreateVector)
+#define VCREATE CONCAT3(LAL,TYPECODE,CreateVectorSequence)
+#define ACREATE CONCAT3(LAL,TYPECODE,CreateArraySequence)
+#define SDESTROY CONCAT3(LAL,TYPECODE,DestroyVector)
+#define VDESTROY CONCAT3(LAL,TYPECODE,DestroyVectorSequence)
+#define ADESTROY CONCAT3(LAL,TYPECODE,DestroyArraySequence)
+#define FMT CONCAT3(LAL_,DATA,_FORMAT)
+#define STRINGTODATA CONCAT2(LALStringTo,DATACODE)
+
 /* <lalVerbatim file="StreamSeriesInputCP"> */
 void
 SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
@@ -44,7 +36,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
   STYPE sCopy; /* internal copy of series */
   int numRead = 0; /* number of values read by parsing subroutine */
 
-  INITSTATUS( stat, "SFUNC", STREAMSERIESINPUTC );
+  INITSTATUS( stat, STRING(SFUNC), STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -440,7 +432,7 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
   CreateVectorSequenceIn in; /* structure to create sequence */
   int numRead = 0; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, "VFUNC", STREAMSERIESINPUTC );
+  INITSTATUS( stat, STRING(VFUNC), STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -919,7 +911,7 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
   CreateArraySequenceIn in; /* structure to create sequence */
   int numRead; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, "AFUNC", STREAMSERIESINPUTC );
+  INITSTATUS( stat, STRING(AFUNC), STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -1468,7 +1460,7 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
   FTYPE sCopy; /* internal copy of series */
   int numRead; /* number of values read per call of fscanf() */
 
-  INITSTATUS( stat, "FFUNC", STREAMSERIESINPUTC );
+  INITSTATUS( stat, STRING(FFUNC), STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
