@@ -647,45 +647,51 @@ static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALVariables 
   return;
 }
 
+static void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams);
+
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
 	UINT4 nIFO=0;
 	LALIFOData *ifo=runState->data;
-	REAL8 BLOCKFRAC=0.20,
-          SINGLEFRAC=0.65,
+	REAL8 BLOCKFRAC=0.05,
+          SINGLEFRAC=1.0,
           SKYFRAC=0.05,
           INCFRAC=0.05,
           PHASEFRAC=0.05;
+        REAL8 SPINROTFRAC = (runState->template == &templateLALSTPN ? 0.05 : 0.0);
 
         nIFO = 0;
         while(ifo){ifo=ifo->next; nIFO++;}
         
         if (nIFO < 2) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          &PTMCMCLALInferenceRotateSpins,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceRotateSky,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          &PTMCMCLALInferenceRotateSpins,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceRotateSky,
                                           (LALProposalFunction *)(&PTMCMCLALInferenceReflectDetPlane),
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          &PTMCMCLALInferenceRotateSpins,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         }
@@ -1593,3 +1599,107 @@ int LALwaveformToSPINspiralwaveform(int waveform)
 	}
 }
 
+static REAL8 dot(REAL8 v[3], REAL8 w[3]) {
+  return v[0]*w[0] + v[1]*w[1] + v[2]*w[2];
+}
+
+static REAL8 norm3(REAL8 v[3]) { return sqrt(dot(v,v)); }
+
+static void cross(REAL8 x[3], REAL8 y[3], REAL8 z[3]) {
+  z[0] = x[1]*y[2] - x[2]*y[1];
+  z[1] = x[2]*y[0] - x[0]*y[2];
+  z[2] = x[0]*y[1] - x[1]*y[0];
+}
+
+static void rotateVectorAboutVector(REAL8 v[3], REAL8 axis[3], REAL8 theta) {
+  REAL8 an = norm3(axis);
+  REAL8 x[3], y[3], z[3];
+  REAL8 zdotv, xnorm;
+  INT4 i;
+
+  for (i = 0; i < 3; i++) {
+    z[i] = axis[i]/an; /* zhat = axisHat */
+  }
+
+  zdotv = dot(z, v);
+
+  for (i = 0; i < 3; i++) {
+    x[i] = v[i] - zdotv*z[i]; /* Remove the z component from v, store in x. */
+  }
+
+  xnorm = norm3(x);
+
+  if (xnorm == 0.0) return; /* v is along axis, rotation is done. */
+
+  for (i = 0; i < 3; i++) {
+    x[i] /= xnorm;
+  }
+
+  cross(z, x, y);  /* y = z \times x*/
+
+  for (i = 0; i < 3; i++) {
+    v[i] = zdotv*z[i] + xnorm*(cos(theta)*x[i]+sin(theta)*y[i]);
+  }
+}
+
+static void thetaPhiToVector(REAL8 norm, REAL8 theta, REAL8 phi, REAL8 v[3]) {
+  v[2] = norm*cos(theta);
+  v[0] = norm*sin(theta)*cos(phi);
+  v[1] = norm*sin(theta)*sin(phi);
+}
+
+static void vectorToThetaPhi(REAL8 *nrm, REAL8 *theta, REAL8 *phi, REAL8 v[3]) {
+  *nrm = norm3(v);
+
+  *theta = acos(v[2]/(*nrm));
+
+  *phi = atan2(v[1], v[0]);
+
+  if (*phi < 0.0) {
+    *phi += 2.0*M_PI; /* We use 0 <= phi < 2*M_PI, while atan2 uses -M_PI < phi <= M_PI. */
+  }
+}
+
+static void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  REAL8 inc, theta1, theta2, phi1, phi2;
+  REAL8 L[3], A1[3], A2[3];
+  REAL8 rotAngle;
+  REAL8 selector;
+  REAL8 dummy;
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  inc = *((REAL8 *)getVariable(proposedParams, "inclination"));
+  theta1 = *((REAL8 *)getVariable(proposedParams, "theta_spin1"));
+  phi1 = *((REAL8 *)getVariable(proposedParams, "phi_spin1"));
+  theta2 = *((REAL8 *)getVariable(proposedParams, "theta_spin2"));
+  phi2 = *((REAL8 *)getVariable(proposedParams, "phi_spin2"));
+
+  thetaPhiToVector(1.0, inc, 0.0, L); 
+  thetaPhiToVector(1.0, theta1, phi1, A1);
+  thetaPhiToVector(1.0, theta2, phi2, A2);
+
+  rotAngle = 2.0*M_PI*gsl_rng_uniform(runState->GSLrandom);
+
+  selector = gsl_rng_uniform(runState->GSLrandom);
+  
+  if (selector < 1.0/3.0) {
+    /* Rotate both spins about L */
+    rotateVectorAboutVector(A1, L, rotAngle);
+    rotateVectorAboutVector(A2, L, rotAngle);
+  } else if (selector < 2.0 / 3.0) {
+    /* Rotate only A1 */
+    rotateVectorAboutVector(A1, L, rotAngle);
+  } else {
+    /* Rotate only A2 */
+    rotateVectorAboutVector(A2, L, rotAngle);
+  }
+
+  vectorToThetaPhi(&dummy, &theta1, &phi1, A1);
+  vectorToThetaPhi(&dummy, &theta2, &phi2, A2);
+
+  setVariable(proposedParams, "theta_spin1", &theta1);
+  setVariable(proposedParams, "phi_spin1", &phi1);
+  setVariable(proposedParams, "theta_spin2", &theta2);
+  setVariable(proposedParams, "phi_spin2", &phi2);
+}
