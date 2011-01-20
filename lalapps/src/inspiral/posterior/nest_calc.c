@@ -299,13 +299,19 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		}
 		fprintSample(fpout,Live[i]);
 	}
+	
+	/* Output the aximum template, data, etc */
+	sprintf(outEnd,"%s_maxLdata.dat",outfile);
+	MCMCinput->dumpfile=outEnd;
+	MCMCinput->funcLikelihood(MCMCinput,Live[Nlive-1]);
+	
+	/* Output some statistics */
 	double Npoints = MCMCinput->numberDataStreams*MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->deltaF);
 	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood/Npoints);
 	logZ=mean(logZarray,Nruns);
 	fprintf(stdout,"deltaLmax = %lf\n",Live[Nlive-1]->logLikelihood-logZnoise);
 	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
 	fprintf(stdout,"Z-score = %lf\n",zscore);
-	
 	fclose(fpout);
 	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");
