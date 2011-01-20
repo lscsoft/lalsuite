@@ -621,46 +621,74 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 //	return(logdensity);
 //}
 
+static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALVariables *proposedParams,
+                                   LALProposalFunction *props[], REAL8 weights[]) {
+  REAL8 totalWeight, uniformRand;
+  INT4 NProps, i;
+
+  NProps=0;
+  while (props[NProps] != NULL) NProps++;
+
+  totalWeight = 0.0;
+  for (i = 0; i < NProps; i++) {
+    totalWeight += weights[i];
+  }
+
+  uniformRand = gsl_rng_uniform(runState->GSLrandom);
+
+  i = 0;
+  while (uniformRand > weights[i] / totalWeight) {
+    uniformRand -= weights[i]/totalWeight;
+    i++;
+  }
+
+  (props[i])(runState, proposedParams);
+
+  return;
+}
+
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
 	UINT4 nIFO=0;
 	LALIFOData *ifo=runState->data;
-	REAL8 randnum;
 	REAL8 BLOCKFRAC=0.20,
           SINGLEFRAC=0.65,
           SKYFRAC=0.05,
           INCFRAC=0.05,
           PHASEFRAC=0.05;
-        
-top:
-	randnum=gsl_rng_uniform(runState->GSLrandom);
-	/* Choose a random type of jump to propose */
-	if(randnum<BLOCKFRAC)
-          PTMCMCLALBlockCorrelatedProposal(runState, proposedParams); /* Try to propose from correlated jumps; fall back on Block proposal if no covariance matrix specified. */
-	else if(randnum<BLOCKFRAC + SINGLEFRAC)
-		PTMCMCLALSingleCorrelatedProposal(runState,proposedParams);
-	else if(randnum<BLOCKFRAC + SINGLEFRAC + SKYFRAC){
-		/* Check number of detectors */
-		while(ifo){ifo=ifo->next; nIFO++;}
-		
-		if(nIFO<2) goto top;
-		if(nIFO<3) 
-			PTMCMCLALInferenceRotateSky(runState, proposedParams);
-		else {
-			/* Choose to rotate or reflect */
-			if(randnum- (BLOCKFRAC + SINGLEFRAC)>SKYFRAC/2.0)
-				PTMCMCLALInferenceRotateSky(runState, proposedParams);
-			else{
-				PTMCMCLALInferenceReflectDetPlane(runState, proposedParams);
-				PTMCMCLALBlockProposal(runState,proposedParams);
-			}
-		}
-	} else if (randnum < BLOCKFRAC + SINGLEFRAC + SKYFRAC + INCFRAC) {
-          PTMCMCLALInferenceInclinationFlip(runState, proposedParams);
-        } else if (randnum < BLOCKFRAC + SINGLEFRAC + SKYFRAC + INCFRAC + PHASEFRAC) {
-          PTMCMCLALInferenceOrbitalPhaseJump(runState, proposedParams);
-        }
 
+        nIFO = 0;
+        while(ifo){ifo=ifo->next; nIFO++;}
+        
+        if (nIFO < 2) {
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC};
+          LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
+                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALInferenceInclinationFlip,
+                                          &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          0};
+          PTMCMCCombinedProposal(runState, proposedParams, props, weights);
+          return;
+        } else if (nIFO < 3) {
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC};
+          LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
+                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALInferenceRotateSky,
+                                          &PTMCMCLALInferenceInclinationFlip,
+                                          &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          0};
+          PTMCMCCombinedProposal(runState, proposedParams, props, weights);
+        } else {
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC};
+          LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
+                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALInferenceRotateSky,
+                                          (LALProposalFunction *)(&PTMCMCLALInferenceReflectDetPlane),
+                                          &PTMCMCLALInferenceInclinationFlip,
+                                          &PTMCMCLALInferenceOrbitalPhaseJump,
+                                          0};
+          PTMCMCCombinedProposal(runState, proposedParams, props, weights);
+        }
 }
 
 void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
