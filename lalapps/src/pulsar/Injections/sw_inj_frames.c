@@ -63,7 +63,10 @@ example$ ./lalapps_sw_inj_frames -d 128 -s 945625472 -p /Users/erinmacdonald/lsc
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
 #include <lal/BinaryPulsarTiming.h>
+#include <lal/LogPrintf.h>
 /*#include <lal/PulsarDataTypes.h>*/
+
+#define STRINGLENGTH 256              /* the length of general string */
 
 /* ---------- local type definitions ---------- */
 typedef struct{
@@ -118,7 +121,7 @@ int main(int argc, char **argv)
   /*  REAL8Vector *Tstamp=NULL;*/
   /*  FILE *outtest;*/
   
-  FrStream *frfile=NULL;
+  /*  FrStream *frfile=NULL;*/
   FrStream *gwffile=NULL;
   
   struct dirent **namelist;
@@ -241,25 +244,34 @@ int main(int argc, char **argv)
 
       /* read in and test generated frame with XLAL function*/
 
+      struct FrameH *outFrame   = NULL;        /* frame data structure */
+
+      if ((outFrame = XLALFrameNew(&epoch,(REAL8)ndata,"CW_INJ",1,0,0)) == NULL) {
+	LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() failed with error = %d.\n",fn,xlalErrno);
+	XLAL_ERROR(fn,XLAL_EFAILED);
+      }
+
+
+
       /**** This is where we need to change to Chris's code for writing frames ********/
       /*This is wher the error is coming in... need to have a file defined and written already */
-      if (( frfile = XLALFrOpen( uvar->outputdir, out_file )) == NULL){
+      /*if (( frfile = XLALFrOpen( uvar->outputdir, out_file )) == NULL){
 	XLAL_ERROR ( fn, XLAL_EFUNC);
 	}
-      else {
+	else {*/
       series=NULL;
 	if ((series = XLALCreateREAL8TimeSeries( out_chan, &epoch, 0., 1./srate, &lalSecondUnit, (int)(ndata*srate) )) == NULL){
 	  XLAL_ERROR ( fn, XLAL_EFUNC );
 	}
-	CHAR *fffile;
-	sprintf(fffile, "%s/%s", uvar->outputdir, out_file);
-	if (fopen(fffile , 'w+') == NULL){
+	CHAR fffile[256];
+	snprintf(fffile,STRINGLENGTH,"%s/%s",uvar->outputdir,out_file);
+	if (fopen(fffile , "w+") == NULL){
 	  fprintf(stderr, "fail");
 	}
 
-	if (( frfile = XLALFrOpen( uvar->outputdir, out_file )) == NULL){
+	/*if (( frfile = XLALFrOpen( uvar->outputdir, out_file )) == NULL){
 	  XLAL_ERROR ( fn, XLAL_EFUNC );
-	}
+	  }*/
 	/*create series to be the sum, general series to add to the noise */
 	REAL8TimeSeries *total_inject=NULL;
 	if (( total_inject = XLALCreateREAL8TimeSeries(out_chan, &epoch, 0., 1./srate, &lalSecondUnit, (UINT4)(ndata*srate)) ) == NULL) {
@@ -328,7 +340,7 @@ int main(int argc, char **argv)
 	    }
 	    params.orbit->tp.gpsSeconds = (UINT4)floor(pulparams.T0);
 	    params.orbit->tp.gpsNanoSeconds = (UINT4)floor((pulparams.T0 - params.orbit->tp.gpsSeconds)*1e9);
-	  } /* if pulparams.model */
+	  } /* if pulparams.model is BINARY */
 	  else
 	    params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
             
@@ -383,8 +395,20 @@ int main(int argc, char **argv)
 	  series->data->data[i] = gwfseries->data->data[i] + total_inject->data->data[i]; /*read in makefakedata file -- how to add?*/
 	  /*fprintf(stderr, "%le\n", series->data->data[i]);*/
 	}
+
+	if (XLALFrameAddREAL8TimeSeriesProcData(outFrame,series)) {
+	  LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddINT4TimeSeries() failed with error = %d.\n",fn,xlalErrno);
+	  XLAL_ERROR(fn,XLAL_EFAILED);
+	}
+
 	fprintf(stderr,"%e\n", series->data->data[1]);
-	
+
+        /* write frame structure to file (opens, writes, and closes file) - last argument is compression level */
+        if (XLALFrameWrite(outFrame,fffile,1)) {
+          LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n",fn,xlalErrno);
+          XLAL_ERROR(fn,XLAL_EFAILED);
+        }
+
 	if (( XLALFrWriteREAL8TimeSeries( series, 1 ) ) != XLAL_SUCCESS ){
 	  XLAL_ERROR( fn, XLAL_EFUNC );
 	}
@@ -402,7 +426,6 @@ int main(int argc, char **argv)
 	/*  }*/
 	/****End test****/
 	
-      }
 	/* Free up the memory */
 	
 	/*  XLALDestroyREAL8Vector(injsig);*/
