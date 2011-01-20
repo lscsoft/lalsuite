@@ -958,7 +958,8 @@ LALHCapDerivativesP4PN(
    REAL8 dr, ds, dp, dq;
    REAL8 r2, p2, p4, q2;
    REAL8 u, u2, u3;
-   REAL8 A, AoverSqrtD, dAdr, Heff;
+   REAL8 A, AoverSqrtD, dAdr, Heff, Hreal;
+   REAL8 HeffHreal;
    REAL8 eta, z3, omega, v;
 
    /* Non-Keplerian velocity */
@@ -988,11 +989,18 @@ LALHCapDerivativesP4PN(
    dAdr       = XLALCalculateEOBdAdr(r, eta);
    AoverSqrtD = A / sqrt( XLALCalculateEOBD(r, eta) );
 
-   Heff = XLALEffectiveHamiltonian( values, ak );
+   /* Note that Hreal as given here is missing a factor of 1/eta */
+   /* This is because it only enters into the derivatives in     */
+   /* the combination eta*Hreal*Heff, so the eta would get       */
+   /* cancelled out anyway. */
 
+   Heff  = XLALEffectiveHamiltonian( values, ak );
+   Hreal = sqrt( 1. - 2.*eta*(Heff - 1.) );
 
-   dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / Heff;
-   ds = dvalues->data[1] = omega = q * A * u2 / Heff;
+   HeffHreal = Heff * Hreal;
+
+   dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
+   ds = dvalues->data[1] = omega = q * A * u2 / HeffHreal;
 
    v = cbrt(omega);
 
@@ -1010,7 +1018,7 @@ LALHCapDerivativesP4PN(
    vPhi6 *= vPhi6;
 
    dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * ( 2.0 * ( q2 + p4 * z3) * A
-                      - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / Heff;
+                      - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal;
    dq = dvalues->data[3] = - omega * ak->flux(vPhi,ak->coeffs)/(eta * vPhi6);
 }
 
@@ -1936,6 +1944,8 @@ LALEOBPPWaveformEngine (
 /*
    omegamatch = -0.05 -0.01 + 0.133 + 0.183 * params->eta + 1.161 * params->eta * params->eta;
 */
+   /*FILE *out = fopen("eobpp-10-10_fixed.dat", "w");*/
+
 
    while ( ( omega > omegaOld || !isnan(hLM.re) ) && r < rOld)
    {
@@ -2005,6 +2015,9 @@ LALEOBPPWaveformEngine (
           ampl->data[j] =  (REAL4)( apFac * v2 );
           ampl->data[k] =  (REAL4)( acFac * v2 );
           phse->data[i] =  (REAL8)( st );
+          /*fprintf( out, "%e %e %e %e %e %e %e %e %e %e\n", sig1->data[i], sig2->data[i], values->data[0],
+             values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
+             dvalues->data[2], dvalues->data[3] );*/
         }
         else if ( !isnan( hLM.re) )
         {
@@ -2139,6 +2152,8 @@ LALEOBPPWaveformEngine (
       }
       ndx++;
    }
+
+   /*fclose( out );*/
 
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
