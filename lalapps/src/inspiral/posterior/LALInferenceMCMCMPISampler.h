@@ -28,6 +28,9 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
 /* Flip inclination about observing plane (iota -> Pi - iota) */
 void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams);
 
+/* Rotate one or both spins about L. */
+void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams);
+
 /* Increment orbital phase by Pi */
 void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALVariables *proposedParams);
 

@@ -647,8 +647,6 @@ static void PTMCMCCombinedProposal(LALInferenceRunState *runState, LALVariables 
   return;
 }
 
-static void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams);
-
 void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedParams)
 {
 	UINT4 nIFO=0;
@@ -870,20 +868,6 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
 }
 
 /* Reflect the inclination about the observing plane, iota -> Pi - iota */
-void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams) {
-  REAL8 iota;
-  copyVariables(runState->currentParams, proposedParams);
-
-  iota = *((REAL8 *) getVariable(proposedParams, "inclination"));
-
-  iota = M_PI - iota;
-
-  setVariable(proposedParams, "inclination", &iota);
-
-  /* Not really needed (probably), but let's be safe. */
-  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs); 
-}
-
 void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALVariables *proposedParams) {
   REAL8 phi;
 
@@ -1660,7 +1644,7 @@ static void vectorToThetaPhi(REAL8 *nrm, REAL8 *theta, REAL8 *phi, REAL8 v[3]) {
   }
 }
 
-static void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams) {
+void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables *proposedParams) {
   REAL8 inc, theta1, theta2, phi1, phi2;
   REAL8 L[3], A1[3], A2[3];
   REAL8 rotAngle;
@@ -1703,3 +1687,33 @@ static void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVar
   setVariable(proposedParams, "theta_spin2", &theta2);
   setVariable(proposedParams, "phi_spin2", &phi2);
 }
+
+void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  REAL8 iota;
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  iota = *((REAL8 *) getVariable(proposedParams, "inclination"));
+  
+  if (runState->template==&templateLALSTPN) {
+    /* Handle spins. */
+    REAL8 theta1, theta2;
+
+    theta1 = *((REAL8 *) getVariable(proposedParams, "theta_spin1"));
+    theta2 = *((REAL8 *) getVariable(proposedParams, "theta_spin2"));
+
+    theta1 = M_PI - theta1;
+    theta2 = M_PI - theta2;
+
+    setVariable(proposedParams, "theta_spin1", &theta1);
+    setVariable(proposedParams, "theta_spin2", &theta2);
+  }
+
+  iota = M_PI - iota;
+
+  setVariable(proposedParams, "inclination", &iota);
+
+  /* Not really needed (probably), but let's be safe. */
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs); 
+}
+
