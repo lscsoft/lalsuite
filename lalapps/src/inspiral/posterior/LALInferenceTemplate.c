@@ -1210,9 +1210,9 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	
 	//REAL8 shift0			= *(REAL8*) getVariable(IFOdata->modelParams, "phase");				/* initial phase */	
 	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
-	
+
 	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
-		fprintf(stderr, "ERROR: Desired tc is before start of segment\n");
+		fprintf(stderr, "ERROR: Desired tc %f is before start of segment %f\n",desired_tc,(IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds));
 		exit(1);
 	}
 	
@@ -1410,6 +1410,235 @@ void templateLALSTPN(LALIFOData *IFOdata)
 
 	return;
 }
+
+
+
+void templateLALGenerateInspiral(LALIFOData *IFOdata)
+/********************************************************************************************/
+/* LALGenerateInspiral wrapper.																*/
+/*  Required (`IFOdata->modelParams') parameters are:										*/
+/*   - "m1"				(mass of object 1; REAL8, solar mass)								*/
+/*   - "m2"				(mass of object 1; REAL8, solar mass)								*/
+/*   - "inclination"	(inclination angle; REAL8, radians)                                 */
+/*   - "coa_phase"      (phase angle; REAL8, radians)                                       */
+/*   - "spin1x"			(x component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
+/*   - "spin1y"			(y component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
+/*   - "spin1z"			(z component of the spin of object 1; REAL8) (if SpinTaylor approx)	*/
+/*   - "spin2x"			(x component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
+/*   - "spin2y"			(y component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
+/*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
+/*	 - "shift0"			(shift offset; REAL8, radians)			                            */
+/*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
+/*	 - "PNorder"		(Phase PN order; REAL8)												*/
+/********************************************************************************************/
+{
+	
+	static LALStatus    status;
+	CoherentGW          waveform;
+	SimInspiralTable    injParams;
+	PPNParamStruc       ppnParams;
+	Approximant			approximant=0;
+	LALPNOrder			order=0;
+	CHAR				approximant_order[LIGOMETA_WAVEFORM_MAX];
+	long				i;
+	int					forceTimeLocation;
+	
+	REAL8 a1,a2,phi,shift;
+	REAL8 m1,m2,mc,eta;
+	REAL8 chirplength;
+	
+	memset( &status, 0, sizeof(LALStatus) );
+	memset( &waveform, 0, sizeof(CoherentGW) );
+	memset( &injParams, 0, sizeof(SimInspiralTable) );
+	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+	
+
+	newswitch = 0; //temporay global variable to use the new LALSTPN
+	
+	IFOdata->modelDomain = timeDomain;
+	
+	if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
+		approximant = *(INT4*) getVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+	else die(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
+	
+	if (checkVariable(IFOdata->modelParams, "LAL_PNORDER"))
+		order = *(INT4*) getVariable(IFOdata->modelParams, "LAL_PNORDER");
+	else die(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
+	
+	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
+	LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
+	
+	
+
+	mc  = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
+	eta = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
+	
+	mc2masses(mc, eta, &m1, &m2);
+	
+	injParams.mass1			= m1;				/* stellar mass */
+	injParams.mass2			= m2;			    /* stellar mass */
+	injParams.inclination	= *(REAL8*) getVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
+	injParams.coa_phase		= *(REAL8*) getVariable(IFOdata->modelParams, "phase");
+	
+	
+	
+	REAL8 a_spin1		= 0.0;
+	if(checkVariable(IFOdata->modelParams, "a_spin1"))		a_spin1		= *(REAL8*) getVariable(IFOdata->modelParams, "a_spin1");
+	REAL8 theta_spin1	= injParams.inclination; //default to spin aligned case if no angles are provided for the spins. 
+	if(checkVariable(IFOdata->modelParams, "theta_spin1"))	theta_spin1	= *(REAL8*) getVariable(IFOdata->modelParams, "theta_spin1");
+	REAL8 phi_spin1		= 0.0;
+	if(checkVariable(IFOdata->modelParams, "phi_spin1"))	phi_spin1	= *(REAL8*) getVariable(IFOdata->modelParams, "phi_spin1");
+	
+	REAL8 a_spin2		= 0.0;
+	if(checkVariable(IFOdata->modelParams, "a_spin2"))		a_spin2		= *(REAL8*) getVariable(IFOdata->modelParams, "a_spin2");
+	REAL8 theta_spin2	= injParams.inclination; //default to spin aligned case if no angles are provided for the spins.
+	if(checkVariable(IFOdata->modelParams, "theta_spin2"))	theta_spin2	= *(REAL8*) getVariable(IFOdata->modelParams, "theta_spin2");
+	REAL8 phi_spin2		= 0.0;
+	if(checkVariable(IFOdata->modelParams, "phi_spin2"))	phi_spin2	= *(REAL8*) getVariable(IFOdata->modelParams, "phi_spin2");
+	
+	injParams.spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
+	injParams.spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
+	injParams.spin1z = (a_spin1 * cos(theta_spin1));
+	
+	injParams.spin2x = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
+	injParams.spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
+	injParams.spin2z = (a_spin2 * cos(theta_spin2));
+	
+	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
+	
+	if (IFOdata->timeData==NULL) 
+		die(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
+	
+	ppnParams.deltaT = IFOdata->timeData->deltaT;
+	double deltaT = IFOdata->timeData->deltaT;
+
+	//injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
+	injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
+	
+
+	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
+
+	if(desired_tc < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
+		fprintf(stderr, "ERROR: Desired tc %f is before start of segment %f (in %s, line %d)\n",desired_tc,(IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds), __FILE__, __LINE__);
+		exit(1);
+	}
+	
+	REAL8 instant;
+	
+	//REPORTSTATUS(&status);
+	/* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
+	LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
+	//REPORTSTATUS(&status);
+	
+    if ( status.statusCode )
+    {
+		fprintf( stderr, " ERROR in templateLALGenerateInspiral(): error generating waveform.\n" );
+		//REPORTSTATUS(&status);
+		for (i=0; i<IFOdata->timeData->data->length; i++){
+			
+			IFOdata->timeModelhPlus->data->data[i] = 0.0;
+			IFOdata->timeModelhPlus->data->data[i] = 0.0;
+		}
+		return;
+    }
+	
+	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+ppnParams.tc;
+	
+	/* now either time-shift template or just store the time value: */
+	/* (time-shifting should not be necessary in general,           */
+	/* but may be neat to have for de-bugging etc.)                 */
+	forceTimeLocation = 0;  /* default: zero! */
+		if (forceTimeLocation) { /* time-shift the time-domain template: */
+			
+			chirplength=ppnParams.tc;	/*The waveform duration up to tc */
+			REAL8 timeShift = desired_tc - (chirplength + IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);   /* This is the difference between the desired start time and the actual start time */
+			INT4 integerLeftShift = ceil(-timeShift/deltaT);
+			REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
+			
+			for (i=0; i<IFOdata->timeData->data->length; i++){		
+				if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
+					IFOdata->timeModelhPlus->data->data[i] = 0;
+					IFOdata->timeModelhCross->data->data[i] = 0;		
+				}
+				/* Shifting waveform to account for timeShift: */
+				else{
+					a1  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+2];
+					a2  = (1.0-fractionalRightShift)*waveform.a->data->data[2*(i+integerLeftShift)+1]+fractionalRightShift*waveform.a->data->data[2*(i+integerLeftShift)+3];
+					phi     = (1.0-fractionalRightShift)*waveform.phi->data->data[i+integerLeftShift]+fractionalRightShift*waveform.phi->data->data[i+integerLeftShift+1];
+					shift   = (1.0-fractionalRightShift)*waveform.shift->data->data[i+integerLeftShift]+fractionalRightShift*waveform.shift->data->data[i+integerLeftShift+1];
+					
+					IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+					IFOdata->timeModelhCross->data->data[i] = a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+				}
+			}
+		
+		}
+		else {
+			/* write template (time axis) location in "->modelParams" so that     */
+			/* template corresponds to stored parameter values                    */
+			/* and other functions may time-shift template to where they want it: */
+			setVariable(IFOdata->modelParams, "time", &instant);
+			
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				if((i+1)>=(waveform.phi->data->length - 1)){
+					IFOdata->timeModelhPlus->data->data[i] = 0;
+					IFOdata->timeModelhCross->data->data[i] = 0;		
+				}
+				else{
+					a1		= waveform.a->data->data[2*i];
+					a2		= waveform.a->data->data[2*i+1];
+					phi     = waveform.phi->data->data[i];
+					shift   = waveform.shift->data->data[i];
+				
+					IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+					IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+				}
+				
+			}
+		}
+
+	
+	
+	if(checkVariable(IFOdata->modelParams, "INFERENCE_TAPER")){
+		
+		if(*(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")<5 && *(LALInferenceApplyTaper*)getVariable(IFOdata->modelParams, "INFERENCE_TAPER")>0){
+			
+			InspiralApplyTaper bookends = *(InspiralApplyTaper*) getVariable(IFOdata->modelParams, "INFERENCE_TAPER");
+			
+			REAL4Vector *tempVec = NULL;
+			tempVec = (REAL4Vector *)XLALCreateREAL4Vector(IFOdata->timeData->data->length);
+			
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				tempVec->data[i]=(REAL4) IFOdata->timeModelhPlus->data->data[i];
+			}
+			XLALInspiralWaveTaper(tempVec,bookends);
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
+			}
+			
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
+			}
+			XLALInspiralWaveTaper(tempVec,bookends);
+			for (i=0; i<IFOdata->timeData->data->length; i++){
+				IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
+			}
+			XLALDestroyREAL4Vector(tempVec);
+			
+		}
+	}
+	
+
+	
+	destroyCoherentGW( &waveform );	
+	LALCheckMemoryLeaks();
+	
+	return;
+}
+
+
+
+
 
 
 static void destroyCoherentGW( CoherentGW *waveform )

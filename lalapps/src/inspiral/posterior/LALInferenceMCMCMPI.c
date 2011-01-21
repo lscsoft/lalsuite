@@ -188,9 +188,17 @@ void initializeMCMC(LALInferenceRunState *runState)
 	
 	ppt=getProcParamVal(commandLine,"--approx");
 	if(ppt){
-		if(strstr(ppt->value,"SpinTaylor")) {
+		/*if(strstr(ppt->value,"SpinTaylor")) {
 			runState->template=&templateLALSTPN;
 			fprintf(stdout,"Template function called is \"templateLALSTPN\"\n");
+		}
+		else {
+			runState->template=&templateLAL;
+			fprintf(stdout,"Template function called is \"templateLAL\"\n");
+		}*/
+		if(strstr(ppt->value,"SpinTaylor")) {
+			runState->template=&templateLALGenerateInspiral;
+			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
 		}
 		else {
 			runState->template=&templateLAL;
