@@ -51,7 +51,8 @@ typedef struct
    INT4 maxbinshift;
    INT4 templatelength;
    INT4 rootFindingMethod;
-   LALDetector *det;
+   LALDetector det;
+   CHAR* sftType;
 } inputParamsStruct;
 
 typedef struct
