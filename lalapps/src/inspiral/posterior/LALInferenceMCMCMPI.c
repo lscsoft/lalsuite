@@ -790,7 +790,7 @@ void initVariables(LALInferenceRunState *state)
         INT4 sigmaVecNumber = 0;
         addVariable(state->proposalArgs, "proposedSigmaNumber", &sigmaVecNumber, INT4_t, PARAM_OUTPUT);
 
-        REAL8 tau = 1e4;
+        REAL8 tau = 1e3;
         addVariable(state->proposalArgs, "adaptTau", &tau, REAL8_t, PARAM_OUTPUT);
 
         ppt = getProcParamVal(commandLine, "--adaptTau");
