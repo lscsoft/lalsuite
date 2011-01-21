@@ -1477,6 +1477,9 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	
 	injParams.mass1			= m1;				/* stellar mass */
 	injParams.mass2			= m2;			    /* stellar mass */
+	injParams.eta			= eta;
+	injParams.mchirp		= mc;
+
 	injParams.inclination	= *(REAL8*) getVariable(IFOdata->modelParams, "inclination");	    /* inclination in radian */
 	injParams.coa_phase		= *(REAL8*) getVariable(IFOdata->modelParams, "phase");
 	
@@ -1514,7 +1517,10 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 
 	//injParams.f_final = IFOdata->fHigh; //(IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
 	injParams.f_lower = IFOdata->fLow; // IFOdata->fLow * 0.9;
-	
+	//ppnParams.fStartIn = IFOdata->fLow;
+	//ppnParams.lengthIn = 0;
+	//ppnParams.ppn      = NULL;
+
 
 	REAL8 desired_tc		= *(REAL8 *)getVariable(IFOdata->modelParams, "time");   			/* time at coalescence */
 
@@ -1533,7 +1539,7 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
     if ( status.statusCode )
     {
 		fprintf( stderr, " ERROR in templateLALGenerateInspiral(): error generating waveform.\n" );
-		//REPORTSTATUS(&status);
+		REPORTSTATUS(&status);
 		for (i=0; i<IFOdata->timeData->data->length; i++){
 			
 			IFOdata->timeModelhPlus->data->data[i] = 0.0;
@@ -1588,8 +1594,9 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 					a1		= waveform.a->data->data[2*i];
 					a2		= waveform.a->data->data[2*i+1];
 					phi     = waveform.phi->data->data[i];
-					shift   = waveform.shift->data->data[i];
-				
+					if (waveform.shift) shift   = waveform.shift->data->data[i];
+					else shift = 0.0;
+					
 					IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
 					IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
 				}
