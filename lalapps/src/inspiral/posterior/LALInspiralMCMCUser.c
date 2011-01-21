@@ -784,7 +784,7 @@ in the frequency domain */
 				resp_i = det_resp.plus*model_im_prime + det_resp.cross*model_re_prime;
 				resp_r/=deltaF; resp_i/=deltaF;
 				
-				fprintf(modelout,"%4.3lf %10.10lf %10.10lf %10.10lf %10.10lf %10.10lf %10.10lf %10.10lf\n",
+				fprintf(modelout,"%4.3e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e %10.10e\n",
 						idx*deltaF, inputMCMC->invspec[det_i]->data->data[idx],
 						inputMCMC->stilde[det_i]->data->data[idx].re, inputMCMC->stilde[det_i]->data->data[idx].im,
 						resp_r, resp_i, 2.0*deltaF*(inputMCMC->stilde[det_i]->data->data[idx].re-resp_r), 2.0*deltaF*(inputMCMC->stilde[det_i]->data->data[idx].im-resp_i));
