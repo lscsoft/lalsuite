@@ -756,6 +756,49 @@ void initVariables(LALInferenceRunState *state)
           fclose(inp);
         }
 
+        ppt=getProcParamVal(commandLine, "--adapt");
+        if (ppt) {
+          fprintf(stdout, "Adapting single-param step sizes.\n");
+          UINT4 N = (approx == SpinTaylor ? 15 : 9);
+          if (!checkVariable(state->proposalArgs, SIGMAVECTORNAME)) {
+            /* We need a sigma vector for adaptable jumps. */
+            REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
+            UINT4 i = 0;
+            
+            for (i = 0; i < N; i++) {
+              sigmaVec->data[i] = 1e-4;
+            }
+            
+            addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
+          }
+          REAL8Vector *avgPaccept = XLALCreateREAL8Vector(N);
+          UINT4 i;
+
+          for (i = 0; i < N; i++) {
+            avgPaccept->data[i] = 0.0;
+          }
+          
+          addVariable(state->proposalArgs, "adaptPacceptAvg", &avgPaccept, REAL8Vector_t, PARAM_FIXED);
+        }
+
+        INT4 adaptableStep = 0;
+        addVariable(state->proposalArgs, "adaptableStep", &adaptableStep, INT4_t, PARAM_OUTPUT);
+
+        INT4 varNumber = 0;
+        addVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, INT4_t, PARAM_OUTPUT);
+
+        INT4 sigmaVecNumber = 0;
+        addVariable(state->proposalArgs, "proposedSigmaNumber", &sigmaVecNumber, INT4_t, PARAM_OUTPUT);
+
+        REAL8 tau = 1e4;
+        addVariable(state->proposalArgs, "adaptTau", &tau, REAL8_t, PARAM_OUTPUT);
+
+        ppt = getProcParamVal(commandLine, "--adaptTau");
+        if (ppt) {
+          tau = atof(ppt->value);
+          fprintf(stdout, "Setting adapt tau = %g.\n", tau);
+          setVariable(state->proposalArgs, "adaptTau", &tau);
+        }
 	
 	return;
 }

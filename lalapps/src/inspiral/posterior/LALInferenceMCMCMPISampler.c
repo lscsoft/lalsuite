@@ -298,6 +298,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 		acceptanceCount = *(INT4*) getVariable(runState->proposalArgs, "acceptanceCount");
 		
+                if (MPIrank == 0 && (i % Nskip == 0)) {
+                  /* Every 100 steps, print out sigma. */
+                  ppt = getProcParamVal(runState->commandLine, "--adapt");
+                  if (ppt) {
+                    UINT4 j;
+                    REAL8Vector *sigmas = *((REAL8Vector **)getVariable(runState->proposalArgs, SIGMAVECTORNAME));
+                    REAL8Vector *Pacc = *((REAL8Vector **) getVariable(runState->proposalArgs, "adaptPacceptAvg"));
+                    fprintf(stderr, "Iteration %10d: sigma = {", i);
+                    for (j = 0; j < sigmas->length-1; j++) {
+                      fprintf(stderr, "%8.5g, ", sigmas->data[j]);
+                    }
+                    fprintf(stderr, "%8.5g}\n", sigmas->data[sigmas->length - 1]);
+                    fprintf(stderr, "                    Paccept = {");
+                    for (j = 0; j < Pacc->length-1; j++) {
+                      fprintf(stderr, "%8.5g, ", Pacc->data[j]);
+                    }
+                    fprintf(stderr, "%8.5g}\n", Pacc->data[Pacc->length - 1]);
+                  }
+                }
+
 		if ((i % Nskip) == 0){
 			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
 			//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
@@ -320,6 +340,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			fprintf(chainoutput[tempIndex],"\n");
 			fflush(chainoutput[tempIndex]);
 			//fclose(chainoutput[tempIndex]);
+                        
 			}
 		
 
@@ -428,6 +449,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 	REAL8 logAcceptanceProbability;
 	REAL8 temperature;
 	INT4 acceptanceCount;
+        ProcessParamsTable *ppt, *commandLine = runState->commandLine;
 	
 	// current values:
 	//logPriorCurrent      = runState->prior(runState, runState->currentParams);
@@ -470,6 +492,45 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		setVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
 		//}
 	}
+
+        /* Adapt if desired. */
+        ppt = getProcParamVal(commandLine, "--adapt");
+        if (ppt) {
+          INT4 adaptableStep = *((INT4 *)getVariable(runState->proposalArgs, "adaptableStep"));
+          if (adaptableStep) {
+            INT4 i = *((INT4 *)getVariable(runState->proposalArgs, "proposedSigmaNumber"));
+            INT4 varNr = *((INT4 *)getVariable(runState->proposalArgs, "proposedVariableNumber"));
+            REAL8 Pacc = (logAcceptanceProbability > 0.0 ? 1.0 : exp(logAcceptanceProbability));
+            REAL8Vector *sigmaVec = *((REAL8Vector **)getVariable(runState->proposalArgs, SIGMAVECTORNAME));
+            REAL8Vector *avgPacc = *((REAL8Vector **)getVariable(runState->proposalArgs, "adaptPacceptAvg"));
+            REAL8 sigma = sigmaVec->data[i];
+            REAL8 tau = *((REAL8 *)getVariable(runState->proposalArgs, "adaptTau"));
+            char *name = getVariableName(&proposedParams, varNr);
+            char nameMin[VARNAME_MAX], nameMax[VARNAME_MAX];
+            REAL8 priorMin, priorMax, dprior;
+
+            sprintf(nameMin, "%s_min", name);
+            sprintf(nameMax, "%s_max", name);
+
+            priorMin = *((REAL8 *)getVariable(runState->priorArgs, nameMin));
+            priorMax = *((REAL8 *)getVariable(runState->priorArgs, nameMax));
+
+            dprior = priorMax - priorMin;
+
+            sigma *= (1.0 - 4.0*Pacc - 8.0*tau)/(4.0*Pacc - 8.0*tau - 1.0);
+            
+            sigma = (sigma > dprior ? dprior : sigma);
+            
+            sigmaVec->data[i] = sigma;
+
+            avgPacc->data[i] *= 1.0 - 1.0/tau;
+            avgPacc->data[i] += Pacc / tau;
+
+            /* Make sure we don't do this again until we take another adaptable step. */
+            adaptableStep = 0;
+            setVariable(runState->proposalArgs, "adaptableStep", &adaptableStep);
+          }
+        }
 	//fprintf(stdout,"%9.5f < %9.5f\t(%9.5f)\n",temp,logAcceptanceProbability,temperature);
 	destroyVariables(&proposedParams);	
 }
@@ -746,6 +807,7 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
     REAL8 sqrtT = sqrt(T);
     UINT4 dim;
     UINT4 i;
+    UINT4 varNr;
     REAL8Vector *sigmas = *(REAL8Vector **) getVariable(args, SIGMAVECTORNAME);
 
     copyVariables(runState->currentParams, proposedParams);
@@ -753,7 +815,8 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
     dim = proposedParams->dimension;
 
     do {
-      param = getItemNr(proposedParams, 1+gsl_rng_uniform_int(rng, dim));
+      varNr = 1+gsl_rng_uniform_int(rng, dim);
+      param = getItemNr(proposedParams, varNr);
     } while (param->vary == PARAM_FIXED || param->vary == PARAM_OUTPUT);
 
     for (dummyParam = proposedParams->head, i = 0; dummyParam != NULL; dummyParam = dummyParam->next) {
@@ -784,6 +847,13 @@ void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariab
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+
+    INT4 as = 1;
+    setVariable(args, "adaptableStep", &as);
+
+    setVariable(args, "proposedVariableNumber", &varNr);
+    
+    setVariable(args, "proposedSigmaNumber", &i);
   }
 }
 
