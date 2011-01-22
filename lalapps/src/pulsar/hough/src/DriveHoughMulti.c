@@ -18,13 +18,12 @@
  */
 
 /**
- * \file DriveHough_v3.c
+ * \file
+ * \ingroup pulsarApps
  * \author Badri Krishnan, Alicia Sintes, Llucia Sancho 
  * \brief Driver code for performing Hough transform search on non-demodulated
    data using SFTs from possible multiple IFOs
 
-   Revision: $Id$
- 
    History:   Created by Sintes and Krishnan July 04, 2003
               Modifications for S4 January 2006
 	      Modifications for S5 November 2007

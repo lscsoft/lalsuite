@@ -19,6 +19,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
+ */
+
 /*-----------------------------------------------------------------------
  *
  * File Name: makefakedata_v4.c
@@ -27,9 +33,6 @@
  *
  * This code is a descendant of an earlier implementation 'makefakedata_v2.[ch]'
  * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
- *
- * Revision: $Id$
- *
  *
  *-----------------------------------------------------------------------
  */
@@ -56,7 +59,7 @@
 RCSID ("$Id$");
 
 /* Error codes and messages */
-/* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0
 #define MAKEFAKEDATAC_ESUB  	1
 #define MAKEFAKEDATAC_EARG  	2
@@ -76,7 +79,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
 #define MAKEFAKEDATAC_MSGEBINARYOUT "Error in writing binary-data to stdout"
 #define MAKEFAKEDATAC_MSGEREADFILE "Error reading in file"
-/* </lalErrTable> */
+/*@}*/
 
 /***************************************************/
 #define TRUE (1==1)

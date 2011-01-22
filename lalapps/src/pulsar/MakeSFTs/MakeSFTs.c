@@ -17,13 +17,19 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Gregory Mendell, Xavier Siemens, Bruce Allen
+ * \brief generate SFTs
+ */
+
 /*********************************************************************************/
 /*                                                                               */
 /* File: MakeSFTs.c                                                              */
 /* Purpose: generate SFTs                                                        */
 /* Origin: first written by Xavier Siemens, UWM - May 2005,                      */
 /*         based on make_sfts.c by Bruce Allen                                   */
-/* $Id$                     */
 /*********************************************************************************/
 
 /* REVISIONS: */

@@ -1,4 +1,4 @@
-/** Copyright (C) 2010 Chris Messenger
+/*  Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarCoherent
+ * \ingroup pulsarApps
  * \file
  * \brief
  * This code is designed to compute the Bayes factor for a semi-coherent analysis

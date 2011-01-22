@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Y. Ioth, M.A. Papa, X. Siemens, R. Prix, T. Creighton
+ * \brief F-statistic generation code for known pulsars
+ */
+
 /*********************************************************************************/
 /*                    F-statistic generation code for known pulsars              */
 /*                                                                               */
@@ -57,10 +64,7 @@ RCSID( "$Id$");
 #define FILE_SPRNG 
 */
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
+/** \name Error Codes */ /*@{*/
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
@@ -68,7 +72,7 @@ RCSID( "$Id$");
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-/*************************************************** </lalErrTable> */
+/*@}*/
 
 
 /*----------------------------------------------------------------------

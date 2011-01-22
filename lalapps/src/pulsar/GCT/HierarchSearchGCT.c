@@ -24,6 +24,7 @@
 /*********************************************************************************/
 /** \author Holger Pletsch
  * \file
+ * \ingroup pulsarApps
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
  *  exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
  *

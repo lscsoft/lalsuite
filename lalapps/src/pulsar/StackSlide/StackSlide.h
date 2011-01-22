@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="ComputeSkyHV">
-Author:  Landry, M., and Mendell, G.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author M. Landry, G. Mendell
+*/
 
 /* REVISIONS: */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
@@ -30,17 +29,16 @@ $Id$
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 /* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
 
-/* <lalLaTeX> 
-\section{Header \texttt{StackSlide.h}}
-\label{s:StackSlide.h}
+/**
+\heading{Header \ref StackSlide.h}
 Computes frequency model, slide stacks accordingly, and sum them.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/StackSlide.h>
-\end{verbatim}
-\noindent  This is a short summary...
-</lalLaTeX> */
+\endcode
+This is a short summary...
+*/
 
 #ifndef _STACKSLIDE_H
 #define _STACKSLIDE_H
@@ -59,14 +57,8 @@ extern "C" {
 NRCSID (STACKSLIDEH, "$Id$");
   
 /* Author-defined error codes */
-/* <lalLaTeX>  
-     \subsection*{Error conditions}
-     \vspace{0.1in}
-     \input{StackSlideHErrorTable}
-     
-</lalLaTeX> */
   
-/* <lalErrTable file="ComputeSkyHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define STACKSLIDEH_ENULL 1
 #define STACKSLIDEH_ENNUL 2
 #define STACKSLIDEH_ENEGA 4
@@ -79,9 +71,9 @@ NRCSID (STACKSLIDEH, "$Id$");
 #define STACKSLIDECOMPUTESKYH_MSGENULL "Null Pointer in StackSlideComputeSky"
 #define STACKSLIDECOMPUTESKYH_MSGENNUL "Non-Null Pointer in StackSlideComputeSky"
 #define STACKSLIDECOMPUTESKYH_MSGENEGA "Bad Negative Value in StackSlideComputeSky"
-/* </lalErrTable>  */
+/*@}*/
 
-/* <lalErrTable file="ComputeSkyBinaryHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define COMPUTESKYBINARYH_ENULL 1
 #define COMPUTESKYBINARYH_ENNUL 2
 #define COMPUTESKYBINARYH_ERANG 3
@@ -90,21 +82,21 @@ NRCSID (STACKSLIDEH, "$Id$");
 #define COMPUTESKYBINARYH_MSGENNUL "Non-Null Pointer"
 #define COMPUTESKYBINARYH_MSGERANG "Input parameter out of range"
 #define COMPUTESKYBINARYH_MSGENEGA "Bad Negative Value"
-/* </lalErrTable>  */
+/*@}*/
 
 #define ACC 1e-9
 
-/* <lalLaTeX>
-\subsection*{Structures}
+/**
+\heading{Structures}
 
-\begin{verbatim}
+\code
 struct StackSlideParams
-\end{verbatim}
-\index{\texttt{StackSlideParams}}
-\noindent This structure contains the parameters for the \verb@StackSlide()@ routine.  The parameters are:
-\begin{description}
-\end{description}
-</lalLaTeX> */
+\endcode
+\c StackSlideParams
+This structure contains the parameters for the <tt>StackSlide()</tt> routine.  The parameters are:
+<dl>
+</dl>
+*/
 
 /* 04/12/05 gam; old version; new version is below */
 /* typedef struct

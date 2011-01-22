@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Bruce Allen, Peter Shawhan
+ * \brief multipulsar injection routine
+ */
+
 /* 
    multipulsar injection routine, written for E10/S3 by Bruce Allen,
    10/2003.  Calls to Signal Injection Library added by Peter
