@@ -67,7 +67,7 @@ Optional OPTIONS:\n \
 [--event INT (0)\t:\tUse event INT from Sim or Sngl InspiralTable]\n \
 [--Mmin FLOAT, --Mmax FLOAT\t:\tSpecify min and max prior chirp masses\n \
 [--Dmin FLOAT (1), --Dmax FLOAT (100)\t:\tSpecify min and max prior distances in Mpc\n \
-[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor|IMRPhenomFB_Chi_low)]\n \
+[--approximant STRING (TaylorF2)\t:\tUse a different approximant where STRING is (TaylorF2|TaylorT2|TaylorT3|TaylorT4|AmpCorPPN|IMRPhenomFA|IMRPhenomFB|IMRPhenomFB_NS|IMRPhenomFB_Chi|EOBNR|SpinTaylor|IMRPhenomFB_Chi_low)|IMRPhenomB_Chi_low]\n \
 [--amporder INT\t:\tAmplitude order to use, requires --approximant AmpCorPPN]\n \
 [--phaseorder INT\t:\tPhase PN order to use, multiply by two, i.e. 3.5PN=7. (Default 4 = 2.0PN)]\n\
 [--H1GPSshift FLOAT\t: Specify timeslide in H1]\n \
@@ -871,7 +871,7 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 
 	/* Set up the approximant to use in the likelihood function */
-	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRB[]="IMRPhenomFB_Chi_low";
+	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
 	inputMCMC.approximant = TaylorF2; /* Default */
 	if(!strcmp(approx,TF2)) inputMCMC.approximant=TaylorF2;
@@ -882,7 +882,8 @@ int main( int argc, char *argv[])
     else if(!strcmp(approx,BBHSpin1)) inputMCMC.approximant=IMRPhenomFB;
     else if(!strcmp(approx,BBHSpin2)) inputMCMC.approximant=IMRPhenomFB;
     else if(!strcmp(approx,BBHSpin3)) inputMCMC.approximant=IMRPhenomFB;
-    else if(!strcmp(approx,LowMassIMRB)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,LowMassIMRFB)) inputMCMC.approximant=IMRPhenomFB;
+    else if(!strcmp(approx,LowMassIMRB)) inputMCMC.approximant=IMRPhenomB;
     else if(!strcmp(approx,EBNR)) inputMCMC.approximant=EOBNR;
 	else if(!strcmp(approx,AMPCOR)) inputMCMC.approximant=AmpCorPPN;
 	else if(!strcmp(approx,ST)) inputMCMC.approximant=SpinTaylor;
@@ -986,7 +987,7 @@ doneinit:
         inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
         inputMCMC.funcInit = NestInitManualIMRBChi;
     }
-    if(!strcmp(approx,LowMassIMRB)){
+    if((!strcmp(approx,LowMassIMRB)) || (!strcmp(approx,LowMassIMRFB)) ){
 	inputMCMC.funcPrior = NestPrior;
 	inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
 	inputMCMC.funcInit = NestInitManualIMRBChi;

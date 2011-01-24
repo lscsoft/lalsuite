@@ -149,5 +149,7 @@ void IMRPhenomFA_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 
 void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
 
+void IMRPhenomB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
+
 void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
 #endif /* _LALINSPIRALMCMCUSER_H */

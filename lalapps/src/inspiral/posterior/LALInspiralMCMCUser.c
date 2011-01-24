@@ -681,6 +681,7 @@ in the frequency domain */
 		case TaylorT2 :
         case TaylorT4 : TaylorT_template(&status,&template,parameter,inputMCMC); break;
 		case SpinTaylor : SpinTaylor_template(&status,&template,parameter,inputMCMC); break;
+		case IMRPhenomB: IMRPhenomB_template(&status,&template, parameter, inputMCMC); break;
 		default: {fprintf(stderr,"This template is not available. Exiting."); exit(1);}
 	}
 
@@ -1211,6 +1212,61 @@ void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParam
 	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
 
 	return;
+
+}
+
+void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCParameter *parameter, LALMCMCInput *inputMCMC)
+{
+	UINT4 NtimeModel, idx;
+	NtimeModel = inputMCMC->segment[0]->data->length;
+	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
+	
+        /*'x' and 'y' components of spins must be set to zero.*/
+        template->spin1[0]=0.;
+        template->spin1[1]=0.;
+	template->spin1[2]=0.;
+
+        template->spin2[0]=0.;
+        template->spin2[1]=0.;
+	template->spin2[2]=0.;
+
+        /*Get aligned spins configuration/magnitude if these are set*/
+        if(XLALMCMCCheckParameter(parameter,"spin1z")) {
+        template->spin1[2] = XLALMCMCGetParameter(parameter,"spin1z");
+    }
+
+    if(XLALMCMCCheckParameter(parameter,"spin2z")) {
+        template->spin2[2] = XLALMCMCGetParameter(parameter,"spin2z");
+    }
+
+    /* Fill out parameter structure*/
+    LALInspiralParameterCalc(status,template);
+    LALInspiralRestrictedAmplitude(status,template);
+
+    if(XLALMCMCCheckParameter(parameter,"chiSpin")) {
+        double spin1z = 1.0;
+        template->spin1[2] = spin1z ;
+        double chiSpin = XLALMCMCGetParameter(parameter,"chiSpin");
+        double delta = sqrt(1.0- 4.0*template->eta);
+
+        template->spin2[2] = (chiSpin*2.0 - (1+delta)*spin1z)/ (1-delta);
+    }
+
+    /* IMRPhenomFB takes distance in metres */
+    double distanceMPC = template->distance;
+    double distanceSI= LAL_PC_SI*1e6*distanceMPC;
+    template->distance = distanceSI/inputMCMC->deltaF;//IMR doesnt normalise by multiplying by df
+
+    LALInspiralWave(status, Tmodel, template);
+    template->distance = distanceMPC;
+    
+    float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+    float Norm = winNorm * inputMCMC->deltaT;
+    for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
+    if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
+    LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
+    return;
+
 
 }
 
