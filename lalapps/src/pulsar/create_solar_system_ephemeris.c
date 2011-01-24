@@ -21,21 +21,20 @@
 
 /* Matt Pitkin - 07/04/08 */
 
-/* 
- Author: Pitkin, M. D.
- $Id$ 
-*/
-
-/*******************************************************************************
-    This code will take in JPL binary ephemeris files containing (e.g.
-    DE200.1950.2050), and output the position and velocities of a given solar
-    system body over a given time range. The code is based on Curt Cutler's
-    FORTRAN code, which itself uses E. Miles. Standish's JPL functions. However,
-    large parts of the ephemeris file reading function and interpolation
-    functions have been taken from David Hoffman's ephem_read.c code found at 
-    http://www.projectpluto.com/jpl_eph.htm - the code found there offers far
-    more functionality then my code.
-*******************************************************************************/
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matt Pitkin
+ * \brief
+ * This code will take in JPL binary ephemeris files containing (e.g.
+ * DE200.1950.2050), and output the position and velocities of a given solar
+ * system body over a given time range. The code is based on Curt Cutler's
+ * FORTRAN code, which itself uses E. Miles. Standish's JPL functions. However,
+ * large parts of the ephemeris file reading function and interpolation
+ * functions have been taken from David Hoffman's ephem_read.c code found at 
+ * http://www.projectpluto.com/jpl_eph.htm - the code found there offers far
+ * more functionality then my code.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

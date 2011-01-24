@@ -18,7 +18,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarCoherent
+ * \ingroup pulsarApps
  * \file
  * \brief
  * This code is converts an HJD (Heliocentric Julian Date) to a GPS time defined at the

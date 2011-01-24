@@ -205,7 +205,7 @@ if [ ."$build_win32" = ."true" ] ; then
 else
     case `uname -s` in
 	Darwin)
-            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" -o ".$acc" = "._altivec" ] ; then
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
@@ -213,7 +213,17 @@ else
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
 	    LDFLAGS="-lpthread $LDFLAGS"
-	    platform=i686-pc-linux-gnu
+	    if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
+	        platform=x86_64-pc-linux-gnu
+	    else
+	        platform=i686-pc-linux-gnu
+	    fi
+	    if [ ".$WITH_SSL" = "." -a -d /usr/local/ssl ]; then
+	        ssldir=/usr/local/ssl
+		CPPFLAGS="$CPPFLAGS -I$ssldir/include"
+		LIBS="$LIBS -L$ssldir/lib"
+		WITH_SSL="--with-ssl=$ssldir"
+	    fi
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"

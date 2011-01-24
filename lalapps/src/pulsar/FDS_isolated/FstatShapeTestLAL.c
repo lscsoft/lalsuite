@@ -17,11 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/*!@file
-   @author Itoh, Yousuke  
-   $Id$
-   @note 
-   @brief Note on the code
+/**
+   \file
+   \author Itoh, Yousuke  
+   \brief Note on the code
 
   (1)Description of the algorithm:
   See the GWDAW8 proceedings.
@@ -49,16 +48,12 @@
   difference of 6x10^-8. 
 
   
-  @todo 
+  \todo 
   <ul>
   <li>Adopt LALUserInput command line argument parser.   
   </ul>  
 
  */
-/*************************************** <lalVerbatim file="FstatShapeTestLALCV">
-$Id$
-***************************************************************</lalVerbatim> */
-
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -18,18 +18,13 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: ComputePSD.c
- * Authors:  Krishnan, B.  ; Sintes, A. M.
- *
- * Revision: $Id$
- *
- * History:   Created by Krishnan
- *            Modified by Sintes
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan, Iraj Gholami, Reinhard Prix, Alicia Sintes, Karl Wette
+ * \brief Compute power spectral densities
  */
+
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>

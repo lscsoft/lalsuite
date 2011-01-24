@@ -19,18 +19,15 @@
 
 /**
  * \file
- *
- * \author{Reinhard Prix}
- *
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
+ * \brief
  * This module deals with calculating various F-statistic metric approximations,
  * Fisher matrices and mismatches. Contrary to previous implementations
  * this consistently uses gsl-integration, and allows for very generic
  * handling of different coordinate systems in the Doppler parameter space.
  *
  * In particular, it allows for easy extensions to new coordinates and Doppler parameters.
- *
- *
- *
  */
 
 /* ---------- includes ---------- */

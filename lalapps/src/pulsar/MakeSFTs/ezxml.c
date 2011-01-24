@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ */
+
 /* ezxml.c
  *
  * Copyright 2004, 2005 Aaron Voisine <aaron@voisine.org>

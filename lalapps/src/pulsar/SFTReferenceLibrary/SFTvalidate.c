@@ -20,6 +20,7 @@
 /** 
  *  \author Bruce Allen
  *  \file
+ *  \ingroup pulsarApps
  *  \brief
  *  Verify that a set of SFT files is valid
  *

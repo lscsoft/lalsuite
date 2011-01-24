@@ -17,6 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * \brief
+ * Program to read in a 2-D binary orbit template file and find
+ * the closest N templates in parameter space
+ */
+
 /*********************************************************************************/
 /*         Program to read in a 2-D binary orbit template file and find          */
 /*                 the closest N templates in parameter space                    */
