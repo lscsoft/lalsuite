@@ -7,7 +7,7 @@
 
 #include "LALInference.h"
 
-#define COVMATRIXNAME "covarainceMatrix"
+#define COVMATRIXNAME "covarianceMatrix"
 #define UNCORRSAMPNAME "uncorrelatedSample"
 #define SIGMAVECTORNAME "sigmaJump"
 
