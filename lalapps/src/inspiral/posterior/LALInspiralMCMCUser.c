@@ -700,6 +700,12 @@ in the frequency domain */
 /*	LALInspiralTofV(&status,&ChirpISCOLength,pow(6.0,-0.5),(void *)&TofVparams);*/
 	ChirpISCOLength=ak.tn;
 
+	/* IMRPhenomB calcaultes the chirp length differently */
+	if(template.approximant == IMRPhenomB){
+		ChirpISCOLength = template.tC;
+	}
+
+
 	/* This is the time of the start of the wave in the GeoCentre */
 	REAL8 TimeShiftToGC=XLALMCMCGetParameter(parameter,"time");
 
