@@ -6,9 +6,11 @@
 
 REAL4 *XLALCudaMallocReal(UINT4 size)
 {
+
     static const char *func = "XLALCudaMallocReal";
     REAL4 *d_data;
-    cudaMalloc( (void **)&d_data, sizeof(REAL4) * size );
+
+    XLALCUDACHECK(cudaMalloc( (void **)&d_data, sizeof(REAL4) * size ));
 
     if( !d_data )
         XLAL_ERROR_NULL( func, XLAL_ENOMEM );
@@ -17,9 +19,11 @@ REAL4 *XLALCudaMallocReal(UINT4 size)
 
 COMPLEX8 *XLALCudaMallocComplex(UINT4 size)
 {
+
     static const char *func = "XLALCudaMallocComplex";
     COMPLEX8 *d_data;
-    cudaMalloc( (void **)&d_data, sizeof(COMPLEX8) * size );
+
+    XLALCUDACHECK(cudaMalloc( (void **)&d_data, sizeof(COMPLEX8) * size));
 
     if( !d_data )
         XLAL_ERROR_NULL( func, XLAL_ENOMEM );
@@ -28,6 +32,10 @@ COMPLEX8 *XLALCudaMallocComplex(UINT4 size)
 
 void XLALCudaFree(void *d_data)
 {
+
+  static int callcnt=1;
+  printf("called: XLALCudaFree %d\n )", callcnt++);
+
     static const char *func = "XLALCudaFree";
     if( !d_data )
         XLAL_ERROR_VOID( func, XLAL_EFAULT );

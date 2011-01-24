@@ -1,6 +1,25 @@
 #include <lal/LALDatatypes.h>
 #include "CudaFunctions.h"
 
+
+void XLALCudaError(cudaError_t error, const char *file, int line)
+{
+    if(error != cudaSuccess)	
+    {	   
+        printf("%s:%d %s\n", file, line, cudaGetErrorString(error));
+        exit(-1);
+    }
+}
+
+void XLALCudaFFTError(cufftResult_t error, const char *file, int line)
+{
+    if(error != CUFFT_SUCCESS) 
+    {
+        printf("%s:%d Cuda FFT Error: %d\n", file, line, error);
+        exit(-1);
+    }
+}
+
 int cudafft_execute_r2c(cufftHandle plan,
     cufftComplex *output, const cufftReal *input,
     cufftComplex *d_output, cufftReal *d_input,UINT4 size)
@@ -8,11 +27,11 @@ int cudafft_execute_r2c(cufftHandle plan,
     UINT4 inputBytes = size * sizeof(cufftReal);
     UINT4 outputBytes = (size/2 + 1) * sizeof(cufftComplex);
 
-    cudaMemcpy( d_input, input, inputBytes, cudaMemcpyHostToDevice );
+    XLALCUDACHECK(cudaMemcpy( d_input, input, inputBytes, cudaMemcpyHostToDevice ));
 
-    cufftExecR2C(plan, d_input, d_output);
+    XLALCUDAFFTCHECK(cufftExecR2C(plan, d_input, d_output));
 
-    cudaMemcpy( output, d_output, outputBytes, cudaMemcpyDeviceToHost );
+    XLALCUDACHECK(cudaMemcpy( output, d_output, outputBytes, cudaMemcpyDeviceToHost ));
 
     return 0;
 }
@@ -24,11 +43,11 @@ int cudafft_execute_c2r(cufftHandle plan,
     UINT4 inputBytes = (size/2 + 1) * sizeof(cufftComplex);
     UINT4 outputBytes = size * sizeof(cufftReal);
 
-    cudaMemcpy( d_input, input, inputBytes, cudaMemcpyHostToDevice );
+    XLALCUDACHECK(cudaMemcpy( d_input, input, inputBytes, cudaMemcpyHostToDevice ));
 
-    cufftExecC2R(plan, d_input, d_output);
+    XLALCUDAFFTCHECK(cufftExecC2R(plan, d_input, d_output));
 
-    cudaMemcpy( output, d_output, outputBytes, cudaMemcpyDeviceToHost );
+    XLALCUDACHECK(cudaMemcpy( output, d_output, outputBytes, cudaMemcpyDeviceToHost ));
 
     return 0;
 }
@@ -40,11 +59,11 @@ int cudafft_execute_c2c(cufftHandle plan,
 {
     UINT4 nBytes = size * sizeof(cufftComplex);
 
-    cudaMemcpy( d_input, input, nBytes, cudaMemcpyHostToDevice );
+    XLALCUDACHECK(cudaMemcpy( d_input, input, nBytes, cudaMemcpyHostToDevice ));
 
-    cufftExecC2C(plan, d_input, d_output, direction);
+    XLALCUDAFFTCHECK(cufftExecC2C(plan, d_input, d_output, direction));
 
-    cudaMemcpy( output, d_output, nBytes, cudaMemcpyDeviceToHost );
+    XLALCUDACHECK(cudaMemcpy( output, d_output, nBytes, cudaMemcpyDeviceToHost ));
 
     return 0;
 }
