@@ -298,25 +298,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
 		acceptanceCount = *(INT4*) getVariable(runState->proposalArgs, "acceptanceCount");
 		
-                if (MPIrank == 0 && (i % Nskip == 0)) {
-                  /* Every 100 steps, print out sigma. */
-                  ppt = getProcParamVal(runState->commandLine, "--adapt");
-                  if (ppt) {
-                    UINT4 j;
-                    REAL8Vector *sigmas = *((REAL8Vector **)getVariable(runState->proposalArgs, SIGMAVECTORNAME));
-                    REAL8Vector *Pacc = *((REAL8Vector **) getVariable(runState->proposalArgs, "adaptPacceptAvg"));
-                    fprintf(stderr, "Iteration %10d: sigma = {", i);
-                    for (j = 0; j < sigmas->length-1; j++) {
-                      fprintf(stderr, "%8.5g, ", sigmas->data[j]);
-                    }
-                    fprintf(stderr, "%8.5g}\n", sigmas->data[sigmas->length - 1]);
-                    fprintf(stderr, "                    Paccept = {");
-                    for (j = 0; j < Pacc->length-1; j++) {
-                      fprintf(stderr, "%8.5g, ", Pacc->data[j]);
-                    }
-                    fprintf(stderr, "%8.5g}\n", Pacc->data[Pacc->length - 1]);
-                  }
-                }
+                /* if (MPIrank == 0 && (i % Nskip == 0)) { */
+                /*   /\* Every 100 steps, print out sigma. *\/ */
+                /*   ppt = getProcParamVal(runState->commandLine, "--adapt"); */
+                /*   if (ppt) { */
+                /*     UINT4 j; */
+                /*     REAL8Vector *sigmas = *((REAL8Vector **)getVariable(runState->proposalArgs, SIGMAVECTORNAME)); */
+                /*     REAL8Vector *Pacc = *((REAL8Vector **) getVariable(runState->proposalArgs, "adaptPacceptAvg")); */
+                /*     fprintf(stderr, "Iteration %10d: sigma = {", i); */
+                /*     for (j = 0; j < sigmas->length-1; j++) { */
+                /*       fprintf(stderr, "%8.5g, ", sigmas->data[j]); */
+                /*     } */
+                /*     fprintf(stderr, "%8.5g}\n", sigmas->data[sigmas->length - 1]); */
+                /*     fprintf(stderr, "                    Paccept = {"); */
+                /*     for (j = 0; j < Pacc->length-1; j++) { */
+                /*       fprintf(stderr, "%8.5g, ", Pacc->data[j]); */
+                /*     } */
+                /*     fprintf(stderr, "%8.5g}\n", Pacc->data[Pacc->length - 1]); */
+                /*   } */
+                /* } */
 
 		if ((i % Nskip) == 0){
 			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
@@ -720,34 +720,48 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
           SINGLEFRAC=1.0,
           SKYFRAC=0.05,
           INCFRAC=0.05,
-          PHASEFRAC=0.05;
+          PHASEFRAC=0.05,
+          SKYLOCSMALLWANDERFRAC=0.05;
         REAL8 SPINROTFRAC = (runState->template == &templateLALSTPN ? 0.05 : 0.0);
+        REAL8 COVEIGENFRAC;
+        ProcessParamsTable *ppt;
+        
+        ppt=getProcParamVal(runState->commandLine, "--covarianceMatrix");
+        if (ppt) {
+          COVEIGENFRAC = 1.0;
+        } else {
+          COVEIGENFRAC = 0.0;
+        }
 
         nIFO = 0;
         while(ifo){ifo=ifo->next; nIFO++;}
         
         if (nIFO < 2) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
                                           &PTMCMCLALInferenceRotateSpins,
+                                          &PTMCMCLALInferenceCovarianceEigenvectorJump,
+                                          &PTMCMCLALInferenceSkyLocWanderJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceRotateSky,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
                                           &PTMCMCLALInferenceRotateSpins,
+                                          &PTMCMCLALInferenceCovarianceEigenvectorJump,
+                                          &PTMCMCLALInferenceSkyLocWanderJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleCorrelatedProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -755,6 +769,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
                                           &PTMCMCLALInferenceRotateSpins,
+                                          &PTMCMCLALInferenceCovarianceEigenvectorJump,
+                                          &PTMCMCLALInferenceSkyLocWanderJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         }
@@ -934,6 +950,8 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
         } else {
           *((REAL8 *)param->value) += sum;
         }
+
+        i++;
       }
     }
 
@@ -1791,3 +1809,60 @@ void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariab
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs); 
 }
 
+void PTMCMCLALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  LALVariables *proposalArgs = runState->proposalArgs;
+  gsl_matrix *eigenvectors = *((gsl_matrix **)getVariable(proposalArgs, "covarianceEigenvectors"));
+  REAL8Vector *eigenvalues = *((REAL8Vector **)getVariable(proposalArgs, "covarianceEigenvalues"));
+  REAL8 temp = *((REAL8 *)getVariable(proposalArgs, "temperature"));
+  UINT4 N = eigenvalues->length;
+  gsl_rng *rng = runState->GSLrandom;
+  UINT4 i = gsl_rng_uniform_int(rng, N);
+  REAL8 jumpSize = sqrt(temp*eigenvalues->data[i])*gsl_ran_ugaussian(rng);
+  UINT4 j;
+  LALVariableItem *proposeIterator;
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  j = 0;
+  proposeIterator = proposedParams->head;
+  if (proposeIterator == NULL) {
+    fprintf(stderr, "Bad proposed params in %s, line %d\n",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+  do {
+    if (proposeIterator->vary != PARAM_FIXED && proposeIterator->vary != PARAM_OUTPUT) {
+      REAL8 tmp = *((REAL8 *)proposeIterator->value);
+
+      tmp += jumpSize*gsl_matrix_get(eigenvectors, j, i);
+
+      memcpy(proposeIterator->value, &tmp, sizeof(REAL8));
+
+      j++;
+    }
+  } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
+
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+}
+
+void PTMCMCLALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  gsl_rng *rng = runState->GSLrandom;
+  LALVariables *proposalArgs = runState->proposalArgs;
+  REAL8 temp = *((REAL8 *)getVariable(proposalArgs, "temperature"));
+  REAL8 jumpX = sqrt(temp)*0.01*gsl_ran_ugaussian(rng)/sqrt(2.0);
+  REAL8 jumpY = sqrt(temp)*0.01*gsl_ran_ugaussian(rng)/sqrt(2.0);
+  REAL8 RA, DEC;
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  RA = *((REAL8 *)getVariable(proposedParams, "rightascension"));
+  DEC = *((REAL8 *)getVariable(proposedParams, "declination"));
+
+  RA += jumpX/cos(DEC);
+  DEC += jumpY;
+
+  setVariable(proposedParams, "rightascension", &RA);
+  setVariable(proposedParams, "declination", &DEC);
+
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+}

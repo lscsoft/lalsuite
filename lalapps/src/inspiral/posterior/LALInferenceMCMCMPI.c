@@ -724,6 +724,7 @@ void initVariables(LALInferenceRunState *state)
           FILE *inp = fopen(ppt->value, "r");
           UINT4 N = (approx == SpinTaylor ? 15 : 9);
           gsl_matrix *covM = gsl_matrix_alloc(N,N);
+          gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
           REAL8Vector *unCorrVec = XLALCreateREAL8Vector(N), *sigmaVec = XLALCreateREAL8Vector(N);
           UINT4 i, j;
 
@@ -733,6 +734,8 @@ void initVariables(LALInferenceRunState *state)
                     __FILE__, __LINE__);
             exit(1);
           }
+
+          gsl_matrix_memcpy(covCopy, covM);
 
           for (i = 0; i < N; i++) {
             sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
@@ -750,10 +753,33 @@ void initVariables(LALInferenceRunState *state)
           addVariable(state->proposalArgs, UNCORRSAMPNAME, &unCorrVec, REAL8Vector_t, PARAM_FIXED);
           addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
 
-          fprintf(stderr, "Jumping with correlated jumps in %d dimensions from file %s.\n",
+          /* Set up eigenvectors and eigenvalues. */
+          gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
+          gsl_vector *eValues = gsl_vector_alloc(N);
+          REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
+          gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
+          int gsl_status;
+
+          if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+            fprintf(stderr, "Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n",
+                    __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+            exit(1);
+          }
+
+          for (i = 0; i < N; i++) {
+            eigenValues->data[i] = gsl_vector_get(eValues,i);
+          }
+
+          addVariable(state->proposalArgs, "covarianceEigenvectors", &eVectors, gslMatrix_t, PARAM_FIXED);
+          addVariable(state->proposalArgs, "covarianceEigenvalues", &eigenValues, REAL8Vector_t, PARAM_FIXED);
+
+          fprintf(stdout, "Jumping with correlated jumps in %d dimensions from file %s.\n",
                   N, ppt->value);
 
           fclose(inp);
+          gsl_eigen_symmv_free(ws);
+          gsl_matrix_free(covCopy);
+          gsl_vector_free(eValues);
         }
 
         ppt=getProcParamVal(commandLine, "--adapt");

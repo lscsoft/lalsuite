@@ -34,6 +34,12 @@ void PTMCMCLALInferenceRotateSpins(LALInferenceRunState *runState, LALVariables 
 /* Increment orbital phase by Pi */
 void PTMCMCLALInferenceOrbitalPhaseJump(LALInferenceRunState *runState, LALVariables *proposedParams);
 
+/* Choose a random covariance matrix eigenvector to jump along. */
+void PTMCMCLALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALVariables *proposedParams);
+
+/* Jump around by 0.01 radians in angle on the sky */
+void PTMCMCLALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALVariables *proposedParams);
+
 //REAL8 GaussianLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 UnityLikelihood(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template);
 //REAL8 PTUniformGaussianPrior(LALInferenceRunState *runState, LALVariables *params);
