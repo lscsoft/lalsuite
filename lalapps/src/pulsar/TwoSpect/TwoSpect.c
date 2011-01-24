@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
       if (antweightsrms == 0.0) {
          antweightsrms = currentAntWeightsRMS;
       }
-      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.03 ) {
+      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
       }
