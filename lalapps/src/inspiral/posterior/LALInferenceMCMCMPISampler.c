@@ -918,7 +918,6 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
     REAL8Vector *uncorrelatedSample = *(REAL8Vector **)getVariable(args, UNCORRSAMPNAME);
     UINT4 i;
     UINT4 N = uncorrelatedSample->length;
-    REAL8 sqrtN = sqrt(N);
     LALVariableItem *param = NULL;
 
     copyVariables(runState->currentParams, proposedParams);
@@ -930,7 +929,7 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
     }
     
     for (i = 0; i < N; i++) {
-      uncorrelatedSample->data[i] = gsl_ran_ugaussian(rng)*sqrtT/sqrtN; /* Normalized to magnitude sqrt(T) */
+      uncorrelatedSample->data[i] = gsl_ran_ugaussian(rng)*sqrtT; /* Normalized to magnitude sqrt(T) */
     }
 
     for (i = 0, param = proposedParams->head; param != NULL; param = param->next) {
@@ -950,7 +949,7 @@ void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariabl
         } else {
           *((REAL8 *)param->value) += sum;
         }
-
+        
         i++;
       }
     }
@@ -1833,8 +1832,9 @@ void PTMCMCLALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState,
   do {
     if (proposeIterator->vary != PARAM_FIXED && proposeIterator->vary != PARAM_OUTPUT) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
+      REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
 
-      tmp += jumpSize*gsl_matrix_get(eigenvectors, j, i);
+      tmp += inc;
 
       memcpy(proposeIterator->value, &tmp, sizeof(REAL8));
 
