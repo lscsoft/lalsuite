@@ -23,7 +23,7 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 /* Makes correlated jumps if the square root (Cholesky decomp) of a
    covariance matrix has been specified; if not, falls back to PTMCMCLALBlockProposal. */
 void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
-void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
+void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALVariables *proposedParams);
 
 /* Flip inclination about observing plane (iota -> Pi - iota) */
 void PTMCMCLALInferenceInclinationFlip(LALInferenceRunState *runState, LALVariables *proposedParams);

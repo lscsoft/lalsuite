@@ -739,7 +739,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         if (nIFO < 2) {
           REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
-                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
                                           &PTMCMCLALInferenceRotateSpins,
@@ -751,7 +751,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         } else if (nIFO < 3) {
           REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
-                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
                                           &PTMCMCLALInferenceInclinationFlip,
                                           &PTMCMCLALInferenceOrbitalPhaseJump,
@@ -763,7 +763,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         } else {
           REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
-                                          &PTMCMCLALSingleCorrelatedProposal,
+                                          &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
                                           (LALProposalFunction *)(&PTMCMCLALInferenceReflectDetPlane),
                                           &PTMCMCLALInferenceInclinationFlip,
@@ -811,10 +811,13 @@ void PTMCMCLALBlockProposal(LALInferenceRunState *runState, LALVariables *propos
 	
 }
 
-void PTMCMCLALSingleCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams) {
+void PTMCMCLALSingleAdaptProposal(LALInferenceRunState *runState, LALVariables *proposedParams) {
   LALVariables *args = runState->proposalArgs;
-
-  if (!checkVariable(args, SIGMAVECTORNAME)) {
+  ProcessParamsTable *ppt = getProcParamVal(runState->commandLine, "--adapt");
+  
+  if (!checkVariable(args, SIGMAVECTORNAME) || !ppt) {
+    /* We are not adaptive, or for some reason don't have a sigma
+       vector---fall back on old proposal. */
     PTMCMCLALSingleProposal(runState, proposedParams);
   } else {
     gsl_rng *rng = runState->GSLrandom;
@@ -886,7 +889,7 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 	
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-3) big_sigma = 1.0e1;    //Every 1e3 iterations, take a 10x larger jump in a parameter
 	if(gsl_ran_ugaussian(GSLrandom) < 1.0e-4) big_sigma = 1.0e2;    //Every 1e4 iterations, take a 100x larger jump in a parameter
-	
+
 	do {
           paraHead=getItemNr(proposedParams,1+(int)gsl_rng_uniform_int(GSLrandom,proposedParams->dimension));
 	} while ((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT));
