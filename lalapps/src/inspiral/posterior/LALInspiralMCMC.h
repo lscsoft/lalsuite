@@ -267,6 +267,7 @@ tagLALMCMCInput
    
   UINT4                     numberDataStreams;
   CHAR*                     ifoID[MAXDET];
+  CHAR*						dumpfile; /* Likelihod function should dump data if this is not null */
   REAL8TimeSeries*          segment[MAXDET];
   REAL8FrequencySeries*     invspec[MAXDET];
   COMPLEX16FrequencySeries* stilde[MAXDET];

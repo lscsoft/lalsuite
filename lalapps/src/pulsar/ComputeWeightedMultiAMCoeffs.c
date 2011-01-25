@@ -18,8 +18,9 @@
  */
 
 /**
- * \author Karl Wette
  * \file
+ * \ingroup pulsarApps
+ * \author Karl Wette
  * \brief Computes the weighted AM coefficients for given SFTs
  */
 

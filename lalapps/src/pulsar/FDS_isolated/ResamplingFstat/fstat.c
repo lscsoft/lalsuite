@@ -1,3 +1,14 @@
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Pinkesh Patel, Rejean Dupuis & Xavier Siemens
+ * \brief 
+ * Prototype program written to perform the calculation of the F-statistic via
+ * the use of the algorithm described in the JKS paper on pulsar data analysis. This program
+ * uses LAL, LALApps, GSL and FFTW. It also requires files which provide data on the location
+ * of the earth and sun during a desired interval of time.
+ */
+
 /* TBary.c is a prototype program written to perform the calculation of the F-statistic via the use of the algorithm described in the JKS paper on pulsar data analysis. This program uses LAL, LALApps, GSL and FFTW. It also requires files which provide data on the location of the earth and sun during a desired interval of time.
 
 Authors - Pinkesh Patel, Rejean Dupuis & Xavier Siemens

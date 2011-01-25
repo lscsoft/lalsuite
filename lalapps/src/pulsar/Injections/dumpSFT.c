@@ -22,10 +22,8 @@
  * \author Reinhard Prix
  * \date 2005
  * \file 
+ * \ingroup pulsarApps
  * \brief Code to dump various SFT-info in human-readable form to stdout.
- *
- * $Id$
- *
  */
 
 /* ---------- includes ---------- */

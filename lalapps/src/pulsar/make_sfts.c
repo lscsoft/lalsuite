@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Bruce Allen, Gregory Mendell, Jolien Creighton, Patrick Brady, Xavier Siemens
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
