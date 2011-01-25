@@ -1507,7 +1507,14 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	injParams.spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
 	injParams.spin2z = (a_spin2 * cos(theta_spin2));
 	
-	injParams.distance	= 1.;																	/* distance set at 1 Mpc */
+	if ((approximant == EOB) 
+		|| (approximant == EOBNR)
+		|| (approximant == TaylorT3)
+		|| (approximant == IMRPhenomA)
+		|| (approximant == IMRPhenomB))
+		injParams.distance  = LAL_PC_SI * 1.0e6;
+	
+	else injParams.distance	= 1.;																	/* distance set at 1 Mpc */
 	
 	if (IFOdata->timeData==NULL) 
 		die(" ERROR in templateLALGenerateInspiral(): encountered unallocated 'timeData'.\n");
