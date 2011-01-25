@@ -18,30 +18,33 @@
 
 #include <lal/LALInspiral.h>
 #include <math.h>
+#include <complex.h>
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
-	UINT4 j, jmax, jstep, k;
-	UINT4 nfilters = 0;
-	REAL8 phase_ddot, phase_dot;
-	UINT4 i;
-	COMPLEX16Vector *resp;
+	int j, jmax, jstep, k;
+	int nfilters = 0;
+	double phase_ddot, phase_dot;
 
 	/* FIXME: Add error checking for lengths of amp and phase */
+	if (amp->length != phase->length) 
+	         XLAL_ERROR(__func__, XLAL_EINVAL);
+
 	jmax = amp->length;
 
 	/* FIXME: Error check that *b0, *a1, *delay ARE null pointers */
-	if(!delay)
-		return 
+	/*if (!*a1 || !*b0 || !*delay)
+	         XLAL_ERROR(__func__, XLAL_EFAULT);*/
 
 	phase_ddot = (phase->data[2] -2.0 * phase->data[1] + phase->data[0]) / ( 2.0 * LAL_PI); // Second derivative of the phase at the first data point
-	jstep = (UINT4) floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
+
+	jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
 	j = jstep;
 
 	while (j < jmax - 2 && jstep != 0) {
 		/* FIXME: Check that the flooring of k really is correct */
 		nfilters++;
-		k = (UINT4 ) floor((REAL8 ) j - alpha * ((REAL8 ) jstep) + 0.5) - 1;
+		k = (int ) floor((double ) j - alpha * ((double ) jstep) + 0.5) - 1;
 		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
 
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */
@@ -50,13 +53,13 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		*delay = XLALResizeINT4Vector(*delay, nfilters);
 
 		/* Record a1, b0 and delay */
-		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((REAL8) exp(-beta / ((double) jstep)), -phase_dot);		
-		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((REAL8) (j-(k+1))) );
+		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((double) exp(-beta / ((double) jstep)), -phase_dot);
+		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j-(k+1))) );
 		(*delay)->data[nfilters-1] = jmax - j;
 
 		/* Calculate the next data point step */
 		phase_ddot = (phase->data[j+1] - 2.0 * phase->data[j] + phase->data[j-1]) / (2.0 * LAL_PI);
-		jstep = (UINT4) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
+		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
 		j += jstep;
 
 	}
@@ -65,11 +68,11 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 }
 
 
-int XLALInspiralIIRSetResponse(UINT4 N, COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector **response)
+int XLALInspiralIIRSetResponse(int N, COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector **response)
 {  
-	UINT4 f, j, nfilters;
+	int f, j, nfilters;
 	COMPLEX16 a1f, b0f;
-	UINT4 delayf;
+	int delayf;
 
 	/* FIX ME: Check if a1, b0, delay actually exist */
 	nfilters = a1->length;
@@ -85,24 +88,24 @@ int XLALInspiralIIRSetResponse(UINT4 N, COMPLEX16Vector *a1, COMPLEX16Vector *b0
 			delayf = delay->data[f];
 
 			for (j = delayf; j < N; j++)
-				(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (REAL8 ) (j - delayf))));
+				(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (double ) (j - delayf))));
 
 		}
 
 	return 0;
 }
 
-int XLALInspiralGenerateIIRSetFourierTransform(UINT4 j, UINT4 jmax, COMPLEX16 a1, COMPLEX16 b0, INT4 delay, COMPLEX16 *hfcos, COMPLEX16 *hfsin)
+int XLALInspiralGenerateIIRSetFourierTransform(int j, int jmax, COMPLEX16 a1, COMPLEX16 b0, INT4 delay, COMPLEX16 *hfcos, COMPLEX16 *hfsin)
 {
-	REAL8 loga1, arga1, pf;
+	double loga1, arga1, pf;
 	COMPLEX16 scl, ft, ftconj;
 
 	/* FIXME: Check if a1, b0, delay exist */
 
 	loga1 = XLALCOMPLEX16LogAbs(a1);
 	arga1 = XLALCOMPLEX16Arg(a1);
-	pf = 2.0 * LAL_PI * ((REAL8 ) j) / ((REAL8 ) jmax);
-	scl = XLALCOMPLEX16Polar(0.5, - pf * ((REAL8 ) (jmax - delay)));
+	pf = 2.0 * LAL_PI * ((double ) j) / ((double ) jmax);
+	scl = XLALCOMPLEX16Polar(0.5, - pf * ((double ) (jmax - delay)));
 
 	ft = XLALCOMPLEX16Div(b0, XLALCOMPLEX16Rect(-loga1, -arga1 - pf));
 	ftconj = XLALCOMPLEX16Div(XLALCOMPLEX16Conjugate(b0), XLALCOMPLEX16Rect(-loga1, arga1 - pf));
@@ -113,7 +116,7 @@ int XLALInspiralGenerateIIRSetFourierTransform(UINT4 j, UINT4 jmax, COMPLEX16 a1
 	return 0;
 }
 
-int XLALInspiralCalculateIIRSetInnerProduct(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, REAL8Vector *psd, REAL8 *ip)
+int XLALInspiralCalculateIIRSetInnerProduct(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, REAL8Vector *psd, double *ip)
 {
 	UINT4 k, j;
 	COMPLEX16 hA;
@@ -127,10 +130,10 @@ int XLALInspiralCalculateIIRSetInnerProduct(COMPLEX16Vector *a1, COMPLEX16Vector
 			hA = XLALCOMPLEX16Rect(0.0, 0.0);
 			for (k = 0; k < a1->length; k++)
 				{
-					XLALIIRFreqSeries(j, 2 * psd->length, a1->data[k], b0->data[k], delay->data[k], &hfcos, &hfsin);
+					XLALInspiralGenerateIIRSetFourierTransform(j, 2 * psd->length, a1->data[k], b0->data[k], delay->data[k], &hfcos, &hfsin);
 					hA = XLALCOMPLEX16Add(hA, hfcos);
 				}
-			*ip += XLALCOMPLEX16Abs2(hA) / (psd->data[j] * ((REAL8 ) psd->length)) * 1.0; 
+			*ip += XLALCOMPLEX16Abs2(hA) / (psd->data[j] * ((double ) psd->length)) * 1.0; 
 		}
 
 	return 0;

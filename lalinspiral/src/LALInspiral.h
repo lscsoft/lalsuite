@@ -1801,7 +1801,7 @@ int XLALBandPassInspiralTemplate(
         REAL4          fSampling
         );
 
-int XLALCreateInspiralIIRFilters(
+int XLALInspiralGenerateIIRSet(
 	REAL8Vector         *amp,
 	REAL8Vector         *phase,
 	double                  epsilon,
@@ -1812,30 +1812,30 @@ int XLALCreateInspiralIIRFilters(
 	INT4Vector          **delay
 	);
 
-int XLALCreateIIRResponseSeries(
-	UINT4               N,
+int XLALInspiralIIRSetResponse(
+	int               N,
 	COMPLEX16Vector     *a1,
 	COMPLEX16Vector     *b0,
 	INT4Vector          *delay,
 	COMPLEX16Vector     **response
 	);
 
-int XLALIIRFreqSeries(
-	UINT4                j,
-	UINT4                jmax,
+int XLALInspiralGenerateIIRSetFourierTransform(
+	int                 j,
+	int                 jmax,
 	COMPLEX16           a1,
 	COMPLEX16           b0,
-	INT4                delay,
+	int                 delay,
 	COMPLEX16           *hfcos,
 	COMPLEX16           *hfsin
 	);
 
-int XLALIIRInnerProduct(
+int XLALInspiralCalculateIIRSetInnerProduct(
 	COMPLEX16Vector    *a1,
 	COMPLEX16Vector    *b0,
 	INT4Vector         *delay,
 	REAL8Vector        *psd,
-	REAL8              *ip
+	double             *ip
 	);
 
 #ifdef  __cplusplus
