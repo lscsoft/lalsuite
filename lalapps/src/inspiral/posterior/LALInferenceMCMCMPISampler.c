@@ -225,9 +225,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				if(ppt1 && !ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
 										  "a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 				else if(!ppt1 && ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-											   "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+											   "phi2", "theta2", "a2", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 				else if(ppt1 && ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-											   "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+											   "a2", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 				else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
 							 "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			} else {
