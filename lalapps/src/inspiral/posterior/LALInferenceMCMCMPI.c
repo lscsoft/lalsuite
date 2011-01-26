@@ -678,41 +678,41 @@ void initVariables(LALInferenceRunState *state)
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	if(approx==SpinTaylor){
-	
-		tmpMin=0.0; tmpMax=1.0;
-		addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
-		addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
-				
-		ppt=getProcParamVal(commandLine, "--spinAligned");
-		if(ppt) fprintf(stdout,"Running with spin1 aligned to the orbital angular momentum.\n");
-		else {
-			tmpMin=0.0; tmpMax=LAL_PI;
-			addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
-			addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
-		
-			tmpMin=0.0; tmpMax=LAL_TWOPI;
-			addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
-			addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
-		}
 		
 		ppt=getProcParamVal(commandLine, "--singleSpin");
-		if(ppt) fprintf(stdout,"Running with second spin set to 0\n");
+		if(ppt) fprintf(stdout,"Running with first spin set to 0\n");
 		else {
 			tmpMin=0.0; tmpMax=1.0;
-			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
-			addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
-		
+			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+			addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
+				
 			ppt=getProcParamVal(commandLine, "--spinAligned");
-			if(ppt) fprintf(stdout,"Running with spin2 aligned to the orbital angular momentum.\n");
+			if(ppt) fprintf(stdout,"Running with spin1 aligned to the orbital angular momentum.\n");
 			else {
 				tmpMin=0.0; tmpMax=LAL_PI;
-				addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
-				addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+				addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
+				addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 		
 				tmpMin=0.0; tmpMax=LAL_TWOPI;
-				addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
-				addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+				addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
+				addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 			}
+		}
+		
+		tmpMin=0.0; tmpMax=1.0;
+		addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+	
+		ppt=getProcParamVal(commandLine, "--spinAligned");
+		if(ppt) fprintf(stdout,"Running with spin2 aligned to the orbital angular momentum.\n");
+		else {
+			tmpMin=0.0; tmpMax=LAL_PI;
+			addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
+			addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
+		
+			tmpMin=0.0; tmpMax=LAL_TWOPI;
+			addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
+			addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 		}
 	}
 	
