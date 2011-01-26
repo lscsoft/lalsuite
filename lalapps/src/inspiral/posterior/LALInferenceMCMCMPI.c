@@ -677,7 +677,8 @@ void initVariables(LALInferenceRunState *state)
 	//addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_FIXED);
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
-	if(approx==SpinTaylor){
+	ppt=getProcParamVal(commandLine, "--noSpin");
+	if(approx==SpinTaylor && !ppt){
 		
 		ppt=getProcParamVal(commandLine, "--singleSpin");
 		if(ppt) fprintf(stdout,"Running with first spin set to 0\n");
