@@ -84,7 +84,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALIFOData *ifodata1=runState->data;
         const char *USAGE = 
           "[--appendOutput fname\tBasename of the file to append outputs to.]";
-	ProcessParamsTable *ppt;
+	ProcessParamsTable *ppt,*ppt1,*ppt2;	
 
 	ppt=getProcParamVal(runState->commandLine, "--help");
 	if (ppt) {
@@ -212,14 +212,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				ifodata1=ifodata1->next;
 			}
 			fprintf(chainoutput[t], "\n\n%31s","");
+			// Ultimately, I want to have a "printParameterNonFixedHeaders()" routine
 			if (waveform == 3) {
-				ppt=getProcParamVal(runState->commandLine, "--spinAligned");
-				if(ppt) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",81,71,55,52,33,31,23,41,11,62,61);
+				ppt1=getProcParamVal(runState->commandLine, "--spinAligned");
+				ppt2=getProcParamVal(runState->commandLine, "--singleSpin");
+				if(ppt1 && !ppt2) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",81,71,55,52,33,31,23,41,11,62,61);
+				else if(!ppt1 && ppt2) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",73,74,71,55,52,33,31,23,41,11,62,61);
+				else if(ppt1 && ppt2) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",71,55,52,33,31,23,41,11,62,61);
 				else fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",83,84,81,73,74,71,55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				if(ppt) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-						"a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+				if(ppt1 && !ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+										  "a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+				else if(!ppt1 && ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+											   "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+				else if(ppt1 && ppt2) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+											   "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 				else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
 							 "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			} else {
