@@ -25,9 +25,17 @@ if __name__=='__main__':
     parser.add_option("-B","--bayesfactor",help="Location of file to store global bayes factor",default=None,type="string")
     parser.add_option("-X","--x2iota", dest="xflag", action="store_true", help="If parameter x needs to be converted to iota")
     parser.add_option("-N","--Nlive", dest="Nlive", action="store",type="int",help="number of live points for each of the files")
+    parser.add_option("-H","--headers",dest="headers",action="store",type="string",help="Text file with parameter names",default=None)
     (opts,args)=parser.parse_args()
 
     data=args
+
+    if opts.headers is None:
+        headerstr='mchirp\t eta\t time\t phi0\t dist\t RA\t dec\t psi\t iota\t likelihood'
+    else:
+        headerfile=open(opts.headers,'r')
+        headerstr=headerfile.readline()
+        headerfile.close()
 
     if not opts.outsamp and not opts.outpos and not opts.bayesfactor:
         print 'No output specified, nothing to do'
@@ -38,7 +46,7 @@ if __name__=='__main__':
     if opts.outpos is not None:
         posfilename=opts.outpos
         posfile=open(posfilename,'w')
-        posfile.write('mchirp \t eta \t time \t phi0 \t dist \t RA \t dec \t psi \t iota \t likelihood \n')
+        posfile.write(headerstr)
         for row in pos:
             for i in row:
                 posfile.write('%f\t' %(i))
