@@ -97,6 +97,9 @@ struct gengetopt_args_info
   char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lalpulsar/share/lalpulsar').  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
+  char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files (default='08-11').  */
+  char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
+  const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
   double dopplerMultiplier_arg;	/**< @brief Multiplier for the Doppler velocity (default='1.0').  */
   char * dopplerMultiplier_orig;	/**< @brief Multiplier for the Doppler velocity original value given at command line.  */
   const char *dopplerMultiplier_help; /**< @brief Multiplier for the Doppler velocity help description.  */
@@ -143,6 +146,7 @@ struct gengetopt_args_info
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
+  unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int templateLength_given ;	/**< @brief Whether templateLength was given.  */
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */

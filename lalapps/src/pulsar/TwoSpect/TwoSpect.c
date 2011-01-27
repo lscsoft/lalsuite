@@ -118,24 +118,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
-      
-   //Allocate memory for files and directory
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*sun_ephemeris));
-   sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
-   if (earth_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*earth_ephemeris));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   } else if (sun_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sun_ephemeris));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   } else if (sft_dir==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sft_dir));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   }
-   sprintf(earth_ephemeris, "%s/earth05-09.dat", args_info.ephemDir_arg);
-   sprintf(sun_ephemeris, "%s/sun05-09.dat", args_info.ephemDir_arg);
-   sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
    
    //Parameters for the sky-grid
    CHAR *sky = XLALCalloc(strlen(args_info.skyRegion_arg)+1, sizeof(*sky));
@@ -2342,6 +2324,24 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       XLAL_ERROR(fn, XLAL_EINVAL);
    }
    XLALFree((CHAR*)IFO);
+   
+   //Allocate memory for files and directory
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
+   if (earth_ephemeris==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*earth_ephemeris));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   } else if (sun_ephemeris==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sun_ephemeris));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   } else if (sft_dir==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sft_dir));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   }
+   sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
+   sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
+   sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
    
    return 0;
    

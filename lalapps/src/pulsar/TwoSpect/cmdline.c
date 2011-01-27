@@ -54,6 +54,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --outdirectory=STRING     Output directory",
   "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
   "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
+  "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
@@ -96,11 +97,12 @@ init_help_array(void)
   gengetopt_args_info_help[24] = gengetopt_args_info_full_help[24];
   gengetopt_args_info_help[25] = gengetopt_args_info_full_help[25];
   gengetopt_args_info_help[26] = gengetopt_args_info_full_help[26];
-  gengetopt_args_info_help[27] = 0; 
+  gengetopt_args_info_help[27] = gengetopt_args_info_full_help[27];
+  gengetopt_args_info_help[28] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[28];
+const char *gengetopt_args_info_help[29];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -171,6 +173,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->outdirectory_given = 0 ;
   args_info->sftDir_given = 0 ;
   args_info->ephemDir_given = 0 ;
+  args_info->ephemYear_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
@@ -217,6 +220,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->sftDir_orig = NULL;
   args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
   args_info->ephemDir_orig = NULL;
+  args_info->ephemYear_arg = gengetopt_strdup ("08-11");
+  args_info->ephemYear_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
   args_info->templateLength_arg = 50;
@@ -261,15 +266,16 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->outdirectory_help = gengetopt_args_info_full_help[19] ;
   args_info->sftDir_help = gengetopt_args_info_full_help[20] ;
   args_info->ephemDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[22] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[23] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[24] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[25] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[26] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[27] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[28] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[29] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[30] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[22] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[23] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[24] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[25] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[26] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[27] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[28] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[29] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[30] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[31] ;
   
 }
 
@@ -383,6 +389,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->sftDir_orig));
   free_string_field (&(args_info->ephemDir_arg));
   free_string_field (&(args_info->ephemDir_orig));
+  free_string_field (&(args_info->ephemYear_arg));
+  free_string_field (&(args_info->ephemYear_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
   free_string_field (&(args_info->templateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
@@ -464,6 +472,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "sftDir", args_info->sftDir_orig, 0);
   if (args_info->ephemDir_given)
     write_into_file(outfile, "ephemDir", args_info->ephemDir_orig, 0);
+  if (args_info->ephemYear_given)
+    write_into_file(outfile, "ephemYear", args_info->ephemYear_orig, 0);
   if (args_info->dopplerMultiplier_given)
     write_into_file(outfile, "dopplerMultiplier", args_info->dopplerMultiplier_orig, 0);
   if (args_info->templateLength_given)
@@ -762,6 +772,7 @@ cmdline_parser_internal (
         { "outdirectory",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
+        { "ephemYear",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
@@ -1058,6 +1069,20 @@ cmdline_parser_internal (
                 &(local_args_info.ephemDir_given), optarg, 0, "/opt/lscsoft/lalpulsar/share/lalpulsar", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "ephemDir", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Year or year range (e.g. 08-11) of ephemeris files.  */
+          else if (strcmp (long_options[option_index].name, "ephemYear") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ephemYear_arg), 
+                 &(args_info->ephemYear_orig), &(args_info->ephemYear_given),
+                &(local_args_info.ephemYear_given), optarg, 0, "08-11", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "ephemYear", '-',
                 additional_error))
               goto failure;
           
