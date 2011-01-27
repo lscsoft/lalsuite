@@ -136,10 +136,20 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		tempMax=1.0;
 	}
 	else {
-		tempDelta = log(tempMax)/(REAL8)(nChain-1);
-		for (t=0; t<nChain; ++t) {
-			tempLadder[t]=exp(t*tempDelta);
+		ppt = getProcParamVal(runState->commandLine, "--inverseLadder");
+		if(ppt){
+			tempDelta = (1.0 - 1.0/tempMax)/(REAL8)(nChain-1);
+			for (t=0; t<nChain; ++t) {
+				tempLadder[t]=1.0/(REAL8)(1.0-t*tempDelta);
 			}
+		}
+		else{
+			tempDelta = log(tempMax)/(REAL8)(nChain-1);
+			for (t=0; t<nChain; ++t) {
+				tempLadder[t]=exp(t*tempDelta);
+				}
+			}
+		
 		}
 	
 	if (MPIrank == 0) {
