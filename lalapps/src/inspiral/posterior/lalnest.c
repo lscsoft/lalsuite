@@ -105,11 +105,11 @@ Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--s2_phi_min FLOAT\t:\tSet lower limit on spin azimuthal angle for body 2 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
 [--s2_phi_max FLOAT\t:\tSet upper limit on spin azimuthal angle for body 2 for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
 [--lat_min FLOAT\t:\tSet lower limit on source plane declination for PhenSpinTaylorRD template waveform. Default is -PI/2.]\n \
-[--lat_max FLOAT\t:\Set upper limit on source plane declination for PhenSpinTaylorRD template waveform. Default is PI/2.]\n \
+[--lat_max FLOAT\t:\tSet upper limit on source plane declination for PhenSpinTaylorRD template waveform. Default is PI/2.]\n \
 [--long_min FLOAT\t:\tSet lower limit on source plane RA for PhenSpinTaylorRD template waveform. Default is 0.]\n \
-[--long_max FLOAT\t:\Set upper limit on source plane RA for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
-[--iota_min FLOAT\t:\Set lower limit on source plane inclination for PhenSpinTaylorRD template waveform. Default is 0.]\n \
-[--iota_max FLOAT\t:\Set upper limit on source plane inclination for PhenSpinTaylorRD template waveform. Default is PI.]\n \
+[--long_max FLOAT\t:\tSet upper limit on source plane RA for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
+[--iota_min FLOAT\t:\tSet lower limit on source plane inclination for PhenSpinTaylorRD template waveform. Default is 0.]\n \
+[--iota_max FLOAT\t:\tSet upper limit on source plane inclination for PhenSpinTaylorRD template waveform. Default is PI.]\n \
 [--help\t:\tPrint this message]\n \
 "
 

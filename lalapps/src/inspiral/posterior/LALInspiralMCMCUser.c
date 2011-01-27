@@ -878,7 +878,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
   REAL8 logL=0.0;
   REAL8 chisq=0.0;
 
-  REAL8 eta,mtot,mchirp;
+  REAL8 eta,mtot=0,mchirp;
   REAL8 TimeFromGC; /* Time delay from geocentre */
   REAL8 resp_r,resp_i;
   REAL8 ci,real,imag;
@@ -990,8 +990,6 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
   /* This also holds the source and the detector, LAL has two different structs for this! */
   LALDetAndSource det_source;
   det_source.pSource=&source;
-
-  FILE *modelout;
 
   for(det_i=0;det_i<inputMCMC->numberDataStreams;det_i++){ 
     /* **MAIN LOOP** For each detector */
@@ -1291,7 +1289,8 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
     /* IMRPhenomFB takes distance in metres */
     double distanceMPC = template->distance;
     double distanceSI= LAL_PC_SI*1e6*distanceMPC;
-    template->distance = distanceSI/inputMCMC->deltaF;//IMR doesnt normalise by multiplying by df
+    template->distance = distanceSI/(inputMCMC->deltaF*inputMCMC->deltaF);
+	//IMR doesnt normalise by multiplying by df, plus TF2 has a deltaF assumed which is divided out later
 
     LALBBHPhenWaveFreqDom(status,model,template);
     template->distance = distanceMPC;
@@ -1563,8 +1562,8 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 
 void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC){
 
-  FILE *TDomain,*FDomain;
   UINT4 Nmodel,NtimeModel,idx;
+  double aspin, theta, phi;
   NtimeModel =  inputMCMC->numPoints;
   Nmodel = (inputMCMC->stilde[0]->data->length-1)*2;
   REAL4Vector* TmodelPlus;//PhenSpin treats "+" and "x" polarisations differently.
@@ -1579,9 +1578,9 @@ void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LAL
   if(XLALMCMCCheckParameter(parameter,"Spin1") && XLALMCMCCheckParameter(parameter,"Spin1theta")
      && XLALMCMCCheckParameter(parameter,"Spin1phi"))
   {
-     double aspin=XLALMCMCGetParameter(parameter,"Spin1");
-     double theta=XLALMCMCGetParameter(parameter,"Spin1theta");
-     double phi  =XLALMCMCGetParameter(parameter,"Spin1phi");
+     aspin=XLALMCMCGetParameter(parameter,"Spin1");
+     theta=XLALMCMCGetParameter(parameter,"Spin1theta");
+     phi  =XLALMCMCGetParameter(parameter,"Spin1phi");
      template->spin1[0]=aspin*sin(theta)*cos(phi);
      template->spin1[1]=aspin*sin(theta)*sin(phi);
      template->spin1[2]=aspin*cos(theta);

@@ -145,7 +145,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-	LALMCMCParameter *param_ptr;
+	LALMCMCParam *param_ptr;
 
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
@@ -226,8 +226,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	
     /* Write list of parameter names */
     sprintf(outEnd,"%s_params.txt",outfile);
-    fpout=fopen(outEnd,"w")
-    for(param_ptr=temp;param_ptr;param_ptr=param_ptr->next)
+    fpout=fopen(outEnd,"w");
+    for(param_ptr=temp->param;param_ptr;param_ptr=param_ptr->next)
     {
         fprintf(fpout,"%s\t",param_ptr->core->name);
     }
