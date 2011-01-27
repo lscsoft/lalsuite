@@ -1458,13 +1458,13 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
     omegaRD = modefreqs->data[0].re * unitHz / LAL_PI / 2.;
     /* If Nyquist freq. <  220 QNM freq., print warning message, but go on */
     /* Note that we cancelled a factor of 2 occuring on both sides */
-    if (params->tSampling < modefreqs->data[0].re / LAL_PI) {
+  /*  if (params->tSampling < modefreqs->data[0].re / LAL_PI) {
 	fprintf(stdout,
 		"LALPhenSpin WARNING : Estimated ringdown freq larger than Nyquist freq.\n");
-	/* XLALDestroyCOMPLEX8Vector( modefreqs ); 
+	 XLALDestroyCOMPLEX8Vector( modefreqs ); 
 	   LALError(status->statusPtr, message);
-	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); */
-    }
+	   ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE); 
+   }*/
 
     v2 = pow(omega, 2. / 3.);
     v = sqrt(v2);

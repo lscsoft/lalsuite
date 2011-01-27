@@ -117,6 +117,8 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
+REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
+
 REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 void NestInitInjNINJA(LALMCMCParameter *parameter, void *iT);
@@ -136,6 +138,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 REAL8 MCMCSTLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC, LALMCMCParameter *parameter);
+
+REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
 void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
 
