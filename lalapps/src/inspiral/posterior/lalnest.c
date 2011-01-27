@@ -84,7 +84,7 @@ Optional OPTIONS:\n \
 [--version\t:\tPrint version information and exit]\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
 [--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
- \n\n \
+\n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S1=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
 [--nospin_flag INT\t:\tSet S1=S2=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -1328,46 +1328,13 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 												double spin2phimin=s2_phi_min;
 												double spin2phimax=s2_phi_max;
 
-												XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, -1);
+/*												XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, -1);
 												XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, -1);
-												XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, -1);
+												XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, -1);*/
 												XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,-1);
 												XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, -1);
 												XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax,-1);
 											 }	
-		
-		if(onespin_flag==1 && nospin_flag==1){
-		
-		
-												double spin1min=0.;
-												double spin1max=0.;
-
-												double spin2min=0.;
-												double spin2max=0.;
-    
-												double spin1thetamin=0.;
-												double spin1thetamax=0.;
-        
-												double spin2thetamin=0.;
-												double spin2thetamax=0.;
-
-												double spin1phimin=0.;
-												double spin1phimax=0.;
-
-												double spin2phimin=0.;
-												double spin2phimax=0.;
-
-												XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, -1);
-												XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, -1);
-												XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, -1);
-												XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,-1);
-												XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, -1);
-												XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax,-1);
-											 }		
-		
-		
-		
-		
 		
 	}
     return;

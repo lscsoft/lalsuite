@@ -1573,22 +1573,29 @@ void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LAL
   TmodelPlus=XLALCreateREAL4Vector(NtimeModel); /* Allocate storage for the waveform */
   TmodelCross=XLALCreateREAL4Vector(NtimeModel);/* Allocate storage for the waveform */
 
-  double aspin=XLALMCMCGetParameter(parameter,"Spin1");
-  double theta=XLALMCMCGetParameter(parameter,"Spin1theta");
-  double phi  =XLALMCMCGetParameter(parameter,"Spin1phi");
+  template->spin1[0]=template->spin1[1]=template->spin1[2]=0;
+  template->spin2[0]=template->spin2[1]=template->spin2[2]=0;
 
-  template->spin1[0]=aspin*sin(theta)*cos(phi);
-  template->spin1[1]=aspin*sin(theta)*sin(phi);
-  template->spin1[2]=aspin*cos(theta);
-
-  aspin=XLALMCMCGetParameter(parameter,"Spin2");
-  theta=XLALMCMCGetParameter(parameter,"Spin2theta");
-  phi  =XLALMCMCGetParameter(parameter,"Spin2phi");
-
-  template->spin2[0]=aspin*sin(theta)*cos(phi);
-  template->spin2[1]=aspin*sin(theta)*sin(phi);
-  template->spin2[2]=aspin*cos(theta);
-
+  if(XLALMCMCCheckParameter(parameter,"Spin1") && XLALMCMCCheckParameter(parameter,"Spin1theta")
+     && XLALMCMCCheckParameter(parameter,"Spin1phi"))
+  {
+     double aspin=XLALMCMCGetParameter(parameter,"Spin1");
+     double theta=XLALMCMCGetParameter(parameter,"Spin1theta");
+     double phi  =XLALMCMCGetParameter(parameter,"Spin1phi");
+     template->spin1[0]=aspin*sin(theta)*cos(phi);
+     template->spin1[1]=aspin*sin(theta)*sin(phi);
+     template->spin1[2]=aspin*cos(theta);
+  }
+    if(XLALMCMCCheckParameter(parameter,"Spin2") && XLALMCMCCheckParameter(parameter,"Spin2theta")
+         && XLALMCMCCheckParameter(parameter,"Spin2phi"))
+  {
+      aspin=XLALMCMCGetParameter(parameter,"Spin2");
+      theta=XLALMCMCGetParameter(parameter,"Spin2theta");
+      phi  =XLALMCMCGetParameter(parameter,"Spin2phi");
+      template->spin2[0]=aspin*sin(theta)*cos(phi);
+      template->spin2[1]=aspin*sin(theta)*sin(phi);
+      template->spin2[2]=aspin*cos(theta);
+  }
   template->inclination=XLALMCMCGetParameter(parameter,"iota");
   template->startPhase=XLALMCMCGetParameter(parameter,"phi");
   //template->OmegaS=0.0548;
@@ -1621,9 +1628,6 @@ void PhenSpinTaylorRD_template(LALStatus *status,InspiralTemplate *template, LAL
 
    XLALDestroyREAL4Vector(TmodelPlus);
    XLALDestroyREAL4Vector(TmodelCross);
-
- 
-
 } /* End of PhenSpinTaylorRD_template */
 
 
