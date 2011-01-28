@@ -867,8 +867,8 @@ int main( int argc, char *argv[])
 			}
 		}
 		
-		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - datastart.gpsSeconds));
-		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*datastart.gpsNanoSeconds);
+		TrigSample=(INT4)(SampleRate*(ETgpsSeconds - realstart.gpsSeconds));
+		TrigSample+=(INT4)(1e-9*SampleRate*ETgpsNanoseconds - 1e-9*SampleRate*realstart.gpsNanoSeconds);
 		/*TrigSegStart=TrigSample+SampleRate*(0.5*(segDur-InjParams.tc)) - seglen; */ /* Centre the injection */
 		TrigSegStart=TrigSample+ (2*SampleRate) - seglen; /* Put trigger 2 s before end of segment */
 		if(InjParams.tc>segDur) fprintf(stderr,"Warning! Your template is longer than the data segment\n");
@@ -910,7 +910,15 @@ int main( int argc, char *argv[])
 			/* Shift the data if requested like for PSD */
 			LIGOTimeGPS realsegstart;
 			memcpy(&realsegstart,&segmentStart,sizeof(LIGOTimeGPS));
-               		if(specifictimeslides && !FakeFlag){ /* Set up time slides by offsetting the data by user defined value */
+               		if(timeslides&&!FakeFlag){ /* Set up time slides by randomly offsetting the data */
+                        	LALCreateRandomParams(&status,&randparam,seed);
+                        	LALUniformDeviate(&status,&TSoffset,randparam);
+                        	TSoffset=(TSoffset-0.5)*TIMESLIDE;
+                        	XLALGPSAdd(&segmentStart, TSoffset);
+	                        fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
+        	                XLALDestroyRandomParams(randparam);
+			}
+			if(specifictimeslides && !FakeFlag){ /* Set up time slides by offsetting the data by user defined value */
                         	if( ( !strcmp(IFOnames[i],"H1") && H1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"L1") &&
                                         L1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"V1") && V1GPSshift != 0.0 ) ) {
                                 if(!strcmp(IFOnames[i],"H1"))
@@ -919,9 +927,8 @@ int main( int argc, char *argv[])
                                         TSoffset=L1GPSshift;
                                 else if(!strcmp(IFOnames[i],"V1"))
                                         TSoffset=V1GPSshift;
-                                datastart = realstart;
                                 XLALGPSAdd(&segmentStart, TSoffset);
-                                fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
+                                fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realsegstart.gpsSeconds+1e-9*realsegstart.gpsNanoSeconds,segmentStart.gpsSeconds+1e-9*segmentStart.gpsNanoSeconds);
                         	}
                 	}
 			inputMCMC.segment[i]=readTseries(CacheFileNames[i],ChannelNames[i],segmentStart,(REAL8)seglen/SampleRate);
