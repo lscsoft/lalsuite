@@ -1329,29 +1329,13 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 	}
 	
 	else{
-		 if(onespin_flag==1 && nospin_flag==0){ 
-		
-												double spin1min=0.;
-												double spin1max=0.;
-
-												double spin2min=s2_mag_min;
-												double spin2max=s2_mag_max;
-    
-												double spin1thetamin=0.;
-												double spin1thetamax=0.;
-        
-												double spin2thetamin=s2_theta_min;
-												double spin2thetamax=s2_theta_max;
-
-												double spin1phimin=0.;
-												double spin1phimax=0.;
-
-												double spin2phimin=s2_phi_min;
-												double spin2phimax=s2_phi_max;
-
-/*												XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, -1);
-												XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, -1);
-												XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, -1);*/
+		if(onespin_flag==1 && nospin_flag==0){
+			double spin2min=s2_mag_min;
+			double spin2max=s2_mag_max;
+        		double spin2thetamin=s2_theta_min;
+			double spin2thetamax=s2_theta_max;
+			double spin2phimin=s2_phi_min;
+			double spin2phimax=s2_phi_max;
 												XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,-1);
 												XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, -1);
 												XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax,-1);
