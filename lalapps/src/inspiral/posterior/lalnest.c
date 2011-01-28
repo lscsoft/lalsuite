@@ -907,7 +907,28 @@ int main( int argc, char *argv[])
 			}
 
 			/* Set up to read trigger time independently */
+			/* Shift the data if requested like for PSD */
+			LIGOTimeGPS realsegstart;
+			memcpy(&realsegstart,&segmentStart,sizeof(LIGOTimeGPS));
+               		if(specifictimeslides && !FakeFlag){ /* Set up time slides by offsetting the data by user defined value */
+                        	if( ( !strcmp(IFOnames[i],"H1") && H1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"L1") &&
+                                        L1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"V1") && V1GPSshift != 0.0 ) ) {
+                                if(!strcmp(IFOnames[i],"H1"))
+                                        TSoffset=H1GPSshift;
+                                else if(!strcmp(IFOnames[i],"L1"))
+                                        TSoffset=L1GPSshift;
+                                else if(!strcmp(IFOnames[i],"V1"))
+                                        TSoffset=V1GPSshift;
+                                datastart = realstart;
+                                XLALGPSAdd(&segmentStart, TSoffset);
+                                fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
+                        	}
+                	}
 			inputMCMC.segment[i]=readTseries(CacheFileNames[i],ChannelNames[i],segmentStart,(REAL8)seglen/SampleRate);
+			/* Copy the real start time into vector */
+			memcpy(&segmentStart,&realsegstart,sizeof(LIGOTimeGPS));
+			memcpy(&(inputMCMC.segment[i]->epoch),&realsegstart,sizeof(LIGOTimeGPS));
+
 			if(SampleRate) check=XLALResampleREAL8TimeSeries(inputMCMC.segment[i],1.0/SampleRate);
 
 			if(InjParams.tc>segDur-padding) fprintf(stderr,"Warning, flat-top is shorter than injected waveform!\n");
