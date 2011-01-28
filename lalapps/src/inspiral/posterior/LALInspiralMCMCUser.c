@@ -1451,7 +1451,7 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
     /* IMRPhenomFB takes distance in metres */
     double distanceMPC = template->distance;
     double distanceSI= LAL_PC_SI*1e6*distanceMPC;
-    template->distance = distanceSI/inputMCMC->deltaF;//IMR doesnt normalise by multiplying by df
+    template->distance = distanceSI/(inputMCMC->deltaF*inputMCMC->deltaF);//IMR doesnt normalise by multiplying by df
 
     LALInspiralWave(status, Tmodel, template);
     template->distance = distanceMPC;
