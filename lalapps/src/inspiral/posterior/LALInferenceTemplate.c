@@ -456,6 +456,12 @@ void templateLAL(LALIFOData *IFOdata)
   double phi      = *(REAL8*) getVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double tc       = *(REAL8*) getVariable(IFOdata->modelParams, "time");
   double iota     = *(REAL8*) getVariable(IFOdata->modelParams, "inclination");
+  double spin1    = 0.0;
+  if (checkVariable(IFOdata->modelParams, "spin1")) 
+    spin1 =  *(REAL8*) getVariable(IFOdata->modelParams, "spin1");
+  double spin2    = 0.0;
+  if (checkVariable(IFOdata->modelParams, "spin2")) 
+    spin2 =  *(REAL8*) getVariable(IFOdata->modelParams, "spin2");
   int approximant=0, order=0;
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
   double m1, m2, chirptime, deltaT;
@@ -504,6 +510,8 @@ void templateLAL(LALIFOData *IFOdata)
   /* actual inspiral parameters: */
   params.mass1       = m1;
   params.mass2       = m2;
+  params.spin1[2]    = spin1;
+  params.spin2[2]    = spin2;
   params.startPhase  = phi;
   if ((params.approximant == EOB) 
       || (params.approximant == EOBNR)

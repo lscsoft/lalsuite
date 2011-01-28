@@ -245,10 +245,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 				else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
 							 "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			} else {
-				fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
+        ppt1=getProcParamVal(runState->commandLine, "--spinAligned");
+        if(ppt1) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",81,71,55,52,33,31,23,41,11,62,61);
+				else fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
 				fprintf(chainoutput[t],"\n");
 				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
+				if(ppt1) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
+                         "a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");
+        else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
 			}
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);

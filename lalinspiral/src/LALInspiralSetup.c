@@ -86,6 +86,9 @@ LALInspiralSetup (
    REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
    REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
    REAL8 oneby6=1.0/6.0;
+   REAL8 beta = 0.L;
+   REAL8 sigma = 0.L;
+   REAL8 chi1, chi2;
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
    ATTATCHSTATUSPTR(status);
@@ -128,6 +131,22 @@ LALInspiralSetup (
    ak->eta = (ak->m1*ak->m2) / (ak->totalmass*ak->totalmass);
    eta = ak->eta;
    ak->totalmass = ak->totalmass * LAL_MTSUN_SI;
+
+
+/* Aligned spin corrections (Poisson and Will PRD 52 848 (1995))
+   Use the z components of the spins */
+  chi1 = params->spin1[2];
+  chi2 = params->spin2[2];
+  if (eta <= 0.25L)
+  {
+    /* Chi1 is spin on larger mass
+       m1 = mtot * (1 + sqrt(1 - 4 eta)) / 2
+       m2 = mtot * (1 - sqrt(1 - 4 eta)) / 2 */
+    beta = ((113.L - 76.L * ieta * eta) * (chi1 + chi2) / 24.L)
+         + (113.L * sqrt(1.L - 4.L * ieta * eta) * (chi1 - chi2) / 24.L);
+    sigma = 474.L * ieta * eta * chi1 * chi2 / 48.L;
+  }
+
 
 /* Set initial velocity according to initial frequency */
 
@@ -303,9 +322,9 @@ LALInspiralSetup (
 
    ak->pfaN = 3.L/(128.L * eta);
    ak->pfa2 = 5.L*(743.L/84.L + 11.L * ieta*eta)/9.L;
-   ak->pfa3 = -16.L*LAL_PI;
+   ak->pfa3 = -16.L*LAL_PI + 4.L*beta;
    ak->pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * ieta*eta
-		   + 617.L * ieta*eta*eta)/72.L;
+		   + 617.L * ieta*eta*eta)/72.L - 10.L*sigma;
    ak->pfa5 = 5.L/9.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
    ak->pfl5 = 5.L/3.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
 

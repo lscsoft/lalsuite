@@ -717,6 +717,23 @@ void initVariables(LALInferenceRunState *state)
 		}
 	}
 	
+  ppt=getProcParamVal(commandLine, "--spinAligned");
+	if(approx==TaylorF2 && ppt){
+		
+    tmpMin=-1.0; tmpMax=1.0;
+    addVariable(currentParams, "spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+    addMinMaxPrior(priorArgs, "spin1",     &tmpMin, &tmpMax,   REAL8_t);
+		
+		tmpMin=-1.0; tmpMax=1.0;
+		addVariable(currentParams, "spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		addMinMaxPrior(priorArgs, "spin2",     &tmpMin, &tmpMax,   REAL8_t);
+    
+	}
+  
+  
+  
+  
+  
 	//REAL8 x0 = 0.9;
 	//addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
 
