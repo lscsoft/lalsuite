@@ -551,7 +551,7 @@ for seg in times_by_seg.keys():
             co_combine_node[ifo].add_file_opt('bayesfactor',co_bf_file[ifo],file_is_output_file=True)
             co_combine_node[ifo].add_file_opt('outsamp',co_outsamp[ifo],file_is_output_file=True)
             map(co_combine_node[ifo].add_parent,co_nests_by_seg[seg][ifo])
-            map(lambda a:co_combine_node[ifo].add_file_opt('headers',a+'_params.txt'))
+            map(lambda a:co_combine_node[ifo].add_file_opt('headers',a+'_params.txt'),co_nestfiles_by_seg[seg][ifo])
             map(co_combine_node[ifo].add_var_arg,co_nestfiles_by_seg[seg][ifo])
             dag.add_node(co_combine_node[ifo])
         coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
