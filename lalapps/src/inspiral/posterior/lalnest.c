@@ -84,6 +84,8 @@ Optional OPTIONS:\n \
 [--version\t:\tPrint version information and exit]\n \
 [--datadump DATA.txt\t:\tOutput frequency domain PSD and data segment to DATA.txt]\n \
 [--flow NUM\t:\t:Set low frequency cutoff (default 40Hz)]\n\
+[--chimin NUM\t:\tMin value of chi spin parameter]\n\
+[--chimax NUM\t:\tMax value of chi spin parameter]\n\
 \n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S1=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -207,6 +209,9 @@ double long_min=0.;
 double long_max=LAL_TWOPI;
 double lat_min=-LAL_PI/2.;
 double lat_max=LAL_PI/2.;
+double manual_chi_min=-1.;
+double manual_chi_max=1.;
+
 /* */
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
 void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT);
@@ -319,10 +324,18 @@ void initialise(int argc, char *argv[]){
 		{"iota_max",required_argument,0,61},
 		{"m_tot_min",required_argument,0,62},
 		{"m_tot_max",required_argument,0,63},
+		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
+		{"chimax",required_argument,0,91},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
+		case 64:
+			manual_chi_min=atof(optarg);
+			break;
+		case 91:
+			manual_chi_max=atof(optarg);
+			break;
 		case 40:
 			m_tot_min=atof(optarg);
 			break;
@@ -1549,8 +1562,8 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 
-    double chiSpinmin=-1.;
-    double chiSpinmax=1.;
+    double chiSpinmin=manual_chi_min;
+    double chiSpinmax=manual_chi_max;
 
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
