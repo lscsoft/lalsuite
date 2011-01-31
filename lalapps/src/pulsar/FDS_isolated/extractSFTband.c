@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author M.A.Papa
+ */
 
 /*-----------------------------------------------------------------------
  *
@@ -28,15 +33,6 @@
  *
  *-----------------------------------------------------------------------
  */
-
-/*
- * 1.  An author and Id block
- */
-
-/************************************ <lalVerbatim file="makefakedataCV">
-Author: Papa, M.A. 
-$Id: extractSFTband.c,v 1.2 2004/06/22 21:03:56 siemens Exp $
-************************************* </lalVerbatim> */
 
 #include <lal/LALStdlib.h>
 NRCSID (MAKEFAKEDATAC, "$Id: extractSFTband.c,v 1.2 2004/06/22 21:03:56 siemens Exp $");

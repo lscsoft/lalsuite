@@ -406,6 +406,7 @@ else:
 for time in times:
     dag.add_node(combine_each_time_nodes[time])
     combine_each_time_nodes[time].add_var_arg(nest_files[time])
+    combine_each_time_nodes[time].add_file_opt('headers',nest_files[time]+'_params.txt')
 
 # Set up coherence test jobs if required
 if opts.coherence_test:
@@ -458,6 +459,7 @@ if opts.coherence_test:
                 combine_node.add_parent(inspnest_node)
                 coherence_inspnest_nodes[time][ifo]=inspnest_node
             combine_node.add_var_arg(coherence_test_files[time][ifo])
+            combine_node.add_file_opt('headers',coherence_test_files[time][ifo]+'_params.txt')
             coherence_test_node.add_var_arg(coherence_test_files[time][ifo])
             map(coherence_test_node.add_parent, inspnest_nodes)
             map(dag.add_node,inspnest_nodes)
@@ -530,6 +532,7 @@ for seg in times_by_seg.keys():
     outsamp=os.path.join(combine_dir,'nested_samples_%.3f-%.3f.dat'%(seg[0],seg[1]))
     combine_node.add_file_opt('outsamp',outsamp)
     map(combine_node.add_var_arg,nestfiles_by_seg[seg])
+    map(lambda a: combine_node.add_file_opt('headers',a+'_params.txt'),nestfiles_by_seg[seg])
     map(combine_node.add_parent,inspnest_by_seg[seg])
     dag.add_node(combine_node)
     combine_nodes[seg]=combine_node
@@ -548,6 +551,7 @@ for seg in times_by_seg.keys():
             co_combine_node[ifo].add_file_opt('bayesfactor',co_bf_file[ifo],file_is_output_file=True)
             co_combine_node[ifo].add_file_opt('outsamp',co_outsamp[ifo],file_is_output_file=True)
             map(co_combine_node[ifo].add_parent,co_nests_by_seg[seg][ifo])
+            map(lambda a:co_combine_node[ifo].add_file_opt('headers',a+'_params.txt'),co_nestfiles_by_seg[seg][ifo])
             map(co_combine_node[ifo].add_var_arg,co_nestfiles_by_seg[seg][ifo])
             dag.add_node(co_combine_node[ifo])
         coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
@@ -555,6 +559,7 @@ for seg in times_by_seg.keys():
         coherence_test_node.add_var_opt('outfile',cotest_outfile_seg)
         coherence_test_node.add_var_arg(outsamp)
         map(coherence_test_node.add_var_arg, co_outsamp.values())
+        map(lambda a: coherence_test_node.add_file_opt('headers',a+'_params.txt'),co_outsamp.values())
         map(coherence_test_node.add_parent, co_combine_node.values())
         coherence_test_node.add_parent(combine_node)
         dag.add_node(coherence_test_node)

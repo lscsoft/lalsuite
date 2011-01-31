@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/*********************************** <lalVerbatim file="StackSlideFStatIsolatedCV">
-Authors: Mendell, Gregory
-$Id$
-************************************ </lalVerbatim> */
+/**
+ * \author Gregory Mendell
+ */
 
 /* REVISIONS: */
 

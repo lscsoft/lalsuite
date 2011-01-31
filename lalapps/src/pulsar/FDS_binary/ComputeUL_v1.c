@@ -17,6 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * \brief
+ * This code reads in results data from a search and reads in results from
+ * injecting many signals into the data.  By comparing the loudest event in the
+ * real results with the distribution of events using injections we can calculate
+ * an upperlimit confidence as a function of injected signal amplitude.
+ */
+
 /************************************************************************************/
 /* This code reads in results data from a search and reads in results from          */
 /* injecting many signals into the data.  By comparing the loudest event in the     */

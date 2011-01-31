@@ -18,56 +18,28 @@
  */
 
 /**
- *
  * \file PeakSelect.c
  * \author Sintes, A.M. and Krishnan, B.  
  * \brief Functions for selecting peaks from SFTs.
-
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan Oct, 2005
  *
- *
- */
 
-/************************************ <lalVerbatim file="PeakSelectCV">
-Author: Sintes, A.M.,
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{MOdule \texttt{PeakSelect.c}}
-\label{ss:PeakSelect.c}
+\heading{\ref PeakSelect.c}
 Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{PeakSelectD}
-\index{\verb&PeakSelectHeader1()&}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Prototypes}
+<tt>PeakSelectHeader1()</tt>
 
+\heading{Description}
 the output of the periodogram should be properly normalized !!!
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{PeakSelectCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
+\endcode
+*/
 
 #include "./PeakSelect.h"
 
@@ -78,11 +50,11 @@ NRCSID (PEAKSELECTC, "$Id$");
  */
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void LALComputeMeanPower (LALStatus  *status,
 			  REAL8                *mean,
 			  REAL8Periodogram1    *peri)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
   
   INT4       length;
   REAL8      sum;
@@ -119,12 +91,12 @@ void LALComputeMeanPower (LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void LALSelectPeakWhiteNoise(LALStatus  *status,
 			     UCHARPeakGram        *pg,
 			     REAL8                *thr,
 			     REAL8Periodogram1    *peri)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
   
 
   INT4  length;
@@ -182,11 +154,11 @@ void LALSelectPeakWhiteNoise(LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void LALUCHAR2HOUGHPeak(LALStatus  *status,
 			HOUGHPeakGram        *pgOut,
 			UCHARPeakGram        *pgIn)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
   
   INT4  length;
   UINT4  nPeaks;
@@ -237,12 +209,12 @@ void LALUCHAR2HOUGHPeak(LALStatus  *status,
 /*  estimate psd from periodogram using runing-median  */
 /*  this is just a wrapper to Mohanty's rngmed */
 /******************************************************************/
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void LALPeriodo2PSDrng (LALStatus  *status,
                      REAL8Periodogram1    *psd,
                      REAL8Periodogram1    *peri,
                      INT4                *blocksRNG)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4   length, j;
   UINT2  blockSize, nblocks2;
@@ -308,12 +280,12 @@ void LALPeriodo2PSDrng (LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void LALSelectPeakColorNoise(LALStatus  *status,
 			     UCHARPeakGram        *pg,
 			     REAL8                *thr,
 			     REAL8PeriodoPSD      *in)
-{ /*   *********************************************  </lalVerbatim> */ 
+{  
   
   INT4  length;
   INT4  nPeaks;
@@ -392,12 +364,12 @@ void LALSelectPeakColorNoise(LALStatus  *status,
 /** Convert a normalized sft into a peakgram by selecting bins in 
     which power exceeds a threshold.
 */
-/* *******************************  <lalVerbatim file="PeakSelectD"> */
+
 void SFTtoUCHARPeakGram(LALStatus        *status,
 			UCHARPeakGram    *pg,
 			const SFTtype    *sft,   
 			REAL8            thr)
-{ /*   *********************************************  </lalVerbatim> */ 
+{  
   
   INT4  length;
   INT4  nPeaks;

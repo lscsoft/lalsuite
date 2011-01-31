@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Evan Goetz
+ */
+
 #include <stdio.h>
 #include <math.h>
 #include <sys/stat.h>
@@ -112,42 +118,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
-   //Interferometer
-   CHAR *IFO = XLALCalloc(strlen(args_info.IFO_arg)+1, sizeof(*IFO));
-   if (IFO==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*IFO));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   }
-   sprintf(IFO, "%s", args_info.IFO_arg);
-   LALDetector det;
-   if (strcmp("L1", IFO)==0) {
-      fprintf(stderr, "Analyzing data from LLO.\n");
-      fprintf(LOG, "Analyzing data from LLO.\n");
-      det = lalCachedDetectors[LALDetectorIndexLLODIFF]; //L1
-   } else {
-      fprintf(stderr, "Analyzing data from LHO.\n");
-      fprintf(LOG, "Analyzing data from LHO.\n");
-      det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
-   }
-   inputParams->det = &det;
-   
-   //Allocate memory for files and directory
-   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*earth_ephemeris));
-   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+20, sizeof(*sun_ephemeris));
-   sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
-   if (earth_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*earth_ephemeris));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   } else if (sun_ephemeris==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sun_ephemeris));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   } else if (sft_dir==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sft_dir));
-      XLAL_ERROR(fn, XLAL_ENOMEM);
-   }
-   sprintf(earth_ephemeris, "%s/earth05-09.dat", args_info.ephemDir_arg);
-   sprintf(sun_ephemeris, "%s/sun05-09.dat", args_info.ephemDir_arg);
-   sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
    
    //Parameters for the sky-grid
    CHAR *sky = XLALCalloc(strlen(args_info.skyRegion_arg)+1, sizeof(*sky));
@@ -356,7 +326,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       
       //Determine detector velocity w.r.t. a sky location for each SFT
-      CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, *inputParams->det, edat);
+      CompAntennaVelocity(detectorVelocities, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det, edat);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompAntennaVelocity() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
@@ -375,7 +345,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numffts);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, *inputParams->det);
+      CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
@@ -418,7 +388,7 @@ int main(int argc, char *argv[])
       if (antweightsrms == 0.0) {
          antweightsrms = currentAntWeightsRMS;
       }
-      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.03 ) {
+      if ( fabs(currentAntWeightsRMS-antweightsrms)/antweightsrms >= 0.01 ) {
          ihsfarstruct->ihsfar->data[0] = 0.0;
          antweightsrms = currentAntWeightsRMS;
       }
@@ -854,6 +824,7 @@ int main(int argc, char *argv[])
          if (exactCandidates2->length < ihsCandidates->numofcandidates) exactCandidates2 = resize_candidateVector(exactCandidates2, ihsCandidates->numofcandidates);
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
             loadCandidateData(&exactCandidates2->data[ii], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, 0.0, 0.0, 0, ihsCandidates->data[ii].normalization);
+            (exactCandidates2->numofcandidates)++;
          }
       } /* if IHSonly is given */
 
@@ -985,17 +956,21 @@ int main(int argc, char *argv[])
                   template = NULL;
                   for (ll=0; ll<(INT4)trialp->length; ll++) {
                      if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]>=inputParams->dfmin && trialb->data[kk]<=inputParams->dfmax && trialp->data[ll]<=inputParams->Pmax && trialp->data[ll]>=inputParams->Pmin ) {
+                        
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
+                        
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
                            fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
                            XLAL_ERROR(fn, XLAL_EFUNC); 
                         }
+                        
                         makeTemplateGaussians(template, cand, inputParams);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
+                        
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
                         if (XLAL_IS_REAL8_FAIL_NAN(R)) {
@@ -1005,9 +980,11 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
+                        
                         REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         //fprintf(Rtemplatevals,"%.9g %.9g %.9g %.9g %.9g %.9g\n",trialf->data[jj], trialp->data[ll], trialb->data[kk], R, h0, prob);
                         //if (ll==1) fprintf(stderr,"%f %g %g\n",trialf->data[jj],R,snr);
+                        
                         if (R > farval->far && prob < bestProb) {
                            bestf = trialf->data[jj];
                            bestp = trialp->data[ll];
@@ -1017,6 +994,7 @@ int main(int argc, char *argv[])
                            bestProb = prob;
                            bestproberrcode = proberrcode;
                         }
+                        
                         free_templateStruct(template);
                         template = NULL;
                      } /* if within boundaries */
@@ -1032,7 +1010,7 @@ int main(int argc, char *argv[])
             if (bestf!=0.0) {
                if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
                loadCandidateData(&gaussCandidates3->data[gaussCandidates3->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, gaussCandidates2->data[0].normalization);
-               gaussCandidates3->numofcandidates++;
+               (gaussCandidates3->numofcandidates)++;
             }
             
             XLALDestroyREAL8Vector(trialf);
@@ -1221,11 +1199,13 @@ int main(int argc, char *argv[])
                      if ( (trialf->data[jj]-trialb->data[kk]-6/inputParams->Tcoh)>inputParams->fmin && (trialf->data[jj]+trialb->data[kk]+6/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) && trialb->data[kk]<maxModDepth(trialp->data[ll], inputParams->Tcoh) && trialp->data[ll]>minPeriod(trialb->data[kk], inputParams->Tcoh) && trialp->data[ll]<=(0.2*inputParams->Tobs) && trialp->data[ll]>=(2.0*3600.0) && trialb->data[kk]<=inputParams->dfmax && trialb->data[kk]>=inputParams->dfmin && trialp->data[ll]>=inputParams->Pmin && trialp->data[ll]<=inputParams->Pmax) {
                         
                         loadCandidateData(&cand, trialf->data[jj], trialp->data[ll], trialb->data[kk], (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, 0, 0, 0.0, 0, 0.0);
+                        
                         template = new_templateStruct(inputParams->templatelength);
                         if (template==NULL) {
                            fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
                            XLAL_ERROR(fn, XLAL_EFUNC); 
                         }
+                        
                         if (!args_info.gaussTemplatesOnly_given) {
                            makeTemplate(template, cand, inputParams, secondFFTplan);
                            if (xlalErrno!=0) {
@@ -1249,6 +1229,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
+                        
                         REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         
                         if (R > farval->far && prob < bestProb) {
@@ -1265,6 +1246,7 @@ int main(int argc, char *argv[])
                            for (mm=0; mm<(INT4)template->templatedata->length; mm++) fprintf(TEMPLATEOUT,"%g %g %g %d %d %d\n",template->templatedata->data[mm],ffdata->ffdata->data[template->pixellocations->data[mm]],aveNoise->data[template->secondfftfrequencies->data[mm]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[mm]],template->pixellocations->data[mm],template->firstfftfrequenciesofpixels->data[mm],template->secondfftfrequencies->data[mm]);
                            fclose(TEMPLATEOUT); */
                         }
+                        
                         free_templateStruct(template);
                         template = NULL;
                      } /* if within boundaries */
@@ -1335,7 +1317,6 @@ int main(int argc, char *argv[])
    XLALFree((CHAR*)sft_dir);
    XLALFree((CHAR*)earth_ephemeris);
    XLALFree((CHAR*)sun_ephemeris);
-   XLALFree((CHAR*)IFO);
    XLALDestroyEphemerisData(edat);
    cmdline_parser_free(&args_info);
    XLALFree(configparams);
@@ -1378,6 +1359,7 @@ inputParamsStruct * new_inputParams(void)
 void free_inputParams(inputParamsStruct *input)
 {
    
+   XLALFree((CHAR*)input->sftType);
    XLALFree((inputParamsStruct*)input);
 
 } /* free_inputParams() */
@@ -1477,7 +1459,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    constraints.detector = NULL;
    constraints.startTime = constraints.endTime = NULL;
    constraints.timestamps = NULL;
-   constraints.detector = input->det->frDetector.prefix;
+   constraints.detector = input->det.frDetector.prefix;
    constraints.startTime = &start;
    constraints.endTime = &end;
    
@@ -1532,6 +1514,12 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
       }
       
    } /* for ii < numffts */
+   
+   //Vladimir's code uses a different SFT normalization factor than MFD
+   if (strcmp(input->sftType, "vladimir") == 0) {
+      REAL4 vladimirfactor = (REAL4)(0.25*(8.0/3.0));
+      for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
+   }
    
    LALDestroySFTCatalog(&status, &catalog);
    XLALDestroySFTVector(sfts);
@@ -2182,6 +2170,8 @@ REAL8 calcStddevD(REAL8Vector *vector)
 INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info)
 {
    
+   const CHAR *fn = __func__;
+   
    //Defaults given or option passed
    params->Tcoh = args_info.Tcoh_arg;
    params->SFToverlap = args_info.SFToverlap_arg;
@@ -2287,6 +2277,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"dfmax = %f Hz\n",params->dfmax);
    fprintf(stderr,"Running median blocksize = %d\n",params->blksize);
    
+   //Root finding method
    if (args_info.BrentsMethod_given == 0) {
       fprintf(LOG,"Using Newton's method for root finding.\n");
       fprintf(stderr,"Using Newton's method for root finding.\n");
@@ -2294,7 +2285,63 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(LOG,"Using Brent's method for root finding.\n");
       fprintf(stderr,"Using Brent's method for root finding.\n");
    }
-
+   
+   //SFT type MFD or vladimir
+   params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
+   if (params->sftType==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*(params->sftType)));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   }
+   sprintf(params->sftType, "%s", args_info.sftType_arg);
+   if (strcmp(params->sftType, "MFD")==0) {
+      fprintf(LOG,"Using SFT type from Makefakedata\n");
+      fprintf(stderr,"Using SFT type from Makefakedata\n");
+   } else if (strcmp(params->sftType, "vladimir")==0) {
+      fprintf(LOG,"Using SFT type from Vladimir (uses normalization = 2 instead of = sqrt(8/3))\n");
+      fprintf(stderr,"Using SFT type from Vladimir (uses normalization = 2 instead of = sqrt(8/3))\n");
+   } else {
+      fprintf(stderr, "%s: Not using valid type of SFT! Expected 'MFD' or 'vladimir' not %s.\n", fn, params->sftType);
+      XLAL_ERROR(fn, XLAL_EINVAL);
+   }
+   
+   //Interferometer
+   CHAR *IFO = XLALCalloc(strlen(args_info.IFO_arg)+1, sizeof(*IFO));
+   if (IFO==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*IFO));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   }
+   sprintf(IFO, "%s", args_info.IFO_arg);
+   if (strcmp("L1", IFO)==0) {
+      fprintf(stderr, "Analyzing data from LLO.\n");
+      fprintf(LOG, "Analyzing data from LLO.\n");
+      params->det = lalCachedDetectors[LALDetectorIndexLLODIFF]; //L1
+   } else if (strcmp("H1", IFO)==0) {
+      fprintf(stderr, "Analyzing data from LHO.\n");
+      fprintf(LOG, "Analyzing data from LHO.\n");
+      params->det = lalCachedDetectors[LALDetectorIndexLHODIFF]; //H1
+   } else {
+      fprintf(stderr, "%s: Not using valid interferometer! Expected 'H1' or 'L1' not %s.\n", fn, IFO);
+      XLAL_ERROR(fn, XLAL_EINVAL);
+   }
+   XLALFree((CHAR*)IFO);
+   
+   //Allocate memory for files and directory
+   earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
+   sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
+   sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
+   if (earth_ephemeris==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*earth_ephemeris));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   } else if (sun_ephemeris==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sun_ephemeris));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   } else if (sft_dir==NULL) {
+      fprintf(stderr, "%s: XLALCalloc(%lu) failed.\n", fn, sizeof(*sft_dir));
+      XLAL_ERROR(fn, XLAL_ENOMEM);
+   }
+   sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
+   sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
+   sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
    
    return 0;
    

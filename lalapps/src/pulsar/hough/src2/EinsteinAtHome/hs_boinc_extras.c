@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Bernd Machenschalk, Reinhard Prix
+ */
+
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
 */
 
@@ -248,7 +254,7 @@ int try_load_dlls(const char*dlls, const char*mess) {
     based on LogPrintf()
  */
 void ReportStatus(LALStatus *status)
-{ /* </lalVerbatim> */
+{ 
   LALStatus *ptr;
   for ( ptr = status; ptr ; ptr = ptr->statusPtr ) {                                         
     fprintf(stderr, "\nLevel %i: %s\n", ptr->level, ptr->Id );

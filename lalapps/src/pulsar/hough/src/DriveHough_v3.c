@@ -18,12 +18,11 @@
  */
 
 /**
- * \file DriveHough_v3.c
+ * \file
+ * \ingroup pulsarApps
  * \author Badri Krishnan, Alicia Sintes 
  * \brief Driver code for performing Hough transform search on non-demodulated
    data.
-
-   Revision: $Id$
  
    History:   Created by Sintes and Krishnan July 04, 2003
               Modifications for S4 January 2006

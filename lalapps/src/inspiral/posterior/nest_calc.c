@@ -145,7 +145,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-	
+	LALMCMCParam *param_ptr;
+
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
 	MCMCinput->Live=Live;
@@ -223,6 +224,15 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;}
 	i=0;
 	
+    /* Write list of parameter names */
+    sprintf(outEnd,"%s_params.txt",outfile);
+    fpout=fopen(outEnd,"w");
+    for(param_ptr=temp->param;param_ptr;param_ptr=param_ptr->next)
+    {
+        fprintf(fpout,"%s\t",param_ptr->core->name);
+    }
+    fclose(fpout);
+
 	/* open outfile */
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s\n",outfile);
@@ -304,7 +314,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	sprintf(outEnd,"%s_maxLdata.dat",outfile);
 	MCMCinput->dumpfile=outEnd;
 	MCMCinput->funcLikelihood(MCMCinput,Live[Nlive-1]);
-	
+
 	/* Output some statistics */
 	double Npoints = MCMCinput->numberDataStreams*MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->deltaF);
 	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood/Npoints);
