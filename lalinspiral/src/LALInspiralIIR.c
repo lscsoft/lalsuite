@@ -41,6 +41,10 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
 	j = jstep;
 
+	*a1 = XLALCreateCOMPLEX16Vector(0);
+	*b0 = XLALCreateCOMPLEX16Vector(0);
+	*delay = XLALCreateINT4Vector(0);
+
 	while (j < jmax - 2 && jstep != 0) {
 		/* FIXME: Check that the flooring of k really is correct */
 		nfilters++;
