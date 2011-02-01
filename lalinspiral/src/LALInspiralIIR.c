@@ -90,6 +90,8 @@ int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vec
 				{
 					y *= a1f;
 					response_data[j] += y;
+					if (cabs(y/a1f) < 1e-13)
+						break;
 				}
 			//(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (double ) (j - delayf))));
 
