@@ -302,6 +302,63 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 		printf(" MCMC iteration: 0\t");
 		printf("%f\t", runState->currentLikelihood - nullLikelihood); 
 		printf("0\n");
+
+                /* Do a data dump. */
+                ppt = getProcParamVal(runState->commandLine, "--data-dump");
+                if (ppt) {
+                  const UINT4 nameLength=256;
+                  char filename[nameLength];
+                  FILE *out;
+                  LALIFOData *headData = runState->data;
+                  
+                  while (headData != NULL) {
+
+                    snprintf(filename, nameLength, "%s-freqModelhPlus.dat", headData->name);
+                    out = fopen(filename, "w");
+                    for (i = 0; i < headData->freqModelhPlus->data->length; i++) {
+                      REAL8 f = headData->freqModelhPlus->deltaF * i;
+                      COMPLEX16 d = headData->freqModelhPlus->data->data[i];
+
+                      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-freqModelhCross.dat", headData->name);
+                    out = fopen(filename, "w");
+                    for (i = 0; i < headData->freqModelhCross->data->length; i++) {
+                      REAL8 f = headData->freqModelhCross->deltaF * i;
+                      COMPLEX16 d = headData->freqModelhCross->data->data[i];
+
+                      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
+                    out = fopen(filename, "w");
+                    for (i = 0; i < headData->timeModelhPlus->data->length; i++) {
+                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) + 
+                        i * headData->timeModelhPlus->deltaT;
+                      REAL8 d = headData->timeModelhPlus->data->data[i];
+
+                      fprintf(out, "%.6f %g\n", tt, d);
+                    }
+                    fclose(out);
+
+                    snprintf(filename, nameLength, "%s-timeModelhCross.dat", headData->name);
+                    out = fopen(filename, "w");
+                    for (i = 0; i < headData->timeModelhCross->data->length; i++) {
+                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
+                        i * headData->timeModelhCross->deltaT;
+                      REAL8 d = headData->timeModelhCross->data->data[i];
+
+                      fprintf(out, "%.6f %g\n", tt, d);
+                    }
+                    fclose(out);
+
+                    headData = headData->next;
+                  }
+                }
+
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	// iterate:

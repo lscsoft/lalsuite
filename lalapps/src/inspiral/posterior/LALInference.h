@@ -214,9 +214,11 @@ struct tagLALIFOData * readData (ProcessParamsTable * commandLine);
 
 void injectSignal(struct tagLALIFOData *IFOdata, ProcessParamsTable *commandLine);
 
+#define DETNAMELEN 256
 typedef struct
 tagLALIFOData
 {
+  char                       name[DETNAMELEN];
   REAL8TimeSeries           *timeData, 
                             *timeModelhPlus, *timeModelhCross,
                             *whiteTimeData, *windowedTimeData; /* white is not really white, but over-white. */

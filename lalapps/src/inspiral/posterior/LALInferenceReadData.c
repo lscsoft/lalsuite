@@ -155,6 +155,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	for(i=0;i<Nifo;i++) {
           IFOdata[i].fLow=fLows?atof(fLows[i]):defaultFLow; 
           IFOdata[i].fHigh=fHighs?atof(fHighs[i]):defaultFHigh;
+          strncpy(IFOdata[i].name, IFOnames[i], DETNAMELEN);
         }
 
 	/* Only allocate this array if there weren't channels read in from the command line */
@@ -288,6 +289,46 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                          IFOdata[i].fLow, IFOdata[i].fHigh);
 
                 makeWhiteData(&(IFOdata[i]));
+                
+                if (getProcParamVal(commandLine, "--data-dump")) {
+                  const UINT4 nameLength=256;
+                  char filename[nameLength];
+                  FILE *out;
+
+                  snprintf(filename, nameLength, "%s-PSD.dat", IFOdata[i].name);
+                  out = fopen(filename, "w");
+                  for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
+                    REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
+                    REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
+
+                    fprintf(out, "%g %g\n", f, psd);
+                  }
+                  fclose(out);
+
+                  snprintf(filename, nameLength, "%s-timeData.dat", IFOdata[i].name);
+                  out = fopen(filename, "w");
+                  for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
+                    REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) + 
+                      j * IFOdata[i].timeData->deltaT;
+                    REAL8 d = IFOdata[i].timeData->data->data[j];
+
+                    fprintf(out, "%.6f %g\n", t, d);
+                  }
+                  fclose(out);
+
+                  snprintf(filename, nameLength, "%s-freqData.dat", IFOdata[i].name);
+                  out = fopen(filename, "w");
+                  for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
+                    REAL8 f = IFOdata[i].freqData->deltaF * j;
+                    REAL8 dre = IFOdata[i].freqData->data->data[j].re;
+                    REAL8 dim = IFOdata[i].freqData->data->data[j].im;
+
+                    fprintf(out, "%g %g %g\n", f, dre, dim);
+                  }
+                  fclose(out);
+                  
+                }
+
 	}
 	
 
