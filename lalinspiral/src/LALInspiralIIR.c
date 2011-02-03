@@ -41,6 +41,10 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
 	j = jstep;
 
+	*a1 = XLALCreateCOMPLEX16Vector(0);
+	*b0 = XLALCreateCOMPLEX16Vector(0);
+	*delay = XLALCreateINT4Vector(0);
+
 	while (j < jmax - 2 && jstep != 0) {
 		/* FIXME: Check that the flooring of k really is correct */
 		nfilters++;
@@ -68,27 +72,32 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 }
 
 
-int XLALInspiralIIRSetResponse(int N, COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector **response)
+int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector *response)
 {  
-	int f, j, nfilters;
-	COMPLEX16 a1f, b0f;
-	int delayf;
+	unsigned f, j;
+	complex double a1f, y;
+	complex double *a1_data = (complex double *) a1->data;
+	complex double *b0_data = (complex double *) b0->data;
+	complex double *response_data = (complex double *) response->data;
 
-	/* FIX ME: Check if a1, b0, delay actually exist */
-	nfilters = a1->length;
-	*response = XLALResizeCOMPLEX16Vector(*response, N);
+	if(a1->length != b0->length || a1->length != delay->length)
+		XLAL_ERROR(__func__, XLAL_EBADLEN);
 
-	for (j = 0; j < N; j++)
-		(*response)->data[j] = XLALCOMPLEX16Rect(0.0, 0.0);
+	for (j = 0; j < response->length; j++)
+		response_data[j] = 0;
 
-	for (f = 0; f < nfilters; f++)
+	for (f = 0; f < a1->length; f++)
 		{
-			a1f = a1->data[f];
-			b0f = b0->data[f];
-			delayf = delay->data[f];
-
-			for (j = delayf; j < N; j++)
-				(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (double ) (j - delayf))));
+			a1f = a1_data[f];
+			y = b0_data[f];
+			for (j = delay->data[f]; j < response->length; j++)
+				{
+					y *= a1f;
+					response_data[j] += y;
+					if (cabs(y/a1f) < 1e-13)
+						break;
+				}
+			//(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (double ) (j - delayf))));
 
 		}
 

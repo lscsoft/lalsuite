@@ -1813,11 +1813,10 @@ int XLALInspiralGenerateIIRSet(
 	);
 
 int XLALInspiralIIRSetResponse(
-	int               N,
 	COMPLEX16Vector     *a1,
 	COMPLEX16Vector     *b0,
 	INT4Vector          *delay,
-	COMPLEX16Vector     **response
+	COMPLEX16Vector     *response
 	);
 
 int XLALInspiralGenerateIIRSetFourierTransform(
