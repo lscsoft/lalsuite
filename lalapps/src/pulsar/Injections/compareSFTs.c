@@ -17,15 +17,10 @@
 *  MA  02111-1307  USA
 */
 
- /*-----------------------------------------------------------------------
- *
- * File Name: compareSFTs.c
- *
- * Authors: Prix, R.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author R. Prix
  */
 
 /* ---------- includes ---------- */
@@ -37,7 +32,7 @@
 RCSID ("$Id");
 
 /* Error codes and messages */
-/* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0
 #define MAKEFAKEDATAC_ESUB  	1
 #define MAKEFAKEDATAC_EARG  	2
@@ -56,7 +51,7 @@ RCSID ("$Id");
 #define MAKEFAKEDATAC_MSGEINCOMPAT "Incompatible SFTs"
 #define MAKEFAKEDATAC_MSGENULL	"Unexpected null pointer"
 
-/* </lalErrTable> */
+/*@}*/
 
 /***************************************************/
 #define TRUE (1==1)

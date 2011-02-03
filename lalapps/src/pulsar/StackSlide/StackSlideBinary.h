@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="ComputeSkyHV">
-Author:  Virginia Re
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author  Virginia Re
+*/
 
 /* Revisions: */
 /* 04/12/05 gam; Add StackSlideSearchParams *params to StackSlideBinary. Need to include "DriveStackSlide.h" */

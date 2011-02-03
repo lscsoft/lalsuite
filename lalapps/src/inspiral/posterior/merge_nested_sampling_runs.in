@@ -127,4 +127,10 @@ if opts.pos is not None:
 			posfile.write('%f\t'%(i))
 		posfile.write('\n')
 	posfile.close()
+if(os.access(args[0]+'_params.txt'),os.R_OK):
+    import shutil
+    if opts.pos:
+        shutil.copy(args[0]+'_params.txt',opts.pos+'_params.txt')
+    if opts.out:
+        shutil.copy(args[0]+'_params.txt',opts.out+'_params.txt')
 

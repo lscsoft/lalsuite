@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matt Pitkin
+ * \brief Preprocessor code to take inputs from a TEMPO .par file and output the values
+ */
+
 /* Matt Pitkin 22/06/04 */
 /*
 $Id$

@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk
+ * \brief takes in two Fstats file to look for coincidence
+ */
+
 /*********************************************************************************/
 /*       uberpolka - the pulsar koinzidenz analysis code for einstein@home       */
 /*                                                                               */

@@ -19,13 +19,10 @@
 
 /**
  * \file 
- *
- * \author{Reinhard Prix}
- *
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
+ * \brief
  * Standalone code to calculated the Fstat-metrics and mismatches
- *
- * Revision: $Id$
- *           
  */
 
 /* ---------- includes ---------- */

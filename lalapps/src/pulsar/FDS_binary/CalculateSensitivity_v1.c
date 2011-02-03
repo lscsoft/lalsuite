@@ -17,6 +17,16 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * \brief
+ * This code has been written to quantify the sensitivity of a particular detector
+ * given a specific sky position.  It is used to identify the most sensitive
+ * stretch of data available from a large dataset.
+ */
+
 /************************************************************************************/
 /* This code has been written to quantify the sensitivity of a particular detector  */
 /* given a specific sky position.  It is used to identify the most sensitive        */

@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.0.1"
+version "1.0.2"
 purpose "TwoSpect analysis program"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
@@ -21,11 +21,13 @@ option "blksize"  - "Blocksize for running median of 1st FFT band" int default="
 option "outdirectory"   - "Output directory" string optional
 option "sftDir"         - "Directory containing SFTs" string default="./" optional
 option "ephemDir"      - "Path to ephemeris files" string default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
+option "ephemYear"     - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional
 option "templateLength" - "Maximum number of pixels to use in the template" int default="50" optional
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string default="allsky" optional
 option "SFToverlap"    - "SFT overlap in seconds, usually Tcoh/2" double default="900" optional
-option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off
-option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off
+option "sftType"  - "Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization" string default="vladimir" optional
+option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
+option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off hidden
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden

@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger, Iraj Gholami,  Holger Pletsch, Reinhard Prix, Xavier Siemens
+ * \brief Semi-Analytic calculation of the F-statistic
+ */
+
 /************************************************************************
  ** WARNING: THIS CODE OUTPUTS 'F' INSTEAD OF '2F' WHICH WOULD BE OUR USUAL
  **          CONVENTION FOR THE "F-STATISTIC"
