@@ -226,7 +226,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 	runState->prior=&LALInferenceInspiralPriorNormalised;
 	//runState->prior=PTUniformGaussianPrior;
 
-	
+
 	
 	ppt=getProcParamVal(commandLine,"--verbose");
 	if(ppt) {
@@ -597,6 +597,12 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		addVariable(currentParams, "INFERENCE_TAPER",     &bookends,        INT4_t, PARAM_FIXED);
 	}
+  ppt=getProcParamVal(commandLine,"--newswitch");
+  int newswitch=0;
+  if(ppt){
+    newswitch=1;
+    addVariable(currentParams, "newswitch", &newswitch, INT4_t, PARAM_FIXED);
+  }
 	/* Set up the variable parameters */
 	//tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);
 	//tmpVal=7.86508;

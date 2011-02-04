@@ -1460,9 +1460,10 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	memset( &injParams, 0, sizeof(SimInspiralTable) );
 	memset( &ppnParams, 0, sizeof(PPNParamStruc) );
 	
-
-	newswitch = 0; //temporay global variable to use the new LALSTPN
-	
+  newswitch = 0;
+  if (checkVariable(IFOdata->modelParams, "newswitch"))
+    newswitch = *(INT4*) getVariable(IFOdata->modelParams, "newswitch"); //temporay global variable to use the new LALSTPN
+  
 	IFOdata->modelDomain = timeDomain;
 	
 	if (checkVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
