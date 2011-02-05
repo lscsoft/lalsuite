@@ -247,8 +247,13 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
 			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
 			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-			XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
-			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+			if (getProcParamVal(commandLine, "--PSDwelch")) {
+        XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
+      }
+      else {
+        XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
+			}
+        XLALDestroyREAL8TimeSeries(PSDtimeSeries);
 			
 			/* Read the data segment */
 			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
