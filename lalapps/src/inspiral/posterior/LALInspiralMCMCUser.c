@@ -943,10 +943,10 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.ieta = 1;
 	template.inclination=XLALMCMCGetParameter(parameter,"iota");
 
-	template.totalMass=50.;
-	template.eta=0.25;
-	template.distance=3.*LAL_PC_SI*1.e6;
-	template.inclination=1.9;
+	template.totalMass=mtot;
+	template.eta=eta;
+//	template.distance=3.*LAL_PC_SI*1.e6;
+//	template.inclination=1.9;
 
 	//	fprintf(stdout,"M %11.4e  eta %8.3f  inc %8.4f  dist %11.4e  mc %11.4e\n",template.totalMass,template.eta,template.inclination, template.distance/LAL_PC_SI*1.e-6,mchirp);
 
@@ -1131,6 +1131,9 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	parameter->logLikelihood=logL;
 	return(logL);
 
+ 	XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
+	XLALDestroyCOMPLEX8FrequencySeries(H_c_t);	
+	
 }
 
 
