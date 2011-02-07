@@ -623,6 +623,7 @@ int main( int argc, char *argv[])
 	static LALStatus status;
 	LALMCMCParameter **Live = NULL; /* Structure which holds the parameters */
 	LALMCMCInput	inputMCMC;
+	LALMCMCInput	inputMCMC_N;
 	REAL8TimeSeries *RawData;
 	UINT4			seglen=0;
 	SnglInspiralTable *inputCurrent = NULL;
@@ -682,7 +683,7 @@ int main( int argc, char *argv[])
 	fwdplan = XLALCreateForwardREAL8FFTPlan( seglen, 0 );
 	revplan = XLALCreateReverseREAL8FFTPlan( seglen, 0 );
 	memset(&inputMCMC,0,sizeof(inputMCMC)); /* CLEAR THE INPUT STRUCTURE! */
-
+	memset(&inputMCMC_N,0,sizeof(inputMCMC_N)); /* CLEAR THE INPUT STRUCTURE! */
 	inputMCMC.deltaT=(REAL8 )(1.0/SampleRate);
 	inputMCMC.verbose=verbose;
 	char strainname[20]="LSC-STRAIN";
@@ -720,11 +721,14 @@ int main( int argc, char *argv[])
 			if (nChannel>0) sprintf(ChannelNames[i],"%s",UserChannelNames[i]);
 			else sprintf((ChannelNames[i]),"G1:DER_DATA_H");
 			continue;}
+		inputMCMC_N.detector[i]=inputMCMC.detector[i];
 		/*		if(!strcmp(IFOnames[i],"TAMA")||!strcmp(IFOnames[i],"T1")) {inputMCMC.detector[i]=&lalCachedDetectors[LALDetectorIndexTAMA300DIFF]; continue;}*/
 		fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO\n",IFOnames[i]); exit(-1);
 	}
 
 	inputMCMC.fLow = fLow;
+	inputMCMC_N.fLow = inputMCMC.fLow;
+
 
 	/* Prepare for injections */
 	UINT4 Ninj=0;
@@ -809,6 +813,8 @@ int main( int argc, char *argv[])
 		INT4 TrigSegStart,TrigSample;
 		inputMCMC.ifoID[i] = IFOnames[i];
 		inputMCMC.deltaF = (REAL8)SampleRate/seglen;
+		inputMCMC_N.ifoID[i] = inputMCMC.ifoID[i];
+		inputMCMC_N.deltaF = inputMCMC.deltaF;
 		datastart=realstart; /* Reset the datastart in case it has been slid previously */
 		segmentStart = datastart;
 
@@ -827,9 +833,11 @@ int main( int argc, char *argv[])
 			if(!strcmp(CacheFileNames[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
 			if(!strcmp(CacheFileNames[i],"LAL2kLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 36E-46;}
 			if(PSD==NULL) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",CacheFileNames[i]); exit(-1);}
-			inputMCMC.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&realstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+			inputMCMC.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&realstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);				  inputMCMC_N.invspec[i]=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&realstart,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+
 			for(j=0;j<inputMCMC.invspec[i]->data->length;j++){ PSD(&status,&(inputMCMC.invspec[i]->data->data[j]),j*inputMCMC.deltaF);}
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
+			inputMCMC_N.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC_N.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			memcpy(&(inputMCMC.stilde[i]->epoch),&segmentStart,sizeof(LIGOTimeGPS));
 			/*			inputMCMC.stilde[i]->epoch = datastart;
 			 XLALGPSAdd(&(inputMCMC.stilde[i]->epoch), (REAL8)TrigSegStart/(REAL8)SampleRate);*/
@@ -896,6 +904,7 @@ int main( int argc, char *argv[])
 			if(estimatenoise){ /* Spectrum not used with student-t likelihood */
 				/* Set up inverse spectrum structure */
 				inputMCMC.invspec[i] = (REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&RawData->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+				inputMCMC_N.invspec[i] = (REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("inverse spectrum",&RawData->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 
 				/* Compute power spectrum */
 				if(DEBUG) fprintf(stderr,"Computing power spectrum, seglen %i\n",seglen);
@@ -945,7 +954,7 @@ int main( int argc, char *argv[])
 			if(DEBUG) fprintf(stderr,"Data segment %d in %s from %f to %f, including padding\n",i,IFOnames[i],((float)TrigSegStart)/((float)SampleRate),((float)(TrigSegStart+seglen))/((float)SampleRate) );
 
 			inputMCMC.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC.deltaF,&lalDimensionlessUnit,seglen/2 +1);
-
+			inputMCMC_N.stilde[i] = (COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("stilde",&realstart,0.0,inputMCMC_N.deltaF,&lalDimensionlessUnit,seglen/2 +1);
 			XLALDestroyREAL8TimeSeries(RawData);
 
 			/* Window and FFT the data */
@@ -1027,6 +1036,9 @@ int main( int argc, char *argv[])
 			/* Actually inject the waveform */
 			if(!FakeFlag) for(j=0;j<inj8Wave->data->length;j++) inputMCMC.segment[i]->data->data[j]+=(REAL8)inj8Wave->data->data[j];
 			for(j=0;j<injF->data->length;j++) {
+				inputMCMC_N.stilde[i]->data->data[j].re=inputMCMC.stilde[i]->data->data[j].re;
+			  	inputMCMC_N.stilde[i]->data->data[j].im=inputMCMC.stilde[i]->data->data[j].im;
+			  	inputMCMC_N.invspec[i]->data->data[j]=inputMCMC.invspec[i]->data->data[j];			
 				inputMCMC.stilde[i]->data->data[j].re+=(REAL8)injF->data->data[j].re;
 				inputMCMC.stilde[i]->data->data[j].im+=(REAL8)injF->data->data[j].im;
 			}
@@ -1060,7 +1072,9 @@ int main( int argc, char *argv[])
 						 inputMCMC.stilde[j]->f0 + i*inputMCMC.stilde[0]->deltaF,
 						 inputMCMC.stilde[j]->data->data[i].re,
 				 		 inputMCMC.stilde[j]->data->data[i].im,
-						 1./inputMCMC.invspec[j]->data->data[i]);
+						 1./inputMCMC.invspec[j]->data->data[i],
+						 inputMCMC_N.stilde[j]->data->data[i].re,
+				 		 inputMCMC_N.stilde[j]->data->data[i].im);	
 			fclose(outinit);
 		}
 	}
@@ -1068,6 +1082,8 @@ int main( int argc, char *argv[])
 	/* Set up the structure */
 	inputMCMC.injectionTable = injTable;
 	inputMCMC.numberDataStreams = nIFO;
+	inputMCMC_N.numberDataStreams = nIFO;
+	
 	inputMCMC.numPoints = seglen;
 	inputMCMC.stride = stride;
 	inputMCMC.inspiralTable = inputCurrent;
@@ -1238,14 +1254,19 @@ doneinit:
 			for(i=0;i<inputMCMC.stilde[j]->data->length;i++)
 			{
 				if(estimatenoise)
-					fprintf(dataoutfile,"%10.3e %10.10e %10.10e %10.10e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.invspec[j]->deltaF,1./inputMCMC.invspec[j]->data->data[i],inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im,inputMCMC_N.stilde[j]->data->data[i].re,inputMCMC_N.stilde[j]->data->data[i].im);
 				else
-					fprintf(dataoutfile,"%lf %lf %lf\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im);
+					fprintf(dataoutfile,"%12.5e  %14.8e  %14.8e  %14.8e  %14.8e\n",(REAL8)i*inputMCMC.stilde[j]->deltaF,inputMCMC.stilde[j]->data->data[i].re,inputMCMC.stilde[j]->data->data[i].im,inputMCMC_N.stilde[j]->data->data[i].re,inputMCMC_N.stilde[j]->data->data[i].im);
 			}
 			fclose(dataoutfile);
 		}
 	}
 
+			evidence=computeZ(&inputMCMC_N);
+	#if DEBUG
+	  fprintf(stdout,"Evidence of noise w/o injection: %18.8e\n",evidence);
+	#endif
+	
 	evidence = nestZ(Nruns,Nlive,Live,&inputMCMC);
 	fprintf(stdout,"logZ = %lf\n",evidence);
 
@@ -1280,33 +1301,49 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
     }
   }
   
+  double m1min = 1.;
+  double m2min = 1.;
+  double m1maxhalf = 17.;
+  double m2maxhalf = 17.;
+
 
   double etamin=0.25 - etawindow;
   double eta=etamin+gsl_rng_uniform(RNG)*(0.25-etamin);
 
   double logMc;
-  double mcmax=0.435275*totalMassMax;
-  double mcmin=pow((totalMassMin-1.)*(totalMassMin-1.)*(totalMassMin-1.)/totalMassMin,0.2);
+//  double mcmax=0.435275*totalMassMax;
+ // double mcmin = m2mc(m1min,m2min);
+ // double mcmax = m2mc(m1maxhalf,m2maxhalf);
+
+  double epowmin=pow(m1min*m2min/(m1min +m2min),0.6);
+  double mcmin=pow((m1min+m2min),0.4)*epowmin;
+  double epowmax=pow(m1maxhalf*m2maxhalf/(m1maxhalf +m2maxhalf),0.6);
+  double mcmax=pow((m1maxhalf+m1maxhalf),0.4)*epowmax;
   double lMcmin=log(mcmin);
   double lMcmax=log(mcmax);
 
   parameter->param=NULL;
   parameter->dimension = 0;
   
-  logMc=log(50.*pow(eta,3./5.));
+  logMc=log((gsl_rng_uniform(RNG)*(33.)+2.)*pow(eta,3./5.));
 
     XLALMCMCAddParam(parameter,"logMc",logMc,lMcmin,lMcmax,0);
 
-  XLALMCMCAddParam(parameter,"eta",eta,etamin,0.25,0);
+    XLALMCMCAddParam(parameter,"eta",eta,etamin,0.25,0);
 
     XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
     XLALMCMCAddParam(parameter,"phi", LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
     XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
+   
+    if ((long_min<=0.)&&(long_max>=2.*LAL_PI))
+    XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*2.*LAL_PI,0.,2.*LAL_PI,1);
+    else
     XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*(long_max-long_min)+long_min,long_min,long_max,0);
-    XLALMCMCAddParam(parameter,"lat", gsl_rng_uniform(RNG)*(lat_max-lat_min)+lat_min,lat_min,lat_max,0);
-    XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI/2.0,0,LAL_PI/2.0,0);
+
+    XLALMCMCAddParam(parameter,"lat", lat_min+gsl_rng_uniform(RNG)*(lat_max-lat_min),lat_min,lat_max,0);
+    XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI,0,LAL_PI,1);
     XLALMCMCAddParam(parameter,"iota", gsl_rng_uniform(RNG)*(iota_max-iota_min)+iota_min ,iota_min,iota_max,0);
-    
+ 
     if(onespin_flag==0 && nospin_flag==0){
     
     double spin1min=s1_mag_min;
@@ -1329,11 +1366,17 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 
     XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, 0);
     XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, 1);
+        if ((spin1phimax>=2.*LAL_PI)&&(spin1phimin<=0.))
+    XLALMCMCAddParam(parameter,"Spin1phi",  2.*LAL_PI*gsl_rng_uniform(RNG),  0., 2.*LAL_PI, 1);
+	else
     XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, 0);
     XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
     XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 1);
-    XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax,0);
-	}
+	if ((spin2phimax>=2.*LAL_PI)&&(spin2phimin<=0.))
+    XLALMCMCAddParam(parameter,"Spin2phi",  2.*LAL_PI*gsl_rng_uniform(RNG), 0., 2.*LAL_PI,1);
+   	else
+    XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax, 0);
+					}
 	
 	else{
 		if(onespin_flag==1 && nospin_flag==0){
@@ -1343,12 +1386,15 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 			double spin2thetamax=s2_theta_max;
 			double spin2phimin=s2_phi_min;
 			double spin2phimax=s2_phi_max;
-							XLALMCMCAddParam(parameter,"Spin1",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
-							XLALMCMCAddParam(parameter,"Spin1theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 1);
-							XLALMCMCAddParam(parameter,"Spin1phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax,0);
-											 }	
+							XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
+							XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 1);
+							 if ((spin2phimax>=2.*LAL_PI)&&(spin2phimin<=0.))
+      							XLALMCMCAddParam(parameter,"Spin2phi",  2.*LAL_PI*gsl_rng_uniform(RNG), 0., 2.*LAL_PI,1);
+    							 else
+      							XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax, 0);					 
+						     }	
 		
-	}
+	   }
     return;
 }
 
