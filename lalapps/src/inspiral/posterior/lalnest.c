@@ -1316,8 +1316,8 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   
   double m1min = 1.;
   double m2min = 1.;
-  double m1maxhalf = 17.;
-  double m2maxhalf = 17.;
+  double m1maxhalf = 17.5;
+  double m2maxhalf = 17.5;
 
 
   double etamin=0.25 - etawindow;
@@ -1328,7 +1328,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmin = m2mc(m1min,m2min);
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
-  double epowmin=pow(m1min*m2min/(m1min +m2min),0.6);
+  double epowmin=pow((m1min*m2min)/(m1min +m2min),0.6);
   double mcmin=pow((m1min+m2min),0.4)*epowmin;
   double epowmax=pow(m1maxhalf*m2maxhalf/(m1maxhalf +m2maxhalf),0.6);
   double mcmax=pow((m1maxhalf+m1maxhalf),0.4)*epowmax;
