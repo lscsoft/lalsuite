@@ -127,6 +127,8 @@ typedef struct
 
 /*---------- empty structs for initializations ----------*/
 UserVariables_t empty_UserVariables;
+  BOOLEAN dumpPSDperSFT; /* output PSD for every single SFT */
+  REAL8 dumpPSDforFreq;   /* output particular frequency */
 /* ---------- global variables ----------*/
 
 extern int vrbflg;
@@ -143,6 +145,7 @@ static REAL8 math_op(REAL8*, size_t, INT4);
  * FUNCTION definitions
  *============================================================*/
 
+void XLALDumpPSD(int freqbin, const CHAR *name,const CHAR *detector,  REAL8* data, size_t length,MultiSFTVector *inputSFTs, int detnumber);
 int
 main(int argc, char *argv[]){
 
@@ -315,7 +318,8 @@ main(int argc, char *argv[]){
     finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
     if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
       return EXIT_FAILURE;
-
+	  if ((uvar.dumpPSDperSFT) && (uvar.dumpPSDforFreq == 0 || uvar.dumpPSDforFreq == (Freq0 + k * dFreq)))
+			LAL_CALL ( XLALDumpPSD(k,uvar.outputPSD,multiPSD->data[X]->data[0].name, overSFTs->data, numSFTs,inputSFTs,X), &status);
   } /* over freq bins */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
@@ -618,7 +622,9 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
   uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
-
+  uvar->dumpPSDperSFT = FALSE;
+  uvar->dumpPSDforFreq = 0;
+  
   uvar->binSizeHz = 0.0;
   uvar->binSize   = 1;
   uvar->PSDmthopBins  = MATH_OP_ARITHMETIC_MEDIAN;
@@ -671,6 +677,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 								"(names must contain IFO name)");
 
   /* read all command line variables */
+  XLALregBOOLUserStruct  (dumpPSDperSFT,    'd', UVAR_OPTIONAL, "Output PSD per single SFT");
+  XLALregREALUserStruct  (dumpPSDforFreq,   'F', UVAR_OPTIONAL, "Output PSD for particular frequency (0 = all bins)");
   if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
     return XLAL_FAILURE;
 
@@ -827,3 +835,44 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   ABORT ( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE );
 
 } /* LALfwriteSpectrograms() */
+
+/** Dump PSD to file for every single SFT.
+ *  The filename for each IFO is generated as 'name-IFO'
+ */
+
+void XLALDumpPSD(int freqbin, const CHAR *name,const CHAR *detector,  REAL8* data, size_t length,MultiSFTVector *inputSFTs, int detnumber){
+    CHAR *fname;
+	FILE *fp;
+	
+	UINT4 len = strlen ( name ) + 4 + (snprintf(0,0,"%d",freqbin));
+
+	UINT4 i;
+	REAL8 res = 0.0;
+	
+    if ( ( fname = LALMalloc ( len * sizeof(CHAR) )) == NULL ) {
+	  XLAL_ERROR_VOID("XLALDumpPSD",XLAL_ENOMEM);
+    }
+    
+	sprintf ( fname, "%s-%c%c", name, detector[0], detector[1]);
+
+    if ( ( fp = fopen( fname, "a" ))  == NULL ) {
+		LogPrintf (LOG_CRITICAL, "Failed to open PSDperSFT file '%s' for writing!\n", fname );
+		goto failed;
+    }
+
+ 	fprintf(fp,"#frequency bin %d\n",freqbin);
+	for (i = 0; i < length; ++i) {
+		res = *(data++);
+		fprintf(fp,"%d %d %e\n",inputSFTs->data[detnumber]->data[i].epoch.gpsSeconds,i,(double)res);
+	}
+ 	fprintf(fp,"\n\n");
+    fclose ( fp );
+    LALFree ( fname );
+  XLAL_ERROR_VOID("XLALDumpPSD",XLAL_SUCCESS);
+  
+  /* cleanup and exit on write-error */
+ failed:
+  if ( fname ) LALFree ( fname );
+  if ( fp ) fclose ( fp );
+  XLAL_ERROR_VOID("XLALDumpPSD",XLAL_EIO);
+} /* XLALDumpPSD() */
