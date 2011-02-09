@@ -60,7 +60,7 @@ if __name__=='__main__':
         for row in d_all:
             for i in row:
                 outfilenew.write('%f\t' %(i))
-                outfilenew.write('\n')
+            outfilenew.write('\n')
         outfilenew.close()
         outfileB=open(outfilename+'_B.txt','w')
         # Write out B Zsig Znoise maxL
