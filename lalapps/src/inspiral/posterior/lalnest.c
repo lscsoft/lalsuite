@@ -1081,7 +1081,7 @@ int main( int argc, char *argv[])
 			char filename[100];
 			sprintf(filename,"indata_%s.dat",IFOnames[j]);
 			FILE *outinit=fopen(filename,"w");
-			for(i=0;i<inputMCMC.stilde[j]->data->length;i++) fprintf(outinit,"%e %e %e %e\n",
+			for(i=0;i<inputMCMC.stilde[j]->data->length;i++) fprintf(outinit,"%e %e %e %e %e %e\n",
 						 inputMCMC.stilde[j]->f0 + i*inputMCMC.stilde[0]->deltaF,
 						 inputMCMC.stilde[j]->data->data[i].re,
 				 		 inputMCMC.stilde[j]->data->data[i].im,
@@ -1765,6 +1765,3 @@ int checkParamInList(const char *list, const char *param)
 			return 0;
 	return 1;
 }
-
-
-
