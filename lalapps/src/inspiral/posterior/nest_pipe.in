@@ -559,7 +559,6 @@ for seg in times_by_seg.keys():
         coherence_test_node.add_var_opt('outfile',cotest_outfile_seg)
         coherence_test_node.add_var_arg(outsamp)
         map(coherence_test_node.add_var_arg, co_outsamp.values())
-        map(lambda a: coherence_test_node.add_file_opt('headers',a+'_params.txt'),co_outsamp.values())
         map(coherence_test_node.add_parent, co_combine_node.values())
         coherence_test_node.add_parent(combine_node)
         dag.add_node(coherence_test_node)

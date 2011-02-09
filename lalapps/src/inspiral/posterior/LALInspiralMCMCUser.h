@@ -141,6 +141,8 @@ REAL8 MCMCLikelihoodMultiCoherentF(LALMCMCInput *inputMCMC, LALMCMCParameter *pa
 
 REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter);
 
+REAL8  MCMCLikelihoodMultiCoherentF_test(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter,const char *outfile);
+
 void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
 
 void TaylorF2_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) ;
