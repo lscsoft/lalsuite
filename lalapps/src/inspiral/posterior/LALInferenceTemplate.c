@@ -1539,21 +1539,24 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	}
 	
 	REAL8 instant;
-	
+	INT4 errnum;
+  
 	//REPORTSTATUS(&status);
 	/* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
-	LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams );
+	XLAL_TRY( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ), errnum);
 	//REPORTSTATUS(&status);
 	
     if ( status.statusCode )
     {
-		fprintf( stderr, " ERROR in templateLALGenerateInspiral(): error generating waveform.\n" );
+		fprintf( stderr, " ERROR in templateLALGenerateInspiral(): error generating waveform. errnum=%d\n",errnum );
 		REPORTSTATUS(&status);
 		for (i=0; i<IFOdata->timeData->data->length; i++){
 			
 			IFOdata->timeModelhPlus->data->data[i] = 0.0;
 			IFOdata->timeModelhPlus->data->data[i] = 0.0;
 		}
+    destroyCoherentGW( &waveform );	
+    LALCheckMemoryLeaks();
 		return;
     }
 	
