@@ -57,6 +57,7 @@ The algorithms used in these functions are explained in detail in [Ref Needed].
 
 #include "LALInspiralMCMCUser.h"
 #include <fftw3.h>
+#include <gsl/gsl_spline.h>
 
 #define MpcInMeters 3.08568025e22
 
@@ -977,11 +978,23 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.next = NULL;
 	template.fine = NULL;
 
+	LALInspiralParameterCalc(&status,&template);
+	
+	UINT4 mylength;
+        LALInspiralWaveLength(&status, &mylength, template);
+	
+	if(NtimeDomain>=mylength){
+		
 
 	hPlus=XLALCreateREAL4Vector(NtimeDomain); /* Allocate storage for the waveform */
 	hCross=XLALCreateREAL4Vector(NtimeDomain);/* Allocate storage for the waveform */
+		}
 
-	LALInspiralParameterCalc(&status,&template);
+		else{
+	hPlus=XLALCreateREAL4Vector(mylength);/* Allocate storage for the waveform */
+        hCross=XLALCreateREAL4Vector(mylength);/* Allocate storage for the waveform */
+			}
+			
 	LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template);
 	if(status.statusCode)
 	  {
@@ -999,26 +1012,98 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	/* Get H+ and Hx in the Freq Domain */
 
-	if(inputMCMC->likelihoodPlan==NULL) {
-	  #if DEBUGMODEL !=0 
-	  fprintf(stdout,"\n   Creating FFTW plan...\n");
-	  #endif
-	  LALCreateForwardREAL4FFTPlan(&status,&inputMCMC->likelihoodPlan,NtimeDomain,FFTW_ESTIMATE);
-	  #if DEBUGMODEL !=0
-	  fprintf(stdout,"    Done.\n");
-	  #endif
-	}
+		/*Compute the wavelenth*/
 
+				if (NtimeDomain>=mylength){
 	XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
 	XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
+					}
+
+				else {
+	  fprintf(stderr,"increasing wavelength due to low chirp mass: Mchirp=%11.4e\n eta=%11.4e\n",mchirp,eta);
+	  REAL4FFTPlan *likePlan = XLALCreateForwardREAL4FFTPlan(mylength,FFTW_ESTIMATE);
+
+	  REAL4Vector* Hptmp = XLALCreateREAL4Vector(mylength);
+	  REAL4Vector* Hctmp = XLALCreateREAL4Vector(mylength);
+
+	  REAL8Vector* freqstd=XLALCreateREAL8Vector(NtimeDomain/2);
+
+	  REAL8Vector* freq=XLALCreateREAL8Vector(mylength/2);
+	  REAL8Vector* HPR=XLALCreateREAL8Vector(mylength/2);
+	  REAL8Vector* HPI=XLALCreateREAL8Vector(mylength/2);
+	  REAL8Vector* HCR=XLALCreateREAL8Vector(mylength/2);
+	  REAL8Vector* HCI=XLALCreateREAL8Vector(mylength/2);
+
+	  if(!(Hptmp && Hctmp && freqstd && freq && HPR && HPI && HCR && HCI )){
+	    fprintf(stderr,"Unable to allocate support F-domain signal buffer\n");
+	    exit(1);
+	  }
+
+	  XLALREAL4VectorFFT(Hptmp,hPlus,likePlan);
+	  XLALREAL4VectorFFT(Hctmp,hCross,likePlan);
+
+	  XLALDestroyREAL4FFTPlan(likePlan);
+	  XLALDestroyREAL4Vector(Hptmp);
+	  XLALDestroyREAL4Vector(Hctmp);
+
+	  REAL8 dF=1./mylength/inputMCMC->deltaT;
+
+	  for (idx=0;idx<NtimeDomain/2;idx++) 
+	    freqstd->data[idx]=inputMCMC->deltaF*idx;
+	  for (idx=0;idx<mylength/2;idx++) 
+	    freq->data[idx]=dF*idx;
+
+	  for (idx=0;idx<mylength/2;idx++) {
+	    HPR->data[idx]=Hptmp->data[idx];
+	    HPI->data[idx]=Hptmp->data[mylength-idx];
+	    HCR->data[idx]=Hctmp->data[idx];
+	    HCI->data[idx]=Hctmp->data[mylength-idx];
+	  }
+	  
+	  gsl_interp_accel *acc    = (gsl_interp_accel*) gsl_interp_accel_alloc();
+
+	  gsl_spline* spline_Pr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
+	  gsl_spline* spline_Pi = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
+	  gsl_spline* spline_Cr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
+	  gsl_spline* spline_Ci = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
+
+	  gsl_spline_init(spline_Pr, freq->data, HPR->data, mylength/2);
+	  gsl_spline_init(spline_Pi, freq->data, HPI->data, mylength/2);
+	  gsl_spline_init(spline_Cr, freq->data, HCR->data, mylength/2);
+	  gsl_spline_init(spline_Ci, freq->data, HCI->data, mylength/2);
+
+	  for (idx=0;idx<NtimeDomain/2;idx++)
+
+	  inputMCMC->Fwfp->data[idx] = gsl_spline_eval ( spline_Pr , freqstd->data[idx] , acc);
+	  inputMCMC->Fwfp->data[NtimeDomain-idx] = gsl_spline_eval ( spline_Pi , freqstd->data[idx] , acc);
+	  inputMCMC->Fwfc->data[idx] = gsl_spline_eval ( spline_Cr , freqstd->data[idx] , acc);
+	  inputMCMC->Fwfc->data[NtimeDomain-idx] = gsl_spline_eval ( spline_Ci , freqstd->data[idx] , acc);
+
+	  XLALDestroyREAL8Vector(freqstd);
+
+	  XLALDestroyREAL8Vector(freq);
+	  XLALDestroyREAL8Vector(HPR);
+	  XLALDestroyREAL8Vector(HPI);
+	  XLALDestroyREAL8Vector(HCR);
+	  XLALDestroyREAL8Vector(HCI);
+
+	  gsl_spline_free (spline_Pr);
+	  gsl_spline_free (spline_Pi);
+	  gsl_spline_free (spline_Cr);
+	  gsl_spline_free (spline_Ci);
+	  gsl_interp_accel_free (acc);
+
+	}
+
 
 	XLALDestroyREAL4Vector(hPlus);
 	XLALDestroyREAL4Vector(hCross);
-		
+				
 	for(idx =0; idx < NtimeDomain; idx++){
 		inputMCMC->Fwfc->data[idx]*=inputMCMC->deltaT;
 		inputMCMC->Fwfp->data[idx]*=inputMCMC->deltaT;
 	}
+
 	/* This is the time of the start of the wave in the GeoCentre */
 	REAL8 TimeShiftToGC=XLALMCMCGetParameter(parameter,"time");
 

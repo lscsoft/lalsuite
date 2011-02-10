@@ -30,6 +30,7 @@
 #include <lal/VectorOps.h>
 #include <LALAppsVCSInfo.h>
 #include <lalapps.h>
+#include <fftw3.h>
 
 #include "nest_calc.h"
 
@@ -1228,6 +1229,17 @@ doneinit:
 	  inputMCMC.funcInit = NestInitManualPhenSpinRD;
 	  inputMCMC.Fwfc = XLALCreateREAL4Vector(inputMCMC.numPoints);
 	  inputMCMC.Fwfp = XLALCreateREAL4Vector(inputMCMC.numPoints);
+		
+        
+          #if DEBUGMODEL !=0 
+          fprintf(stdout,"\n   Creating FFTW plan...\n");
+          #endif
+          LALCreateForwardREAL4FFTPlan(&status,&inputMCMC.likelihoodPlan,inputMCMC.numPoints,FFTW_ESTIMATE);
+          #if DEBUGMODEL !=0
+          fprintf(stdout,"    Done.\n");
+          #endif
+        
+
 	} 
      
 	/* Live is an array of LALMCMCParameter * types */
@@ -1323,7 +1335,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
   double epowmin=pow((m1min*m2min)/(m1min +m2min),0.6);
-  double mcmin=m_c_min;//pow((m1min+m2min),0.4)*epowmin;
+  double mcmin=pow((m1min+m2min),0.4)*epowmin;
   double epowmax=pow(m1maxhalf*m2maxhalf/(m1maxhalf +m2maxhalf),0.6);
   double mcmax=pow((m1maxhalf+m1maxhalf),0.4)*epowmax;
   double lMcmin=log(mcmin);
