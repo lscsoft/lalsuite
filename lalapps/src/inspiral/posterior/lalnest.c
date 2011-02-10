@@ -98,14 +98,12 @@ Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--s1_mag_max FLOAT\t:\tSet upper limit on spin magnitude of body 1 for PhenSpinTaylorRD template waveform. Default is 1.]\n \
 [--s1_theta_min FLOAT\t:\tSet lower limit on spin polar angle for body 1 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
 [--s1_theta_max FLOAT\t:\tSet upper limit on spin polar angle for body 1 for PhenSpinTaylorRD template waveform. Default is PI.]\n \
-[--s1_phi_min FLOAT\t:\tSet lower limit on spin azimuthal angle for body 1 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
-[--s1_phi_max FLOAT\t:\tSet upper limit on spin azimuthal angle for body 1 for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
 [--s2_mag_min FLOAT\t:\tSet lower limit on spin magnitude of body 2 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
 [--s2_mag_max FLOAT\t:\tSet upper limit on spin magnitude of body 2 for PhenSpinTaylorRD template waveform. Default is 1.]\n \
 [--s2_theta_min FLOAT\t:\tSet lower limit on spin polar angle for body 2 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
 [--s2_theta_max FLOAT\t:\tSet upper limit on spin polar angle for body 2 for PhenSpinTaylorRD template waveform. Default is PI.]\n \
-[--s2_phi_min FLOAT\t:\tSet lower limit on spin azimuthal angle for body 2 for PhenSpinTaylorRD template waveform. Default is 0.]\n \
-[--s2_phi_max FLOAT\t:\tSet upper limit on spin azimuthal angle for body 2 for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
+[--s_phi_min FLOAT\t:\tSet lower limit on spin1-spin2 azimuthal angle for PhenSpinTaylorRD template waveform. Default is 0.]\n \
+[--s_phi_max FLOAT\t:\tSet upper limit on spin1-spin2 azimuthal angle for PhenSpinTaylorRD template waveform. Default is 2PI.]\n \
 [--lat_min FLOAT\t:\tSet lower limit on source plane declination for PhenSpinTaylorRD template waveform. Default is -PI/2.]\n \
 [--lat_max FLOAT\t:\tSet upper limit on source plane declination for PhenSpinTaylorRD template waveform. Default is PI/2.]\n \
 [--long_min FLOAT\t:\tSet lower limit on source plane RA for PhenSpinTaylorRD template waveform. Default is 0.]\n \
@@ -197,12 +195,10 @@ double s2_mag_min=0.;
 double s2_mag_max=1.;
 double s1_theta_min=0.;
 double s2_theta_min=0.;
-double s1_phi_min=0.;
-double s2_phi_min=0.;
+double s_phi_min=0.;
 double s1_theta_max=LAL_PI;
 double s2_theta_max=LAL_PI;
-double s1_phi_max=LAL_TWOPI;
-double s2_phi_max=LAL_TWOPI;
+double s_phi_max=LAL_TWOPI;
 double iota_min=0.;
 double iota_max=LAL_PI;
 double long_min=0.;
@@ -312,10 +308,8 @@ void initialise(int argc, char *argv[]){
 		{"s1_theta_max",required_argument,0,49},
 		{"s2_theta_min",required_argument,0,50},
 		{"s2_theta_max",required_argument,0,51},
-		{"s1_phi_min",required_argument,0,52},
-		{"s1_phi_max",required_argument,0,53},
-		{"s2_phi_min",required_argument,0,54},
-		{"s2_phi_max",required_argument,0,55},
+		{"s_phi_min",required_argument,0,52},
+		{"s_phi_max",required_argument,0,53},
 		{"lat_min",required_argument,0,56},
 		{"lat_max",required_argument,0,57},
 		{"long_min",required_argument,0,58},
@@ -385,21 +379,13 @@ void initialise(int argc, char *argv[]){
             if (s2_theta_max>LAL_PI) {fprintf(stderr,"ERROR: The maximum spin polar angle is pi, please set --s1_theta_max pi or less.\n");exit(1);}
 			break;
 		case 52:
-			s1_phi_min=atof(optarg);
-			if (s1_phi_min<0.) {fprintf(stderr,"ERROR: The minimum spin azimuthal angle is 0, please set --s1_phi_min 0 or more.\n");exit(1);}
+			s_phi_min=atof(optarg);
+			if (s_phi_min<0.) {fprintf(stderr,"ERROR: The minimum spin1-spin2 azimuthal angle is 0, please set --s_phi_min 0 or more.\n");exit(1);}
 			break;
 		case 53:
-            s1_phi_min=atof(optarg);
-            if (s1_phi_min>LAL_TWOPI) {fprintf(stderr,"ERROR: The maximum spin azimuthal angle is 2pi, please set --s1_phi_max 2pi or less.\n");exit(1);}
+            s_phi_min=atof(optarg);
+            if (s_phi_min>LAL_TWOPI) {fprintf(stderr,"ERROR: The maximum spin1-spin2 azimuthal angle is 2pi, please set --s_phi_max 2pi or less.\n");exit(1);}
             break;
-		case 54:
-            s2_phi_min=atof(optarg);
-            if (s2_phi_min<0.) {fprintf(stderr,"ERROR: The minimum spin azimuthal angle is 0, please set --s1_phi_min 0 or more.\n");exit(1);}
-            break;
-		case 55:
-            s2_phi_min=atof(optarg);
-            if (s2_phi_min>LAL_TWOPI) {fprintf(stderr,"ERROR: The maximum spin azimuthal angle is 2pi, please set --s1_phi_max 2pi or less.\n");exit(1);}
- 			break;
 		case 56:
 			lat_min=atof(optarg);
 			if (lat_min<-LAL_PI/2.) {fprintf(stderr,"ERROR: The minimum latitude is -pi/2, please set --lat_min -pi/2 or more.\n");exit(1);}
@@ -1379,24 +1365,20 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
     double spin2thetamin=s2_theta_min;
     double spin2thetamax=s2_theta_max;
 
-    double spin1phimin=s1_phi_min;
-    double spin1phimax=s1_phi_max;
+    double spinphimin=s_phi_min;
+    double spinphimax=s_phi_max;
 
-    double spin2phimin=s2_phi_min;
-    double spin2phimax=s2_phi_max;
 
     XLALMCMCAddParam(parameter,"Spin1",    (spin1max-spin1min)*gsl_rng_uniform(RNG)+spin1min,  spin1min, spin1max, 0);
-    XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, 1);
-        if ((spin1phimax>=2.*LAL_PI)&&(spin1phimin<=0.))
-    XLALMCMCAddParam(parameter,"Spin1phi",  2.*LAL_PI*gsl_rng_uniform(RNG),  0., 2.*LAL_PI, 1);
-	else
-    XLALMCMCAddParam(parameter,"Spin1phi",  (spin1phimax-spin1phimin)*gsl_rng_uniform(RNG)+spin1phimin,  spin1phimin, spin1phimax, 0);
+    XLALMCMCAddParam(parameter,"Spin1theta",(spin1thetamax-spin1thetamin)*gsl_rng_uniform(RNG)+spin1thetamin, spin1thetamin, spin1thetamax, 0);
+
     XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
-    XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 1);
-	if ((spin2phimax>=2.*LAL_PI)&&(spin2phimin<=0.))
-    XLALMCMCAddParam(parameter,"Spin2phi",  2.*LAL_PI*gsl_rng_uniform(RNG), 0., 2.*LAL_PI,1);
+    XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 0);
+
+    if ((spinphimax>=2.*LAL_PI)&&(spinphimin<=0.))
+    XLALMCMCAddParam(parameter,"Spinphi",  2.*LAL_PI*gsl_rng_uniform(RNG), 0., 2.*LAL_PI,1);
    	else
-    XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax, 0);
+    XLALMCMCAddParam(parameter,"Spinphi",  (spinphimax-spinphimin)*gsl_rng_uniform(RNG)+spinphimin,  spinphimin, spinphimax, 0);
 					}
 	
 	else{
@@ -1405,17 +1387,11 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 			double spin2max=s2_mag_max;
         		double spin2thetamin=s2_theta_min;
 			double spin2thetamax=s2_theta_max;
-			double spin2phimin=s2_phi_min;
-			double spin2phimax=s2_phi_max;
-							XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
-							XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 1);
-							 if ((spin2phimax>=2.*LAL_PI)&&(spin2phimin<=0.))
-      							XLALMCMCAddParam(parameter,"Spin2phi",  2.*LAL_PI*gsl_rng_uniform(RNG), 0., 2.*LAL_PI,1);
-    							 else
-      							XLALMCMCAddParam(parameter,"Spin2phi",  (spin2phimax-spin2phimin)*gsl_rng_uniform(RNG)+spin2phimin,  spin2phimin, spin2phimax, 0);					 
-						     }	
-		
-	   }
+
+			XLALMCMCAddParam(parameter,"Spin2",     (spin2max-spin2min)*gsl_rng_uniform(RNG)+spin2min,  spin2min, spin2max,0);
+			XLALMCMCAddParam(parameter,"Spin2theta",(spin2thetamax-spin2thetamin)*gsl_rng_uniform(RNG)+spin2thetamin,  spin2thetamin, spin2thetamax, 0);
+		}
+	}
     return;
 }
 
@@ -1773,3 +1749,4 @@ int checkParamInList(const char *list, const char *param)
 			return 0;
 	return 1;
 }
+

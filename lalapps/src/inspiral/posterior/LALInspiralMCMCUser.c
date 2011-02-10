@@ -947,32 +947,32 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	double spin1=0.;
 	double spin1theta=0.;
-	double spin1phi=0.;
+	double spinphi=0.;
 	double spin2=0.;
 	double spin2theta=0.;
-	double spin2phi=0.;
 
 	if(XLALMCMCCheckParameter(parameter,"Spin1"))
 	  spin1 = XLALMCMCGetParameter(parameter,"Spin1");
 	if(XLALMCMCCheckParameter(parameter,"Spin1theta"))
 	  spin1theta=XLALMCMCGetParameter(parameter,"Spin1theta");
-	if(XLALMCMCCheckParameter(parameter,"Spin1phi"))
-	  spin1phi=XLALMCMCGetParameter(parameter,"Spin1phi");
+
 	if(XLALMCMCCheckParameter(parameter,"Spin2"))
 	  spin2=XLALMCMCGetParameter(parameter,"Spin2");
 	if(XLALMCMCCheckParameter(parameter,"Spin2theta"))
 	  spin2theta=XLALMCMCGetParameter(parameter,"Spin2theta");
-	if(XLALMCMCCheckParameter(parameter,"Spin2phi"))
-	  spin2phi=XLALMCMCGetParameter(parameter,"Spin2phi");
+	if(XLALMCMCCheckParameter(parameter,"Spinphi"))
+	  spinphi=XLALMCMCGetParameter(parameter,"Spinphi");
 
 	
-	template.spin1[0]=spin1*sin(spin1theta)*cos(spin1phi);
-	template.spin1[1]=spin1*sin(spin1theta)*sin(spin1phi);
+	template.spin1[0]=spin1*sin(spin1theta)*cos(spinphi);
+	template.spin1[1]=spin1*sin(spin1theta)*sin(spinphi);
 	template.spin1[2]=spin1*cos(spin1theta);
 
-	template.spin2[0]=spin2*sin(spin2theta)*cos(spin2phi);
-	template.spin2[1]=spin2*sin(spin2theta)*sin(spin2phi);
+	template.spin2[0]=spin2*sin(spin2theta)*cos(spinphi);
+	template.spin2[1]=0.;
 	template.spin2[2]=spin2*cos(spin2theta);
+
+	template.axisChoice=TotalJ;
 
 	template.next = NULL;
 	template.fine = NULL;
@@ -1613,5 +1613,6 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	return;
 
 }
+
 
 
