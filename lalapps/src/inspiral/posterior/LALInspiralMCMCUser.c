@@ -880,8 +880,6 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	REAL4Vector *hPlus;
 	REAL4Vector *hCross;
-	REAL4TimeSeries *h_p_t=NULL,*h_c_t=NULL;
-        COMPLEX8FrequencySeries *H_p_t=NULL, *H_c_t=NULL;
 
 	InspiralTemplate template;
 
@@ -890,7 +888,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	UINT4 det_i=0;
 	UINT4 idx=0;
 	UINT4 NtimeDomain=2*(inputMCMC->stilde[det_i]->data->length-1);
-	UINT4 NFD=inputMCMC->stilde[det_i]->data->length;
+	//UINT4 NFD=inputMCMC->stilde[det_i]->data->length;
 
 	REAL8 eta,mchirp;
 	REAL8 mtot=0.;
@@ -945,10 +943,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	template.totalMass=mtot;
 	template.eta=eta;
-//	template.distance=3.*LAL_PC_SI*1.e6;
-//	template.inclination=1.9;
 
-	//	fprintf(stdout,"M %11.4e  eta %8.3f  inc %8.4f  dist %11.4e  mc %11.4e\n",template.totalMass,template.eta,template.inclination, template.distance/LAL_PC_SI*1.e-6,mchirp);
 
 	double spin1=0.;
 	double spin1theta=0.;
@@ -970,8 +965,6 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	if(XLALMCMCCheckParameter(parameter,"Spin2phi"))
 	  spin2phi=XLALMCMCGetParameter(parameter,"Spin2phi");
 
-	//spin1=0.;
-	//spin2=0.;
 	
 	template.spin1[0]=spin1*sin(spin1theta)*cos(spin1phi);
 	template.spin1[1]=spin1*sin(spin1theta)*sin(spin1phi);
@@ -997,27 +990,15 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n");
 	  }
 	
-	float WinNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
+	//float WinNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
 
-	h_p_t = XLALCreateREAL4TimeSeries("hplus",&inputMCMC->epoch,inputMCMC->fLow,inputMCMC->deltaT,&lalADCCountUnit,NtimeDomain);
-	h_c_t = XLALCreateREAL4TimeSeries("hcross",&inputMCMC->epoch,inputMCMC->fLow,inputMCMC->deltaT,&lalADCCountUnit,NtimeDomain);
-	if(!(h_p_t && h_c_t)){
-	  fprintf(stderr,"Unable to allocate signal buffer\n");
-	  exit(1);
-	}
-	for(idx=0;idx<NtimeDomain;idx++){
-	  h_p_t->data->data[idx]=hPlus->data[idx];//*((REAL4)inputMCMC->window->data->data[idx] / WinNorm);
-	  h_c_t->data->data[idx]=hCross->data[idx];//*((REAL4)inputMCMC->window->data->data[idx] / WinNorm);
-	}
+//	for(idx=0;idx<NtimeDomain;idx++){
+//	  h_p_t->data->data[idx]=hPlus->data[idx];// *((REAL4)inputMCMC->window->data->data[idx] / WinNorm);
+//	  h_c_t->data->data[idx]=hCross->data[idx];// *((REAL4)inputMCMC->window->data->data[idx] / WinNorm);
+//	}
 
 	/* Get H+ and Hx in the Freq Domain */
-	H_p_t = XLALCreateCOMPLEX8FrequencySeries("Hplus",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
-	H_c_t = XLALCreateCOMPLEX8FrequencySeries("Hcross",&inputMCMC->epoch,0,(REAL8)inputMCMC->deltaF,&lalDimensionlessUnit,(size_t)NFD);
 
-	if(!(H_p_t && H_c_t)){
-	  fprintf(stderr,"Unable to allocate F-domain signal buffer\n");
-	  exit(1);
-	}
 	if(inputMCMC->likelihoodPlan==NULL) {
 	  #if DEBUGMODEL !=0 
 	  fprintf(stdout,"\n   Creating FFTW plan...\n");
@@ -1028,12 +1009,16 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	  #endif
 	}
 
-	LALTimeFreqRealFFT(&status,H_p_t,h_p_t,inputMCMC->likelihoodPlan);
-	LALTimeFreqRealFFT(&status,H_c_t,h_c_t,inputMCMC->likelihoodPlan);
+	XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
+	XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
 
-	XLALDestroyREAL4TimeSeries(h_p_t);
-	XLALDestroyREAL4TimeSeries(h_c_t);
-
+	XLALDestroyREAL4Vector(hPlus);
+	XLALDestroyREAL4Vector(hCross);
+		
+	for(idx =0; idx < NtimeDomain; idx++){
+		inputMCMC->Fwfc->data[idx]*=inputMCMC->deltaT;
+		inputMCMC->Fwfp->data[idx]*=inputMCMC->deltaT;
+	}
 	/* This is the time of the start of the wave in the GeoCentre */
 	REAL8 TimeShiftToGC=XLALMCMCGetParameter(parameter,"time");
 
@@ -1055,23 +1040,10 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	  
 	        #if DEBUGMODEL !=0
                 char modelname[100];	
-		//FILE *model2out;
 	        sprintf(modelname,"waveformF_%s.dat",inputMCMC->ifoID[det_i]);
-		//modelout=fopen(modelname,"r");
-		//if (modelout==NULL) 
-		modelout=fopen(modelname,"w");
-		/*else {
-		  modelout=fopen("wpippo.dat","r");
-		  if (modelout==NULL) {
-		    fprintf(stdout,"Adesso scrivo\n");
-		    modelout=fopen("wpippo.dat","w");
-		    model2out=fopen("tTmplt.dat","w");
-		    fprintf(stdout," Un attimo\n");
-		  }
-		  else exit(1);
-		  }*/
-                #endif
-
+                modelout=fopen(modelname,"w");
+		#endif
+		
 	        chisq=0.0;
 	        /* Compute time delay */
 	        TimeFromGC = XLALTimeDelayFromEarthCenter(inputMCMC->detector[det_i]->location, source.equatorialCoords.longitude, source.equatorialCoords.latitude, &(inputMCMC->epoch)); /* Compute time delay */
@@ -1094,10 +1066,10 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			
-			plus_re = H_p_t->data->data[idx].re*time_cos + H_p_t->data->data[idx].im*time_sin;
-			plus_im = H_p_t->data->data[idx].im*time_cos - H_p_t->data->data[idx].re*time_sin;
-			cross_re = H_c_t->data->data[idx].re*time_cos + H_c_t->data->data[idx].im*time_sin;
-			cross_im = H_c_t->data->data[idx].im*time_cos - H_c_t->data->data[idx].re*time_sin;
+			plus_re = inputMCMC->Fwfp->data[idx]*time_cos + inputMCMC->Fwfp->data[NtimeDomain - idx]*time_sin;
+			plus_im = inputMCMC->Fwfp->data[NtimeDomain - idx]*time_cos - inputMCMC->Fwfp->data[idx]*time_sin;
+			cross_re = inputMCMC->Fwfc->data[idx]*time_cos + inputMCMC->Fwfc->data[NtimeDomain - idx]*time_sin;
+			cross_im = inputMCMC->Fwfc->data[NtimeDomain - idx]*time_cos - inputMCMC->Fwfc->data[idx]*time_sin;
 			resp_r = (REAL8)( plus_re*det_resp.plus + cross_re*det_resp.cross );
 			resp_i = (REAL8)( plus_im*det_resp.plus + cross_im*det_resp.cross );
 			real=inputMCMC->stilde[det_i]->data->data[idx].re - resp_r;
@@ -1113,10 +1085,6 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 		
                 #if DEBUGMODEL !=0
-		/*		if (model2out!=NULL) {
-		  for (idx=0;idx<NtimeDomain;idx++) fprintf(model2out,"%12.5e  %12.5e\n",idx*inputMCMC->deltaT,hPlus->data[idx]*det_resp.plus+hCross->data[idx]*det_resp.cross);
-		  fclose(model2out);
-		  }*/
 		  fclose(modelout);
 		#endif
 		if(highBin<inputMCMC->stilde[det_i]->data->length-2 && highBin>lowBin) chisq+=topdown_sum[det_i]->data[highBin+1];
@@ -1131,8 +1099,6 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	parameter->logLikelihood=logL;
 	return(logL);
 
- 	XLALDestroyCOMPLEX8FrequencySeries(H_p_t);
-	XLALDestroyCOMPLEX8FrequencySeries(H_c_t);	
 	
 }
 

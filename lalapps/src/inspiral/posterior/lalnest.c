@@ -211,7 +211,7 @@ double lat_min=-LAL_PI/2.;
 double lat_max=LAL_PI/2.;
 double manual_chi_min=-1.;
 double manual_chi_max=1.;
-
+double m_c_min=1.;
 /* */
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
 void NestInitManualIMRB(LALMCMCParameter *parameter, void *iT);
@@ -326,10 +326,14 @@ void initialise(int argc, char *argv[]){
 		{"m_tot_max",required_argument,0,63},
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
+		{"m_c_min",required_argument,0,99},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
+		case 99:
+			m_c_min=atof(optarg);
+			break;
 		case 64:
 			manual_chi_min=atof(optarg);
 			break;
@@ -1108,8 +1112,6 @@ int main( int argc, char *argv[])
 	LALCreateRandomParams(&status,&(inputMCMC.randParams),seed);
 
 
-    inputMCMC.Fwfp = XLALCreateREAL4Vector(inputMCMC.numPoints);//Fourier modes + of T-model: PhenSpin deal with "+" & "x" polarisations differently so we set them here
-	inputMCMC.Fwfc = XLALCreateREAL4Vector(inputMCMC.numPoints); //Fourier modes x of T-model: PhenSpin deal with "+" & "x" polarisations differently so we set them here
 	/* Set up the approximant to use in the likelihood function */
 	CHAR TT2[]="TaylorT2"; CHAR TT3[]="TaylorT3"; CHAR TT4[]="TaylorT4"; CHAR TF2[]="TaylorF2"; CHAR BBH[]="IMRPhenomFA"; CHAR BBHSpin1[]="IMRPhenomFB_NS"; CHAR BBHSpin2[]="IMRPhenomFB"; CHAR BBHSpin3[]="IMRPhenomFB_Chi"; CHAR EBNR[]="EOBNR"; CHAR AMPCOR[]="AmpCorPPN"; CHAR ST[]="SpinTaylor"; CHAR LowMassIMRFB[]="IMRPhenomFB_Chi_low"; CHAR LowMassIMRB[]="IMRPhenomB_Chi_low"; CHAR PSTRD[]="PhenSpinTaylorRD";
 	/*CHAR PSTRD[]="PhenSpinTaylorRD"; */ /* Commented out until PhenSpin waveforms are in master */
@@ -1238,6 +1240,8 @@ doneinit:
 	  inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF_PhenSpin;
 	  inputMCMC.likelihoodPlan = NULL;
 	  inputMCMC.funcInit = NestInitManualPhenSpinRD;
+	  inputMCMC.Fwfc = XLALCreateREAL4Vector(inputMCMC.numPoints);
+	  inputMCMC.Fwfp = XLALCreateREAL4Vector(inputMCMC.numPoints);
 	} 
      
 	/* Live is an array of LALMCMCParameter * types */
@@ -1285,6 +1289,10 @@ doneinit:
 
 	/* Clean up */
 	XLALDestroyREAL8Window(windowplan);
+	if(!strcmp(approx,PSTRD)){
+	XLALDestroyREAL4Vector(inputMCMC.Fwfc);
+	XLALDestroyREAL4Vector(inputMCMC.Fwfp);
+	}
 	for(i=0;i<nIFO;i++){
 		XLALDestroyCOMPLEX16FrequencySeries(inputMCMC.stilde[i]);
 		if(estimatenoise) XLALDestroyREAL8FrequencySeries(inputMCMC.invspec[i]);
@@ -1329,7 +1337,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
   double epowmin=pow((m1min*m2min)/(m1min +m2min),0.6);
-  double mcmin=pow((m1min+m2min),0.4)*epowmin;
+  double mcmin=m_c_min;//pow((m1min+m2min),0.4)*epowmin;
   double epowmax=pow(m1maxhalf*m2maxhalf/(m1maxhalf +m2maxhalf),0.6);
   double mcmax=pow((m1maxhalf+m1maxhalf),0.4)*epowmax;
   double lMcmin=log(mcmin);
