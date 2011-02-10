@@ -1476,8 +1476,11 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	
 	XLALInspiralGetApproximantString( approximant_order, LIGOMETA_WAVEFORM_MAX, (Approximant) approximant, (LALPNOrder)  order);
 	LALSnprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),approximant_order);
-	
-	
+
+	if (approximant == SpinQuadTaylor){
+    injParams.qmParameter1 = 1.;
+    injParams.qmParameter2 = 1.;
+  }
 
 	mc  = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
 	eta = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");

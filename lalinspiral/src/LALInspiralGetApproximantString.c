@@ -147,7 +147,12 @@ int XLALInspiralGetApproximantString( CHAR        *output,
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "SpinTaylor" );
       break;
-
+      
+    case SpinQuadTaylor:
+      snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+               "SpinQuadTaylor" );
+      break;
+      
     case FindChirpSP:
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "FindChirpSP" );
