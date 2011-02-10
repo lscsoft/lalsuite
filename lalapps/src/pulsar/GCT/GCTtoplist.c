@@ -200,7 +200,7 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
   }
-  
+
 }
 
 /* frees the space occupied by the toplist */
@@ -702,7 +702,7 @@ static void dump_heap_order(const toplist_t*tl, const char*name) {
 static void sort_gctFStat_toplist_debug(toplist_t*l) {
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
-  sort_gctFStat_toplist(l); 
+  sort_gctFStat_toplist(l);
   /*sort_gctFStat_toplist_strongest(l);*/
   if(debugfp) {
     fclose(debugfp);

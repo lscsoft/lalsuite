@@ -98,15 +98,15 @@ struct tag_ComputeFBuffer_RS {
  * recomputing things that depend ONLY on the skyposition and detector-state series (but not on the spins).
  */
 typedef struct {
-  ComputeFBuffer_RS **data;                                    /**< pointer to a series of ComputeFBuffer_RS structures */ 
+  ComputeFBuffer_RS **data;                                    /**< pointer to a series of ComputeFBuffer_RS structures */
   UINT4 length;                                               /**< the length of the vector */
 } ComputeFBufferVector_RS;
 
 /*---------- exported prototypes [API] ----------*/
 
 void ComputeFStatFreqBand_RS ( LALStatus *status,
-			       REAL4FrequencySeries *fstatVector, 	
-			       const PulsarDopplerParams *doppler,	
+			       REAL4FrequencySeries *fstatVector,
+			       const PulsarDopplerParams *doppler,
 			       MultiSFTVector *multiSFTs,                   /* modified */
 			       const MultiNoiseWeights *multiWeights,
 			       MultiDetectorStateSeries *multiDetStates,    /* modified */
@@ -120,20 +120,20 @@ void ResampleMultiSFTs ( LALStatus *status,
 			 const MultiSSBtimes *multiSSB,
 			 const MultiSFTVector *multiSFTs
 			 );
-  
-MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries ( 
-                         MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */	
-			 ); 
-  
-  
+
+MultiCOMPLEX8TimeSeries *XLALMultiSFTVectorToCOMPLEX8TimeSeries (
+                         MultiSFTVector *multisfts  /**< [in] multi SFT vector, gets modified! */
+			 );
+
+
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out,
 				 MultiSFTVector *multisfts
-				 );     
-  
+				 );
+
 int XLALLatestMultiSFTsample ( LIGOTimeGPS *out,
 			       MultiSFTVector *multisfts
-			       );  
-   
+			       );
+
 int XLALAntennaWeightCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft,                         /**< [out] the timeseries weighted by a(t) */
 					  COMPLEX8TimeSeries **Fboft,                         /**< [out] the timeseries weighted by b(t) */
 					  const COMPLEX8TimeSeries *timeseries,         /**< [in] the input timeseries */
@@ -154,7 +154,7 @@ int XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries **F
 						     const MultiCOMPLEX8TimeSeries *Fboft,                       /**< [in] the detector frame timeseries Fb(t) */
 						     const MultiSSBtimes *multiSSB,                              /**< [in] the multi-detector SSB times data */
 						     const MultiSFTVector *multiSFTs,                            /**< [in] the multi-detector SFT data */
-						     const REAL8 deltaF                                          /**< [in] the user defined output frequency resolution */ 
+						     const REAL8 deltaF                                          /**< [in] the user defined output frequency resolution */
 						     );
 
 int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,                         /**< [out] the resampled timeseries Fa(t_SSB) */
@@ -167,22 +167,22 @@ int XLALBarycentricResampleCOMPLEX8TimeSeries ( COMPLEX8TimeSeries **Faoft_RS,  
 
 int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output GPS time */
 			       const MultiSSBtimes *multiSSB,        /**< input multi SSB SFT-midpoint timestamps */
-			       const REAL8 Tsft                     /**< the length of an SFT */ 
+			       const REAL8 Tsft                     /**< the length of an SFT */
 			       );
 
 int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output latest GPS time */
 			     const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-			     const REAL8 Tsft                    /**< the length of an SFT */ 
+			     const REAL8 Tsft                    /**< the length of an SFT */
 			     );
 
 int XLALGSLInterpolateREAL8Vector ( REAL8Vector **yi,            /**< output interpolated timeseries */
 				    REAL8Vector *xi,              /**< input interpolation points */
 				    gsl_spline *spline		/**< [in] pre-computed spline data */
 				    );
-    
-int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline, 
-				       REAL8Vector *x, 
-				       REAL8Vector *y 
+
+int XLALGSLInitInterpolateREAL8Vector( gsl_spline **spline,
+				       REAL8Vector *x,
+				       REAL8Vector *y
 				       );
 
 int XLALFFTShiftCOMPLEX8Vector(COMPLEX8Vector **x);

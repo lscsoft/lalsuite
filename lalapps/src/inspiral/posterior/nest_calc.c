@@ -259,7 +259,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
     {
         fprintf(fpout,"%s\t",param_ptr->core->name);
     }
-    fprintf(fpout,"logL");
+    fprintf(fpout,"logl");
     fclose(fpout);
 
 	/* open outfile */
