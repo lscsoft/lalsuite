@@ -32,6 +32,9 @@ lalinspiralinclude_HEADERS = \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
 	LALSTPNWaveform2.h \
+	LALSQTPNIntegrator.h \
+	LALSQTPNWaveform.h \
+	LALSQTPNWaveformInterface.h \
 	LIGOLwXMLInspiralRead.h \
 	LIGOLwXMLRingdownRead.h \
 	LIGOMetadataInspiralUtils.h \
@@ -177,6 +180,9 @@ liblalinspiral_la_SOURCES = \
 	LALAdaptiveRungeKutta4.c \
 	LALSTPNWaveform.c \
 	LALSTPNWaveform2.c \
+	LALSQTPNIntegrator.c \
+	LALSQTPNWaveform.c \
+	LALSQTPNWaveformInterface.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALTrigScanCluster.c \
