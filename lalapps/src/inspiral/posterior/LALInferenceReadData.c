@@ -127,6 +127,13 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	   !getProcParamVal(commandLine,"--PSDlength")||!getProcParamVal(commandLine,"--seglen"))
 	{fprintf(stderr,USAGE); return(NULL);}
 	
+  //TEMPORARY. JUST FOR CHECKING USING SPINSPIRAL PSD
+  char **spinspiralPSD=NULL;
+  UINT4 NspinspiralPSD = 0;
+  if (getProcParamVal(commandLine, "--spinspiralPSD")) {
+    parseCharacterOptionString(getProcParamVal(commandLine,"--spinspiralPSD")->value,&spinspiralPSD,&NspinspiralPSD);
+  }    
+  
 	if(getProcParamVal(commandLine,"--channel")){
 		parseCharacterOptionString(getProcParamVal(commandLine,"--channel")->value,&channels,&Nchannel);
 	}
@@ -294,6 +301,51 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
                          IFOdata[i].fLow, IFOdata[i].fHigh);
 
                 makeWhiteData(&(IFOdata[i]));
+    
+    if (getProcParamVal(commandLine, "--spinspiralPSD")) {
+      FILE *in;
+      //char fileNameIn[256];
+      //snprintf(fileNameIn, 256, spinspiralPSD);
+      double freq_temp, psd_temp, temp;
+      int n=0;
+      int k=0;
+      int templen=0;
+      char buffer[256];
+      char * line=buffer;
+    
+      //in = fopen(fileNameIn, "r");
+      in = fopen(spinspiralPSD[i], "r");
+      while(fgets(buffer, 256, in)){
+        templen++;
+      }
+    
+     // REAL8 *tempPSD = NULL;
+     // REAL8 *tempfreq = NULL;
+     // tempPSD=calloc(sizeof(REAL8),templen+1);
+     // tempfreq=calloc(sizeof(REAL8),templen+1);
+    
+      rewind(in);
+      IFOdata[i].oneSidedNoisePowerSpectrum->data->data[0] = 1.0;
+      while(fgets(buffer, 256, in)){
+        line=buffer;
+      
+        sscanf(line, "%lg%n", &freq_temp,&n);
+        line+=n;
+        sscanf(line, "%lg%n", &psd_temp,&n);
+        line+=n;
+        sscanf(line, "%lg%n", &temp,&n);
+        line+=n;
+      
+     // tempfreq[k]=freq_temp;
+     // tempPSD[k]=psd_temp*psd_temp;
+        
+        IFOdata[i].oneSidedNoisePowerSpectrum->data->data[k+1]=psd_temp*psd_temp;
+        
+      k++;
+      //fprintf(stdout, "%g %g \n",freq_temp, psd_temp); fflush(stdout);
+      }
+      fclose(in);
+    }
                 
                 if (getProcParamVal(commandLine, "--data-dump")) {
                   const UINT4 nameLength=256;
