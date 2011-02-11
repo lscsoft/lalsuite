@@ -145,8 +145,6 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
 		return LALSTPN_TEST_OMEGADOT;
-	} else if (values[4] * values[4] > 1.0 - 1.0e-8) { /* coordinate singularity */
-		return LALSTPN_TEST_COORDINATE;
 	} else if isnan(omega) {													 /* omega is nan */
 		return LALSTPN_TEST_OMEGANAN;
 	} else {
@@ -261,12 +259,11 @@ static int XLALSTPNAdaptiveDerivatives(double t,const double values[],double dva
   dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * dotLNS1 * crossz);
 		
 	/* dphi */
-	/* TO DO: fix the coordinate singularity if possible */
-  ds = omega - (-LNhz * (LNhy*dLNhx - LNhx*dLNhy) / (LNhx*LNhx + LNhy*LNhy)); /* term in parens is alphadotcosi */
-	
-	if isinf(ds) {
-		return LALSTPN_DERIVATIVE_COORDINATE;
-	}
+  if(LNhx*LNhx + LNhy*LNhy > 0.0) {
+    ds = omega - (-LNhz * (LNhy*dLNhx - LNhx*dLNhy) / (LNhx*LNhx + LNhy*LNhy)); /* term in parens is alphadotcosi */
+  } else {
+    ds = omega;
+  }
 
 	dvalues[0] = ds   ; dvalues[1] = domega;
 	dvalues[2] = dLNhx; dvalues[3] = dLNhy ; dvalues[4] = dLNhz;
@@ -403,12 +400,16 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 		*countback = len;
 
 		if (signalvec1) { /* return polarizations */
-			REAL8 v, amp, alpha;
+			REAL8 v, amp, alpha, alpha0 = atan2(LNhy[0],LNhx[0]);
 			
 			for(unsigned int i=0;i<len;i++) {
 				v = pow(omega[i],oneby3);
 				amp = params->signalAmplitude * (v*v);
-				alpha = atan2(LNhy[i],LNhx[i]);
+				if(LNhx[i]*LNhx[i] + LNhy[i]*LNhy[i] > 0.0) {
+          alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
+        } else {
+          alpha = alpha0;
+        }        
 
 				signalvec1->data[i]   = (REAL4)(-0.5 * amp * cos(2*vphi[i]) * cos(2*alpha) * (1.0 + LNhz[i]*LNhz[i]) \
 				                                     + amp * sin(2*vphi[i]) * sin(2*alpha) * LNhz[i]);
@@ -422,14 +423,18 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
 			params->fFinal = pow(v,3.0)/(LAL_PI*m);
 			if (!signalvec2) params->tC = yout->data[len-1];	/* TO DO: why only in this case? */
 		} else if (a) {	/* return coherentGW components */
-			REAL8 apcommon, f2a, alpha;
+			REAL8 apcommon, f2a, alpha, alpha0 = atan2(LNhy[0],LNhx[0]);
 			
 			/* (minus) amplitude for distance in m; should be (1e6 * LAL_PC_SI * params->distance) for distance in Mpc */
 			apcommon = -4.0 * params->mu * LAL_MRSUN_SI/(params->distance);
 			
 			for(unsigned int i=0;i<len;i++) {
 				f2a = pow(omega[i],twoby3);
-				alpha = atan2(LNhy[i],LNhx[i]);
+				if(LNhx[i]*LNhx[i] + LNhy[i]*LNhy[i] > 0.0) {
+          alpha = atan2(LNhy[i],LNhx[i]); alpha0 = alpha;
+        } else {
+          alpha = alpha0;
+        }        
 
 			  ff   ->data[i]     = (REAL4)(omega[i]/unitHz);
 			  a    ->data[2*i]   = (REAL4)(apcommon * f2a * 0.5 * (1 + LNhz[i]*LNhz[i]));
