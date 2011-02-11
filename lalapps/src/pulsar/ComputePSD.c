@@ -116,14 +116,12 @@ typedef struct
   INT4 nSFTmthopIFOs;    /* for norm. SFT, type of math. operation over IFOs */
 
   REAL8 binSizeHz;       /* output PSD bin size in Hz */
-  INT4  binSize;         /* output PSD bin size in no. of bins */
+  INT4  binSize;         /* output PSD bin size in no. of bins */ 
   INT4  PSDmthopBins;    /* for PSD, type of math. operation over bins */
   INT4  nSFTmthopBins;   /* for norm. SFT, type of math. operation over bins */
   REAL8 binStepHz;       /* output PSD bin step in Hz */
-  INT4  binStep;         /* output PSD bin step in no. of bins */
+  INT4  binStep;         /* output PSD bin step in no. of bins */ 
   BOOLEAN outFreqBinEnd; /* output the end frequency of each bin? */
-
-  BOOLEAN dumpPSDperSFT; /* output PSD for every single SFT */
 
 } UserVariables_t;
 
@@ -140,15 +138,14 @@ int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
 void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector  *ts, CHAR *filename);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
 static REAL8 math_op(REAL8*, size_t, INT4);
-int XLALDumpPSD ( INT4 freqbin, const CHAR *outbname, const PSDVector *PSDVect );
 
 /*============================================================
  * FUNCTION definitions
  *============================================================*/
+
 int
-main(int argc, char *argv[])
-{
-  const char *fn = __func__;
+main(int argc, char *argv[]){
+
   static LALStatus       status;  /* LALStatus pointer */
   UserVariables_t uvar = empty_UserVariables;
 
@@ -312,22 +309,14 @@ main(int argc, char *argv[])
       if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
 	return EXIT_FAILURE;
 
-      /* if user requested it, output PSD per detector X, per freq-bin k, and per SFT into a separate file */
-      if ( uvar.dumpPSDperSFT ) {
-        if ( XLALDumpPSD ( k, uvar.outputPSD, multiPSD->data[X] ) != XLAL_SUCCESS ) {
-          XLALPrintError ("%s: XLALDumpPSD() failed, xlalErrnor = %d\n", fn, xlalErrno );
-          return EXIT_FAILURE;
-        }
-      } /* if uvar.dumpPSDperSFT */
-
-    } /* for IFOs X */
+    } /* over IFOs */
 
     /* compute math. operation over IFOs for this frequency */
     finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
     if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
       return EXIT_FAILURE;
 
-  } /* for freq bins k */
+  } /* over freq bins */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /* compute normalised SFT power */
@@ -360,7 +349,7 @@ main(int argc, char *argv[])
 	  return EXIT_FAILURE;
 
       } /* over IFOs */
-
+      
       /* compute math. operation over IFOs for this frequency */
       finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
       if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
@@ -413,25 +402,25 @@ main(int argc, char *argv[])
     LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
     for (k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
-
+      
       REAL8 f0 = Freq0 + b * dFreq;
       REAL8 f1 = f0 + finalBinStep * dFreq;
       fprintf(fpOut, "%f", f0);
       if (uvar.outFreqBinEnd)
-	fprintf(fpOut, "   %f", f1);
-
+	fprintf(fpOut, "   %f", f1);	  
+      
       REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
       if (XLALIsREAL8FailNaN( psd ))
 	return EXIT_FAILURE;
       fprintf(fpOut, "   %e", psd);
-
+      
       if (uvar.outputNormSFT) {
 	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
 	if (XLALIsREAL8FailNaN( nsft ))
 	  return EXIT_FAILURE;
 	fprintf(fpOut, "   %f", nsft);
       }
-
+      
       fprintf(fpOut, "\n");
     }
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -629,7 +618,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
   uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
-  uvar->dumpPSDperSFT = FALSE;
 
   uvar->binSizeHz = 0.0;
   uvar->binSize   = 1;
@@ -681,8 +669,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregINTUserStruct   (maxBinsClean,     'm', UVAR_OPTIONAL, "Maximum Cleaning Bins");
   XLALregLISTUserStruct  (linefiles,         0 , UVAR_OPTIONAL, "Comma separated list of linefiles "
 								"(names must contain IFO name)");
-
-  XLALregBOOLUserStruct  (dumpPSDperSFT,    'd', UVAR_OPTIONAL, "Output PSD for every SFT into file '<outputPSD>-IFO'");
 
   /* read all command line variables */
   if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
@@ -841,61 +827,3 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   ABORT ( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE );
 
 } /* LALfwriteSpectrograms() */
-
-/** Dump PSD to file for every single SFT.
- *  The filename for each IFO is generated as 'name-IFO'
- */
-int XLALDumpPSD ( INT4 freqbin,			/**< frequency bin to output */
-                  const CHAR *outbname,		/**< basename of PDF output files */
-                  const PSDVector *PSDVect	/**< psd vector to output */
-                  )
-{
-  const char *fn = __func__;
-
-  /* check input consistency */
-  if ( outbname == NULL ) {
-    XLALPrintError ("%s: NULL input 'outbname'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( PSDVect == NULL ) {
-    XLALPrintError ("%s: NULL input 'PSDVect'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( freqbin < 0 || (UINT4)freqbin > PSDVect->data[0].data->length ) {
-    XLALPrintError ("%s: invalid frequency bin 'freqbin = %d' not within [0, %d]\n", fn, freqbin, PSDVect->data[0].data->length );
-    XLAL_ERROR ( fn, XLAL_EDOM );
-  }
-
-  CHAR *fname;
-  FILE *fp;
-
-  UINT4 len = strlen ( outbname ) + 4 + snprintf ( NULL, 0, "%d", freqbin );
-
-  if ( ( fname = XLALMalloc ( len * sizeof(CHAR) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, len );
-    XLAL_ERROR ( fn, XLAL_ENOMEM);
-  }
-
-  sprintf ( fname, "%s-%c%c", outbname, PSDVect->data[0].name[0], PSDVect->data[0].name[1] );
-
-  if ( ( fp = fopen( fname, "ab" ))  == NULL ) {
-    XLALPrintError ("%s: Failed to open PSDperSFT file '%s' for appending!\n", fn, fname );
-    XLALFree ( fname );
-    XLAL_ERROR ( fn, XLAL_ESYS );
-  }
-
-  fprintf(fp,"%%%% Freq = %.15g\n", PSDVect->data[0].f0 + freqbin * PSDVect->data[0].deltaF );
-  fprintf(fp,"%%%% ti[GPS]  PSD[ti]\n" );
-  UINT4 iSFT;
-  for ( iSFT = 0; iSFT < PSDVect->length; iSFT++ )
-    {
-      fprintf(fp, "%d %e\n", PSDVect->data[iSFT].epoch.gpsSeconds, PSDVect->data[0].data->data[freqbin] );
-    }
-
-  fprintf(fp,"\n\n");
-  fclose ( fp );
-  XLALFree ( fname );
-
-  return XLAL_SUCCESS;
-
-} /* XLALDumpPSD() */
