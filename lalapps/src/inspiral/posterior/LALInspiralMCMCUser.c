@@ -863,7 +863,7 @@ in the frequency domain */
 	}
 
 	/* Add log likelihoods to find global likelihood */
-	parameter->logLikelihood=logL;
+	parameter->logLikelihood=logL; 
 	return(logL);
 }
 
@@ -980,28 +980,50 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	LALInspiralParameterCalc(&status,&template);
 	
-	UINT4 mylength;
-        LALInspiralWaveLength(&status, &mylength, template);
 	
-	if(NtimeDomain>=mylength){
+	UINT4 dummy_length;
+		
+
+        LALInspiralWaveLength(&status, &dummy_length, template);
+	dummy_length*=2;	
+	if(NtimeDomain>=dummy_length){
 		
 
 	hPlus=XLALCreateREAL4Vector(NtimeDomain); /* Allocate storage for the waveform */
 	hCross=XLALCreateREAL4Vector(NtimeDomain);/* Allocate storage for the waveform */
+	XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
+        XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
+	LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template);
+        if(status.statusCode)
+          {
+            REPORTSTATUS(&status);
+            chisq=DBL_MAX;
+            fprintf(stderr,"**** ERROR ****: No PhenSpin waveform %d created!!!\n",NtimeDomain);
+          }
+	  XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
+          XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
+/*	  XLALDestroyREAL4Vector(hPlus);
+          XLALDestroyREAL4Vector(hCross);
+
+        for(idx =0; idx < NtimeDomain; idx++){
+                inputMCMC->Fwfc->data[idx]*=inputMCMC->deltaT;
+                inputMCMC->Fwfp->data[idx]*=inputMCMC->deltaT;
+        				     }
+*/
 		}
 
 		else{
-	hPlus=XLALCreateREAL4Vector(mylength);/* Allocate storage for the waveform */
-        hCross=XLALCreateREAL4Vector(mylength);/* Allocate storage for the waveform */
-			}
+	hPlus=XLALCreateREAL4Vector(inputMCMC->mylength);/* Allocate storage for the waveform */
+        hCross=XLALCreateREAL4Vector(inputMCMC->mylength);/* Allocate storage for the waveform */
+			
 			
 	LALPSpinInspiralRDTemplates(&status,hPlus,hCross,&template);
 	if(status.statusCode)
 	  {
 	    REPORTSTATUS(&status);
 	    chisq=DBL_MAX;
-	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n");
-	  }
+	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n",inputMCMC->mylength);
+	 }
 	
 	//float WinNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
 
@@ -1014,72 +1036,85 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 		/*Compute the wavelenth*/
 
-				if (NtimeDomain>=mylength){
-	XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
-	XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
-					}
-
-				else {
-	  fprintf(stderr,"increasing wavelength due to low chirp mass: Mchirp=%11.4e\n eta=%11.4e\n",mchirp,eta);
-	  REAL4FFTPlan *likePlan = XLALCreateForwardREAL4FFTPlan(mylength,FFTW_ESTIMATE);
-
-	  REAL4Vector* Hptmp = XLALCreateREAL4Vector(mylength);
-	  REAL4Vector* Hctmp = XLALCreateREAL4Vector(mylength);
-
+/*	if (NtimeDomain>=dummy_length){
+	  XLALREAL4VectorFFT(inputMCMC->Fwfp,hPlus,inputMCMC->likelihoodPlan);
+	  XLALREAL4VectorFFT(inputMCMC->Fwfc,hCross,inputMCMC->likelihoodPlan);
+	}*/
+	
+	 // fprintf(stderr,"increasing wavelength due to low chirp mass: Mchirp=%11.4e\n eta=%11.4e\n",mchirp,eta);
+	 // REAL4FFTPlan *likePlan = XLALCreateForwardREAL4FFTPlan(inputMCMC->mylength,FFTW_ESTIMATE);
+	  
+	  REAL4Vector* Hptmp = XLALCreateREAL4Vector(inputMCMC->mylength);
+	  REAL4Vector* Hctmp = XLALCreateREAL4Vector(inputMCMC->mylength);
+	  
 	  REAL8Vector* freqstd=XLALCreateREAL8Vector(NtimeDomain/2);
-
-	  REAL8Vector* freq=XLALCreateREAL8Vector(mylength/2);
-	  REAL8Vector* HPR=XLALCreateREAL8Vector(mylength/2);
-	  REAL8Vector* HPI=XLALCreateREAL8Vector(mylength/2);
-	  REAL8Vector* HCR=XLALCreateREAL8Vector(mylength/2);
-	  REAL8Vector* HCI=XLALCreateREAL8Vector(mylength/2);
-
+	  
+	  REAL8Vector* freq=XLALCreateREAL8Vector(inputMCMC->mylength/2);
+	  REAL8Vector* HPR=XLALCreateREAL8Vector(inputMCMC->mylength/2);
+	  REAL8Vector* HPI=XLALCreateREAL8Vector(inputMCMC->mylength/2);
+	  REAL8Vector* HCR=XLALCreateREAL8Vector(inputMCMC->mylength/2);
+	  REAL8Vector* HCI=XLALCreateREAL8Vector(inputMCMC->mylength/2);
+	  
 	  if(!(Hptmp && Hctmp && freqstd && freq && HPR && HPI && HCR && HCI )){
 	    fprintf(stderr,"Unable to allocate support F-domain signal buffer\n");
 	    exit(1);
 	  }
-
-	  XLALREAL4VectorFFT(Hptmp,hPlus,likePlan);
-	  XLALREAL4VectorFFT(Hctmp,hCross,likePlan);
-
-	  XLALDestroyREAL4FFTPlan(likePlan);
-	  XLALDestroyREAL4Vector(Hptmp);
-	  XLALDestroyREAL4Vector(Hctmp);
-
-	  REAL8 dF=1./mylength/inputMCMC->deltaT;
-
+	  
+	  XLALREAL4VectorFFT(Hptmp,hPlus,inputMCMC->longplan);
+	  XLALREAL4VectorFFT(Hctmp,hCross,inputMCMC->longplan);
+	  
+	  
+	  REAL8 dF=1./inputMCMC->mylength/inputMCMC->deltaT;
+	  
 	  for (idx=0;idx<NtimeDomain/2;idx++) 
 	    freqstd->data[idx]=inputMCMC->deltaF*idx;
-	  for (idx=0;idx<mylength/2;idx++) 
+	  for (idx=0;idx<inputMCMC->mylength/2;idx++) 
 	    freq->data[idx]=dF*idx;
-
-	  for (idx=0;idx<mylength/2;idx++) {
-	    HPR->data[idx]=Hptmp->data[idx];
-	    HPI->data[idx]=Hptmp->data[mylength-idx];
-	    HCR->data[idx]=Hctmp->data[idx];
-	    HCI->data[idx]=Hctmp->data[mylength-idx];
-	  }
 	  
+	  for (idx=0;idx<inputMCMC->mylength/2;idx++) {
+	    HPR->data[idx]=Hptmp->data[idx];
+	    HPI->data[idx]=Hptmp->data[inputMCMC->mylength-1-idx];
+	    HCR->data[idx]=Hctmp->data[idx];
+	    HCI->data[idx]=Hctmp->data[inputMCMC->mylength-1-idx];
+	  }
+	  XLALDestroyREAL4Vector(Hptmp);
+          XLALDestroyREAL4Vector(Hctmp); 
 	  gsl_interp_accel *acc    = (gsl_interp_accel*) gsl_interp_accel_alloc();
+	  
+	  gsl_spline* spline_Pr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, inputMCMC->mylength/2);
+	  gsl_spline* spline_Pi = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, inputMCMC->mylength/2);
+	  gsl_spline* spline_Cr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, inputMCMC->mylength/2);
+	  gsl_spline* spline_Ci = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, inputMCMC->mylength/2);
 
-	  gsl_spline* spline_Pr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
-	  gsl_spline* spline_Pi = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
-	  gsl_spline* spline_Cr = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
-	  gsl_spline* spline_Ci = (gsl_spline*) gsl_spline_alloc(gsl_interp_cspline, mylength/2);
+	  gsl_spline_init(spline_Pr, freq->data, HPR->data, inputMCMC->mylength/2);
+	  gsl_spline_init(spline_Pi, freq->data, HPI->data, inputMCMC->mylength/2);
+	  gsl_spline_init(spline_Cr, freq->data, HCR->data, inputMCMC->mylength/2);
+	  gsl_spline_init(spline_Ci, freq->data, HCI->data, inputMCMC->mylength/2);
 
-	  gsl_spline_init(spline_Pr, freq->data, HPR->data, mylength/2);
-	  gsl_spline_init(spline_Pi, freq->data, HPI->data, mylength/2);
-	  gsl_spline_init(spline_Cr, freq->data, HCR->data, mylength/2);
-	  gsl_spline_init(spline_Ci, freq->data, HCI->data, mylength/2);
+	  for (idx=0;idx<NtimeDomain/2;idx++){
 
-	  for (idx=0;idx<NtimeDomain/2;idx++)
+	    inputMCMC->Fwfp->data[idx] = gsl_spline_eval ( spline_Pr , freqstd->data[idx] , acc);
+	    inputMCMC->Fwfp->data[NtimeDomain-1-idx] = gsl_spline_eval ( spline_Pi , freqstd->data[idx] , acc);
+	    inputMCMC->Fwfc->data[idx] = gsl_spline_eval ( spline_Cr , freqstd->data[idx] , acc);
+	    inputMCMC->Fwfc->data[NtimeDomain-1-idx] = gsl_spline_eval ( spline_Ci , freqstd->data[idx] , acc);
+	  }
 
-	  inputMCMC->Fwfp->data[idx] = gsl_spline_eval ( spline_Pr , freqstd->data[idx] , acc);
-	  inputMCMC->Fwfp->data[NtimeDomain-idx] = gsl_spline_eval ( spline_Pi , freqstd->data[idx] , acc);
-	  inputMCMC->Fwfc->data[idx] = gsl_spline_eval ( spline_Cr , freqstd->data[idx] , acc);
-	  inputMCMC->Fwfc->data[NtimeDomain-idx] = gsl_spline_eval ( spline_Ci , freqstd->data[idx] , acc);
-
-	  XLALDestroyREAL8Vector(freqstd);
+	 /* FILE *debug=fopen("debugspline.dat","r");
+	  if (debug==NULL) {
+	    debug=fopen("debugspline.dat","w");
+	    FILE *debug2=fopen("debug2spline.dat","w");
+	    for (idx=1;idx<NtimeDomain/2;idx++) {
+	      fprintf(debug,"%12.6e  %12.6e  %12.6e  %12.6e  %12.6e\n",idx*inputMCMC->deltaF,inputMCMC->Fwfp->data[idx],inputMCMC->Fwfp->data[NtimeDomain-idx],inputMCMC->Fwfc->data[idx],inputMCMC->Fwfc->data[NtimeDomain-idx]);
+	    }
+		printf("inputMCMC->mylengthi %d\n",mylength);
+	    for (idx=1;idx<inputMCMC->mylength/2;idx++) {
+	      fprintf(debug2,"%12.6e  %12.6e  %12.6e  %12.6e  %12.6e\n",idx*dF,HPR->data[idx],HPI->data[idx],HCR->data[idx],HCI->data[idx]);
+	    }
+	  fclose(debug2);
+		}
+	  fclose(debug);
+	   */ 
+	    XLALDestroyREAL8Vector(freqstd);
 
 	  XLALDestroyREAL8Vector(freq);
 	  XLALDestroyREAL8Vector(HPR);
@@ -1094,10 +1129,9 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	  gsl_interp_accel_free (acc);
 
 	}
-
-
-	XLALDestroyREAL4Vector(hPlus);
-	XLALDestroyREAL4Vector(hCross);
+  
+          XLALDestroyREAL4Vector(hPlus);
+          XLALDestroyREAL4Vector(hCross);
 				
 	for(idx =0; idx < NtimeDomain; idx++){
 		inputMCMC->Fwfc->data[idx]*=inputMCMC->deltaT;
@@ -1698,6 +1732,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	return;
 
 }
+
 
 
 

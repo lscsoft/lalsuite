@@ -191,9 +191,9 @@ double m_tot_max_highmass=300.;
 double d_min=1.;
 double d_max=100.;
 double s1_mag_min=0.;
-double s1_mag_max=1.;
+double s1_mag_max=0.95;
 double s2_mag_min=0.;
-double s2_mag_max=1.;
+double s2_mag_max=0.95;
 double s1_theta_min=0.;
 double s2_theta_min=0.;
 double s_phi_min=0.;
@@ -208,6 +208,7 @@ double lat_min=-LAL_PI/2.;
 double lat_max=LAL_PI/2.;
 double manual_chi_min=-1.;
 double manual_chi_max=1.;
+int mc_flag=0;
 double m_c_min=1.;
 /* */
 void NestInitManual(LALMCMCParameter *parameter, void *iT);
@@ -322,10 +323,14 @@ void initialise(int argc, char *argv[]){
 		{"chimin",required_argument,0,64}, /* N.B. ASCII codes 65 - 90 and 97-122 are letters */
 		{"chimax",required_argument,0,91},
 		{"m_c_min",required_argument,0,99},
+		{"mc_flag",no_argument,0,100},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
+		case 100:
+			mc_flag=1;
+			break;
 		case 99:
 			m_c_min=atof(optarg);
 			break;
@@ -1229,8 +1234,27 @@ doneinit:
 	  inputMCMC.funcInit = NestInitManualPhenSpinRD;
 	  inputMCMC.Fwfc = XLALCreateREAL4Vector(inputMCMC.numPoints);
 	  inputMCMC.Fwfp = XLALCreateREAL4Vector(inputMCMC.numPoints);
+          InspiralTemplate template; 
+		template.fCutoff=SampleRate/2.-1.;
+		template.tSampling=SampleRate;
+		template.approximant=PhenSpinTaylorRD;
+		template.totalMass=mc2mass1(m_c_min,0.24)+mc2mass2(m_c_min,0.24);
 		
-        
+		template.eta=0.24;
+		template.massChoice=totalMassAndEta;
+		template.fLower=inputMCMC.fLow;
+        template.order=inputMCMC.phaseOrder;
+        template.nStartPad = 0;
+        template.nEndPad =0;
+        template.startTime = 0.0;
+        template.ieta = 1;
+
+		LALInspiralParameterCalc(&status,&template);
+		LALInspiralWaveLength(&status, &inputMCMC.mylength, template);
+	        if(inputMCMC.mylength>inputMCMC.numPoints){	
+		printf("myl = %d ,total mass=%11.4E\n",inputMCMC.mylength,template.totalMass);
+		
+		LALCreateForwardREAL4FFTPlan(&status,&inputMCMC.longplan,inputMCMC.mylength,FFTW_ESTIMATE);}
           #if DEBUGMODEL !=0 
           fprintf(stdout,"\n   Creating FFTW plan...\n");
           #endif
@@ -1322,8 +1346,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   
   double m1min = 1.;
   double m2min = 1.;
-  double m1maxhalf = 17.5;
-  double m2maxhalf = 17.5;
+  double mmaxhalf = 17.5;
 
 
   double etamin=0.25 - etawindow;
@@ -1334,12 +1357,16 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
  // double mcmin = m2mc(m1min,m2min);
  // double mcmax = m2mc(m1maxhalf,m2maxhalf);
 
-  double epowmin=pow((m1min*m2min)/(m1min +m2min),0.6);
-  double mcmin=pow((m1min+m2min),0.4)*epowmin;
-  double epowmax=pow(m1maxhalf*m2maxhalf/(m1maxhalf +m2maxhalf),0.6);
-  double mcmax=pow((m1maxhalf+m1maxhalf),0.4)*epowmax;
+  double mu_pow_min=pow((m1min*m2min)/(m1min +m2min),0.6);
+  double mcmin=pow((m1min+m2min),0.4)*mu_pow_min;
+  if(mc_flag){
+	mcmin=m_c_min;
+		}
+  double mu_pow_max=pow(mmaxhalf*mmaxhalf/(mmaxhalf +mmaxhalf),0.6);
+  double mcmax=pow((mmaxhalf+mmaxhalf),0.4)*mu_pow_max;
   double lMcmin=log(mcmin);
   double lMcmax=log(mcmax);
+
 
   parameter->param=NULL;
   parameter->dimension = 0;
