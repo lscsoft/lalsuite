@@ -676,6 +676,11 @@ void initVariables(LALInferenceRunState *state)
 	addMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	tmpMin=0.0; tmpMax=LAL_PI;
+  
+  ppt=getProcParamVal(commandLine,"--max-iota");
+  if (ppt) {
+    tmpMax = atof(ppt->value);
+  }
 	//tmpVal=0.9207;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=2.86094;
