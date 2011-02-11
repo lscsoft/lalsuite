@@ -47,12 +47,16 @@ typedef struct
    REAL8 dfmin;
    REAL8 dfmax;
    REAL4 dopplerMultiplier;
+   REAL4 ihsfomthresh;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
    INT4 rootFindingMethod;
    LALDetector det;
    CHAR* sftType;
+   INT4 markBadSFTs;
+   INT4 antennaOff;
+   INT4 noiseWeightOff;
 } inputParamsStruct;
 
 typedef struct

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include <gsl/gsl_sort.h>
 
 #include "IHS.h"
-#include "TwoSpect.h"
+#include "statistics.h"
 #include "candidates.h"
 
 //////////////////////////////////////////////////////////////
@@ -104,11 +104,9 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, inputParamsStruct *par
    for (ii=0; ii<(INT4)ihss->length; ii++) {
    
       //For each column, populate it with the data for that frequency bin, excluding harmonics of antenna pattern modulation
+      memcpy(column->data, &(input->ffdata->data[ii*numfprbins]), sizeof(REAL4)*column->length);
       for (jj=0; jj<(INT4)column->length; jj++) {
-         
          if (fabs(params->Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(params->Tobs/(6.0*3600.0)-jj)<=1.0) column->data[jj] = 0.0;
-         else column->data[jj] = input->ffdata->data[ii*numfprbins + jj];
-         
       }
       
       //Run the IHS algorithm on the column
@@ -265,9 +263,9 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
-   //srand(time(NULL));
-   //UINT8 randseed = rand();
-   //gsl_rng_set(rng, randseed);
+   /* srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed); */
    gsl_rng_set(rng, 0);
    
    ihsVals *ihsvals = new_ihsVals();
@@ -327,20 +325,25 @@ void genIhsFar(ihsfarStruct *output, INT4 columns, REAL4 threshold, REAL4Vector 
       output->ihsdistMean->data[ii-1] = calcMean(tempihsvals);
       output->ihsdistSigma->data[ii-1] = calcStddev(tempihsvals);
       
-      //Launch insertion sort method to find the threshold value
-      topihsvals = XLALCreateREAL4Vector((UINT4)roundf((trials-ii)*threshold)+1);
-      if (topihsvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf((trials-ii)*threshold)+1);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+      //Launch insertion sort method to find the threshold value if the threshold value is not equal to 1.0
+      //If equal to 1.0, set the FAR value equal to 0
+      if (threshold!=1.0) {
+         topihsvals = XLALCreateREAL4Vector((UINT4)roundf((trials-ii)*threshold)+1);
+         if (topihsvals==NULL) {
+            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, (INT4)roundf((trials-ii)*threshold)+1);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+         if( (gsl_sort_float_largest((float*)topihsvals->data, topihsvals->length, (float*)tempihsvals->data, 1, tempihsvals->length)) != 0) {
+            fprintf(stderr,"%s: gsl_sort_float_largest() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
+         
+         output->ihsfar->data[ii-1] = topihsvals->data[topihsvals->length-1];
+         XLALDestroyREAL4Vector(topihsvals);
+         topihsvals = NULL;
+      } else {
+         output->ihsfar->data[ii-1] = 0.0;
       }
-      if( (gsl_sort_float_largest((float*)topihsvals->data, topihsvals->length, (float*)tempihsvals->data, 1, tempihsvals->length)) != 0) {
-         fprintf(stderr,"%s: gsl_sort_float_largest() failed.\n", fn);
-         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-      }
-      
-      output->ihsfar->data[ii-1] = topihsvals->data[topihsvals->length-1];
-      XLALDestroyREAL4Vector(topihsvals);
-      topihsvals = NULL;
       
       //Reset temporary vector
       XLALDestroyREAL4Vector(tempihsvals);
@@ -419,7 +422,7 @@ REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
    }
    
    //For the highest SNR pair, compute the FOM
-   fom = 6.0*(locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]) * (locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]);
+   fom = 12.0*(locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]) * (locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]);
    
    //Destroy used variables
    XLALDestroyREAL4Vector(snrs);
@@ -477,9 +480,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    INT4 ii, jj, kk, checkbin;
    REAL8 fsig, per0, B;
-   REAL4 ihsfomfar = 6.0;
    
-   //INT4 numberofIHSvalsChecked = 0;
+   //INT4 numberofIHSvalsChecked = 0, numberofIHSvalsExceededThresh = 0;
    
    INT4 numfbins = (INT4)round(params->fspan*params->Tcoh)+1;
    
@@ -541,8 +543,12 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
          
+         //numberofIHSvalsChecked++;
+         
          //Check the IHS sum against the FAR (scaling FAR with mean of the noise in the range of columns)
          if (ihsmaxima->maxima->data[checkbin] > ihsfarstruct->ihsfar->data[ii]*meanNoise) {
+            
+            //numberofIHSvalsExceededThresh++;
          
             //Load temporary vectors for determining the FOM
             for (kk=0; kk<=ii; kk++) {
@@ -566,7 +572,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          
             //Check the IHS FOM against the FAR, if smaller, and the location is non-zero,
             //and the location is within range then we have a candidate
-            if  (fom<=ihsfomfar && loc>=5.0 && params->Tobs/loc>=2.0*3600.0) {
+            if  (fom<=params->ihsfomthresh && loc>=5.0 && params->Tobs/loc>=2.0*3600.0) {
                
                //Candidate frequency
                fsig = params->fmin + (0.5*ii + jj)/params->Tcoh;
@@ -583,7 +589,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   candlist = resize_candidateVector(candlist, 2*(candlist->length));
                   if (candlist->numofcandidates == candlist->length-1) XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                }
-               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, 0.0, 0.0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
+               loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[checkbin], fom, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
                (candlist->numofcandidates)++;
             } /* if fom is below threshold and within period limits */
          } /* if val exceeds threshold */
@@ -606,6 +612,8 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       rmssinrange = NULL;
       
    } /* for ii < ihsfarstruct->ihsfar->length */
+   
+   //fprintf(stderr,"Number of IHS vals checked = %d, number exceeding threshold = %d\n", numberofIHSvalsChecked, numberofIHSvalsExceededThresh);
    
 } /* findIHScandidates() */
 

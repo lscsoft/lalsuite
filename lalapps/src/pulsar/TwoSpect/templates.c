@@ -29,6 +29,7 @@
 
 #include "templates.h"
 #include "cdfwchisq.h"
+#include "statistics.h"
 
 //////////////////////////////////////////////////////////////
 // Allocate memory for farStruct struct  -- done
