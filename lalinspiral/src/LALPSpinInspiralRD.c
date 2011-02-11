@@ -1000,7 +1000,25 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
 	inc = params->inclination;
 	break;
 
-    case TotalJ:
+    case View:
+	cosa1 =
+	    (params->spin1[2] * cos(params->inclination) +
+	     params->spin1[0] * sin(params->inclination)) / mchi1;
+	cosa2 =
+	    (params->spin1[2] * cos(params->inclination) +
+	     params->spin2[0] * sin(params->inclination)) / mchi2;
+	for (i = 0; i < 3; i++) {
+	    initS1[i] = params->spin1[i] * params->mass1 * params->mass1;
+	    initS2[i] = params->spin2[i] * params->mass2 * params->mass2;
+	}
+	initLNh[0] = sin(params->inclination);
+	initLNh[1] = 0.;
+	initLNh[2] = cos(params->inclination);
+	inc = 0.;
+	break;
+
+    default:	
+	//case TotalJ:
 	cosa1 = params->spin1[2] / mchi1;
 	cosa2 = params->spin2[2] / mchi2;
 	for (j = 0; j < 3; j++) {
@@ -1049,23 +1067,6 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
 	    }
 	}
 	inc = params->inclination;
-	break;
-    default:
-	//case View:
-	cosa1 =
-	    (params->spin1[2] * cos(params->inclination) +
-	     params->spin1[0] * sin(params->inclination)) / mchi1;
-	cosa2 =
-	    (params->spin1[2] * cos(params->inclination) +
-	     params->spin2[0] * sin(params->inclination)) / mchi2;
-	for (i = 0; i < 3; i++) {
-	    initS1[i] = params->spin1[i] * params->mass1 * params->mass1;
-	    initS2[i] = params->spin2[i] * params->mass2 * params->mass2;
-	}
-	initLNh[0] = sin(params->inclination);
-	initLNh[1] = 0.;
-	initLNh[2] = cos(params->inclination);
-	inc = 0.;
 	break;
     }
 
@@ -2555,3 +2556,4 @@ void LALPSpinInspiralRDEngine(LALStatus * status,
     /*End */
 
 }
+

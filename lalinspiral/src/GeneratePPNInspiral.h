@@ -302,9 +302,9 @@ description (above).
 
 /* <lalVerbatim file="LALInputAxisH">  */
 typedef enum {
+  TotalJ,
   View,
   OrbitalL,
-  TotalJ
  } InputAxis;
 /* </lalVerbatim>  */
 
@@ -439,3 +439,4 @@ LALGenerateInspiralSmooth( LALStatus            *,
 #endif
 
 #endif /* _GENERATEPPNINSPIRAL_H */
+

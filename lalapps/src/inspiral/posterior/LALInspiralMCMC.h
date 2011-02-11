@@ -346,7 +346,8 @@ tagLALMCMCInput
 /* For plus and cross polarisations in PhenSpinRD */
   REAL4Vector* Fwfp;
   REAL4Vector* Fwfc;
-
+  REAL4FFTPlan *longplan;
+  UINT4 mylength; 
 }  LALMCMCInput;
 /* </lalVerbatim>  */
 
