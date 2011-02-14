@@ -324,7 +324,7 @@ static void sighandler(int sig)
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fprintf(stderr, "\n");
+  fputs("\n-- signal handler called\n",stderr);
   fprintf(stderr, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
