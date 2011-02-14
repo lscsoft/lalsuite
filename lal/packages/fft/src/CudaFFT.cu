@@ -1,13 +1,12 @@
 #include <lal/LALDatatypes.h>
 #include "CudaFunctions.h"
 
-
 void XLALCudaError(cudaError_t error, const char *file, int line)
 {
     if(error != cudaSuccess)	
     {	   
-        printf("%s:%d %s\n", file, line, cudaGetErrorString(error));
-        exit(-1);
+        fprintf( stderr, "%s:%d %s\n", file, line, cudaGetErrorString(error));
+        exit(1);
     }
 }
 
@@ -15,8 +14,8 @@ void XLALCudaFFTError(cufftResult_t error, const char *file, int line)
 {
     if(error != CUFFT_SUCCESS) 
     {
-        printf("%s:%d Cuda FFT Error: %d\n", file, line, error);
-        exit(-1);
+        fprintf( stderr, "%s:%d Cuda FFT Error: %d\n", file, line, error);
+        exit(1);
     }
 }
 

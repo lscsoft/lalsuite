@@ -33,9 +33,6 @@ COMPLEX8 *XLALCudaMallocComplex(UINT4 size)
 void XLALCudaFree(void *d_data)
 {
 
-  static int callcnt=1;
-  printf("called: XLALCudaFree %d\n )", callcnt++);
-
     static const char *func = "XLALCudaFree";
     if( !d_data )
         XLAL_ERROR_VOID( func, XLAL_EFAULT );
