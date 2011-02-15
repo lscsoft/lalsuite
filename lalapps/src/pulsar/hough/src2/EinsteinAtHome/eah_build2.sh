@@ -117,7 +117,7 @@ for i; do
 	    export MACOSX_DEPLOYMENT_TARGET=10.3
 	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
 	    pflags="-arch ppc -D_NONSTD_SOURCE -isystem $SDKROOT"
-	    CPPFLAGS="$pflags $CPPFLAGS"
+	    CPPFLAGS="$pflags $CPPFLAGS -DMAC_OS_X_VERSION_MAX_ALLOWED=1030 -DMAC_OS_X_VERSION_MIN_REQUIRED=1030"
 	    CFLAGS="$pflags -Wno-long-double $CFLAGS"
 	    CXXFLAGS="$pflags -Wno-long-double $CXXFLAGS"
 	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
