@@ -123,6 +123,15 @@ for i; do
 	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
 	    export RELEASE_LDADD="./libstdc++.a"
 	    export CC=gcc-3.3 CXX=g++-3.3 ;;
+	--tiger)
+	    export MACOSX_DEPLOYMENT_TARGET=10.4
+	    export SDKROOT="/Developer/SDKs/MacOSX10.4u.sdk"
+	    pflags="-D_NONSTD_SOURCE -isystem $SDKROOT"
+	    CPPFLAGS="$pflags $CPPFLAGS -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 -DMAC_OS_X_VERSION_MIN_REQUIRED=1040"
+	    CFLAGS="$pflags $CFLAGS"
+	    CXXFLAGS="$pflags $CXXFLAGS"
+	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
+	    export RELEASE_LDADD="/usr/lib/libstdc++-static.a" ;;
 	--with-ssl=*)
 	    WITH_SSL="$i"
 	    ssldir=`echo "$i" | sed 's/--with-ssl=//'`
@@ -149,6 +158,7 @@ for i; do
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --panther         build to run on Mac OS 10.3.9"
+	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
