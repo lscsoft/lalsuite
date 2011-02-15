@@ -85,6 +85,11 @@ for i; do
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
+	--32)
+	    CPPFLAGS="-m32 $CPPFLAGS"
+	    CXXFLAGS="-m32 $CXXFLAGS"
+	    CFLAGS="-m32 $CFLAGS"
+	    LDFLAGS="-m32 $LDFLAGS" ;;
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
@@ -141,6 +146,7 @@ for i; do
 	    echo "  --rebuild-lal     rebuild lalsuite"
 	    echo "  --rebuild-boinc   rebuild BOINC"
 	    echo "  --static          try to link statically"
+	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --panther         build to run on Mac OS 10.3.9"
 	    echo "  --cuda            build an App that uses CUDA"
