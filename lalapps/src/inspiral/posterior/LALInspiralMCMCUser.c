@@ -1428,6 +1428,9 @@ void IMRPhenomFA_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 
 
 void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
+	UINT4 NtimeModel=model->length;
+	UINT4 NfreqModel = model->length;
+	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
 
 	/*'x' and 'y' components of spins must be set to zero.*/
 	template->spin1[0]=0.;
@@ -1467,8 +1470,36 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	//IMR doesnt normalise by multiplying by df, plus TF2 has a deltaF assumed which is divided out later
 
     LALBBHPhenWaveFreqDom(status,model,template);
+	
+	
+	/* Begin the rigmarole of aligning this template properly */
+	/* Inverse FFT it back into the time domain */
+	if(!inputMCMC->likelihoodRevPlan) inputMCMC->likelihoodRevPlan = XLALCreateReverseREAL4FFTPlan(NtimeModel,0);
+	XLALREAL4VectorFFT(Tmodel,model,inputMCMC->likelihoodRevPlan);
+	
+	/* Find the position of the maximum within the buffer */
+	UINT4 i, max_i=0;
+	REAL4 max=-10;
+	for(i=0;i<NtimeModel;i++) {
+		if(Tmodel->data[i]>max){
+			max=Tmodel->data[i];
+			max_i=i;
+		}		
+	}
+	REAL4 shift = i*inputMCMC->deltaT;
+	
+	/* Shift the template in the frequency domain to compensate */
+	for(i=0;i<model->length/2;i++){
+		REAL4 time_sin=sin(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
+		REAL4 time_cos=cos(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
+		REAL4 real=model->data->data[idx];
+		REAL4 imag=model->data->data[NfreqModel-idx];
+		model->data->data[idx]	=			real*time_cos + imag*time_sin;
+		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+	}
+	/* Finally restore the proper value of distance */
     template->distance = distanceMPC;
-
+	/* P.S. I hate IMRPhenomB */
 }
 
 void TaylorF2_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
@@ -1481,23 +1512,6 @@ void TaylorF2_template(LALStatus *status,InspiralTemplate *template, LALMCMCPara
 	LALInspiralRestrictedAmplitude(status,template);
 
 	LALInspiralWave(status,model,template);
-
-	/*
-	FILE* model_output;
-	model_output=fopen("output.dat","w");
-
-	fprintf(model_output,"Sampling frequency: %lf\n",template->tSampling);
-
-	fprintf(model_output,"Mass 1: %lf\n",template->mass1);
-	fprintf(model_output,"Mass 2: %lf\n",template->mass2);
-
-	for(i=0;i<model->length;i++) {
-		fprintf(model_output,"%g\n",model->data[i]);
-	}
-	fclose(model_output);
-
-	exit(0);
-	*/
 
 	return;
 
@@ -1587,8 +1601,10 @@ void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParam
 
 void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCParameter *parameter, LALMCMCInput *inputMCMC)
 {
-	UINT4 NtimeModel, idx;
+	UINT4 NtimeModel, NfreqModel, idx;
+	REAL4 deltaF = inputMCMC->deltaF;
 	NtimeModel = inputMCMC->segment[0]->data->length;
+	NfreqModel = inputMCMC->stilde[0]->data->length;
 	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
 	
         /*'x' and 'y' components of spins must be set to zero.*/
@@ -1630,13 +1646,27 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
     LALInspiralWave(status, Tmodel, template);
     template->distance = distanceMPC;
     
+	
+	/* Compute time shift between end of wave and end of buffer */
+	UINT4 start = template->nStartPad*inputMCMC->deltaT;
+	UINT4 max_time = template->tC+start;
+	UINT4 shift = inputMCMC->deltaT*NtimeModel - max_time;
+	
     float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
     float Norm = winNorm * inputMCMC->deltaT;
     for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
     if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
     LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
-    return;
-
+	/* Apply time shift to make peak time at end of buffer */
+	for(idx=0;idx<NfreqModel;idx++){
+		REAL4 time_sin=sin(LAL_TWOPI*idx*deltaF*shift);
+		REAL4 time_cos=cos(LAL_TWOPI*idx*deltaF*shift);
+		REAL4 real=model->data->data[idx];
+		REAL4 imag=model->data->data[NfreqModel-idx];
+		model->data->data[idx]	=			real*time_cos + imag*time_sin;
+		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+	}
+	return;
 
 }
 
