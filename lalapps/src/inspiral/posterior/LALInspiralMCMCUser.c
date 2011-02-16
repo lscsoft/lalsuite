@@ -1648,17 +1648,17 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
     
 	
 	/* Compute time shift between end of wave and end of buffer */
-	UINT4 start = template->nStartPad*inputMCMC->deltaT;
+	/*UINT4 start = template->nStartPad*inputMCMC->deltaT;
 	UINT4 max_time = template->tC+start;
 	UINT4 shift = inputMCMC->deltaT*NtimeModel - max_time;
-	
+	*/
     float winNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
     float Norm = winNorm * inputMCMC->deltaT;
     for(idx=0;idx<Tmodel->length;idx++) Tmodel->data[idx]*=(REAL4)inputMCMC->window->data->data[idx] * Norm; /* window & normalise */
     if(inputMCMC->likelihoodPlan==NULL) {LALCreateForwardREAL4FFTPlan(status,&inputMCMC->likelihoodPlan,(UINT4) NtimeModel,FFTW_PATIENT);}
     LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
 	/* Apply time shift to make peak time at end of buffer */
-	for(idx=0;idx<NfreqModel;idx++){
+	/*for(idx=0;idx<NfreqModel;idx++){
 		REAL4 time_sin=sin(LAL_TWOPI*idx*deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*idx*deltaF*shift);
 		REAL4 real=model->data[idx];
@@ -1666,6 +1666,7 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
 		model->data[idx]	=     real*time_cos + imag*time_sin;
 		model->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
 	}
+	*/
 	return;
 
 }
