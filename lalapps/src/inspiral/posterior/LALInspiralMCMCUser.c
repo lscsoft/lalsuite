@@ -825,7 +825,7 @@ in the frequency domain */
 		/* Dump the template and data if required */
 		if(inputMCMC->dumpfile){
 			sprintf(dumpfile,"%s.%s",inputMCMC->dumpfile,inputMCMC->ifoID[det_i]);
-			modelout = fopen(dumpfile,"w");
+			FILE *modelout = fopen(dumpfile,"w");
 			for(idx=lowBin;idx<inputMCMC->stilde[det_i]->data->length;idx++)
 			{
 				time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
