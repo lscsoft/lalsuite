@@ -1481,12 +1481,12 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	UINT4 i, max_i=0;
 	REAL4 max=-10;
 	for(i=0;i<NtimeModel;i++) {
-		if(Tmodel->data[i]>max){
-			max=Tmodel->data[i];
+		if(fabs(Tmodel->data[i])>max){
+			max=fabs(Tmodel->data[i]);
 			max_i=i;
 		}		
 	}
-	REAL4 shift = max_i*inputMCMC->deltaT;
+	REAL4 shift = inputMCMC->deltaT*NtimeModel - max_i*inputMCMC->deltaT;
 	
 	/* Shift the template in the frequency domain to compensate */
 	for(i=0;i<model->length/2;i++){
