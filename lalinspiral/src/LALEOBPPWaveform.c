@@ -1023,7 +1023,6 @@ LALHCapDerivativesP4PN(
    printf(" AoverSqrtD = %e, u3 = %e, 1st term = %e, 2nd term = %e, dAdr = %e, denom = %e\n",
      AoverSqrtD, u3, 2.0 * ( q2 + p4 * z3) * A, - r * ( q2 + r2 + p4 * z3 ), dAdr, HeffHreal );
    printf( "q2 = %e, r2 = %e, p4 * z3 = %e\n", q2, r2, p4*z3);
-     exit(1);
    dq = dvalues->data[3] = - omega * ak->flux(vPhi,ak->coeffs)/(eta * vPhi6);
 }
 
@@ -1949,7 +1948,7 @@ LALEOBPPWaveformEngine (
 /*
    omegamatch = -0.05 -0.01 + 0.133 + 0.183 * params->eta + 1.161 * params->eta * params->eta;
 */
-   FILE *out = fopen("eobpp-10-10_fixed.dat", "w");
+   /*FILE *out = fopen("eobpp-10-10_fixed.dat", "w");*/
 
 
    while ( ( omega > omegaOld || !isnan(hLM.re) ) && r < rOld)
@@ -2020,9 +2019,10 @@ LALEOBPPWaveformEngine (
           ampl->data[j] =  (REAL4)( apFac * v2 );
           ampl->data[k] =  (REAL4)( acFac * v2 );
           phse->data[i] =  (REAL8)( st );
+          /*
           fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", sig1->data[i], sig2->data[i], values->data[0],
              values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
-             dvalues->data[2], dvalues->data[3] );
+             dvalues->data[2], dvalues->data[3] );*/
         }
         else if ( !isnan( hLM.re) )
         {
@@ -2158,7 +2158,7 @@ LALEOBPPWaveformEngine (
       ndx++;
    }
 
-   fclose( out );
+   /*fclose( out );*/
 
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
@@ -2285,11 +2285,13 @@ LALEOBPPWaveformEngine (
 #endif
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
+   FILE *out = fopen("eobpp-real_im.dat", "w");
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
+     fprintf( out, "%e %e\n", x1, x2 );
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
      if (x1 || x2)
@@ -2306,6 +2308,7 @@ LALEOBPPWaveformEngine (
        }
      }
    }
+   fclose(out);
 
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
