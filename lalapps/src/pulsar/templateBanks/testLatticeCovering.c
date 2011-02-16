@@ -20,6 +20,7 @@
 /**
  * \author Reinhard Prix
  * \date 2005
+ * \ingroup pulsarApps
  * \file 
  * \ingroup moduleLatticeCovering
  * \brief test-functions for the module LatticeCovering

@@ -17,6 +17,18 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Réjean Dupuis
+ * \brief
+ * This code extracts the 95% upper limits (from the results of ComputePFD)
+ * and then calculates the corresponding limits on ellipticity given the
+ * pulsar frequency and distance.  The output data from ComputePDF are
+ * linearly interpolated to get h95. This limit is compared to the spindown
+ * based upper limits where applicable.
+ */
+
 /*****************************************************************************/
 /* This code extracts the 95% upper limits (from the results of ComputePFD)  */     
 /* and then calculates the corresponding limits on ellipticity given the     */
@@ -28,7 +40,6 @@
 /*                                                                           */
 /*                       University of Glasgow - last modified 21/04/2004    */
 /*****************************************************************************/
-/* $Id$ */
 
 #include <stdio.h>
 #include <math.h>

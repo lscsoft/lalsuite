@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="FstatShapeTestCV">
-Author: Itoh, Yousuke 
-$Id$
-************************************* </lalVerbatim> */
+/**
+ * \author Yousuke Itoh
+ */
 
 /* 
   gcc -Wall -g -o FstatShapeTest FstatShapeTest.c -lm -I/afs/aeiw/grawave/Linux/lal/include/ -llal -llalsupport -L/afs/aeiw/grawave/Linux/lal/lib/

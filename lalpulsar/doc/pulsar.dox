@@ -137,3 +137,9 @@ here <tt>tdb()</tt>.
     \brief Module for antenna-pattern functions and amplitude
     modulation of pulsar signals.
 */
+
+
+/** \defgroup pulsarApps Applications
+ *  \ingroup pulsar
+ *  \brief Applications related to continuous GW (pulsar) searches.
+ */

@@ -54,10 +54,12 @@ const char *gengetopt_args_info_full_help[] = {
   "      --outdirectory=STRING     Output directory",
   "      --sftDir=STRING           Directory containing SFTs  (default=`./')",
   "      --ephemDir=STRING         Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
+  "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --templateLength=INT      Maximum number of pixels to use in the template \n                                   (default=`50')",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky  (default=`allsky')",
   "      --SFToverlap=DOUBLE       SFT overlap in seconds, usually Tcoh/2  \n                                  (default=`900')",
+  "      --sftType=STRING          Expected SFT from either 'MFD' \n                                  (Makefakedata_v4) or 'vladimir' (Vladimir's \n                                  SFT windowed version) which uses a factor of \n                                  2 rather than sqrt(8/3) for the window \n                                  normalization  (default=`vladimir')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
   "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
@@ -171,10 +173,12 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->outdirectory_given = 0 ;
   args_info->sftDir_given = 0 ;
   args_info->ephemDir_given = 0 ;
+  args_info->ephemYear_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->templateLength_given = 0 ;
   args_info->skyRegion_given = 0 ;
   args_info->SFToverlap_given = 0 ;
+  args_info->sftType_given = 0 ;
   args_info->IHSonly_given = 0 ;
   args_info->BrentsMethod_given = 0 ;
   args_info->antennaOff_given = 0 ;
@@ -216,6 +220,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->sftDir_orig = NULL;
   args_info->ephemDir_arg = gengetopt_strdup ("/opt/lscsoft/lalpulsar/share/lalpulsar");
   args_info->ephemDir_orig = NULL;
+  args_info->ephemYear_arg = gengetopt_strdup ("08-11");
+  args_info->ephemYear_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
   args_info->templateLength_arg = 50;
@@ -224,6 +230,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->skyRegion_orig = NULL;
   args_info->SFToverlap_arg = 900;
   args_info->SFToverlap_orig = NULL;
+  args_info->sftType_arg = gengetopt_strdup ("vladimir");
+  args_info->sftType_orig = NULL;
   args_info->IHSonly_flag = 0;
   args_info->BrentsMethod_flag = 0;
   args_info->antennaOff_flag = 0;
@@ -258,14 +266,16 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->outdirectory_help = gengetopt_args_info_full_help[19] ;
   args_info->sftDir_help = gengetopt_args_info_full_help[20] ;
   args_info->ephemDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[22] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[23] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[24] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[25] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[26] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[27] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[28] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[29] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[22] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[23] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[24] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[25] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[26] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[27] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[28] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[29] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[30] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[31] ;
   
 }
 
@@ -379,11 +389,15 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->sftDir_orig));
   free_string_field (&(args_info->ephemDir_arg));
   free_string_field (&(args_info->ephemDir_orig));
+  free_string_field (&(args_info->ephemYear_arg));
+  free_string_field (&(args_info->ephemYear_orig));
   free_string_field (&(args_info->dopplerMultiplier_orig));
   free_string_field (&(args_info->templateLength_orig));
   free_string_field (&(args_info->skyRegion_arg));
   free_string_field (&(args_info->skyRegion_orig));
   free_string_field (&(args_info->SFToverlap_orig));
+  free_string_field (&(args_info->sftType_arg));
+  free_string_field (&(args_info->sftType_orig));
   
   
 
@@ -458,6 +472,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "sftDir", args_info->sftDir_orig, 0);
   if (args_info->ephemDir_given)
     write_into_file(outfile, "ephemDir", args_info->ephemDir_orig, 0);
+  if (args_info->ephemYear_given)
+    write_into_file(outfile, "ephemYear", args_info->ephemYear_orig, 0);
   if (args_info->dopplerMultiplier_given)
     write_into_file(outfile, "dopplerMultiplier", args_info->dopplerMultiplier_orig, 0);
   if (args_info->templateLength_given)
@@ -466,6 +482,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
   if (args_info->SFToverlap_given)
     write_into_file(outfile, "SFToverlap", args_info->SFToverlap_orig, 0);
+  if (args_info->sftType_given)
+    write_into_file(outfile, "sftType", args_info->sftType_orig, 0);
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
   if (args_info->BrentsMethod_given)
@@ -754,10 +772,12 @@ cmdline_parser_internal (
         { "outdirectory",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
+        { "ephemYear",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "templateLength",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
+        { "sftType",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
         { "BrentsMethod",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
@@ -1053,6 +1073,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Year or year range (e.g. 08-11) of ephemeris files.  */
+          else if (strcmp (long_options[option_index].name, "ephemYear") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ephemYear_arg), 
+                 &(args_info->ephemYear_orig), &(args_info->ephemYear_given),
+                &(local_args_info.ephemYear_given), optarg, 0, "08-11", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "ephemYear", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Multiplier for the Doppler velocity.  */
           else if (strcmp (long_options[option_index].name, "dopplerMultiplier") == 0)
           {
@@ -1105,6 +1139,20 @@ cmdline_parser_internal (
                 &(local_args_info.SFToverlap_given), optarg, 0, "900", ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "SFToverlap", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization.  */
+          else if (strcmp (long_options[option_index].name, "sftType") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->sftType_arg), 
+                 &(args_info->sftType_orig), &(args_info->sftType_given),
+                &(local_args_info.sftType_given), optarg, 0, "vladimir", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "sftType", '-',
                 additional_error))
               goto failure;
           

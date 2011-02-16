@@ -18,7 +18,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarCoherent
+ * \ingroup pulsarApps
  * \file
  * \brief
  * This code is designed to combine the results files from multiple analyses using

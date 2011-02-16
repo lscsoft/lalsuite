@@ -17,27 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTclean.c
- * Authors:  Krishnan, B. 
- *
- * Revision: $Id$
- *
- * History:   Created by Krishnan July 12, 2004
- *            Modified...
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan
  */
-/************************************ <lalVerbatim file="SFTbinTestCV">
-Author: Krishnan, B.  
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include <lal/SFTClean.h>
 #include <glob.h> 
@@ -47,7 +31,7 @@ NRCSID (SFTCLEANC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="SFTCLEANCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define SFTCLEANC_ENORM 0
 #define SFTCLEANC_ESUB  1
 #define SFTCLEANC_EARG  2
@@ -59,7 +43,7 @@ NRCSID (SFTCLEANC, "$Id$");
 #define SFTCLEANC_MSGEARG  "Error parsing arguments"
 #define SFTCLEANC_MSGEBAD  "Bad argument values"
 #define SFTCLEANC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */

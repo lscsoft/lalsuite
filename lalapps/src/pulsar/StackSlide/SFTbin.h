@@ -31,43 +31,23 @@
  *-----------------------------------------------------------------------
  */
  
-/* *********************************** <lalVerbatim file="SFTbinHV">
-Author: Sintes, A.M., 
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A.M.,
+*/
 
 /* REVISIONS: */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTbin.h}}
-\label{s:SFTbin.h}
+/**
+\heading{Header \ref SFTbin.h}
 Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
+\heading{Synopsis}
 
-\begin{verbatim}
+\code
 #include <lal/SFTbin.h>
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{SFTbinHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTbinHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTbinC}
-%%%%%%%%%% Test program. %%
-\newpage\input{TestSFTbinC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
+\endcode
+*/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -125,7 +105,7 @@ NRCSID (SFTBINH, "$Id$");
  *    inclusion in the documentation.
  */
   
-/* <lalErrTable file="SFTbinHErrorTable"> */
+/**\name Error Codes */ /*@{*/
   
 #define SFTBINH_ENULL 1
 #define SFTBINH_EFILE 2
@@ -146,7 +126,7 @@ NRCSID (SFTBINH, "$Id$");
 #define SFTBINH_MSGEWRITE "fwrite failed"
 
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************

@@ -31,40 +31,17 @@
  *-----------------------------------------------------------------------
  */
  
-/* *********************************** <lalVerbatim file="SFTbinHV">
-Author: Sintes, A.M., 
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author A.M. Sintes
 
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTbin.h}}
-\label{s:SFTbin.h}
+\heading{Header \ref SFTbin.h}
 Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/SFTbin.h>
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{SFTbinHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTbinHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTbinC}
-%%%%%%%%%% Test program. %%
-\newpage\input{TestSFTbinC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
+\endcode
+*/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -122,7 +99,7 @@ NRCSID (SFTBINH, "$Id$");
  *    inclusion in the documentation.
  */
   
-/* <lalErrTable file="SFTbinHErrorTable"> */
+/**\name Error Codes */ /*@{*/
   
 #define SFTBINH_ENULL 1
 #define SFTBINH_EFILE 2
@@ -143,7 +120,7 @@ NRCSID (SFTBINH, "$Id$");
 #define SFTBINH_MSGEWRITE "fwrite failed"
 
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************
