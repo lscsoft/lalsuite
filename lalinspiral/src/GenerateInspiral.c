@@ -538,7 +538,6 @@ LALGenerateInspiralPopulateInspiral(
   /* distance in Mpc */
   inspiralParams->startTime	  =  0.0;
   inspiralParams->startPhase	  =  thisEvent->coa_phase;
-  inspiralParams->startPhase      = 0.0;
 
   inspiralParams->OmegaS = GENERATEINSPIRAL_OMEGAS;/* EOB 3PN contribution */
   inspiralParams->Theta	 = GENERATEINSPIRAL_THETA; /* EOB 3PN contribution */
