@@ -1022,7 +1022,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	  {
 	    REPORTSTATUS(&status);
 	    chisq=DBL_MAX;
-	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n",inputMCMC->mylength);
+	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n");
 	 }
 	
 	//float WinNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
@@ -1430,16 +1430,17 @@ void IMRPhenomFA_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
 	UINT4 NtimeModel=model->length;
 	UINT4 NfreqModel = model->length;
+	UINT4 idx;
 	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
 
 	/*'x' and 'y' components of spins must be set to zero.*/
 	template->spin1[0]=0.;
 	template->spin1[1]=0.;
-    template->spin1[2]=0.;
+    	template->spin1[2]=0.;
 
 	template->spin2[0]=0.;
 	template->spin2[1]=0.;
-    template->spin2[2]=0.;
+    	template->spin2[2]=0.;
 
 	/*Get aligned spins configuration/magnitude if these are set*/
 	if(XLALMCMCCheckParameter(parameter,"spin1z")) {
@@ -1492,10 +1493,10 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	for(i=0;i<model->length/2;i++){
 		REAL4 time_sin=sin(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
-		REAL4 real=model->data->data[idx];
-		REAL4 imag=model->data->data[NfreqModel-idx];
-		model->data->data[idx]	=			real*time_cos + imag*time_sin;
-		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+		REAL4 real=model->data[idx];
+		REAL4 imag=model->data[NfreqModel-idx];
+		model->data[idx]	=			real*time_cos + imag*time_sin;
+		model->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
 	}
 	/* Finally restore the proper value of distance */
     template->distance = distanceMPC;
@@ -1661,10 +1662,10 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
 	for(idx=0;idx<NfreqModel;idx++){
 		REAL4 time_sin=sin(LAL_TWOPI*idx*deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*idx*deltaF*shift);
-		REAL4 real=model->data->data[idx];
-		REAL4 imag=model->data->data[NfreqModel-idx];
-		model->data->data[idx]	=			real*time_cos + imag*time_sin;
-		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+		REAL4 real=model->data[idx];
+		REAL4 imag=model->data[NfreqModel-idx];
+		model->data[idx]	=     real*time_cos + imag*time_sin;
+		model->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
 	}
 	return;
 
