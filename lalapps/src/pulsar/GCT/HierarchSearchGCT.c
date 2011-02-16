@@ -2588,7 +2588,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
       while ( 1 )
         {
           LIGOTimeGPS gpsEnd = catalog->data[iSFT1].header.epoch;
-          XLALGPSAdd( &gpsEnd, Tsft );
+          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
           int cmp = XLALGPSInSeg ( &gpsEnd, thisSeg );
 
           if ( cmp < 0 ) { 	/* end of iSFT1 lies *before* current segment ==> something is screwed up! */
