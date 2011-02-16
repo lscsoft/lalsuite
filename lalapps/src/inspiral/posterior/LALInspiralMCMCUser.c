@@ -1022,7 +1022,7 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	  {
 	    REPORTSTATUS(&status);
 	    chisq=DBL_MAX;
-	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n",inputMCMC->mylength);
+	    fprintf(stderr,"**** ERROR ****: No PhenSpin waveform created!!!\n");
 	 }
 	
 	//float WinNorm = sqrt(inputMCMC->window->sumofsquares/inputMCMC->window->data->length);
@@ -1435,11 +1435,11 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	/*'x' and 'y' components of spins must be set to zero.*/
 	template->spin1[0]=0.;
 	template->spin1[1]=0.;
-    template->spin1[2]=0.;
+    	template->spin1[2]=0.;
 
 	template->spin2[0]=0.;
 	template->spin2[1]=0.;
-    template->spin2[2]=0.;
+    	template->spin2[2]=0.;
 
 	/*Get aligned spins configuration/magnitude if these are set*/
 	if(XLALMCMCCheckParameter(parameter,"spin1z")) {
@@ -1466,7 +1466,7 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
     /* IMRPhenomFB takes distance in metres */
     double distanceMPC = template->distance;
     double distanceSI= LAL_PC_SI*1e6*distanceMPC;
-    template->distance = distanceSI/(inputMCMC->deltaF*inputMCMC->deltaF);
+    template->distance = distanceSI/inputMCMC->deltaF;
 	//IMR doesnt normalise by multiplying by df, plus TF2 has a deltaF assumed which is divided out later
 
     LALBBHPhenWaveFreqDom(status,model,template);
@@ -1481,21 +1481,21 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 	UINT4 i, max_i=0;
 	REAL4 max=-10;
 	for(i=0;i<NtimeModel;i++) {
-		if(Tmodel->data[i]>max){
-			max=Tmodel->data[i];
+		if(fabs(Tmodel->data[i])>max){
+			max=fabs(Tmodel->data[i]);
 			max_i=i;
-		}		
+		}
 	}
-	REAL4 shift = i*inputMCMC->deltaT;
+	REAL4 shift = inputMCMC->deltaT*NtimeModel - max_i*inputMCMC->deltaT;
 	
 	/* Shift the template in the frequency domain to compensate */
 	for(i=0;i<model->length/2;i++){
-		REAL4 time_sin=sin(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
-		REAL4 time_cos=cos(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
-		REAL4 real=model->data->data[idx];
-		REAL4 imag=model->data->data[NfreqModel-idx];
-		model->data->data[idx]	=			real*time_cos + imag*time_sin;
-		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+		REAL4 time_sin=-sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 time_cos=cos(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 real=model->data[i];
+		REAL4 imag=model->data[NfreqModel-i];
+		model->data[i]	=			real*time_cos + imag*time_sin;
+		model->data[NfreqModel-i]= -real*time_sin + imag*time_cos;
 	}
 	/* Finally restore the proper value of distance */
     template->distance = distanceMPC;
@@ -1661,10 +1661,10 @@ void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCP
 	for(idx=0;idx<NfreqModel;idx++){
 		REAL4 time_sin=sin(LAL_TWOPI*idx*deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*idx*deltaF*shift);
-		REAL4 real=model->data->data[idx];
-		REAL4 imag=model->data->data[NfreqModel-idx];
-		model->data->data[idx]	=			real*time_cos + imag*time_sin;
-		model->data->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+		REAL4 real=model->data[idx];
+		REAL4 imag=model->data[NfreqModel-idx];
+		model->data[idx]	=     real*time_cos + imag*time_sin;
+		model->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
 	}
 	return;
 
