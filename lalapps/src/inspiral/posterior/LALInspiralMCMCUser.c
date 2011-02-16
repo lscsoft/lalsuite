@@ -746,7 +746,7 @@ in the frequency domain */
 	ChirpISCOLength=ak.tn;
 
 	/* IMRPhenomB calcaultes the chirp length differently */
-	if(template.approximant == IMRPhenomB){
+	if(template.approximant == IMRPhenomB || template.approximant==IMRPhenomFB){
 		ChirpISCOLength = template.tC;
 	}
 
@@ -1486,11 +1486,13 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 			max_i=i;
 		}
 	}
-	REAL4 shift = inputMCMC->deltaT*NtimeModel - max_i*inputMCMC->deltaT;
+	
+	/* Want to shift so that max_time - tc is at start of buffer */
+	REAL4 shift = (max_i*inputMCMC->deltaT -template->tC) - 0 ;
 	
 	/* Shift the template in the frequency domain to compensate */
 	for(i=0;i<model->length/2;i++){
-		REAL4 time_sin=-sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 time_sin=sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*i*inputMCMC->deltaF*shift);
 		REAL4 real=model->data[i];
 		REAL4 imag=model->data[NfreqModel-i];
@@ -1758,7 +1760,6 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	fclose(model_output);
 
 	exit(0);
-
 
 	return;
 
