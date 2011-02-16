@@ -147,8 +147,6 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
 		return LALSTPN_TEST_OMEGADOT;
-	} else if (values[4] * values[4] > 1.0 - 1.0e-8) { /* coordinate singularity */
-		return LALSTPN_TEST_COORDINATE;
 	} else if isnan(omega) {													 /* omega is nan */
 		return LALSTPN_TEST_OMEGANAN;
 	} else {
@@ -227,12 +225,12 @@ static int XLALSTPNAdaptiveDerivativesFrameless(double t,const double values[],d
   dLNhy = (-tmpx*LNhz + tmpz*LNhx);
   dLNhz = (-tmpy*LNhx + tmpx*LNhy);
 
-  /* dE1; reuses tmpxyz above, which is PBCV's Omega_e */
+  /* dE1; reuses tmpxyz above, which is PBCV's Omega_L */
   
   tmp1 = tmpx * LNhx + tmpy * LNhy + tmpz * LNhz;
   tmpx -= tmp1 * LNhx;
   tmpy -= tmp1 * LNhy;
-  tmpz -= tmp1 * LNhz;
+  tmpz -= tmp1 * LNhz; /* Now tmpxyz is PBCV's Omega_e */
 
   dE1x = (-tmpz*E1y + tmpy*E1z);
   dE1y = (-tmpx*E1z + tmpz*E1x);
