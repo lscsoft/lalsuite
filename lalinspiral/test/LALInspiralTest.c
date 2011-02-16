@@ -62,7 +62,7 @@ Example values of the parameters that can be set (with options in brackets) is:
    params.signalAmplitude=1.0;
    params.nStartPad=0;     (number of leading zero bins)
    params.nEndPad=0;       (number of trailing zero bins)
-   params.approximant=TaylorT1; (TaylorT1, PadeT1=ODE solver;
+   params.approximant=TaylorF2; (TaylorT1, PadeT1=ODE solver;
                             TaylorT2=implicit phasing formula solved in quadrature;
                             TaylorT3=explicit time-domain phasing;
                             TaylorF1=stationary phase approx. using ODEs;
@@ -118,22 +118,24 @@ int main (void) {
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1;
-   params.mass1=5.;
+   params.mass1=5.1;
    params.mass2=5.;
    params.startTime=0.0;
    params.startPhase=0.0;
-   params.fLower=85.0;
-   params.fCutoff=2047.00;
-   params.tSampling=4096.0;
+   params.fLower=40.0;
+   params.fCutoff=2048.00;
+   params.tSampling=8192.0;
    params.order=6;
-   params.approximant=EOB;
+   params.approximant=IMRPhenomB;
 /* SpinTaylorT3 */
    params.signalAmplitude=1.0;
    params.nStartPad=0;
    params.nEndPad=0;
    params.massChoice=m1Andm2;
+   params.distance = 100.;
    dt = 1./params.tSampling;
-
+   params.spin1[2]=1.0;
+   params.spin2[2]=0.99;
 
    LALInspiralWaveLength(&status, &n, params);
    LALInspiralParameterCalc(&status, &params);
