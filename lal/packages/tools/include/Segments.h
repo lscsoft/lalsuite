@@ -55,7 +55,7 @@ and setting \c xlalErrno to a nonzero value.
 
 A \c LALSegList must be initialized before it is used.  Initialization
 leaves it in an ``empty'' state, containing no segments. They also must be ''cleared''
-after using \c XLALSegListClear, and freed with \c LALFree if it was dynamically allocated.
+after using \c XLALSegListClear(), and freed with \c LALFree() if it was dynamically allocated.
 Segments can then be added to the list through an ``append'' operation.  The information about
 each segment appended is copied to a memory location managed by the
 \c LALSegList object.  In fact, the segments are stored in the form of
@@ -107,7 +107,7 @@ nonzero.
 
 A segment list is considered ``sorted'' if the segments are in ascending
 (or at least non-descending) order according to the comparison done by
-the \c XLALSegCmp function.  A segment list is considered ``disjoint''
+the \c XLALSegCmp() function.  A segment list is considered ``disjoint''
 if no two segments in the list overlap, although they
 may touch at an endpoint due to the half-open nature of the time intervals
 represented by segments.  The \c LALSegList structure includes fields
@@ -117,7 +117,7 @@ that a segment list could in principle be disjoint but not sorted, but that
 case is not of interest for the code; the \c disjoint field in the
 structure specifically means that the list is sorted \e and disjoint.
 
-Also all segments in a segment list can be time-shifted using \c XLALSegListShift.
+Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
 
 */
 
