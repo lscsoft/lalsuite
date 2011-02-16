@@ -1258,6 +1258,15 @@ LALSTPNWaveformForInjection (
 			    CoherentGW       *waveform,
 			    InspiralTemplate *params,
 			    PPNParamStruc  *ppnParams);
+
+void
+LALSTPNWaveformFramelessForInjection (
+                             LALStatus        *status,
+                             CoherentGW       *waveform,
+                             InspiralTemplate *params,
+                             PPNParamStruc    *ppnParams
+                            );
+
 void
 LALSTPNWaveformEngine (
                 LALStatus        *status,

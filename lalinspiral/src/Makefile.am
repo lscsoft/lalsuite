@@ -32,6 +32,7 @@ lalinspiralinclude_HEADERS = \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
 	LALSTPNWaveform2.h \
+	LALSTPNWaveformFrameless.h \
 	LALSQTPNIntegrator.h \
 	LALSQTPNWaveform.h \
 	LALSQTPNWaveformInterface.h \
@@ -180,6 +181,7 @@ liblalinspiral_la_SOURCES = \
 	LALAdaptiveRungeKutta4.c \
 	LALSTPNWaveform.c \
 	LALSTPNWaveform2.c \
+	LALSTPNWaveformFrameless.c \
 	LALSQTPNIntegrator.c \
 	LALSQTPNWaveform.c \
 	LALSQTPNWaveformInterface.c \
