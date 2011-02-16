@@ -1430,7 +1430,6 @@ void IMRPhenomFA_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCParameter *parameter,LALMCMCInput *inputMCMC) {
 	UINT4 NtimeModel=model->length;
 	UINT4 NfreqModel = model->length;
-	UINT4 idx;
 	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
 
 	/*'x' and 'y' components of spins must be set to zero.*/
@@ -1487,16 +1486,16 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 			max_i=i;
 		}		
 	}
-	REAL4 shift = i*inputMCMC->deltaT;
+	REAL4 shift = max_i*inputMCMC->deltaT;
 	
 	/* Shift the template in the frequency domain to compensate */
 	for(i=0;i<model->length/2;i++){
-		REAL4 time_sin=sin(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
-		REAL4 time_cos=cos(LAL_TWOPI*idx*inputMCMC->deltaF*shift);
-		REAL4 real=model->data[idx];
-		REAL4 imag=model->data[NfreqModel-idx];
-		model->data[idx]	=			real*time_cos + imag*time_sin;
-		model->data[NfreqModel-idx]= -real*time_sin + imag*time_cos;
+		REAL4 time_sin=sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 time_cos=cos(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 real=model->data[i];
+		REAL4 imag=model->data[NfreqModel-i];
+		model->data[i]	=			real*time_cos + imag*time_sin;
+		model->data[NfreqModel-i]= -real*time_sin + imag*time_cos;
 	}
 	/* Finally restore the proper value of distance */
     template->distance = distanceMPC;
