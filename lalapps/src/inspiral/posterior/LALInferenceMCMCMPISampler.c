@@ -804,8 +804,9 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
           SKYFRAC=0.05,
           INCFRAC=0.05,
           PHASEFRAC=0.05,
-          SKYLOCSMALLWANDERFRAC=0.05;
-        REAL8 SPINROTFRAC = (runState->template == &templateLALSTPN ? 0.05 : 0.0);
+          SKYLOCSMALLWANDERFRAC=0.0; /* Not symmetric! Was: 0.05; */
+        /* No spin rotations, because they are actually not symmetric! */
+        REAL8 SPINROTFRAC = 0.0; /* (runState->template == &templateLALSTPN ? 0.05 : 0.0); */
         REAL8 COVEIGENFRAC;
         ProcessParamsTable *ppt;
         
@@ -832,7 +833,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
+          /* Removed the rotate sky function from proposal because it's not symmetric. */
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -844,7 +846,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, SKYFRAC, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
+          /* Removed the rotate sky function because it's not symmetric. */
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
