@@ -666,7 +666,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
         params->fFinal = pow(v,3.0)/(LAL_PI*m);
 	params->tC = yout->data[len-1];	/* In the original code, this is only done if signalvec2 doesn't exist. I don't see a reason for that, so I removed it. */
     } else if (a) {	/* return coherentGW components */
-        printf("Frameless STPN generating a, phi, etc.\n");
+        //printf("Frameless STPN generating a, phi, etc.\n");
         REAL8 apcommon, f2a;
 
         /* (minus) amplitude for distance in m; should be (1e6 * LAL_PC_SI * params->distance) for distance in Mpc */

@@ -196,7 +196,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 			runState->template=&templateLAL;
 			fprintf(stdout,"Template function called is \"templateLAL\"\n");
 		}*/
-		if(strstr(ppt->value,"TaylorF")) {
+		if(strstr(ppt->value,"TaylorF2")) {
 			runState->template=&templateLAL;
 			fprintf(stdout,"Template function called is \"templateLAL\"\n");
 		}

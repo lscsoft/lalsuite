@@ -1481,7 +1481,9 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
     injParams.qmParameter1 = 1.;
     injParams.qmParameter2 = 1.;
   }
-
+	if (approximant == SpinTaylorT3){
+    snprintf(injParams.waveform,LIGOMETA_WAVEFORM_MAX*sizeof(CHAR),"SpinTaylorFramelessthreePointFivePN");
+  }
 	mc  = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
 	eta = *(REAL8*) getVariable(IFOdata->modelParams, "massratio");
 	
