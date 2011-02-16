@@ -1484,13 +1484,13 @@ void IMRPhenomFB_template(LALStatus *status,InspiralTemplate *template, LALMCMCP
 		if(fabs(Tmodel->data[i])>max){
 			max=fabs(Tmodel->data[i]);
 			max_i=i;
-		}		
+		}
 	}
 	REAL4 shift = inputMCMC->deltaT*NtimeModel - max_i*inputMCMC->deltaT;
 	
 	/* Shift the template in the frequency domain to compensate */
 	for(i=0;i<model->length/2;i++){
-		REAL4 time_sin=sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
+		REAL4 time_sin=-sin(LAL_TWOPI*i*inputMCMC->deltaF*shift);
 		REAL4 time_cos=cos(LAL_TWOPI*i*inputMCMC->deltaF*shift);
 		REAL4 real=model->data[i];
 		REAL4 imag=model->data[NfreqModel-i];
