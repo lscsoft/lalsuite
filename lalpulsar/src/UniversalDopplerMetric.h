@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Reinhard Prix
+ * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -143,30 +143,36 @@ typedef enum {
   DOPPLERCOORD_F2DOT_SI,		/**< f2dot = d2Freq/dt2 in Hz/s^2 */
   DOPPLERCOORD_F3DOT_SI,		/**< f3dot = d3Freq/dt3 in Hz/s^3 */
 
-  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascencion (longitude) in radians, using coord-system of ephemeris-file */
+  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascension (longitude) in radians, using coord-system of ephemeris-file */
   DOPPLERCOORD_DELTA_RAD,		/**< declination (latitude) in radians,  using coord-system of ephemeris-file */
 
-  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * Tspan */
-  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * Tspan^2 */
-  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * Tspan^3 */
-  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * Tspan^4 */
+  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * (Tspan/2) */
+  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * (Tspan/2)^2 */
+  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * (Tspan/2)^3 */
+  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * (Tspan/2)^4 */
 
-  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
   DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
 
   DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
-  DOPPLERCOORD_N3X,			/**< experimental: unconstrained sky-vector n3: ecliptic-x coordinate */
-  DOPPLERCOORD_N3Y,			/**< experimental: unconstrained sky-vector n3: ecliptic-y coordinate */
-  DOPPLERCOORD_N3Z,			/**< experimental: unconstrained sky-vector n3: ecliptic-z coordinate */
-
   DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
   DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
 
+  DOPPLERCOORD_N3X_EQU,			/**< unconstrained sky-vector n3: equatorial-x coordinate */
+  DOPPLERCOORD_N3Y_EQU,			/**< unconstrained sky-vector n3: equatorial-y coordinate */
+  DOPPLERCOORD_N3Z_EQU,			/**< unconstrained sky-vector n3: equatorial-z coordinate */
 
-  DOPPLERCOORD_NEQU_X_GC,		/**< Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant */
-  DOPPLERCOORD_NEQU_Y_GC,		/**< Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant" */
+  DOPPLERCOORD_N3X_ECL,			/**< unconstrained sky-vector n3: ecliptic-x coordinate */
+  DOPPLERCOORD_N3Y_ECL,			/**< unconstrained sky-vector n3: ecliptic-y coordinate */
+  DOPPLERCOORD_N3Z_ECL,			/**< unconstrained sky-vector n3: ecliptic-z coordinate */
+
+
+  DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
+  DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
+  DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
+  DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
@@ -196,15 +202,21 @@ const CHAR *DopplerCoordinateNames[] = {
   "nEcl_x_Nat",
   "nEcl_y_Nat",
 
-  "n3_x",
-  "n3_y",
-  "n3_z",
-
   "nEqu_x_Nat",
   "nEqu_y_Nat",
 
-  "nEqu_x_GC",
-  "nEqu_y_GC",
+  "n3Equ_x",
+  "n3Equ_y",
+  "n3Equ_z",
+
+  "n3Ecl_x",
+  "n3Ecl_y",
+  "n3Ecl_z",
+
+  "nu0",
+  "nu1",
+  "nu2",
+  "nu3",
 
   "NONE"
 };
@@ -225,27 +237,33 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "Sky-position: Right-ascension (longitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
   "Sky-position: Declination (latitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}.",
 
-  "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq Tspan [Units:1]",
-  "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! Tspan^2 [Units:1]",
-  "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! Tspan^3 [Units:1]",
-  "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! Tspan^4 [Units:1]",
+  "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq (Tspan/2) [Units:1]",
+  "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! (Tspan/2)^2 [Units:1]",
+  "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! (Tspan/2)^3 [Units:1]",
+  "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! (Tspan/2)^4 [Units:1]",
 
-  "Sky-position: Right-ascencion (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
+  "Sky-position: Right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )",
   "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )",
 
   "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
   "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
 
+  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
+  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
+
+  "experimental: unconstrained sky-vector n3: equatorial-x coordinate",
+  "experimental: unconstrained sky-vector n3: equatorial-y coordinate",
+  "experimental: unconstrained sky-vector n3: equatorial-z coordinate",
+
   "experimental: unconstrained sky-vector n3: ecliptic-x coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-y coordinate",
   "experimental: unconstrained sky-vector n3: ecliptic-z coordinate",
 
-  "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const",
-  "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const",
 
-  "Sky-position: n_x in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
-  "Sky-position: n_y in EQUATORIAL Cartesian coordinates. Holding {nu, nu1, nu2, ... } constant",
-
+  "'global correlation' frequency coordinate nu_0",
+  "'global correlation' f1dot coordinate nu_1",
+  "'global correlation' f2dot coordinate nu_2",
+  "'global correlation' f3dot coordinate nu_3",
 
   "NONE"
 };

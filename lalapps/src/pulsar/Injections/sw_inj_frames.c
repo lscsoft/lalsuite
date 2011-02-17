@@ -17,6 +17,14 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Erin Macdonald
+ * \brief
+ * Code to create frames and add them to existing data files
+ */
+
 /* Code to create frames and add them to existing data files
 Input format as $ ./sw_inj_frames framefile duration epoch
 example$ ./lalapps_sw_inj_frames -d 128 -s 945625472 -p /Users/erinmacdonald/lsc/analyses/test_par_files -g /Users/erinmacdonald/lsc/analyses/frames -c /Users/erinmacdonald/lsc/analyses/CWINJframes -I H1 -y 09-11

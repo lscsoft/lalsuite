@@ -44,9 +44,9 @@ void cfs_inner_loop(UINT4 klim, REAL8 tempFreq1, REAL4 tsin, REAL4 tcos, COMPLEX
 #endif
 
 #ifdef USE_R4LALDEMOD
-/* <lalVerbatim file="LALDemodCP"> */
+
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
-/* </lalVerbatim> */
+
 { 
 
 /* ---------------------------------------------------------------------- */
@@ -333,9 +333,9 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 }
 #else /* USE_R4LALDEMOD, USE_ALTIVEC */
 
-/* <lalVerbatim file="LALDemodCP"> */
+
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
-/* </lalVerbatim> */
+
 { 
 
   INT4 alpha,i;                 /* loop indices */

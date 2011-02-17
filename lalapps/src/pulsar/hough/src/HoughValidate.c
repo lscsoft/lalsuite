@@ -17,17 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: MCInjectComputeHough.c
- *
- * Authors: Sintes, A.M., Krishnan, B. 
- *
- * Revision: $Id$
- *  
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author A.M. Sintes, B. Krishnan
+ * \brief
  * Monte Carlo signal injections for several h_0 values and
- *  compute the Hough transform for only one point in parameter space each time
- *-----------------------------------------------------------------------
+ * compute the Hough transform for only one point in parameter space each time
  */
 
 /* 

@@ -16,18 +16,14 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
  *  MA  02111-1307  USA
  */
- 
-/*-----------------------------------------------------------------------
- *
- * File Name: MCInjectHoughMulti.c
- *
- * Authors: Sintes, A.M., Krishnan, B. 
- *
- * Revision: $Id$
- *  
+
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Alicia Sintes, Badri Krishnan
+ * \brief
  * Monte Carlo signal injections for several h_0 values and
  *  compute the Hough transform for a small number of point in parameter space each time
- *-----------------------------------------------------------------------
  */
 
 /* 

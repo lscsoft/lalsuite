@@ -18,9 +18,9 @@
 */
 
 /**
- * \file getMesh.c
- *
- * \author{Reinhard Prix}
+ * \file
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
  *
  * Standalone code to produce a 'mesh' in the parameter-space
  * Currently this is just some code to use InitDopplerScan()
@@ -28,10 +28,7 @@
  * than generating sky-grids.
  *
  * UserInput-parameters a compatible with ComputeFStatistic.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------*/
+ */
 
 /* ---------- includes ---------- */
 #include <math.h>

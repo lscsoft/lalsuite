@@ -20,6 +20,7 @@
 /**
  * \author Karl Wette
  * \file
+ * \ingroup pulsarApps
  * \brief Test program for FlatLatticeTiling*
  */
 

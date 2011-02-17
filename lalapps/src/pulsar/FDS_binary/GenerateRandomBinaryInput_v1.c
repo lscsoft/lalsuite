@@ -17,6 +17,14 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * Program to generate an input file for lalapps_makefakedata
+ * that consists of randomly generated parameters
+ */
+
 /*********************************************************************************/
 /*         Program to generate an input file for lalapps_makefakedata            */
 /*              that consists of randomly generated parameters                   */

@@ -17,6 +17,10 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ */
 
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
