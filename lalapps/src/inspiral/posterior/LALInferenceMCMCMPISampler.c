@@ -2036,9 +2036,9 @@ void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunStat
   iota = *((REAL8 *)getVariable(proposedParams, "inclination"));
   cosIota = cos(iota);
 
-  norm = (fPlus*(0.5*(1.0 + cosIota*cosIota)) + fCross*cosIota)/d;
+  norm = fabs((fPlus*(0.5*(1.0 + cosIota*cosIota)) + fCross*cosIota)/d);
 
-  dNew = (fPlus*(0.5*(1.0 + cosIotaNew*cosIotaNew)) + fCross*cosIotaNew) / norm;
+  dNew = fabs((fPlus*(0.5*(1.0 + cosIotaNew*cosIotaNew)) + fCross*cosIotaNew) / norm);
 
   setVariable(proposedParams, "distance", &dNew);
   setVariable(proposedParams, "inclination", &iotaNew);
