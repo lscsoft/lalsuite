@@ -474,7 +474,9 @@ int MAIN( int argc, char *argv[]) {
 
   /* check that the numbercount can't exceed the data type */
   {
-    INT8 maxseg = (1l << (8*sizeof(FINEGRID_NC_T))) - 1;
+    UINT8 maxseg = 1;
+    maxseg = maxseg << (8*sizeof(FINEGRID_NC_T));
+    maxseg -= 1;
     if ( uvar_nStacksMax > maxseg) {
       fprintf(stderr,
 	      "Number of segments exceeds %d!\n"
