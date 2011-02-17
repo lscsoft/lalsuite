@@ -275,9 +275,11 @@ REAL4 calcMedian(REAL4Vector *vector)
 
 INT4 qsort_REAL4_compar(const void *a, const void *b)
 {
+   const REAL4 *y = a;
+   const REAL4 *z = b;
    
-   if ( *(REAL4*)a < *(REAL4*)b ) return -1;
-   if ( *(REAL4*)a > *(REAL4*)b ) return 1;
+   if ( *y < *z ) return -1;
+   if ( *y > *z ) return 1;
    return 0;
    
 }
