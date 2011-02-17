@@ -763,6 +763,18 @@ tagInspiralInit
 }  InspiralInit;
 
 /** UNDOCUMENTED */
+typedef struct
+tagEOBNonQCCoeffs
+{
+  REAL8 a1;
+  REAL8 a2;
+  REAL8 a3;
+  REAL8 a4;
+  REAL8 b1;
+  REAL8 b2;
+} EOBNonQCCoeffs;
+
+/** UNDOCUMENTED */
 typedef enum
 {
   INSPIRAL_TAPER_NONE,		/**< UNDOCUMENTED */
