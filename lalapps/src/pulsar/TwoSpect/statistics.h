@@ -35,6 +35,9 @@ REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
 REAL4 calcMedian(REAL4Vector *vector);
 
+void sort_float_largest(REAL4Vector *output, REAL4Vector *input);
+void sort_float_smallest(REAL4Vector *output, REAL4Vector *input);
+
 INT4 qsort_REAL4_compar(const void *a, const void *b);
 
 #endif

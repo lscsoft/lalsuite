@@ -30,7 +30,7 @@ candidateVector * new_candidateVector(UINT4 length)
    
    candidateVector *vector = XLALMalloc(sizeof(*vector));
    if (vector==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*vector));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*vector));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
       
@@ -41,7 +41,7 @@ candidateVector * new_candidateVector(UINT4 length)
       vector->data = XLALMalloc( length*sizeof(*vector->data) );
       if (vector->data==NULL) {
          XLALFree((candidateVector*)vector);
-         fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
+         fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, length*sizeof(*vector->data));
          XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
       }
    }
@@ -66,7 +66,7 @@ candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length)
    vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data));
    if (vector->data==NULL) {
       vector->length = 0;
-      fprintf(stderr,"%s: XLALRealloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
+      fprintf(stderr,"%s: XLALRealloc(%zu) failed.\n", fn, length*sizeof(*vector->data));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    vector->length = length;

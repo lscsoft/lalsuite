@@ -40,7 +40,7 @@ farStruct * new_farStruct(void)
    
    farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
    if (farstruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*farstruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*farstruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -152,9 +152,17 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
    const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
    gsl_root_fsolver *s1 = gsl_root_fsolver_alloc(T1);
+   if (s1==NULL) {
+      fprintf(stderr,"%s: gsl_root_fsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
    gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
+   if (s0==NULL) {
+      fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function_fdf FDF;
    
    
@@ -481,7 +489,7 @@ templateStruct * new_templateStruct(INT4 length)
    
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*templatestruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*templatestruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    

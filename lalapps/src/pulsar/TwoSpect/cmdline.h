@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.0.2"
+#define CMDLINE_PARSER_VERSION "1.0.3"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -79,9 +79,12 @@ struct gengetopt_args_info
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
-  double ihsfom_arg;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2 (default='12.0').  */
+  double ihsfom_arg;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2.  */
   char * ihsfom_orig;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2 original value given at command line.  */
   const char *ihsfom_help; /**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2 help description.  */
+  double ihsfomfar_arg;	/**< @brief IHS FOM FAR threshold.  */
+  char * ihsfomfar_orig;	/**< @brief IHS FOM FAR threshold original value given at command line.  */
+  const char *ihsfomfar_help; /**< @brief IHS FOM FAR threshold help description.  */
   double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
@@ -148,6 +151,7 @@ struct gengetopt_args_info
   unsigned int IFO_given ;	/**< @brief Whether IFO was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */
+  unsigned int ihsfomfar_given ;	/**< @brief Whether ihsfomfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */

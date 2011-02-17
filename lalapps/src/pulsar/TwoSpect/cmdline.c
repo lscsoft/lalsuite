@@ -48,7 +48,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --dfmax=DOUBLE            Maximum modulation depth to search",
   "      --IFO=STRING              Interferometer of whose data is being analyzed  \n                                  (default=`H1')",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
-  "      --ihsfom=DOUBLE           IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2  \n                                  (default=`12.0')",
+  "      --ihsfom=DOUBLE           IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2",
+  "      --ihsfomfar=DOUBLE        IHS FOM FAR threshold",
   "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh  \n                                  (default=`1.0')",
   "      --blksize=INT             Blocksize for running median of 1st FFT band  \n                                  (default=`1001')",
@@ -103,11 +104,12 @@ init_help_array(void)
   gengetopt_args_info_help[27] = gengetopt_args_info_full_help[27];
   gengetopt_args_info_help[28] = gengetopt_args_info_full_help[28];
   gengetopt_args_info_help[29] = gengetopt_args_info_full_help[29];
-  gengetopt_args_info_help[30] = 0; 
+  gengetopt_args_info_help[30] = gengetopt_args_info_full_help[30];
+  gengetopt_args_info_help[31] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[31];
+const char *gengetopt_args_info_help[32];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -173,6 +175,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->IFO_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
+  args_info->ihsfomfar_given = 0 ;
   args_info->tmplfar_given = 0 ;
   args_info->avesqrtSh_given = 0 ;
   args_info->blksize_given = 0 ;
@@ -216,8 +219,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->IFO_orig = NULL;
   args_info->ihsfar_arg = 0.01;
   args_info->ihsfar_orig = NULL;
-  args_info->ihsfom_arg = 12.0;
   args_info->ihsfom_orig = NULL;
+  args_info->ihsfomfar_orig = NULL;
   args_info->tmplfar_arg = 0.01;
   args_info->tmplfar_orig = NULL;
   args_info->avesqrtSh_arg = 1.0;
@@ -273,24 +276,25 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->IFO_help = gengetopt_args_info_full_help[14] ;
   args_info->ihsfar_help = gengetopt_args_info_full_help[15] ;
   args_info->ihsfom_help = gengetopt_args_info_full_help[16] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[17] ;
-  args_info->avesqrtSh_help = gengetopt_args_info_full_help[18] ;
-  args_info->blksize_help = gengetopt_args_info_full_help[19] ;
-  args_info->outdirectory_help = gengetopt_args_info_full_help[20] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[23] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[24] ;
-  args_info->templateLength_help = gengetopt_args_info_full_help[25] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[26] ;
-  args_info->SFToverlap_help = gengetopt_args_info_full_help[27] ;
-  args_info->sftType_help = gengetopt_args_info_full_help[28] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[29] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[30] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[31] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[32] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[33] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[34] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[17] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[18] ;
+  args_info->avesqrtSh_help = gengetopt_args_info_full_help[19] ;
+  args_info->blksize_help = gengetopt_args_info_full_help[20] ;
+  args_info->outdirectory_help = gengetopt_args_info_full_help[21] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[25] ;
+  args_info->templateLength_help = gengetopt_args_info_full_help[26] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[27] ;
+  args_info->SFToverlap_help = gengetopt_args_info_full_help[28] ;
+  args_info->sftType_help = gengetopt_args_info_full_help[29] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[30] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[31] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[32] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[33] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[34] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[35] ;
   
 }
 
@@ -396,6 +400,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->IFO_orig));
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->ihsfom_orig));
+  free_string_field (&(args_info->ihsfomfar_orig));
   free_string_field (&(args_info->tmplfar_orig));
   free_string_field (&(args_info->avesqrtSh_orig));
   free_string_field (&(args_info->blksize_orig));
@@ -478,6 +483,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "ihsfar", args_info->ihsfar_orig, 0);
   if (args_info->ihsfom_given)
     write_into_file(outfile, "ihsfom", args_info->ihsfom_orig, 0);
+  if (args_info->ihsfomfar_given)
+    write_into_file(outfile, "ihsfomfar", args_info->ihsfomfar_orig, 0);
   if (args_info->tmplfar_given)
     write_into_file(outfile, "tmplfar", args_info->tmplfar_orig, 0);
   if (args_info->avesqrtSh_given)
@@ -789,6 +796,7 @@ cmdline_parser_internal (
         { "IFO",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
+        { "ihsfomfar",	1, NULL, 0 },
         { "tmplfar",	1, NULL, 0 },
         { "avesqrtSh",	1, NULL, 0 },
         { "blksize",	1, NULL, 0 },
@@ -1021,9 +1029,23 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->ihsfom_arg), 
                  &(args_info->ihsfom_orig), &(args_info->ihsfom_given),
-                &(local_args_info.ihsfom_given), optarg, 0, "12.0", ARG_DOUBLE,
+                &(local_args_info.ihsfom_given), optarg, 0, 0, ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "ihsfom", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* IHS FOM FAR threshold.  */
+          else if (strcmp (long_options[option_index].name, "ihsfomfar") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->ihsfomfar_arg), 
+                 &(args_info->ihsfomfar_orig), &(args_info->ihsfomfar_given),
+                &(local_args_info.ihsfomfar_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "ihsfomfar", '-',
                 additional_error))
               goto failure;
           

@@ -101,6 +101,49 @@ REAL8 ks_test_exp(REAL4Vector *vector)
 }
 
 
+void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
+{
+   
+   const CHAR *fn = __func__;
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(input->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, input->length);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   INT4 ii;
+   for (ii=0; ii<(INT4)output->length; ii++) output->data[ii] = tempvect->data[tempvect->length-1-ii];
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+}
+void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
+{
+   
+   const CHAR *fn = __func__;
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(input->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, input->length);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   memcpy(output->data, tempvect->data, sizeof(REAL4)*output->length);
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+}
+
+
 //////////////////////////////////////////////////////////////
 // Compute the mean value of a vector of values
 REAL4 calcMean(REAL4Vector *vector)
@@ -161,7 +204,7 @@ REAL4 calcRms(REAL4Vector *vector)
    REAL8Vector *sqvector = XLALCreateREAL8Vector(vector->length);
    if (sqvector==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, vector->length);
-      XLAL_ERROR_REAL4(fn, XLAL_ENOMEM);
+      XLAL_ERROR_REAL4(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)vector->length; ii++) sqvector->data[ii] = (REAL8)(vector->data[ii]*vector->data[ii]);
    REAL4 rms = (REAL4)sqrt(calcMeanD(sqvector));

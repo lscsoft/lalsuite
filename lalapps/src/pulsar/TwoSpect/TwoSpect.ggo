@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.0.2"
+version "1.0.3"
 purpose "TwoSpect analysis program"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
@@ -15,7 +15,8 @@ option "dfmin" - "Minimum modulation depth to search" double optional
 option "dfmax" - "Maximum modulation depth to search" double optional
 option "IFO"   - "Interferometer of whose data is being analyzed" string default="H1" optional
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
-option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double default="12.0" optional
+option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
+option "ihsfomfar" - "IHS FOM FAR threshold" double optional
 option "tmplfar"  - "Template FAR threshold" double default="0.01" optional
 option "avesqrtSh"    - "Expected average of square root of Sh" double default="1.0" optional
 option "blksize"  - "Blocksize for running median of 1st FFT band" int default="1001" optional
