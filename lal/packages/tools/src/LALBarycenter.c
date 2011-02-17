@@ -20,10 +20,6 @@
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID(LALBARYCENTERC, "$Id$");
-/** \endcond */
-
 /** \author Curt Cutler
  * \ingroup LALBarycenter_h
  * \brief Computes the position and orientation of the Earth, at some arrival time
@@ -726,8 +722,9 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
 
+/** \cond DONT_DOXYGEN */
 NRCSID(LALBARYCENTERC, "$Id$");
-
+/** \endcond */
 
 /** Deprecated LAL wrapper to XLALBarycenterEarth()
  */
