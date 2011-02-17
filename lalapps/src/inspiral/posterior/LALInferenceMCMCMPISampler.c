@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/DetResponse.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
 #include <lal/VectorOps.h>
@@ -808,6 +809,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         /* No spin rotations, because they are actually not symmetric! */
         REAL8 SPINROTFRAC = 0.0; /* (runState->template == &templateLALSTPN ? 0.05 : 0.0); */
         REAL8 COVEIGENFRAC;
+        REAL8 IOTADISTANCEFRAC=0.05;
         ProcessParamsTable *ppt;
         
         ppt=getProcParamVal(runState->commandLine, "--covarianceMatrix");
@@ -821,7 +823,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         while(ifo){ifo=ifo->next; nIFO++;}
         
         if (nIFO < 2) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
@@ -829,12 +831,13 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceRotateSpins,
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
+                                          &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
           /* Removed the rotate sky function from proposal because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -843,11 +846,12 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceRotateSpins,
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
+                                          &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
           /* Removed the rotate sky function because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -857,6 +861,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceRotateSpins,
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
+                                          &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         }
@@ -1978,4 +1983,66 @@ void PTMCMCLALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALVaria
   setVariable(proposedParams, "declination", &DEC);
 
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+}
+
+/* Choose a jump in inclination and distance such that the signal
+   amplitude in one of the detectors remains constant. */
+void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunState *runState, 
+                                                             LALVariables *proposedParams) {
+  UINT4 nIFO, iIFO;
+  LALIFOData *ifoData;
+  REAL8 fPlus, fCross;
+  LIGOTimeGPS timeGPS;
+  REAL8 ra, dec, psi, t, gmst;
+  REAL8 iotaNew, cosIotaNew, iota, cosIota;
+  REAL8 dNew, d;
+  REAL8 norm;
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  ra = *((REAL8 *)getVariable(proposedParams, "rightascension"));
+  dec = *((REAL8 *)getVariable(proposedParams, "declination"));
+  psi = *((REAL8 *)getVariable(proposedParams, "polarisation"));
+  t = *((REAL8 *)getVariable(proposedParams, "time"));
+
+  XLALGPSSetREAL8(&timeGPS, t);
+  gmst = XLALGreenwichMeanSiderealTime(&timeGPS);
+
+  /* Find number of IFO's. */
+  nIFO=0;
+  ifoData=runState->data;
+  do {
+    nIFO++;
+    ifoData=ifoData->next;
+  } while (ifoData != NULL);
+
+  /* Now choose one at random, and get its data. */
+  iIFO=gsl_rng_uniform_int(runState->GSLrandom, nIFO);
+  ifoData=runState->data;
+  while (iIFO > 0) {
+    ifoData=ifoData->next;
+    iIFO--;
+  }
+
+  /* Now we know which IFO we want to keep the magnitude constant in.
+     Now compute f+, fx for that IFO. */
+  XLALComputeDetAMResponse(&fPlus, &fCross, ifoData->detector->response, ra, dec, psi, gmst);
+
+  iotaNew = M_PI*gsl_rng_uniform(runState->GSLrandom);
+  cosIotaNew = cos(iotaNew);
+
+  d = *((REAL8 *)getVariable(proposedParams, "distance"));
+
+  iota = *((REAL8 *)getVariable(proposedParams, "inclination"));
+  cosIota = cos(iota);
+
+  norm = (fPlus*(0.5*(1.0 + cosIota*cosIota)) + fCross*cosIota)/d;
+
+  dNew = (fPlus*(0.5*(1.0 + cosIotaNew*cosIotaNew)) + fCross*cosIotaNew) / norm;
+
+  setVariable(proposedParams, "distance", &dNew);
+  setVariable(proposedParams, "inclination", &iotaNew);
+
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+  
 }
