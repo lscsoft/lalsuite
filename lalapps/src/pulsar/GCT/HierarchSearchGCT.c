@@ -33,6 +33,13 @@
 /* ---------- Includes -------------------- */
 #include "HierarchSearchGCT.h"
 
+#ifdef GC_SSE2_OPT
+#include <gc_hotloop_sse2.h>
+#else
+#define ALRealloc LALRealloc
+#define ALFree LALFree
+#endif
+
 RCSID( "$Id$");
 
 /* ---------- Defines -------------------- */
@@ -57,10 +64,10 @@ RCSID( "$Id$");
 #define FOPEN fopen
 #ifdef HS_OPTIMIZATION
 extern void
-LocalComputeFStatFreqBand ( LALStatus *status,
+LocalComputeFStatFreqBand ( LALStatus *status, 
                             REAL4FrequencySeries *FstatVector,
                             const PulsarDopplerParams *doppler,
-                            const MultiSFTVector *multiSFTs,
+                            const MultiSFTVector *multiSFTs, 
                             const MultiNoiseWeights *multiWeights,
                             const MultiDetectorStateSeries *multiDetStates,
                             const ComputeFParams *params);
@@ -196,7 +203,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8VectorSequence *velStack = NULL;
   REAL8VectorSequence *accStack = NULL;
 
-	/* duration of each segment */
+  /* duration of each segment */
   REAL8 tStack;
 
   /* number of segments */
@@ -235,7 +242,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* fine grid */
   FineGrid finegrid;
-  FineGridPoint thisFgPoint; /* a single fine-grid point */
   UINT4 nfreqs_fg, nf1dots_fg=1; /* number of frequency and spindown values */
   REAL8 gammaRefine, sigmasq;  /* refinement factor and variance */
 
@@ -247,7 +253,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 dfreq_fg, df1dot_fg, freqmin_fg, f1dotmin_fg, freqband_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_tmp, f1dot_tmp;
-  REAL4 Fstat, TwoFthreshold, sumTwoF_tmp, TwoF_tmp, sumTwoFmax; /* REAL4 precision of Fstat values */
+  REAL4 Fstat, TwoFthreshold, sumTwoFmax; /* REAL4 precision of Fstat values */
   UINT4 nc_max;
   REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
@@ -466,6 +472,18 @@ int MAIN( int argc, char *argv[]) {
     return( HIERARCHICALSEARCH_EBAD );
   }
 
+  /* check that the numbercount can't exceed the data type */
+  {
+    INT8 maxseg = (1l << (8*sizeof(FINEGRID_NC_T))) - 1;
+    if ( uvar_nStacksMax > maxseg) {
+      fprintf(stderr,
+	      "Number of segments exceeds %d!\n"
+	      "Compile without GC_SSE2_OPT to extend the available segment range\n",
+	      maxseg);
+      return( HIERARCHICALSEARCH_EBAD );
+    }
+  }
+
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
     return( HIERARCHICALSEARCH_EBAD );
@@ -520,8 +538,10 @@ int MAIN( int argc, char *argv[]) {
     } /* end of logging */
 
   /* initializations of coarse and fine grids */
-  coarsegrid.list = NULL;
-  finegrid.list = NULL;
+  coarsegrid.TwoF=NULL;
+  coarsegrid.Uindex=NULL;
+  finegrid.nc= NULL;
+  finegrid.sumTwoF=NULL;
   Fstat = 0;
 
   /* initialize ephemeris info */
@@ -941,8 +961,10 @@ int MAIN( int argc, char *argv[]) {
         coarsegrid.length = (UINT4) (binsFstat1);
 
         /* allocate memory for coarsegrid */
-        coarsegrid.list = (CoarseGridPoint *)LALRealloc( coarsegrid.list, coarsegrid.length * sizeof(CoarseGridPoint));
-        if ( coarsegrid.list == NULL) {
+        coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
+        coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
+
+	if ( coarsegrid.TwoF == NULL || coarsegrid.Uindex == NULL) {
           fprintf(stderr, "ERROR: Memory allocation  [HierarchSearchGCT.c %d]\n" , __LINE__);
           return(HIERARCHICALSEARCH_EMEM);
         }
@@ -1002,8 +1024,18 @@ int MAIN( int argc, char *argv[]) {
         finegrid.refTime = tMidGPS;
 
         /* allocate memory for finegrid points */
-        finegrid.list = (FineGridPoint *)LALRealloc( finegrid.list, finegrid.length * sizeof(FineGridPoint));
-        if ( finegrid.list == NULL) {
+/* FIXME: The SSE2 optimized code relies on an identical alignment modulo 16 of the
+          arrays finegrid.nc and finegrid.sumTwoF !!
+          MacOS enforces 16 byte alignment of memory blocks with size >= 16 bytes allocated
+          with malloc and realloc, but e.g. for 32 bit Linux this will NOT hold.
+          Alternatives might be using (posix_)memalign under Linux.
+          Windows ==>???
+*/
+
+        finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
+        finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
+
+        if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
           fprintf(stderr, "ERROR: Memory allocation [HierarchSearchGCT.c %d]\n" , __LINE__);
           return(HIERARCHICALSEARCH_EMEM);
         }
@@ -1012,9 +1044,6 @@ int MAIN( int argc, char *argv[]) {
         finegrid.alpha = thisPoint.Alpha;
         finegrid.delta = thisPoint.Delta;
 
-        /* initialize finegrid point */
-        thisFgPoint.nc=0;
-        thisFgPoint.sumTwoF=0.0;
 
         /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
         ic = 0;
@@ -1022,7 +1051,8 @@ int MAIN( int argc, char *argv[]) {
           /*f1dot_tmp = f1dotmin_fg + ic3 * df1dot_fg;*/
           for( ic2 = 0; ic2 < nfreqs_fg; ic2++ ) {
             /*freq_tmp = freqmin_fg + ic2 * dfreq_fg;*/
-            finegrid.list[ic] = thisFgPoint;
+            finegrid.nc[ic] = 0;
+            finegrid.sumTwoF[ic]=0.0f;
             ic++;
           }
         }
@@ -1182,7 +1212,8 @@ int MAIN( int argc, char *argv[]) {
             thisCgPoint.TwoF = 2.0 * Fstat;
 
             /* Add this point to the coarse grid */
-            coarsegrid.list[ifreq] = thisCgPoint;
+            coarsegrid.TwoF[ifreq] = thisCgPoint.TwoF;
+            coarsegrid.Uindex[ifreq] = thisCgPoint.Uindex;
 
           } /* END: Loop over coarse-grid frequency bins (ifreq) */
 
@@ -1225,51 +1256,34 @@ int MAIN( int argc, char *argv[]) {
               return(HIERARCHICALSEARCH_ECG);
             }
 
-            for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) {
+            REAL4 * cgrid2F = coarsegrid.TwoF + U1idx;
+            REAL4 * fgrid2F = finegrid.sumTwoF + ifine;
+            FINEGRID_NC_T * fgridnc = finegrid.nc+ifine;
 
-              /* Add the 2F value to the 2F sum */
-              TwoF_tmp = coarsegrid.list[U1idx].TwoF;
-              sumTwoF_tmp = finegrid.list[ifine].sumTwoF + TwoF_tmp;
-              finegrid.list[ifine].sumTwoF = sumTwoF_tmp;
+#ifdef GC_SSE2_OPT
+            gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
+#else // GC_SSE2_OPT
+	    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+	      fgrid2F[0] += cgrid2F[0];
+#ifndef EXP_NO_NUM_COUNT	    
+	      fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
+	      fgridnc++;
+#endif // EXP_NO_NUM_COUNT	    
+	      fgrid2F++;
+	      cgrid2F++;
+	    }
+#endif // GC_SSE2_OPT
 
-              /* Increase the number count */
-              if (TwoF_tmp > TwoFthreshold) {
-                finegrid.list[ifine].nc++;
-              }
-
-#ifdef DIAGNOSISMODE
-              /* Keep track of strongest candidate (maximum 2F-sum and maximum number count) */
-              if (finegrid.list[ifine].nc > nc_max) {
-                nc_max = finegrid.list[ifine].nc;
-              }
-              if (sumTwoF_tmp > sumTwoFmax) {
-                sumTwoFmax = sumTwoF_tmp;
-              }
-#endif
-
-              /* -------------- Single-trial check ------------- */
-              /*
-               if ( ifine == 850642 && (k+1) == nStacks ) {
-               fprintf(stderr, "MyFineGridPoint,%d f: %.13f fdot: %g  NC: %d  2F: %f\n",
-               k+1, finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg,
-               finegrid.f1dotmin_fg + if1dot_fg * finegrid.df1dot_fg,
-               finegrid.list[ifine].nc, (finegrid.list[ifine].sumTwoF / nStacks)
-               );
-               }
-               */
-
-              U1idx++; /* increment U1 index */
-              ifine++; /* increment fine-grid index */
-
-            } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
+            ifine+=finegrid.freqlength; /* increment fine-grid index */
 
           } /* for( if1dot_fg = 0; if1dot_fg < finegrid.f1dotlength; if1dot_fg++ ) { */
 
-
+#ifndef GC_SSE2_OPT
+	  /* FIXME the following diagnostic output was broken by the SSE2 code */
 #ifdef DIAGNOSISMODE
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1));
 #endif
-
+#endif
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
         /* ############################################################### */
@@ -1563,12 +1577,20 @@ int MAIN( int argc, char *argv[]) {
     LALFree ( scanInit.skyRegionString );
 
   /* free fine grid and coarse grid */
-  if (finegrid.list) {
-    LALFree(finegrid.list);
+  if (finegrid.nc) {
+    ALFree(finegrid.nc);
   }
-  if (coarsegrid.list) {
-    LALFree(coarsegrid.list);
+  if (finegrid.sumTwoF) {
+    ALFree(finegrid.sumTwoF);
   }
+
+  if (coarsegrid.TwoF) {
+    LALFree(coarsegrid.TwoF);
+  }
+  if (coarsegrid.Uindex) {
+    LALFree(coarsegrid.Uindex);
+  }
+
 
   /* free candidate toplist */
   free_gctFStat_toplist(&semiCohToplist);
@@ -2133,8 +2155,8 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.Alpha = in->alpha;
       line.Delta = in->delta;
       line.F1dot = f1dot_tmp;
-      line.nc = in->list[ifine].nc;
-      line.sumTwoF = (in->list[ifine].sumTwoF) / Nsegments; /* save the average 2F value */
+      line.nc = in->nc[ifine];
+      line.sumTwoF = (in->sumTwoF[ifine]) / Nsegments; /* save the average 2F value */
 
       debug = insert_into_gctFStat_toplist( list, line);
 
@@ -2146,8 +2168,6 @@ void UpdateSemiCohToplist(LALStatus *status,
   RETURN(status);
 
 } /* UpdateSemiCohToplist() */
-
-
 
 
 
@@ -2341,44 +2361,3 @@ int compareCoarseGridUindex(const void *a,const void *b) {
   else
     return(0);
 }
-
-
-
-
-
-
-
-/** Comparison function for sorting the fine grid in number count */
-int compareFineGridNC(const void *a,const void *b) {
-  FineGridPoint a1, b1;
-  a1 = *((const FineGridPoint *)a);
-  b1 = *((const FineGridPoint *)b);
-
-  if( a1.nc < b1.nc )
-    return(1);
-  else if( a1.nc > b1.nc)
-    return(-1);
-  else
-    return(0);
-}
-
-
-
-
-
-/** Comparison function for sorting the fine grid in summed 2F */
-int compareFineGridsumTwoF(const void *a,const void *b) {
-  FineGridPoint a1, b1;
-  a1 = *((const FineGridPoint *)a);
-  b1 = *((const FineGridPoint *)b);
-
-  if( a1.sumTwoF < b1.sumTwoF )
-    return(1);
-  else if( a1.sumTwoF > b1.sumTwoF)
-    return(-1);
-  else
-    return(0);
-}
-
-
-
