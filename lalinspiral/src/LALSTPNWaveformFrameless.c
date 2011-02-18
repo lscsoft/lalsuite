@@ -323,6 +323,7 @@ LALSTPNWaveformFramelessForInjection (
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
   /* Compute some parameters*/
+  params->startPhase = ppnParams->phi; //The start phase is passed via coa_phase in the SimInspiralTable, then ppnParams->phi due to convention in GenerateInspiral.c
   LALInspiralInit(status->statusPtr, params, &paramsInit);
   CHECKSTATUSPTR(status);
   if (paramsInit.nbins==0)

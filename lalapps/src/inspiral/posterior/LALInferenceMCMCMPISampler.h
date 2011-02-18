@@ -49,3 +49,7 @@ void PTMCMCLALAdaptationSingleProposal(LALInferenceRunState *runState, LALVariab
 
 void PTMCMCLALInferenceRotateSky(LALInferenceRunState *state,LALVariables *parameter);
 INT4 PTMCMCLALInferenceReflectDetPlane(LALInferenceRunState *state,LALVariables *parameter);
+
+/* Jump in iota and distance so that approximate magnitude remains
+   constant in one of the detectors. */
+void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunState *state, LALVariables *proposedParams);
