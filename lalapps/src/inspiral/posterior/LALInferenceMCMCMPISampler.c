@@ -1763,6 +1763,9 @@ int LALwaveformToSPINspiralwaveform(int waveform)
 		case 11:
 			return 3;
 			break;
+    case 10:
+			return 3;
+			break;
 		default:
 			return 4;
 			break;

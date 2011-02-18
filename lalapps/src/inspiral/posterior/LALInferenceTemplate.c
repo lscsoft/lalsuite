@@ -1546,6 +1546,7 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	REAL8 instant;
 	INT4 errnum;
   
+  //lal_errhandler = LAL_ERR_RTRN;
 	//REPORTSTATUS(&status);
 	/* LAL_CALL( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ),&status); */
 	XLAL_TRY( LALGenerateInspiral( &status, &waveform, &injParams, &ppnParams ), errnum);
