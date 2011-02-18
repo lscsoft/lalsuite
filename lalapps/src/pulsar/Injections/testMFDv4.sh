@@ -63,7 +63,7 @@ refTime=701210229
 ## excercise non-integer cycle gaps in heterodyned timeseries
 fmin=299.1001
 Band=9.9998
-fmax=$(echo $fmin $Band | awk '{printf "%.7g", $1 + $2}');
+fmax=$(echo $fmin $Band | LC_ALL=C awk '{printf "%.7g", $1 + $2}');
 fUpper=311
 
 ## VARY
