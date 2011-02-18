@@ -1708,8 +1708,9 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	equatorial.latitude=lat;
 	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
 	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
-	deltalong=geodetic.longitude-equatorial.longitude;
+	//LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
+	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
+        deltalong=geodetic.longitude-equatorial.longitude;
 	
 	/* Add offset to RA to convert to earth-fixed */
 	
