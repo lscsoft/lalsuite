@@ -131,6 +131,34 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	/*	free(model); */
 }
 
+
+REAL8 computeZ(LALMCMCInput *MCMCinput)
+{
+  UINT4 i=0;
+  UINT4 j;
+
+  REAL8 logZnoise=0.0;
+
+  topdown_sum=calloc((size_t)MCMCinput->numberDataStreams,sizeof(REAL8Vector *));
+  for (i=0;i<MCMCinput->numberDataStreams;i++) {
+    topdown_sum[i]=XLALCreateREAL8Vector(MCMCinput->stilde[i]->data->length);
+    topdown_sum[i]->data[topdown_sum[i]->length-1] = (pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].re,2.0)+pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].im,2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
+    for(j=topdown_sum[i]->length-2;j>0;j--) {
+      topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(MCMCinput->stilde[i]->data->data[j].re,2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
+    }
+  }
+
+  /* Likelihood of the noise model */
+  logZnoise=0.0;
+  for (j=0;j<MCMCinput->numberDataStreams;j++){
+    int lowBin=(int)MCMCinput->fLow/MCMCinput->deltaF;
+    logZnoise+=topdown_sum[j]->data[lowBin];
+  }
+  logZnoise*=-2.0*MCMCinput->deltaF;
+
+  return logZnoise;
+}
+
 REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCinput)
 {
 	UINT4 i=0;
@@ -145,7 +173,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-	
+	LALMCMCParam *param_ptr;
+
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
 	MCMCinput->Live=Live;
@@ -223,6 +252,16 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;}
 	i=0;
 	
+    /* Write list of parameter names */
+    sprintf(outEnd,"%s_params.txt",outfile);
+    fpout=fopen(outEnd,"w");
+    for(param_ptr=temp->param;param_ptr;param_ptr=param_ptr->next)
+    {
+        fprintf(fpout,"%s\t",param_ptr->core->name);
+    }
+    fprintf(fpout,"logl");
+    fclose(fpout);
+
 	/* open outfile */
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s\n",outfile);
@@ -299,13 +338,19 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		}
 		fprintSample(fpout,Live[i]);
 	}
+	
+	/* Output the aximum template, data, etc */
+	sprintf(outEnd,"%s_maxLdata.dat",outfile);
+	MCMCinput->dumpfile=outEnd;
+	MCMCinput->funcLikelihood(MCMCinput,Live[Nlive-1]);
+
+	/* Output some statistics */
 	double Npoints = MCMCinput->numberDataStreams*MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->deltaF);
 	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood/Npoints);
 	logZ=mean(logZarray,Nruns);
 	fprintf(stdout,"deltaLmax = %lf\n",Live[Nlive-1]->logLikelihood-logZnoise);
 	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
 	fprintf(stdout,"Z-score = %lf\n",zscore);
-	
 	fclose(fpout);
 	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");

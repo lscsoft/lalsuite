@@ -158,13 +158,13 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
   /* ------------------------------------------------------------------------- */
 
-  /** one fine-grid point */
-  typedef struct tagFineGridPoint {
-    UINT4 nc;           /**< number count */
-    REAL4 sumTwoF;      /**< sum of 2F-values */
-  } FineGridPoint;  
 
   /** structure for storing fine-grid points */
+#ifdef GC_SSE2_OPT
+#define FINEGRID_NC_T UCHAR
+#else
+#define FINEGRID_NC_T UINT4
+#endif
   typedef struct tagFineGrid {
     REAL8 freqmin_fg;       /**< fine-grid start in frequency */
     REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
@@ -176,21 +176,25 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     UINT4 length;           /**< maximum allowed length of vectors */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
-    FineGridPoint *list;    /**> list of finegrid points */
+    REAL4 * sumTwoF;        /**< sum of 2F-values */
+    FINEGRID_NC_T * nc;     /**< number count */
   } FineGrid;
-  
+
+
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
     UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
-  
+
+
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
     UINT4 length;             /**< maximum allowed length of vectors */
-    CoarseGridPoint *list;    /**> list of finegrid points */
+    UINT4 * Uindex;      /**< U index */
+    REAL4 * TwoF;       /**< 2F-value */
   } CoarseGrid;
-  
+
  /* ------------------------------------------------------------------------- */
 
  /* function prototypes */

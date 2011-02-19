@@ -17,13 +17,20 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author G.Mendell, M.Landry
+ * \brief
+ * Drive StackSlide jobs under Condor and the Grid
+ */
+
 /*********************************************************************************/
 /*                                                                               */
 /* File: ComputeStackSlideSums.c                                                 */
 /* Purpose: Drive StackSlide jobs under Condor and the Grid                      */
 /* Author: Mendell, G. and Landry, M.                                            */
 /* Started: 03 December 2003                                                     */
-/* $Id$         */
 /*                                                                               */
 /*********************************************************************************/
 /* Notes: */

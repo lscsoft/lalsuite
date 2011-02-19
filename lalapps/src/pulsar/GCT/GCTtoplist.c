@@ -30,6 +30,7 @@
 #include <lalapps.h>
 
 #if defined(USE_BOINC) || defined(EAH_BOINC)
+#include "hs_boinc_options.h"
 #ifdef _WIN32
 /* On MS Windows boinc_rename() is not as atomic as rename()
    on POSIX systems. We therefore use our own implementation
@@ -199,7 +200,7 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
   }
-  
+
 }
 
 /* frees the space occupied by the toplist */
@@ -368,6 +369,14 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
       else
 	length += ret;
     }
+
+    /* write BOINC user & host info */
+#ifdef EAH_BOINC
+    fprintf(fpnew,"%%%% UserID: %d\n", eah_userid);
+    fprintf(fpnew,"%%%% Username: '%s'\n", eah_username);
+    fprintf(fpnew,"%%%% HostID: %d\n", eah_hostid);
+    fprintf(fpnew,"%%%% HostCPID: '%s'\n", eah_hostcpid);
+#endif
 
     /* write the command-line */
     if (length >= 0) {
@@ -693,7 +702,7 @@ static void dump_heap_order(const toplist_t*tl, const char*name) {
 static void sort_gctFStat_toplist_debug(toplist_t*l) {
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
-  sort_gctFStat_toplist(l); 
+  sort_gctFStat_toplist(l);
   /*sort_gctFStat_toplist_strongest(l);*/
   if(debugfp) {
     fclose(debugfp);

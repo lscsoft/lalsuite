@@ -32,10 +32,13 @@ using namespace std;
 
 #include "hs_boinc_options.h"
 #include <boinc/util.h> /* for BOINC's dtime() */
+#include <boinc/svn_version.h>
 
 char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
 APP_INIT_DATA eah_app_init_data;
+int eah_userid, eah_hostid;
+char*eah_hostcpid, *eah_username;
 
 /* BOINC APIv6 stuff */
 
@@ -121,5 +124,14 @@ int setup_shmem(void) {
 void set_boinc_options(void) {
   rcsid = HS_BOINC_OPTIONS_H_RCSID;
   boinc_get_init_data(eah_app_init_data);
+#if defined(SVN_REVISION) && (SVN_REVISION >= 22905)
+  // this breaks compilation for BOINC older than SVN trunk r22902
+  eah_userid   = eah_app_init_data.userid;
+#else
+  eah_userid   = -1;
+#endif
+  eah_username = eah_app_init_data.user_name;
+  eah_hostid   = eah_app_init_data.hostid;
+  eah_hostcpid = eah_app_init_data.host_info.host_cpid;
   boinc_options_defaults(eah_boinc_options);
 }

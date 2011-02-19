@@ -2672,32 +2672,21 @@ XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiFstatAtoms )
  * NOTE: Amu[] need to be an allocated 4-dim gsl-vector!
  */
 int
-XLALAmplitudeParams2Vect ( gsl_vector *A_Mu,			/**< [out] canonical amplitude coordinates A^mu = {A1, A2, A3, A4} */
-                           const PulsarAmplitudeParams *Amp	/**< [in] 'physical' amplitude params {h0, cosi, psi, phi0} */
+XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		/**< [out] canonical amplitude coordinates A^mu = {A1, A2, A3, A4} */
+                           const PulsarAmplitudeParams Amp	/**< [in] 'physical' amplitude params {h0, cosi, psi, phi0} */
                            )
 {
-  const char *fn = __func__;
+  REAL8 aPlus = 0.5 * Amp.h0 * ( 1.0 + SQ(Amp.cosi) );
+  REAL8 aCross = Amp.h0 * Amp.cosi;
+  REAL8 cos2psi = cos ( 2.0 * Amp.psi );
+  REAL8 sin2psi = sin ( 2.0 * Amp.psi );
+  REAL8 cosphi0 = cos ( Amp.phi0 );
+  REAL8 sinphi0 = sin ( Amp.phi0 );
 
-  if ( !A_Mu || (A_Mu->size != 4) ) {
-    XLALPrintError ( "%s: Invalid output vector A_Mu: must be allocated 4D gsl-vector\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-  if ( !Amp ) {
-    XLALPrintError ("%s: invalid NULL input Amp.\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
-  }
-
-  REAL8 aPlus = 0.5 * Amp->h0 * ( 1.0 + SQ(Amp->cosi) );
-  REAL8 aCross = Amp->h0 * Amp->cosi;
-  REAL8 cos2psi = cos ( 2.0 * Amp->psi );
-  REAL8 sin2psi = sin ( 2.0 * Amp->psi );
-  REAL8 cosphi0 = cos ( Amp->phi0 );
-  REAL8 sinphi0 = sin ( Amp->phi0 );
-
-  gsl_vector_set ( A_Mu, 0,  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0 );
-  gsl_vector_set ( A_Mu, 1,  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0 );
-  gsl_vector_set ( A_Mu, 2, -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0 );
-  gsl_vector_set ( A_Mu, 3, -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0 );
+  A_Mu[0] =  aPlus * cos2psi * cosphi0 - aCross * sin2psi * sinphi0;
+  A_Mu[1] =  aPlus * sin2psi * cosphi0 + aCross * cos2psi * sinphi0;
+  A_Mu[2] = -aPlus * cos2psi * sinphi0 - aCross * sin2psi * cosphi0;
+  A_Mu[3] = -aPlus * sin2psi * sinphi0 + aCross * cos2psi * cosphi0;
 
   return XLAL_SUCCESS;
 
@@ -2708,8 +2697,8 @@ XLALAmplitudeParams2Vect ( gsl_vector *A_Mu,			/**< [out] canonical amplitude co
  * Adapted from algorithm in LALEstimatePulsarAmplitudeParams().
 */
 int
-XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	/**< [out] output physical amplitude parameters {h0,cosi,psi,phi} */
-                           const gsl_vector *A_Mu	/**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
+XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	  /**< [out] output physical amplitude parameters {h0,cosi,psi,phi} */
+                           const PulsarAmplitudeVect A_Mu /**< [in] input canonical amplitude vector A^mu = {A1,A2,A3,A4} */
                            )
 {
   const char *fn = __func__;
@@ -2720,8 +2709,8 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	/**< [out] output physica
   REAL8 Ap2, Ac2, aPlus, aCross;
   REAL8 beta, b1, b2, b3;
 
-  if ( !A_Mu || (A_Mu->size != 4) ) {
-    XLALPrintError ( "%s: Invalid input vector A_Mu: must be allocated 4D\n", fn );
+  if ( !A_Mu ) {
+    XLALPrintError ( "%s: Invalid NULL input vector A_Mu\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   if ( !Amp ) {
@@ -2729,10 +2718,10 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,	/**< [out] output physica
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
-  A1 = gsl_vector_get ( A_Mu, 0 );
-  A2 = gsl_vector_get ( A_Mu, 1 );
-  A3 = gsl_vector_get ( A_Mu, 2 );
-  A4 = gsl_vector_get ( A_Mu, 3 );
+  A1 = A_Mu[0];
+  A2 = A_Mu[1];
+  A3 = A_Mu[2];
+  A4 = A_Mu[3];
 
   Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
   Da = A1 * A4 - A2 * A3;

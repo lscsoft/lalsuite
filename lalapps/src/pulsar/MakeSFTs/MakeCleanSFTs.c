@@ -18,13 +18,20 @@ version 2 of the License, or
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Paola Leaci
+ * \brief generate SFTs
+ */
+
 /*********************************************************************************/
 /*                                                                               */
 /* File: MakeSFTs.c                                                              */
 /* Purpose: generate SFTs                                                        */
 /* Origin: first written by Xavier Siemens, UWM - May 2005,                      */
 /*         based on make_sfts.c by Bruce Allen                                   */
-/* $Id: MakeSFTs.c,v 1.16 2007/06/27 01:46:48 gmendell Exp $                     */
+/* Id: MakeSFTs.c,v 1.16 2007/06/27 01:46:48 gmendell Exp                        */
 /* Time domain cleaning procedure routines: Paola Leaci                          */
 /*********************************************************************************/
 

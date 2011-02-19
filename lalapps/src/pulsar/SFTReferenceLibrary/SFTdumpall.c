@@ -20,6 +20,7 @@
 /** 
  *  \author Bruce Allen, Reinhard Prix
  *  \file
+ *  \ingroup pulsarApps
  *  \brief
  *  Dump all information from a set of SFT files
  *
