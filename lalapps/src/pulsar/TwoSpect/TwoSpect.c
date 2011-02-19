@@ -507,19 +507,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
       
-      //TEST: Compute median of FF plane
-      /* REAL4 ffdata_median = calcMedian(ffdata->ffdata);
-      if (ffdata_median==0.0) {
-       fprintf(stderr, "Apparently, no SFTs were read in (Average power value is zero). Program exiting with failure.\n");
-       XLAL_ERROR(fn, XLAL_FAILURE);
-      }
-      ffdata_median /= LAL_LN2;
-      fprintf(LOG, "FF median value adjusted from %f to 1.0\n", ffdata_median);
-      fprintf(stderr, "FF median value adjusted from %f to 1.0\n", ffdata_median);
-      REAL8 inv_ffdata_median = 1.0/ffdata_median;
-      for (ii=0; ii<(INT4)ffdata->ffdata->length; ii++) ffdata->ffdata->data[ii] *= inv_ffdata_median;
-      ffdata->ffnormalization *= inv_ffdata_median; */
-      
       REAL4 secFFTmean = calcMean(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
@@ -640,7 +627,7 @@ int main(int argc, char *argv[])
                   if (gaussCandidates1->numofcandidates == gaussCandidates1->length-1) {
                      gaussCandidates1 = resize_candidateVector(gaussCandidates1, 2*gaussCandidates1->length);
                      if (gaussCandidates1->data==NULL) {
-                        fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                        fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates1->length);
                         XLAL_ERROR(fn, XLAL_EFUNC);
                      }
                   }
@@ -890,7 +877,7 @@ int main(int argc, char *argv[])
                      if (gaussCandidates1->numofcandidates == gaussCandidates1->length-1) {
                         gaussCandidates1 = resize_candidateVector(gaussCandidates1, 2*gaussCandidates1->length);
                         if (gaussCandidates1->data==NULL) {
-                           fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                           fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates1->length);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                      }
@@ -909,7 +896,7 @@ int main(int argc, char *argv[])
          if (exactCandidates2->length < ihsCandidates->numofcandidates) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, ihsCandidates->numofcandidates);
             if (exactCandidates2->data==NULL) {
-               fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+               fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, ihsCandidates->numofcandidates);
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
          }
@@ -1054,6 +1041,12 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
+                        //TODO: think about removing this?
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } /* up to here */
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
@@ -1095,7 +1088,7 @@ int main(int argc, char *argv[])
                if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) {
                   gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
                   if (gaussCandidates3->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates3->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
@@ -1177,7 +1170,7 @@ int main(int argc, char *argv[])
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
                   if (exactCandidates1->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates1->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
@@ -1308,6 +1301,12 @@ int main(int argc, char *argv[])
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
+                        //TODO: think about removing this?
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } /* up to here */
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
@@ -1351,7 +1350,7 @@ int main(int argc, char *argv[])
                if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
                   exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
                   if (exactCandidates2->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates2->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
