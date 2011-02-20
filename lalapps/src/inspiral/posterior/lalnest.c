@@ -1564,6 +1564,8 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	mcmax=m2mc(manual_mass_high/2.0,manual_mass_high/2.0);
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
+	double lDmin=log(manual_dist_min);
+	double lDmax=log(manual_dist_max);
 
 	XLALMCMCAddParam(parameter,"logM",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 	/*	XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
@@ -1572,7 +1574,7 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
-	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"logdist",lDmin+gsl_rng_uniform(RNG)*(lDmax-lDmin),lDmin,lDmax,0);
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
@@ -1594,6 +1596,9 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 
+    double ldmin=log(manual_dist_min);
+    double ldmax=log(manual_dist_max);
+
     double spin1zmin=-1.;
     double spin1zmax=1.;
 
@@ -1607,7 +1612,7 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
-	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"logdist",ldmin+gsl_rng_uniform(RNG)*(ldmax-ldmin),ldmin,ldmax,0);
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
@@ -1631,6 +1636,8 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
     double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 
+    double ldmin=log(manual_dist_min);
+    double ldmax=log(manual_dist_max);
     double chiSpinmin=manual_chi_min;
     double chiSpinmax=manual_chi_max;
 
@@ -1641,7 +1648,7 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
-	XLALMCMCAddParam(parameter,"logdist",log(1.0)+gsl_rng_uniform(RNG)*(log(100.0)-log(1.0)),log(1.0),log(100.0),0);
+	XLALMCMCAddParam(parameter,"logdist",ldmin+gsl_rng_uniform(RNG)*(ldmax-ldmin),ldmin,ldmax,0);
 	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
