@@ -241,7 +241,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
-  INT8                  maximizationInterval = 0;
+  REAL4                 maximizationInterval = 0;
 
   REAL4                 h1snrCut = 0;
 
@@ -730,16 +730,16 @@ int main( int argc, char *argv[] )
 
       case '@':
         /* set the maximization window */
-        maximizationInterval = atoi( optarg );
+        maximizationInterval = atof( optarg );
         if ( maximizationInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "maximization interval must be positive:\n "
-              "(%" LAL_INT8_FORMAT " ms specified)\n",
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%" LAL_INT8_FORMAT,  maximizationInterval );
+        ADD_PROCESS_PARAM( "int", "%" LAL_REAL4_FORMAT,  maximizationInterval );
         break;
 
       case '*':
@@ -1071,11 +1071,11 @@ if ( vrbflg)
       {
         if (vrbflg)
         {
-          fprintf( stdout, "Clustering triggers for over %" LAL_INT8_FORMAT " ms window\n",
+          fprintf( stdout, "Clustering triggers for over %" LAL_REAL4_FORMAT " ms window\n",
               maximizationInterval);
         }
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
-            (1.0e6 * maximizationInterval) );
+            (INT8) round(1.0e6 * maximizationInterval) );
         numFileTriggers = XLALCountSnglRingdown( ringdownFileList );
       }
       
