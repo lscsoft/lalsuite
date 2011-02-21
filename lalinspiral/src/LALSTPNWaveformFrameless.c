@@ -607,7 +607,8 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
 	
 	/* check that we're not above Nyquist */
 	if (yinit[1]/unitHz > 0.5 * params->tSampling) {
-		fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
+    //Need to find a way to pass this information along without creating GB worth of warnings. a --no-warning flag?
+		//fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
 	}
 	
 	/* if we have enough space, compute the waveform components; otherwise abort */

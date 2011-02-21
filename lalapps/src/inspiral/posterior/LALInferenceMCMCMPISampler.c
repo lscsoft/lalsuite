@@ -311,14 +311,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                   char filename[nameLength];
                   FILE *out;
                   LALIFOData *headData = runState->data;
+                  UINT4 ui;
                   
                   while (headData != NULL) {
 
                     snprintf(filename, nameLength, "%s-freqModelhPlus.dat", headData->name);
                     out = fopen(filename, "w");
-                    for (i = 0; i < headData->freqModelhPlus->data->length; i++) {
-                      REAL8 f = headData->freqModelhPlus->deltaF * i;
-                      COMPLEX16 d = headData->freqModelhPlus->data->data[i];
+                    for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
+                      REAL8 f = headData->freqModelhPlus->deltaF * ui;
+                      COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
 
                       fprintf(out, "%g %g %g\n", f, d.re, d.im);
                     }
@@ -326,9 +327,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
                     snprintf(filename, nameLength, "%s-freqModelhCross.dat", headData->name);
                     out = fopen(filename, "w");
-                    for (i = 0; i < headData->freqModelhCross->data->length; i++) {
-                      REAL8 f = headData->freqModelhCross->deltaF * i;
-                      COMPLEX16 d = headData->freqModelhCross->data->data[i];
+                    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
+                      REAL8 f = headData->freqModelhCross->deltaF * ui;
+                      COMPLEX16 d = headData->freqModelhCross->data->data[ui];
 
                       fprintf(out, "%g %g %g\n", f, d.re, d.im);
                     }
@@ -336,10 +337,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
                     snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
                     out = fopen(filename, "w");
-                    for (i = 0; i < headData->timeModelhPlus->data->length; i++) {
+                    for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
                       REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) + 
-                        i * headData->timeModelhPlus->deltaT;
-                      REAL8 d = headData->timeModelhPlus->data->data[i];
+                        ui * headData->timeModelhPlus->deltaT;
+                      REAL8 d = headData->timeModelhPlus->data->data[ui];
 
                       fprintf(out, "%.6f %g\n", tt, d);
                     }
@@ -347,10 +348,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
                     snprintf(filename, nameLength, "%s-timeModelhCross.dat", headData->name);
                     out = fopen(filename, "w");
-                    for (i = 0; i < headData->timeModelhCross->data->length; i++) {
+                    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
                       REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
-                        i * headData->timeModelhCross->deltaT;
-                      REAL8 d = headData->timeModelhCross->data->data[i];
+                        ui * headData->timeModelhCross->deltaT;
+                      REAL8 d = headData->timeModelhCross->data->data[ui];
 
                       fprintf(out, "%.6f %g\n", tt, d);
                     }
@@ -1708,8 +1709,8 @@ INT4 PTMCMCLALInferenceReflectDetPlane(
 	equatorial.latitude=lat;
 	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
 	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	//LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
-	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
+	LAL_CALL(LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch)),&status);
+	//LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
         deltalong=geodetic.longitude-equatorial.longitude;
 	
 	/* Add offset to RA to convert to earth-fixed */
