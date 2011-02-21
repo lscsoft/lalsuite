@@ -96,34 +96,37 @@ typedef struct
 {
   BOOLEAN help;
 
-  CHAR *inputData;    /* directory for unclean sfts */
-  CHAR *outputPSD;   /* directory for cleaned sfts */
+  CHAR *inputData;    	/**< directory for input sfts */
+  CHAR *outputPSD;    	/**< directory for output sfts */
   CHAR *outputSpectBname;
-  REAL8 fStart;
-  REAL8 fBand;
+
   REAL8 startTime;
   REAL8 endTime;
   CHAR *IFO;
   CHAR  *timeStampsFile;
   LALStringVector *linefiles;
-  INT4 blocksRngMed;
+  INT4 blocksRngMed;	/**< number of running-median bins to use */
   INT4 maxBinsClean;
 
-  INT4 PSDmthopSFTs;     /* for PSD, type of math. operation over SFTs */
-  INT4 PSDmthopIFOs;     /* for PSD, type of math. operation over IFOs */
-  BOOLEAN outputNormSFT; /* output normalised SFT power? */
-  INT4 nSFTmthopSFTs;    /* for norm. SFT, type of math. operation over SFTs */
-  INT4 nSFTmthopIFOs;    /* for norm. SFT, type of math. operation over IFOs */
+  INT4 PSDmthopSFTs;     /**< for PSD, type of math. operation over SFTs */
+  INT4 PSDmthopIFOs;     /**< for PSD, type of math. operation over IFOs */
+  BOOLEAN outputNormSFT; /**< output normalised SFT power? */
+  INT4 nSFTmthopSFTs;    /**< for norm. SFT, type of math. operation over SFTs */
+  INT4 nSFTmthopIFOs;    /**< for norm. SFT, type of math. operation over IFOs */
 
-  REAL8 binSizeHz;       /* output PSD bin size in Hz */
-  INT4  binSize;         /* output PSD bin size in no. of bins */
-  INT4  PSDmthopBins;    /* for PSD, type of math. operation over bins */
-  INT4  nSFTmthopBins;   /* for norm. SFT, type of math. operation over bins */
-  REAL8 binStepHz;       /* output PSD bin step in Hz */
-  INT4  binStep;         /* output PSD bin step in no. of bins */
-  BOOLEAN outFreqBinEnd; /* output the end frequency of each bin? */
+  REAL8 binSizeHz;       /**< output PSD bin size in Hz */
+  INT4  binSize;         /**< output PSD bin size in no. of bins */
+  INT4  PSDmthopBins;    /**< for PSD, type of math. operation over bins */
+  INT4  nSFTmthopBins;   /**< for norm. SFT, type of math. operation over bins */
+  REAL8 binStepHz;       /**< output PSD bin step in Hz */
+  INT4  binStep;         /**< output PSD bin step in no. of bins */
+  BOOLEAN outFreqBinEnd; /**< output the end frequency of each bin? */
 
-  BOOLEAN dumpPSDperSFT; /* output PSD for every single SFT */
+  BOOLEAN dumpPSDperSFT; /**< output PSD for every single SFT */
+
+  REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (*DEPRECATED*: use --Freq) */
+  REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (*DEPRECATED*: use --FreqBand) */
+
 
 } UserVariables_t;
 
@@ -190,6 +193,8 @@ main(int argc, char *argv[])
   if (uvar.help)
     return EXIT_SUCCESS;
 
+  /** ---------- load SFTs ---------- */
+
   /* set detector constraint */
   if (XLALUserVarWasSet(&uvar.IFO))
     constraints.detector = uvar.IFO;
@@ -231,6 +236,8 @@ main(int argc, char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+
+  /* ---------- end loading SFTs ---------- */
 
   /* clean sfts if required */
   if ( XLALUserVarWasSet( &uvar.linefiles ) )
