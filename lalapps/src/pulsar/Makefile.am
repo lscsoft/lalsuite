@@ -34,6 +34,7 @@ lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 
 EXTRA_DIST = \
+testComputePSD.sh\
 make_locked_data_list \
 make_cluster_data_list \
 make_job_input_data.c \
@@ -63,6 +64,14 @@ S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
 S2-L1segments.txt
+
+TESTS = testComputePSD.sh
+
+CLEANFILES = psd1.dat
+
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
