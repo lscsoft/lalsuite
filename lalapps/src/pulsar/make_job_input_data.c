@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"and DIRNAME is a directory number to place output job files.\n");
 	exit(1);
   }
- 
+
   /* read file containing list of segment numbers and start times */
   if (!(fp=fopen(argv[1],"r"))){
     perror("Could not open file");
@@ -81,8 +81,8 @@ int main(int argc, char* argv[]) {
   }
 
   if (code!=EOF){
-    fprintf(stderr,"File %s terminated unexpectedly at line %ld\n", argv[1], nstart-nseg);
-    exit(1); 
+    fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[1], nstart-nseg);
+    exit(1);
   }
   fclose(fp);
   locksegs=nstart-nseg-1;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr,"Unable to open file %s for reading\n",argv[2]);
     exit(1);
   }
-  
+
   /* parse file containing files names in order Assumes end of
      filename is of the form TGPS-XX.gwf where TGPS is 9 digits.  Note
      that this string is 9+3+4=16 digits long */
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
 	      bigbuff, namelen, argv[0]);
       exit(1);
     }
-    
+
     /* check that there is still space left */
     if (filenum>=FN){
       fprintf(stderr, "Too many files: %d.  Please recompile with bigger FN=%d\n", filenum, FN);
@@ -127,9 +127,9 @@ int main(int argc, char* argv[]) {
 
     /* does dash appear as separator in the right place */
     if (i<9){
-      fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\ndoesn't have '-' separator in right place\n", 
+      fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\ndoesn't have '-' separator in right place\n",
 	      filenames[filenum], filenum+1, argv[2]);
-      exit(1); 
+      exit(1);
     }
 
     /* get start time and duration of file from name */
@@ -144,9 +144,9 @@ int main(int argc, char* argv[]) {
 
     /* check that duration is what's expected */
     if (deltat!=framesec){
-            fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (framesec=%d)\n", 
+            fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (framesec=%d)\n",
 	      filenames[filenum], filenum+1, argv[2], deltat, framesec);
-      exit(1); 
+      exit(1);
     }
 
     /* see if start time same as the previous file (NDAS data can do this!) */
@@ -154,14 +154,14 @@ int main(int argc, char* argv[]) {
       filenum++;
     else if (starttimes[filenum]==starttimes[filenum-1]){
       /* NOTE THAT WE DON'T EXIT -- THIS IS A WARNING ONLY */
-#if (0)      
+#if (0)
       fprintf(stderr,"Identical timestamps:\n%d: %s\n%d: %s\n",
 	      starttimes[filenum], filenames[filenum], starttimes[filenum-1], filenames[filenum-1]);
 #endif
     }
     else {
       fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%d: %s\n%d: %s\n",
-	      filenum+1, argv[2], starttimes[filenum], filenames[filenum], 
+	      filenum+1, argv[2], starttimes[filenum], filenames[filenum],
 	      starttimes[filenum-1], filenames[filenum-1]);
       exit(1);
     }
@@ -170,15 +170,15 @@ int main(int argc, char* argv[]) {
   /* Check that file of frame file names was in expected format */
   if (code!=EOF){
     fprintf(stderr,"File %s terminated unexpectedly at line %d\n", argv[2], filenum);
-    exit(1); 
+    exit(1);
   }
   fclose(fp);
-  
+
   /* clear array to keep track of what is printed */
   int i;
   for (i=0;i<filenum;i++)
     printed[i]=0;
-  
+
   /* check that files names/times are properly ordered */
   for (i=0;i<filenum-1;i++){
     if (starttimes[i]>=starttimes[i+1]){
@@ -194,10 +194,10 @@ int main(int argc, char* argv[]) {
   for (i=0;i<locksegs;i++){
     for (k=0;k<nseg[i];k++){
       int startat;
-      
+
       /* Segment that the job should start with */
       startat=(totalsegs*jobno)/NODES;
-      
+
       if (
 #if (SEGSPERJOB)
 	  /* predetermined fixed number of segments per file */
@@ -210,14 +210,14 @@ int main(int argc, char* argv[]) {
 	int j0,j1;
 	char fname[256];
 
-	/* clear any lists of printed files first... */	
+	/* clear any lists of printed files first... */
 	j0=j-2;
 	if (j0<0) j0=0;
 	j1=j+2;
 	if (j1>filenum) j1=filenum;
 	for (j=j0;j<j1;j++)
 	  printed[j]=0;
-	
+
 	/* Need to close old files and open new files */
 	if (fp)  fclose(fp);
 	if (fp1) fclose(fp1);
@@ -239,30 +239,30 @@ int main(int argc, char* argv[]) {
 	};
 	jobno++;
       }
-      
+
       /* time at which next output segment starts */
       thistime=tseg[i]+k*tbase[i];
       /* fprintf(fp,"%d\n",thistime); */
-      
+
       /* How many frame files do we need? */
       firstframe=thistime-thistime%framesec;
       lastframe =(thistime+tbase[i]-1)-(thistime+tbase[i]-1)%framesec;
       nframes=1+(lastframe-firstframe)/framesec;
-      
+
       /* find correct data files */
       while (filepointer1<filenum && starttimes[filepointer1]<firstframe)
 	filepointer1++;
       while (filepointer2<filenum && starttimes[filepointer2]<lastframe)
 	filepointer2++;
-      
+
       /* see if data files are there */
       if (starttimes[filepointer1]==firstframe &&
 	  starttimes[filepointer2]==lastframe &&
 	  filepointer2-filepointer1==nframes-1){
-      
+
 	/* We have another segment! */
 	segno++;
-	
+
 	fprintf(fp,"%d %d\n",thistime, tbase[i]);
 	for (j=filepointer1;j<=filepointer2;j++){
 	  /* don't print a file name twice, please.  Note though */
@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
 	  }
 	}
       }
-      else { 
+      else {
 	int shouldbethere,my1=filepointer1;
 
 	/* missing data */
@@ -288,12 +288,12 @@ int main(int argc, char* argv[]) {
 	    perror("Could not write file");
 	    fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	    return 1;
-	  }; 
+	  };
 	}
         fprintf(fp2,"Data missing for %d-second SFT starting at %d\n",tbase[i],thistime);
 	fprintf(fp2,"First frame GPS start: %d\n", firstframe);
 	fprintf(fp2,"Last  frame GPS start: %d\n", lastframe);
-	
+
 	/* to list the missing frames, first step through all the
 	   frames that SHOULD be there */
 	for (shouldbethere=firstframe; shouldbethere<=lastframe; shouldbethere+=framesec){
@@ -306,17 +306,17 @@ int main(int argc, char* argv[]) {
 	      foundit=1;
 	      break;
 	    }
-	  /* see if we found it */ 
+	  /* see if we found it */
 	  if (!foundit)
 	    fprintf(fp2,"  Missing frame has start time: %d\n", shouldbethere);
 	}
       }
     }
   }
-  
+
   fclose(fp);
   fclose(fp1);
   if (fp2)
     fclose(fp2);
- 
+
   return 0;}
