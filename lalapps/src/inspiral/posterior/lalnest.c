@@ -1382,11 +1382,11 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
     XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
    
     if ((long_min<=0.)&&(long_max>=2.*LAL_PI))
-    XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*2.*LAL_PI,0.,2.*LAL_PI,1);
+    XLALMCMCAddParam(parameter,"ra",gsl_rng_uniform(RNG)*2.*LAL_PI,0.,2.*LAL_PI,1);
     else
-    XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*(long_max-long_min)+long_min,long_min,long_max,0);
+    XLALMCMCAddParam(parameter,"ra",gsl_rng_uniform(RNG)*(long_max-long_min)+long_min,long_min,long_max,0);
 
-    XLALMCMCAddParam(parameter,"lat", lat_min+gsl_rng_uniform(RNG)*(lat_max-lat_min),lat_min,lat_max,0);
+    XLALMCMCAddParam(parameter,"dec", lat_min+gsl_rng_uniform(RNG)*(lat_max-lat_min),lat_min,lat_max,0);
     XLALMCMCAddParam(parameter,"psi",gsl_rng_uniform(RNG)*LAL_PI,0,LAL_PI,1);
     XLALMCMCAddParam(parameter,"iota", gsl_rng_uniform(RNG)*(iota_max-iota_min)+iota_min ,iota_min,iota_max,0);
  
@@ -1482,8 +1482,8 @@ void NestInitGRB(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "phi",              LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
 
-	XLALMCMCAddParam(parameter,"long",trueLong,trueLong-0.5*deltaLong,trueLong+0.5*deltaLong,-1);
-	XLALMCMCAddParam(parameter,"lat",trueLat,trueLat-0.5*deltaLat,trueLat+0.5*deltaLat,-1);
+	XLALMCMCAddParam(parameter,"ra",trueLong,trueLong-0.5*deltaLong,trueLong+0.5*deltaLong,-1);
+	XLALMCMCAddParam(parameter,"dec",trueLat,trueLat-0.5*deltaLat,trueLat+0.5*deltaLat,-1);
 
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
@@ -1516,8 +1516,8 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 	return;
@@ -1546,8 +1546,8 @@ void NestInitSkyPatch(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	XLALMCMCAddParam(parameter,"long",manual_RA,manual_RA-0.5*deltaLong,manual_RA+0.5*deltaLong,-1);
-	XLALMCMCAddParam(parameter,"lat",manual_dec,manual_dec-0.5*deltaLat,manual_dec+0.5*deltaLat,-1);
+	XLALMCMCAddParam(parameter,"ra",manual_RA,manual_RA-0.5*deltaLong,manual_RA+0.5*deltaLong,-1);
+	XLALMCMCAddParam(parameter,"dec",manual_dec,manual_dec-0.5*deltaLat,manual_dec+0.5*deltaLat,-1);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG), 0, LAL_PI, 1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 	return;
@@ -1575,8 +1575,8 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
 	XLALMCMCAddParam(parameter,"logdist",lDmin+gsl_rng_uniform(RNG)*(lDmax-lDmin),lDmin,lDmax,0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -1613,8 +1613,8 @@ void NestInitManualIMRB(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
 	XLALMCMCAddParam(parameter,"logdist",ldmin+gsl_rng_uniform(RNG)*(ldmax-ldmin),ldmin,ldmax,0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -1649,8 +1649,8 @@ void NestInitManualIMRBChi(LALMCMCParameter *parameter, void UNUSED *iT)
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 /*	XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax, 0);*/
 	XLALMCMCAddParam(parameter,"logdist",ldmin+gsl_rng_uniform(RNG)*(ldmax-ldmin),ldmin,ldmax,0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -1684,8 +1684,8 @@ void NestInitNINJAManual(LALMCMCParameter *parameter, void UNUSED *iT){
 	XLALMCMCAddParam(parameter, "time",             (gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",              LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 499.0*gsl_rng_uniform(RNG)+1.0, 1.0, 500.0, 0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -1745,14 +1745,14 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	else
 		XLALMCMCAddParam(parameter,"logdist",(log(manual_dist_max)-log(manual_dist_min))*gsl_rng_uniform(RNG)+log(manual_dist_min) ,log(manual_dist_min),log(manual_dist_max),0);
 
-	if(checkParamInList(pinned_params,"long")||checkParamInList(pinned_params,"longitude")||checkParamInList(pinned_params,"RA"))
-		XLALMCMCAddParam(parameter,"long",injTable->longitude,0,LAL_TWOPI,-1);
+	if(checkParamInList(pinned_params,"ra")||checkParamInList(pinned_params,"longitude")||checkParamInList(pinned_params,"RA"))
+		XLALMCMCAddParam(parameter,"ra",injTable->longitude,0,LAL_TWOPI,-1);
 	else
-		XLALMCMCAddParam(parameter,"long",gsl_rng_uniform(RNG)*LAL_TWOPI,0,LAL_TWOPI,1);
-	if(checkParamInList(pinned_params,"lat") || checkParamInList(pinned_params,"latitude") || checkParamInList(pinned_params,"dec"))
-		XLALMCMCAddParam(parameter,"lat",injTable->latitude,-LAL_PI/2.0,LAL_PI/2.0,-1);
+		XLALMCMCAddParam(parameter,"ra",gsl_rng_uniform(RNG)*LAL_TWOPI,0,LAL_TWOPI,1);
+	if(checkParamInList(pinned_params,"dec") || checkParamInList(pinned_params,"latitude") || checkParamInList(pinned_params,"dec"))
+		XLALMCMCAddParam(parameter,"dec",injTable->latitude,-LAL_PI/2.0,LAL_PI/2.0,-1);
 	else
-		XLALMCMCAddParam(parameter,"lat", acos(2.0*gsl_rng_uniform(RNG)-1.0)-LAL_PI/2.0,-LAL_PI/2.0,LAL_PI/2.0,0);
+		XLALMCMCAddParam(parameter,"dec", acos(2.0*gsl_rng_uniform(RNG)-1.0)-LAL_PI/2.0,-LAL_PI/2.0,LAL_PI/2.0,0);
 
 	if(checkParamInList(pinned_params,"psi")||checkParamInList(pinned_params,"polarization"))
 		XLALMCMCAddParam(parameter,"psi",injTable->polarization,0,LAL_PI,-1);
