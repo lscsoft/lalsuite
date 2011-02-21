@@ -100,6 +100,9 @@ typedef struct
   CHAR *outputPSD;    	/**< directory for output sfts */
   CHAR *outputSpectBname;
 
+  REAL8 Freq;		/**< *physical* start frequency to compute PSD for (excluding rngmed wings) */
+  REAL8 FreqBand;	/**< *physical* frequency band to compute PSD for (excluding rngmed wings) */
+
   REAL8 startTime;
   REAL8 endTime;
   CHAR *IFO;
@@ -651,8 +654,9 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregSTRINGUserStruct(outputPSD,        'o', UVAR_OPTIONAL, "Output PSD into this file");
   XLALregSTRINGUserStruct(outputSpectBname,  0 , UVAR_OPTIONAL, "Filename-base for (binary) spectrograms (one per IFO)");
 
-  XLALregREALUserStruct  (fStart,           'f', UVAR_OPTIONAL, "Frequency to start from (-1 = all freqs)");
-  XLALregREALUserStruct  (fBand,            'b', UVAR_OPTIONAL, "Frequency Band");
+  XLALregREALUserStruct  (Freq,              0,  UVAR_OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
+  XLALregREALUserStruct  (FreqBand,          0,  UVAR_OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
+
   XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS start time");
   XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS end time");
   XLALregSTRINGUserStruct(timeStampsFile,   't', UVAR_OPTIONAL, "Time-stamps file");
@@ -690,6 +694,12 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 								"(names must contain IFO name)");
 
   XLALregBOOLUserStruct  (dumpPSDperSFT,    'd', UVAR_OPTIONAL, "Output PSD for every SFT into file '<outputPSD>-IFO'");
+
+  /* ----- deprecated options ---------- */
+  XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (*DEPRECATED*: use --Freq)");
+  XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (*DEPRECATED*: use --FreqBand)");
+
+
 
   /* read all command line variables */
   if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
