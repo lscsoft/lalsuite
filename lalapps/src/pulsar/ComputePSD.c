@@ -143,10 +143,10 @@ extern INT4 lalDebugLevel;
 
 /* ---------- local prototypes ---------- */
 int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
-void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector  *ts, CHAR *filename);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
 static REAL8 math_op(REAL8*, size_t, INT4);
-int XLALDumpPSD ( INT4 freqbin, const CHAR *outbname, const PSDVector *PSDVect );
+int XLALDumpPSDperSFT ( INT4 freqbin, const CHAR *outbname, const PSDVector *PSDVect );
+MultiSFTVector *XLALReadSFTs ( const UserVariables_t *uvar );
 
 /*============================================================
  * FUNCTION definitions
@@ -167,14 +167,8 @@ main(int argc, char *argv[])
   REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
   REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
 
-  SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *multiPSD = NULL;
-
-  LIGOTimeGPS startTimeGPS, endTimeGPS;
-  LIGOTimeGPSVector inputTimeStampsVector;
 
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 0;
@@ -196,51 +190,11 @@ main(int argc, char *argv[])
   if (uvar.help)
     return EXIT_SUCCESS;
 
-  /** ---------- load SFTs ---------- */
-
-  /* set detector constraint */
-  if (XLALUserVarWasSet(&uvar.IFO))
-    constraints.detector = uvar.IFO;
-  else
-    constraints.detector = NULL;
-
-  if ( XLALUserVarWasSet( &uvar.startTime ) ) {
-    XLALGPSSetREAL8(&startTimeGPS, uvar.startTime);
-    constraints.startTime = &startTimeGPS;
-  }
-
-  if ( XLALUserVarWasSet( &uvar.endTime ) ) {
-    XLALGPSSetREAL8(&endTimeGPS, uvar.endTime);
-    constraints.endTime = &endTimeGPS;
-  }
-
-  if ( XLALUserVarWasSet( &uvar.timeStampsFile ) ) {
-    LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar.timeStampsFile), &status);
-    constraints.timestamps = &inputTimeStampsVector;
-  }
-
-  /* get sft catalog */
-  LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar.inputData, &constraints), &status);
-  if ( (catalog == NULL) || (catalog->length == 0) ) {
-    fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar.inputData );
-    return EXIT_FAILURE;
-  }
-  LogPrintfVerbatim ( LOG_DEBUG, "done (found %i SFTs).\n", catalog->length);
-
-  /* now we can free the inputTimeStampsVector */
-  if ( XLALUserVarWasSet( &uvar.timeStampsFile ) ) {
-    LALFree( inputTimeStampsVector.data );
-  }
-
-  /* read the sfts */
-  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
-  LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, uvar.fStart, uvar.fStart + uvar.fBand), &status);
-  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
-
-  /* ---------- end loading SFTs ---------- */
+  if ( ( inputSFTs = XLALReadSFTs ( &uvar ) ) == NULL )
+    {
+      XLALPrintError ("Call to XLALReadSFTs() failed with xlalErrno = %d\n", xlalErrno );
+      return EXIT_FAILURE;
+    }
 
   /* clean sfts if required */
   if ( XLALUserVarWasSet( &uvar.linefiles ) )
@@ -324,8 +278,8 @@ main(int argc, char *argv[])
 
       /* if user requested it, output PSD per detector X, per freq-bin k, and per SFT into a separate file */
       if ( uvar.dumpPSDperSFT ) {
-        if ( XLALDumpPSD ( k, uvar.outputPSD, multiPSD->data[X] ) != XLAL_SUCCESS ) {
-          XLALPrintError ("%s: XLALDumpPSD() failed, xlalErrnor = %d\n", fn, xlalErrno );
+        if ( XLALDumpPSDperSFT ( k, uvar.outputPSD, multiPSD->data[X] ) != XLAL_SUCCESS ) {
+          XLALPrintError ("%s: XLALDumpPSDperSFT() failed, xlalErrnor = %d\n", fn, xlalErrno );
           return EXIT_FAILURE;
         }
       } /* if uvar.dumpPSDperSFT */
@@ -466,62 +420,6 @@ main(int argc, char *argv[])
   return EXIT_SUCCESS;
 
 } /* main() */
-
-
-
-/* read timestamps file */
-void ReadTimeStampsFile (LALStatus          *status,
-			 LIGOTimeGPSVector  *ts,
-			 CHAR               *filename)
-{
-
-  FILE  *fp = NULL;
-  INT4  numTimeStamps, r;
-  UINT4 j;
-  REAL8 temp1, temp2;
-
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT(ts, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(ts->data == NULL, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(ts->length == 0, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(filename, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-
-  if ( (fp = fopen(filename, "r")) == NULL) {
-    ABORT( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE);
-  }
-
-  /* count number of timestamps */
-  numTimeStamps = 0;
-
-  do {
-    r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-    /* make sure the line has the right number of entries or is EOF */
-    if (r==2) numTimeStamps++;
-  } while ( r != EOF);
-  rewind(fp);
-
-  ts->length = numTimeStamps;
-  ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
-  if ( ts->data == NULL ) {
-    fclose(fp);
-    ABORT( status, COMPUTEPSDC_ENULL, COMPUTEPSDC_MSGENULL);
-  }
-
-  for (j = 0; j < ts->length; j++)
-    {
-      r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-      ts->data[j].gpsSeconds = (INT4)temp1;
-      ts->data[j].gpsNanoSeconds = (INT4)temp2;
-    }
-
-  fclose(fp);
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
 
 /** compute the various kinds of math. operation */
 REAL8 math_op(REAL8* data, size_t length, INT4 type) {
@@ -862,7 +760,7 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
 /** Dump PSD to file for every single SFT.
  *  The filename for each IFO is generated as 'name-IFO'
  */
-int XLALDumpPSD ( INT4 freqbin,			/**< frequency bin to output */
+int XLALDumpPSDperSFT ( INT4 freqbin,			/**< frequency bin to output */
                   const CHAR *outbname,		/**< basename of PDF output files */
                   const PSDVector *PSDVect	/**< psd vector to output */
                   )
@@ -915,4 +813,84 @@ int XLALDumpPSD ( INT4 freqbin,			/**< frequency bin to output */
 
   return XLAL_SUCCESS;
 
-} /* XLALDumpPSD() */
+} /* XLALDumpPSDperSFT() */
+
+/** Load all SFTs according to user-input
+ */
+MultiSFTVector *
+XLALReadSFTs ( const UserVariables_t *uvar )
+{
+  const char *fn = __func__;
+
+  SFTCatalog *catalog = NULL;
+  SFTConstraints constraints = empty_SFTConstraints;
+  LIGOTimeGPS startTimeGPS, endTimeGPS;
+  LIGOTimeGPSVector *inputTimeStampsVector = NULL;
+
+  /* check input */
+  if ( !uvar || !uvar->inputData ) {
+    XLALPrintError ("%s: invalid NULL input 'uvar' or 'uvar->inputData'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* set detector constraint */
+  if ( XLALUserVarWasSet ( &uvar->IFO ) )
+    constraints.detector = uvar->IFO;
+  else
+    constraints.detector = NULL;
+
+  if ( XLALUserVarWasSet( &uvar->startTime ) ) {
+    XLALGPSSetREAL8 ( &startTimeGPS, uvar->startTime);
+    constraints.startTime = &startTimeGPS;
+  }
+
+  if ( XLALUserVarWasSet( &uvar->endTime ) ) {
+    XLALGPSSetREAL8 ( &endTimeGPS, uvar->endTime);
+    constraints.endTime = &endTimeGPS;
+  }
+
+  if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {
+    if ( (inputTimeStampsVector = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL )
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+    constraints.timestamps = inputTimeStampsVector;
+  }
+
+  /* get sft catalog */
+  LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
+  LALStatus status = blank_status;
+  LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", fn, status.statusCode );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  if ( (catalog == NULL) || (catalog->length == 0) ) {
+    XLALPrintError ("%s: Unable to match any SFTs with pattern '%s'\n", fn, uvar->inputData );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  LogPrintfVerbatim ( LOG_DEBUG, "done (found %i SFTs).\n", catalog->length);
+
+  /* now we can free the inputTimeStampsVector */
+  if ( inputTimeStampsVector )
+    XLALDestroyTimestampVector ( inputTimeStampsVector );
+
+  /* read the sfts */
+  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
+  MultiSFTVector *multi_sfts;
+  if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, uvar->fStart, uvar->fStart + uvar->fBand) ) == NULL ) {
+    XLALPrintError ("%s: XLALLoadMultiSFTs() failed with xlalErrno = %d\n", fn, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+  LALDestroySFTCatalog ( &status, &catalog );
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ("%s: LALDestroySFTCatalog() failed with statusCode = %d\n", fn, status.statusCode );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+
+  /* ---------- end loading SFTs ---------- */
+
+  return multi_sfts;
+
+} /* XLALReadSFTs() */
