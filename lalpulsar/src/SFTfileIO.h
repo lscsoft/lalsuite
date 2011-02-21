@@ -291,7 +291,7 @@ void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fnam
 void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
 void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
 
-void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname);
+LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
 
 void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
 void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
@@ -304,9 +304,14 @@ INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
 /*================================================================================
+ * DEPRECATED LAL-API [use XLAL-API whenever available]
+ *================================================================================*/
+void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname); /* use XLALReadTimestampsFile() instead! */
+
+
+/*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]
  *================================================================================*/
-
 
 /** [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification
  * version v1.0.

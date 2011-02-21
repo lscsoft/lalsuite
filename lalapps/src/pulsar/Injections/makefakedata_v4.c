@@ -554,7 +554,7 @@ main(int argc, char *argv[])
 void
 InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
-  static const char *fn = "InitMakefakedata()";
+  static const char *fn = __func__;
 
   CHAR *channelName = NULL;
   BinaryPulsarParams pulparams;
@@ -887,14 +887,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     /* ----- load timestamps from file if given  */
     if ( haveTimestampsFile )
       {
-	LIGOTimeGPSVector *timestamps = NULL;
 	if ( haveStart || haveDuration || haveOverlap )
 	  {
 	    printf ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
-	cfg->timestamps = timestamps;
+	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
+          XLALPrintError ("%s: failed to read timestamps from file '%s'\n", fn, uvar_timestampsFile );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
 
       } /* if haveTimestampsFile */
 
