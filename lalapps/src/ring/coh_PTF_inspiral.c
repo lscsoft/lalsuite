@@ -672,6 +672,10 @@ int main( int argc, char **argv )
         segStartTime = params->trigTime;
         for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
+          for ( i = 0; i < 3; i++ )
+          {
+            detLoc[i] = (double) detectors[ifoNumber]->location[i];
+          }
           /* calculate time offsets */
           timeOffsets[ifoNumber] =
               XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
