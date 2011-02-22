@@ -258,6 +258,10 @@ int main( int argc, char **argv )
   PTFM[ifoNumber] = NULL;
   PTFN[ifoNumber] = NULL;
   PTFqVec[ifoNumber] = NULL;
+  struct bankDataOverlaps *chisqOverlaps = NULL;
+  REAL4 *powerBinsPlus = NULL;
+  REAL4 *powerBinsCross = NULL;
+
 
   /*------------------------------------------------------------------------*
    * Construct the null stream, its segments and its PSD                    *
@@ -672,6 +676,10 @@ int main( int argc, char **argv )
         segStartTime = params->trigTime;
         for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
+          for ( i = 0; i < 3; i++ )
+          {
+            detLoc[i] = (double) detectors[ifoNumber]->location[i];
+          }
           /* calculate time offsets */
           timeOffsets[ifoNumber] =
               XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
@@ -689,7 +697,7 @@ int main( int argc, char **argv )
             spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
             gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
             subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
-            autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
+            autoTempOverlaps,fcTmplt,invspec,segments,invPlan,chisqOverlaps,powerBinsPlus,powerBinsCross);
      
         verbose("Made coherent statistic for segment %d, template %d at %ld \n",
             j,i,time(NULL)-startTime);      
@@ -784,6 +792,26 @@ int main( int argc, char **argv )
     }
     LALFree( autoTempOverlaps );
   }
+
+  if (chisqOverlaps)
+  {
+    for( j = 0; j < params->numChiSquareBins; j++)
+    {
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if (chisqOverlaps[j].PTFqVec[k])
+        {
+          XLALDestroyCOMPLEX8VectorSequence(chisqOverlaps[j].PTFqVec[k]);
+        }
+      }
+    }
+    LALFree(chisqOverlaps);
+  }
+  if (powerBinsPlus)
+    LALFree(powerBinsPlus);
+  if (powerBinsCross)
+    LALFree(powerBinsCross);
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     LALFree(detectors[ifoNumber]);
@@ -821,7 +849,10 @@ void coh_PTF_statistic(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     RingDataSegments        *segments[LAL_NUM_IFO+1],
-    COMPLEX8FFTPlan         *invPlan
+    COMPLEX8FFTPlan         *invPlan,
+    struct bankDataOverlaps *chisqOverlaps,
+    REAL4 *powerBinsPlus,
+    REAL4 *powerBinsCross
 )
 
 {
@@ -988,12 +1019,9 @@ void coh_PTF_statistic(
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   struct bankCohTemplateOverlaps *bankCohOverlaps = NULL;
   struct bankCohTemplateOverlaps *autoCohOverlaps = NULL;
-  struct bankDataOverlaps *chisqOverlaps = NULL;
   COMPLEX8VectorSequence *tempqVec = NULL;
   REAL4 *frequencyRangesPlus = NULL;
   REAL4 *frequencyRangesCross = NULL;
-  REAL4 *powerBinsPlus = NULL;
-  REAL4 *powerBinsCross = NULL;
   REAL4 fLow,fHigh;
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
@@ -1523,21 +1551,6 @@ void coh_PTF_statistic(
       LALFree(frequencyRangesCross);
     if (tempqVec)
       XLALDestroyCOMPLEX8VectorSequence( tempqVec );
-    if (chisqOverlaps)
-    {
-      for( j = 0; j < params->numChiSquareBins; j++)
-      {
-        for( k = 0; k < LAL_NUM_IFO; k++)
-        {
-          if (chisqOverlaps[j].PTFqVec[k])
-          {
-            XLALDestroyCOMPLEX8VectorSequence(chisqOverlaps[j].PTFqVec[k]);
-          }
-        }
-      }
-      LALFree(chisqOverlaps);      
-    }
-
   }
 
   gsl_matrix_free(BNull);

@@ -247,7 +247,10 @@ void coh_PTF_statistic(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     RingDataSegments        *segment[LAL_NUM_IFO+1],
-    COMPLEX8FFTPlan         *invPlan
+    COMPLEX8FFTPlan         *invPlan,
+    struct bankDataOverlaps *chisqOverlaps,
+    REAL4 *powerBinsPlus,
+    REAL4 *powerBinsCross 
 );
 UINT8 coh_PTF_add_triggers(
     struct coh_PTF_params   *params,
