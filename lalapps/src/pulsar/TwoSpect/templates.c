@@ -375,6 +375,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       noncentrality->data[ii] = 0.0;
       dofs->data[ii] = 2;
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
+      sorting->data[ii] = ii;  //This is for the fact that a few steps later (before using Davies' algorithm, we sort the weights)
    }
    
    qfvars vars;
@@ -382,10 +383,14 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.noncentrality = noncentrality;
    vars.dofs = dofs;
    vars.sorting = sorting;
+   vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
    vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
    REAL8 accuracy = 5.0e-6;   //(1e-5) don't change this value
+   
+   //sort the weights here so we don't have to do it later (qsort)
+   sort_double_descend(newweights);
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);

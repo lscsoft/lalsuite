@@ -45,9 +45,7 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
       XLAL_ERROR_REAL8(fn, XLAL_EFAULT);
    }
    
-   REAL8 noise = gsl_ran_exponential(ptrToGenerator, mu);
-   
-   return noise;
+   return gsl_ran_exponential(ptrToGenerator, mu);
    
 } /* expRandNum() */
 
@@ -140,6 +138,32 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
    memcpy(output->data, tempvect->data, sizeof(REAL4)*output->length);
    
    XLALDestroyREAL4Vector(tempvect);
+   
+}
+
+/* !!!!This modifies the input vector!!!! */
+void sort_double_descend(REAL8Vector *vector)
+{
+   
+   const CHAR *fn = __func__;
+   
+   INT4 ii;
+   
+   qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
+   
+   REAL8Vector *tempvect = XLALCreateREAL8Vector(vector->length);
+   if (vector==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", fn, vector->length);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, vector->data, sizeof(REAL8)*vector->length);
+   
+   for (ii=0; ii<(INT4)vector->length; ii++) {
+      vector->data[ii] = tempvect->data[tempvect->length-1-ii];
+   }
+   
+   XLALDestroyREAL8Vector(tempvect);
    
 }
 
@@ -283,3 +307,14 @@ INT4 qsort_REAL4_compar(const void *a, const void *b)
    return 0;
    
 }
+INT4 qsort_REAL8_compar(const void *a, const void *b)
+{
+   const REAL8 *y = a;
+   const REAL8 *z = b;
+   
+   if ( *y < *z ) return -1;
+   if ( *y > *z ) return 1;
+   return 0;
+   
+}
+

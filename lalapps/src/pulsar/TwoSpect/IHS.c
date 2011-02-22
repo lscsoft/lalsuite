@@ -21,6 +21,8 @@
 
 #include <lal/LALMalloc.h>
 
+#include <gsl/gsl_randist.h>
+
 #include "IHS.h"
 #include "statistics.h"
 #include "candidates.h"
@@ -182,24 +184,26 @@ void free_ihsVals(ihsVals *ihsvals)
 void incHarmSum(ihsVals *output, REAL4Vector *input)
 {
    
-   INT4 ii, loc;
-   REAL4 ihs;
+   const CHAR *fn = __func__;
    
-   ihs = 0.0;
-   loc = 0;
+   if (input==NULL || input->data==NULL) {
+      fprintf(stderr, "%s: No input data to incHarmSum().\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EINVAL);
+   }
+   
+   INT4 ii;
+   
+   output->ihs = 0.0;
+   
    //Start ii >= 15
    for (ii=15; ii<(INT4)input->length; ii++) {
       REAL4 sum = input->data[ii] + input->data[(INT4)(ii*0.5)] + input->data[(INT4)(ii/3.0)] + input->data[(INT4)(ii*0.25)] + input->data[(INT4)(ii*0.2)];
 
-      if (sum > ihs) {
-         ihs = sum;
-         loc = (INT4)round(ii/3.0);
+      if (sum > output->ihs) {
+         output->ihs = sum;
+         output->loc = (INT4)round(ii/3.0);
       }
    } /* for ii < input->length */
-   
-   //Load the outputs into the structure
-   output->ihs = ihs;
-   output->loc = loc;
 
 } /* incHarmSum() */
 
@@ -261,11 +265,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
    
    const CHAR *fn = __func__;
    
-   INT4 ii, jj, length;
+   INT4 ii, jj;
    REAL4Vector *noise = NULL;
    REAL8 Tobs = params->Tobs;
-   
-   length = (INT4)aveNoise->length;
    
    INT4 trials = (INT4)round(10000*0.01/params->ihsfar);    //Number of trials to determine FAR value
    if (params->ihsfomfar!=0.0 && trials<(INT4)round(10000*0.01/params->ihsfomfar)) {
@@ -273,8 +275,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
    }
    trials += columns;
    
-   REAL4Vector *ihss = XLALCreateREAL4Vector((UINT4)trials);
-   INT4Vector *locs = XLALCreateINT4Vector((UINT4)trials);
+   REAL4Vector *ihss = XLALCreateREAL4Vector(trials);
+   INT4Vector *locs = XLALCreateINT4Vector(trials);
    if (ihss==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, trials);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
@@ -301,17 +303,18 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
    }
    
    //Determine IHS values for the number of trials
-   noise = XLALCreateREAL4Vector((UINT4)length);
+   noise = XLALCreateREAL4Vector(aveNoise->length);
    if (noise==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, aveNoise->length);
       XLAL_ERROR_VOID(fn, XLAL_EFUNC);
    }
    for (ii=0; ii<trials; ii++) {
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
-      for (jj=0; jj<length; jj++) {
+      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
          if (fabs(Tobs/(24.0*3600.0)-jj)<=1.0 || fabs(Tobs/(12.0*3600.0)-jj)<=1.0 || fabs(Tobs/(8.0*3600.0)-jj)<=1.0 || fabs(Tobs/(6.0*3600.0)-jj)<=1.0) noise->data[jj] = 0.0;
-         else noise->data[jj] = (REAL4)expRandNum(aveNoise->data[jj], rng);
-      } /* for jj < length */
+         else noise->data[jj] = gsl_ran_exponential(rng, aveNoise->data[jj]);
+         //else noise->data[jj] = (REAL4)expRandNum(aveNoise->data[jj], rng);
+      } /* for jj < aveNoise->length */
       
       //Compute IHS value on exponential noise
       incHarmSum(ihsvals, noise);
@@ -503,35 +506,38 @@ REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
 //REAL4 ihsFOM(REAL4Vector *ihss, INT4Vector *locs, REAL4 sigma)
 {
    
-   const CHAR *fn = __func__;
+   //const CHAR *fn = __func__;
    
    INT4 ii, maxsnrloc;
-   REAL4 maxsnr, fom;
+   REAL4 maxsnr;
    
    //Create normalized SNR of IHS values
-   REAL4Vector *snrs = XLALCreateREAL4Vector(ihss->length);
+   /* REAL4Vector *snrs = XLALCreateREAL4Vector(ihss->length);
    if (snrs==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ihss->length);
       XLAL_ERROR_REAL4(fn, XLAL_ENOMEM);
    }
-   for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii];
+   for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma->data[ii]; */
    //for (ii=0; ii<(INT4)snrs->length; ii++) snrs->data[ii] = ihss->data[ii]/sigma;
    
    //Find which pair has the best combined SNR (RMS) and the location
-   maxsnr = sqrtf(snrs->data[0]*snrs->data[0] + snrs->data[snrs->length-1]*snrs->data[snrs->length-1]);
+   //maxsnr = sqrtf(snrs->data[0]*snrs->data[0] + snrs->data[snrs->length-1]*snrs->data[snrs->length-1]);
+   maxsnr = sqrtf(ihss->data[0]*ihss->data[0]/(sigma->data[0]*sigma->data[0]) + ihss->data[ihss->length-1]*ihss->data[ihss->length-1]/(sigma->data[sigma->length-1]*sigma->data[sigma->length-1]));
    maxsnrloc = 0;
-   for (ii=1; ii<(INT4)(snrs->length*0.5); ii++) {
-      if (sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1])>maxsnr) {
-         maxsnr = sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1]);
+   for (ii=1; ii<(INT4)(ihss->length*0.5); ii++) {
+      //if (sqrtf(snrs->data[ii]*snrs->data[ii] + snrs->data[snrs->length-ii-1]*snrs->data[snrs->length-ii-1])>maxsnr) {
+      REAL4 snr = sqrtf(ihss->data[ii]*ihss->data[ii]/(sigma->data[ii]*sigma->data[ii]) + ihss->data[ihss->length-ii-1]*ihss->data[ihss->length-ii-1]/(sigma->data[sigma->length-ii-1]*sigma->data[sigma->length-ii-1]));
+      if (snr>maxsnr) {
+         maxsnr = snr;
          maxsnrloc = ii;
       }
    }
    
    //For the highest SNR pair, compute the FOM
-   fom = 12.0*(locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]) * (locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]);
+   REAL4 fom = 12.0*(locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]) * (locs->data[maxsnrloc] - locs->data[locs->length-maxsnrloc-1]);
    
    //Destroy used variables
-   XLALDestroyREAL4Vector(snrs);
+   //XLALDestroyREAL4Vector(snrs);
    
    return fom;
 
