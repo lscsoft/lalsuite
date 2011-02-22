@@ -852,7 +852,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
           /* Removed the rotate sky function because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, SKYFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
