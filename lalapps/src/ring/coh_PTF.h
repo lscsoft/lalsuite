@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <ctype.h>
@@ -230,6 +230,8 @@ void coh_PTF_statistic(
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
     REAL8                   *Fcross,
+    REAL8                   *Fplustrig,
+    REAL8                   *Fcrosstrig,
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
@@ -248,10 +250,12 @@ void coh_PTF_statistic(
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     RingDataSegments        *segment[LAL_NUM_IFO+1],
     COMPLEX8FFTPlan         *invPlan,
-    struct bankDataOverlaps *chisqOverlaps,
-    REAL4 *powerBinsPlus,
-    REAL4 *powerBinsCross 
+    struct bankDataOverlaps **chisqOverlapsP,
+    REAL4 **frequencyRangesPlusP,
+    REAL4 **frequencyRangesCrossP,
+    struct timeval          startTime
 );
+
 UINT8 coh_PTF_add_triggers(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
@@ -370,7 +374,9 @@ void coh_PTF_cleanup(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
-    REAL8                   *Fcross
+    REAL8                   *Fcross,
+    REAL8                   *Fplustrig,
+    REAL8                   *Fcrosstrig
 );
 
 REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
@@ -383,6 +389,10 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
     InspiralTemplate        *template,
     UINT4                   eventNumber
 );
+
+long int timeval_subtract(struct timeval *t1);
+
+void timeval_print(struct timeval *tv);
 
 /* Function declarations for coh_PTF_template.c */
 

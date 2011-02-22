@@ -470,7 +470,9 @@ void coh_PTF_cleanup(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
-    REAL8                   *Fcross
+    REAL8                   *Fcross,
+    REAL8                   *Fplustrig,
+    REAL8                   *Fcrosstrig
     )
 {
   /* Clean up memory usage */
@@ -570,6 +572,10 @@ void coh_PTF_cleanup(
     LALFree( Fplus );
   if ( Fcross )
     LALFree( Fcross );
+  if ( Fplustrig )
+    LALFree( Fplustrig );
+  if ( Fcrosstrig )
+    LALFree( Fcrosstrig );
 }
 
 
@@ -695,13 +701,32 @@ struct coh_PTF_skyPoints *coh_PTF_generate_sky_points(
     skyPoints.declination = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
     for ( i=0 ; i<numSkyPoints ; i++ )
     {
-      skyPoints.rightAscension[i] = params->rightAscension;
-      skyPoints.declination[i]    = params->declination;
+      skyPoints.rightAscension[i] = params->rightAscension + 0.1*i;
+      skyPoints.declination[i]    = params->declination - 0.1*i;
     }
 
   }
-  fprintf(stderr,"Do I get here?");
 
   skyPoints.numPoints = numSkyPoints;
   return &skyPoints;
+}
+
+long int timeval_subtract(struct timeval *t1)
+{
+    struct timeval t2;
+    gettimeofday(&t2,NULL);
+    long int diff = (t2.tv_usec + 1000000 * t2.tv_sec) - (t1->tv_usec + 1000000 * t1->tv_sec);
+
+    return diff;
+}
+
+void timeval_print(struct timeval *tv)
+{
+    char buffer[30];
+    time_t curtime;
+
+    printf("%ld.%06ld", tv->tv_sec, tv->tv_usec);
+    curtime = tv->tv_sec;
+    strftime(buffer, 30, "%m-%d-%Y  %T", localtime(&curtime));
+    printf(" = %s.%06ld\n", buffer, tv->tv_usec);
 }
