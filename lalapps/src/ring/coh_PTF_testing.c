@@ -29,71 +29,91 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
 
 int main( int argc, char **argv )
 {
-// Declarations of parameters
+  /* Declarations of parameters */
   INT4 i,j,k;
-  UINT4 ui,uj;
-  struct coh_PTF_params      *params    = NULL;
-  ProcessParamsTable      *procpar   = NULL;
-  REAL4FFTPlan            *fwdplan   = NULL;
-  REAL4FFTPlan            *revplan   = NULL;
-  COMPLEX8FFTPlan         *invPlan   = NULL;
+  UINT4 ui,uj,sp;
+  /* process structures */
+  struct coh_PTF_params   *params                  = NULL;
+  ProcessParamsTable      *procpar                 = NULL;
+  /* sky position structures */
+  UINT4                    numSkyPoints             = 1;
+  struct coh_PTF_skyPoints skyPoints;
+  
+  /* FFT structures */
+  REAL4FFTPlan            *fwdplan                 = NULL;
+  REAL4FFTPlan            *revplan                 = NULL;
+  COMPLEX8FFTPlan         *invPlan                 = NULL;
+  /* input data and spectrum storage */
+  UINT4                   numDetectors             = 0;
+  UINT4                   singleDetector           = 0;
   REAL4TimeSeries         *channel[LAL_NUM_IFO+1];
   REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1];
   RingDataSegments        *segments[LAL_NUM_IFO+1];
-  INT4                    numTmplts = 0;
-  INT4                    numSpinTmplts = 0;
-  INT4                    numNoSpinTmplts = 0;
-  INT4  startTemplate     = -1;           /* index of first template      */
-  INT4  stopTemplate      = -1;           /* index of last template       */
-  INT4 numSegments        = 0;
-  InspiralTemplate        *PTFSpinTemplate = NULL;
-  InspiralTemplate        *PTFNoSpinTemplate = NULL;
-  InspiralTemplate        *PTFtemplate = NULL;
-  InspiralTemplate        *PTFbankhead = NULL;
-  FindChirpTemplate       *fcTmplt     = NULL;
-  InspiralTemplate        *PTFBankTemplates = NULL;
-  InspiralTemplate        *PTFBankvetoHead = NULL;
-  FindChirpTemplate       *bankFcTmplts = NULL;
-  FindChirpTmpltParams    *fcTmpltParams      = NULL;
-  FindChirpInitParams     *fcInitParams = NULL;
+  INT4                    numSegments              = 0;
+  /* template counters */
+  INT4                    numTmplts                = 0;
+  INT4                    numSpinTmplts            = 0;
+  INT4                    numNoSpinTmplts          = 0;
+  /* template indexes */
+  INT4                    startTemplate            = -1;
+  INT4                    stopTemplate             = -1;
+  /* bank structures */
+  UINT4                   UNUSED spinBank          = 0;
+  char                    spinFileName[256];
+  char                    noSpinFileName[256];
+  /* template and findchirp data structures */
+  InspiralTemplate        *PTFSpinTemplate         = NULL;
+  InspiralTemplate        *PTFNoSpinTemplate       = NULL;
+  InspiralTemplate        *PTFtemplate             = NULL;
+  InspiralTemplate        *PTFbankhead             = NULL;
+  FindChirpTemplate       *fcTmplt                 = NULL;
+  InspiralTemplate        *PTFBankTemplates        = NULL;
+  InspiralTemplate        *PTFBankvetoHead         = NULL;
+  FindChirpTemplate       *bankFcTmplts            = NULL;
+  FindChirpTmpltParams    *fcTmpltParams           = NULL;
+  FindChirpInitParams     *fcInitParams            = NULL;
   UINT4                   numPoints,ifoNumber,spinTemplate;
   REAL8Array              *PTFM[LAL_NUM_IFO+1];
   REAL8Array              *PTFN[LAL_NUM_IFO+1];
   COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1];
+  /* triggered sky position and sensitivity structures */
+  LIGOTimeGPS             segStartTime;
   time_t                  startTime;
   LALDetector             *detectors[LAL_NUM_IFO+1];
   REAL8                   *timeOffsets;
   REAL8                   *Fplus;
   REAL8                   *Fcross;
   REAL8                   detLoc[3];
-  REAL4TimeSeries         *cohSNR = NULL;
+  /* coherent statistic structures */
+  REAL4TimeSeries         *cohSNR                  = NULL;
   REAL4TimeSeries         *pValues[10];
   REAL4TimeSeries         *snrComps[LAL_NUM_IFO];
   REAL4TimeSeries         *gammaBeta[2];
-  REAL4TimeSeries         *nullSNR = NULL;
-  REAL4TimeSeries         *traceSNR = NULL;
-  REAL4TimeSeries         *bankVeto = NULL;
-  REAL4TimeSeries         *autoVeto = NULL;
-  REAL4TimeSeries         *chiSquare = NULL;
-  LIGOTimeGPS             segStartTime;
-  MultiInspiralTable      *eventList = NULL;
-  MultiInspiralTable      *thisEvent = NULL;
-  UINT8                   eventId = 0;
-  UINT4                   numDetectors = 0;
-  UINT4                   singleDetector = 0;
-  UINT4                   UNUSED spinBank = 0;
-  char                    spinFileName[256];
-  char                    noSpinFileName[256];
+  REAL4TimeSeries         *nullSNR                 = NULL;
+  REAL4TimeSeries         *traceSNR                = NULL;
+  /* consistency test structures */
+  REAL4TimeSeries         *bankVeto                = NULL;
+  REAL4TimeSeries         *autoVeto                = NULL;
+  REAL4TimeSeries         *chiSquare               = NULL;
+  /* output event structures */
+  MultiInspiralTable      *eventList               = NULL;
+  MultiInspiralTable      *thisEvent               = NULL;
+  UINT8                   eventId                  = 0;
   
+  /*------------------------------------------------------------------------*
+   * initialise                                                             *
+   *------------------------------------------------------------------------*/
+
   startTime = time(NULL);
 
   /* set error handlers to abort on error */
   set_abrt_on_error();
 
-  /* options are parsed and debug level is set here... */
-  
+  /*
+   * no lal mallocs before this! *
+   */
 
-  /* no lal mallocs before this! */
+  /* options are parsed and debug level is set here... */
   params = coh_PTF_get_params( argc, argv );
 
   /* create process params */
@@ -108,7 +128,6 @@ int main( int argc, char **argv )
   verbose("Made fft plans %ld \n", time(NULL)-startTime);
 
   /* Determine if we are analyzing single or multiple ifo data */
-
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( params->haveTrig[ifoNumber] )
@@ -116,6 +135,7 @@ int main( int argc, char **argv )
       numDetectors++;
     }
   }
+
   /* NULL out pointers where necessary */
   for ( i = 0 ; i < 10 ; i++ )
   {
@@ -148,7 +168,11 @@ int main( int argc, char **argv )
     singleDetector = 1;
   }
 
-  /* In this loop we read the data, generate segments and the PSD */
+  /*------------------------------------------------------------------------*
+   * read the data, generate segments and the PSD                           *
+   *------------------------------------------------------------------------*/
+
+  /* loop over ifos */ 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     /* Initialize some of the structures */
@@ -158,6 +182,7 @@ int main( int argc, char **argv )
     PTFM[ifoNumber] = NULL;
     PTFN[ifoNumber] = NULL;
     PTFqVec[ifoNumber] = NULL;
+    /* if ifo is on: */
     if ( params->haveTrig[ifoNumber] )
     {
       /* Read in data from the various ifos */
@@ -184,32 +209,39 @@ int main( int argc, char **argv )
     }
   }
 
-  /* Determine time delays and response functions */
-  /* This is computed for all detectors, even if not being analyzed */ 
+  /*------------------------------------------------------------------------*
+   * Determine time delays and response functions                           *
+   * This is computed for all detectors, even if not being analyzed         *
+   *------------------------------------------------------------------------*/
+
+  /* generate sky points array */
+  coh_PTF_generate_sky_points( &skyPoints, params );
+  numSkyPoints = skyPoints.numPoints;
+
+  /* allocate memory */ 
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
   Fplus = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
   Fcross = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
+  /* loop over ifos */
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
     XLALReturnDetector(detectors[ifoNumber] ,ifoNumber);
+    /* get location in three dimensions */
     for ( i = 0; i < 3; i++ )
     {
       detLoc[i] = (double) detectors[ifoNumber]->location[i];
     }
+    /* */
     for ( j = 0; j < numSegments; ++j )
     {
-      /* Despite being called segStartTime we use the time at the middle 
-      * of a segment */
+      /* set 'segStartTime' to trigger time */
       segStartTime = params->trigTime;
-      
-      /*XLALGPSAdd(&segStartTime,(j+1)*params->segmentDuration/2.0);*/
-//      XLALGPSAdd(&segStartTime,8.5*params->segmentDuration/2.0);
-      /*XLALGPSMultiply(&segStartTime,0.);
-      XLALGPSAdd(&segStartTime,874610713.072549154);*/
+      /* calculate time offsets */ 
       timeOffsets[ifoNumber] = 
           XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
           params->declination,&segStartTime);
+      /* calculate response functions */
       XLALComputeDetAMResponse(&Fplus[ifoNumber],
          &Fcross[ifoNumber],
          detectors[ifoNumber]->response,params->rightAscension,
@@ -230,8 +262,10 @@ int main( int argc, char **argv )
   PTFN[ifoNumber] = NULL;
   PTFqVec[ifoNumber] = NULL;
 
+  /*------------------------------------------------------------------------*
+   * Construct the null stream, its segments and its PSD                    *
+   *------------------------------------------------------------------------*/
 
-  /* Construct the null stream, its segments and its PSD */
   if ( params->doNullStream )
   {
     /* Read in data from the various ifos */
@@ -265,8 +299,10 @@ int main( int argc, char **argv )
     PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
   }
 
-  /* At this point we can discard the calibrated data, only the segments
-     and spectrum is needed now */
+  /*------------------------------------------------------------------------*
+   * At this point we can discard the calibrated data, only the segments    *
+   * and spectrum are needed now                                            *
+   *------------------------------------------------------------------------*/
 
   for( ifoNumber = 0; ifoNumber < (LAL_NUM_IFO+1); ifoNumber++)
   {
@@ -278,7 +314,11 @@ int main( int argc, char **argv )
     }
   }
 
-  /* Create the relevant structures that will be needed */
+  /*------------------------------------------------------------------------*
+   * Create the relevant structures that will be needed                     *
+   *------------------------------------------------------------------------*/
+
+  /* finchirp parameters */
   fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
   fcTmplt = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams = LALCalloc ( 1, sizeof( *fcTmpltParams ) );
@@ -304,10 +344,15 @@ int main( int argc, char **argv )
       PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
     }
   }
+
   /* Create an inverse FFT plan */
   invPlan = XLALCreateReverseCOMPLEX8FFTPlan( numPoints, 0 );
 
-  /* Read in the tmpltbank xml files */
+  /*------------------------------------------------------------------------*
+   * Read in the tmpltbank xml files                                        *
+   *------------------------------------------------------------------------*/
+
+  /* read spinning bank */
   if ( params->spinBank )
   {
     numSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFSpinTemplate,
@@ -321,6 +366,8 @@ int main( int argc, char **argv )
       params->spinBank = NULL;
       spinBank = 0;
   }
+
+  /* read non-spinning bank */
   if ( params->noSpinBank )
   {
     numNoSpinTmplts = InspiralTmpltBankFromLIGOLw( &PTFNoSpinTemplate,
@@ -333,6 +380,7 @@ int main( int argc, char **argv )
     else
       params->noSpinBank = NULL;
   }
+
   /* If both banks present combine them and mark where to swap over */
   if ( params->spinBank && params->noSpinBank )
   {
@@ -346,6 +394,10 @@ int main( int argc, char **argv )
     }
     PTFtemplate = PTFNoSpinTemplate;
   }
+
+  /*------------------------------------------------------------------------*
+   * initialise bank veto
+   *------------------------------------------------------------------------*/
 
   /* Create the templates needed for the bank veto, if necessary */
   UINT4 subBankSize = 0;
@@ -405,6 +457,10 @@ int main( int argc, char **argv )
         
   }
 
+  /*------------------------------------------------------------------------*
+   * initialise auto veto
+   *------------------------------------------------------------------------*/
+
   /* Create the structures needed for the auto veto, if necessary */
   UINT4 timeStepPoints = 0;
   struct bankComplexTemplateOverlaps *autoTempOverlaps = NULL;
@@ -432,15 +488,21 @@ int main( int argc, char **argv )
       }
     }
   }
-    
+   
+  /*------------------------------------------------------------------------*
+   * find gravitational waves
+   *------------------------------------------------------------------------*/
 
   PTFbankhead = PTFtemplate;
-  for ( j = 0; j < numSegments; ++j ) /* Loop over segments */
+
+  /* loop over segments */
+  for ( j = 0; j < numSegments; ++j )
   {
     if ( params->doBankVeto )
     {
       /* Calculate overlap between bank templates and data for bank veto */
-      for ( ui = 0 ; ui < subBankSize ; ui++ ) /* Loop over bank veto temps*/
+      /* loop over bank veto templates */
+      for ( ui = 0 ; ui < subBankSize ; ui++ )
       {
         for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
@@ -607,25 +669,41 @@ int main( int argc, char **argv )
       /* FIXME: Sky location looping should go here.
          Clustering may be required if we are doing this! */
 
-      // This function calculates the cohSNR time series and all of the
-      // signal based vetoes as appropriate
-      coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
-          spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
-          gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
-          subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
-          autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
-     
-      verbose("Made coherent statistic for segment %d, template %d at %ld \n",
-          j,i,time(NULL)-startTime);      
+      for ( sp = 0; sp < numSkyPoints ; sp++ )
+      {
+        /* set 'segStartTime' to trigger time */
+        segStartTime = params->trigTime;
+        /* calculate time offsets */
+        timeOffsets[ifoNumber] =
+            XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+            params->declination,&segStartTime);
+        /* calculate response functions */
+        XLALComputeDetAMResponse(&Fplus[ifoNumber],
+           &Fcross[ifoNumber],
+           detectors[ifoNumber]->response,skyPoints.rightAscension[sp],
+           skyPoints.declination[sp],0.,
+           XLALGreenwichMeanSiderealTime(&segStartTime));
 
-      // This function adds any loud events to the list of triggers 
-      eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
-      verbose("Generated triggers for segment %d, template %d at %ld \n",
-          j,i,time(NULL)-startTime);
-//      Clustering could happen here. The clustering routine needs refining
-//      coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-//      verbose("Clustered triggers for segment %d, template %d at %ld \n",
- //         j,i,time(NULL)-startTime);
+        // This function calculates the cohSNR time series and all of the
+        // signal based vetoes as appropriate
+        coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
+            spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
+            gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
+            subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
+            autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
+     
+        verbose("Made coherent statistic for segment %d, template %d at %ld \n",
+            j,i,time(NULL)-startTime);      
+
+        // This function adds any loud events to the list of triggers 
+        eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
+        verbose("Generated triggers for segment %d, template %d at %ld \n",
+            j,i,time(NULL)-startTime);
+//        Clustering could happen here. The clustering routine needs refining
+//        coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
+//        verbose("Clustered triggers for segment %d, template %d at %ld \n",
+ //           j,i,time(NULL)-startTime);
+      }
       // Then we get a bunch of memory freeing statements
       for ( k = 0 ; k < 10 ; k++ )
       {
