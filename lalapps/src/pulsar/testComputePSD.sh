@@ -55,6 +55,11 @@ if ! eval $cmdline; then
 fi
 
 ## ----- compare result PSD to reference result in source-directory
+if [ ! -r "$outPSD" -o ! -r $ "$refPSD" ]; then
+    echo "ERROR: missing psd output file '$outPSD' or '$refPSD'"
+    exit 1
+fi
+
 cmp=`paste $outPSD $refPSD | LC_ALL=C awk 'BEGIN {n=0; maxErr = 0; avgErr = 0; binsOff = 0} {n+=1; dFreq = $3 - $1; if ( dFreq != 0 ) binsOff ++; relErr = 2*($4 - $2)/($4 + $2); if (relErr > maxErr) maxErr = relErr; avgErr += relErr } END { avgErr /= n; printf "binsOff=%d; avgErr=%g; maxErr=%g", binsOff, avgErr, maxErr}'`
 
 eval $cmp

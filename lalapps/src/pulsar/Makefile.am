@@ -34,7 +34,6 @@ lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 
 EXTRA_DIST = \
-testComputePSD.sh\
 make_locked_data_list \
 make_cluster_data_list \
 make_job_input_data.c \
@@ -63,7 +62,10 @@ S1-H2segments.txt \
 S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
-S2-L1segments.txt
+S2-L1segments.txt \
+testComputePSD.sh \
+psd_ref.dat
+
 
 TESTS = testComputePSD.sh
 
