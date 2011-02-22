@@ -2436,9 +2436,18 @@ int compareCoarseGridUindex(const void *a,const void *b) {
 
 
 /** Function to read a segment list from given filename, returns a *sorted* SegmentList
+ *
+ * The segment-list format parse here is consistent with Xavie's segment lists used previously
+ * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
+ * allowed comment-characters are '%' and '#'
+ *
+ * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
+ * contained in that segment. This will be used as a consistency check in
+ * XLALSetUpStacksFromSegmentList().
+ *
  */
 LALSegList *
-XLALReadSegmentsFromFile ( const char *fname	/**< file containing segment list */
+XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segment list */
                            )
 {
   const char *fn = __func__;
@@ -2466,20 +2475,29 @@ XLALReadSegmentsFromFile ( const char *fname	/**< file containing segment list *
   UINT4 iSeg;
   for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
     {
-      REAL8 ti, T;
+      REAL8 t0, t1, TspanHours;
+      INT4 NSFT;
       LALSeg thisSeg;
-      if ( sscanf ( flines->lines->tokens[iSeg], "%lf  %lf\n", &ti, &T ) != 2 ) {
-        XLALPrintError ("%s: failed to parse data-line %d in segment-list %s\n", fn, iSeg, fname );
+      if ( sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d\n", &t0, &t1, &TspanHours, &NSFT ) != 4 ) {
+        XLALPrintError ("%s: failed to parse data-line %d in segment-list %s: '%s'\n", fn, iSeg, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
         XLALDestroyParsedDataFile ( &flines );
         XLAL_ERROR_NULL ( fn, XLAL_ESYS );
       }
-      LIGOTimeGPS start, end;
-      XLALGPSSetREAL8( &start, ti );
-      XLALGPSSetREAL8( &end, ti + T );
+      /* check internal consistency of these numbers */
+      REAL8 hours = 3600.0;
+      if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
+        XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", fn, iSeg, t0, t1, TspanHours );
+        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
 
-      if ( XLALSegSet ( &thisSeg, &start, &end, iSeg ) != XLAL_SUCCESS )
+      LIGOTimeGPS start, end;
+      XLALGPSSetREAL8( &start, t0 );
+      XLALGPSSetREAL8( &end,   t1 );
+
+      /* we set number of SFTs as 'id' field, as we have no other use for it */
+      if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
         XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
 
       if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
@@ -2605,10 +2623,11 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
         } /* while true */
 
-      /* check if we found any at all? Otherwise terminate with error */
+      /* check the number of SFTs we found in this segment against the nominal value,
+       * stored in the segment list field 'id' */
       INT4 numSFTsInSeg = iSFT1 - iSFT0 + 1;
-      if ( numSFTsInSeg <= 1 ) {
-        XLALPrintError ("%s: Empty or single-SFT segment iSeg=%d: numSFTs[iSeg] = %d\n", fn, iSeg, numSFTsInSeg );
+      if ( numSFTsInSeg != thisSeg->id ) {
+        XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iSeg, numSFTsInSeg, thisSeg->id );
         XLAL_ERROR_NULL ( fn, XLAL_EDOM );
       }
 

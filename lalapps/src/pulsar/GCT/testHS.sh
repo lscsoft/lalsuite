@@ -97,7 +97,11 @@ tmpTime=$startTime
 ic1="1"
 while [ "$ic1" -le "$Nsegments" ];
 do
-    echo "$tmpTime $Tsegment" >> $segFile
+    t0=$tmpTime
+    t1=`echo $t0 $Tsegment | awk '{print $1 + $2}'`
+    TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
+    NSFT=`echo $Tsegment $Tsft | awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+    echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
     segs[${ic1}]=$tmpTime # save seg's beginning for later use
     echo "Segment: "$ic1" of "$Nsegments"   GPS start time: "${segs[${ic1}]}
 
