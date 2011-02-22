@@ -666,13 +666,14 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
 
 /* construct list of of (ra, dec) pairs for multiple sky points */
 
-void coh_PTF_generate_sky_points( 
-    struct coh_PTF_skyPoints *skyPoints,
+struct coh_PTF_skyPoints *coh_PTF_generate_sky_points( 
     struct coh_PTF_params *params
     )
 {
   /* set variables */
+  static struct coh_PTF_skyPoints skyPoints;
   UINT4 numSkyPoints = 1;
+  UINT4 i;
 
   /* if all sky... */
   if ( params->declination == -1000. )
@@ -690,13 +691,17 @@ void coh_PTF_generate_sky_points(
   else // if single point
   {
     fprintf( stderr, "loop over sky points coming soon...\n" );
-    skyPoints->rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
-    skyPoints->declination    = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
-
-    skyPoints->rightAscension[0] = params->rightAscension;
-    skyPoints->declination[0]    = params->declination;
+    skyPoints.rightAscension  = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+    skyPoints.declination = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+    for ( i=0 ; i<numSkyPoints ; i++ )
+    {
+      skyPoints.rightAscension[i] = params->rightAscension;
+      skyPoints.declination[i]    = params->declination;
+    }
 
   }
+  fprintf(stderr,"Do I get here?");
 
-  skyPoints->numPoints = numSkyPoints;
+  skyPoints.numPoints = numSkyPoints;
+  return &skyPoints;
 }

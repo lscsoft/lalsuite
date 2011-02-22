@@ -625,7 +625,6 @@ int generate_file_name(
 
 /* generate array of sky points based on RA, DEC and DECERROR */
 /* should return linked list */
-void coh_PTF_generate_sky_points(
-    struct coh_PTF_skyPoints * skyPoints,
+struct coh_PTF_skyPoints *coh_PTF_generate_sky_points(
     struct coh_PTF_params *params
 );

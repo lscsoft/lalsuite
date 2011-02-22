@@ -36,8 +36,8 @@ int main( int argc, char **argv )
   struct coh_PTF_params   *params                  = NULL;
   ProcessParamsTable      *procpar                 = NULL;
   /* sky position structures */
-  UINT4                    numSkyPoints             = 1;
-  struct coh_PTF_skyPoints skyPoints;
+  UINT4                    numSkyPoints;
+  struct coh_PTF_skyPoints *skyPoints;
   
   /* FFT structures */
   REAL4FFTPlan            *fwdplan                 = NULL;
@@ -215,8 +215,9 @@ int main( int argc, char **argv )
    *------------------------------------------------------------------------*/
 
   /* generate sky points array */
-  coh_PTF_generate_sky_points( &skyPoints, params );
-  numSkyPoints = skyPoints.numPoints;
+//  skyPoints = LALCalloc(1, sizeof( struct coh_PTF_skyPoints ));
+  skyPoints = coh_PTF_generate_sky_points( params );
+  numSkyPoints = skyPoints->numPoints;
 
   /* allocate memory */ 
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
@@ -233,21 +234,17 @@ int main( int argc, char **argv )
       detLoc[i] = (double) detectors[ifoNumber]->location[i];
     }
     /* */
-    for ( j = 0; j < numSegments; ++j )
-    {
-      /* set 'segStartTime' to trigger time */
-      segStartTime = params->trigTime;
-      /* calculate time offsets */ 
-      timeOffsets[ifoNumber] = 
-          XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
-          params->declination,&segStartTime);
-      /* calculate response functions */
-      XLALComputeDetAMResponse(&Fplus[ifoNumber],
-         &Fcross[ifoNumber],
-         detectors[ifoNumber]->response,params->rightAscension,
-         params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
-    }
-    LALFree(detectors[ifoNumber]);
+    /* set 'segStartTime' to trigger time */
+    segStartTime = params->trigTime;
+    /* calculate time offsets */ 
+    timeOffsets[ifoNumber] = 
+        XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+        params->declination,&segStartTime);
+    /* calculate response functions */
+    XLALComputeDetAMResponse(&Fplus[ifoNumber],
+       &Fcross[ifoNumber],
+       detectors[ifoNumber]->response,params->rightAscension,
+       params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
   }
   
 
@@ -673,17 +670,19 @@ int main( int argc, char **argv )
       {
         /* set 'segStartTime' to trigger time */
         segStartTime = params->trigTime;
-        /* calculate time offsets */
-        timeOffsets[ifoNumber] =
-            XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
-            params->declination,&segStartTime);
-        /* calculate response functions */
-        XLALComputeDetAMResponse(&Fplus[ifoNumber],
-           &Fcross[ifoNumber],
-           detectors[ifoNumber]->response,skyPoints.rightAscension[sp],
-           skyPoints.declination[sp],0.,
-           XLALGreenwichMeanSiderealTime(&segStartTime));
-
+        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+        {
+          /* calculate time offsets */
+          timeOffsets[ifoNumber] =
+              XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+              params->declination,&segStartTime);
+          /* calculate response functions */
+          XLALComputeDetAMResponse(&Fplus[ifoNumber],
+             &Fcross[ifoNumber],
+             detectors[ifoNumber]->response,skyPoints->rightAscension[sp],
+             skyPoints->declination[sp],0.,
+             XLALGreenwichMeanSiderealTime(&segStartTime));
+        }
         // This function calculates the cohSNR time series and all of the
         // signal based vetoes as appropriate
         coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
@@ -785,8 +784,10 @@ int main( int argc, char **argv )
     }
     LALFree( autoTempOverlaps );
   }
-
-
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    LALFree(detectors[ifoNumber]);
+  }
   verbose("Generated output xml file, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
   LALCheckMemoryLeaks();
