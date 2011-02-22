@@ -138,6 +138,7 @@ struct coh_PTF_params {
   REAL4        nonspinSNR2threshold;
   REAL4        rightAscension;
   REAL4        declination;
+  REAL4        declinationError;
   const char  *bankFile;
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
@@ -210,6 +211,12 @@ typedef struct tagRingDataSegments
   COMPLEX8FrequencySeries *sgmnt;
 }
 RingDataSegments;
+
+struct coh_PTF_skyPoints {
+  UINT4 numPoints;
+  REAL8 *rightAscension;
+  REAL8 *declination;
+};
 
 /* Function declarations for coh_PTF_inspiral */
 
@@ -616,3 +623,9 @@ int generate_file_name(
     int dt
 );
 
+/* generate array of sky points based on RA, DEC and DECERROR */
+/* should return linked list */
+void coh_PTF_generate_sky_points(
+    struct coh_PTF_skyPoints * skyPoints,
+    struct coh_PTF_params *params
+);

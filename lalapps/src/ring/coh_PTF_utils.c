@@ -664,3 +664,39 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
   return cnvTemplate;
 }
 
+/* construct list of of (ra, dec) pairs for multiple sky points */
+
+void coh_PTF_generate_sky_points( 
+    struct coh_PTF_skyPoints *skyPoints,
+    struct coh_PTF_params *params
+    )
+{
+  /* set variables */
+  UINT4 numSkyPoints = 1;
+
+  /* if all sky... */
+  if ( params->declination == -1000. )
+  {
+    fprintf( stderr, "all sky mode is not implemented yet, please provide --declination" );
+    exit(1);
+  }
+
+  /* if sky region */
+  if ( params->declinationError > 0 )
+  {
+    fprintf( stderr, "declinationError=%e\n", params->declinationError );
+    exit(1);
+  }
+  else // if single point
+  {
+    fprintf( stderr, "loop over sky points coming soon...\n" );
+    skyPoints->rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+    skyPoints->declination    = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+
+    skyPoints->rightAscension[0] = params->rightAscension;
+    skyPoints->declination[0]    = params->declination;
+
+  }
+
+  skyPoints->numPoints = numSkyPoints;
+}

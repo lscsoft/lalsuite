@@ -31,10 +31,14 @@ int main( int argc, char **argv )
 {
   /* Declarations of parameters */
   INT4 i,j,k;
-  UINT4 ui,uj;
+  UINT4 ui,uj,sp;
   /* process structures */
   struct coh_PTF_params   *params                  = NULL;
   ProcessParamsTable      *procpar                 = NULL;
+  /* sky position structures */
+  UINT4                    numSkyPoints             = 1;
+  struct coh_PTF_skyPoints skyPoints;
+  
   /* FFT structures */
   REAL4FFTPlan            *fwdplan                 = NULL;
   REAL4FFTPlan            *revplan                 = NULL;
@@ -209,6 +213,10 @@ int main( int argc, char **argv )
    * Determine time delays and response functions                           *
    * This is computed for all detectors, even if not being analyzed         *
    *------------------------------------------------------------------------*/
+
+  /* generate sky points array */
+  coh_PTF_generate_sky_points( &skyPoints, params );
+  numSkyPoints = skyPoints.numPoints;
 
   /* allocate memory */ 
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
@@ -661,25 +669,41 @@ int main( int argc, char **argv )
       /* FIXME: Sky location looping should go here.
          Clustering may be required if we are doing this! */
 
-      // This function calculates the cohSNR time series and all of the
-      // signal based vetoes as appropriate
-      coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
-          spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
-          gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
-          subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
-          autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
-     
-      verbose("Made coherent statistic for segment %d, template %d at %ld \n",
-          j,i,time(NULL)-startTime);      
+      for ( sp = 0; sp < numSkyPoints ; sp++ )
+      {
+        /* set 'segStartTime' to trigger time */
+        segStartTime = params->trigTime;
+        /* calculate time offsets */
+        timeOffsets[ifoNumber] =
+            XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+            params->declination,&segStartTime);
+        /* calculate response functions */
+        XLALComputeDetAMResponse(&Fplus[ifoNumber],
+           &Fcross[ifoNumber],
+           detectors[ifoNumber]->response,skyPoints.rightAscension[sp],
+           skyPoints.declination[sp],0.,
+           XLALGreenwichMeanSiderealTime(&segStartTime));
 
-      // This function adds any loud events to the list of triggers 
-      eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
-      verbose("Generated triggers for segment %d, template %d at %ld \n",
-          j,i,time(NULL)-startTime);
-//      Clustering could happen here. The clustering routine needs refining
-//      coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-//      verbose("Clustered triggers for segment %d, template %d at %ld \n",
- //         j,i,time(NULL)-startTime);
+        // This function calculates the cohSNR time series and all of the
+        // signal based vetoes as appropriate
+        coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
+            spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,j,pValues,
+            gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
+            subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
+            autoTempOverlaps,fcTmplt,invspec,segments,invPlan);
+     
+        verbose("Made coherent statistic for segment %d, template %d at %ld \n",
+            j,i,time(NULL)-startTime);      
+
+        // This function adds any loud events to the list of triggers 
+        eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
+        verbose("Generated triggers for segment %d, template %d at %ld \n",
+            j,i,time(NULL)-startTime);
+//        Clustering could happen here. The clustering routine needs refining
+//        coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
+//        verbose("Clustered triggers for segment %d, template %d at %ld \n",
+ //           j,i,time(NULL)-startTime);
+      }
       // Then we get a bunch of memory freeing statements
       for ( k = 0 ; k < 10 ; k++ )
       {

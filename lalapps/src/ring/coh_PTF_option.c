@@ -100,9 +100,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { "right-ascension",         required_argument, 0, 'f' },
     { "declination",             required_argument, 0, 'F' },
+    { "declination-error",       required_argument, 0, 'g' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>:g";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -187,6 +188,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'F': /* Declination */
         localparams.declination = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'g': /* Error in declination */
+        localparams.declinationError = atof( optarg ) * LAL_PI_180;
         break;
       case 'h': /* help */
         coh_PTF_usage( program );
@@ -304,6 +308,7 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   /* Right Ascension and declination must be provided */
   params->rightAscension = -1000.;
   params->declination = -1000.;
+  params->declinationError = 0.;
 
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
@@ -400,6 +405,12 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   }
   sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
   sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
+  sanity_check( params->declinationError >= -LAL_PI/2. && params->declinationError <=LAL_PI/2. );
+
+  /*(if ( params->declinationError > 0 && params->doNullStream )
+  {
+    error( "--do-null-stream and --declination-error are incompatbile. Null stream on more than one sky point is a bad idea.\n" );
+  }*/
 
   /* Check that filter frequencies have been given */
   sanity_check( params->highpassFrequency > 0);
@@ -532,6 +543,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
   fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
   fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
+  fprintf( stderr, "--error-declination=err error in sky location of external trigger in degrees\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
