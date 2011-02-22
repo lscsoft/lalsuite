@@ -397,6 +397,30 @@ LALCompareRingdowns (
     if ( ds2 < (aAcc.ds_sq + bAcc.ds_sq)/2. )
     {
       params->match = 1;
+      if ( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"H2")==0)
+        ||(strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"H1")==0) )
+      {
+        aPtr->ds2_H1H2=ds2;
+        bPtr->ds2_H1H2=ds2;
+      }
+      else if( (strcmp(aPtr->ifo,"H1")==0 && strcmp(bPtr->ifo,"L1")==0)
+        || (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H1")==0) )
+      {
+        aPtr->ds2_H1L1=ds2;
+        bPtr->ds2_H1L1=ds2;
+      }
+      else if( (strcmp(aPtr->ifo,"H2")==0 && strcmp(bPtr->ifo,"L1")==0)
+        || (strcmp(aPtr->ifo,"L1")==0 && strcmp(bPtr->ifo,"H2")==0) )
+      {
+        aPtr->ds2_H2L1=ds2;
+        bPtr->ds2_H2L1=ds2;
+      }
+      else
+      {
+        LALInfo( status, "Unknown pair of ifo's" );
+        params->match = 0;
+        goto exit;
+      }
     }
     else
     {
