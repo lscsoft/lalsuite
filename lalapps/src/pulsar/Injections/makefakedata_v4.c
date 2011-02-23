@@ -1323,8 +1323,8 @@ InitUserVars (LALStatus *status)
 
   uvar_logfile = NULL;
 
-  /* per default we generate the whole timeseries first (except for hardware-injections)*/
-  uvar_generationMode = GENERATE_ALL_AT_ONCE;
+  /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
+  uvar_generationMode = GENERATE_PER_SFT;
 
   uvar_window = NULL;	/* By default, use rectangular window */
 
