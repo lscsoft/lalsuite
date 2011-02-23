@@ -812,7 +812,12 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         REAL8 COVEIGENFRAC;
         REAL8 IOTADISTANCEFRAC=0.05;
         ProcessParamsTable *ppt;
-        
+  
+        ppt=getProcParamVal(runState->commandLine, "--iotaDistance");
+        if (ppt) {
+          IOTADISTANCEFRAC = atof(ppt->value);
+          printf("IOTADISTANCEFRAC = %f\n",IOTADISTANCEFRAC);
+        }
         ppt=getProcParamVal(runState->commandLine, "--covarianceMatrix");
         if (ppt) {
           COVEIGENFRAC = 1.0;
