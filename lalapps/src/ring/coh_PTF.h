@@ -139,6 +139,7 @@ struct coh_PTF_params {
   REAL4        rightAscension;
   REAL4        declination;
   REAL4        declinationError;
+  UINT4        skyLooping;
   const char  *bankFile;
   const char  *segmentsToDoList;
   const char  *templatesToDoList;
@@ -217,6 +218,18 @@ struct coh_PTF_skyPoints {
   REAL8 *rightAscension;
   REAL8 *declination;
 };
+
+/* ENUM for sky location looping */
+
+typedef enum
+{
+  SINGLE_SKY_POINT,
+  TWO_DET_SKY_POINT_ERROR,
+  SKY_POINT_ERROR,
+  ALL_SKY,
+  TWO_DET_ALL_SKY
+}
+Skyloopingtype;
 
 /* Function declarations for coh_PTF_inspiral */
 

@@ -217,9 +217,11 @@ int main( int argc, char **argv )
    *------------------------------------------------------------------------*/
 
   /* generate sky points array */
-//  skyPoints = LALCalloc(1, sizeof( struct coh_PTF_skyPoints ));
-  skyPoints = coh_PTF_generate_sky_points( params );
-  numSkyPoints = skyPoints->numPoints;
+  if (params->skyLooping == SKY_POINT_ERROR)
+  {
+    skyPoints = coh_PTF_generate_sky_points( params );
+    numSkyPoints = skyPoints->numPoints;
+  }
 
   /* allocate memory */ 
   timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
@@ -228,29 +230,31 @@ int main( int argc, char **argv )
   Fplustrig = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
   Fcrosstrig = LALCalloc(1, LAL_NUM_IFO*sizeof( REAL8 ));
   /* loop over ifos */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  if ((params->skyLooping != ALL_SKY) && (params->skyLooping!=TWO_DET_ALL_SKY))
   {
-    detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
-    XLALReturnDetector(detectors[ifoNumber] ,ifoNumber);
-    /* get location in three dimensions */
-    for ( i = 0; i < 3; i++ )
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
     {
-      detLoc[i] = (double) detectors[ifoNumber]->location[i];
+      detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
+      XLALReturnDetector(detectors[ifoNumber] ,ifoNumber);
+      /* get location in three dimensions */
+     for ( i = 0; i < 3; i++ )
+     {
+       detLoc[i] = (double) detectors[ifoNumber]->location[i];
+      }
+
+      /* set 'segStartTime' to trigger time */
+      segStartTime = params->trigTime;
+      /* calculate time offsets */ 
+      timeOffsets[ifoNumber] = 
+          XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+          params->declination,&segStartTime);
+      /* calculate response functions */
+      XLALComputeDetAMResponse(&Fplustrig[ifoNumber],
+         &Fcrosstrig[ifoNumber],
+         detectors[ifoNumber]->response,params->rightAscension,
+         params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
     }
-    /* */
-    /* set 'segStartTime' to trigger time */
-    segStartTime = params->trigTime;
-    /* calculate time offsets */ 
-    timeOffsets[ifoNumber] = 
-        XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
-        params->declination,&segStartTime);
-    /* calculate response functions */
-    XLALComputeDetAMResponse(&Fplustrig[ifoNumber],
-       &Fcrosstrig[ifoNumber],
-       detectors[ifoNumber]->response,params->rightAscension,
-       params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
   }
-  
 
   numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
 
@@ -673,48 +677,75 @@ int main( int argc, char **argv )
       
       /* FIXME: Sky location looping should go here.
          Clustering may be required if we are doing this! */
-
-      for ( sp = 0; sp < numSkyPoints ; sp++ )
+      switch(params->skyLooping)
       {
-        /* set 'segStartTime' to trigger time */
-        segStartTime = params->trigTime;
-        for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-        {
-          for ( k = 0; k < 3; k++ )
-          {
-            detLoc[k] = (double) detectors[ifoNumber]->location[k];
-          }
-          /* calculate time offsets */
-          timeOffsets[ifoNumber] =
-              XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
-              params->declination,&segStartTime);
-          /* calculate response functions */
-          XLALComputeDetAMResponse(&Fplus[ifoNumber],
-             &Fcross[ifoNumber],
-             detectors[ifoNumber]->response,skyPoints->rightAscension[sp],
-             skyPoints->declination[sp],0.,
-             XLALGreenwichMeanSiderealTime(&segStartTime));
-        }
-        // This function calculates the cohSNR time series and all of the
-        // signal based vetoes as appropriate
-        coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
-            spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,Fplustrig,
-            Fcrosstrig,j,pValues,
+        case SINGLE_SKY_POINT:
+          coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
+            spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,Fplus,
+            Fcross,j,pValues,
             gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
             subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
-            autoTempOverlaps,fcTmplt,invspec,segments,invPlan,&chisqOverlaps,&frequencyRangesPlus,&frequencyRangesCross,startTime);
-     
-        verbose("Made coherent statistic for segment %d, template %d at %ld \n",
-            j,i,timeval_subtract(&startTime));      
-
-        // This function adds any loud events to the list of triggers 
-        eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
-        verbose("Generated triggers for segment %d, template %d at %ld \n",
+            autoTempOverlaps,fcTmplt,invspec,segments,invPlan,&chisqOverlaps,
+            &frequencyRangesPlus,&frequencyRangesCross,startTime);
+          verbose("Made coherent statistic for segment %d, template %d at %ld \n",
             j,i,timeval_subtract(&startTime));
-//        Clustering could happen here. The clustering routine needs refining
-//        coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-//        verbose("Clustered triggers for segment %d, template %d at %ld \n",
- //           j,i,time(NULL)-startTime);
+          eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
+          verbose("Generated triggers for segment %d, template %d at %ld \n",
+            j,i,timeval_subtract(&startTime));
+          break;
+        case TWO_DET_SKY_POINT_ERROR:
+          fprintf(stderr,"Two detector given a sky point with error is not implemented yet!\n");
+          break;
+        case SKY_POINT_ERROR:
+          for ( sp = 0; sp < numSkyPoints ; sp++ )
+          {
+            /* set 'segStartTime' to trigger time */
+            segStartTime = params->trigTime;
+            for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+            {
+              for ( k = 0; k < 3; k++ )
+              {
+                detLoc[k] = (double) detectors[ifoNumber]->location[k];
+              }
+              /* calculate time offsets */
+              timeOffsets[ifoNumber] =
+                  XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
+                  params->declination,&segStartTime);
+              /* calculate response functions */
+              XLALComputeDetAMResponse(&Fplus[ifoNumber],
+                 &Fcross[ifoNumber],
+                 detectors[ifoNumber]->response,skyPoints->rightAscension[sp],
+                 skyPoints->declination[sp],0.,
+                 XLALGreenwichMeanSiderealTime(&segStartTime));
+            }
+            // This function calculates the cohSNR time series and all of the
+            // signal based vetoes as appropriate
+            coh_PTF_statistic(cohSNR,PTFM,PTFqVec,params,
+                spinTemplate,singleDetector,timeOffsets,Fplus,Fcross,Fplustrig,
+                Fcrosstrig,j,pValues,
+                gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,
+                subBankSize,bankOverlaps,bankNormOverlaps,dataOverlaps,
+                autoTempOverlaps,fcTmplt,invspec,segments,invPlan,&chisqOverlaps,&frequencyRangesPlus,&frequencyRangesCross,startTime);
+     
+            verbose("Made coherent statistic for segment %d, template %d at %ld \n",
+                j,i,timeval_subtract(&startTime));      
+
+            // This function adds any loud events to the list of triggers 
+            eventId = coh_PTF_add_triggers(params,&eventList,&thisEvent,cohSNR,*PTFtemplate,eventId,spinTemplate,singleDetector,pValues,gammaBeta,snrComps,nullSNR,traceSNR,bankVeto,autoVeto,chiSquare,PTFM);
+            verbose("Generated triggers for segment %d, template %d at %ld \n",
+                j,i,timeval_subtract(&startTime));
+            // Clustering can happen here. The clustering routine needs refining
+            // coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
+            // verbose("Clustered triggers for segment %d, template %d at %ld \n",
+            // j,i,time(NULL)-startTime);
+          }
+          break;
+        case ALL_SKY:
+          fprintf(stderr,"All sky calculation is not implemented yet\n");
+          break;
+        case TWO_DET_ALL_SKY:
+          fprintf(stderr,"Two detector all sky calculation is not implemented yet\n");
+          break;
       }
       // Then we get a bunch of memory freeing statements
       for ( k = 0 ; k < 10 ; k++ )
@@ -741,6 +772,24 @@ int main( int argc, char **argv )
       if (autoVeto) XLALDestroyREAL4TimeSeries(autoVeto);
       if (chiSquare) XLALDestroyREAL4TimeSeries(chiSquare);
       XLALDestroyREAL4TimeSeries(cohSNR);
+      if (chisqOverlaps)
+      {
+        for( uj = 0; uj < params->numChiSquareBins; uj++)
+        {
+          for( k = 0; k < LAL_NUM_IFO; k++)
+          {
+            if (chisqOverlaps[uj].PTFqVec[k])
+            {
+              XLALDestroyCOMPLEX8VectorSequence(chisqOverlaps[uj].PTFqVec[k]);
+            }
+          }
+        }
+        LALFree(chisqOverlaps);
+      }
+      if (frequencyRangesPlus)
+        LALFree(frequencyRangesPlus);
+      if (frequencyRangesCross)
+        LALFree(frequencyRangesCross);
     }
     if ( params->doBankVeto )
     {
@@ -797,25 +846,6 @@ int main( int argc, char **argv )
     }
     LALFree( autoTempOverlaps );
   }
-
-  if (chisqOverlaps)
-  {
-    for( uj = 0; uj < params->numChiSquareBins; uj++)
-    {
-      for( k = 0; k < LAL_NUM_IFO; k++)
-      {
-        if (chisqOverlaps[uj].PTFqVec[k])
-        {
-          XLALDestroyCOMPLEX8VectorSequence(chisqOverlaps[uj].PTFqVec[k]);
-        }
-      }
-    }
-    LALFree(chisqOverlaps);
-  }
-  if (frequencyRangesPlus)
-    LALFree(frequencyRangesPlus);
-  if (frequencyRangesCross)
-    LALFree(frequencyRangesCross);
 
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {

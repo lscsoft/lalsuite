@@ -337,6 +337,7 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->nullStatThreshold = 5.25;
   params->nullStatGradOn = 30.;
   params->nullStatGradient = 50./700.;
+  params->skyLooping = SINGLE_SKY_POINT;
 
   return 0;
 }
