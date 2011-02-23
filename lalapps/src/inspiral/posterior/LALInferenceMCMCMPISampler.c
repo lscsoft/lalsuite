@@ -816,7 +816,6 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         ppt=getProcParamVal(runState->commandLine, "--iotaDistance");
         if (ppt) {
           IOTADISTANCEFRAC = atof(ppt->value);
-          printf("IOTADISTANCEFRAC = %f\n",IOTADISTANCEFRAC);
         }
         ppt=getProcParamVal(runState->commandLine, "--covarianceMatrix");
         if (ppt) {
