@@ -584,6 +584,13 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       exit (0);
     }
 
+  /* ----- check contradictory/conflicting options ----- */
+  if ( uvar_outSingleSFT && ( uvar_generationMode == GENERATE_PER_SFT ) ) {
+    XLALPrintError ("%s: sorry, --outSingleSFT currently only works in --generationMode=0!\n", fn );
+    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+  }
+
+
   /* read in par file parameters if given */
    if (have_parfile){
       XLALReadTEMPOParFile( &pulparams, uvar_parfile);
