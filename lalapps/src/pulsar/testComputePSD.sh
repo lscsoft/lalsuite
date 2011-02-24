@@ -55,7 +55,7 @@ if ! eval $cmdline; then
 fi
 
 ## ----- compare result PSD to reference result in source-directory
-if [ ! -r "$outPSD" -o ! -r $ "$refPSD" ]; then
+if [ ! -r "$outPSD" -o ! -r "$refPSD" ]; then
     echo "ERROR: missing psd output file '$outPSD' or '$refPSD'"
     exit 1
 fi
