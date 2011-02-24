@@ -190,8 +190,7 @@ main(int argc, char *argv[])
 	  d2 = 1.0 - scalar / (norm1*norm2);
 	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
 	  d4 = getMaxErrSFT (sft1, sft2);
-	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n",
-		  d1, d2, d3, d4);
+	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
 
@@ -223,8 +222,7 @@ main(int argc, char *argv[])
     maxd = mymax ( maxd, d4 );
 
     if ( uvar_verbose )
-      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n",
-	      d1, d2, d3, d4);
+      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
     else
       printf ("%10.3e  %10.3e\n", d3, d4);
 
@@ -234,6 +232,7 @@ main(int argc, char *argv[])
   /* free memory */
   LAL_CALL (LALDestroySFTVector(&status, &SFTs1), &status);
   LAL_CALL (LALDestroySFTVector(&status, &SFTs2), &status);
+  LAL_CALL (LALDestroySFTVector(&status, &diffs), &status);
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
 

@@ -208,9 +208,9 @@ int main(int argc, char *argv[])
    }
    
    //Second fft plan, only need to make this once for all the exact templates
-   REAL4FFTPlan *secondFFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 0);
+   REAL4FFTPlan *secondFFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag);
    if (secondFFTplan==NULL) {
-      fprintf(stderr, "%s: XLALCreateForwardREAL4FFTPlan(%d,%d) failed.\n", fn, ffdata->numffts, 0);
+      fprintf(stderr, "%s: XLALCreateForwardREAL4FFTPlan(%d,%d) failed.\n", fn, ffdata->numffts, inputParams->FFTplanFlag);
       XLAL_ERROR(fn, XLAL_EFUNC);
    }
    
@@ -398,9 +398,9 @@ int main(int argc, char *argv[])
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
       //fprintf(stderr, "Mean of TFdata_slided %g, background_slided %g\n", calcMean(TFdata_slided), calcMean(background_slided));
-      FILE *TFBACKGROUND = fopen("./output/tfbackground.dat","w");
+      /* FILE *TFBACKGROUND = fopen("./output/tfbackground.dat","w");
       for (ii=0; ii<(INT4)background_slided->length; ii++) fprintf(TFBACKGROUND, "%.6g\n", background_slided->data[ii]);
-      fclose(TFBACKGROUND);
+      fclose(TFBACKGROUND); */
       
       //Check the RMS of the antenna weights, if bigger than standard deviation then reset the IHS FAR and the average noise background of the 2nd FFT
       if (antweightsrms == 0.0) {
@@ -506,19 +506,6 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: makeSecondFFT() failed.\n", fn);
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
-      
-      //TEST: Compute median of FF plane
-      /* REAL4 ffdata_median = calcMedian(ffdata->ffdata);
-      if (ffdata_median==0.0) {
-       fprintf(stderr, "Apparently, no SFTs were read in (Average power value is zero). Program exiting with failure.\n");
-       XLAL_ERROR(fn, XLAL_FAILURE);
-      }
-      ffdata_median /= LAL_LN2;
-      fprintf(LOG, "FF median value adjusted from %f to 1.0\n", ffdata_median);
-      fprintf(stderr, "FF median value adjusted from %f to 1.0\n", ffdata_median);
-      REAL8 inv_ffdata_median = 1.0/ffdata_median;
-      for (ii=0; ii<(INT4)ffdata->ffdata->length; ii++) ffdata->ffdata->data[ii] *= inv_ffdata_median;
-      ffdata->ffnormalization *= inv_ffdata_median; */
       
       REAL4 secFFTmean = calcMean(ffdata->ffdata);
       
@@ -640,7 +627,7 @@ int main(int argc, char *argv[])
                   if (gaussCandidates1->numofcandidates == gaussCandidates1->length-1) {
                      gaussCandidates1 = resize_candidateVector(gaussCandidates1, 2*gaussCandidates1->length);
                      if (gaussCandidates1->data==NULL) {
-                        fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                        fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates1->length);
                         XLAL_ERROR(fn, XLAL_EFUNC);
                      }
                   }
@@ -890,7 +877,7 @@ int main(int argc, char *argv[])
                      if (gaussCandidates1->numofcandidates == gaussCandidates1->length-1) {
                         gaussCandidates1 = resize_candidateVector(gaussCandidates1, 2*gaussCandidates1->length);
                         if (gaussCandidates1->data==NULL) {
-                           fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                           fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates1->length);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                      }
@@ -909,7 +896,7 @@ int main(int argc, char *argv[])
          if (exactCandidates2->length < ihsCandidates->numofcandidates) {
             exactCandidates2 = resize_candidateVector(exactCandidates2, ihsCandidates->numofcandidates);
             if (exactCandidates2->data==NULL) {
-               fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+               fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, ihsCandidates->numofcandidates);
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
          }
@@ -1054,6 +1041,12 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
+                        //TODO: think about removing this?
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } /* up to here */
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
@@ -1095,7 +1088,7 @@ int main(int argc, char *argv[])
                if (gaussCandidates3->numofcandidates == gaussCandidates3->length-1) {
                   gaussCandidates3 = resize_candidateVector(gaussCandidates3, 2*gaussCandidates3->length);
                   if (gaussCandidates3->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*gaussCandidates3->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
@@ -1177,7 +1170,7 @@ int main(int argc, char *argv[])
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
                   if (exactCandidates1->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates1->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
@@ -1308,6 +1301,12 @@ int main(int argc, char *argv[])
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
+                        //TODO: think about removing this?
+                        numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                        if (xlalErrno!=0) {
+                           fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                           XLAL_ERROR(fn, XLAL_EFUNC);
+                        } /* up to here */
                         
                         REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
                         REAL8 prob = (probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode));
@@ -1351,7 +1350,7 @@ int main(int argc, char *argv[])
                if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
                   exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
                   if (exactCandidates2->data==NULL) {
-                     fprintf(stderr,"%s: resize_candidateVector() failed.\n", fn);
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*exactCandidates2->length);
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
@@ -1834,7 +1833,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    XLALDestroyREAL4Vector(antweightssq);
    XLALDestroyREAL4Vector(rngMeanssq);
    
-   fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(output));
+   //fprintf(stderr,"TF after weighting, mean subtraction = %g\n",calcMean(output));
 
 } /* tfWeightMeanSubtract() */
 
@@ -2238,6 +2237,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->antennaOff = args_info.antennaOff_given;
    params->noiseWeightOff = args_info.noiseWeightOff_given;
    params->markBadSFTs = args_info.markBadSFTs_given;
+   params->FFTplanFlag = args_info.FFTplanFlag_arg;
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;
@@ -2342,6 +2342,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(LOG,"dfmin = %f Hz\n",params->dfmin);
    fprintf(LOG,"dfmax = %f Hz\n",params->dfmax);
    fprintf(LOG,"Running median blocksize = %d\n",params->blksize);
+   fprintf(LOG,"FFT plan flag = %d\n", params->FFTplanFlag);
    fprintf(stderr,"Tobs = %f sec\n",params->Tobs);
    fprintf(stderr,"Tcoh = %f sec\n",params->Tcoh);
    fprintf(stderr,"SFToverlap = %f sec\n",params->SFToverlap);
@@ -2352,6 +2353,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"dfmin = %f Hz\n",params->dfmin);
    fprintf(stderr,"dfmax = %f Hz\n",params->dfmax);
    fprintf(stderr,"Running median blocksize = %d\n",params->blksize);
+   fprintf(stderr,"FFT plan flag = %d\n", params->FFTplanFlag);
    if (args_info.ihsfomfar_given) {
       fprintf(LOG,"IHS FOM FAR = %f\n", params->ihsfomfar);
       fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);

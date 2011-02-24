@@ -249,8 +249,8 @@ XLALMCMCAddParam(parameter, "eta", eta , etamin, etamax, 0);
 XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 XLALMCMCAddParam(parameter, "distMpc", 499.0*gsl_rng_uniform(RNG)+1.0, 1.0, 500.0, 0);
-XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -294,8 +294,8 @@ XLALMCMCAddParam(parameter, "eta", eta , etamin, etamax, 0);
 XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 XLALMCMCAddParam(parameter, "distMpc", 499.0*gsl_rng_uniform(RNG)+1.0, 1.0, 500.0, 0);
-XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
+XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI/2.0,0);
 XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 
@@ -325,7 +325,7 @@ REAL8 GRBPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   parameter->logPrior+=-(5.0/6.0)*logmc;
 
   eta=XLALMCMCGetParameter(parameter,"eta");
-  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
@@ -359,7 +359,7 @@ REAL8 NestPriorHighMass(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
   else
      parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
 
-  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+  parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
   parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
   /*      parameter->logPrior+=logJacobianMcEta(mc,eta);*/
   ParamInRange(parameter);
@@ -398,7 +398,7 @@ REAL8 NestPrior(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
 		parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
 	else
 		parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
-	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+	parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
 	parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
 	/*	parameter->logPrior+=logJacobianMcEta(mc,eta);*/
 	ParamInRange(parameter);
@@ -434,7 +434,7 @@ REAL8 NestPriorPhenSpin(LALMCMCInput *inputMCMC,LALMCMCParameter *parameter)
                 parameter->logPrior+=3.0*XLALMCMCGetParameter(parameter,"logdist");
         else
                 parameter->logPrior+=2.0*log(XLALMCMCGetParameter(parameter,"distMpc"));
-        parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"lat"))));
+        parameter->logPrior+=log(fabs(cos(XLALMCMCGetParameter(parameter,"dec"))));
         parameter->logPrior+=log(fabs(sin(XLALMCMCGetParameter(parameter,"iota"))));
         ParamInRange(parameter);
 
@@ -474,8 +474,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 	if(XLALMCMCCheckParameter(parameter,"logMc")) mc=exp(XLALMCMCGetParameter(parameter,"logMc"));
 	else mc=XLALMCMCGetParameter(parameter,"mchirp");
 	eta=XLALMCMCGetParameter(parameter,"eta");
-	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"long");
-	PPNparams.position.latitude=XLALMCMCGetParameter(parameter,"lat");
+	PPNparams.position.longitude=XLALMCMCGetParameter(parameter,"ra");
+	PPNparams.position.latitude=XLALMCMCGetParameter(parameter,"dec");
 	PPNparams.position.system=COORDINATESYSTEM_EQUATORIAL;
 	PPNparams.psi=XLALMCMCGetParameter(parameter,"psi");
 	memcpy(&(PPNparams.epoch),&(inputMCMC->epoch),sizeof(LIGOTimeGPS));
@@ -559,8 +559,8 @@ REAL8 MCMCLikelihoodMultiCoherentAmpCor(LALMCMCInput *inputMCMC, LALMCMCParamete
 
 	/* The epoch of observation and the accuracy required ( we don't care about a few leap seconds) */
 	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
-	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
+	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"ra");
+	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"dec");
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
 
@@ -763,8 +763,8 @@ in the frequency domain */
 
 	/* Initialise structures for detector response calcs */
 	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
-	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
+	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"ra");
+	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"dec");
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
 /*	source.name = (CHAR *)NULL; */
@@ -1140,8 +1140,8 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 
 	/* Initialise structures for detector response calcs */
 	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
-	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
+	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"ra");
+	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"dec");
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
 
@@ -1316,8 +1316,8 @@ in the frequency domain */
 
 	/* Initialise structures for detector response calcs */
 	LALSource source; /* The position and polarisation of the binary */
-	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"long");
-	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"lat");
+	source.equatorialCoords.longitude = XLALMCMCGetParameter(parameter,"ra");
+	source.equatorialCoords.latitude = XLALMCMCGetParameter(parameter,"dec");
 	source.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 	source.orientation = XLALMCMCGetParameter(parameter,"psi");
 /*	source.name = (CHAR *)NULL; */
@@ -1675,7 +1675,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	double qnm223freq;
 
 
-	UINT4 i,NtimeModel, idx;
+	UINT4 NtimeModel, idx;
 
 	/*Containers for EOBNR data */
 	COMPLEX8Vector *modefreqs=NULL;
@@ -1723,7 +1723,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	double distance = LAL_PC_SI*1e6*template->distance;
 	template->distance = distance;
 
-	printf("qnm %lf samp %lf mass1 %lf mass2 %lf",qnm223freq,template->tSampling,template->mass1,template->mass2);
+	/* printf("qnm %lf samp %lf mass1 %lf mass2 %lf",qnm223freq,template->tSampling,template->mass1,template->mass2); */
 
 	/*Generate EOBNR waveform*/
 	LALInspiralWave(status,Tmodel,template);
@@ -1740,6 +1740,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	LALREAL4VectorFFT(status,model,Tmodel,inputMCMC->likelihoodPlan); /* REAL4VectorFFT doesn't normalise like TimeFreqRealFFT, so we do this above in Norm */
 
 
+	/*
 	FILE* model_output;
 	model_output=fopen("model_output.dat","w");
 
@@ -1752,8 +1753,9 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 		fprintf(model_output,"%g\n",model->data[i]);
 	}
 	fclose(model_output);
-
+	
 	exit(0);
+	*/
 
 	return;
 

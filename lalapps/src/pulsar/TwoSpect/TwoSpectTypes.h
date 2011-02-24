@@ -57,6 +57,7 @@ typedef struct
    LALDetector det;
    CHAR* sftType;
    INT4 markBadSFTs;
+   INT4 FFTplanFlag;
    INT4 antennaOff;
    INT4 noiseWeightOff;
 } inputParamsStruct;

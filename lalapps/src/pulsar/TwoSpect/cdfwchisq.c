@@ -113,7 +113,8 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += vars->weights->data[ii] * (vars->noncentrality->data[ii] / y + vars->dofs->data[ii]) / y;
-      sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + log1(-x, 0 ));
+      //sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + log1(-x, 0 ));
+      sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + gsl_sf_log_1plusx_mx(-x));
    }
    *cx = xconst;
    
@@ -196,10 +197,12 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
       sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);
       if (x > 1.0) {
          prod2 += vars->dofs->data[ii] * log(x);
-         prod3 += vars->dofs->data[ii] * log1(x, 1 );
+         //prod3 += vars->dofs->data[ii] * log1(x, 1 );
+         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
          s += vars->dofs->data[ii];
       }
-      else prod1 += vars->dofs->data[ii] * log1(x, 1 );
+      else prod1 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
+      //else prod1 += vars->dofs->data[ii] * log1(x, 1 );
    } /* for ii < vars->weights->length */
    
    sum1 *= 0.5;
@@ -281,7 +284,8 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
          y = x*x;
-         sum3 -= 0.25 * vars->dofs->data[jj] * log1(y, 1 );
+         //sum3 -= 0.25 * vars->dofs->data[jj] * log1(y, 1 );
+         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);
          y = vars->noncentrality->data[jj] * x / (1.0 + y);
          z = vars->dofs->data[jj] * atan(x) + y;
          sum1 += z;
@@ -388,7 +392,7 @@ REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault)
    vars->ersm = 0.0;
    qfval = -1.0;
    acc1 = acc;
-   vars->ndtsrt = 1;  
+   //vars->ndtsrt = 1;  We already sorted outside of this algorithm
    vars->fail = 0;
    xlim = (REAL8)vars->lim;
 

@@ -62,7 +62,18 @@ S1-H2segments.txt \
 S1-L1segments.txt \
 S2-H1segments.txt \
 S2-H2segments.txt \
-S2-L1segments.txt
+S2-L1segments.txt \
+testComputePSD.sh \
+psd_ref.dat
+
+
+TESTS = testComputePSD.sh
+
+CLEANFILES = psd1.dat
+
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
