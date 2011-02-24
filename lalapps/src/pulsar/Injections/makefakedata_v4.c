@@ -261,6 +261,7 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
+  FILE *fpSingleSFT = NULL;
 
   UINT4 i;
 
@@ -331,6 +332,25 @@ main(int argc, char *argv[])
       return MAKEFAKEDATAC_EARG;
       break;
     } /* switch generationMode */
+
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* check that user isn't giving a directory */
+    if ( is_directory ( uvar_outSFTbname ) ) {
+      XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
+                     uvar_outSFTbname);
+      return MAKEFAKEDATAC_EBAD;
+    }
+    
+    /* open concatenated SFT file for writing */
+    if ( (fpSingleSFT = LALFopen ( uvar_outSFTbname, "wb" )) == NULL )
+      {
+        XLALPrintError ("\nERROR: Failed to open file '%s' for writing: %s\n\n", uvar_outSFTbname, strerror(errno));
+        return MAKEFAKEDATAC_EFILE;
+    }
+
+  }
 
   /* ----------
    * Main loop: produce time-series and turn it into SFTs,
@@ -491,16 +511,13 @@ main(int argc, char *argv[])
 	      /* if user requesting single concatenated SFT */
 	      if ( uvar_outSingleSFT ) {
 
-		/* check that user isn't giving a directory */
-		if ( is_directory ( uvar_outSFTbname ) ) {
-		  XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_EBAD;
-		}
-		if (XLAL_SUCCESS != XLALWriteSFTVector2File(SFTs, uvar_outSFTbname, comment)) {
-		  XLALPrintError("\nXLALWriteSFTVector2File failed to write SFTs to '%s'!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_ESUB;
+                /* write all SFTs to concatenated file */
+                for ( UINT4 k = 0; k < SFTs->length; k++ ) {
+                  if ( XLAL_SUCCESS != XLALWriteSFT2fp( &(SFTs->data[k]), fpSingleSFT, comment ) ) {
+                    XLALPrintError("\nXLALWriteSFT2fp() failed to write SFT to '%s'!\n",
+                                   uvar_outSFTbname);
+                    return MAKEFAKEDATAC_ESUB;
+                  }
 		}
 
 	      }
@@ -539,6 +556,14 @@ main(int argc, char *argv[])
 	}
 
     } /* for i_chunk < numchunks */
+
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* close concatenated SFT */
+    LALFclose( fpSingleSFT );
+
+  }
 
   LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
 
@@ -583,13 +608,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ("%s\n", cfg->VCSInfoString );
       exit (0);
     }
-
-  /* ----- check contradictory/conflicting options ----- */
-  if ( uvar_outSingleSFT && ( uvar_generationMode == GENERATE_PER_SFT ) ) {
-    XLALPrintError ("%s: sorry, --outSingleSFT currently only works in --generationMode=0!\n", fn );
-    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-  }
-
 
   /* read in par file parameters if given */
    if (have_parfile){
