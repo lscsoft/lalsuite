@@ -172,6 +172,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         } else if (runState->likelihood==&UndecomposedFreqDomainLogLikelihood ||
                    runState->likelihood==&FreqDomainLogLikelihood) {
           nullLikelihood = NullLogLikelihood(runState->data);
+        } else if (runState->likelihood==&ZeroLogLikelihood) {
+          nullLikelihood = 0.0;
         } else {
           fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n", 
                   __FILE__, __LINE__);
