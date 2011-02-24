@@ -1402,19 +1402,22 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   deltaFsft = catalog->data[0].header.deltaF;
   timebase = 1.0/deltaFsft;
 
-  /* calculate start and end times and tobs from catalog*/
-  tStartGPS = catalog->data[0].header.epoch;
-  in->tStartGPS = tStartGPS;
-  tEndGPS = catalog->data[catalog->length - 1].header.epoch;
-  XLALGPSAdd(&tEndGPS, timebase);
-  tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
-  in->tObs = tObs;
-
   /* get sft catalogs for each stack */
   TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
 
   /* reset number of stacks */
-  in->nStacks = catalogSeq.length;
+  UINT4 numSegments = catalogSeq.length;
+  in->nStacks = numSegments;
+
+  /* calculate start and end times and tobs from segmented catalog*/
+  tStartGPS = catalogSeq.data[0].data[0].header.epoch;
+  in->tStartGPS = tStartGPS;
+  SFTCatalog *LastSegmentCat = &(catalogSeq.data[numSegments - 1]);
+  UINT4 numSFTsInLastSeg = LastSegmentCat->length;
+  tEndGPS = LastSegmentCat->data[numSFTsInLastSeg-1].header.epoch;
+  XLALGPSAdd(&tEndGPS, timebase);
+  tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
+  in->tObs = tObs;
 
   /* get timestamps of start and mid of each stack */
   /* set up vector containing mid times of stacks */
