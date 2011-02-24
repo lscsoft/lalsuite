@@ -208,10 +208,12 @@ void initializeMCMC(LALInferenceRunState *runState)
 	}
 	else {runState->template=&templateLAL;}
 
-        ppt=getProcParamVal(commandLine,"--tdlike");
-        if (ppt) {
+        if (getProcParamVal(commandLine,"--tdlike")) {
           fprintf(stderr, "Computing likelihood in the time domain.\n");
           runState->likelihood=&TimeDomainLogLikelihood;
+        } else if (getProcParamVal(commandLine, "--zeroLogLike")) {
+          /* Use zero log(L) */
+          runState->likelihood=&ZeroLogLikelihood;
         } else {
           runState->likelihood=&UndecomposedFreqDomainLogLikelihood;
         }

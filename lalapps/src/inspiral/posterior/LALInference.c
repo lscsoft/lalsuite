@@ -674,7 +674,9 @@ void printCommandLine(ProcessParamsTable *procparams, char *str)
 
 /* ============ Likelihood computations: ========== */
 
-
+REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTemplateFunction *template) {
+  return 0.0;
+}
 
 REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)

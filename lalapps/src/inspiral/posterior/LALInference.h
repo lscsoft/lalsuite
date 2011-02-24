@@ -255,6 +255,10 @@ void printCommandLine(ProcessParamsTable *procparams, char *str);
 REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData *data, 
                               LALTemplateFunction *template);
 
+/* For testing purposes, likelihood that returns 0.0 = log(1) every
+   time.  Activated with the --zeroLogLike command flag. */
+REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTemplateFunction *template);
+
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
