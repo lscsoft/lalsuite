@@ -132,6 +132,12 @@ typedef struct tagPr3In {
 static inline REAL8
 XLALCalculateA5( REAL8 eta );
 
+static inline REAL8
+XLALCalculateA5FF( REAL8 eta );
+
+static inline REAL8
+XLALCalculateA6FF( REAL8 eta );
+
 static void
 omegaofrP4PN (
              REAL8 *x,
@@ -152,6 +158,11 @@ void LALHCapDerivativesP4PNFF(   REAL8Vector *values,
 static
 REAL8 XLALCalculateEOBA( REAL8    r,
                          REAL8  eta);
+
+static
+REAL8 XLALCalculateEOBAFF( REAL8    r,
+                           REAL8  eta);
+
 static
 REAL8 XLALCalculateEOBD( REAL8    r,
                          REAL8	eta);
@@ -161,8 +172,17 @@ REAL8 XLALCalculateEOBdAdr( REAL8 r,
                             REAL8 eta);
 
 static
+REAL8 XLALCalculateEOBdAdrFF( REAL8 r,
+                            REAL8 eta);
+
+static
 REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
                                 InspiralDerivativesIn *ak);
+
+static
+REAL8 XLALEffectiveHamiltonianFF( REAL8Vector           *values,
+                                InspiralDerivativesIn *ak);
+
 static
 void LALprInitP4PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
 
@@ -262,7 +282,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         pr	= values -> data[2];
 	pp	= values -> data[3];
 
-	Heff	= XLALEffectiveHamiltonian( values, ak ); 
+	Heff	= XLALEffectiveHamiltonianFF( values, ak ); 
 	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
 	Omega	= dvalues -> data[1];
 	v	= cbrt( Omega );
@@ -682,6 +702,21 @@ REAL8 XLALCalculateA5( REAL8 eta )
   return -12.9499 + 204.779 * eta - 206.319 *eta*eta;
 }
 
+static inline
+REAL8 XLALCalculateA5FF( REAL8 eta )
+{
+  printf( "a5 = %e\n", - 82.5384 + 508.681 * eta - 787.826 * eta*eta );
+  return - 82.5384 + 508.681 * eta - 787.826 * eta*eta;
+}
+
+static inline 
+REAL8 XLALCalculateA6FF( REAL8 eta )
+{
+
+  printf( "a6 = %e\n", 500. - 1800. * eta );
+  return 500. - 1800. * eta;
+}
+
 static
 REAL8 XLALCalculateEOBA( REAL8   r,
                          REAL8 eta)
@@ -702,6 +737,47 @@ REAL8 XLALCalculateEOBA( REAL8   r,
 	
 	return NA/DA;	
 }
+
+static
+REAL8 XLALCalculateEOBAFF( REAL8 r,
+                          REAL8 eta)
+{
+
+  REAL8 r2, r3, r4, r5;
+  REAL8 eta2, eta3;
+  REAL8 a4, a5, a6;
+  REAL8 NA, DA;
+
+  /* Note that the definitions of a5 and a6 DO NOT correspond to those in the paper */
+  /* Therefore we have to multiply the results of our a5 and a6 finctions by eta. */
+
+  r2 = r*r;
+  r3 = r2 * r;
+  r4 = r2*r2;
+  r5 = r4*r;
+
+  eta2 = eta*eta;
+  eta3 = eta2*eta;
+
+  a4 = ninty4by3etc * eta;
+  a5 = XLALCalculateA5FF( eta ) * eta;
+  a6 = XLALCalculateA6FF( eta ) * eta;
+
+  NA = r4 * ( -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2)
+     + r5 * ( 32. -4.*a4 - a5 - 24.*eta );
+
+  DA = 4.*a4*a4 + 4.*a4*a5 + a5*a5 - a4*a6 + 16.*a6 + (32.*a4 + 16.*a5 - 8.*a6) * eta + 4.*a4*eta2 + 32.*eta3
+     + r  * ( 4.*a4*a4 + a4*a5 + 16.*a5 + 8.*a6 + (32.*a4 - 2.*a6)*eta + 32.*eta2 + 8.*eta3 )
+     + r2 * ( 16.*a4 + 8.*a5 + 4.*a6 + (8.*a4 + 2.*a5)*eta + 32.*eta2 )
+     + r3 * ( 8.*a4 + 4.*a5 + 2.*a6 + 32.*eta - 8.*eta2 )
+     + r4 * ( 4.*a4 + 2.*a5 + a6 + 16.*eta - 4.*eta2 )
+     + r5 * (32. - 4.*a4 - a5 - 24. * eta );
+
+  printf( "In the function, A is %e\n", NA/DA );
+
+  return NA/DA;
+}
+  
 
 static
 REAL8 XLALCalculateEOBdAdr( REAL8 r,
@@ -727,6 +803,51 @@ REAL8 XLALCalculateEOBdAdr( REAL8 r,
              + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u3))/(DA*DA);
 
         return (- u2 * dA);
+}
+
+static
+REAL8 XLALCalculateEOBdAdrFF( REAL8 r,
+                              REAL8 eta)
+{
+  REAL8 r2, r3, r4, r5;
+  REAL8 eta2, eta3;
+  REAL8 a4, a5, a6;
+  REAL8 NA, DA;
+  REAL8 dA;
+
+  /* Note that the definitions of a5 and a6 DO NOT correspond to those in the paper */
+  /* Therefore we have to multiply the results of our a5 and a6 finctions by eta. */
+
+  r2 = r*r;
+  r3 = r2 * r;
+  r4 = r2*r2;
+  r5 = r4*r;
+
+  eta2 = eta*eta;
+  eta3 = eta2*eta;
+
+  a4 = ninty4by3etc * eta;
+  a5 = XLALCalculateA5FF( eta ) * eta;
+  a6 = XLALCalculateA6FF( eta ) * eta;
+
+  NA = r4 * ( -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2)
+     + r5 * ( 32. -4.*a4 - a5 - 24.*eta );
+
+  DA = 4.*a4*a4 + 4.*a4*a5 + a5*a5 - a4*a6 + 16.*a6 + (32.*a4 + 16.*a5 - 8.*a6) * eta + 4.*a4*eta2 + 32.*eta3
+     + r  * ( 4.*a4*a4 + a4*a5 + 16.*a5 + 8.*a6 + (32.*a4 - 2.*a6)*eta + 32.*eta2 + 8.*eta3 )
+     + r2 * ( 16.*a4 + 8.*a5 + 4.*a6 + (8.*a4 + 2.*a5)*eta + 32.*eta2 )
+     + r3 * ( 8.*a4 + 4.*a5 + 2.*a6 + 32.*eta - 8.*eta2 )
+     + r4 * ( 4.*a4 + 2.*a5 + a6 + 16.*eta - 4.*eta2 )
+     + r5 * (32. - 4.*a4 - a5 - 24. * eta );
+
+  dA = (- 4.*(64. - 12.*a4 - 4.*a5 - a6 - 64.*eta + 4.*eta2)*r3 - 5.*(-32. + 4.*a4 + a5 + 24.*eta)*r4) * DA
+     - ( 4.*a4*a4 + 16.*a5 + a4*a5 + 8.*a6 + 32.*a4*eta - 2.*a6*eta + 32.*eta2 + 8.*eta3
+     + 2.*(16.*a4 + 8.*a5 + 4.*a6 + 8.*a4*eta + 2.*a5*eta + 32.*eta2)*r
+     + 3.*(8.*a4 + 4.*a5 + 2.*a6 + 32.*eta - 8.*eta2)*r2
+     + 4.*(4.*a4 + 2.*a5 + a6 + 16.*eta - 4.*eta2)*r3
+     + 5.*(32. - 4.*a4 - a5 - 24.*eta)*r4) * NA;
+
+  return dA / (DA*DA);
 }
 
 static
@@ -764,6 +885,30 @@ REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
 	eoba = XLALCalculateEOBA( r, eta );
 	z3   = 2. * ( 4. - 3. * eta ) * eta;
 	return sqrt( pr2 + eoba * ( 1.  + pp2/r2 + z3*pr2*pr2/r2 ) );	
+}
+
+static
+REAL8 XLALEffectiveHamiltonianFF( REAL8Vector           *values,
+                                InspiralDerivativesIn *ak)
+{
+
+        /* The pr used in here is the tortoise co-ordinate */
+        REAL8 eta, r, phi, pr, pp, r2, pr2, pp2, z3, eoba;
+
+        eta = ak->coeffs->eta;
+
+        r   = values->data[0];
+        phi = values->data[1];
+        pr  = values->data[2];
+        pp  = values->data[3];
+
+        r2   = r * r;
+        pr2  = pr * pr;
+        pp2  = pp * pp;
+
+        eoba = XLALCalculateEOBAFF( r, eta );
+        z3   = 2. * ( 4. - 3. * eta ) * eta;
+        return sqrt( pr2 + eoba * ( 1.  + pp2/r2 + z3*pr2*pr2/r2 ) );
 }
 
 /*-------------------------------------------------------------------*/
@@ -1044,21 +1189,56 @@ LALHCapDerivativesP4PNFF(
 
   double r, s, p, q;
   double dr, ds, dp, dq;
+  REAL8 r2, p2, p4, q2;
+  REAL8 u, u2, u3;
+  REAL8 A, AoverSqrtD, dAdr, Heff, Hreal;
+  REAL8 HeffHreal;
+  REAL8 z3;
+
 
   ak = (InspiralDerivativesIn *) funcParams;
 
   eta = ak->coeffs->eta;
+
+  z3   = 2. * ( 4. - 3. * eta ) * eta;
 
   r = values->data[0];
   s = values->data[1];
   p = values->data[2];
   q = values->data[3];
 
-  LALHCapDerivativesP4PN( values, dvalues, funcParams );
+  u  = 1.0 / r;
+  u2 = u * u;
+  u3 = u2 * u;
+  r2 = r * r;
+  p2 = p*p;
+  p4 = p2 * p2;
+  q2 = q * q;
 
-  dr = dvalues->data[0];
-  ds = omega = dvalues->data[1];
-  dp = dvalues->data[2];
+  A          = XLALCalculateEOBAFF(r, eta);
+  dAdr       = XLALCalculateEOBdAdrFF(r, eta);
+  AoverSqrtD = A / sqrt( XLALCalculateEOBD(r, eta) );
+
+  /* Note that Hreal as given here is missing a factor of 1/eta */
+  /* This is because it only enters into the derivatives in     */
+  /* the combination eta*Hreal*Heff, so the eta would get       */
+  /* cancelled out anyway. */
+
+  Heff  = XLALEffectiveHamiltonianFF( values, ak );
+  Hreal = sqrt( 1. + 2.*eta*(Heff - 1.) );
+
+  HeffHreal = Heff * Hreal;
+
+  dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
+  ds = dvalues->data[1] = omega = q * A * u2 / HeffHreal;
+  dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
+                     - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal;
+
+
+   printf(" A = %e, AoverSqrtD = %e, u3 = %e, 1st term = %e, 2nd term = %e, dAdr = %e, denom = %e\n",
+     A, AoverSqrtD, u3, 2.0 * ( q2 + p4 * z3) * A, - r * ( q2 + r2 + p4 * z3 ), dAdr, HeffHreal );
+   printf( "q2 = %e, r2 = %e, p4 * z3 = %e\n", q2, r2, p4*z3);
+
   dq = XLALInspiralFactorizedFlux( values, dvalues, ak, lMax );
   /* This function can fail */
   /* TODO: Implement proper error checking */
@@ -1812,15 +1992,16 @@ LALEOBPPWaveformEngine (
        CHECKSTATUSPTR(status);
        /* We need to change P to be the tortoise co-ordinate */
        /* TODO: Change prInit to calculate this directly */
-       p = p * XLALCalculateEOBA(r, eta);
-       p = p / sqrt( XLALCalculateEOBD( r, eta ) );
-
        if ( params->approximant == EOBNR_PF )
        {
+         p = p * XLALCalculateEOBAFF(r, eta);
+         p = p / sqrt( XLALCalculateEOBD( r, eta ) );
          in4.function = LALHCapDerivativesP4PNFF;
        }
        else
        {
+         p = p * XLALCalculateEOBA(r, eta);
+         p = p / sqrt( XLALCalculateEOBD( r, eta ) );
          in4.function = LALHCapDerivativesP4PN;
        }
        break;
@@ -1948,7 +2129,7 @@ LALEOBPPWaveformEngine (
 /*
    omegamatch = -0.05 -0.01 + 0.133 + 0.183 * params->eta + 1.161 * params->eta * params->eta;
 */
-   /*FILE *out = fopen("eobpp-10-10_fixed.dat", "w");*/
+   FILE *out = fopen("eobpf-10-10_fixed.dat", "w");
 
 
    while ( ( omega > omegaOld || !isnan(hLM.re) ) && r < rOld)
@@ -2019,10 +2200,10 @@ LALEOBPPWaveformEngine (
           ampl->data[j] =  (REAL4)( apFac * v2 );
           ampl->data[k] =  (REAL4)( acFac * v2 );
           phse->data[i] =  (REAL8)( st );
-          /*
+          
           fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", sig1->data[i], sig2->data[i], values->data[0],
              values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
-             dvalues->data[2], dvalues->data[3] );*/
+             dvalues->data[2], dvalues->data[3] );
         }
         else if ( !isnan( hLM.re) )
         {
@@ -2158,7 +2339,7 @@ LALEOBPPWaveformEngine (
       ndx++;
    }
 
-   /*fclose( out );*/
+   fclose( out );
 
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
@@ -2285,13 +2466,11 @@ LALEOBPPWaveformEngine (
 #endif
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
-   FILE *out = fopen("eobpp-real_im.dat", "w");
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
-     fprintf( out, "%e %e\n", x1, x2 );
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
      if (x1 || x2)
@@ -2308,7 +2487,6 @@ LALEOBPPWaveformEngine (
        }
      }
    }
-   fclose(out);
 
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
