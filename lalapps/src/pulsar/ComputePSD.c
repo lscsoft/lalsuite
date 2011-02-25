@@ -127,8 +127,8 @@ typedef struct
 
   BOOLEAN dumpMultiPSDVector; /**< output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) */
 
-  REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (*DEPRECATED*: use --Freq) */
-  REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (*DEPRECATED*: use --FreqBand) */
+  REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --Freq instead) */
+  REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --FreqBand instead) */
 
 
 } UserVariables_t;
@@ -602,9 +602,9 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   XLALregBOOLUserStruct  (dumpMultiPSDVector,'d',UVAR_OPTIONAL, "Output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) '<outputPSD>-IFO'");
 
-  /* ----- deprecated options ---------- */
-  XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (*DEPRECATED*: use --Freq)");
-  XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (*DEPRECATED*: use --FreqBand)");
+  /* ----- developer options ---------- */
+  XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
+  XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
 
 
 
