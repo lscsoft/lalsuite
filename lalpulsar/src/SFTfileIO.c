@@ -1194,6 +1194,8 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
       XLALFree(numsfts);
       XLALFree(name);
 
+      XLAL_ERROR_NULL ( __func__, XLAL_EFUNC );
+
     }
   }
 
