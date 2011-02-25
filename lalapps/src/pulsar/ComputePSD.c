@@ -980,7 +980,7 @@ XLALReadSFTs ( UINT4 *firstBin,			/**< [out] first PSD bin for output */
   if ( have_Freq )
     {
       REAL8 dFreq = catalog->data[0].header.deltaF;
-      binsOffset = uvar->blocksRngMed / 2;	/* truncates down! */
+      binsOffset = uvar->blocksRngMed / 2 + 1;	/* truncates down plus add one bin extra safety! */
       binsBand   = ceil ( (uvar->FreqBand - 1e-9) / dFreq ) + 1; /* round up ! */
 
       REAL8 rngmedSideBand = binsOffset * dFreq;
