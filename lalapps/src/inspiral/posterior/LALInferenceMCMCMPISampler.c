@@ -803,7 +803,9 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
 {
 	UINT4 nIFO=0;
 	LALIFOData *ifo=runState->data;
-	REAL8 BLOCKFRAC=0.05,
+	REAL8 BLOCKFRAC=0.0, /* Removed block jumps because of
+                                roundoff problems in cholesky
+                                decomp. */
           SINGLEFRAC=1.0,
           SKYFRAC=0.05,
           INCFRAC=0.05,

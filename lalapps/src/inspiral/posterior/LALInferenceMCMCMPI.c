@@ -760,8 +760,8 @@ void initVariables(LALInferenceRunState *state)
           UINT4 N = (approx == SpinTaylor ? 15 : 9);
           gsl_matrix *covM = gsl_matrix_alloc(N,N);
           gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
-          REAL8Vector *unCorrVec = XLALCreateREAL8Vector(N), *sigmaVec = XLALCreateREAL8Vector(N);
-          UINT4 i, j;
+          REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
+          UINT4 i;
 
 
           if (readSquareMatrix(covM, N, inp)) {
@@ -776,16 +776,6 @@ void initVariables(LALInferenceRunState *state)
             sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
           }
 
-          gsl_linalg_cholesky_decomp(covM);
-
-          for (i = 0; i < N; i++) {
-            for (j = i+1; j < N; j++) {
-              gsl_matrix_set(covM, i, j, 0.0); /* Zero upper triangular components. */
-            }
-          }
-
-          addVariable(state->proposalArgs, COVMATRIXNAME, &covM, gslMatrix_t, PARAM_FIXED);
-          addVariable(state->proposalArgs, UNCORRSAMPNAME, &unCorrVec, REAL8Vector_t, PARAM_FIXED);
           addVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmaVec, REAL8Vector_t, PARAM_FIXED);
 
           /* Set up eigenvectors and eigenvalues. */
