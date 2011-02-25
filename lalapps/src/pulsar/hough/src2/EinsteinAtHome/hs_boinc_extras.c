@@ -324,7 +324,7 @@ static void sighandler(int sig)
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fprintf(stderr, "\n");
+  fputs("\n-- signal handler called\n",stderr);
   fprintf(stderr, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
@@ -1617,7 +1617,7 @@ void enable_floating_point_exceptions(void) {
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
     */
-#ifdef ENABLE_SSE_EXCEPTIONS
+#if __SSE__
     set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
 #endif
   }

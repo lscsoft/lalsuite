@@ -57,6 +57,9 @@ int main(int argc, char *argv[]) {
   REAL8 band = 0.0;
   INT4 num_bands = 1;
   CHAR *sft_pattern = NULL;
+  CHAR *sft_ifo = NULL;
+  REAL8 sft_start_time = 0.0;
+  REAL8 sft_end_time = 0.0;
   CHAR *ephem_dir = NULL;
   CHAR *ephem_year = NULL;
   INT4 rng_med_win = 50;
@@ -80,6 +83,9 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterREALUserVar  (&status, "band",            'b', UVAR_REQUIRED, "Frequency band", &band), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "num-bands",       'N', UVAR_OPTIONAL, "Number of bands to compute AM coeffs for", &num_bands), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",        'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
+  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-ifo",         'I', UVAR_OPTIONAL, "Filter SFTs by interferometer", &sft_ifo), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "sft-start-time",  's', UVAR_OPTIONAL, "Filter SFTs by start time", &sft_start_time), &status);
+  LAL_CALL(LALRegisterREALUserVar  (&status, "sft-end-time",    'e', UVAR_OPTIONAL, "Filter SFTs by end time", &sft_end_time), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",       'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",      'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",     'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
@@ -120,7 +126,24 @@ int main(int argc, char *argv[]) {
     /* Load the SFTs */
     {
       SFTConstraints constraints = empty_SFTConstraints;
+      LIGOTimeGPS start_time_gps, end_time_gps;
       REAL8 extra = 0.0, f_min = 0.0, f_max = 0.0;
+
+      /* Add constraints */
+      if (XLALUserVarWasSet(&sft_ifo)) {
+        constraints.detector = sft_ifo;
+      }
+      else {
+        constraints.detector = NULL;
+      }
+      if (XLALUserVarWasSet(&sft_start_time)) {
+        XLALGPSSetREAL8(&start_time_gps, sft_start_time);
+        constraints.startTime = &start_time_gps;
+      }
+      if (XLALUserVarWasSet(&sft_end_time)) {
+        XLALGPSSetREAL8(&end_time_gps, sft_end_time);
+        constraints.endTime = &end_time_gps;
+      }
       
       /* Load the catalog */
       LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");

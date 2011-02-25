@@ -16,6 +16,8 @@ void NestInit2PN(LALMCMCParameter *parameter, void *iT);
 
 REAL8 mean(REAL8 *array,int N);
 
+REAL8 computeZ(LALMCMCInput *MCMCinput);
+
 REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live,LALMCMCInput *MCMCinput);
 
 REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, LALMCMCInput *MCMCInput,REAL8 minL,gsl_matrix *covM,INT4 N);

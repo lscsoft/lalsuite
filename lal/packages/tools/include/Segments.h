@@ -17,25 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------- <lalVerbatim file="SegmentsHV">
- * Author: Peter Shawhan
- * Revision: $Id$
- *----------------------------------- </lalVerbatim> */
+/**
+\author Peter Shawhan
+\defgroup Segments_h Segments
+\ingroup tools
+\brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
 
-#if 0
-------------------------------------- <lalLaTeX>
-\section{Header \texttt{Segments.h}}
-\label{s:Segments.h}
-
-Provides data types and functions for manipulating lists of ``segments''
-(GPS time intervals).
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/Segments.h>
-\end{verbatim}
+\endcode
 
-\noindent This header defines data structures for segments and lists of
+This header defines data structures for segments and lists of
 segments, as well as prototypes for functions that manipulate them.
 
 A segment is a time interval with a start time and an end time.  The end time
@@ -46,100 +39,87 @@ interval, inclusive of its starting point and exclusive of its ending point.
 
 All of the segment list manipulation functions are XLAL functions.
 They handle error conditions by invoking the current XLAL error handler
-and setting \texttt{xlalErrno} to a nonzero value.
+and setting \c xlalErrno to a nonzero value.
 
-\subsection*{Error conditions}
+\heading{Error conditions}
 
-\begin{center}
-\begin{tabular}{|cp{5.0in}|} \hline
-\texttt{xlalErrno} & description \\ \hline
-  \tt XLAL\_EFAULT & Null pointer passed for some argument \\
-  \tt XLAL\_EINVAL & Attempted to use an uninitialized segment list structure \\
-  \tt XLAL\_EDOM   & Pair of GPS times does not represent a valid segment \\
-\hline
-\end{tabular}
-\end{center}
+<table><tr><td>
+\c xlalErrno</td><td>description</td></tr>
+<tr><td>  \tt XLAL_EFAULT</td><td>Null pointer passed for some argument</td></tr>
+<tr><td>  \tt XLAL_EINVAL</td><td>Attempted to use an uninitialized segment list structure</td></tr>
+<tr><td>  \tt XLAL_EDOM</td><td>Pair of GPS times does not represent a valid segment</td></tr>
+<tr><td>
+</td></tr></table>
 
-\subsection*{Structures}
-\idx[Type]{LALSeg}
-\idx[Type]{LALSegList}
-\input{SegmentsHS}
+\heading{Notes}
 
-\subsection*{Notes}
-
-A \texttt{LALSegList} must be initialized before it is used.  Initialization
-leaves it in an ``empty'' state, containing no segments. They also must be ''cleared'' after using \texttt{XLALSegListClear}, and freed with \texttt{LALFree} if it was dynamically allocated. Segments can then
-be added to the list through an ``append'' operation.  The information about
+A \c LALSegList must be initialized before it is used.  Initialization
+leaves it in an ``empty'' state, containing no segments. They also must be ''cleared''
+after using \c XLALSegListClear(), and freed with \c LALFree() if it was dynamically allocated.
+Segments can then be added to the list through an ``append'' operation.  The information about
 each segment appended is copied to a memory location managed by the
-\texttt{LALSegList} object.  In fact, the segments are stored in the form of
-an array of \texttt{LALSeg} structures, with the \texttt{segs} field of
+\c LALSegList object.  In fact, the segments are stored in the form of
+an array of \c LALSeg structures, with the \c segs field of
 the segment list structure being the base address of the array.
 This allows the segments to be accessed directly using a pointer as an
 iterator, as in the following example code:
-%
-\begin{verbatim}
+
+\code
   LALSegList mylist;
   LALSeg *segp;
   ...
-  /* (Append segments to the segment list 'mylist' here) */
+  /-* (Append segments to the segment list 'mylist' here) *-/
   ...
   for ( segp=mylist.segs; segp<mylist.segs+mylist.length; segp++ ) {
 
-    printf( "The end time of the segment is GPS %d.%09d\n",
-            segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
+    printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
 
   }
-\end{verbatim}
-%
-\ldots or by using an integer array index, as in the following example code:
-%
-\begin{verbatim}
+\endcode
+
+... or by using an integer array index, as in the following example code:
+
+\code
   LALSegList mylist;
   LALSeg *segp;
   INT4 iseg;
   LIGOTimeGPS startgps;
   ...
-  /* (Append segments to the segment list 'mylist' here) */
+  /-* (Append segments to the segment list 'mylist' here) *-/
   ...
   for ( iseg=0; iseg<mylist.length; iseg++ ) {
 
-    /* One way to access the segment... */
+    /-* One way to access the segment... *-/
     startgps = mylist.segs[iseg].start;
-    printf( "The start time of the segment is GPS %d.%09d\n",
-            startgps.gpsSeconds, startgps.gpsNanoSeconds );
+    printf( "The start time of the segment is GPS %d.%09d\n", startgps.gpsSeconds, startgps.gpsNanoSeconds );
 
-    /* Another way to access the segment... */
+    /-* Another way to access the segment... *-/
     segp = mylist.segs + iseg;
-    printf( "The end time of the segment is GPS %d.%09d\n",
-            segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
+    printf( "The end time of the segment is GPS %d.%09d\n", segp->end.gpsSeconds, segp->end.gpsNanoSeconds );
 
   }
-\end{verbatim}
+\endcode
 
-Note that if the segment list is empty, then the \texttt{segs} field will
-be NULL and the \texttt{length} field will be $0$.  So be careful not to
-dereference the \texttt{segs} pointer unless you know that the length is
+Note that if the segment list is empty, then the \c segs field will
+be NULL and the \c length field will be \f$0\f$.  So be careful not to
+dereference the \c segs pointer unless you know that the length is
 nonzero.
 
 A segment list is considered ``sorted'' if the segments are in ascending
 (or at least non-descending) order according to the comparison done by
-the \texttt{XLALSegCmp} function.  A segment list is considered ``disjoint''
+the \c XLALSegCmp() function.  A segment list is considered ``disjoint''
 if no two segments in the list overlap, although they
 may touch at an endpoint due to the half-open nature of the time intervals
-represented by segments.  The \texttt{LALSegList} structure includes fields
+represented by segments.  The \c LALSegList structure includes fields
 which record whether the segment list is sorted and/or disjoint, and these
 are used to search the segment list more efficiently when possible.  Note
 that a segment list could in principle be disjoint but not sorted, but that
-case is not of interest for the code; the \texttt{disjoint} field in the
-structure specifically means that the list is sorted \emph{and} disjoint.
+case is not of interest for the code; the \c disjoint field in the
+structure specifically means that the list is sorted \e and disjoint.
 
-Also all segments in a segment list can be time-shifted using \texttt{XLALSegListShift}.
+Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
 
-
-\vfill{\footnotesize\input{SegmentsHV}}
-\newpage\input{SegmentsC}
-------------------------------------- </lalLaTeX>
-#endif
+*/
 
 #ifndef _SEGMENTS_H
 #define _SEGMENTS_H
@@ -152,10 +132,12 @@ extern "C" {
 #pragma }
 #endif
 
+/** \cond DONT_DOXYGEN */
 NRCSID( SEGMENTSH, "$Id$" );
+/** \endcond */
 
 /*------------------- Compile-time parameters -------------------*/
-
+/** \ingroup Segments_h */ /*@{*/
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to
 				  * allocate in memory at one time; this is
 				  * intended to reduce the number of memory
@@ -172,7 +154,7 @@ NRCSID( SEGMENTSH, "$Id$" );
 
 /*------------------- Data structure definitions -------------------*/
 
-/* <lalVerbatim file="SegmentsHS"> */
+/** Struct holding a single segment */
 typedef struct
 tagLALSeg
 {
@@ -181,10 +163,10 @@ tagLALSeg
   INT4 id;           /**< Identifier (segment ID, array index, etc.) for user */
 }
 LALSeg;
-/* </lalVerbatim> */
 
 
-/* <lalVerbatim file="SegmentsHS"> */
+
+/** Struct holding a segment list */
 typedef struct
 tagLALSegList
 {
@@ -198,10 +180,11 @@ tagLALSegList
   LALSeg *lastFound; /**< Internal record of last segment found by a search */
 }
 LALSegList;
-/* </lalVerbatim> */
 
+/*@}*/
 
 /*----------------------- Function prototypes ----------------------*/
+/** \cond DONT_DOXYGEN */
 
 INT4
 XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
@@ -241,6 +224,7 @@ XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *shift );
 INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
 
+/** \endcond */
 /*----------------------- Trailer stuff ----------------------------*/
 
 #ifdef  __cplusplus

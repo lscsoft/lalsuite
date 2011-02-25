@@ -20,8 +20,7 @@ CUDART ?= -lcudart
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
 
-EXTRA_PROGRAMS = lalapps_HierarchicalSearchGC \
-		 lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
+EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
 		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda
 
 # lalapps_HierarchicalSearch doesn't condor compile
@@ -42,12 +41,6 @@ lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
 			../src/SFTbin.h ../src/SFTbin.c \
 			../src/DriveHoughColor.h ../src/PeakSelect.h \
 			../src/PeakSelect.c
-
-lalapps_HierarchicalSearchGC_SOURCES = HierarchicalSearchGC.c HierarchicalSearchGC.h \
-			  StackSlideFstat.c StackSlideFstat.h \
-			  HoughFStatToplist.c HoughFStatToplist.h \
-			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
-			  $(FDSsrc)/ComputeFStatistic.h
 
 HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \

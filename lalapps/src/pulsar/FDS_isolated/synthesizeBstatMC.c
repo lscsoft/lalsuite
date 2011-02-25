@@ -581,7 +581,6 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
   REAL8 phi0Min = AmpRange.phi0;
   REAL8 phi0Max = phi0Min + AmpRange.phi0Band;
   REAL8 SNR = AmpRange.SNR;
-  gsl_vector *A_Mu, *s_mu;
   REAL8 res_rho2;
 
   int gslstat;
@@ -620,15 +619,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
   }
 
   /* ----- allocate temporary interal storage vectors */
-  if ( (A_Mu = gsl_vector_alloc ( 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_alloc (4) failed.\n", fn);
-    return XLAL_ENOMEM;
-  }
-
-  if ( (s_mu = gsl_vector_alloc ( 4 )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_alloc (4) failed.\n", fn);
-    return XLAL_ENOMEM;
-  }
+  PulsarAmplitudeVect A_Mu_data = {0,0,0,0}, s_mu_data = {0,0,0,0};
 
   if ( SNR > 0 )
     {
@@ -650,7 +641,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       Amp.psi  = gsl_ran_flat ( rng, psiMin, psiMax );
       Amp.phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
-      XLALAmplitudeParams2Vect ( A_Mu, &Amp );
+      XLALAmplitudeParams2Vect ( A_Mu_data, Amp );
 
       /* testing inversion property
       {
@@ -661,6 +652,10 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       }
       */
 
+      /* set gsl-vector views on the fixed-size arrays A_Mu_data and s_mu_data */
+
+      gsl_vector_view A_Mu = gsl_vector_view_array (A_Mu_data, 4);
+      gsl_vector_view s_mu = gsl_vector_view_array ( s_mu_data, 4);
 
       /* GSL-doc: int gsl_blas_dsymv (CBLAS_UPLO_t Uplo, double alpha, const gsl_matrix * A,
        *                              const gsl_vector * x, double beta, gsl_vector * y )
@@ -671,13 +666,13 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
        * then the upper triangle and diagonal of A are used, and when Uplo
        * is CblasLower then the lower triangle and diagonal of A are used.
        */
-      if ( (gslstat = gsl_blas_dsymv (CblasUpper, 1.0, M_mu_nu, A_Mu, 0.0, s_mu)) ) {
+      if ( (gslstat = gsl_blas_dsymv (CblasUpper, 1.0, M_mu_nu, &A_Mu.vector, 0.0, &s_mu.vector)) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: gsl_blas_dsymv(M_mu_nu * A^mu failed): %s\n", fn, gsl_strerror (gslstat) );
 	return XLAL_EDOM;
       }
 
       /* compute optimal SNR for this signal: rho2 = A^mu M_{mu,nu} A^nu = A^mu s_mu */
-      if ( (gslstat = gsl_blas_ddot (A_Mu, s_mu, &res_rho2)) ) {
+      if ( (gslstat = gsl_blas_ddot (&A_Mu.vector, &s_mu.vector, &res_rho2)) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: lnL = gsl_blas_ddot(A^mu * s_mu) failed: %s\n", fn, gsl_strerror (gslstat) );
 	return XLAL_EDOM;
       }
@@ -687,8 +682,8 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 	REAL8 rescale_h0 = SNR / sqrt ( res_rho2 );
 	Amp.h0 *= rescale_h0;
 	res_rho2 = SQ(SNR);
-	gsl_vector_scale ( A_Mu, rescale_h0);
-	gsl_vector_scale ( s_mu, rescale_h0);
+	gsl_vector_scale ( &A_Mu.vector, rescale_h0);
+	gsl_vector_scale ( &s_mu.vector, rescale_h0);
       }
 
       gsl_vector_set ( *rho2_i, row, res_rho2 );
@@ -698,8 +693,8 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       gsl_matrix_set ( *Amp_i,  row, 2, Amp.psi  );
       gsl_matrix_set ( *Amp_i,  row, 3, Amp.phi0 );
 
-      gsl_matrix_set_row ( *A_Mu_i, row, A_Mu );
-      gsl_matrix_set_row ( *s_mu_i, row, s_mu );
+      gsl_matrix_set_row ( *A_Mu_i, row, &A_Mu.vector );
+      gsl_matrix_set_row ( *s_mu_i, row, &s_mu.vector );
 
       /*
       printf("A^mu = ");
@@ -709,9 +704,6 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       */
 
     } /* row < numDraws */
-
-  gsl_vector_free ( A_Mu );
-  gsl_vector_free ( s_mu );
 
   return 0;
 

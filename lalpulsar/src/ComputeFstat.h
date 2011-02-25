@@ -349,8 +349,8 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 
 FstatAtoms * XLALCreateFstatAtoms ( UINT4 num );
 
-int XLALAmplitudeParams2Vect ( gsl_vector *A_Mu, const PulsarAmplitudeParams *Amp );
-int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const gsl_vector *A_Mu );
+int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
+int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );

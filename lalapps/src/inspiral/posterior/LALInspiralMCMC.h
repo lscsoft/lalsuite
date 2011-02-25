@@ -278,6 +278,7 @@ tagLALMCMCInput
   REAL8FFTPlan *fwdplan;
   REAL8FFTPlan *revplan;
   REAL4FFTPlan *likelihoodPlan;
+  REAL4FFTPlan *likelihoodRevPlan;
   REAL8Window *window; /* Window for FFTing the data */
   LIGOTimeGPS epoch;
   REAL4   fLow;
@@ -346,7 +347,8 @@ tagLALMCMCInput
 /* For plus and cross polarisations in PhenSpinRD */
   REAL4Vector* Fwfp;
   REAL4Vector* Fwfc;
-
+  REAL4FFTPlan *longplan;
+  UINT4 mylength; 
 }  LALMCMCInput;
 /* </lalVerbatim>  */
 

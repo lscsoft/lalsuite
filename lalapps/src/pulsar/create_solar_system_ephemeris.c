@@ -31,7 +31,7 @@
  * system body over a given time range. The code is based on Curt Cutler's
  * FORTRAN code, which itself uses E. Miles. Standish's JPL functions. However,
  * large parts of the ephemeris file reading function and interpolation
- * functions have been taken from David Hoffman's ephem_read.c code found at 
+ * functions have been taken from David Hoffman's ephem_read.c code found at
  * http://www.projectpluto.com/jpl_eph.htm - the code found there offers far
  * more functionality then my code.
  */
@@ -146,7 +146,7 @@ void endian_swap(CHAR *pdata, size_t dsize, size_t nelements);
 /* function to read in coefficients from the ephemeris file for a give time */
 void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp);
 
-void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target, 
+void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   REAL8 *state, FILE *fp);
 
 void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp);
@@ -155,7 +155,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp);
 void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]);
 
 int main(int argc, char **argv){
-  FILE *fpe=NULL; 
+  FILE *fpe=NULL;
   FILE *fp=NULL; /* file pointer for ephemeris file */
 
   /* variable names taken from Curt's code */
@@ -285,9 +285,9 @@ inputs.noverlap);
     fprintf(stderr, "Error allocating memory.\n");
     return 1;
   }
-  
-  fprintf(stderr, "sizeof(coeffArray) = %lu\n", sizeof(coeffArray));
-  
+
+  fprintf(stderr, "sizeof(coeffArray) = %zu\n", sizeof(coeffArray));
+
   if(verbose){
     fprintf(stderr, "The array size for ephemeris file %s is %d.\n",
       inputs.ephemfile , ARRAY_SIZE);
@@ -304,7 +304,7 @@ inputs.noverlap);
       fprintf(stderr, "Error reading in ephemeris header.\n");
       return TESTFAIL;
     }
-    
+
     /* check that values are the same as in the existing ephemeris file */
     if(gps_yr - title[0] != 0. || inputs.nhre*hour - title[1] != 0. ||
        nentries - title[2] != 0.){
@@ -333,9 +333,9 @@ writing!\n");
   gps_JD[1] = 0.;
 
   gps = gps_2000 + (gps_JD[0] - jd_2000)*day;
-  
+
   convert(gps_JD, time);
-  
+
   pleph(coeffArray, time, inputs.target, R, fp);
 
   Rnow[0] = R[0];
@@ -359,9 +359,9 @@ writing!\n");
 
   gps_JD[0] = gps_JD_start1;
   gps_JD[1] = halfinterval_jd;
-  
+
   convert(gps_JD, time);
-  
+
   pleph(coeffArray, time, inputs.target, R, fp);
   Vnext[0] = R[3];
   Vnext[1] = R[4];
@@ -373,7 +373,7 @@ writing!\n");
   A[2] = (Vnext[2] - Vlast[2])/finterval;
 
   fgps = (REAL8)gps;
-  
+
   if(test){
     /* compare the ephemeris positions, velocites and accelerations */
     if( fscanf(fpe, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%lf", &fgps, &pos[0], &pos[1],
@@ -381,11 +381,11 @@ writing!\n");
       fprintf(stderr, "Error reading in ephemeris values.\n");
       return TESTFAIL;
     }
-      
+
     if(fabs(Rnow[0]-pos[0]) > 1e-12 || fabs(Rnow[1]-pos[1]) > 1e-12 ||
-      fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 || 
+      fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 ||
       fabs(Vnow[1]-vel[1]) > 1e-19 || fabs(Vnow[2]-vel[2]) > 1e-19 ||
-      fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 || 
+      fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 ||
       fabs(A[2]-acc[2]) > 1e-23){
       fprintf(stderr, "Position, velocity or acceleration is not the same as \
 in the exiting ephmeris file.\n");
@@ -452,11 +452,11 @@ A[0], A[1], A[2]);
         fprintf(stderr, "Error reading in ephemeris values.\n");
         return TESTFAIL;
       }
-      
+
       if(fabs(Rnow[0]-pos[0]) > 1e-12 || fabs(Rnow[1]-pos[1]) > 1e-12 ||
-         fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 || 
+         fabs(Rnow[2]-pos[2]) > 1e-12 || fabs(Vnow[0]-vel[0]) > 1e-19 ||
          fabs(Vnow[1]-vel[1]) > 1e-19 || fabs(Vnow[2]-vel[2]) > 1e-19 ||
-         fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 || 
+         fabs(A[0]-acc[0]) > 1e-23 || fabs(A[1]-acc[1]) > 1e-23 ||
          fabs(A[2]-acc[2]) > 1e-23){
         fprintf(stderr, "Position, velocity or acceleration is not the same as \
 in the exiting ephmeris file.\n");
@@ -479,9 +479,9 @@ A[1], A[2]);
   /* free memory */
   fclose(fp);
   fclose(fpe);
-  
+
   free(coeffArray);
-  
+
   if(test && verbose)
     fprintf(stderr, "The code has passed the test. Hoorah!\n");
 
@@ -601,7 +601,7 @@ void convert(REAL8 *gps_JD, REAL8 *time){
 void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
   REAL8 Tdelta = 0.;
   INT4 offset = 0;
-  
+
   /* for first time in this time should be set to zero to read in the first set
      of coefficients */
   if( time[0] == 0. ){
@@ -654,11 +654,11 @@ void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
 }
 
 void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
-  REAL8 stateTemp[6];  
+  REAL8 stateTemp[6];
 
   INT4 i=0;
 
-  REAL8 au=1.4959787066e8; 
+  REAL8 au=1.4959787066e8;
   /* Curt's AU value from his code - this is slightly different from the one
      in the JPL binary ephemeris files (of order a few hundred metres), so I
      need to muliply things be a factor of au_Curt/au_JPLephem */
@@ -666,9 +666,9 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
   /* if we're getting the Earth data then correct for the Moon */
   if( target == EARTH ){
     interpolate_state(coeffArray, time, target, stateTemp, fp);
-    
-    for (i=0; i<6; i++) 
-      state[i] = stateTemp[i];    
+
+    for (i=0; i<6; i++)
+      state[i] = stateTemp[i];
 
     /* get moon position */
     interpolate_state(coeffArray, time, MOON, stateTemp, fp);
@@ -679,7 +679,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
   else if( target == MOON ){
     interpolate_state(coeffArray, time, target, stateTemp, fp);
 
-    for (i=0; i<6; i++) 
+    for (i=0; i<6; i++)
       state[i] = stateTemp[i];
 
     /* get Earth position */
@@ -703,7 +703,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 /* this function will compute the position and velocity vector of a given
 planetary body from the Chebyshev coefficients - it does not compute nutations
 of librations */
-void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target, 
+void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   REAL8 *state, FILE *fp){
   REAL8 A[50], B[50], Cp[50], Psum[3], Vsum[3], Up[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
@@ -718,7 +718,7 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   }
 
   /* determin if we need a new record to be read, or if the current one is OK */
-  if( time[0]+time[1] < Tbeg || time[0]+time[1] > Tend) 
+  if( time[0]+time[1] < Tbeg || time[0]+time[1] > Tend)
     read_coeffs(coeffArray, time, fp);
 
   /* read coefficients from the header record */
@@ -730,26 +730,26 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   if ( G == 1 ){
     /* Tc = 2.*(time - Tbeg)/Tspan - 1.;*/
     Tc = (2.*(time[0]-Tbeg)/Tspan) + (2.*time[1]/Tspan) - 1.;
-    
+
     for (i=C ; i<(C+3*N) ; i++)  A[i-C] = coeffArray[i];
   }
   else if ( G > 1 ){
     Tsub = Tspan/(REAL8)G;          /* compute subgranule interval */
-       
+
     for ( j=G ; j>0 ; j-- ){
       Tbreak = Tbeg + ((REAL8) j-1) * Tsub;
-      
+
       if ( time[0]+time[1] > Tbreak ){
         Tseg  = Tbreak;
         offset = j-1;
         break;
       }
     }
-            
+
     /* Tc = 2.*(time - Tseg)/Tsub - 1.; */
     Tc = (2.*(time[0] - Tseg)/Tsub) + (2.*time[1]/Tsub) - 1.;
     C  = C + 3 * offset * N;
-       
+
     for (i=C ; i<(C+3*N) ; i++) A[i-C] = coeffArray[i];
   }
   else{     /* something has gone terribly wrong */
@@ -760,10 +760,10 @@ data.\n");
 
   /* calculate the position and velocity */
   for ( i=0 ; i<3 ; i++ ){    /* compute interpolating polynomials */
-    Cp[0] = 1.;           
+    Cp[0] = 1.;
     Cp[1] = Tc;
     Cp[2] = 2.*Tc*Tc - 1.;
-        
+
     Up[0] = 0.;
     Up[1] = 1.;
     Up[2] = 4.*Tc;
@@ -789,7 +789,7 @@ data.\n");
 void endian_swap(CHAR *pdata, size_t dsize, size_t nelements){
   UINT4 i, j, indx;
   CHAR tempbyte;
-  
+
   if (dsize <= 1) return;
 
   for (i=0; i<nelements; i++){
@@ -803,14 +803,14 @@ void endian_swap(CHAR *pdata, size_t dsize, size_t nelements){
 
     pdata = pdata + dsize;
   }
-  
+
   return;
 
 } /* endian swap */
 
 
 void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] = 
+  struct option long_options[] =
   {
     { "help",          no_argument,       0, 'h' },
     { "verbose",       no_argument, &verbose, 1 },
@@ -875,7 +875,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         break;
       case 't':
         inputParams->targName = NULL;
-  
+
         if((inputParams->targName=(CHAR*)strstr("MERCURY",optarg))!=NULL)
           inputParams->target = MERCURY;
         else if((inputParams->targName=(CHAR*)strstr("VENUS",optarg))!=NULL)
@@ -885,7 +885,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         else if((inputParams->targName=(CHAR*)strstr("MARS",optarg))!=NULL)
           inputParams->target = MARS;
         else if((inputParams->targName=(CHAR*)strstr("JUPITER",optarg)) !=
-          NULL)      
+          NULL)
           inputParams->target = JUPITER;
         else if((inputParams->targName=(CHAR*)strstr("SATURN",optarg)) !=
           NULL)
@@ -898,9 +898,9 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
           inputParams->target = NEPTUNE;
         else if((inputParams->targName=(CHAR*)strstr("PLUTO",optarg))!=NULL)
           inputParams->target = PLUTO;
-        else if((inputParams->targName=(CHAR*)strstr("MOON",optarg))!=NULL) 
+        else if((inputParams->targName=(CHAR*)strstr("MOON",optarg))!=NULL)
           inputParams->target = MOON;
-        else if((inputParams->targName=(CHAR*)strstr("SUN",optarg))!=NULL)  
+        else if((inputParams->targName=(CHAR*)strstr("SUN",optarg))!=NULL)
           inputParams->target = SUN;
         else{
           fprintf(stderr, "You must enter a valid solar system body!\n");

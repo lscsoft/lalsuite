@@ -243,7 +243,7 @@ BOOLEAN uvar_version;		/**< output version information */
 
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-CHAR *uvar_parfile;             /** option .par file path */ 
+CHAR *uvar_parfile;             /** option .par file path */
 
 /*----------------------------------------------------------------------*/
 
@@ -502,7 +502,7 @@ main(int argc, char *argv[])
 				 uvar_outSFTbname);
 		  return MAKEFAKEDATAC_ESUB;
 		}
-		
+
 	      }
 	      else {
 
@@ -583,6 +583,13 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       printf ("%s\n", cfg->VCSInfoString );
       exit (0);
     }
+
+  /* ----- check contradictory/conflicting options ----- */
+  if ( uvar_outSingleSFT && ( uvar_generationMode == GENERATE_PER_SFT ) ) {
+    XLALPrintError ("%s: sorry, --outSingleSFT currently only works in --generationMode=0!\n", fn );
+    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+  }
+
 
   /* read in par file parameters if given */
    if (have_parfile){
@@ -729,7 +736,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
-    if ( have_parfile ) 
+    if ( have_parfile )
       {
 	uvar_f1dot = 2.*pulparams.f1;
 	uvar_f2dot = 2.*pulparams.f2;
@@ -1323,8 +1330,8 @@ InitUserVars (LALStatus *status)
 
   uvar_logfile = NULL;
 
-  /* per default we generate the whole timeseries first (except for hardware-injections)*/
-  uvar_generationMode = GENERATE_ALL_AT_ONCE;
+  /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
+  uvar_generationMode = GENERATE_PER_SFT;
 
   uvar_window = NULL;	/* By default, use rectangular window */
 

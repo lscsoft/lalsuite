@@ -30,7 +30,7 @@ candidateVector * new_candidateVector(UINT4 length)
    
    candidateVector *vector = XLALMalloc(sizeof(*vector));
    if (vector==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*vector));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*vector));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
       
@@ -41,7 +41,7 @@ candidateVector * new_candidateVector(UINT4 length)
       vector->data = XLALMalloc( length*sizeof(*vector->data) );
       if (vector->data==NULL) {
          XLALFree((candidateVector*)vector);
-         fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
+         fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, length*sizeof(*vector->data));
          XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
       }
    }
@@ -66,7 +66,7 @@ candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length)
    vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data));
    if (vector->data==NULL) {
       vector->length = 0;
-      fprintf(stderr,"%s: XLALRealloc(%lu) failed.\n", fn, length*sizeof(*vector->data));
+      fprintf(stderr,"%s: XLALRealloc(%zu) failed.\n", fn, length*sizeof(*vector->data));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    vector->length = length;
@@ -147,13 +147,13 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    }
    
    //If not equal, make output vector the same length as the input vector
-   if (output->length < input->length) {
+   /* if (output->length < input->length) {
       output = resize_candidateVector(output, input->length);
       if (output->length < input->length) {
          fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, input->length);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
-   }
+   } */
    
    //Set default if bad option given
    if (option!=0 || option!=1) option = 0;
@@ -340,6 +340,13 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
+               if (output->numofcandidates == output->length-1) {
+                  output = resize_candidateVector(output, 2*output->length);
+                  if (output->data==NULL) {
+                     fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", fn, 2*output->length);
+                     XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+                  }
+               }
                loadCandidateData(&output->data[output->numofcandidates], avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization);
                numcandoutlist++;
                (output->numofcandidates)++;
