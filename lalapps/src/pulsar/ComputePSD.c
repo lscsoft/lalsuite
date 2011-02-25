@@ -146,7 +146,9 @@ int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
 static REAL8 math_op(REAL8*, size_t, INT4);
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
-MultiSFTVector *XLALReadSFTs ( const UserVariables_t *uvar );
+MultiSFTVector *XLALReadSFTs ( UINT4 *firstBin, UINT4 *lastBin, const UserVariables_t *uvar );
+
+int XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect, UINT4 firstBin, UINT4 lastBin );
 
 /*============================================================
  * FUNCTION definitions
@@ -166,9 +168,6 @@ main(int argc, char *argv[])
   REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
   REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
   REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
-
-  MultiSFTVector *inputSFTs = NULL;
-  MultiPSDVector *multiPSD = NULL;
 
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 0;
@@ -190,7 +189,9 @@ main(int argc, char *argv[])
   if (uvar.help)
     return EXIT_SUCCESS;
 
-  if ( ( inputSFTs = XLALReadSFTs ( &uvar ) ) == NULL )
+  UINT4 firstBin, lastBin;
+  MultiSFTVector *inputSFTs = NULL;
+  if ( ( inputSFTs = XLALReadSFTs ( &firstBin, &lastBin, &uvar ) ) == NULL )
     {
       XLALPrintError ("Call to XLALReadSFTs() failed with xlalErrno = %d\n", xlalErrno );
       return EXIT_FAILURE;
@@ -223,7 +224,13 @@ main(int argc, char *argv[])
   LogPrintf (LOG_DEBUG, "Computing spectrogram and PSD ... ");
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
+  MultiPSDVector *multiPSD = NULL;
   LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
+  /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
+  if ( ( XLALCropMultiPSDVector ( multiPSD, firstBin, lastBin )) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALCropMultiPSDVector (inputPSD, %d, %d) failed with xlalErrno = %d\n", fn, firstBin, lastBin, xlalErrno );
+    return EXIT_FAILURE;
+  }
 
   /* start frequency and frequency spacing */
   Freq0 = multiPSD->data[0]->data[0].f0;
@@ -878,10 +885,19 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname>
 } /* XLALDumpMultiPSDVector() */
 
 
-/** Load all SFTs according to user-input
+/** Load all SFTs according to user-input, returns multi-SFT vector.
+ *
+ * Returns 'effective' range of SFT-bins [firstBin, lastBin], which which the PSD will be estimated:
+ *   - if the user input {fStart, fBand} then these are loaded from SFTs and directly translated into bins
+ *   - if user input {Freq, FreqBand}, we load a wider frequency-band ADDING running-median/2 on either side
+ *     from the SFTs, and firstBind, lastBin correspond to {Freq,FreqBand} (rounded to closest bins)
+ *
  */
 MultiSFTVector *
-XLALReadSFTs ( const UserVariables_t *uvar )
+XLALReadSFTs ( UINT4 *firstBin,			/**< [out] first PSD bin for output */
+               UINT4 *lastBin,			/**< [out] last PSD bin for output */
+               const UserVariables_t *uvar	/**< [in] complete user-input */
+               )
 {
   const char *fn = __func__;
 
@@ -937,23 +953,156 @@ XLALReadSFTs ( const UserVariables_t *uvar )
   if ( inputTimeStampsVector )
     XLALDestroyTimestampVector ( inputTimeStampsVector );
 
-  /* read the sfts */
+  /* ----- some user-input consistency checks */
+  BOOLEAN have_fStart   = XLALUserVarWasSet ( &uvar->fStart );
+  BOOLEAN have_Freq     = XLALUserVarWasSet ( &uvar->Freq );
+  BOOLEAN have_fBand    = XLALUserVarWasSet ( &uvar->fBand );
+  BOOLEAN have_FreqBand = XLALUserVarWasSet ( &uvar->FreqBand );
+  if ( have_fStart && have_Freq ) {
+    XLALPrintError ("%s: use only one of --fStart OR --Freq (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( have_fBand && have_FreqBand ) {
+    XLALPrintError ("%s: use only one of --fBand OR --FreqBand (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( ( have_fStart && have_FreqBand ) || ( have_Freq && have_fBand ) ) {
+    XLALPrintError ("%s: don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  /* ---------- figure out the right frequency-band to read from the SFTs, depending on user-input ----- */
+  REAL8 fMin, fMax;
+  UINT4 binsOffset; /* rngmed bin offset from start and end */
+  UINT4 binsBand;   /* width of physical FreqBand in bins */
+  if ( have_Freq )
+    {
+      REAL8 dFreq = catalog->data[0].header.deltaF;
+      binsOffset = uvar->blocksRngMed / 2;	/* truncates down! */
+      binsBand   = ceil ( (uvar->FreqBand - 1e-9) / dFreq ) + 1; /* round up ! */
+
+      REAL8 rngmedSideBand = binsOffset * dFreq;
+
+      fMin = uvar->Freq - rngmedSideBand;
+      fMax = uvar->Freq + uvar->FreqBand + rngmedSideBand;
+    }
+  else	/* NOTE: if no user-input on freq-band, we fall back to defaults on {fStart, fBand} */
+    {
+      fMin = uvar->fStart;
+      fMax = uvar->fStart + uvar->fBand;
+      binsOffset = 0;	/* no truncation of rngmed sidebands */
+    }
+
+  /* ---------- read the sfts ---------- */
   LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
   MultiSFTVector *multi_sfts;
-  if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, uvar->fStart, uvar->fStart + uvar->fBand) ) == NULL ) {
-    XLALPrintError ("%s: XLALLoadMultiSFTs() failed with xlalErrno = %d\n", fn, xlalErrno );
+  if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) == NULL ) {
+    XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", fn, fMin, fMax, xlalErrno );
     XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
   }
+  XLALDestroySFTCatalog ( &catalog );
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-  LALDestroySFTCatalog ( &status, &catalog );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ("%s: LALDestroySFTCatalog() failed with statusCode = %d\n", fn, status.statusCode );
-    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
-  }
-
   /* ---------- end loading SFTs ---------- */
+
+  /* figure out effective PSD bin-boundaries for user */
+  UINT4 numBins = multi_sfts->data[0]->data[0].data->length;
+  INT4 bin0, bin1;
+  if ( have_Freq )
+    {
+      bin0 = 0 + binsOffset;
+      bin1 = bin0 + binsBand - 1;
+    }
+  else	/* output all bins loaded from SFTs (includes rngmed-sidebands) */
+    {
+      bin0 = 0;
+      bin1 = numBins - 1;
+    }
+
+  /* return results */
+  (*firstBin) = (UINT4) bin0;
+  (*lastBin ) = (UINT4) bin1;
+
+  XLALPrintInfo ("%s: loaded SFTs have %d bins, effective PSD output band is [%d, %d]\n", fn, numBins, bin0, bin1 );
 
   return multi_sfts;
 
 } /* XLALReadSFTs() */
+
+/** Function that *truncates the PSD in place* to the requested frequency-bin interval [firstBin, lastBin] for the given multiPSDVector.
+ */
+int
+XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect,
+                         UINT4 firstBin,
+                         UINT4 lastBin
+                         )
+{
+  const char *fn = __func__;
+
+  /* check user input */
+  if ( !multiPSDVect ) {
+    XLALPrintError ("%s: invalid NULL input 'multiPSDVect'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( lastBin < firstBin ) {
+    XLALPrintError ("%s: empty bin interval requested [%d, %d]\n", fn, firstBin, lastBin );
+    XLAL_ERROR ( fn, XLAL_EDOM );
+  }
+
+  UINT4 numIFOs = multiPSDVect->length;
+  UINT4 numBins = multiPSDVect->data[0]->data[0].data->length;
+
+  if ( (firstBin >= numBins) || (lastBin >= numBins ) ) {
+    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", fn, firstBin, lastBin, 0, numBins - 1 );
+    XLAL_ERROR ( fn, XLAL_EDOM );
+  }
+
+  /* ----- check if there's anything to do at all? ----- */
+  if ( (firstBin == 0)  && (lastBin == numBins - 1) )
+    return XLAL_SUCCESS;
+
+  REAL8 f0    = multiPSDVect->data[0]->data[0].f0;
+  REAL8 dFreq = multiPSDVect->data[0]->data[0].deltaF;
+
+  /* ----- loop over detectors, timestamps, then crop each PSD ----- */
+  UINT4 X;
+  for ( X=0; X < numIFOs; X ++ )
+    {
+      PSDVector *thisPSDVect = multiPSDVect->data[X];
+      UINT4 numTS   = thisPSDVect->length;
+
+      UINT4 iTS;
+      for ( iTS = 0; iTS < numTS; iTS ++ )
+        {
+          REAL8FrequencySeries *thisPSD = &thisPSDVect->data[iTS];
+
+          if ( numBins != thisPSD->data->length ) {
+            XLALPrintError ("%s: inconsistent number of frequency-bins across multiPSDVector: X=%d, iTS=%d: numBins = %d != %d\n",
+                            fn, X, iTS, numBins, thisPSD->data->length );
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
+
+          UINT4 numNewBins = lastBin - firstBin + 1;
+          /* now do some clever memory-sane cropping on this PSD */
+          if ( firstBin > 0 )
+            {
+              void *dest = thisPSD->data->data;	/* always copy to the beginning of array */
+              void *src  = thisPSD->data->data + firstBin;	/* we're copying from firstBin on ... */
+
+              if ( dest != memmove(dest, src, numNewBins * sizeof(*thisPSD->data->data)) ) { /* memmove() handles overlapping memory correctly */
+                XLALPrintError ("%s: something failed in moving PSD data with memmove()\n", fn );
+                XLAL_ERROR ( fn, XLAL_EFAILED );
+              }
+            }
+          /* truncate array to new size */
+          thisPSD->data->length = numNewBins;
+
+          /* set correct start-frequency in cropped PSD */
+          thisPSD->f0 = f0 + firstBin * dFreq;
+
+        } /* for iTS < numTS */
+
+    } /* for X < numIFOs */
+
+  /* that should be all ... */
+  return XLAL_SUCCESS;
+
+} /* XLALCropMultiPSDVector() */
