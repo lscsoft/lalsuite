@@ -800,6 +800,8 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname>
     XLAL_ERROR ( fn, XLAL_ENOMEM);
   }
 
+  
+
   UINT4 numIFOs = multiPSDVect->length;
   UINT4 X;
   for ( X = 0; X < numIFOs; X ++ )
@@ -876,9 +878,10 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname>
         } /* for iTS < numTS */
 
       fclose ( fp );
-      XLALFree ( fname );
 
     } /* for X < numIFOs */
+
+  XLALFree ( fname );
 
   return XLAL_SUCCESS;
 
