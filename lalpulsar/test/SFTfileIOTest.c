@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 				 TESTDIR "SFT-test6;"
 				 TESTDIR "SFT-test7", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[5]*", NULL ), &status );
 
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
@@ -295,9 +295,9 @@ int main(int argc, char *argv[])
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 6 SFTs from 2 IFOs should have been read */
-  if ( (sft_vect->length != 6) 	/* either as a single SFTVector */
+  if ( (sft_vect->length != 4) 	/* either as a single SFTVector */
        || (multsft_vect->length != 2) 	/* or separated by detector */
-       || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
+       || (multsft_vect->data[0]->length != 3) || ( multsft_vect->data[1]->length != 1 ) )
     {
       XLALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
@@ -336,13 +336,11 @@ int main(int argc, char *argv[])
       return SFTFILEIOTESTC_ESUB;
     }
     /* check that the single file SFT is the same as the single SFTs */
-    const UINT4 numSingleSFTs = 5;
+    const UINT4 numSingleSFTs = 3;
     const CHAR *singleSFTs[] = {
       "H-1_H1_60SFT_test-000012345-61.sft",
       "H-1_H1_60SFT_test-000012465-61.sft",
-      "H-1_H1_60SFT_test-000012585-61.sft",
-      "H-1_H1_60SFT_test-000012765-61.sft",
-      "H-1_H1_60SFT_test-000012825-61.sft"
+      "H-1_H1_60SFT_test-000012585-61.sft"
     };
     fprintf(stderr, "*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
