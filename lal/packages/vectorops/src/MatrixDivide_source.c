@@ -1,24 +1,31 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE2,`D',`define(`TYPE2',`REAL8')')
-ifelse(TYPECODE2,`S',`define(`TYPE2',`REAL4')')
-ifelse(TYPECODE2,`I2',`define(`TYPE2',`INT2')')
-ifelse(TYPECODE2,`I4',`define(`TYPE2',`INT4')')
-ifelse(TYPECODE2,`I8',`define(`TYPE2',`INT8')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`VTYPE2',`format(`%sVector',TYPE2)')
-define(`ATYPE2',`format(`%sArray',TYPE2)')
-define(`F1',`format(`LAL%sDotSlash%sVector',TYPECODE,TYPECODE2)')
-define(`F2',`format(`LAL%sVectorDotSlash%s',TYPECODE,TYPECODE2)')
-define(`F3',`format(`LAL%sVectorDotSlash%sVector',TYPECODE,TYPECODE2)')
-define(`F4',`format(`LAL%sDotSlash%sArray',TYPECODE,TYPECODE2)')
-define(`F5',`format(`LAL%sArrayDotSlash%s',TYPECODE,TYPECODE2)')
-define(`F6',`format(`LAL%sArrayDotSlash%sArray',TYPECODE,TYPECODE2)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define CONCAT4x(a,b,c,d) a##b##c##d
+#define CONCAT4(a,b,c,d) CONCAT4x(a,b,c,d)
+#define CONCAT5x(a,b,c,d,e) a##b##c##d##e
+#define CONCAT5(a,b,c,d,e) CONCAT5x(a,b,c,d,e)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,Vector)
+#define ATYPE CONCAT2(TYPE,Array)
+#define VTYPE2 CONCAT2(TYPE2,Vector)
+#define ATYPE2 CONCAT2(TYPE2,Array)
+
+#define CAFUNC CONCAT3(LAL,TYPECODE,CreateArray)
+#define CVFUNC CONCAT3(LAL,TYPECODE,CreateVector)
+#define DAFUNC CONCAT3(LAL,TYPECODE,DestroyArray)
+#define CAFUNC2 CONCAT3(LAL,TYPECODE2,CreateArray)
+#define CVFUNC2 CONCAT3(LAL,TYPECODE2,CreateVector)
+#define DAFUNC2 CONCAT3(LAL,TYPECODE2,DestroyArray)
+
+#define F1 CONCAT5(LAL,TYPECODE,DotSlash,TYPECODE2,Vector)
+#define F2 CONCAT4(LAL,TYPECODE,VectorDotSlash,TYPECODE2)
+#define F3 CONCAT5(LAL,TYPECODE,VectorDotSlash,TYPECODE2,Vector)
+#define F4 CONCAT5(LAL,TYPECODE,DotSlash,TYPECODE2,Array)
+#define F5 CONCAT4(LAL,TYPECODE,ArrayDotSlash,TYPECODE2)
+#define F6 CONCAT5(LAL,TYPECODE,ArrayDotSlash,TYPECODE2,Array)
 
 /******************************* <lalLaTeX file="MatrixDivideC">
 \begin{verbatim}void F1 ( LALStatus *status, VTYPE2 **result,
@@ -36,7 +43,7 @@ void F1 (
         UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F1" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F1) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -52,7 +59,7 @@ void F1 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE2`'CreateVector( status->statusPtr, result, length);
+        CVFUNC2( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
@@ -79,7 +86,7 @@ void F2 (
         UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F2" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F2) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -95,7 +102,7 @@ void F2 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE2`'CreateVector( status->statusPtr, result, length);
+        CVFUNC2( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
@@ -122,7 +129,7 @@ void F3 (
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F3" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F3) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -142,7 +149,7 @@ void F3 (
         /*  length must be greater than one  */
         ASSERT ( length > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-	LAL`'TYPECODE`'CreateVector( status->statusPtr, result, length);
+	CVFUNC( status->statusPtr, result, length);
 
         for (iterator = 0; iterator < length; iterator++)
         {
@@ -171,7 +178,7 @@ void F4 (
         UINT4		iterator, myindex;
 	UINT4		row, column;
 
-        INITSTATUS( status, "4" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F4) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -197,7 +204,7 @@ void F4 (
 	/*  length must be greater than one  */
         ASSERT ( length->data[0] > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE2`'CreateArray( status->statusPtr, result, length);
+        CAFUNC2( status->statusPtr, result, length);
 
 	if( ndims == 2 )
 	{
@@ -212,7 +219,7 @@ void F4 (
         }
         else
         {
-		LAL`'TYPECODE2`'DestroyArray( status->statusPtr, result);
+		DAFUNC2( status->statusPtr, result);
 		(*result) = NULL;
         }
 
@@ -241,7 +248,7 @@ void F5 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F5" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F5) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -267,7 +274,7 @@ void F5 (
         /*  length must be greater than one  */
         ASSERT ( length->data[0] > 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-        LAL`'TYPECODE`'CreateArray( status->statusPtr, result, length);
+        CAFUNC( status->statusPtr, result, length);
 
 	if( ndims == 2 )
 	{
@@ -282,7 +289,7 @@ void F5 (
         }
         else
         {
-		LAL`'TYPECODE`'DestroyArray( status->statusPtr, result);
+		DAFUNC( status->statusPtr, result);
 		(*result) = NULL;
         }
 
@@ -312,7 +319,7 @@ void F6 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F6" , MATLABMATRIXDIVC);
+        INITSTATUS( status, STRING(F6) , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -349,7 +356,7 @@ void F6 (
 		ASSERT ( length->data[iterator] == ((ATYPE2*)(A))->dimLength->data[iterator], status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 	}
 
-        LAL`'TYPECODE`'CreateArray( status->statusPtr, result, length);
+        CAFUNC( status->statusPtr, result, length);
 
 	if ( ndims == 2 )
 	{
@@ -364,7 +371,7 @@ void F6 (
 	}
 	else
 	{
-		LAL`'TYPECODE`'DestroyArray( status->statusPtr, result);
+		DAFUNC( status->statusPtr, result);
 		(*result) = NULL;
 	}
 
