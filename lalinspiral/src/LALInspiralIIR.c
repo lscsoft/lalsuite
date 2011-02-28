@@ -22,7 +22,7 @@
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
-	int j, jmax, jstep, k;
+	int j = amp->length-1, jstep, k;
 	int nfilters = 0;
 	double phase_ddot, phase_dot;
 
@@ -30,25 +30,18 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 	if (amp->length != phase->length) 
 	         XLAL_ERROR(__func__, XLAL_EINVAL);
 
-	jmax = amp->length;
-
-	/* FIXME: Error check that *b0, *a1, *delay ARE null pointers */
-	/*if (!*a1 || !*b0 || !*delay)
-	         XLAL_ERROR(__func__, XLAL_EFAULT);*/
-
-	phase_ddot = (phase->data[2] -2.0 * phase->data[1] + phase->data[0]) / ( 2.0 * LAL_PI); // Second derivative of the phase at the first data point
-
-	jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot) + 0.5);
-	j = jstep;
-
 	*a1 = XLALCreateCOMPLEX16Vector(0);
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
 
-	while (j < jmax - 2 && jstep != 0) {
-		/* FIXME: Check that the flooring of k really is correct */
+	while (j >= 0 ) {
+		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
+		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
+		k = (int ) floor((double ) j - alpha * ((double ) jstep) + 0.5);
+
+		if (k <= 2) break;
 		nfilters++;
-		k = (int ) floor((double ) j - alpha * ((double ) jstep) + 0.5) - 1;
+
 		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
 
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */
@@ -58,13 +51,11 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 		/* Record a1, b0 and delay */
 		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((double) exp(-beta / ((double) jstep)), -phase_dot);
-		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j-(k+1))) );
-		(*delay)->data[nfilters-1] = jmax - j;
+		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j-(k+0))) );//NOTE CHANGE FROM k+1 to k+0
+		(*delay)->data[nfilters-1] = amp->length - j;
 
 		/* Calculate the next data point step */
-		phase_ddot = (phase->data[j+1] - 2.0 * phase->data[j] + phase->data[j-1]) / (2.0 * LAL_PI);
-		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
-		j += jstep;
+		j -= jstep;
 
 	}
 
