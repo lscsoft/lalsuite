@@ -469,8 +469,8 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
       if ( this_header.deltaF != first_header.deltaF )
 	{
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent Tsft!\n\n",
-			file_pattern);
+	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent deltaF: %.18g != %.18g!\n\n",
+                         file_pattern, this_header.deltaF, first_header.deltaF );
 	  ABORT ( status, SFTFILEIO_EDIFFTSFT, SFTFILEIO_MSGEDIFFTSFT );
 	}
 
