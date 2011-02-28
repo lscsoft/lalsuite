@@ -194,6 +194,7 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 
 int main(int argc, char *argv[])
 {
+  const char *fn = __func__;
   LALStatus status = empty_status;
 
   SFTCatalog *catalog = NULL;
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
   SFTVector *sft_vect = NULL;
   SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
+  MultiSFTVector *multsft_vect2 = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
 
@@ -285,6 +287,11 @@ int main(int argc, char *argv[])
 
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
+  /* load again, using XLAL API */
+  if ( ( multsft_vect2 = XLALLoadMultiSFTs ( catalog, -1, -1 )) == NULL ) {
+    XLALPrintError ("%s: XLALLoadMultiSFTs (cat, -1, -1) failed with xlalErrno = %d\n", fn, xlalErrno );
+    return SFTFILEIOTESTC_ESUB;
+  }
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 6 SFTs from 2 IFOs should have been read */
@@ -295,6 +302,19 @@ int main(int argc, char *argv[])
       XLALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
+
+  /* compare results from LALLoadMultiSFTs() and XLALLoadMultiSFTs() */
+  {
+    UINT4 numIFOs = multsft_vect->length;
+    UINT4 X;
+    for ( X=0; X < numIFOs; X ++ )
+      {
+        if( CompareSFTVectors ( multsft_vect->data[X], multsft_vect2->data[X] ) ) {
+          XLALPrintError ("%s: comparing (X)LALLoadMultiSFTs(): sft-vectors differ for X=%d\n", fn, X );
+          return SFTFILEIOTESTC_ESUB;
+        }
+      } /* for X < numIFOs */
+  } /* ------ */
 
   /* ----- v2 SFT writing ----- */
   /* write v2-SFT to disk */
@@ -385,6 +405,8 @@ int main(int argc, char *argv[])
 
   SUB ( LALDestroySFTVector ( &status, &sft_vect ), &status );
   SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
+  SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect2 ), &status );
+
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
   /* need to set proper detector! */
