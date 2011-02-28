@@ -407,9 +407,13 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 		else 
 		{
 			if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
-			/*else {	if(jump_select<0.3) XLALMCMCJumpSingle(MCMCInput,temp,covM);*/
-			else XLALMCMCJump(MCMCInput,temp,covM);
-			/*}*/
+			else {
+			  /* Check for higher harmonics present */
+			  if(jump_select=gsl_rng_uniform(RNG)<0.1 && MCMCInput->ampOrder!=0)
+			    XLALMCMCJumpHarmonic(MCMCInput,temp);
+			  else /* Otherwise just perform a regular jump */
+			    XLALMCMCJump(MCMCInput,temp,covM);
+			}
 		}
 		/* Evoluate the MH ratio */		
 		MCMCInput->funcPrior(MCMCInput,temp);

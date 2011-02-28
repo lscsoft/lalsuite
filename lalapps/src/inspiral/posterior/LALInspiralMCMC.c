@@ -850,6 +850,50 @@ INT4 XLALMCMCDifferentialEvolution(
 	return(0);
 }
 
+/*********************************************/
+/* Jump between harmonics by altering mchirp */
+/*********************************************/
+
+INT4 XLALMCMCJumpHarmonic(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter
+     )
+{
+  REAL8 old,new;
+  REAL4 randnum;
+  UINT4 maxOrder;
+  REAL8 mcFactor,mcnew;
+  LALStatus status;
+  memset(&status,0,sizeof(LALStatus));
+  
+  /* Check random params exist */
+  if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
+
+  /* Maximum harmonic multiple to include in jumps */
+  maxOrder = (inputMCMC->ampOrder+2)/2;
+  
+  /* Select two harmonics */
+  LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
+  old=ceil(randnum*(REAL4)maxOrder);
+  LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
+  new=ceil(randnum*(REAL4)maxOrder);
+  
+  /* Ratio of mchirp is determined by (old/new)^(5/8) */
+  mcFactor = pow(old/new, 5./8.);
+  if(XLALMCMCCheckParameter(parameter,"logmc"))
+  {
+    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logmc"));
+    XLALMCMCSetParameter(parameter,"logmc",log(mcnew));
+  }
+  else
+  {
+    mcnew=mcFactor*XLALMCMCGetParameter(parameter,"mchirp");
+    XLALMCMCSetParameter(parameter,"mchirp",mcnew);
+  }
+  XLALMCMCCyclicReflectiveBound(parameter);
+  return(0);
+}
+  
 INT4 XLALMCMCReflectDetPlane(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
