@@ -800,8 +800,6 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname>
     XLAL_ERROR ( fn, XLAL_ENOMEM);
   }
 
-  
-
   UINT4 numIFOs = multiPSDVect->length;
   UINT4 X;
   for ( X = 0; X < numIFOs; X ++ )
@@ -838,7 +836,7 @@ XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname>
       fprintf (fp, "%-19d", -1 );
       for (iFreq = 0; iFreq < numFreqs; iFreq++ )
         fprintf (fp, " %-21.16g", f0 + iFreq * dFreq );
-      fprintf (fp, "\n");
+      fprintf (fp, "\n\n\n");
 
       /* output another header line describing the following format "ti[GPS] PSD(f1) ... " */
       fprintf(fp,"%%%%%-17s", "ti[GPS]");
