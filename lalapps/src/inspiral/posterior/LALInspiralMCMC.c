@@ -870,7 +870,7 @@ INT4 XLALMCMCJumpHarmonic(
   if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
 
   /* Maximum harmonic multiple to include in jumps */
-  maxOrder = (inputMCMC->ampOrder+2)/2;
+  maxOrder = inputMCMC->ampOrder+2;
   
   /* Select two harmonics */
   LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
