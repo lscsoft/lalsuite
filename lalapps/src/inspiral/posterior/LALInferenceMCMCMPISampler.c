@@ -2128,7 +2128,7 @@ void PTMCMCLALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState
   LALVariables *ptJ = dePts[j];
 
   for (i = 0; names[i] != NULL; i++) {
-    if (!checkVariable(proposedParams, names[i]) || !checkVariable(ptJ, names[i])) {
+    if (!checkVariable(proposedParams, names[i]) || !checkVariable(ptJ, names[i]) || !checkVariable(ptI, names[i])) {
       /* Ignore variable if it's not in each of the params. */
     } else {
       REAL8 x = *((REAL8 *)getVariable(proposedParams, names[i]));
