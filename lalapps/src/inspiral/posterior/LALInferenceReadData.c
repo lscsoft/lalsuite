@@ -662,8 +662,6 @@ char **getHeaderLine(FILE *inp) {
   do {
     colName=strtok(NULL, delimiters);
 
-    fprintf(stderr, "Assigning column name %d to %s (max len = %d, pointer = %p).\n", colNamesLen, colName, colNamesMaxLen, colNames);
-
     colNames[colNamesLen]=colNameToParamName(colName);
     colNamesLen++;
 

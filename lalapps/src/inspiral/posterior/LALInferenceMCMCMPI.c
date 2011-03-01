@@ -843,11 +843,6 @@ void initVariables(LALInferenceRunState *state)
           state->differentialPoints = dePts;
           state->differentialPointsLength = dePtsLen;
           
-          size_t i;
-          for (i = 0; i < state->differentialPointsLength-1; i++) {
-            printVariables(state->differentialPoints[i]);
-          }
-
           fclose(dePtsFile);
           free(headers); /* Reclaim some (but not all) the memory from
                             header.  (The individual names must stick

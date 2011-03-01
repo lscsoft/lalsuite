@@ -815,6 +815,8 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         REAL8 SPINROTFRAC = 0.0; /* (runState->template == &templateLALSTPN ? 0.05 : 0.0); */
         REAL8 COVEIGENFRAC;
         REAL8 IOTADISTANCEFRAC=0.05;
+        REAL8 DIFFFULLFRAC;
+        REAL8 DIFFPARTIALFRAC;
         ProcessParamsTable *ppt;
   
         ppt=getProcParamVal(runState->commandLine, "--iotaDistance");
@@ -828,11 +830,19 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
           COVEIGENFRAC = 0.0;
         }
 
+        if (getProcParamVal(runState->commandLine, "--differential-evolution")) {
+          DIFFFULLFRAC = 1.0;
+          DIFFPARTIALFRAC = 1.0 / 4.0;
+        } else {
+          DIFFFULLFRAC = 0.0;
+          DIFFPARTIALFRAC = 0.0;
+        }
+
         nIFO = 0;
         while(ifo){ifo=ifo->next; nIFO++;}
         
         if (nIFO < 2) {
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceInclinationFlip,
@@ -841,12 +851,17 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
                                           &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
+                                          &PTMCMCLALInferenceDifferentialEvolutionFull,
+                                          &PTMCMCLALInferenceDifferentialEvolutionMasses,
+                                          &PTMCMCLALInferenceDifferentialEvolutionAmp,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSpins,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSky,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
           return;
         } else if (nIFO < 3) {
           /* Removed the rotate sky function from proposal because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -856,11 +871,16 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
                                           &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
+                                          &PTMCMCLALInferenceDifferentialEvolutionFull,
+                                          &PTMCMCLALInferenceDifferentialEvolutionMasses,
+                                          &PTMCMCLALInferenceDifferentialEvolutionAmp,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSpins,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSky,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         } else {
           /* Removed the rotate sky function because it's not symmetric. */
-          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC};
+          REAL8 weights[] = {BLOCKFRAC, SINGLEFRAC, 0.0 /* SKYFRAC */, 0.0 /* SKYFRAC */, INCFRAC, PHASEFRAC, SPINROTFRAC, COVEIGENFRAC, SKYLOCSMALLWANDERFRAC, IOTADISTANCEFRAC, DIFFFULLFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC, DIFFPARTIALFRAC};
           LALProposalFunction *props[] = {&PTMCMCLALBlockCorrelatedProposal,
                                           &PTMCMCLALSingleAdaptProposal,
                                           &PTMCMCLALInferenceRotateSky,
@@ -871,6 +891,11 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                           &PTMCMCLALInferenceCovarianceEigenvectorJump,
                                           &PTMCMCLALInferenceSkyLocWanderJump,
                                           &PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump,
+                                          &PTMCMCLALInferenceDifferentialEvolutionFull,
+                                          &PTMCMCLALInferenceDifferentialEvolutionMasses,
+                                          &PTMCMCLALInferenceDifferentialEvolutionAmp,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSpins,
+                                          &PTMCMCLALInferenceDifferentialEvolutionSky,
                                           0};
           PTMCMCCombinedProposal(runState, proposedParams, props, weights);
         }
@@ -2058,4 +2083,85 @@ void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunStat
 
   LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
   
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionFull(LALInferenceRunState *runState, LALVariables *proposedParams) {
+  PTMCMCLALInferenceDifferentialEvolutionNames(runState, proposedParams, NULL);
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState, 
+                                                  LALVariables *proposedParams,
+                                                  const char **names) {
+  if (names == NULL) {
+    size_t i;
+    size_t N = getVariableDimension(runState->currentParams) + 1;
+    names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
+                                         having to deallocate after
+                                         proposal. */
+    for (i = 1; i <= N-1; i++) {
+      names[i-1] = getVariableName(runState->currentParams, i);
+    }
+
+    names[N-1]=NULL; /* Terminate */
+  }
+
+
+  LALVariables **dePts = runState->differentialPoints;
+  size_t nPts = runState->differentialPointsLength;
+
+  if (dePts == NULL || nPts <= 1) {
+    fprintf(stderr, "Trying to differentially evolve without enough points (in %s, %d)\n",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+
+  copyVariables(runState->currentParams, proposedParams);
+
+  size_t i,j;
+
+  i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+  do {
+    j = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+  } while (j == i);
+
+  LALVariables *ptI = dePts[i];
+  LALVariables *ptJ = dePts[j];
+
+  for (i = 0; names[i] != NULL; i++) {
+    if (!checkVariable(proposedParams, names[i]) || !checkVariable(ptJ, names[i])) {
+      /* Ignore variable if it's not in each of the params. */
+    } else {
+      REAL8 x = *((REAL8 *)getVariable(proposedParams, names[i]));
+      REAL8 scale = 1.66511*gsl_ran_ugaussian(runState->GSLrandom); 
+      /* 1.66511 = number of sigma where Gaussian PDF drops to
+         0.25. */
+      
+      x += scale * (*((REAL8 *) getVariable(ptJ, names[i])));
+      x -= scale * (*((REAL8 *) getVariable(ptI, names[i])));
+      
+      setVariable(proposedParams, names[i], &x);
+    }
+  }
+
+  LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALVariables *pp) {
+  const char *names[] = {"chirpmass", "massratio", NULL};
+  PTMCMCLALInferenceDifferentialEvolutionNames(runState, pp, names);
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionAmp(LALInferenceRunState *runState, LALVariables *pp) {
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "distance", NULL};
+  PTMCMCLALInferenceDifferentialEvolutionNames(runState, pp, names);
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionSpins(LALInferenceRunState *runState, LALVariables *pp) {
+  const char *names[] = {"a_spin1", "a_spin2", "phi_spin1", "phi_spin2", "theta_spin1", "theta_spin2", NULL};
+  PTMCMCLALInferenceDifferentialEvolutionNames(runState, pp, names);
+}
+
+void PTMCMCLALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALVariables *pp) {
+  const char *names[] = {"rightascension", "declination", NULL};
+  PTMCMCLALInferenceDifferentialEvolutionNames(runState, pp, names);
 }

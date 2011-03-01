@@ -53,3 +53,11 @@ INT4 PTMCMCLALInferenceReflectDetPlane(LALInferenceRunState *state,LALVariables 
 /* Jump in iota and distance so that approximate magnitude remains
    constant in one of the detectors. */
 void PTMCMCLALInferenceInclinationDistanceConstAmplitudeJump(LALInferenceRunState *state, LALVariables *proposedParams);
+
+/* Differential evolution */
+void PTMCMCLALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALVariables *proposedParams);
+void PTMCMCLALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALVariables *proposedParams, const char *names[]);
+void PTMCMCLALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALVariables *proposedParams);
+void PTMCMCLALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALVariables *proposedParams);
+void PTMCMCLALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALVariables *proposedParams);
+void PTMCMCLALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALVariables *proposedParams);
