@@ -816,6 +816,8 @@ void initVariables(LALInferenceRunState *state)
             fprintf(stderr, "Could not open differential evolution file (%s, line %d).\n",
                     __FILE__, __LINE__);
             exit(1);
+          } else {
+            printf("Using differential evolution jumps from file %s\n", ppt->value);
           }
           
           char **headers = getHeaderLine(dePtsFile);
