@@ -96,7 +96,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 # generate concatenated SFT
-mfdCL="$mfdCL.sft --outSingleSFT"
+mfdCL="${mfdCL}.sft --outSingleSFT"
 cmdline="$mfdCODE $mfdCL";
 echo "$cmdline (concatenated SFT version)";
 if ! eval $cmdline; then
@@ -117,7 +117,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 # generate concatenated SFT
-mfdCL="$mfdCL.sft --outSingleSFT"
+mfdCL="${mfdCL}.sft --outSingleSFT"
 cmdline="$mfdCODE $mfdCL";
 echo "$cmdline (concatenated SFT version)";
 if ! eval $cmdline; then
@@ -204,7 +204,7 @@ fi
 
 ## clean up files [allow turning off via 'NOCLEANUP' environment variable
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR1 $testDIR1.sft $testDIR2 $testDIR3
+    rm -rf $testDIR1 ${testDIR1}.sft $testDIR2 ${testDIR2}.sft $testDIR3 ${testDIR3}.sft
 fi
 
 
