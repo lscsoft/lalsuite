@@ -1377,7 +1377,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
   
   logMc=log((gsl_rng_uniform(RNG)*(33.)+2.)*pow(eta,3./5.));
 
-    XLALMCMCAddParam(parameter,"logMc",logMc,lMcmin,lMcmax,0);
+    XLALMCMCAddParam(parameter,"logM",logMc,lMcmin,lMcmax,0);
 
     XLALMCMCAddParam(parameter,"eta",eta,etamin,0.25,0);
 

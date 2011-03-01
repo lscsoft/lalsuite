@@ -875,15 +875,17 @@ INT4 XLALMCMCJumpHarmonic(
   /* Select two harmonics */
   LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
   old=ceil(randnum*(REAL4)maxOrder);
-  LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
-  new=ceil(randnum*(REAL4)maxOrder);
-  
+  do{
+    LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
+    new=ceil(randnum*(REAL4)maxOrder);
+  }while(new==old);
+    
   /* Ratio of mchirp is determined by (old/new)^(5/8) */
   mcFactor = pow(old/new, 5./8.);
-  if(XLALMCMCCheckParameter(parameter,"logmc"))
+  if(XLALMCMCCheckParameter(parameter,"logM"))
   {
-    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logmc"));
-    XLALMCMCSetParameter(parameter,"logmc",log(mcnew));
+    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logM"));
+    XLALMCMCSetParameter(parameter,"logM",log(mcnew));
   }
   else
   {
