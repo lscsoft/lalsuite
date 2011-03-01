@@ -757,7 +757,7 @@ void initVariables(LALInferenceRunState *state)
         ppt=getProcParamVal(commandLine, "--covarianceMatrix");
         if (ppt) {
           FILE *inp = fopen(ppt->value, "r");
-          UINT4 N = (approx == SpinTaylor ? 15 : 9);
+          UINT4 N = getVariableDimensionNonFixed(currentParams);
           gsl_matrix *covM = gsl_matrix_alloc(N,N);
           gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
           REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
