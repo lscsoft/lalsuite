@@ -807,6 +807,57 @@ void initVariables(LALInferenceRunState *state)
           gsl_vector_free(eValues);
         }
 
+        /* Differential Evolution? */
+        ppt=getProcParamVal(commandLine, "--differential-evolution");
+        if (ppt) {
+          FILE *dePtsFile = fopen(ppt->value, "r");
+          
+          if (!dePtsFile) {
+            fprintf(stderr, "Could not open differential evolution file (%s, line %d).\n",
+                    __FILE__, __LINE__);
+            exit(1);
+          }
+          
+          char **headers = getHeaderLine(dePtsFile);
+          size_t maxDePtsLen = 1;
+          size_t dePtsLen = 1;
+          LALVariables **dePts = malloc(sizeof(LALVariables *));
+          
+          while (!feof(dePtsFile)) {
+            dePts[dePtsLen-1] = malloc(sizeof(LALVariables));
+            dePts[dePtsLen-1]->head = NULL;
+            dePts[dePtsLen-1]->dimension = 0;
+            
+            processParamLine(dePtsFile, headers, dePts[dePtsLen-1]);
+            
+            dePtsLen++;
+            if (dePtsLen > maxDePtsLen) {
+              /* Extend. */
+              maxDePtsLen *= 2;
+              dePts = realloc(dePts, maxDePtsLen*sizeof(LALVariables *));
+            }
+          }
+          
+          dePts = realloc(dePts, dePtsLen*sizeof(LALVariables *));
+          
+          state->differentialPoints = dePts;
+          state->differentialPointsLength = dePtsLen;
+          
+          size_t i;
+          for (i = 0; i < state->differentialPointsLength-1; i++) {
+            printVariables(state->differentialPoints[i]);
+          }
+
+          fclose(dePtsFile);
+          free(headers); /* Reclaim some (but not all) the memory from
+                            header.  (The individual names must stick
+                            around to be keys in the LALVariables
+                            structure.) */
+        } else {
+          state->differentialPoints = NULL;
+          state->differentialPointsLength = 0;
+        }
+
         ppt=getProcParamVal(commandLine, "--adapt");
         if (ppt) {
           fprintf(stdout, "Adapting single-param step sizes.\n");

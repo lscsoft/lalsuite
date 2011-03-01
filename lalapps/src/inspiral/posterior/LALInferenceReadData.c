@@ -388,7 +388,6 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 
 	}
 	
-
 	for (i=0;i<Nifo-1;i++) IFOdata[i].next=&(IFOdata[i+1]);
 	
 	for(i=0;i<Nifo;i++) {
@@ -620,4 +619,154 @@ fclose(file);
 
 	fprintf(stdout,"Network SNR of event %d = %g\n",event,NetworkSNR);
 	return;
+}
+
+/* This function has a Memory Leak!  You cannot free the allocated
+   header buffer (of length MAXSIZE).  Don't call it too many times!
+   (It's only expected to be called once to initialize the
+   differential evolution array, so this should be OK. */
+char **getHeaderLine(FILE *inp) {
+  const size_t MAXSIZE=1024;
+  const char *delimiters = " \n\t";
+  char *header = malloc(MAXSIZE*sizeof(char));
+  char **colNames = NULL;  /* Will be filled in with the column names,
+                              terminated by NULL. */
+  size_t colNamesLen=0, colNamesMaxLen=0;
+  char *colName = NULL;
+
+  if (!fgets(header, MAXSIZE, inp)) {
+    /* Some error.... */
+    fprintf(stderr, "Error reading header line from file (in %s, line %d)\n",
+            __FILE__, __LINE__);
+    exit(1);
+  } else if (strlen(header) >= MAXSIZE-1) {
+    /* Probably ran out of space before reading the entire line. */
+    fprintf(stderr, "Header line too long (more than %ld chars) in %s, line %d.\n",
+            MAXSIZE-1, __FILE__, __LINE__);
+    exit(1);
+  }
+
+  /* Sure hope we read the whole line. */
+  colNamesMaxLen=2;
+  colNames=(char **)malloc(2*sizeof(char *));
+
+  if (!colNames) {
+    fprintf(stderr, "Failed to allocate colNames (in %s, line %d).\n",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+
+  colName=strtok(header, delimiters);
+  colNames[0] = colNameToParamName(colName);
+  colNamesLen=1;
+  do {
+    colName=strtok(NULL, delimiters);
+
+    fprintf(stderr, "Assigning column name %d to %s (max len = %d, pointer = %p).\n", colNamesLen, colName, colNamesMaxLen, colNames);
+
+    colNames[colNamesLen]=colNameToParamName(colName);
+    colNamesLen++;
+
+    /* Expand if necessary. */
+    if (colNamesLen >= colNamesMaxLen) {
+      colNamesMaxLen *= 2;
+      colNames=realloc(colNames, colNamesMaxLen*sizeof(char *));
+      if (!colNames) {
+        fprintf(stderr, "Failed to realloc colNames (in %s, line %d).\n",
+                __FILE__, __LINE__);
+        exit(1);
+      }
+    }
+
+  } while (colName != NULL);
+
+  /* Trim down to size. */
+  colNames=realloc(colNames, colNamesLen*sizeof(char *));
+
+  return colNames;
+}
+
+const char *colNameToParamName(const char *colName) {
+  if (colName == NULL) {
+    return NULL;
+  }
+
+  if (!strcmp(colName, "dist")) {
+    return "distance";
+  }
+
+  if (!strcmp(colName, "ra")) {
+    return "rightascension";
+  }
+
+  if (!strcmp(colName, "iota")) {
+    return "inclination";
+  }
+
+  if (!strcmp(colName, "psi")) {
+    return "polarisation";
+  }
+
+  if (!strcmp(colName, "mc")) {
+    return "chirpmass";
+  }
+
+  if (!strcmp(colName, "phi_orb")) {
+    return "phase";
+  }
+
+  if (!strcmp(colName, "eta")) {
+    return "massratio";
+  }
+
+  if (!strcmp(colName, "dec")) {
+    return "declination";
+  }
+
+  if (!strcmp(colName, "phi1")) {
+    return "phi_spin1";
+  }
+
+  if (!strcmp(colName, "phi2")) {
+    return "phi_spin2";
+  }
+
+  if (!strcmp(colName, "theta1")) {
+    return "theta_spin1";
+  }
+
+  if (!strcmp(colName, "theta2")) {
+    return "theta_spin2";
+  }
+
+  if (!strcmp(colName, "a1")) {
+    return "a_spin1";
+  }
+
+  if (!strcmp(colName, "a2")) {
+    return "a_spin2";
+  }
+
+  return colName;
+}
+
+int processParamLine(FILE *inp, char **headers, LALVariables *vars) {
+  size_t i;
+
+  for (i = 0; headers[i] != NULL; i++) {
+    double param;
+    int nread;
+    
+    nread = fscanf(inp, " %lg ", &param);
+
+    if (nread != 1) {
+      fprintf(stderr, "Could not read parameter value, the %ld parameter in the row (in %s, line %d)\n",
+              i, __FILE__, __LINE__);
+      exit(1);
+    }
+
+    addVariable(vars, headers[i], &param, REAL8_t, PARAM_FIXED);
+  }
+
+  return 0;
 }

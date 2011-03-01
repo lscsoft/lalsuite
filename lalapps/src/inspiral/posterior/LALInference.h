@@ -197,11 +197,12 @@ tagLALInferenceRunState
   LALTemplateFunction       *template;
   struct tagLALIFOData      *data;
   LALVariables              *currentParams,
-                            *priorArgs,
-                            *proposalArgs,
-							*algorithmParams; /* Parameters which control the running of the algorithm */
+    *priorArgs,
+    *proposalArgs,
+    *algorithmParams; /* Parameters which control the running of the algorithm */
   LALVariables				**livePoints; /* Array of live points for Nested Sampling */
-  
+  LALVariables **differentialPoints;
+  size_t differentialPointsLength;
   REAL8						currentLikelihood;
   REAL8                     currentPrior;
   gsl_rng                   *GSLrandom;
@@ -323,6 +324,21 @@ void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8Tim
 void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
 
 REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
+
+/* Differential Evolution and Common Format Posterior File Parsing
+   Utilities. */
+
+/* Returns an array of header strings (terminated by NULL). */
+char **getHeaderLine(FILE *inp);
+
+/* Turns common-format column names into our internal parameter
+   names. */
+const char *colNameToParamName(const char *colName);
+
+/* Reads one line from the given file and stores the values there into
+   the variable structure, using the given header array to name the
+   columns.  Returns 0 on success. */
+int processParamLine(FILE *inp, char **headers, LALVariables *vars);
 
 #endif
 
