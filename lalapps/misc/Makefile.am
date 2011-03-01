@@ -3,6 +3,7 @@ EXTRA_DIST = \
 	compile \
 	config.guess \
 	config.sub \
+	cuda.common \
 	depcomp \
 	install-sh \
 	lalapps.m4 \
