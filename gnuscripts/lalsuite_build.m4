@@ -385,23 +385,19 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
       cuda=false
       ;;
     yes)
-      if test "x$build_os" != "xlinux"; then
-        AC_MSG_ERROR([CUDA not supported on this platform])
+      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
+      cuda=true
+      if test "x$build_cpu" = "xx86_64"; then
+        CLIBS="lib64"
       else
-        AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-        cuda=true
-        if test "x$build_cpu" = "xx86_64"; then
-          CLIBS="lib64"
-        else
-          CLIBS="lib"
-        fi
-        CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
-        CUDA_CFLAGS="-I/opt/cuda/include"
-        LIBS="$LIBS $CUDA_LIBS"
-        CFLAGS="$CFLAGS $CUDA_CFLAGS"
-        AC_SUBST(CUDA_LIBS)
-        AC_SUBST(CUDA_CFLAGS)
+        CLIBS="lib"
       fi
+      CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
+      CUDA_CFLAGS="-I/opt/cuda/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
       ;;
     *)
       AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
