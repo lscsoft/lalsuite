@@ -1,11 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libvectorops.la
 EXTRA_DIST = \
-	MatrixMultiplyBase.m4 \
 	MiscMatlab.m4 \
 	MatrixPower.m4 \
 	MiscMatlabBase.m4 \
-	MatrixMultiply.m4 \
 	MatrixPowerBase.m4 \
 	VectorIndexRangeC.m4 \
 	VectorIndexRangeBaseC.m4
@@ -20,12 +18,12 @@ libvectorops_la_SOURCES = \
 	VectorIndexRange.c
 
 noinst_HEADERS = \
-	MatrixDivide_source.c
+	MatrixDivide_source.c \
+	MatrixMultiply_source.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 MAINTAINERCLEANFILES = \
-	MatrixMultiply.c \
 	MatrixPower.c \
 	MiscMatlab.c \
 	VectorIndexRange.c
@@ -34,9 +32,6 @@ MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 
 dvi-local: .dvi-dep
-
-MatrixMultiply.c: MatrixMultiply.m4 MatrixMultiplyBase.m4
-	cd $(srcdir) && @M4@ MatrixMultiply.m4 > MatrixMultiply.c
 
 MatrixPower.c: MatrixPower.m4 MatrixPowerBase.m4
 	cd $(srcdir) && @M4@ MatrixPower.m4 > MatrixPower.c
