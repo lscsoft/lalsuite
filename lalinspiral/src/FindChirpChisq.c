@@ -65,14 +65,11 @@ LALCOMPLEX8VectorFFT()
 #include <lal/ComplexFFT.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/Chisq_GPU.h>
+#include <lal/Chisq_CPU.h>
+
 
 NRCSID (FINDCHIRPCHISQC, "$Id$");
-
-#ifdef LALINSPIRAL_CUDA_ENABLED
-#include <lal/Chisq_GPU.h>
-#else
-#include <lal/Chisq_CPU.h>
-#endif
 
 
 void
