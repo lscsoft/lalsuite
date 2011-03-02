@@ -2,7 +2,6 @@ INCLUDES = -I$(top_builddir)/include
 
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
-	Chisq_GPU.h \
 	BBHPhenomCoeffs.h \
 	BlackHoleMode.h \
 	CoherentInspiral.h \
@@ -49,6 +48,12 @@ lalinspiralinclude_HEADERS = \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
 	TrigScanEThincaCommon.h
+
+if CUDA
+lalinspiralinclude_HEADERS += Chisq_GPU.h
+else
+lalinspiralinclude_HEADERS += Chisq_CPU.h
+endif
 
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
@@ -213,6 +218,8 @@ liblalinspiral_la_SOURCES = \
 
 if CUDA
 liblalinspiral_la_SOURCES += Chisq_GPU.cu
+else
+liblalinspiral_la_SOURCES += Chisq_CPU.c
 endif
 
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
