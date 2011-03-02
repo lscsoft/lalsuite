@@ -721,28 +721,29 @@ const char *colNameToParamName(const char *colName) {
     return "declination";
   }
 
+  /* Note the 1 <--> 2 swap between the post-proc world and the LI world. */
   if (!strcmp(colName, "phi1")) {
-    return "phi_spin1";
-  }
-
-  if (!strcmp(colName, "phi2")) {
     return "phi_spin2";
   }
 
-  if (!strcmp(colName, "theta1")) {
-    return "theta_spin1";
+  if (!strcmp(colName, "phi2")) {
+    return "phi_spin1";
   }
 
-  if (!strcmp(colName, "theta2")) {
+  if (!strcmp(colName, "theta1")) {
     return "theta_spin2";
   }
 
+  if (!strcmp(colName, "theta2")) {
+    return "theta_spin1";
+  }
+
   if (!strcmp(colName, "a1")) {
-    return "a_spin1";
+    return "a_spin2";
   }
 
   if (!strcmp(colName, "a2")) {
-    return "a_spin2";
+    return "a_spin1";
   }
 
   return colName;
