@@ -144,6 +144,21 @@ omegaofrP4PN (
              REAL8 r,
              void *params) ;
 
+/*static void
+omegaofrP4PNFF (
+             REAL8 *x,
+             REAL8 r,
+             void *params) ;
+*/
+static REAL8
+nonKeplerianCoefficient(
+                   REAL8Vector * restrict values,
+                   REAL8 eta );
+
+static REAL8
+nonKeplerianCoefficientFF(
+                   REAL8Vector * restrict values,
+                   REAL8 eta );
 
 static
 void LALHCapDerivativesP4PN(   REAL8Vector *values,
@@ -290,7 +305,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         vh3     = Hreal * Omega;
 	vh	= cbrt(vh3);
 	eulerlogxabs = LAL_GAMMA + log( 2.0 * (REAL8)m * v );
-	
+
+
         /* Calculate the non-Keplerian velocity */
         memset( &pr3in, 0, sizeof( pr3In ) );
         pr3in.omega  = Omega;
@@ -298,9 +314,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         pr3in.zeta2  = ak->coeffs->zeta2;
         pr3in.eta    = eta;
   
-        omegaofrP4PN( &vPhi, values->data[0], &pr3in );
+        vPhi = nonKeplerianCoefficientFF( values, eta );
 
-        vPhi  = cbrt( 1.0 / (vPhi*vPhi) );
+        vPhi  = r * cbrt(vPhi);
         vPhi *= Omega;
 
         /* Calculate the NQC term. aNQC values will be given after calibration. */
@@ -705,7 +721,6 @@ REAL8 XLALCalculateA5( REAL8 eta )
 static inline
 REAL8 XLALCalculateA5FF( REAL8 eta )
 {
-  printf( "a5 = %e\n", - 82.5384 + 508.681 * eta - 787.826 * eta*eta );
   return - 82.5384 + 508.681 * eta - 787.826 * eta*eta;
 }
 
@@ -713,7 +728,6 @@ static inline
 REAL8 XLALCalculateA6FF( REAL8 eta )
 {
 
-  printf( "a6 = %e\n", 500. - 1800. * eta );
   return 500. - 1800. * eta;
 }
 
@@ -772,8 +786,6 @@ REAL8 XLALCalculateEOBAFF( REAL8 r,
      + r3 * ( 8.*a4 + 4.*a5 + 2.*a6 + 32.*eta - 8.*eta2 )
      + r4 * ( 4.*a4 + 2.*a5 + a6 + 16.*eta - 4.*eta2 )
      + r5 * (32. - 4.*a4 - a5 - 24. * eta );
-
-  printf( "In the function, A is %e\n", NA/DA );
 
   return NA/DA;
 }
@@ -1030,6 +1042,71 @@ omegaofrP4PN (
 
 }
 
+/*static void
+omegaofrP4PNFF (
+             REAL8 *x,
+             REAL8 r,
+             void *params)
+{
+   REAL8 u, u3, eta, A, dA;
+
+
+   pr3In *ak;
+   ak = (pr3In *) params;
+   eta = ak->eta;
+
+   u = 1./r;
+   u3 = u*u*u;
+
+   A  = XLALCalculateEOBAFF( r, eta );
+   dA = XLALCalculateEOBdAdrFF( r, eta );
+
+   printf( "A = %e, dA = %e\n", A , dA);
+*/
+   /* Comparing this expression with the old one, I *think* I will need to multiply */
+   /* dA by - r^2. TODO: Check that this should be the case */
+/*   dA = - r * r * dA;
+
+   *x = sqrt(u3) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+    printf( "with the new code, omegaofr = %e\n", *x );
+    printf( " %e %e %e %e\n", u3, -0.5 * dA, A, A+0.5 * u*dA);
+    if ( isnan( *x ) )
+      exit(1);
+
+}*/
+
+static REAL8
+nonKeplerianCoefficientFF(
+                   REAL8Vector * restrict values,
+                   REAL8 eta )
+{
+
+  REAL8 r    = values->data[0];
+  REAL8 pphi = values->data[3];
+
+  REAL8 A  = XLALCalculateEOBAFF( r, eta );
+  REAL8 dA = XLALCalculateEOBdAdrFF( r, eta );
+
+  return 2. * (1. + 2. * eta * ( -1. + sqrt( (1. + pphi*pphi/(r*r)) * A ) ) )
+          / ( r*r * dA );
+}
+
+
+static REAL8
+nonKeplerianCoefficient(
+                   REAL8Vector * restrict values,
+                   REAL8 eta )
+{
+
+  REAL8 r    = values->data[0];
+  REAL8 pphi = values->data[3];
+
+  REAL8 A  = XLALCalculateEOBA( r, eta );
+  REAL8 dA = XLALCalculateEOBdAdr( r, eta );
+
+  return 2. * (1. + 2. * eta * ( -1. + sqrt( (1. + pphi*pphi/(r*r)) * A ) ) )
+          / ( r*r * dA );
+}
 
 /*-------------------------------------------------------------------*/
 
@@ -1155,9 +1232,9 @@ LALHCapDerivativesP4PN(
    pr3in.zeta2  = ak->coeffs->zeta2;
    pr3in.eta    = eta;
 
-   omegaofrP4PN( &vPhi, values->data[0], &pr3in );
-   vPhi = cbrt( 1.0 / (vPhi*vPhi) );
-   vPhi *= omega;
+   vPhi = nonKeplerianCoefficient( values, eta );
+   vPhi = r * cbrt( vPhi );
+   vPhi = vPhi * omega;
 
    vPhi6  = vPhi*vPhi*vPhi;
    vPhi6 *= vPhi6;
@@ -1165,9 +1242,6 @@ LALHCapDerivativesP4PN(
    dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
                       - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal;
 
-   printf(" AoverSqrtD = %e, u3 = %e, 1st term = %e, 2nd term = %e, dAdr = %e, denom = %e\n",
-     AoverSqrtD, u3, 2.0 * ( q2 + p4 * z3) * A, - r * ( q2 + r2 + p4 * z3 ), dAdr, HeffHreal );
-   printf( "q2 = %e, r2 = %e, p4 * z3 = %e\n", q2, r2, p4*z3);
    dq = dvalues->data[3] = - omega * ak->flux(vPhi,ak->coeffs)/(eta * vPhi6);
 }
 
@@ -1193,6 +1267,7 @@ LALHCapDerivativesP4PNFF(
   REAL8 u, u2, u3;
   REAL8 A, AoverSqrtD, dAdr, Heff, Hreal;
   REAL8 HeffHreal;
+  REAL8 flux;
   REAL8 z3;
 
 
@@ -1231,20 +1306,25 @@ LALHCapDerivativesP4PNFF(
 
   dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
   ds = dvalues->data[1] = omega = q * A * u2 / HeffHreal;
+
+  /* Note that the only field of dvalues used in the flux is dvalues->data[1] */
+  /* which we have already calculated. */
+  flux = XLALInspiralFactorizedFlux( values, dvalues, ak, lMax );
+
   dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
-                     - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal;
+                     - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal
+                     - AoverSqrtD * (p / q) * (flux / (eta * omega));
 
-
+/*
    printf(" A = %e, AoverSqrtD = %e, u3 = %e, 1st term = %e, 2nd term = %e, dAdr = %e, denom = %e\n",
      A, AoverSqrtD, u3, 2.0 * ( q2 + p4 * z3) * A, - r * ( q2 + r2 + p4 * z3 ), dAdr, HeffHreal );
    printf( "q2 = %e, r2 = %e, p4 * z3 = %e\n", q2, r2, p4*z3);
-
-  dq = XLALInspiralFactorizedFlux( values, dvalues, ak, lMax );
+*/
+  dq = flux;
   /* This function can fail */
   /* TODO: Implement proper error checking */
 
   dq = dvalues->data[3] = - dq / (eta * omega);
-  
 }
 
 
@@ -1846,9 +1926,9 @@ LALEOBPPWaveformEngine (
    XLALDestroyCOMPLEX8Vector( modefreqs );
 
    /* Calculate the time we will need to step back for ringdown */
-   tStepBack = 6.0 * params->totalMass * LAL_MTSUN_SI;
+   tStepBack = 20.0 * params->totalMass * LAL_MTSUN_SI;
    nStepBack = ceil( tStepBack * params->tSampling );
-   XLALPrintInfo( " We step back %d points\n", nStepBack );
+   printf( " We step back %d points\n", nStepBack );
 
 
    /* Allocate vectors to keep track of previous values */
@@ -1860,6 +1940,8 @@ LALEOBPPWaveformEngine (
    /* Calculate the resample factor for attaching the ringdown */
    /* We want it to be a power of 2 */
    /* Of course, we only want to do this if the required SR > current SR... */
+   /* The form chosen for the resampleEstimate will essentially set */
+   /* deltaT = M / 20. ( or less taking into account the power of 2 stuff */
    resampEstimate = 20. / ( params->totalMass * LAL_MTSUN_SI * params->tSampling );
    resampFac      = 1;
 
@@ -2130,9 +2212,10 @@ LALEOBPPWaveformEngine (
    omegamatch = -0.05 -0.01 + 0.133 + 0.183 * params->eta + 1.161 * params->eta * params->eta;
 */
    FILE *out = fopen("eobpf-10-10_fixed.dat", "w");
+   FILE *out2 = fopen("eobpf-10-10_end.dat", "w");
 
-
-   while ( ( omega > omegaOld || !isnan(hLM.re) ) && r < rOld)
+   int stop = 0;
+   while ( ( omega > omegaOld || !stop ) && r < rOld)
    {
       if (count > length)
       {
@@ -2201,11 +2284,11 @@ LALEOBPPWaveformEngine (
           ampl->data[k] =  (REAL4)( acFac * v2 );
           phse->data[i] =  (REAL8)( st );
           
-          fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", sig1->data[i], sig2->data[i], values->data[0],
+          fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1->data[i], sig2->data[i], values->data[0],
              values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
              dvalues->data[2], dvalues->data[3] );
         }
-        else if ( !isnan( hLM.re) )
+        else if ( !isnan( hLM.re) && r > 1.0 )
         {
 
           sig1Hi->data[i] =  (REAL4) ampl0 * hLM.re;
@@ -2217,11 +2300,24 @@ LALEOBPPWaveformEngine (
           amplHi->data[j] =  (REAL4)( apFac * v2 );
           amplHi->data[k] =  (REAL4)( acFac * v2 );
           phseHi->data[i] =  (REAL8)( st );
+
+          fprintf( out2, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1Hi->data[i], sig2Hi->data[i], values->data[0],
+             values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
+             dvalues->data[2], dvalues->data[3] );
+
         }
         else
         {
-          printf("Triggered NaN condition\n" );
+          if ( isnan( hLM.re ) )
+          {
+            printf("Triggered NaN condition\n" );
+          }
+          else
+          {
+            printf("r has dropped below 1.\n" );
+          }
           finalIdx = --count;
+          stop = 1;
         }
       }
 
@@ -2340,6 +2436,7 @@ LALEOBPPWaveformEngine (
    }
 
    fclose( out );
+   fclose( out2 );
 
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
@@ -2379,11 +2476,12 @@ LALEOBPPWaveformEngine (
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
    }
 
-   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 ) - 50;
-   rdMatchPoint->data[1] = peakIdx - 50;
-   rdMatchPoint->data[2] = finalIdx - 50;
+   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 )/* - 50*/;
+   rdMatchPoint->data[1] = peakIdx/* - 50*/;
+   rdMatchPoint->data[2] = finalIdx/* - 50*/;
 
    printf("Matching points: %u %u %u\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2]);
+   printf("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
 
    XLALPrintInfo( "Ringdown matching points: %e, %e\n", 
            (REAL8)rdMatchPoint->data[0]/resampFac + (REAL8)hiSRndx, 
@@ -2473,6 +2571,7 @@ LALEOBPPWaveformEngine (
      x2 = sig2->data[i];
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
+
      if (x1 || x2)
      {
    /*
