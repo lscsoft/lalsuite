@@ -163,12 +163,6 @@ int compareFineGridsumTwoF( const void *a,const void *b );
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 extern int lalDebugLevel;
 
-#ifdef OUTPUT_TIMING
-time_t clock0;
-UINT4 nSFTs;
-#endif
-
-
 /* ###################################  MAIN  ################################### */
 
 int MAIN( int argc, char *argv[]) {
@@ -351,6 +345,8 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_SortToplist = 0;
   BOOLEAN uvar_version = 0;
 
+  CHAR *uvar_outputTiming = NULL;
+
   global_status = &status;
 
 #ifndef EAH_BOINC
@@ -437,6 +433,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "SepDetVeto",   0, UVAR_OPTIONAL,  "Separate detector veto with top candidate", &uvar_SepDetVeto), &status);
+
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
 
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
@@ -624,7 +622,7 @@ int MAIN( int argc, char *argv[]) {
   /* for 1st stage: read sfts, calculate detector states */
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
-  fprintf(stderr," done.\n");
+  LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
@@ -641,6 +639,16 @@ int MAIN( int argc, char *argv[]) {
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
+  /* count the total number of SFTs used */
+  UINT4 iTS, nSFTs = 0;
+  for ( iTS = 0; iTS < nStacks; iTS ++ )
+    {
+      UINT4 X;
+      for ( X=0; X < stackMultiSFT.data[iTS]->length; X ++ )
+        nSFTs += stackMultiSFT.data[iTS]->data[X]->length;
+    } /* for iTS < nStacks */
+
+  /* special treatment of SFTs if upsampling is used */
   if ( uvar_sftUpsampling > 1 )
     {
       LogPrintf (LOG_DEBUG, "Upsampling SFTs by factor %d ... ", uvar_sftUpsampling );
@@ -856,9 +864,9 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
-#ifdef OUTPUT_TIMING
-    clock0 = time(NULL);
-#endif
+
+
+  REAL8 timeStart = XLALGetTimeOfDay();
 
  /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
@@ -1330,16 +1338,20 @@ int MAIN( int argc, char *argv[]) {
   } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
-#ifdef OUTPUT_TIMING
-  {
-    time_t tau = time(NULL) - clock0;
-    UINT4 Nrefine = nf1dots_fg;
-    FILE *timing_fp = fopen ( "HS_timing.dat", "ab" );
-    fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%d\n",
-	      thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
-    fclose ( timing_fp );
-  }
-#endif
+  REAL8 timeEnd = XLALGetTimeOfDay();
+  UINT4 Nrefine = nf1dots_fg;
+  if ( uvar_outputTiming )
+    {
+      FILE *timing_fp = fopen ( uvar_outputTiming, "ab" );
+      if ( timing_fp == NULL ) {
+        XLALPrintError ("%s: failed to open timing-file '%s' for appending.\n", __func__, uvar_outputTiming );
+        return HIERARCHICALSEARCH_EFILE;
+      }
+      REAL8 tau = timeEnd - timeStart;
+      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f\n",
+                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
+      fclose ( timing_fp );
+    }
 
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
@@ -1843,18 +1855,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       } /* end if */
     } /* loop over stacks */
   LALFree( catalogSeq.data);
-
-
-#ifdef OUTPUT_TIMING
-  /* need to count the total number of SFTs */
-  nSFTs = 0;
-  for ( k = 0; k < in->nStacks; k ++ )
-    {
-      UINT4 X;
-      for ( X=0; X < stackMultiSFT->data[k]->length; X ++ )
-        nSFTs += stackMultiSFT->data[k]->data[X]->length;
-    } /* for k < stacks */
-#endif
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
