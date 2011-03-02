@@ -814,7 +814,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
         /* No spin rotations, because they are actually not symmetric! */
         REAL8 SPINROTFRAC = 0.0; /* (runState->template == &templateLALSTPN ? 0.05 : 0.0); */
         REAL8 COVEIGENFRAC;
-        REAL8 IOTADISTANCEFRAC=0.05;
+        REAL8 IOTADISTANCEFRAC=0.0; /* Not symmetric! Stop! */
         REAL8 DIFFFULLFRAC;
         REAL8 DIFFPARTIALFRAC;
         ProcessParamsTable *ppt;
