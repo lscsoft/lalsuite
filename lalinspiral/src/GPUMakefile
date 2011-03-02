@@ -1,5 +1,0 @@
-# Manual makefile to build Chisq_GPU.cpp out of Chisq_GPU.cu
-# Author: Karsten Wiesner MPI
-
-MakeGPU :
-	nvcc -g -G -cuda -Xptxas -v -I. -I../include -I/home/kawies/dev/include -I/usr/local/nvidia/sdk-3.2/cuda//include --output-file Chisq_GPU.cpp Chisq_GPU.cu
