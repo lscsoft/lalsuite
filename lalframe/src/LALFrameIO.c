@@ -793,6 +793,37 @@ int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
   return 0;
 }
 
+int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series )
+{
+  static const char * func = "XLALFrameAddREAL8TimeSeriesSimData";
+  LIGOTimeGPS frameEpoch;
+  FrSimData *sim;
+  FrVect *vect;
+
+  vect = XLALFrVectREAL8TimeSeries( series );
+  if ( ! vect )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -64 );
+  if ( ! sim ) {
+    FrVectFree( vect );
+    XLAL_ERROR( func, XLAL_EERR );
+  }
+  FrVectFree( sim->data );
+  sim->data = vect;
+
+  /* time offset: compute this from frame time */
+  frameEpoch.gpsSeconds     = frame->GTimeS;
+  frameEpoch.gpsNanoSeconds = frame->GTimeN;
+  sim->timeOffset = XLALGPSDiff( &series->epoch, &frameEpoch );
+
+  /* remaining metadata */
+  sim->fShift = 0;
+  sim->phase  = 0;
+
+  return 0;
+}
+
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 {
   static const char * func = "XLALFrameAddREAL4TimeSeriesAdcData";

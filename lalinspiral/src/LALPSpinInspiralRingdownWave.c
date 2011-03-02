@@ -542,14 +542,15 @@ INT4 XLALPSpinFinalMassSpin(
 
   *finalSpin = sqrt( a12 + 2.*ll*qq*a12l + ll*ll*qq*qq)/(1.+qq)/(1.+qq);
   if ((*finalSpin > 1.)||(*finalSpin < 0.)) {
-    if ((*finalSpin>=1.)&&(*finalSpin<1.005)) {
+    if ((*finalSpin>=1.)&&(*finalSpin<1.01)) {
 	fprintf(stderr,"*** LALPSpinInspiralRingdownWave WARNING: Estimated final Spin slightly >1 : %11.3e\n ",*finalSpin);
-	fprintf(stderr,"      (m1=%8.3f  m2=%8.3f) final spin set to one and code goes on\n",params->mass1,params->mass2);
+	fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to one and code goes on\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]);
 	*finalSpin = .99999;
       }
     else {
       fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Estimated final Spin >1 : %11.3e\n ",*finalSpin);
-      fprintf(stderr,"***                                    Final Spin set to 0\n");
+     fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) ) final spin set to one and code goes on\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]); 
+     fprintf(stderr,"***                                    Final Spin set to 0 and code aborts\n");
       *finalSpin = 0.;
       XLAL_ERROR( func, XLAL_ERANGE);
     }

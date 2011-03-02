@@ -211,11 +211,11 @@ main(int argc, char *argv[]){
   /* get sft catalog */
   LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
   LAL_CALL( LALSFTdataFind( &status, &catalog, uvar.inputData, &constraints), &status);
-  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   if ( (catalog == NULL) || (catalog->length == 0) ) {
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar.inputData );
     return EXIT_FAILURE;
   }
+  LogPrintfVerbatim ( LOG_DEBUG, "done (found %i SFTs).\n", catalog->length);
 
   /* now we can free the inputTimeStampsVector */
   if ( XLALUserVarWasSet( &uvar.timeStampsFile ) ) {

@@ -771,8 +771,8 @@ XLALMCMCSample(
 
 void XLALMCMCGetCartesianPos(REAL8 vec[3],LALMCMCParameter *parameter)
 {
-REAL8 longitude = XLALMCMCGetParameter(parameter,"long");
-REAL8 latitude = XLALMCMCGetParameter(parameter,"lat");
+REAL8 longitude = XLALMCMCGetParameter(parameter,"ra");
+REAL8 latitude = XLALMCMCGetParameter(parameter,"dec");
 /*REAL8 distance = XLALMCMCGetParameter(parameter,"distMpc");*/
 vec[0]=cos(longitude)*cos(latitude);
 vec[1]=sin(longitude)*cos(latitude);
@@ -788,8 +788,8 @@ dist=sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2]);
 longi=atan2(pos[1]/dist,pos[0]/dist);
 	if(longi<0.0) longi=LAL_TWOPI+longi;
 lat=asin(pos[2]/dist);
-XLALMCMCSetParameter(parameter,"lat",lat);
-XLALMCMCSetParameter(parameter,"long",longi);
+XLALMCMCSetParameter(parameter,"dec",lat);
+XLALMCMCSetParameter(parameter,"ra",longi);
 return;
 }
 
@@ -850,6 +850,52 @@ INT4 XLALMCMCDifferentialEvolution(
 	return(0);
 }
 
+/*********************************************/
+/* Jump between harmonics by altering mchirp */
+/*********************************************/
+
+INT4 XLALMCMCJumpHarmonic(
+  LALMCMCInput *inputMCMC,
+  LALMCMCParameter *parameter
+     )
+{
+  REAL8 old,new;
+  REAL4 randnum;
+  UINT4 maxOrder;
+  REAL8 mcFactor,mcnew;
+  LALStatus status;
+  memset(&status,0,sizeof(LALStatus));
+  
+  /* Check random params exist */
+  if(inputMCMC->randParams==NULL) LALCreateRandomParams(&status,&(inputMCMC->randParams),0);
+
+  /* Maximum harmonic multiple to include in jumps */
+  maxOrder = inputMCMC->ampOrder+2;
+  
+  /* Select two harmonics */
+  LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
+  old=ceil(randnum*(REAL4)maxOrder);
+  do{
+    LALUniformDeviate(&status, &randnum, inputMCMC->randParams);
+    new=ceil(randnum*(REAL4)maxOrder);
+  }while(new==old);
+    
+  /* Ratio of mchirp is determined by (old/new)^(5/8) */
+  mcFactor = pow(old/new, 5./8.);
+  if(XLALMCMCCheckParameter(parameter,"logM"))
+  {
+    mcnew=mcFactor*exp(XLALMCMCGetParameter(parameter,"logM"));
+    XLALMCMCSetParameter(parameter,"logM",log(mcnew));
+  }
+  else
+  {
+    mcnew=mcFactor*XLALMCMCGetParameter(parameter,"mchirp");
+    XLALMCMCSetParameter(parameter,"mchirp",mcnew);
+  }
+  XLALMCMCCyclicReflectiveBound(parameter);
+  return(0);
+}
+  
 INT4 XLALMCMCReflectDetPlane(
 	LALMCMCInput *inputMCMC,
 	LALMCMCParameter *parameter
@@ -892,8 +938,8 @@ while(IFO3==IFO1
 	IFO3=(IFO3+1) % inputMCMC->numberDataStreams;
 /*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
 
-longi = XLALMCMCGetParameter(parameter,"long");
-lat = XLALMCMCGetParameter(parameter,"lat");
+longi = XLALMCMCGetParameter(parameter,"ra");
+lat = XLALMCMCGetParameter(parameter,"dec");
 
 double deltalong=0;
 
@@ -906,7 +952,7 @@ double deltalong=0;
 	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(inputMCMC->epoch));
 	deltalong=geodetic.longitude-equatorial.longitude;
 
-XLALMCMCSetParameter(parameter,"long",deltalong+XLALMCMCGetParameter(parameter,"long"));
+XLALMCMCSetParameter(parameter,"ra",deltalong+XLALMCMCGetParameter(parameter,"ra"));
 XLALMCMCGetCartesianPos(pos,parameter); /* Get sky position in cartesian coords */
 
 
@@ -928,11 +974,11 @@ for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
 
 
 CartesianToSkyPos(pos,parameter);
-XLALMCMCSetParameter(parameter,"long",XLALMCMCGetParameter(parameter,"long")-deltalong);
+XLALMCMCSetParameter(parameter,"ra",XLALMCMCGetParameter(parameter,"ra")-deltalong);
 
 	/* Compute change in tgeocentre for this change in sky location */
-	newlong=XLALMCMCGetParameter(parameter,"long");
-	newlat=XLALMCMCGetParameter(parameter,"lat");
+	newlong=XLALMCMCGetParameter(parameter,"ra");
+	newlat=XLALMCMCGetParameter(parameter,"dec");
 	REAL8 dtold,dtnew,deltat;
 	dtold = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, longi, lat, &(inputMCMC->epoch)); /* Compute time delay */
 	dtnew = XLALTimeDelayFromEarthCenter(inputMCMC->detector[0]->location, newlong, newlat, &(inputMCMC->epoch)); /* Compute time delay */
@@ -962,8 +1008,8 @@ void XLALMCMCRotateSky(
 	if(inputMCMC->numberDataStreams<2) return;
 	if(inputMCMC->numberDataStreams==2 && inputMCMC->detector[0]==inputMCMC->detector[1]) return;
 	
-	longi = XLALMCMCGetParameter(parameter,"long");
-	lat = XLALMCMCGetParameter(parameter,"lat");
+	longi = XLALMCMCGetParameter(parameter,"ra");
+	lat = XLALMCMCGetParameter(parameter,"dec");
 	
 	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
 	SkyPosition geodetic,equatorial;
@@ -1028,8 +1074,8 @@ void XLALMCMCRotateSky(
 	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
 	deltat+=XLALMCMCGetParameter(parameter,"time");
 	XLALMCMCSetParameter(parameter,"time",deltat);	
-	XLALMCMCSetParameter(parameter,"lat",newlat);
-	XLALMCMCSetParameter(parameter,"long",newlong);
+	XLALMCMCSetParameter(parameter,"dec",newlat);
+	XLALMCMCSetParameter(parameter,"ra",newlong);
 	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
 	XLALMCMCCyclicReflectiveBound(parameter);
 
@@ -1209,7 +1255,7 @@ XLALMCMCJumpIntrinsic(
   /* loop over all parameters */
   for (paraHead=parameter->param,i=0; paraHead; paraHead=paraHead->next,i++)
   { 
-	if(!strcmp(paraHead->core->name,"long") || !strcmp(paraHead->core->name,"lat")||!strcmp(paraHead->core->name,"time")||paraHead->core->wrapping==-1)
+	if(!strcmp(paraHead->core->name,"ra") || !strcmp(paraHead->core->name,"dec")||!strcmp(paraHead->core->name,"time")||paraHead->core->wrapping==-1)
 	{;}
   /*  if (inputMCMC->verbose)
       printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 

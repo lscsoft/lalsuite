@@ -36,6 +36,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
 
 #ifdef _MSC_VER
@@ -81,7 +82,6 @@ static void LogPrintf_va (LogLevel_t level, const char* format, va_list va );
 
 static const char * LogGetTimestamp (void);
 static const char * LogTimeToString(double t);
-static double LogDtime(void);
 
 static const char *LogFormatLevel( LogLevel_t level );
 
@@ -187,23 +187,21 @@ LogTimeToString ( double t )
 } /* LogTimeToString() */
 
 
-/** taken from BOINC's dtime():
- *  return time of day (seconds since 1970) as a double
+/** Return time of day (seconds since 1970) as a double.
+ * Taken from BOINC's dtime():
  *
- * FIXME: windows-version certainly broken right now!
  */
-
-#define EPOCHFILETIME_SEC (11644473600.)
-#define TEN_MILLION 10000000.
-
-static double
-LogDtime (void)
+REAL8
+XLALGetTimeOfDay ( void )
 {
-#ifdef _MSC_VER
+  const char *fn = __func__;
 
+#ifdef _MSC_VER
   /* Windows version of dtime() from BOINC.
      Compile switch is MS compiler macro,
      because I suspect gettimeofday should be present in MinGW */
+#define EPOCHFILETIME_SEC (11644473600.)
+#define TEN_MILLION 10000000.
 
   LARGE_INTEGER time;
   FILETIME sysTime;
@@ -215,22 +213,24 @@ LogDtime (void)
   t /= TEN_MILLION;                /* In seconds */
   t -= EPOCHFILETIME_SEC;     /* Offset to the Epoch time */
   return t;
-
 #else
 
   struct timeval tv;
-  gettimeofday(&tv, 0);
+  if ( gettimeofday ( &tv, NULL ) != 0 ) {
+    XLALPrintError ("%s: call to gettimeofday() failed with errno = %d\n", fn, errno );
+    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+  }
 
   return tv.tv_sec + (tv.tv_usec/1.e6);
 
 #endif
-} /* LogDtime() */
+} /* XLALGetTimeOfDay() */
 
 /* returns static timestamps-string for 'now' */
 static const char *
 LogGetTimestamp (void)
 {
-  return ( LogTimeToString ( LogDtime() ) );
+  return ( LogTimeToString ( XLALGetTimeOfDay() ) );
 
 } /* LogGetTimestamp() */
 

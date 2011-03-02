@@ -75,7 +75,8 @@ noinst_DATA = \
 	SFT-test6 \
 	SFT-test7 \
 	inputsft.0 \
-	inputsft.1
+	inputsft.1 \
+	testTimestamps.dat
 
 MOSTLYCLEANFILES = \
 	H-1_H1*.sft \
@@ -118,6 +119,7 @@ pkgdata_DATA = \
 	sun09-11.dat \
 	sun09.dat  \
 	sun98.dat \
-	sun99.dat
+	sun99.dat \
+	testTimestamps.dat
 
 EXTRA_DIST = $(DATA)

@@ -624,7 +624,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
   section = 'ifar4'
   sections.append(section)
   htmlAndPlot.append(section)
-  titles[section] = "IFAR and loudest event tables at with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
+  titles[section] = "IFAR and loudest event tables with CAT2 and CAT3 vetoes applied and CBC hardware injections removed."
   tags[section] = '*plotifar*'+ifartag[0]+'*CAT_4*'+ifartag[1] + '*'
   htmltags[section] = '*'+ifartag[0]+'*CAT_4_VETO_LOUDEST*'+ifartag[1]+'*_EVENTS_BY_COMBINED_FAR*'
   imagetags[section] = ['cumhist_combined_ifar']

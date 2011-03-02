@@ -469,6 +469,45 @@ int main(int argc, char *argv[])
   SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
+  /* ---------- test timestamps-reading functions by comparing LAL- and XLAL-versions against each other ---------- */
+  {
+#define TS_FNAME "testTimestamps.dat"
+    LIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
+
+    /* ----- load timestamps with deprecated LAL function  */
+    SUB ( LALReadTimestampsFile ( &status, &ts1, TESTDIR TS_FNAME ), &status );
+    /* ----- load timestamps w new XLAL function */
+    if ( (ts2 = XLALReadTimestampsFile ( TS_FNAME )) == NULL ) {
+      XLALPrintError ("XLALReadTimestampsFile() failed to read timestamps from file '%s'. xlalErrno = %d\n", TS_FNAME );
+      return SFTFILEIOTESTC_ESUB;
+    }
+    /* ----- compare the two */
+    if ( ts1->length != ts2->length ) {
+      XLALPrintError ("Read timestamps-lists differ in length %d != %d\n", ts1->length, ts2->length );
+      return 1;
+    }
+    if ( ts1->deltaT != ts2->deltaT ) {
+      XLALPrintError ("Read timestamps-lists differ in deltaT %g != %g\n", ts1->deltaT, ts2->deltaT );
+      return 1;
+    }
+    UINT4 i, numTS = ts1->length;
+    for ( i = 0; i < numTS; i ++ )
+      {
+        if ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) != 0 ) {
+          XLALPrintError ("Read timestamps-lists differ in entry %d: { %d, %d } != { %d, %d }\n",
+                          i + 1,
+                          ts1->data[i].gpsSeconds, ts1->data[i].gpsNanoSeconds,
+                          ts2->data[i].gpsSeconds, ts2->data[i].gpsNanoSeconds );
+          return 1;
+        }
+      } /* for i < numTS */
+
+    /* free mem */
+    XLALDestroyTimestampVector ( ts1 );
+    XLALDestroyTimestampVector ( ts2 );
+  }
+
+  /* ------------------------------ */
   LALCheckMemoryLeaks();
 
   XLALPrintError ("\n\n--------------------------------------------------------------------------------\n");

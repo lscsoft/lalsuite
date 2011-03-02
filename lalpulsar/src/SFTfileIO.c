@@ -469,8 +469,8 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
       if ( this_header.deltaF != first_header.deltaF )
 	{
 	  LALDestroySFTCatalog ( status->statusPtr, &ret );
-	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent Tsft!\n\n",
-			file_pattern);
+	  XLALPrintError("\nERROR: file-pattern '%s' matched SFTs with inconsistent deltaF: %.18g != %.18g!\n\n",
+                         file_pattern, this_header.deltaF, first_header.deltaF );
 	  ABORT ( status, SFTFILEIO_EDIFFTSFT, SFTFILEIO_MSGEDIFFTSFT );
 	}
 
@@ -1194,6 +1194,8 @@ XLALLoadMultiSFTs (const SFTCatalog *inputCatalog,   /**< The 'catalogue' of SFT
       XLALFree(numsfts);
       XLALFree(name);
 
+      XLAL_ERROR_NULL ( __func__, XLAL_EFUNC );
+
     }
   }
 
@@ -1819,8 +1821,71 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALCheckSFTCatalog() */
 
+/** Load timestamps file into LIGOTimeGPSVector struct, allocated here.
+ *
+ * The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
+ * allowing for '%#' as comments, which are ignored.
+ *
+ */
+LIGOTimeGPSVector *
+XLALReadTimestampsFile ( const CHAR *fname )
+{
+  const char *fn = __func__;
+  LIGOTimeGPSVector *timestamps = NULL;
 
-/** Read timestamps file and returns timestamps vector (alloc'ed in here!).
+  /** check input consistency */
+  if ( !fname ) {
+    XLALPrintError ( "%s: NULL input 'fname'", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* read and parse timestamps-list file contents*/
+  LALParsedDataFile *flines = NULL;
+  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  UINT4 numTS = flines->lines->nTokens;
+  /* allocate and initialized segment list */
+  if ( ( timestamps = XLALCreateTimestampVector ( numTS )) == NULL )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  UINT4 iTS;
+  for ( iTS = 0; iTS < numTS; iTS ++ )
+    {
+      INT4 secs, ns;
+      if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
+        XLALPrintError ("%s: failed to parse data-line %d in timestamps-file %s\n", fn, iTS + 1, fname );
+        XLALDestroyTimestampVector ( timestamps );
+        XLALDestroyParsedDataFile ( &flines );
+        XLAL_ERROR_NULL ( fn, XLAL_ESYS );
+      }
+      if ( ( secs < 0 ) || ( ns < 0 ) ) {
+	XLALPrintError ("%s: timestamps-file contains negative time-entry in line %d : s = %d, ns = %d\n", fn, iTS, secs, ns );
+	XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
+      if ( ns > 999999999 ) {
+        XLALPrintError ("%s: timestamps-file contains nano-seconds entry >= 1 billion ns in line %d: s = %d, ns = %d\n", fn, iTS, secs, ns );
+	XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
+
+      timestamps->data[iTS].gpsSeconds = secs;
+      timestamps->data[iTS].gpsNanoSeconds = ns;
+
+    } /* for iTS < numTS */
+
+  /* free parsed segment file contents */
+  if ( XLALDestroyParsedDataFile ( &flines ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  return timestamps;
+
+} /* XLALReadTimestampsFile() */
+
+
+
+/**  [DEPRECATED] Read timestamps file and returns timestamps vector (alloc'ed in here!).
+ *
+ * \deprecated Use XLALReadTimestampsFile() instead.
  */
 void
 LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *fname)
@@ -1834,6 +1899,8 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT (timestamps, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
   ASSERT (*timestamps == NULL, status, SFTFILEIO_ENONULL,  SFTFILEIO_MSGENONULL);
+
+  XLALPrintDeprecationWarning("LALReadTimestampsFile()", "XLALReadTimestampsFile()");
 
   if ( (fp = LALFopen( fname, "r")) == NULL) {
     XLALPrintError("\nUnable to open timestampsname file %s\n\n", fname);

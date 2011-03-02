@@ -243,7 +243,7 @@ BOOLEAN uvar_version;		/**< output version information */
 
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-CHAR *uvar_parfile;             /** option .par file path */ 
+CHAR *uvar_parfile;             /** option .par file path */
 
 /*----------------------------------------------------------------------*/
 
@@ -261,6 +261,7 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
+  FILE *fpSingleSFT = NULL;
 
   UINT4 i;
 
@@ -331,6 +332,25 @@ main(int argc, char *argv[])
       return MAKEFAKEDATAC_EARG;
       break;
     } /* switch generationMode */
+
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* check that user isn't giving a directory */
+    if ( is_directory ( uvar_outSFTbname ) ) {
+      XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
+                     uvar_outSFTbname);
+      return MAKEFAKEDATAC_EBAD;
+    }
+    
+    /* open concatenated SFT file for writing */
+    if ( (fpSingleSFT = LALFopen ( uvar_outSFTbname, "wb" )) == NULL )
+      {
+        XLALPrintError ("\nERROR: Failed to open file '%s' for writing: %s\n\n", uvar_outSFTbname, strerror(errno));
+        return MAKEFAKEDATAC_EFILE;
+    }
+
+  }
 
   /* ----------
    * Main loop: produce time-series and turn it into SFTs,
@@ -491,18 +511,15 @@ main(int argc, char *argv[])
 	      /* if user requesting single concatenated SFT */
 	      if ( uvar_outSingleSFT ) {
 
-		/* check that user isn't giving a directory */
-		if ( is_directory ( uvar_outSFTbname ) ) {
-		  XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_EBAD;
+                /* write all SFTs to concatenated file */
+                for ( UINT4 k = 0; k < SFTs->length; k++ ) {
+                  if ( XLAL_SUCCESS != XLALWriteSFT2fp( &(SFTs->data[k]), fpSingleSFT, comment ) ) {
+                    XLALPrintError("\nXLALWriteSFT2fp() failed to write SFT to '%s'!\n",
+                                   uvar_outSFTbname);
+                    return MAKEFAKEDATAC_ESUB;
+                  }
 		}
-		if (XLAL_SUCCESS != XLALWriteSFTVector2File(SFTs, uvar_outSFTbname, comment)) {
-		  XLALPrintError("\nXLALWriteSFTVector2File failed to write SFTs to '%s'!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_ESUB;
-		}
-		
+
 	      }
 	      else {
 
@@ -540,6 +557,14 @@ main(int argc, char *argv[])
 
     } /* for i_chunk < numchunks */
 
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* close concatenated SFT */
+    LALFclose( fpSingleSFT );
+
+  }
+
   LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
 
   LALCheckMemoryLeaks();
@@ -554,7 +579,7 @@ main(int argc, char *argv[])
 void
 InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
-  static const char *fn = "InitMakefakedata()";
+  static const char *fn = __func__;
 
   CHAR *channelName = NULL;
   BinaryPulsarParams pulparams;
@@ -729,7 +754,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
-    if ( have_parfile ) 
+    if ( have_parfile )
       {
 	uvar_f1dot = 2.*pulparams.f1;
 	uvar_f2dot = 2.*pulparams.f2;
@@ -880,14 +905,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     /* ----- load timestamps from file if given  */
     if ( haveTimestampsFile )
       {
-	LIGOTimeGPSVector *timestamps = NULL;
 	if ( haveStart || haveDuration || haveOverlap )
 	  {
 	    printf ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
-	cfg->timestamps = timestamps;
+	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
+          XLALPrintError ("%s: failed to read timestamps from file '%s'\n", fn, uvar_timestampsFile );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
 
       } /* if haveTimestampsFile */
 
@@ -1323,8 +1349,8 @@ InitUserVars (LALStatus *status)
 
   uvar_logfile = NULL;
 
-  /* per default we generate the whole timeseries first (except for hardware-injections)*/
-  uvar_generationMode = GENERATE_ALL_AT_ONCE;
+  /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
+  uvar_generationMode = GENERATE_PER_SFT;
 
   uvar_window = NULL;	/* By default, use rectangular window */
 

@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.0.2"
+#define CMDLINE_PARSER_VERSION "1.0.4"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -79,6 +79,12 @@ struct gengetopt_args_info
   double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
+  double ihsfom_arg;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2.  */
+  char * ihsfom_orig;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2 original value given at command line.  */
+  const char *ihsfom_help; /**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2 help description.  */
+  double ihsfomfar_arg;	/**< @brief IHS FOM FAR threshold.  */
+  char * ihsfomfar_orig;	/**< @brief IHS FOM FAR threshold original value given at command line.  */
+  const char *ihsfomfar_help; /**< @brief IHS FOM FAR threshold help description.  */
   double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
@@ -115,12 +121,19 @@ struct gengetopt_args_info
   char * sftType_arg;	/**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
   char * sftType_orig;	/**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
   const char *sftType_help; /**< @brief Expected SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
+  int markBadSFTs_flag;	/**< @brief Mark bad SFTs (default=off).  */
+  const char *markBadSFTs_help; /**< @brief Mark bad SFTs help description.  */
+  int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='3').  */
+  char * FFTplanFlag_orig;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive original value given at command line.  */
+  const char *FFTplanFlag_help; /**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive help description.  */
   int IHSonly_flag;	/**< @brief IHS stage only is run. Output statistic is the IHS statistic. (default=off).  */
   const char *IHSonly_help; /**< @brief IHS stage only is run. Output statistic is the IHS statistic. help description.  */
   int BrentsMethod_flag;	/**< @brief Use Brent's method in the root finding algorithm. (default=off).  */
   const char *BrentsMethod_help; /**< @brief Use Brent's method in the root finding algorithm. help description.  */
   int antennaOff_flag;	/**< @brief Antenna pattern weights are /NOT/ used if this flag is used (default=off).  */
   const char *antennaOff_help; /**< @brief Antenna pattern weights are /NOT/ used if this flag is used help description.  */
+  int noiseWeightOff_flag;	/**< @brief Turn off noise weighting if this flag is used (default=off).  */
+  const char *noiseWeightOff_help; /**< @brief Turn off noise weighting if this flag is used help description.  */
   int gaussTemplatesOnly_flag;	/**< @brief Gaussian templates only throughout the pipeline if this flag is used (default=off).  */
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
   
@@ -140,6 +153,8 @@ struct gengetopt_args_info
   unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
   unsigned int IFO_given ;	/**< @brief Whether IFO was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
+  unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */
+  unsigned int ihsfomfar_given ;	/**< @brief Whether ihsfomfar was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int avesqrtSh_given ;	/**< @brief Whether avesqrtSh was given.  */
   unsigned int blksize_given ;	/**< @brief Whether blksize was given.  */
@@ -152,9 +167,12 @@ struct gengetopt_args_info
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
+  unsigned int markBadSFTs_given ;	/**< @brief Whether markBadSFTs was given.  */
+  unsigned int FFTplanFlag_given ;	/**< @brief Whether FFTplanFlag was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
   unsigned int BrentsMethod_given ;	/**< @brief Whether BrentsMethod was given.  */
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */
+  unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
 
 } ;

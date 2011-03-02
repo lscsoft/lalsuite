@@ -17,45 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------- <lalVerbatim file="SegmentsTestCV">
- * Author: Peter Shawhan
- * Revision: $Id$
- *----------------------------------- </lalVerbatim> */
+/**
+ * \author Peter Shawhan
+ * \file
+ * \ingroup Segments_h
+ * \brief Tests the segment and segment list manipulation functions.
+ *
+\heading{Usage}
 
-#if 0
-<lalLaTeX>
-\subsection{Program \texttt{SegmentsTest.c}}
-
-Tests the segment and segment list manipulation functions.
-
-\subsubsection*{Usage}
-
-\begin{verbatim}
+\code
 SegmentsTest [ lalDebugLevel ]
-\end{verbatim}
+\endcode
 
-The default value of \texttt{lalDebugLevel} is 4.
+The default value of \c lalDebugLevel is 4.
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program tests the various XLAL functions which deal with segments
 and segment lists.
 
-If the \texttt{lalDebugLevel} argument is omitted, the test program sets it
+If the \c lalDebugLevel argument is omitted, the test program sets it
 to 4 to turn on info messages only.
 Note that this default value does not enable LAL/XLAL error messages,
 since many of the tests intentionally create error conditions and verify that
 the proper error codes are generated.  If you want to turn on the LAL/XLAL
-error and warning messages, specify a \texttt{lalDebugLevel} value of 7,
+error and warning messages, specify a \c lalDebugLevel value of 7,
 or 23 if you also want informational messages related to memory checking.
 If you specify 0, then no messages will be printed under any circumstances.
 However, in all cases, the return status of the program will be 0 if all
 tests passed, 1 if one or more tests failed.
 
-\vfill{\footnotesize\input{SegmentsTestCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -63,6 +55,7 @@ tests passed, 1 if one or more tests failed.
 #include <lal/Segments.h>
 #include <lal/Date.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( SEGMENTSTESTC, "$Id$" );
 
 /*-- Macros for this test program --*/
@@ -1185,3 +1178,6 @@ int main( int argc, char *argv[] )
     return 1;
   }
 }
+
+
+/** \endcond */

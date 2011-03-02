@@ -69,39 +69,21 @@ LALDestroyVector()
 
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "errutil.h"
-
 RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
-#define sanity_check( condition ) \
-  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
-
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
 void
-cohPTFTemplate (
+coh_PTF_template (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
 {
 
   // This function generates Q_{1-5} as a function of time and then FFTs
   // them before returning Q(f) in fcTmplt->PTFQtilde
-
-
   // It would be nice to use the stuff in LAL to do most of this ....
-/*  LALStatus status;
-  LAL_CALL (LALFindChirpPTFTemplate( &status,fcTmplt,InspTmplt,params), &status);*/
 
   UINT4 errcode;
   /* local variables */
@@ -174,6 +156,9 @@ cohPTFTemplate (
                                       params->deltaT);
   sanity_check( errcode == XLAL_SUCCESS );
 
+  /* FIXME: This should not be hardcoded below. 60 Should be duration/4
+     minus about 4 seconds */
+
   if (InspTmplt->tC > 60 )
   {
     fprintf(stderr,"Template generated is longer than 60s. Template must not ");
@@ -209,17 +194,6 @@ cohPTFTemplate (
             e1y * e2y - 2 * e1z * e2z ));
   }
 
-  /* This block outputs a file containing all 5 Q time series (and time) */
-  /* Need to make a option to print this if required*/
-  /*FILE *outfile;
-  outfile = fopen("Q_timeseries.dat","w");
-  for ( i = 0; i < N; ++i)
-  {
-    fprintf (outfile,"%f %f %f %f %f %f \n",params->deltaT*i,Q[0].data[i],Q[1].data[i],Q[2].data[i],Q[3].data[i],Q[4].data[i]);
-  }
-  fclose(outfile);*/
-  
-
   /* Fourier transform the Q's into the Qtilde's */
   for ( i = 0; i < 5; ++i )
   {
@@ -227,27 +201,16 @@ cohPTFTemplate (
         params->fwdPlan);
   }
 
-  /* This block outputs a file containing all 5 Q frequency series (and time) */
-  /* It prints only the magnitude of the frequency */
-  /* Need to make a option to print this if required and use deltaF not T*/
-  /*FILE *outfile2;
-  outfile2 = fopen("Q_freqseries.dat","w");
-  for ( i = 0; i < N/2 + 1; ++i)
-  {
-    fprintf (outfile2,"%f %f %f %f %f %f %f %f %f %f %f\n",1./(N*params->deltaT)*i,Qtilde[0].data[i].re,Qtilde[0].data[i].im,Qtilde[1].data[i].re,Qtilde[1].data[i].im,Qtilde[2].data[i].re,Qtilde[2].data[i].im,Qtilde[3].data[i].re,Qtilde[3].data[i].im,Qtilde[4].data[i].re,Qtilde[4].data[i].im);
-  }
-  fclose(outfile2);*/
+  /* FIXME: Q and Qtilde should be outputtable. Probably easier outside of
+     this function as template number is available. */
 
-
-  /* XXX set this to be the correct values XXX */
   fcTmplt->tmplt.tC = InspTmplt->tC; /* length of template in seconds */
   fcTmplt->tmplt.fFinal = InspTmplt->fFinal; /* upper freq of template in Hz */
 }
 
 
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
-void
-cohPTFNormalize(
+void coh_PTF_normalize(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     REAL4FrequencySeries       *invspec,
     REAL8Array                 *PTFM,
@@ -261,8 +224,6 @@ cohPTFNormalize(
  * the same as Diego's B matrix (Q_0 | Q_0). We also have
  * A = ( Q_0 | s ) and B = ( Q_{\pi/2} | s ) Diego's A matrix is equal to
  * sqrt(A**2 + B**2) in this notation. */
-
-/* </lalVerbatim> */
 {
   // This function calculates the various filters used to calculate SNR
   // It calculates (Q_0 | Q_0), (Q | s) and if necessary it will calculate
@@ -295,12 +256,9 @@ cohPTFNormalize(
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
   deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -322,19 +280,12 @@ cohPTFNormalize(
   sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
 
   /* Set parameters to determine spin/nonspin */
-  vecLength = 2;
+  /* For non-spin we only need one filter. For PTF all 5 are needed */
+  vecLength = 1;
   if (spinTemplate == 1)
   {
     vecLength = 5;
   } 
-  else
-  {
-    for ( k = kmin; k < kmax ; ++k )
-    {
-      PTFQtilde[k].im = PTFQtilde[k+len].re;
-      PTFQtilde[k + len].im = -PTFQtilde[k].re;
-    }
-  }
 
   /*
    *
@@ -383,24 +334,6 @@ cohPTFNormalize(
     }
   }
 
-
-  /* A routine to print out the M^IJ information */
- 
-//  FILE *outfile;
-  /*
-  outfile = fopen("M_array.dat","w");
-  for ( i = 0; i < 5; ++i )
-  {
-    for ( j = 0; j < 5; ++j )
-    {
-      fprintf(outfile,"%f ", PTFM->data[5*i + j]);
-    }
-  fprintf(outfile,"\n");
-  }
-  fclose(outfile);
-  */
-  
-
   for ( i = 0; i < vecLength; ++i )
   {
 
@@ -427,43 +360,14 @@ cohPTFNormalize(
     XLALCOMPLEX8VectorFFT( &qVec, qtildeVec, invPlan );
   }
 
-  /*Routines for printing the A and B time series */
-  
-  
-/*  outfile = fopen("A_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f \n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re);
-  }
-  fclose(outfile);
-
-  outfile = fopen("B_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f \n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im);
-  }
-  fclose(outfile);*/
-
-  /*outfile = fopen("A_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
-  }
-  fclose(outfile);
-
-  outfile = fopen("B_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
-  }
-  fclose(outfile);*/
-
+  /* FIXME: We would like to be able to print off A,B and M. 
+     like above, this may be better in the main function */
   
   XLALDestroyCOMPLEX8Vector( qtildeVec );
 }
 
-void
-cohPTFTemplateOverlaps(
+void coh_PTF_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -474,7 +378,7 @@ cohPTFTemplateOverlaps(
   // This function calculates the real part of the overlap between two templates
 
   UINT4         i, j, k, kmin, kmax, len,vecLen;
-  REAL8         f_min, deltaF, fFinal, UNUSED test1, UNUSED test2;
+  REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde1   = NULL;
   COMPLEX8     *PTFQtilde2   = NULL;
 
@@ -484,16 +388,9 @@ cohPTFTemplateOverlaps(
 
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
-  /* Note that these frequencies are not just hardcoded here, if you change*/
-  /* these values you will need to change them in other places as well */
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
-  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
-    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   vecLen = 5;
@@ -502,14 +399,10 @@ cohPTFTemplateOverlaps(
     vecLen = 1;
   }
 
-//  fprintf(stderr,"Calculating PTFM overlap \n");
-
   for( i = 0; i < vecLen; ++i )
   {
     for ( j = 0; j < vecLen; ++j )
     {
-      test1 = 0;
-      test2 = 0;
       for ( k = kmin; k < kmax ; ++k )
       {
         PTFM->data[vecLen * i + j] += (PTFQtilde1[k + i * len].re *
@@ -518,29 +411,15 @@ cohPTFTemplateOverlaps(
                             PTFQtilde2[k + j * len].im )
                             * invspec->data->data[k] ;
       
-/*        if ( i == j)
-        {
-        if (PTFM->data[vecLen * i + j] > test1)
-        {
-          if (PTFM->data[vecLen * i + j] > test2)
-          {
-            fprintf(stderr,"WTF!: %e %e %e \n",PTFM->data[vecLen * i + j],test1,test2);
-          }
-        }
-        }*/
       }
       PTFM->data[vecLen * i + j] *= 4.0 * deltaF ;
-      /* Use the symmetry of M */
-      /*PTFM->data[5 * j + i] = PTFM->data[5 * i + j];*/
-//      fprintf(stderr, "PTFM: %e \n",PTFM->data[vecLen * i + j]);
     }
   }
-//  fprintf(stderr,"PTFM calc in func: %e \n",PTFM->data[0]);
 
 }
 
-void
-cohPTFComplexTemplateOverlaps(
+void coh_PTF_complex_template_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt1,
     FindChirpTemplate          *fcTmplt2,
     REAL4FrequencySeries       *invspec,
@@ -561,14 +440,9 @@ cohPTFComplexTemplateOverlaps(
 
   len       = invspec->data->length;
   deltaF    = invspec->deltaF;
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt1->tmplt.fLower;
-  f_min     = 40;
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt1->tmplt.fFinal;
-  if ( (REAL4) fcTmplt2->tmplt.fFinal < fFinal)
-    fFinal    = (REAL4) fcTmplt2->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
   vecLen = 5;
@@ -576,8 +450,6 @@ cohPTFComplexTemplateOverlaps(
   {
     vecLen = 1;
   }
-
-//  fprintf(stderr,"Calculating PTFM overlap \n");
 
   for( i = 0; i < vecLen; ++i )
   {
@@ -598,14 +470,13 @@ cohPTFComplexTemplateOverlaps(
       }
       PTFM->data[vecLen * i + j].re *= 4.0 * deltaF ;
       PTFM->data[vecLen * i + j].im *= 4.0 * deltaF ;
-//      fprintf(stderr, "PTFM: %e \n",PTFM->data[vecLen * i + j].re,PTFM->data[vecLen * i + j].im);
     }
   }
-//  fprintf(stderr,"PTFM calc in func: %e \n",PTFM->data[0]);
 
 }
 
-void cohPTFBankFilters(
+void coh_PTF_bank_filters(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     UINT4                      spinBank,
     COMPLEX8FrequencySeries    *sgmnt,
@@ -618,34 +489,31 @@ void cohPTFBankFilters(
   // This function calculates (Q|s) for the bank veto. It only returns the 
   // middle half of the time series with some buffer to allow for time shifts
 
+  /* FIXME: Can this function be merged with normalize?? */
+
   UINT4          i, j, k, kmin, len, kmax,numPoints,vecLen,halfNumPoints;
-  REAL8          deltaF, UNUSED deltaT, r, s, x, y, UNUSED length;
+  REAL8          deltaF, r, s, x, y, UNUSED length;
   COMPLEX8       *inputData,*qtilde;
   COMPLEX8Vector *qtildeVec,qVec;
   COMPLEX8       *PTFQtilde   = NULL;  
-
-
-//  fprintf(stderr,"Frequency ranges %e %e\n",f_min,fFinal);
 
   numPoints   = PTFqVec->vectorLength;
   halfNumPoints = 3*numPoints/4 - numPoints/4;
   len       = sgmnt->data->length;
   PTFQtilde = fcTmplt->PTFQtilde->data;
   deltaF    = sgmnt->deltaF;
-  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
+//  deltaT    = 1.0 / ( deltaF * (REAL4) numPoints);
+
+  /* F_min and F_max are used to do the chisquared limited filters */
   if (! f_min)
   {
-    f_min     = (REAL4) fcTmplt->tmplt.fLower;
-    f_min     = 40;
+    f_min     = params->lowFilterFrequency;
   }
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
   if (! fFinal)
   {
-    fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-    fFinal    = 1000;
+    fFinal    = params->highFilterFrequency;
   }
-//  fprintf(stderr,"Frequency ranges %e %e\n",f_min,fFinal);
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec.length = numPoints;
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -692,58 +560,10 @@ void cohPTFBankFilters(
       PTFBankqVec->data[i*(halfNumPoints+10000) + (j-numPoints/4+5000)] = PTFqVec->data[i*numPoints + j];
     }
   }
-
-  /*FILE *outfile;
-
-  outfile = fopen("A_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].re,PTFqVec->data[i+numPoints].re,PTFqVec->data[i+2*numPoints].re,PTFqVec->data[i+3*numPoints].re,PTFqVec->data[i+4*numPoints].re);
-  }
-  fclose(outfile);
-
-  outfile = fopen("B_timeseries.dat","w");
-  for ( i = 0; i < numPoints; ++i)
-  {
-    fprintf (outfile,"%f %f %f %f %f %f\n",deltaT*i,PTFqVec->data[i].im,PTFqVec->data[i+numPoints].im,PTFqVec->data[i+2*numPoints].im,PTFqVec->data[i+3*numPoints].im,PTFqVec->data[i+4*numPoints].im);
-  }
-  fclose(outfile);*/
-
 }
 
-
-REAL4 cohPTFDataNormalize(
-    COMPLEX8FrequencySeries    *sgmnt,
-    REAL4FrequencySeries       *invspec)
-{
-  // This function is not used and will be removed
-
-  REAL4 overlap = 0;
-  UINT4 k,kmin,kmax,len;
-  REAL8 f_min, fFinal,deltaF;
-
-  deltaF    = sgmnt->deltaF;
-  len       = sgmnt->data->length;
-  f_min     = 40;
-  fFinal    = 1000;
-  kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
-
-
-  for ( k = kmin; k < kmax ; ++k )
-  {
-    overlap += (sgmnt->data->data[k].re *
-        sgmnt->data->data[k].re +
-        sgmnt->data->data[k].im *
-        sgmnt->data->data[k].im )
-        / invspec->data->data[k] ;
-  }
-  overlap = overlap * deltaF;
-  return overlap;
- 
-}
-
-void autoVetoOverlaps(
+void coh_PTF_auto_veto_overlaps(
+    struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
     struct bankComplexTemplateOverlaps *autoTempOverlaps,
     REAL4FrequencySeries       *invspec,
@@ -757,7 +577,7 @@ void autoVetoOverlaps(
   // for the auto veto
 
   UINT4          i, j, k, kmin, len, kmax,vecLen,numPoints;
-  REAL8          f_min, deltaF, UNUSED deltaT, fFinal, r, s, x, y;
+  REAL8          f_min, deltaF, fFinal, r, s, x, y;
   COMPLEX8       *qtilde;
   COMPLEX8Vector *qtildeVec,*qVec;
   COMPLEX8       *PTFQtilde   = NULL;
@@ -766,13 +586,11 @@ void autoVetoOverlaps(
   PTFQtilde = fcTmplt->PTFQtilde->data;
   numPoints   = len*2 -2;
   deltaF      = invspec->deltaF;
-  deltaT    = 1.0 / ( deltaF * (REAL4) len);
-  /* This is explicit as I want f_min of template lower than f_min of filter*/
-  f_min     = (REAL4) fcTmplt->tmplt.fLower;
-  f_min     = 40;
+//  deltaT    = 1.0 / ( deltaF * (REAL4) len);
+
+  f_min     = params->lowFilterFrequency;
   kmin      = f_min / deltaF > 1 ?  f_min / deltaF : 1;
-  fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
-  fFinal    = 1000;
+  fFinal    = params->highFilterFrequency;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
   qVec = XLALCreateCOMPLEX8Vector( numPoints );
   qtildeVec    = XLALCreateCOMPLEX8Vector( numPoints );
@@ -782,10 +600,6 @@ void autoVetoOverlaps(
     vecLen = 1;
   else
     vecLen = 5;
-
-//  FILE *outfile;
-
-//  outfile = fopen("auto_correlation_timeseries.dat","w");
 
   for ( i = 0; i < vecLen; ++i )
   {
@@ -811,14 +625,12 @@ void autoVetoOverlaps(
       {
         autoTempOverlaps[k-1].timeStepDelay = - k * timeStepPoints;
         autoTempOverlaps[k-1].PTFM[ifoNumber]->data[i*vecLen + j] = qVec->data[numPoints - k * timeStepPoints];
-//        autoTempOverlaps[k-1].PTFM[ifoNumber]->data[i*vecLen + j] = qVec->data[k * timeStepPoints];
       }
-/*      for (k = 0 ; k < numPoints ; k++)
-      {
-        fprintf(outfile,"%e %e \n", qVec->data[k].re,qVec->data[k].im);
-      }*/
     }
   }
+
+  /* FIXME: We should be able to print off the autocorrelation timeseries */
+
   XLALDestroyCOMPLEX8Vector( qtildeVec);
   XLALDestroyCOMPLEX8Vector( qVec );
 }

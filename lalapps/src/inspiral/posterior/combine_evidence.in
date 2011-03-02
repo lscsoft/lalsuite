@@ -31,7 +31,7 @@ if __name__=='__main__':
     data=args
 
     if opts.headers is None:
-        headerstr='mchirp\t eta\t time\t phi0\t dist\t RA\t dec\t psi\t iota\t likelihood'
+        headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
     else:
         headerfile=open(opts.headers,'r')
         headerstr=headerfile.readline()
@@ -46,7 +46,7 @@ if __name__=='__main__':
     if opts.outpos is not None:
         posfilename=opts.outpos
         posfile=open(posfilename,'w')
-        posfile.write(headerstr)
+        posfile.write(headerstr+'\n')
         for row in pos:
             for i in row:
                 posfile.write('%f\t' %(i))
@@ -60,7 +60,7 @@ if __name__=='__main__':
         for row in d_all:
             for i in row:
                 outfilenew.write('%f\t' %(i))
-                outfilenew.write('\n')
+            outfilenew.write('\n')
         outfilenew.close()
         outfileB=open(outfilename+'_B.txt','w')
         # Write out B Zsig Znoise maxL

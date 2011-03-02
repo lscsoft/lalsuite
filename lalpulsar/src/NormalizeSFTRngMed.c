@@ -168,8 +168,8 @@ LALPeriodoToRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
   length = periodo->data->length;
   ASSERT (length == rngmed->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
 
-  if ( length <= blockSize ) {
-    XLALPrintError ("Need at least %d bins in SFT (have %d) to perform running median!\n", blockSize + 1, length );
+  if ( length < blockSize ) {
+    XLALPrintError ("Need at least %d bins in SFT (have %d) to perform running median!\n", blockSize, length );
     ABORT ( status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);
   }
 

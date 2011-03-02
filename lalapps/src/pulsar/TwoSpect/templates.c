@@ -29,6 +29,7 @@
 
 #include "templates.h"
 #include "cdfwchisq.h"
+#include "statistics.h"
 
 //////////////////////////////////////////////////////////////
 // Allocate memory for farStruct struct  -- done
@@ -39,7 +40,7 @@ farStruct * new_farStruct(void)
    
    farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
    if (farstruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*farstruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*farstruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -151,9 +152,17 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
    const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
    gsl_root_fsolver *s1 = gsl_root_fsolver_alloc(T1);
+   if (s1==NULL) {
+      fprintf(stderr,"%s: gsl_root_fsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
    gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
+   if (s0==NULL) {
+      fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function_fdf FDF;
    
    
@@ -366,6 +375,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       noncentrality->data[ii] = 0.0;
       dofs->data[ii] = 2;
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
+      sorting->data[ii] = ii;  //This is for the fact that a few steps later (before using Davies' algorithm, we sort the weights)
    }
    
    qfvars vars;
@@ -373,10 +383,14 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.noncentrality = noncentrality;
    vars.dofs = dofs;
    vars.sorting = sorting;
+   vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
    vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
    REAL8 accuracy = 5.0e-6;   //(1e-5) don't change this value
+   
+   //sort the weights here so we don't have to do it later (qsort)
+   sort_double_descend(newweights);
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
    prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);
@@ -480,7 +494,7 @@ templateStruct * new_templateStruct(INT4 length)
    
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*templatestruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*templatestruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
