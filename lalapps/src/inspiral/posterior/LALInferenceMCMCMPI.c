@@ -696,7 +696,10 @@ void initVariables(LALInferenceRunState *state)
 		ppt=getProcParamVal(commandLine, "--singleSpin");
 		if(ppt) fprintf(stdout,"Running with first spin set to 0\n");
 		else {
-			tmpMin=0.0; tmpMax=1.0;
+      ppt=getProcParamVal(commandLine, "--spinAligned");
+      if(ppt) tmpMin=-1.0;
+      else tmpMin=0.0;
+      tmpMax=1.0;
 			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
 			addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 				
@@ -713,7 +716,10 @@ void initVariables(LALInferenceRunState *state)
 			}
 		}
 		
-		tmpMin=0.0; tmpMax=1.0;
+    ppt=getProcParamVal(commandLine, "--spinAligned");
+    if(ppt) tmpMin=-1.0;
+    else tmpMin=0.0;
+    tmpMax=1.0;
 		addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
 		addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 	
