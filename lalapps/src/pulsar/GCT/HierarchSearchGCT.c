@@ -477,7 +477,7 @@ int MAIN( int argc, char *argv[]) {
     UINT8 maxseg = 1;
     maxseg = maxseg << (8*sizeof(FINEGRID_NC_T));
     maxseg -= 1;
-    if ( uvar_nStacksMax > maxseg) {
+    if ( (UINT8)uvar_nStacksMax > maxseg) {
       fprintf(stderr,
 	      "Number of segments exceeds %d!\n"
 	      "Compile without GC_SSE2_OPT to extend the available segment range\n",
