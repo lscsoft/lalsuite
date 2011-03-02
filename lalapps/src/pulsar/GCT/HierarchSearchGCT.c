@@ -479,7 +479,7 @@ int MAIN( int argc, char *argv[]) {
     maxseg -= 1;
     if ( (UINT8)uvar_nStacksMax > maxseg) {
       fprintf(stderr,
-	      "Number of segments exceeds %d!\n"
+	      "Number of segments exceeds %" LAL_UINT8_FORMAT "!\n"
 	      "Compile without GC_SSE2_OPT to extend the available segment range\n",
 	      maxseg);
       return( HIERARCHICALSEARCH_EBAD );
