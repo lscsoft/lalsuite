@@ -1020,16 +1020,52 @@ void PTMCMCLALSingleProposal(LALInferenceRunState *runState, LALVariables *propo
 	} while ((paraHead->vary==PARAM_FIXED || paraHead->vary==PARAM_OUTPUT));
 	//printf("%s\n",paraHead->name);
 		
-	if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
-		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
-	}else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
-		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
-	}else{
-		*(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
-	}
-	
+        if (getProcParamVal(runState->commandLine, "--zeroLogLike")) {
+          if (!strcmp(paraHead->name, "massratio")) {
+            sigma = 0.02;
+          } else if (!strcmp(paraHead->name, "chirpmass")) {
+            sigma = 1.0;
+          } else if (!strcmp(paraHead->name, "time")) {
+            sigma = 0.02;
+          } else if (!strcmp(paraHead->name, "phase")) {
+            sigma = 0.6;
+          } else if (!strcmp(paraHead->name, "distance")) {
+            sigma = 10.0;
+          } else if (!strcmp(paraHead->name, "declination")) {
+            sigma = 0.3;
+          } else if (!strcmp(paraHead->name, "rightascension")) {
+            sigma = 0.6;
+          } else if (!strcmp(paraHead->name, "polarisation")) {
+            sigma = 0.6;
+          } else if (!strcmp(paraHead->name, "inclination")) {
+            sigma = 0.3;
+          } else if (!strcmp(paraHead->name, "a_spin1")) {
+            sigma = 0.1;
+          } else if (!strcmp(paraHead->name, "theta_spin1")) {
+            sigma = 0.3;
+          } else if (!strcmp(paraHead->name, "phi_spin1")) {
+            sigma = 0.6;
+          } else if (!strcmp(paraHead->name, "a_spin2")) {
+            sigma = 0.1;
+          } else if (!strcmp(paraHead->name, "theta_spin2")) {
+            sigma = 0.3;
+          } else if (!strcmp(paraHead->name, "phi_spin2")) {
+            sigma = 0.6;
+          } else {
+            fprintf(stderr, "Could not find parameter %s!", paraHead->name);
+            exit(1);
+          }
+          *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*sigma;
+        } else {
+          if (!strcmp(paraHead->name,"massratio") || !strcmp(paraHead->name,"time") || !strcmp(paraHead->name,"a_spin2") || !strcmp(paraHead->name,"a_spin1")){
+            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.001;
+          } else if (!strcmp(paraHead->name,"polarisation") || !strcmp(paraHead->name,"phase") || !strcmp(paraHead->name,"inclination")){
+            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.1;
+          } else {
+            *(REAL8 *)paraHead->value += gsl_ran_ugaussian(GSLrandom)*big_sigma*sigma*0.01;
+          }
+        }
 	LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
-	
 }
 
 void PTMCMCLALBlockCorrelatedProposal(LALInferenceRunState *runState, LALVariables *proposedParams) {
