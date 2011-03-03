@@ -807,7 +807,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                 roundoff problems in cholesky
                                 decomp. */
           SINGLEFRAC=1.0,
-          SKYFRAC=0.05,
+          SKYFRAC=0.0, /* Not symmetric! */
           INCFRAC=0.05,
           PHASEFRAC=0.05,
           SKYLOCSMALLWANDERFRAC=0.0; /* Not symmetric! Was: 0.05; */
