@@ -158,24 +158,34 @@ dag.set_dag_file(basename)
 # Open the ihope cache and sort THINCA_SECOND files by user_tag
 
 print "Parsing the ihope cache..."
+coinc_zero_lag_tag = cp.get('pipeline', 'coinc-file-tag')
+coinc_slide_tag = cp.get('pipeline', 'coinc-slide-file-tag')
+search_file_tag = cp.get('pipeline', 'search-file-tag')
 ihope_cache = [line for line in file(options.ihope_cache) \
-  if "THINCA_SECOND" in line or "THINCA_SLIDE_SECOND" in line \
-  or " INJECTIONS" in line or "INSPIRAL_SECOND" in line]
+  if coinc_zero_lag_tag in line or coinc_slide_tag in line \
+  or " INJECTIONS" in line or search_file_tag in line]
 
 zero_lag_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
-  if "THINCA_SECOND" in entry])
+  if coinc_zero_lag_tag in entry])
 slide_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
-  if "THINCA_SLIDE_SECOND" in entry])
+  if coinc_slide_tag in entry])
 inj_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache if \
   " INJECTIONS" in entry])
 all_inspirals_cache = lal.Cache([lal.CacheEntry(entry) for entry in ihope_cache \
-  if "INSPIRAL_SECOND" in entry]) 
+  if search_file_tag in entry]) 
 
 del ihope_cache
 
 # get the user tags from the zero_lag_cache
+# for two stage runs, ihope sticks the instrument time in after the program name,
+# e.g., THINCA_SECONCD_H1L1_USER_TAG whereas for one stage pipelines it's
+# THINCA_FIRST_USER_TAG.
+if 'SECOND' in coinc_zero_lag_tag:
+  skip_tags = 3
+else:
+  skip_tags = 2
 user_tags = set([ '_'.join([ entry.description.split('_')[ii] 
-  for ii in range( 3, len(entry.description.split('_')) ) ])
+  for ii in range( skip_tags, len(entry.description.split('_')) ) ])
   for entry in zero_lag_cache ])
 
 # create a list to store non-injection databases for later caching
@@ -185,6 +195,9 @@ non_sim_dbs = []
 # Create the needed jobs to be run
 
 # thinca_to_coinc jobs
+# Note: the ringdown pipeline actually uses rinca_to_coinc, but that's ok b/c
+# both programs have the same options. The difference is handled in the condor
+# section of the ini file.
 t2c_job = inspiral.ThincaToCoincJob(cp)
 t2c_job.set_experiment_start_time(options.gps_start_time)
 t2c_job.set_experiment_end_time(options.gps_end_time)
@@ -248,12 +261,22 @@ if cp.has_section('plotfm'):
       fmcp.set('plotfm', fmopt, fmval)
     plotfm_jobs.append( (plotfm_tag, inspiral.PlotFMJob(fmcp)) )
 
+# ditto repop coinc
+repop_coinc_jobs = []
+if cp.has_section('repop_coinc'):
+  for repop_coinc_tag in cp.options('repop_coinc'):
+    repopcp = copy.deepcopy(cp)
+    repopcp.remove_section('repop_coinc')
+    repopcp.add_section('repop_coinc')
+    for repopopt, repopval in cp.items(repop_coinc_tag):
+      repopcp.set('repop_coinc', repopopt, repopval)
+    repop_coinc_jobs.append( (repop_coinc_tag, inspiral.RepopCoincJob(repopcp)) )
+
 # all other jobs: all the nodes share the same static options for these
 dbsimplify_job = inspiral.DBSimplifyJob(cp)
 dbaddinj_job = inspiral.DBAddInjJob(cp)
-inspinjfind_job = inspiral.InspInjFindJob(cp)
+injfind_job = inspiral.InjFindJob(cp)
 comp_durs_job = inspiral.ComputeDurationsJob(cp)
-repop_coinc_job = inspiral.RepopCoincJob(cp)
 cluster_job = inspiral.ClusterCoincsJob(cp)
 ucfar_job = inspiral.CFarJob(cp, ['cfar-uncombined'])
 ccfar_job = inspiral.CFarJob(cp, ['cfar-combined'])
@@ -277,9 +300,10 @@ sql_frominput_job.set_sub_file( '.'.join([ basename, 'add_from_input', 'ligolw_s
 sql_extract_job.set_sub_file( '.'.join([ basename, 'extract', 'ligolw_sqlite', 'sub' ]) )
 dbsimplify_job.set_sub_file( '.'.join([ basename, 'dbsimplify', 'sub' ]) )
 dbaddinj_job.set_sub_file( '.'.join([ basename, 'dbaddinj', 'sub' ]) )
-inspinjfind_job.set_sub_file( '.'.join([ basename, 'inspinjfind', 'sub' ]) )
+injfind_job.set_sub_file( '.'.join([ basename, 'injfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
-repop_coinc_job.set_sub_file( '.'.join([ basename, 'repop_coinc', 'sub' ]) )
+for repoptag, repopjob in repop_coinc_jobs:
+  repopjob.set_sub_file( '.'.join([ basename, repoptag, 'repop_coinc', 'sub' ]) )
 cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
 mvsc_get_doubles_job.set_sub_file( '.'.join([ basename, 'mvsc_get_doubles', 'sub' ]) )
 mvsc_train_forest_job.set_sub_file( '.'.join([ basename, 'mvsc_train_forest', 'sub' ]) )
@@ -313,7 +337,7 @@ sql_replace_job.add_condor_cmd("requirements", "Memory > 1000")
 sql_fromcache_job.add_condor_cmd("requirements", "Memory > 1000")
 sql_frominput_job.add_condor_cmd("requirements", "Memory > 1000")
 sql_extract_job.add_condor_cmd("requirements", "Memory > 1000")
-inspinjfind_job.add_condor_cmd("requirements", "Memory > 1000")
+injfind_job.add_condor_cmd("requirements", "Memory > 1000")
 printlc_job.add_condor_cmd("requirements", "Memory > 1000")
 printsims_job.add_condor_cmd("requirements", "Memory > 1000")
 printsims_nominifup_job.add_condor_cmd("requirements", "Memory > 1000")
@@ -326,7 +350,7 @@ minifup_cm_job.add_condor_cmd("requirements", "Memory > 1000")
 
 veto_files = {}
 cluster_nodes = {}
-inspinjfind_parents = {}
+injfind_parents = {}
 sim_tags = []
 for tag in user_tags:
 
@@ -408,7 +432,7 @@ for tag in user_tags:
       this_cache.append(entry)
       # if this isn't a simulation add the slide file
       if not simulation:
-        slide_entry = lal.CacheEntry(re.sub('THINCA', 'THINCA_SLIDE', str(entry)))
+        slide_entry = lal.CacheEntry(re.sub(coinc_zero_lag_tag, coinc_slide_tag, str(entry)))
         this_cache.append(slide_entry)
       # if n*20th entry or last remainder, write to cache
       if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
@@ -433,7 +457,7 @@ for tag in user_tags:
         dag.add_node(this_t2c_node)
         t2c_nodes.append(this_t2c_node)
         # add output files to t2c_output
-        t2c_output += this_t2c_node.get_output_from_cache()
+        t2c_output += this_t2c_node.get_output_from_cache( coinc_zero_lag_tag )
         # set end-time of last entry to be start time of next cache
         cache_start_time = entry.segment[1].seconds
         del this_cache
@@ -500,16 +524,20 @@ for tag in user_tags:
   print "\tsetting up repop_coinc node to recalculate detection statistic..."
 
   # set node options
-  repop_coinc_node = inspiral.RepopCoincNode( repop_coinc_job )
-  repop_coinc_node.set_category('repop_coinc')
-  repop_coinc_node.set_tmp_space( tmp_space )
-  repop_coinc_node.set_input( raw_result_db )
-  repop_coinc_node.set_output( raw_result_db )
+  last_node = dbsimplify_node
+  for repop_coinc_tag, repop_coinc_job in repop_coinc_jobs:
+      repop_coinc_node = inspiral.RepopCoincNode( repop_coinc_job )
+      repop_coinc_node.set_category('repop_coinc')
+      repop_coinc_node.set_tmp_space( tmp_space )
+      repop_coinc_node.set_input( raw_result_db )
+      repop_coinc_node.set_output( raw_result_db )
 
-  # set parent node
-  repop_coinc_node.add_parent( dbsimplify_node )
+      # set parent node
+      repop_coinc_node.add_parent( last_node )
 
-  dag.add_node( repop_coinc_node )
+      dag.add_node( repop_coinc_node )
+      # update last node to be the last repop_coinc node
+      last_node = repop_coinc_node
 
   #############################################################################
   # Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
@@ -529,8 +557,9 @@ for tag in user_tags:
     'sqlite' ]) 
   cluster_node.set_output(result_db)
   
-  # set parent node
-  cluster_node.add_parent( repop_coinc_node )
+  # set parent node; this is the last repop coinc node (if there were any; 
+  # if not, the dbsimplify node)
+  cluster_node.add_parent( last_node )
   
   dag.add_node( cluster_node )
 
@@ -569,10 +598,10 @@ for tag in user_tags:
     simxml_node.add_parent( dbaddinj_node )
     dag.add_node( simxml_node )
 
-    # add to list of inspinjfind parents
-    if veto_cat not in inspinjfind_parents:
-      inspinjfind_parents[veto_cat] = []
-    inspinjfind_parents[veto_cat].append( simxml_node )
+    # add to list of injfind parents
+    if veto_cat not in injfind_parents:
+      injfind_parents[veto_cat] = []
+    injfind_parents[veto_cat].append( simxml_node )
 
   else:
     # just cache the result_db
@@ -580,30 +609,30 @@ for tag in user_tags:
     
 
 ##############################################################################
-# done cycling over tags: Create inspinjfind job and node
+# done cycling over tags: Create injfind job and node
 
 # cache the sim xmls by veto category
-print "Creating inspinjfind nodes..."
+print "Creating injfind nodes..."
 
-inspinjfind_nodes = {}
+injfind_nodes = {}
 sim_caches = {}
 sim_tags = set(sim_tags+['ALLINJ'])
-for veto_cat, node_list in inspinjfind_parents.items():
+for veto_cat, node_list in injfind_parents.items():
   
-  # create a inspinjfind node for each veto_category
-  inspinjfind_node = inspiral.InspInjFindNode( inspinjfind_job )
-  inspinjfind_node.set_category('inspinjfind')
+  # create a injfind node for each veto_category
+  injfind_node = inspiral.InspInjFindNode( injfind_job )
+  injfind_node.set_category('injfind')
 
   # add input files and parents
   for simxml_node in node_list:
-    inspinjfind_node.add_file_arg( simxml_node.get_output() )
-    inspinjfind_node.add_parent( simxml_node )
-  dag.add_node( inspinjfind_node )
+    injfind_node.add_file_arg( simxml_node.get_output() )
+    injfind_node.add_parent( simxml_node )
+  dag.add_node( injfind_node )
 
-  inspinjfind_nodes[veto_cat] = inspinjfind_node
+  injfind_nodes[veto_cat] = injfind_node
 
   # Cache the files
-  sim_cache = lal.Cache().from_urls( inspinjfind_node.get_input_files() )
+  sim_cache = lal.Cache().from_urls( injfind_node.get_input_files() )
   if veto_cat == 'CAT_1_VETO':
     cache_type = 'ALLINJ_CLUSTERED_CBC_RESULTS'
   else:
@@ -651,7 +680,7 @@ for result_db in result_dbs_cache:
     sim2fulldb_node.set_database( result_db.path() )
     sim2fulldb_node.set_tmp_space( tmp_space )
     
-    sim2fulldb_node.add_parent( inspinjfind_nodes[veto_cat] )
+    sim2fulldb_node.add_parent( injfind_nodes[veto_cat] )
     sim2fulldb_node.add_parent( cluster_nodes[tag] )
     dag.add_node( sim2fulldb_node )
 
@@ -925,8 +954,8 @@ for result_db in result_dbs_cache:
             summ_file_type = 'html'
             columns = ','.join([
               'injected_decisive_distance',
-              'injected_end_time',
-              'injected_end_time_utc__Px_click_for_daily_ihope_xP_',
+              'injected_gps_time',
+              'injected_event_time_utc__Px_click_for_daily_ihope_xP_',
               'elogs',
               'injected_mass1',
               'injected_mass2',
@@ -993,8 +1022,8 @@ for result_db in result_dbs_cache:
           columns = ','.join([
             'rank',
             'decisive_distance',
-            'end_time',
-            'end_time_utc__Px_click_for_daily_ihope_xP_',
+            'gps_time',
+            'injection_time_utc__Px_click_for_daily_ihope_xP_',
             'elogs',
             'mchirp',
             'mass1',
