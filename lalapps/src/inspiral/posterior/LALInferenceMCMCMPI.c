@@ -200,6 +200,10 @@ void initializeMCMC(LALInferenceRunState *runState)
 			runState->template=&templateLAL;
 			fprintf(stdout,"Template function called is \"templateLAL\"\n");
 		}
+    else if(strstr(ppt->value,"35phase_25amp")) {
+      runState->template=&template3525TD;
+			fprintf(stdout,"Template function called is \"template3525TD\"\n");
+    }
 		else {
 			runState->template=&templateLALGenerateInspiral;
 			fprintf(stdout,"Template function called is \"templateLALGenerateInspiral\"\n");
