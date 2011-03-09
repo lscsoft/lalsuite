@@ -31,7 +31,8 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 */
 
 /* 2/3/11 v. 2 (which is not entirely accurate, but I'm starting from here): added a log file, version number, and separate channel for i(t) -- E. Macdonald */
-
+/* 3/3/11 v. 3: placed log comments throughout */
+/* 7/3/11 v. 4: output file to dump ascii of failed frames */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -46,6 +47,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <signal.h>
 #include <math.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 /*LAL Functions */
 #include <lalapps.h>
@@ -85,14 +87,15 @@ typedef struct{
   CHAR *ephemDir; /*directory for ephemeris files*/
   CHAR *ephemYear; /*ephemeris years*/
   CHAR *IFO; /*detector */
+  CHAR *logDir; /*directory for the log files */
 } UserInput_t;
   
 UserInput_t uvar_struct;    
 
 /* ---------- local function prototypes ---------- */
-EphemerisData * XLALInitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir );
-int InitUserVars ( UserInput_t *uvar, int argc, char **argv );
+EphemerisData * XLALInitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir ); /*function to read ephemeris files*/
 
+int InitUserVars ( UserInput_t *uvar, int argc, char **argv ); /*Initiates user variables*/
 
 /* empty initialiser */
 LALStatus empty_LALStatus;
@@ -112,21 +115,35 @@ int main(int argc, char **argv)
   }
  
   if ( uvar->help )
+    return 0;  
+
+  char version[256];
+  sprintf(version, "v4"); /*manually change */
+
+  /*Get current time for log */
+  time_t result;
+  result = time(NULL);
+  struct tm* btm = localtime(&result);
+
+  /*Start the log file */  
+  FILE *logfile;
+  char log_file[256];
+
+  sprintf(log_file, "%s/%s/test.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
+  fprintf(stderr, "Your log file is here: %s\n", log_file);
+
+  /*Writing to .log file*/
+  if (( logfile = fopen( log_file, "a" )) == NULL ) {
+    fprintf (stderr, "Error opening .log file! \n" );
     return 0;
-  
-  /*char lalframefile[256];
-    char gwfframefile[256];
-    
-    double srate;
-    double ndata; *//* data taken every 1 sec */
-  
-  
-  /*  REAL8Vector *Tstamp=NULL;*/
-  /*  FILE *outtest;*/
-  
-  /*  FrStream *frfile=NULL;*/
-  /*FrStream *gwffile=NULL;*/
-  
+  }
+  else {
+    fprintf (logfile, "\nsw_inj_frames.c version number: %s\nCurrent time: %s \n", version, asctime(btm));
+    fprintf (logfile, "User inputs:\n Sample rate: %f\n Pulsar file directory: %s\n Raw frame file directory: %s\n Output directory: %s\n Years for ephemeris: %s\n Directory for ephemeris: %s\n Name of directory for log (w/in output dir): %s\n IFO: %s\n", uvar->srate, uvar->inputdir, uvar->gwfdir, uvar->outputdir, uvar->ephemYear, uvar->ephemDir, uvar->logDir, uvar->IFO);
+    fclose(logfile);
+  }
+  /* </log file> */
+
   struct dirent **parnamelist;
   struct dirent **gwfnamelist;
   char pulin[256];
@@ -146,15 +163,6 @@ int main(int argc, char **argv)
   
   /*  epoch.gpsSeconds = atoi(argv[5]);  User defined gps epoch */
   /*  epoch.gpsNanoSeconds = 0;*/
-  
-  /*   define the input directory for the mfd_files*/
-  /*  sprintf(inputdir, "/home/emacdonald/par_files/generated/%s/mfd_files", argv[6]);*/
-  /*  fprintf(stderr, "%s\n", inputdir);*/
-  
-  /***To be used later in loop, not as user variable***/
-  /*LIGOTimeGPS epoch;*/
-  /*epoch.gpsSeconds = uvar->start;*/
-  /*epoch.gpsNanoSeconds = 0;*/
   
   /*init ephemeris-data */
   EphemerisData *edat;
@@ -200,6 +208,18 @@ int main(int argc, char **argv)
   CHAR inj_chan[256];
   sprintf( inj_chan, "%s_LDAS_C02_L2_CWINJ_SIG", uvar->IFO );
 
+  /*Writing to .log file*/
+  if (( logfile = fopen( log_file, "a" )) == NULL ) {
+    fprintf (stderr, "Error opening .log file! \n" );
+    return 0;
+  }
+  else {
+    fprintf (logfile, "Channels:\n Reading from raw: %s\n Injection+noise: %s\n Pure injection: %s\n", in_chan, out_chan, inj_chan);
+    fclose(logfile);
+  }
+  /* </log file> */
+
+
   /*  extract .gwf file name from inputs*/
   /*  pos = strchr(uvar->out_chan, '_');*/
   /*  ipos = pos-(uvar->out_chan);*/
@@ -229,26 +249,85 @@ int main(int argc, char **argv)
   UINT4 ndata;
   size_t filength;
 
+  /* Put the pulsar files in the log (so as not to loop every time) */
+  /*Read in all pulsar files from inputdir*/
+  int n = scandir(uvar->inputdir, &parnamelist, 0, alphasort);
+  if ( n < 0 ) {
+    XLALPrintError ("%s: scandir() failed for directory '%s'\n", fn, uvar->inputdir );
+    XLAL_ERROR ( fn, XLAL_EIO );
+  }
+  UINT4 numParFiles = (UINT4)n;
+  UINT4 h=0;
+  /*h starts at 2 to skip over . and .. found in scandir, they are the first two entries */
+  for (h=2; h < numParFiles; h++) {
+    if(strstr(parnamelist[h]->d_name, ".par") == NULL){
+      fprintf(stderr, "Not using file %s\n",parnamelist[h]->d_name);
+      continue;
+    }
+    else{
+      /*Writing to .log file*/
+      if (( logfile = fopen( log_file, "a" )) == NULL ) {
+	fprintf (stderr, "Error opening .log file! \n" );
+	return 0;
+      }
+      else {
+	char parname[256];
+	sprintf(parname, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);
+	char t[ 100 ];
+	struct stat b;
+	if (!stat(parname, &b)) {
+	  strftime(t, 100, "%d/%m/%Y %H:%M:%S", localtime( &b.st_mtime));
+	  fprintf (logfile, "%s/%s Last Modified: %s\n", uvar->inputdir, parnamelist[h]->d_name, t);
+	  fclose(logfile);
+	}
+      }
+      /* </log file> */
+    } /*checking if file ends in .par*/
+  }/*looping through files in uvar->inputdir */
+
   if ( (m = scandir(uvar->gwfdir, &gwfnamelist, 0, alphasort)) == -1) {
     XLALPrintError ("%s: scandir('%s',...) failed.\n", fn, uvar->gwfdir );
     XLAL_ERROR ( fn, XLAL_EIO );
   }
+  
   UINT4 k=0;
-
   for (k=2; k < (UINT4)m; k++){
     if (strstr(gwfnamelist[k]->d_name, ".gwf") == NULL){
       continue; /*make sure it's a .gwf file */
     }
     else{
-      fprintf(stderr, "\ngwf_dir = %s \nfile name = %s\n", uvar->gwfdir, gwfnamelist[k]->d_name );
-      
       FrStream *gwffile=NULL; 
       
       if (( gwffile = XLALFrOpen( uvar->gwfdir, gwfnamelist[k]->d_name)) == NULL ) {
-	XLAL_ERROR ( fn, XLAL_EFUNC ); /*test that it's an acceptable file */
+	/*XLAL_ERROR ( fn, XLAL_EFUNC ); -- don't want to abort, but save elsewhere test that it's an acceptable file */
+	
+	/*Writing to failed file*/
+	FILE *frames;
+	char framefilename[256];
+	sprintf(framefilename, "%s/%s/failed_frames.txt", uvar->outputdir, uvar->logDir);
+        if (( frames = fopen( framefilename, "a" )) == NULL ) {
+          fprintf (stderr, "Error opening file %s! \n", framefilename );
+          return 0;
+        }
+        else {
+          fprintf (frames, "%s\n", gwfnamelist[k]->d_name);
+	  fclose(logfile);
+        }
+        /* </failed file> */
+	continue; /*don't exit program if .gwf file fails, continue through*/
       }
       else {
-     
+	/*Writing to .log file*/
+	if (( logfile = fopen( log_file, "a" )) == NULL ) {
+	  fprintf (stderr, "Error opening .log file! \n" );
+	  return 0;
+	}
+	else {
+	  fprintf (logfile, "Read file %s/%s\n", uvar->gwfdir, gwfnamelist[k]->d_name);
+	  fclose(logfile);
+	}
+	/* </log file> */
+
 	REAL8TimeSeries *gwfseries=NULL;
 	REAL8TimeSeries *series=NULL;
 
@@ -259,7 +338,7 @@ int main(int argc, char **argv)
 	strepoch[sizeof(strepoch)-1] = '\0'; /*Null terminate the string*/
 	epoch.gpsSeconds = atoi(strepoch);  /* convert to integer from string */
 	epoch.gpsNanoSeconds = 0; /* no nanosecond precision */
-	fprintf(stderr, "epoch = %i\n", epoch.gpsSeconds);
+	/*	fprintf(stderr, "epoch = %i\n", epoch.gpsSeconds);*/
 	
 	/*UINT4 ndata;*/
 	/*size_t filength;*/
@@ -267,9 +346,20 @@ int main(int argc, char **argv)
 	char strdur[4];
 	strncpy(strdur, (strrchr(gwfnamelist[k]->d_name, '-')+1), 3); /* duration is last number in frame file */
 	strdur[sizeof(strdur)-1] = '\0';
-	fprintf(stderr, "Duration = %s\n", strdur);
+	/*	fprintf(stderr, "Duration = %s\n", strdur);*/
 	/* assigns duration from .gwf frame */
 	ndata = atoi(strdur);
+
+	/*Writing to .log file*/
+	if (( logfile = fopen( log_file, "a" )) == NULL ) {
+	  fprintf (stderr, "Error opening .log file! \n" );
+	  return 0;
+	}
+	else {
+	  fprintf (logfile, "Using epoch: %i and duration: %i\n", epoch.gpsSeconds, ndata);
+	  fclose(logfile);
+	}
+	/* </log file> */
 	
 	/* acquire time series from frame file */
 	if ( (gwfseries = XLALCreateREAL8TimeSeries( in_chan, &epoch, 0., 1./srate, &lalSecondUnit, (int)(ndata*srate) )) == NULL ) {
@@ -282,7 +372,17 @@ int main(int argc, char **argv)
 	
 	/* define output .gwf file */
 	sprintf(out_file, "%c-%s-%d-%d.gwf", uvar->IFO[0], out_chan, epoch.gpsSeconds, ndata);
-	fprintf(stderr, "out_file = %s\n", out_file);
+	
+	/*Writing to .log file*/
+	if (( logfile = fopen( log_file, "a" )) == NULL ) {
+	  fprintf (stderr, "Error opening .log file! \n" );
+	  return 0;
+	}
+	else {
+	  fprintf (logfile, "Writing to %s/%s\n", uvar->outputdir, out_file);
+	  fclose(logfile);
+	}
+	/* </log file> */
 	
 	/* read in and test generated frame with XLAL function*/
 	
@@ -318,13 +418,13 @@ int main(int argc, char **argv)
 	  total_inject->data->data[counter] = 0;
 	
 	/*Read in all pulsar files from inputdir*/
-	int n = scandir(uvar->inputdir, &parnamelist, 0, alphasort);
+	n = scandir(uvar->inputdir, &parnamelist, 0, alphasort);
 	if ( n < 0 ) {
 	  XLALPrintError ("%s: scandir() failed for directory '%s'\n", fn, uvar->inputdir );
 	  XLAL_ERROR ( fn, XLAL_EIO );
 	}
-	UINT4 numParFiles = (UINT4)n;
-	UINT4 h=0;
+	numParFiles=(UINT4)n;
+	h=0;
 	/*h starts at 2 to skip over . and .. found in scandir, they are the first two entries */
 	for (h=2; h < numParFiles; h++) {
 	  if(strstr(parnamelist[h]->d_name, ".par") == NULL){
@@ -333,7 +433,7 @@ int main(int argc, char **argv)
 	  }
 	  else{
 	    sprintf(pulin, "%s/%s", uvar->inputdir, parnamelist[h]->d_name);
-	    fprintf(stderr, "This is your pulsar file:%s\n", pulin);
+	    /*fprintf(stderr, "This is your pulsar file:%s\n", pulin);*/
 	    if (( inject = fopen ( pulin, "r" )) == NULL ){
 	      fprintf(stderr, "Error opening file: %s\n", pulin);
 	      XLAL_ERROR ( fn, XLAL_EIO );
@@ -426,7 +526,7 @@ int main(int argc, char **argv)
 	  XLAL_ERROR(fn, XLAL_EFAILED);
 	}
 	
-	fprintf(stderr,"%e\n", series->data->data[250]);
+	/*fprintf(stderr,"%e\n", series->data->data[250]);*/
 	
 	/* write frame structure to file (opens, writes, and closes file) - last argument is compression level */
 	if (XLALFrameWrite(outFrame,fffile,1)) {
@@ -472,6 +572,17 @@ int main(int argc, char **argv)
 	/*  XLALDestroyREAL8TimeSeries( series );*/
 
       } /*ends loop for creating CWINJ .gwf file */
+      /*Writing to .log file*/
+      if (( logfile = fopen( log_file, "a" )) == NULL ) {
+	fprintf (stderr, "Error opening .log file! \n" );
+	return 0;
+      }
+      else {
+	fprintf (logfile, "%s created successfully!\n", out_file);
+	fclose(logfile);
+      }
+      /* </log file> */
+
     } /*ends loop through all .gwf files in .gwf directory*/
   }
   return 1;
@@ -519,6 +630,7 @@ InitUserVars ( UserInput_t *uvar,	/**< [out] UserInput structure to be filled */
   XLALregSTRINGUserStruct(ephemYear,      'y', UVAR_OPTIONAL,"Year(or range of years) for ephemeris files to be used");
   XLALregSTRINGUserStruct(ephemDir,   'e', UVAR_OPTIONAL,"Directory to find ephemeris files");
   XLALregSTRINGUserStruct( IFO,       'I', UVAR_REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
+  XLALregSTRINGUserStruct( logDir, 'L', UVAR_OPTIONAL, "Directory to put .log file");
   
   if (XLALUserVarReadAllInput (argc, argv ) != XLAL_SUCCESS) {
     XLALPrintError ("%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno);
