@@ -51,6 +51,7 @@ typedef struct tagBBHPhenomParams{
   REAL8 psi5;
   REAL8 psi6;
   REAL8 psi7;
+  REAL8 psi8;
 }
 BBHPhenomParams;
 
@@ -153,7 +154,7 @@ static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
 
 {
 
-  REAL8 totalMass, piM, eta, fMerg_a, fMerg_b, fMerg_c, fRing_a, fRing_b;
+  REAL8 totalMass, piM, eta, fMerg_a, fMerg_b, fMerg_c, fRing_a, fRing_b, etap2;
   REAL8 fRing_c, sigma_a, sigma_b, sigma_c, fCut_a, fCut_b, fCut_c;
   REAL8 psi0_a, psi0_b, psi0_c, psi2_a, psi2_b, psi2_c, psi3_a, psi3_b, psi3_c;
   REAL8 psi4_a, psi4_b, psi4_c, psi6_a, psi6_b, psi6_c, psi7_a, psi7_b, psi7_c;
@@ -214,19 +215,20 @@ static void XLALComputePhenomParams( BBHPhenomParams  *phenParams,
    * arXiv:0710.2335 [gr-qc] */
   if (phenParams) {
 
-    phenParams->fCut  = (fCut_a*eta*eta  + fCut_b*eta  + fCut_c)/piM;
-    phenParams->fMerger  = (fMerg_a*eta*eta  + fMerg_b*eta  + fMerg_c)/piM;
-    phenParams->fRing  = (fRing_a*eta*eta + fRing_b*eta + fRing_c)/piM;
-    phenParams->sigma = (sigma_a*eta*eta + sigma_b*eta + sigma_c)/piM;
+	etap2 = eta*eta;
+    phenParams->fCut  = (fCut_a*etap2  + fCut_b*eta  + fCut_c)/piM;
+    phenParams->fMerger  = (fMerg_a*etap2  + fMerg_b*eta  + fMerg_c)/piM;
+    phenParams->fRing  = (fRing_a*etap2 + fRing_b*eta + fRing_c)/piM;
+    phenParams->sigma = (sigma_a*etap2 + sigma_b*eta + sigma_c)/piM;
 
-    phenParams->psi0 = (psi0_a*eta*eta + psi0_b*eta + psi0_c)/(eta*pow(piM, 5./3.));
+    phenParams->psi0 = (psi0_a*etap2 + psi0_b*eta + psi0_c)/(eta*pow(piM, 5./3.));
     phenParams->psi1 = 0.;
-    phenParams->psi2 = (psi2_a*eta*eta + psi2_b*eta + psi2_c)/(eta*pow(piM, 3./3.));
-    phenParams->psi3 = (psi3_a*eta*eta + psi3_b*eta + psi3_c)/(eta*pow(piM, 2./3.));
-    phenParams->psi4 = (psi4_a*eta*eta + psi4_b*eta + psi4_c)/(eta*pow(piM, 1./3.));
+    phenParams->psi2 = (psi2_a*etap2 + psi2_b*eta + psi2_c)/(eta*pow(piM, 3./3.));
+    phenParams->psi3 = (psi3_a*etap2 + psi3_b*eta + psi3_c)/(eta*pow(piM, 2./3.));
+    phenParams->psi4 = (psi4_a*etap2 + psi4_b*eta + psi4_c)/(eta*pow(piM, 1./3.));
     phenParams->psi5 = 0.;
-    phenParams->psi6 = (psi6_a*eta*eta + psi6_b*eta + psi6_c)/(eta*pow(piM, -1./3.));
-    phenParams->psi7 = (psi7_a*eta*eta + psi7_b*eta + psi7_c)/(eta*pow(piM, -2./3.));
+    phenParams->psi6 = (psi6_a*etap2 + psi6_b*eta + psi6_c)/(eta*pow(piM, -1./3.));
+    phenParams->psi7 = (psi7_a*etap2 + psi7_b*eta + psi7_c)/(eta*pow(piM, -2./3.));
   }
 
   return;
@@ -243,6 +245,7 @@ static void XLALComputePhenomParams2( BBHPhenomParams  *phenParams,
 {
 
     REAL8 totalMass, piM, eta, chi, delta;
+	REAL8 etap2, chip2, etap3, etap2chi, etachip2, etachi; 
 
     /* calculate the total mass and symmetric mass ratio */
 
@@ -263,50 +266,61 @@ static void XLALComputePhenomParams2( BBHPhenomParams  *phenParams,
     /* spinning phenomenological waveforms */
     if (phenParams) {
 
+			etap2 = eta*eta;
+			chip2 = chi*chi;
+			etap3 = etap2*eta;
+			etap2chi = etap2*chi;
+			etachip2 = eta*chip2;	
+			etachi = eta*chi;
+
             phenParams->psi0 = 3./(128.*eta);
 
             phenParams->psi2 = 3715./756. +
-            -9.2091e+02*eta + 4.9213e+02*eta*chi + 1.3503e+02*eta*pow(chi,2.) +
-            6.7419e+03*pow(eta,2.) + -1.0534e+03*pow(eta,2.)*chi +
-            -1.3397e+04*pow(eta,3.) ;
+            -9.2091e+02*eta + 4.9213e+02*etachi + 1.3503e+02*etachip2 +
+            6.7419e+03*etap2 + -1.0534e+03*etap2chi +
+            -1.3397e+04*etap3 ;
 
             phenParams->psi3 = -16.*LAL_PI + 113.*chi/3. +
-            1.7022e+04*eta + -9.5659e+03*eta*chi + -2.1821e+03*eta*pow(chi,2.) +
-            -1.2137e+05*pow(eta,2.) + 2.0752e+04*pow(eta,2.)*chi +
-            2.3859e+05*pow(eta,3.) ;
+            1.7022e+04*eta + -9.5659e+03*etachi + -2.1821e+03*etachip2 +
+            -1.2137e+05*etap2 + 2.0752e+04*etap2chi +
+            2.3859e+05*etap3 ;
 
-            phenParams->psi4 = 15293365./508032. - 405.*pow(chi,2.)/8. +
-            -1.2544e+05*eta + 7.5066e+04*eta*chi + 1.3382e+04*eta*pow(chi,2.) +
-            8.7354e+05*pow(eta,2.) + -1.6573e+05*pow(eta,2.)*chi +
-            -1.6936e+06*pow(eta,3.) ;
+            phenParams->psi4 = 15293365./508032. - 405.*chip2/8. +
+            -1.2544e+05*eta + 7.5066e+04*etachi + 1.3382e+04*etachip2 +
+            8.7354e+05*etap2 + -1.6573e+05*etap2chi +
+            -1.6936e+06*etap3 ;
 
-            phenParams->psi6 = -8.8977e+05*eta + 6.3102e+05*eta*chi + 5.0676e+04*eta*pow(chi,2.) +
-            5.9808e+06*pow(eta,2.) + -1.4148e+06*pow(eta,2.)*chi +
-            -1.1280e+07*pow(eta,3.) ;
+            phenParams->psi6 = -8.8977e+05*eta + 6.3102e+05*etachi + 5.0676e+04*etachip2 +
+            5.9808e+06*etap2 + -1.4148e+06*etap2chi +
+            -1.1280e+07*etap3 ;
 
-            phenParams->psi7 = 8.6960e+05*eta + -6.7098e+05*eta*chi + -3.0082e+04*eta*pow(chi,2.) +
-            -5.8379e+06*pow(eta,2.) + 1.5145e+06*pow(eta,2.)*chi +
-            1.0891e+07*pow(eta,3.) ;
+            phenParams->psi7 = 8.6960e+05*eta + -6.7098e+05*etachi + -3.0082e+04*etachip2 +
+            -5.8379e+06*etap2 + 1.5145e+06*etap2chi +
+            1.0891e+07*etap3 ;
+
+    		phenParams->psi8 = -3.6600e+05*eta + 3.0670e+05*etachi + 6.3176e+02*etachip2 +
+            2.4265e+06*etap2 + -7.2180e+05*etap2chi + 
+            -4.5524e+06*etap3;
 
             phenParams->fMerger =  1. - 4.4547*pow(1.-chi,0.217) + 3.521*pow(1.-chi,0.26) +
-            6.4365e-01*eta + 8.2696e-01*eta*chi + -2.7063e-01*eta*pow(chi,2.) +
-            -5.8218e-02*pow(eta,2.) + -3.9346e+00*pow(eta,2.)*chi +
-            -7.0916e+00*pow(eta,3.) ;
+            6.4365e-01*eta + 8.2696e-01*etachi + -2.7063e-01*etachip2 +
+            -5.8218e-02*etap2 + -3.9346e+00*etap2chi +
+            -7.0916e+00*etap3 ;
 
             phenParams->fRing = (1. - 0.63*pow(1.-chi,0.3))/2. +
-            1.4690e-01*eta + -1.2281e-01*eta*chi + -2.6091e-02*eta*pow(chi,2.) +
-            -2.4900e-02*pow(eta,2.) + 1.7013e-01*pow(eta,2.)*chi +
-            2.3252e+00*pow(eta,3.) ;
+            1.4690e-01*eta + -1.2281e-01*etachi + -2.6091e-02*etachip2 +
+            -2.4900e-02*etap2 + 1.7013e-01*etap2chi +
+            2.3252e+00*etap3 ;
 
             phenParams->sigma = (1. - 0.63*pow(1.-chi,0.3))*pow(1.-chi,0.45)/4. +
-            -4.0979e-01*eta + -3.5226e-02*eta*chi + 1.0082e-01*eta*pow(chi,2.) +
-            1.8286e+00*pow(eta,2.) + -2.0169e-02*pow(eta,2.)*chi +
-            -2.8698e+00*pow(eta,3.) ;
+            -4.0979e-01*eta + -3.5226e-02*etachi + 1.0082e-01*etachip2 +
+            1.8286e+00*etap2 + -2.0169e-02*etap2chi +
+            -2.8698e+00*etap3 ;
 
-            phenParams->fCut = 3.2361e-01 + 4.8935e-02*chi + 1.3463e-02*pow(chi,2.) +
-            -1.3313e-01*eta + -8.1719e-02*eta*chi + 1.4512e-01*eta*pow(chi,2.) +
-            -2.7140e-01*pow(eta,2.) + 1.2788e-01*pow(eta,2.)*chi +
-            4.9220e+00*pow(eta,3.) ;
+            phenParams->fCut = 3.2361e-01 + 4.8935e-02*chi + 1.3463e-02*chip2 +
+            -1.3313e-01*eta + -8.1719e-02*etachi + 1.4512e-01*etachip2 +
+            -2.7140e-01*etap2 + 1.2788e-01*etap2chi +
+            4.9220e+00*etap3 ;
 
             phenParams->fCut   /= piM;
         	phenParams->fMerger/= piM;
@@ -332,19 +346,13 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
 
     REAL8 df, shft, phi, amp0, ampEff=0, psiEff, fMerg, fNorm;
     REAL8 f, fRing, sigma, totalMass, eta;
-    INT4 i, j, n;
+    INT4 i, j, n, nby2;
 
     /* freq resolution and the low-freq bin */
     df = insp_template->tSampling/signalvec->length;
     n = signalvec->length;
 
-    /* If we want to pad with zeroes in the beginning then the instant of
-    * coalescence will be the chirp time + the duration for which padding
-    * is needed. Thus, in the equation below nStartPad occurs with a +ve sign.
-    * This code doesn't support non-zero start-time. i.e. params->startTime
-    * should be necessarily zero.*/
-    shft = 2.*LAL_PI * ((REAL4)signalvec->length/insp_template->tSampling +
-            insp_template->nStartPad/insp_template->tSampling + insp_template->startTime);
+    shft = LAL_TWOPI*(insp_template->nStartPad/insp_template->tSampling + insp_template->startTime);
     phi  = insp_template->startPhase;
 
     /* phenomenological  parameters*/
@@ -365,8 +373,10 @@ static void XLALBBHPhenWaveFD ( BBHPhenomParams  *params,
     *(signalvec->data+0) = 0.;
     *(signalvec->data+n/2) = 0.;
 
+    nby2 = n/2; 
+
     /* now generate the waveform at all frequency bins */
-    for (i=1; i<n/2; i++) {
+    for (i=1; i<nby2; i++) {
 
         /* this is the index of the imaginary part */
         j = n-i;
@@ -419,21 +429,15 @@ static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
 
     REAL8 df, shft, phi, amp0, ampEff=0, psiEff, fMerg, fNorm;
     REAL8 f, fRing, sigma, totalMass, eta;
-    INT4 i, j, n;
-    REAL8 v, alpha2, alpha3, w1, vMerg, v2, v3, v4, v5, v6, v7;
+    INT4 i, j, n, nby2;
+    REAL8 v, alpha2, alpha3, w1, vMerg, v2, v3, v4, v5, v6, v7, v8;
     REAL8 epsilon_1, epsilon_2, w2, vRing, chi, mergPower, delta;
 
     /* freq resolution and the low-freq bin */
     df = insp_template->tSampling/signalvec->length;
     n = signalvec->length;
 
-    /* If we want to pad with zeroes in the beginning then the instant of
-    * coalescence will be the chirp time + the duration for which padding
-    * is needed. Thus, in the equation below nStartPad occurs with a +ve sign.
-    * This code doesn't support non-zero start-time. i.e. params->startTime
-    * should be necessarily zero.*/
-    shft = 2.*LAL_PI * ((REAL4)signalvec->length/insp_template->tSampling +
-            insp_template->nStartPad/insp_template->tSampling + insp_template->startTime)-20.;
+    shft = LAL_TWOPI*(insp_template->nStartPad/insp_template->tSampling + insp_template->startTime);
 
     /* the negative sign is introduced such that the definition of the
      * polarisations (phi = 0 for plus, phi = pi/2 for cross) is consistent
@@ -490,7 +494,8 @@ static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
     /***********************************************************************/
     /* now generate the waveform at all frequency bins */
     /***********************************************************************/
-    for (i=1; i<n/2; i++) {
+    nby2 = n/2; 
+    for (i=1; i<nby2; i++) {
 
         /* this is the index of the imaginary part */
         j = n-i;
@@ -502,7 +507,7 @@ static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
         /* PN expansion parameter */
         v = pow(LAL_PI*totalMass*LAL_MTSUN_SI*f, 1./3.);
 
-        v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
+        v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v, v8 = v7*v;
 
     	/* compute the amplitude */
         if ((f < insp_template->fLower) || (f > params->fCut)) {
@@ -529,7 +534,7 @@ static void XLALBBHPhenWaveFD2 ( BBHPhenomParams  *params,
                     + 3./(128.*eta*v5)*(1 + params->psi2*v2
                     + params->psi3*v3 + params->psi4*v4
                     + params->psi5*v5 + params->psi6*v6
-                    + params->psi7*v7);
+                    + params->psi7*v7 + params->psi8*v8);
 
        	/* generate the waveform */
        	*(signalvec->data+i) = (REAL4) (amp0 * ampEff * cos(psiEff));     /* real */
@@ -646,10 +651,11 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 			      InspiralTemplate *params)
 {
 
-    REAL8 dt, cosI, fLower, peakAmp, fCut, fRes, f, totalMass, softWin;
-    REAL8 fLowerOrig, eta, tau0, winFLo, winFHi, sigLo, sigHi, tF0;
+    REAL8 dt, cosI, fLower, peakAmp, fCut, fRes, f, totalMass, softWin, z1, z2;
+    REAL8 fLowerOrig, eta, tau0, winFLo, winFHi, sigLo, sigHi, tF0, expectedAmplRatio;
+	REAL8 phaseShift, sig1, sig2, startPhaseOrig, phiC;
     REAL4 windowLength;
-    UINT4 i, j, k, n, peakAmpIdx, sigLength, iLower;
+    UINT4 i, j, k, l, n, peakAmpIdx, sigLength, iLower;
     REAL4Vector *signalFD1 = NULL, *signalFD2 = NULL, *signalTD1 = NULL, *signalTD2 = NULL, *a=NULL, *fVec=NULL;
     REAL8Vector *phi=NULL;
     REAL4FFTPlan *revPlan = NULL;
@@ -700,6 +706,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
      * will later apply a window function, and truncate the time-domain waveform
      * below an instantaneous frequency  fLower */
     fLowerOrig = params->fLower;    /* this is the low-freq set by the user */
+	startPhaseOrig = params->startPhase; /* this is the coalescence phase set by the user*/
   
     /* Find an optimum value for fLower (using the definition of Newtonian chirp time)
      * such that the waveform has a minimum length of tau0. This is necessary to avoid
@@ -778,34 +785,32 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
      * will match to the 'plus' and 'cross' polarisations of the hybrid waveforms,
        * respectively*/
     for (i = 0; i < n; i++) {
-        signalTD1->data[i] *= -params->tSampling/n;
-        signalTD2->data[i] *= -params->tSampling/n;
+        signalTD1->data[i] *= params->tSampling/n;
+        signalTD2->data[i] *= params->tSampling/n;
     }
     
-    /* apply a linearly increasing/decresing window at the beginning and at the end
-     * of the waveform in order to avoid edge effects. This could be made fancier */
+    /* apply a linearly decresing window at the end
+     * of the waveform in order to avoid edge effects. */
     windowLength = 10.*totalMass * LAL_MTSUN_SI*params->tSampling;
     for (i=0; i< windowLength; i++){
            signalTD1->data[n-i-1] *= i/windowLength;
            signalTD2->data[n-i-1] *= i/windowLength;
     }
-    windowLength = 1000.*totalMass * LAL_MTSUN_SI*params->tSampling;
-    for (i=0; i< windowLength; i++){
-          signalTD1->data[i] *= i/windowLength;
-          signalTD2->data[i] *= i/windowLength;
-    }
 
     /* compute the instantaneous frequency */
     a = XLALCreateREAL4Vector(n);
     fVec = XLALCreateREAL4Vector(n);
+    phi = XLALCreateREAL8Vector(n);
+
     XLALComputeInstantFreq(fVec, signalTD1, signalTD2, dt);
     peakAmp = 0.;
     peakAmpIdx = 0;
   
-    /* find the peak amplitude of the waveform */
+    /* compute the amplitude and phase. find the peak amplitude */
     for (i=0; i<n; i++){
   
           a->data[i] = sqrt(pow(signalTD1->data[i],2.) + pow(signalTD2->data[i],2.));
+		  phi->data[i] = -atan2(signalTD2->data[i], signalTD1->data[i]);
   
           /* find the peak amplitude*/
           if (a->data[i] > peakAmp) {
@@ -814,21 +819,48 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
           }
     }
   
-    /* if the instantaneous amplitude is less than 1/1000 of the peak amplitude, set the
-     * instantaneous freq to be zero. This frequency estimation can very well be corrput due
-     * to the very low amplitude of the signal, and is dominated by noise arising from the
-     * edge effects. 
-     * Also find the index of the fVec corresponding to fLowerOrig */
+    /* If the instantaneous amplitude a(t) is too low, noise will corrupt the
+     * estimation of the instantaneous frequency f(t). Hence, if the ratio of
+     * a(t) with the peak amplitude is lower than a threshold, we set f(t) = 0
+     * for those time bins. Choosing of such a threshold is a tricky business!
+     * The current value is chosen using the following argument: a(t) is
+     * proportional to the square of the speed v(t) of the binary (the PN
+     * parameter). At the merger, v(t) ~ 1. At the start of the waveform
+     * v(t) = (pi M f_lower)^{1/3}. Thus, the expected ratio at the start of
+     * the waveform is a_0/a_peak = (pi M f_lower)^{-2/3}. Divide by 2 as a
+     * safety margin */
+    expectedAmplRatio = pow(LAL_PI*LAL_MTSUN_SI*totalMass*fLowerOrig, 2./3.)/2.;
+
+    /* Also find the index of the fVec corresponding to fLowerOrig */
     iLower = 0;
     for (i=0; i< fVec->length; i++) {
-          if (a->data[i] < 1.0e-3*peakAmp) fVec->data[i] = 0.0;
+          if (a->data[i] < expectedAmplRatio*peakAmp) {
+			fVec->data[i] = 0.0;
+			phi->data[i] = 0.0;
+		  }
           if ((iLower == 0) && (fVec->data[i] >= fLowerOrig)) iLower = i;
     }
-  
-    /* reassign the original value of fLower and fCut */
+
+	/* unwrap the phase */
+	XLALREAL8VectorUnwrapAngle(phi, phi);
+
+    /* reassign the original values of fLower, fCut and startPhase */
     params->fLower = fLowerOrig;
     params->fFinal = fCut; 
-  
+    params->startPhase = startPhaseOrig; 
+
+    /* apply a phase-shift to the waveforms such that the phase at coalescence is 
+     * equal to params->startPhase */
+	phaseShift = phi->data[peakAmpIdx] + params->startPhase;
+	phiC = phi->data[peakAmpIdx] - params->startPhase;
+    for (i=iLower; i < fVec->length; i++) {
+        sig1 = signalTD1->data[i]*cos(phaseShift) - signalTD2->data[i]*sin(phaseShift);
+        sig2 = signalTD1->data[i]*sin(phaseShift) + signalTD2->data[i]*cos(phaseShift);
+        signalTD1->data[i] = sig1;
+        signalTD2->data[i] = sig2;
+		phi->data[i] -= phiC;
+    }
+
     /* copy the frequency components above fLower to the signal vector to be returned */
     j = params->nStartPad;
     tF0 = iLower*dt;           /* time bin corresponding to f(t) = fLower */
@@ -837,14 +869,37 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     if (signalvec1) sigLength = signalvec1->length;
     if (signalvec2) sigLength = signalvec2->length;
 
+	/* inclination-weights on two polarizations */
+	z1 = -0.5*(1. + cosI*cosI);
+	z2 = -cosI;
+
     for (i=iLower; i < fVec->length; i++) {
         if (j<sigLength) {
-            if (signalvec1) signalvec1->data[j] = signalTD1->data[i];
-            if (signalvec2) signalvec2->data[j] = signalTD2->data[i];
+
+			k = 2*j;
+			l = k+1;
+
+            if (signalvec1) signalvec1->data[j] = signalTD1->data[i]; /* signal with phi_c = 0 */
+            if (signalvec2) signalvec2->data[j] = signalTD2->data[i]; /* signal with phic_c = pi/2 */	
+        	if (freqVec) freqVec->data[j] = fVec->data[i];			  /* instant. freq */
+        	if (phiVec) phiVec->data[j] = phi->data[i];			  	  /* phase evolution */
+        	if (aVec) {
+				aVec->data[k] = a->data[i];	/* inst. amplitude, assuming that h+ & hx have equal ...*/ 
+        		aVec->data[l] = a->data[i];	/* ... amplitude. valid in the absence of precession */
+			}
+        	if (h) {
+            	h->data[k] = z1 * signalTD1->data[i];  /* h+ ~ -[ 1+cos^2(iota) ]/2 cos (phi) */
+            	h->data[l] = z2 * signalTD2->data[i];  /* hx ~ -cos(iota) sin (phi) */
+        	}
+
             j++;
         }
     }
     
+    /* free the memory */
+    XLALDestroyREAL4Vector(a);
+    XLALDestroyREAL4Vector(fVec);
+    XLALDestroyREAL8Vector(phi);
     XLALDestroyREAL4Vector(signalTD1);
     XLALDestroyREAL4Vector(signalTD2);
   
@@ -852,44 +907,6 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
     params->vFinal = pow(LAL_PI*LAL_MTSUN_SI*totalMass*params->fFinal, 1./3.);
     params->tC = peakAmpIdx*dt-tF0;   /* time of coalescence. defined as the time
                                               corresponding to the peak amplitude*/
-    /* allocate memory for the temporary phase vector */
-    if (phiVec) phi = XLALCreateREAL8Vector(phiVec->length);
-
-    /* compute the amplitude, phase and frequency.  Fill the polarisation vector h
-     * in the prescribed format */
-    for (i=0; i<signalvec1->length; i++){
-        j = 2*i;
-        k = j+1;
-
-        if (phiVec) phi->data[i] = -atan2(signalvec2->data[i], signalvec1->data[i]);
-        if (freqVec) freqVec->data[i] = fVec->data[i];
-
-        /* fill the amplitude vector, if required. Currently we assume that both
-         * polarisations are of equal ampliude, which is defined as [hp^2+hc^2]^0.5 */
-        if (aVec) {
-            aVec->data[j] = a->data[i];
-            aVec->data[k] = a->data[i];
-        }
-
-        /* fill in the h vector, if required */
-        if (h) {
-            REAL8 z1 = 0.25 * (( 1. + cosI ) * ( 1. + cosI ) + ( 1. - cosI ) * ( 1. - cosI ));
-            REAL8 z2 = 0.25 * (( 1. - cosI ) * ( 1. - cosI ) - ( 1. + cosI ) * ( 1. + cosI ));
-
-            h->data[j] = z1 * signalvec1->data[i];
-            h->data[k] = z2 * signalvec2->data[i];
-        }
-     }
-
-    /* unwrap the phase */
-    if (phiVec) {
-        LALUnwrapREAL8Angle (status->statusPtr, phiVec, phi);
-        XLALDestroyREAL8Vector(phi);
-    }
-    
-    /* free the memory */
-    XLALDestroyREAL4Vector(a);
-    XLALDestroyREAL4Vector(fVec);
 
     DETATCHSTATUSPTR(status);
     RETURN (status);
@@ -1023,11 +1040,6 @@ void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
   sprintf(message, "cycles = %f", s/3.14159);
   LALInfo(status, message);
 
-  /* CHECK THIS CHECK THIS $$$$$$$$$$$$$$$$$$$$$$$$$$$*/
-  sprintf(message, "final coalescence phase with respet to actual data =%f ",
-          (ff->data[count-1]-ff->data[count-2])/2/3.14159);
-  LALInfo(status, message);
-
   if ( (s/LAL_PI) < 2 ){
       sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.",
 	      (double) s/ (double)LAL_PI );
@@ -1154,13 +1166,14 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
 			     REAL4Vector *hc,
 			     REAL8 dt)
 {
-    REAL4Vector *hpDot = NULL, *hcDot = NULL;
+    REAL8Vector *hpDot = NULL, *hcDot = NULL;
     UINT4 k, len;
+	REAL8 fOfT;
 
     len = hp->length;
 
-    hpDot= XLALCreateREAL4Vector(len);
-    hcDot= XLALCreateREAL4Vector(len);
+    hpDot= XLALCreateREAL8Vector(len);
+    hcDot= XLALCreateREAL8Vector(len);
 
     /* Construct the dot vectors (2nd order differencing) */
     hpDot->data[0] = 0.0;
@@ -1173,16 +1186,17 @@ static void XLALComputeInstantFreq( REAL4Vector *Freq,
     }
 
     /* Compute frequency using the fact that  */
-    /*h(t) = A(t) e^(i Phi) = Re(h) + i Im(h) */
+    /*h(t) = A(t) e^(-i Phi) = Re(h) - i Im(h) = h_+ - i h_x */
     for( k = 0; k < len; k++) {
-        Freq->data[k] = -hcDot->data[k] * hp->data[k] +hpDot->data[k] * hc->data[k];
-        Freq->data[k] /= LAL_TWOPI;
-        Freq->data[k] /= (pow(hp->data[k],2.) + pow(hc->data[k], 2.));
+        fOfT = -hcDot->data[k] * hp->data[k] +hpDot->data[k] * hc->data[k];
+        fOfT /= LAL_TWOPI;
+        fOfT /= (pow(hp->data[k],2.) + pow(hc->data[k], 2.));
+        Freq->data[k] = (REAL4) fOfT;
     }
 
     /* free the memory allocated for the derivative vectors */
-    XLALDestroyREAL4Vector(hpDot);
-    XLALDestroyREAL4Vector(hcDot);
+    XLALDestroyREAL8Vector(hpDot);
+    XLALDestroyREAL8Vector(hcDot);
 
     return;
 
