@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;
    //REAL4 ihsfarthresh = args_info.ihsfar_arg;
    REAL4 templatefarthresh = args_info.tmplfar_arg;
-   fprintf(LOG, "FAR for templates = %f\n", templatefarthresh);
-   fprintf(stderr, "FAR for templates = %f\n", templatefarthresh);
+   fprintf(LOG, "FAR for templates = %g\n", templatefarthresh);
+   fprintf(stderr, "FAR for templates = %g\n", templatefarthresh);
    
    //Allocate memory for ffdata structure
    ffdataStruct *ffdata = new_ffdata(inputParams);
@@ -901,7 +901,7 @@ int main(int argc, char *argv[])
             }
          }
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
-            loadCandidateData(&exactCandidates2->data[ii], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, 0.0, 0.0, 0, ihsCandidates->data[ii].normalization);
+            loadCandidateData(&exactCandidates2->data[ii], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].ra, ihsCandidates->data[ii].dec, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, 0.0, 0, ihsCandidates->data[ii].normalization);
             (exactCandidates2->numofcandidates)++;
          }
       } /* if IHSonly is given */
@@ -1537,7 +1537,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    //Find SFT files
    LALSFTdataFind(&status, &catalog, sft_dir, &constraints);
    if (status.statusCode != 0) {
-      fprintf(stderr,"%s: LAALSFTdataFind() failed with code = %d.\n", fn, status.statusCode);
+      fprintf(stderr,"%s: LALSFTdataFind() failed with code = %d.\n", fn, status.statusCode);
       XLAL_ERROR_NULL(fn, XLAL_EFUNC);
    }
    
