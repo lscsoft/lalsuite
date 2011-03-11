@@ -1787,6 +1787,9 @@ LALEOBPPWaveformEngine (
    BOOLEAN                 writeToWaveform = 0;     /* Set to true when the current frequency
 						     * crosses fLower */
    REAL8                   sInit, s0 = 0.0;  /* Initial phase, and phase to subtract */
+   
+   REAL8                   rInit, pInit, qInit; 
+
    REAL8                   rmin = 20;        /* Smallest value of r at which to generate the waveform */
    COMPLEX16  MultSphHarmP;    /* Spin-weighted spherical harmonics */
    COMPLEX16  MultSphHarmM;    /* Spin-weighted spherical harmonics */
@@ -1831,6 +1834,11 @@ LALEOBPPWaveformEngine (
    REAL4Vector             *sig1Hi, *sig2Hi, *amplHi, *freqHi;
    REAL8Vector             *phseHi;
    UINT4                   lengthHiSR;
+
+   /* Used in the calculation of the non-quasicircular correctlon */
+   REAL8Vector             *ampNQC, *q1, *q2, *q3, *p1, *p2;
+   REAL8Vector             *phseNQC;
+   EOBNonQCCoeffs           nqcCoeffs;
 
    /* Inidices of the ringdown matching points */
    /* peakIdx is the index where omega is a maximum */
@@ -2013,6 +2021,7 @@ LALEOBPPWaveformEngine (
    in3.dEnergy = func.dEnergy;
    in3.flux = func.flux;
    in3.coeffs = &ak;
+   in3.nqcCoeffs = &nqcCoeffs;
    funcParams3 = (void *) &in3;
 
    funcParams1 = (void *) &rofomegain;
@@ -2152,6 +2161,15 @@ LALEOBPPWaveformEngine (
    freqHi = XLALCreateREAL4Vector ( length );
    phseHi = XLALCreateREAL8Vector ( length );
 
+   /* Allocate NQC vectors */
+   ampNQC = XLALCreateREAL8Vector ( length );
+   phseNQC= XLALCreateREAL8Vector ( length );
+   q1     = XLALCreateREAL8Vector ( length );
+   q2     = XLALCreateREAL8Vector ( length );
+   q3     = XLALCreateREAL8Vector ( length );
+   p1     = XLALCreateREAL8Vector ( length );
+   p2     = XLALCreateREAL8Vector ( length );
+
    if ( !sig1Hi || !sig2Hi || !amplHi || !freqHi || !phseHi )
    {
      if ( sig1 ) XLALDestroyREAL4Vector( sig1 );
@@ -2173,6 +2191,12 @@ LALEOBPPWaveformEngine (
    memset(amplHi->data, 0, amplHi->length * sizeof( REAL4 ));
    memset(freqHi->data, 0, freqHi->length * sizeof( REAL4 ));
    memset(phseHi->data, 0, phseHi->length * sizeof( REAL8 ));
+   memset(ampNQC->data, 0, ampNQC->length * sizeof( REAL8 ));
+   memset(q1->data, 0, q1->length * sizeof( REAL8 ));
+   memset(q2->data, 0, q2->length * sizeof( REAL8 ));
+   memset(q3->data, 0, q3->length * sizeof( REAL8 ));
+   memset(p1->data, 0, p1->length * sizeof( REAL8 ));
+   memset(p2->data, 0, p2->length * sizeof( REAL8 ));
 
    /* Initialize the GSL integrator */
    if (!(integrator = XLALRungeKutta4Init(nn, &in4)))
@@ -2208,11 +2232,66 @@ LALEOBPPWaveformEngine (
    t = 0.0;
    rOld = r+0.1;
 
+   /* store initial conditions */
+   rInit = r;
+   pInit = p;
+   qInit = q;
+
 /*
    omegamatch = -0.05 -0.01 + 0.133 + 0.183 * params->eta + 1.161 * params->eta * params->eta;
 */
+
+   memset( &nqcCoeffs, 0, sizeof( EOBNonQCCoeffs ) );
+   int doneNqcCoeffs = 0;
+
+   do
+   {
+   /*
    FILE *out = fopen("eobpf-10-10_fixed.dat", "w");
    FILE *out2 = fopen("eobpf-10-10_end.dat", "w");
+   */
+   /* reset initial conditions here */
+   r = values->data[0] = rInit;
+   s = values->data[1] = sInit;
+   p = values->data[2] = pInit;
+   q = values->data[3] = qInit;
+
+   memset(sig1->data, 0, sig1->length * sizeof( REAL4 ) );
+   memset(sig2->data, 0, sig2->length * sizeof( REAL4 ) );
+   memset(freq->data, 0, freq->length * sizeof( REAL4 ) );
+   memset(ampl->data, 0, ampl->length * sizeof( REAL4 ) );
+   memset(phse->data, 0, phse->length * sizeof( REAL8 ) );
+   memset(sig1Hi->data, 0, sig1Hi->length * sizeof( REAL4 ));
+   memset(sig2Hi->data, 0, sig2Hi->length * sizeof( REAL4 ));
+   memset(amplHi->data, 0, amplHi->length * sizeof( REAL4 ));
+   memset(freqHi->data, 0, freqHi->length * sizeof( REAL4 ));
+   memset(phseHi->data, 0, phseHi->length * sizeof( REAL8 ));
+   memset(ampNQC->data, 0, ampNQC->length * sizeof( REAL8 ));
+   memset(phseNQC->data, 0, ampNQC->length * sizeof( REAL8 ));
+   memset(q1->data, 0, q1->length * sizeof( REAL8 ));
+   memset(q2->data, 0, q2->length * sizeof( REAL8 ));
+   memset(q3->data, 0, q3->length * sizeof( REAL8 ));
+   memset(p1->data, 0, p1->length * sizeof( REAL8 ));
+   memset(p2->data, 0, p2->length * sizeof( REAL8 ));
+
+   writeToWaveform = 0;
+
+   count = 0;
+   if (a || signalvec2)
+      params->nStartPad = 0; /* must be zero for templates and injection */
+
+   count = params->nStartPad;
+
+   /* Calculate the initial value of omega */
+   in4.function(values, dvalues, funcParams3);
+   omega = dvalues->data[1];
+
+   /* Make sure old omega is < omega to get into the loop */
+   omegaOld = omega - 0.1;
+
+   /* Begin integration loop here */
+   t = 0.0;
+   rOld = r+0.1;
 
    int stop = 0;
    while ( ( omega > omegaOld || !stop ) && r < rOld)
@@ -2239,6 +2318,7 @@ LALEOBPPWaveformEngine (
       if ( omega <= omegaOld && !peakIdx )
       {
         peakIdx = count - 1;
+        printf( "At peak at index %d\n", peakIdx );
       }
         
 
@@ -2271,6 +2351,15 @@ LALEOBPPWaveformEngine (
         {
           ABORTXLAL( status );
         }
+
+        /* Apply NQC correction if we have it */
+        if ( doneNqcCoeffs )
+        {
+          COMPLEX16 hNQC;
+          xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, dvalues, &nqcCoeffs );
+          hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+        }          
+
         if ( !higherSR )
         {
          
@@ -2284,9 +2373,9 @@ LALEOBPPWaveformEngine (
           ampl->data[k] =  (REAL4)( acFac * v2 );
           phse->data[i] =  (REAL8)( st );
           
-          fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1->data[i], sig2->data[i], values->data[0],
+          /*fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1->data[i], sig2->data[i], values->data[0],
              values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
-             dvalues->data[2], dvalues->data[3] );
+             dvalues->data[2], dvalues->data[3] );*/
         }
         else if ( !isnan( hLM.re) && r > 1.0 )
         {
@@ -2301,21 +2390,37 @@ LALEOBPPWaveformEngine (
           amplHi->data[k] =  (REAL4)( acFac * v2 );
           phseHi->data[i] =  (REAL8)( st );
 
-          fprintf( out2, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1Hi->data[i], sig2Hi->data[i], values->data[0],
+          ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
+          phseNQC->data[i] = atan2( hLM.im, hLM.re );
+          if ( i && phseNQC->data[i-1] && phseNQC->data[i] < phseNQC->data[i-1] )
+          {
+            do
+            {
+              phseNQC->data[i] += LAL_TWOPI;
+            }
+            while ( phseNQC->data[i] < phseNQC->data[i-1] );
+          }
+          q1->data[i] = values->data[2]*values->data[2] / (r*r*omega*omega);
+          q2->data[i] = q1->data[i] / r;
+          q3->data[i] = q2->data[i] / sqrt(r);
+          p1->data[i] = values->data[2] / ( r*omega );
+          p2->data[i] = p1->data[i] * values->data[2] * values->data[2];
+
+          /*fprintf( out2, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",t, sig1Hi->data[i], sig2Hi->data[i], values->data[0],
              values->data[1], values->data[2], values->data[3], dvalues->data[0], dvalues->data[1],
-             dvalues->data[2], dvalues->data[3] );
+             dvalues->data[2], dvalues->data[3] );*/
 
         }
         else
         {
-          if ( isnan( hLM.re ) )
+          /*if ( isnan( hLM.re ) )
           {
             printf("Triggered NaN condition\n" );
           }
           else
           {
             printf("r has dropped below 1.\n" );
-          }
+          }*/
           finalIdx = --count;
           stop = 1;
         }
@@ -2417,7 +2522,7 @@ LALEOBPPWaveformEngine (
       }
       if ( isnan( omega ) && higherSR )
       {
-        printf( "Triggered omega NaN condition\n" );
+        /*printf( "Triggered omega NaN condition\n" );*/
         finalIdx = --count;
       }
 
@@ -2435,8 +2540,25 @@ LALEOBPPWaveformEngine (
       ndx++;
    }
 
-   fclose( out );
-   fclose( out2 );
+   /*fclose( out );
+   fclose( out2 );*/
+
+   if ( !doneNqcCoeffs )
+   {
+     XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, peakIdx, dt/m, eta, &nqcCoeffs );
+     /*printf( "NQCCoeffs: a1 = %e, a2 = %e, a3 = %e, b1 = %e, b2 = %e\n", 
+        nqcCoeffs.a1, nqcCoeffs.a2, nqcCoeffs.a3, nqcCoeffs.b1, nqcCoeffs.b2 );*/
+     /* Reset the resample factors */
+     higherSR = 0;
+     dt *= (double) resampFac;
+     t = 0;
+     in4.h = dt/m;
+   }
+
+   doneNqcCoeffs++;
+   }
+
+   while ( doneNqcCoeffs < 2 );
 
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
@@ -2467,6 +2589,8 @@ LALEOBPPWaveformEngine (
    REAL8 tmpSamplingRate = params->tSampling;
    params->tSampling *= resampFac;
 
+   printf( "New sampling rate = %e\n", params->tSampling );
+
    rdMatchPoint = XLALCreateUINT4Vector( 3 );
 
    /* Check the first matching point is sensible */
@@ -2476,13 +2600,17 @@ LALEOBPPWaveformEngine (
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
    }
 
-   rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 )/* - 50*/;
-   rdMatchPoint->data[1] = peakIdx/* - 50*/;
-   rdMatchPoint->data[2] = finalIdx/* - 50*/;
+   /*rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 );*/
+   /* Experiment */
+   rdMatchPoint->data[0] = ceil( 3. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) < peakIdx ?
+       ceil( 3. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) : 0;
+   rdMatchPoint->data[1] = peakIdx;
+   rdMatchPoint->data[2] = finalIdx;
+
 
    printf("Matching points: %u %u %u\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2]);
    printf("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
-
+   
    XLALPrintInfo( "Ringdown matching points: %e, %e\n", 
            (REAL8)rdMatchPoint->data[0]/resampFac + (REAL8)hiSRndx, 
            (REAL8)rdMatchPoint->data[1]/resampFac + (REAL8)hiSRndx );
@@ -2564,11 +2692,13 @@ LALEOBPPWaveformEngine (
 #endif
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
+   FILE *out = fopen( "realAndImag.dat", "w" );
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
+     fprintf( out, "%e %e %e\n", i * dt * resampFac, x1, x2 );
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
 
@@ -2586,7 +2716,7 @@ LALEOBPPWaveformEngine (
        }
      }
    }
-
+   /*fclose( out );*/
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
     * relevant arrays

@@ -44,6 +44,9 @@ REAL8 XLALInspiralFactorizedFlux(
   COMPLEX16 hLM;
   INT4 l, m;
 
+  /*EOBNonQCCoeffs *nqcCoeffs = ak->nqcCoeffs;
+*/
+
 #ifndef LAL_NDEBUG
   if ( !values || !dvalues || !ak )
   {
@@ -70,7 +73,20 @@ REAL8 XLALInspiralFactorizedFlux(
       {
         XLAL_ERROR_REAL8( func, XLAL_EFUNC );
       }
+      /* For the 2,2 mode, we apply NQC correction to the flux */
+      /*
+      if ( l == 2 && m == 2 )
+      {
+        if ( nqcCoeffs->a1 || nqcCoeffs->a2 || nqcCoeffs->a3
+            || nqcCoeffs->b1 || nqcCoeffs->b2 )
+        {
+          COMPLEX16 hNQC;
+          XLALEOBNonQCCorrection( &hNQC, values, dvalues, nqcCoeffs );
 
+          hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+        }
+      }
+      */
       flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
     }
   }
