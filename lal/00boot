@@ -112,7 +112,6 @@ ${M4} ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "crea
 cd ../../.. || fail "creating sources in packages/factories/test"
 
 cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
-${M4} MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
 ${M4} VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
 cd ../../.. || fail "creating sources in packages/vectorops/src"
 
