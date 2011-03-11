@@ -189,7 +189,6 @@ packages/utilities/test/SFTCleanTest
 packages/utilities/test/SortTest
 packages/utilities/test/ZCoarseGrainFrequencySeriesTest
 packages/vectorops/include/VectorIndexRange.h
-packages/vectorops/src/MatrixPower.c
 packages/vectorops/src/MiscMatlab.c
 packages/vectorops/src/VectorIndexRange.c
 packages/vectorops/test/VectorIndexRangeTest

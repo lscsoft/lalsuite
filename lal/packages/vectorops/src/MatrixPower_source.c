@@ -1,24 +1,22 @@
-dnl $Id$
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')')
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
-ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
-ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
-ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
-ifelse(TYPECODE2,`D',`define(`TYPE2',`REAL8')')
-ifelse(TYPECODE2,`S',`define(`TYPE2',`REAL4')')
-ifelse(TYPECODE2,`I2',`define(`TYPE2',`INT2')')
-ifelse(TYPECODE2,`I4',`define(`TYPE2',`INT4')')
-ifelse(TYPECODE2,`I8',`define(`TYPE2',`INT8')')
-define(`VTYPE',`format(`%sVector',TYPE)')
-define(`ATYPE',`format(`%sArray',TYPE)')
-define(`VTYPE2',`format(`%sVector',TYPE2)')
-define(`ATYPE2',`format(`%sArray',TYPE2)')
-define(`F1',`format(`LAL%sDotPower%sVector',TYPECODE,TYPECODE2)')
-define(`F2',`format(`LAL%sVectorDotPower%s',TYPECODE,TYPECODE2)')
-define(`F3',`format(`LAL%sVectorDotPower%sVector',TYPECODE,TYPECODE2)')
-define(`F4',`format(`LAL%sDotPower%sArray',TYPECODE,TYPECODE2)')
-define(`F5',`format(`LAL%sArrayDotPower%s',TYPECODE,TYPECODE2)')
-define(`F6',`format(`LAL%sArrayDotPower%sArray',TYPECODE,TYPECODE2)')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT4x(a,b,c,d) a##b##c##d
+#define CONCAT4(a,b,c,d) CONCAT4x(a,b,c,d)
+#define CONCAT5x(a,b,c,d,e) a##b##c##d##e
+#define CONCAT5(a,b,c,d,e) CONCAT5x(a,b,c,d,e)
+#define STRING(a) #a
+
+#define VTYPE CONCAT2(TYPE,Vector)
+#define ATYPE CONCAT2(TYPE,Array)
+#define VTYPE2 CONCAT2(TYPE2,Vector)
+#define ATYPE2 CONCAT2(TYPE2,Array)
+
+#define F1 CONCAT5(LAL,TYPECODE,DotPower,TYPECODE2,Vector)
+#define F2 CONCAT4(LAL,TYPECODE,VectorDotPower,TYPECODE2)
+#define F3 CONCAT5(LAL,TYPECODE,VectorDotPower,TYPECODE2,Vector)
+#define F4 CONCAT5(LAL,TYPECODE,DotPower,TYPECODE2,Array)
+#define F5 CONCAT4(LAL,TYPECODE,ArrayDotPower,TYPECODE2)
+#define F6 CONCAT5(LAL,TYPECODE,ArrayDotPower,TYPECODE2,Array)
 
 /******************************* <lalLaTeX file="MatrixPowerC">
 \begin{verbatim}void F1 ( LALStatus *status, REAL8Vector **result,
@@ -36,7 +34,7 @@ void F1 (
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F1" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F1) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -79,7 +77,7 @@ void F2 (
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F2" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F2) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -122,7 +120,7 @@ void F3 (
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, "F3" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F3) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -172,7 +170,7 @@ void F4 (
         UINT4		iterator, myindex;
 	UINT4		row, column;
 
-        INITSTATUS( status, "F4" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F4) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -242,7 +240,7 @@ void F5 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F5" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F5) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -314,7 +312,7 @@ void F6 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, "F6" , MATLABMATRIXPOWC);
+        INITSTATUS( status, STRING(F6) , MATLABMATRIXPOWC);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
