@@ -251,6 +251,7 @@ src/stochastic/lalapps_stochastic_preprocess
 src/stochastic/lalapps_stochastic_virgo
 src/stochastic/lalapps_stopp
 src/stochastic/lalapps_stopp_bayes
+src/string/lalapps_StringAddFrame
 src/string/lalapps_StringSearch
 src/tracksearch/lalapps_tracksearch
 src/tracksearch/lalapps_tracksearch_averager
