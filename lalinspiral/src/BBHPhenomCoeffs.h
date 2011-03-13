@@ -63,7 +63,7 @@ NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 
 /* This header contains the coeffs from the matching with the LONG */
 /* Jena waveforms (those are not the ones published in the original paper */
-/* but in the Amaldi 07 proceedings) */
+/* but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343) */
 
 #define BBHPHENOMCOEFFSH_FMERG_A   6.6389e-01
 #define BBHPHENOMCOEFFSH_FMERG_B   -1.0321e-01
