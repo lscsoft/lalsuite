@@ -9,6 +9,7 @@ conv_test_SOURCES = LALInference.c conv_test.c
 time_domain_overlap_test_SOURCES = LALInference.c time_domain_overlap_test.c
 
 if LALINSPIRAL
+
 if LALFRAME
 
 if LALMETAIO
@@ -17,8 +18,9 @@ lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nes
 endif
 
 if LALPULSAR
-pulsar_progs = lalinference_test lalinference_nest #lalinference_mcmcmpi
+pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 lalinference_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c LALInferenceMCMC.c
+ChiSquare_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
 lalinference_nest_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c LALInferenceNestedSampler.c LALInferencePrior.c
 #lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 endif

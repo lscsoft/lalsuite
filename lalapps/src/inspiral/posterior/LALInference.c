@@ -892,6 +892,83 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   return(loglikeli);
 }
 
+
+REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template)
+/***************************************************************/
+/* Chi-Square function.                                        */
+/* Returns the chi square of a template:                       */
+/* chisq= p * sum_i (dx_i)^2, with dx_i  =  <s,h>_i  - <s,h>/p */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* Required (`currentParams') parameters are:                  */
+/*   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       */
+/*   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  */
+/*   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        */
+/*   - "distance"        (REAL8, Mpc, >0)                      */
+/*   - "time"            (REAL8, GPS sec.)                     */
+/***************************************************************/
+{
+  REAL8 ChiSquared=0.0, dxp=0.0, xp=0.0, x=0.0, qp=0.0, deltaFSegments,norm,sumqp;
+  INT4  lowerF, upperF, p, nSegment=10;
+  LALIFOData *ifoPtr=data;
+  COMPLEX16Vector *freqModelResponse=NULL;
+  //COMPLEX16Vector *segmentFreqModelResponse-NULL;
+  
+  /* loop over data (different interferometers): */
+  while (ifoPtr != NULL) {
+    if(freqModelResponse==NULL)
+      freqModelResponse= XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
+    else
+      freqModelResponse= XLALResizeCOMPLEX16Vector(freqModelResponse, ifoPtr->freqData->data->length);
+    /*compute the response*/
+    ComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
+
+    //deltaT = ifoPtr->timeData->deltaT;
+    //deltaF = 1.0 / (((double)ifoPtr->timeData->data->length) * deltaT);
+    
+    lowerF = ifoPtr->fLow;
+    upperF = ifoPtr->fHigh;
+    
+    deltaFSegments = (ifoPtr->fHigh - ifoPtr->fLow)/(REAL8)nSegment;
+    
+    x = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse);
+    norm = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
+    
+    ChiSquared=0.0;
+    sumqp=0.0;
+    
+    for (p=0; p<nSegment; ++p){
+      
+      ifoPtr->fLow = lowerF + p*deltaFSegments;
+      ifoPtr->fHigh = ifoPtr->fLow + deltaFSegments;
+      
+      xp = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)/(sqrt(norm));
+      
+      qp = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse)/norm;
+      sumqp=sumqp+qp;
+      
+      dxp = xp-x*qp;
+      
+      ChiSquared = ChiSquared + dxp*dxp/qp;
+      
+    }
+    printf("%f\n",sumqp);
+    //ChiSquared=ChiSquared*(REAL8)nSegment;
+    ifoPtr->fLow = lowerF;
+    ifoPtr->fHigh = upperF;
+    
+    printf("Chi-Square for %s\t=\t%f\n",ifoPtr->detector->frDetector.name,ChiSquared);
+    
+    ifoPtr = ifoPtr->next;
+  }
+  XLALDestroyCOMPLEX16Vector(freqModelResponse);
+  return(ChiSquared);
+}
+
+
+
+
+
 REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
 /***************************************************************/

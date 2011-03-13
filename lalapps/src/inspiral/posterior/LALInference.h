@@ -262,6 +262,8 @@ REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTempla
 
 REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template);
+REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, 
+                              LALTemplateFunction *template);
 void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr, 
                               LALTemplateFunction *template, COMPLEX16Vector *freqWaveform);	
 
