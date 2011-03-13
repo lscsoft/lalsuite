@@ -800,6 +800,10 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
+    dataPtr->fPlus = FplusScaled;
+    dataPtr->fCross = FcrossScaled;
+    dataPtr->timeshift = timeshift;
+
  //FILE *testout=fopen("test_likeliLAL.txt","w");
  //fprintf(testout, "f PSD dataRe dataIm signalRe signalIm\n");
     /* determine frequency range & loop over frequency bins: */

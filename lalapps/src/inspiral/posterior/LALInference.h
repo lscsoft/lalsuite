@@ -223,6 +223,8 @@ tagLALIFOData
   REAL8TimeSeries           *timeData, 
                             *timeModelhPlus, *timeModelhCross,
                             *whiteTimeData, *windowedTimeData; /* white is not really white, but over-white. */
+  REAL8                      fPlus, fCross;
+  REAL8                      timeshift;
   COMPLEX16FrequencySeries  *freqData, 
                             *freqModelhPlus, *freqModelhCross,
                             *whiteFreqData; /* Over-white. */

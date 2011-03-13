@@ -359,6 +359,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                     }
                     fclose(out);
 
+                    snprintf(filename, nameLength, "%s-timeModel.dat", headData->name);
+                    out = fopen(filename, "w");
+                    for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
+                      REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) + 
+                        headData->timeshift + ui*headData->timeModelhCross->deltaT;
+                      REAL8 d = headData->fPlus*headData->timeModelhPlus->data->data[ui] + 
+                        headData->fCross*headData->timeModelhCross->data->data[ui];
+
+                      fprintf(out, "%.6f %g\n", tt, d);
+                    }
+                    fclose(out);
+
                     headData = headData->next;
                   }
                 }
