@@ -908,7 +908,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/
 {
-  REAL8 ChiSquared=0.0, dxp=0.0, xp=0.0, x=0.0, qp=0.0, deltaFSegments,norm,sumqp;
+  REAL8 ChiSquared=0.0, dxp=0.0, xp=0.0, x=0.0, qp=0.0, deltaFSegments,norm;
   INT4  lowerF, upperF, p, nSegment=10;
   LALIFOData *ifoPtr=data;
   COMPLEX16Vector *freqModelResponse=NULL;
@@ -931,11 +931,10 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
     
     deltaFSegments = (ifoPtr->fHigh - ifoPtr->fLow)/(REAL8)nSegment;
     
-    x = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse);
     norm = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
+    x = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)/(sqrt(norm));
     
     ChiSquared=0.0;
-    sumqp=0.0;
     
     for (p=0; p<nSegment; ++p){
       
@@ -945,14 +944,12 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
       xp = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)/(sqrt(norm));
       
       qp = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse)/norm;
-      sumqp=sumqp+qp;
       
       dxp = xp-x*qp;
       
       ChiSquared = ChiSquared + dxp*dxp/qp;
       
     }
-    printf("%f\n",sumqp);
     //ChiSquared=ChiSquared*(REAL8)nSegment;
     ifoPtr->fLow = lowerF;
     ifoPtr->fHigh = upperF;
