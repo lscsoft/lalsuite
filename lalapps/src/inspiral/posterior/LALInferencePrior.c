@@ -199,7 +199,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALVar
 								return -DBL_MAX;
 					}
 					
-					logPrior += -(5./6.)*logmc+norm;
+					logPrior += -(11./6.)*logmc+norm;
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
 				else if(!strcmp(item->name, "massratio")) continue;
@@ -334,7 +334,7 @@ double innerIntegrand(double M2, void *viData) {
 	if (Mc < iData->McMin || Mc > iData->McMax || eta < iData->etaMin || eta > iData->etaMax) {
 		return 0.0;
 	} else {
-		return pow(Mc, -5.0/6.0);
+		return pow(Mc, -11.0/6.0);
 	}
 }
 
