@@ -623,8 +623,12 @@ void initVariables(LALInferenceRunState *state)
 	/* Set up the variable parameters */
 	//tmpVal=4.82+gsl_ran_gaussian(GSLrandom,0.025);//log(mcMin+(mcMax-mcMin)/2.0);
 	//tmpVal=7.86508;
-	addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_LINEAR);
-	//addVariable(currentParams, "chirpmass",    &tmpVal,    REAL8_t,	PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixMc");
+	if(ppt){
+		addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_FIXED);
+	}else{
+	    addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_LINEAR);
+    }
 	addMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		REAL8_t);
 	//addVariable(currentParams,"logmc",&tmpVal, REAL8_t, PARAM_LINEAR);
 	//logmcMin=log(mcMin); logmcMax=log(mcMax);
@@ -633,8 +637,12 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=0.244;
 	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
-	addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_LINEAR);
-	//addVariable(currentParams, "massratio",       &tmpVal,             REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixMassratio");
+	if(ppt){
+	    addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_FIXED);
+	}else{
+	    addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_LINEAR);
+	}
     addMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	REAL8_t);
 	
 	tmpMin=endtime-dt; tmpMax=endtime+dt;
@@ -648,23 +656,36 @@ void initVariables(LALInferenceRunState *state)
           timeParam = endtime+gsl_ran_gaussian(GSLrandom,0.01);          
         }
 
-        addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_LINEAR); 
+	ppt=getProcParamVal(commandLine,"--fixTime");
+	if(ppt){
+	    addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_FIXED);
+	}else{
+	    addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_LINEAR); 
+	}
 	addMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   REAL8_t);	
 
 	//tmpVal=1.5;
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=3.89954;
-    addVariable(currentParams, "phase",           &start_phase,             REAL8_t, PARAM_CIRCULAR);
-	//addVariable(currentParams, "phase",           &tmpVal,             REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixPhi");
+	if(ppt){
+		addVariable(currentParams, "phase",           &start_phase,        REAL8_t, PARAM_FIXED);
+	}else{
+	    addVariable(currentParams, "phase",           &start_phase,        REAL8_t, PARAM_CIRCULAR);
+	}
 	addMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	//tmpVal=5.8287;
 	//tmpVal=8.07955+gsl_ran_gaussian(GSLrandom,1.1);
 	//Dmin+(Dmax-Dmin)/2.0;
 	//tmpVal=46.92314;
-	addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_LINEAR);
-	//addVariable(currentParams,"distance", &tmpVal, REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixDist");
+	if(ppt){
+	     addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_FIXED);	
+	}else{	
+	     addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_LINEAR);
+	}
 	addMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   REAL8_t);
 
 	
@@ -672,24 +693,36 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=4.5500;//1.0;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=3.34650;
-	addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_CIRCULAR);
-	//addVariable(currentParams, "rightascension",  &tmpVal,      REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixRa");
+	if(ppt){
+		 addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_FIXED);
+    }else{
+	     addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_CIRCULAR);
+	}
 	addMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	//tmpVal=1.0759;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=-0.90547;
-	addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_CIRCULAR);
-	//addVariable(currentParams, "declination",     &tmpVal,     REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixDec");
+	if(ppt){
+		addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_FIXED);
+	}else{
+	    addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_CIRCULAR);
+	}
 	addMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   REAL8_t);
     
 	tmpMin=0.0; tmpMax=LAL_PI;
 	//tmpVal=0.2000;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=0.64546;
-	addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_CIRCULAR);
-	//addVariable(currentParams, "polarisation",    &tmpVal,     REAL8_t, PARAM_FIXED);
+	ppt=getProcParamVal(commandLine,"--fixPsi");
+	if(ppt){
+	     addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_FIXED);
+	}else{	
+	     addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_CIRCULAR);
+	}
 	addMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	tmpMin=0.0; tmpMax=LAL_PI;
@@ -701,8 +734,13 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=0.9207;
 	//tmpVal=tmpMin+gsl_rng_uniform(GSLrandom)*(tmpMax-tmpMin);
 	//tmpVal=2.86094;
- 	addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_CIRCULAR);
-	//addVariable(currentParams, "inclination",     &tmpVal,            REAL8_t, PARAM_FIXED);
+
+	ppt=getProcParamVal(commandLine,"--fixIota");
+	if(ppt){
+		addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_FIXED);
+	}else{
+ 	    addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_CIRCULAR);
+	}
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	ppt=getProcParamVal(commandLine, "--noSpin");
@@ -715,18 +753,33 @@ void initVariables(LALInferenceRunState *state)
       if(ppt) tmpMin=-1.0;
       else tmpMin=0.0;
       tmpMax=1.0;
-			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+			ppt=getProcParamVal(commandLine,"--fixA1");
+			if(ppt){
+			    addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
+			}else{
+				addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+			}
 			addMinMaxPrior(priorArgs, "a_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 				
 			ppt=getProcParamVal(commandLine, "--spinAligned");
 			if(ppt) fprintf(stdout,"Running with spin1 aligned to the orbital angular momentum.\n");
 			else {
 				tmpMin=0.0; tmpMax=LAL_PI;
-				addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
+				ppt=getProcParamVal(commandLine,"--fixTheta1");
+				if(ppt){
+				    addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_FIXED);
+				}else{
+				    addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
+				}
 				addMinMaxPrior(priorArgs, "theta_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 		
 				tmpMin=0.0; tmpMax=LAL_TWOPI;
-				addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
+				ppt=getProcParamVal(commandLine,"--fixPhi1");
+				if(ppt){
+					addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_FIXED);
+				}else{
+					addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
+				}
 				addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 			}
 		}
@@ -735,18 +788,33 @@ void initVariables(LALInferenceRunState *state)
     if(ppt) tmpMin=-1.0;
     else tmpMin=0.0;
     tmpMax=1.0;
-		addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		ppt=getProcParamVal(commandLine,"--fixA2");
+		if(ppt){
+			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
+		}else{
+			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		}
 		addMinMaxPrior(priorArgs, "a_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 	
 		ppt=getProcParamVal(commandLine, "--spinAligned");
 		if(ppt) fprintf(stdout,"Running with spin2 aligned to the orbital angular momentum.\n");
 		else {
 			tmpMin=0.0; tmpMax=LAL_PI;
-			addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
+			ppt=getProcParamVal(commandLine,"--fixTheta2");
+			if(ppt){
+				addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_FIXED);
+			}else{
+				addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
+			}
 			addMinMaxPrior(priorArgs, "theta_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 		
 			tmpMin=0.0; tmpMax=LAL_TWOPI;
-			addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
+			ppt=getProcParamVal(commandLine,"--fixPhi2");
+			if(ppt){
+				addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_FIXED);
+			}else{
+				addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
+			}
 			addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 		}
 	}
@@ -755,11 +823,21 @@ void initVariables(LALInferenceRunState *state)
 	if(approx==TaylorF2 && ppt){
 		
     tmpMin=-1.0; tmpMax=1.0;
-    addVariable(currentParams, "spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+		ppt=getProcParamVal(commandLine,"--fixA1");
+		if(ppt){
+			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
+		}else{
+			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+		}
     addMinMaxPrior(priorArgs, "spin1",     &tmpMin, &tmpMax,   REAL8_t);
 		
 		tmpMin=-1.0; tmpMax=1.0;
-		addVariable(currentParams, "spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		ppt=getProcParamVal(commandLine,"--fixA2");
+		if(ppt){
+			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
+		}else{
+			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+		}
 		addMinMaxPrior(priorArgs, "spin2",     &tmpMin, &tmpMax,   REAL8_t);
     
 	}
