@@ -460,6 +460,17 @@ void initVariables(LALInferenceRunState *state)
 		//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",numberI4,PhaseOrder);
 	}
 
+        /* This flag was added to account for the broken Big Dog
+           injection, which had the opposite sign in H and L compared
+           to Virgo. */
+        if (getProcParamVal(commandLine, "--crazyInjectionHLSign")) {
+          INT4 flag = 1;
+          addVariable(currentParams, "crazyInjectionHLSign", &flag, INT4_t, PARAM_FIXED);
+        } else {
+          INT4 flag = 0;
+          addVariable(currentParams, "crazyInjectionHLSign", &flag, INT4_t, PARAM_FIXED);
+        }
+
 	/* Over-ride taper if specified */
 	ppt=getProcParamVal(commandLine,"--taper");
 	if(ppt){

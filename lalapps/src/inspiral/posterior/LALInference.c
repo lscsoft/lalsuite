@@ -800,6 +800,14 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
+    if (checkVariable(currentParams, "crazyInjectionHLSign") &&
+        *((INT4 *)getVariable(currentParams, "crazyInjectionHLSign"))) {
+      if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
+        FplusScaled *= -1.0;
+        FcrossScaled *= -1.0;
+      }
+    }
+
     dataPtr->fPlus = FplusScaled;
     dataPtr->fCross = FcrossScaled;
     dataPtr->timeshift = timeshift;
@@ -1159,6 +1167,14 @@ void ComputeFreqDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
+    
+    if (checkVariable(currentParams, "crazyInjectionHLSign") &&
+        *((INT4 *)getVariable(currentParams, "crazyInjectionHLSign"))) {
+      if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
+        FplusScaled *= -1.0;
+        FcrossScaled *= -1.0;
+      }
+    }
 
 	if(freqWaveform->length!=dataPtr->freqModelhPlus->data->length){
 		printf("fW%d data%d\n", freqWaveform->length, dataPtr->freqModelhPlus->data->length);
@@ -1330,6 +1346,13 @@ void ComputeTimeDomainResponse(LALVariables *currentParams, LALIFOData * dataPtr
     FplusScaled  = Fplus  / distMpc;
     FcrossScaled = Fcross / distMpc;
 
+    if (checkVariable(currentParams, "crazyInjectionHLSign") &&
+        *((INT4 *)getVariable(currentParams, "crazyInjectionHLSign"))) {
+      if (strstr(dataPtr->name, "H") || strstr(dataPtr->name, "L")) {
+        FplusScaled *= -1.0;
+        FcrossScaled *= -1.0;
+      }
+    }
 
 	if(timeWaveform->data->length!=dataPtr->timeModelhPlus->data->length){
 		printf("fW%d data%d\n", timeWaveform->data->length, dataPtr->freqModelhPlus->data->length);
