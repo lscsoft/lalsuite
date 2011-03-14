@@ -626,6 +626,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixMc");
 	if(ppt){
 		addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"chirpmass fixed and set to %f\n",start_mc);
 	}else{
 	    addVariable(currentParams, "chirpmass",    &start_mc,    REAL8_t,	PARAM_LINEAR);
     }
@@ -637,9 +638,10 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=0.244;
 	//tmpVal=0.03+gsl_rng_uniform(GSLrandom)*(0.25-0.03);
 	//tmpVal=0.18957;
-	ppt=getProcParamVal(commandLine,"--fixMassratio");
+	ppt=getProcParamVal(commandLine,"--fixEta");
 	if(ppt){
 	    addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
 	}else{
 	    addVariable(currentParams, "massratio",       &start_eta,             REAL8_t, PARAM_LINEAR);
 	}
@@ -659,6 +661,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixTime");
 	if(ppt){
 	    addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"time fixed and set to %f\n",timeParam);
 	}else{
 	    addVariable(currentParams, "time",            &timeParam   ,           REAL8_t, PARAM_LINEAR); 
 	}
@@ -671,6 +674,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixPhi");
 	if(ppt){
 		addVariable(currentParams, "phase",           &start_phase,        REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"phase fixed and set to %f\n",start_phase);
 	}else{
 	    addVariable(currentParams, "phase",           &start_phase,        REAL8_t, PARAM_CIRCULAR);
 	}
@@ -682,7 +686,8 @@ void initVariables(LALInferenceRunState *state)
 	//tmpVal=46.92314;
 	ppt=getProcParamVal(commandLine,"--fixDist");
 	if(ppt){
-	     addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_FIXED);	
+	     addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"distance fixed and set to %f\n",start_dist);
 	}else{	
 	     addVariable(currentParams,"distance", &start_dist, REAL8_t, PARAM_LINEAR);
 	}
@@ -696,6 +701,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixRa");
 	if(ppt){
 		 addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"R.A. fixed and set to %f\n",start_ra);
     }else{
 	     addVariable(currentParams, "rightascension",  &start_ra,      REAL8_t, PARAM_CIRCULAR);
 	}
@@ -708,6 +714,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixDec");
 	if(ppt){
 		addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"declination fixed and set to %f\n",start_dec);
 	}else{
 	    addVariable(currentParams, "declination",     &start_dec,     REAL8_t, PARAM_CIRCULAR);
 	}
@@ -720,6 +727,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixPsi");
 	if(ppt){
 	     addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"polarisation fixed and set to %f\n",start_psi);
 	}else{	
 	     addVariable(currentParams, "polarisation",    &start_psi,     REAL8_t, PARAM_CIRCULAR);
 	}
@@ -738,6 +746,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine,"--fixIota");
 	if(ppt){
 		addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_FIXED);
+		if(MPIrank==0) fprintf(stdout,"iota fixed and set to %f\n",start_iota);
 	}else{
  	    addVariable(currentParams, "inclination",     &start_iota,            REAL8_t, PARAM_CIRCULAR);
 	}
@@ -754,6 +763,7 @@ void initVariables(LALInferenceRunState *state)
 			ppt=getProcParamVal(commandLine,"--fixA1");
 			if(ppt){
 			    addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
+				if(MPIrank==0) fprintf(stdout,"spin 1 fixed and set to %f\n",start_a_spin1);
 			}else{
 				addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
 			}
@@ -766,6 +776,7 @@ void initVariables(LALInferenceRunState *state)
 				ppt=getProcParamVal(commandLine,"--fixTheta1");
 				if(ppt){
 				    addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_FIXED);
+					if(MPIrank==0) fprintf(stdout,"theta 1 fixed and set to %f\n",start_theta_spin1);
 				}else{
 				    addVariable(currentParams, "theta_spin1",     &start_theta_spin1,            REAL8_t, PARAM_CIRCULAR);
 				}
@@ -775,6 +786,7 @@ void initVariables(LALInferenceRunState *state)
 				ppt=getProcParamVal(commandLine,"--fixPhi1");
 				if(ppt){
 					addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_FIXED);
+					if(MPIrank==0) fprintf(stdout,"phi 1 fixed and set to %f\n",start_phi_spin1);
 				}else{
 					addVariable(currentParams, "phi_spin1",     &start_phi_spin1,            REAL8_t, PARAM_CIRCULAR);
 				}
@@ -790,6 +802,7 @@ void initVariables(LALInferenceRunState *state)
 		ppt=getProcParamVal(commandLine,"--fixA2");
 		if(ppt){
 			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"spin 2 fixed and set to %f\n",start_a_spin2);
 		}else{
 			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
 		}
@@ -802,6 +815,7 @@ void initVariables(LALInferenceRunState *state)
 			ppt=getProcParamVal(commandLine,"--fixTheta2");
 			if(ppt){
 				addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_FIXED);
+				if(MPIrank==0) fprintf(stdout,"theta spin 2 fixed and set to %f\n",start_theta_spin2);
 			}else{
 				addVariable(currentParams, "theta_spin2",     &start_theta_spin2,            REAL8_t, PARAM_CIRCULAR);
 			}
@@ -811,6 +825,7 @@ void initVariables(LALInferenceRunState *state)
 			ppt=getProcParamVal(commandLine,"--fixPhi2");
 			if(ppt){
 				addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_FIXED);
+				if(MPIrank==0) fprintf(stdout,"phi 2 fixed and set to %f\n",start_phi_spin2);
 			}else{
 				addVariable(currentParams, "phi_spin2",     &start_phi_spin2,            REAL8_t, PARAM_CIRCULAR);
 			}
@@ -825,6 +840,7 @@ void initVariables(LALInferenceRunState *state)
 		ppt=getProcParamVal(commandLine,"--fixA1");
 		if(ppt){
 			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"spin 1 fixed and set to %f\n",start_a_spin1);
 		}else{
 			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
 		}
@@ -834,6 +850,7 @@ void initVariables(LALInferenceRunState *state)
 		ppt=getProcParamVal(commandLine,"--fixA2");
 		if(ppt){
 			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
+			if(MPIrank==0) fprintf(stdout,"spin 2 fixed and set to %f\n",start_a_spin2);
 		}else{
 			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
 		}
