@@ -746,9 +746,7 @@ void initVariables(LALInferenceRunState *state)
 	ppt=getProcParamVal(commandLine, "--noSpin");
 	if((approx==SpinTaylor ||approx==SpinTaylorT3) && !ppt){
 		
-		ppt=getProcParamVal(commandLine, "--singleSpin");
-		if(ppt) fprintf(stdout,"Running with first spin set to 0\n");
-		else {
+
       ppt=getProcParamVal(commandLine, "--spinAligned");
       if(ppt) tmpMin=-1.0;
       else tmpMin=0.0;
@@ -782,8 +780,9 @@ void initVariables(LALInferenceRunState *state)
 				}
 				addMinMaxPrior(priorArgs, "phi_spin1",     &tmpMin, &tmpMax,   REAL8_t);
 			}
-		}
-		
+		ppt=getProcParamVal(commandLine, "--singleSpin");
+		if(ppt) fprintf(stdout,"Running with first spin set to 0\n");
+		else {
     ppt=getProcParamVal(commandLine, "--spinAligned");
     if(ppt) tmpMin=-1.0;
     else tmpMin=0.0;
@@ -818,7 +817,7 @@ void initVariables(LALInferenceRunState *state)
 			addMinMaxPrior(priorArgs, "phi_spin2",     &tmpMin, &tmpMax,   REAL8_t);
 		}
 	}
-	
+	}
   ppt=getProcParamVal(commandLine, "--spinAligned");
 	if(approx==TaylorF2 && ppt){
 		
