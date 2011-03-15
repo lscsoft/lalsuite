@@ -463,6 +463,52 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample){
 	return;
 }
 
+const char *translateInternalToExternalParamName(const char *inName) {
+  if (!strcmp(inName, "a_spin1")) {
+    return "a1";
+  } else if (!strcmp(inName, "a_spin2")) {
+    return "a2";
+  } else if (!strcmp(inName, "phi_spin1")) {
+    return "phi1";
+  } else if (!strcmp(inName, "phi_spin2")) {
+    return "phi2";
+  } else if (!strcmp(inName, "theta_spin1")) {
+    return "theta1";
+  } else if (!strcmp(inName, "theta_spin2")) {
+    return "theta2";
+  } else if (!strcmp(inName, "chirpmass")) {
+    return "mc";
+  } else if (!strcmp(inName, "massratio")) {
+    return "eta";
+  } else if (!strcmp(inName, "rightascension")) {
+    return "ra";
+  } else if (!strcmp(inName, "declination")) {
+    return "dec";
+  } else if (!strcmp(inName, "phase")) {
+    return "phi_orb";
+  } else if (!strcmp(inName, "polarisation")) {
+    return "psi";
+  } else if (!strcmp(inName, "inclination")) {
+    return "iota";
+  } else if (!strcmp(inName, "distance")) {
+    return "dist";
+  } else {
+    return inName;
+  }
+}
+
+int fprintParameterNonFixedHeaders(FILE *out, LALVariables *params) {
+  LALVariableItem *head = params->head;
+
+  while (head != NULL) {
+    if (head->vary != PARAM_FIXED) {
+      fprintf(out, "%s\t", translateInternalToExternalParamName(head->name));
+    }
+    head = head->next;
+  }
+
+  return 0;
+}
 
 int compareVariables(LALVariables *var1, LALVariables *var2)
 /*  Compare contents of "var1" and "var2".                       */
@@ -752,6 +798,9 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
 	/* t_c corresponds to the "time" parameter in                    */
 	/* IFOdata->modelParams (set, e.g., from the trigger value).     */
     
+    /* Reset log-likelihood */
+    dataPtr->loglikelihood = 0.0;
+
     /* Compare parameter values with parameter values corresponding  */
     /* to currently stored template; ignore "time" variable:         */
     if (checkVariable(dataPtr->modelParams, "time")) {
@@ -842,7 +891,9 @@ REAL8 UndecomposedFreqDomainLogLikelihood(LALVariables *currentParams, LALIFODat
       diffRe       = dataReal - templateReal;         // Difference in real parts...
       diffIm       = dataImag - templateImag;         // ...and imaginary parts, and...
       diffSquared  = diffRe*diffRe + diffIm*diffIm ;  // ...squared difference of the 2 complex figures.
-      chisquared  += ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      REAL8 temp = ((TwoDeltaToverN * diffSquared) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      chisquared  += temp;
+      dataPtr->loglikelihood -= temp;
  //fprintf(testout, "%e %e %e %e %e %e\n",
  //        f, dataPtr->oneSidedNoisePowerSpectrum->data->data[i], 
  //        dataPtr->freqData->data->data[i].re, dataPtr->freqData->data->data[i].im,
@@ -878,6 +929,8 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
+    ifoPtr->loglikelihood = 0.0;
+
 	if(freqModelResponse==NULL)
 		freqModelResponse= XLALCreateCOMPLEX16Vector(ifoPtr->freqData->data->length);
 	else
@@ -892,10 +945,11 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 	COMPLEX16VectorSubtract(residual, ifoPtr->freqData->data, freqModelResponse);
 	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, residual, residual); 
 	*/
-
-	totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data)
-		-2.0*ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)
-		+ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
+        REAL8 temp = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data)
+          -2.0*ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)
+          +ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
+	totalChiSquared+=temp;
+        ifoPtr->loglikelihood -= 0.5*temp;
 
     ifoPtr = ifoPtr->next;
   }
@@ -1000,6 +1054,8 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
+    ifoPtr->loglikelihood = 0.0;
+
     if(timeModelResponse==NULL) {
       timeModelResponse = 
 	XLALCreateREAL8TimeSeries("time detector response", &(ifoPtr->timeData->epoch), 
@@ -1018,11 +1074,11 @@ REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
      
     /*compute the response*/
     ComputeTimeDomainResponse(currentParams, ifoPtr, template, timeModelResponse);
-
-    totalChiSquared+=
-      (WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData)
-       -2.0*WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, timeModelResponse)
-       +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
+    REAL8 temp = (WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData)
+                  -2.0*WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, timeModelResponse)
+                  +timeDomainOverlap(ifoPtr->timeDomainNoiseWeights, timeModelResponse, timeModelResponse));
+    totalChiSquared+=temp;
+    ifoPtr->loglikelihood -= 0.5*temp;
     
     ifoPtr = ifoPtr->next;
   }
@@ -1597,7 +1653,10 @@ REAL8 NullLogLikelihood(LALIFOData *data)
 	
 	/* loop over data (different interferometers): */
 	while (ifoPtr != NULL) {
-		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
+          ifoPtr->nullloglikelihood = 0.0;
+          REAL8 temp = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
+          totalChiSquared+=temp;
+          ifoPtr->nullloglikelihood -= 0.5*temp;
 		ifoPtr = ifoPtr->next;
 	}
 	loglikeli = -0.5 * totalChiSquared; // note (again): the log-likelihood is unnormalised!
@@ -1617,67 +1676,11 @@ REAL8 TimeDomainNullLogLikelihood(LALIFOData *data) {
   /* FILE *out; */
   
   while (ifoPtr != NULL) {
-    logL += WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData);
-  
-    /* snprintf(fileName, 256, "TDW-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->timeDomainNoiseWeights->data->length; i++) { */
-    /*   fprintf(out, "%g %g\n", i*ifoPtr->timeDomainNoiseWeights->deltaT, ifoPtr->timeDomainNoiseWeights->data->data[i]); */
-    /* } */
-    /* fclose(out); */
-
-    /* snprintf(fileName, 256, "timeData-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->timeData->data->length; i++) { */
-    /*   fprintf(out, "%g %g\n", i*ifoPtr->timeData->deltaT, ifoPtr->timeData->data->data[i]); */
-    /* } */
-    /* fclose(out); */
-
-    /* snprintf(fileName, 256, "whiteTimeData-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->whiteTimeData->data->length; i++) { */
-    /*   fprintf(out, "%g %g\n", i*ifoPtr->whiteTimeData->deltaT, ifoPtr->whiteTimeData->data->data[i]); */
-    /* } */
-    /* fclose(out); */
-
-    /* snprintf(fileName, 256, "freqData-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->freqData->data->length; i++) { */
-    /*   fprintf(out, "%g %g+i*%g\n", i*ifoPtr->freqData->deltaF, ifoPtr->freqData->data->data[i].re, */
-    /*           ifoPtr->freqData->data->data[i].im); */
-    /* } */
-    /* fclose(out); */
-
-    /* snprintf(fileName, 256, "whiteFreqData-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->whiteFreqData->data->length; i++) { */
-    /*   fprintf(out, "%g %g+i*%g\n", i*ifoPtr->whiteFreqData->deltaF, ifoPtr->whiteFreqData->data->data[i].re, */
-    /*           ifoPtr->freqData->data->data[i].im); */
-    /* } */
-    /* fclose(out); */
-
-    /* REAL8TimeSeries *invFreqData = */
-    /*   XLALCreateREAL8TimeSeries("inv Freq data", &(ifoPtr->freqData->epoch), */
-    /*                             0.0, ifoPtr->timeData->deltaT, &lalDimensionlessUnit, */
-    /*                             ifoPtr->timeData->data->length); */
-    /* XLALREAL8FreqTimeFFT(invFreqData, ifoPtr->freqData, ifoPtr->freqToTimeFFTPlan); */
-
-    /* snprintf(fileName, 256, "invFreqData-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < invFreqData->data->length; i++) { */
-    /*   fprintf(out, "%g %g\n", i*invFreqData->deltaT, invFreqData->data->data[i]); */
-    /* } */
-    /* fclose(out); */
-
-    /* XLALDestroyREAL8TimeSeries(invFreqData); */
-
-    /* snprintf(fileName, 256, "PSD-%d.dat", ifoIndex); */
-    /* out = fopen(fileName, "w"); */
-    /* for (i = 0; i < ifoPtr->oneSidedNoisePowerSpectrum->data->length; i++) { */
-    /*   fprintf(out, "%g %g\n", i*ifoPtr->oneSidedNoisePowerSpectrum->deltaF, ifoPtr->oneSidedNoisePowerSpectrum->data->data[i]); */
-    /* } */
-    /* fclose(out); */
-
+    ifoPtr->nullloglikelihood = 0.0;
+    REAL8 temp = WhitenedTimeDomainOverlap(ifoPtr->whiteTimeData, ifoPtr->windowedTimeData);
+    logL += temp;
+    ifoPtr->nullloglikelihood -= 0.5*temp;
+ 
     ifoPtr = ifoPtr->next;
     /* ifoIndex++; */
   }
