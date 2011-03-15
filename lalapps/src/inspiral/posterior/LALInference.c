@@ -1053,7 +1053,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
     
     ChiSquared=0.0;
     
-    for (i=0; i < numBins + 1; ++i){
+    for (i=0; i < numBins; ++i){
       
       ifoPtr->fLow = chisqBin[i] * deltaF;
       ifoPtr->fHigh = chisqBin[i+1] * deltaF;
