@@ -405,35 +405,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 /*   } */
                 /* } */
 
-		if ((i % Nskip) == 0){
-			//chainoutput[tempIndex] = fopen(outfileName[tempIndex],"a");
-			//fprintf(chainoutput[tempIndex], "%8d %12.5lf %9.6lf", i,runState->currentLikelihood - nullLikelihood,1.0);
-			fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
-			/*fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"chirpmass"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"massratio"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"time"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"distance"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"rightascension"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"declination"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"inclination"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"phase"));
-			 fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"polarisation"));*/
-			//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
-			fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
-			fprintf(chainoutput[tempIndex],"%f\t",runState->currentLikelihood - nullLikelihood);
-                        LALIFOData *headIFO = runState->data;
-                        while (headIFO != NULL) {
-                          fprintf(chainoutput[tempIndex], "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
-                          headIFO = headIFO->next;
-                        }
-			//fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
-			//fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
-			//fprintf(chainoutput[tempIndex],"%f\t",((double)acceptanceCount)/((double)i));
-			fprintf(chainoutput[tempIndex],"\n");
-			fflush(chainoutput[tempIndex]);
-			//fclose(chainoutput[tempIndex]);
-                        
-			}
+		if ((i % Nskip) == 0) {
+                  fseek(chainoutput[tempIndex], 0L, SEEK_END);
+                  fprintf(chainoutput[tempIndex], "%d\t%f\t%f\t", i,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior,runState->currentPrior);
+                  fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
+                  fprintf(chainoutput[tempIndex],"%f\t",runState->currentLikelihood - nullLikelihood);
+                  
+                  LALIFOData *headIFO = runState->data;
+                  while (headIFO != NULL) {
+                    fprintf(chainoutput[tempIndex], "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+                    headIFO = headIFO->next;
+                  }
+		
+                  fprintf(chainoutput[tempIndex],"\n");
+                  fflush(chainoutput[tempIndex]);
+                }
 		
 
 		//if (tempIndex == 0) {
