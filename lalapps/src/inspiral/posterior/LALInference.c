@@ -896,9 +896,7 @@ REAL8 FreqDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data,
   return(loglikeli);
 }
 
-
-REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, 
-                              LALTemplateFunction *template)
+REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateFunction *template)
 /***************************************************************/
 /* Chi-Square function.                                        */
 /* Returns the chi square of a template:                       */
@@ -912,12 +910,16 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/
 {
-  REAL8 ChiSquared=0.0, dxp=0.0, xp=0.0, x=0.0, qp=0.0, deltaFSegments,norm;
-  INT4  lowerF, upperF, p, nSegment=10;
+  REAL8 ChiSquared, dxp, xp, x, deltaFSegments, norm, binPower, nextBin;
+  REAL8 lowerF, upperF, deltaT, deltaF;
+  REAL8 *segnorm;
+  INT4  i, chisqPt, imax, kmin, kmax, numBins;
+  INT4  *chisqBin;
   LALIFOData *ifoPtr=data;
   COMPLEX16Vector *freqModelResponse=NULL;
   //COMPLEX16Vector *segmentFreqModelResponse-NULL;
   
+
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
     if(freqModelResponse==NULL)
@@ -927,34 +929,79 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
     /*compute the response*/
     ComputeFreqDomainResponse(currentParams, ifoPtr, template, freqModelResponse);
 
-    //deltaT = ifoPtr->timeData->deltaT;
-    //deltaF = 1.0 / (((double)ifoPtr->timeData->data->length) * deltaT);
+    deltaT = ifoPtr->timeData->deltaT;
+    deltaF = 1.0 / (((REAL8)ifoPtr->timeData->data->length) * deltaT);
     
+    /* Store values of fLow and fHigh to use later */
     lowerF = ifoPtr->fLow;
     upperF = ifoPtr->fHigh;
+   
+    /* Generate bin boundaries */
+    numBins = *(INT4*) getVariable(currentParams, "numbins");
+    kmin = ceil(ifoPtr->fLow / deltaF);
+    kmax = floor(ifoPtr->fHigh / deltaF);
+    imax = kmax > ifoPtr->freqData->data->length-1 ? ifoPtr->freqData->data->length-1 : kmax;
     
-    deltaFSegments = (ifoPtr->fHigh - ifoPtr->fLow)/(REAL8)nSegment;
+    segnorm=malloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
+    memset(segnorm,0,sizeof(REAL8) * ifoPtr->freqData->data->length);
+    norm = 0.0;
     
-    norm = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse);
+    for (i=1; i < imax; ++i){  	  	  
+      norm += ((4.0 * deltaF * (freqModelResponse->data[i].re*freqModelResponse->data[i].re
+              +freqModelResponse->data[i].im*freqModelResponse->data[i].im)) 
+              / ifoPtr->oneSidedNoisePowerSpectrum->data->data[i]);
+      segnorm[i] = norm;
+    }
+
+    chisqBin=malloc(sizeof(INT4) * (numBins + 1));
+    memset(chisqBin,0,sizeof(INT4) * (numBins +1));
+
+    binPower = norm / (REAL8) numBins;
+    nextBin   = binPower;
+    chisqPt   = 0;
+    chisqBin[chisqPt++] = 0;
+
+    for ( i = 1; i < imax; ++i )
+    {
+      if ( segnorm[i] >= nextBin )
+      {
+        chisqBin[chisqPt++] = i;
+        nextBin += binPower;
+        if ( chisqPt == numBins ) break;
+      }
+    }
+    chisqBin[16]=imax;
+    /* check that we have sucessfully allocated all the bins */
+    if ( i == ifoPtr->freqData->data->length && chisqPt != numBins )
+    {
+      /* if we have reaced the end of the template power vec and not
+       * */
+      /* allocated all the bin boundaries then there is a problem
+       * */
+      fprintf(stderr,"Error constructing frequency bins\n"); 
+    }
+
+    /* the last bin boundary is at can be at Nyquist since   */
+    /* qtilde is zero above the ISCO of the current template */
+    // chisqBin[numBins] = ifoPtr->freqData->data->length;
+
+    /* end */
+    
     x = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)/(sqrt(norm));
     
     ChiSquared=0.0;
     
-    for (p=0; p<nSegment; ++p){
+    for (i=0; i < numBins + 1; ++i){
       
-      ifoPtr->fLow = lowerF + p*deltaFSegments;
-      ifoPtr->fHigh = ifoPtr->fLow + deltaFSegments;
+      ifoPtr->fLow = chisqBin[i] * deltaF;
+      ifoPtr->fHigh = chisqBin[i+1] * deltaF;
       
       xp = ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, freqModelResponse)/(sqrt(norm));
-      
-      qp = ComputeFrequencyDomainOverlap(ifoPtr, freqModelResponse, freqModelResponse)/norm;
-      
-      dxp = xp-x*qp;
-      
-      ChiSquared = ChiSquared + dxp*dxp/qp;
+      dxp = ((REAL8) numBins) * xp - x;
+      ChiSquared += (dxp * dxp);
       
     }
-    //ChiSquared=ChiSquared*(REAL8)nSegment;
+    ChiSquared = ChiSquared / (REAL8) numBins;
     ifoPtr->fLow = lowerF;
     ifoPtr->fHigh = upperF;
     
@@ -962,13 +1009,10 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data,
     
     ifoPtr = ifoPtr->next;
   }
-  XLALDestroyCOMPLEX16Vector(freqModelResponse);
+  free(chisqBin);
+  free(segnorm);
   return(ChiSquared);
 }
-
-
-
-
 
 REAL8 TimeDomainLogLikelihood(LALVariables *currentParams, LALIFOData * data, 
                               LALTemplateFunction *template)
