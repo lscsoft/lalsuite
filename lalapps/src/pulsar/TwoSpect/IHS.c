@@ -18,6 +18,7 @@
 */
 
 #include <math.h>
+#include <time.h>
 
 #include <lal/LALMalloc.h>
 
@@ -291,10 +292,10 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
       XLAL_ERROR_VOID(fn, XLAL_ENOMEM);
    }
-   /* srand(time(NULL));
+   srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   gsl_rng_set(rng, 0);
+   gsl_rng_set(rng, randseed);
+   //gsl_rng_set(rng, 0);
    
    ihsVals *ihsvals = new_ihsVals();
    if (ihsvals==NULL) {
@@ -659,7 +660,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   fprintf(stderr,"%s: ihsLoc() failed.\n", fn);
                   XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                }               
-               if (loc>=5.0 && params->Tobs/loc>=2.0*3600.0) {
+               if (ihsfarstruct->fomfarthresh->data[ii-2]==-1.0 || (loc>=5.0 && params->Tobs/loc>=2.0*3600.0)) {
                   //Candidate frequency
                   fsig = params->fmin + (0.5*ii + jj)/params->Tcoh;
                   //Candidate modulation depth

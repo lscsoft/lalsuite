@@ -302,7 +302,7 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    REAL8 R2 = R-(R1-R);
    REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
    REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
-   while (fabs(prob1-prob2)<10.0*LAL_REAL4_MIN) {
+   while (fabs(prob1-prob2)<100.0*LAL_REAL8_EPS) {
       dR *= 2.0;
       R1 = (1.0+dR)*R;
       R2 = R-(R1-R);

@@ -54,12 +54,6 @@ extern "C" {
 #include <lal/DetectorStates.h>
 #include <lal/SFTutils.h>
 
-/*---------- DEFINES ----------*/
-NRCSID( UNIVERSALDOPPLERMETRICH, "$Id$");
-
-/*----- Error-codes -----*/
-
-
 /*---------- exported types ----------*/
   /** 2D vector */
 typedef REAL8 vect2D_t[2];
