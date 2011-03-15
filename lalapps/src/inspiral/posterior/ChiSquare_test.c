@@ -594,7 +594,7 @@ int main(int argc, char *argv[]){
  	initVariables(runState);
 	
     REAL8 loglikelihood=0.0;
-	loglikelihood = FreqDomainLogLikelihood(runState->currentParams, runState->data, &templateLALGenerateInspiral);
+	loglikelihood = FreqDomainLogLikelihood(runState->currentParams, runState->data, &templateLALGenerateInspiral) - NullLogLikelihood(runState->data);
 	printf("network LogLikelihood=%f\tSNR=%f\n",loglikelihood,sqrt(2*loglikelihood));
     ChiSquareTest(runState->currentParams, runState->data, &templateLALGenerateInspiral);
 
