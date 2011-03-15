@@ -182,11 +182,6 @@ void initVariables(LALInferenceRunState *state)
 	fprintf(stdout, " initialize(): random seed: %u\n", randomseed);
 	//addVariable(state->algorithmParams,"random_seed",&randomseed, UINT4_t,PARAM_FIXED);
 	gsl_rng_set(state->GSLrandom, randomseed);
-  
-  
-  
-  
-  
 	gsl_rng * GSLrandom=state->GSLrandom;
 	REAL8 endtime=0.0, timeParam=0.0;
 	REAL8 start_mc			=4.82+gsl_ran_gaussian(GSLrandom,0.025);
@@ -203,6 +198,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 start_a_spin2		=0.0+gsl_rng_uniform(GSLrandom)*(1.0-0.0);
 	REAL8 start_theta_spin2 =0.0+gsl_rng_uniform(GSLrandom)*(LAL_PI-0.0);
 	REAL8 start_phi_spin2	=0.0+gsl_rng_uniform(GSLrandom)*(LAL_TWOPI-0.0);
+        INT4  numBins           = 16;
 	
 	memset(currentParams,0,sizeof(LALVariables));
 	
@@ -216,24 +212,25 @@ void initVariables(LALInferenceRunState *state)
 	[--eta eta]\tTrigger eta to use\
 	[--phi phase]\tTrigger phase to use\
 	[--iota inclination]\tTrigger inclination to use\
-  [--dist dist]\tTrigger distance\
-  [--ra ra]\tTrigger RA\
-  [--dec dec]\tTrigger declination\
-  [--psi psi]\tTrigger psi\
-  [--a1 a1]\tTrigger a1\
-  [--theta1 theta1]\tTrigger theta1\
-  [--phi1 phi1]\tTrigger phi1\
-  [--a2 a2]\tTrigger a2\
-  [--theta2 theta2]\tTrigger theta2\
-  [--phi2 phi2]\tTrigger phi2\
-  [--time time]\tWaveform time (overrides random about trigtime)\
-	[--Dmin dist]\tMinimum distance in Mpc (1)\
-	[--Dmax dist]\tMaximum distance in Mpc (100)\
-	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
-	[--mincomp min]\tMinimum component mass (1.0)\
-	[--maxcomp max]\tMaximum component mass (30.0)\
-	[--MTotMax] \t Maximum total mass (35.0)\
-  [--covarianceMatrix file]\tFind the Cholesky decomposition of the covariance matrix for jumps in file";
+        [--dist dist]\tTrigger distance\
+        [--ra ra]\tTrigger RA\
+        [--dec dec]\tTrigger declination\
+        [--psi psi]\tTrigger psi\
+        [--a1 a1]\tTrigger a1\
+        [--theta1 theta1]\tTrigger theta1\
+        [--phi1 phi1]\tTrigger phi1\
+        [--a2 a2]\tTrigger a2\
+        [--theta2 theta2]\tTrigger theta2\
+        [--phi2 phi2]\tTrigger phi2\
+        [--time time]\tWaveform time (overrides random about trigtime)\
+        [--Dmin dist]\tMinimum distance in Mpc (1)\
+        [--Dmax dist]\tMaximum distance in Mpc (100)\
+        [--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\
+        [--mincomp min]\tMinimum component mass (1.0)\
+        [--maxcomp max]\tMaximum component mass (30.0)\
+        [--MTotMax] \t Maximum total mass (35.0)\
+        [--covarianceMatrix file]\tFind the Cholesky decomposition of the covariance matrix for jumps in file\
+        [--num-bins\tNumber of frequency bins to use to compute Chisq statistics, (default 16)";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
@@ -360,6 +357,11 @@ void initVariables(LALInferenceRunState *state)
   if (ppt) {
     start_phi_spin2 = atof(ppt->value);
   }
+  
+  ppt=getProcParamVal(commandLine,"--num-bins");
+  if (ppt) {
+    numBins = atof(ppt->value);
+  }
 	
 	/* Over-ride time prior if specified */
 //	ppt=getProcParamVal(commandLine,"--dt");
@@ -403,6 +405,7 @@ void initVariables(LALInferenceRunState *state)
 	
 	printf("Read end time %f\n",endtime);
   
+        addVariable(currentParams, "numbins",       &numBins,             INT4_t, PARAM_FIXED);
 	addVariable(currentParams, "LAL_APPROXIMANT", &approx,        INT4_t, PARAM_FIXED);
 	//addVariable(currentParams, "LAL_APPROXIMANT", &numberI4,        INT4_t, PARAM_FIXED);
 	//numberI4 = LAL_PNORDER_TWO;
