@@ -794,7 +794,7 @@ in the frequency domain */
 		UINT4 lowBin = (UINT4)(inputMCMC->fLow / inputMCMC->stilde[det_i]->deltaF);
 		UINT4 highBin = (UINT4)(template.fFinal / inputMCMC->stilde[det_i]->deltaF);
 		if(highBin==0 || highBin>inputMCMC->stilde[det_i]->data->length-1) highBin=inputMCMC->stilde[det_i]->data->length-1;
-		if(template.approximant==IMRPhenomFB || IMRPhenomB) highBin=inputMCMC->stilde[det_i]->data->length-1;
+		if(template.approximant==IMRPhenomFB || template.approximant==IMRPhenomB || template.approximant==EOBNR) highBin=inputMCMC->stilde[det_i]->data->length-1;
 		for(idx=lowBin;idx<=highBin;idx++){
 			time_sin = sin(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
 			time_cos = cos(LAL_TWOPI*(TimeFromGC+TimeShiftToGC)*((double) idx)*deltaF);
