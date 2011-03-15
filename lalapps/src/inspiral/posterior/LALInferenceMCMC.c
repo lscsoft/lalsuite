@@ -79,6 +79,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	printVariables(runState->currentParams);
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+        LALIFOData *headData = runState->data;
+        while (headData != NULL) {
+          headData->acceptedloglikelihood = headData->loglikelihood;
+          headData=headData->next;
+        }
 	for(t=0; t<nChain; t++) { TcurrentLikelihood[t] = runState->currentLikelihood; } // initialize the liklelihood for all chains
 	printf(" MCMC iteration: 0\t");
 	for(t=0; t<nChain; t++) { printf("%f\t", TcurrentLikelihood[t] - nullLikelihood); }
@@ -204,6 +209,11 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		|| (log(gsl_rng_uniform(runState->GSLrandom)) < logAcceptanceProbability)) {   //accept
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
+                LALIFOData *headData = runState->data;
+                while (headData != NULL) {
+                  headData->acceptedloglikelihood = headData->loglikelihood;
+                  headData = headData->next;
+                }
 	}
 	
 	destroyVariables(&proposedParams);	

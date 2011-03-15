@@ -134,6 +134,9 @@ tagLALVariables
   INT4 dimension;
 } LALVariables;
 
+const char *translateInternalToExternalParamName(const char *inName);
+int fprintParameterNonFixedHeaders(FILE *out, LALVariables *params);
+
 void *getVariable(LALVariables * vars, const char * name);
 INT4 getVariableDimension(LALVariables *vars);
 INT4 getVariableDimensionNonFixed(LALVariables *vars);
@@ -223,6 +226,13 @@ tagLALIFOData
   REAL8TimeSeries           *timeData, 
                             *timeModelhPlus, *timeModelhCross,
                             *whiteTimeData, *windowedTimeData; /* white is not really white, but over-white. */
+  /* Stores the log(L) for the model in presence of data.  These were
+     added to allow for individual-detector log(L) output.  The
+     convention is that loglikelihood always stores the log(L) for the
+     model in freqModel... or timeModel....  When a jump is accepted,
+     that value is copied into acceptedloglikelihood, which is the
+     quantity that is actually output in the output files. */
+  REAL8                      nullloglikelihood, loglikelihood, acceptedloglikelihood; 
   REAL8                      fPlus, fCross;
   REAL8                      timeshift;
   COMPLEX16FrequencySeries  *freqData, 

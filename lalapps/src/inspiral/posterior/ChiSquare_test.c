@@ -577,8 +577,6 @@ void initVariables(LALInferenceRunState *state)
 
 
 
-
-
 int main(int argc, char *argv[]){
 
 
@@ -594,8 +592,11 @@ int main(int argc, char *argv[]){
 	/* And allocating memory */
 	runState = initialize(procParams);
  	initVariables(runState);
-  
-  ChiSquareTest(runState->currentParams, runState->data, &templateLALGenerateInspiral);
+	
+    REAL8 loglikelihood=0.0;
+	loglikelihood = FreqDomainLogLikelihood(runState->currentParams, runState->data, &templateLALGenerateInspiral);
+	printf("network LogLikelihood=%f\tSNR=%f\n",loglikelihood,sqrt(2*loglikelihood));
+    ChiSquareTest(runState->currentParams, runState->data, &templateLALGenerateInspiral);
 
   return 0;
 }

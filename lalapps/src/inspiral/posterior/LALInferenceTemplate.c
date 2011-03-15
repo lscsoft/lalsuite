@@ -378,8 +378,8 @@ void mc2masses(double mc, double eta, double *m1, double *m2)
 {
   double root = sqrt(0.25-eta);
   double fraction = (0.5+root) / (0.5-root);
-  *m1 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
-  *m2 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
   return;
 }
 

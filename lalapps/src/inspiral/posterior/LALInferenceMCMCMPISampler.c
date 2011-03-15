@@ -182,6 +182,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 	// initialize starting likelihood value:
 	runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+        LALIFOData *headData = runState->data;
+        while (headData != NULL) {
+          headData->acceptedloglikelihood = headData->loglikelihood;
+          headData = headData->next;
+        }
 	runState->currentPrior = runState->prior(runState, runState->currentParams);
 	
 	
@@ -224,43 +229,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 							(int)atof(getProcParamVal(runState->commandLine,"--seglen")->value)*atoi(getProcParamVal(runState->commandLine,"--srate")->value));
 				ifodata1=ifodata1->next;
 			}
-			fprintf(chainoutput[t], "\n\n%31s","");
-			// Ultimately, I want to have a "printParameterNonFixedHeaders()" routine to get rid of this mess
-			if (waveform == 3) {
-				ppt1=getProcParamVal(runState->commandLine, "--spinAligned");
-				ppt2=getProcParamVal(runState->commandLine, "--singleSpin");
-				ppt3=getProcParamVal(runState->commandLine, "--noSpin");
-				if(ppt1 && !ppt2 && !ppt3) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",81,71,55,52,33,31,23,41,11,62,61);
-				else if(!ppt1 && ppt2 && !ppt3) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",73,74,71,55,52,33,31,23,41,11,62,61);
-				else if(ppt1 && ppt2 && !ppt3) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",71,55,52,33,31,23,41,11,62,61);
-				else if(ppt3) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
-				else fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",83,84,81,73,74,71,55,52,33,31,23,41,11,62,61);
-				fprintf(chainoutput[t],"\n");
-				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				if(ppt1 && !ppt2 && !ppt3) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-										  "a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-				else if(!ppt1 && ppt2 && !ppt3) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-											   "phi2", "theta2", "a2", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-				else if(ppt1 && ppt2 && !ppt3) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-											   "a2", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-				else if(ppt3) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-													   "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-				else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-							 "phi2", "theta2", "a2", "phi1", "theta1", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-			} else {
-        ppt1=getProcParamVal(runState->commandLine, "--spinAligned");
-        if(ppt1) fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i %9i",81,71,55,52,33,31,23,41,11,62,61);
-				else fprintf(chainoutput[t], " %9i %9i %9i %9i %9i %9i %9i %9i %9i",55,52,33,31,23,41,11,62,61);
-				fprintf(chainoutput[t],"\n");
-				fprintf(chainoutput[t], "%8s %12s %9s","cycle","logpost", "logprior");
-				if(ppt1) fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s",
-                         "a2", "a1", "iota", "psi", "dec", "ra", "dist", "phi_orb", "time", "eta", "mc", "logl");
-        else fprintf(chainoutput[t], " %9s %9s %9s %9s %9s %9s %9s %9s %9s %9s","iota","psi","dec","ra","dist","phi_orb","time","eta","mc", "logl");//, "temp", "mpirank", "acceptance_ratio");
-			}
+			fprintf(chainoutput[t], "\n\n%31s\n","");
+                        fprintf(chainoutput[t], "cycle\tlogpost\tlogprior\t");
+                        fprintParameterNonFixedHeaders(chainoutput[t], runState->currentParams);
+                        fprintf(chainoutput[t], "logl\t");
+                        LALIFOData *headIFO = runState->data;
+                        while (headIFO != NULL) {
+                          fprintf(chainoutput[t], "logl");
+                          fprintf(chainoutput[t], headIFO->name);
+                          fprintf(chainoutput[t], "\t");
+                          headIFO = headIFO->next;
+                        }
 			fprintf(chainoutput[t],"\n");
 			fprintf(chainoutput[t], "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
 			fprintSampleNonFixed(chainoutput[t],runState->currentParams);
 			fprintf(chainoutput[t],"%f\t",runState->currentLikelihood - nullLikelihood);
+                        headIFO = runState->data;
+                        while (headIFO != NULL) {
+                          fprintf(chainoutput[t], "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+                          headIFO = headIFO->next;
+                        }
 			//fprintf(chainoutput[t],"%f\t",tempLadder[t]);
 			//fprintf(chainoutput[t],"%d\t",MPIrank);
 			//fprintf(chainoutput[t],"%d\t",acceptanceCount);
@@ -433,6 +421,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 			//fprintf(chainoutput[tempIndex]," %9.5f",*(REAL8 *)getVariable(runState->currentParams,"x0"));
 			fprintSampleNonFixed(chainoutput[tempIndex],runState->currentParams);
 			fprintf(chainoutput[tempIndex],"%f\t",runState->currentLikelihood - nullLikelihood);
+                        LALIFOData *headIFO = runState->data;
+                        while (headIFO != NULL) {
+                          fprintf(chainoutput[tempIndex], "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+                          headIFO = headIFO->next;
+                        }
 			//fprintf(chainoutput[tempIndex],"%f\t",tempLadder[tempIndex]);
 			//fprintf(chainoutput[tempIndex],"%d\t",MPIrank);
 			//fprintf(chainoutput[tempIndex],"%f\t",((double)acceptanceCount)/((double)i));
@@ -586,6 +579,11 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
+                LALIFOData *headData = runState->data;
+                while (headData != NULL) {
+                  headData->acceptedloglikelihood = headData->loglikelihood;
+                  headData = headData->next;
+                }
 		runState->currentPrior = logPriorProposed;
 		acceptanceCount++;
 		setVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount);
@@ -689,6 +687,11 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 		//if(logLikelihoodProposed>nullLikelihood){
 		copyVariables(&proposedParams, runState->currentParams);
 		runState->currentLikelihood = logLikelihoodProposed;
+                LALIFOData *headData = runState->data;
+                while (headData != NULL) {
+                  headData->acceptedloglikelihood = headData->loglikelihood;
+                  headData=headData->next;
+                }
 		for (p=0; p<(nPar); ++p){
 			sigma[p]=sigma[p]+s_gamma*(1.0-0.234);
 		}
@@ -730,6 +733,11 @@ void PTMCMCAdaptationOneStep(LALInferenceRunState *runState)
 			//if(logLikelihoodProposed>nullLikelihood){
 			copyVariables(&proposedParams, runState->currentParams);
 			runState->currentLikelihood = logLikelihoodProposed;
+                        LALIFOData *headData = runState->data;
+                        while (headData != NULL) {
+                          headData->acceptedloglikelihood = headData->loglikelihood;
+                          headData = headData->next;
+                        }
 							sigma[p]=sigma[p]+s_gamma*(1.0-0.234);
 			//}
 		}else{
