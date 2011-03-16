@@ -858,13 +858,9 @@ void initVariables(LALInferenceRunState *state)
     
 	}
   
-  
-  
-  
-  
-	//REAL8 x0 = 0.9;
-	//addVariable(currentParams, "x0", &x0,  REAL8_t, PARAM_LINEAR);
-
+        /* Make sure that our initial value is within the
+           prior-supported volume. */
+        LALInferenceCyclicReflectiveBound(currentParams, priorArgs);
 
         /* Init covariance matrix, if specified.  The given file
            should contain the desired covariance matrix for the jump
