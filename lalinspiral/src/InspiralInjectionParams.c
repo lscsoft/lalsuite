@@ -365,7 +365,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
   cosinc   = cos( inc );
   sininc   = sin( inc );
   kappa    = -2.0;
-
+  
   /* spin1Mag */
   spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *
     (spin1Max - spin1Min);
@@ -384,41 +384,34 @@ SimInspiralTable* XLALRandomInspiralSpins(
     sgn = (sgn > 0.0) ? 1.0 : -1.0;
     kappa = kappa * sgn;
   }
+
+  /* spin1z */
   if (kappa > -2.0)
   {
-    sintheta = sqrt( 1 - kappa * kappa );
-    zmin = spin1Mag * ( cosinc * kappa - sininc * sintheta );
-    zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
+	  sintheta = sqrt( 1 - kappa * kappa );
+	  zmin = spin1Mag * ( cosinc * kappa - sininc * sintheta );
+	  zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
+	  inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
+  }
+  else 
+  { 
+	  inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
+  }
 
-    /* spin1z */
-    inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
-
-    /* spin1x and spin1y */
-    if (!aligned) {
-      inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
-      inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
-          (inj->spin1x * inj->spin1x)) , 0.5);
-    }
-    else { /* aligned */
-      inj->spin1x = 0;
-      inj->spin1y = 0;
-    }
+  /* spin1x and spin1y */
+  if (kappa > -2.0 && inc!=0) {
+	  inj->spin1x = (kappa * spin1Mag - inj->spin1z * cosinc) / sininc ;
+	  inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
+				  (inj->spin1x * inj->spin1x)) , 0.5);
   }
   else
   {
-    /* spin1z */
-    inj->spin1z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin1Mag);
+    fprintf(stderr,"I'm here\n");
     /* phi1 */
     r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
     phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
-    if (! aligned) {
       inj->spin1x = r1 * cos(phi1);
       inj->spin1y = r1 * sin(phi1);
-    }
-    else { /* aligned */
-      inj->spin1x = 0;
-      inj->spin1y = 0;
-    }
   }
 
   /* spin2Mag */
@@ -438,7 +431,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
     inj->spin2x = r2 * cos(phi2);
     inj->spin2y = r2 * sin(phi2);
   }
-  else { /* aligned */
+  else { /* aligned <FIXME: !THIS SETS S2 MAGNITUDE TO SPIN2Z */
     inj->spin1x = 0;
     inj->spin1y = 0;
   }
