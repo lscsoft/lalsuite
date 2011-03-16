@@ -406,12 +406,6 @@ LALSimulateCoherentGW( LALStatus        *status,
 		       CoherentGW       *input,
 		       DetectorResponse *detector );
 
-void
-LALSimulateCoherentGW_exp (LALStatus        *status,
-			   REAL4TimeSeries  *output,
-			   CoherentGW       *input,
-			   DetectorResponse *detector );
-
 /* <lalLaTeX>
 %\newpage\input{SimulateCoherentGWTestC}
 </lalLaTeX> */
