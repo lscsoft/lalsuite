@@ -154,6 +154,11 @@
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 
+#ifdef  __cplusplus
+extern "C" {
+#pragma }
+#endif
+
 
 /* <lalErrTable file="LALMathematicaHE"> */
 #define LALMATHEMATICAH_ENULL 1
@@ -216,5 +221,10 @@ LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );
+
+#ifdef  __cplusplus
+#pragma {
+}
+#endif
 
 #endif /* _LALMATHEMATICA_H */
