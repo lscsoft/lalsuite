@@ -1669,7 +1669,7 @@ void EOBNR_template(LALStatus *status,InspiralTemplate *template, LALMCMCParamet
 	template->Zeta2=0.;
 	template->Theta=1.;
 
-	NtimeModel = (inputMCMC->stilde[0]->data->length);
+	NtimeModel = (2*inputMCMC->stilde[0]->data->length-2);
 
 	if(Tmodel==NULL) {
 		LALCreateVector(status,&Tmodel,NtimeModel);

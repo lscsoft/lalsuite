@@ -652,6 +652,9 @@ int main( int argc, char *argv[])
 	LIGOTimeGPS realstart,segmentStart;
 	REAL8 networkSNR=0.0;
 
+	lal_errhandler = LAL_ERR_EXIT;
+        set_debug_level( "33" );
+
 	seed=0;
 	etawindow=1.0;
 	timewindow=0.05;
