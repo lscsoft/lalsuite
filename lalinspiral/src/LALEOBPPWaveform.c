@@ -133,10 +133,7 @@ static inline REAL8
 XLALCalculateA5( REAL8 eta );
 
 static inline REAL8
-XLALCalculateA5FF( REAL8 eta );
-
-static inline REAL8
-XLALCalculateA6FF( REAL8 eta );
+XLALCalculateA6( REAL8 eta );
 
 static void
 omegaofrP4PN (
@@ -144,19 +141,8 @@ omegaofrP4PN (
              REAL8 r,
              void *params) ;
 
-/*static void
-omegaofrP4PNFF (
-             REAL8 *x,
-             REAL8 r,
-             void *params) ;
-*/
 static REAL8
 nonKeplerianCoefficient(
-                   REAL8Vector * restrict values,
-                   REAL8 eta );
-
-static REAL8
-nonKeplerianCoefficientFF(
                    REAL8Vector * restrict values,
                    REAL8 eta );
 
@@ -166,17 +152,8 @@ void LALHCapDerivativesP4PN(   REAL8Vector *values,
                                void        *funcParams);
 
 static
-void LALHCapDerivativesP4PNFF(   REAL8Vector *values,
-                                 REAL8Vector *dvalues,
-                                 void        *funcParams);
-
-static
 REAL8 XLALCalculateEOBA( REAL8    r,
                          REAL8  eta);
-
-static
-REAL8 XLALCalculateEOBAFF( REAL8    r,
-                           REAL8  eta);
 
 static
 REAL8 XLALCalculateEOBD( REAL8    r,
@@ -187,15 +164,7 @@ REAL8 XLALCalculateEOBdAdr( REAL8 r,
                             REAL8 eta);
 
 static
-REAL8 XLALCalculateEOBdAdrFF( REAL8 r,
-                            REAL8 eta);
-
-static
 REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
-                                InspiralDerivativesIn *ak);
-
-static
-REAL8 XLALEffectiveHamiltonianFF( REAL8Vector           *values,
                                 InspiralDerivativesIn *ak);
 
 static
@@ -297,7 +266,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         pr	= values -> data[2];
 	pp	= values -> data[3];
 
-	Heff	= XLALEffectiveHamiltonianFF( values, ak ); 
+	Heff	= XLALEffectiveHamiltonian( values, ak ); 
 	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
 	Omega	= dvalues -> data[1];
 	v	= cbrt( Omega );
@@ -314,7 +283,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         pr3in.zeta2  = ak->coeffs->zeta2;
         pr3in.eta    = eta;
   
-        vPhi = nonKeplerianCoefficientFF( values, eta );
+        vPhi = nonKeplerianCoefficient( values, eta );
 
         vPhi  = r * cbrt(vPhi);
         vPhi *= Omega;
@@ -715,45 +684,18 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 static inline
 REAL8 XLALCalculateA5( REAL8 eta )
 {
-  return -12.9499 + 204.779 * eta - 206.319 *eta*eta;
-}
-
-static inline
-REAL8 XLALCalculateA5FF( REAL8 eta )
-{
   return - 82.5384 + 508.681 * eta - 787.826 * eta*eta;
 }
 
 static inline 
-REAL8 XLALCalculateA6FF( REAL8 eta )
+REAL8 XLALCalculateA6( REAL8 eta )
 {
 
   return 500. - 1800. * eta;
 }
 
 static
-REAL8 XLALCalculateEOBA( REAL8   r,
-                         REAL8 eta)
-{
-	REAL8 eta2, u, u2, u3, u4, a4, a5, NA, DA;
-
-	eta2 = eta*eta;
-	u = 1./r;
-	u2 = u*u;
-	u3 = u2*u;
-	u4 = u2*u2;
-	a4 = ninty4by3etc * eta;
-	a5 = XLALCalculateA5( eta );
-	NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
-	DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
-	   - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
-	   + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
-	
-	return NA/DA;	
-}
-
-static
-REAL8 XLALCalculateEOBAFF( REAL8 r,
+REAL8 XLALCalculateEOBA( REAL8 r,
                           REAL8 eta)
 {
 
@@ -774,8 +716,8 @@ REAL8 XLALCalculateEOBAFF( REAL8 r,
   eta3 = eta2*eta;
 
   a4 = ninty4by3etc * eta;
-  a5 = XLALCalculateA5FF( eta ) * eta;
-  a6 = XLALCalculateA6FF( eta ) * eta;
+  a5 = XLALCalculateA5( eta ) * eta;
+  a6 = XLALCalculateA6( eta ) * eta;
 
   NA = r4 * ( -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2)
      + r5 * ( 32. -4.*a4 - a5 - 24.*eta );
@@ -793,32 +735,6 @@ REAL8 XLALCalculateEOBAFF( REAL8 r,
 
 static
 REAL8 XLALCalculateEOBdAdr( REAL8 r,
-                            REAL8 eta)
-{
-        REAL8 eta2, u, u2, u3, u4, a4, a5, NA, DA, dA;
-
-        eta2 = eta*eta;
-        u = 1./r;
-        u2 = u*u;
-        u3 = u2*u;
-        u4 = u2*u2;
-        a4 = ninty4by3etc * eta;
-        a5 = XLALCalculateA5( eta );
-        NA = (32. - 24.*eta - 4.*a4 - a5*eta)*u + (a4 - 16. + 8.*eta);
-        DA = a4 - 16. + 8.*eta - (2.*a4 + a5*eta + 8.*eta)*u - (4.*a4 + 2.*a5*eta + 16.*eta)*u2
-           - (8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u3
-           + (-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u4;
-
-        dA = ( (32. - 24.*eta - 4.*a4 - a5*eta) * DA - NA *
-             ( -(2.*a4 + a5*eta + 8.*eta) - 2.*(4.*a4 + 2.*a5*eta + 16.*eta)*u
-             - 3.*(8.*a4 + 4.*a5*eta + 2.*a4*eta + 16.*eta2)*u2
-             + 4.*(-a4*a4 - 8.*a5*eta - 8.*a4*eta + 2.*a5*eta2 - 16.*eta2)*u3))/(DA*DA);
-
-        return (- u2 * dA);
-}
-
-static
-REAL8 XLALCalculateEOBdAdrFF( REAL8 r,
                               REAL8 eta)
 {
   REAL8 r2, r3, r4, r5;
@@ -839,8 +755,8 @@ REAL8 XLALCalculateEOBdAdrFF( REAL8 r,
   eta3 = eta2*eta;
 
   a4 = ninty4by3etc * eta;
-  a5 = XLALCalculateA5FF( eta ) * eta;
-  a6 = XLALCalculateA6FF( eta ) * eta;
+  a5 = XLALCalculateA5( eta ) * eta;
+  a6 = XLALCalculateA6( eta ) * eta;
 
   NA = r4 * ( -64. + 12.*a4 + 4.*a5 + a6 + 64.*eta - 4.*eta2)
      + r5 * ( 32. -4.*a4 - a5 - 24.*eta );
@@ -881,30 +797,6 @@ REAL8 XLALEffectiveHamiltonian( REAL8Vector           *values,
 {
 
         /* The pr used in here is the tortoise co-ordinate */
-	REAL8 eta, r, phi, pr, pp, r2, pr2, pp2, z3, eoba;
-
-   	eta = ak->coeffs->eta;
-
-   	r   = values->data[0];
-   	phi = values->data[1];
-   	pr  = values->data[2];
-   	pp  = values->data[3];
-
-	r2   = r * r;
-	pr2  = pr * pr;
-	pp2  = pp * pp;
-	
-	eoba = XLALCalculateEOBA( r, eta );
-	z3   = 2. * ( 4. - 3. * eta ) * eta;
-	return sqrt( pr2 + eoba * ( 1.  + pp2/r2 + z3*pr2*pr2/r2 ) );	
-}
-
-static
-REAL8 XLALEffectiveHamiltonianFF( REAL8Vector           *values,
-                                InspiralDerivativesIn *ak)
-{
-
-        /* The pr used in here is the tortoise co-ordinate */
         REAL8 eta, r, phi, pr, pp, r2, pr2, pp2, z3, eoba;
 
         eta = ak->coeffs->eta;
@@ -918,7 +810,7 @@ REAL8 XLALEffectiveHamiltonianFF( REAL8Vector           *values,
         pr2  = pr * pr;
         pp2  = pp * pp;
 
-        eoba = XLALCalculateEOBAFF( r, eta );
+        eoba = XLALCalculateEOBA( r, eta );
         z3   = 2. * ( 4. - 3. * eta ) * eta;
         return sqrt( pr2 + eoba * ( 1.  + pp2/r2 + z3*pr2*pr2/r2 ) );
 }
@@ -1076,23 +968,6 @@ omegaofrP4PNFF (
 }*/
 
 static REAL8
-nonKeplerianCoefficientFF(
-                   REAL8Vector * restrict values,
-                   REAL8 eta )
-{
-
-  REAL8 r    = values->data[0];
-  REAL8 pphi = values->data[3];
-
-  REAL8 A  = XLALCalculateEOBAFF( r, eta );
-  REAL8 dA = XLALCalculateEOBdAdrFF( r, eta );
-
-  return 2. * (1. + 2. * eta * ( -1. + sqrt( (1. + pphi*pphi/(r*r)) * A ) ) )
-          / ( r*r * dA );
-}
-
-
-static REAL8
 nonKeplerianCoefficient(
                    REAL8Vector * restrict values,
                    REAL8 eta )
@@ -1107,6 +982,7 @@ nonKeplerianCoefficient(
   return 2. * (1. + 2. * eta * ( -1. + sqrt( (1. + pphi*pphi/(r*r)) * A ) ) )
           / ( r*r * dA );
 }
+
 
 /*-------------------------------------------------------------------*/
 
@@ -1166,88 +1042,10 @@ LALlightRingRadiusP4PN(
 }
 
 /*-------------------------------------------------------------------*/
- void
-LALHCapDerivativesP4PN(
-                  REAL8Vector *values,
-                  REAL8Vector *dvalues,
-                  void        *funcParams
-                  )
-{
-
-   InspiralDerivativesIn *ak;
-
-   REAL8 r, s, p, q;
-   REAL8 dr, ds, dp, dq;
-   REAL8 r2, p2, p4, q2;
-   REAL8 u, u2, u3;
-   REAL8 A, AoverSqrtD, dAdr, Heff, Hreal;
-   REAL8 HeffHreal;
-   REAL8 eta, z3, omega, v;
-
-   /* Non-Keplerian velocity */
-   REAL8 vPhi, vPhi6;
-   pr3In pr3in;
-
-   ak = (InspiralDerivativesIn *) funcParams;
-
-   eta = ak->coeffs->eta;
-
-   z3   = 2. * ( 4. - 3. * eta ) * eta;
-
-   r = values->data[0];
-   s = values->data[1];
-   p = values->data[2];
-   q = values->data[3];
-
-   u  = 1.0 / r;
-   u2 = u * u;
-   u3 = u2 * u;
-   r2 = r * r;
-   p2 = p*p;
-   p4 = p2 * p2;
-   q2 = q * q;
-
-   A          = XLALCalculateEOBA(r, eta);
-   dAdr       = XLALCalculateEOBdAdr(r, eta);
-   AoverSqrtD = A / sqrt( XLALCalculateEOBD(r, eta) );
-
-   /* Note that Hreal as given here is missing a factor of 1/eta */
-   /* This is because it only enters into the derivatives in     */
-   /* the combination eta*Hreal*Heff, so the eta would get       */
-   /* cancelled out anyway. */
-
-   Heff  = XLALEffectiveHamiltonian( values, ak );
-   Hreal = sqrt( 1. + 2.*eta*(Heff - 1.) );
-
-   HeffHreal = Heff * Hreal;
-
-   dr = dvalues->data[0] = AoverSqrtD * u2 * p * (r2 + 2. * p2 * z3 * A ) / HeffHreal;
-   ds = dvalues->data[1] = omega = q * A * u2 / HeffHreal;
-
-   v = cbrt(omega);
-
-   memset( &pr3in, 0, sizeof( pr3In ) );
-   pr3in.omega  = omega;
-   pr3in.omegaS = ak->coeffs->omegaS;
-   pr3in.zeta2  = ak->coeffs->zeta2;
-   pr3in.eta    = eta;
-
-   vPhi = nonKeplerianCoefficient( values, eta );
-   vPhi = r * cbrt( vPhi );
-   vPhi = vPhi * omega;
-
-   vPhi6  = vPhi*vPhi*vPhi;
-   vPhi6 *= vPhi6;
-
-   dp = dvalues->data[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
-                      - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal;
-
-   dq = dvalues->data[3] = - omega * ak->flux(vPhi,ak->coeffs)/(eta * vPhi6);
-}
 
 /* Version which uses the factorized flux */
 void
-LALHCapDerivativesP4PNFF(
+LALHCapDerivativesP4PN(
 					   REAL8Vector *values,
 					   REAL8Vector *dvalues,
 					   void        *funcParams
@@ -1290,8 +1088,8 @@ LALHCapDerivativesP4PNFF(
   p4 = p2 * p2;
   q2 = q * q;
 
-  A          = XLALCalculateEOBAFF(r, eta);
-  dAdr       = XLALCalculateEOBdAdrFF(r, eta);
+  A          = XLALCalculateEOBA(r, eta);
+  dAdr       = XLALCalculateEOBdAdr(r, eta);
   AoverSqrtD = A / sqrt( XLALCalculateEOBD(r, eta) );
 
   /* Note that Hreal as given here is missing a factor of 1/eta */
@@ -1299,7 +1097,7 @@ LALHCapDerivativesP4PNFF(
   /* the combination eta*Hreal*Heff, so the eta would get       */
   /* cancelled out anyway. */
 
-  Heff  = XLALEffectiveHamiltonianFF( values, ak );
+  Heff  = XLALEffectiveHamiltonian( values, ak );
   Hreal = sqrt( 1. + 2.*eta*(Heff - 1.) );
 
   HeffHreal = Heff * Hreal;
@@ -1768,8 +1566,6 @@ LALEOBPPWaveformEngine (
    void                    *funcParams1, *funcParams2, *funcParams3;
 
    REAL8Vector             *values, *dvalues, *newvalues, *yt, *dym, *dyt;
-   TofVIn                  in1;
-   InspiralPhaseIn         in2;
    InspiralDerivativesIn   in3;
    rk4In                   in4;
    rk4GSLIntegrator        *integrator = NULL;
@@ -1967,36 +1763,12 @@ LALEOBPPWaveformEngine (
    lengthHiSR = ( nStepBack + (UINT4)(20.0 / modefreqs->data[0].im / dt) ) * resampFac;
 
    /* Find the initial velocity given the lower frequency */
-   t = 0.0;
-   in1.t = t;
-   in1.t0 = ak.t0;
-   in1.v0 = ak.v0;
-   in1.vlso = ak.vlso;
-   in1.totalmass = ak.totalmass;
-   in1.dEnergy = func.dEnergy;
-   in1.flux = func.flux;
-   in1.coeffs = &ak;
-
-   LALInspiralVelocity(status->statusPtr, &v, &in1);
-   CHECKSTATUSPTR(status);
-
-   omega = v*v*v;
-   f = omega/(LAL_PI*m);
+   f     = params->fLower;
+   omega = f * LAL_PI * m;
+   v     = cbrt( omega );
 
    /* Then the initial phase */
-   in2.v0 = ak.v0;
-   in2.phi0 = params->startPhase;
-   in2.dEnergy = func.dEnergy;
-   in2.flux = func.flux;
-   in2.coeffs = &ak;
-   LALInspiralPhasing1(status->statusPtr, &s, v, &in2);
-   CHECKSTATUSPTR(status);
-/*
-   LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
-   The ODEs we solve give the orbital phase. Therefore, set the
-   initial phase to be half the GW pahse.
-*/
-   s = s/2.;
+   s = params->startPhase;
    sInit = s;
 
    /* light ring value - where to stop evolution */
@@ -2034,8 +1806,7 @@ LALEOBPPWaveformEngine (
        funcParams2 = (void *) &pr3in;
        break;
      default:
-       snprintf(message, 256, "There are no EOBNR_PP waveforms implemented at order %d\n", params->order);
-       LALError( status, message );
+       XLALPrintError( "There are no EOBNRv2 waveforms implemented at order %d\n", params->order);
        XLALDestroyREAL8Vector( values );
        XLALDestroyREAL8Vector( dvalues );
        XLALDestroyREAL8Vector( newvalues );
@@ -2083,22 +1854,12 @@ LALEOBPPWaveformEngine (
        CHECKSTATUSPTR(status);
        /* We need to change P to be the tortoise co-ordinate */
        /* TODO: Change prInit to calculate this directly */
-       if ( params->approximant == EOBNR_PF )
-       {
-         p = p * XLALCalculateEOBAFF(r, eta);
-         p = p / sqrt( XLALCalculateEOBD( r, eta ) );
-         in4.function = LALHCapDerivativesP4PNFF;
-       }
-       else
-       {
-         p = p * XLALCalculateEOBA(r, eta);
-         p = p / sqrt( XLALCalculateEOBD( r, eta ) );
-         in4.function = LALHCapDerivativesP4PN;
-       }
+       p = p * XLALCalculateEOBA(r, eta);
+       p = p / sqrt( XLALCalculateEOBD( r, eta ) );
+       in4.function = LALHCapDerivativesP4PN;
        break;
      default:
-       snprintf(message, 256, "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order);
-       LALError( status, message );
+       XLALPrintError( "There are no EOB/EOBNR waveforms implemented at order %d\n", params->order );
        XLALDestroyREAL8Vector( values );
        XLALDestroyREAL8Vector( dvalues );
        XLALDestroyREAL8Vector( newvalues );
