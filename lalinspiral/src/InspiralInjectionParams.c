@@ -373,16 +373,16 @@ SimInspiralTable* XLALRandomInspiralSpins(
   /* Check if initial spin orientation is specified by user */
   if ( (kappa1Min > -1.0) || (kappa1Max < 1.0) )
   {
-    kappa = kappa1Min + XLALUniformDeviate( randParams ) *
-        ( kappa1Max - kappa1Min );
+	  kappa = kappa1Min + XLALUniformDeviate( randParams ) *
+		  ( kappa1Max - kappa1Min );
   }
   else if ( (abskappa1Min > 0.0) || (abskappa1Max < 1.0) )
   {
-    kappa = abskappa1Min + XLALUniformDeviate( randParams ) *
-        ( abskappa1Max - abskappa1Min );
-    sgn = XLALUniformDeviate( randParams ) - 0.5;
-    sgn = (sgn > 0.0) ? 1.0 : -1.0;
-    kappa = kappa * sgn;
+	  kappa = abskappa1Min + XLALUniformDeviate( randParams ) *
+		  ( abskappa1Max - abskappa1Min );
+	  sgn = XLALUniformDeviate( randParams ) - 0.5;
+	  sgn = (sgn > 0.0) ? 1.0 : -1.0;
+	  kappa = kappa * sgn;
   }
 
   /* spin1z */
@@ -392,6 +392,10 @@ SimInspiralTable* XLALRandomInspiralSpins(
 	  zmin = spin1Mag * ( cosinc * kappa - sininc * sintheta );
 	  zmax = spin1Mag * ( cosinc * kappa + sininc * sintheta );
 	  inj->spin1z = zmin + XLALUniformDeviate( randParams ) * (zmax - zmin);
+  }
+  else if (aligned) 
+  {
+	  inj->spin1z = spin1Mag * cosinc;
   }
   else 
   { 
@@ -404,36 +408,47 @@ SimInspiralTable* XLALRandomInspiralSpins(
 	  inj->spin1y = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z) -
 				  (inj->spin1x * inj->spin1x)) , 0.5);
   }
+  else if (aligned)
+  {
+	  inj->spin1x = spin1Mag * sininc;
+	  inj->spin1y = 0.0;
+  }
   else
   {
-    fprintf(stderr,"I'm here\n");
-    /* phi1 */
-    r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
-    phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
-      inj->spin1x = r1 * cos(phi1);
-      inj->spin1y = r1 * sin(phi1);
+	  /* phi1 */
+	  r1 = pow( ((spin1Mag * spin1Mag) - (inj->spin1z * inj->spin1z)) , 0.5);
+	  phi1 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
+	  inj->spin1x = r1 * cos(phi1);
+	  inj->spin1y = r1 * sin(phi1);
   }
 
   /* spin2Mag */
   spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *
-    (spin2Max - spin2Min);
+	  (spin2Max - spin2Min);
 
   /* spin2z */
-  inj->spin2z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin2Mag);
-  r2 = pow( ((spin2Mag * spin2Mag) - (inj->spin2z * inj->spin2z)) ,
-      0.5);
+  if (aligned) 
+  {
+	  inj->spin2z = spin2Mag * cosinc;
+  }
+  else
+  {
+	  inj->spin2z = (XLALUniformDeviate( randParams ) - 0.5) * 2 * (spin2Mag);
+	  r2 = pow( ((spin2Mag * spin2Mag) - (inj->spin2z * inj->spin2z)) ,
+			  0.5);
+  }
 
   /* phi2 */
   phi2 = XLALUniformDeviate( randParams ) * LAL_TWOPI;
 
   /* spin2x and spin2y */
   if (! aligned) {
-    inj->spin2x = r2 * cos(phi2);
-    inj->spin2y = r2 * sin(phi2);
+	  inj->spin2x = r2 * cos(phi2);
+	  inj->spin2y = r2 * sin(phi2);
   }
-  else { /* aligned <FIXME: !THIS SETS S2 MAGNITUDE TO SPIN2Z */
-    inj->spin1x = 0;
-    inj->spin1y = 0;
+  else { /* aligned */
+	  inj->spin2x = spin2Mag * sininc;
+	  inj->spin2y = 0.0;
   }
 
   return ( inj );
