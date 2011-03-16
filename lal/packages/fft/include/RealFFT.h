@@ -49,6 +49,16 @@ extern "C" {
 #pragma }
 #endif
 
+#ifdef  __cplusplus
+#ifdef __GNUC__
+#define RESTRICT __restrict__
+#else
+#define RESTRICT
+#endif
+#else
+#define RESTRICT restrict
+#endif
+
 NRCSID( REALFFTH, "$Id$" );
 
 
@@ -438,7 +448,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
  *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
  *  .
  */
-int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restrict input,
+int XLALREAL4VectorFFT( REAL4Vector * RESTRICT output, const REAL4Vector * RESTRICT input,
     const REAL4FFTPlan *plan );
 
 /** Computes the power spectrum of REAL4 data
@@ -894,6 +904,8 @@ LALREAL8VectorFFT(
     REAL8Vector *input,
     REAL8FFTPlan *plan
     );
+
+#undef RESTRICT
 
 #ifdef  __cplusplus
 #pragma {
