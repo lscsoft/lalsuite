@@ -839,20 +839,20 @@ void initVariables(LALInferenceRunState *state)
     tmpMin=-1.0; tmpMax=1.0;
 		ppt=getProcParamVal(commandLine,"--fixA1");
 		if(ppt){
-			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
+			addVariable(currentParams, "spin1",     &start_a_spin1,            REAL8_t, PARAM_FIXED);
 			if(MPIrank==0) fprintf(stdout,"spin 1 fixed and set to %f\n",start_a_spin1);
 		}else{
-			addVariable(currentParams, "a_spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
+			addVariable(currentParams, "spin1",     &start_a_spin1,            REAL8_t, PARAM_LINEAR);
 		}
     addMinMaxPrior(priorArgs, "spin1",     &tmpMin, &tmpMax,   REAL8_t);
 		
 		tmpMin=-1.0; tmpMax=1.0;
 		ppt=getProcParamVal(commandLine,"--fixA2");
 		if(ppt){
-			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
+			addVariable(currentParams, "spin2",     &start_a_spin2,            REAL8_t, PARAM_FIXED);
 			if(MPIrank==0) fprintf(stdout,"spin 2 fixed and set to %f\n",start_a_spin2);
 		}else{
-			addVariable(currentParams, "a_spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
+			addVariable(currentParams, "spin2",     &start_a_spin2,            REAL8_t, PARAM_LINEAR);
 		}
 		addMinMaxPrior(priorArgs, "spin2",     &tmpMin, &tmpMax,   REAL8_t);
     
