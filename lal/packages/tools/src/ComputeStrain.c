@@ -710,7 +710,7 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
   int n;
   int xlerr;
 
-  INITSTATUS( status, "LALFIRFilter", COMPUTESTRAINC );
+  INITSTATUS( status, "LALFFTFIRFilter", COMPUTESTRAINC );
   ATTATCHSTATUSPTR( status );
 
   /* check that the time series is larger than the length of the filter */
