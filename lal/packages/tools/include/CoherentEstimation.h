@@ -104,4 +104,9 @@ LALClearCoherentInfo (
 		      CoherentEstimation *dat
 		      );
 
+#ifdef __cplusplus
+#pragma {
+}
 #endif
+
+#endif /* _COHERENTESTIMATION_H */
