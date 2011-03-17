@@ -30,6 +30,7 @@ lalinspiralinclude_HEADERS = \
 	LALNoiseModelsInspiral.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
+	LALTrigScanCluster.h \
 	LIGOLwXMLInspiralRead.h \
 	LIGOLwXMLRingdownRead.h \
 	LIGOMetadataInspiralUtils.h \
