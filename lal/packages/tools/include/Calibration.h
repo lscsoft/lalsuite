@@ -355,10 +355,6 @@ void LALFFTFIRFilter(LALStatus *status,
 		     REAL8TimeSeries *tseries,
 		     REAL8IIRFilter *FIR);
 
-void LALFIRFilter(LALStatus *status,
-		     REAL8TimeSeries *tseries,
-		     REAL8IIRFilter *FIR);
-
 void LALFreeFilter(LALStatus *status, REAL8IIRFilter *F2, int ORDER);
 void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, int ORDER);
 
