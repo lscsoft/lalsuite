@@ -348,7 +348,7 @@ void LALMakeFIRLPALPHAS(LALStatus *status,
 void LALMakeFIRHP(LALStatus *status,
 		  REAL8IIRFilter *G);
 
-int XALFIRFilter(REAL8TimeSeries *tseries,
+int XLALFIRFilter(REAL8TimeSeries *tseries,
 		  REAL8IIRFilter *FIR);
 
 void LALFFTFIRFilter(LALStatus *status,
