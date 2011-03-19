@@ -227,7 +227,7 @@ LALTwoDColumn( LALStatus            *status,
 
 void
 LALTwoDNodeCopy( LALStatus    *status,
-		 TwoDMeshNode **new,
+		 TwoDMeshNode **new_,
 		 TwoDMeshNode *old );
 
 
