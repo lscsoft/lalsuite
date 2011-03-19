@@ -38,10 +38,11 @@
 #include <lal/GSLSupport.h>
 #include <lal/BitField.h>
 #include <lal/DopplerFullScan.h>
-#include <lal/VeryBasicXMLOutput.h>
 #include <lal/FlatLatticeTiling.h>
 #include <lal/FlatLatticeTilingPulsar.h>
 #include <lalapps.h>
+
+#include "VeryBasicXMLOutput.h"
 
 RCSID("$Id$");
 

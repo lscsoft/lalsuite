@@ -24,7 +24,6 @@ liblalsupport_la_SOURCES = \
 	StreamVectorInput.c \
 	StreamVectorSequenceInput.c \
 	UserInput.c \
-	VeryBasicXMLOutput.c \
 	getopt.c \
 	getopt.h \
 	getopt1.c
