@@ -161,6 +161,12 @@ RCSID( "$Id$");
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #endif
 
+#if USE_OPENCL_KERNEL || defined(USE_CUDA)
+extern int gpu_device_id;
+#else
+int gpu_device_id;
+#endif
+
 extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
@@ -442,6 +448,7 @@ int MAIN( int argc, char *argv[]) {
 #define GPUREADY_DEFAULT 0
 #endif
   BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
+  INT4 uvar_gpu_device = -1;
   global_status = &status;
 
 
@@ -528,6 +535,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "device",       0, UVAR_DEVELOPER, "GPU device id", &uvar_gpu_device ), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
@@ -558,6 +566,9 @@ int MAIN( int argc, char *argv[]) {
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
+
+  if(uvar_gpu_device >= 0)
+    gpu_device_id = uvar_gpu_device;
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
