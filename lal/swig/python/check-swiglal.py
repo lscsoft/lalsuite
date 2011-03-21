@@ -12,6 +12,12 @@ class error(Exception):
     def __str__(self):
         return str
 
+# check module load
+import swiglal
+from swiglal import *
+swiglal.cvar.lalDebugLevel = 1
+msg("passed module load")
+
 # check memory allocation
 if not cvar.swiglal_debug:
     msg("skipping memory allocation")

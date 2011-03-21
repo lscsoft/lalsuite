@@ -5,6 +5,11 @@ function msg(str)
   disp([program_name, ": ", str]);
 endfunction
 
+## check module load
+swiglal;
+swiglal.cvar.lalDebugLevel = 1;
+msg("passed module load");
+
 ## check memory allocation
 if !cvar.swiglal_debug
   msg("skipping memory allocation");
