@@ -65,8 +65,8 @@ void NestInit2PN(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI*0.5,LAL_PI*0.5,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI*0.5,LAL_PI*0.5,0);
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI*0.5,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 	
@@ -131,6 +131,34 @@ void Inject2PN(LALMCMCParameter *parameter, LALMCMCInput *inputMCMC, double SNR)
 	/*	free(model); */
 }
 
+
+REAL8 computeZ(LALMCMCInput *MCMCinput)
+{
+  UINT4 i=0;
+  UINT4 j;
+
+  REAL8 logZnoise=0.0;
+
+  topdown_sum=calloc((size_t)MCMCinput->numberDataStreams,sizeof(REAL8Vector *));
+  for (i=0;i<MCMCinput->numberDataStreams;i++) {
+    topdown_sum[i]=XLALCreateREAL8Vector(MCMCinput->stilde[i]->data->length);
+    topdown_sum[i]->data[topdown_sum[i]->length-1] = (pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].re,2.0)+pow(MCMCinput->stilde[i]->data->data[topdown_sum[i]->length-1].im,2.0))*MCMCinput->invspec[i]->data->data[topdown_sum[i]->length-1];
+    for(j=topdown_sum[i]->length-2;j>0;j--) {
+      topdown_sum[i]->data[j]=topdown_sum[i]->data[j+1]+(pow(MCMCinput->stilde[i]->data->data[j].re,2.0)+pow(MCMCinput->stilde[i]->data->data[j].im,2.0))*MCMCinput->invspec[i]->data->data[j];
+    }
+  }
+
+  /* Likelihood of the noise model */
+  logZnoise=0.0;
+  for (j=0;j<MCMCinput->numberDataStreams;j++){
+    int lowBin=(int)MCMCinput->fLow/MCMCinput->deltaF;
+    logZnoise+=topdown_sum[j]->data[lowBin];
+  }
+  logZnoise*=-2.0*MCMCinput->deltaF;
+
+  return logZnoise;
+}
+
 REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCMCinput)
 {
 	UINT4 i=0;
@@ -145,7 +173,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	FILE *fpout=NULL;
 	CHAR outEnd[FILENAME_MAX];
 	LALMCMCParameter *temp=(LALMCMCParameter *)malloc(sizeof(LALMCMCParameter));
-	
+	LALMCMCParam *param_ptr;
+
 	if(!(MCMCinput->randParams)) LALCreateRandomParams(&status,&(MCMCinput->randParams),seed);
 	
 	MCMCinput->Live=Live;
@@ -223,6 +252,16 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;}
 	i=0;
 	
+    /* Write list of parameter names */
+    sprintf(outEnd,"%s_params.txt",outfile);
+    fpout=fopen(outEnd,"w");
+    for(param_ptr=temp->param;param_ptr;param_ptr=param_ptr->next)
+    {
+        fprintf(fpout,"%s\t",param_ptr->core->name);
+    }
+    fprintf(fpout,"logl");
+    fclose(fpout);
+
 	/* open outfile */
 	fpout=fopen(outfile,"w");
 	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s\n",outfile);
@@ -299,13 +338,19 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 		}
 		fprintSample(fpout,Live[i]);
 	}
+	
+	/* Output the aximum template, data, etc */
+	sprintf(outEnd,"%s_maxLdata.dat",outfile);
+	MCMCinput->dumpfile=outEnd;
+	MCMCinput->funcLikelihood(MCMCinput,Live[Nlive-1]);
+
+	/* Output some statistics */
 	double Npoints = MCMCinput->numberDataStreams*MCMCinput->stilde[0]->data->length-(int)(MCMCinput->fLow/MCMCinput->deltaF);
 	fprintf(stdout,"MaxL = %lf\nReduced chi squared = %lf\n",Live[Nlive-1]->logLikelihood,-Live[Nlive-1]->logLikelihood/Npoints);
 	logZ=mean(logZarray,Nruns);
 	fprintf(stdout,"deltaLmax = %lf\n",Live[Nlive-1]->logLikelihood-logZnoise);
 	double zscore =( -2.0*Live[Nlive-1]->logLikelihood - Npoints) / sqrt(2.0*Npoints);
 	fprintf(stdout,"Z-score = %lf\n",zscore);
-	
 	fclose(fpout);
 	sprintf(outEnd,"%s_B.txt",outfile);
 	fpout=fopen(outEnd,"w");
@@ -345,7 +390,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 	while (i<N || (nreflect==a_cnt && nreflect>0 && nreflect%2==0)){
 		i++;
 		jump_select = gsl_rng_uniform(RNG);
-		if(jump_select<0.1 && MCMCInput->numberDataStreams>1 && XLALMCMCCheckWrapping(sample,"long")!=-1 && XLALMCMCCheckWrapping(sample,"lat")!=-1){
+		if(jump_select<0.1 && MCMCInput->numberDataStreams>1 && XLALMCMCCheckWrapping(sample,"ra")!=-1 && XLALMCMCCheckWrapping(sample,"dec")!=-1){
 			if(MCMCInput->numberDataStreams>1) jump_select = gsl_rng_uniform(RNG);
 			else jump_select=0;
 			if(jump_select>0.5) {
@@ -362,9 +407,13 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 		else 
 		{
 			if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
-			/*else {	if(jump_select<0.3) XLALMCMCJumpSingle(MCMCInput,temp,covM);*/
-			else XLALMCMCJump(MCMCInput,temp,covM);
-			/*}*/
+			else {
+			  /* Check for higher harmonics present */
+			  if((jump_select=gsl_rng_uniform(RNG))<0.1 && MCMCInput->ampOrder!=0)
+			    XLALMCMCJumpHarmonic(MCMCInput,temp);
+			  else /* Otherwise just perform a regular jump */
+			    XLALMCMCJump(MCMCInput,temp,covM);
+			}
 		}
 		/* Evoluate the MH ratio */		
 		MCMCInput->funcPrior(MCMCInput,temp);
