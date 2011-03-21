@@ -1,0 +1,5 @@
+/**
+    \defgroup tools tools
+    \ingroup general
+    \brief This package contains the general purpose LAL tools.
+*/

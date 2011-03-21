@@ -18,7 +18,7 @@
  */
 
 /** \defgroup ExtrapolatePulsarSpins Extrapolate Pulsar Spins and Phase
- *  \ingroup pulsarCommon
+ *  \ingroup pulsarTODO
  *  \author Reinhard Prix
  *  \date $Date$
  *  \brief  Extrapolate the Pulsar spin-paramters
@@ -36,7 +36,7 @@
  *     + {\ddot{f}(\tau_0) \over 2!} \,\Delta\tau^2 + ...
  *  = \sum_{k=0}^s {f^{(k)}(\tau_0) \over k!}\, \Delta\tau^k\,,
  * \f]
- * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f\,,\f]
+ * where \f[\Delta\tau \equiv \tau_1 - \tau_0\f]
  * and therefore generally
  *
  * \f[

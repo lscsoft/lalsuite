@@ -25,8 +25,13 @@
 
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
-
 #include <lal/LALRCSID.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#pragma }
+#endif
+
 NRCSID(SEQUENCEH, "$Id:");
 
 define(`DATATYPE',COMPLEX8)
@@ -69,5 +74,9 @@ define(`DATATYPE',UINT8)
 define(`SQUAREDATATYPE',UINT8)
 include(SequenceH.m4)
 
+#ifdef __cplusplus
+#pragma {
+}
+#endif
 
 #endif  /* _SEQUENCE_H */

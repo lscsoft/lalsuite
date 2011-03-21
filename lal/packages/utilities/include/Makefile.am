@@ -3,7 +3,6 @@ pkginclude_HEADERS = \
 	CoarseGrainFrequencySeries.h \
 	Dirichlet.h \
 	FindRoot.h \
-	FlatMesh.h \
 	GSLSupport.h \
 	Integrate.h \
 	Interpolate.h \

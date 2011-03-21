@@ -194,8 +194,8 @@ XLALNextDopplerSkyPos( PulsarDopplerParams *pos, DopplerSkyScanState *skyScan)
 /** Initialize the Doppler sky-scanner
  */
 void
-InitDopplerSkyScan( LALStatus *status,
-		    DopplerSkyScanState *skyScan, 		/**< [out] the initialized scan-structure */
+InitDopplerSkyScan( LALStatus *status,			/**< pointer to LALStatus structure */
+		    DopplerSkyScanState *skyScan, 	/**< [out] the initialized scan-structure */
 		    const DopplerSkyScanInit *init)	/**< [in] init-params */
 {
   DopplerSkyGrid *node;
@@ -706,15 +706,15 @@ plotSkyGrid (LALStatus *status,
 /** Function for checking if a given point lies inside or outside a given
  *  polygon, which is specified by a list of points in a SkyPositionVector.
  *
- * \par Note1:
+ * \heading{Note1:}
  * 	The list of polygon-points must not close on itself, the last point
  * 	is automatically assumed to be connected to the first
  *
- * \par Alorithm:
+ * \heading{Algorithm:}
  *     Count the number of intersections of rays emanating to the right
  *     from the point with the lines of the polygon: even=> outside, odd=> inside
  *
- * \par Note2:
+ * \heading{Note2:}
  *     we try to get this algorith to count all boundary-points as 'inside'
  *     we do this by counting intersection to the left _AND_ to the right
  *     and consider the point inside if either of those says its inside...
@@ -1395,7 +1395,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
  * "SkyRegion"-string of the form '(a1,d1), (a2,d2),...'
  */
 void
-SkySquare2String (LALStatus *status,
+SkySquare2String (LALStatus *status,	/**< pointer to LALStatus structure */
 		  CHAR **string,	/**< OUT: skyRegion string */
 		  REAL8 Alpha,		/**< longitude of first point */
 		  REAL8 Delta,		/**< latitude of first point */
@@ -1458,10 +1458,10 @@ SkySquare2String (LALStatus *status,
  * NOTE: currently only 1 spindown is supported!
  */
 void
-getGridSpacings( LALStatus *status,
+getGridSpacings( LALStatus *status,			/**< pointer to LALStatus structure */
 		 PulsarDopplerParams *spacings,		/**< OUT: grid-spacings in gridpoint */
 		 PulsarDopplerParams gridpoint,		/**< IN: gridpoint to get spacings for*/
-		 const DopplerSkyScanInit *params)		/**< IN: Doppler-scan parameters */
+		 const DopplerSkyScanInit *params)	/**< IN: Doppler-scan parameters */
 {
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
@@ -1575,7 +1575,7 @@ getGridSpacings( LALStatus *status,
  *  PointsPerDim == 1: DopplerRegion is only one point (randomized within one cell)
  */
 void
-getMCDopplerCube (LALStatus *status,
+getMCDopplerCube (LALStatus *status,		/**< pointer to LALStatus structure */
 		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
 		  PulsarDopplerParams lal_signal, 	/**< signal-position: approximate cube-center */
 		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */

@@ -343,7 +343,7 @@ XLALCreateVOTResourceNode ( const char *type,			/**< [in] Type of the \c RESOURC
 xmlNodePtr
 XLALCreateVOTTableNode ( const char *name,		/**< [in] optional name attribute to assign to this \c TABLE element (may be NULL) */
                          xmlNode *fieldNodeList, 	/**< [in] linked list of \c xmlNodes that are to be assigned as FIELD children */
-                         xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the <DATA> element: TABLEDATA, BINARY or FITS */
+                         xmlNode *dataContentNode 	/**< [in] pointer to xmlNode to be inserted under the \<DATA\> element: TABLEDATA, BINARY or FITS */
                          )
 {
     const char *fn = __func__;
@@ -1232,9 +1232,9 @@ XLALgetXPathToVOTElementAttibute ( const CHAR *resourcePath,	/**< [in] optional 
 
 /** Generate an xpath statement reflecting a VOT "extended" resource path.
  *
- * Note: the 'extResourcePath' may contain unnamed element types prefixed by '$', eg
- * 'resource1.resource2....resourceN.$TABLE', in order to parse element inside <TABLE> under
- * the named <RESOURCE name="resourceN">, within a named <RESOURCE name="resourceN-1"> etc.
+ * Note: the 'extResourcePath' may contain unnamed element types prefixed by '\$', eg
+ * 'resource1.resource2....resourceN.\$TABLE', in order to parse element inside \<TABLE\> under
+ * the named \<RESOURCE name="resourceN"\>, within a named \<RESOURCE name="resourceN-1"\> etc.
  *
  * NOTE: caller needs to XLALFree() the returned string.
  */
@@ -1984,9 +1984,9 @@ XLALVOTsscanfToArray ( VOTABLE_DATATYPE datatype,	/**< [in] atomic dataypte of e
  *
  * \return A "node set" containing all matching xmlNodes at the given "path".
  *
- * Note: the 'extResourcePath' may contain unnamed element types prefixed by '$', eg
- * 'resource1.resource2....resourceN.$TABLE', in order to parse element inside <TABLE> under
- * the named <RESOURCE name="resourceN">, within a named <RESOURCE name="resourceN-1"> etc.
+ * Note: the 'extResourcePath' may contain unnamed element types prefixed by '\$', eg
+ * 'resource1.resource2....resourceN.\$TABLE', in order to parse element inside \<TABLE\> under
+ * the named \<RESOURCE name="resourceN"\>, within a named \<RESOURCE name="resourceN-1"\> etc.
  *
  * \b Important: the caller is responsible to free the returned node-set using xmlXPathFreeNodeSet()
  *

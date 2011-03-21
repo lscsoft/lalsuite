@@ -21,12 +21,10 @@
  * \author Creighton, T. D.
  * \date 2003
  * \file
- * \ingroup PulsarMetric
+ * \ingroup TwoDMesh_h
  * \brief Some metric computation routines suitable for use in LALCreateTwoDMesh()
  *
- * $Id$
- *
- * \par Description
+ * \heading{Description}
  *
  This module contains metric computation routines suitable for passing
  into LALCreateTwoDMesh() via the \a params->getMetric
@@ -60,9 +58,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>
 #include <lal/TwoDMesh.h>
-
+/** \cond DONT_DOXYGEN */
 NRCSID( TWODMESHMETRICSC, "$Id$" );
-
+/** \endcond */
 void
 LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
 {
@@ -130,7 +128,7 @@ LALInterpolateMetricGrid( LALStatus *stat, REAL4 metric[3], REAL4 position[2], v
   INITSTATUS( stat, "LALGetNearestMetric", TWODMESHMETRICSC );
 
   p = (REAL4Grid *)params;
-  /* This function may be called a lot.  Do error checking only in
+   /* This function may be called a lot.  Do error checking only in
      debug mode. */
 #ifndef NDEBUG
   if ( lalDebugLevel ) {

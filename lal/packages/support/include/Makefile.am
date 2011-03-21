@@ -13,8 +13,7 @@ pkginclude_HEADERS = \
 	SegmentsIO.h \
 	StreamInput.h \
 	StreamOutput.h \
-	UserInput.h ConfigFile.h \
-	VeryBasicXMLOutput.h
+	UserInput.h ConfigFile.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

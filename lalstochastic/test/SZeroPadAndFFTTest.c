@@ -227,8 +227,6 @@ main( int argc, char *argv[] )
    UINT4      i;
    REAL8      f;
 
-   REAL4                   *sPtr;
-   COMPLEX8                *cPtr;
 
    const REAL4    testInputDataData[SZEROPADANDFFTTESTC_LENGTH]
                      = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
@@ -392,6 +390,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
+     COMPLEX8                *cPtr;
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALSZeroPadAndFFT(&status, &badOutput, &goodInput, &goodParams);
@@ -420,6 +419,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
+     REAL4                   *sPtr;
      sPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALSZeroPadAndFFT(&status, &goodOutput, &badInput, &goodParams);

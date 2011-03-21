@@ -67,6 +67,10 @@ int XLALBurstInjectSignals(
 	const COMPLEX16FrequencySeries *response
 );
 
+int XLALBurstInjectHNullSignals(
+	REAL8TimeSeries *series,
+	const SimBurst *sim_burst
+);
 
 #ifdef  __cplusplus
 #pragma {

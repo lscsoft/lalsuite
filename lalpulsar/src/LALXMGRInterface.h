@@ -206,15 +206,6 @@ LALXMGRCloseFile (
     );
 
 void
-LALXMGRTimeTitle (
-    LALStatus          *status,
-    CHARVector         *title,
-    LIGOTimeGPS        *startGPS,
-    LIGOTimeGPS        *stopGPS,
-    CHAR               *comment
-    );
-
-void
 LALXMGRCreateGraph (
     LALStatus          *status,
     XMGRGraphVector    *graphVec

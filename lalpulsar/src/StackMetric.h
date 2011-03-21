@@ -18,25 +18,25 @@
 */
 
 /**
+ * \defgroup StackMetric_h StackMetric
  * \author Creighton, T. D.
  * \date 2000 -- 2003
- * \file
  * \ingroup PulsarMetric
- * \brief Provides routines to compute parameter-space metrics for coherent or
- * stacked pulsar searches.
+ * \brief Provides routines to compute parameter-space metrics for coherent or stacked pulsar searches.
  *
- * $Id$
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StackMetric.h>
+ * \endcode
  *
- * \par Description
- *
- This header covers routines that determine the metric
+ This module covers routines that determine the metric
  coefficients for the mismatch function (ambiguity function) on the
  parameter space for a pulsar search.  The assumed search method is
  stacking one or more Fourier power spectra, after some suitable
  demodulation.
 
  The method for determining the parameter metric is discussed in detail
- in Sec.~II of \ref Brady_P2000; we present the key results here in
+ in Sec.\ II of \ref Brady_P2000; we present the key results here in
  brief.  We assume that a model waveform in our search is described by
  an overall frequency scale \f$f_0\f$, and by some modulation about that
  frequency described by ``shape'' parameters
@@ -65,8 +65,10 @@
  is computed from a coherent power spectrum of a time interval \f$\Delta t\f$,
  then the metric components are given simply by the covariances of
  the phase derivatives \f$\partial\phi/\partial\lambda^\alpha\f$ over the
- time interval: \anchor eq_gab_phi
+ time interval:
+ \anchor eq_gab_phi
  \f{equation}
+ \label{eq_gab_phi}
  g_{\alpha\beta}(\mathbf{\lambda}) =
  \left\langle
  \frac{\partial\phi[t;\mathbf{\lambda}]}{\partial\lambda^\alpha}
@@ -97,6 +99,7 @@
  \f$\gamma_{ij}(\vec{\lambda})\f$, where \f$i\f$ and \f$j\f$ run from 1 to \f$n\f$:
  \anchor eq_gij_gab
  \f{equation}
+ \label{eq_gij_gab}
  \gamma_{ij}(\vec{\lambda}) = \left[g_{ij}-\frac{g_{0i}g_{0j}}{g_{00}}
  \right]_{\lambda^0=f_\mathrm{max}} \; .
  \f}
@@ -118,17 +121,19 @@ extern "C" {
 
 NRCSID(STACKMETRICH,"$Id$");
 
-
-/** @{ \name Error conditions */
+/** \name Error conditions */
+/*@{*/
+/** \ingroup StackMetric_h */
 #define STACKMETRICH_ENUL 1
 #define STACKMETRICH_EBAD 2
 
 #define STACKMETRICH_MSGENUL "Null pointer"
 #define STACKMETRICH_MSGEBAD "Bad parameter values"
-/* @} */
+/*@}*/
 
-/** This structure stores and passes parameters for computing a
-    parameter-space metric.  It points to the canonical time function used
+/** \brief This structure stores and passes parameters for computing a parameter-space metric.
+    \ingroup StackMetric_h
+    It points to the canonical time function used
     to compute the metric and to the parameters required by this function.
     In addition, this structure must indicate the timespan over which the
     timing differences accumulate, and whether this accumulation is

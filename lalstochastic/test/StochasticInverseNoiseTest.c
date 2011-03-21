@@ -18,7 +18,7 @@
 */
 
 /************************* <lalVerbatim file="StochasticInverseNoiseTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
+Author: UTB Relativity Group; contact whelan\@phys.utb.edu
 $Id$
 ********************************* </lalVerbatim> */
 
@@ -212,8 +212,6 @@ int main(int argc, char *argv[])
 
   REAL4FrequencySeries     realBadData;
   COMPLEX8FrequencySeries  complexBadData;
-  REAL4                   *sPtr;
-  COMPLEX8                *cPtr;
   LIGOTimeGPS              epoch = {1234,56789};
 
   REAL4FrequencySeries     wNoise;
@@ -448,6 +446,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
+    REAL4                   *sPtr;
     sPtr = realBadData.data->data;
     realBadData.data->data = NULL;
 
@@ -485,6 +484,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
+    COMPLEX8                *cPtr;
     cPtr = complexBadData.data->data;
     complexBadData.data->data = NULL;
 

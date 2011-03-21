@@ -90,7 +90,7 @@ detector at UTC-time \f$t\f$, which depends on the source-position
   \tau (t) = t + { \vec{r}(t)\cdot\vec{n} \over c}\,,
 \f}
 where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$
-is the unit-vector pointing \emph{to} the source.
+is the unit-vector pointing <em>to</em> the source.
 
 This is a standalone "clean-room" implementation using no other
 outside-functions <em>except</em> for LALGPStoLMST1() to calculate

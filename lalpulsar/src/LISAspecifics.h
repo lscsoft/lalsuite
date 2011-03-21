@@ -21,7 +21,7 @@
  * \author Reinhard Prix
  * \date 2006
  * \file
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \brief Header-file defining the API for the LISA-specific functions
  *
  * $Id$

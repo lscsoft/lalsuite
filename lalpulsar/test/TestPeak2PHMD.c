@@ -35,64 +35,45 @@
  * 1.  An author and Id block
  */
 
-/************************************ <lalVerbatim file="TestPeak2PHMDCV">
-Author: Sintes, A. M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M., Krishnan, B.
+\file
+\ingroup PHMD_h
 
-/*
- * 2. Commented block with the documetation of this module
- */
+\heading{Program \ref TestPeak2PHMD.c}
 
+\brief Tests the construction of Partial-Hough-Map-Derivatives (\c phmd)
 
-/* ************************************************ <lalLaTeX>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \ \texttt{TestPeak2PHMD.c}}
-\label{s:TestPeak2PHMD.c}
-Tests the construction of Partial-Hough-Map-Derivatives ({\sc phmd})
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 TestPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
-\end{verbatim}
+\endcode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Description}
 
-%TO BE CHANGED
+\%TO BE CHANGED
 
 This program generates a patch grid, calculates the parameters needed for
-building a {\sc lut}, builds the {\sc lut}, constructs a {\sc phmd} at a
-certain frequency (shifted from the frequency at which the {\sc lut} was built),
- and outputs the {\sc phmd} into a file. The sky patch is set at the south pole,
+building a \c lut, builds the \c lut, constructs a \c phmd at a
+certain frequency (shifted from the frequency at which the \c lut was built),
+ and outputs the \c phmd into a file. The sky patch is set at the south pole,
 no spin-down parameters are assumed for the demodulation and
- every third  peak in the spectrum is selected. The peak-gram frequency interval
- is large enough to ensure compatibility with the {\sc lut} and the frequency of
- the {\sc phmd}. \\
+every third  peak in the spectrum is selected. The peak-gram frequency interval
+is large enough to ensure compatibility with the \c lut and the frequency of the \c phmd.
 
- By default, running this program with no arguments simply tests the subroutines,
-producing an output file called \verb@OutHough.asc@.  All default parameters are set from
-\verb@#define@d constants.\\
+By default, running this program with no arguments simply tests the subroutines,
+producing an output file called <tt>OutHough.asc</tt>.  All default parameters are set from
+<tt>#define</tt>d constants.
 
-The \verb@-d@ option sets the debug level to the specified value
-\verb@debuglevel@.  The \verb@-o@ flag tells the program to print the partial Hough map
-derivative  to the specified data file \verb@outfile@.  The
-\verb@-f@ option sets the intrinsic frequency \verb@f0@ at which build the {\sc
-lut}.   The \verb@-p@ option sets the velocity orientation of the detector
-\verb@alpha@, \verb@delta@ (in radians).
+The <b>-d</b> option sets the debug level to the specified value
+\c debuglevel.  The <b>-o</b> flag tells the program to print the partial Hough map
+derivative  to the specified data file \c outfile.  The
+<b>-f</b> option sets the intrinsic frequency \c f0 at which build the
+<tt>lut</tt>.   The <b>-p</b> option sets the velocity orientation of the detector
+\c alpha, \c delta (in radians).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Exit codes}
-\vspace{0.1in}
-\input{TESTPEAK2PHMDCErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHOUGHPatchGrid()
+\heading{Uses}
+\code
 LALHOUGHParamPLUT()
 LALHOUGHConstructPLUT()
 LALHOUGHPeak2PHMD()
@@ -100,29 +81,13 @@ LALPrintError()
 LALMalloc()
 LALFree()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection*{Notes}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{TestPeak2PHMDCV}}
-
-********************************************   </lalLaTeX> */
-
-
+*/
 
 #include <lal/PHMD.h>
 
-
-
-NRCSID (TESTPEAK2PHMDC, "$Id$");
-
-
-/* Error codes and messages */
-
-/************** <lalErrTable file="TESTPEAK2PHMDCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define TESTPEAK2PHMDC_ENORM 0
 #define TESTPEAK2PHMDC_ESUB  1
 #define TESTPEAK2PHMDC_EARG  2
@@ -134,8 +99,11 @@ NRCSID (TESTPEAK2PHMDC, "$Id$");
 #define TESTPEAK2PHMDC_MSGEARG  "Error parsing arguments"
 #define TESTPEAK2PHMDC_MSGEBAD  "Bad argument values"
 #define TESTPEAK2PHMDC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
+
+/** \cond DONT_DOXYGEN */
+NRCSID (TESTPEAK2PHMDC, "$Id$");
 
 /* Default parameters. */
 
@@ -540,3 +508,5 @@ int main(int argc, char *argv[]){
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/** \endcond */

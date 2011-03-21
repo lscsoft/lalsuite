@@ -17,78 +17,64 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="PtoleMetricTestCV">
-Author: Owen, B. J.,   Jones, D. I.
-$Id$
-********************************************************** </lalVerbatim> */
+/**
+\author Owen, B. J.,   Jones, D. I.
+\file
+\ingroup PtoleMetric_h
+\brief Tests the LALPtoleMetric() function.
 
-/**************************************************************** <lalLaTeX>
+\heading{Program \c PtoleMetricTest}
+\latexonly\label{ss_PtoleMetricTest}\endlatexonly
 
-\subsection{Program \texttt{PtoleMetricTest}}
-\label{ss:PtoleMetricTest}
-
-Tests the \texttt{PtoleMetric()} function.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 PtoleMetricTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This program computes metric components using \texttt{PtoleMetric()}. The
-ordering of the components is $(f_0, \alpha, \delta, f_1, \ldots)$ for the
-unprojected metric, and $(\alpha, \delta, f_1, \ldots)$ for the metric with
-$f_0$ projected out.
+This program computes metric components using LALPtoleMetric(). The
+ordering of the components is \f$(f_0, \alpha, \delta, f_1, \ldots)\f$ for the
+unprojected metric, and \f$(\alpha, \delta, f_1, \ldots)\f$ for the metric with
+\f$f_0\f$ projected out.
 
 With no options, this program displays metric components for a single point
-in parameter space for the default integration time (see the \texttt{-t}
+in parameter space for the default integration time (see the <tt>-t</tt>
 option).
 
-The \texttt{-b} option sets the beginning time of integration to the option
-argument. (Default is $0$ seconds)
+The <tt>-b</tt> option sets the beginning time of integration to the option
+argument. (Default is \f$0\f$ seconds)
 
-The \texttt{-e} option causes the program to showcase error messages when
+The <tt>-e</tt> option causes the program to showcase error messages when
 given bad parameter values, etc.
 
-The \texttt{-m} option sets the mismatch (default is $0.02$).
+The <tt>-m</tt> option sets the mismatch (default is \f$0.02\f$).
 
-The \texttt{-p} option is provided for users who wish to view the
-power mismatch contours provided by the \texttt{-x} option (see below)
+The <tt>-p</tt> option is provided for users who wish to view the
+power mismatch contours provided by the <tt>-x</tt> option (see below)
 but don't have xmgrace installed.  All necessary data is simply
 written to a file ``nongrace.data''; it's probably best to look at the
 code to see the exact format.  The user should then write a small
 script to convert the data into the format appropriate to their
 favorite graphics package.
 
-The \texttt{-t} option sets the duration of integration in seconds. The default
-is $10^5$ seconds, which is chosen because it is about one day but not an
+The <tt>-t</tt> option sets the duration of integration in seconds. The default
+is \f$10^5\f$ seconds, which is chosen because it is about one day but not an
 integer multiple of any astronomically important timescale.
 
-The \texttt{-x} option produces a graph of the 2\% power mismatch
+The <tt>-x</tt> option produces a graph of the 2\% power mismatch
 contours on the sky. Dimensions of the ellipses have been exaggerated
-by a factor of \texttt{MAGNIFY} (specified within the code) for
+by a factor of \c MAGNIFY (specified within the code) for
 legibility. The purpose of the graph is to get a feel for how ellipses
 are varying across parameter space. Note that this option makes a
-system call to the \texttt{xmgrace} program, and will not work if that
+system call to the \c xmgrace program, and will not work if that
 program is not installed on your system.
 
+\heading{Algorithm}
 
-\subsubsection*{Exit Codes}
-************************************************ </lalLaTeX><lalErrTable> */
-#define PTOLEMETRICTESTC_EMEM 1
-#define PTOLEMETRICTESTC_ESUB 2
-#define PTOLEMETRICTESTC_ESYS 3
+\heading{Uses}
 
-#define PTOLEMETRICTESTC_MSGEMEM "memory (de)allocation error"
-#define PTOLEMETRICTESTC_MSGESUB "subroutine failed"
-#define PTOLEMETRICTESTC_MSGESYS "system call failed"
-/************************************************** </lalErrTable><lalLaTeX>
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
+\code
 lalDebugLevel
 LALCheckMemoryLeaks()
 LALCreateVector()
@@ -98,17 +84,25 @@ LALDDestroyVector()
 LALProjectMetric()
 LALPtoleMetric()
 xmgrace
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
 The graph shows that the patches' overall area is independent of right
 ascension but that those near the equator rotate, which adds a new
 complication to the tiling.
 
-\vfill{\footnotesize\input{PtoleMetricTestCV}}
+*/
 
-************************************************************* </lalLaTeX> */
+/** \name Error Codes */ /*@{*/
+#define PTOLEMETRICTESTC_EMEM 1
+#define PTOLEMETRICTESTC_ESUB 2
+#define PTOLEMETRICTESTC_ESYS 3
+
+#define PTOLEMETRICTESTC_MSGEMEM "memory (de)allocation error"
+#define PTOLEMETRICTESTC_MSGESUB "subroutine failed"
+#define PTOLEMETRICTESTC_MSGESYS "system call failed"
+/*@}*/
 
 #include <math.h>
 #include <stdio.h>
@@ -122,8 +116,9 @@ complication to the tiling.
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
-extern char *optarg;
 
+/** \cond DONT_DOXYGEN */
+extern char *optarg;
 NRCSID( PTOLEMETRICTESTC, "$Id" );
 
 #define DEFAULT_DURATION 1e5 /* seconds */
@@ -441,3 +436,5 @@ int main( int argc, char *argv[] ) {
   LALCheckMemoryLeaks();
   return 0;
 } /* main() */
+
+/** \endcond */

@@ -129,24 +129,12 @@ h & = & \arctan\!2[\cos a\sin(-A), \sin a\cos\phi -
 As explained in <tt>CelestialCoordinates.c</tt>, the function
 \f$\arctan\!2(y,x)\f$ returns the argument of the complex number \f$x+iy\f$.
 
-\image html inject_geodetic.png "Fig. 1: The difference between geodetic and geocentric latitude."
-\latexonly
-\newpage
-\begin{wrapfigure}{r}{0.35\textwidth}
-\vspace{-2ex}
-\begin{center}
-\resizebox{0.3\textwidth}{!}{\includegraphics{inject_geodetic}} \\
-\parbox{0.3\textwidth}{\caption{\label{fig:geodetic} The difference
-between geodetic and geocentric latitude.}}
-\end{center}
-\vspace{-2ex}
-\end{wrapfigure}
-\paragraph{Geocentric coordinates:}
-\endlatexonly \htmlonly
-<b>Geocentric coordinates:</b>\endhtmlonly
-As shown in
-\latexonly Fig.~\ref{fig:geodetic},\endlatexonly
-\htmlonly Fig. 1,\endhtmlonly
+\wrapfig{r,0.35\textwidth,fig_geodetic}
+\image html  inject_geodetic.png "The difference between geodetic and geocentric latitude."
+\image latex inject_geodetic.eps "The difference between geodetic and geocentric latitude." width=0.3\textwidth
+\latexonly\textbf{Geocentric coordinates:}\endlatexonly
+\htmlonly      <b>Geocentric coordinates:</b>\endhtmlonly
+As shown in Fig.\figref{fig_geodetic},
 the ellipticity of the Earth means that the
 vertical axis of a point on the Earth's surface does not pass through
 the geometric centre of the Earth.  This means that the geodetic

@@ -17,71 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="GetEarthTimesCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{GetEarthTimes.c}}
-\label{ss:GetEarthTimes.c}
-
-Computes the next sidereal midnight and autumnal equinox.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GetEarthTimesCP}
-\idx{LALGetEarthTimes()}
-
-\subsubsection*{Description}
-
-This function takes a GPS time from the parameter field
-\verb@times->epoch@ and uses it to assign the fields
-\verb@times->tAutumn@ and \verb@times->tMidnight@, which are
-\verb@REAL8@ representations of the time in seconds from
-\verb@times->epoch@ to the next autumnal equinox or sidereal midnight,
-respectively.  This routine was written under the \verb@PulsarTimes.h@
-header because these quantities are vital for performing pulsar
-timing: they characterize the Earth's orbital and rotational phase,
-and hence the Dopple modulation on an incoming signal.  See the
-\verb@PulsarTimes.h@ header for more information about the
-\verb@PulsarTimesParamStruc@ structure.
-
-\subsubsection*{Algorithm}
-
-The routine first computes the Greenwich mean sidereal time at
-\verb@times->epoch@ using \verb@LALGPStoMST1()@.  The next sidereal
-midnight (at the Prime Meridian) is simply 86400 seconds minus that
-sidereal time.
-
-Next the routine computes the time of the next autumnal equinox.  The
-module contains an internal list of GPS times of autumnal equinoxes
-from 1992 to 2020, given to the nearest minute; this is certainly
-enough accuracy for use with the routines in \verb@TBaryPtolemaic()@.
-If the specified time \verb@times->epoch@ is after the 2020 autumnal
-equinox, or more than a year before the 1992 equinox, then the next
-equinox is extrapolated assuming exact periods of length
-\verb@LAL_YRSID_SI@.
-
-When assigning the fields of \verb@*times@, it is up to the user to
-choose a \verb@times->epoch@ that is close to the actual times that
-are being considered.  This is important, since many computations use
-a \verb@REAL8@ time variable whose origin is the time
-\verb@times->epoch@.  If this is too far from the times of interest,
-the \verb@REAL8@ time variables may suffer loss of precision.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-XLALGreenwichMeanSiderealTime()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{GetEarthTimesCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -90,11 +25,12 @@ XLALGreenwichMeanSiderealTime()
 #include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID( GETEARTHTIMESC, "$Id$" );
+/** \endcond */
 
-
-/* Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
 #define NEQUINOXES 29
+/** Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
 static const INT4 equinoxes[NEQUINOXES] = {
   401222588, 432778929, 464336350, 495893590, 527450411, 559007772,
   590564232, 622121473, 653678833, 685235053, 716792113, 748349233,
@@ -104,10 +40,55 @@ static const INT4 equinoxes[NEQUINOXES] = {
   1284816613 };
 
 
-/* <lalVerbatim file="GetEarthTimesCP"> */
+/** \file
+    \author Creighton, T. D.
+    \ingroup PulsarTimes_h
+    \brief Computes the next sidereal midnight and autumnal equinox.
+
+This function takes a GPS time from the parameter field
+<tt>times->epoch</tt> and uses it to assign the fields
+<tt>times->tAutumn</tt> and <tt>times->tMidnight</tt>, which are
+REAL8 representations of the time in seconds from
+<tt>times->epoch</tt> to the next autumnal equinox or sidereal midnight,
+respectively.  This routine was written under the \ref PulsarTimes_h
+module because these quantities are vital for performing pulsar
+timing: they characterize the Earth's orbital and rotational phase,
+and hence the Doppler modulation on an incoming signal.  See
+\ref PulsarTimes_h for more information about the
+PulsarTimesParamStruc structure.
+
+\heading{Algorithm}
+
+The routine first computes the Greenwich mean sidereal time at
+<tt>times->epoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
+midnight (at the Prime Meridian) is simply 86400 seconds minus that
+sidereal time.
+
+Next the routine computes the time of the next autumnal equinox.  The
+module contains an internal list of GPS times of autumnal equinoxes
+from 1992 to 2020, given to the nearest minute; this is certainly
+enough accuracy for use with the routines in LALTBaryPtolemaic().
+If the specified time <tt>times->epoch</tt> is after the 2020 autumnal
+equinox, or more than a year before the 1992 equinox, then the next
+equinox is extrapolated assuming exact periods of length
+\ref LAL_YRSID_SI.
+
+When assigning the fields of <tt>*times</tt>, it is up to the user to
+choose a <tt>times->epoch</tt> that is close to the actual times that
+are being considered.  This is important, since many computations use
+a REAL8 time variable whose origin is the time
+<tt>times->epoch</tt>.  If this is too far from the times of interest,
+the REAL8 time variables may suffer loss of precision.
+
+\heading{Uses}
+\code
+XLALGreenwichMeanSiderealTime()
+\endcode
+*/ /*@{*/
+
 void
 LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
-{ /* </lalVerbatim> */
+{
   LIGOTimeGPS epoch;   /* local copy of times->epoch */
   REAL8 t;             /* time as a floating-point number (s) */
 
@@ -149,3 +130,4 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   DETATCHSTATUSPTR( stat );
   RETURN(stat);
 }
+/*@}*/

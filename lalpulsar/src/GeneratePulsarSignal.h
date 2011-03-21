@@ -24,7 +24,7 @@
  * \brief Pulsar signal-generation routines for hardware- and software-injections.
  *
 
- * \par Description
+ * \heading{Description}
  *
  * - The main function LALGeneratePulsarSignal() generates a fake
  * pulsar-signal, either for an isolated or a binary pulsar. It returns a
@@ -48,7 +48,7 @@
  * PulsarSignalParams structure.
  *
  *
- * \par Algorithm:
+ * \heading{Algorithm}
  *
  * LALGeneratePulsarSignal() is basically a wrapper for the two
  * LAL-functions GenerateSpinOrbitCW() to produce the source-signal,
@@ -81,7 +81,7 @@
  *
  *
  *
- * \par Use of LALFastGeneratePulsarSFTs()
+ * \heading{Use of LALFastGeneratePulsarSFTs()}
  *
 The functions LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
 use approximate analytic formulas to generate SFTs.  This should be significantly
@@ -155,7 +155,7 @@ dominates and can be Taylor expanded to give:
 Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
 \f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.
 
-\par Example pseudocode
+\heading{Example pseudocode}
 
 The structs used by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs
 are given in previous sections, and make use of those used by
@@ -188,7 +188,7 @@ loop over sky positions {
 
 \endcode
 
-\par Notes on LALFastGeneratePulsarSFTs
+\heading{Notes on LALFastGeneratePulsarSFTs()}
 
 -#  If \c *outputSFTs sent to LALFastGeneratePulsarSFTs() is \c NULL then
 LALFastGeneratePulsarSFTs() allocates memory for the output SFTs; otherwise it assumes

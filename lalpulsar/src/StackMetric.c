@@ -17,19 +17,23 @@
 *  MA  02111-1307  USA
 */
 
+#include<math.h>
+#include<lal/LALStdlib.h>
+#include<lal/AVFactories.h>
+#include<lal/StackMetric.h>
+
+NRCSID(STACKMETRICC,"$Id$");
+
 /**
+ * \brief Computes the parameter space metric for a coherent pulsar search.
  * \author Creighton, T. D.
  * \date 2000, 2001
- * \file
- * \ingroup PulsarMetric
- * \brief Computes the parameter space metric for a coherent pulsar search.
+ * \ingroup StackMetric_h
  *
- * $Id$
- *
- \par Description
+ \heading{Description}
 
  This function computes the metric \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, as
- discussed in the header StackMetric.h, under the assumption
+ discussed in \ref StackMetric_h, under the assumption
  that the detected power is constructed from the incoherent sum of \f$N\f$
  separate power spectrum, each derived from separate time intervals of
  length \f$\Delta t\f$.  The indecies \f$\alpha\f$ and \f$\beta\f$ are assumed to
@@ -40,15 +44,15 @@
  as the LALCoherentMetric() function.  Thus, the argument
  \a *metric is a vector of length \f$(n+1)(n+2)/2\f$ storing all
  non-redundant coefficients of \f$g_{\alpha\beta}\f$, or twice this length
- if \a params->errors is nonzero.  See CoherentMetric.c for
+ if \a params->errors is nonzero.  See LALCoherentMetric() for
  the indexing scheme.  The argument \a lambda is another vector,
  of length \f$n+1\f$, storing the components of
  \f$\mathbf{\lambda}=(\lambda^0,\ldots,\lambda^n)\f$ for the parameter space
  point at which the metric is being evaluated.  The argument
  \a *params stores the remaining parameters for computing the
- metric, as given in the Structures section of StackMetric.h.
+ metric, as given in the Structures section of \ref StackMetric_h.
 
- \par Algorithm
+ \heading{Algorithm}
 
  Most of what this routine does is set up arguments to be passed to the
  function LALCoherentMetric().  Each metric component in the stack
@@ -66,16 +70,7 @@
  s^{(k)}_{\alpha\beta} \; .
  \f]
  There are no clever tricks involved in any of these computations.
-
 */
-
-#include<math.h>
-#include<lal/LALStdlib.h>
-#include<lal/AVFactories.h>
-#include<lal/StackMetric.h>
-
-NRCSID(STACKMETRICC,"$Id$");
-
 void
 LALStackMetric( LALStatus        *stat,
 		REAL8Vector      *metric,

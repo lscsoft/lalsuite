@@ -22,7 +22,7 @@
  * \author Christine Chung, Badri Krishnan, John Whelan
  * \date 2008
  * \file
- * \ingroup pulsar
+ * \ingroup pulsarTODO
  * \brief Header-file for LAL routines for CW cross-correlation searches
  *
  * $Id$
@@ -140,22 +140,22 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 
   typedef struct tagSFTListElement {
     SFTtype sft;
-    struct SFTListElement *nextSFT;
+    struct tagSFTListElement *nextSFT;
   } SFTListElement;
 
   typedef struct tagPSDListElement {
     REAL8FrequencySeries psd;
-    struct PSDListElement *nextPSD;
+    struct tagPSDListElement *nextPSD;
   } PSDListElement;
 
   typedef struct tagREAL8ListElement {
     REAL8 val;
-    struct REAL8ListElement *nextVal;
+    struct tagREAL8ListElement *nextVal;
   } REAL8ListElement;
 
-  typedef struct {
+  typedef struct tagCrossCorrBeamFnListElement {
     CrossCorrBeamFn beamfn;
-    struct CrossCorrBeamFnListElement *nextBeamfn;
+    struct tagCrossCorrBeamFnListElement *nextBeamfn;
   } CrossCorrBeamFnListElement;
 /*
  *  Functions Declarations (i.e., prototypes).

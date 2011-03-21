@@ -91,8 +91,8 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
     XLAL_ERROR("Tspan must be strictly positive", XLAL_EINVAL);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_FAILURE);
   gsl_matrix_set_identity(norm_metric);
   gsl_vector_set_all(norm_to_real, 1.0);
 
@@ -184,7 +184,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
     XLAL_ERROR("'tiling->dimensions' is too small", XLAL_EINVAL);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);
   gsl_matrix_set_zero(data);
 
   /* Set frequency bounds */

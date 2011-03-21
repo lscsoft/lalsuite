@@ -17,17 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/**
+#include<math.h>
+#include<lal/LALStdlib.h>
+#include<lal/StackMetric.h>
+
+NRCSID(PROJECTMETRICC,"$Id$");
+
+
+/**\brief Project out the zeroth dimension of a metric.
  * \author Creighton, T. D.
  * \date 2000
- * \file
- * \ingroup PulsarMetric
- * \brief Project out the zeroth dimension of a metric.
- *
- * $Id$
- *
+ * \ingroup StackMetric_h
 
- \par Description
+ \heading{Description}
 
  This function takes a metric \f$g_{\alpha\beta}\f$, where
  \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
@@ -35,11 +37,11 @@
  header StackMetric.h.
 
 The argument \a *metric stores the metric components in the manner
-used by the functions CoherentMetric() and
-StackMetric(), and \a errors indicates whether error
+used by the functions LALCoherentMetric() and
+LALStackMetric(), and \a errors indicates whether error
 estimates are included in \a *metric.  Thus \a *metric is a
 vector of length \f$(n+1)(n+2)/2\f$ if \a errors is zero, or of length
-\f$(n+1)(n+2)\f$ if \a errors is nonzero; see CoherentMetric.c
+\f$(n+1)(n+2)\f$ if \a errors is nonzero; see LALCoherentMetric()
 for the indexing scheme.
 
 Upon return, \a *metric stores the components of \f$\gamma_{ij}\f$ in
@@ -47,10 +49,10 @@ the same manner as above, with the physically meaningless components
 \f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
 identically to zero.
 
-\par Algorithm
+\heading{Algorithm}
 
-The function simply implements \ref eq_gij_gab "Eq. (2)" in header
-StackMetric.h.  The formula used to convert uncertainties
+The function simply implements Eq.\eqref{eq_gij_gab} in
+\ref StackMetric_h.  The formula used to convert uncertainties
 \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
 uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:
 \f[
@@ -77,22 +79,13 @@ orthogonal to the \f$\lambda^0\f$ axis.  In order for \f$\gamma_{ij}\f$ to
 measure the \em maximum distance between points \f$\vec\lambda\f$, it
 is important to evaluate \f$g_{\alpha\beta}\f$ at the value of \f$\lambda^0\f$
 that gives the largest possible separations.  For the pulsar search
-formalism discussed in the header StackMetric.h, this is always
+formalism discussed in \ref StackMetric_h, this is always
 achieved by choosing the largest value of \f$\lambda^0=f_\mathrm{max}\f$
 that is to be covered in the search.
-
 */
-
-#include<math.h>
-#include<lal/LALStdlib.h>
-#include<lal/StackMetric.h>
-
-NRCSID(PROJECTMETRICC,"$Id$");
-
-/* <lalVerbatim file="ProjectMetricCP"> */
 void
 LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
-{ /* </lalVerbatim> */
+{
   UINT4 s;     /* The number of parameters before projection. */
   UINT4 i, j;  /* Indecies. */
   REAL8 *data; /* The metric data array. */

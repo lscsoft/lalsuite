@@ -250,11 +250,11 @@ int XLALAddFlatLatticeTilingBound(
 
   /* (Re)Allocate memory */
   if (!tiling->bound_map) {
-    ALLOC_GSL_VECTOR_INT(tiling->bound_map, n, XLAL_ERROR);
+    ALLOC_GSL_VECTOR_INT(tiling->bound_map, n, XLAL_FAILURE);
     gsl_vector_int_set_all(tiling->bound_map, -1);
   }
   if (!tiling->bound_point)
-    ALLOC_GSL_VECTOR(tiling->bound_point, n, XLAL_ERROR);
+    ALLOC_GSL_VECTOR(tiling->bound_point, n, XLAL_FAILURE);
   if (NULL == (tiling->bounds = (FlatLatticeTilingBound**)XLALRealloc(tiling->bounds, ++tiling->num_bounds * sizeof(FlatLatticeTilingBound*))))
     XLAL_ERROR("Could not (re)allocate 'tiling->bounds'", XLAL_ENOMEM);
   if (NULL == (bound = (tiling->bounds[tiling->num_bounds - 1] = CreateFlatLatticeTilingBound())))
@@ -393,13 +393,13 @@ int XLALSetFlatLatticeTilingMetric(
   }
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(tiling->metric,          n, n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->real_scale,         n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->real_offset,        n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->curr_point,         n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->curr_lower,         n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->curr_upper,         n, XLAL_ERROR);
-  ALLOC_GSL_VECTOR(tiling->current,            n, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(tiling->metric,          n, n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->real_scale,         n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->real_offset,        n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->curr_point,         n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->curr_lower,         n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->curr_upper,         n, XLAL_FAILURE);
+  ALLOC_GSL_VECTOR(tiling->current,            n, XLAL_FAILURE);
 
   /* Initialise normalised to real conversion */
   gsl_vector_set_all(tiling->real_scale, 1.0);
@@ -491,11 +491,11 @@ static int UpdateFlatLatticeTilingSubspace(
   if ((r = tiling->curr_subspace->dimensions) > 0) {
 
     /* Allocate memory */
-    ALLOC_GSL_MATRIX(metric,                           r, r, XLAL_ERROR);
-    ALLOC_GSL_MATRIX(orth_directions,                  r, r, XLAL_ERROR);
-    ALLOC_GSL_MATRIX(increment,                        r, r, XLAL_ERROR);
-    ALLOC_GSL_VECTOR(tiling->curr_subspace->padding,      n, XLAL_ERROR);
-    ALLOC_GSL_MATRIX(tiling->curr_subspace->increment, n, n, XLAL_ERROR);
+    ALLOC_GSL_MATRIX(metric,                           r, r, XLAL_FAILURE);
+    ALLOC_GSL_MATRIX(orth_directions,                  r, r, XLAL_FAILURE);
+    ALLOC_GSL_MATRIX(increment,                        r, r, XLAL_FAILURE);
+    ALLOC_GSL_VECTOR(tiling->curr_subspace->padding,      n, XLAL_FAILURE);
+    ALLOC_GSL_MATRIX(tiling->curr_subspace->increment, n, n, XLAL_FAILURE);
 
     /* Copy tiled dimensions of the metric and orthogonal directions */
     for (i = 0, ii = 0; i < n; ++i) {
@@ -804,7 +804,7 @@ int XLALRandomPointInFlatLatticeParamSpace(
     *metric_dist = 0.0;
 
     /* Allocate memory */
-    ALLOC_GSL_VECTOR(diff, n, XLAL_ERROR);
+    ALLOC_GSL_VECTOR(diff, n, XLAL_FAILURE);
 
     /* Calculate difference between random and other point */
     gsl_vector_memcpy(diff, point);
@@ -858,10 +858,10 @@ gsl_matrix* XLALMetricEllipsePrincipalAxes(
     XLAL_ERROR_NULL("'metric' is not square", XLAL_ESIZE);
 
   /* Allocate memory */
-  ALLOC_GSL_1D(eigen_symmv, eig_wksp,    n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(temp_matrix,       n, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_VECTOR(temp_vector,          n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(eig_vec,           n, n, XLAL_ERROR_NULL);
+  ALLOC_GSL_1D(eigen_symmv, eig_wksp,    n, NULL);
+  ALLOC_GSL_MATRIX(temp_matrix,       n, n, NULL);
+  ALLOC_GSL_VECTOR(temp_vector,          n, NULL);
+  ALLOC_GSL_MATRIX(eig_vec,           n, n, NULL);
 
   /* Calculate the eigenvector of the metric */
   gsl_matrix_memcpy(temp_matrix, metric);
@@ -914,10 +914,10 @@ gsl_vector *XLALMetricEllipseBoundingBox(
     XLAL_ERROR_NULL("'metric' is not square", XLAL_ESIZE);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(LU_decomp,    n, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_PERMUTATION(LU_perm,    n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(inverse,      n, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_VECTOR(bound_box,       n, XLAL_ERROR_NULL);
+  ALLOC_GSL_MATRIX(LU_decomp,    n, n, NULL);
+  ALLOC_GSL_PERMUTATION(LU_perm,    n, NULL);
+  ALLOC_GSL_MATRIX(inverse,      n, n, NULL);
+  ALLOC_GSL_VECTOR(bound_box,       n, NULL);
 
   /* Compute metric inverse */
   gsl_matrix_memcpy(LU_decomp, metric);
@@ -960,7 +960,7 @@ int XLALOrthonormaliseWRTMetric(
     XLAL_ERROR("'matrix' is not the same size as 'metric'", XLAL_ESIZE);
 
   /* Allocate */
-  ALLOC_GSL_VECTOR(temp, n, XLAL_ERROR);
+  ALLOC_GSL_VECTOR(temp, n, XLAL_FAILURE);
 
   /* Orthonormalise the columns of the matrix using numerically stabilised Gram-Schmidt */
   for (i = n - 1; i >= 0; --i) {
@@ -1023,15 +1023,15 @@ gsl_matrix *XLALSquareLowerTriangularLatticeGenerator(
     XLAL_ERROR_NULL("'generator' must have number of rows >= number of columns", XLAL_ESIZE);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(QR_decomp, m, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_VECTOR(QR_tau,       n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(Q,         m, m, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(R,         m, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(perm_sign, n, m, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(left,      n, m, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(right,     n, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(temp,      m, n, XLAL_ERROR_NULL);
-  ALLOC_GSL_MATRIX(result,    n, n, XLAL_ERROR_NULL);
+  ALLOC_GSL_MATRIX(QR_decomp, m, n, NULL);
+  ALLOC_GSL_VECTOR(QR_tau,       n, NULL);
+  ALLOC_GSL_MATRIX(Q,         m, m, NULL);
+  ALLOC_GSL_MATRIX(R,         m, n, NULL);
+  ALLOC_GSL_MATRIX(perm_sign, n, m, NULL);
+  ALLOC_GSL_MATRIX(left,      n, m, NULL);
+  ALLOC_GSL_MATRIX(right,     n, n, NULL);
+  ALLOC_GSL_MATRIX(temp,      m, n, NULL);
+  ALLOC_GSL_MATRIX(result,    n, n, NULL);
 
   /* Find the QR decomposition of the generator */
   gsl_matrix_memcpy(QR_decomp, generator);
@@ -1105,8 +1105,8 @@ int XLALNormaliseLatticeGenerator(
     XLAL_ERROR("'generator' is not square", XLAL_ESIZE);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(LU_decomp, n, n, XLAL_ERROR);
-  ALLOC_GSL_PERMUTATION(LU_perm, n, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(LU_decomp, n, n, XLAL_FAILURE);
+  ALLOC_GSL_PERMUTATION(LU_perm, n, XLAL_FAILURE);
 
   /* Compute generator LU decomposition */
   gsl_matrix_memcpy(LU_decomp, generator);
@@ -1138,7 +1138,7 @@ static int FlatTilingCubicLatticeGenerator(INT4 dimensions, gsl_matrix** generat
   const int r = dimensions;
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(*generator, r, r, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(*generator, r, r, XLAL_FAILURE);
 
   /* Create generator */
   gsl_matrix_set_identity(*generator);
@@ -1171,7 +1171,7 @@ static int FlatTilingAnstarLatticeGenerator(INT4 dimensions, gsl_matrix** genera
   const int r = dimensions;
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(*generator, r + 1, r, XLAL_ERROR);
+  ALLOC_GSL_MATRIX(*generator, r + 1, r, XLAL_FAILURE);
 
   /* Create generator in (r + 1) space */
   gsl_matrix_set_all(*generator, 0.0);
@@ -1240,7 +1240,7 @@ int XLALAddFlatLatticeTilingConstantBound(
     XLAL_ERROR("'lower' must be less than or equal to 'upper'", XLAL_EINVAL);
 
   /* Allocate memory */
-  ALLOC_GSL_VECTOR(data, 2, XLAL_ERROR);
+  ALLOC_GSL_VECTOR(data, 2, XLAL_FAILURE);
 
   /* Set bounds data */
   gsl_vector_set(data, 0, lower);

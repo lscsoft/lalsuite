@@ -17,23 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SnglBurstUtils.c
- *
- * Author: Brown, D. A.  Brady, P. R. Ray Majumder, S. K. and Cannon, K. C.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- */
-
-#if 0
-<lalVerbatim file="SnglBurstUtilsCV">
-Author: Brown, D. A. Brady, P. R. Ray Majumder, S. K and Cannon, K. C.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <string.h>
 #include <lal/LIGOMetadataTables.h>
@@ -41,43 +24,8 @@ $Id$
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
+
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
-
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{SnglBurstUtils.c}}
-
-\noindent Blah.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SnglBurstUtilsCP}
-\idx{XLALSortSnglBurst()}
-\idx{XLALCompareSnglBurstByStartTime()}
-\idx{XLALCompareSnglBurstByLowFreq()}
-\idx{XLALCompareSnglBurstByStartTimeAndLowFreq()}
-\idx{XLALCompareSimBurstAndSnglBurst()}
-\idx{XLALClusterSnglBurstTable()}
-
-\subsubsection*{Description}
-
-\noindent Blah.
-
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent None.
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{SnglBurstUtilsCV}}
-
-</lalLaTeX>
-#endif
 
 
 /*
@@ -85,21 +33,21 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
  */
 
 
-static INT8 start_time(const SnglBurst *x)
+static INT8 int8_start_time(const SnglBurst *x)
 {
-	return(XLALGPSToINT8NS(&x->start_time));
+	return XLALGPSToINT8NS(&x->start_time);
 }
 
 
-static INT8 peak_time(const SnglBurst *x)
+static INT8 int8_peak_time(const SnglBurst *x)
 {
-	return(XLALGPSToINT8NS(&x->peak_time));
+	return XLALGPSToINT8NS(&x->peak_time);
 }
 
 
 static REAL4 lo_freq(const SnglBurst *x)
 {
-	return(x->central_freq - x->bandwidth / 2);
+	return x->central_freq - x->bandwidth / 2;
 }
 
 
@@ -108,9 +56,7 @@ static REAL4 lo_freq(const SnglBurst *x)
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALDestroySnglBurst(SnglBurst *event)
-/* </lalVerbatim> */
 {
 	XLALFree(event);
 }
@@ -154,32 +100,32 @@ long XLALSnglBurstAssignIDs(
 }
 
 
-/*
+/**
+ * Compute the length of a linked list of SnglBurst objects.
+ */
+
+
+int XLALSnglBurstTableLength(SnglBurst *head)
+{
+	int length;
+
+	for(length = 0; head; head = head->next)
+		length++;
+
+	return length;
+}
+
+
+/**
  * Sort a list of SnglBurst events into increasing order according to the
  * supplied comparison function.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
-int XLALSnglBurstTableLength(SnglBurst *head)
-/* </lalVerbatim> */
-{
-	int length;
-
-	/* count the number of events in the list */
-	for(length = 0; head; head = head->next)
-		length++;
-
-	return(length);
-}
-
-
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 SnglBurst **XLALSortSnglBurst(
 	SnglBurst **head,
 	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)
 )
-/* </lalVerbatim> */
 {
 	int i;
 	int length;
@@ -216,67 +162,61 @@ SnglBurst **XLALSortSnglBurst(
 }
 
 
-/*
+/**
  * Compare the start times of two SnglBurst events.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByStartTime(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	INT8 ta, tb;
 
-	ta = start_time(*a);
-	tb = start_time(*b);
+	ta = int8_start_time(*a);
+	tb = int8_start_time(*b);
 
 	if(ta > tb)
-		return(1);
+		return 1;
 	if(ta < tb)
-		return(-1);
-	return(0);
+		return -1;
+	return 0;
 }
 
 
-/*
+/**
  * Compare two sngl_burst events by their peak times, with no slack.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByExactPeakTime(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	INT8 ta, tb;
 
-	ta = peak_time(*a);
-	tb = peak_time(*b);
+	ta = int8_peak_time(*a);
+	tb = int8_peak_time(*b);
 
 	if(ta > tb)
-		return(1);
+		return 1;
 	if(ta < tb)
-		return(-1);
-	return(0);
+		return -1;
+	return 0;
 }
 
 
-/*
+/**
  * Compare the SNRs of two SnglBurst events.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstBySNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	REAL4 snra = (*a)->snr;
 	REAL4 snrb = (*b)->snr;
@@ -289,17 +229,15 @@ int XLALCompareSnglBurstBySNR(
 }
 
 
-/*
+/**
  * Compare the peak times and SNRs of two SnglBurst events.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	int result;
 
@@ -307,21 +245,19 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 	if(!result)
 		result = XLALCompareSnglBurstBySNR(a, b);
 
-	return(result);
+	return result;
 }
 
 
-/*
+/**
  * Compare the low frequency limits of two SnglBurst events.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByLowFreq(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	REAL4 flowa, flowb;
 
@@ -329,53 +265,49 @@ int XLALCompareSnglBurstByLowFreq(
 	flowb = lo_freq(*b);
 
 	if(flowa > flowb)
-		return(1);
+		return 1;
 	if(flowa < flowb)
-		return(-1);
-	return(0);
+		return -1;
+	return 0;
 }
 
 
-/*
+/**
  * Compare two events first by start time, then by lowest frequency to break
  * ties.
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int XLALCompareSnglBurstByStartTimeAndLowFreq(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
 )
-/* </lalVerbatim> */
 {
 	int result;
 
 	result = XLALCompareSnglBurstByStartTime(a, b);
 	if(!result)
 		result = XLALCompareSnglBurstByLowFreq(a, b);
-	return(result);
+	return result;
 }
 
 
-/*
+/**
  * cluster events a and b, storing result in a; takes one with largest snr
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALStringBurstCluster(
 	SnglBurst *a,
 	const SnglBurst *b
 )
-/* </lalVerbatim> */
 {
 	if(b->snr > a->snr)
 		*a = *b;
 }
 
 
-/*
+/**
  * Recursively cluster a linked list of SnglBurst events until the list
  * stops changing.  testfunc() should return 0 if the two given events are to
  * be clustered.  If bailoutfunc() is provided (not NULL), then testfunc() will
@@ -388,14 +320,12 @@ void XLALStringBurstCluster(
  */
 
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALClusterSnglBurstTable (
 	SnglBurst **list,
 	int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
 	int (*testfunc)(const SnglBurst * const *, const SnglBurst * const *),
 	void (*clusterfunc)(SnglBurst *, const SnglBurst *)
 )
-/* </lalVerbatim> */
 {
 	int did_cluster;
 	SnglBurst *a, *b, *prev;
@@ -513,6 +443,91 @@ void XLALDestroySimBurstTable(SimBurst *head)
 		XLALDestroySimBurst(head);
 		head = next;
 	}
+}
+
+
+/**
+ * Compare the geocentre times of two SimBurst events.
+ */
+
+
+int XLALCompareSimBurstByGeocentTimeGPS(
+	const SimBurst * const *a,
+	const SimBurst * const *b
+)
+{
+	INT8 ta, tb;
+
+	ta = XLALGPSToINT8NS(&(*a)->time_geocent_gps);
+	tb = XLALGPSToINT8NS(&(*b)->time_geocent_gps);
+
+	if(ta > tb)
+		return 1;
+	if(ta < tb)
+		return -1;
+	return 0;
+}
+
+
+/**
+ * Compute the length of a linked list of SimBurst objects.
+ */
+
+
+int XLALSimBurstTableLength(SimBurst *head)
+{
+	int length;
+
+	for(length = 0; head; head = head->next)
+		length++;
+
+	return length ;
+}
+
+
+/**
+ * Sort a list of SimBurst events into increasing order according to the
+ * supplied comparison function.
+ */
+
+
+SimBurst **XLALSortSimBurst(
+	SimBurst **head,
+	int (*comparefunc)(const SimBurst * const *, const SimBurst * const *)
+)
+{
+	int i;
+	int length;
+	SimBurst *event;
+	SimBurst **array;
+	SimBurst **next;
+
+	/* empty list --> no-op */
+	if(!*head)
+		return head;
+
+	/* construct an array of pointers into the list */
+	length = XLALSimBurstTableLength(*head);
+	array = XLALCalloc(length, sizeof(*array));
+	if(!array)
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+	for(i = 0, event = *head; event; event = event->next)
+		array[i++] = event;
+
+	/* sort the array using the specified function */
+	qsort(array, length, sizeof(*array), (int(*)(const void *, const void *)) comparefunc);
+
+	/* re-link the list according to the sorted array */
+	next = head;
+	for(i = 0; i < length; i++, next = &(*next)->next)
+		*next = array[i];
+	*next = NULL;
+
+	/* free the array */
+	XLALFree(array);
+
+	/* success */
+	return head;
 }
 
 

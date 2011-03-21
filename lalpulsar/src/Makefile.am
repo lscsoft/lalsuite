@@ -1,5 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
 
+if LALXML
+XMLHDR = LALXMLVOTableSerializersPulsar.h
+XMLSRC = LALXMLVOTableSerializersPulsar.c
+endif
+
 lalpulsarincludedir = $(includedir)/lal
 lalpulsarinclude_HEADERS = \
 	BinaryPulsarTiming.h \
@@ -14,6 +19,7 @@ lalpulsarinclude_HEADERS = \
 	ExtrapolatePulsarSpins.h \
 	FitToPulsar.h \
 	FlatLatticeTilingPulsar.h \
+	FlatMesh.h \
 	FlatPulsarMetric.h \
 	FoldAmplitudes.h \
 	GeneratePulsarSignal.h \
@@ -44,7 +50,8 @@ lalpulsarinclude_HEADERS = \
 	Statistics.h \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
-	Velocity.h
+	Velocity.h \
+	$(XMLHDR)
 
 lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
@@ -67,6 +74,7 @@ liblalpulsar_la_SOURCES = \
 	ExtrapolatePulsarSpins.c \
 	FitToPulsar.c \
 	FlatLatticeTilingPulsar.c \
+	FlatMesh.c \
 	FlatPulsarMetric.c \
 	FoldAmplitudes.c \
 	GenerateEllipticSpinOrbitCW.c \
@@ -112,7 +120,8 @@ liblalpulsar_la_SOURCES = \
 	TwoDMeshMetrics.c \
 	TwoDMeshRanges.c \
 	UniversalDopplerMetric.c \
-	Velocity.c
+	Velocity.c \
+	$(XMLSRC)
 
 liblalpulsar_la_LDFLAGS = -version-info $(LIBVERSION)
 

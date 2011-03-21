@@ -323,8 +323,6 @@ int main( int argc, char *argv[] )
 
   REAL4FrequencySeries     dummyOutput;
 
-  REAL4                *tempPtr;
-
   const REAL4 expectedOutputDataData[8] = {1.0, .2113956922,
 					   -.1372693019, .9606085997e-2,
 					   .6120349226e-1, -.5375432760e-1,
@@ -448,6 +446,7 @@ int main( int argc, char *argv[] )
     {
       return code;
     }
+    REAL4                *tempPtr;
     tempPtr = dummyOutput.data->data;
     dummyOutput.data->data = NULL;
 

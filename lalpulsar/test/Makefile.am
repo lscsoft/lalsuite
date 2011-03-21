@@ -1,10 +1,15 @@
 AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
+if LALXML
+XMLTEST = LALPulsarXMLTest
+endif
+
 if LALSUPPORT
 check_PROGRAMS = \
 	ExtrapolatePulsarSpinsTest \
 	FitToPulsarTest \
+	FlatMeshTest \
 	FoldAmplitudesTest \
 	GeneralMeshTest \
 	GeneralMetricTest \
@@ -30,10 +35,12 @@ check_PROGRAMS = \
 	TestStatistics \
 	TestVelocity \
 	TwoDMeshTest \
-	UniversalDopplerMetricTest
+	UniversalDopplerMetricTest \
+	$(XMLTEST)
 ##	SFTCleanTest \
 ##	NormalizeSFTRngMedTest \
 TESTS = $(check_PROGRAMS)
+EXTRA_PROGRAMS = XLALLoadSFTsTest
 else
 check_PROGRAMS =
 TESTS =
@@ -68,7 +75,8 @@ noinst_DATA = \
 	SFT-test6 \
 	SFT-test7 \
 	inputsft.0 \
-	inputsft.1
+	inputsft.1 \
+	testTimestamps.dat
 
 MOSTLYCLEANFILES = \
 	H-1_H1*.sft \
@@ -111,6 +119,7 @@ pkgdata_DATA = \
 	sun09-11.dat \
 	sun09.dat  \
 	sun98.dat \
-	sun99.dat
+	sun99.dat \
+	testTimestamps.dat
 
 EXTRA_DIST = $(DATA)

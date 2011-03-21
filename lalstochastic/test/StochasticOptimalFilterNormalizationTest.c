@@ -237,7 +237,6 @@ int main(int argc, char *argv[])
   REAL4WithUnits           normOut, varOut;
 
   REAL4FrequencySeries     realBadData;
-  REAL4*                   realTempPtr;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -467,6 +466,7 @@ int main(int argc, char *argv[])
     {
       return code;
     }
+    REAL4*                   realTempPtr;
     realTempPtr = realBadData.data->data;
     realBadData.data->data = NULL;
 

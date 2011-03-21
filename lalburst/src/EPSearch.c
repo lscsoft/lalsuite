@@ -59,7 +59,6 @@ SnglBurst *XLALEPSearch(
 	REAL8 maxTileDuration
 )
 {
-	static const char func[] = "XLALEPSearch";
 	SnglBurst *head = NULL;
 	int errorcode = 0;
 	int start_sample;
@@ -134,7 +133,7 @@ SnglBurst *XLALEPSearch(
 	 * Construct the time-frequency plane's channel filters.
 	 */
 
-	XLALPrintInfo("%s(): constructing channel filters\n", func);
+	XLALPrintInfo("%s(): constructing channel filters\n", __func__);
 	filter_bank = XLALCreateExcessPowerFilterBank(psd->deltaF, plane->flow, plane->deltaF, plane->channel_data->size2, psd, plane->two_point_spectral_correlation);
 	if(!filter_bank) {
 		errorcode = XLAL_EFUNC;
@@ -150,7 +149,7 @@ SnglBurst *XLALEPSearch(
 		 * Verbosity.
 		 */
 
-		XLALPrintInfo("%s(): ", func);
+		XLALPrintInfo("%s(): ", __func__);
 		XLALPrintProgressBar(start_sample / (double) (tseries->data->length - plane->window->data->length));
 		XLALPrintInfo(" complete\n");
 
@@ -163,7 +162,7 @@ SnglBurst *XLALEPSearch(
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
-		XLALPrintInfo("%s(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", func, cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
+		XLALPrintInfo("%s(): analyzing %u samples (%.9lf s) at offset %u (%.9lf s) from epoch %d.%09u s\n", __func__, cuttseries->data->length, cuttseries->data->length * cuttseries->deltaT, start_sample, start_sample * cuttseries->deltaT, tseries->epoch.gpsSeconds, tseries->epoch.gpsNanoSeconds);
 		if(diagnostics)
 			diagnostics->XLALWriteLIGOLwXMLArrayREAL8TimeSeries(diagnostics->LIGOLwXMLStream, NULL, cuttseries);
 
@@ -171,7 +170,7 @@ SnglBurst *XLALEPSearch(
 		 * Window and DFT the time series.
 		 */
 
-		XLALPrintInfo("%s(): computing the Fourier transform\n", func);
+		XLALPrintInfo("%s(): computing the Fourier transform\n", __func__);
 		if(!XLALUnitaryWindowREAL8Sequence(cuttseries->data, plane->window)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -188,7 +187,7 @@ SnglBurst *XLALEPSearch(
 		 */
 
 #if 1
-		XLALPrintInfo("%s(): normalizing to the average spectrum\n", func);
+		XLALPrintInfo("%s(): normalizing to the average spectrum\n", __func__);
 		if(!XLALWhitenCOMPLEX16FrequencySeries(fseries, psd)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -202,7 +201,7 @@ SnglBurst *XLALEPSearch(
 		 * series and channel filters.
 		 */
 
-		XLALPrintInfo("%s(): projecting data onto time-frequency plane\n", func);
+		XLALPrintInfo("%s(): projecting data onto time-frequency plane\n", __func__);
 		if(XLALFreqSeriesToTFPlane(plane, filter_bank, fseries, rplan)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -217,7 +216,7 @@ SnglBurst *XLALEPSearch(
 		 * by testing for head == NULL.
 		 */
 
-		XLALPrintInfo("%s(): computing the excess power for each tile\n", func);
+		XLALPrintInfo("%s(): computing the excess power for each tile\n", __func__);
 		XLALClearErrno();
 		head = XLALComputeExcessPower(plane, filter_bank, head, confidence_threshold);
 		if(xlalErrno) {
@@ -230,7 +229,7 @@ SnglBurst *XLALEPSearch(
 	 * Memory clean-up.
 	 */
 
-	XLALPrintInfo("%s(): done\n", func);
+	XLALPrintInfo("%s(): done\n", __func__);
 
 	error:
 	XLALDestroyREAL8FFTPlan(fplan);
@@ -242,7 +241,7 @@ SnglBurst *XLALEPSearch(
 	XLALDestroyTFPlane(plane);
 	if(errorcode) {
 		XLALDestroySnglBurstTable(head);
-		XLAL_ERROR_NULL(func, errorcode);
+		XLAL_ERROR_NULL(__func__, errorcode);
 	}
 	return(head);
 }

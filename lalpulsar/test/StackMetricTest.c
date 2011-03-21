@@ -17,63 +17,48 @@
 *  MA  02111-1307  USA
 */
 
-/****************************** <lalVerbatim file="StackMetricTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
+\ingroup StackMetric_h
 
-/********************************************************** <lalLaTeX>
+\heading{Program <tt>StackMetricTest.c</tt>}
+\latexonly\label{ss_StackMetricTest_c}\endlatexonly
 
-\subsection{Program \texttt{StackMetricTest.c}}
-\label{ss:StackMetricTest.c}
+\brief Computes the parameter space metric for a coherent pulsar search.
 
-Computes the parameter space metric for a coherent pulsar search.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 StackMetricTest [-p n dt t0] [-l lat lon] [-d debuglevel]
                 [ra dec f0 [f1 [...]]]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test program computes the stack search metric for a particular
 location in parameter space.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-p}] Sets the search parameters: the number of stacks
-\verb@n@, the length of each stack \verb@dt@ (in seconds), and the
-start time of the first stack \verb@t0@ (in seconds of GPS time).
-\item[\texttt{-l}] Sets the detector latitude to \verb@lat@ (in
-radians north from the equator) and longitude to \verb@lon@ (in
-radians east of the prime meridian).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.
-\end{itemize}
+<ul>
+<li>[<tt>-p</tt>] Sets the search parameters: the number of stacks
+\c n, the length of each stack \c dt (in seconds), and the
+start time of the first stack \c t0 (in seconds of GPS time).</li>
+<li>[<tt>-l</tt>] Sets the detector latitude to \c lat (in
+radians north from the equator) and longitude to \c lon (in
+radians east of the prime meridian).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.</li>
+</ul>
 Once any of the above options are processed, any remaining
 command-line options are taken to be the parameter-space location of
-the source: its right ascension \verb@ra@ (in radians), its
-declination \verb@dec@ (in radians), its frequency \verb@f0@ (in Hz),
-and zero or more spindown parameters \verb@f@$k$ (in $\mathrm{Hz}^k$),
-all evaluated at the start time of the search \verb@t0@.  If any (or
+the source: its right ascension \c ra (in radians), its
+declination \c dec (in radians), its frequency \c f0 (in Hz),
+and zero or more spindown parameters \c f\f$k\f$ (in \f$\mathrm{Hz}^k\f$),
+all evaluated at the start time of the search \c t0.  If any (or
 all) of the command-line arguments are missing, they will be set from
-\verb@#define@d defaults.
+<tt>#define</tt>d defaults.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define STACKMETRICTESTC_ENORM 0
-#define STACKMETRICTESTC_ESUB  1
-#define STACKMETRICTESTC_EARG  2
-#define STACKMETRICTESTC_EVAL  3
+\heading{Algorithm}
 
-#define STACKMETRICTESTC_MSGENORM "Normal exit"
-#define STACKMETRICTESTC_MSGESUB  "Subroutine failed"
-#define STACKMETRICTESTC_MSGEARG  "Error parsing arguments"
-#define STACKMETRICTESTC_MSGEVAL  "Input argument out of valid range"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
@@ -83,14 +68,25 @@ LALTBaryPtolemaic()             LALDTBaryPtolemaic()
 LALTSpin()                      LALDTSpin()
 LALDTComp()
 LALGetEarthTimes()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{StackMetricTestCV}}
+*/
 
-******************************************************* </lalLaTeX> */
+/** \name Error Codes */ /*@{*/
+#define STACKMETRICTESTC_ENORM 0
+#define STACKMETRICTESTC_ESUB  1
+#define STACKMETRICTESTC_EARG  2
+#define STACKMETRICTESTC_EVAL  3
 
+#define STACKMETRICTESTC_MSGENORM "Normal exit"
+#define STACKMETRICTESTC_MSGESUB  "Subroutine failed"
+#define STACKMETRICTESTC_MSGEARG  "Error parsing arguments"
+#define STACKMETRICTESTC_MSGEVAL  "Input argument out of valid range"
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -464,3 +460,4 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
 	       lsd );
   return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }
+/** \endcond */

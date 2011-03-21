@@ -36,10 +36,7 @@ Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 #include <lal/FileIO.h>
 \end{verbatim}
 
-\noindent This header provides the LALsnprintf function.
-
 \vfill{\footnotesize\input{LALStdioHV}}
-\newpage\input{LALStdC}
 </lalLaTeX>
 #endif /* autodoc block */
 
@@ -116,12 +113,6 @@ NRCSID( LALSTDIOH, "$Id$" );
 #define LAL_UINT8_FORMAT LAL_INT8_SCNu
 #define LAL_REAL4_FORMAT "g"
 #define LAL_REAL8_FORMAT "lg"
-
-int
-LALSnprintf( char *, size_t, const char *, ... );
-
-int
-LALVsnprintf( char *, size_t, const char *, va_list );
 
 #ifdef __cplusplus
 }

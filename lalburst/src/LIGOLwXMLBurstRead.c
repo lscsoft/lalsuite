@@ -32,7 +32,6 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	const char *filename
 )
 {
-	static const char func[] = "XLALSnglBurstTableFromLIGOLw";
 	static const char table_name[] = "sngl_burst";
 	int miostatus;
 	SnglBurst *head = NULL;
@@ -61,13 +60,13 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* find columns */
@@ -95,8 +94,8 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -109,7 +108,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -122,7 +121,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 		strncpy(row->ifo, env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data, sizeof(row->ifo) - 1);
 		strncpy(row->search, env.ligo_lw.table.elt[column_pos.search].data.lstring.data, sizeof(row->search) - 1);
@@ -140,22 +139,22 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
 			XLALDestroySnglBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 	}
 	if(miostatus < 0) {
 		XLALDestroySnglBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* close file */
 
 	if(MetaioClose(&env)) {
 		XLALDestroySnglBurstTable(head);
-		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* done */
@@ -178,7 +177,6 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	const LIGOTimeGPS *end
 )
 {
-	static const char func[] = "XLALSimBurstTableFromLIGOLw";
 	static const char table_name[] = "sim_burst";
 	int miostatus;
 	SimBurst *head = NULL;
@@ -209,13 +207,13 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* open the file and find table */
 
 	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\": %s\n", func, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* find columns */
@@ -245,8 +243,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading %s table\n", func, table_name);
-		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -259,7 +257,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 
 		/* populate the columns */
@@ -268,7 +266,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 		strncpy(row->waveform, env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data, sizeof(row->waveform) - 1);
 		if(column_pos.ra >= 0)
@@ -284,7 +282,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
 		}
 
 		if(!strcmp(row->waveform, "StringCusp")) {
@@ -292,8 +290,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
-				XLAL_ERROR_NULL(func, XLAL_EIO);
+				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLAL_ERROR_NULL(__func__, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
@@ -303,8 +301,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
-				XLAL_ERROR_NULL(func, XLAL_EIO);
+				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLAL_ERROR_NULL(__func__, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
@@ -318,8 +316,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
-				XLAL_ERROR_NULL(func, XLAL_EIO);
+				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLAL_ERROR_NULL(__func__, XLAL_EIO);
 			}
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
@@ -331,8 +329,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
-				XLALPrintError("%s(): missing required column in %s table\n", func, table_name);
-				XLAL_ERROR_NULL(func, XLAL_EIO);
+				XLALPrintError("%s(): missing required column in %s table\n", __func__, table_name);
+				XLAL_ERROR_NULL(__func__, XLAL_EIO);
 			}
 			row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_8;
 		} else {
@@ -340,8 +338,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);
 			MetaioAbort(&env);
-			XLALPrintError("%s(): unrecognized waveform \"%s\" in %s table\n", func, row->waveform, table_name);
-			XLAL_ERROR_NULL(func, XLAL_EIO);
+			XLALPrintError("%s(): unrecognized waveform \"%s\" in %s table\n", __func__, row->waveform, table_name);
+			XLAL_ERROR_NULL(__func__, XLAL_EIO);
 		}
 
 		/* if outside accepted time window, discard */
@@ -359,16 +357,16 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	if(miostatus < 0) {
 		XLALDestroySimBurstTable(head);
 		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* close file */
 
 	if(MetaioClose(&env)) {
 		XLALDestroySimBurstTable(head);
-		XLALPrintError("%s(): error parsing document after %s table: %s\n", func, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(func, XLAL_EIO);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(__func__, XLAL_EIO);
 	}
 
 	/* done */

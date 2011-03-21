@@ -42,103 +42,68 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="StereographicCV">
-Author: Sintes, A. M.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A. M.
+\file
+\ingroup LUT_h
+\brief Routines to perform rotations on the celestial sphere and stereographic projection.
 
+\heading{Description}
 
-/* <lalLaTeX>
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{Stereographic.c}}
-\label{ss:Stereographic.c}
-Routines to perform rotations on the celestial sphere and stereographic
-projection.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StereographicD}
-\index{\verb&LALRotatePolarU()&}
-\index{\verb&LALInvRotatePolarU()&}
-\index{\verb&LALStereoProjectPolar()&}
-\index{\verb&LALStereoProjectCart()&}
-\index{\verb&LALStereoInvProjectPolar()&}
-\index{\verb&LALStereoInvProjectCart()&}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-${}$
-
- \indent The function \verb&LALRotatePolarU()& rotates the celestial sphere so that
- a given point,
- in the rotated coordinates, corresponds to ($\alpha = 0$, $\delta = -\pi/2$).
+The function LALRotatePolarU() rotates the celestial sphere so that
+a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).
 The inputs are:
-\verb@*par@ the reference point (e.g., the center of the sky-patch) of type
- \verb@REAL8UnitPolarCoor@ and
-\verb@*in@ the point on the celestial sphere we want to rotate. The output is
-\verb@*out@ of type \verb@REAL8UnitPolarCoor@ containing the coordinates of the
-point in the rotated reference frame.\\
+<tt>*par</tt> the reference point (e.g., the center of the sky-patch) of type
+ \c REAL8UnitPolarCoor and
+<tt>*in</tt> the point on the celestial sphere we want to rotate. The output is
+<tt>*out</tt> of type \c REAL8UnitPolarCoor containing the coordinates of the
+point in the rotated reference frame.
 
- The function \verb&LALInvRotatePolarU()& does the inverse rotation. Given the
-reference point \verb@*par@ (e.g., the center of the sky-patch) of type
- \verb@REAL8UnitPolarCoor@  and a point \verb@*in@ in the rotated reference
- frame, the output \verb@*out@ are the coordinates of the point is the
- same reference system as \verb@*par@. All inputs and output being
-  of type \verb@REAL8UnitPolarCoor@. \\
+The function LALInvRotatePolarU() does the inverse rotation. Given the
+reference point <tt>*par</tt> (e.g., the center of the sky-patch) of type
+\c REAL8UnitPolarCoor  and a point <tt>*in</tt> in the rotated reference
+frame, the output <tt>*out</tt> are the coordinates of the point is the
+same reference system as <tt>*par</tt>. All inputs and output being
+of type \c REAL8UnitPolarCoor.
 
-Given a point on the celestial sphere \verb@*in@ of type
-\verb@REAL8UnitPolarCoor@, the function \verb&LALStereoProjectPolar()&
-returns \verb@*out@,
-of type \verb@REAL8Polar2Coor@, the stereographic projection of that point
-in polar coordinates, with the particularity  that \verb@out->radius@  can be positive
-or negative. \verb@in->delta@=$\pi/2$ is an invalid argument  and an error will
-output. \\
+Given a point on the celestial sphere <tt>*in</tt> of type
+\c REAL8UnitPolarCoor, the function LALStereoProjectPolar()
+returns <tt>*out</tt>,
+of type \c REAL8Polar2Coor, the stereographic projection of that point
+in polar coordinates, with the particularity  that <tt>out->radius</tt>  can be positive
+or negative. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+output.
 
-Given a point on the celestial sphere \verb@*in@ of type
-\verb@REAL8UnitPolarCoor@, the function \verb@LALStereoProjectCart()@
-returns \verb@*out@, of type \verb@REAL8Cart2Coor@, the stereographic projection of that point
-in Cartesian coordinates. \verb@in->delta@=$\pi/2$ is an invalid argument  and an error will
-output. \\
+Given a point on the celestial sphere <tt>*in</tt> of type
+\c REAL8UnitPolarCoor, the function LALStereoProjectCart()
+returns <tt>*out</tt>, of type \c REAL8Cart2Coor, the stereographic projection of that point
+in Cartesian coordinates. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+output.
 
-Given a point on the projected plane \verb@*in@ , the functions
-\verb&LALStereoInvProjectPolar()&  and \verb&LALStereoInvProjectCart()&
-provide the corresponding point on the sphere \verb@*out@ (corresponding to the inverse
-stereographic  projection) of type \verb@REAL8UnitPolarCoor@.
+Given a point on the projected plane <tt>*in</tt> , the functions
+LALStereoInvProjectPolar()  and LALStereoInvProjectCart()
+provide the corresponding point on the sphere <tt>*out</tt> (corresponding to the inverse
+stereographic  projection) of type \c REAL8UnitPolarCoor.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-%%\begin{verbatim}
-%%LALZDestroyVector()
-%%\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{StereographicCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-</lalLaTeX> */
-
-
+*/
 
 #include <lal/LUT.h>
 
+/** \cond DONT_DOXYGEN */
 NRCSID (STEREOGRAPHICC, "$Id$");
-
+/** \endcond */
 
 /*
  * The functions that make up the guts of this module
  */
 
-
-
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALRotatePolarU(LALStatus            *status,
 		     REAL8UnitPolarCoor   *out,
 		     REAL8UnitPolarCoor   *in,
 		     REAL8UnitPolarCoor   *par)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   REAL8 Xx, Xy, Xz;
   REAL8 Yx, Yy, Yz;
@@ -213,12 +178,12 @@ void LALRotatePolarU(LALStatus            *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALInvRotatePolarU(LALStatus            *status,
 		     REAL8UnitPolarCoor   *out,
 		     REAL8UnitPolarCoor   *in,
 		     REAL8UnitPolarCoor   *par)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   REAL8 Xx, Xy, Xz;
   REAL8 Yx, Yy, Yz;
@@ -293,11 +258,11 @@ void LALInvRotatePolarU(LALStatus            *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALStereoProjectPolar(LALStatus           *status,
 			   REAL8Polar2Coor     *out,
 			   REAL8UnitPolarCoor  *in)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   REAL8   mygamma;
   /* --------------------------------------------- */
@@ -326,11 +291,11 @@ void LALStereoProjectPolar(LALStatus           *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALStereoProjectCart(LALStatus           *status,
 			  REAL8Cart2Coor      *out,
 			  REAL8UnitPolarCoor  *in )
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   REAL8   mygamma;
   REAL8   alpha, radius;
@@ -361,11 +326,11 @@ void LALStereoProjectCart(LALStatus           *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALStereoInvProjectPolar(LALStatus        *status,
 			   REAL8UnitPolarCoor  *out,
 			   REAL8Polar2Coor     *in)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
 
   /* --------------------------------------------- */
@@ -393,11 +358,11 @@ void LALStereoInvProjectPolar(LALStatus        *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/*  ***************************** <lalVerbatim file="StereographicD"> */
+
 void LALStereoInvProjectCart(LALStatus           *status,
 			     REAL8UnitPolarCoor  *out,
 			     REAL8Cart2Coor      *in)
-{ /*  ************************************************ </lalVerbatim> */
+{
 
   REAL8 x,y,radius;
   /* --------------------------------------------- */

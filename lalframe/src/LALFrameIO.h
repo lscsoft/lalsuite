@@ -36,6 +36,7 @@ struct FrFile * XLALFrOpenURL( const char *url );
 int XLALFrFileCheckSum( FrFile *iFile );
 FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );
 FrDetector * XLALFrDetectorNew( int detector );
+void XLALFrameFree( FrameH *frame );
 FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
     const char *project, int run, int frnum, int detectorFlags );
 FrVect * XLALFrVectINT4TimeSeries( INT4TimeSeries *series );
@@ -53,6 +54,7 @@ int XLALFrameAddREAL8TimeSeriesProcData( FrameH *frame, REAL8TimeSeries *series 
 int XLALFrameAddREAL4TimeSeriesProcData( FrameH *frame, REAL4TimeSeries *series );
 int XLALFrameAddINT4TimeSeriesProcData( FrameH *frame, INT4TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series );
+int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series );
 int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series );
 
 COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeGPS *epoch, const char *channel, FrameH *frame );

@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 4
+# serial 8
 
 AC_DEFUN([LAL_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
@@ -79,37 +79,6 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
     esac
   ], [ intelfft=false ] )
-])
-
-AC_DEFUN([LAL_WITH_CUDA],
-[AC_ARG_WITH(
-  [cuda],
-  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
-  [ case "$with_cuda" in
-    no)
-      cuda=false
-      ;;
-    yes)
-      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-      cuda=true
-      CUDA_LIBS="-L/opt/cuda/lib -lcufft -lcudart"
-      CUDA_CFLAGS="-I/opt/cuda/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-      ;;
-    *)
-      AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
-      cuda=true
-      CUDA_LIBS="-L${with_cuda}/lib -lcufft -lcudart"
-      CUDA_CFLAGS="-I${with_cuda}/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-    esac
-  ], [ cuda=false ])
 ])
 
 AC_DEFUN([LAL_ENABLE_DEBUG],

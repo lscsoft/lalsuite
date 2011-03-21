@@ -213,8 +213,6 @@ main( int argc, char *argv[] )
    UINT4      i;
    REAL8      f;
 
-   COMPLEX8                *cPtr;
-
    const COMPLEX8    testInputDataData[CZEROPADANDFFTTESTC_LENGTH]
      = {{1.0,0.0}, {2.0,0.0}, {3.0,0.0}, {4.0,0.0}, {5.0,0.0}, {6.0,0.0},
 	{7.0,0.0}, {8.0,0.0}};
@@ -387,6 +385,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
+     COMPLEX8                *cPtr;
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, &goodParams);

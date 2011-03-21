@@ -17,79 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- *  \file Velocity.h
- *  \author Badri Krishnan
- *  \brief Header file for velocity and position routines.
- *  \ingroup pulsarHough
- *
- *  $Id$
- *
- *  Created by Badri Krishnan on May 23, 2003
-***************************************************** */
-
-
-/************************************<lalVerbatim file="VelocityHV">
-Author: Krishnan, B., Sintes, A.M.
-$Id$
-*************************************</lalVerbatim> */
-
-/* <lalLaTeX> *************************************************
-
-\section{Header \texttt{Velocity.h}}
-\label{s:Velocity.h}
-Computation of instant and averaged velocities for a given detector and the
-like.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
-
-\begin{verbatim}
-#include <lal/Velocity.h>
-\end{verbatim}
-
-To find the velocity of a given detetector at a given time, or the averaged
-velocity  of a detector in a certain time interval.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{VelocityHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Structures}
-\begin{verbatim}
-struct VelocityPar
-\end{verbatim}
-\index{\texttt{VelocityPar}}
-\noindent This structure stores the parameters required by LALBarycenter to calculate
-Earth velocity at a given detector location.
-\begin{description}
-\item[\texttt{LALDetector    detector}]
-\item[\texttt{EphemerisData  *edat}]  ephemeris data pointer from LALInitBarycenter
-\item[\texttt{LIGOTimeGPS  startTime}]  start of time interval
-\item[\texttt{REAL8          tBase}]  duration of interval
-\item[\texttt{REAL8          vTol}]   fractional accuracy required for velocity
-\end{description}
-
-
-\begin{verbatim}
-struct AvgVelPar
-\end{verbatim}
-\index{\texttt{AvgVelPar}}
-\begin{description}
-\item[\texttt{LALDetector    detector}]
-\item[\texttt{EphemerisData  *edat}]
-\end{description}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{VelocityHV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{VelocityC}
-%%%%%%%%%%Test program. %%
-\newpage\input{TestVelocityC}
-
-*************************************************** </lalLaTeX> */
-
-
 /* double inclusion protection */
 #ifndef _VELOCITY_H
 #define _VELOCITY_H
@@ -117,37 +44,58 @@ struct AvgVelPar
 #ifdef  __cplusplus
 extern "C" {
 #endif
-/* ***************************************
- *   Assignment of Id string using NRCSID()
- */
-
-NRCSID( VELOCITYH, "$Id$");
 
 /* ***************************************
  *   Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
-/* <lalErrTable file="VelocityHErrorTable"> */
+/**\name Error Codes */ /*@{*/
+/** \ingroup Velocity_h */
 #define VELOCITYH_ENULL 1
 #define VELOCITYH_EVAL 2
 #define VELOCITYH_MSGENULL "Null Pointer"
 #define VELOCITYH_MSGEVAL "Invalid Value"
-/* </lalErrTable>  */
+/*@}*/
+
+
+/**
+\author Krishnan, B., Sintes, A.M.
+\defgroup Velocity_h Velocity
+\ingroup pulsarHough
+\brief Computation of instant and averaged velocities for a given detector and the like.
+
+\heading{Synopsis}
+
+\code
+#include <lal/Velocity.h>
+\endcode
+
+To find the velocity of a given detetector at a given time, or the averaged
+velocity  of a detector in a certain time interval.
+
+*/
+/*@{*/
 
 /* *****************************************************
  *   Structure, enum, union, etc., typdefs.
  */
 
-/** parameters required by LALBarycenter to calculate Earth velocity at
-   a given detector location */
+/** This structure stores the parameters required by LALBarycenter() to calculate
+ * Earth velocity at a given detector location.
+ */
 typedef struct tagVelocityPar {
-  LALDetector    detector; /**< the detector */
-  EphemerisData  *edat;  /**< ephemeris data pointer from LALInitBarycenter */
-  LIGOTimeGPS    startTime; /**< start of time interval */
-  REAL8          tBase; /**< duration of interval */
-  REAL8          vTol;  /**< fractional accuracy required for velocity (redundant for average velocity calculation) */
+  LALDetector    detector; 	/**< the detector */
+  EphemerisData  *edat;  	/**< ephemeris data pointer from LALInitBarycenter() */
+  LIGOTimeGPS    startTime; 	/**< start of time interval */
+  REAL8          tBase; 	/**< duration of interval */
+  REAL8          vTol;  	/**< fractional accuracy required for velocity (redundant for average velocity calculation) */
 } VelocityPar;
 
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+
+NRCSID( VELOCITYH, "$Id$");
 
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
@@ -173,6 +121,8 @@ void LALDetectorPos(LALStatus   *status,
 		 EphemerisData *edat);
 
 /* ****************************************************** */
+
+/** \endcond */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

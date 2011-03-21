@@ -17,68 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="TwoDMeshPlotCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{TwoDMeshPlot.c}}
-\label{ss:TwoDMeshPlot.c}
-
-Plots a hierarchical mesh of templates on an 2-dimensional parameter
-space.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TwoDMeshPlotCP}
-\idx{LALPlotTwoDMesh()}
-
-\subsubsection*{Description}
-
-This routine creates a PostScript plot of the parameter mesh list
-pointed to by \verb@mesh@, using the plotting parameters given in
-\verb@*params@.  The PostScript output is printed to the writable
-output stream \verb@*stream@ using \verb@fprintf()@.
-
-\subsubsection*{Algorithm}
-
-The algorithm is set up so that it requires only one pass through the
-list.  After defining PostScript macros to plot mesh points, mesh
-tiles, and mismatch ellipses, the routine then defines a macro to plot
-the boundary.  Since some PostScript interpreters will fail if a macro
-contains too many objects, the boundary-plotting macro may be split
-into several macros.
-
-\verb@LALPlotTwoDMesh()@ then calls a static (but LAL-compliant)
-subroutine \verb@LALMakeMeshMacro()@ to create one or more macros to
-plot the mesh points, tiles, or ellipses, as required by
-\verb@*params@.  This subroutine takes a pointer to the head of a list
-of mesh points as input, and traverses down the list, calling itself
-recursively on any submeshes it encounters (if
-\verb@params->maxLevels@ permits).
-
-While plotting the boundary and other mesh objects,
-\verb@LALPlotTwoDMesh()@ and \verb@LALMakeMeshMacro()@ keep track of
-the bounding box surrounding all plotted objects.  This is used either
-to set a bounding box for the overall plot, or to adjust the scale of
-the plot, depending on \verb@params->autoscale@.  If the resulting
-bounding box is larger than a single $8.5''\times11''$ page,
-\verb@LALPlotTwoDMesh()@ will divide the plot area up into pages of
-this side, calling the plotting macros on each page.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()             LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{TwoDMeshPlotCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -110,13 +48,59 @@ static void
 AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params );
 
 
-/* <lalVerbatim file="TwoDMeshPlotCP"> */
+
+/**
+\author Creighton, T. D.
+\ingroup TwoDMeshPlot_h
+\brief Plots a hierarchical mesh of templates on an 2-dimensional parameter space.
+
+\heading{Description}
+
+This routine creates a PostScript plot of the parameter mesh list
+pointed to by \c mesh, using the plotting parameters given in
+<tt>*params</tt>.  The PostScript output is printed to the writable
+output stream <tt>*stream</tt> using <tt>fprintf()</tt>.
+
+\heading{Algorithm}
+
+The algorithm is set up so that it requires only one pass through the
+list.  After defining PostScript macros to plot mesh points, mesh
+tiles, and mismatch ellipses, the routine then defines a macro to plot
+the boundary.  Since some PostScript interpreters will fail if a macro
+contains too many objects, the boundary-plotting macro may be split
+into several macros.
+
+LALPlotTwoDMesh() then calls a static (but LAL-compliant)
+subroutine LALMakeMeshMacro() to create one or more macros to
+plot the mesh points, tiles, or ellipses, as required by
+<tt>*params</tt>.  This subroutine takes a pointer to the head of a list
+of mesh points as input, and traverses down the list, calling itself
+recursively on any submeshes it encounters (if
+<tt>params->maxLevels</tt> permits).
+
+While plotting the boundary and other mesh objects,
+LALPlotTwoDMesh() and LALMakeMeshMacro() keep track of
+the bounding box surrounding all plotted objects.  This is used either
+to set a bounding box for the overall plot, or to adjust the scale of
+the plot, depending on <tt>params->autoscale</tt>.  If the resulting
+bounding box is larger than a single \f$8.5''\times11''\f$ page,
+LALPlotTwoDMesh() will divide the plot area up into pages of
+this side, calling the plotting macros on each page.
+
+\heading{Uses}
+\code
+LALMalloc()             LALFree()
+\endcode
+
+\heading{Notes}
+
+*/
 void
 LALPlotTwoDMesh( LALStatus         *stat,
 		 FILE              *stream,
 		 TwoDMeshNode      *mesh,
 		 TwoDMeshPlotStruc *params )
-{ /* </lalVerbatim> */
+{
   UINT4 i;          /* an index */
   UINT4 nObj = 0;   /* counter of number of objects boundary macro */
   UINT4 nMacro = 0; /* counter of number of boundary macros */

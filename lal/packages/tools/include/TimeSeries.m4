@@ -25,8 +25,13 @@
 
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
-
 #include <lal/LALRCSID.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#pragma }
+#endif
+
 NRCSID(TIMESERIESH, "$Id:");
 
 define(`DATATYPE',COMPLEX8)
@@ -59,5 +64,9 @@ include(TimeSeriesH.m4)
 define(`DATATYPE',UINT8)
 include(TimeSeriesH.m4)
 
+#ifdef __cplusplus
+#pragma {
+}
+#endif
 
 #endif  /* _TIMESERIES_H */

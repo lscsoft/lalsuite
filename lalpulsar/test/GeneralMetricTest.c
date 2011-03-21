@@ -17,105 +17,118 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="GeneralMetricTestCV">
-Author: Jones, D. I.,     Owen, B. J.
-$Id$
-********************************************************** </lalVerbatim> */
+/**
+\author Jones, D. I.,     Owen, B. J.
+\file
+\ingroup PtoleMetric_h
 
-/**************************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{GeneralMetricTest.c}}
-\label{ss:GeneralMetricTest}
-
-Tests the various LAL metric functions, by outputting the metric at a
+\brief Tests the various LAL metric functions, by outputting the metric at a
 point in parameter space, and also producing an array of ellipses of
 constant mismatch.
 
-\subsubsection*{Usage}
-\begin{verbatim}
-GeneralMetricTest
-\end{verbatim}
+\heading{Program <tt>GeneralMetricTest.c</tt>}
+\latexonly\label{ss_GeneralMetricTest}\endlatexonly
 
-\subsubsection*{Description}
+\heading{Usage}
+\code
+GeneralMetricTest
+\endcode
+
+\heading{Description}
 
 This program computes metric components using a metric function of the
-user's specification.  The ordering of the components is $(f_0,
-\alpha, \delta, f_1\ldots)$ for the unprojected metric, and $(\alpha,
-\delta, f_1\ldots)$ for the metric with $f_0$ projected out.
+user's specification.  The ordering of the components is \f$(f_0,
+\alpha, \delta, f_1\ldots)\f$ for the unprojected metric, and \f$(\alpha,
+\delta, f_1\ldots)\f$ for the metric with \f$f_0\f$ projected out.
 
 With no options, this program displays metric components for a single point
 in parameter space for the default parameter values.
 
-The \texttt{-a} option determines which LAL metric code is used.  The
+The <b>-a</b> option determines which LAL metric code is used.  The
 options are:
-
-\hspace{1cm} 1 = PtoleMetric (default),
-
-\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic),
-
-\hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
-
-The \texttt{-b} option sets the beginning GPS time of integration to
-the option argument. (Default is $731265908$ seconds, chosen to lie
+<ul>
+<li>1 = LALPtoleMetric() (default),
+<li>2 = (LALCoherentMetric() \& LALDTBaryPtolemaic()),
+<li>3 = (LALCoherentMetric() \& LALDTEphemeris()).
+</ul>
+The <b>-b</b> option sets the beginning GPS time of integration to
+the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
 within the S2 run).
 
-The \texttt{-c} option determines the point on the sky where the metric
+The <b>-c</b> option determines the point on the sky where the metric
 is evaluated.  This option is hard-coded to use equatorial coordinates
 and the argument should be given in hh:mm:ss:dd:mm:ss format.
 (Default is the center of the globular cluster 47 Tuc).
 
-The \texttt{-d} option sets the detector to the option argument. The
+The <b>-d</b> option sets the detector to the option argument. The
 options are:
+<ul>
+<li> 1 = LIGO Hanford
+<li> 2 = LIGO Livingston
+<li> 3 = VIRGO
+<li> 4 = GEO600 (default)
+<li> 5 = TAMA300
+</ul>
+The <b>-e</b> option sets the LAL debug level to 1.  (The default is 0).
 
-\hspace{1cm} 1 = LIGO Hanford
-
-\hspace{1cm} 2 = LIGO Livingston
-
-\hspace{1cm} 3 = VIRGO
-
-\hspace{1cm} 4 = GEO600 (default)
-
-\hspace{1cm} 5 = TAMA300
-
-The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
-
-The \texttt{-f} option sets the maximum frequency (in Hz) to search. (The
+The <b>-f</b> option sets the maximum frequency (in Hz) to search. (The
 default is 1000.)
 
-The \texttt{-l} option determines the limits in right ascension and
+The <b>-l</b> option determines the limits in right ascension and
 declination of the rectangular region over which the mismatch contours
 are computed.  The argument should be given in degrees as
-RA(min):RA(max):dec(min):dec(max).  (The default is the octant of the
-sky defined by $0 < {\rm RA} 90$ and $0< {\rm dec} 85$; this avoids the
+%RA(min):%RA(max):dec(min):dec(max).  (The default is the octant of the
+sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} < 85\f$; this avoids the
 coordinate singularity at the poles.)
 
-The \texttt{-m} option sets the mismatch (default is $0.02$).
+The <b>-m</b> option sets the mismatch (default is \f$0.02\f$).
 
-The \texttt{-n} option sets the number of spindown parameters (default 0).
+The <b>-n</b> option sets the number of spindown parameters (default 0).
 
-The \texttt{-p} option is provided for users who wish to view the
-power mismatch contours provided by the \texttt{-x} option (see below)
+The <b>-p</b> option is provided for users who wish to view the
+power mismatch contours provided by the <b>-x</b> option (see below)
 but don't have xmgrace installed.  All necessary data is simply
 written to a file ``nongrace.data''; it's probably best to look at the
 code to see the exact format.  The user should then write a small
 script to convert the data into the format appropriate to their
 favorite graphics package.
 
-The \texttt{-t} option sets the duration of integration in seconds. (The
-default is $39600$ seconds $= 11$ hours, which is chosen because it is of
+The <b>-t</b> option sets the duration of integration in seconds. (The
+default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
 the right size for S2 analyses).
 
-The \texttt{-x} option produces a graph of the 2\% power mismatch
+The <b>-x</b> option produces a graph of the 2\% power mismatch
 contours on the sky. Dimensions of the ellipses have been exaggerated
-by a factor of \texttt{MAGNIFY} (specified within the code) for
+by a factor of \c MAGNIFY (specified within the code) for
 legibility. The purpose of the graph is to get a feel for how ellipses
 are varying across parameter space. Note that this option makes a
-system call to the \texttt{xmgrace} program, and will not work if that
+system call to the \c xmgrace program, and will not work if that
 program is not installed on your system.
 
+\heading{Algorithm}
 
-\subsubsection*{Exit Codes}
-************************************************ </lalLaTeX><lalErrTable> */
+\heading{Uses}
+
+\code
+lalDebugLevel
+LALCheckMemoryLeaks()
+LALCreateVector()
+LALDestroyVector()
+LALDCreateVector()
+LALDDestroyVector()
+LALProjectMetric()
+LALPtoleMetric()
+xmgrace
+\endcode
+
+\heading{Notes}
+
+The code does not yet really work with more than one spindown parameter.
+
+*/
+
+
+/** \name Error Codes */ /*@{*/
 #define GENERALMETRICTESTC_EMEM 1
 #define GENERALMETRICTESTC_ESUB 2
 #define GENERALMETRICTESTC_ESYS 3
@@ -126,30 +139,7 @@ program is not installed on your system.
 #define GENERALMETRICTESTC_MSGESYS "system call failed"
 #define GENERALMETRICTESTC_MSGEMET "determinant of projected metric negative"
 
-/************************************************** </lalErrTable><lalLaTeX>
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-lalDebugLevel
-LALCheckMemoryLeaks()
-LALCreateVector()
-LALDestroyVector()
-LALDCreateVector()
-LALDDestroyVector()
-LALProjectMetric()
-LALPtoleMetric()
-xmgrace
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-The code does not yet really work with more than one spindown parameter.
-
-\vfill{\footnotesize\input{GeneralMetricTestCV}}
-
-************************************************************* </lalLaTeX> */
+/*@}*/
 
 #include <math.h>
 #include <stdio.h>
@@ -166,6 +156,7 @@ The code does not yet really work with more than one spindown parameter.
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 
+/** \cond DONT_DOXYGEN */
 extern char *optarg;
 
 NRCSID( GENERALMETRICTESTC, "$Id" );
@@ -643,3 +634,5 @@ int main( int argc, char *argv[] ) {
   LALCheckMemoryLeaks();
   return 0;
 } /* main() */
+
+/** \endcond */

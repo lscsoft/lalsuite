@@ -34,7 +34,7 @@ NRCSID (LALLIGOIPSDC,"$Id$");
 /**
  * Calculate the Initial LIGO SRD noise spectral density at given a
  * frequency.  The input is frequency in Hz, and the return value is the
- * noise spectral density, $S_{h}(f)$, for that frequency.
+ * noise spectral density, \f$S_{h}(f)\f$, for that frequency.
  *
  * The noise PSD is based on data provided by K. Blackburn (see \ref dis2001) and
  * is approximated by the following:
@@ -45,7 +45,7 @@ NRCSID (LALLIGOIPSDC,"$Id$");
  * \left( \frac{f}{f_0} \right)^2 \right]
  * \f]
  *
- * Multiply the return value of this function by 2 \Delta f to put it in
+ * Multiply the return value of this function by \f$2 \Delta f\f$ to put it in
  * the same units as used by the LAL average spectrum functions like
  * XLALWhitenCOMPLEX16FrequencySeries().
  */

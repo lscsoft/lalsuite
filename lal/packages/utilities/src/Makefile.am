@@ -8,7 +8,6 @@ libutilities_la_SOURCES = \
 	Dirichlet.c \
 	Eigen.c \
 	EigenInternal.c \
-	FlatMesh.c \
 	FindRoot.c \
 	GSLSupport.c \
 	HeapSort.c \

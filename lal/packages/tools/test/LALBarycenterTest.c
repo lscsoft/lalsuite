@@ -21,13 +21,18 @@
  * \author Curt Cutler
  * \date 2001
  * \file
- * \ingroup moduleBarycenter
- * \brief Test functions for Barycenter module.
- *
- * Tests the routine LALBarycenter().  Exercises some of the error
+ * \ingroup LALBarycenter_h
+ * \brief  Tests the routine LALBarycenter(): exercises some of the error
  * conditions and makes sure that they work.
  *
- * \par Description
+ * \heading{Program <tt>LALBarycenterTest.c</tt>}
+ *
+ * \heading{Usage}
+ * \code
+ * LALBarycenterTest
+ * \endcode
+ *
+ * \heading{Description}
  *
  * This program demonstrates the use of LALBarycenter.c.
  * The two ephemeris files specified in the EphemerisFilenames
@@ -41,8 +46,6 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
-
-NRCSID(LALBARYCENTERTESTC,"$Id$");
 
 /** \name Error codes */
 /*@{*/
@@ -61,6 +64,8 @@ NRCSID(LALBARYCENTERTESTC,"$Id$");
 #define LALBARYCENTERTESTC_MSGEEPHFILE "Failed to catch error reading ephemeris file."
 /*@}*/
 
+/** \cond DONT_DOXYGEN */
+NRCSID(LALBARYCENTERTESTC,"$Id$");
 
 /* ----- internal prototype ---------- */
 int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 );
@@ -416,3 +421,5 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
   return XLAL_SUCCESS;
 
 } /* compare_ephemeris() */
+
+/** \endcond */

@@ -197,7 +197,7 @@ XLALDestroySFT ( SFTtype *sft )
 /** Create one SFT-struct. Allows for numBins == 0.
  */
 void
-LALCreateSFTtype (LALStatus *status,
+LALCreateSFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 		  SFTtype **output, 	/**< [out] allocated SFT-struct */
 		  UINT4 numBins)	/**< number of frequency-bins */
 {
@@ -235,7 +235,7 @@ LALCreateSFTtype (LALStatus *status,
 /** Create a whole vector of \c numSFT SFTs with \c SFTlen frequency-bins
  */
 void
-LALCreateSFTVector (LALStatus *status,
+LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		    SFTVector **output, /**< [out] allocated SFT-vector */
 		    UINT4 numSFTs, 	/**< number of SFTs */
 		    UINT4 numBins)	/**< number of frequency-bins per SFT */
@@ -309,7 +309,7 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 
 
 
-void LALCreateMultiSFTVector ( LALStatus *status,
+void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus structure */
 			       MultiSFTVector **out,  /**< [out] multi sft vector created */
 			       UINT4 length,          /**< number of sft data points */
 			       UINT4Vector *numsft    /**< number of sfts in each sftvect */
@@ -361,7 +361,7 @@ void LALCreateMultiSFTVector ( LALStatus *status,
 /** Destroy an SFT-struct.
  */
 void
-LALDestroySFTtype (LALStatus *status,
+LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 		   SFTtype **sft)	/**< SFT-struct to free */
 {
 
@@ -394,7 +394,7 @@ LALDestroySFTtype (LALStatus *status,
 /** Destroy an SFT-vector
  */
 void
-LALDestroySFTVector (LALStatus *status,
+LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		     SFTVector **vect)	/**< the SFT-vector to free */
 {
   INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
@@ -444,7 +444,7 @@ XLALDestroySFTVector (SFTVector *vect)
 /** Destroy a PSD-vector
  */
 void
-LALDestroyPSDVector (LALStatus *status,
+LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		     PSDVector **vect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -484,7 +484,7 @@ LALDestroyPSDVector (LALStatus *status,
 /** Destroy a multi SFT-vector
  */
 void
-LALDestroyMultiSFTVector (LALStatus *status,
+LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 		          MultiSFTVector **multvect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -516,7 +516,7 @@ LALDestroyMultiSFTVector (LALStatus *status,
 /** Destroy a multi PSD-vector
  */
 void
-LALDestroyMultiPSDVector (LALStatus *status,
+LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structure */
 		          MultiPSDVector **multvect)	/**< the SFT-vector to free */
 {
   UINT4 i;
@@ -554,7 +554,7 @@ LALDestroyMultiPSDVector (LALStatus *status,
  * in which case only the header is copied.
  */
 void
-LALCopySFT (LALStatus *status,
+LALCopySFT (LALStatus *status,	/**< pointer to LALStatus structure */
 	    SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
 	    const SFTtype *src)	/**< input-SFT to be copied */
 {
@@ -591,7 +591,7 @@ LALCopySFT (LALStatus *status,
  *
  */
 void
-LALSubtractSFTVectors (LALStatus *status,
+LALSubtractSFTVectors (LALStatus *status,	/**< pointer to LALStatus structure */
 		     SFTVector **outVect,	/**< [out] difference of SFT-vectors */
 		     const SFTVector *inVect1,	/**< input-vector 1 */
 		     const SFTVector *inVect2 ) /**< input-vector 2 */
@@ -692,7 +692,7 @@ LALSubtractSFTVectors (LALStatus *status,
  */
 void
 LALLinearlyCombineSFTVectors
-(LALStatus *status,
+(LALStatus *status,		/**< pointer to LALStatus structure */
  SFTVector **outVect,	          /**< [out] linear combo of SFT-vectors */
  SFTVector **inVects,	  /**< array of SFT-vectors */
  const COMPLEX16Vector *weights,  /**< vector of SFT-weights */
@@ -805,7 +805,7 @@ LALLinearlyCombineSFTVectors
 
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
 void
-LALAppendSFT2Vector (LALStatus *status,
+LALAppendSFT2Vector (LALStatus *status,		/**< pointer to LALStatus structure */
 		     SFTVector *vect,		/**< destinatino SFTVector to append to */
 		     const SFTtype *sft)	/**< the SFT to append */
 {
@@ -858,7 +858,7 @@ XLALCreateTimestampVector (UINT4 length)
 
 /** LAL-interface: Allocate a LIGOTimeGPSVector */
 void
-LALCreateTimestampVector (LALStatus *status,
+LALCreateTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
 			  LIGOTimeGPSVector **vect, 	/**< [out] allocated timestamp-vector  */
 			  UINT4 length)			/**< number of elements */
 {
@@ -899,7 +899,7 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 /** De-allocate a LIGOTimeGPSVector
  */
 void
-LALDestroyTimestampVector (LALStatus *status,
+LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
 			   LIGOTimeGPSVector **vect)	/**< timestamps-vector to be freed */
 {
   INITSTATUS( status, "LALDestroyTimestampVector", SFTUTILSC);
@@ -924,7 +924,7 @@ LALDestroyTimestampVector (LALStatus *status,
  * covering this time-stretch.
  */
 void
-LALMakeTimestamps(LALStatus *status,
+LALMakeTimestamps(LALStatus *status,			/**< pointer to LALStatus structure */
 		  LIGOTimeGPSVector **timestamps, 	/**< [out] timestamps-vector */
 		  LIGOTimeGPS tStart, 			/**< GPS start-time */
 		  REAL8 duration, 			/**< duration in seconds */
@@ -977,7 +977,7 @@ LALMakeTimestamps(LALStatus *status,
 /** Deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
  */
 void
-LALGetSFTtimestamps (LALStatus *status,
+LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 		     const SFTVector *sfts )		/**< input SFT-vector  */
 {
@@ -1519,7 +1519,7 @@ LALDestroyMultiNoiseWeights  (LALStatus         *status,
  *  _replacing_ the original SFTs
  */
 void
-upsampleMultiSFTVector (LALStatus *status,
+upsampleMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 			  MultiSFTVector *inout,	/**< [in,out]: upsampled multi SFT-vector */
 			  UINT4 upsample, 		/**< integer factor to upsample by */
 			  UINT4 Dterms			/**< number of terms in Dirichlet kernel [on each side] */
@@ -1552,7 +1552,7 @@ upsampleMultiSFTVector (LALStatus *status,
 
 
 void
-upsampleSFTVector (LALStatus *status,
+upsampleSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 		     SFTVector *inout,		/**< [in,out]: upsampled SFT-vector */
 		     UINT4 upsample, 		/**< integer factor to upsample by */
 		     UINT4 Dterms		/**< number of terms in Dirichlet kernel [on each side] */

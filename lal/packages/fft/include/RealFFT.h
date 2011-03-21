@@ -444,12 +444,12 @@ int XLALREAL4VectorFFT( REAL4Vector * restrict output, const REAL4Vector * restr
 /** Computes the power spectrum of REAL4 data
  *
  * This routine computes
- * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2&k=0\\2|z[k]|^2&1\lek<\lfloor (N+1)/2\rfloor\\|z[N/2]|^2&k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
+ * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2&k=0\\2|z[k]|^2&1\leq \lfloor (N+1)/2\rfloor\\|z[N/2]|^2&k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
  * where \f[z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,x[j],\f]
  * and N is the length of the input vector x.
  *
- * @param[out] output The real power spectrum P of length [N/2] + 1 of the data x
- * @param[in] input The input real data vector x of length N
+ * @param[out] spec The real power spectrum P of length [N/2] + 1 of the data x
+ * @param[in] data The input real data vector x of length N
  * @param[in] plan The FFT plan to use for the transform
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
@@ -668,12 +668,12 @@ int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
 /** Computes the power spectrum of REAL8 data
  *
  * This routine computes
- * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2&k=0\\2|z[k]|^2&1\lek<\lfloor (N+1)/2\rfloor\\|z[N/2]|^2&k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
+ * \f[P[k]=\left\{\begin{array}{ll}|z[0]|^2 & k=0\\2|z[k]|^2 & 1\leq \lfloor (N+1)/2\rfloor\\ |z[N/2]|^2 & k=N/2,\;\mbox{$N$ even}\end{array}\right.\f]
  * where \f[z[k] = \sum_{j=0}^{N-1} e^{-2\pi ijk/N}\,x[j],\f]
  * and N is the length of the input vector x.
  *
- * @param[out] output The real power spectrum P of length [N/2] + 1 of the data x
- * @param[in] input The input real data vector x of length N
+ * @param[out] spec The real power spectrum P of length [N/2] + 1 of the data x
+ * @param[in] data The input real data vector x of length N
  * @param[in] plan The FFT plan to use for the transform
  * @return 0 upon successful completion or non-zero upon failure.
  * @par Errors:
