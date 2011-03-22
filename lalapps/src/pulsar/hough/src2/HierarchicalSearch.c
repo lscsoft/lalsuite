@@ -995,7 +995,7 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-      ComputeFBufferREAL4V cfvBuffer;
+      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
 
       /* if (skyGridCounter == 25965) { */
 
