@@ -116,7 +116,7 @@ void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddep
 // Cluster candidates by frequency and period using templates:
 // option = 0 uses Gaussian templates (default)
 // option = 1 uses exact templates
-void clusterCandidates(candidateVector *output, candidateVector *input, ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 option)
+void clusterCandidates(candidateVector *output, candidateVector *input, ffdataStruct *ffdata, inputParamsStruct *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4Vector *sftexist, INT4 option)
 {
    
    const char *fn = __func__;
@@ -287,7 +287,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
                      if (option==1) {
-                        makeTemplate(template, cand, params, plan);
+                        makeTemplate(template, cand, params, sftexist, plan);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
                            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
