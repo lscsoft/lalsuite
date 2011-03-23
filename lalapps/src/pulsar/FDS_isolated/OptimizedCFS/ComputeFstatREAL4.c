@@ -87,17 +87,10 @@ static const REAL4 inv_fact[PULSAR_MAX_SPINS] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0)
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
-
-// const SSBtimes empty_SSBtimes;
-// const MultiSSBtimes empty_MultiSSBtimes;
-// const AntennaPatternMatrix empty_AntennaPatternMatrix;
-// const MultiAMCoeffs empty_MultiAMCoeffs;
-// const Fcomponents empty_Fcomponents;
-// const ComputeFBuffer empty_ComputeFBuffer;
-const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
+static const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
+static const FcomponentsREAL4 empty_FcomponentsREAL4;
 const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
 const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
-const FcomponentsREAL4 empty_FcomponentsREAL4;
 
 
 /*---------- internal prototypes ----------*/
