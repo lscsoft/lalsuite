@@ -426,7 +426,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
-   REAL8 logprobest = 0;
+   REAL8 logprobest = 0.0;
    INT4 estimatedTheProb = 0;
    /* if (prob<=1.0e-4) {
       estimatedTheProb = 1;
