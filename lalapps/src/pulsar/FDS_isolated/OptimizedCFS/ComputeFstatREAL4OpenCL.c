@@ -79,7 +79,6 @@ static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
-
 const SSBtimes empty_SSBtimes;
 const MultiSSBtimes empty_MultiSSBtimes;
 const AntennaPatternMatrix empty_AntennaPatternMatrix;
@@ -87,8 +86,6 @@ const MultiAMCoeffs empty_MultiAMCoeffs;
 const Fcomponents empty_Fcomponents;
 const ComputeFBuffer empty_ComputeFBuffer;
 const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
-const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
-const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 const FcomponentsREAL4 empty_FcomponentsREAL4;
 const CLWorkspace empty_CLWorkspace;
 
