@@ -28,43 +28,10 @@
  *
  *-----------------------------------------------------------------------
  */
-/**
-\author Krishnan, B.
-\file
-\ingroup pulsarTODO
 
-*/
-
+#include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
-#include <glob.h>
-#include <lal/GeneratePulsarSignal.h>
-
-/**\name Error Codes */ /*@{*/
-#define NORMALIZESFTRNGMEDC_ENORM 0
-#define NORMALIZESFTRNGMEDC_ESUB  1
-#define NORMALIZESFTRNGMEDC_EARG  2
-#define NORMALIZESFTRNGMEDC_EBAD  3
-#define NORMALIZESFTRNGMEDC_EFILE 4
-
-#define NORMALIZESFTRNGMEDC_MSGENORM "Normal exit"
-#define NORMALIZESFTRNGMEDC_MSGESUB  "Subroutine failed"
-#define NORMALIZESFTRNGMEDC_MSGEARG  "Error parsing arguments"
-#define NORMALIZESFTRNGMEDC_MSGEBAD  "Bad argument values"
-#define NORMALIZESFTRNGMEDC_MSGEFILE "Could not create output file"
-/*@}*/
-
-
-/* Default parameters. */
-
-INT4 lalDebugLevel=0;
-
-
-#define MAXFILENAMELENGTH 256
-#define INPUTSFTDIR "/local_data/badkri/fakesfts/"
-#define OUTPUTSFTDIR "./test/"
-#define FMIN 251.0
-#define FMAX 259.0
-#define BLKSIZE 101
+#include <lal/Units.h>
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -97,101 +64,77 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
+/* Error codes and messages */
+#define NORMALIZESFTRNGMEDC_ENORM 0
+#define NORMALIZESFTRNGMEDC_ESUB  1
+#define NORMALIZESFTRNGMEDC_EARG  2
+#define NORMALIZESFTRNGMEDC_EBAD  3
+#define NORMALIZESFTRNGMEDC_EFILE 4
 
-#define TRUE (1==1)
-#define FALSE (1==0)
+#define NORMALIZESFTRNGMEDC_MSGENORM "Normal exit"
+#define NORMALIZESFTRNGMEDC_MSGESUB  "Subroutine failed"
+#define NORMALIZESFTRNGMEDC_MSGEARG  "Error parsing arguments"
+#define NORMALIZESFTRNGMEDC_MSGEBAD  "Bad argument values"
+#define NORMALIZESFTRNGMEDC_MSGEFILE "Could not create output file"
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
-  static LALStatus    status;  /* LALStatus pointer */
+/* Default parameters. */
 
-  /*static SFTVector  *sft=NULL;*/
+INT4 lalDebugLevel=3;
+LALStatus empty_status;
 
-  static MultiSFTVector *multsftvect=NULL;
-  static MultiPSDVector *multpsdvect=NULL;
+#define NUM_BINS  5
 
-  CHAR *fname=NULL;
+int main ( void )
+{
+  const char *fn = __func__;
 
-  SFTCatalog *catalog = NULL;
+  LALStatus status = empty_status;
 
-  /* user input variables */
-  BOOLEAN uvar_help;
-  CHAR *uvar_inputSFTDir;    /* directory for unclean sfts */
-  CHAR *uvar_outputSFTDir;   /* directory for cleaned sfts */
-  /* REAL8 uvar_fmin, uvar_fmax; */
-  INT4 uvar_blockSize;
-  /* set defaults */
+  SFTtype *mySFT;
+  LIGOTimeGPS epoch = { 731210229, 0 };
+  REAL8 dFreq = 1.0 / 1800.0;
+  REAL8 f0 = 150.0 - 2.0 * dFreq;
 
-  lalDebugLevel = 0;
-  /* LALDebugLevel must be called before anything else */
-  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+  if ( (mySFT = XLALCreateSFT ( NUM_BINS )) == NULL ) {
+    XLALPrintError ("%s: Failed to create test-SFT using XLALCreateSFT(), xlalErrno = %d\n", fn, xlalErrno );
+    return NORMALIZESFTRNGMEDC_ESUB;
+  }
+  /* init header */
+  strcpy ( mySFT->name, "H1;testSFTRngmed" );
+  mySFT->epoch = epoch;
+  mySFT->f0 = f0;
+  mySFT->deltaF = dFreq;
 
-  uvar_help = FALSE;
+  /* init data array */
+  COMPLEX8 vals[NUM_BINS] = {
+    { -1.249241e-21,   1.194085e-21 },
+    {  2.207420e-21,   2.472366e-22 },
+    {  1.497939e-21,   6.593609e-22 },
+    {  3.544089e-20,  -9.365807e-21 },
+    {  1.292773e-21,  -1.402466e-21 }
+  };
+  /* we simply copy over these data-values into the SFT */
+  UINT4 iBin;
+  for ( iBin = 0; iBin < NUM_BINS; iBin ++ )
+    mySFT->data->data[iBin] = vals[iBin];
 
-  uvar_blockSize = BLKSIZE;
+  /* test running-median PSD estimation is simple blocksize cases */
+  UINT4 blockSize = 3;
 
-  uvar_inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_inputSFTDir, INPUTSFTDIR);
+  /* get median->mean bias correction */
+  REAL8 medianBias;
+  SUB ( LALRngMedBias( &status, &medianBias, blockSize ), &status);
 
-  uvar_outputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_outputSFTDir, OUTPUTSFTDIR);
 
-  /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",         'h', UVAR_HELP,     "Print this message",    &uvar_help),         &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",  'i', UVAR_OPTIONAL, "Input SFT Directory",   &uvar_inputSFTDir),  &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir", 'o', UVAR_OPTIONAL, "Output SFT Directory",  &uvar_outputSFTDir), &status);
-  SUB( LALRegisterINTUserVar(    &status, "blockSize",    'b', UVAR_OPTIONAL, "Rng Med block size",    &uvar_blockSize),    &status);
 
-  /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
 
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0);
 
-  fname = (CHAR *)LALMalloc(256*sizeof(CHAR));
-  strcpy(fname, uvar_inputSFTDir);
-  strcat(fname, "/*SFT-test*");
-
-  SUB ( LALSFTdataFind ( &status, &catalog, fname, NULL), &status);
-
-  SUB ( LALLoadMultiSFTs ( &status, &multsftvect, catalog, -1, -1 ), &status );
-
-  SUB ( LALNormalizeMultiSFTVect(&status, &multpsdvect, multsftvect, uvar_blockSize), &status);
-
-  SUB ( LALNormalizeSFTVect(&status, multsftvect->data[0], uvar_blockSize), &status);
 
   /* free memory */
-  SUB ( LALDestroyMultiPSDVector ( &status, &multpsdvect), &status);
-  SUB ( LALDestroyMultiSFTVector ( &status, &multsftvect), &status);
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-
-  LALFree(fname);
-
-  SUB (LALDestroyUserVars(&status), &status);
+  XLALDestroySFT ( mySFT );
 
   LALCheckMemoryLeaks();
 
-  INFO( NORMALIZESFTRNGMEDC_MSGENORM );
   return NORMALIZESFTRNGMEDC_ENORM;
-}
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-
-
-
-
-
-
-
-
-
-
-
-
+} /* main() */
