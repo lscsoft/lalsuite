@@ -1392,7 +1392,7 @@ InitUserVars (LALStatus *status)
   /* start + duration of timeseries */
   LALregINTUserVar(status,   startTime,		'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
   LALregINTUserVar(status,   duration,	 	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "Timestamps file");
+  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* generation-mode of timeseries: all-at-once or per-sft */
   LALregINTUserVar(status,   generationMode, 	 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
