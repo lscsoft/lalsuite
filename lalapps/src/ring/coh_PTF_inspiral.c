@@ -902,6 +902,11 @@ void coh_PTF_statistic(
   REAL4 *frequencyRangesPlus = *frequencyRangesPlusP;
   REAL4 *frequencyRangesCross = *frequencyRangesCrossP; 
 
+  for (i = 0; i < LAL_NUM_IFO; i++)
+  {
+    fprintf(stderr,"%e %e %e %e %e \n",timeOffsets[i],Fplus[i],Fcross[i],Fplustrig[i],Fcrosstrig[i]);
+  }
+
   // Code works slightly differently if spin/non spin and single/coherent
   if (spinTemplate)
     vecLength = 5;
