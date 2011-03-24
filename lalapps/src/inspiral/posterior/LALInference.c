@@ -972,7 +972,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/
 {
-  REAL8 ChiSquared, dxp, xp, x, deltaFSegments, norm, binPower, nextBin;
+  REAL8 ChiSquared, dxp, xp, x, norm, binPower, nextBin;
   REAL8 lowerF, upperF, deltaT, deltaF;
   REAL8 *segnorm;
   INT4  i, chisqPt, imax, kmin, kmax, numBins;
@@ -1002,7 +1002,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
     numBins = *(INT4*) getVariable(currentParams, "numbins");
     kmin = ceil(ifoPtr->fLow / deltaF);
     kmax = floor(ifoPtr->fHigh / deltaF);
-    imax = kmax > ifoPtr->freqData->data->length-1 ? ifoPtr->freqData->data->length-1 : kmax;
+    imax = kmax > (INT4) ifoPtr->freqData->data->length-1 ? (INT4) ifoPtr->freqData->data->length-1 : kmax;
     
     segnorm=malloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
     memset(segnorm,0,sizeof(REAL8) * ifoPtr->freqData->data->length);
@@ -1034,7 +1034,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
     }
     chisqBin[16]=imax;
     /* check that we have sucessfully allocated all the bins */
-    if ( i == ifoPtr->freqData->data->length && chisqPt != numBins )
+    if ( i == (INT4) ifoPtr->freqData->data->length && chisqPt != numBins )
     {
       /* if we have reaced the end of the template power vec and not
        * */
