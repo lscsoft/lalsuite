@@ -813,7 +813,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                     devices,
                     &num_devices);
   if (err != CL_SUCCESS) {
-      XLALPrintError ("%s: Error querying number of OpenCL devices\n", fn );
+      XLALPrintError ("%s: Error querying number of OpenCL devices: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   } else if ( gpu_device_id >= num_devices ) {
@@ -840,7 +840,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                                    CL_QUEUE_PROFILING_ENABLE,
                                    &err);
   if (cmd_queue == (cl_command_queue)0) {
-      XLALPrintError ("%s: Failed to create command queue\n", fn );
+      XLALPrintError ("%s: Failed to create command queue: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -1139,7 +1139,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
     err_total += (err-CL_SUCCESS);
 
     if (err_total != CL_SUCCESS) {
-        XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err_total );
+        XLALPrintError ("%s: Error creating OpenCL memory buffer: %s (%d)\n", fn, pclerror(err_total), err_total);
         XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
     }
   }
