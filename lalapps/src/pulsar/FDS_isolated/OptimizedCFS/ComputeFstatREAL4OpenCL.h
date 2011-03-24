@@ -132,6 +132,7 @@ extern CLWorkspace clW;
 /* ---------- additional exported API prototypes ---------- */
 extern int XLALInitCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
 extern void XLALDestroyCLWorkspace (CLWorkspace *clWp, const MultiSFTVectorSequence *stackMultiSFT);
+extern void XLALRearrangeSFTData ( CLWorkspace *clW, const REAL4FrequencySeriesVector *fstatBandV );
 
 #if USE_OPENCL_KERNEL
 void freeCLMemoryObject (cl_mem *memobj);

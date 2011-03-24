@@ -74,8 +74,6 @@ int gpu_platform_id = 0;
 #define LUT_RES         	64      /* resolution of lookup-table */
 #define OO_LUT_RES		(1.0f / LUT_RES )
 
-static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
@@ -1108,7 +1106,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
 
   if ( clW->Fstat.data == NULL || clW->Freq.data == NULL ) {
       XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
   }
 
 #if USE_OPENCL_KERNEL
@@ -1128,7 +1126,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
 
     if (err_total != CL_SUCCESS) {
         XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err_total );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
+        XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
     }
   }
 #endif // #if USE_OPENCL_KERNEL
