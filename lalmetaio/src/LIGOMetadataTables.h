@@ -668,6 +668,8 @@ tagSimInspiralTable
   REAL4          eff_dist_g;
   REAL4          eff_dist_t;
   REAL4          eff_dist_v;
+  REAL4		       qmParameter1;
+  REAL4		       qmParameter2; 
   EventIDColumn  *event_id;
   INT4           numrel_mode_min;
   INT4           numrel_mode_max;
