@@ -20,8 +20,9 @@ CUDART ?= -lcudart
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch lalapps_RecalcHSCandidates
 
-EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
-		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda lalapps_HierarchicalSearch_opencl_mac
+EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 \
+		 lalapps_HierarchicalSearch_cuda lalapps_HierarchicalSearch_opencl_mac lalapps_HierarchicalSearch_opencl_lin \
+		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda
 
 # lalapps_HierarchicalSearch doesn't condor compile
 #if CONDOR_ENABLED
@@ -83,6 +84,10 @@ lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) $(CUDART)
 lalapps_HierarchicalSearch_opencl_mac_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4OpenCL.c
 lalapps_HierarchicalSearch_opencl_mac_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_OPENCL_KERNEL=1
 lalapps_HierarchicalSearch_opencl_mac_LDFLAGS = $(AM_LDFLAGS) -framework OpenCL
+
+lalapps_HierarchicalSearch_opencl_lin_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4OpenCL.c
+lalapps_HierarchicalSearch_opencl_lin_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_OPENCL_KERNEL=1
+lalapps_HierarchicalSearch_opencl_lin_LDADD = $(LDADD) -lOpenCL
 
 # Einstein@home targets
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
