@@ -572,6 +572,10 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   global_work_size[0] = local_work_size[0] * numBins;
   global_work_size[1] = local_work_size[1] * clWp->numSegments;
 
+  LogPrintf(LOG_DEBUG,
+	    "In function %s: work group size local 0: %d, local 1: %d, max device: %d\n",
+	    fn,local_work_size[0],local_work_size[1],CL_KERNEL_WORK_GROUP_SIZE);
+
   err = clEnqueueNDRangeKernel(*(clWp->cmd_queue), *(clWp->kernel),
                                2, // Work dimensions
                                NULL, // must be NULL (work offset)
@@ -738,6 +742,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   static const char *fn = "XLALInitCLWorkspace()";
   // TODO: do something with the hardcoded kernel path
   static const char *cl_kernel_filepath = "FStatOpenCLKernel.cl";
+  size_t max_work_size = 0;
 
 #if USE_OPENCL_KERNEL
   cl_int err, err_total;
@@ -819,6 +824,15 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     LogPrintf(LOG_DEBUG, "In function %s: Found %d devices, using device id %d\n", fn, num_devices, gpu_device_id);
   }
   clW->device = &(devices[gpu_device_id]);
+
+  // get the max work group size
+  err = clGetDeviceInfo(devices[gpu_device_id],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(max_work_size),&max_work_size,NULL);
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error %d (%s) querying max work group size\n", fn, err, pclerror(err));
+    XLALDestroyCLWorkspace (clW, stackMultiSFT);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: device id %d max work group size: %d\n", fn, gpu_device_id, max_work_size);
 
   // create a command-queue
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);
