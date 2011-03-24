@@ -860,7 +860,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   // get the max work group size
   err = clGetDeviceInfo(devices[gpu_device_id],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(max_work_size),&max_work_size,NULL);
   if (err != CL_SUCCESS) {
-    XLALPrintError ("%s: Error %d (%s) querying max work group size\n", fn, err, pclerror(err));
+    XLALPrintError ("%s: Error querying max work group size: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clW, stackMultiSFT);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -1117,6 +1117,16 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   clW->kernel = &kernel;
+
+  err = clGetKernelWorkGroupInfo(kernel, devices[gpu_device_id], CL_KERNEL_WORK_GROUP_SIZE,
+				 sizeof(clW->kernel_work_size), &(clW->kernel_work_size), NULL);
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error querying max work group size: %s (%d)\n", fn, pclerror(err), err);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: device id %d kernel group size: %d\n", fn, gpu_device_id, clW->kernel_work_size);
+
 #endif // #if USE_OPENCL_KERNEL
 
   return 0;

@@ -99,6 +99,7 @@ typedef struct {
     cl_command_queue  *cmd_queue;
     cl_program        *program;
     cl_kernel         *kernel;
+    size_t            kernel_work_size;
 #endif
 
     UINT4              numBins;       // <200
