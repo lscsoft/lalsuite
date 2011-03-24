@@ -17,6 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * \brief 
+ * Program to identify a subset of orbital templates in a secondary detector
+ * given a single template location in the primary detector.
+ */
+
 /*********************************************************************************/
 /* Program to identify a subset of orbital templates in a secondary detector     */
 /* given a single template location in the primary detector.                     */

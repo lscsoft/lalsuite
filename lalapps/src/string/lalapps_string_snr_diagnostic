@@ -1,0 +1,434 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2010  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+import math
+try:
+	isinf = math.isinf
+except AttributeError:
+	# python < 2.6
+	from numpy import isinf
+from optparse import OptionParser
+try:
+	import sqlite3
+except ImportError:
+	# pre 2.5.x
+	from pysqlite2 import dbapi2 as sqlite3
+import sys
+
+
+from glue import iterutils
+from glue import lal
+from pylal import git_version
+from pylal import ligolw_burca2
+from pylal import rate
+from pylal import SnglBurstUtils
+from pylal import stringutils
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg
+	)
+	parser.add_option("-b", "--base", metavar = "base", default = "string_snr_diagnostic_", help = "Set the prefix for output filenames (default = \"string_plotbinj_\").")
+	parser.add_option("--detection-threshold", metavar = "likelihood-ratio", type = "float", help = "Set the detection threshold (the likelihood ratio assigned to the highest-ranked zero-lag event).")
+	parser.add_option("-f", "--format", metavar = "format", action = "append", default = [], help = "Set the output image format (default = \"png\").  Option can be given multiple times to generate plots in multiple formats.")
+	parser.add_option("--input-cache", metavar = "filename", action = "append", default = [], help = "Get list of files from this LAL cache.")
+	parser.add_option("--likelihood-cache", metavar = "filename", help = "Also load the likelihood ratio data files listsed in this LAL cache.  See lalapps_path2cache for information on how to produce a LAL cache file.")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("--vetoes-name", metavar = "name", help = "Set the name of the segment lists to use as vetoes (default = do not apply vetoes).")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	if options.detection_threshold is None:
+		raise ValueError, "must set --detection-threshold"
+
+	if not options.format:
+		options.format = ["png"]
+
+	filenames = filenames or []
+	for cache in options.input_cache:
+		if options.verbose:
+			print >>sys.stderr, "reading '%s' ..." % cache
+		filenames += [lal.CacheEntry(line).path() for line in file(cache)]
+	if not filenames:
+		raise ValueError, "Nothing to do!"
+	if options.likelihood_cache is None:
+		raise ValueError, "must set --likelihood-cache"
+	options.likelihood_filenames = [lal.CacheEntry(line).path() for line in file(options.likelihood_cache)]
+
+	return options, filenames
+
+
+#
+# =============================================================================
+#
+#                   Single-Detector SNR Threshold Diagnostic
+#
+# =============================================================================
+#
+
+def find_nth_percentile(yx_pairs, xbins, percentile = 50.0):
+	yvalues = [[] for i in range(len(xbins))]
+	for y, x in yx_pairs:
+		yvalues[xbins[x]].append(y)
+	for i, l in enumerate(yvalues):
+		if l:
+			l.sort()
+			yvalues[i] = l[int(round((len(l) - 1) * percentile / 100.0))]
+		else:
+			# no data = instrument has no effect
+			yvalues[i] = 1
+	return yvalues
+
+
+class LikelihoodVsSNR(object):
+	class Data(object):
+		def __init__(self):
+			self.zero_lag = iterutils.Highest(max = 1000000)
+			self.zero_lag_buffer = []
+			self.background = iterutils.Highest(max = 1000000)
+			self.background_buffer = []
+			self.injection = []
+			self.injection_buffer = []
+			self.injection_ratio = []
+			self.injection_ratio_buffer = []
+			self.lowest_surviving_snr = float("+inf")
+
+	def __init__(self, detection_threshold, likelihood_ratio):
+		self.detection_threshold = detection_threshold
+		self.likelihood_ratio = likelihood_ratio
+		self.max_snr = 15
+		self.data = {}
+
+	def add_noninjections(self, contents):
+		for instrument, snr, peak_time, peak_time_ns, likelihood, is_background in contents.connection.cursor().execute("""
+SELECT
+	sngl_burst.ifo,
+	sngl_burst.snr,
+	sngl_burst.peak_time, sngl_burst.peak_time_ns,
+	coinc_event.likelihood,
+	EXISTS (
+		SELECT
+			*
+		FROM
+			time_slide
+		WHERE
+			time_slide.time_slide_id == coinc_event.time_slide_id
+			AND time_slide.offset != 0
+	)
+FROM
+	coinc_event
+	JOIN coinc_event_map AS c ON (
+		c.coinc_event_id == coinc_event.coinc_event_id
+	)
+	JOIN sngl_burst ON (
+		c.table_name == 'sngl_burst'
+		AND c.event_id == sngl_burst.event_id
+	)
+WHERE
+	coinc_event.coinc_def_id == ?
+		""", (contents.bb_definer_id,)):
+			peak_time = LIGOTimeGPS(peak_time, peak_time_ns)
+			# ignore vetoed triggers, and coincs that haven't
+			# had likelihoods assigned to them (too many
+			# triggers vetoed)
+			if snr < self.max_snr and likelihood is not None and (instrument not in contents.vetoseglists or peak_time not in contents.vetoseglists[instrument]):
+				try:
+					data = self.data[instrument]
+				except KeyError:
+					data = self.data[instrument] = self.Data()
+
+				if is_background:
+					data.background_buffer.append((likelihood, snr))
+				else:
+					data.zero_lag_buffer.append((likelihood, snr))
+		for data in self.data.values():
+			data.background.extend(data.background_buffer)
+			del data.background_buffer[:]
+			data.zero_lag.extend(data.zero_lag_buffer)
+			del data.zero_lag_buffer[:]
+
+	def add_injections(self, contents):
+		offset_vectors = contents.time_slide_table.as_dict()
+		cursor = contents.connection.cursor()
+		for values in contents.connection.cursor().execute("""
+SELECT
+	sim_burst.*,
+	coinc_event.coinc_event_id,
+	coinc_event.time_slide_id,
+	coinc_event.likelihood
+FROM
+	sim_burst
+	JOIN coinc_event_map AS a ON (
+		a.table_name == 'sim_burst'
+		AND a.event_id == sim_burst.simulation_id
+	)
+	JOIN coinc_event_map AS b ON (
+		b.coinc_event_id == a.coinc_event_id
+	)
+	JOIN coinc_event ON (
+		b.table_name == 'coinc_event'
+		AND b.event_id == coinc_event.coinc_event_id
+	)
+WHERE
+	coinc_event.coinc_def_id == ?
+		""", (contents.bb_definer_id,)):
+			sim = contents.sim_burst_table.row_from_cols(values)
+			coinc_event_id, time_slide_id, likelihood = values[-3:]
+			if likelihood is None:
+				# ignore vetoed coincs
+				continue
+			time_slide_id = dbtables.ilwd.get_ilwdchar(time_slide_id)
+			events = [contents.sngl_burst_table.row_from_cols(values) for values in cursor.execute("""
+SELECT
+	sngl_burst.*
+FROM
+	sngl_burst
+	JOIN coinc_event_map ON (
+		coinc_event_map.table_name == 'sngl_burst'
+		AND sngl_burst.event_id == coinc_event_map.event_id
+	)
+WHERE
+	coinc_event_map.coinc_event_id == ?
+        		""", (coinc_event_id,))]
+			# ignore vetoed triggers
+			events = set(event for event in events if event.ifo not in contents.vetoseglists or event.get_peak() not in contents.vetoseglists[event.ifo])
+
+			# if event was above detection threshold, update
+			# min surviving SNR
+			if likelihood > self.detection_threshold:
+				for event in events:
+					try:
+						data = self.data[event.ifo]
+					except KeyError:
+						data = self.data[event.ifo] = self.Data()
+					data.lowest_surviving_snr = min(data.lowest_surviving_snr, event.snr)
+
+			if len(events) <= 2:
+				# if nevents <= 2 there isn't a "what if"
+				# scenario, so just record the likelihood
+				for event in events:
+					if event.snr > self.max_snr:
+						continue
+					try:
+						data = self.data[event.ifo]
+					except KeyError:
+						data = self.data[event.ifo] = self.Data()
+					data.injection_buffer.append((likelihood, event.snr))
+			else:
+				# if nevents > 2, for each even compute the
+				# likelihood ratio that would've been
+				# obtained if the event was not in the
+				# coinc and record the ratio of the actual
+				# likelihood to the what-if likelihood.
+				# this is how much the presence of this
+				# event has contributed to the value of the
+				# ranking statistic
+				for event in events:
+					if event.snr > self.max_snr:
+						continue
+					try:
+						data = self.data[event.ifo]
+					except KeyError:
+						data = self.data[event.ifo] = self.Data()
+					alt_likelihood = self.likelihood_ratio(stringutils.coinc_params_func(events - set([event]), offset_vectors[time_slide_id]))
+					if likelihood == 0:
+						if alt_likelihood == 0:
+							# noise with or without
+							data.injection_ratio_buffer.append((1, event.snr))
+						else:
+							# noise with, not noise without
+							data.injection_ratio_buffer.append((0, event.snr))
+					elif isinf(likelihood):
+						if isinf(alt_likelihood):
+							# injection with or without
+							data.injection_ratio_buffer.append((1, event.snr))
+						else:
+							# injection with, not without
+							data.injection_ratio_buffer.append((float("inf"), event.snr))
+					else:
+						assert alt_likelihood != 0
+						data.injection_ratio_buffer.append((likelihood / alt_likelihood, event.snr))
+					# also record the likelihood itself
+					data.injection_buffer.append((likelihood, event.snr))
+
+		for data in self.data.values():
+			data.injection.extend(data.injection_buffer)
+			del data.injection_buffer[:]
+			data.injection_ratio.extend(data.injection_ratio_buffer)
+			del data.injection_ratio_buffer[:]
+		cursor.close()
+
+	def finish(self):
+		f = file("lalapps_string_snr_diagnostic.txt", "w")
+		for instrument, data in sorted(self.data.items()):
+			for y, x in data.injection_ratio:
+				print >>f, "%s ratio %.16g %.16g" % (instrument, x, y)
+			for y, x in data.injection:
+				print >>f, "%s inj %.16g %.16g" % (instrument, x, y)
+			for y, x in data.background:
+				print >>f, "%s bak %.16g %.16g" % (instrument, x, y)
+			for y, x in data.zero_lag:
+				print >>f, "%s zero %.16g %.16g" % (instrument, x, y)
+		f.close()
+
+		for instrument, data in sorted(self.data.items()):
+			fig, axes = SnglBurstUtils.make_burst_plot(r"SNR in %s" % instrument, r"$\Lambda(\mathrm{with}) / \Lambda(\mathrm{without})$")
+			axes.set_title("Contribution to Coincidence Likelihood vs.\ SNR in %s" % instrument)
+			axes.loglog()
+			x, y = [x for y, x in data.injection_ratio], [y for y, x in data.injection_ratio]
+			axes.plot(x, y, "r+")
+
+			bins = rate.LinearBins(min(x), max(x), int((max(x) - min(x)) / 0.125))
+			axes.plot(bins.centres(), find_nth_percentile(data.injection_ratio, bins, 90.0), "k-")
+			axes.axhline(1, linewidth = 1, color = "k")
+			axes.axvline(data.lowest_surviving_snr, linewidth = 1, color = "k")
+			print >>sys.stderr, "Lowest surviving SNR in %s: %g" % (instrument, data.lowest_surviving_snr)
+			yield fig
+			continue
+
+			fig, axes = SnglBurstUtils.make_burst_plot(r"SNR in %s" % instrument, r"Coincidence Likelihood Ratio $\Lambda$")
+			axes.set_title(r"Coincidence Likelihood Ratio vs.\ SNR in %s" % instrument)
+			axes.loglog()
+			x, y = [x for y, x in data.injection], [y for y, x in data.injection]
+			axes.plot(x, y, "r+")
+			x, y = [x for y, x in data.background], [y for y, x in data.background]
+			axes.plot(x, y, "k+", alpha = 0.6)
+			x, y = [x for y, x in data.zero_lag], [y for y, x in data.zero_lag]
+			axes.plot(x, y, "b+")
+			axes.axhline(1, linewidth = 1, color = "k")
+			axes.axvline(data.lowest_surviving_snr, linewidth = 1, color = "k")
+
+			yield fig
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+
+#
+# Parse command line
+#
+
+
+options, filenames = parse_command_line()
+
+
+#
+# Load likelihood data
+#
+
+
+coincparamsdistributions = stringutils.load_likelihood_data(options.likelihood_filenames, verbose = options.verbose)
+if options.verbose:
+	print >>sys.stderr, "computing event densities ..."
+coincparamsdistributions.finish(filters = stringutils.DistributionsStats.filters, verbose = options.verbose)
+
+
+#
+# Initialize plots
+#
+
+
+plots = [
+	LikelihoodVsSNR(options.detection_threshold, ligolw_burca2.LikelihoodRatio(coincparamsdistributions))
+]
+
+
+#
+# Process files
+#
+
+
+from glue.ligolw import dbtables
+dbtables.lsctables.LIGOTimeGPS = LIGOTimeGPS
+
+for n, filename in enumerate(filenames):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+	connection = sqlite3.connect(working_filename)
+	dbtables.DBTable_set_connection(connection)
+	database = SnglBurstUtils.CoincDatabase(connection, "StringSearch", search = "StringCusp", veto_segments_name = options.vetoes_name)
+	if options.verbose:
+		SnglBurstUtils.summarize_coinc_database(database)
+	for n, plot in enumerate(plots):
+		if options.verbose:
+			print >>sys.stderr, "adding to plot %d ..." % n
+		if database.sim_burst_table is None:
+			#plot.add_noninjections(database)
+			pass
+		else:
+			plot.add_injections(database)
+	connection.close()
+	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+
+
+#
+# finish and write plots, deleting them as we go to save memory
+#
+
+
+n = 0
+format = "%%s%%0%dd%%s.%%s" % (int(math.log10(len(plots) or 1)) + 1)
+while len(plots):
+	plot = plots.pop(0)
+	if options.verbose:
+		print >>sys.stderr, "finishing plot %d ..." % n
+	try:
+		figs = plot.finish()
+	except ValueError, e:
+		print >>sys.stderr, "can't finish plot %d: %s" % (n, str(e))
+	else:
+		for f, fig in enumerate(figs):
+			for extension in options.format:
+				filename = format % (options.base, n, chr(97 + f), extension)
+				if options.verbose:
+					print >>sys.stderr, "writing %s ..." % filename
+				fig.savefig(filename)
+	n += 1

@@ -17,16 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/****************************************************
- *
- * Filename: HoughMismatch.c
- *
- * Revision: $Id$
- * 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan, Reinhard Prix
+ * \brief
  * Estimating mismatch of grid used in Hough search
- * 
- ****************************************************/
-
+ */
 
 #include "../src/MCInjectHoughS2.h"
 

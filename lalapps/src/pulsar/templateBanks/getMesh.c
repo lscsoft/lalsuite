@@ -18,9 +18,9 @@
 */
 
 /**
- * \file getMesh.c
- *
- * \author{Reinhard Prix}
+ * \file
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
  *
  * Standalone code to produce a 'mesh' in the parameter-space
  * Currently this is just some code to use InitDopplerScan()
@@ -28,10 +28,7 @@
  * than generating sky-grids.
  *
  * UserInput-parameters a compatible with ComputeFStatistic.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------*/
+ */
 
 /* ---------- includes ---------- */
 #include <math.h>
@@ -593,10 +590,10 @@ checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
  *
  */
 void
-getSearchRegion (LALStatus *status,
+getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 		 DopplerRegion *searchRegion,	/**< OUT: the DopplerRegion to search over */
 		 const DopplerSkyScanInit *params,	/**< IN: DopplerSkyScan params might be needed */
-		 const UserVariables_t *uvar
+		 const UserVariables_t *uvar	/**< [in] set of all user-input */
 		 )
 {
 

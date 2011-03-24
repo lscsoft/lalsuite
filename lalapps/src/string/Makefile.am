@@ -3,8 +3,9 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src
 if LALFRAME
 if LALMETAIO
 if LALBURST
-bin_PROGRAMS = lalapps_StringSearch
+bin_PROGRAMS = lalapps_StringSearch lalapps_StringAddFrame 
 lalapps_StringSearch_SOURCES = StringSearch.c
+lalapps_StringAddFrame_SOURCES = AddFrame.c
 endif
 endif
 endif

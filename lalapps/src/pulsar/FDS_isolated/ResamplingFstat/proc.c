@@ -1,4 +1,10 @@
-/* This code takes in SFTs as input and creates a heterodyned, downsampled time series out of them. It will fill in the gaps in SFTs with zeros and combine consecutive SFTs are combined coherently.*/
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \brief
+ * This code takes in SFTs as input and creates a heterodyned, downsampled time series out of them.
+ * It will fill in the gaps in SFTs with zeros and combine consecutive SFTs are combined coherently.
+ */
 
 
 

@@ -19,18 +19,15 @@
 
 /**
  * \file
- *
- * \author{Reinhard Prix}
- *
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
+ * \brief
  * This module deals with calculating various F-statistic metric approximations,
  * Fisher matrices and mismatches. Contrary to previous implementations
  * this consistently uses gsl-integration, and allows for very generic
  * handling of different coordinate systems in the Doppler parameter space.
  *
  * In particular, it allows for easy extensions to new coordinates and Doppler parameters.
- *
- *
- *
  */
 
 /* ---------- includes ---------- */
@@ -234,6 +231,7 @@ main(int argc, char *argv[])
     return 0;
   }
 
+
   if ( uvar.coordsHelp )
     {
       CHAR *helpstr;
@@ -324,7 +322,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
 
   uvar->startTime = 714180733;
   uvar->duration = 10 * 3600;
-  uvar->refTime = 0;
+  uvar->refTime = -1;	/* default: use mid-time */
 
   uvar->projection = 0;
   if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
@@ -335,7 +333,7 @@ initUserVars (LALStatus *status, UserVariables_t *uvar)
   uvar->IFOweights = NULL;
 
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
-  uvar->metricType = 2;	/* by default: compute both phase + Fstat metric */
+  uvar->metricType = 0;	/* by default: compute only phase metric */
 
   if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
@@ -486,7 +484,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
       XLAL_ERROR ( fn, XLAL_EFUNC );
     }
     cfg->history->cmdline = cmdline;
-
   } /* record history */
 
 

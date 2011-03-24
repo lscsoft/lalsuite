@@ -17,27 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <getopt.h>
-
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "errutil.h"
-#include "gpstime.h"
-#include "injsgnl.h"
-#include "processtable.h"
-
 RCSID( "$Id$" );
-
-extern int vrbflg;
-static int coh_PTF_usage( const char *program );
-static int coh_PTF_default_params( struct coh_PTF_params *params );
-
 
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
@@ -85,7 +67,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "v1-channel-name",            required_argument, 0, 'z' },
     { "v1-frame-cache",             required_argument, 0, 'Z' },
     { "debug-level",             required_argument, 0, 'd' },
-    { "cutoff-frequency",        required_argument, 0, 'e' },
+    { "low-template-freq",        required_argument, 0, 'e' },
+    { "low-filter-freq",        required_argument, 0, 'H' },
+    { "high-filter-freq",        required_argument, 0, 'I' },
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "injection-file",          required_argument, 0, 'i' },
     { "snr-threshold",           required_argument, 0, 'j' },
@@ -118,7 +102,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -186,8 +170,14 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'd': /* debug-level */
         set_debug_level( optarg );
         break;
-      case 'e': /* cutoff-frequency */
-        localparams.lowCutoffFrequency = atof( optarg );
+      case 'e': /* start frequency of template generation */
+        localparams.lowTemplateFrequency = atof( optarg );
+        break;
+      case 'H': /* start frequency of matched filter */
+        localparams.lowFilterFrequency = atof( optarg );
+        break;
+      case 'I': /* End frequency of matched filter */
+        localparams.highFilterFrequency = atof( optarg );
         break;
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
@@ -306,7 +296,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 }
 
 /* sets default values for parameters */
-static int coh_PTF_default_params( struct coh_PTF_params *params )
+int coh_PTF_default_params( struct coh_PTF_params *params )
 {
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
@@ -318,8 +308,11 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
 
-  /* negative value means use the "default" values */
-  params->highpassFrequency     = -1.0; /* use low-frequency cutoff */
+  /* Various frequencies must be set */
+  params->highpassFrequency     = -1.0; 
+  params->lowTemplateFrequency = -1.0;
+  params->lowFilterFrequency = -1.0;
+  params->highFilterFrequency = -1.0;
 
   /* segments and templates to do: all of them */
   params->segmentsToDoList  = "^-$";
@@ -331,7 +324,7 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   params->getSpectrum = 1;
   params->doFilter    = 1;
 
-  /* Some thresholding stuff, this should be command line options */
+  /* FIXME: Some thresholding stuff, this should be command line options */
   params->bankVeton = 3.;
   params->bankVetoq = 4.;
   params->autoVeton = 3.;
@@ -342,10 +335,6 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
 
   return 0;
 }
-
-/* macro for testing validity of a condition that prints an error if invalid */
-#define sanity_check( condition ) \
-  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
 
 /* check sanity of parameters and sets appropriate values of unset parameters */
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
@@ -412,6 +401,13 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
   sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
 
+  /* Check that filter frequencies have been given */
+  sanity_check( params->highpassFrequency > 0);
+  sanity_check( params->lowTemplateFrequency > 0);
+  fprintf(stderr, "%e %e %e \n", params->lowTemplateFrequency, params->lowFilterFrequency, params->highFilterFrequency);
+  sanity_check( params->lowFilterFrequency > 0 && params->lowFilterFrequency >= params->lowTemplateFrequency);
+  sanity_check( params->highFilterFrequency > params->lowFilterFrequency);
+
 // This needs fixing. Need a check on whether segmentsToDoList and 
 // analyzeInjSegsOnly have been given.
 //  sanity_check( ! ((params->segmentsToDoList  != "^-$") && (params->analyzeInjSegsOnly)));
@@ -475,7 +471,7 @@ int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params )
 
 
 /* prints a help message */
-static int coh_PTF_usage( const char *program )
+int coh_PTF_usage( const char *program )
 {
   fprintf( stderr, "usage: %s options\n", program );
   fprintf( stderr, "\ngeneral options:\n" );
@@ -522,7 +518,9 @@ static int coh_PTF_usage( const char *program )
 
   fprintf( stderr, "\npower spectrum options:\n" );
   fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
-  fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
+  fprintf( stderr, "--low-template-freq=fmin    low frequency cutoff for generation of templates (Hz)\n" );
+  fprintf( stderr, "--low-filter-freq=f_low    low frequency cutoff for matched filtering (Hz)\n" );
+  fprintf( stderr, "--high-filter-freq=f_max    high frequency cutoff for matched filtering (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-file=name           Location of tmpltbank xml file\n" );

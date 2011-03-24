@@ -799,6 +799,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     # since it is inherited by all the other sub-workflows
     hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
       'segment_files.cache', '../segments/*txt' )))
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
+      'veto_files.cache', '../segments/*VETOTIME*xml' )))
     hipeNode.add_output_file( hipe_cache(ifos, None, \
         hipecp.getint("input", "gps-start-time"), \
         hipecp.getint("input", "gps-end-time")) )
@@ -808,9 +810,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         hipecp.getint("input", "gps-start-time"), \
         hipecp.getint("input", "gps-end-time")) )
     if hipecp.has_section("ligolw_cafe"):
+      num_slide_files = int(hipecp.get("ligolw_cafe", "num-slides-files"))
+      slide_files = [hipecp.get("ligolw_cafe","slides-file-%i"%idx)
+          for idx in range(num_slide_files)]
       hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
-        'slide_files.cache', [hipecp.get("ligolw_cafe","background-slides"),
-          hipecp.get("ligolw_cafe", "zero-lag-slides")] )))
+        'slide_files.cache', slide_files )))
       hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_glob_cache(
         'cafe_files.cache', '*CAFE*.cache' )))
 

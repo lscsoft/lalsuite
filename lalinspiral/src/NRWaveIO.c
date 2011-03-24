@@ -39,7 +39,7 @@ NRCSID( NRWAVEIOC, "$Id$");
 /** Functionfor reading the numrel waveform -- just returns the numrel
     data as it is without any rescaling of time or amplitude */
 
-void LALReadNRWave_raw(LALStatus *status,
+void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
 		       REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
 		       const CHAR  *filename        /**< [in] File containing numrel waveform */)
 {
@@ -119,7 +119,7 @@ void LALReadNRWave_raw(LALStatus *status,
     total mass for setting the timescale.  The output waveform is scaled corresponding
     to a distance of 1Mpc.
 */
-void LALReadNRWave(LALStatus *status,
+void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
 		   REAL4TimeVectorSeries **out, /**< [out] output time series for h+ and hx */
 		   const REAL4  mass,           /**< [in] Value of total mass for setting time scale */
 		   const CHAR  *filename        /**< [in] File containing numrel waveform */)
@@ -208,7 +208,7 @@ void LALReadNRWave(LALStatus *status,
     takes care of removing comment lines starting with # and other details.
  */
 void
-LALNRDataFind( LALStatus *status,
+LALNRDataFind( LALStatus *status,   /**< pointer to LALStatus structure */
 	       NRWaveCatalog *out,  /**< [out] list of numrel metadata */
 	       const CHAR *dir,     /**< [in] directory with data files */
 	       const CHAR *filename /**< [in] File with metadata information */)
@@ -248,7 +248,7 @@ LALNRDataFind( LALStatus *status,
 
 /** Parse a single string to fill the NRWaveMetaData structure */
 void
-LALGetSingleNRMetaData( LALStatus       *status,
+LALGetSingleNRMetaData( LALStatus       *status, /**< pointer to LALStatus structure */
 			NRWaveMetaData  *out,   /**< [out] Meta data struct to be filled */
 			const CHAR      *dir,   /**< [in] data directory */
 			const CHAR      *cfgstr /**< [in] config string containing the data for a single NR wave*/)
@@ -303,12 +303,12 @@ LALGetSingleNRMetaData( LALStatus       *status,
 /** Put the main functionalities of nr_wave.c together */
 void
 LALAddStrainModes(
-  LALStatus              *status,
-  REAL4TimeVectorSeries  **outStrain,       /* h+, hx data       */
-  NRWaveCatalog          *nrCatalog,    /* NR wave metadata struct        */
-  INT4                   modeLlo,      /* contains modeLlo and modeLhi   */
-  INT4                   modeLhi,      /* modeLhi                        */
-  const SimInspiralTable       *thisInj     /* injection                      */)
+  LALStatus              *status,	/**< pointer to LALStatus structure */
+  REAL4TimeVectorSeries  **outStrain,   /**< h+, hx data       */
+  NRWaveCatalog          *nrCatalog,    /**< NR wave metadata struct        */
+  INT4                   modeLlo,      /**< contains modeLlo and modeLhi   */
+  INT4                   modeLhi,      /**< modeLhi                        */
+  const SimInspiralTable       *thisInj     /**< injection                      */)
 {
   INT4 modeL, modeM;
   REAL4TimeVectorSeries *sumStrain=NULL;
@@ -377,7 +377,7 @@ LALAddStrainModes(
 
 
 /** Main driver funtion for doing Numerical Relativity Injections */
-void LALDriveNRInject( LALStatus *status,
+void LALDriveNRInject( LALStatus *status,	/**< pointer to LALStatus structure */
 		       REAL4TimeSeries *injData, /**< The time series to inject into */
 		       SimInspiralTable *injections, /**< The list of injections to perform */
 		       NumRelInjectParams *params /**< Parameters */

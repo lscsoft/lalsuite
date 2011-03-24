@@ -29,61 +29,48 @@
 /* The function's inputs params have be swithced about to conform to 
 	 the LAL Spec */
 
-/* <lalVerbatim file="HeterodyneCrabPulsarCV">
-	 Author: Pitkin, M. D.
-	 $Id$
-	 </lalVerbatim>
-
-	 <lalLaTeX>
-	 \subsection{Module \texttt{HeterodyneCrabPulsar.c}}
-	 \label{ss:HeterodyneCrabPulsar.c}
-
+/**
+         \file
+	 \author M. D. Pitkin
+         \brief
 	 Functions for reading the Crab Ephemeris, interpolating between these values and
 	 heterodyning the timing noise phase difference.
-	 
-	 \subsubsection*{Prototypes}
-	 \vspace{0.1in}
-	 \input{HeterodyneCrabPulsarCP}
-	 \idx{LALGetCrabEphemeris()}
-	 \idx{LALComputeFreqDerivatives()}
-	 \idx{LALSetSpindownParams()}
-	 \idx{LALTimingNoiseHeterodyne()}
-	 
-	 \subsubsection*{Description}
-	 
+
+	 \heading{Description}
+
 	 The first function will read the data from a file containing the Crab
-	 pulsar ephemeris (\texttt{crab_ephemeris.txt}) which has four columns with
-	 the Modified Julian Date (MJD) in Barycentre Dynamical Time (TDB), 
-	 the arrival time of the first pulse after 
-	 midnight on the given MJD in seconds, the frequency $f$ (Hz) at that time 
-	 and $\dot{f}$ ($10^{-10}\,{\rm Hz}^2$) \cite{CrabEphem}. The ephemeris values
+	 pulsar ephemeris (<tt>crab_ephemeris.txt</tt>) which has four columns with
+	 the Modified Julian Date (MJD) in Barycentre Dynamical Time (TDB),
+	 the arrival time of the first pulse after
+	 midnight on the given MJD in seconds, the frequency \f$f\f$ (Hz) at that time
+	 and \f$\dot{f}\f$ (\f$10^{-10}\,\textrm{Hz}^2\f$) \ref CrabEphem. The ephemeris values
 	 are given on a roughly monthly basis. The function converts the MJD
 	 times into GPS seconds including adding leap seconds. The ephemeris values
 	 are available from 15 February 1982 so all leap seconds from that point are
 	 added at the correct times - this is overkill as there is no data to be
 	 analysed prior 2001, but I've included it just for completeness.
-	 
-	 The second function will use the ephemeris values and create a fourth order 
+
+	 The second function will use the ephemeris values and create a fourth order
 	 spline interpolation between consecutive monthly points. The simple phase
 	 evolution of a pulsar signal can be described by the truncated Talyor series
-	 
-	 \begin{equation}
-	 \phi(t) = \phi_0 + f_0(t-t_0) + frac{\dot{f_0}(t-t_0)^2}{2} + \dots,
-	 \end{equation}
-	 
-	 To completely model the phase evolution of the Crab pulsar the higher order 
-	 frequency derivatives of the spin down model ($\ddot{f}$, $\dddot{f}$, 
-	 and eventually $\ddddot{f}$) need to be calculated for each point in the
-	 ephemeris. This is done by fitting the spin-down model between consecutive 
-	 points using the known values of $f$,$\dot{f}$ and the phase $\phi$ at 
-	 either point as boundary conditions. The evolution of the phase, frequency 
+
+	 \f{equation}{
+	 \phi(t) = \phi_0 + f_0(t-t_0) + \frac{\dot{f_0}(t-t_0)^2}{2} + \dots,
+	 \f}
+
+	 To completely model the phase evolution of the Crab pulsar the higher order
+	 frequency derivatives of the spin down model (\f$\ddot{f}\f$, \f$\dddot{f}\f$,
+	 and eventually \f$\ddddot{f}\f$) need to be calculated for each point in the
+	 ephemeris. This is done by fitting the spin-down model between consecutive
+	 points using the known values of \f$f\f$,\f$\dot{f}\f$ and the phase \f$\phi\f$ at
+	 either point as boundary conditions. The evolution of the phase, frequency
 	 and higher order derivatives are given by the following matrix:
-	 
-	 \begin{equation}\label{numatrix}
-	 \left( \begin{array}{c} \phi \\ f \\ \dot{f} \\ \ddot{f} \\ 
+
+	 \anchor numatrix \f{equation}{\label{numatrix}
+	 \left( \begin{array}{c} \phi \\ f \\ \dot{f} \\ \ddot{f} \\
 	 \dddot{f} \\ \ddddot{f}
 	 \end{array} \right) =
-	 \left( \begin{array}{cccccc} 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 & 
+	 \left( \begin{array}{cccccc} 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 &
 	 \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
 	 0 & 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 & \frac{1}{24}t^4 \\
 	 0 & 0 & 1 & t & \frac{1}{2}t^2 & \frac{1}{6}t^3 \\
@@ -91,19 +78,19 @@
 	 0 & 0 & 0 & 0 & 1 & t \\
 	 0 & 0 & 0 & 0 & 0 & 1 \\
 	 \end{array} \right)
-	 \left( \begin{array}{c} \phi_0 \\ f_0 \\ \dot{f_0} \\ \ddot{f_0} \\ 
+	 \left( \begin{array}{c} \phi_0 \\ f_0 \\ \dot{f_0} \\ \ddot{f_0} \\
 	 \dddot{f_0} \\ \ddddot{f_0}
 	 \end{array} \right)
-	 \end{equation}
+	 \f}
 
-	 Using the relation $\vec{a} = \mathbf{X}\vec{b}$, where $\vec{a}$ and 
-	 $\vec{b}$ are the vectors of $\phi$ and $\phi_0$ derivatives respectively 
-	 and $\mathbf{X}$ is the matrix of coefficients, it follows that $\vec{b} = 
-	 \mathbf{X}^{-1}\vec{a}$. The inverse matrix $\mathbf{X}^{-1}$ is
+	 Using the relation \f$\vec{a} = \mathbf{X}\vec{b}\f$, where \f$\vec{a}\f$ and
+	 \f$\vec{b}\f$ are the vectors of \f$\phi\f$ and \f$\phi_0\f$ derivatives respectively
+	 and \f$\mathbf{X}\f$ is the matrix of coefficients, it follows that \f$\vec{b} =
+	 \mathbf{X}^{-1}\vec{a}\f$. The inverse matrix \f$\mathbf{X}^{-1}\f$ is
 
-	 \begin{equation}\label{nu2matrix}
+	 \anchor nu2matrix \f{equation}{\label{nu2matrix}
 	 \mathbf{X}^{-1} =
-	 \left( \begin{array}{cccccc} 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & 
+	 \left( \begin{array}{cccccc} 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 &
 	 \frac{1}{24}t^4 & -\frac{1}{120}t^5 \\
 	 0 & 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
 	 0 & 0 & 1 & -t & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
@@ -111,26 +98,26 @@
 	 0 & 0 & 0 & 0 & 1 & -t \\
 	 0 & 0 & 0 & 0 & 0 & 1 \\
 	 \end{array} \right).
-	 \end{equation}
+	 \f}
 
-	 The values of $\phi$ and $\phi_0$ are unknown at each data point, but it is
-	 known that they must be integer values. The phase at the first point 
-	 can be set to zero with the consecutive points having phases with integer 
+	 The values of \f$\phi\f$ and \f$\phi_0\f$ are unknown at each data point, but it is
+	 known that they must be integer values. The phase at the first point
+	 can be set to zero with the consecutive points having phases with integer
 	 values. The exact number of then needs to be calculated. To get a constraint
-	 on the phase at each data point, the boundary conditions for the known 
-	 parameters can be used to calculate the values of the unknowns $\ddot{f}$,
-	 $\ddot{f_0}$, $\dddot{f}$, and $\dddot{f_0}. Taking the $4\times 4$ 
-	 matrices in the centres of (\ref{numatrix}) and (\ref{nu2matrix}) and vectors
-	 of $f$ and its first three derivatives, one can then construct 4 equations
-	 containing the 4 unknowns by equating the equations, when worked out at a 
-	 time $t$ halfway between consecutive points and solving them
-	 simultaneously using the boundary conditions (by inverting the matrix in 
-	 (\ref{simult1}) to give (\ref{inverse1}) and solving as above). The values 
-	 could then be used to calculate a value of $\phi$ from (\ref{phi}).
+	 on the phase at each data point, the boundary conditions for the known
+	 parameters can be used to calculate the values of the unknowns \f$\ddot{f}\f$,
+	 \f$\ddot{f_0}\f$, \f$\dddot{f}\f$, and \f$\dddot{f_0}\f$. Taking the \f$4\times 4\f$
+	 matrices in the centres of\eqnref{numatrix} and\eqnref{nu2matrix} and vectors
+	 of \f$f\f$ and its first three derivatives, one can then construct 4 equations
+	 containing the 4 unknowns by equating the equations, when worked out at a
+	 time \f$t\f$ halfway between consecutive points and solving them
+	 simultaneously using the boundary conditions (by inverting the matrix in
+	 \eqnref{simult1} to give\eqnref{inverse1} and solving as above). The values
+	 could then be used to calculate a value of \f$\phi\f$ from\eqnref{phi}.
 
-	 \begin{equation}\label{simult1}
-	 \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\ 
-	 \dot{f_0} - \dot{f} \\ 0 \\ 0 \end{array} \right) = \left( 
+	 \anchor simult1 \f{equation}{\label{simult1}
+	 \left( \begin{array}{c} f_0 + \dot{f_0}t - f + \dot{f}t \\
+	 \dot{f_0} - \dot{f} \\ 0 \\ 0 \end{array} \right) = \left(
 	 \begin{array}{cccc}
 	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
 	 -t & -\frac{1}{2}t^2 & -t & \frac{1}{2}t^2 \\
@@ -138,23 +125,23 @@
 	 0 & -1 & 0 & 1 \end{array} \right) \left( \begin{array}{c}
 	 \ddot{f_0} \\ \dddot{f_0} \\ \ddot{f} \\ \dddot{f}
 	 \end{array} \right).
-	 \end{equation}
+	 \f}
 
-	 \begin{equation}\label{inverse1}
+	 \anchor inverse1 \f{equation}{\label{inverse1}
 	 \mathbf{X}^{-1}
 	 \left( \begin{array}{cccc}
 	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 \\
 	 -t & -\frac{1}{2}t^2 & -t & \frac{1}{2}t^2 \\
 	 -1 & -t & 1 & -t \\
 	 0 & -1 & 0 & 1 \end{array} \right)
-	 \end{equation}
-	 
-	 Equating the whole of equations (\ref{numatrix}) and (\ref{nu2matrix}) at a 
-	 point halfway inbetween consecutive points, gave the six equations necessary 
-	 to work out the six unknowns, which are shown in matrix form in equation 
-	 (\ref{simult2}).
+	 \f}
 
-	 \begin{equation}\label{simult2}
+	 Equating the whole of equations\eqnref{numatrix} and\eqnref{nu2matrix} at a
+	 point halfway inbetween consecutive points, gave the six equations necessary
+	 to work out the six unknowns, which are shown in matrix form in equation
+	 \eqnref{simult2}.
+
+	 \anchor simult2 \f{equation}{\label{simult2}
 	 \left( \begin{array}{c} \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - \frac{\dot{f}}{2} \\ f_0 + \dot{f_0}t - f + \dot{f}t \\ \dot{f_0} - \dot{f} \\ 0 \\ 0 \\ 0 \end{array} \right) = \left( \begin{array}{cccccc}
 	 -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & -\frac{1}{120}t^5 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 & \frac{1}{120}t^5 \\
 	 -\frac{1}{2}t^2 & -\frac{1}{6}t^3 & -\frac{1}{24}t^4 & \frac{1}{2}t^2 & -\frac{1}{6}t^3 & \frac{1}{24}t^4 \\
@@ -164,65 +151,60 @@
 	 0 & 0 & -1 & 0 & 0 & 1 \end{array} \right) \left( \begin{array}{c}
 	 \ddot{f_0} \\ \dddot{f_0} \\ \ddddot{f_0} \\ \ddot{f} \\ \dddot{f} \\ \ddddot{f}
 	 \end{array} \right).
-	 \end{equation}
+	 \f}
 
 	 The matrix has an inverse,
 
-	 \begin{equation}\label{inverse2}
+	 \anchor inverse2 \f{equation}{\label{inverse2}
 	 \mathbf{X}^{-1} =
 	 \left( \begin{array}{cccccc}
-	 -\frac{15}{2}\frac{1}{t^3} & -\frac{3}{2}\frac{1}{t^2} & 
+	 -\frac{15}{2}\frac{1}{t^3} & -\frac{3}{2}\frac{1}{t^2} &
 	 \frac{3}{4}\frac{1}{t} & \frac{1}{4}& -\frac{1}{16}t & -\frac{1}{16}t^2 \\
-	 \frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} & 
-	 -\frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & \frac{7}{16} & 
+	 \frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} &
+	 -\frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & \frac{7}{16} &
 	 \frac{5}{16}t \\
-	 -\frac{42}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 & 
+	 -\frac{42}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 &
 	 -\frac{15}{16}\frac{1}{t} & -\frac{1}{2} \\
-	 -\frac{15}{2}\frac{3}{2} & \frac{3}{2}\frac{1}{t} & \frac{3}{4}\frac{1}{t} & 
+	 -\frac{15}{2}\frac{3}{2} & \frac{3}{2}\frac{1}{t} & \frac{3}{4}\frac{1}{t} &
 	 -\frac{1}{4} & -\frac{1}{16}t & \frac{1}{16}t^2 \\
-	 -\frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} & 
-	 \frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & -\frac{7}{16} & 
+	 -\frac{45}{2}\frac{1}{t^4} & \frac{3}{2}\frac{1}{t^3} &
+	 \frac{15}{4}\frac{1}{t^2} & -\frac{3}{4}\frac{1}{t} & -\frac{7}{16} &
 	 \frac{5}{16}t \\
-	 -\frac{45}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 & 
+	 -\frac{45}{2}\frac{1}{t^5} & 0 & \frac{15}{4}\frac{1}{t^3} & 0 &
 	 -\frac{15}{16}\frac{1}{t} & \frac{1}{2} \end{array} \right)
-	 \end{equation}
-	 
-	 This leaves three equations for the values of the unknowns $\ddot{f_0}$,
-	 $\dddot{f_0}$ and $\ddddot{f_0}$,
-	 
-	 \begin{equation}
+	 \f}
+
+	 This leaves three equations for the values of the unknowns \f$\ddot{f_0}\f$,
+	 \f$\dddot{f_0}\f$ and \f$\ddddot{f_0}\f$,
+
+	 \f{equation}{
 	 \ddot{f_0} =  -\frac{15}{2t^3}a - \frac{3}{2t^2}b + \frac{3}{4t}c,
-	 \end{equation}
-	 
-	 \begin{equation}
+	 \f}
+
+	 \f{equation}{
 	 \dddot{f_0} = \frac{45}{2t^4}a + \frac{3}{2t^3}b - \frac{15}{4t^2}c,
-	 \end{equation}
-	 
-	 \begin{equation}
+	 \f}
+
+	 \f{equation}{
 	 \ddddot{f_0} = -\frac{45}{2t^5}a + \frac{15}{4t^3}c,
-	 \end{equation}
-	 where $a = \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t - 
-	 \frac{\dot{f}}{2}$, $b = f_0 + \dot{f_0}t - f + \dot{f}t$, $c = 
-	 \dot{f_0} - \dot{f}$ and $t$ is the time halfway between ephemeris points.
-	 
+	 \f}
+	 where \f$a = \phi_0 + f_0 t + \frac{\dot{f_0}}{2}t^2 - \phi + f t -
+	 \frac{\dot{f}}{2}\f$, \f$b = f_0 + \dot{f_0}t - f + \dot{f}t\f$, \f$c =
+	 \dot{f_0} - \dot{f}\f$ and \f$t$ is the time halfway between ephemeris points.
+
 	 The third function sets the values of the Crab pulsar spin-down to be used
 	 to heterodyne a particular data point. The values are set to those that are
 	 the first values prior to the time of the data point.
-	 
+
 	 The fourth function calculates the phase difference between that used to
 	 initially heterodyne the data and the phase including timing noise as
 	 calculated using the interpolated ephemeris values. It then
 	 removes this phase difference via another complex heterodyne,
-	 
-	 \begin{equation}
-	 B_{\rm k final} = B_{\rm k initial}e^{-i\Delta\phi}.
-	 \end{equation}
-	 
-	 \subsubsection*{Notes}
-	 
-	 \vfill{\footnotesize\input{HeterodyneCrabPulsarCV}}
-	 
-	 </lalLaTeX>
+
+	 \f{equation}{
+	 B_\textrm{k final} = B_\textrm{k initial}e^{-i\Delta\phi}.
+	 \f}
+
 */
 
 #include <math.h>

@@ -17,44 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-#include <math.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "coh_PTF.h"
 
-#include "processtable.h"
-#include "lalapps.h"
-#include "errutil.h"
-#include "gpstime.h"
-
 RCSID( "$Id$" );
-
 
 /*
  *
  * Routines to output event triggers.
+ * Note that a lot of functions should be merged with ring_output
  *
  */
-
-
-/* macro is_option() (and friends): determine if string is an option */
-/* i.e., does it start with "-[a-zA-Z]" or "--[a-zA-Z]" */
-#define is_long_option(s) \
-  ( strlen(s) > 2 && (s)[0] == '-' && (s)[1] == '-' && isalpha( s[2] ) )
-#define is_short_option(s) \
-  ( strlen(s) > 1 && (s)[0] == '-' && isalpha( s[1] ) )
-#define is_option(s) ( is_long_option(s) || is_short_option(s) )
-
-
-/* creates a process table */
-static ProcessTable * ring_create_process_table( struct coh_PTF_params *params );
-
-
-/* creates a search-summary table */
-static SearchSummaryTable *ring_create_search_summary( struct coh_PTF_params *params );
 
 
 /* creates a process params table from command line arguments */
@@ -107,7 +79,7 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 
 
 /* routine to output events as LIGOLw XML file */
-int cohPTF_output_events_xml( 
+int coh_PTF_output_events_xml( 
     char               *outputFile,
     MultiInspiralTable  *events,
     ProcessParamsTable *processParamsTable,
@@ -130,9 +102,9 @@ int cohPTF_output_events_xml(
   memset( &results, 0, sizeof( results ) );
 
   /* create process table and search summary tables */
-  process.processTable = ring_create_process_table( params );
+  process.processTable = coh_PTF_create_process_table( params );
   processParams.processParamsTable = processParamsTable;
-  searchSummary.searchSummaryTable = ring_create_search_summary( params );
+  searchSummary.searchSummaryTable = coh_PTF_create_search_summary( params );
   ringEvents.multiInspiralTable = events;
 
   /* open results xml file */
@@ -171,7 +143,7 @@ int cohPTF_output_events_xml(
 }
 
 /* routine to output template bank as LIGOLw XML file */
-int cohPTF_output_tmpltbank(
+int coh_PTF_output_tmpltbank(
     char               *outputFile,
     SnglInspiralTable  *tmplts,
     ProcessParamsTable *processParamsTable,
@@ -194,9 +166,9 @@ int cohPTF_output_tmpltbank(
   memset( &results, 0, sizeof( results ) );
 
   /* create process table and search summary tables */
-  process.processTable = ring_create_process_table( params );
+  process.processTable = coh_PTF_create_process_table( params );
   processParams.processParamsTable = processParamsTable;
-  searchSummary.searchSummaryTable = ring_create_search_summary( params );
+  searchSummary.searchSummaryTable = coh_PTF_create_search_summary( params );
   templateBank.snglInspiralTable = tmplts;
 
   /* open results xml file */
@@ -237,7 +209,7 @@ int cohPTF_output_tmpltbank(
 
 
 /* routine to create process table */
-ProcessTable *ring_create_process_table( struct coh_PTF_params *params )
+ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
 {
   ProcessTable *processTable = NULL;
 
@@ -257,7 +229,7 @@ ProcessTable *ring_create_process_table( struct coh_PTF_params *params )
 
 
 /* routine to create search summary table */
-static SearchSummaryTable *ring_create_search_summary( struct coh_PTF_params *params )
+SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params )
 {
   SearchSummaryTable *searchSummary = NULL;
   LIGOTimeGPS outStartTime;
@@ -304,13 +276,6 @@ static SearchSummaryTable *ring_create_search_summary( struct coh_PTF_params *pa
  *
  */
 
-
-/* routine to construct an appropriately-formatted filename from series name */
-static int generate_file_name( char *fname, size_t size,
-    const char *sname, int t, int dt );
-#define FILENAME_SIZE 256
-
-
 /* routine to write a time series */
 int write_REAL4TimeSeries( REAL4TimeSeries *series )
 {
@@ -353,7 +318,7 @@ int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
 }
 
 /* routine to construct an appropriately-formatted filename from series name */
-static int generate_file_name( char *fname, size_t size,
+int generate_file_name( char *fname, size_t size,
     const char *sname, int t, int dt )
 {
   char *c;

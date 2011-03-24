@@ -28,42 +28,17 @@
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan Oct 2005
  *
- *-----------------------------------------------------------------------
- */
 
-/* *********************************** <lalVerbatim file="PeakSelectHV">
-Author: Sintes, A.M.,
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{PeakSelect.h}}
-\label{s:PeakSelect.h}
+\heading{Header \ref PeakSelect.h}
+\latexonly\label{s_PeakSelect_h}\endlatexonly
 From periodogram to peakgram
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
 
-\begin{verbatim}
+\heading{Synopsis}
+
+\code
 #include <lal/PeakSelect.h>
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{PeakSelectHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{PeakSelectHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{PeakSelectC}
-%%%%%%%%%% Test program. %%
-\newpage\input{PeakSelectTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
+\endcode
+*/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -115,7 +90,7 @@ NRCSID (PEAKSELECTH, "$Id$");
  *    inclusion in the documentation.
  */
 
-/* <lalErrTable file="PeakSelectHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 
 #define PEAKSELECTH_ENULL 1
 #define PEAKSELECTH_EVAL 5
@@ -123,7 +98,7 @@ NRCSID (PEAKSELECTH, "$Id$");
 #define PEAKSELECTH_MSGENULL "Null pointer"
 #define PEAKSELECTH_MSGEVAL  "Invalid value"
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************
@@ -168,7 +143,7 @@ typedef struct tagREAL8PeriodoPSD{
  */
 
 /** to compute mean power from a periodogram -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALComputeMeanPower (LALStatus  *status,
+void LALComputeMeanPower (LALStatus  *status,		/**< pointer to LALStatus structure */
 			  REAL8                *mean, /**< mean power */
 			  REAL8Periodogram1    *peri /**< periodogram */);
 
@@ -179,27 +154,27 @@ void LALSelectPeakWhiteNoise(LALStatus  *status,
 			     REAL8Periodogram1    *peri);
 
 /** Compress explicit peak gram */	     
-void LALUCHAR2HOUGHPeak(LALStatus  *status,
+void LALUCHAR2HOUGHPeak(LALStatus  *status,		/**< pointer to LALStatus structure */
 			HOUGHPeakGram        *pgOut, /**< compressed peakgram */
 			UCHARPeakGram        *pgIn /**< explicit peakgram -- collection of 1s and 0s*/ 
 			);
 
 /** Wrapper for LALRunningMedian code -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALPeriodo2PSDrng (LALStatus  *status,
+void LALPeriodo2PSDrng (LALStatus  *status,		/**< pointer to LALStatus structure */
 			REAL8Periodogram1    *psd, /**< output psd */
 			REAL8Periodogram1    *peri, /**< input periodogram */
 			INT4                *blocksRNG /**< running median block size */
 			);
 
 /** Function for selecting peaks in colored noise -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALSelectPeakColorNoise(LALStatus  *status,
+void LALSelectPeakColorNoise(LALStatus  *status,		/**< pointer to LALStatus structure */
 			     UCHARPeakGram        *pg,  /**< output peakgram */
 			     REAL8                *thr, /**< threshold reltive to psd */
 			     REAL8PeriodoPSD      *in /**< input psd and periodogram */
 			     );
 
 /** Constructs peakgram from a normalized SFT -- uses standard pulsar data types */
-void SFTtoUCHARPeakGram(LALStatus        *status,
+void SFTtoUCHARPeakGram(LALStatus        *status,		/**< pointer to LALStatus structure */
 			UCHARPeakGram    *pg, /**< output peakgram */
 			const SFTtype    *sft, /**< standard pulsar sft type */  
 			REAL8            thr /**< sft power threshold for peak selection */

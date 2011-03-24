@@ -34,7 +34,7 @@
 double Ms,Mpc,G,c,Mpcs,pi,tpi,mtpi;
 
 /**
- * \mainpage SPINspiral documentation
+ * \defgroup SPINspiral SPINspiral documentation
  * SPINspiral is a parameter-estimation code designed to extract the physical parameters of compact-binary coalescences (CBCs) from observed gravitational-wave signals.
  *
  * More information about SPINspiral can be found on its web page: 

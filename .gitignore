@@ -11,17 +11,5 @@ configure
 lalsuite-*.tar.gz
 lalsuite.spec
 libtool
-config.lt
-*configDevelop*
-*configProduct*
-temp
-.cproject
-.project
-Debug
-own
-*.patch
-
-# Built applications that are not ignored
-lalapps_combinexteframes
-lalapps_framestats
-
+TAGS
+auto/

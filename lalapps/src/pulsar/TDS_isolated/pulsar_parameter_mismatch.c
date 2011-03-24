@@ -1,3 +1,9 @@
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \brief calculate the mismatch between two phase models from the standard definition of mismatch
+ */
+
 /* calculate the mismatch between two phase models from the standard definition
 of mismatch m (from Teviet of m = 1 - <a|b>/sqrt(<a|a><b|b>)), which for two
 phases phi1 and phi2 gives m = 1 - (1/T) \int cos( phi1 - phi2 ) dt. The code

@@ -17,9 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/*
-  Author: Pitkin, M. D.
-*/
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author M. D. Pitkin
+ * \brief
+ * lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
+ * parameters. The heterodyne is a 2 stage process with the code run for a coarse
+ * heterodyne (not taking into account the SSB and BSB time delays, but using the other frequency
+ * params) and then rerun for the fine heterodyne (taking into account SSB and BSB time delays). The
+ * code can also be used to update heterodyned data using new parameters (old and new parameter files
+ * are required) i.e. it will take the difference of the original heterodyne phase and the new phase
+ * and reheterodyne with this phase difference.
+ */
 
 /* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
 
@@ -298,7 +308,7 @@ heterodyne.\n");  }
       INT4 duration;
       REAL8TimeSeries *datareal=NULL;
       CHAR *smalllist=NULL; /* list of frame files for a science segment */ 
-      LIGOTimeGPS epochdummy; 
+      LIGOTimeGPS epochdummy;       
 
       epochdummy.gpsSeconds = 0;
       epochdummy.gpsNanoSeconds = 0;
@@ -377,7 +387,8 @@ heterodyne.\n");  }
 
       XLALDestroyREAL8TimeSeries( datareal );
 
-      XLALFree( smalllist );
+      XLALFree( smalllist );    
+
       count++;
     }
     else if( inputParams.heterodyneflag == 1 || 
@@ -1673,9 +1684,9 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
   INT4 check=0;
   CHAR *smalllist=NULL;
 
-  if( (smalllist = XLALMalloc(MAXLISTLENGTH*sizeof(CHAR))) == NULL )
+  if( (smalllist = XLALCalloc(MAXLISTLENGTH, sizeof(CHAR))) == NULL )
     {  XLALPrintError("Error allocating memory for small frame list.\n");  }
-  
+
   durlock = *stops - *starts;
   tempstart = *starts;
   tempstop = *stops;
@@ -1685,19 +1696,26 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
     tempstop = tempstart + MAXDATALENGTH;
 
   for( i=0;i<numFrames;i++ ){
-    if(tempstart >= cache.starttime[i] && tempstart <
-      cache.starttime[i]+cache.duration[i] &&
-      cache.starttime[i] < tempstop){
-      if( check == 0 ){
-        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %d %d",
-          cache.framelist[i], cache.starttime[i], cache.duration[i]);
-        check++;
+    if(tempstart >= cache.starttime[i] 
+        && tempstart < cache.starttime[i]+cache.duration[i] 
+        && cache.starttime[i] < tempstop){
+      #define MAXLEN 512
+      CHAR tempstr[MAXLEN];
+      INT4 errcheck=0;
+
+      errcheck = snprintf(tempstr, MAXLEN, "%s %d %d ", cache.framelist[i], cache.starttime[i], cache.duration[i]);
+      if ( errcheck < 0 || errcheck > 512 ){
+        fprintf(stderr, "Error... something wrong with snprintf() creating file list! errcheck=%d\n", errcheck);
+        exit(1);
+      }    
+
+      if ( XLALStringAppend(smalllist, tempstr) == NULL ){
+        fprintf(stderr, "Error... something wrong creating frmae list with XLALStringAppend!\n");
+        exit(1);
       }
-      else{
-        snprintf(smalllist, MAXLISTLENGTH*sizeof(CHAR), "%s %s %d %d ",
-          smalllist, cache.framelist[i], cache.starttime[i], cache.duration[i]);
-      }
+      
       tempstart += cache.duration[i];
+      check++;
     }
     /* break out the loop when we have all the files for the segment */
     else if( cache.starttime[i] > tempstop )
@@ -1814,8 +1832,7 @@ Assume calibration coefficients are 1 and use the response funtcion.\n",
         }
 
         if(fscanf(fpcoeff, "%lf%lf%lf", &times[i], &alpha[i], &ggamma[i])!= 3){
-         fprintf(stderr, "Error... problem reading in values from calibration \
-coefficient file!\n");
+         fprintf(stderr, "Error... problem reading in values from calibration coefficient file!\n");
          exit(1);
         }
         i++;
@@ -1827,8 +1844,7 @@ coefficient file!\n");
     /* check times aren't outside range of calib coefficients */
     if(times[0] > datatimes->data[series->data->length-1] || times[i-1] <
         datatimes->data[0]){
-      fprintf(stderr, "Error... calibration coefficients outside range of \
-data.\n");
+      fprintf(stderr, "Error... calibration coefficients outside range of data.\n");
       exit(1);
     }
 

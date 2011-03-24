@@ -17,29 +17,21 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="FitToPulsarCV">
-Author: Dupuis, R. J.
-$Id$  
-************************************* </lalVerbatim> */
+/**
+\author Dupuis, R. J.
 
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{FitToPulsar.c}}
+\heading{Module \ref FitToPulsar.c}
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 To be completed.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALSCreateVector()
 LALSDestroyVector()
 LALComputeDetAMResponse()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{FitToPulsarCV}}
-
-******************************************************* </lalLaTeX> */ 
+\endcode
+*/ 
 
 
 #include <math.h>
@@ -58,14 +50,14 @@ NRCSID( FITTOPULSARC, "$Id$" );
 #define IOTAMEAN 1.084983929502275
 #define IOTASIGMA 0.02321287905152458
 
-/* <lalVerbatim file="FitToPulsarCP"> */
+
 void
 LALCoarseFitToPulsar	( 	LALStatus            *status,
 		    		CoarseFitOutput      *output,
 		    		CoarseFitInput       *input,
 		    		CoarseFitParams      *params )
 		
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
 
@@ -239,13 +231,13 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 }
 
 
-/* <lalVerbatim file="FitToPulsarCP"> */		
+		
 void
 LALFitToPulsarStudentT	( 	LALStatus            *status,
 		    		CoarseFitOutput      *output,
 		    		FitInputStudentT       *input,
 		    		CoarseFitParams      *params )		
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
 
@@ -464,13 +456,13 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 }
 
 /* ******************************* */
-/* <lalVerbatim file="FitToPulsarCP"> */
+
 void
 LALPulsarMarginalize   ( 	LALStatus              *status,
 		    		PulsarPdfs             *output,
 		    		CoarseFitOutput        *input,
 		    		CoarseFitParams        *params )
-/* </lalVerbatim> */
+
 {
   /******* DECLARE VARIABLES ************/
    UINT4 arg,i; 

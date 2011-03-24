@@ -1,113 +1,32 @@
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <time.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_blas.h>
-
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "getdata.h"
-#include "injsgnl.h"
-#include "getresp.h"
-#include "spectrm.h"
-#include "segment.h"
-#include "errutil.h"
-
 RCSID( "$Id$" );
-#define PROGRAM_NAME "lalapps_coh_PTF_inspiral"
+#define PROGRAM_NAME "lalapps_coh_PTF_spin_checker"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE   "$Source$"
 #define CVS_DATE     "$Date$"
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
+/* This function should be migrated to option.c */
+/* warning: returns a pointer to a static variable... not reenterant */
+/* only call this routine once to initialize params! */
+/* also do not attempt to free this pointer! */
+static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
+{
+  static struct coh_PTF_params params;
+  static char programName[] = PROGRAM_NAME;
+  static char cvsRevision[] = CVS_REVISION;
+  static char cvsSource[]   = CVS_SOURCE;
+  static char cvsDate[]     = CVS_DATE;
+  coh_PTF_parse_options( &params, argc, argv );
+  coh_PTF_params_sanity_check( &params ); /* this also sets various params */
+  coh_PTF_params_inspiral_sanity_check( &params );
+  params.programName = programName;
+  params.cvsRevision = cvsRevision;
+  params.cvsSource   = cvsSource;
+  params.cvsDate     = cvsDate;
+  return &params;
+}
 
-static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv );
-static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
-static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params );
-static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       const char *ifoChannel, const char *dataCache );
-int coh_PTF_get_null_stream(
-    struct coh_PTF_params *params,
-    REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
-    REAL8 *Fplus,
-    REAL8 *Fcross,
-    REAL8 *timeOffsets );
-static REAL4FrequencySeries *coh_PTF_get_invspec(
-    REAL4TimeSeries         *channel,
-    REAL4FFTPlan            *fwdplan,
-    REAL4FFTPlan            *revplan,
-    struct coh_PTF_params   *params
-    );
-void rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor);
-static RingDataSegments *coh_PTF_get_segments(
-    REAL4TimeSeries         *channel,
-    REAL4FrequencySeries    *invspec,
-    REAL4FFTPlan            *fwdplan,
-    struct coh_PTF_params      *params
-    );
-static int is_in_list( int i, const char *list );
-SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
-    InspiralTemplate        *template,
-    UINT4                   eventNumber);
-void generate_PTF_template(
-    InspiralTemplate         *PTFtemplate,
-    FindChirpTemplate        *fcTmplt,
-    FindChirpTmpltParams     *fcTmpltParams);
-void cohPTFTemplate (
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *InspTmplt,
-    FindChirpTmpltParams       *params    );
-void
-cohPTFNormalize(
-    FindChirpTemplate          *fcTmplt,
-    REAL4FrequencySeries       *invspec,
-    REAL8Array                 *PTFM,
-    REAL8Array                 *PTFN,
-    COMPLEX8VectorSequence     *PTFqVec,
-    COMPLEX8FrequencySeries    *sgmnt,
-    COMPLEX8FFTPlan            *invPlan,
-    UINT4                      spinTemplate
-    );
-int cohPTFspinChecker(
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    struct coh_PTF_params   *params,
-    UINT4                   singleDetector,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
-    INT4                    segmentNumber
-);
-
-static void coh_PTF_cleanup(
-    ProcessParamsTable      *procpar,
-    REAL4FFTPlan            *fwdplan,
-    REAL4FFTPlan            *revplan,
-    COMPLEX8FFTPlan         *invPlan,
-    REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
-    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
-    RingDataSegments        *segments[LAL_NUM_IFO+1],
-    MultiInspiralTable      *events,
-    InspiralTemplate        *PTFbankhead,
-    FindChirpTemplate       *fcTmplt,
-    FindChirpTmpltParams    *fcTmpltParams,
-    FindChirpInitParams     *fcInitParams,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross
-    );
 
 int main( int argc, char **argv )
 {
@@ -230,8 +149,8 @@ int main( int argc, char **argv )
       else if ( ifoNumber == LAL_IFO_V1 )
           params->doubleData = 0;
       channel[ifoNumber] = coh_PTF_get_data(params,params->channel[ifoNumber],\
-                               params->dataCache[ifoNumber] );
-      rescale_data (channel[ifoNumber],1E20);
+                               params->dataCache[ifoNumber],ifoNumber );
+      coh_PTF_rescale_data (channel[ifoNumber],1E20);
 
       /* compute the spectrum */
       invspec[ifoNumber] = coh_PTF_get_invspec( channel[ifoNumber], fwdplan,\
@@ -338,7 +257,7 @@ int main( int argc, char **argv )
     PTFtemplate->order = LAL_PNORDER_TWO;
     PTFtemplate->fLower = 38.;
     /* Generate the Q freq series of the template */
-    generate_PTF_template(PTFtemplate,fcTmplt,fcTmpltParams);
+    coh_PTF_template(fcTmplt,PTFtemplate,fcTmpltParams);
 
     verbose("Generated template %d at %ld \n", i, time(NULL)-startTime);
 
@@ -350,14 +269,13 @@ int main( int argc, char **argv )
         memset( PTFN[ifoNumber]->data, 0, 25 * sizeof(REAL8) );
         memset( PTFqVec[ifoNumber]->data, 0,
                   5 * numPoints * sizeof(COMPLEX8) );
-        cohPTFNormalize(fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
-              PTFN[ifoNumber],
-              PTFqVec[ifoNumber],&segments[ifoNumber]->sgmnt[0],invPlan,
-              1);
+        coh_PTF_normalize(params,fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
+              PTFN[ifoNumber],PTFqVec[ifoNumber],
+              &segments[ifoNumber]->sgmnt[0],invPlan,1);
       }
     }
 
-    spinTemplate = cohPTFspinChecker(PTFM,PTFN,params,singleDetector,Fplus,Fcross,numSegments/2); 
+    spinTemplate = coh_PTF_spin_checker(PTFM,PTFN,params,singleDetector,Fplus,Fcross,numSegments/2); 
     if (spinTemplate)
       verbose("Template %d treated as spin at %ld \n",i,time(NULL)-startTime);
     else
@@ -399,8 +317,8 @@ int main( int argc, char **argv )
     }
   }
 
-  cohPTF_output_tmpltbank(spinFileName,PTFSpinTmpltHead,procpar,params);
-  cohPTF_output_tmpltbank(noSpinFileName,PTFNoSpinTmpltHead,procpar,params);
+  coh_PTF_output_tmpltbank(spinFileName,PTFSpinTmpltHead,procpar,params);
+  coh_PTF_output_tmpltbank(noSpinFileName,PTFNoSpinTmpltHead,procpar,params);
 
   verbose("Generated output xml files, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
@@ -433,355 +351,7 @@ int main( int argc, char **argv )
   return 0;
 }
 
-/* warning: returns a pointer to a static variable... not reenterant */
-/* only call this routine once to initialize params! */
-/* also do not attempt to free this pointer! */
-static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
-{
-  static struct coh_PTF_params params;
-  static char programName[] = PROGRAM_NAME;
-  static char cvsRevision[] = CVS_REVISION;
-  static char cvsSource[]   = CVS_SOURCE;
-  static char cvsDate[]     = CVS_DATE;
-  coh_PTF_parse_options( &params, argc, argv );
-  coh_PTF_params_sanity_check( &params ); /* this also sets various params */
-  coh_PTF_params_spin_checker_sanity_check( &params );
-  params.programName = programName;
-  params.cvsRevision = cvsRevision;
-  params.cvsSource   = cvsSource;
-  params.cvsDate     = cvsDate;
-  return &params;
-}
-
-/* gets the data, performs any injections, and conditions the data */
-static REAL4TimeSeries *coh_PTF_get_data( struct coh_PTF_params *params,\
-                       const char *ifoChannel, const char *dataCache  )
-{
-  int stripPad = 0;
-  REAL4TimeSeries *channel = NULL;
-
-  /* compute the start and duration needed to pad data */
-  params->frameDataStartTime = params->startTime;
-  XLALGPSAdd( &params->frameDataStartTime, -1.0 * params->padData );
-  params->frameDataDuration = params->duration + 2.0 * params->padData;
-
-  if ( params->getData )
-  {
-    if ( params->simData )
-      channel = get_simulated_data( ifoChannel, &params->startTime,
-          params->duration, LALRINGDOWN_DATATYPE_SIM, params->sampleRate,
-          params->randomSeed, 1E-20 );
-    else if ( params->zeroData )
-    {
-      channel = get_zero_data( ifoChannel, &params->startTime,
-          params->duration, LALRINGDOWN_DATATYPE_ZERO, params->sampleRate );
-    }
-    else if ( params->doubleData )
-    {
-      channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
-          &params->frameDataStartTime, params->frameDataDuration,
-          LALRINGDOWN_DATATYPE_HT_REAL8,
-          params->highpassFrequency);
-      stripPad = 1;
-    }
-    else
-    {
-      channel = ring_get_frame_data( dataCache, ifoChannel,
-          &params->frameDataStartTime, params->frameDataDuration,
-          LALRINGDOWN_DATATYPE_HT_REAL4 );
-      stripPad = 1;
-    }
-    if ( params->writeRawData ) /* write raw data */
-      write_REAL4TimeSeries( channel );
-
-    /* Function to put injections overhead */
-    /*snprintf( channel->name, LALNameLength * sizeof(CHAR), "ZENITH" );*/
-
-    /* inject signals */
-    if ( params->injectFile )
-      ring_inject_signal( channel, LALRINGDOWN_EOBNR_INJECT, params->injectFile,
-          NULL, 1.0, NULL );
-    if ( params->writeRawData )
-       write_REAL4TimeSeries( channel );
-
-    /* condition the data: resample and highpass */
-    resample_REAL4TimeSeries( channel, params->sampleRate );
-    if ( params->writeProcessedData ) /* write processed data */
-      write_REAL4TimeSeries( channel );
-
-    if (! params->zeroData )
-    {
-      highpass_REAL4TimeSeries( channel, params->highpassFrequency );
-      if ( params->writeProcessedData ) /* write processed data */
-        write_REAL4TimeSeries( channel );
-    } 
-
-    if ( stripPad )
-    {
-      trimpad_REAL4TimeSeries( channel, params->padData );
-      if ( params->writeProcessedData ) /* write data with padding removed */
-        write_REAL4TimeSeries( channel );
-    }
-  }
-
-  return channel;
-}
-
-
-/* gets the forward fft plan */
-static REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params )
-{
-  REAL4FFTPlan *plan = NULL;
-  if ( params->segmentDuration > 0.0 )
-  {
-    UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 0 );
-  }
-  return plan;
-}
-
-
-/* gets the reverse fft plan */
-static REAL4FFTPlan *coh_PTF_get_fft_revplan( struct coh_PTF_params *params )
-{
-  REAL4FFTPlan *plan = NULL;
-  if ( params->segmentDuration > 0.0 )
-  {
-    UINT4 segmentLength;
-    segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 0 );
-  }
-  return plan;
-}
-
-/* computes the inverse power spectrum */
-static REAL4FrequencySeries *coh_PTF_get_invspec(
-    REAL4TimeSeries         *channel,
-    REAL4FFTPlan            *fwdplan,
-    REAL4FFTPlan            *revplan,
-    struct coh_PTF_params   *params
-    )
-{
-  REAL4FrequencySeries *invspec = NULL;
-  if ( params->getSpectrum )
-  {
-    /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel,
-        LALRINGDOWN_SPECTRUM_MEDIAN_MEAN, params->segmentDuration,
-        params->strideDuration, fwdplan, params->whiteSpectrum );
-
-    if ( params->writeInvSpectrum ) /* Write spectrum before inversion */
-      write_REAL4FrequencySeries( invspec );
-
-    /* invert spectrum */
-    invert_spectrum( invspec, params->sampleRate, params->strideDuration,
-        params->truncateDuration, params->lowCutoffFrequency, fwdplan,
-        revplan );
-
-    if ( params->writeInvSpectrum ) /* write inverse calibrated spectrum */
-      write_REAL4FrequencySeries( invspec );
-  }
-
-  return invspec;
-}
-
-void rescale_data (REAL4TimeSeries *channel,REAL8 rescaleFactor)
-{
-  /* Function to dynamically rescale the data */
-  UINT4 k;
-  for ( k = 0; k < channel->data->length; ++k )
-  {
-    channel->data->data[k] *= rescaleFactor;
-  }
-}
-
-/* creates the requested data segments (those in the list of segments to do) */
-static RingDataSegments *coh_PTF_get_segments(
-    REAL4TimeSeries         *channel,
-    REAL4FrequencySeries    *invspec,
-    REAL4FFTPlan            *fwdplan,
-    struct coh_PTF_params   *params
-    )
-{
-  RingDataSegments *segments = NULL;
-  COMPLEX8FrequencySeries  *response = NULL;
-  UINT4  sgmnt,i;
-  UINT4  segListToDo[params->numOverlapSegments];
-
-  segments = LALCalloc( 1, sizeof( *segments ) );
-
-  if ( params->analyzeInjSegsOnly )
-  {
-    segListToDo[2] = 1;
-    for ( i = 0 ; i < params->numOverlapSegments; i++)
-      segListToDo[i] = 0;
-    SimInspiralTable        *injectList = NULL;
-    SimInspiralTable        *thisInject = NULL;
-    LIGOTimeGPS UNUSED injTime;
-    REAL8 deltaTime;
-    INT4 segNumber, UNUSED segLoc, UNUSED ninj;
-    segLoc = 0;
-    ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
-    while (injectList)
-    {
-      injTime = injectList->geocent_end_time;
-      deltaTime = injectList->geocent_end_time.gpsSeconds;
-      deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
-      deltaTime -= params->startTime.gpsSeconds;
-      deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
-      segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
-      segListToDo[segNumber] = 1;
-      thisInject = injectList;
-      injectList = injectList->next;
-      LALFree( thisInject );
-    }
-  }
-
- /* TODO: trig start/end time condition */
-
-  /* if todo list is empty then do them all */
-  if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
-  {
-    segments->numSgmnt = params->numOverlapSegments;
-    segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
-    for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-      compute_data_segment( &segments->sgmnt[sgmnt], sgmnt, channel, invspec,
-          response, params->segmentDuration, params->strideDuration, fwdplan );
-  }
-  else  /* only do the segments in the todo list */
-  {
-    UINT4 count;
-
-    /* first count the number of segments to do */
-    count = 0;
-    for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-      if ( params->analyzeInjSegsOnly )
-      {
-        if ( segListToDo[sgmnt] == 1)
-          ++count;
-        else
-          continue;
-      }
-      else
-      {
-        if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-          ++count;
-        else
-          continue; /* skip this segment: it is not in todo list */
-      }
-
-    if ( ! count ) /* no segments to do */
-      return NULL;
-
-    segments->numSgmnt = count;
-    segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
-
-    count = 0;
-    for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
-    {
-      if ( params->analyzeInjSegsOnly )
-      {
-        if ( segListToDo[sgmnt] == 1)
-          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
-            invspec, response, params->segmentDuration, params->strideDuration,
-            fwdplan );
-      }
-      else
-      {
-        if ( is_in_list( sgmnt, params->segmentsToDoList ) )
-          compute_data_segment( &segments->sgmnt[count++], sgmnt, channel,
-            invspec, response, params->segmentDuration, params->strideDuration,
-            fwdplan );
-      }
-    }
-  }
-  if ( params->writeSegment) /* write data segment */
-  {
-    for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
-    {
-      write_COMPLEX8FrequencySeries( &segments->sgmnt[sgmnt] ) ;
-    }
-  }
-
-  return segments;
-}
- 
-/* routine to see if integer i is in a list of integers to do */
-/* e.g., 2, 7, and 222 are in the list "1-3,5,7-" but 4 is not */
-#define BUFFER_SIZE 256
-static int is_in_list( int i, const char *list )
-{
-  char  buffer[BUFFER_SIZE];
-  char *str = buffer;
-  int   ans = 0;
-
-  strncpy( buffer, list, sizeof( buffer ) - 1 );
-
-  while ( str )
-  {
-    char *tok;  /* token in a delimited list */
-    char *tok2; /* second part of token if it is a range */
-    tok = str;
-
-    if ( ( str = strchr( str, ',' ) ) ) /* look for next delimiter */
-      *str++ = 0; /* nul terminate current token; str is remaining string */
-
-    /* now see if this token is a range */
-    if ( ( tok2 = strchr( tok, '-' ) ) )
-      *tok2++ = 0; /* nul terminate first part of token; tok2 is second part */        
-    if ( tok2 ) /* range */
-    {
-      int n1, n2;
-      if ( strcmp( tok, "^" ) == 0 )
-        n1 = INT_MIN;
-      else
-        n1 = atoi( tok );
-      if ( strcmp( tok2, "$" ) == 0 )
-        n2 = INT_MAX;
-      else
-        n2 = atoi( tok2 );
-      if ( i >= n1 && i <= n2 ) /* see if i is in the range */
-        ans = 1;
-    }
-    else if ( i == atoi( tok ) )
-      ans = 1;
-
-    if ( ans ) /* i is in the list */
-      break;
-  }
-
-  return ans;
-}
-
-void generate_PTF_template(
-    InspiralTemplate         *PTFtemplate,
-    FindChirpTemplate        *fcTmplt,
-    FindChirpTmpltParams     *fcTmpltParams)
-{
-  cohPTFTemplate( fcTmplt,PTFtemplate, fcTmpltParams );
-}
-
-SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
-    InspiralTemplate        *template,
-    UINT4                   eventNumber
-    )
-{
-  SnglInspiralTable *cnvTemplate;
-  cnvTemplate = (SnglInspiralTable *) LALCalloc(1,sizeof(SnglInspiralTable));
-  cnvTemplate->event_id = (EventIDColumn *)
-      LALCalloc(1, sizeof(EventIDColumn) );
-  cnvTemplate->event_id->id=eventNumber;
-  cnvTemplate->mass1 = template->mass1;
-  cnvTemplate->mass2 = template->mass2;
-  cnvTemplate->chi = template->chi;
-  cnvTemplate->kappa = template->kappa;
-  cnvTemplate->f_final = template->fCutoff;
-  return cnvTemplate;
-}
-  
-
-int cohPTFspinChecker(
+int coh_PTF_spin_checker(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
     struct coh_PTF_params   *params,
@@ -1262,125 +832,3 @@ int cohPTFspinChecker(
 
   return passCheck;
 }
-        
-static void coh_PTF_cleanup(
-    ProcessParamsTable      *procpar,
-    REAL4FFTPlan            *fwdplan,
-    REAL4FFTPlan            *revplan,
-    COMPLEX8FFTPlan         *invPlan,
-    REAL4TimeSeries         *channel[LAL_NUM_IFO+1],
-    REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
-    RingDataSegments        *segments[LAL_NUM_IFO+1],
-    MultiInspiralTable      *events,
-    InspiralTemplate        *PTFbankhead,
-    FindChirpTemplate       *fcTmplt,
-    FindChirpTmpltParams    *fcTmpltParams,
-    FindChirpInitParams     *fcInitParams,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross
-    )
-{
-  UINT4 ifoNumber;
-  while ( events )
-  {
-    MultiInspiralTable *thisEvent;
-    thisEvent = events;
-    events = events->next;
-    if ( thisEvent->event_id )
-    {
-      LALFree( thisEvent->event_id );
-    }
-    LALFree( thisEvent );
-  }  
-  while ( PTFbankhead )
-  {
-    InspiralTemplate *thisTmplt;
-    thisTmplt = PTFbankhead;
-    PTFbankhead = PTFbankhead->next;
-    if ( thisTmplt->event_id )
-    {
-      LALFree( thisTmplt->event_id );
-    }
-    LALFree( thisTmplt );
-  }
-  UINT4 sgmnt;
-  for( ifoNumber = 0; ifoNumber < (LAL_NUM_IFO+1); ifoNumber++)
-  {
-    if ( segments[ifoNumber] )
-    {
-      for ( sgmnt = 0; sgmnt < segments[ifoNumber]->numSgmnt; sgmnt++ )
-      {
-        if (segments[ifoNumber]->sgmnt[sgmnt].data)  
-          XLALDestroyCOMPLEX8Vector(segments[ifoNumber]->sgmnt[sgmnt].data);
-      }
-      LALFree( segments[ifoNumber]->sgmnt );
-      LALFree( segments[ifoNumber] );
-    }
-    if ( invspec[ifoNumber] )
-    {
-      XLALDestroyREAL4Vector( invspec[ifoNumber]->data );
-      LALFree( invspec[ifoNumber] );
-    }
-    if ( channel[ifoNumber] )
-    {
-      XLALDestroyREAL4Vector( channel[ifoNumber]->data );
-      LALFree( channel[ifoNumber] );
-    }
-    if ( PTFM[ifoNumber] )
-      XLALDestroyREAL8Array( PTFM[ifoNumber] );
-    if ( PTFN[ifoNumber] )
-      XLALDestroyREAL8Array( PTFN[ifoNumber] );
-    if ( PTFqVec[ifoNumber] )
-      XLALDestroyCOMPLEX8VectorSequence( PTFqVec[ifoNumber] );
-  }
-  if ( revplan )
-    XLALDestroyREAL4FFTPlan( revplan );
-  if ( fwdplan )
-    XLALDestroyREAL4FFTPlan( fwdplan );
-  if ( invPlan )
-    XLALDestroyCOMPLEX8FFTPlan( invPlan );
-  while ( procpar )
-  {
-    ProcessParamsTable *thisParam;
-    thisParam = procpar;
-    procpar = procpar->next;
-    LALFree( thisParam );
-  }
-  if (fcTmpltParams)
-  {
-    if ( fcTmpltParams->fwdPlan )
-      XLALDestroyREAL4FFTPlan( fcTmpltParams->fwdPlan );
-    if ( fcTmpltParams->PTFe1 )
-      XLALDestroyVectorSequence( fcTmpltParams->PTFe1 );
-    if ( fcTmpltParams->PTFe2 )
-      XLALDestroyVectorSequence( fcTmpltParams->PTFe2 );
-    if ( fcTmpltParams->PTFQ )
-      XLALDestroyVectorSequence( fcTmpltParams->PTFQ );
-    if ( fcTmpltParams->PTFphi )
-      XLALDestroyVector( fcTmpltParams->PTFphi );
-    if ( fcTmpltParams->PTFomega_2_3 )
-      XLALDestroyVector( fcTmpltParams->PTFomega_2_3 );
-    LALFree( fcTmpltParams );
-  }
-  if ( fcTmplt )
-  {
-    if ( fcTmplt->PTFQtilde )
-      XLALDestroyCOMPLEX8VectorSequence( fcTmplt->PTFQtilde );
-    LALFree( fcTmplt );
-  }
-  if ( fcInitParams )
-    LALFree( fcInitParams );
-  if ( timeOffsets )
-    LALFree( timeOffsets );
-  if ( Fplus )
-    LALFree( Fplus );
-  if ( Fcross )
-    LALFree( Fcross );
-}
-
-  
-

@@ -1,0 +1,13 @@
+dag :
+	ligolw_segments --verbose --coalesce --comment "S6 string cusp search" --name vetoes --insert-from-segwizard H1=S6-H1-cat2.txt --insert-from-segwizard L1=S6-L1-cat2.txt --insert-from-segwizard V1=S6-V1-cat2.txt --output S6vetoes.xml.gz
+	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument L1=0:0:0 --instrument V1=0:0:0 S6injection_time_slides.xml.gz
+	ligolw_tisi --verbose --instrument H1=0:0:0 --instrument L1=-70.898154036220632:+70.898154036220632:3.5449077018110318 --instrument V1=-70.898154036220632:+70.898154036220632:3.5449077018110318 S6background_time_slides_0.xml.gz
+	n=20 ; while [[ $$n -le 25 ]] ; do \
+	    ligolw_segments --verbose --coalesce --comment "S6 string cusp search chunk $$n" --name segments --insert-from-segwizard H1=segments/S6-H1segments-cat1_c$$n.txt --insert-from-segwizard L1=segments/S6-L1segments-cat1_c$$n.txt --insert-from-segwizard V1=segments/S6-V1segments-cat1_c$$n.txt --output S6segments_c$$n.xml.gz ; \
+	    mkdir -p dag_c$$n ; pushd dag_c$$n ; lalapps_cosmicstring_pipe --verbose --config-file ../S6_StringDag.ini --log-path $(TMPDIR) --segments-file ../S6segments_c$$n.xml.gz --vetoes-file ../S6vetoes.xml.gz --injection-time-slides ../S6injection_time_slides.xml.gz --background-time-slides ../S6background_time_slides_0.xml.gz ; popd ; \
+	    ((n = n + 1)) ; \
+	done 
+
+clean :
+	rm -Rvf S6vetoes.xml.gz S6segments*.gz *_time_slides_*.xml.gz dag_c*
+

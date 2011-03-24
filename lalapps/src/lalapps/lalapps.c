@@ -39,6 +39,11 @@
 #include <lal/LALMetaIOVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALXML
+#include <lal/LALXMLConfig.h>
+#include <lal/LALXMLVCSInfo.h>
+#endif
+
 #ifdef HAVE_LIBLALBURST
 #include <lal/LALBurstConfig.h>
 #include <lal/LALBurstVCSInfo.h>
@@ -57,11 +62,6 @@
 #ifdef HAVE_LIBLALSTOCHASTIC
 #include <lal/LALStochasticConfig.h>
 #include <lal/LALStochasticVCSInfo.h>
-#endif
-
-#ifdef HAVE_LIBLALXML
-#include <lal/LALXMLConfig.h>
-#include <lal/LALXMLVCSInfo.h>
 #endif
 
 #define FAILMSG( stat, func, file, line, id )                                  \
@@ -227,6 +227,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALMETAIO
   char lalmetaio_info[1024];
 #endif
+#ifdef HAVE_LIBLALXML
+  char lalxml_info[1024];
+#endif
 #ifdef HAVE_LIBLALBURST
   char lalburst_info[1024];
 #endif
@@ -238,9 +241,6 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALSTOCHASTIC
   char lalstochastic_info[1024];
-#endif
-#ifdef HAVE_LIBLALXML
-  char lalxml_info[1024];
 #endif
   char lalapps_info[2048];
   char *ret;
@@ -268,6 +268,15 @@ XLALGetVersionString( int level )
   {
     /* check lalmetaio version consistency */
     if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALXML
+  if ((LALXML_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
+  {
+    /* check lalxml version consistency */
+    if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
       exit(1);
   }
 #endif
@@ -308,15 +317,6 @@ XLALGetVersionString( int level )
   }
 #endif
 
-#ifdef HAVE_LIBLALXML
-  if ((LALXML_VERSION_DEVEL != 0) || (LALAPPS_VERSION_DEVEL != 0))
-  {
-    /* check lalxml version consistency */
-    if (version_compare(__func__, &lalXMLHeaderVCSInfo, &lalXMLVCSInfo))
-      exit(1);
-  }
-#endif
-
   switch(level)
   {
     case 0:
@@ -340,6 +340,14 @@ XLALGetVersionString( int level )
       snprintf(lalmetaio_info, sizeof(lalmetaio_info),
           "%%%% LALMetaIO: %s (%s %s)\n", lalMetaIOVCSInfo.version, \
           strsep(&tree_status, delim), lalMetaIOVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALXML
+      /* get lalxml info */
+      tree_status = strdup(lalXMLVCSInfo.vcsStatus);
+      snprintf(lalxml_info, sizeof(lalxml_info),
+          "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
+          strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -372,14 +380,6 @@ XLALGetVersionString( int level )
       snprintf(lalstochastic_info, sizeof(lalstochastic_info),
           "%%%% LALStochastic: %s (%s %s)\n", lalStochasticVCSInfo.version, \
           strsep(&tree_status, delim), lalStochasticVCSInfo.vcsId);
-#endif
-
-#ifdef HAVE_LIBLALXML
-      /* get lalxml info */
-      tree_status = strdup(lalXMLVCSInfo.vcsStatus);
-      snprintf(lalxml_info, sizeof(lalxml_info),
-          "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
-          strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
 #endif
 
       /* get lalapps info */
@@ -450,6 +450,27 @@ XLALGetVersionString( int level )
           lalMetaIOVCSInfo.vcsStatus,
           LALMETAIO_CONFIGURE_DATE ,
           LALMETAIO_CONFIGURE_ARGS );
+#endif
+
+#ifdef HAVE_LIBLALXML
+      /* get lalxml info */
+      snprintf( lalxml_info, sizeof(lalxml_info),
+          "%%%% LALXML-Version: %s\n"
+          "%%%% LALXML-Id: %s\n"
+          "%%%% LALXML-Date: %s\n"
+          "%%%% LALXML-Branch: %s\n"
+          "%%%% LALXML-Tag: %s\n"
+          "%%%% LALXML-Status: %s\n"
+          "%%%% LALXML-Configure Date: %s\n"
+          "%%%% LALXML-Configure Arguments: %s\n",
+          lalXMLVCSInfo.version,
+          lalXMLVCSInfo.vcsId,
+          lalXMLVCSInfo.vcsDate,
+          lalXMLVCSInfo.vcsBranch,
+          lalXMLVCSInfo.vcsTag,
+          lalXMLVCSInfo.vcsStatus,
+          LALXML_CONFIGURE_DATE ,
+          LALXML_CONFIGURE_ARGS );
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -536,27 +557,6 @@ XLALGetVersionString( int level )
           LALSTOCHASTIC_CONFIGURE_ARGS );
 #endif
 
-#ifdef HAVE_LIBLALXML
-      /* get lalxml info */
-      snprintf( lalxml_info, sizeof(lalxml_info),
-          "%%%% LALXML-Version: %s\n"
-          "%%%% LALXML-Id: %s\n"
-          "%%%% LALXML-Date: %s\n"
-          "%%%% LALXML-Branch: %s\n"
-          "%%%% LALXML-Tag: %s\n"
-          "%%%% LALXML-Status: %s\n"
-          "%%%% LALXML-Configure Date: %s\n"
-          "%%%% LALXML-Configure Arguments: %s\n",
-          lalXMLVCSInfo.version,
-          lalXMLVCSInfo.vcsId,
-          lalXMLVCSInfo.vcsDate,
-          lalXMLVCSInfo.vcsBranch,
-          lalXMLVCSInfo.vcsTag,
-          lalXMLVCSInfo.vcsStatus,
-          LALXML_CONFIGURE_DATE ,
-          LALXML_CONFIGURE_ARGS );
-#endif
-
       /* add lalapps info */
       snprintf( lalapps_info, sizeof(lalapps_info),
           "%%%% LALApps-Version: %s\n"
@@ -586,6 +586,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALMETAIO
   len += strlen(lalmetaio_info);
 #endif
+#ifdef HAVE_LIBLALXML
+  len += strlen(lalxml_info);
+#endif
 #ifdef HAVE_LIBLALBURST
   len += strlen(lalburst_info);
 #endif
@@ -597,9 +600,6 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALSTOCHASTIC
   len += strlen(lalstochastic_info);
-#endif
-#ifdef HAVE_LIBLALXML
-  len += strlen(lalxml_info);
 #endif
   if ( (ret = XLALMalloc ( len )) == NULL ) {
     XLALPrintError ("%s: Failed to XLALMalloc(%d)\n", __func__, len );
@@ -613,6 +613,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALMETAIO
   strcat ( ret, lalmetaio_info );
 #endif
+#ifdef HAVE_LIBLALXML
+  strcat ( ret, lalxml_info );
+#endif
 #ifdef HAVE_LIBLALBURST
   strcat ( ret, lalburst_info );
 #endif
@@ -624,9 +627,6 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALSTOCHASTIC
   strcat ( ret, lalstochastic_info );
-#endif
-#ifdef HAVE_LIBLALXML
-  strcat ( ret, lalxml_info );
 #endif
   strcat ( ret, lalapps_info );
 

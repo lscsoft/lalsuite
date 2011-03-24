@@ -96,7 +96,7 @@ void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan
  * center of the original skyRegion. 
  */
 void 
-InitDopplerScanOnRefinedGrid ( LALStatus *status, 
+InitDopplerScanOnRefinedGrid ( LALStatus *status, 		/**< pointer to LALStatus structure */
 			       DopplerScanState *theScan,  /*!<  Output DopplerScanState variable includes a refined skyRegion  */ 
 			       DopplerScanInit *scanInit   /*!<  Input DopplerScanInit variable includes the original skyRegion */ )
 {
@@ -198,9 +198,9 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
  *    $\vec g = \frac{1}{N}\sum_{i}^N\vec p_i$
  *--------------------------------------------------------------------*/
 void 
-ComputeCenterOfMass ( LALStatus *status, 
-		     SkyPosition *skyposCM, /*!< output: center of mass of the vertices pointed by scanInit */
-		     SkyRegion *skyRegion /*!< input: Initial vertices. */)
+ComputeCenterOfMass ( LALStatus *status, 	/**< pointer to LALStatus structure */
+		     SkyPosition *skyposCM, 	/**< output: center of mass of the vertices pointed by scanInit */
+		     SkyRegion *skyRegion 	/**< input: Initial vertices. */)
 {
   REAL8 longitudeCM = 0.0, latitudeCM = 0.0;
   UINT4 ic;
@@ -245,7 +245,7 @@ ComputeCenterOfMass ( LALStatus *status,
  * (5)Check that all the vertices are within the nominal angular-range. 
  *--------------------------------------------------------------------*/
 void 
-RefineSkyRegion (LALStatus *status, 
+RefineSkyRegion (LALStatus *status, 		/**< pointer to LALStatus structure */
 		 DopplerScanInit *scanInit, /*!< output: includes scaled vertices */
 		 DopplerScanState *scanState, /*!< input: includes skyPosition to be scaled */
 		 SkyPosition *centerOfMass,  /*!< input: geometrical center of the skyRegion */

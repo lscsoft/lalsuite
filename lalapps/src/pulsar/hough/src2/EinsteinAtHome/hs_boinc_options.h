@@ -51,6 +51,9 @@ extern int setup_shmem(void);
 
 extern void set_boinc_options(void);
 
+extern int eah_userid, eah_hostid;
+extern char*eah_hostcpid, *eah_username;
+
 #ifdef __cplusplus
 }
 #endif

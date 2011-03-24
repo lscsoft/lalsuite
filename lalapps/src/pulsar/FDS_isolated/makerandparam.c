@@ -17,18 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/*
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Iraj Gholami
+ * \brief
  *    This code prints five + alpha random numbers to stdout,
  *  where alpha specifies the number of additional random numbers to be 
  *  printed out, and can be specified by -n option. 
  *    Those random numbers are uniformaly distributed over the ranges 
  *  [0, 2pi) [-pi/2, pi/2) [0, 2pi) [0, 2pi) [-1, 1) and [0,1) ...
  */
+
 /*
  *
  * gcc -static -Wall -g -o makerandparam makerandparam.c  -I/afs/aeiw/grawave/Linux/lal/include/ 
  *
  */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>

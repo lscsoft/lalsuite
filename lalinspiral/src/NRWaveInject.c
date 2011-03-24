@@ -367,7 +367,7 @@ int compare_abs_double(const void *a, const void *b){
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
   INT4
-XLALFindNRCoalescenceTime(REAL8 *tc,
+XLALFindNRCoalescenceTime(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
     const REAL4TimeVectorSeries *in   /**< input strain time series */)
 {
 
@@ -402,7 +402,7 @@ XLALFindNRCoalescenceTime(REAL8 *tc,
   This uses the peak of h(t)
   */
   INT4
-XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
+XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,   /**< FIXME: !TO BE DOCUMENTED! */
     const REAL4TimeSeries *in   /**< input strain time series */)
 {
 
@@ -424,7 +424,7 @@ XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 
 /** Function for calculating the coalescence time (defined to be the peak) of a NR wave */
   INT4
-XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
+XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
     const REAL8TimeSeries *in   /**< input strain time series */)
 {
 

@@ -363,9 +363,17 @@ int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
   /* Get info from injection file */
   sim_burst = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, &startTime, &stopTime);
 
+
   /* Inject the signals into ht */
-  if(XLALBurstInjectSignals(ht, sim_burst, NULL))
-    return 1;
+
+  /* only calibration uncertainties if null stream */
+  if(!strcmp(CLA.ChannelName,"H2:LSC-STRAIN_HNULL")){
+    if(XLALBurstInjectHNullSignals(ht, sim_burst)) return 1;
+  }
+  /* inject once otherwise */
+  else{
+    if(XLALBurstInjectSignals(ht, sim_burst, NULL)) return 1;
+  }
 
   /* free the injection table */
   XLALDestroySimBurstTable(sim_burst);
@@ -442,9 +450,9 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
 
   /* burst table */
   if(XLALWriteLIGOLwXMLSnglBurstTable(xml, events)) return -1;
-  
-  XLALCloseLIGOLwXMLFile(xml);
 
+  XLALCloseLIGOLwXMLFile(xml);
+      
   return 0;
 }
 
@@ -570,6 +578,12 @@ int FindStringBurst(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht, unsigned
       /* find triggers */
       if(FindEvents(CLA, &strtemplate[m], vector, head)) return 1;
 
+      /*
+      if(m==10){
+      	for ( int ii = 0 ; ii < vector->data->length; ii++ )
+	  printf("%.3e\n",vector->data->data[ii]);
+      }
+      */
       /* free chunk */
       XLALDestroyREAL8TimeSeries( vector );
     }

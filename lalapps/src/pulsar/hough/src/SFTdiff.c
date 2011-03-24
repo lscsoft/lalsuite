@@ -17,7 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/* program for comparing two sfts in a frequency band */
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan
+ * \brief
+ * program for comparing two sfts in a frequency band
+ */
 
 #include <lal/SFTfileIO.h>
 

@@ -17,26 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: FreqAverager_v2.c
- * Authors:  Krishnan, B.
- *
- * Revision: $Id$
- *
- * History:   Created by Badri Krishnan, November 3 
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan
  */
-/************************************ <lalVerbatim file="ComputePSDCV">
-Author: Krishnan, B. , Sintes, A.M. 
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include <glob.h> 
 #include <stdlib.h>
@@ -62,7 +47,6 @@ RCSID( "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="ComputePSDCErrorTable"> */
 #define COMPUTEPSDC_ENORM 0
 #define COMPUTEPSDC_ESUB  1
 #define COMPUTEPSDC_EARG  2
@@ -77,7 +61,6 @@ RCSID( "$Id$");
 #define COMPUTEPSDC_MSGEFILE "Could not create output file"
 #define COMPUTEPSDC_MSGENULL "Null Pointer"
 
-/******************************************** </lalErrTable> */
 
 
 /* Default parameters. */

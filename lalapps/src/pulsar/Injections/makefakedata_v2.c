@@ -23,8 +23,6 @@
  *
  * Authors: Papa, M.A., 
  *
- * Revision: $Id$
- *
  * History:   Created by Papa July 2002
  *            Modified by X. Siemens to fix random seed bug
  *
@@ -34,54 +32,41 @@
  *-----------------------------------------------------------------------
  */
 
-/*
- * 1.  An author and Id block
- */
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Papa, M.A.
+ * \brief
+ Produces fake SFT data.
 
-/************************************ <lalVerbatim file="makefakedataCV">
-Author: Papa, M.A. 
-$Id$
-************************************* </lalVerbatim> */
-
-
-/* ************************************************ <lalLaTeX>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \ \texttt{makefakedata.c}}
-\label{s:makefakedata.c}
-Produces fake SFT data.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
-\end{verbatim}
+\endcode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Description}
 
 This program uses Teviet Creighton's LAL CW signal routines in order
 to produce SFT files in the GEO binary format.
-
 
 The signal parameters are specified in an input file. The default name
 for the input file is In.data, however a file with another name can
 also be used, as long as the name is specified with the -i command
 line argument. The input file must contain the following information:
-\begin{tabular}{|r|r|}
-time-baseline of the SFT      &          (Tsft\_in\_sec)\\
-number of SFTs to be produced &       (nTsft)\\
-\end{tabular}
+<table><tr><td>
+time-baseline of the SFT</td><td>(Tsft\_in\_sec)</td></tr>
+<tr><td>number of SFTs to be produced</td><td>(nTsft)</td></tr>
+</table>
 
 frequency of first bin of SFTs       (first\_SFT\_frequency\_in\_Hz)
 band of produced SFT data            (SFT\_freq\_band\_in\_Hz)
-standard deviation of noise 
+standard deviation of noise
     (for real and imag) SFT          (std\_of\_noise.When=0\_only\_signal\_present)
 amplitude of plus polarization       (Aplus)
 amplitude of cross polarization      (Across)
 polarization angle                   (psi)
 initial phase                        (phi0)
-intrinsic emission frequency 
+intrinsic emission frequency
     at the beginning of observation   (f0)
 position of source (eq. coordinates)  (latitude\_in\_degrees)
                       "               (longitude\_in\_degrees)
@@ -91,7 +76,7 @@ The information in parenthesis above shows what appears in the In.data
 input file as a comment to help you remember what the different
 entries are.
 
-A number of SFTs will be created. The names will be 
+A number of SFTs will be created. The names will be
 NAME.00001
 NAME.00002
 .....
@@ -109,7 +94,7 @@ two columns: one column for the gps seconds and one for the gps
 nanoseconds of each time-stamp. The name of the time-stamps file is
 specified in the input file (In.data default name).
 
-If one uses the command line argument -t to specify a filename, say 
+If one uses the command line argument -t to specify a filename, say
 TIMEFILES, then a set of files:
 TIMEFILES.00001
 TIMEFILES.00002
@@ -122,14 +107,8 @@ data.
 If sigma in the input file is negative, then the noise data is read in
 from SFT files that are specified in the code.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Exit codes}
-\vspace{0.1in}
-\input{MAKEFAKEDATACErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALGenerateTaylorCW()
 LALSimulateCoherentGW()
 LALMalloc()
@@ -137,16 +116,9 @@ LALSCreateVector()
 LALSDestroyVector()
 LALFree()
 LALCheckMemoryLeaks()
-\end{verbatim}
+\endcode
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsubsection*{Notes}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{TestDriveHoughCV}}
-
-********************************************   </lalLaTeX> */
+*/
 
 #include <lal/LALStdlib.h>
 
@@ -156,7 +128,7 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 /* Error codes and messages */
 
 
-/************** <lalErrTable file="MAKEFAKEDATACErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 0
 #define MAKEFAKEDATAC_ESUB  1
 #define MAKEFAKEDATAC_EARG  2
@@ -168,7 +140,7 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 #define MAKEFAKEDATAC_MSGEARG  "Error parsing arguments"
 #define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
 #define MAKEFAKEDATAC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /***************************************************/

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Laszlo Vereb
+*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Riccardo Sturani, Laszlo Vereb
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -58,8 +58,8 @@ Either a time- or a frequency-domain signal is returned depending upon the
 
 The code \texttt{LALInspiralWave} is the user interface to the inspiral codes. It takes from the user all
 the physical parameters which specify the binary, and calls the relevent wave generation function.
-Currently nine different approximants are fully implemented. These are {\tt TaylorT1, TaylorT2,
-TaylorT3, TaylorF1, TaylorF2, PadeT1, EOB, BCV, SpinTaylorT3.}
+Currently ten different approximants are fully implemented. These are {\tt TaylorT1, TaylorT2, 
+TaylorT3, TaylorF1, TaylorF2, PadeT1, EOB, BCV, SpinTaylorT3, PhenSpinTalorRD.}
 {\tt Taylor} approximants can all be generated at seven different post-Newtonian orders,
 from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher,
 {\tt EOB} at orders 2 and higher. {\tt SpinTaylorT3} is implemented only at 2PN order
@@ -106,7 +106,7 @@ Depending on the user inputs one of the following functions is called:\\
 
 \begin{itemize}
     \item A time-domain waveform is returned when the {\tt approximant} is one of
-        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3, SpinQuadTaylor}
+        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3, PhenSpinTaylorRD, SpinQuadTaylor}
     \item A frequency-domain waveform is returned when the {\tt approximant} is one of
         {\tt TaylorF1, TaylorF2, BCV}.
          In these cases the code returns the real and imagninary parts of the
@@ -217,6 +217,14 @@ LALInspiralWave(
            LALSTPNWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
+      case PhenSpinTaylorRD:
+           LALPSpinInspiralRD(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
+	   break;
+      case PhenSpinTaylorRDF:
+           LALPSpinInspiralRDFreqDom(status->statusPtr, signalvec, params);
+           CHECKSTATUSPTR(status);
+           break;
 	  case SpinQuadTaylor:
 	   		TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
 			break;
@@ -318,6 +326,10 @@ LALInspiralWaveTemplates(
            LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
+      case PhenSpinTaylorRD:
+	   LALPSpinInspiralRDTemplates(status->statusPtr, signalvec1, signalvec2, params);
+           CHECKSTATUSPTR(status);
+	   break;
       case SpinQuadTaylor:
            TRY(LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params), status);
            break;
@@ -400,6 +412,10 @@ LALInspiralWaveForInjection(
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
            break;
+      case PhenSpinTaylorRD:
+	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           CHECKSTATUSPTR(status);
+	   break;
 	  case SpinQuadTaylor:
 		   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
 		   break;

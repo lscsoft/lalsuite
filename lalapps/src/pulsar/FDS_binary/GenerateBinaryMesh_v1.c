@@ -17,6 +17,18 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
+ * \brief
+ * Program to generate a grid of filters in parameter space for use
+ * in a search for signals from sources in circular binary orbits.
+ * A metric is calculated, projected and diagonalised.  Filters are
+ * then placed within the specified boundaries of the space and output
+ * to file ready for a search.
+ */
+
 /************************************************************************************/
 /*         Program to generate a grid of filters in parameter space for use         */
 /*         in a search for signals from sources in circular binary orbits.          */

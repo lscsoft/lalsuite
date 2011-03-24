@@ -18,16 +18,15 @@
 */
 
 /**
- * File Name: compareTS.c
- *
+ * \file
+ * \ingroup pulsarApps
+ * \author R. Prix
+ * \brief
  * compare two binary strain files, written from hardware-injection
  * streams, return maximal relative error.
  *
  * Note: the strain file need to start with magic REAL4 1234.5,
  * followed by an INT4 argument giving the number of elements.
- *
- * Authors: Prix, R.
- *
  */
 
 /* ---------- includes ---------- */

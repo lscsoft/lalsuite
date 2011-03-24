@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.4.0.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -65,6 +65,7 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
+
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
@@ -170,25 +171,7 @@ AM_PATH_PYTHON([2.4],,[:])
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version
-if test "x$build_vendor" = "xapple"; then
-  AC_CHECK_PROGS([SW_VERS],[sw_vers])
-  if test "x$SW_VERS" != "x"; then
-    AC_MSG_CHECKING([Mac OS X version])
-    MACOSX_VERSION=`$SW_VERS -productVersion`
-    AC_MSG_RESULT([$MACOSX_VERSION])
-  fi
-  case "$MACOSX_VERSION" in
-    10.0*|10.1*|10.2*|10.3*)
-      AC_MSG_ERROR([This version of Mac OS X is not supported])
-      ;;
-    10.4*|10.5*|10.6*)
-      # supported version
-      ;;
-    *)
-      AC_MSG_WARN([Unknown Mac OS X version])
-      ;;
-  esac
-fi
+LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
@@ -351,15 +334,15 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.4.1.2],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.4.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.0.2],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[1.0.0.2],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.0.0.2],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.0.0.2],[XLALComputeFaFb],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.0.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.0.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.2],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.1],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.0.1],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.1],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -423,11 +406,11 @@ echo "
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
                 LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
+                LAL XML library support is $LALXML_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Inspiral library support is $LALINSPIRAL_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
                 LAL Pulsar library support is $LALPULSAR_ENABLE_VAL
-                LAL XML library support is $LALXML_ENABLE_VAL
                 FITS library support is $CFITSIO_ENABLE_VAL
                 PSS library support is $PSS_ENABLE_VAL
                 Condor support is $CONDOR_ENABLE_VAL

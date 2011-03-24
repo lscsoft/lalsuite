@@ -2,7 +2,7 @@
 #
 # cbc_code_compare
 #
-# usage: cbc_code_compare branch1:tag1 branch2:tag2 harness_repo:harness_tag
+# usage: cbc_code_compare branch1:tag1 branch2:tag2 git_url
 # example:
 #   cbc_code_compare master:ca000577f498a0638dc41512db9ae0205aefdc36 \
 #                    s6_20090722:60d8943667e1088027a26d138127382a9453ff0b
@@ -131,7 +131,7 @@ for name in $(< $REFERENCE_XML_DIR/full_data_test_suite.txt); do
 
     # given two unit test ids, submit the diff test for this XML data product
     # this Metronome job will block until the unit tests are complete (or 24h)
-    export _NMI_HARNESS_GIT_REPO=$NMI_GIT_URL
+    export _NMI_HARNESS_GIT_REPO=$_NMI_GIT_URL
     export _NMI_HARNESS_GIT_BRANCH=$LATEST_MASTER_ID
     ./gendiff.sh $UNIT_A_GID $UNIT_B_GID
 done

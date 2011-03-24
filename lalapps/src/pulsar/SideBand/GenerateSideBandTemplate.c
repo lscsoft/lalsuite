@@ -20,6 +20,7 @@
 /*********************************************************************************/
 /** \author C. Messenger
  * \file 
+ * \ingroup pulsarApps
  * \brief
  * Generate a frequency domain template for a binary signal as recieved at the SSB.
  *                                                                          

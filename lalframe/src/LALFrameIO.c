@@ -112,6 +112,7 @@ int XLALFrFileCheckSum( FrFile *iFile )
 {
   static const char *func = "XLALFrFileCheckSum";
   FrameH *frame = NULL;
+  int retval = 0;
   FRBOOL chkSumFiFlag = iFile->chkSumFiFlag;
   FRBOOL chkSumFrFlag = iFile->chkSumFrFlag;
   iFile->chkSumFiFlag = FR_YES;
@@ -130,13 +131,14 @@ int XLALFrFileCheckSum( FrFile *iFile )
   }
   if ( iFile->chkTypeFiRead == 0 ) {
     XLALPrintWarning( "XLAL Warning - %s: missing checksum\n", func );
-    return 1;
-  }
-  if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
+    retval = 1; /* missing checksum */
+  } else if ( iFile->chkSumFiRead != iFile->chkSumFi ) {
     XLALPrintError( "XLAL Error - %s: bad checksum\n", func );
-    return -1;
-  }
-  return 0;
+    retval = -1; /* bad checksum */
+  } else
+    retval = 0;
+  FrFileIRewind(iFile);
+  return retval;
 }
 
 

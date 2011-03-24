@@ -18,13 +18,12 @@
  */
 
 /**
- * \file DriveHough_v3.c
+ * \file
+ * \ingroup pulsarApps
  * \author Badri Krishnan, Alicia Sintes, Llucia Sancho 
  * \brief Driver code for performing Hough transform search on non-demodulated
    data using SFTs from possible multiple IFOs
 
-   Revision: $Id$
- 
    History:   Created by Sintes and Krishnan July 04, 2003
               Modifications for S4 January 2006
 	      Modifications for S5 November 2007
@@ -1669,7 +1668,7 @@ void GetSFTNoiseWeights(LALStatus          *status,
 
 
 /** Loop over SFTs and set a threshold to get peakgrams.  SFTs must be normalized.  */
-void GetPeakGramFromMultSFTVector(LALStatus           *status,
+void GetPeakGramFromMultSFTVector(LALStatus           *status,		/**< pointer to LALStatus structure */
 				  HOUGHPeakGramVector *out, /**< Output peakgrams */
 				  MultiSFTVector      *in,  /**< Input SFTs */
 				  REAL8               thr   /**< Threshold on SFT power */)  
@@ -1727,7 +1726,7 @@ void GetPeakGramFromMultSFTVector(LALStatus           *status,
 /** Set up location of skypatch centers and sizes 
     If user specified skyRegion then use DopplerScan function
     to construct an isotropic grid. Otherwise use skypatch file. */
-void SetUpSkyPatches(LALStatus           *status,
+void SetUpSkyPatches(LALStatus           *status,		/**< pointer to LALStatus structure */
 		     HoughSkyPatchesInfo *out,   /**< output skypatches info */
 		     CHAR                *skyFileName, /**< name of skypatch file */
 		     CHAR                *skyRegion,  /**< skyregion (if isotropic grid is to be constructed) */
@@ -2660,7 +2659,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 			   REAL8                    alphaPeak,
 			   MultiDetectorStateSeries *mdetStates,
 			   REAL8Vector		    *weightsNoise,
-			   UCHARPeakGramVector      *upgV /**< Expanded (UCHAR) peakgrams */)
+			   UCHARPeakGramVector      *upgV /* Expanded (UCHAR) peakgrams */)
 {
     HoughTemplate    pulsarTemplate;
     UINT4            mObsCoh; 
@@ -2854,7 +2853,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 /** Loop over SFTs and set a threshold to get peakgrams.  SFTs must be normalized.  */
 /** This function will create a vector with the uncompressed PeakGrams in it        */
 /** (this is necesary if we want to compute the chi2 later )                        */
-void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *status,
+void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *status,	/**< pointer to LALStatus structure */
 						HOUGHPeakGramVector         *out, /**< Output compressed peakgrams */
 						UCHARPeakGramVector         *upgV, /**< Output uncompressed peakgrams */
 						MultiSFTVector              *in,  /**< Input SFTs */

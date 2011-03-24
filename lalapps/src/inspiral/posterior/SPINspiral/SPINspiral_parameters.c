@@ -1111,7 +1111,7 @@ void readParameterInputfile(struct runPar *run)
 			
 			run->parID[0] = 65;run->parBestVal[0] = 1.3;		    run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.890;		run->priorBoundUp[0] = 1.125;
 			run->parID[1] = 62;run->parBestVal[1] = 0.2;		    run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.0312;		run->priorBoundUp[1] = 0.25;
-			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
+			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.10000;	run->priorBoundUp[2] = 0.10000;
 			run->parID[3] = 21;run->parBestVal[3] = 125000.0;		run->parStartMCMC[3] = 2;run->parSigma[3] = 1.0000;		run->priorType[3] = 11;		run->priorBoundLow[3] = 1.0;		run->priorBoundUp[3] = 1000000.0;
 			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
 			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;
@@ -1131,7 +1131,7 @@ void readParameterInputfile(struct runPar *run)
 			
 			run->parID[0] = 65;run->parBestVal[0] = 1.3;		run->parStartMCMC[0] = 2;run->parSigma[0] = 0.0250;		run->priorType[0] = 13;		run->priorBoundLow[0] = 0.890;		run->priorBoundUp[0] = 1.125;
 			run->parID[1] = 62;run->parBestVal[1] = 0.2;		run->parStartMCMC[1] = 5;run->parSigma[1] = 0.0250;		run->priorType[1] = 11;		run->priorBoundLow[1] = 0.0312;		run->priorBoundUp[1] = 0.25;
-			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.05000;	run->priorBoundUp[2] = 0.05000;
+			run->parID[2] = 11;run->parBestVal[2] = 0.0;			run->parStartMCMC[2] = 2;run->parSigma[2] = 0.0100;		run->priorType[2] = 12;		run->priorBoundLow[2] = -0.10000;	run->priorBoundUp[2] = 0.10000;
 			run->parID[3] = 21;run->parBestVal[3] = 125000.0;		run->parStartMCMC[3] = 2;run->parSigma[3] = 1.0000;		run->priorType[3] = 11;		run->priorBoundLow[3] = 1.0;		run->priorBoundUp[3] = 1000000.0;
 			run->parID[4] = 31;run->parBestVal[4] = 0.0;			run->parStartMCMC[4] = 5;run->parSigma[4] = 0.1000;		run->priorType[4] = 21;		run->priorBoundLow[4] = 0.0;		run->priorBoundUp[4] = 6.283185;
 			run->parID[5] = 32;run->parBestVal[5] = 0.0;			run->parStartMCMC[5] = 5;run->parSigma[5] = 0.1000;		run->priorType[5] = 11;		run->priorBoundLow[5] = -0.999999;	run->priorBoundUp[5] = 0.999999;

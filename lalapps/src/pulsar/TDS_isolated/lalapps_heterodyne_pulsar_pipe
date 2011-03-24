@@ -26,18 +26,6 @@ import tempfile
 import ConfigParser
 import exceptions
 
-# import things needed for the segment list finding part (as taken from LSCsegFind)
-from types import *
-
-try:
-  from glue import gsiserverutils
-  from glue.lal import LIGOTimeGPS
-except ImportError, e:
-  print >> sys.stderr, """
-Error: unable to import modules from glue. Check that glue is correctly installed and in your
-PYTHONPATH. %s """ % e
-  sys.exit(1)
-
 # append the lalapps python path
 sys.path.append('/home/matthew/lscsoft/lib/python')
 

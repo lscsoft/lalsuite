@@ -183,7 +183,7 @@ XLALSphHarm ( COMPLEX16 *out, /**< [out] the value of Y2_lm(theta,phi) */
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */
 			      UINT4 l, /**< azimuthal mode index */
-			      INT4 m );/**< polar mode index */
+			      INT4 m /**< polar mode index */);
 
 NumRelGroup XLALParseNumRelGroupName( CHAR *name);
 

@@ -19,13 +19,10 @@
 
 /**
  * \file 
- *
- * \author{Reinhard Prix}
- *
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
+ * \brief
  * Standalone code to calculated the Fstat-metrics and mismatches
- *
- * Revision: $Id$
- *           
  */
 
 /* ---------- includes ---------- */
@@ -1603,7 +1600,7 @@ XLALDestroyMultiPhaseDerivs ( MultiPhaseDerivs *mdPhi )
 
 /** Load Ephemeris from ephemeris data-files  */
 void
-InitEphemeris (LALStatus * status,
+InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */

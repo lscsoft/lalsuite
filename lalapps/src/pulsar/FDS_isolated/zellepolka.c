@@ -30,11 +30,12 @@
 
 /*! 
    @file
+   @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh , Holger Pletsch
    @brief The pulsar coincidence analysis code for einstein at home post-processing --- counting
     number of events in cells construcetd in 4D parameters space.
 
-<li>Inputs and outputs
-<ul>   
+    \par Inputs and outputs
+<ul>
 <li> This code takes one single file generated from the EaH zipped result files by a python code combiner_v4.py,
 to be found at:
 http://www.lsc-group.phys.uwm.edu/cgi-bin/cvs/viewcvs.cgi/einsteinathome/CFS/post_processing/combiner_v4.py?cvsroot=lscsoft
@@ -54,10 +55,10 @@ some information on stdout.
 </ol>
 </ul>
 
-<li>Algorithm
+\par Algorithm
 <ol>
 <li> First construct a grid in four dimensional parameters space (frequency, right ascension, declination and f1dot).
-   A varying cell width in declination is used according to the metric-grid used in the E@H S4 search
+   A varying cell width in declination is used according to the metric-grid used in the E\@H S4 search
    (the actual implementation uses a Gaussian declination-model, with maximum around the equator),
    a uniform cell-grid in the frequency and spin-down.
    We can change the cell-grid spacing of the each parameter, and shift the cell-grid as a whole for 
@@ -69,9 +70,6 @@ some information on stdout.
   which the result files may have originated.
 </ol>
 
-
-  @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh , Holger Pletsch
-  $Id$ 
 */
 
 
@@ -228,7 +226,7 @@ typedef struct PolkaConfigVarsTag
   CHAR *OutputFile;  /*  Names of output file */
   CHAR *InputDir;    /*  Directory name of input files */
   CHAR *BaseName;    /*  Base name of input files */
-  CHAR *EahRun;      /*  E@H identifying run label */
+  CHAR *EahRun;      /*  E\@H identifying run label */
   CHAR **Filelist;   /*  Array of filenames to load Fstats file from */
   UINT4 NFiles;      /*  Number of input files read */
   INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
@@ -829,13 +827,13 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength )
 /* ------------------------------------------------------------------------------*/      
 /*!
   Re-Allocate memory for the cells and initialize the additional celldata variables.
-
-  @param[in,out] lalStatus LALStatus*
-  @param[out]    cell      CellData** CellData structure to be initialized
-  @param[in]     CLength   INT8       Number of the cells
 */
  
-void RePrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength , const INT8 iposition)
+void RePrepareCells( LALStatus *lalStatus,	/**< LALStatus* pointer */
+                     CellData **cell,		/**< CellData structure to be initialized */
+                     const INT8 CLength,	/**< Number of the cells */
+                     const INT8 iposition	/**< FIXME: !TO BE DOCUMENTED! */
+                     )
 {
   INT8 icell, ncell;
   INT4 errflg = 0;
@@ -902,22 +900,14 @@ void RePrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength ,
 /* ########################################################################################## */
 /*! 
   Output results 
-
-
-
-  @param[in,out] lalStatus LALStatus*
-  @param[in]     CLA       PolkaConfigVars*
-  @param[in]     cell      CellData*
-  @param[in]     ncell     INT8* Number of the cells
-  @param[in]     CList     CandidateList
 */
-void PrintResult(LALStatus *lalStatus, 
-		 const PolkaConfigVars *CLA, 
-		 CellData *cell, 
-		 const INT8 *ncell, 
-		 CandidateList *CList, 
-		 const INT4 cellgridnum, 
-		 INT8 CellListi[])
+void PrintResult(LALStatus *lalStatus, 		/**< LALStatus pointer */
+		 const PolkaConfigVars *CLA, 	/**< PolkaConfigVars* */
+		 CellData *cell, 		/**< CellData* */
+		 const INT8 *ncell, 		/**< Number of the cells */
+		 CandidateList *CList, 		/**< CandidateList */
+		 const INT4 cellgridnum, 	/**< FIXME: !TO BE DOCUMENTED! */
+		 INT8 CellListi[])		/**< FIXME: !TO BE DOCUMENTED! */
 {
   INT8 icell;
   CHAR fnameSigTime[256]; /* Time variation of 2F of some significant outliers. */
@@ -1228,14 +1218,6 @@ void PrintResult(LALStatus *lalStatus,
   \li whose indices are between \b icell_start and \b icell_end, and 
   \li in which numbers of the events are above \b ncand_thr, and 
   \li in which significances are above \b sig_thr.
-
-  @param[in,out] lalStatus LALStatus*
-  @param[in]     fp        FILE*
-  @param[in]     cd        CellData*
-  @param[in]     INT8      icell_start
-  @param[in]     INT8      icell_end
-  @param[in]     REAL8     sig_thr
-  @param[in]     REAL8     ncand_thr
 */
 void print_info_of_the_cell( LALStatus *lalStatus, 
 			     FILE *fp, 
@@ -1272,16 +1254,10 @@ void print_info_of_the_cell( LALStatus *lalStatus,
   Free memory 
 
   Free Configuration variables \b CLA, CellData variable \b cell, CandidateList var \b CList.
-
-  @param[in,out] lalStatus LALStatus* 
-  @param[in]     CLA       PolkaConfigVars* configuration variables structure
-  @param[in]     cell      CellData*        CellData structure
-  @param[in]     CList     CandidateList*   CandidateList structure
-  @param[in]     CLength   INT8            Number of the cells
 */
-void FreeMemory( LALStatus *lalStatus, 
-	    PolkaConfigVars *CLA, 
-                 CandidateList *CList) 
+void FreeMemory( LALStatus *lalStatus,	/**< LALStatus*  pointer */ 
+                 PolkaConfigVars *CLA, 	/**< configuration variables structure */
+                 CandidateList *CList) /**< CandidateList structure */
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1309,16 +1285,10 @@ void FreeMemory( LALStatus *lalStatus,
   Free memory 
 
   Free Configuration variables \b CLA, CellData variable \b cell, CandidateList var \b CList.
-
-  @param[in,out] lalStatus LALStatus* 
-  @param[in]     CLA       PolkaConfigVars* configuration variables structure
-  @param[in]     cell      CellData*        CellData structure
-  @param[in]     CList     CandidateList*   CandidateList structure
-  @param[in]     CLength   INT8            Number of the cells
 */
-void FreeMemoryCellsOnly( LALStatus *lalStatus, 
-			  CellData *cell, 
-			  const INT8 datalen)
+void FreeMemoryCellsOnly( LALStatus *lalStatus, /**< LALStatus*  pointer */
+			  CellData *cell, 	/**< CellData structure */
+			  const INT8 datalen)	/**< Number of the cells */
 {
   INT8 icell;
 
@@ -2552,18 +2522,14 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   \li if we could read all the events in the file.
 
   This function prints the bytecounts and the checksum of the file \b fname.
-
-  @param[in,out] lalStatus LALStatus* 
-  @param[out]    CList     CandidateList** CandidateList str to be filled in this code 
-  @param[in]     fname     CHAR* the name of the file to be read
-  @param[out]    candlen   INT8* total number of the candidate events
 */
-void  
-ReadOneCandidateFile( LALStatus *lalStatus, 
-		      CandidateList **CList, 
-		      const CHAR *fname, 
-		      INT8 *candlen, 
-		      const REAL8 myFthr )
+void
+ReadOneCandidateFile( LALStatus *lalStatus, 	/**< LALStatus pointer */
+		      CandidateList **CList, 	/**< CandidateList str to be filled in this code  */
+		      const CHAR *fname, 	/**< the name of the file to be read */
+		      INT8 *candlen, 		/**< total number of the candidate events */
+                      const REAL8 myFthr	/**< FIXME: !TO BE DOCUMENTED! */
+                      )
 {
   INT8 i;
   INT8 numlines;

@@ -19,9 +19,9 @@
 
 /**
  * \file
- *
- * \author{Reinhard Prix}
- *
+ * \ingroup pulsarApps
+ * \author Reinhard Prix
+ * \brief
  * Simple standalone code to provide ASCII output for detector response
  * and ephemeris state at given time, for given detector and sky-location
  *

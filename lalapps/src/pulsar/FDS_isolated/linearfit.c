@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author B. Krishnan
+ */
 
 /* B. Krishnan, July 2005 */
 /* small modification by M.A. Papa */

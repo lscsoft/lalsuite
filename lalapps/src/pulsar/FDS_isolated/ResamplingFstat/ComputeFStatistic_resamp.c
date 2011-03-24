@@ -24,6 +24,7 @@
 /*********************************************************************************/
 /** \author P.Patel, X.Siemens, R. Prix, I. Gholami, Y. Ioth,M. Papa
  * \file
+ * \ingroup pulsarApps
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in \ref JKS98.
@@ -880,7 +881,7 @@ initUserVars (LALStatus *status)
 
 /** Load Ephemeris from ephemeris data-files  */
 void
-InitEphemeris (LALStatus * status,
+InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 	       EphemerisData *edat,	/**< [out] the ephemeris-data */
 	       const CHAR *ephemDir,	/**< directory containing ephems */
 	       const CHAR *ephemYear,	/**< which years do we need? */

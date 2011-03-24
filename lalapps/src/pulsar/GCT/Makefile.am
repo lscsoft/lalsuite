@@ -10,7 +10,7 @@ INCLUDES = -I$(top_srcdir)/src/lalapps -I$(CFSsrc) -I$(EAHsrc)
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
-EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda
+EXTRA_PROGRAMS = eah_HierarchSearchGCT lalapps_HierarchSearchGCT_cuda lalapps_HierarchSearchGCT_VFStat
 
 EAHSources = $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp $(OPTsrc)/LocalComputeFstat.c
 HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
@@ -24,6 +24,9 @@ lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 lalapps_HierarchSearchGCT_cuda_SOURCES = $(HSGCTSources) $(OPTsrc)/ComputeFstatREAL4.c $(OPTsrc)/ComputeFstatREAL4CUDA.c $(OPTsrc)/FStatCUDA.cu
 lalapps_HierarchSearchGCT_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchSearchGCT_cuda_LDADD = $(LDADD) -lcudart
+
+lalapps_HierarchSearchGCT_VFStat_SOURCES = $(HSGCTSources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_HierarchSearchGCT_VFStat_CPPFLAGS = $(AM_CPPFLAGS) -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
 
 eah_HierarchSearchGCT_SOURCES = $(HSGCTSources) $(EAHSources)
 eah_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS) -DEAH_BOINC -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT
@@ -67,3 +70,14 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     eah_HierarchSearchGCT-LocalComputeFstat.o \
     libstdc++.a
 	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
+
+
+EXTRA_DIST = testHS.sh
+
+TESTS = testHS.sh
+
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+
+CLEANFILES =

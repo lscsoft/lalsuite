@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author X. Siemens
+ * \brief takes in an Fstats file and a ParamMLE file and constructs In.data
+ */
+
 /*********************************************************************************/
 /*                                 In.data file maker                            */
 /*                                                                               */

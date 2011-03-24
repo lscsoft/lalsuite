@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/*********************************** <lalVerbatim file="StackSlideCV">
-Authors:  Landry, Michael; Mendell, Gregory; Re, Virginia
-$Id$
-************************************ </lalVerbatim> */
+/**
+ * \author Michael Landry, Gregory Mendell, Virginia Re
+ */
 
 /* REVISIONS: */
 /* 01/28/04 gam; need to find index to which to SUM */
@@ -58,30 +57,21 @@ $Id$
 /*                                           */
 /*********************************************/
 
-/* <lalLaTeX> 
-\subsection{Module \texttt{StackSlide.c}}\label{ss:StackSlide.c}
+/**
+\heading{Module \ref StackSlide.c}
 Computes frequency model, slide stacks accordingly, and sum them.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StackSlideCP}
-\index{\texttt{StackSlideComputeSky()}}
+\heading{Prototypes}
+<tt>StackSlideComputeSky()</tt>
 
-\subsubsection*{Description}
+\heading{Description}
 Slide 'em.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 Sum them.
 
-\subsubsection*{Uses}
-\begin{verbatim}
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{StackSlideCV}}
-
-</lalLaTeX> */
+\heading{Uses}
+*/
 
 #include "StackSlide.h"/*This includes isolated/binary info*/
 
@@ -295,11 +285,11 @@ void SumStacks( 	LALStatus *status,
 /* static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f); */ /* 07/27/05 gam */
  
-/* <lalVerbatim file="StackSlideCP"> */
+
 void StackSlideComputeSky (LALStatus            *status,
 			   TdotsAndDeltaTs      *pTdotsAndDeltaTs,
 			   StackSlideSkyParams  *params)
-{  /* </lalVerbatim> */
+{  
   
   INT4 m, n;
   /* REAL8 t; */                  /* 07/27/05 gam; this and next variable are no longer used */

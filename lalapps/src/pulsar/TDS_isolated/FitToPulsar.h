@@ -17,37 +17,23 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="FitToPulsarHV">
-Author: Dupuis, R.J.
-$Id$
-********************************** </lalVerbatim> */
+/**
+\author Dupuis, R.J.
 
-/********************************* <lalLaTeX>
-
-\section{Header \texttt{FitToPulsar.h}}
-Provides routines for finding the best fit of the measured data to the strain expected from 
+\heading{Header \ref FitToPulsar.h}
+Provides routines for finding the best fit of the measured data to the strain expected from
 non-precessing pulsar.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/FitToPulsar.h>
-\end{verbatim}
+\endcode
 
 Functions in this package calculate the posterior probability of the following model given the data ({Bk})
-\begin{equation}
-y(t;\textrm{{\bf a}}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
-\end{equation}
-
-More documentation later.
-\subsection*{Error conditions}
-\input{FitToPulsarHE}
-
-
-\vfill{\footnotesize\input{FitToPulsarHV}}
-\newpage\input{FitToPulsarC}
-\newpage\input{FitToPulsarTestC}
-
-********************************** </lalLaTeX> */
+\f{equation}{
+y(t;\textrm{\c a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
+\f}
+*/
 
 #ifndef _FITTOPULSAR_H
 #define _FITTOPULSAR_H
@@ -75,7 +61,7 @@ extern "C" {
 
 NRCSID (FITTOPULSARH, "$Id$");
 
-/******************************** <lalErrTable file="FitToPulsarHE"> */
+/**\name Error Codes */ /*@{*/
 #define FITTOPULSARH_ENULLINPUT 1
 #define FITTOPULSARH_ENULLOUTPUT 2
 #define FITTOPULSARH_ENULLPARAMS 3
@@ -98,7 +84,7 @@ NRCSID (FITTOPULSARH, "$Id$");
 #define FITTOPULSARH_MSGETIM "Problem with time stamps.. there are not M data chunks of length N"
 
 
-/************************************ </lalErrTable> */
+/*@}*/
 
 /****** DEFINE OTHER GLOBAL CONSTANTS OR MACROS ************/
 

@@ -89,7 +89,7 @@ startTime="852443819"
 refTime="862999869"
 Tsegment="90000"
 Nsegments="14"
-seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc) 
+seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc)
 tsfile="timestampsTEST.txt"
 rm -rf $tsfile
 tmpTime=$startTime
@@ -98,7 +98,7 @@ while [ "$ic1" -le "$Nsegments" ];
 do
     segs[${ic1}]=$tmpTime # save seg's beginning for later use
     echo "Segment: "$ic1" of "$Nsegments"   GPS start time: "${segs[${ic1}]}
-    
+
     ic2=$Tsft
     while [ "$ic2" -le "$Tsegment" ];
     do
@@ -106,7 +106,7 @@ do
 	tmpTime=$(echo "scale=0; ${tmpTime} + ${Tsft}" | bc)
 	ic2=$(echo "scale=0; ${ic2} + ${Tsft}" | bc)
     done
-    
+
     tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | awk '{printf "%.0f",$1}')
     ic1=$(echo "scale=0; ${ic1} + 1" | bc)
 done
@@ -151,7 +151,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-# construct MFD cmd for L1:                                                                                                     
+# construct MFD cmd for L1:
 mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=1001"
 
 if [ "$haveNoise" = true ]; then
@@ -180,7 +180,7 @@ TwoFsum2="0"
 for ((x=1; x <= $Nsegments; x++))
   do
     outfile_pfs="__tmp_PFS.dat";
-    
+
     startGPS=${segs[${x}]}
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
     #echo "Segment: "$x"  "$startGPS" "$endGPS
@@ -219,7 +219,7 @@ for ((x=1; x <= $Nsegments; x++))
         fi
         resPFS2=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
         TwoFsum2=$(echo "scale=6; ${TwoFsum2} + ${resPFS2}" | bc);
-	
+
 	echo "Segment: "$x"   2F: "$resPFS"    (H1 only: "$resPFS1"  L1 only: "$resPFS2")"
     else
 	echo "Segment: "$x"   2F: "$resPFS
@@ -252,7 +252,7 @@ if [ -e "checkpoint.cpt" ]; then
 fi
 
 outfile_gct1="__tmp_GCT1.dat"
-                                                                                           
+
 gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
 
 cmdline="$gct_code $gct_CL"
@@ -317,7 +317,7 @@ freqreldev2=$(echo "scale=13; (($Freq - $freqGCT2)/$Freq) " | bc | awk '{ if($1>
 if [ -n "$SEPIFOVETO" ]; then
     reldev2H1=$(echo "scale=5; ($TwoFsum1 - $resGCT2H1)/(0.5 * ($TwoFsum1 + $resGCT2H1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
     reldev2L1=$(echo "scale=5; ($TwoFsum2 - $resGCT2L1)/(0.5 * ($TwoFsum2 + $resGCT2L1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-fi    
+fi
 freqreldev2B=$(echo "scale=13; (($Freq - $freqGCT2)/${gct_dFreq})" | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
 
 
@@ -344,7 +344,7 @@ if [ `echo $reldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK." 
+    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK."
 fi
 
 if [ -z "$NORESAMP" ]; then
@@ -353,7 +353,7 @@ if [ `echo $reldev3" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"      OK." 
+    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"      OK."
 fi
 fi
 
@@ -383,8 +383,8 @@ fi
 
 
 if [ -n "$SEPIFOVETO" ]; then
-    echo 
-    
+    echo
+
     if [ `echo $reldev2H1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
 	echo "==>  GCT, H1 only deviation:     "$reldev2H1
 	echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."

@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 SUBDIRS = \
+	doxygen \
 	gnuscripts \
 	@subdirs@
 
