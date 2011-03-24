@@ -138,7 +138,8 @@ struct coh_PTF_params {
   REAL4        nonspinSNR2threshold;
   REAL4        rightAscension;
   REAL4        declination;
-  REAL4        declinationError;
+  REAL4        skyError;
+  REAL4        timingAccuracy;
   UINT4        skyLooping;
   const char  *bankFile;
   const char  *segmentsToDoList;
@@ -651,6 +652,17 @@ int generate_file_name(
 
 /* generate array of sky points based on RA, DEC and DECERROR */
 /* should return linked list */
-struct coh_PTF_skyPoints *coh_PTF_generate_sky_points(
+void coh_PTF_generate_sky_points(
+    struct coh_PTF_skyPoints *skyPoints,
     struct coh_PTF_params *params
+);
+
+void coh_PTF_sky_grid(
+    struct coh_PTF_skyPoints *skyPoints,
+    struct coh_PTF_params *params
+);
+
+struct coh_PTF_skyPoints coh_PTF_circular_grid(
+    REAL4 angularResolution,
+    REAL4 skyError
 );
