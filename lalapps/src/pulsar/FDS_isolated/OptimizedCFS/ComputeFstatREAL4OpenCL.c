@@ -757,6 +757,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   static cl_command_queue cmd_queue;
   static cl_program program;
   static cl_kernel kernel;
+  static cl_context_properties properties[3];
 
   clW->platform  = NULL;
   clW->device    = NULL;
@@ -782,29 +783,46 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 #if USE_OPENCL_KERNEL
   // query the platform ID
   LogPrintf(LOG_DEBUG, "In function %s: query the platform ID\n", fn);
-  clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
-  clW->platform = &(platforms[gpu_platform_id]);
+  err = clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformIDs: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if (num_platforms == 0) {
+      XLALPrintError ("%s: clGetPlatformInfo found no usable platform\n", fn);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
+  clW->platform = &(platforms[gpu_platform_id]);
   LogPrintf(LOG_DEBUG, "In function %s: Found %d platforms, using platform id %d\n", fn, num_platforms, gpu_platform_id);
 
   // query OpenCL platform info
   LogPrintf(LOG_DEBUG, "In function %s: query the OpenCL platform info\n", fn);
-  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_PROFILE, 100, strInfo, NULL );
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_PROFILE, sizeof(strInfo), strInfo, NULL );
   if (err != CL_SUCCESS) {
-      XLALPrintError ("%s: Error calling clGetPlatformInfo.\n", fn );
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-
-  // create OpenCL GPU context
-  LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
-  context = clCreateContextFromType(0, CL_DEVICE_TYPE_GPU, NULL, NULL, NULL);
-  if (context == (cl_context)0) {
-      XLALPrintError ("%s: Failed to create context\n", fn );
-      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+  LogPrintf(LOG_DEBUG, "In function %s: platform profile: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_VERSION, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  clW->context = &context;
-
+  LogPrintf(LOG_DEBUG, "In function %s: platform version: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_NAME, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: platform name: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_VENDOR, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: platform vendor: %s\n", fn, strInfo);
+  
   // get the list of available GPU devices
   LogPrintf(LOG_DEBUG, "In function %s: get the list of all available GPU devices\n", fn);
   err = clGetDeviceIDs( *(clW->platform),
@@ -824,6 +842,20 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     LogPrintf(LOG_DEBUG, "In function %s: Found %d devices, using device id %d\n", fn, num_devices, gpu_device_id);
   }
   clW->device = &(devices[gpu_device_id]);
+
+  properties[0] = (cl_context_properties)CL_CONTEXT_PLATFORM;  // indicates that next element is platform
+  properties[1] = (cl_context_properties)platforms[gpu_platform_id];  // platform is of type cl_platform_id
+  properties[2] = (cl_context_properties)0;
+
+  // create OpenCL GPU context
+  LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
+  context = clCreateContextFromType(properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
+  if (context == NULL) {
+      XLALPrintError ("%s: Failed to create context: %s (%d)\n", fn, pclerror(err), err);
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->context = &context;
 
   // get the max work group size
   err = clGetDeviceInfo(devices[gpu_device_id],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(max_work_size),&max_work_size,NULL);
