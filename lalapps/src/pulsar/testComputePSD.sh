@@ -34,8 +34,10 @@ tolerance=1e-5
 # ---------- fixed parameter of our test-signal
 IFO=H1
 
-fStart=300.0
-fBand=0.1
+## we specify the frequency range as an "open" interval (300, 300.1) to avoid
+## roundoff ambiguities to discrete bins on different platforms, using eps=1e-6
+fStart=300.000001 ## 300 + eps
+fBand=0.099997	  ## 0.1 - 3eps
 
 
 blocksRngMed=101
