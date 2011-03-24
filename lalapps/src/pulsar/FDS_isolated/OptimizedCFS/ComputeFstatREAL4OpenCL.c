@@ -468,7 +468,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
         err_total += (err-CL_SUCCESS);
 
         if (err_total != CL_SUCCESS) {
-          XLALPrintError ("%s: Error copying data to memory buffer, error code = %d\n", fn, err );
+          XLALPrintError ("%s: Error copying data to memory buffer: %s (%d)\n", fn, pclerror(err), err);
           XLALDestroyCLWorkspace (clWp, multiSFTsV);
           XLAL_ERROR ( fn, XLAL_EINVAL );
         }
@@ -491,7 +491,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                clWp->fkdot16.data, 0, NULL, NULL);
   err_total += (err-CL_SUCCESS);
   if (err_total != CL_SUCCESS) {
-    XLALPrintError ("%s: Error copying frequency data to device memory, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error copying frequency data to device memory: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -556,7 +556,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   err_total += (err-CL_SUCCESS);
 
   if (err_total != CL_SUCCESS) {
-    XLALPrintError ("%s: Error while setting the kernel arguments, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error while setting the kernel arguments: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -583,7 +583,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                NULL, // event list
                                NULL); // event for this kernel
   if (err != CL_SUCCESS) {
-    XLALPrintError ("%s: Error enqueueing the kernel, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error enqueueing the kernel: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -599,7 +599,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                              clWp->Fstat.data,    // pointer
                              0, NULL, NULL);     // events
   if (err != CL_SUCCESS) {
-    XLALPrintError ("%s: Error reading output buffer, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error reading output buffer: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -981,7 +981,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   err_total += (err-CL_SUCCESS);
 
   if (err_total != CL_SUCCESS) {
-      XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err );
+      XLALPrintError ("%s: Error creating OpenCL memory buffer: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
