@@ -972,7 +972,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
 /*   - "time"            (REAL8, GPS sec.)                     */
 /***************************************************************/
 {
-  REAL8 ChiSquared, dxp, xp, x, norm, binPower, nextBin;
+  REAL8 ChiSquared=0.0, dxp, xp, x, norm, binPower, nextBin;
   REAL8 lowerF, upperF, deltaT, deltaF;
   REAL8 *segnorm;
   INT4  i, chisqPt, imax, kmin, kmax, numBins;
@@ -980,7 +980,10 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
   LALIFOData *ifoPtr=data;
   COMPLEX16Vector *freqModelResponse=NULL;
   //COMPLEX16Vector *segmentFreqModelResponse-NULL;
-  
+
+  /* Allocate memory for local pointers */
+  segnorm=malloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
+  chisqBin=malloc(sizeof(INT4) * (numBins + 1));
 
   /* loop over data (different interferometers): */
   while (ifoPtr != NULL) {
@@ -1004,7 +1007,6 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
     kmax = floor(ifoPtr->fHigh / deltaF);
     imax = kmax > (INT4) ifoPtr->freqData->data->length-1 ? (INT4) ifoPtr->freqData->data->length-1 : kmax;
     
-    segnorm=malloc(sizeof(REAL8) * ifoPtr->freqData->data->length);
     memset(segnorm,0,sizeof(REAL8) * ifoPtr->freqData->data->length);
     norm = 0.0;
     
@@ -1015,7 +1017,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
       segnorm[i] = norm;
     }
 
-    chisqBin=malloc(sizeof(INT4) * (numBins + 1));
+
     memset(chisqBin,0,sizeof(INT4) * (numBins +1));
 
     binPower = norm / (REAL8) numBins;

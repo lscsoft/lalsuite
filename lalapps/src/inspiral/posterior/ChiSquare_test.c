@@ -136,7 +136,7 @@ void initVariables(LALInferenceRunState *state)
 	LALStatus status;
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
-	LALVariables *priorArgs=state->priorArgs;
+	//LALVariables *priorArgs=state->priorArgs;
 	state->currentParams=XLALCalloc(1,sizeof(LALVariables));
 	LALVariables *currentParams=state->currentParams;
 	ProcessParamsTable *commandLine=state->commandLine;
@@ -148,15 +148,15 @@ void initVariables(LALInferenceRunState *state)
 	//INT4 numberI4 = TaylorT3;
 	//INT4 approx=TaylorF2;
 	LALInferenceApplyTaper bookends = INFERENCE_TAPER_NONE;
-	REAL8 logDmin=log(1.0);
-	REAL8 logDmax=log(100.0);
-	REAL8 Dmin=1.0;
-	REAL8 Dmax=100.0;
-	REAL8 mcMin=1.0;
-	REAL8 mcMax=15.3;
+	//REAL8 logDmin=log(1.0);
+	//REAL8 logDmax=log(100.0);
+	//REAL8 Dmin=1.0;
+	//REAL8 Dmax=100.0;
+	//REAL8 mcMin=1.0;
+	//REAL8 mcMax=15.3;
 	//REAL8 logmcMax,logmcMin;
-	REAL8 mMin=1.0,mMax=30.0;
-	REAL8 MTotMax=35.0;
+	//REAL8 mMin=1.0,mMax=30.0;
+	//REAL8 MTotMax=35.0;
 	REAL8 etaMin=0.0312;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
