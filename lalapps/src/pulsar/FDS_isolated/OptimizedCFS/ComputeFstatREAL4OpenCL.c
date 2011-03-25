@@ -862,9 +862,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 
   // create a command-queue
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);
-  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device),
-                                   CL_QUEUE_PROFILING_ENABLE,
-                                   &err);
+  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device), 0, &err);
   if (cmd_queue == (cl_command_queue)0) {
       XLALPrintError ("%s: Failed to create command queue: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
