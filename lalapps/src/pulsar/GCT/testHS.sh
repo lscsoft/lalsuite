@@ -451,6 +451,6 @@ echo "----------------------------------------------------------------------"
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2 checkpoint.cpt stderr.log stdout.log $segFile
+    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2 $outfile_gct5 checkpoint.cpt stderr.log stdout.log $segFile
     echo "Cleaned up."
 fi
