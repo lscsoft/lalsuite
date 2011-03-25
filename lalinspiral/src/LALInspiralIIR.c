@@ -51,8 +51,8 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 		/* Record a1, b0 and delay */
 		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((double) exp(-beta / ((double) jstep)), -phase_dot);
-		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j-(k+0))) );//NOTE CHANGE FROM k+1 to k+0
-		(*delay)->data[nfilters-1] = amp->length - j;
+		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j - k)) );
+		(*delay)->data[nfilters-1] = amp->length - 1 - j;
 
 		/* Calculate the next data point step */
 		j -= jstep;
@@ -80,8 +80,8 @@ int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vec
 	for (f = 0; f < a1->length; f++)
 		{
 			a1f = a1_data[f];
-			y = b0_data[f];
-			for (j = delay->data[f]; j < response->length; j++)
+			y = b0_data[f]/a1f;
+			for (j = delay->data[f]; j < response->length; j++ )
 				{
 					y *= a1f;
 					response_data[j] += y;

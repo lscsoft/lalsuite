@@ -108,15 +108,15 @@ typedef struct
 
 
 /*---------- empty initializers ---------- */
-static LALStatus empty_status;
-static EmissionTime empty_EmissionTime;
-static intparams_t empty_intparams;
-static PosVel3D_t empty_PosVel3D_t;
+static const LALStatus empty_status;
+static const EmissionTime empty_EmissionTime;
+static const intparams_t empty_intparams;
+static const PosVel3D_t empty_PosVel3D_t;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
-DopplerMetricParams empty_DopplerMetricParams;
-DopplerCoordinateSystem empty_DopplerCoordinateSystem;
-MultiDetectorInfo empty_MultiDetectorInfo;
+const DopplerMetricParams empty_DopplerMetricParams;
+const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
+const MultiDetectorInfo empty_MultiDetectorInfo;
 
 /*---------- Global variables ----------*/
 NRCSID( UNIVERSALDOPPLERMETRICC, "$Id$");
@@ -973,7 +973,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   if ( metricParams->metricType >= METRIC_TYPE_LAST ) {
     XLALPrintError ("%s: Invalid value '%d' for metricType received. Must be within [%d,%d]!\n\n",
-                    metricParams->metricType, 0, METRIC_TYPE_LAST - 1, fn);
+                    fn, metricParams->metricType, 0, METRIC_TYPE_LAST - 1);
     XLAL_ERROR_NULL( fn, XLAL_EINVAL );
   }
 

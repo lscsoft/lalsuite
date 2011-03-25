@@ -219,7 +219,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* F-statistic computation related stuff */
   REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
-  UINT4 binsFstat1, binsFstatSearch;
+  UINT4 binsFstat1, binsFstatSearch=0;
   static ComputeFParams CFparams;
   ComputeFBufferVector_RS resampbuffers;  /* used to store the buffered quantities used in repeated calls to ComputeFstatFreqBand_RS */
 
