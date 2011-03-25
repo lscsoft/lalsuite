@@ -18,6 +18,7 @@
 */
 
 #include <math.h>
+#include <time.h>
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_roots.h>
@@ -158,6 +159,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    }
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
+   //const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_steffenson;
    gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
    if (s0==NULL) {
       fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", fn);
@@ -180,7 +182,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
       FDF.params = &params;
    }
    
-   
    //Start off with an initial guess and set the solver at the beginning
    REAL8 Rlow = 0.0, Rhigh = 10000.0, root = 400.0;
    REAL8 initialroot = root;
@@ -197,12 +198,21 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    }
    
    
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_ENOMEM);
+   }
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
+   
    
    //And now find the root
    ii = 0;
-   INT4 max_iter = 100;
+   INT4 max_iter = 100, jj = 0, max_retries = 10;
    INT4 status = GSL_CONTINUE;
-   REAL8 prevroot;
+   REAL8 prevroot = 0.0;
    while (status==GSL_CONTINUE && ii<max_iter) {
       
       ii++;
@@ -231,12 +241,24 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
          }
          prevroot = root;
          root = gsl_root_fdfsolver_root(s0);
-         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
          status = gsl_root_test_delta(prevroot, root, 0.0, 0.001);
          if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
             fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
+         
+         //If there is an issue that the root is negative, try a new initial guess
+         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
+         if (root<0.0 && jj<max_retries) {
+            ii = 0;
+            jj++;
+            status = GSL_CONTINUE;
+            if ( (gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(rng)*Rhigh)) != 0 ) {
+               fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
+               XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+            }
+         } //Up to here
+         
       }
       
    } /* while status==GSL_CONTINUE && ii < max_iter */
@@ -277,6 +299,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    //Cleanup
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
+   gsl_rng_free(rng);
    
    
 } /* numericFAR() */
@@ -495,9 +518,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
       gsl_rng_set(rng, 0);
       
-      REAL8Vector *slopes = XLALCreateREAL8Vector(20);
+      REAL8Vector *slopes = XLALCreateREAL8Vector(10);
       if (slopes==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 20);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
       
@@ -548,6 +571,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
       }
+      
+      gsl_rng_free(rng);
+      XLALDestroyREAL8Vector(slopes);
       
    }
    
