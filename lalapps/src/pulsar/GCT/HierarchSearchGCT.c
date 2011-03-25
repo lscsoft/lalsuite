@@ -334,7 +334,7 @@ int MAIN( int argc, char *argv[]) {
 
   REAL8 uvar_tStack = 0;
   INT4  uvar_nStacksMax = 1;
-  CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (tGPS, tSpan) */
+  CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
   INT4 uvar_Dterms = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
@@ -435,7 +435,7 @@ int MAIN( int argc, char *argv[]) {
 
   LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of segments", &uvar_nStacksMax ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a pre-computed segment list of tuples (tGPS, tSpan)", &uvar_segmentList),  &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -2567,7 +2567,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
     XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
   }
 
-  REAL8 Tsft = floor ( 1.0 / catalog->data[0].header.deltaF + 0.5 );	/* round to closest integer seconds */
+  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
 
   /* Step through segment list:
    * for every segment:
