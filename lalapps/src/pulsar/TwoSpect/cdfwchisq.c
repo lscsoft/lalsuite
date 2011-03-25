@@ -30,6 +30,8 @@
 #include <lal/Sort.h>
 
 #include <gsl/gsl_sf_log.h>
+#include <gsl/gsl_machine.h>
+
 
 #include "cdfwchisq.h"
 
@@ -42,6 +44,32 @@ REAL8 exp1(REAL8 x)
    if (x<-700.0) return 0.0;
    else return exp(x);
 } /* exp1() */
+
+//based on the gsl functions
+REAL8 twospect_log_1plusx(REAL8 x)
+{
+   
+   if (fabs(x)<GSL_ROOT6_DBL_EPSILON) {
+      return x*(1.0+x*(-.5+x*(1.0/3.0+x*(-.25+x*(.2+x*(-1.0/6.0+x*(1.0/7.0+x*(-.125+x*(1.0/9.0-.1*x)))))))));
+   } else if (fabs(x)<0.5) {
+      return gsl_sf_log_1plusx(x);
+   } else {
+      return log(1.0 + x);
+   }
+   
+}
+REAL8 twospect_log_1plusx_mx(REAL8 x)
+{
+   
+   if(fabs(x)<GSL_ROOT5_DBL_EPSILON) {
+      return x*x*(-.5+x*(1.0/3.0+x*(-.25+x*(.2+x*(-1.0/6.0+x*(1.0/7.0+x*(-.125+x*(1.0/9.0-.1*x))))))));
+   } else if (fabs(x)<0.5) {
+      return gsl_sf_log_1plusx_mx(x);
+   } else {
+      return log(1.0 + x) - x;
+   }
+   
+}
 
 
 //count number of calls to errbound, truncation, coeff
@@ -136,7 +164,8 @@ REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += 2.0*vars->weights->data[ii]/y;
-      sum1 += 2 * (x*x / y + gsl_sf_log_1plusx_mx(-x));
+      //sum1 += 2 * (x*x / y + gsl_sf_log_1plusx_mx(-x));
+      sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
    }
    *cx = xconst;
    
@@ -290,10 +319,12 @@ REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
       if (x > 1.0) {
          prod2 += 2 * log(x);
-         prod3 += 2 * gsl_sf_log_1plusx(x);
+         //prod3 += 2 * gsl_sf_log_1plusx(x);
+         prod3 += 2 * twospect_log_1plusx(x);
          s += 2;
       }
-      else prod1 += 2 * gsl_sf_log_1plusx(x);
+      else prod1 += 2 * twospect_log_1plusx(x);
+      //else prod1 += 2 * gsl_sf_log_1plusx(x);
    } /* for ii < vars->weights->length */
    
    prod2 += prod1;
@@ -439,7 +470,8 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
-         sum3 -= 0.5 * gsl_sf_log_1plusx((x*x));
+         //sum3 -= 0.5 * gsl_sf_log_1plusx((x*x));
+         sum3 -= 0.5 * twospect_log_1plusx((x*x));
          z = 2.0 * atan(x);
          sum1 += z;
          sum2 += fabs(z);

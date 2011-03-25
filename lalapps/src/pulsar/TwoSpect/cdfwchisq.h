@@ -53,6 +53,8 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 void counter(qfvars *vars);
 
 REAL8 exp1(REAL8 x);
+REAL8 twospect_log_1plusx(REAL8 x);
+REAL8 twospect_log_1plusx_mx(REAL8 x);
 REAL8 log1(REAL8 x, INT4 first);
 REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx);
 REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx);
