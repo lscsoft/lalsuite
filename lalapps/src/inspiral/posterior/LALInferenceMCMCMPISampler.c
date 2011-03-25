@@ -85,7 +85,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 	LALIFOData *ifodata1=runState->data;
         const char *USAGE = 
           "[--appendOutput fname\tBasename of the file to append outputs to.]";
-	ProcessParamsTable *ppt,*ppt1,*ppt2,*ppt3;	
+	ProcessParamsTable *ppt;//,*ppt1,*ppt2,*ppt3;	
 
 	ppt=getProcParamVal(runState->commandLine, "--help");
 	if (ppt) {
@@ -236,7 +236,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                         LALIFOData *headIFO = runState->data;
                         while (headIFO != NULL) {
                           fprintf(chainoutput[t], "logl");
-                          fprintf(chainoutput[t], headIFO->name);
+                          fprintf(chainoutput[t], "%s",headIFO->name);
                           fprintf(chainoutput[t], "\t");
                           headIFO = headIFO->next;
                         }
@@ -300,7 +300,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                   const UINT4 nameLength=256;
                   char filename[nameLength];
                   FILE *out;
-                  LALIFOData *headData = runState->data;
+                  //LALIFOData *headData = runState->data;
+                  headData = runState->data;
                   UINT4 ui;
                   
                   while (headData != NULL) {
@@ -813,7 +814,7 @@ void PTMCMCLALProposal(LALInferenceRunState *runState, LALVariables *proposedPar
                                 roundoff problems in cholesky
                                 decomp. */
           SINGLEFRAC=1.0,
-          SKYFRAC=0.0, /* Not symmetric! */
+          //SKYFRAC=0.0, /* Not symmetric! */
           INCFRAC=0.05,
           PHASEFRAC=0.05,
           SKYLOCSMALLWANDERFRAC=0.0; /* Not symmetric! Was: 0.05; */

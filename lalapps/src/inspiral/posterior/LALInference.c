@@ -975,7 +975,7 @@ REAL8 ChiSquareTest(LALVariables *currentParams, LALIFOData * data, LALTemplateF
   REAL8 ChiSquared=0.0, dxp, xp, x, norm, binPower, nextBin;
   REAL8 lowerF, upperF, deltaT, deltaF;
   REAL8 *segnorm;
-  INT4  i, chisqPt, imax, kmin, kmax, numBins;
+  INT4  i, chisqPt, imax, kmin, kmax, numBins=0;
   INT4  *chisqBin;
   LALIFOData *ifoPtr=data;
   COMPLEX16Vector *freqModelResponse=NULL;
