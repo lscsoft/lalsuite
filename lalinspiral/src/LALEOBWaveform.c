@@ -987,6 +987,9 @@ LALHCapDerivativesP4PN(
 
   dA = (dNA * DA - NA * dDA)/ DA2;
   d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DA2 * DA);
+ 
+  printf( " A = %e, dA = %e, d2A = %e\n", A, dA, d2A );
+
   v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
 

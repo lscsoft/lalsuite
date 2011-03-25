@@ -30,6 +30,7 @@
  */
 
 #include <lal/LALInspiral.h>
+#include <lal/LALEOBNRv2Waveform.h>
 #include <lal/LALComplex.h>
 
 #include <gsl/gsl_sf_gamma.h>
@@ -42,10 +43,9 @@ XLALCalculateNewtonianMultipole(
                             REAL8 phi,
                             UINT4  l,
                             INT4  m,
-                            InspiralDerivativesIn *ak
+                            EOBParams *params
                             )
 {
-   static const char func[] = "XLALCalculateNewtonianMultipole";
 
    INT4 xlalStatus;
 
@@ -68,11 +68,11 @@ XLALCalculateNewtonianMultipole(
 
    epsilon = ( l + m )  % 2;
 
-   totalMass = ak->coeffs->m1 + ak->coeffs->m2; 
-   eta       = ak->coeffs->eta;
+   totalMass = params->m1 + params->m2; 
+   eta       = params->eta;
 
-   x1 = ak->coeffs->m1 / totalMass;
-   x2 = ak->coeffs->m2 / totalMass;
+   x1 = params->m1 / totalMass;
+   x2 = params->m2 / totalMass;
 
    if  ( abs( m % 2 ) == 0 )
    {
@@ -117,14 +117,14 @@ XLALCalculateNewtonianMultipole(
   else
   {
     XLALPrintError( "Epsilon must be 0 or 1.\n");
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
   /* Calculate the necessary Ylm */
   xlalStatus = XLALScalarSphericalHarmonic( &y, l - epsilon, - m, LAL_PI_2, phi );
   if (xlalStatus != XLAL_SUCCESS )
   {
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
   /* Now we can construct the final answer */
@@ -143,8 +143,6 @@ XLALScalarSphericalHarmonic(
                          REAL8 phi)
 {
 
-  static const char func[] = "XLALScalarSphericalHarmonic";
-
   int   gslStatus;
   gsl_sf_result pLm;
 
@@ -152,7 +150,7 @@ XLALScalarSphericalHarmonic(
 
   if ( absM > (INT4) l )
   {
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( __func__, XLAL_EINVAL );
   }
 
   /* For some reason GSL will not take negative m */
@@ -161,7 +159,7 @@ XLALScalarSphericalHarmonic(
   if (gslStatus != GSL_SUCCESS)
   {
     XLALPrintError("Error in GSL function\n" );
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
   /* Compute the values for the spherical harmonic */

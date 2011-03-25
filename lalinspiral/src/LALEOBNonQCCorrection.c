@@ -29,6 +29,7 @@
 
 #include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALEOBNRv2Waveform.h>
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>

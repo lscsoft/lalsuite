@@ -22,6 +22,7 @@ lalinspiralinclude_HEADERS = \
 	GenerateRing.h \
 	InspiralInjectionParams.h \
 	LALAdaptiveRungeKutta4.h \
+	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
 	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
@@ -104,6 +105,7 @@ liblalinspiral_la_SOURCES = \
 	LALBCVWaveform.c \
 	LALDeterminant3.c \
 	LALDiscoverInspiralEvents.c \
+	LALEOBGetFactorizedWaveform.c \
 	LALEOBWaveform.c \
 	LALEOBNonQCCorrection.c \
 	LALEOBPPWaveform.c \

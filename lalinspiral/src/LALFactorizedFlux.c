@@ -27,17 +27,16 @@
 
 #include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALEOBNRv2Waveform.h>
 
 REAL8 XLALInspiralFactorizedFlux(
                       REAL8Vector           *values,
-                      REAL8Vector           *dvalues,
-                      InspiralDerivativesIn *ak,
+                      const REAL8           omega,
+                      EOBParams             *ak,
                       const INT4             lMax
                      )
 
 {
-
-  static const char func[] = "XLALInspiralFactorizedFlux";
 
   REAL8 flux = 0.0;
   REAL8 omegaSq;
@@ -48,30 +47,29 @@ REAL8 XLALInspiralFactorizedFlux(
 */
 
 #ifndef LAL_NDEBUG
-  if ( !values || !dvalues || !ak )
+  if ( !values || !ak )
   {
-    XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL8( __func__, XLAL_EFAULT );
   }
 #endif
 
   if ( lMax < 2 )
   {
-    XLAL_ERROR_REAL8( func, XLAL_EINVAL );
+    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
   }
 
   /* Omegs is the derivative of phi */
-  omegaSq = dvalues->data[1];
-  omegaSq *= omegaSq;
+  omegaSq = omega*omega;
 
   for ( l = 2; l <= lMax; l++ )
   {
     for ( m = 1; m <= l; m++ )
     {
 
-      if ( XLALGetFactorizedWaveform( &hLM, values, dvalues, ak, l, m )
+      if ( XLALGetFactorizedWaveform( &hLM, values, omega, l, m, ak )
              == XLAL_FAILURE )
       {
-        XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+        XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );
       }
       /* For the 2,2 mode, we apply NQC correction to the flux */
       /*

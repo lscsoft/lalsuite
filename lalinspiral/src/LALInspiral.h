@@ -1750,65 +1750,6 @@ int XLALInspiralCalculateIIRSetInnerProduct(
 	);
 
 /*---------------------------------------------------------------- */
-/* Functions used in calculating the Newtonian multipolar waveform */
-/* Defined in Damour et al Phys.Rev.D79:064004,2009 */
-int
-XLALCalculateNewtonianMultipole(
-                            COMPLEX16 *multipole,
-                            REAL8 eta,
-                            REAL8 x,
-                            UINT4  l,
-                            INT4  m,
-                            InspiralDerivativesIn *ak
-                            );
-
-int
-XLALScalarSphericalHarmonic(
-                         COMPLEX16 *y,
-                         UINT4 l,
-                         INT4  m,
-                         REAL8 theta,
-                         REAL8 phi);
-
-REAL8 
-XLALInspiralFactorizedFlux(
-                      REAL8Vector           *values,
-                      REAL8Vector           *dvalues,
-                      InspiralDerivativesIn *ak,
-                      const INT4             lMax
-                     );
-
-INT4 
-XLALGetFactorizedWaveform( 
-                      COMPLEX16             *hlm,
-                      REAL8Vector           *values,
-                      REAL8Vector           *dvalues,
-                      InspiralDerivativesIn *ak,
-                      const INT4            l,
-                      const INT4            m
-                     );
-
-int  XLALEOBNonQCCorrection(
-                      COMPLEX16             *nqc,
-                      REAL8Vector           *values,
-                      REAL8Vector           *dvalues,
-                      EOBNonQCCoeffs        *coeffs
-                     );
-
-int XLALCalculateNQCCoefficients(
-                 REAL8Vector    * restrict amplitude,
-                 REAL8Vector    * restrict phase,
-                 REAL8Vector    * restrict q1,
-                 REAL8Vector    * restrict q2,
-                 REAL8Vector    * restrict q3,
-                 REAL8Vector    * restrict p1,
-                 REAL8Vector    * restrict p2,
-                 UINT4                     peakIdx,
-                 REAL8                     deltaT,
-                 REAL8                     eta,
-                 EOBNonQCCoeffs * restrict coeffs );
-
-/*---------------------------------------------------------------- */
 
 #ifdef  __cplusplus
 }
