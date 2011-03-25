@@ -350,8 +350,9 @@ typedef struct
 
 
 /*---------- Global variables ----------*/
-extern DopplerMetricParams empty_DopplerMetricParams;
-extern MultiDetectorInfo empty_MultiDetectorInfo;
+extern const DopplerMetricParams empty_DopplerMetricParams;
+extern const MultiDetectorInfo empty_MultiDetectorInfo;
+extern const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *

@@ -425,6 +425,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 columns, RE
    
    //Destroy variables
    XLALDestroyREAL4Vector(ihss);
+   XLALDestroyREAL4Vector(FbinMean);
+   XLALDestroyINT4Vector(locs);
    free_ihsVals(ihsvals);
    free_ihsMaxima(ihsmaxima);
    gsl_rng_free(rng);

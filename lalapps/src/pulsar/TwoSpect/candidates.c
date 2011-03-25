@@ -248,7 +248,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             REAL8 bestmoddepth = 0.0;
             REAL8 bestR = 0.0;
             REAL8 besth0 = 0.0;
-            REAL8 bestProb = 1.0;
+            REAL8 bestProb = 0.0;
             INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
                avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
@@ -274,18 +274,22 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             
             if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
                INT4 numofmoddepths = (INT4)floorf(2*(maxdf-mindf)*params->Tcoh)+1;
+               candidate cand;
+               templateStruct *template = new_templateStruct(params->templatelength);
+               if (template==NULL) {
+                  fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
+                  XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+               }
+               farStruct *farval = new_farStruct();
+               if (farval==NULL) {
+                  fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
+                  XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+               }
                for (kk=0; kk<numofmoddepths; kk++) {
-                  
                   if ((mindf+kk*0.5/params->Tcoh)>=params->dfmin && (mindf+kk*0.5/params->Tcoh)<=params->dfmax) {
                      
-                     candidate cand;
                      loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tcoh, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0);
                      
-                     templateStruct *template = new_templateStruct(params->templatelength);
-                     if (template==NULL) {
-                        fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, params->templatelength);
-                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                     }
                      if (option==1) {
                         makeTemplate(template, cand, params, sftexist, plan);
                         if (xlalErrno!=0) {
@@ -300,11 +304,6 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         }
                      }
                      
-                     farStruct *farval = new_farStruct();
-                     if (farval==NULL) {
-                        fprintf(stderr,"%s: new_farStruct() failed.\n", fn);
-                        XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                     }
                      numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: numericFAR() failed.\n", fn);
@@ -329,14 +328,13 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         bestProb = prob;
                         bestproberrcode = proberrcode;
                      }
-                     
-                     free_templateStruct(template);
-                     template = NULL;
-                     free_farStruct(farval);
-                     farval = NULL;
-                     
                   } /* if test moddepth is within user specified range */
                } /* for kk < numofmoddepths */
+               
+               free_templateStruct(template);
+               template = NULL;
+               free_farStruct(farval);
+               farval = NULL;
             } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {

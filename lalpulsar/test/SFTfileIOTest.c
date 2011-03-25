@@ -194,6 +194,7 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
 
 int main(int argc, char *argv[])
 {
+  const char *fn = __func__;
   LALStatus status = empty_status;
 
   SFTCatalog *catalog = NULL;
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
   SFTVector *sft_vect = NULL;
   SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
+  MultiSFTVector *multsft_vect2 = NULL;
   CHAR detector[2] = "H1";
   INT4 crc_check;
 
@@ -278,23 +280,41 @@ int main(int argc, char *argv[])
 				 TESTDIR "SFT-test6;"
 				 TESTDIR "SFT-test7", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[567]*", NULL ), &status );
+  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TESTDIR "SFT-test[123]*;" TESTDIR "SFT-test[5]*", NULL ), &status );
 
   /* load once as a single SFT-vector (mix of detectors) */
   SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
 
   /* load once as a multi-SFT vector */
   SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
+  /* load again, using XLAL API */
+  if ( ( multsft_vect2 = XLALLoadMultiSFTs ( catalog, -1, -1 )) == NULL ) {
+    XLALPrintError ("%s: XLALLoadMultiSFTs (cat, -1, -1) failed with xlalErrno = %d\n", fn, xlalErrno );
+    return SFTFILEIOTESTC_ESUB;
+  }
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* 6 SFTs from 2 IFOs should have been read */
-  if ( (sft_vect->length != 6) 	/* either as a single SFTVector */
+  if ( (sft_vect->length != 4) 	/* either as a single SFTVector */
        || (multsft_vect->length != 2) 	/* or separated by detector */
-       || (multsft_vect->data[0]->length != 5) || ( multsft_vect->data[1]->length != 1 ) )
+       || (multsft_vect->data[0]->length != 3) || ( multsft_vect->data[1]->length != 1 ) )
     {
       XLALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
       return SFTFILEIOTESTC_ESUB;
     }
+
+  /* compare results from LALLoadMultiSFTs() and XLALLoadMultiSFTs() */
+  {
+    UINT4 numIFOs = multsft_vect->length;
+    UINT4 X;
+    for ( X=0; X < numIFOs; X ++ )
+      {
+        if( CompareSFTVectors ( multsft_vect->data[X], multsft_vect2->data[X] ) ) {
+          XLALPrintError ("%s: comparing (X)LALLoadMultiSFTs(): sft-vectors differ for X=%d\n", fn, X );
+          return SFTFILEIOTESTC_ESUB;
+        }
+      } /* for X < numIFOs */
+  } /* ------ */
 
   /* ----- v2 SFT writing ----- */
   /* write v2-SFT to disk */
@@ -316,13 +336,11 @@ int main(int argc, char *argv[])
       return SFTFILEIOTESTC_ESUB;
     }
     /* check that the single file SFT is the same as the single SFTs */
-    const UINT4 numSingleSFTs = 5;
+    const UINT4 numSingleSFTs = 3;
     const CHAR *singleSFTs[] = {
       "H-1_H1_60SFT_test-000012345-61.sft",
       "H-1_H1_60SFT_test-000012465-61.sft",
-      "H-1_H1_60SFT_test-000012585-61.sft",
-      "H-1_H1_60SFT_test-000012765-61.sft",
-      "H-1_H1_60SFT_test-000012825-61.sft"
+      "H-1_H1_60SFT_test-000012585-61.sft"
     };
     fprintf(stderr, "*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
@@ -385,6 +403,8 @@ int main(int argc, char *argv[])
 
   SUB ( LALDestroySFTVector ( &status, &sft_vect ), &status );
   SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
+  SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect2 ), &status );
+
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL_WITH_CODE ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status, SFTFILEIO_EDETECTOR );
   /* need to set proper detector! */

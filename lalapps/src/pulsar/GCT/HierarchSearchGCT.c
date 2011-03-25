@@ -31,6 +31,8 @@
  *********************************************************************************/
 
 /* ---------- Includes -------------------- */
+#include <lal/Segments.h>
+
 #include "HierarchSearchGCT.h"
 
 #ifdef GC_SSE2_OPT
@@ -118,8 +120,6 @@ int global_argc;
 /** useful variables for each hierarchical stage */
 typedef struct {
   CHAR  *sftbasename;    /**< filename pattern for sfts */
-  REAL8 tStack;          /**< duration of stacks */
-  UINT4 nStacks;         /**< number of stacks */
   LIGOTimeGPS tStartGPS; /**< start and end time of stack */
   REAL8 tObs;            /**< tEndGPS - tStartGPS */
   REAL8 refTime;         /**< reference time for pulsar params */
@@ -137,6 +137,10 @@ typedef struct {
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
   REAL8 dopplerMax;                /**< extra sft wings for doppler motion */
+  /* parameters describing the coherent data-segments */
+  REAL8 tStack;          	   /**< duration of stacks */
+  UINT4 nStacks;         	   /**< number of stacks */
+  LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
 } UsefulStageVariables;
 
 
@@ -159,6 +163,9 @@ int compareCoarseGridUindex( const void *a, const void *b );
 int compareFineGridNC( const void *a,const void *b );
 int compareFineGridsumTwoF( const void *a,const void *b );
 
+LALSegList * XLALReadSegmentsFromFile ( const char *fname );
+SFTCatalogSequence *XLALSetUpStacksFromSegmentList ( const SFTCatalog *SFTCatalog, const LALSegList *segList );
+
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 extern int lalDebugLevel;
@@ -166,6 +173,7 @@ extern int lalDebugLevel;
 /* ###################################  MAIN  ################################### */
 
 int MAIN( int argc, char *argv[]) {
+  const char *fn = __func__;
 
   LALStatus status = blank_status;
 
@@ -219,7 +227,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* F-statistic computation related stuff */
   REAL4FrequencySeriesVector fstatVector; /* F-statistic vectors for each segment */
-  UINT4 binsFstat1, binsFstatSearch;
+  UINT4 binsFstat1, binsFstatSearch=0;
   static ComputeFParams CFparams;
   ComputeFBufferVector_RS resampbuffers;  /* used to store the buffered quantities used in repeated calls to ComputeFstatFreqBand_RS */
 
@@ -320,11 +328,14 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_dopplerMax = 1.05e-4;
 
   REAL8 uvar_refTime = 0;
-  REAL8 uvar_tStack = 0;
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
   INT4 uvar_blocksRngMed = BLOCKSRNGMED;
-  INT4 uvar_nStacksMax = 1;
+
+  REAL8 uvar_tStack = 0;
+  INT4  uvar_nStacksMax = 1;
+  CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
+
   INT4 uvar_Dterms = DTERMS;
   INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   INT4 uvar_gammaRefine = 1;
@@ -405,8 +416,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of 1st stage segments", &uvar_nStacksMax ),&status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_REQUIRED, "Duration of 1st stage segments (sec)", &uvar_tStack ),&status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "gridType1",    0,  UVAR_OPTIONAL, "0=flat,1=isotropic,2=metric,3=file", &uvar_gridType1),  &status);
@@ -423,6 +432,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useResamp",    0,  UVAR_OPTIONAL, "Use resampling to compute F-statistic", &uvar_useResamp), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "SignalOnly",  'S', UVAR_OPTIONAL, "Signal only flag", &uvar_SignalOnly), &status);
+
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacksMax",   0,  UVAR_OPTIONAL, "Maximum No. of segments", &uvar_nStacksMax ),&status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "tStack",      'T', UVAR_OPTIONAL, "Duration of segments (sec)", &uvar_tStack ),&status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -588,8 +601,32 @@ int MAIN( int argc, char *argv[]) {
 
   /* some useful first stage params */
   usefulParams.sftbasename = uvar_DataFiles1;
-  usefulParams.nStacks = uvar_nStacksMax;
-  usefulParams.tStack = uvar_tStack;
+
+  /* ----- prepare generation of coherent segment list */
+  if ( XLALUserVarWasSet ( &uvar_segmentList ) )
+    {
+      if ( XLALUserVarWasSet ( &uvar_nStacksMax ) || XLALUserVarWasSet ( &uvar_tStack ) ) {
+        XLALPrintError ( "Use EITHER (--nStacksMax and --tStack) OR --segmentList to define the coherent segments!\n\n" );
+        return HIERARCHICALSEARCH_EBAD;
+      }
+      if ( (usefulParams.segmentList = XLALReadSegmentsFromFile ( uvar_segmentList )) == NULL ) {
+        XLALPrintError ("Failed to parse segment-list file '%s'. xlalErrno = %d\n", uvar_segmentList, xlalErrno );
+        return HIERARCHICALSEARCH_ESUB;
+      }
+    }
+  else /* set up maximally nStacksMax fixed-size segments of length tStack */
+    {
+      if ( !XLALUserVarWasSet ( &uvar_tStack ) ) {
+        XLALPrintError ( "Need to set --tStack or --segmentList to define the coherent segments!\n\n" );
+        return HIERARCHICALSEARCH_EBAD;
+      }
+
+      usefulParams.nStacks = uvar_nStacksMax;
+      usefulParams.tStack = uvar_tStack;
+      usefulParams.segmentList = NULL;
+    }
+  /* ----- */
+
 
   INIT_MEM ( usefulParams.spinRange_startTime );
   INIT_MEM ( usefulParams.spinRange_endTime );
@@ -623,6 +660,13 @@ int MAIN( int argc, char *argv[]) {
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
+
+  /* free segment list */
+  if ( usefulParams.segmentList )
+    if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+  XLALFree ( usefulParams.segmentList );
+  usefulParams.segmentList = NULL;
 
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
@@ -1355,9 +1399,9 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
-  LogPrintf ( LOG_DEBUG, "Writing output ...");
-
+  LogPrintf ( LOG_DEBUG, "Writing output ... ");
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /* --- Further analysis with the top candidate if desired ---
          This veto computes the average F-statistic for each detector
@@ -1632,6 +1676,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 		MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
 		UsefulStageVariables *in /**< input params */)
 {
+  const char *fn = __func__;
 
   SFTCatalog *catalog = NULL;
   static SFTConstraints constraints;
@@ -1668,19 +1713,47 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   deltaFsft = catalog->data[0].header.deltaF;
   timebase = 1.0/deltaFsft;
 
-  /* calculate start and end times and tobs from catalog*/
-  tStartGPS = catalog->data[0].header.epoch;
+  /* get sft catalogs for each stack */
+  if ( in->segmentList )	/* if segment list was given by user */
+    {
+      SFTCatalogSequence *catalogSeq_p;
+      if ( (catalogSeq_p = XLALSetUpStacksFromSegmentList ( catalog, in->segmentList )) == NULL ) {
+        XLALPrintError ( "%s: XLALSetUpStacksFromSegmentList() failed to set up segments from given list.\n", fn );
+        ABORT ( status, HIERARCHICALSEARCH_ESUB, HIERARCHICALSEARCH_MSGESUB );
+      }
+      catalogSeq = (*catalogSeq_p);/* copy top-level struct */
+      XLALFree ( catalogSeq_p );   /* free alloc'ed top-level struct after copying (contents survive in catalogSeq!) */
+
+      /* we need to set tStack here:
+       * this will be used for setting Freq,f1dot resolution on segments, therefore we use the longest segment duration
+       */
+      UINT4 iSeg;
+      REAL8 maxT = 0;
+      for ( iSeg=0; iSeg < in->segmentList->length; iSeg++)
+        {
+          REAL8 T = XLALGPSDiff ( &(in->segmentList->segs[iSeg].end), &(in->segmentList->segs[iSeg].start) );
+          maxT = HSMAX ( maxT, T );
+        }
+      in->tStack = maxT;
+    }
+  else	/* set up nStacks segments of fixed span tStack */
+    {
+      TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
+    }
+
+  /* reset number of stacks */
+  UINT4 numSegments = catalogSeq.length;
+  in->nStacks = numSegments;
+
+  /* calculate start and end times and tobs from segmented catalog*/
+  tStartGPS = catalogSeq.data[0].data[0].header.epoch;
   in->tStartGPS = tStartGPS;
-  tEndGPS = catalog->data[catalog->length - 1].header.epoch;
+  SFTCatalog *LastSegmentCat = &(catalogSeq.data[numSegments - 1]);
+  UINT4 numSFTsInLastSeg = LastSegmentCat->length;
+  tEndGPS = LastSegmentCat->data[numSFTsInLastSeg-1].header.epoch;
   XLALGPSAdd(&tEndGPS, timebase);
   tObs = XLALGPSDiff(&tEndGPS, &tStartGPS);
   in->tObs = tObs;
-
-  /* get sft catalogs for each stack */
-  TRY( SetUpStacks( status->statusPtr, &catalogSeq, in->tStack, catalog, in->nStacks), status);
-
-  /* reset number of stacks */
-  in->nStacks = catalogSeq.length;
 
   /* get timestamps of start, mid and end times of each stack */
   /* set up vector containing mid times of stacks */
@@ -2363,3 +2436,219 @@ int compareCoarseGridUindex(const void *a,const void *b) {
   else
     return(0);
 }
+
+
+/** Function to read a segment list from given filename, returns a *sorted* SegmentList
+ *
+ * The segment-list format parse here is consistent with Xavie's segment lists used previously
+ * and follows the format <repeated lines of form "startGPS endGPS duration[h] NumSFTs">,
+ * allowed comment-characters are '%' and '#'
+ *
+ * \note we (ab)use the integer 'id' field in LALSeg to carry the total number of SFTs
+ * contained in that segment. This will be used as a consistency check in
+ * XLALSetUpStacksFromSegmentList().
+ *
+ */
+LALSegList *
+XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segment list */
+                           )
+{
+  const char *fn = __func__;
+  LALSegList *segList = NULL;
+
+  /** check input consistency */
+  if ( !fname ) {
+    XLALPrintError ( "%s: NULL input 'fname'", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* read and parse segment-list file contents*/
+  LALParsedDataFile *flines = NULL;
+  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  UINT4 numSegments = flines->lines->nTokens;
+  /* allocate and initialized segment list */
+  if ( (segList = XLALCalloc ( 1, sizeof(*segList) )) == NULL )
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  if ( XLALSegListInit ( segList ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+
+  UINT4 iSeg;
+  for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
+    {
+      REAL8 t0, t1, TspanHours;
+      INT4 NSFT;
+      LALSeg thisSeg;
+      if ( sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d\n", &t0, &t1, &TspanHours, &NSFT ) != 4 ) {
+        XLALPrintError ("%s: failed to parse data-line %d in segment-list %s: '%s'\n", fn, iSeg, fname, flines->lines->tokens[iSeg] );
+        XLALSegListClear ( segList );
+        XLALFree ( segList );
+        XLALDestroyParsedDataFile ( &flines );
+        XLAL_ERROR_NULL ( fn, XLAL_ESYS );
+      }
+      /* check internal consistency of these numbers */
+      REAL8 hours = 3600.0;
+      if ( fabs ( t1 - t0 - TspanHours * hours ) >= 1.0 ) {
+        XLALPrintError ("%s: Inconsistent segment list, in line %d: t0 = %f, t1 = %f, Tspan = %f != t1 - t0 (to within 1s)\n", fn, iSeg, t0, t1, TspanHours );
+        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
+
+      LIGOTimeGPS start, end;
+      XLALGPSSetREAL8( &start, t0 );
+      XLALGPSSetREAL8( &end,   t1 );
+
+      /* we set number of SFTs as 'id' field, as we have no other use for it */
+      if ( XLALSegSet ( &thisSeg, &start, &end, NSFT ) != XLAL_SUCCESS )
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+      if ( XLALSegListAppend ( segList, &thisSeg ) != XLAL_SUCCESS )
+        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+    } /* for iSeg < numSegments */
+
+  /* sort final segment list in increasing GPS start-times */
+  if ( XLALSegListSort( segList ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  /* free parsed segment file contents */
+  if ( XLALDestroyParsedDataFile ( &flines ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+  return segList;
+
+} /* XLALReadSegmentsFromFile() */
+
+
+/** Set up 'segmented' SFT-catalogs for given list of segments and a total SFT-catalog.
+ *
+ * Note: this function does not allow 'empty' segments to be returned, i.e. if there is any
+ * segment that would contain no SFTs from the given SFT-catalog, an error is returned.
+ * These segment-lists are 'precomputed' and therefore one can assume that empty segments
+ * are not intended.
+ * However, the function will not complain if some SFTs from the catalog are 'unused', i.e.
+ * they didn't fit into any of the given segments.
+ *
+ * \note the input segment list must be sorted, otherwise an error is returned
+ *
+ */
+SFTCatalogSequence *
+XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list of SFTs read in */
+                                 const LALSegList *segList	/**< pre-computed list of segments to split SFTs into */
+                                 )
+{
+  const char *fn = __func__;
+
+  SFTCatalogSequence *stacks;	/* output: segmented SFT-catalogs */
+
+  /* check input consistency */
+  if ( !catalog || !segList ) {
+    XLALPrintError ("%s: invalid NULL input\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  /* check that segment list is sorted */
+  if ( ! segList->sorted ) {
+    XLALPrintError ("%s: input segment list must be sorted! -> Use XLALSegListSort()\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+  }
+
+  UINT4 numSegments = segList->length;
+  UINT4 numSFTs = catalog->length;
+
+  /* set memory of output catalog sequence to maximum possible length */
+  if ( (stacks = XLALCalloc ( 1, sizeof(*stacks) ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%d) failed.\n", fn, sizeof(*stacks) );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+  stacks->length = numSegments;
+  if ( (stacks->data = XLALCalloc( stacks->length, sizeof(*stacks->data) )) == NULL ) {
+    XLALPrintError ("%s: failed to allocate segmented SFT-catalog\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  }
+
+  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
+
+  /* Step through segment list:
+   * for every segment:
+   *  - find earliest and last SFT fitting completely into this segment
+   *  - copy this range of SFT-headers into the segmented SFT-catalog 'stacks'
+   */
+  UINT4 iSeg;
+  INT4 iSFT0 = 0, iSFT1 = 0;	/* indices of earliest and last SFT fitting into segment iSeg */
+  for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
+    {
+      REAL8 tSeg0, tSeg1;	/* boundaries of this segment */
+      LALSeg *thisSeg = &(segList->segs[iSeg]);
+
+      tSeg0 = XLALGPSGetREAL8 ( & thisSeg->start );
+      tSeg1 = XLALGPSGetREAL8 ( & thisSeg->end );
+
+      /* ----- find earliest SFT fitting into this segment */
+      iSFT0 = iSFT1;	/* start from previous segment's last SFT */
+      while ( 1 )
+        {
+          LIGOTimeGPS gpsStart = catalog->data[iSFT0].header.epoch;
+          int cmp = XLALGPSInSeg ( &gpsStart, thisSeg );
+
+          if ( cmp < 0 )	/* iSFT0 lies *before* current segment => advance */
+            iSFT0 ++;
+          if ( cmp == 0 )	/* iSFT0 lies *inside* current segment ==> stop */
+            break;
+
+          /* if no more SFTs or iSFT0 lies *past* current segment => ERROR: empty segment! */
+          if ( cmp > 0 || iSFT0 == (INT4)numSFTs )
+            {
+              XLALPrintError ("%s: Empty segment! No SFTs fit into segment iSeg=%d\n", fn, iSeg );
+              XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+            }
+        } /* while true */
+
+      /* ----- find last SFT completely fitting into this segment */
+      iSFT1 = iSFT0;
+      while ( 1 )
+        {
+          LIGOTimeGPS gpsEnd = catalog->data[iSFT1].header.epoch;
+          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
+          int cmp = XLALGPSInSeg ( &gpsEnd, thisSeg );
+
+          if ( cmp < 0 ) { 	/* end of iSFT1 lies *before* current segment ==> something is screwed up! */
+            XLALPrintError ("%s: end of current SFT %d lies before current segment %d ==> code seems inconsistent!\n", fn, iSFT1, iSeg );
+            XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+          }
+          if ( cmp == 0 )	/* end of iSFT1 lies *inside* current segment ==> advance */
+            iSFT1 ++;
+
+          if ( cmp > 0 || iSFT1 == (INT4)numSFTs ) {	/* last SFT reached or end of iSFT1 lies *past* current segment => step back once and stop */
+            iSFT1 --;
+            break;
+          }
+
+        } /* while true */
+
+      /* check the number of SFTs we found in this segment against the nominal value,
+       * stored in the segment list field 'id' */
+      INT4 numSFTsInSeg = iSFT1 - iSFT0 + 1;
+      if ( numSFTsInSeg != thisSeg->id ) {
+        XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iSeg, numSFTsInSeg, thisSeg->id );
+        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+      }
+
+      /* ----- allocate and copy this range of SFTs into the segmented catalog */
+      stacks->data[iSeg].length = (UINT4)numSFTsInSeg;
+      UINT4 size = sizeof(*stacks->data[iSeg].data);
+      if ( (stacks->data[iSeg].data = XLALCalloc ( numSFTsInSeg, size)) == NULL ) {
+        XLALPrintError ("%s: failed to XLALCalloc(%d, %d)\n", fn, numSFTsInSeg, size );
+        XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      }
+
+      INT4 iSFT;
+      for ( iSFT = iSFT0; iSFT <= iSFT1; iSFT++ )
+        stacks->data[iSeg].data[iSFT - iSFT0] = catalog->data[iSFT];
+
+    } /* for iSeg < numSegments */
+
+  return stacks;
+
+} /* XLALSetUpStacksFromSegmentList() */
+

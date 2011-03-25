@@ -117,6 +117,17 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
  *  Structure, enum, union, etc., typdefs.
  */
 
+  /** type describing one coherent segment of data: ( start-time + duration ) */
+  typedef struct {
+    UINT4 startTime;	/**< gps start-time of segment, in seconds */
+    UINT4 duration;	/**< duration of segment in seconds */
+  } Segment_t;
+
+  /** a standard vector of data-segments */
+  typedef struct {
+    UINT4 length;	/**< number of segments */
+    Segment_t *data;	/**< array of segments */
+  } SegmentVector_t;
 
   /** sequence of MultiSFT vectors -- for each stack */
   typedef struct tagMultiSFTVectorSequence {
@@ -209,7 +220,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 			 INT4 *loopindex, 
 			 const CHAR *fnameChkPoint);
 
-  
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
