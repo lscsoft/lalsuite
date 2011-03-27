@@ -25,8 +25,6 @@
  * \ingroup pulsarTODO
  * \brief Header-file for LAL routines for CW cross-correlation searches
  *
- * $Id$
- *
  */
 
 /*
