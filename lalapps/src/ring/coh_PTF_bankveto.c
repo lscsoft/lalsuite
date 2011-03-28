@@ -760,8 +760,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   }
 }
 
-        
-
 REAL4 coh_PTF_calculate_chi_square(
 struct coh_PTF_params   *params,
 UINT4           numPoints,
