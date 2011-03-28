@@ -184,14 +184,13 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    
    //Start off with an initial guess and set the solver at the beginning
    REAL8 Rlow = 0.0, Rhigh = 10000.0, root = 400.0;
-   REAL8 initialroot = root;
    if (method != 0) {
       if ( (gsl_root_fsolver_set(s1, &F, Rlow, Rhigh)) != 0 ) {
          fprintf(stderr,"%s: Unable to initialize root solver to bracketed positions.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    } else {
-      if ( (gsl_root_fdfsolver_set(s0, &FDF, initialroot)) != 0 ) {
+      if ( (gsl_root_fdfsolver_set(s0, &FDF, root)) != 0 ) {
          fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } 
@@ -257,6 +256,8 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
                fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
                XLAL_ERROR_VOID(fn, XLAL_EFUNC);
             }
+         } else if (root<0.0 && jj==max_retries) {
+            status = GSL_FAILURE;
          } //Up to here
          
       }
@@ -518,9 +519,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
       gsl_rng_set(rng, 0);
       
-      REAL8Vector *slopes = XLALCreateREAL8Vector(10);
+      REAL8Vector *slopes = XLALCreateREAL8Vector(50);
       if (slopes==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 50);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
       
@@ -528,7 +529,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c1 = gsl_rng_uniform_pos(rng)*Rpr;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
-         while (tempprob<=1.0e-4 || tempprob>=5.0e-3) {
+         while (tempprob<=1.0e-4 || tempprob>=1.0e-3) {
             c1 = gsl_rng_uniform_pos(rng)*Rpr;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
@@ -538,7 +539,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c2 = gsl_rng_uniform_pos(rng)*Rpr;
          vars.c = c2;
          tempprob2 = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
-         while (tempprob2<=1.0e-4 || tempprob2>=5.0e-3 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
+         while (tempprob2<=1.0e-4 || tempprob2>=1.0e-3 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
             c2 = gsl_rng_uniform_pos(rng)*Rpr;
             vars.c = c2;
             tempprob2 = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);

@@ -255,7 +255,6 @@ REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += 2.0*vars->weights->data[ii]/y;
-      //sum1 += 2 * (x*x / y + gsl_sf_log_1plusx_mx(-x));
       sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
    }
    *cx = xconst;
@@ -408,12 +407,10 @@ REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
       if (x > 1.0) {
          prod2 += 2 * log(x);
-         //prod3 += 2 * gsl_sf_log_1plusx(x);
          prod3 += 2 * twospect_log_1plusx(x);
          s += 2;
       }
       else prod1 += 2 * twospect_log_1plusx(x);
-      //else prod1 += 2 * gsl_sf_log_1plusx(x);
    } /* for ii < vars->weights->length */
    
    prod2 += prod1;
@@ -558,7 +555,6 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
-         //sum3 -= 0.5 * gsl_sf_log_1plusx((x*x));
          sum3 -= 0.5 * twospect_log_1plusx((x*x));
          z = 2.0 * atan(x);
          sum1 += z;
