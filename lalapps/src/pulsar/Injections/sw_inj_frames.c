@@ -17,14 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- * \ingroup pulsarApps
- * \author Erin Macdonald
- * \brief
- * Code to create frames and add them to existing data files
- */
-
 /* Code to create frames and add them to existing data files
 Input format as $ ./sw_inj_frames framefile duration epoch
 example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_files -g /Users/erinmacdonald/lsc/analyses/frames -c /Users/erinmacdonald/lsc/analyses/CWINJframes -I H1 -e /Users/erinmacdonald/lsc/src/lscsoft/lalsuite/lalpulsar/test -y 09-11
@@ -33,6 +25,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /* 2/3/11 v. 2 (which is not entirely accurate, but I'm starting from here): added a log file, version number, and separate channel for i(t) -- E. Macdonald */
 /* 3/3/11 v. 3: placed log comments throughout */
 /* 7/3/11 v. 4: output file to dump ascii of failed frames */
+/* 21/3/11 v. 5: fixed closing .par file L520 */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -118,7 +111,7 @@ int main(int argc, char **argv)
     return 0;  
 
   char version[256];
-  sprintf(version, "v4"); /*manually change */
+  sprintf(version, "v5"); /*manually change */
 
   /*Get current time for log */
   time_t result;
@@ -129,7 +122,7 @@ int main(int argc, char **argv)
   FILE *logfile;
   char log_file[256];
 
-  sprintf(log_file, "%s/%s/test.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
+  sprintf(log_file, "%s/%s/injections.log", uvar->outputdir, uvar->logDir); /*How to name log files separately?*/
   fprintf(stderr, "Your log file is here: %s\n", log_file);
 
   /*Writing to .log file*/
@@ -151,8 +144,8 @@ int main(int argc, char **argv)
   lalDebugLevel = 1;	/* debug level for this code */
   LALStatus status = empty_LALStatus;
   
-  PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
-  BinaryPulsarParams pulparams; /* read from the .par file */
+  /*PulsarSignalParams params = empty_PulsarSignalParams;*/ /*pulsar parameter structure*/
+  /*BinaryPulsarParams pulparams;*/ /* read from the .par file */
   
   /*  sprintf(lalframefile, "%s", argv[1]);  User defined frame file -- need to simplify */
   /*  sprintf(gwfframefile, "%s", argv[2]);  Frame file to be read in*/
@@ -179,10 +172,10 @@ int main(int argc, char **argv)
   }
   
   
-  if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
-    XLALPrintError("Out of memory");
-    XLAL_ERROR ( fn, XLAL_EFUNC );
-  }
+ /*  if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) { */
+/*     XLALPrintError("Out of memory"); */
+/*     XLAL_ERROR ( fn, XLAL_EFUNC ); */
+/*   } */
   
   /*Error Checks*/
   /*    if (uvar->in_chan == 0){*/
@@ -438,9 +431,16 @@ int main(int argc, char **argv)
 	      fprintf(stderr, "Error opening file: %s\n", pulin);
 	      XLAL_ERROR ( fn, XLAL_EIO );
 	    }
-	    
+	    PulsarSignalParams params = empty_PulsarSignalParams; /*pulsar parameter structure*/
+	    BinaryPulsarParams pulparams; /* read from the .par file */
+	    if ( (params.pulsar.spindown = XLALCreateREAL8Vector(1))== NULL ) {
+	      XLALPrintError("Out of memory");
+	      XLAL_ERROR ( fn, XLAL_EFUNC );
+	    }
 	    /*read in parameters from .par file */
 	    XLALReadTEMPOParFile( &pulparams, pulin);
+	    fprintf(stderr, "%s\n", pulin);
+	    fprintf(stderr, "h=%i\n", h);
 	    params.pulsar.position.longitude = pulparams.ra;
 	    params.pulsar.position.latitude = pulparams.dec;
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -457,6 +457,7 @@ int main(int argc, char **argv)
 	    
 	    /*if binary */
 	    if (pulparams.model != NULL) {
+	      fprintf(stderr, "You have a binary! %s", pulin);
 	      params.orbit->asini = pulparams.x;
 	      params.orbit->period = pulparams.Pb*86400;
 	      
@@ -475,7 +476,7 @@ int main(int argc, char **argv)
 		params.orbit->ecc = pulparams.e;
 	      }
 	      if (strstr(pulparams.model,"ELL1") != NULL) {
-		REAL8 fe, uasc,Dt;
+		REAL8 fe, uasc, Dt;
 		fe = sqrt((1.0-params.orbit->ecc)/(1.0+params.orbit->ecc));
 		uasc = 2.0*atan(fe*tan(params.orbit->argp/2.0));
 		Dt = (params.orbit->period/LAL_TWOPI)*(uasc-params.orbit->ecc*sin(uasc));
@@ -487,7 +488,6 @@ int main(int argc, char **argv)
 	    } /* if pulparams.model is BINARY */
 	    else
 	      params.orbit = NULL; /*if pulparams.model = NULL -- isolated pulsar*/
-            
 	    params.site = site;
 	    params.ephemerides = edat;
 	    params.startTimeGPS = epoch;
@@ -496,8 +496,18 @@ int main(int argc, char **argv)
 	    params.fHeterodyne = 0.; /*not sure what this is, will check */
 	    
 	    REAL4TimeSeries *TSeries = NULL;
+	    fprintf(stderr, "status%i\n", status.statusCode);
 	    LALGeneratePulsarSignal (&status, &TSeries, &params);
 	    if ( status.statusCode ) {
+	      if (( logfile = fopen( log_file, "a" )) == NULL ) {
+		fprintf (stderr, "Error opening .log file! \n" );
+		return 0;
+	      }
+	      else {
+		fprintf (logfile, "LAL Routine failed at pulsar %s\n", pulin);
+		XLAL_ERROR ( fn, XLAL_EFAILED );
+		fclose(logfile);
+	      }
 	      fprintf( stderr, "LAL Routine failed\n" );
 	      XLAL_ERROR ( fn, XLAL_EFAILED );
 	    }
@@ -506,7 +516,9 @@ int main(int argc, char **argv)
 	      total_inject->data->data[i] += TSeries->data->data[i];
 	    }
 	    /*	  if ((total_inject = XLALFrameAddREAL8TimeSeriesProcData(frfile, TSeries)) == NULL)*/
+	    fprintf(stderr, "your pulsar is %s\n", pulin);
 	    XLALDestroyREAL4TimeSeries (TSeries);
+	    fclose( inject ); /*close .par file */
 	  } /* for strstr .par  */
 	} /*for k<num par files */
 	
@@ -537,28 +549,7 @@ int main(int argc, char **argv)
 	if (( XLALFrWriteREAL8TimeSeries( series, 1 ) ) != XLAL_SUCCESS ){
 	  XLAL_ERROR( fn, XLAL_EFUNC );
 	}
-	
-	/****Test for Matlab****/
-	FILE *outtest;
-        if (( outtest = fopen( "/Users/erinmacdonald/lsc/analyses/sw_injections/test.txt", "w" )) == NULL)
-          fprintf(stderr, "Error opening file\n");
-        else{
-          for (i = 0; i < series->data->length; i++){
-            fprintf(outtest,"%e\n",series->data->data[i] );
-          }
-          fclose(outtest);
-        }
-	FILE *injtest;
-	if (( injtest = fopen( "/Users/erinmacdonald/lsc/analyses/sw_injections/injtest.txt","w" )) == NULL)
-	  fprintf(stderr, "Error opening injection file\n");
-	else{
-	  for (i = 0; i < total_inject->data->length; i++){
-	    fprintf(injtest,"%e\n",total_inject->data->data[i] );
-	  }
-	  fclose(injtest);
-	}
-        /****End test****/
-	
+
 	XLALDestroyREAL8TimeSeries( gwfseries);
 	XLALDestroyREAL8TimeSeries( total_inject );
 	XLALDestroyREAL8TimeSeries( series );
@@ -582,7 +573,7 @@ int main(int argc, char **argv)
 	fclose(logfile);
       }
       /* </log file> */
-
+      fprintf(stderr, "you created %s", out_file);
     } /*ends loop through all .gwf files in .gwf directory*/
   }
   return 1;
