@@ -223,6 +223,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiSSBtimes *multiBinary = NULL;
+  MultiSSBtimes *multiSSBTotal = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv, Ed;
@@ -297,25 +298,12 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
     /* new orbital parameter corrections if not already buffered */
   if ( doppler->orbit )
     {
-      /* if already buffered */
-      if ( cfBuffer && cfBuffer->multiBinary )
-	{ /* yes ==> reuse */
-	  multiBinary = cfBuffer->multiBinary;
-	}
-      else
-	{
-	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
-
-	  /* store these in buffer if available */
-	  if ( cfBuffer )
-	    {
-	      XLALDestroyMultiSSBtimes ( cfBuffer->multiBinary );
-	      cfBuffer->multiBinary = multiBinary;
-	    } /* if cfBuffer */
- 	}
+      /* compute binary time corrections to the SSB time delays and SSB time derivitive */
+      TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
+      multiSSBTotal = multiBinary;
     }
-  else multiBinary = multiSSB;
+  else
+    multiSSBTotal = multiSSB;
 
   /* special treatment of AM coefficients */
   if ( params->useRAA && !multiCmplxAMcoef )
@@ -393,7 +381,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 
       if ( params->useRAA )
 	{
-	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiCmplxAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiCmplxAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFbCmplx() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -401,7 +389,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
       else if ( params->upsampling > 1)
 	{
-	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFbXavie() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -409,7 +397,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
       else
 	{
-	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -460,10 +448,12 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   if ( !cfBuffer )
     {
       XLALDestroyMultiSSBtimes ( multiSSB );
-      XLALDestroyMultiSSBtimes ( multiBinary );
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
       XLALDestroyMultiCmplxAMCoeffs ( multiCmplxAMcoef );
     } /* if !cfBuffer */
+
+  /* this always needs to be free'ed, as it's no longer buffered */
+  XLALDestroyMultiSSBtimes ( multiBinary );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
