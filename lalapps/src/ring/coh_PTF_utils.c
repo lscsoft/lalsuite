@@ -677,10 +677,8 @@ void coh_PTF_generate_sky_points(
     struct coh_PTF_params *params
     )
 {
-  /* set variables */
-  UINT4 numSkyPoints;
-  UINT4 i;
 
+  /* if all sky */
   if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
   {
     fprintf( stderr, "all sky mode is not implemented yet, please provide --declination" );
@@ -865,7 +863,7 @@ void coh_PTF_sky_grid(
     skyPoints->declination[i]    = LAL_PI / 2. - theta;
 
     if ( skyPoints->declination[i] < 0. )
-      skyPoints->declination[i] + LAL_PI / 2.;
+      skyPoints->declination[i] += LAL_PI / 2.;
 
   }
 

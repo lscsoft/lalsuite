@@ -256,6 +256,17 @@ int main( int argc, char **argv )
       }
       /* set 'segStartTime' to trigger time */
       segStartTime = params->trigTime;
+      /* calculate time offsets */
+      timeOffsets[ifoNumber] =
+          XLALTimeDelayFromEarthCenter( detLoc, params->rightAscension,
+                                        params->declination, &segStartTime );
+      /* calculate response functions for trigger */
+      XLALComputeDetAMResponse( &Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
+                                detectors[ifoNumber]->response,
+                                params->rightAscension,
+                                params->declination, 0.,
+                                XLALGreenwichMeanSiderealTime(&segStartTime) );
+
     }
   }
 
@@ -698,6 +709,11 @@ int main( int argc, char **argv )
 
             for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
             {
+              /* get location in three dimensions */
+              for ( i = 0; i < 3; i++ )
+              {
+                 detLoc[i] = (double) detectors[ifoNumber]->location[i];
+              }
               /* calculate time offsets */
               timeOffsets[ifoNumber] =
                   XLALTimeDelayFromEarthCenter( detLoc,
@@ -1809,10 +1825,11 @@ UINT8 coh_PTF_add_triggers(
 }
 
 void coh_PTF_cluster_triggers(
-  MultiInspiralTable      **eventList,
-  MultiInspiralTable      **thisEvent
+    MultiInspiralTable      **eventList,
+    MultiInspiralTable      **thisEvent
 )
 {
+
   /* This clustering function is currently unused. Currently clustering is
      done in post-processing, though this may need to be changed. */
   MultiInspiralTable *currEvent = *eventList;
@@ -1825,6 +1842,7 @@ void coh_PTF_cluster_triggers(
   UINT4 lenTriggers = 0;
   UINT4 numRemovedTriggers = 0;
 
+  /* find number of triggers */
   while (currEvent)
   {
     lenTriggers+=1;
@@ -1834,6 +1852,8 @@ void coh_PTF_cluster_triggers(
   currEvent = *eventList;
   UINT4 rejectTriggers[lenTriggers];
 
+  /* for each trigger, find out whether a louder trigger is within the
+   * clustering time */
   while (currEvent)
   {
     rejectTrigger = 0;
@@ -1846,7 +1866,8 @@ void coh_PTF_cluster_triggers(
       time2.gpsNanoSeconds=currEvent2->end_time.gpsNanoSeconds;
       if (fabs(XLALGPSDiff(&time1,&time2)) < 0.1)
       {
-        if (currEvent->snr < currEvent2->snr && (currEvent->event_id->id != currEvent2->event_id->id))
+        if (currEvent->snr < currEvent2->snr\
+            && (currEvent->event_id->id != currEvent2->event_id->id))
         {
           rejectTrigger = 1;
           numRemovedTriggers +=1;
@@ -1870,6 +1891,7 @@ void coh_PTF_cluster_triggers(
   currEvent = *eventList;
   triggerNum = 0;
 
+  /* construct new event table with triggers to keep */
   while (currEvent)
   {
     if (! rejectTriggers[triggerNum])
@@ -1898,6 +1920,8 @@ void coh_PTF_cluster_triggers(
     }
     triggerNum+=1;
   }
+
+  /* write new table over old one */
   if (newEvent)
   {
     newEvent->next = NULL;
