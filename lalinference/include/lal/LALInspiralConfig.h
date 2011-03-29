@@ -1,0 +1,1 @@
+/home/john/src/lalsuite/lalinference/src/LALInspiralConfig.h
