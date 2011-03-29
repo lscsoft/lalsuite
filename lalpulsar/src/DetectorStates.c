@@ -699,17 +699,15 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
       DetectorState *state = &(ret->data[i]);
       EarthState *earth = &(state->earthState);
       LIGOTimeGPS tgps;
-      LALStatus status = empty_LALStatus;
 
       /* shift timestamp by tOffset */
       tgps = timestamps->data[i];
       XLALGPSAdd(&tgps, tOffset);
 
       /*----- first get earth-state */
-      LALBarycenterEarth (&status, earth, &tgps, edat );
-      if ( status.statusCode ) {
+      if ( XLALBarycenterEarth ( earth, &tgps, edat ) != XLAL_SUCCESS ) {
         XLALDestroyDetectorStateSeries ( ret );
-        XLALPrintError("%s: LALBarycenterEarth() failed with code %d\n", fn, status.statusCode );
+        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", fn, xlalErrno );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
 
@@ -722,10 +720,9 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
       baryinput.alpha = baryinput.delta = 0;	/* irrelevant */
       baryinput.dInv = 0;
 
-      LALBarycenter ( &status, &emit, &baryinput, earth);
-      if ( status.statusCode ) {
+      if ( XLALBarycenter ( &emit, &baryinput, earth) != XLAL_SUCCESS ) {
 	XLALDestroyDetectorStateSeries( ret );
-        XLALPrintError("%s: LALBarycenterEarth() failed with code %d\n", fn, status.statusCode );
+        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", fn, xlalErrno );
         XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
       }
 
@@ -785,7 +782,7 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   UINT4 numDetectors;
   numDetectors = multiIFO->length;
   if ( numDetectors != multiTS->length ) {
-    XLALPrintError ("%f: inconsistent number of IFOs in 'multiIFO' (%d) and 'multiTS' (%d)\n", fn, multiIFO->length, multiTS->length );
+    XLALPrintError ("%s: inconsistent number of IFOs in 'multiIFO' (%d) and 'multiTS' (%d)\n", fn, multiIFO->length, multiTS->length );
     XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
   }
 
