@@ -66,8 +66,8 @@ XLALBarycenterEarth ( EarthState *earth, 		/**< [out] the earth's state at time 
   INT4 j; /*dummy index */
 
   /* check input */
-  if ( !earth || !tGPS || !edat ) {
-    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS' or 'edat'\n", fn );
+  if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
+    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat', 'edat->ephemE' or 'edat->ephemS'\n", fn );
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
 
@@ -488,8 +488,8 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
     delta = baryinput->delta;
 
 /* check that alpha and delta are in reasonable range */
-    if ( (alpha < 0) || (alpha > LAL_TWOPI) || ( fabs(delta) > LAL_PI_2 ) ){
-      XLALPrintError ("%s: alpha = %f outside of [0,2pi] or delta = %f outside of [-pi/2,pi/2]\n", fn, alpha, delta );
+    if ( ( fabs(alpha) > LAL_TWOPI) || ( fabs(delta) > LAL_PI_2 ) ){
+      XLALPrintError ("%s: alpha = %f outside of [-2pi,2pi] or delta = %f outside of [-pi/2,pi/2]\n", fn, alpha, delta );
       XLAL_ERROR ( fn, XLAL_EDOM );
     }
 
