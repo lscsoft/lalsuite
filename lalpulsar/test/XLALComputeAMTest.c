@@ -89,7 +89,9 @@ int main(int argc, char *argv[])
 
   /* init random-generator */
   struct tms buf;
-  srand ( times(&buf) );
+  UINT4 seed = times(&buf);
+  srand ( seed );
+  XLALPrintInfo ("%s: seed used = %d\n", fn, seed );
 
   /* ----- init ephemeris ----- */
   EphemerisData *edat;
@@ -182,6 +184,7 @@ int main(int argc, char *argv[])
         return XLAL_EFAILED;
       }
 
+
       /* ----- compute multiAM using XLAL function ----- */
       MultiAMCoeffs *multiAM_XLAL;
       if ( ( multiAM_XLAL = XLALComputeMultiAMCoeffs ( multiDetStates, weights, skypos )) == NULL ) {
@@ -263,33 +266,33 @@ XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REA
             maxerr_ab = err_b;
 
           avgerr_ab += err_a + err_b;
-          numTerms += 2;
+          numTerms += 1;
 
         } /* for i < numSteps */
 
     } /* for X < numDet */
 
-  avgerr_ab /= (1.0 * numTerms);
+  avgerr_ab /= (2.0 * numTerms);
 
   /* now compute absolute maximal error in AntennaPattern matrix terms */
   AntennaPatternMatrix *Mmunu1 = &multiAM1->Mmunu;
   AntennaPatternMatrix *Mmunu2 = &multiAM2->Mmunu;
 
-  REAL8 maxxerr_Mmunu = 0;
+  REAL8 maxxerr_Ad = 0, maxxerr_Bd = 0, maxxerr_Cd = 0, maxxerr_Dd = 0;
   REAL8 err;
 
   err = fabs ( Mmunu1->Ad - Mmunu2->Ad );
-  if ( err > maxxerr_Mmunu )
-    maxxerr_Mmunu = err;
+  if ( err > maxxerr_Ad )
+    maxxerr_Ad = err;
   err = fabs ( Mmunu1->Bd - Mmunu2->Bd );
-  if ( err > maxxerr_Mmunu )
-    maxxerr_Mmunu = err;
+  if ( err > maxxerr_Bd )
+    maxxerr_Bd = err;
   err = fabs ( Mmunu1->Cd - Mmunu2->Cd );
-  if ( err > maxxerr_Mmunu )
-    maxxerr_Mmunu = err;
+  if ( err > maxxerr_Cd )
+    maxxerr_Cd = err;
   err = fabs ( Mmunu1->Dd - Mmunu2->Dd );
-  if ( err > maxxerr_Mmunu )
-    maxxerr_Mmunu = err;
+  if ( err > maxxerr_Dd )
+    maxxerr_Dd = err;
 
   UINT4 failed = 0;
   /* special treatment for Sinv_Tsft: independent of AM-functions, should agree to within numerics */
@@ -298,27 +301,57 @@ XLALCompareMultiAMCoeffs ( MultiAMCoeffs *multiAM1, MultiAMCoeffs *multiAM2, REA
     XLALPrintError ("%s: Sinv_Tsft differs by more than %g relative error\n", fn, eps );
     failed ++;
   }
+  else
+    XLALPrintInfo ("%s: Sinv_Tsft 1 = %g, 2 = %g, 1-2 = %g\n", fn, Mmunu1->Sinv_Tsft, Mmunu2->Sinv_Tsft, Mmunu1->Sinv_Tsft - Mmunu2->Sinv_Tsft );
 
-  if ( maxxerr_Mmunu > tolerance ) {
-    XLALPrintError ("%s: maximal difference in Mmunu matrix is %g, which exceeds the tolerance %g\n", fn, maxxerr_Mmunu, tolerance );
+  /* ----- compare matrix elements A,B,C -------------------- */
+  /* Mmunu = {A,B,C} are sums of N terms a^2, b^2, a*b, each with small numerical errors
+   * we therefore need to relax the tolerance from a,b,c by a factor of sqrt(N):
+   */
+  REAL8 tolerance_Mmunu = tolerance * sqrt ( 1.0 * numTerms );
+  XLALPrintError ("%s: tolerances tol(a,b,c)=%g, tol(Mmunu) = %g\n", fn, tolerance, tolerance_Mmunu );
+
+  if ( maxxerr_Ad > tolerance_Mmunu ) {
+    XLALPrintError ("%s: maximal difference in Ad is %g, which exceeds the tolerance %g\n", fn, maxxerr_Ad, tolerance_Mmunu );
     failed ++;
   }
   else
-    XLALPrintInfo ("%s: maxxerr_Mmunu = %g\n", fn, maxxerr_Mmunu);
+    XLALPrintInfo ("%s: maxxerr_Ad = %g (< %g)\n", fn, maxxerr_Ad, tolerance_Mmunu);
 
+  if ( maxxerr_Bd > tolerance_Mmunu ) {
+    XLALPrintError ("%s: maximal difference in Bd is %g, which exceeds the tolerance %g\n", fn, maxxerr_Bd, tolerance_Mmunu );
+    failed ++;
+  }
+  else
+    XLALPrintInfo ("%s: maxxerr_Bd = %g (< %g)\n", fn, maxxerr_Bd, tolerance_Mmunu);
+
+  if ( maxxerr_Cd > tolerance_Mmunu ) {
+    XLALPrintError ("%s: maximal difference in Cd is %g, which exceeds the tolerance %g\n", fn, maxxerr_Cd, tolerance_Mmunu );
+    failed ++;
+  }
+  else
+    XLALPrintInfo ("%s: maxxerr_Cd = %g (< %g)\n", fn, maxxerr_Cd, tolerance_Mmunu);
+
+  /* matrix can be quite ill-conditioned, so the error on Dd is very hard to constrain.
+   * in principle for random-parameters this can go arbitrarly badly, so we don't use
+   * any constraints in this test to avoid spurious test-failures
+   */
+  XLALPrintError ("%s: maxxerr_Dd = %g (%g)\n", fn, maxxerr_Dd, tolerance_Mmunu);
+
+  /* ----- compare individual a,b,c errors -------------------- */
   if ( maxerr_ab > tolerance ) {
     XLALPrintError ("%s: maximal difference in {a, b} coefficients is %g, which exceeds the tolerance %g\n", fn, maxerr_ab, tolerance );
     failed ++;
   }
   else
-    XLALPrintInfo ("%s: maxerr_ab = %g\n", fn, maxerr_ab);
+    XLALPrintInfo ("%s: maxerr_ab = %g (< %g)\n", fn, maxerr_ab, tolerance);
 
   if ( avgerr_ab > tolerance ) {
     XLALPrintError ("%s: average difference in {a, b} coefficients is %g, which exceeds the tolerance %g\n", fn, avgerr_ab, tolerance );
     failed ++;
   }
   else
-    XLALPrintInfo ("%s: avgerr_ab = %g\n", fn, avgerr_ab);
+    XLALPrintInfo ("%s: avgerr_ab = %g (< %g)\n", fn, avgerr_ab, tolerance);
 
   return failed;
 
