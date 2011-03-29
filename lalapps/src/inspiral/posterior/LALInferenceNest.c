@@ -134,7 +134,10 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			randomseed = tv.tv_sec + tv.tv_usec;
 		} 
 		else {
-			fread(&randomseed, sizeof(randomseed), 1, devrandom);
+			if(1!=fread(&randomseed, sizeof(randomseed), 1, devrandom)){
+			  fprintf(stderr,"Error: Unable to read random seed from /dev/random\n");
+			  exit(1);
+			}
 			fclose(devrandom);
 		}
 	}
@@ -158,7 +161,8 @@ void initializeNS(LALInferenceRunState *runState)
 	--Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
 	[--Nruns R]\tNumber of parallel samples from logt to use(1)\n\
 	[--tolerance dZ]\tTolerance of nested sampling algorithm (0.1)\n\
-	[--randomseed seed]\tRandom seed of sampling distribution\n";
+	[--randomseed seed]\tRandom seed of sampling distribution\n\
+	[--verbose]\n";
 	
 	INT4 verbose=0,tmpi=0,randomseed=0;
 	REAL8 tmp=0;
@@ -208,7 +212,13 @@ void initializeNS(LALInferenceRunState *runState)
 	
 	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
-	tmpi=atoi(getProcParamVal(commandLine,"--Nmcmc")->value);
+	ppt=getProcParamVal(commandLine,"--Nmcmc");
+	if(ppt)
+	  tmpi=atoi(ppt->value);
+	else {
+	  fprintf(stderr,"Error, must specify number of MCMC points\n");
+	  exit(1);
+	}
 	addVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				INT4_t,PARAM_FIXED);
 	
