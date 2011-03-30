@@ -58,6 +58,7 @@ typedef struct
    CHAR* sftType;
    INT4 markBadSFTs;
    INT4 FFTplanFlag;
+   INT4 keepOneIHS;
    INT4 antennaOff;
    INT4 noiseWeightOff;
 } inputParamsStruct;
