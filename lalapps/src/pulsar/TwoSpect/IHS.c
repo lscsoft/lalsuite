@@ -197,14 +197,21 @@ void incHarmSum(ihsVals *output, REAL4Vector *input)
    output->ihs = 0.0;
    
    //Start ii >= 15
-   for (ii=15; ii<(INT4)input->length; ii++) {
+   /*for (ii=15; ii<(INT4)input->length; ii++) {
       REAL4 sum = input->data[ii] + input->data[(INT4)(ii*0.5)] + input->data[(INT4)(ii/3.0)] + input->data[(INT4)(ii*0.25)] + input->data[(INT4)(ii*0.2)];
 
       if (sum > output->ihs) {
          output->ihs = sum;
          output->loc = (INT4)round(ii/3.0);
       }
-   } /* for ii < input->length */
+   } */ /* for ii < input->length */
+   for (ii=5; ii<(INT4)(0.2*input->length); ii++) {
+      REAL4 sum = input->data[ii] + input->data[(INT4)(ii*2.0)] + input->data[(INT4)(ii*3.0)] + input->data[(INT4)(ii*4.0)] + input->data[(INT4)(ii*5.0)];
+      if (sum > output->ihs) {
+         output->ihs = sum;
+         output->loc = ii;
+      }
+   } /* for ii = 5 --> 0.2*input->length */
 
 } /* incHarmSum() */
 
