@@ -8,4 +8,4 @@ Description: LAL Inference Library Support
 Version: @VERSION@
 Requires: gsl lal libmetaio lalmetaio lalinspiral
 Libs: -L${libdir} -llalinference
-Cflags: -I${includedir}
+Cflags: -I${includedir} -std=gnu99
