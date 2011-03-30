@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "LALInference.h"
+#include <lal/LALInference.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
@@ -32,6 +32,12 @@
 #include <lal/VectorOps.h>
 #include <lal/Date.h>
 #include <lal/Sequence.h>
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 size_t typeSize[] = {sizeof(INT4), 
                      sizeof(INT8),
@@ -346,7 +352,7 @@ void printVariables(LALVariables *var)
           fprintf(stdout, "%d", *(INT4 *) ptr->value);
           break;
         case INT8_t:
-          fprintf(stdout, "%lld", *(INT8 *) ptr->value);
+          fprintf(stdout, "%ld", *(INT8 *) ptr->value);
           break;
 		case UINT4_t:
 		  fprintf(stdout, "%ud", *(UINT4 *) ptr->value);
@@ -388,7 +394,7 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%d", *(INT4 *) ptr->value);
 				break;
 			case INT8_t:
-				fprintf(fp, "%lld", *(INT8 *) ptr->value);
+				fprintf(fp, "%ld", *(INT8 *) ptr->value);
 				break;
 			case UINT4_t:
 				fprintf(fp, "%ud", *(UINT4 *) ptr->value);
@@ -431,7 +437,7 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample){
 					fprintf(fp, "%d", *(INT4 *) ptr->value);
 					break;
 				case INT8_t:
-					fprintf(fp, "%lld", *(INT8 *) ptr->value);
+					fprintf(fp, "%ld", *(INT8 *) ptr->value);
 					break;
 				case UINT4_t:
 					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
@@ -720,7 +726,7 @@ void printCommandLine(ProcessParamsTable *procparams, char *str)
 
 /* ============ Likelihood computations: ========== */
 
-REAL8 ZeroLogLikelihood(LALVariables *currentParams, LALIFOData *data, LALTemplateFunction *template) {
+REAL8 ZeroLogLikelihood(LALVariables UNUSED *currentParams, LALIFOData UNUSED *data, LALTemplateFunction UNUSED *template) {
   return 0.0;
 }
 
