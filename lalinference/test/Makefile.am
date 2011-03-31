@@ -11,7 +11,7 @@ FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
 endif
 
-EXTRA_DIST = 
+EXTRA_DIST =
 
 CLEANFILES = \
 	*.out \
