@@ -36,6 +36,19 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_sf_legendre.h>
 
+
+static REAL8
+XLALAssociatedLegendreXIsZero( const int l,
+                               const int m
+                             );
+
+static int
+XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
+                         INT4 l,
+                         INT4  m,
+                         REAL8 phi);
+
+
 int
 XLALCalculateNewtonianMultipole(
                             COMPLEX16 *multipole,
@@ -121,7 +134,7 @@ XLALCalculateNewtonianMultipole(
   }
 
   /* Calculate the necessary Ylm */
-  xlalStatus = XLALScalarSphericalHarmonic( &y, l - epsilon, - m, LAL_PI_2, phi );
+  xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
   if (xlalStatus != XLAL_SUCCESS )
   {
     XLAL_ERROR( __func__, XLAL_EFUNC );
@@ -174,4 +187,235 @@ XLALScalarSphericalHarmonic(
   }
 
   return XLAL_SUCCESS;
+}
+
+
+/* In the calculation of the Newtonian multipole, we only use
+ * the spherical harmonic with theta set to pi/2. Since this
+ * is always the case, we can use this information to use a 
+ * faster version of the spherical harmonic code
+ */
+
+static int
+XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
+                         INT4 l,
+                         INT4  m,
+                         REAL8 phi)
+{
+
+  REAL8 legendre;
+  INT4 absM = abs( m );
+
+  if ( l < 0 || absM > (INT4) l )
+  {
+    XLAL_ERROR( __func__, XLAL_EINVAL );
+  }
+
+  /* For some reason GSL will not take negative m */
+  /* We will have to use the relation between sph harmonics of +ve and -ve m */
+  legendre = XLALAssociatedLegendreXIsZero( l, absM );
+  if ( XLAL_IS_REAL8_FAIL_NAN( legendre ))
+  {
+    XLAL_ERROR( __func__, XLAL_EFUNC );
+  }
+
+  /* Compute the values for the spherical harmonic */
+  y->re = legendre * cos(m * phi);
+  y->im = legendre * sin(m * phi);
+
+  /* If m is negative, perform some jiggery-pokery */
+  if ( m < 0 && absM % 2  == 1 )
+  {
+    y->re = - y->re;
+    y->im = - y->im;
+  }
+
+  return XLAL_SUCCESS;
+}
+
+
+
+static REAL8
+XLALAssociatedLegendreXIsZero( const int l,
+                               const int m )
+{
+
+  REAL8 legendre;
+
+  if ( l < 0 )
+  {
+    XLALPrintError( "l cannot be < 0\n" );
+    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+  }
+  
+  if ( m < 0 || m > l )
+  {
+    XLALPrintError( "Invalid value of m!\n" );
+    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+  }
+
+  /* we will switch on the values of m and n */
+  switch ( l )
+  {
+    case 2:
+      switch ( m )
+      {
+        case 2:
+          legendre = 3.;
+          break;
+        case 1:
+          legendre = 0.;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 3:
+      switch ( m )
+      {
+        case 3:
+          legendre = -15.;
+          break;
+        case 2:
+          legendre = 0.;
+          break;
+        case 1:
+          legendre = 1.5;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 4:
+      switch ( m )
+      {
+        case 4:
+          legendre = 105.;
+          break;
+        case 3:
+          legendre = 0.;
+          break;
+        case 2:
+          legendre = - 7.5;
+          break;
+        case 1:
+          legendre = 0;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 5:
+      switch ( m )
+      {
+        case 5:
+          legendre = - 945.;
+          break;
+        case 4:
+          legendre = 0.;
+          break;
+        case 3:
+          legendre = 52.5;
+          break;
+        case 2:
+          legendre = 0;
+          break;
+        case 1:
+          legendre = - 28.125;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 6:
+      switch ( m )
+      {
+        case 6:
+          legendre = 10395.;
+          break;
+        case 5:
+          legendre = 0.;
+          break;
+        case 4:
+          legendre = - 472.5;
+          break;
+        case 3:
+          legendre = 0;
+          break;
+        case 2:
+          legendre = 13.125;
+          break;
+        case 1:
+          legendre = 0;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 7:
+      switch ( m )
+      {
+        case 7:
+          legendre = - 135135.;
+          break;
+        case 6:
+          legendre = 0.;
+          break;
+        case 5:
+          legendre = 5197.5;
+          break;
+        case 4:
+          legendre = 0.;
+          break;
+        case 3:
+          legendre = - 118.125;
+          break;
+        case 2:
+          legendre = 0.;
+          break;
+        case 1:
+          legendre = 2.1875;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    case 8:
+      switch ( m )
+      {
+        case 8:
+          legendre = 2027025.;
+          break;
+        case 7:
+          legendre = 0.;
+          break;
+        case 6:
+          legendre = - 67567.5;
+          break;
+        case 5:
+          legendre = 0.;
+          break;
+        case 4:
+          legendre = 1299.375;
+          break;
+        case 3:
+          legendre = 0.;
+          break;
+        case 2:
+          legendre = - 19.6875;
+          break;
+        case 1:
+          legendre = 0.;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
+    default:
+      XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+  }
+
+  legendre *= sqrt( (REAL8)(2*l+1)*gsl_sf_fact( l-m ) / (4.*LAL_PI*gsl_sf_fact(l+m)));
+
+  return legendre;
 }

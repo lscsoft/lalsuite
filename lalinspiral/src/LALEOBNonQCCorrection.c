@@ -64,7 +64,7 @@ REAL8 GetNRPeakOmegaDot( REAL8 eta )
 int  XLALEOBNonQCCorrection(
                       COMPLEX16             * restrict nqc,
                       REAL8Vector           * restrict values,
-                      REAL8Vector           * restrict dvalues,
+                      const REAL8                      omega,
                       EOBNonQCCoeffs        * restrict coeffs
                      )
 
@@ -79,7 +79,7 @@ int  XLALEOBNonQCCorrection(
   r = values->data[0];
   p = values->data[2];
 
-  rOmega = r * dvalues->data[1];
+  rOmega = r * omega;
   rOmegaSq = rOmega*rOmega;
 
   mag = 1. + (p*p / rOmegaSq) * ( coeffs->a1
@@ -143,6 +143,8 @@ int XLALCalculateNQCCoefficients(
 
   /* Temporary to get rid of unused warning */
   p2->data[0] = p2->data[0];
+
+  memset( coeffs, 0, sizeof( EOBNonQCCoeffs ) );
 
   /* Populate the time vector */
   /* It is okay to assume initial t = 0 */

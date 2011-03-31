@@ -287,7 +287,7 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 
     vector = output->data + outputlen*i;
     for(int j=0;j<outputlen;j++) {
-      vector[j] = gsl_spline_eval(interp,times[j],accel);
+      gsl_spline_eval_e(interp,times[j],accel, &(vector[j]));
     }
   }
 	XLAL_ENDGSL;

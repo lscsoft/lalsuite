@@ -8,6 +8,12 @@
 extern "C" {
 #endif
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 
 /**
  *  Structure containing the coefficients for EOBNRv2 A potential function.
@@ -266,6 +272,7 @@ typedef
 struct tagEOBParams
 {
   REAL8 eta;
+  REAL8 omega;
   REAL8 m1;
   REAL8 m2;
   EOBACoefficients  *aCoeffs;
@@ -316,7 +323,7 @@ XLALGetFactorizedWaveform(
 int  XLALEOBNonQCCorrection(
                       COMPLEX16             *nqc,
                       REAL8Vector           *values,
-                      REAL8Vector           *dvalues,
+                      const REAL8           omega,
                       EOBNonQCCoeffs        *coeffs
                      );
 
