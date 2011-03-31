@@ -6,7 +6,6 @@ if LALINSPIRAL
 check_PROGRAMS = \
 	InferenceTest
 TESTS = $(check_PROGRAMS)
-InferenceTest_SOURCES = InferenceTest.c
 endif
 endif
 
