@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -225,6 +225,7 @@ REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn)
 } /* cutoff_twospect() */
 
 //bound integration error due to truncation at u
+//Eq. 6, 7, 8 of Davies 1980
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum1, sum2, prod1, prod2, prod3, x, y, err1, err2;
@@ -232,36 +233,36 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 
    counter(vars);
    
-   sum1  = 0.0;
-   prod2 = 0.0;
-   prod3 = 0.0;
-   s = 0;
+   sum1  = 0.0;   //Calculating N(u) = exp(-2u**2 sum_j(lambda_j**2 delta_j**2/(1+4u**2 lambda_j**2)))
+   prod2 = 0.0;   //Calculating product (i)
+   prod3 = 0.0;   //Calculating product (ii)
+   s = 0;   //Sum of degrees of freedom
    
    sum2 = (vars->sigsq + tausq) * u*u;
    prod1 = 2.0 * sum2;
-   u *= 2.0;
+   u *= 2.0;      //This produces the factor of 4 in front of the products (U*lambda_j)**2 (i and ii) in Davies 1980
    
    for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
-      x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
-      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);
+      x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);  //(2*U*lambda_j)**2
+      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);   //Sum after eq 4 in Davies 1980
       if (x > 1.0) {
-         prod2 += vars->dofs->data[ii] * log(x);
-         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
-         s += vars->dofs->data[ii];
+         prod2 += vars->dofs->data[ii] * log(x);      //Logarithim of product (ii) produces sum of logorithms
+         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);    //Logarithim of product (i) produces sum of logorithms
+         s += vars->dofs->data[ii];    //sum of degrees of freedom
       }
       else prod1 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
    } /* for ii < vars->weights->length */
    
-   sum1 *= 0.5;
+   sum1 *= 0.5;      //Remove the extra prefactor of 2 before taking the exponential
    prod2 += prod1;
    prod3 += prod1;
-   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;
-   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;
+   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 6)
+   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 8)
    
    if (s==0) err1 = 1.0;
    else err1 = 2.0*x/s;
    
-   if (prod3>1.0) err2 = 2.5*y;
+   if (prod3>1.0) err2 = 2.5*y;  //eq 8
    else err2 = 1.0;
    
    if (err2 < err1) err1 = err2;
@@ -398,31 +399,31 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
    REAL8 inpi, u, sum1, sum2, sum3, x, y, z;
    INT4 ii, jj;
    
-   inpi = interv*LAL_1_PI;
+   inpi = interv*LAL_1_PI;    //inpi = pi*(k + 1/2)
    
    for (ii=nterm; ii>=0; ii--) {
       u = (ii + 0.5)*interv;     //First part of eq 3 in Davies 1980, eq 9 in Davies 1973
-      sum1 = - 2.0*u*vars->c;
+      sum1 = - 2.0*u*vars->c;    //Third sum
       sum2 = fabs(sum1);
-      sum3 = -0.5*vars->sigsq * u*u;
+      sum3 = -0.5*vars->sigsq * u*u;   //Product
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
-         x = 2.0 * vars->weights->data[jj] * u;
-         y = x*x;
-         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);
-         y = vars->noncentrality->data[jj] * x / (1.0 + y);
-         z = vars->dofs->data[jj] * atan(x) + y;
-         sum1 += z;
+         x = 2.0 * vars->weights->data[jj] * u;    //2 * lambda_j * u
+         y = x*x;    //4 * lambda_j**2 * u**2
+         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);    //product in eq 13 of Davies 1980
+         y = vars->noncentrality->data[jj] * x / (1.0 + y);    //First sum argument in eq 13 of Davies 1980
+         z = vars->dofs->data[jj] * atan(x) + y;      //Third sum argument in eq 13 of Davies 1980
+         sum1 += z;        //Third sum in eq 13
          sum2 += fabs(z);
-         sum3 -= 0.5 * x * y;
+         sum3 -= 0.5 * x * y;    //Product
       } /* for jj=vars->weights->length-1 --> 0 */
       
       x = inpi * exp1(sum3) / u;
-      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));
-      sum1 = sin(0.5 * sum1) * x;
+      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));  //For auxillary integration, we multiply by this factor)
+      sum1 = sin(0.5 * sum1) * x;   //Now compute the sine
       sum2 *= 0.5*x;
-      vars->intl += sum1;
-      vars->ersm += sum2;
+      vars->intl += sum1;     //integration value
+      vars->ersm += sum2;     //error on integration
    } /* for ii=nterm --> 0 */
    
 } /* integrate() */
@@ -459,6 +460,7 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 } /* integrate_twospect() */
 
 //Coefficient of tausq in error when convergence factor of exp1(-0.5*tausq*u^2) is used when df is evaluated at x
+//Eq. 10 of Davies 1980
 REAL8 coeff(qfvars *vars, REAL8 x)
 {
    

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -319,7 +319,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         fprintf(stderr,"%s: probR() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
-                     REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
+                     REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                      
                      //if (R > farval->far && prob < bestProb) {
                      if (prob < bestProb) {
