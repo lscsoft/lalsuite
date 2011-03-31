@@ -7,7 +7,6 @@ check_PROGRAMS = \
 	LALInferenceTest
 TESTS = $(check_PROGRAMS)
 InferenceTest_SOURCES = InferenceTest.c
-FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
 endif
 
