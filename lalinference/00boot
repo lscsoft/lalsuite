@@ -98,6 +98,6 @@ echo "
         00boot has been run.
 
         Now run './configure' with appropriate options
-        to configure LAL Inspiral.
+        to configure LAL Inference.
 
 ================================================================="
