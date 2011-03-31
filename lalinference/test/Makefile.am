@@ -4,7 +4,7 @@ LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalinspiral.la
 if LALSUPPORT
 if LALINSPIRAL
 check_PROGRAMS = \
-	LALInferenceTest
+	InferenceTest
 TESTS = $(check_PROGRAMS)
 InferenceTest_SOURCES = InferenceTest.c
 endif
