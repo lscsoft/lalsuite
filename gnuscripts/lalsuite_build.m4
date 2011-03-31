@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 13
+# serial 14
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -16,6 +16,11 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
 ])])[]dnl
 AC_LANG(_AC_LANG)[]dnl
 ]) # LALSUITE_USE_LIBTOOL
+
+AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+  AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
+])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])

@@ -47,8 +47,6 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
 ])
 AM_INIT_AUTOMAKE([foreign])
-AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
-AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
@@ -57,6 +55,8 @@ AH_BOTTOM([
 ])
 
 AC_CANONICAL_HOST
+
+LALSUITE_ARG_VAR
 
 LALAPPS_WITH_CC
 LALAPPS_WITH_LAL_PREFIX
