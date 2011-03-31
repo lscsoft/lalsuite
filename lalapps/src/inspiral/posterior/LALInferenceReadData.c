@@ -93,7 +93,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
 {
 	LALStatus status;
-	INT4 seed=0;
+	INT4 dataseed=0;
 	memset(&status,0,sizeof(status));
 	ProcessParamsTable *procparam=NULL;
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
