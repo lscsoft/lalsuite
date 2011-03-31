@@ -1361,12 +1361,23 @@ int main(int argc, char *argv[])
             trialb = NULL;
             trialp = NULL;
          } /* for ii < numofcandidates */
-         fprintf(LOG,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
-         fprintf(stderr,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
 ////////End of detailed search
          
-         //
-         if (inputParams->keepOneIHS && ihsCandidates->numofcandidates==1 && exactCandidates1->numofcandidates==0) {
+         //If no candidate from this sky location passed the tests, save the one best candidate from the IHS candidates
+         if (inputParams->keepOneIHS && ihsCandidates->numofcandidates>=1 && exactCandidates1->numofcandidates==0) {
+            //Determine the best candidate
+            INT4 bestcandidate = 0;
+            REAL8 bestcandidatevalue = 0.0;
+            if (ihsCandidates->numofcandidates>1) {
+               for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
+                  REAL8 candidatevalue = (ihsCandidates->data[ii].stat-ihsfarstruct->ihsfar->data[(INT4)round(2.0*ihsCandidates->data[ii].moddepth*inputParams->Tcoh)-2])/ihsfarstruct->ihsdistSigma->data[(INT4)round(2.0*ihsCandidates->data[ii].moddepth*inputParams->Tcoh)-2];
+                  if (candidatevalue>bestcandidatevalue || bestcandidatevalue==0.0) {
+                     bestcandidatevalue = candidatevalue;
+                     bestcandidate = ii;
+                  } /* if candidatevalue > bestcandidate value or bestcandidatevalue == 0.0 */
+               } /* for ii < ihsCandidates->numofcandidates */
+            } /* if ihsCandidates->numofcandidates > 1 */
+            
             templateStruct *template = new_templateStruct(inputParams->templatelength);
             if (template==NULL) {
                fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", fn, inputParams->templatelength);
@@ -1374,13 +1385,13 @@ int main(int argc, char *argv[])
             }
             
             if (!args_info.gaussTemplatesOnly_given) {
-               makeTemplate(template, ihsCandidates->data[0], inputParams, sftexist, secondFFTplan);
+               makeTemplate(template, ihsCandidates->data[bestcandidate], inputParams, sftexist, secondFFTplan);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: makeTemplate() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
             } else {
-               makeTemplateGaussians(template, ihsCandidates->data[0], inputParams);
+               makeTemplateGaussians(template, ihsCandidates->data[bestcandidate], inputParams);
                if (xlalErrno!=0) {
                   fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
@@ -1397,7 +1408,8 @@ int main(int argc, char *argv[])
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
             
-            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            REAL8 h0 = 0.0;
+            if (R>0.0) h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
             
             if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
                exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
@@ -1406,7 +1418,7 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
             }
-            loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], ihsCandidates->data[0].fsig, ihsCandidates->data[0].period, ihsCandidates->data[0].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, prob, proberrcode, ihsCandidates->data[0].normalization);
+            loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], ihsCandidates->data[bestcandidate].fsig, ihsCandidates->data[bestcandidate].period, ihsCandidates->data[bestcandidate].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, prob, proberrcode, ihsCandidates->data[bestcandidate].normalization);
             (exactCandidates2->numofcandidates)++;
             
             free_templateStruct(template);
@@ -1418,6 +1430,9 @@ int main(int argc, char *argv[])
          
          //Reset first round of exact template candidates, but keep length the same (doesn't reset actual values in the vector)
          exactCandidates1->numofcandidates = 0;
+         
+         fprintf(LOG,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
+         fprintf(stderr,"Exact step is done with the total number of candidates = %d\n", exactCandidates2->numofcandidates);
          
       } /* if IHSonly is not given */
       
