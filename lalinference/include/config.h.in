@@ -9,6 +9,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <lal/ComputeFstat.h> header file. */
+#undef HAVE_LAL_COMPUTEFSTAT_H
+
 /* Define to 1 if you have the <lal/FileIO.h> header file. */
 #undef HAVE_LAL_FILEIO_H
 
@@ -41,6 +44,9 @@
 
 /* Define to 1 if you have the LALMetaIO library */
 #undef HAVE_LIBLALMETAIO
+
+/* Define to 1 if you have the LALPulsar library */
+#undef HAVE_LIBLALPULSAR
 
 /* Define to 1 if you have the LALSupport library */
 #undef HAVE_LIBLALSUPPORT
