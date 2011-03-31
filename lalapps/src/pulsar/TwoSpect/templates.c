@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -809,8 +809,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(N * input.period * LAL_TWOPI * fpr->data[jj]) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) / (cos(input.period * LAL_TWOPI * fpr->data[jj]) - 1.0);
          }
          
-         //Set any bin below 1e-7 to 0.0
-         if (dataval <= 1.0e-7) dataval = 0.0;
+         //Set any bin below 1e-8 to 0.0
+         if (dataval <= 1.0e-8) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
@@ -934,7 +934,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       if (doSecondFFT==1) {
          for (jj=0; jj<(INT4)psd->length; jj++) {
             REAL4 correctedValue = (REAL4)(psd->data[jj]*winFactor/x->length*0.5*params->Tcoh);
-            if (correctedValue<=1.0e-7) correctedValue = 0.0;
+            if (correctedValue<=1.0e-8) correctedValue = 0.0;
             
             //Sum the total weights
             sum += correctedValue;

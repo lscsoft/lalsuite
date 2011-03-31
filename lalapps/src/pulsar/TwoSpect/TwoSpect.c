@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
                   fprintf(stderr,"%s: probR() failed.\n", fn);
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
-               REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+               REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                
                /* if (prob!=0.0) {
                   FILE *TEMPLATEOUT = fopen("./templatevalues.dat","w");
@@ -653,7 +653,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
@@ -728,7 +728,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         //TODO: Remove this?
                         //Calculate FAR if bestProb=0
                         if (bestProb==0.0) {
@@ -765,7 +765,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
@@ -805,7 +805,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
@@ -831,7 +831,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
@@ -862,7 +862,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
@@ -889,7 +889,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: probR() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         if (prob < bestProb) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
@@ -1082,7 +1082,7 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         
-                        REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         //fprintf(Rtemplatevals,"%.9g %.9g %.9g %.9g %.9g %.9g\n",trialf->data[jj], trialp->data[ll], trialb->data[kk], R, h0, prob);
                         //if (ll==1) fprintf(stderr,"%f %g %g\n",trialf->data[jj],R,snr);
                         
@@ -1188,7 +1188,7 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", fn);
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
-            REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
             if (R > farval->far) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
@@ -1314,7 +1314,7 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         
-                        REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         
                         if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && R > farval->far) ) {
                            bestf = trialf->data[jj];
@@ -1351,7 +1351,7 @@ int main(int argc, char *argv[])
                }
                loadCandidateData(&exactCandidates2->data[exactCandidates2->numofcandidates], bestf, bestp, bestdf, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, bestR, besth0, bestProb, bestproberrcode, exactCandidates1->data[0].normalization);
                (exactCandidates2->numofcandidates)++;
-            }
+            } /* if bestProb != 0 */
             
             //Destroy parameter space values
             XLALDestroyREAL8Vector(trialf);
@@ -1397,7 +1397,7 @@ int main(int argc, char *argv[])
                XLAL_ERROR(fn, XLAL_EFUNC);
             }
             
-            REAL8 h0 = 2.9569*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
             
             if (exactCandidates2->numofcandidates == exactCandidates2->length-1) {
                exactCandidates2 = resize_candidateVector(exactCandidates2, 2*exactCandidates2->length);
@@ -1414,12 +1414,12 @@ int main(int argc, char *argv[])
             
             //Now reset the IHS candidate vector for next sky position
             ihsCandidates->numofcandidates = 0;
-         }
+         } /* if keepOneIHS is true, number of IHS candidates == 1, and number of exact candidates (1) == 0 */
          
          //Reset first round of exact template candidates, but keep length the same (doesn't reset actual values in the vector)
          exactCandidates1->numofcandidates = 0;
          
-      }
+      } /* if IHSonly is not given */
       
       //Destroy stuff
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);

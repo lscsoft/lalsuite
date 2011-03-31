@@ -656,12 +656,17 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             fprintf(stderr,"%s: calcMean() failed.\n", fn);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
+         REAL4 rmsNoise = calcRms(avgsinrange);
+         if (XLAL_IS_REAL4_FAIL_NAN(rmsNoise)) {
+            fprintf(stderr,"%s: calcRms() failed.\n", fn);
+            XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+         }
          
          //numberofIHSvalsChecked++;
          
          //Save one IHS value
          if (params->keepOneIHS) {
-            REAL8 abovethreshbysigma = ihsmaxima->maxima->data[checkbin]/(ihsfarstruct->ihsfar->data[ii-2]*ihsfarstruct->ihsdistSigma->data[ii-2]);
+            REAL8 abovethreshbysigma = (ihsmaxima->maxima->data[checkbin]-ihsfarstruct->ihsfar->data[ii-2]*meanNoise)/(ihsfarstruct->ihsdistSigma->data[ii-2]*rmsNoise);
             if (abovethreshbysigma>highestabovethresh) {
                highestabovethresh = abovethreshbysigma;
                iiloc = ii;
