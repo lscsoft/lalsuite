@@ -1503,7 +1503,7 @@ REAL8 ComputeFrequencyDomainOverlap(LALIFOData * dataPtr,
   lower = ceil(dataPtr->fLow / deltaF);
   upper = floor(dataPtr->fHigh / deltaF);
 	
-  for (i=lower; i<=upper; ++i){  	  	  
+  for (i=lower; i<=upper; ++i){
     overlap  += ((4.0*deltaF*(freqData1->data[i].re*freqData2->data[i].re+freqData1->data[i].im*freqData2->data[i].im)) 
                  / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
   }

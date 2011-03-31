@@ -86,12 +86,14 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 --seglen segment_length \n\
 --trigtime GPSsecs.GPSnanosecs \n\
 [--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
-[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n"
+[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n\
+[--dataseed number]\n"
 
 LALIFOData *readData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */
 {
 	LALStatus status;
+	INT4 seed=0;
 	memset(&status,0,sizeof(status));
 	ProcessParamsTable *procparam=NULL;
 	LALIFOData *headIFO=NULL,*IFOdata=NULL;
@@ -145,6 +147,11 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 	if(getProcParamVal(commandLine,"--fHigh")){
 		parseCharacterOptionString(getProcParamVal(commandLine,"--fHigh")->value,&fHighs,&NfHigh);
 	}
+	if(getProcParamVal(commandLine,"--dataseed")){
+		procparam=getProcParamVal(commandLine,"--dataseed");
+		dataseed=atoi(procparam->value);
+	}
+								   
 	if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
 	if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
 	
@@ -214,7 +221,7 @@ LALIFOData *readData(ProcessParamsTable *commandLine)
 			 && strcmp(caches[i],"LALAdLIGO")))
 		{
 			FakeFlag=1;
-			datarandparam=XLALCreateRandomParams(0);
+			datarandparam=XLALCreateRandomParams(dataseed?dataseed+i:dataseed);
 			/* Selection of the noise curve */
 			if(!strcmp(caches[i],"LALLIGO")) {PSD = &LALLIGOIPsd; scalefactor=9E-46;}
 			if(!strcmp(caches[i],"LALVirgo")) {PSD = &LALVIRGOPsd; scalefactor=1.0;}
