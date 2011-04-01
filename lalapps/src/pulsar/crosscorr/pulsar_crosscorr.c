@@ -1503,7 +1503,7 @@ void AddSFTtoList(LALStatus *status,
     *sftHead = sftList; 
   }
   else {
-    (*sftTail)->nextSFT = (struct SFTListElement *)sftList;
+    (*sftTail)->nextSFT = (SFTListElement *)sftList;
   }
 	
   *sftTail = sftList;
@@ -1531,7 +1531,7 @@ void AddPSDtoList(LALStatus *status,
   if (!(*psdHead)) {
     *psdHead = psdList;
   } else {
-    (*psdTail)->nextPSD = (struct PSDListElement *)psdList;
+    (*psdTail)->nextPSD = (PSDListElement *)psdList;
   }
   *psdTail = psdList;
 
@@ -1558,7 +1558,7 @@ void AddREAL8toList(LALStatus *status,
   if (!(*head)) {
     *head = List;
   } else {
-    (*tail)->nextVal = (struct REAL8ListElement *)List;
+    (*tail)->nextVal = (REAL8ListElement *)List;
   }
   *tail = List;
 
@@ -1587,7 +1587,7 @@ void AddBeamFntoList(LALStatus *status,
   if (!(*beamHead)) {
     *beamHead = beamList;	
   } else {
-    (*beamTail)->nextBeamfn = (struct CrossCorrBeamFnListElement *)beamList;
+    (*beamTail)->nextBeamfn = (CrossCorrBeamFnListElement *)beamList;
   }
   *beamTail = beamList;
 
