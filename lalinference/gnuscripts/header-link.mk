@@ -8,7 +8,7 @@ header-links:
 			$(LN_S) $$sourcedir/$$file $$targetdir; \
 		fi; \
 	done
-	@for file in LALInspiralConfig.h LALInspiralVCSInfo.h ; do \
+	@for file in LALInferenceConfig.h LALInferenceVCSInfo.h ; do \
 		d=`pwd`; \
 			targetdir=`cd $(top_builddir)/include/lal && pwd`; \
 			if test ! -r $$targetdir/$$file ; then \
