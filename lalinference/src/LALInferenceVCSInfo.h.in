@@ -1,5 +1,5 @@
 /*
- * LALInspiralVCSInfo.h.in - LALInspiral VCS Information Header
+ * LALInferenceVCSInfo.h.in - LALInference VCS Information Header
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,13 +40,13 @@ extern "C" {
 #define LALINFERENCE_VCS_STATUS "@STATUS@"
 
 /* vcs information defines - identable*/
-#define LALINFERENCE_VCS_IDENT_ID "$" "LALInspiralId: @ID@ " "$"
-#define LALINFERENCE_VCS_IDENT_DATE "$" "LALInspiralDate: @DATE@ " "$"
-#define LALINFERENCE_VCS_IDENT_BRANCH "$" "LALInspralBranch: @BRANCH@ " "$"
-#define LALINFERENCE_VCS_IDENT_TAG "$" "LALInspiralTag: @TAG@ " "$"
-#define LALINFERENCE_VCS_IDENT_AUTHOR "$" "LALInspiralAuthor: @AUTHOR@ " "$"
-#define LALINFERENCE_VCS_IDENT_COMMITTER "$" "LALInspiralCommitter: @COMMITTER@ " "$"
-#define LALINFERENCE_VCS_IDENT_STATUS "$" "LALInspiralStatus: @STATUS@ " "$"
+#define LALINFERENCE_VCS_IDENT_ID "$" "LALInferenceId: @ID@ " "$"
+#define LALINFERENCE_VCS_IDENT_DATE "$" "LALInferenceDate: @DATE@ " "$"
+#define LALINFERENCE_VCS_IDENT_BRANCH "$" "LALInferenceBranch: @BRANCH@ " "$"
+#define LALINFERENCE_VCS_IDENT_TAG "$" "LALInferenceTag: @TAG@ " "$"
+#define LALINFERENCE_VCS_IDENT_AUTHOR "$" "LALInferenceAuthor: @AUTHOR@ " "$"
+#define LALINFERENCE_VCS_IDENT_COMMITTER "$" "LALInferenceCommitter: @COMMITTER@ " "$"
+#define LALINFERENCE_VCS_IDENT_STATUS "$" "LALInferenceStatus: @STATUS@ " "$"
 
 /* vcs information structures */
 extern struct tagLALVCSInfo lalInferenceVCSInfo;
