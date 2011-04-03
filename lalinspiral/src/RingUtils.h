@@ -110,9 +110,10 @@
 
 NRCSID( RINGH, "$Id$" );
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma } /** to match the previous brace **/
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /**** <lalLaTeX>
@@ -213,8 +214,9 @@ void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
  *
  **** </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma { /** to match the next brace **/
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

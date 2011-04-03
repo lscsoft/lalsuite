@@ -27,9 +27,10 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(SEQUENCEH, "$Id:");
@@ -74,8 +75,9 @@ define(`DATATYPE',UINT8)
 define(`SQUAREDATATYPE',UINT8)
 include(SequenceH.m4)
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

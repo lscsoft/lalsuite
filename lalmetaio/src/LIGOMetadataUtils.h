@@ -62,9 +62,10 @@ this header.
 #ifndef _LIGOMETADATAUTILS_H
 #define _LIGOMETADATAUTILS_H
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #include <lal/LIGOMetadataTables.h>
@@ -311,8 +312,9 @@ LALTimeSortSummValue (
 </lalLaTeX>
 #endif
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
