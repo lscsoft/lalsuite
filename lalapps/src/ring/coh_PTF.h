@@ -44,6 +44,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -131,6 +132,8 @@ struct coh_PTF_params {
   REAL4        lowFilterFrequency;
   REAL4        highFilterFrequency;
   REAL4        highpassFrequency;
+  Approximant  approximant;
+  LALPNOrder   order;
   REAL4        invSpecLen;
   REAL4        threshold;
   REAL4        timeWindow;
@@ -417,6 +420,12 @@ void coh_PTF_template (
 );
 
 void coh_PTF_template_PTF (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+);
+
+void coh_PTF_template_TaylorF2 (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
