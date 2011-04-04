@@ -360,6 +360,15 @@ int main( int argc, char **argv )
   fcTmpltParams->PTFe2        = XLALCreateVectorSequence( 3, numPoints );
   fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
+  fcTmpltParams->xfacVec      = XLALCreateVector(numPoints / 2 + 1 );
+  /* Set the values of xfacVec  This is k^(-1/3) */
+  const REAL4                   xfacExponent = -1.0/3.0;
+  REAL4                        *xfac = NULL;
+  xfac = fcTmpltParams->xfacVec->data;
+  xfac[0] = 0;
+  for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
+    xfac[ui] = pow( (REAL4) ui, xfacExponent );
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( params->haveTrig[ifoNumber] )

@@ -416,6 +416,12 @@ void coh_PTF_template (
     FindChirpTmpltParams       *params
 );
 
+void coh_PTF_template_PTF (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+);
+
 void coh_PTF_normalize(
     struct coh_PTF_params      *params,
     FindChirpTemplate          *fcTmplt,
