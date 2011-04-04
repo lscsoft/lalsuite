@@ -11,14 +11,15 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL lalapps_compareFstats\
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_zellepolka		\
-	lalapps_PredictFStat \
+	lalapps_PredictFStat  lalapps_ComputeFStatistic_v2 \
 	lalapps_ComputeFStatAnalyticMonteCarloUpperLimit	\
-	lalapps_synthesizeBstatMC lalapps_ComputeFStatistic_v2
+	lalapps_synthesizeBstatMC lalapps_synthesizeTransientStats
 
 check_PROGRAMS = testFstat_v3
 
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat \
 		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
+
 
 # CFSv2 doesn't compile with Condor
 #if CONDOR_ENABLED
@@ -57,7 +58,8 @@ lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h
+ComputeFStatisticV2Sources = ComputeFStatistic_v2.c  HeapToplist.c HeapToplist.h OptimizedCFS/ComputeFstatREAL4.c OptimizedCFS/ComputeFstatREAL4.h \
+				../transientCW_utils.c ../transientCW_utils.h ../ProbabilityDensity.c ../ProbabilityDensity.h
 lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
 ## optimized ComputeFStatistic_v2 targets
@@ -75,13 +77,14 @@ lalapps_ComputeFStatistic_v2_cuda_SOURCES = $(ComputeFStatisticV2Sources) Optimi
 lalapps_ComputeFStatistic_v2_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
-lalapps_PredictFStat_SOURCES = PredictFStat.c
+lalapps_PredictFStat_SOURCES = PredictFStat.c ../transientCW_utils.c ../transientCW_utils.h ../ProbabilityDensity.c ../ProbabilityDensity.h
 # force linking in C++ mode for E@H
 eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
+lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c ../transientCW_utils.c ../transientCW_utils.h ../ProbabilityDensity.c ../ProbabilityDensity.h
 
 lalapps_CFSv3_SOURCES = CFSv3.c Fstat_v3.c Fstat_v3.h
 

@@ -462,7 +462,6 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   /* Check that filter frequencies have been given */
   sanity_check( params->highpassFrequency > 0);
   sanity_check( params->lowTemplateFrequency > 0);
-  fprintf(stderr, "%e %e %e \n", params->lowTemplateFrequency, params->lowFilterFrequency, params->highFilterFrequency);
   sanity_check( params->lowFilterFrequency > 0 && params->lowFilterFrequency >= params->lowTemplateFrequency);
   sanity_check( params->highFilterFrequency > params->lowFilterFrequency);
 

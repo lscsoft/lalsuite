@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -304,11 +304,11 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         }
                      }
                      
-                     numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
+                     /* numericFAR(farval, template, 0.01, ffplanenoise, fbinaveratios, params->rootFindingMethod);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
-                     }
+                     } */
                      
                      REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
                      REAL8 prob = probR(template, ffplanenoise, fbinaveratios, R, &proberrcode);
@@ -319,9 +319,10 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         fprintf(stderr,"%s: probR() failed.\n", fn);
                         XLAL_ERROR_VOID(fn, XLAL_EFUNC);
                      }
-                     REAL8 h0 = 2.9569*pow(R/(params->Tcoh*params->Tobs),0.25);
+                     REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                      
-                     if (R > farval->far && prob < bestProb) {
+                     //if (R > farval->far && prob < bestProb) {
+                     if (prob < bestProb) {
                         besth0 = h0;
                         bestmoddepth = mindf + kk*0.5/params->Tcoh;
                         bestR = R;

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2006 John T. Whelan, Badri Krishnan
- * Copyright (C) 2005, 2006, 2007 Reinhard Prix
+ * Copyright (C) 2005, 2006, 2007, 2010 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -90,17 +90,12 @@ static const REAL8 inv_fact[NUM_FACT] = { 1.0, 1.0, (1.0/2.0), (1.0/6.0), (1.0/2
 static void EccentricAnomoly(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0);
 
 /* empty initializers  */
-static const LALStatus empty_status;
-static const AMCoeffs empty_AMCoeffs;
-
 const SSBtimes empty_SSBtimes;
 const MultiSSBtimes empty_MultiSSBtimes;
-const AntennaPatternMatrix empty_AntennaPatternMatrix;
-const MultiAMCoeffs empty_MultiAMCoeffs;
+
 const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
-const EarthState empty_EarthState;
 
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
@@ -223,6 +218,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiSSBtimes *multiBinary = NULL;
+  MultiSSBtimes *multiSSBTotal = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   MultiCmplxAMCoeffs *multiCmplxAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv, Ed;
@@ -297,25 +293,12 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
     /* new orbital parameter corrections if not already buffered */
   if ( doppler->orbit )
     {
-      /* if already buffered */
-      if ( cfBuffer && cfBuffer->multiBinary )
-	{ /* yes ==> reuse */
-	  multiBinary = cfBuffer->multiBinary;
-	}
-      else
-	{
-	  /* compute binary time corrections to the SSB time delays and SSB time derivitive */
-	  TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
-
-	  /* store these in buffer if available */
-	  if ( cfBuffer )
-	    {
-	      XLALDestroyMultiSSBtimes ( cfBuffer->multiBinary );
-	      cfBuffer->multiBinary = multiBinary;
-	    } /* if cfBuffer */
- 	}
+      /* compute binary time corrections to the SSB time delays and SSB time derivitive */
+      TRY ( LALGetMultiBinarytimes ( status->statusPtr, &multiBinary, multiSSB, multiDetStates, doppler->orbit, doppler->refTime ), status );
+      multiSSBTotal = multiBinary;
     }
-  else multiBinary = multiSSB;
+  else
+    multiSSBTotal = multiSSB;
 
   /* special treatment of AM coefficients */
   if ( params->useRAA && !multiCmplxAMcoef )
@@ -393,7 +376,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 
       if ( params->useRAA )
 	{
-	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSB->data[X], multiCmplxAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFbCmplx (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiCmplxAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFbCmplx() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -401,7 +384,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
       else if ( params->upsampling > 1)
 	{
-	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFbXavie (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFbXavie() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -409,7 +392,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 	}
       else
 	{
-	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiBinary->data[X], multiAMcoef->data[X], params) != 0)
+	  if ( XLALComputeFaFb (&FcX, multiSFTs->data[X], doppler->fkdot, multiSSBTotal->data[X], multiAMcoef->data[X], params) != 0)
 	    {
 	      XLALPrintError ("\nXALComputeFaFb() failed\n");
 	      ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
@@ -451,6 +434,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 		       + Ad * ( SQ(retF.Fb.re) + SQ(retF.Fb.im) )
 		       - 2.0 * Cd *( retF.Fa.re * retF.Fb.re + retF.Fa.im * retF.Fb.im )
 		       );
+
   if ( Ed != 0 ) /* extra term in RAA case */
     retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
 
@@ -460,10 +444,12 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   if ( !cfBuffer )
     {
       XLALDestroyMultiSSBtimes ( multiSSB );
-      XLALDestroyMultiSSBtimes ( multiBinary );
       XLALDestroyMultiAMCoeffs ( multiAMcoef );
       XLALDestroyMultiCmplxAMCoeffs ( multiCmplxAMcoef );
     } /* if !cfBuffer */
+
+  /* this always needs to be free'ed, as it's no longer buffered */
+  XLALDestroyMultiSSBtimes ( multiBinary );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -544,17 +530,19 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
 	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
       }
       FaFb->multiFstatAtoms->length = 1;	/* in this function: single-detector only */
-      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms) )) == NULL ){
+      if ( (FaFb->multiFstatAtoms->data = LALMalloc ( 1 * sizeof( *FaFb->multiFstatAtoms->data) )) == NULL ){
 	LALFree (FaFb->multiFstatAtoms);
 	XLAL_ERROR ( "XLALComputeFaFb", XLAL_ENOMEM );
       }
-      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtoms ( numSFTs )) == NULL ) {
+      if ( (FaFb->multiFstatAtoms->data[0] = XLALCreateFstatAtomVector ( numSFTs )) == NULL ) {
 	LALFree ( FaFb->multiFstatAtoms->data );
 	LALFree ( FaFb->multiFstatAtoms );
 	XLAL_ERROR( "XLALComputeFaFb", XLAL_ENOMEM );
       }
-    } /* if returnAtoms */
 
+      FaFb->multiFstatAtoms->data[0]->TAtom = Tsft;	/* time-baseline of returned atoms is Tsft */
+
+    } /* if returnAtoms */
 
   /* ----- find highest non-zero spindown-entry */
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
@@ -727,18 +715,14 @@ XLALComputeFaFb ( Fcomponents *FaFb,		      	/**< [out] Fa,Fb (and possibly atom
       /* store per-SFT F-stat 'atoms' for transient-CW search */
       if ( params->returnAtoms )
 	{
-	  COMPLEX8 tmp;
-	  FaFb->multiFstatAtoms->data[0]->timestamps[alpha] = SFT_al->epoch;
-	  FaFb->multiFstatAtoms->data[0]->a_alpha[alpha]    = a_alpha;
-	  FaFb->multiFstatAtoms->data[0]->b_alpha[alpha]    = b_alpha;
-	  tmp = Fa_alpha;
-	  tmp.re *= norm;
-	  tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->Fa_alpha[alpha]   = tmp;
-	  tmp = Fb_alpha;
-	  tmp.re *= norm;
-	  tmp.im *= norm;
-	  FaFb->multiFstatAtoms->data[0]->Fb_alpha[alpha]   = tmp;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].timestamp = (UINT4)XLALGPSGetREAL8( &SFT_al->epoch );
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].a2_alpha   = a_alpha * a_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].b2_alpha   = b_alpha * b_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].ab_alpha   = a_alpha * b_alpha;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.re   = norm * Fa_alpha.re;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fa_alpha.im   = norm * Fa_alpha.im;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.re   = norm * Fb_alpha.re;
+	  FaFb->multiFstatAtoms->data[0]->data[alpha].Fb_alpha.im   = norm * Fb_alpha.im;
 	}
 
       /* advance pointers over alpha */
@@ -1209,389 +1193,6 @@ XLALComputeFaFbXavie ( Fcomponents *FaFb,		/**< [out] Fa,Fb (and possibly atoms)
 
 } /* XLALComputeFaFbXavie() */
 
-
-
-/** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in
- * \ref JKS98 for a series of timestamps.
- *
- * The input consists of the DetectorState-timeseries, which contains
- * the detector-info and the LMST's corresponding to the different times.
- *
- * In order to allow re-using the output-structure AMCoeffs for subsequent
- * calls, we require the REAL4Vectors a and b to be allocated already and
- * to have the same length as the DetectoStates-timeseries.
- *
- * \note This is an alternative implementation to LALComputeAM() with
- * the aim to be both simpler and faster.
- * The difference being that we don't implicitly re-derive the final expression
- * here but simply try to implement the final expressions (12), (13) in \ref JKS98
- * in the most economical way possible.
- */
-void
-LALGetAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
-	       AMCoeffs *coeffs,				/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
-	       const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
-	       SkyPosition skypos				/**< {alpha,delta} of the source */
-	       )
-{
-  REAL4 ah1, ah2, ah3, ah4, ah5;
-  REAL4 a1, a2, a3, a4, a5;
-
-  REAL4 bh1, bh2, bh3, bh4;
-  REAL4 b1, b2, b3, b4;
-
-  REAL4 delta, alpha;
-  REAL4 sin1delta, cos1delta, sin2delta, cos2delta;
-
-  REAL4 gam, lambda;
-  REAL4 norm;
-  UINT4 i, numSteps;
-
-  INITSTATUS (status, "LALGetAMCoeffs", COMPUTEFSTATC);
-
-  /*---------- check input ---------- */
-  ASSERT ( DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
-  numSteps = DetectorStates->length;
-
-  /* require the coeffients-vectors to be allocated and consistent with timestamps */
-  ASSERT ( coeffs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( coeffs->a && coeffs->b, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
-	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
-
-  /* require sky-pos to be in equatorial coordinates */
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status,
-	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
-
-  /*---------- detector paramters: lambda, L, gamma */
-  {
-    /* FIXME: put into DetectorStateSeries */
-    /* orientation of detector arms */
-    REAL8 xAzi = DetectorStates->detector.frDetector.xArmAzimuthRadians;
-    REAL8 yAzi = DetectorStates->detector.frDetector.yArmAzimuthRadians;
-
-    /* get detector orientation gamma */
-    gam = LAL_PI_2 - 0.5 * (xAzi + yAzi);
-    /* get detector position latitude (lambda) */
-    lambda = DetectorStates->detector.frDetector.vertexLatitudeRadians;
-    /*
-    printf ("IFO = %s: sin(zeta) = %f\n", DetectorStates->detector.frDetector.name, sin( xAzi - yAzi ) );
-    */
-  }
-
-  /*---------- coefficient ahN, bhN dependent ONLY on detector-position  ---------- */
-  /* FIXME: put these coefficients into DetectorStateSeries */
-  {
-    REAL4 sin2gamma, cos2gamma;
-    REAL4 sin1lambda, cos1lambda;
-    REAL4 sin2lambda, cos2lambda;
-
-    sin_cos_LUT (&sin2gamma, &cos2gamma, 2.0f * gam );
-    sin_cos_LUT (&sin1lambda, &cos1lambda, lambda );
-
-    sin2lambda = 2.0f * sin1lambda * cos1lambda;
-    cos2lambda = cos1lambda * cos1lambda - sin1lambda * sin1lambda;
-
-    /* coefficients for a(t) */
-    ah1 = 0.0625f * sin2gamma * (3.0f - cos2lambda);	/* 1/16 = 0.0625 */
-    ah2 = - 0.25f * cos2gamma * sin1lambda;
-    ah3 =   0.25f * sin2gamma * sin2lambda;
-    ah4 =  -0.5f  * cos2gamma * cos1lambda;
-    ah5 =  0.75f  * sin2gamma * cos1lambda * cos1lambda;
-
-    /* coefficients for b(t) */
-    bh1 =           cos2gamma * sin1lambda;
-    bh2 =   0.25f * sin2gamma * (3.0f - cos2lambda);
-    bh3 =           cos2gamma * cos1lambda;
-    bh4 =   0.5f  * sin2gamma * sin2lambda;
-  }
-
-  /*---------- coefficients aN, bN dependent ONLY on {ahN, bhN} and source-latitude delta */
-  alpha = skypos.longitude;
-  delta = skypos.latitude;
-
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  sin2delta = 2.0f * sin1delta * cos1delta;
-  cos2delta = cos1delta * cos1delta - sin1delta * sin1delta;
-
-  /* coefficients for a(t) */
-  a1 = ah1 * ( 3.0f - cos2delta );
-  a2 = ah2 * ( 3.0f - cos2delta );
-  a3 = ah3 * sin2delta;
-  a4 = ah4 * sin2delta;
-  a5 = ah5 * cos1delta * cos1delta;
-
-  /* coefficients for b(t) */
-  b1 = bh1 * sin1delta;
-  b2 = bh2 * sin1delta;
-  b3 = bh3 * cos1delta;
-  b4 = bh4 * cos1delta;
-
-
-  /*---------- Compute the a(t_i) and b(t_i) ---------- */
-  coeffs->A = 0;
-  coeffs->B = 0;
-  coeffs->C = 0;
-  coeffs->D = 0;
-  for ( i=0; i < numSteps; i++ )
-    {
-      REAL4 ah;
-      REAL4 cos1ah, sin1ah, cos2ah, sin2ah;
-      REAL4 ai, bi;
-
-      ah = alpha - DetectorStates->data[i].LMST;
-
-      sin_cos_LUT ( &sin1ah, &cos1ah, ah );
-      sin2ah = 2.0f * sin1ah * cos1ah;
-      cos2ah = cos1ah * cos1ah - sin1ah * sin1ah;
-
-      ai = a1 * cos2ah + a2 * sin2ah + a3 * cos1ah + a4 * sin1ah + a5;
-      bi = b1 * cos2ah + b2 * sin2ah + b3 * cos1ah + b4 * sin1ah;
-      coeffs->a->data[i] = ai;
-      coeffs->b->data[i] = bi;
-
-      /* sum A, B, C on the fly */
-      coeffs->A += ai * ai;
-      coeffs->B += bi * bi;
-      coeffs->C += ai * bi;
-
-    } /* for i < numSteps */
-
-  /* finish calculation of A,B,C, D */
-  norm = 2.0f / numSteps;
-  coeffs->A *= norm;
-  coeffs->B *= norm;
-  coeffs->C *= norm;
-
-  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
-
-  RETURN(status);
-
-} /* LALGetAMCoeffs() */
-
-/** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \ref JKS98 for a series of
- * timestamps.
- *
- * The input consists of the DetectorState-timeseries, which contains
- * the detector-info and the LMST's corresponding to the different times.
- *
- * In order to allow re-using the output-structure AMCoeffs for subsequent
- * calls, we require the REAL4Vectors a and b to be allocated already and
- * to have the same length as the DetectoStates-timeseries.
- *
- * \note This is an alternative implementation to both LALComputeAM()
- * and LALGetAMCoeffs(), which uses the geometrical definition of
- * \f$a\sin\zeta\f$ and \f$b\sin\zeta\f$ as detector response
- * coefficients in a preferred polarization basis.  (It is thereby
- * more general than the JKS expressions and could be used e.g., with
- * the response tensor of a bar detector with no further modification
- * needed.)
- */
-void
-LALNewGetAMCoeffs(LALStatus *status,			/**< pointer to LALStatus structure */
-	       AMCoeffs *coeffs,			/**< [out] amplitude-coeffs {a(t_i), b(t_i)} */
-	       const DetectorStateSeries *DetectorStates,/**< timeseries of detector states */
-	       SkyPosition skypos			/**< {alpha,delta} of the source */
-	       )
-{
-  REAL4 delta, alpha;
-  REAL4 sin1delta, cos1delta;
-  REAL4 sin1alpha, cos1alpha;
-
-  REAL4 xi1, xi2;
-  REAL4 eta1, eta2, eta3;
-  REAL4 norm;
-  UINT4 i, numSteps;
-
-  INITSTATUS (status, "LALNewGetAMCoeffs", COMPUTEFSTATC);
-
-  /*---------- check input ---------- */
-  ASSERT ( DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
-  numSteps = DetectorStates->length;
-
-  /* require the coeffients-vectors to be allocated and consistent with timestamps */
-  ASSERT ( coeffs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( coeffs->a && coeffs->b, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
-	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
-
-  /* require sky-pos to be in equatorial coordinates */
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status,
-	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
-
-  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
-  alpha = skypos.longitude;
-  delta = skypos.latitude;
-
-  sin_cos_LUT (&sin1delta, &cos1delta, delta );
-  sin_cos_LUT (&sin1alpha, &cos1alpha, alpha );
-  xi1 = - sin1alpha;
-  xi2 =  cos1alpha;
-  eta1 = sin1delta * cos1alpha;
-  eta2 = sin1delta * sin1alpha;
-  eta3 = - cos1delta;
-
-  /*---------- Compute the a(t_i) and b(t_i) ---------- */
-  coeffs->A = 0;
-  coeffs->B = 0;
-  coeffs->C = 0;
-  coeffs->D = 0;
-  for ( i=0; i < numSteps; i++ )
-    {
-      REAL4 ai, bi;
-
-      SymmTensor3 *d = &(DetectorStates->data[i].detT);
-
-      ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d->d13 *             eta1 * eta3
-	+     d->d22 * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d->d23 *             eta2 * eta3
-	-     d->d33 *             eta3*eta3;
-
-      bi =    d->d11 * 2 * xi1 * eta1
-	+ 2 * d->d12 *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d->d13 *     xi1 * eta3
-	+     d->d22 * 2 * xi2 * eta2
-	+ 2 * d->d23 *     xi2 * eta3;
-
-      /*
-      printf("xi = (%f,%f)\n",xi1,xi2);
-      printf("eta = (%f,%f,%f)\n",eta1,eta2,eta3);
-      printf("d = (%f %f %f\n",d->d11,d->d12,d->d13);
-      printf("     %f %f %f\n",d->d12,d->d22,d->d23);
-      printf("     %f %f %f)\n",d->d13,d->d23,d->d33);
-      */
-
-      coeffs->a->data[i] = ai;
-      coeffs->b->data[i] = bi;
-
-      /* sum A, B, C on the fly */
-      coeffs->A += ai * ai;
-      coeffs->B += bi * bi;
-      coeffs->C += ai * bi;
-
-    } /* for i < numSteps */
-
-  /* finish calculation of A,B,C, D */
-  norm = 2.0f / numSteps;
-  coeffs->A *= norm;
-  coeffs->B *= norm;
-  coeffs->C *= norm;
-
-  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
-
-  RETURN(status);
-
-} /* LALNewGetAMCoeffs() */
-
-
-
-/** Compute single time-stamp antenna-pattern coefficients a(t), b(t)
- * Note: this function uses REAL8 precision, so this can be used in
- * high-precision integration of the F-metric
- *
- */
-int
-XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern function a(t) */
-				  REAL8 *bi,			/**< [out] antenna-pattern function b(t) */
-				  const SkyPosition *skypos,	/**< [in] skyposition {alpha, delta} */
-				  const LIGOTimeGPS *tGPS,	/**< [in] GPS time t */
-				  const LALDetector *site,	/**< [in] detector */
-				  const EphemerisData *edat	/**< [in] ephemeris-data */
-				  )
-{
-  const CHAR *fn = __func__;
-
-  LALStatus status = empty_status;
-  EarthState earth = empty_EarthState;
-
-  if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
-    XLAL_ERROR( fn, XLAL_EINVAL );
-  }
-
-  LALBarycenterEarth (&status, &earth, tGPS, edat );
-  if ( status.statusCode ) {
-    XLALPrintError ("%s: Call to LALBarycenterEarth() failed. statusCode=%d\n", fn, status.statusCode );
-    XLAL_ERROR( fn, XLAL_EFUNC );
-  }
-
-  /* ---------- compute the detector tensor ---------- */
-  REAL8 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
-  SymmTensor3d detT;
-
-  sinG = sin ( earth.gmstRad );
-  cosG = cos ( earth.gmstRad );
-
-  sinGsinG = sinG * sinG;
-  sinGcosG = sinG * cosG;
-  cosGcosG = cosG * cosG;
-
-  detT.d11 = site->response[0][0] * cosGcosG
-        - 2 * site->response[0][1] * sinGcosG
-            + site->response[1][1] * sinGsinG;
-  detT.d22 = site->response[0][0] * sinGsinG
-        + 2 * site->response[0][1] * sinGcosG
-            + site->response[1][1] * cosGcosG;
-  detT.d12 = (site->response[0][0] - site->response[1][1]) * sinGcosG
-        + site->response[0][1] * (cosGcosG - sinGsinG);
-  detT.d13 = site->response[0][2] * cosG
-            - site->response[1][2] * sinG;
-  detT.d23 = site->response[0][2] * sinG
-            + site->response[1][2] * cosG;
-  detT.d33 = site->response[2][2];
-
-
-  /*---------- We write components of xi and eta vectors in SSB-fixed coords */
-  REAL8 delta, alpha;
-  REAL8 sin1delta, cos1delta;
-  REAL8 sin1alpha, cos1alpha;
-
-  REAL8 xi1, xi2;
-  REAL8 eta1, eta2, eta3;
-
-
-  alpha = skypos->longitude;
-  delta = skypos->latitude;
-
-  sin1delta = sin(delta);
-  cos1delta = cos(delta);
-
-  sin1alpha = sin(alpha);
-  cos1alpha = cos(alpha);
-
-  xi1 = - sin1alpha;
-  xi2 =  cos1alpha;
-  eta1 = sin1delta * cos1alpha;
-  eta2 = sin1delta * sin1alpha;
-  eta3 = - cos1delta;
-
-  /*---------- Compute the a(t_i) and b(t_i) ---------- */
-  (*ai) = detT.d11 * ( xi1 * xi1 - eta1 * eta1 )
-    + 2 * detT.d12 * ( xi1*xi2 - eta1*eta2 )
-    - 2 * detT.d13 *             eta1 * eta3
-    +     detT.d22 * ( xi2*xi2 - eta2*eta2 )
-    - 2 * detT.d23 *             eta2 * eta3
-    -     detT.d33 *             eta3*eta3;
-
-  (*bi) = detT.d11 * 2 * xi1 * eta1
-    + 2 * detT.d12 *   ( xi1 * eta2 + xi2 * eta1 )
-    + 2 * detT.d13 *     xi1 * eta3
-    +     detT.d22 * 2 * xi2 * eta2
-    + 2 * detT.d23 *     xi2 * eta3;
-
-
-  return XLAL_SUCCESS;
-
-} /* XLALComputeAntennaPatternCoeffs() */
-
-
-
-
-
 /** For a given OrbitalParams, calculate the time-differences
  *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
  *  derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
@@ -1975,83 +1576,6 @@ LALGetMultiSSBtimes (LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* LALGetMultiSSBtimes() */
 
-/** Multi-IFO version of LALGetAMCoeffs().
- * Get all antenna-pattern coefficients for all input detector-series.
- *
- * NOTE: contrary to LALGetAMCoeffs(), this functions *allocates* the output-vector,
- * use XLALDestroyMultiAMCoeffs() to free this.
- */
-void
-LALGetMultiAMCoeffs (LALStatus *status,			/**< pointer to LALStatus structure */
-		     MultiAMCoeffs **multiAMcoef,	/**< [out] AM-coefficients for all input detector-state series */
-		     const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-		     SkyPosition skypos			/**< source sky-position [in equatorial coords!] */
-		     )
-{
-  UINT4 X, numDetectors;
-  MultiAMCoeffs *ret = NULL;
-
-  INITSTATUS( status, "LALGetMultiAMCoeffs", COMPUTEFSTATC);
-  ATTATCHSTATUSPTR (status);
-
-  /* check input */
-  ASSERT (multiDetStates, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (multiDetStates->length, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (multiAMcoef, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *multiAMcoef == NULL, status,COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
-  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
-
-  numDetectors = multiDetStates->length;
-
-  if ( ( ret = LALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  ret->length = numDetectors;
-  if ( ( ret->data = LALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
-    LALFree ( ret );
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-
-  for ( X=0; X < numDetectors; X ++ )
-    {
-      AMCoeffs *amcoeX = NULL;
-      UINT4 numStepsX = multiDetStates->data[X]->length;
-
-      ret->data[X] = LALCalloc ( 1, sizeof ( *(ret->data[X]) ) );
-      amcoeX = ret->data[X];
-      amcoeX->a = XLALCreateREAL4Vector ( numStepsX );
-      if ( (amcoeX->b = XLALCreateREAL4Vector ( numStepsX )) == NULL ) {
-	XLALPrintError ("\nOut of memory!\n\n");
-	goto failed;
-      }
-
-      /* LALGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos ); */
-      LALNewGetAMCoeffs (status->statusPtr, amcoeX, multiDetStates->data[X], skypos );
-      if ( status->statusPtr->statusCode )
-	{
-	  XLALPrintError ( "\nCall to LALNewGetAMCoeffs() has failed ... \n\n");
-	  goto failed;
-	}
-
-    } /* for X < numDetectors */
-
-  goto success;
-
- failed:
-  /* free all memory allocated so far */
-  XLALDestroyMultiAMCoeffs ( ret );
-  ABORT ( status, -1, "LALGetMultiAMCoeffs() failed" );
-
- success:
-  (*multiAMcoef) = ret;
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* LALGetMultiAMCoeffs() */
-
-
-
 /* ===== Object creation/destruction functions ===== */
 
 /** Destroy a MultiSSBtimes structure.
@@ -2089,56 +1613,6 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
 
 } /* XLALDestroyMultiSSBtimes() */
 
-/** Destroy a MultiAMCoeffs structure.
- * Note, this is "NULL-robust" in the sense that it will not crash
- * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs
- */
-void
-XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
-{
-  UINT4 X;
-
-  if ( ! multiAMcoef )
-    return;
-
-  if ( multiAMcoef->data )
-    {
-      for ( X=0; X < multiAMcoef->length; X ++ )
-	{
-	  XLALDestroyAMCoeffs ( multiAMcoef->data[X] );
-	} /* for X < numDetectors */
-      LALFree ( multiAMcoef->data );
-    }
-  LALFree ( multiAMcoef );
-
-  return;
-
-} /* XLALDestroyMultiAMCoeffs() */
-
-/** Destroy a AMCoeffs structure.
- * Note, this is "NULL-robust" in the sense that it will not crash
- * on NULL-entries anywhere in this struct, so it can be used
- * for failure-cleanup even on incomplete structs
- */
-void
-XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
-{
-  if ( ! amcoef )
-    return;
-
-  if ( amcoef->a )
-    XLALDestroyREAL4Vector ( amcoef->a );
-  if ( amcoef->b )
-    XLALDestroyREAL4Vector ( amcoef->b );
-
-  LALFree ( amcoef );
-
-  return;
-
-} /* XLALDestroyAMCoeffs() */
-
-
 
 /** Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the
@@ -2157,98 +1631,6 @@ XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb)
   cfb->multiCmplxAMcoef = NULL;
   return;
 } /* XLALDestroyComputeFBuffer() */
-
-
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
- * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
- *
- * NOTE: this function modifies the AMCoeffs *in place* !
- * NOTE2: if the weights = NULL, we assume unit-weights.
- */
-int
-XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
-{
-  UINT4 numDetectors, X;
-  REAL8 Ad, Bd, Cd;
-  UINT4 alpha;
-
-  if ( !multiAMcoef )
-    XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
-
-  numDetectors = multiAMcoef->length;
-
-  if ( multiWeights && ( multiWeights->length != numDetectors ) )
-    {
-      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
-    }
-
-  /* noise-weight Antenna-patterns and compute A,B,C */
-  Ad = Bd = Cd = 0;
-
-  if ( multiWeights  )
-    {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
-
-	  REAL8Vector *weightsX = multiWeights->data[X];;
-	  if ( weightsX->length != numSteps )
-	    {
-	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	      XLAL_ERROR( "XLALWeighMultiAMCoeffs", XLAL_EINVAL );
-	    }
-
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
-
-	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha] = ahat;
-	      amcoeX->b->data[alpha] = bhat;
-
-	      /* sum A, B, C on the fly */
-	      Ad += ahat * ahat;
-	      Bd += bhat * bhat;
-	      Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-      multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
-    }
-  else /* if no noise-weights: simply add to get A,B,C */
-    {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
-
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 ahat = amcoeX->a->data[alpha] ;
-	      REAL8 bhat = amcoeX->b->data[alpha] ;
-
-	    /* sum A, B, C on the fly */
-	    Ad += ahat * ahat;
-	    Bd += bhat * bhat;
-	    Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-
-    } /* if multiWeights == NULL */
-
-  multiAMcoef->Mmunu.Ad = Ad;
-  multiAMcoef->Mmunu.Bd = Bd;
-  multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
-
-  return XLAL_SUCCESS;
-
-} /* XLALWeighMultiAMCoefs() */
-
 
 /* ===== General internal helper functions ===== */
 
@@ -2591,13 +1973,13 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
 } /* LALEstimatePulsarAmplitudeParams() */
 
-/** Function to allocate a 'FstatAtoms' struct of num timestamps
+/** Function to allocate a 'FstatAtomVector' struct of num timestamps, pre-initialized to zero!
  */
-FstatAtoms *
-XLALCreateFstatAtoms ( UINT4 num )
+FstatAtomVector *
+XLALCreateFstatAtomVector ( UINT4 num )
 {
   const CHAR *fn = __func__;
-  FstatAtoms *ret;
+  FstatAtomVector *ret;
 
   if ( (ret = LALCalloc ( 1, sizeof(*ret))) == NULL )
     goto failed;
@@ -2607,55 +1989,44 @@ XLALCreateFstatAtoms ( UINT4 num )
   if ( num == 0 )	/* allow num=0: return just 'head' with NULL arrays */
     return ret;
 
-  if ( (ret->timestamps = LALMalloc ( num * sizeof( *ret->timestamps) ) ) == NULL )
-    goto failed;
-  if ( (ret->a_alpha = LALMalloc ( num * sizeof( *ret->a_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->b_alpha = LALMalloc ( num * sizeof( *ret->b_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->Fa_alpha = LALMalloc ( num * sizeof( *ret->Fa_alpha) )) == NULL )
-    goto failed;
-  if ( (ret->Fb_alpha = LALMalloc ( num * sizeof( *ret->Fb_alpha) )) == NULL )
+  if ( (ret->data = LALCalloc ( num, sizeof( *ret->data) ) ) == NULL )
     goto failed;
 
   return ret;
 
  failed:
-  XLALDestroyFstatAtoms ( ret );
+  XLALDestroyFstatAtomVector ( ret );
   XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
 
-} /* XLALCreateFstatAtoms() */
+} /* XLALCreateFstatAtomVector() */
 
-/** Function to destroy an FstatAtoms struct
+/** Function to destroy an FstatAtomVector
  */
 void
-XLALDestroyFstatAtoms ( FstatAtoms *atoms )
+XLALDestroyFstatAtomVector ( FstatAtomVector *atoms )
 {
   if ( !atoms )
     return;
-  if ( atoms->Fb_alpha )   LALFree ( atoms->Fb_alpha );
-  if ( atoms->Fa_alpha )   LALFree ( atoms->Fa_alpha );
-  if ( atoms->a_alpha )    LALFree ( atoms->a_alpha );
-  if ( atoms->b_alpha )    LALFree ( atoms->b_alpha );
-  if ( atoms->timestamps ) LALFree ( atoms->timestamps );
+
+  if ( atoms->data )   LALFree ( atoms->data );
   LALFree ( atoms );
 
   return;
 
-} /* XLALDestroyFstatAtoms() */
+} /* XLALDestroyFstatAtomVector() */
 
 
-/** Function to destroy a multi-FstatAtoms struct
+/** Function to destroy a multi-FstatAtom struct
  */
 void
-XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiFstatAtoms )
+XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiFstatAtoms )
 {
   UINT4 X;
   if ( !multiFstatAtoms)
     return;
 
   for ( X=0; X < multiFstatAtoms->length; X++ )
-    XLALDestroyFstatAtoms ( multiFstatAtoms->data[X] );
+    XLALDestroyFstatAtomVector ( multiFstatAtoms->data[X] );
 
   LALFree ( multiFstatAtoms->data );
   LALFree ( multiFstatAtoms );

@@ -46,13 +46,16 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>
+#include <lal/ComplexAM.h>
+
 #include <lal/PulsarDataTypes.h>
 #include <lal/DetectorStates.h>
 #include <gsl/gsl_vector.h>
 
 /*---------- exported DEFINES ----------*/
 
-/*----- Error-codes -----*/
+/** \name Error codes */
+/*@{*/
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ENONULL 		2
 #define COMPUTEFSTATC_EINPUT   		3
@@ -66,6 +69,7 @@ NRCSID( COMPUTEFSTATH, "$Id$" );
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 #define COMPUTEFSTATC_MSGEXLAL		"XLAL function call failed"
 #define COMPUTEFSTATC_MSGEIEEE		"Floating point failure"
+/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -85,95 +89,28 @@ typedef struct {
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
-
-/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
- * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
- * \f{equation}
- * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c} A_d & C_d & 0 & 0 \\ C_d & B_d & 0 & 0 \\ 0 & 0 & A_d & C_d \\ 0 & 0 & C_d & B_d \\ \end{array}\right)\,,
- * \f}
- * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the (single-sided!)
- * multi-detector noise-floor, and
- * \f{equation}
- * A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\,,\quad
- * B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha \,,\quad
- * C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha \,,
- * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
- * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}}\f$.
- *
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately
- * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
- * to use that fact.
- */
+/** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
 typedef struct {
-  REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
-  REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
-  REAL8 Cd; 		/**<  \f$C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha\f$ */
-  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 \f$ */
-  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
-} AntennaPatternMatrix;
+  UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
+  REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
+  REAL8 b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
+  REAL8 ab_alpha;		/**< antenna-pattern factor a*b(X,t_i) */
+  COMPLEX8 Fa_alpha;		/**< Fa^X(t_i) */
+  COMPLEX8 Fb_alpha;		/**< Fb^X(t_i) */
+} FstatAtom;
 
-
-/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
+/** vector of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
 typedef struct {
-  UINT4 length;		/**< number of IFOs */
-  AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
-  AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
-} MultiAMCoeffs;
-
-/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
- * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
- * \f{equation}
- * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c} A_d & C_d & 0 & -E_d \\ C_d & B_d & E_d & 0 \\ 0 & E_d & A_d & C_d \\ -E_d & 0 & C_d & B_d \\ \end{array}\right)\,,
- * \f}
- * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the multi-detector noise-floor, and
- * \f{equation}
- * A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
- * B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
- * C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
- * E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
- * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
- * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}}\f$.
- *
- * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately
- * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
- * to use that fact.
- */
-typedef struct {
-  REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
-  REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Ed; 		/**<  \f$E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
-  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 -E_d^2 \f$ */
-  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
-} CmplxAntennaPatternMatrix;
-
-/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
-typedef struct {
-  UINT4 length;		/**< number of IFOs */
-  CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
-  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
-} MultiCmplxAMCoeffs;
-
-
-/** contains of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
-typedef struct {
-  UINT4 length;			/**< number of SFTs, ie 'atoms' */
-  LIGOTimeGPS *timestamps;	/**< SFT timestamps t_i */
-  REAL8 *a_alpha;		/**< antenna-pattern factor a^X(t_i) */
-  REAL8 *b_alpha;		/**< antenna-pattern factor b^X(t_i) */
-  COMPLEX8 *Fa_alpha;		/**< Fa^X(t_i) */
-  COMPLEX8 *Fb_alpha;		/**< Fb^X(t_i) */
-} FstatAtoms;
+  UINT4 length;			/**< number of per-SFT 'atoms' */
+  FstatAtom *data;		/** FstatAtoms array of given length */
+  UINT4 TAtom;			/**< time-baseline of F-stat atoms (typically Tsft) */
+} FstatAtomVector;
 
 /** multi-detector version of FstatAtoms type */
 typedef struct {
   UINT4 length;			/**< number of detectors */
-  FstatAtoms **data;		/**< array of FstatAtom (pointers), one for each detector X */
-} MultiFstatAtoms;
+  FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
+} MultiFstatAtomVector;
 
 
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
@@ -181,7 +118,7 @@ typedef struct {
   REAL8 F;				/**< F-statistic value */
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
-  MultiFstatAtoms *multiFstatAtoms;	/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
+  MultiFstatAtomVector *multiFstatAtoms;/**< per-IFO, per-SFT arrays of F-stat 'atoms', ie quantities required to compute F-stat */
 } Fcomponents;
 
 /** The precision in calculating the barycentric transformation */
@@ -221,16 +158,10 @@ typedef struct {
 } ComputeFBuffer;
 
 
-
-
-
-
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
 extern const SSBtimes empty_SSBtimes;
 extern const MultiSSBtimes empty_MultiSSBtimes;
-extern const AntennaPatternMatrix empty_AntennaPatternMatrix;
-extern const MultiAMCoeffs empty_MultiAMCoeffs;
 extern const Fcomponents empty_Fcomponents;
 extern const ComputeFParams empty_ComputeFParams;
 extern const ComputeFBuffer empty_ComputeFBuffer;
@@ -284,41 +215,12 @@ LALGetSSBtimes (LALStatus *,
 		SSBprecision precision);
 
 void
-LALGetAMCoeffs(LALStatus *,
-	       AMCoeffs *coeffs,
-	       const DetectorStateSeries *DetectorStates,
-	       SkyPosition skypos);
-
-void
-LALNewGetAMCoeffs(LALStatus *,
-		  AMCoeffs *coeffs,
-		  const DetectorStateSeries *DetectorStates,
-		  SkyPosition skypos);
-
-
-int
-XLALComputeAntennaPatternCoeffs ( REAL8 *ai,
-				  REAL8 *bi,
-				  const SkyPosition *skypos,
-				  const LIGOTimeGPS *tGPS,
-				  const LALDetector *site,
-				  const EphemerisData *edat
-				  );
-
-void
 LALGetMultiSSBtimes (LALStatus *,
 		     MultiSSBtimes **multiSSB,
 		     const MultiDetectorStateSeries *multiDetStates,
 		     SkyPosition pos,
 		     LIGOTimeGPS refTime,
 		     SSBprecision precision );
-
-void
-LALGetMultiAMCoeffs (LALStatus *,
-		     MultiAMCoeffs **multiAMcoef,
-		     const MultiDetectorStateSeries *multiDetStates,
-		     SkyPosition pos );
-
 
 void ComputeFStat ( LALStatus *, Fcomponents *Fstat,
 		    const PulsarDopplerParams *doppler,
@@ -336,9 +238,6 @@ void ComputeFStatFreqBand ( LALStatus *status,
 			    const MultiDetectorStateSeries *multiDetStates,
 			    const ComputeFParams *params);
 
-int
-XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
-
 void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  PulsarCandidate *pulsarParams,
@@ -347,20 +246,17 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 				  const CmplxAntennaPatternMatrix *Mmunu
 				  );
 
-FstatAtoms * XLALCreateFstatAtoms ( UINT4 num );
+FstatAtomVector * XLALCreateFstatAtomVector ( UINT4 num );
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
-void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
-void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
-
 void XLALEmptyComputeFBuffer ( ComputeFBuffer *cfb );
 
-void XLALDestroyFstatAtoms ( FstatAtoms *atoms );
-void XLALDestroyMultiFstatAtoms ( MultiFstatAtoms *multiAtoms );
+void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );
+void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms );
 
 /* helpers */
 int sin_cos_LUT (REAL4 *sinx, REAL4 *cosx, REAL8 x);

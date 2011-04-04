@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -55,8 +55,6 @@ void counter(qfvars *vars);
 REAL8 exp1(REAL8 x);
 REAL8 twospect_log_1plusx(REAL8 x);
 REAL8 twospect_log_1plusx_mx(REAL8 x);
-REAL8 twospect_log_1plusx_chebapprox(REAL8 x);
-REAL8 twospect_log_1plusx_mx_chebapprox(REAL8 x);
 REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx);
 REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx);
 REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn);

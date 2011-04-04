@@ -15,7 +15,7 @@ bin_PROGRAMS = lalapps_makefakedata_v2 lalapps_Makefakedata_v4 lalapps_compareSF
 
 EXTRA_PROGRAMS = psinject eah_Makefakedata_v4 $(frameprogs)
 
-lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
+lalapps_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h ../transientCW_utils.c ../transientCW_utils.h ../ProbabilityDensity.c ../ProbabilityDensity.h
 
 # force linking in C++ mode for E@H
 eah_Makefakedata_v4_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h ../hough/src2/EinsteinAtHome/win_lib.cpp

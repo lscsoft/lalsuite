@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -439,7 +439,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 5.0e-6;   //(1e-5) don't change this value
+   REAL8 accuracy = 1.0e-12;   //(1e-5) old value
    
    //sort the weights here so we don't have to do it later (qsort)
    sort_double_ascend(newweights);
@@ -506,7 +506,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
       
    } */ /* if prob<=1e-4 */
-   if (prob<=1.0e-4) {
+   if (prob<=1.0e-9) {
       estimatedTheProb = 1;
       
       INT4 errcode1 = 0, errcode2 = 0;
@@ -525,22 +525,29 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
       }
       
+      REAL8 lowerend = 0.0;
+      REAL8 upperend = Rpr;
+      
       for (ii=0; ii<(INT4)slopes->length; ii++) {
-         c1 = gsl_rng_uniform_pos(rng)*Rpr;
+         c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
-         while (tempprob<=1.0e-4 || tempprob>=1.0e-3) {
-            c1 = gsl_rng_uniform_pos(rng)*Rpr;
+         while (tempprob<=1.0e-9 || tempprob>=1.0e-7) {
+            if (tempprob<=1.0e-9) upperend = c1;
+            else if (tempprob>=1.0e-7) lowerend = c1;
+            c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
          }
          logprobave += log10(tempprob);
          c += c1;
-         c2 = gsl_rng_uniform_pos(rng)*Rpr;
+         c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
          vars.c = c2;
          tempprob2 = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
-         while (tempprob2<=1.0e-4 || tempprob2>=1.0e-3 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
-            c2 = gsl_rng_uniform_pos(rng)*Rpr;
+         while (tempprob2<=1.0e-9 || tempprob2>=1.0e-7 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
+            if (tempprob2<=1.0e-9) upperend = c2;
+            else if (tempprob2>=1.0e-7) lowerend = c2;
+            c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
             vars.c = c2;
             tempprob2 = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
          }
@@ -802,8 +809,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(N * input.period * LAL_TWOPI * fpr->data[jj]) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) / (cos(input.period * LAL_TWOPI * fpr->data[jj]) - 1.0);
          }
          
-         //Set any bin below 1e-7 to 0.0
-         if (dataval <= 1.0e-7) dataval = 0.0;
+         //Set any bin below 1e-8 to 0.0
+         if (dataval <= 1.0e-8) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
@@ -927,7 +934,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       if (doSecondFFT==1) {
          for (jj=0; jj<(INT4)psd->length; jj++) {
             REAL4 correctedValue = (REAL4)(psd->data[jj]*winFactor/x->length*0.5*params->Tcoh);
-            if (correctedValue<=1.0e-7) correctedValue = 0.0;
+            if (correctedValue<=1.0e-8) correctedValue = 0.0;
             
             //Sum the total weights
             sum += correctedValue;

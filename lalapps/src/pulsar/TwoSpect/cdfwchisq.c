@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -49,129 +49,15 @@ REAL8 exp1(REAL8 x)
 REAL8 twospect_log_1plusx(REAL8 x)
 {
    
-   if (fabs(x)<GSL_ROOT6_DBL_EPSILON) {
-      return x*(1.0+x*(-.5+x*(1.0/3.0+x*(-.25+x*(.2+x*(-1.0/6.0+x*(1.0/7.0+x*(-.125+x*(1.0/9.0-.1*x)))))))));
-   } else if (fabs(x)<0.5) {
-      return twospect_log_1plusx_chebapprox(x);
-   } else {
-      return log(1.0 + x);
-   }
+   return log1p(x);
    
 }
 REAL8 twospect_log_1plusx_mx(REAL8 x)
 {
    
-   if(fabs(x)<GSL_ROOT5_DBL_EPSILON) {
-      return x*x*(-.5+x*(1.0/3.0+x*(-.25+x*(.2+x*(-1.0/6.0+x*(1.0/7.0+x*(-.125+x*(1.0/9.0-.1*x))))))));
-   } else if (fabs(x)<0.5) {
-      return twospect_log_1plusx_mx_chebapprox(x);
-   } else {
-      return log(1.0 + x) - x;
-   }
+   return log1p(x)-x;
    
 }
-REAL8 twospect_log_1plusx_chebapprox(REAL8 x)
-{
-   /* Chebyshev expansion for log(1 + x(t))/x(t) 
-    x(t) = (4t-1)/(2(4-t))
-    t(x) = (8x+1)/(2(x+2))
-    -1/2 < x < 1/2
-    -1 < t < 1
-    */
-   static REAL8 lopx_data[21] = {2.16647910664395270521272590407,
-      -0.28565398551049742084877469679,
-      0.01517767255690553732382488171,
-      -0.00200215904941415466274422081,
-      0.00019211375164056698287947962,
-      -0.00002553258886105542567601400,
-      2.9004512660400621301999384544e-06,
-      -3.8873813517057343800270917900e-07,
-      4.7743678729400456026672697926e-08,
-      -6.4501969776090319441714445454e-09,
-      8.2751976628812389601561347296e-10,
-      -1.1260499376492049411710290413e-10,
-      1.4844576692270934446023686322e-11,
-      -2.0328515972462118942821556033e-12,
-      2.7291231220549214896095654769e-13,
-      -3.7581977830387938294437434651e-14,
-      5.1107345870861673561462339876e-15,
-      -7.0722150011433276578323272272e-16,
-      9.7089758328248469219003866867e-17,
-      -1.3492637457521938883731579510e-17,
-      1.8657327910677296608121390705e-18};
-   
-   REAL8 t = 0.5*(8.0*x + 1.0)/(x+2.0);
-   
-   INT4 j;
-   REAL8 d  = 0.0;
-   REAL8 dd = 0.0;
-   
-   REAL8 y  = t;
-   REAL8 y2 = 2.0 * y;
-   
-   REAL8 temp;
-   for(j = 20; j>=1; j--) {
-      temp = d;
-      d = y2*d - dd + lopx_data[j];
-      dd = temp;
-   }
-   
-   d = x*(y*d - dd + 0.5 * lopx_data[0]);
-   
-   return d;
-   
-}
-REAL8 twospect_log_1plusx_mx_chebapprox(REAL8 x)
-{
-   /* Chebyshev expansion for (log(1 + x(t)) - x(t))/x(t)^2
-    * x(t) = (4t-1)/(2(4-t))
-    * t(x) = (8x+1)/(2(x+2))
-    * -1/2 < x < 1/2
-    * -1 < t < 1
-   */
-   static REAL8 lopxmx_data[20] = {-1.12100231323744103373737274541,
-      0.19553462773379386241549597019,
-      -0.01467470453808083971825344956,
-      0.00166678250474365477643629067,
-      -0.00018543356147700369785746902,
-      0.00002280154021771635036301071,
-      -2.8031253116633521699214134172e-06,
-      3.5936568872522162983669541401e-07,
-      -4.6241857041062060284381167925e-08,
-      6.0822637459403991012451054971e-09,
-      -8.0339824424815790302621320732e-10,
-      1.0751718277499375044851551587e-10,
-      -1.4445310914224613448759230882e-11,
-      1.9573912180610336168921438426e-12,
-      -2.6614436796793061741564104510e-13,
-      3.6402634315269586532158344584e-14,
-      -4.9937495922755006545809120531e-15,
-      6.8802890218846809524646902703e-16,
-      -9.5034129794804273611403251480e-17,
-      1.3170135013050997157326965813e-17};
-   
-   REAL8 t = 0.5*(8.0*x + 1.0)/(x+2.0);
-   
-   INT4 j;
-   REAL8 d  = 0.0;
-   REAL8 dd = 0.0;
-   
-   REAL8 y  = t;
-   REAL8 y2 = 2.0 * y;
-   
-   REAL8 temp;
-   for(j = 19; j>=1; j--) {
-      temp = d;
-      d = y2*d - dd + lopxmx_data[j];
-      dd = temp;
-   }
-   
-   d = x*x*(y*d - dd + 0.5 * lopxmx_data[0]);
-   
-   return d;
-   
-}
-
 
 //count number of calls to errbound, truncation, coeff
 void counter(qfvars *vars)
@@ -255,7 +141,8 @@ REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += 2.0*vars->weights->data[ii]/y;
-      sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
+      //sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
+      sum1 += 2 * (x*x / y + (log1p(-x)+x));
    }
    *cx = xconst;
    
@@ -338,6 +225,7 @@ REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn)
 } /* cutoff_twospect() */
 
 //bound integration error due to truncation at u
+//Eq. 6, 7, 8 of Davies 1980
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 {
    REAL8 sum1, sum2, prod1, prod2, prod3, x, y, err1, err2;
@@ -345,36 +233,36 @@ REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq)
 
    counter(vars);
    
-   sum1  = 0.0;
-   prod2 = 0.0;
-   prod3 = 0.0;
-   s = 0;
+   sum1  = 0.0;   //Calculating N(u) = exp(-2u**2 sum_j(lambda_j**2 delta_j**2/(1+4u**2 lambda_j**2)))
+   prod2 = 0.0;   //Calculating product (i)
+   prod3 = 0.0;   //Calculating product (ii)
+   s = 0;   //Sum of degrees of freedom
    
    sum2 = (vars->sigsq + tausq) * u*u;
    prod1 = 2.0 * sum2;
-   u *= 2.0;
+   u *= 2.0;      //This produces the factor of 4 in front of the products (U*lambda_j)**2 (i and ii) in Davies 1980
    
    for (ii=0; ii<(INT4)vars->weights->length; ii++ ) {
-      x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
-      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);
+      x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);  //(2*U*lambda_j)**2
+      sum1 += vars->noncentrality->data[ii] * x / (1.0 + x);   //Sum after eq 4 in Davies 1980
       if (x > 1.0) {
-         prod2 += vars->dofs->data[ii] * log(x);
-         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
-         s += vars->dofs->data[ii];
+         prod2 += vars->dofs->data[ii] * log(x);      //Logarithim of product (ii) produces sum of logorithms
+         prod3 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);    //Logarithim of product (i) produces sum of logorithms
+         s += vars->dofs->data[ii];    //sum of degrees of freedom
       }
       else prod1 += vars->dofs->data[ii] * gsl_sf_log_1plusx(x);
    } /* for ii < vars->weights->length */
    
-   sum1 *= 0.5;
+   sum1 *= 0.5;      //Remove the extra prefactor of 2 before taking the exponential
    prod2 += prod1;
    prod3 += prod1;
-   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;
-   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;
+   x = exp1(-sum1 - 0.25*prod2)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 6)
+   y = exp1(-sum1 - 0.25*prod3)*LAL_1_PI;    //Now remove logarithm by computing exponential (eq 8)
    
    if (s==0) err1 = 1.0;
    else err1 = 2.0*x/s;
    
-   if (prod3>1.0) err2 = 2.5*y;
+   if (prod3>1.0) err2 = 2.5*y;  //eq 8
    else err2 = 1.0;
    
    if (err2 < err1) err1 = err2;
@@ -407,10 +295,10 @@ REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq)
       x = (u * vars->weights->data[ii])*(u * vars->weights->data[ii]);
       if (x > 1.0) {
          prod2 += 2 * log(x);
-         prod3 += 2 * twospect_log_1plusx(x);
+         prod3 += 2 * log1p(x);
          s += 2;
       }
-      else prod1 += 2 * twospect_log_1plusx(x);
+      else prod1 += 2 * log1p(x);
    } /* for ii < vars->weights->length */
    
    prod2 += prod1;
@@ -511,31 +399,31 @@ void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
    REAL8 inpi, u, sum1, sum2, sum3, x, y, z;
    INT4 ii, jj;
    
-   inpi = interv*LAL_1_PI;
+   inpi = interv*LAL_1_PI;    //inpi = pi*(k + 1/2)
    
    for (ii=nterm; ii>=0; ii--) {
-      u = (ii + 0.5)*interv;
-      sum1 = - 2.0*u*vars->c;
+      u = (ii + 0.5)*interv;     //First part of eq 3 in Davies 1980, eq 9 in Davies 1973
+      sum1 = - 2.0*u*vars->c;    //Third sum
       sum2 = fabs(sum1);
-      sum3 = -0.5*vars->sigsq * u*u;
+      sum3 = -0.5*vars->sigsq * u*u;   //Product
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
-         x = 2.0 * vars->weights->data[jj] * u;
-         y = x*x;
-         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);
-         y = vars->noncentrality->data[jj] * x / (1.0 + y);
-         z = vars->dofs->data[jj] * atan(x) + y;
-         sum1 += z;
+         x = 2.0 * vars->weights->data[jj] * u;    //2 * lambda_j * u
+         y = x*x;    //4 * lambda_j**2 * u**2
+         sum3 -= 0.25 * vars->dofs->data[jj] * gsl_sf_log_1plusx(y);    //product in eq 13 of Davies 1980
+         y = vars->noncentrality->data[jj] * x / (1.0 + y);    //First sum argument in eq 13 of Davies 1980
+         z = vars->dofs->data[jj] * atan(x) + y;      //Third sum argument in eq 13 of Davies 1980
+         sum1 += z;        //Third sum in eq 13
          sum2 += fabs(z);
-         sum3 -= 0.5 * x * y;
+         sum3 -= 0.5 * x * y;    //Product
       } /* for jj=vars->weights->length-1 --> 0 */
       
       x = inpi * exp1(sum3) / u;
-      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));
-      sum1 = sin(0.5 * sum1) * x;
+      if ( !mainx ) x *= (1.0 - exp1(-0.5 * tausq * u*u));  //For auxillary integration, we multiply by this factor)
+      sum1 = sin(0.5 * sum1) * x;   //Now compute the sine
       sum2 *= 0.5*x;
-      vars->intl += sum1;
-      vars->ersm += sum2;
+      vars->intl += sum1;     //integration value
+      vars->ersm += sum2;     //error on integration
    } /* for ii=nterm --> 0 */
    
 } /* integrate() */
@@ -555,7 +443,7 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          x = 2.0 * vars->weights->data[jj] * u;
-         sum3 -= 0.5 * twospect_log_1plusx((x*x));
+         sum3 -= 0.5 * log1p((x*x));
          z = 2.0 * atan(x);
          sum1 += z;
          sum2 += fabs(z);
@@ -572,6 +460,7 @@ void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT
 } /* integrate_twospect() */
 
 //Coefficient of tausq in error when convergence factor of exp1(-0.5*tausq*u^2) is used when df is evaluated at x
+//Eq. 10 of Davies 1980
 REAL8 coeff(qfvars *vars, REAL8 x)
 {
    
