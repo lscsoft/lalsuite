@@ -102,6 +102,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "declination",             required_argument, 0, 'F' },
     { "sky-error",               required_argument, 0, 'g' },
     { "timing-accuracy",         required_argument, 0, 'G' },
+    { "approximant",             required_argument, 0, 'C' },
+    { "order",                   required_argument, 0, 'v' },
     { 0, 0, 0, 0 }
   };
   char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
@@ -183,6 +185,54 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
+        break;
+      case 'C': /* waveform approximant */
+        if ( ! strcmp( "FindChirpSP", optarg ) )
+        {
+          localparams.approximant = FindChirpSP;
+        }
+        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        {
+          localparams.approximant = FindChirpPTF;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either FindChirpSP or FindChirpPTF)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
+      case 'v': /* PN order of waveform */        
+        if ( ! strcmp( "twoPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO;
+        }
+        else if ( ! strcmp( "twoPointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO_POINT_FIVE;
+        }
+        else if ( ! strcmp( "threePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE;
+        }
+        else if ( ! strcmp( "threePointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "pseudoFourPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_PSEUDO_FOUR;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         break;
       case 'f': /* right-ascension */
         localparams.rightAscension = atof( optarg ) * LAL_PI_180;
@@ -345,6 +395,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->nullStatGradient = 50./700.;
   params->skyLooping = SKY_POINT_ERROR;
 
+  params->approximant = NumApproximants;
+  params->order = LAL_PNORDER_NUM_ORDER;
+
   return 0;
 }
 
@@ -462,9 +515,11 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   /* Check that filter frequencies have been given */
   sanity_check( params->highpassFrequency > 0);
   sanity_check( params->lowTemplateFrequency > 0);
-  fprintf(stderr, "%e %e %e \n", params->lowTemplateFrequency, params->lowFilterFrequency, params->highFilterFrequency);
   sanity_check( params->lowFilterFrequency > 0 && params->lowFilterFrequency >= params->lowTemplateFrequency);
   sanity_check( params->highFilterFrequency > params->lowFilterFrequency);
+
+  sanity_check( params->approximant != NumApproximants);
+  sanity_check( params->order != LAL_PNORDER_NUM_ORDER);
 
 // This needs fixing. Need a check on whether segmentsToDoList and 
 // analyzeInjSegsOnly have been given.

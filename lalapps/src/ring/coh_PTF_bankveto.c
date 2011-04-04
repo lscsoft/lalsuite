@@ -21,8 +21,9 @@ InspiralTemplate        **PTFBankTemplates)
   for (i=0; (i < numTemplates); bankTemplate = bankTemplate->next,i++)
   {
     bankTemplate->fLower = params->lowTemplateFrequency;
-    bankTemplate->approximant = FindChirpPTF;
-    bankTemplate->order = LAL_PNORDER_TWO;
+//    bankTemplate->approximant = FindChirpPTF;
+//    bankTemplate->order = LAL_PNORDER_THREE_POINT_FIVE;
+//    bankTemplate->approximant = FindChirpSP;
   }
   return numTemplates;
 }

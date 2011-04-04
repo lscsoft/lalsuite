@@ -556,12 +556,16 @@ void coh_PTF_cleanup(
       XLALDestroyVector( fcTmpltParams->PTFphi );
     if ( fcTmpltParams->PTFomega_2_3 )
       XLALDestroyVector( fcTmpltParams->PTFomega_2_3 );
+    if ( fcTmpltParams->xfacVec )
+      XLALDestroyVector( fcTmpltParams->xfacVec );
     LALFree( fcTmpltParams );
   }
   if ( fcTmplt )
   {
     if ( fcTmplt->PTFQtilde )
       XLALDestroyCOMPLEX8VectorSequence( fcTmplt->PTFQtilde );
+    if ( fcTmplt->data )
+      XLALDestroyCOMPLEX8Vector( fcTmplt->data );
     LALFree( fcTmplt );
   }
   if ( fcInitParams )
@@ -712,6 +716,7 @@ void coh_PTF_sky_grid(
   REAL4 angle;   /* opening angle between 2 IFO baseline and sky localisation */
   REAL4 lambdamin,lambdamax,lambda; /* opening angle closest to pi/2 */
   REAL4 alpha,detalpha;
+  alpha = 0;                         
   REAL4 angularResolution;          /* angular resolution of grid in radians */
   double baseline,distance;
   REAL4 theta,phi;                  /* sky parameters */
@@ -865,6 +870,12 @@ void coh_PTF_sky_grid(
     if ( skyPoints->declination[i] < 0. )
       skyPoints->declination[i] += LAL_PI / 2.;
 
+  }
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( detectors[ifoNumber] )
+      LALFree(detectors[ifoNumber]);
   }
 
 }
