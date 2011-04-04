@@ -45,7 +45,7 @@ REAL8 exp1(REAL8 x)
    else return exp(x);
 } /* exp1() */
 
-//Next special function routines based on the gsl functions
+//Special functions
 REAL8 twospect_log_1plusx(REAL8 x)
 {
    
@@ -112,12 +112,12 @@ REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx)
    
    counter(vars);
    
-   xconst = u * vars->sigsq;
-   sum1 = u * xconst;
+   xconst = u * vars->sigsq;                 //xconst = u * sigma**2 + sum{ }
+   sum1 = u * xconst;                        //sum1 = u**2 * sigma**2 + sum{ }
    u *= 2.0;
    for (ii=vars->weights->length-1; ii>=0; ii--) {
-      x = u * vars->weights->data[ii];
-      y = 1.0 - x;
+      x = u * vars->weights->data[ii];       //x=2*u*lambda_j
+      y = 1.0 - x;                           //y=1-2*u*lambda_j
       xconst += vars->weights->data[ii] * (vars->noncentrality->data[ii] / y + vars->dofs->data[ii]) / y;
       sum1 += vars->noncentrality->data[ii] * (x*x/(y*y)) + vars->dofs->data[ii] * (x*x / y + gsl_sf_log_1plusx_mx(-x));
    }

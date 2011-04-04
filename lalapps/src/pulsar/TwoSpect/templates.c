@@ -22,6 +22,7 @@
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_roots.h>
+#include <gsl/gsl_fit.h>
 #include <gsl/gsl_sort.h>
 
 #include <lal/LALConstants.h>
@@ -452,60 +453,6 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest = 0.0;
    INT4 estimatedTheProb = 0;
-   /* if (prob<=1.0e-4) {
-      estimatedTheProb = 1;
-      
-      INT4 errcode1 = 0, errcode2 = 0;
-      REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
-      
-      REAL8 dR = 0.999;
-      
-      c1 = dR*vars.c;
-      vars.c = c1;
-      tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
-      while ( tempprob <= 1.0e-4 ) {
-         c1 *= dR;
-         vars.c = c1;
-         tempprob = 1.0-cdfwchisq(&vars, sigma, accuracy, &errcode1);
-      }
-      logprob1 = log10(tempprob);
-      
-      c2 = dR*c1;
-      vars.c = c2;
-      tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
-      while ( (tempprob2 - tempprob) < 4.0e-4 ) {
-         c2 *= dR;
-         vars.c = c2;
-         tempprob2 = 1.0 - cdfwchisq(&vars, sigma, accuracy, &errcode2);
-      }
-      REAL8 deltac = c1 - c2;
-      logprob2 = log10(tempprob2);
-      
-      //If either point along the slope had a problem at the end, then better fail.
-      //Otherwise, set errcode = 0;
-      if (errcode1!=0 || errcode2!=0) {
-         fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-      } else {
-         *errcode = errcode1;
-      }
-      
-      //Calculating slope
-      probslope = (logprob1-logprob2)/deltac;
-      if (probslope>=0.0) {
-         fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
-         XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
-      }
-      
-      //Find the log10(prob) of the original Rpr value
-      logprobest = probslope*(Rpr-c1) + logprob1;
-      //logprobest = probslope*(Rpr-c2) + logprob2;
-      if (logprobest>-0.5) {
-         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      }
-      
-   } */ /* if prob<=1e-4 */
    if (prob<=1.0e-9) {
       estimatedTheProb = 1;
       
@@ -572,16 +519,48 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 cave = .5*c/(REAL8)slopes->length;
       logprobave /= 2.0*slopes->length;
       probslope = calcMeanD(slopes);
-      //REAL8 stddevprobslope = calcStddevD(slopes);
-      //fprintf(stderr,"Slope average = %g, Slope sigma = %g\n", probslope, stddevprobslope);
       logprobest = probslope*(Rpr-cave) + logprobave;
       if (logprobest>-0.5) {
          fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
       }
+      XLALDestroyREAL8Vector(slopes);
+      
+      lowerend = 0.0;
+      upperend = Rpr;
+      REAL8Vector *probvals = XLALCreateREAL8Vector(10);
+      REAL8Vector *cvals = XLALCreateREAL8Vector(probvals->length);
+      if (probvals==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      } else if (cvals==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 10);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      for (ii=0; ii<(INT4)probvals->length; ii++) {
+         c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+         vars.c = c1;
+         tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         while (tempprob<=1.0e-9 || tempprob>=1.0e-7) {
+            if (tempprob<=1.0e-9) upperend = c1;
+            else if (tempprob>=1.0e-7) lowerend = c1;
+            c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+            vars.c = c1;
+            tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         }
+         probvals->data[ii] += log10(tempprob);
+         cvals->data[ii] = c1;
+      }
+      REAL8 yintercept, cov00, cov01, cov11, sumsq;
+      if (gsl_fit_linear(cvals->data, 1, probvals->data, 1, cvals->length, &yintercept, &probslope, &cov00, &cov01, &cov11, &sumsq)!=GSL_SUCCESS) {
+         fprintf(stderr,"%s: gsl_fit_linear() failed.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      logprobest = probslope*Rpr + yintercept;
+      XLALDestroyREAL8Vector(probvals);
+      XLALDestroyREAL8Vector(cvals);
       
       gsl_rng_free(rng);
-      XLALDestroyREAL8Vector(slopes);
       
    }
    
@@ -599,16 +578,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    //return prob;
    if (estimatedTheProb==1) {
-      /* if (logprobest==0.0) {
-         fprintf(stderr, "%s: Failure calculating interpolated value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      } */
       return logprobest;
    } else {
-      /* if (log10(prob)==0.0) {
-         fprintf(stderr, "%s: Failure calculating correct false alarm probability value.\n", fn);
-         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
-      } */
       return log10(prob);
    }
    

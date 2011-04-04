@@ -435,30 +435,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(fn, XLAL_EFUNC);
       }
       
-      //TODO: Return to normal
-      //Calculation of average TF noise per frequency bin ratio to total mean
-      /* //REAL4 aveTFinv = 1.0/avgTFdataBand(background_slided, ffdata->numfbins, ffdata->numffts, 0, ffdata->numfbins);
-      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
-      REAL4Vector *TSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
-      if (aveTFnoisePerFbinRatio==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numfbins);
-         XLAL_ERROR(fn, XLAL_EFUNC);
-      } else if (TSofPowers==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", fn, ffdata->numffts);
-         XLAL_ERROR(fn, XLAL_EFUNC);
-      }
-      for (ii=0; ii<ffdata->numfbins; ii++) {
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
-         //aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers)*aveTFinv;
-         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_slided->data[jj*ffdata->numfbins + ii]; //TODO: test
-         aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers);
-      }
-      REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      for (ii=0; ii<ffdata->numfbins; ii++) {
-         aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
-      }
-      XLALDestroyREAL4Vector(TSofPowers); */
-      
       //Compute the weighted TF data
       REAL4Vector *TFdata_weighted = XLALCreateREAL4Vector((UINT4)(ffdata->numffts*ffdata->numfbins));
       if (TFdata_weighted==NULL) {
@@ -478,7 +454,6 @@ int main(int argc, char *argv[])
       for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%g\n",TFdata_weighted->data[jj]);
       fclose(TFDATA); */
       
-      //TODO: remove this
       //Calculation of average TF noise per frequency bin ratio to total mean
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector((UINT4)ffdata->numffts);
@@ -491,8 +466,7 @@ int main(int argc, char *argv[])
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-         //aveTFnoisePerFbinRatio->data[ii] = calcMean(TSofPowers);
-         aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers);
+         aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
       for (ii=0; ii<ffdata->numfbins; ii++) {
@@ -582,11 +556,13 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(fn, XLAL_EFUNC);
                }
                
-               //Estimate the FAR for these bin weights
-               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-               if (xlalErrno!=0) {
-                  fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-                  XLAL_ERROR(fn, XLAL_EFUNC);
+               //Estimate the FAR for these bin weights if the option was given
+               if (inputParams->calcRthreshold) {
+                  numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+                  if (xlalErrno!=0) {
+                     fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                     XLAL_ERROR(fn, XLAL_EFUNC);
+                  }
                }
                
                //Caclulate R, probability noise caused the candidate, and estimate of h0
@@ -617,7 +593,7 @@ int main(int argc, char *argv[])
                INT4 bestproberrcode = 0;
                REAL8 initialFAR = farval->far;
                REAL8 Rfirst = R;
-               if (R > farval->far) {
+               if ((!inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (inputParams->calcRthreshold && R>farval->far)) {
                   bestR = R;
                   besth0 = h0;
                   bestProb = prob;
@@ -631,7 +607,7 @@ int main(int argc, char *argv[])
                   }
                   loadCandidateData(&gaussCandidates1->data[gaussCandidates1->numofcandidates], ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, besth0, bestProb, proberrcode, ihsCandidates->data[ii].normalization);
                   gaussCandidates1->numofcandidates++;
-               } /* if R > farval->far */
+               } /* if prob<log10(templatefarthresh) || R > farval->far */
                
                //Try shifting period by harmonics and fractions, if no candidate was initially found
                if (bestProb == 0.0) {
@@ -654,14 +630,14 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -687,14 +663,14 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -729,17 +705,16 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        //TODO: Remove this?
                         //Calculate FAR if bestProb=0
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
-                        } //up to here
+                        }
                         //Log candidate if more significant or exceeding the FAR for the first time
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -766,14 +741,14 @@ int main(int argc, char *argv[])
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
                         h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
-                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && R>farval->far)) {
+                        if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
                            besth0 = h0;
                            bestR = R;
@@ -1064,7 +1039,7 @@ int main(int argc, char *argv[])
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", fn);
                            XLAL_ERROR(fn, XLAL_EFUNC);
                         }
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
@@ -1086,7 +1061,7 @@ int main(int argc, char *argv[])
                         //fprintf(Rtemplatevals,"%.9g %.9g %.9g %.9g %.9g %.9g\n",trialf->data[jj], trialp->data[ll], trialb->data[kk], R, h0, prob);
                         //if (ll==1) fprintf(stderr,"%f %g %g\n",trialf->data[jj],R,snr);
                         
-                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && R > farval->far) ) {
+                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R > farval->far) ) {
                            bestf = trialf->data[jj];
                            bestp = trialp->data[ll];
                            bestdf = trialb->data[kk];
@@ -1177,19 +1152,25 @@ int main(int argc, char *argv[])
                XLAL_ERROR(fn, XLAL_EFUNC); 
             }
             
-            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
-            if (xlalErrno!=0) {
-               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
-               XLAL_ERROR(fn, XLAL_EFUNC);
+            if (inputParams->calcRthreshold) {
+               numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
+               if (xlalErrno!=0) {
+                  fprintf(stderr,"%s: numericFAR() failed.\n", fn);
+                  XLAL_ERROR(fn, XLAL_EFUNC);
+               }
             }
             
             REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, &proberrcode);
             if (XLAL_IS_REAL8_FAIL_NAN(R)) {
                fprintf(stderr,"%s: calculateR() failed.\n", fn);
                XLAL_ERROR(fn, XLAL_EFUNC);
+            } else if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+               fprintf(stderr,"%s: probR() failed.\n", fn);
+               XLAL_ERROR(fn, XLAL_EFUNC);
             }
             REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
-            if (R > farval->far) {
+            if ((!inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (inputParams->calcRthreshold && R>farval->far)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) {
                   exactCandidates1 = resize_candidateVector(exactCandidates1, 2*exactCandidates1->length);
                   if (exactCandidates1->data==NULL) {
@@ -1197,7 +1178,7 @@ int main(int argc, char *argv[])
                      XLAL_ERROR(fn, XLAL_EFUNC);
                   }
                }
-               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], gaussCandidates4->data[ii].fsig, gaussCandidates4->data[ii].period, gaussCandidates4->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, 0.0, 0, gaussCandidates4->data[ii].normalization);
+               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], gaussCandidates4->data[ii].fsig, gaussCandidates4->data[ii].period, gaussCandidates4->data[ii].moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, R, h0, prob, proberrcode, gaussCandidates4->data[ii].normalization);
                exactCandidates1->numofcandidates++;
             }
             
@@ -1296,7 +1277,7 @@ int main(int argc, char *argv[])
                               XLAL_ERROR(fn, XLAL_EFUNC);
                            }
                         }
-                        if (bestProb==0.0) {
+                        if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, templatefarthresh, aveNoise, aveTFnoisePerFbinRatio, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
                               fprintf(stderr,"%s: numericFAR() failed.\n", fn);
@@ -1316,7 +1297,7 @@ int main(int argc, char *argv[])
                         
                         REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
                         
-                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && R > farval->far) ) {
+                        if ( (bestProb!=0.0 && prob < bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (bestProb==0.0 && inputParams->calcRthreshold && R > farval->far) ) {
                            bestf = trialf->data[jj];
                            bestp = trialp->data[ll];
                            bestdf = trialb->data[kk];
@@ -1454,6 +1435,7 @@ int main(int argc, char *argv[])
       for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) {
          fprintf(LOG, "fsig = %.8f, period = %.8f, df = %.8f, RA = %g, DEC = %g, R = %g, h0 = %.8f, Prob = %g, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
          fprintf(stderr, "fsig = %.8f, period = %.8f, df = %.8f, RA = %g, DEC = %g, R = %g, h0 = %.8f, Prob = %g, Error code = %d, FF normalization = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, exactCandidates2->data[ii].proberrcode, exactCandidates2->data[ii].normalization);
+         //fprintf(stderr,"%.8g\n",exactCandidates2->data[ii].stat);
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
    
@@ -2386,6 +2368,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->rootFindingMethod = args_info.BrentsMethod_given;
    params->antennaOff = args_info.antennaOff_given;
    params->noiseWeightOff = args_info.noiseWeightOff_given;
+   params->calcRthreshold = args_info.calcRthreshold_given;
    params->markBadSFTs = args_info.markBadSFTs_given;
    params->keepOneIHS = args_info.keepOneCandidate_given;
    params->FFTplanFlag = args_info.FFTplanFlag_arg;

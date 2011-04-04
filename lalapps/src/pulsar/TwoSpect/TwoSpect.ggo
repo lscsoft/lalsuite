@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.0.6"
+version "1.0.7"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -35,6 +35,7 @@ option "markBadSFTs"   - "Mark bad SFTs" flag off
 option "keepOneCandidate"  - "Keep a single IHS candidate and let process through the pipeline" flag off
 option "FFTplanFlag"   - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int default="3" optional
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
+option "calcRthreshold"    - "Calculate the threshold value for R given the template false alarm rate" flag off hidden
 option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off hidden
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
