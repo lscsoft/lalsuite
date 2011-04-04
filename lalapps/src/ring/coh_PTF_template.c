@@ -73,8 +73,17 @@ RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
+void coh_PTF_template (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+    )
+{
+  coh_PTF_template_PTF (fcTmplt,InspTmplt,params);
+}
+
 void
-coh_PTF_template (
+coh_PTF_template_PTF (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
