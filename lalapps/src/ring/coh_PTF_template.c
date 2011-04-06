@@ -73,8 +73,29 @@ RCSID( "$Id$" );
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id: FindChirpPTFTemplate.c,v 1.7 2008/06/26 19:05:07 dfazi Exp $");
 
+void coh_PTF_template (
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+    )
+{
+  if (params->approximant == FindChirpSP)
+  {
+    coh_PTF_template_TaylorF2 (fcTmplt,InspTmplt,params);
+  }
+  else if (params->approximant == FindChirpPTF)
+  {
+    coh_PTF_template_PTF (fcTmplt,InspTmplt,params);
+  }
+  else
+  {
+    fprintf(stderr,"Waveform approximant not recognized at template generation\n");
+    exit(0);
+  }
+}
+
 void
-coh_PTF_template (
+coh_PTF_template_PTF (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
@@ -125,9 +146,9 @@ coh_PTF_template (
 
   N = params->PTFphi->length;
 
-  /* check that the parameter structure is set */
+  /* set the parameter structure */
   /* to the correct waveform approximant       */
-  sanity_check( InspTmplt->approximant == FindChirpPTF );
+  InspTmplt->approximant = FindChirpPTF;
   sanity_check( InspTmplt->fLower );
 
   /* copy the template parameters to the finchirp template structure */
@@ -276,8 +297,7 @@ void coh_PTF_normalize(
   sanity_check ( len == length ) ; 
   sanity_check ( fcTmplt->PTFQtilde->vectorLength == len);
 
-  /* check that the parameter structure is set to a time domain approximant */
-  sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
+//  sanity_check ( fcTmplt->tmplt.approximant == FindChirpPTF );
 
   /* Set parameters to determine spin/nonspin */
   /* For non-spin we only need one filter. For PTF all 5 are needed */
@@ -633,4 +653,15 @@ void coh_PTF_auto_veto_overlaps(
 
   XLALDestroyCOMPLEX8Vector( qtildeVec);
   XLALDestroyCOMPLEX8Vector( qVec );
+}
+
+void
+coh_PTF_template_TaylorF2 ( 
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *InspTmplt,
+    FindChirpTmpltParams       *params
+    )
+{
+  LALStatus status = blank_status;
+  LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params);
 }
