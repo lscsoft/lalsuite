@@ -21,8 +21,6 @@ InspiralTemplate        **PTFBankTemplates)
   for (i=0; (i < numTemplates); bankTemplate = bankTemplate->next,i++)
   {
     bankTemplate->fLower = params->lowTemplateFrequency;
-    bankTemplate->approximant = FindChirpPTF;
-    bankTemplate->order = LAL_PNORDER_TWO;
   }
   return numTemplates;
 }
@@ -759,8 +757,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     powerBinsCross[freqBin] = powerBinsCross[freqBin]/SNRcrossLast;
   }
 }
-
-        
 
 REAL4 coh_PTF_calculate_chi_square(
 struct coh_PTF_params   *params,

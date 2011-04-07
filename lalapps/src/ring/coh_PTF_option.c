@@ -28,47 +28,47 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
   struct option long_options[] =
   {
-    { "verbose", no_argument, &vrbflg, 1 },
-    { "strain-data", no_argument, &localparams.strainData, 1 },
-    { "simulated-data", no_argument, &localparams.simData, 1 },
-    { "zero-data", no_argument, &localparams.zeroData, 1 },
-    { "white-spectrum", no_argument, &localparams.whiteSpectrum, 1 },
+    { "verbose",            no_argument, &vrbflg, 1 },
+    { "strain-data",        no_argument, &localparams.strainData, 1 },
+    { "simulated-data",     no_argument, &localparams.simData, 1 },
+    { "zero-data",          no_argument, &localparams.zeroData, 1 },
+    { "white-spectrum",     no_argument, &localparams.whiteSpectrum, 1 },
     { "write-raw-data",     no_argument, &localparams.writeRawData, 1 },
     { "write-data",         no_argument, &localparams.writeProcessedData, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
-    { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1},
-    { "do-null-stream"     ,no_argument, &localparams.doNullStream,1},
-    { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
-    { "do-bank-veto"       ,no_argument, &localparams.doBankVeto,1},
-    { "do-auto-veto"       ,no_argument, &localparams.doAutoVeto,1},
-    { "do-chi-square"      ,no_argument, &localparams.doChiSquare,1},
-/*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
-    {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
-    {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
-    {"l1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_L1]),   1 },
-/*    {"t1-data",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },*/
-    {"v1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_V1]),   1 },
-    { "help",                    no_argument,       0, 'h' },
-    { "version",                 no_argument,       0, 'V' },
+    { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1 },
+    { "do-null-stream",     no_argument, &localparams.doNullStream, 1 },
+    { "do-trace-snr",       no_argument, &localparams.doTraceSNR, 1 },
+    { "do-bank-veto",       no_argument, &localparams.doBankVeto, 1 },
+    { "do-auto-veto",       no_argument, &localparams.doAutoVeto, 1 },
+    { "do-chi-square",      no_argument, &localparams.doChiSquare, 1 },
+/*    {"g1-data",             no_argument, &(haveTrig[LAL_IFO_G1]), 1 },*/
+    {"h1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H1]),1},
+    {"h2-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H2]),1},
+    {"l1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_L1]),1},
+/*    {"t1-data",             no_argument, &(haveTrig[LAL_IFO_T1]), 1 },*/
+    {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
+    { "help",               no_argument, 0, 'h' },
+    { "version",            no_argument, 0, 'V' },
     { "gps-start-time",          required_argument, 0, 'a' },
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
     { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "trigger-time",            required_argument, 0, '<' },
     { "trigger-time-ns",         required_argument, 0, '>' },
-    { "h1-channel-name",            required_argument, 0, 'c' },
-    { "h1-frame-cache",             required_argument, 0, 'D' },
-    { "h2-channel-name",            required_argument, 0, 'x' },
-    { "h2-frame-cache",             required_argument, 0, 'X' },
-    { "l1-channel-name",            required_argument, 0, 'y' },
-    { "l1-frame-cache",             required_argument, 0, 'Y' },
-    { "v1-channel-name",            required_argument, 0, 'z' },
-    { "v1-frame-cache",             required_argument, 0, 'Z' },
+    { "h1-channel-name",         required_argument, 0, 'c' },
+    { "h1-frame-cache",          required_argument, 0, 'D' },
+    { "h2-channel-name",         required_argument, 0, 'x' },
+    { "h2-frame-cache",          required_argument, 0, 'X' },
+    { "l1-channel-name",         required_argument, 0, 'y' },
+    { "l1-frame-cache",          required_argument, 0, 'Y' },
+    { "v1-channel-name",         required_argument, 0, 'z' },
+    { "v1-frame-cache",          required_argument, 0, 'Z' },
     { "debug-level",             required_argument, 0, 'd' },
-    { "low-template-freq",        required_argument, 0, 'e' },
-    { "low-filter-freq",        required_argument, 0, 'H' },
+    { "low-template-freq",       required_argument, 0, 'e' },
+    { "low-filter-freq",         required_argument, 0, 'H' },
     { "high-filter-freq",        required_argument, 0, 'I' },
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "injection-file",          required_argument, 0, 'i' },
@@ -100,9 +100,13 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { "right-ascension",         required_argument, 0, 'f' },
     { "declination",             required_argument, 0, 'F' },
+    { "sky-error",               required_argument, 0, 'g' },
+    { "timing-accuracy",         required_argument, 0, 'G' },
+    { "approximant",             required_argument, 0, 'C' },
+    { "order",                   required_argument, 0, 'v' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
+  char args[] = "a:A:b:B:c:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z:<:>";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -182,11 +186,65 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
         break;
+      case 'C': /* waveform approximant */
+        if ( ! strcmp( "FindChirpSP", optarg ) )
+        {
+          localparams.approximant = FindChirpSP;
+        }
+        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        {
+          localparams.approximant = FindChirpPTF;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either FindChirpSP or FindChirpPTF)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
+      case 'v': /* PN order of waveform */        
+        if ( ! strcmp( "twoPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO;
+        }
+        else if ( ! strcmp( "twoPointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO_POINT_FIVE;
+        }
+        else if ( ! strcmp( "threePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE;
+        }
+        else if ( ! strcmp( "threePointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "pseudoFourPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_PSEUDO_FOUR;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
       case 'f': /* right-ascension */
         localparams.rightAscension = atof( optarg ) * LAL_PI_180;
         break;
       case 'F': /* Declination */
         localparams.declination = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'g': /* Error in declination */
+        localparams.skyError = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'G': /* timing accuracy of network */
+        localparams.timingAccuracy = atof( optarg );
         break;
       case 'h': /* help */
         coh_PTF_usage( program );
@@ -304,6 +362,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   /* Right Ascension and declination must be provided */
   params->rightAscension = -1000.;
   params->declination = -1000.;
+  params->skyError = 0.;
+  params->timingAccuracy = 0.0005;
+  params->skyLooping = ALL_SKY;
 
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
@@ -332,6 +393,10 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->nullStatThreshold = 5.25;
   params->nullStatGradOn = 30.;
   params->nullStatGradient = 50./700.;
+  params->skyLooping = SKY_POINT_ERROR;
+
+  params->approximant = NumApproximants;
+  params->order = LAL_PNORDER_NUM_ORDER;
 
   return 0;
 }
@@ -339,14 +404,23 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
 /* check sanity of parameters and sets appropriate values of unset parameters */
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
 {
-  UINT4 recordLength = 0;
-  UINT4 segmentLength = 0;
-  UINT4 segmentStride = 0;
+  UINT4 recordLength   = 0;
+  UINT4 segmentLength  = 0;
+  UINT4 segmentStride  = 0;
   UINT4 truncateLength = 0;
+  UINT4 numDetectors   = 0;
   UINT4 ifoNumber;
-  INT8 startTime;
-  INT8 endTime;
+  INT8  startTime;
+  INT8  endTime;
 
+  /* Determine if we are analyzing single or multiple ifo data */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( params->haveTrig[ifoNumber] )
+    {
+      numDetectors++;
+    }
+  }
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
@@ -398,15 +472,54 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
     /*sanity_check( params->channel );*/
     sanity_check( params->dynRangeFac > 0.0 );
   }
-  sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
-  sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
+
+  /* sky localisation params */
+  if ( params->rightAscension != -1000. && params->declination != -1000. )
+  {
+
+    sanity_check( params->rightAscension >= 0.\
+                  && params->rightAscension <= 2.*LAL_PI);
+    sanity_check( params->declination >= -LAL_PI/2.\
+                  && params->declination <= LAL_PI/2.);
+
+    if ( params->skyError>0. )
+    {
+
+      sanity_check( params->skyError >= -LAL_PI/2.\
+                    && params->skyError <=LAL_PI/2. );
+      sanity_check( params->timingAccuracy > 0. );
+
+      if ( numDetectors == 2 )
+        params->skyLooping = TWO_DET_SKY_POINT_ERROR;
+      else
+        params->skyLooping = SKY_POINT_ERROR;
+    }
+    else
+    {
+      params->skyLooping = SINGLE_SKY_POINT;
+    }
+  }
+  else
+  {
+    if ( numDetectors == 2 )
+      params->skyLooping = TWO_DET_ALL_SKY;
+    else
+      params->skyLooping = ALL_SKY;
+  }
+
+  if ( params->skyLooping != SINGLE_SKY_POINT && params->doNullStream )
+  {
+    error( "--do-null-stream and --sky-error are incompatbile. Null stream on more than one sky point is a bad idea.\n" );
+  }
 
   /* Check that filter frequencies have been given */
   sanity_check( params->highpassFrequency > 0);
   sanity_check( params->lowTemplateFrequency > 0);
-  fprintf(stderr, "%e %e %e \n", params->lowTemplateFrequency, params->lowFilterFrequency, params->highFilterFrequency);
   sanity_check( params->lowFilterFrequency > 0 && params->lowFilterFrequency >= params->lowTemplateFrequency);
   sanity_check( params->highFilterFrequency > params->lowFilterFrequency);
+
+  sanity_check( params->approximant != NumApproximants);
+  sanity_check( params->order != LAL_PNORDER_NUM_ORDER);
 
 // This needs fixing. Need a check on whether segmentsToDoList and 
 // analyzeInjSegsOnly have been given.
@@ -532,6 +645,8 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
   fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
   fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
+  fprintf( stderr, "--sky-error=err 1-sigma error radius in sky location of external trigger in degrees\n" );
+  fprintf( stderr, "--timing-accuracy=t_acc Accuracy ( in seconds ) of timing information\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );

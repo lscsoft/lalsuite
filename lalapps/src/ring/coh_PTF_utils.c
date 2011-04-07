@@ -470,7 +470,9 @@ void coh_PTF_cleanup(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
-    REAL8                   *Fcross
+    REAL8                   *Fcross,
+    REAL8                   *Fplustrig,
+    REAL8                   *Fcrosstrig
     )
 {
   /* Clean up memory usage */
@@ -554,12 +556,16 @@ void coh_PTF_cleanup(
       XLALDestroyVector( fcTmpltParams->PTFphi );
     if ( fcTmpltParams->PTFomega_2_3 )
       XLALDestroyVector( fcTmpltParams->PTFomega_2_3 );
+    if ( fcTmpltParams->xfacVec )
+      XLALDestroyVector( fcTmpltParams->xfacVec );
     LALFree( fcTmpltParams );
   }
   if ( fcTmplt )
   {
     if ( fcTmplt->PTFQtilde )
       XLALDestroyCOMPLEX8VectorSequence( fcTmplt->PTFQtilde );
+    if ( fcTmplt->data )
+      XLALDestroyCOMPLEX8Vector( fcTmplt->data );
     LALFree( fcTmplt );
   }
   if ( fcInitParams )
@@ -570,6 +576,10 @@ void coh_PTF_cleanup(
     LALFree( Fplus );
   if ( Fcross )
     LALFree( Fcross );
+  if ( Fplustrig )
+    LALFree( Fplustrig );
+  if ( Fcrosstrig )
+    LALFree( Fcrosstrig );
 }
 
 
@@ -664,3 +674,289 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
   return cnvTemplate;
 }
 
+/* construct list of of (ra, dec) pairs for multiple sky points */
+
+void coh_PTF_generate_sky_points( 
+    struct coh_PTF_skyPoints *skyPoints,
+    struct coh_PTF_params *params
+    )
+{
+
+  /* if all sky */
+  if ( params->skyLooping == ALL_SKY || params->skyLooping == TWO_DET_ALL_SKY )
+  {
+    fprintf( stderr, "all sky mode is not implemented yet, please provide --declination" );
+    exit(1);
+
+    //skyPoints = coh_PTF_sky_grid()
+  }
+
+  /* if sky region */
+  else if ( params->skyLooping == SKY_POINT_ERROR\
+            || params->skyLooping == TWO_DET_SKY_POINT_ERROR
+            || params->skyLooping == SINGLE_SKY_POINT )
+  {
+    coh_PTF_sky_grid( skyPoints, params );
+  }
+
+}
+
+/*
+ * Generate a grid of sky points based on the sinusoidal map method used by
+ * the xpipeline.
+ */
+
+void coh_PTF_sky_grid(
+    struct coh_PTF_skyPoints *skyPoints,
+    struct coh_PTF_params *params    
+    )
+{
+  UINT4 ifoNumber,i,j,k;
+  LALDetector *detectors[LAL_NUM_IFO];
+  REAL4 angle;   /* opening angle between 2 IFO baseline and sky localisation */
+  REAL4 lambdamin,lambdamax,lambda; /* opening angle closest to pi/2 */
+  REAL4 alpha,detalpha;
+  alpha = 0;                         
+  REAL4 angularResolution;          /* angular resolution of grid in radians */
+  double baseline,distance;
+  REAL4 theta,phi;                  /* sky parameters */
+  REAL4 raNp  = 0.;                 /* north */
+  REAL4 decNp = LAL_PI / 2.;        /* pole */
+
+  REAL4 rho;                        /* magnitude of rotation vector */
+  REAL4 axis[3];                    /* rotation axis vector */
+  REAL4 npPos[3];                   /* north pole position */
+  REAL4 trigPos[3];                 /* trigger position */
+  REAL4 pos[3],rotPos[3];           /* sky point position (orig & rotated) */
+
+  /* get site coordinates */
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ) );
+    XLALReturnDetector( detectors[ifoNumber], ifoNumber );
+  }
+
+  /* find pair of detectors whose opening angle to the GRB ±error is closest */
+  /* to 90 degrees */
+  for ( i = 0; i < LAL_NUM_IFO; i++ )
+  {
+    if ( params->haveTrig[i] )
+    {
+      for ( j = i+1; j < LAL_NUM_IFO; j++ )
+      {
+        if ( params->haveTrig[j] )
+        {
+          /* get dot product (time delay) between sites */
+          baseline = XLALArrivalTimeDiff( detectors[i]->location,
+                                          detectors[j]->location,
+                                          params->rightAscension,
+                                          params->declination,
+                                          &params->trigTime );
+
+          distance = sqrt( pow( detectors[i]->location[0] - 
+                                detectors[j]->location[0], 2) +
+                           pow( detectors[i]->location[1] -
+                                detectors[j]->location[1], 2) +
+                           pow( detectors[i]->location[2] -
+                                detectors[j]->location[2], 2 ) );
+
+          /* convert to time */
+          distance = distance / LAL_C_SI;
+
+          /* calculate opening angle */
+          angle  = acos( baseline/distance );
+
+          /* generate angular window with sky error */
+          lambdamin = angle-params->skyError;
+          lambdamax = angle+params->skyError;
+   
+          /* if pi/2 is in the range, choose that, 
+           * otherwise get as close as possible */
+          if ( lambdamin < LAL_PI/2. && lambdamax > LAL_PI/2. )
+          {
+            lambda = LAL_PI/2;
+          }
+          else
+            if ( abs( LAL_PI/2. - lambdamin) < abs( LAL_PI/2. - lambdamax ) )
+              lambda = lambdamin;
+            else
+              lambda = lambdamax;
+
+          /* calculate alpha */
+          detalpha = distance * sin( lambda );
+          if ( detalpha > alpha )
+            alpha = detalpha;
+    
+        }
+      }
+    }
+  }
+
+  /* calculate angular resolution */
+  angularResolution = 2. * params->timingAccuracy / alpha;
+
+  /* generate sky grid using sinusoidal map */
+  *skyPoints = coh_PTF_circular_grid( angularResolution, params->skyError );
+
+  /*
+   * Rotate sky grid to centre on the given (ra,dec)
+   */
+  
+  /* calculate angle between north pole and (ra,dec) */
+  raNp  = 0.;
+  decNp = LAL_PI / 2.;
+
+  angle = acos ( sin(decNp)*sin(params->declination) +
+                 cos(decNp)*cos(params->declination) * 
+                 cos( raNp-params->rightAscension ) );
+
+  /* calculate unit vector to rotate around */
+  npPos[0] = cos(decNp) * cos(raNp);
+  npPos[1] = cos(decNp) * sin(raNp);
+  npPos[2] = sin(decNp);
+
+  trigPos[0] = cos(params->declination) * cos(params->rightAscension);
+  trigPos[1] = cos(params->declination) * sin(params->rightAscension);
+  trigPos[2] = sin(params->declination);
+
+  axis[0] = npPos[1]*trigPos[2] - npPos[2]*trigPos[1];
+  axis[1] = npPos[2]*trigPos[0] - npPos[0]*trigPos[2];
+  axis[2] = npPos[0]*trigPos[1] - npPos[1]*trigPos[0];
+
+  rho = sqrt( pow(axis[0],2) + pow(axis[1],2) + pow(axis[2],2) );
+  for ( i=0; i<3; i++ )
+    axis[i] /= rho;
+
+  /* generate rotation matrix */
+  REAL4 R[3][3];
+
+  R[0][0] = cos(angle) + pow(axis[0],2) * ( 1 - cos(angle) );
+  R[0][1] = axis[0] * axis[1] * ( 1 - cos(angle) ) - axis[2] * sin(angle);
+  R[0][2] = axis[0] * axis[2] * ( 1 - cos(angle) ) + axis[1] * sin(angle);
+
+  R[1][0] = axis[1] * axis[0] * ( 1 - cos(angle) ) + axis[2] * sin(angle);
+  R[1][1] = cos(angle) + pow(axis[1],2) * ( 1 - cos(angle) );
+  R[1][2] = axis[1] * axis[2] * ( 1 - cos(angle) ) - axis[0] * sin(angle);
+
+  R[2][0] = axis[2] * axis[0] * ( 1 - cos(angle) ) - axis[1] * sin(angle);
+  R[2][1] = axis[2] * axis[1] * ( 1 - cos(angle) ) + axis[0] * sin(angle);
+  R[2][2] = cos(angle) + pow(axis[2],2) * ( 1 - cos(angle) );
+
+  /* loop over points rotating by angle around axis */
+  for ( i=0; i < skyPoints->numPoints; i++ )
+  {
+
+    /* convert to spherical */
+    phi   = skyPoints->rightAscension[i];
+    theta = LAL_PI / 2. - skyPoints->declination[i];
+    
+    /* convert to cartesian */
+    pos[0] = sin(theta)*cos(phi);
+    pos[1] = sin(theta)*sin(phi);
+    pos[2] = cos(theta);
+
+    /* rotate */
+    for ( k=0; k<3; k++ )
+    {
+      rotPos[k] = R[k][0]*pos[0] + R[k][1]*pos[1] + R[k][2]*pos[2];
+    }
+
+    /* convert back to (phi,theta) */
+    theta = acos(rotPos[2]);
+    phi   = atan2(rotPos[1],rotPos[0]);
+    skyPoints->rightAscension[i] = phi;
+    skyPoints->declination[i]    = LAL_PI / 2. - theta;
+
+    if ( skyPoints->declination[i] < 0. )
+      skyPoints->declination[i] += LAL_PI / 2.;
+
+  }
+
+  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( detectors[ifoNumber] )
+      LALFree(detectors[ifoNumber]);
+  }
+
+}
+
+/*
+ * generate cicular map of sky points centred on north pole:
+ *  * place central point
+ *  * step out in declination by angularResolution
+ *  * place a ring of points separated by angularResolution
+ *  * repeat until maximum skyError radius passed
+ */
+
+struct coh_PTF_skyPoints coh_PTF_circular_grid(
+    REAL4        angularResolution,
+    REAL4        skyError
+    )
+{
+
+  UINT4                    p               = 0;
+  UINT4                    i,j;
+  UINT4                    numTheta;            /* number of rings */
+  REAL4                    dPhi,phi,theta;      /* sky point parameters */
+  UINT4                    numSkyPoints    = 0; /* total number of sky points */
+  struct coh_PTF_skyPoints skyPoints;
+
+  /* set range of theta */
+  numTheta = (int) ceil( skyError / angularResolution ) + 1;
+
+  /* set number of sky points */
+  UINT4 numPhi[numTheta];
+  for ( i=0; i < numTheta; i++ )
+  {
+    theta     = angularResolution * i;
+    numPhi[i] = (int) ceil( LAL_TWOPI * sin(theta) / angularResolution );
+    if ( numPhi[i] < 1 )
+      numPhi[i] = 1;
+    numSkyPoints += numPhi[i];
+  }
+
+  /* assign memory for sky points */
+  skyPoints.rightAscension = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+  skyPoints.declination    = LALCalloc(1, numSkyPoints*sizeof( REAL8 ));
+  skyPoints.numPoints      = numSkyPoints;
+
+  /* loop over rings on sky, and around each ring */
+  for ( i=0; i < numTheta; i++ )
+  {
+    dPhi  = LAL_TWOPI / numPhi[i];
+    theta = angularResolution * i;
+    for ( j=0; j < numPhi[i]; j++ )
+    {
+      /* calculate phi */
+      phi = ( -LAL_PI + dPhi / 2. ) + dPhi * j;
+      /* assign sky point */
+      skyPoints.rightAscension[p] = phi;
+      skyPoints.declination[p]    = LAL_PI / 2. - theta;
+      p++;
+    }
+
+  }
+
+  return skyPoints;
+
+}
+
+long int timeval_subtract(struct timeval *t1)
+{
+  struct timeval t2;
+  gettimeofday(&t2,NULL);
+  long int diff = (t2.tv_usec + 1000000 * t2.tv_sec) - (t1->tv_usec + 1000000 * t1->tv_sec);
+
+  return diff;
+}
+
+void timeval_print(struct timeval *tv)
+{
+  char buffer[30];
+  time_t curtime;
+
+  printf("%ld.%06ld", tv->tv_sec, tv->tv_usec);
+  curtime = tv->tv_sec;
+  strftime(buffer, 30, "%m-%d-%Y  %T", localtime(&curtime));
+  printf(" = %s.%06ld\n", buffer, tv->tv_usec);
+}

@@ -437,7 +437,10 @@ class ptf_run(hipe_run):
     arguments += " " + " ".join(["--" + stage for stage in self._stages])
 
     # run inspiral_hipe
-    inspiralutils.make_external_call("../../lalapps_cohPTF_hipe %s" % (arguments % ini_file_name),show_stdout=False, show_command=self._verbose)
+    inspiralutils.make_external_call(\
+      " ".join((self._cp.get("condor","cohPTF_hipe"),
+               arguments % ini_file_name)),
+      show_stdout=False, show_command=self._verbose)
 
     if os.path.isdir("cache") and not os.path.islink("cache"):
       os.rmdir("cache")

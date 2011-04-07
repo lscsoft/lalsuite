@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 13
+# serial 15
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -16,6 +16,11 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
 ])])[]dnl
 AC_LANG(_AC_LANG)[]dnl
 ]) # LALSUITE_USE_LIBTOOL
+
+AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+  AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
+])
 
 AC_DEFUN([LALSUITE_ENABLE_MODULE],[
 AM_CONDITIONAL([$1],[test x$$2 = xtrue])
@@ -131,7 +136,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
   [ case "${enableval}" in
       yes) lalframe=true;;
       no) lalframe=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalframe) ;;
     esac
   ], [ lalframe=true ] )
 if test "$frame" = "false"; then
@@ -146,7 +151,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
   [ case "${enableval}" in
       yes) lalmetaio=true;;
       no) lalmetaio=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-metaio) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalmetaio) ;;
     esac
   ], [ lalmetaio=true ] )
 if test "$metaio" = "false"; then
@@ -173,7 +178,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALBURST],
   [ case "${enableval}" in
       yes) lalburst=true;;
       no) lalburst=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-burst) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalburst) ;;
     esac
   ], [ lalburst=true ] )
 if test "$lalmetaio" = "false"; then
@@ -187,7 +192,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
   [ case "${enableval}" in
       yes) lalinspiral=true;;
       no) lalinspiral=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-inspiral) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
   ], [ lalinspiral=true ] )
 if test "$lalmetaio" = "false"; then
@@ -214,7 +219,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
   [ case "${enableval}" in
       yes) lalstochastic=true;;
       no) lalstochastic=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-stochastic) ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalstochastic) ;;
     esac
   ], [ lalstochastic=true ] )
 if test "$lalmetaio" = "false"; then
