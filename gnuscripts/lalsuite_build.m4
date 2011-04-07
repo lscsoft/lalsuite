@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 30
+# serial 31
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -387,13 +387,9 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
     yes)
       AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
       cuda=true
-      if test "x$build_os" = "xlinux"; then
-        if test "x$build_cpu" = "xx86_64"; then
-          CLIBS="lib64"
-        fi
-      else
-        CLIBS="lib"
-      fi
+      AS_CASE([$build_os],
+          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
+          [CLIBS="lib"])
       CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
       CUDA_CFLAGS="-I/opt/cuda/include"
       LIBS="$LIBS $CUDA_LIBS"
@@ -404,13 +400,9 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
     *)
       AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
       cuda=true
-      if test "x$build_os" = "xlinux"; then
-        if test "x$build_cpu" = "xx86_64"; then
-          CLIBS="lib64"
-        fi
-      else
-        CLIBS="lib"
-      fi
+      AS_CASE([$build_os],
+          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
+          [CLIBS="lib"])
       CUDA_LIBS="-L${with_cuda}/$CLIBS -lcufft -lcudart"
       CUDA_CFLAGS="-I${with_cuda}/include"
       LIBS="$LIBS $CUDA_LIBS"
