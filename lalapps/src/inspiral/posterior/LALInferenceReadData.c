@@ -74,20 +74,18 @@ REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, 
 	LALFrClose(&status,&stream);
 	return out;
 }
-#define USAGE \
-"Variables needed from command line to read data:\n\
-[ --channel [channel1,channel2,channel3,..] ] \n\
---IFO [IFO1,IFO2,IFO3,..] \n\
---cache [cache1,cache2,cache3,..] \n\
-  (Use LALLIGO, LAL2kLIGO, LALGEO, LALVirgo, LALAdLIGO to simulate these detectors)\n \
---PSDstart GPSsecs.GPSnanosecs \n\
---PSDlength length \n\
-[--srate SampleRate   [4096]] \n\
---seglen segment_length \n\
---trigtime GPSsecs.GPSnanosecs \n\
-[--fLow [cutoff1,cutoff2,cutoff3,..] [40Hz]] \n\
-[--fHigh [fHigh1,fHigh2,fHigh3,..] [f_Nyquist]]\n\
-[--dataseed number]\n"
+#define USAGE "\
+ --IFO   [IFO1,IFO2,...]        IFOs can be H1,L1,V1\n\
+ --cache [cache1,cache2,...]    LAL cache files (LALLIGO, LALAdLIGO, LALVirgo to simulate these detectors)\n\
+ --PSDstart  GPStime            GPS start time of PSD estimation data\n\
+ --PSDlength length             length of PSD estimation data in seconds\n\
+ --seglen    length             length of segments for PSD estimation and analysis in seconds\n\
+ --trigtime  GPStime            GPS time of the trigger to analyse\n\
+(--srate     rate )             Downsample data to rate in Hz\n\
+(--fLow  [freq1,freq2,...] )    Specify lower frequency cutoff for overlap integral\n\
+(--fHigh [freq1,freq2,...] )    Specify higher frequency cutoff for overlap integral\n\
+(--channel [chan1,chan2,...]  ) Specify channel names when reading cache files\n \
+(--dataseed number)             Specify random seed to use when generating data\n"
 
 LALIFOData *readData(ProcessParamsTable *commandLine)
 /* Read in the data and store it in a LALIFOData structure */

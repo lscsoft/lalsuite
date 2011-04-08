@@ -44,6 +44,9 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* calls the "ReadData()" function to gather data & PSD from files, */
 /* and initializes other variables accordingly.                     */
 {
+	char help[]="\
+Initialisation arguments:\n\
+(--randomseed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
@@ -57,6 +60,13 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	irs->commandLine=commandLine;
 	irs->data = readData(commandLine);
 	/* (this will already initialise each LALIFOData's following elements:  */
+        ppt=getProcParamVal(commandLine,"--help");
+        if(ppt)
+        {
+                fprintf(stdout,"%s",help);
+                return(irs);
+        }
+
 	/*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
 	/*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
 	fprintf(stdout, " readData(): finished.\n");
@@ -157,18 +167,15 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeNS(LALInferenceRunState *runState)
 {
 	char help[]="\
-	--Nlive N\tNumber of live points to use\n\
-	--Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
-	[--Nruns R]\tNumber of parallel samples from logt to use(1)\n\
-	[--tolerance dZ]\tTolerance of nested sampling algorithm (0.1)\n\
-	[--randomseed seed]\tRandom seed of sampling distribution\n\
-	[--verbose]\n";
-	
-	INT4 verbose=0,tmpi=0,randomseed=0;
-	REAL8 tmp=0;
-	ProcessParamsTable *commandLine=runState->commandLine;
+Nested sampling arguments:\n\
+ --Nlive N\tNumber of live points to use\n\
+ --Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
+(--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
+(--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
+(--randomseed seed)\tRandom seed of sampling distribution\n\
+(--verbose)\tProduce progress information\n\n";
 	ProcessParamsTable *ppt=NULL;
-
+	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
 	if(ppt)
@@ -176,6 +183,9 @@ void initializeNS(LALInferenceRunState *runState)
 		fprintf(stdout,"%s",help);
 		return;
 	}
+
+	INT4 verbose=0,tmpi=0,randomseed=0;
+	REAL8 tmp=0;
 	
 	/* Initialise parameters structure */
 	runState->algorithmParams=XLALCalloc(1,sizeof(LALVariables));
@@ -374,16 +384,17 @@ void initVariables(LALInferenceRunState *state)
 	memset(currentParams,0,sizeof(LALVariables));
 	
 	char help[]="\
-	[--injXML injections.xml]\tInjection XML file to use\n\
-	[--Mmin mchirp]\tMinimum chirp mass\n\
-	[--Mmax mchirp]\tMaximum chirp mass\n\
-	[--dt time]\tWidth of time prior, centred around trigger (0.1s)\n\
-	[--trigtime time]\tTrigger time to use\n\
-	[--Dmin dist]\tMinimum distance in Mpc (1)\n\
-	[--Dmax dist]\tMaximum distance in Mpc (100)\n\
-	[--approx ApproximantorderPN]\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
-	[--mincomp min]\tMinimum component mass (1.0)\n\
-	[--maxcomp max]\tMaximum component mass (30.0)\n";
+Parameter arguments:\n\
+(--injXML injections.xml)\tInjection XML file to use\n\
+(--Mmin mchirp)\tMinimum chirp mass\n\
+(--Mmax mchirp)\tMaximum chirp mass\n\
+(--dt time)\tWidth of time prior, centred around trigger (0.1s)\n\
+(--trigtime time)\tTrigger time to use\n\
+(--Dmin dist)\tMinimum distance in Mpc (1)\n\
+(--Dmax dist)\tMaximum distance in Mpc (100)\n\
+(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2twoPN)\n\
+(--mincomp min)\tMinimum component mass (1.0)\n\
+(--maxcomp max)\tMaximum component mass (30.0)\n\n";
 	
 	/* Print command line arguments if help requested */
 	ppt=getProcParamVal(commandLine,"--help");
