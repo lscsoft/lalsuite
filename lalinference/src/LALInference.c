@@ -352,7 +352,7 @@ void printVariables(LALVariables *var)
           fprintf(stdout, "%d", *(INT4 *) ptr->value);
           break;
         case INT8_t:
-          fprintf(stdout, "%qi", *(INT8 *) ptr->value);
+          fprintf(stdout, "%" LAL_INT8_FORMAT, *(INT8 *) ptr->value);
           break;
 		case UINT4_t:
 		  fprintf(stdout, "%ud", *(UINT4 *) ptr->value);
@@ -394,7 +394,7 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%d", *(INT4 *) ptr->value);
 				break;
 			case INT8_t:
-				fprintf(fp, "%qi", *(INT8 *) ptr->value);
+				fprintf(fp, "%"LAL_INT8_FORMAT , *(INT8 *) ptr->value);
 				break;
 			case UINT4_t:
 				fprintf(fp, "%ud", *(UINT4 *) ptr->value);
@@ -437,7 +437,7 @@ void fprintSampleNonFixed(FILE *fp,LALVariables *sample){
 					fprintf(fp, "%d", *(INT4 *) ptr->value);
 					break;
 				case INT8_t:
-					fprintf(fp, "%qi", *(INT8 *) ptr->value);
+					fprintf(fp, "%"LAL_INT8_FORMAT, *(INT8 *) ptr->value);
 					break;
 				case UINT4_t:
 					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
