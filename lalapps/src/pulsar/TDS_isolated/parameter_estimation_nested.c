@@ -286,6 +286,8 @@ defined!\n");
     
     FILE *fp=NULL;
     
+    ifodata->modelDomain = timeDomain;
+    
     ifodata=XLALCalloc(1,sizeof(LALIFOData));
     ifodata->next=NULL;
 	  ifodata->dataParams=XLALCalloc(1,sizeof(LALVariables));
@@ -1272,19 +1274,21 @@ REAL8 noise_only_model( LALIFOData *data ){
   INT4 chunkMin = 0, chunkMax = 0;
   REAL8 chunkLength = 0.;
   
-  chunkMin = (INT4 *)getVariable( data->dataParams, "chunkMin" );
-  chunkMax = (INT4 *)getVariable( data->dataParams, "chunkMax" );
+  chunkMin = (INT4)getVariable( data->dataParams, "chunkMin" );
+  chunkMax = (INT4)getVariable( data->dataParams, "chunkMax" );
   
   chunkLengths = (UINT4Vector *)getVariable( data->dataParams, "chunkLengths" );
   sumData = (REAL8Vector *)getVariable( data->dataParams, "sumData" );
   
   for (i=0; i<chunkLengths->length; i++){
-    chunkLength = (REAL8)data.chunkLengths->data[i];
+    chunkLength = (REAL8)chunkLengths->data[i];
     
     logL += (chunkLength - 1.) * log(2.);
     logL += log_factorial((INT4)chunkLength);
-    logL -= chunkLength * log(data.sumData->data[i]);
-  }  
+    logL -= chunkLength * log(sumData->data[i]);
+  }
+  
+  return logL;
 }
 
 /* FOR REFERENCE - using LIGOTimeGPSVector requires the

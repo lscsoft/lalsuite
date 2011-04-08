@@ -6,7 +6,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 if LALFRAME
 bin_PROGRAMS = \
 	lalapps_heterodyne_pulsar \
-	lalapps_pulsar_parameter_estimation 
+	lalapps_pulsar_parameter_estimation \
+	lalapps_pulsar_parameter_estimation_nested
 
 TESTS = test_heterodyne_pulsar.sh
 endif
@@ -21,7 +22,7 @@ lalapps_pulsar_parameter_estimation_SOURCES = \
 
 lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	parameter_estimation_nested.c \
-	parameter_estimation_nested.h \
+	parameter_estimation_nested.h
 
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
