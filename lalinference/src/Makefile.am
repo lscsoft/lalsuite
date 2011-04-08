@@ -4,12 +4,16 @@ lalinferenceincludedir = $(includedir)/lal
 lalinferenceinclude_HEADERS = \
 	LALInference.h \
 	LALInferenceVCSInfo.h \
-	LALInferenceConfig.h
+	LALInferenceConfig.h \
+	LALInferenceNestedSampler.h \
+	LALInferencePrior.h 
 
 lib_LTLIBRARIES = liblalinference.la
 liblalinference_la_SOURCES = \
 	LALInference.c \
-	LALInferenceVCSInfo.c
+	LALInferenceVCSInfo.c \
+	LALInferenceNestedSampler.c \
+	LALInferencePrior.c
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
