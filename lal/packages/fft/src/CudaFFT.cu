@@ -14,8 +14,36 @@ void XLALCudaFFTError(cufftResult_t error, const char *file, int line)
 {
     if(error != CUFFT_SUCCESS) 
     {
-        fprintf( stderr, "%s:%d Cuda FFT Error: %d\n", file, line, error);
-        exit(1);
+	/* As there are no GetErrorString function available for CUDA FFT, 
+	 * the error messages had to be hard-coded, 
+	 * and needs to be updated with new CUDA releases. 
+	 */
+	switch( error )
+	{
+	    case CUFFT_INVALID_PLAN:
+	      fprintf( stderr, "%s:%d The plan handle is invalid\n", file, line );
+	      break;
+	
+	    case CUFFT_INVALID_VALUE:
+	      fprintf( stderr, "%s:%d The input data and/or output data is not valid\n", file, line );
+	      break;
+	      
+	    case CUFFT_INTERNAL_ERROR:
+	      fprintf( stderr, "%s:%d Internal driver error is detected\n", file, line );
+	      break;
+
+	    case CUFFT_EXEC_FAILED:
+	      fprintf( stderr, "%s:%d CUFFT failed to execute the transform on GPU\n", file, line );
+	      break;
+
+	    case CUFFT_SETUP_FAILED:
+	      fprintf( stderr, "%s:%d CUFFT library failed to initialize\n", file, line );
+	      break;
+
+	    default:
+		fprintf( stderr, "%s:%d Cuda FFT Error: %d\n", file, line, error);
+	}
+	exit(1);
     }
 }
 
