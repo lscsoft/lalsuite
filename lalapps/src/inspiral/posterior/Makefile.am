@@ -2,6 +2,11 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+#Tests for the time-domian code
+td_test_progs = TDW_test conv_test time_domain_overlap_test
+TDW_test_SOURCES = TDW_test.c
+conv_test_SOURCES = conv_test.c
+time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
 
 if LALINSPIRAL
 
@@ -15,16 +20,10 @@ endif
 if LALPULSAR
 if LALINFERENCE
 pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
-lalinference_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c #LALInferenceMCMC.c
-ChiSquare_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
-lalinference_nest_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c LALInferenceNestedSampler.c LALInferencePrior.c
-#lalinference_mcmc_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMC.c LALInferenceMCMCSampler.c LALInferencePrior.c
-
-#Tests for the time-domian code
-td_test_progs = TDW_test conv_test time_domain_overlap_test
-TDW_test_SOURCES = LALInference.c TDW_test.c
-conv_test_SOURCES = LALInference.c conv_test.c
-time_domain_overlap_test_SOURCES = LALInference.c time_domain_overlap_test.c
+lalinference_test_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c LALInferenceMCMC.c
+ChiSquare_test_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
+lalinference_nest_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c
+#lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 endif
 endif
 

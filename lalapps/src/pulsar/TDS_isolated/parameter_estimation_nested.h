@@ -46,7 +46,7 @@
 #include <lalapps.h>
 
 #include <lal/LALInference.h>
-#include "LALInferenceNestedSampler.h"
+#include <lal/LALInferenceNestedSampler.h>
 
 
 #ifdef __cplusplus

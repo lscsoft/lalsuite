@@ -19,11 +19,9 @@ lalapps_pulsar_parameter_estimation_SOURCES = \
 	pulsar_parameter_estimation.c \
 	pulsar_parameter_estimation.h
 
-#lalapps_pulsar_parameter_estimation_nested_SOURCES = \
-#	parameter_estimation_nested.c \
-#	parameter_estimation_nested.h \
-#	LALInference.c  LALInference.h \
-#	LALInferenceNestedSampler.c  LALInferenceNestedSampler.h
+lalapps_pulsar_parameter_estimation_nested_SOURCES = \
+	parameter_estimation_nested.c \
+	parameter_estimation_nested.h \
 
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
