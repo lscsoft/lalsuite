@@ -34,8 +34,8 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-#include "LALInferenceMCMCSampler.h"
-#include "LALInferencePrior.h"
+#include "LALInferenceMCMCMPISampler.h"
+#include <lal/LALInferencePrior.h>
 
 
 #include <mpi.h>
@@ -753,7 +753,7 @@ void initVariables(LALInferenceRunState *state)
 	addMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   REAL8_t);
 	
 	ppt=getProcParamVal(commandLine, "--noSpin");
-	if((approx==SpinTaylor ||approx==SpinTaylorFrameless) && !ppt){
+	if((approx==SpinTaylor ||approx==SpinTaylorT3) && !ppt){
 		
 
       ppt=getProcParamVal(commandLine, "--spinAligned");

@@ -47,7 +47,7 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 
 
-#include "LALInference.h"
+#include <lal/LALInference.h>
 
 const LALUnit strainPerCount={0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 

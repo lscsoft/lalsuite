@@ -32,10 +32,10 @@
 #include <lal/TimeDelay.h>
 #include <lalapps.h>
 #include <mpi.h>
-#include "LALInference.h"
+#include <lal/LALInference.h>
 //#include "mpi.h"
-#include "LALInferenceMCMCSampler.h"
-#include "LALInferencePrior.h"
+#include "LALInferenceMCMCMPISampler.h"
+#include <lal/LALInferencePrior.h>
 
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>

@@ -30,7 +30,7 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/GenerateInspRing.h>
 #include <lal/LALStatusMacros.h>
-#include "LALInference.h"
+#include <lal/LALInference.h>
 #include <lalapps.h>
 #include <lal/XLALError.h>
 #include <lal/LIGOMetadataRingdownUtils.h>

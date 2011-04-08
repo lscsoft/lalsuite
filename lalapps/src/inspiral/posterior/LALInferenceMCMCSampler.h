@@ -5,7 +5,7 @@
  * calculation
  */
 
-#include "LALInference.h"
+#include <lal/LALInference.h>
 
 #define COVMATRIXNAME "covarianceMatrix"
 #define UNCORRSAMPNAME "uncorrelatedSample"

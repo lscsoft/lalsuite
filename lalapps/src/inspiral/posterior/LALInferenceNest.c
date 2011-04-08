@@ -24,14 +24,14 @@
 #include <stdio.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
-#include "LALInference.h"
+#include <lal/LALInference.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-#include "LALInferenceNestedSampler.h"
-#include "LALInferencePrior.h"
+#include <lal/LALInferenceNestedSampler.h>
+#include <lal/LALInferencePrior.h>
 
 void initialiseNS(LALInferenceRunState *state);
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);

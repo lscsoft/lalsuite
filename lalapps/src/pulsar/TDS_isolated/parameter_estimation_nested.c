@@ -1259,6 +1259,34 @@ REAL8 log_factorial(INT4 num){
   return logFac;
 }
 
+/* calculate the likelihood for the data just being noise - we still have a
+students-t likelihood, so this basically involves taking that likelihood and
+setting the signal to zero */
+REAL8 noise_only_model( LALIFOData *data ){
+  REAL8 logL = 0.0;
+  UINT4 i = 0;
+  
+  UINT4Vector *chunkLengths = NULL;
+  REAL8Vector *sumData = NULL;
+  
+  INT4 chunkMin = 0, chunkMax = 0;
+  REAL8 chunkLength = 0.;
+  
+  chunkMin = (INT4 *)getVariable( data->dataParams, "chunkMin" );
+  chunkMax = (INT4 *)getVariable( data->dataParams, "chunkMax" );
+  
+  chunkLengths = (UINT4Vector *)getVariable( data->dataParams, "chunkLengths" );
+  sumData = (REAL8Vector *)getVariable( data->dataParams, "sumData" );
+  
+  for (i=0; i<chunkLengths->length; i++){
+    chunkLength = (REAL8)data.chunkLengths->data[i];
+    
+    logL += (chunkLength - 1.) * log(2.);
+    logL += log_factorial((INT4)chunkLength);
+    logL -= chunkLength * log(data.sumData->data[i]);
+  }  
+}
+
 /* FOR REFERENCE - using LIGOTimeGPSVector requires the
 XLALCreateTimestampVector function in SFTutils */
 

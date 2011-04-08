@@ -45,7 +45,7 @@
 
 #include <lalapps.h>
 
-#include "LALInference.h"
+#include <lal/LALInference.h>
 #include "LALInferenceNestedSampler.h"
 
 
@@ -105,7 +105,9 @@ void get_pulsar_model( LALIFOData *data );
 
 void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
   INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus, gsl_matrix *LUfcross);
-	
+  
+REAL8 noise_only_model( LALIFOData *data );
+
 #ifdef __cplusplus
 }
 #endif
