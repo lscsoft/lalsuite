@@ -2733,7 +2733,7 @@ int main( int argc, char *argv[] )
     simTable->bandpass = bandPassInj;
 
 
-    /* populate the sim_ringdown table */ 
+    /* populate the sim_ringdown table */
    if ( writeSimRing )
    {
        memcpy( simRingTable->waveform, "Ringdown",
@@ -2752,14 +2752,17 @@ int main( int argc, char *argv[] )
        simRingTable->polarization = simTable->polarization;
        simRingTable->phase = 0;
        simRingTable->mass = XLALNonSpinBinaryFinalBHMass(simTable->eta, simTable->mass1, simTable->mass2);
-       simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta);
+       /* The final spin calc has been generalized so as to allow initially spinning systems*/
+       /* simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta); */
+       simRingTable->spin = XLALSpinBinaryFinalBHSpin(simTable->eta, simTable->mass1, simTable->mass2,
+          simTable->spin1x, simTable->spin2x,simTable->spin1y, simTable->spin2y, simTable->spin1z, simTable->spin2z);
        simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
        simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
-       simRingTable->epsilon = 0.01; 
+       simRingTable->epsilon = 0.01;
        simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
-       simRingTable->eff_dist_h = simTable->eff_dist_h; 
-       simRingTable->eff_dist_l = simTable->eff_dist_l; 
-       simRingTable->eff_dist_v = simTable->eff_dist_v; 
+       simRingTable->eff_dist_h = simTable->eff_dist_h;
+       simRingTable->eff_dist_l = simTable->eff_dist_l;
+       simRingTable->eff_dist_v = simTable->eff_dist_v;
        simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
        // need hplus & hcross in each detector to populate these
        simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
