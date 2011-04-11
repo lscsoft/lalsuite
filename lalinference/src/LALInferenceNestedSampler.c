@@ -169,9 +169,15 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
 	
-	logZnoise=NullLogLikelihood(runState->data);
-	addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
-	logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
+        
+        if ( !checkVariable(runState->algorithmParams, "logZnoise" ) ){
+          if (runState->data->modelDomain == frequencyDomain )
+            logZnoise=NullLogLikelihood(runState->data);
+	
+          addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
+        }
+        
+        logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
 	verbose=checkVariable(runState->algorithmParams,"verbose");
 	
