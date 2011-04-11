@@ -413,6 +413,9 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%e + i*%e",
 						(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
 				break;
+			case string_t:
+				fprintf(fp, "%s",(char *)((CHAR **)ptr->value));
+				break;
 			case gslMatrix_t:
 				fprintf(stdout, "<can't print matrix>");
 				break;
