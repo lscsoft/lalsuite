@@ -18,8 +18,7 @@ AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
 
-# FIXME: requires b5375c31475f086266a9ca90bf6b6a4eec344553
-# LALSUITE_ARG_VAR
+LALSUITE_ARG_VAR
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
