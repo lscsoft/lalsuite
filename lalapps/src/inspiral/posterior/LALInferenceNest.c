@@ -33,10 +33,8 @@
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 
-void initialiseNS(LALInferenceRunState *state);
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
-void setupLivePointsArray(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
 
 
@@ -266,95 +264,6 @@ Nested sampling arguments:\n\
 	
 }
 
-void setupLivePointsArray(LALInferenceRunState *runState){
-	/* Set up initial basket of live points, drawn from prior,
-	 by copying runState->currentParams to all entries in the array*/
-	
-	UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
-	UINT4 i;
-	REAL8Vector *logLs;
-	
-	LALVariableItem *current;
-		
-	/* Allocate the array */
-	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-	runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *));
-	if(runState->livePoints==NULL)
-	{
-		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
-		exit(1);
-	}
-	
-	logLs=XLALCreateREAL8Vector(Nlive);
-	addVariable(runState->algorithmParams,"logLikelihoods",&logLs,REAL8Vector_t,PARAM_FIXED);
-	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
-	for(i=0;i<Nlive;i++)
-	{
-		runState->livePoints[i]=XLALCalloc(1,sizeof(LALVariables));
-		
-		/* Copy the param structure */
-		copyVariables(runState->currentParams,runState->livePoints[i]);
-		
-		/* Sprinkle the varying points among prior */
-		do{
-			for(current=runState->livePoints[i]->head ;current!=NULL;
-				current=current->next){
-				if(current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR)
-				{
-					switch (current->type){
-					case REAL4_t:
-					{
-						REAL4 tmp;
-						REAL4 min,max;
-						getMinMaxPrior(runState->priorArgs,current->name, 
-									   (void *)&min,(void *)&max);
-						tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						setVariable(runState->livePoints[i],current->name,&tmp);
-						break;
-					}
-						
-					case REAL8_t:
-					{
-						REAL8 tmp;
-						REAL8 min,max;
-						getMinMaxPrior(runState->priorArgs,current->name, 
-									   (void *)&min,(void *)&max);
-						tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						setVariable(runState->livePoints[i],current->name,&tmp);
-						break;
-					}
-					case INT4_t:
-					{
-						INT4 tmp;
-						INT4 min,max;
-						getMinMaxPrior(runState->priorArgs,current->name,
-									   (void *)&min,(void *)&max);
-						tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						setVariable(runState->livePoints[i],current->name,&tmp);
-						break;
-					}
-					case INT8_t:
-					{
-						INT8 tmp;
-						INT8 min,max;
-						getMinMaxPrior(runState->priorArgs,current->name,
-									   (void *)&min,(void *)&max);
-						tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						setVariable(runState->livePoints[i],current->name,&tmp);
-						break;
-					}
-					default:
-						fprintf(stderr,"Trying to randomise a non-numeric parameter!");
-					}
-				}
-			}
-		}while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
-		/* Populate log likelihood */
-		logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
-	}
-	
-}
-
 /* Setup the variables to control template generation */
 /* Includes specification of prior ranges */
 
@@ -542,7 +451,7 @@ int main(int argc, char *argv[]){
 	initVariables(state);
 	
 	/* Call setupLivePointsArray() to populate live points structures */
-	setupLivePointsArray(state);
+	LALInferenceSetupLivePointsArray(state);
 	
 	/* Call nested sampling algorithm */
 	state->algorithm(state);

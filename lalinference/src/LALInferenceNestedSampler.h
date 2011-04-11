@@ -70,3 +70,4 @@ XLALMultiStudentDeviates(REAL4Vector  *vector,
 
 /* Check that the gsl_matrix is positive definite. dim = number of dimensions */
 UINT4 LALInferenceCheckPositiveDefinite(gsl_matrix *matrix, UINT4 dim);
+void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
