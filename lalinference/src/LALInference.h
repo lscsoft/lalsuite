@@ -320,8 +320,6 @@ LALVariableItem *getItemNr(LALVariables *vars, int index);
 void fprintSample(FILE *fp,LALVariables *sample);
 void fprintSampleNonFixed(FILE *fp,LALVariables *sample);
 
-void mc2masses(double mc, double eta, double *m1, double *m2);
-
 /* Time-Domain Likelihood Utility Functions. */
 void makeWhiteData(LALIFOData *IFOdata);
 REAL8 WhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
@@ -336,6 +334,8 @@ void convolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, cons
 UINT4 NTDWFromNPSD(const UINT4 NPSD);
 void wrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
 void linearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
+
+void mc2masses(double mc, double eta, double *m1, double *m2);
 
 REAL8 timeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 

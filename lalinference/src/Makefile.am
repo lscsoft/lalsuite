@@ -13,7 +13,9 @@ liblalinference_la_SOURCES = \
 	LALInference.c \
 	LALInferenceVCSInfo.c \
 	LALInferenceNestedSampler.c \
-	LALInferencePrior.c
+	LALInferencePrior.c \
+	LALInferenceReadData.c \
+	LALInferenceTemplate.c
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
