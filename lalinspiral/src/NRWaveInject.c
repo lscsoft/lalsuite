@@ -1182,7 +1182,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   ENDFAIL( status );
 
   /* set channel name */
-  snprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+  snprintf( injData->name, sizeof(injData->name),
       "%s:STRAIN", ifo );
 
   XLALDestroyREAL4Vector ( htData->data);
@@ -1249,7 +1249,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   XLALSimAddInjectionREAL8TimeSeries( injData, htData, NULL);
 
   /* set channel name */
-  snprintf( injData->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+  snprintf( injData->name, sizeof(injData->name),
       "%s:STRAIN", ifo );
 
   XLALDestroyREAL8TimeSeries ( htData);

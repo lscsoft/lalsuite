@@ -3347,30 +3347,26 @@ class SearchVolumeNode(pipeline.SqliteNode):
   """
   A search volume node.
   """
-  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False, bintype = "TOTAL_MASS"):
+  def __init__(self, job):
     """
-    @database: the pipedown database containing the injection triggers
-    @ouptut_cache: name prefix for cache file to be written out by program
-    @output_tag: a string label for the output files
-    @use_expected_loudest_event: disables the use of loudest event FAR, use 1./livetime instead
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.add_var_arg(database)
 
-    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
-    self.add_var_opt("veto-segments-name",veto_segments_name)
-    if output_cache:
-      self.add_var_opt("output-cache",output_cache)
-    if output_tag:
-      self.add_var_opt("output-name-tag",output_tag)
-    if use_expected_loudest_event:
-      self.add_var_arg("--use-expected-loudest-event")
-    if bintype == "TOTAL_MASS":
-      self.add_var_arg("--bin-by-total-mass")
-    if bintype == "CHIRP_MASS":
-      self.add_var_arg("--bin-by-chirp-mass")
-    if bintype == "MASS1_MASS2":
-      self.add_var_arg("--bin-by-m1m2")
+  def add_database(self, db):
+    self.add_var_arg(db)
+
+  def set_output_cache(self, file):
+    self.add_var_opt("output-cache", file)
+
+  def set_output_tag(self, tag):
+    self.add_var_opt("output-name-tag",tag)
+
+  def set_veto_segments_name(self, name):
+    self.add_var_opt("veto-segments-name", name)
+
+  def use_expected_loudest_event(self):
+    self.add_var_arg("--use-expected-loudest-event")
+
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
   """
@@ -3390,13 +3386,15 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
   """
   A search upper limit node.
   """
-  def __init__(self, job, input_cache):
+  def __init__(self, job):
     """
     @job: a SearchUpperLimitJob
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.add_var_opt("input-cache", input_cache)
     self.open_box = False
+
+  def add_input_cache(self, input_cache):
+    self.add_var_arg(input_cache)
 
   def set_open_box(self):
     '''
@@ -3405,4 +3403,3 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
     if not self.open_box:
       self.open_box = True
       self.add_var_arg("--open-box")
-

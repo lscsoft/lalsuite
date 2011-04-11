@@ -319,9 +319,18 @@ int main( int argc, char **argv )
 
     verbose( "Created segments for null stream at %ld \n",
              timeval_subtract(&startTime) );
-    PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
-    PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
-    PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+    if (params->approximant == FindChirpPTF)
+    {
+      PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
+      PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
+      PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+    }
+    else
+    {
+      PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 1, 1 );
+      PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 1, 1 );
+      PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
+    }
   }
 
   /*------------------------------------------------------------------------*
@@ -347,26 +356,56 @@ int main( int argc, char **argv )
   fcInitParams               = LALCalloc( 1, sizeof( *fcInitParams ) );
   fcTmplt                    = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams              = LALCalloc( 1, sizeof( *fcTmpltParams ) );
-  fcTmpltParams->approximant = FindChirpPTF;
+  fcTmpltParams->approximant = params->approximant;
+  fcTmpltParams->order       = params->order;
 
   /* Note that although non-spinning only uses Q1, the PTF
   generator still generates Q1-5, thus size of these vectors */
-  fcTmplt->PTFQtilde          = 
-      XLALCreateCOMPLEX8VectorSequence( 5, numPoints / 2 + 1 );
-  fcTmpltParams->PTFQ         = XLALCreateVectorSequence( 5, numPoints );
-  fcTmpltParams->PTFphi       = XLALCreateVector( numPoints );
-  fcTmpltParams->PTFomega_2_3 = XLALCreateVector( numPoints );
-  fcTmpltParams->PTFe1        = XLALCreateVectorSequence( 3, numPoints );
-  fcTmpltParams->PTFe2        = XLALCreateVectorSequence( 3, numPoints );
+  if (params->approximant == FindChirpPTF)
+  {
+    fcTmplt->PTFQtilde          = 
+        XLALCreateCOMPLEX8VectorSequence( 5, numPoints / 2 + 1 ); 
+    fcTmpltParams->PTFQ         = XLALCreateVectorSequence( 5, numPoints );
+    fcTmpltParams->PTFphi       = XLALCreateVector( numPoints );
+    fcTmpltParams->PTFomega_2_3 = XLALCreateVector( numPoints );
+    fcTmpltParams->PTFe1        = XLALCreateVectorSequence( 3, numPoints );
+    fcTmpltParams->PTFe2        = XLALCreateVectorSequence( 3, numPoints );
+  }
+  else
+  {
+    fcTmplt->PTFQtilde          =
+        XLALCreateCOMPLEX8VectorSequence( 1, numPoints / 2 + 1 );
+    fcTmplt->data               = XLALCreateCOMPLEX8Vector( numPoints / 2 + 1 );
+    fcTmpltParams->xfacVec      = XLALCreateVector(numPoints / 2 + 1 );
+    /* Set the values of xfacVec  This is k^(-1/3) */
+    const REAL4                   xfacExponent = -1.0/3.0;
+    REAL4                        *xfac = NULL;
+    xfac = fcTmpltParams->xfacVec->data;
+    xfac[0] = 0;
+    for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
+      xfac[ui] = pow( (REAL4) ui, xfacExponent );
+  }
+
   fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
+  fcTmpltParams->fLow = params->lowTemplateFrequency;
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( params->haveTrig[ifoNumber] )
     {
-      PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
-      PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
-      PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+      if ( params->approximant == FindChirpPTF )
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 5, 5 );
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 5, numPoints );
+      }
+      else
+      {
+        PTFM[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 1, 1 );
+        PTFN[ifoNumber]    = XLALCreateREAL8ArrayL( 2, 1, 1 );
+        PTFqVec[ifoNumber] = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
+      }
     }
   }
 
@@ -429,9 +468,10 @@ int main( int argc, char **argv )
   struct bankTemplateOverlaps *bankNormOverlaps = NULL;
   struct bankComplexTemplateOverlaps *bankOverlaps = NULL;
   struct bankDataOverlaps *dataOverlaps = NULL;
-  
+
   if ( params->doBankVeto )
   {
+    verbose( "Initializing bank veto filters at %ld \n", timeval_subtract(&startTime));
     /* Reads in and initializes the bank veto sub bank */
     subBankSize = coh_PTF_read_sub_bank(params,&PTFBankTemplates);
     bankNormOverlaps = LALCalloc( subBankSize,sizeof( *bankNormOverlaps));
@@ -454,7 +494,10 @@ int main( int argc, char **argv )
       /* Only store Q1. Structures used in fcTmpltParams will be overwritten */
       for ( uj = 0 ; uj < (numPoints/2 +1) ; uj++ )
       {
-        bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
+        if (params->approximant == FindChirpPTF)
+          bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->PTFQtilde->data[uj];
+        else
+          bankFcTmplts[ui].PTFQtilde->data[uj] = fcTmplt->data->data[uj];
       }
     }
     /* Calculate the overlap between templates for bank veto */
@@ -487,11 +530,13 @@ int main( int argc, char **argv )
    *------------------------------------------------------------------------*/
 
   /* Create the structures needed for the auto veto, if necessary */
+
   UINT4 timeStepPoints = 0;
   struct bankComplexTemplateOverlaps *autoTempOverlaps = NULL;
 
   if ( params->doAutoVeto )
   {
+    verbose( "Initializing auto veto filters at %ld \n", timeval_subtract(&startTime));
     /* Initializations */
     autoTempOverlaps = LALCalloc( params->numAutoPoints,
         sizeof( *autoTempOverlaps));
@@ -512,6 +557,7 @@ int main( int argc, char **argv )
           autoTempOverlaps[uj].PTFM[ifoNumber] = NULL;
       }
     }
+    verbose( "Generated auto veto filters at %ld \n", timeval_subtract(&startTime));
   }
    
   /*------------------------------------------------------------------------*
@@ -557,12 +603,6 @@ int main( int argc, char **argv )
       else
         spinTemplate = 0;
 
-      /* Currently we can only run PTF. It would be nice to be able to run
-         other stuff */    
-
-      PTFtemplate->approximant = FindChirpPTF;
-      PTFtemplate->order = LAL_PNORDER_TWO;
-   
      /* This value is used for template generation */
 
       PTFtemplate->fLower = params->lowTemplateFrequency;
@@ -573,6 +613,14 @@ int main( int argc, char **argv )
          use other templates. */
        
       coh_PTF_template(fcTmplt,PTFtemplate,fcTmpltParams);
+
+      if (params->approximant != FindChirpPTF)
+      {
+        for ( uj = 0 ; uj < (numPoints/2 +1) ; uj++ )
+        {
+          fcTmplt->PTFQtilde->data[uj] = fcTmplt->data->data[uj];
+        }
+      }
 
       if (spinTemplate)
         verbose( "Generated spin template %d at %ld \n",i,timeval_subtract(&startTime));
@@ -646,9 +694,18 @@ int main( int argc, char **argv )
         if ( params->haveTrig[ifoNumber] )
         {
           /* Zero the storage vectors for the PTF filters */
-          memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL8) );
-          memset( PTFqVec[ifoNumber]->data, 0, 
+          if (params->approximant == FindChirpPTF)
+          {
+            memset( PTFM[ifoNumber]->data, 0, 25 * sizeof(REAL8) );
+            memset( PTFqVec[ifoNumber]->data, 0, 
                   5 * numPoints * sizeof(COMPLEX8) );
+          }
+          else
+          {
+            memset( PTFM[ifoNumber]->data, 0, 1 * sizeof(REAL8) );
+            memset( PTFqVec[ifoNumber]->data, 0,
+                  1 * numPoints * sizeof(COMPLEX8) );
+          }
 
           /* Here (h|s) and (h|h) are calculated */
           coh_PTF_normalize(params,fcTmplt,invspec[ifoNumber],PTFM[ifoNumber],
@@ -681,9 +738,18 @@ int main( int argc, char **argv )
       /* If necessary calculate the null stream filters */
       if ( params->doNullStream)
       {
-        memset( PTFM[LAL_NUM_IFO]->data, 0, 25 * sizeof(REAL8) );
-        memset( PTFqVec[LAL_NUM_IFO]->data, 0,
-                5 * numPoints * sizeof(COMPLEX8) );
+        if (params-> approximant == FindChirpPTF)
+        {
+          memset( PTFM[LAL_NUM_IFO]->data, 0, 25 * sizeof(REAL8) );
+          memset( PTFqVec[LAL_NUM_IFO]->data, 0,
+                  5 * numPoints * sizeof(COMPLEX8) );
+        }
+        else
+        {
+          memset( PTFM[LAL_NUM_IFO]->data, 0, 1 * sizeof(REAL8) );
+          memset( PTFqVec[LAL_NUM_IFO]->data, 0,
+                  1 * numPoints * sizeof(COMPLEX8) );
+        }
         coh_PTF_normalize(params,fcTmplt,invspec[LAL_NUM_IFO],PTFM[LAL_NUM_IFO],
               NULL,PTFqVec[LAL_NUM_IFO],&segments[LAL_NUM_IFO]->sgmnt[j],
               invPlan,spinTemplate);
@@ -710,9 +776,9 @@ int main( int argc, char **argv )
             for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
             {
               /* get location in three dimensions */
-              for ( i = 0; i < 3; i++ )
+              for ( ui = 0; ui < 3; ui++ )
               {
-                 detLoc[i] = (double) detectors[ifoNumber]->location[i];
+                 detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
               }
               /* calculate time offsets */
               timeOffsets[ifoNumber] =
@@ -751,7 +817,7 @@ int main( int argc, char **argv )
                                             pValues, gammaBeta, snrComps,
                                             nullSNR, traceSNR, bankVeto,
                                             autoVeto, chiSquare, PTFM );
-            verbose( "Generated triggers for segment %d, template %d, sky points %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
+            verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
             // Clustering can happen here. The clustering routine needs refining
             // coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
@@ -798,11 +864,14 @@ int main( int argc, char **argv )
           }
         }
         LALFree(chisqOverlaps);
+        chisqOverlaps = NULL;
       }
       if (frequencyRangesPlus)
         LALFree(frequencyRangesPlus);
+        frequencyRangesPlus = NULL;
       if (frequencyRangesCross)
         LALFree(frequencyRangesCross);
+        frequencyRangesCross = NULL;
     }
     if ( params->doBankVeto )
     {
@@ -819,6 +888,13 @@ int main( int argc, char **argv )
     }
   } // Main loop is ended here
   coh_PTF_output_events_xml( params->outputFile, eventList, procpar, params );
+
+  if (skyPoints->rightAscension)
+    LALFree(skyPoints->rightAscension);
+  if (skyPoints->declination)
+    LALFree(skyPoints->declination);
+  if (skyPoints)
+    LALFree(skyPoints);
 
   // This function cleans up memory usage
   coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
@@ -917,11 +993,6 @@ void coh_PTF_statistic(
   struct bankDataOverlaps *chisqOverlaps = *chisqOverlapsP;
   REAL4 *frequencyRangesPlus = *frequencyRangesPlusP;
   REAL4 *frequencyRangesCross = *frequencyRangesCrossP; 
-
-  for (i = 0; i < LAL_NUM_IFO; i++)
-  {
-    fprintf(stderr,"%e %e %e %e %e \n",timeOffsets[i],Fplus[i],Fcross[i],Fplustrig[i],Fcrosstrig[i]);
-  }
 
   // Code works slightly differently if spin/non spin and single/coherent
   if (spinTemplate)
@@ -1563,7 +1634,6 @@ void coh_PTF_statistic(
             tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
           if (! chisqOverlaps)
           {
-            fprintf( stderr,"Calculating chi2 filters\n" );
             chisqOverlaps = LALCalloc(params->numChiSquareBins,sizeof( *chisqOverlaps));
             for( j = 0; j < params->numChiSquareBins; j++)
             {

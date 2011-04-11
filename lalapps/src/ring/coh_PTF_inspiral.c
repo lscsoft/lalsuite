@@ -776,9 +776,9 @@ int main( int argc, char **argv )
             for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
             {
               /* get location in three dimensions */
-              for ( i = 0; i < 3; i++ )
+              for ( ui = 0; ui < 3; ui++ )
               {
-                 detLoc[i] = (double) detectors[ifoNumber]->location[i];
+                 detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
               }
               /* calculate time offsets */
               timeOffsets[ifoNumber] =
@@ -817,7 +817,7 @@ int main( int argc, char **argv )
                                             pValues, gammaBeta, snrComps,
                                             nullSNR, traceSNR, bankVeto,
                                             autoVeto, chiSquare, PTFM );
-            verbose( "Generated triggers for segment %d, template %d, sky points %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
+            verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
             // Clustering can happen here. The clustering routine needs refining
             // coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
@@ -864,11 +864,14 @@ int main( int argc, char **argv )
           }
         }
         LALFree(chisqOverlaps);
+        chisqOverlaps = NULL;
       }
       if (frequencyRangesPlus)
         LALFree(frequencyRangesPlus);
+        frequencyRangesPlus = NULL;
       if (frequencyRangesCross)
         LALFree(frequencyRangesCross);
+        frequencyRangesCross = NULL;
     }
     if ( params->doBankVeto )
     {
@@ -1631,7 +1634,6 @@ void coh_PTF_statistic(
             tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
           if (! chisqOverlaps)
           {
-            fprintf( stderr,"Calculating chi2 filters\n" );
             chisqOverlaps = LALCalloc(params->numChiSquareBins,sizeof( *chisqOverlaps));
             for( j = 0; j < params->numChiSquareBins; j++)
             {

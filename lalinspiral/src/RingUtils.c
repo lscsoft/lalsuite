@@ -132,6 +132,24 @@ static REAL4 ring_quality_fn( REAL4 Q )
     return  1.0 + 7.0/(24.0*Q*Q);
 }
 
+
+/* FIXME Is there already a function*/
+/* in LAL that will return the sign */
+static int SIGN( REAL4 x )
+{
+    if( x > 0 )
+
+        return 1;
+
+    else if( x < 0 )
+
+        return -1;
+
+    else
+
+        return 0;
+}
+
 /*
  *
  * XLAL Routines.
@@ -193,6 +211,7 @@ REAL4 XLALBlackHoleRingFrequency( REAL4 M, REAL4 a )
 }
 
 /* Formulas for final mass and spin of a non-spinning binary */
+/* Spin equation is not used. See XLALSpinBinaryFinalBHSpin() below. */
 /* Buonanno et al arxiv:0706.3732v3 */
 /* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALNonSpinBinaryFinalBHSpin( REAL4 eta )
@@ -208,6 +227,53 @@ REAL4 XLALNonSpinBinaryFinalBHMass( REAL4 eta, REAL4 mass1, REAL4 mass2 )
   return ( 1 + ( sqrt(8.0/9.0) - 1) * eta - 0.498 * eta * eta) * (mass1 + mass2);
 }
 
+/* Formulas for final spin of an initially spinning or initially */
+/* non-spinning binary. */
+/* Barausse & Rezzolla arxiv:0904.2577 */
+/* Equations 6, 7, and 10 */
+/* <lalVerbatim file="RingUtilsCP"> */
+REAL4 XLALSpinBinaryFinalBHSpin( REAL4 eta, REAL4 mass1, REAL4 mass2, REAL4 spin1x, REAL4 spin2x,
+   REAL4 spin1y, REAL4 spin2y, REAL4 spin1z, REAL4 spin2z )
+/* </lalVerbatim> */
+{
+  REAL4 norml;
+  REAL4 cosalpha;
+  REAL4 cosbeta;
+  REAL4 cosgamma;
+  const REAL4 t0 = -2.8904;
+  const REAL4 t2 = -3.5171;
+  const REAL4 t3 = 2.5763;
+  const REAL4 s4 = -0.1229;
+  const REAL4 s5 = 0.4537;
+  const REAL4 q = mass2 / mass1;
+  const REAL4 q2 = q * q;
+  const REAL4 q4 = q2 * q2;
+  const REAL4 q2sum = 1.0 + q2;
+  const REAL4 norma1 = sqrt( spin1x * spin1x + spin1y * spin1y + spin1z * spin1z );
+  const REAL4 norma2 = sqrt( spin2x * spin2x + spin2y * spin2y + spin2z * spin2z );
+  const REAL4 norma12 = norma1 * norma1;
+  const REAL4 norma22 = norma2 * norma2;
+
+  /* FIXME The following calculation for Eq. 7 of arxiv:0904.2577 */
+  /* assumes that we have spin (anti-)aligned PhenomB waveforms */
+  /* aligned in the \hat{z} direction. Furthermore, we assume that */
+  /* the orbital angular momentum L is along the positive \hat{z} */
+  /* direction. For the completely general case, we will need to store */
+  /* the components of \hat{L}. */
+  const int a1sign = SIGN( spin1z );
+  const int a2sign = SIGN( spin2z );
+  cosalpha = (REAL4) a1sign * a2sign;
+  cosbeta = (REAL4) a1sign;
+  cosgamma = (REAL4) a2sign;
+
+  norml = 2.0 * sqrt(3.0) + t2 * eta + t3 * eta * eta + s4  / (q2sum * q2sum) *
+     (norma12 + norma22 * q4 + 2.0 * norma1 * norma2 * q2 * cosalpha) +
+     (s5 * eta + t0 + 2.0) / q2sum * (norma1 * cosbeta + norma2 * q2 * cosgamma);
+
+  return 1.0 / ((1.0 + q) * (1.0 + q)) * sqrt(norma12 + norma22 * q4 + 2.0 * norma1 *
+     norma2 * q2 * cosalpha + 2.0 * (norma1 * cosbeta + norma2 * q2 * cosgamma) * norml *
+     q + norml * norml * q2);
+}
 
 /* <lalVerbatim file="RingUtilsCP"> */
 REAL4 XLALBlackHoleRingAmplitude( REAL4 f, REAL4 Q, REAL4 r, REAL4 epsilon )
