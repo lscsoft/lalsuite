@@ -20,9 +20,9 @@ endif
 if LALPULSAR
 if LALINFERENCE
 pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
-lalinference_test_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c LALInferenceMCMC.c
-ChiSquare_test_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
-lalinference_nest_SOURCES = LALInferenceReadData.c LALInferenceTemplate.c LALInferenceNest.c
+lalinference_test_SOURCES = InferenceTest.c LALInferenceMCMC.c
+ChiSquare_test_SOURCES = ChiSquare_test.c
+lalinference_nest_SOURCES = LALInferenceNest.c
 #lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
 endif
 endif
