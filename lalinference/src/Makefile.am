@@ -2,11 +2,14 @@ INCLUDES = -I$(top_builddir)/include
 
 lalinferenceincludedir = $(includedir)/lal
 lalinferenceinclude_HEADERS = \
-	LALInference.h
+	LALInference.h \
+	LALInferenceVCSInfo.h \
+	LALInferenceConfig.h
 
 lib_LTLIBRARIES = liblalinference.la
 liblalinference_la_SOURCES = \
-	LALInference.c
+	LALInference.c \
+	LALInferenceVCSInfo.c
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 

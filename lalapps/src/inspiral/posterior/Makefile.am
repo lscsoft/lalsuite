@@ -13,6 +13,7 @@ lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nes
 endif
 
 if LALPULSAR
+if LALINFERENCE
 pulsar_progs = lalinference_test lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 lalinference_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c InferenceTest.c #LALInferenceMCMC.c
 ChiSquare_test_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c ChiSquare_test.c
@@ -24,6 +25,7 @@ td_test_progs = TDW_test conv_test time_domain_overlap_test
 TDW_test_SOURCES = LALInference.c TDW_test.c
 conv_test_SOURCES = LALInference.c conv_test.c
 time_domain_overlap_test_SOURCES = LALInference.c time_domain_overlap_test.c
+endif
 endif
 
 frame_progs = lalapps_followupMcmc
