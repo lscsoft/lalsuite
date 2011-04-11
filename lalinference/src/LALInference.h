@@ -138,21 +138,35 @@ tagLALVariables
 const char *translateInternalToExternalParamName(const char *inName);
 int fprintParameterNonFixedHeaders(FILE *out, LALVariables *params);
 
+/* Return a pointer to the variable asked for */
 void *getVariable(LALVariables * vars, const char * name);
+/* Get number of dimensions in this variable */
 INT4 getVariableDimension(LALVariables *vars);
+/* Get number of dimensions which are not fixed to a certain value */
 INT4 getVariableDimensionNonFixed(LALVariables *vars);
 VariableType getVariableTypeByIndex(LALVariables *vars, int index);
+/* Get the type of the variable */
 VariableType getVariableType(LALVariables *vars, const char *name);
+/* Get the VaryType of the variable, see types above */
 ParamVaryType getVariableVaryType(LALVariables *vars, const char *name);
+/* Get the name of the index-th variable */
 char *getVariableName(LALVariables *vars, int index);
+/* Set a variable with a value, pass a void * to the value as argument */
 void setVariable(LALVariables * vars, const char * name, void * value);
+/* Add a variable to the list */
 void addVariable(LALVariables * vars, const char * name, void * value, 
 	VariableType type, ParamVaryType vary);
+/* Remove a variable fm the list */
 void removeVariable(LALVariables *vars,const char *name);
+/* Checks for a variable being present in the list, returns 1(==true) or 0 */
 int  checkVariable(LALVariables *vars,const char *name);
+/* Delete the variables in this structure (does not free the LALVariables itself) */
 void destroyVariables(LALVariables *vars);
+/* Deep copy the variables from one to another LALVariables structure */
 void copyVariables(LALVariables *origin, LALVariables *target);
+/* Print variables to stdout */
 void printVariables(LALVariables *var);
+/* Check for equality in two variables */
 int compareVariables(LALVariables *var1, LALVariables *var2);
 
 
