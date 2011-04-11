@@ -186,6 +186,10 @@ int main(int argc, char **argv){
 
   inputParams_t inputs;
 
+  /* allocate memory for headers structures */
+  /* head1 = calloc(sizeof(headerRecord1), 1);
+  head2 = calloc(sizeof(headerRecord2), 1); */
+
   /* get input parameters */
   get_input_args(&inputs, argc, argv);
 
@@ -285,8 +289,6 @@ inputs.noverlap);
     fprintf(stderr, "Error allocating memory.\n");
     return 1;
   }
-
-  fprintf(stderr, "sizeof(coeffArray) = %zu\n", sizeof(coeffArray));
 
   if(verbose){
     fprintf(stderr, "The array size for ephemeris file %s is %d.\n",
@@ -490,25 +492,56 @@ A[1], A[2]);
 
 /* function to determine the record size and initialise the ephemeris */
 INT4 fsizer(FILE *fp){
-  UINT4 mrecl=0;
-
   INT4 kmx=0, khi=0;
-  INT4 i=0;
+  UINT4 i=0;
   INT4 nd=0;
   UINT4 size=0;
 
-  mrecl=1500;
-
   /* read in header info */
-  if( fread(&head1, sizeof(REAL8), mrecl, fp) != mrecl ){
-    fprintf(stderr, "Error reading in ephemeris header info.\n");
+
+  /* read in data structure one part at a time so 32vs64bit alignment
+     issues don't become a problem */
+  if( fread(&head1.data.ttl, sizeof(head1.data.ttl), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris ttl header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.cnam, sizeof(head1.data.cnam), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris cnam header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.ss, sizeof(head1.data.ss), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris ss header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.con, sizeof(head1.data.con), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris con header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.au, sizeof(head1.data.au), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris au header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.emrat, sizeof(head1.data.emrat), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris emrat header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.ipt, sizeof(head1.data.ipt), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris ipt header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.numde, sizeof(head1.data.numde), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris numde header info.\n");
+    return 0;
+  }
+  if( fread(&head1.data.libratPtr, sizeof(head1.data.libratPtr), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris libratPtr header info.\n");
     return 0;
   }
 
   /* flip bytes of ipt */
   endian_swap((CHAR*)&head1.data.ipt, sizeof(INT4), 36);
   endian_swap((CHAR*)&head1.data.libratPtr, sizeof(INT4), 3);
-
+  
   /*** Calculate array size in the ephemeris */
   for (i=0;i<12;i++){
     if(head1.data.ipt[i][0] > kmx){
@@ -536,28 +569,25 @@ INT4 fsizer(FILE *fp){
   }
   /*****************************************/
 
-  rewind(fp);
+  /* set file pointer to position of header data 2 */
+  fseek(fp, size*sizeof(REAL8), SEEK_SET);
+
+  /* read in values of head2 */
+  if( fread(&head2.data.cval, sizeof(head2.data.cval), 1, fp) != 1 ){
+    fprintf(stderr, "Error reading in ephemeris cval header info.\n");
+    return 0;
+  }
 
   /* Initialise to ephemeris to the point at which the coefficient values start
   */
-  if( fread(&head1, sizeof(REAL8), size, fp) != size ){
-    fprintf(stderr, "Error initialising ephemeris.\n");
-    return 0;
-  }
-  if( fread(&head2, sizeof(REAL8), size, fp) != size ){
-    fprintf(stderr, "Error initialising ephemeris.\n");
-    return 0;
-  }
+  fseek(fp, 2*size*sizeof(REAL8), SEEK_SET);
 
   /* flip bytes of values */
-  endian_swap((CHAR*)&head1.data.ipt, sizeof(INT4), 36);
-  endian_swap((CHAR*)&head1.data.libratPtr, sizeof(INT4), 3);
   endian_swap((CHAR*)&head1.data.au, sizeof(REAL8), 1);
   endian_swap((CHAR*)&head1.data.emrat, sizeof(REAL8), 1);
   endian_swap((CHAR*)&head1.data.ss, sizeof(REAL8), 3);
   endian_swap((CHAR*)&head1.data.con, sizeof(INT4), 1);
   endian_swap((CHAR*)&head1.data.numde, sizeof(INT4), 1);
-
   endian_swap((CHAR*)&head2.data.cval, sizeof(REAL8), 400);
 
   if(verbose){

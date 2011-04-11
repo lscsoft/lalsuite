@@ -904,49 +904,14 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Sensitive Distance as a Function of Component Masses."
-  tags[section] = '*lalapps_cbc_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
+  tags[section] = '*lalapps_cbc_sink_by_component_mass*'+ifartag[0]+'*CAT_4_VETO*'
   htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_range_summary*'
-  imagetags[section] = ['distance','fractional_error']
-  captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of the component masses. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. The corresponding fractional error plot gives a measure of the relative uncertainty in the measured sensitive distance arising from uncertainty in calibration and a finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
+  imagetags[section] = ['distance']
+  captions[section] = """Mean sensitive distance for the CBC search pipeline as a function of the component masses. The sensitive distance is determined by computing the cube root of the mean distance^3 for injections found with a FAR below the FAR of the loudest event. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
   configs[section] = None
   images_dirs[section] = PDdir
 
-  section= 'upperlimitVmtotal'
-  sections.append(section)
-  htmlAndPlot.append(section)
-  titles[section] = "Upper Limits as a Function of Total Mass."
-  tags[section] = '*lalapps_cbc_sink_by_total_mass*'+ifartag[0]+'*CAT_4_VETO*'
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_total_mass_range_summary*'
-  imagetags[section] = ['upper_limit_plot']
-  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of total mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
-  section= 'upperlimitVmchirp'
-  sections.append(section)
-  htmlAndPlot.append(section)
-  titles[section] = "Upper Limits as a Function of Chirp Mass."
-  tags[section] = '*lalapps_cbc_sink_by_chirp_mass*'+ifartag[0]+'*CAT_4_VETO*'
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_chirp_mass_range_summary*'
-  imagetags[section] = ['upper_limit_plot']
-  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of chirp mass. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
-
-  section= 'upperlimitVm1m2'
-  sections.append(section)
-  htmlAndPlot.append(section)
-  titles[section] = "Upper Limits as a Function of Component Masses."
-  tags[section] = '*lalapps_cbc_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_range_summary*'
-  imagetags[section] = ['upper_limit_plot']
-  captions[section] = """Uncombined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of the component masses. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
-  comments[section] = None
-  configs[section] = None
-  images_dirs[section] = PDdir
 
   section= 'combupperlimitVmtotal'
   sections.append(section)
@@ -976,8 +941,8 @@ def write_upperlimit(page, opts,thisSearch='playground',pipedown='pipedown'):
   sections.append(section)
   htmlAndPlot.append(section)
   titles[section] = "Combined Upper Limits as a Function of Component Masses."
-  tags[section] = '*lalapps_cbc_combined_sink_by_mass1_mass2*'+ifartag[0]+'*CAT_4_VETO*'
-  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_mass1_mass2_combined_upper_limit*'
+  tags[section] = '*lalapps_cbc_combined_sink_by_component_mass*'+ifartag[0]+'*CAT_4_VETO*'
+  htmltags[section] = '*'+ifartag[0]+'_CAT_4_VETO_component_mass_combined_upper_limit*'
   imagetags[section] = ['upper_limit_plot']
   captions[section] = """Combined upper limits on the inspiral merger rate (in mergers/Mpc^3/yr) as a function of the component masses. The plot gives the upper limits with and without including the effect of systematic errors due to calibration uncertainty and finite injection population. (CAT2 and CAT3 vetoes applied and CBC hardware injections removed)."""
   comments[section] = None
@@ -2784,9 +2749,9 @@ if opts.hardware_injection is True:
 if opts.full_data is True: html_sections['full_data'] = "Full Data"
 if opts.followup is True: html_sections['followup'] = "Followup"
 if opts.upperlimit is True: 
-  html_sections['upperlimit_play'] = "Playground Upper Limit"
+  html_sections['upperlimit_play'] = "Search Sensitivity"
 if opts.upperlimit and opts.full_data: 
-  html_sections['upperlimit_full'] = "Full Data Upper Limit"
+  html_sections['upperlimit_full'] = "Upper Limits"
 if opts.summary_files:
   html_sections['summary_files'] = "Summary files"
 html_sections['logfile'] = "Log File"
