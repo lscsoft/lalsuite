@@ -646,7 +646,7 @@ char **getHeaderLine(FILE *inp) {
     exit(1);
   } else if (strlen(header) >= MAXSIZE-1) {
     /* Probably ran out of space before reading the entire line. */
-    fprintf(stderr, "Header line too long (more than %ld chars) in %s, line %d.\n",
+    fprintf(stderr, "Header line too long (more than %zu chars) in %s, line %d.\n",
             MAXSIZE-1, __FILE__, __LINE__);
     exit(1);
   }
@@ -690,69 +690,69 @@ char **getHeaderLine(FILE *inp) {
   return colNames;
 }
 
-const char *colNameToParamName(const char *colName) {
+char *colNameToParamName(const char *colName) {
+  char *retstr=NULL;
   if (colName == NULL) {
     return NULL;
   }
-
-  if (!strcmp(colName, "dist")) {
-    return "distance";
+  else if (!strcmp(colName, "dist")) {
+    retstr=XLALStringDuplicate("distance");
   }
 
-  if (!strcmp(colName, "ra")) {
-    return "rightascension";
+  else if (!strcmp(colName, "ra")) {
+    retstr=XLALStringDuplicate("rightascension");
   }
 
-  if (!strcmp(colName, "iota")) {
-    return "inclination";
+  else if (!strcmp(colName, "iota")) {
+    retstr=XLALStringDuplicate("inclination");
   }
 
-  if (!strcmp(colName, "psi")) {
-    return "polarisation";
+  else if (!strcmp(colName, "psi")) {
+    retstr=XLALStringDuplicate("polarisation");
   }
 
-  if (!strcmp(colName, "mc")) {
-    return "chirpmass";
+  else if (!strcmp(colName, "mc")) {
+    retstr=XLALStringDuplicate("chirpmass");
   }
 
-  if (!strcmp(colName, "phi_orb")) {
-    return "phase";
+  else if (!strcmp(colName, "phi_orb")) {
+    retstr=XLALStringDuplicate("phase");
   }
 
-  if (!strcmp(colName, "eta")) {
-    return "massratio";
+  else if (!strcmp(colName, "eta")) {
+    retstr=XLALStringDuplicate("massratio");
   }
 
-  if (!strcmp(colName, "dec")) {
-    return "declination";
+  else if (!strcmp(colName, "dec")) {
+    retstr=XLALStringDuplicate("declination");
   }
 
   /* Note the 1 <--> 2 swap between the post-proc world and the LI world. */
-  if (!strcmp(colName, "phi1")) {
-    return "phi_spin2";
+  else if (!strcmp(colName, "phi1")) {
+    retstr=XLALStringDuplicate("phi_spin2");
   }
 
-  if (!strcmp(colName, "phi2")) {
-    return "phi_spin1";
+  else if (!strcmp(colName, "phi2")) {
+    retstr=XLALStringDuplicate("phi_spin1");
   }
 
-  if (!strcmp(colName, "theta1")) {
-    return "theta_spin2";
+  else if (!strcmp(colName, "theta1")) {
+    retstr=XLALStringDuplicate("theta_spin2");
   }
 
-  if (!strcmp(colName, "theta2")) {
-    return "theta_spin1";
+  else if (!strcmp(colName, "theta2")) {
+    retstr=XLALStringDuplicate("theta_spin1");
   }
 
-  if (!strcmp(colName, "a1")) {
-    return "a_spin2";
+  else if (!strcmp(colName, "a1")) {
+    retstr=XLALStringDuplicate("a_spin2");
   }
 
-  if (!strcmp(colName, "a2")) {
-    return "a_spin1";
+  else if (!strcmp(colName, "a2")) {
+    retstr=XLALStringDuplicate("a_spin1");
   }
-
-  return colName;
+  else retstr=XLALStringDuplicate(colName);
+  return retstr;
 }
 
 int processParamLine(FILE *inp, char **headers, LALVariables *vars) {
@@ -765,7 +765,7 @@ int processParamLine(FILE *inp, char **headers, LALVariables *vars) {
     nread = fscanf(inp, " %lg ", &param);
 
     if (nread != 1) {
-      fprintf(stderr, "Could not read parameter value, the %ld parameter in the row (in %s, line %d)\n",
+      fprintf(stderr, "Could not read parameter value, the %zu parameter in the row (in %s, line %d)\n",
               i, __FILE__, __LINE__);
       exit(1);
     }

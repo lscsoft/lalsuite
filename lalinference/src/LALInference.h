@@ -44,6 +44,7 @@
 # include <lal/LALDatatypes.h>
 # include <lal/FindChirp.h>
 # include <lal/Window.h>
+#include <lal/LALString.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
@@ -347,7 +348,7 @@ char **getHeaderLine(FILE *inp);
 
 /* Turns common-format column names into our internal parameter
    names. */
-const char *colNameToParamName(const char *colName);
+char *colNameToParamName(const char *colName);
 
 /* Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the

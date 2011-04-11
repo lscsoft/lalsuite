@@ -31,7 +31,6 @@
 #include <lal/GenerateInspRing.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALInference.h>
-#include <lalapps.h>
 #include <lal/XLALError.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 
@@ -447,8 +446,7 @@ void templateLAL(LALIFOData *IFOdata)
   static InspiralTemplate params;
   static REAL4Vector *LALSignal=NULL;
   UINT4 n;
-  long i; 
-  long j, jmax=0;
+  unsigned long i,j, jmax=0;
   double pj, pmax, pleft, pright;
 	
   double mc       = *(REAL8*) getVariable(IFOdata->modelParams, "chirpmass");
@@ -552,11 +550,11 @@ void templateLAL(LALIFOData *IFOdata)
   /* and eventually re-do parameter calculations:                   */
   /* Reset errno. */
 
-  LAL_CALL(LALInspiralParameterCalc(&status, &params),&status);
+  LALInspiralParameterCalc(&status, &params);
   chirptime = params.tC;
   if ((params.approximant != TaylorF2) && (params.approximant != BCV)) {
     params.startTime = (tc - XLALGPSGetREAL8(&IFOdata->timeData->epoch)) - chirptime;
-    LAL_CALL(LALInspiralParameterCalc(&status, &params),&status); /* (re-calculation necessary? probably not...) */
+    LALInspiralParameterCalc(&status, &params); /* (re-calculation necessary? probably not...) */
   }
 	
   if (params.approximant == TaylorF2) {	
@@ -570,7 +568,7 @@ void templateLAL(LALIFOData *IFOdata)
   }
 
   /* compute "params.signalAmplitude" slot: */
-  LAL_CALL(LALInspiralRestrictedAmplitude(&status, &params),&status);
+  LALInspiralRestrictedAmplitude(&status, &params);
 
   /* figure out inspiral length & set `n': */
   /* LALInspiralWaveLength(&status, &n, params); */
@@ -588,7 +586,7 @@ void templateLAL(LALIFOData *IFOdata)
   }
 
   /* allocate (temporary) waveform vector: */
-  LAL_CALL(LALCreateVector(&status, &LALSignal, n),&status);
+  LALCreateVector(&status, &LALSignal, n);
   
   for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
 
@@ -604,7 +602,7 @@ void templateLAL(LALIFOData *IFOdata)
   }
 	// lal_errhandler = LAL_ERR_RTRN;
     // REPORTSTATUS(&status); 
-  LAL_CALL(LALInspiralWave(&status, LALSignal, &params),&status);
+  LALInspiralWave(&status, LALSignal, &params);
     // REPORTSTATUS(&status); 
 	// lal_errhandler = LAL_ERR_DFLT; 
   if (status.statusCode != 0) {
@@ -624,7 +622,7 @@ void templateLAL(LALIFOData *IFOdata)
       IFOdata->timeModelhPlus->data->data[i]  = LALSignal->data[i];
       IFOdata->timeModelhCross->data->data[i] = 0.0;  /* (no cross waveform) */
     }
-    LAL_CALL(LALDestroyVector(&status, &LALSignal),&status);
+    LALDestroyVector(&status, &LALSignal);
     /* apply window & execute FT of plus component: */
     if (IFOdata->window==NULL) 
       die(" ERROR in templateLAL(): ran into uninitialized 'IFOdata->window'.\n");
@@ -644,7 +642,7 @@ void templateLAL(LALIFOData *IFOdata)
     }
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].re = LALSignal->data[IFOdata->freqModelhPlus->data->length-1];
     IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
-    LAL_CALL(LALDestroyVector(&status, &LALSignal),&status);
+    LALDestroyVector(&status, &LALSignal);
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
     for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
       IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) n) * deltaT;
@@ -1018,7 +1016,7 @@ void templateSineGaussian(LALIFOData *IFOdata)
   double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
   double t, tsigma, twopif = LAL_TWOPI*f;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
-  long i;
+  unsigned long i;
   if (sigma <= 0.0) {
     fprintf(stderr, " ERROR in templateSineGaussian(): zero or negative \"sigma\" parameter (sigma=%e).\n", sigma);
     exit(1);
@@ -1067,7 +1065,7 @@ void templateDampedSinusoid(LALIFOData *IFOdata)
   double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
   double t, ttau, twopif = LAL_TWOPI*f;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
-  long i;
+  unsigned long i;
   if (tau <= 0.0) {
     fprintf(stderr, " ERROR in templateDampedSinusoid(): zero or negative \"tau\" parameter (tau=%e).\n", tau);
     exit(1);
@@ -1112,7 +1110,7 @@ void templateSinc(LALIFOData *IFOdata)
   double a     = *(REAL8*) getVariable(IFOdata->modelParams, "amplitude");  /* amplitude                        */
   double t, sinArg, sinc, twopif = LAL_TWOPI*f;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
-  long i;
+  unsigned long i;
   if (f < 0.0)
     fprintf(stderr, " WARNING in templateSinc(): negative \"frequency\" parameter (f=%e).\n", f);
   for (i=0; i<IFOdata->timeData->data->length; ++i){
@@ -1140,7 +1138,7 @@ void templateASinOmegaT(LALIFOData *IFOdata)
   double t;
   double epochGPS = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));	
 
-  long i;
+  unsigned long i;
   for (i=0; i<IFOdata->timeData->data->length; ++i){
     t = ((double)i)*IFOdata->timeData->deltaT + (epochGPS);  /* t-mu       */   
     IFOdata->timeModelhPlus->data->data[i] = A * sin(Omega*t);
@@ -1176,7 +1174,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	PPNParamStruc       ppnParams;
 	int approximant=0, order=0;
 	CHAR approximant_order[LIGOMETA_WAVEFORM_MAX];
-	long i;
+	unsigned long i;
 	
 	REAL8 a1,a2,phi,shift;
 	
@@ -1352,7 +1350,7 @@ void templateLALSTPN(LALIFOData *IFOdata)
 	
 
 	for (i=0; i<IFOdata->timeData->data->length; i++){		
-		if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
+		if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || ((long)i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
 			IFOdata->timeModelhPlus->data->data[i] = 0;
 			IFOdata->timeModelhCross->data->data[i] = 0;		
 		}
@@ -1449,7 +1447,7 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 	Approximant			approximant=0;
 	LALPNOrder			order=0;
 	CHAR				approximant_order[LIGOMETA_WAVEFORM_MAX];
-	long				i;
+	unsigned long				i;
 	int					forceTimeLocation;
 	
 	REAL8 a1,a2,phi,shift;
@@ -1582,7 +1580,7 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 			REAL8 fractionalRightShift = (deltaT*integerLeftShift+timeShift)/deltaT;
 			
 			for (i=0; i<IFOdata->timeData->data->length; i++){		
-				if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || (i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
+				if(deltaT*i>desired_tc || (i+integerLeftShift+1)>=(waveform.phi->data->length - 1) || ((long)i+integerLeftShift)<0){	//set waveform to zero after desired tc, or if need to go past end of input
 					IFOdata->timeModelhPlus->data->data[i] = 0;
 					IFOdata->timeModelhCross->data->data[i] = 0;		
 				}
