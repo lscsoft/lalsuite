@@ -61,7 +61,8 @@ INT4 verbose=0;
 INT4 main(INT4 argc, CHAR *argv[]){
   ProcessParamsTable *param_table;
   LALInferenceRunState runState;
-    
+  REAL8 logZnoise = 0.;
+  
   /* Get ProcParamsTable from input arguments */
   param_table=parseCommandLine(argc,argv);
   runState.commandLine=param_table;
@@ -94,11 +95,12 @@ INT4 main(INT4 argc, CHAR *argv[]){
   runState.proposal=LALInferenceProposalDifferentialEvolution;
   
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model(runState->data);
-  addVariable(runState->algorithmParams, "logZnoise", &logZnoise, REAL8_t, PARAM_FIXED);
+  logZnoise = noise_only_model(runState.data);
+  addVariable(runState.algorithmParams, "logZnoise", &logZnoise, REAL8_t, PARAM_FIXED);
+  printf("Set noise likelihood\n");
   
   /* Create live points array and fill initial parameters */
-  setupLivePointsArray(&runState);
+  LALInferenceSetupLivePointsArray(&runState);
   printf("Done setupLivePointsArray\n");
   
   /* Call the nested sampling algorithm */
@@ -290,10 +292,11 @@ defined!\n");
     FILE *fp=NULL;
     
     ifodata=XLALCalloc(1,sizeof(LALIFOData));
+    ifodata->modelParams = XLALCalloc(1,sizeof(LALVariables));
     ifodata->modelDomain = timeDomain;
     ifodata->next=NULL;
     ifodata->dataParams=XLALCalloc(1,sizeof(LALVariables));
-
+    
     if(i==0) head=ifodata;
     if(i>0) prev->next=ifodata;
 
@@ -339,6 +342,7 @@ defined!\n");
         ifodata->compTimeData = NULL;
         ifodata->compTimeData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
 1., &lalSecondUnit, MAXLENGTH );
+        
       }
       
       if( j == MAXLENGTH ){
@@ -359,6 +363,10 @@ defined!\n");
     ifodata->compTimeData =
     XLALResizeCOMPLEX16TimeSeries(ifodata->compTimeData,0,j);
 
+    ifodata->compModelData = NULL;
+    ifodata->compModelData = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0.,
+1., &lalSecondUnit, j);
+    
     /* fill in time stamps as LIGO Time GPS Vector */
     ifodata->dataTimes = NULL;
     ifodata->dataTimes = XLALCreateTimestampVector( j );
@@ -391,19 +399,19 @@ void initialiseAlgorithm(LALInferenceRunState *runState)
 	
   FILE *devrandom=NULL;
   struct timeval tv;
-  
-	ppt=getProcParamVal(commandLine,"--verbose");
-	if(ppt) {
-		verbose=1;
-		addVariable(runState->algorithmParams,"verbose", &verbose , INT4_t,
-PARAM_FIXED);
-	}
 	
 	/* Initialise parameters structure */
 	runState->algorithmParams=XLALCalloc(1,sizeof(LALVariables));
 	runState->priorArgs=XLALCalloc(1,sizeof(LALVariables));
 	runState->proposalArgs=XLALCalloc(1,sizeof(LALVariables));
 	
+        ppt=getProcParamVal(commandLine,"--verbose");
+        if(ppt) {
+                verbose=1;
+                addVariable(runState->algorithmParams,"verbose", &verbose , INT4_t,
+PARAM_FIXED);
+        }
+        
 	printf("set number of live points.\n");
 	/* Number of live points */
 	tmpi=atoi(getProcParamVal(commandLine,"--Nlive")->value);
@@ -464,21 +472,6 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 	ProcessParamsTable *commandLine=runState->commandLine;
 
   INT4 chunkMin, chunkMax;
-  
-	ppt=getProcParamVal(commandLine,"--psi-bins");
-	INT4 psiBins;
-	if(ppt) psiBins=atoi(ppt->value);
-		else psiBins=50;
-	addVariable(runState->algorithmParams,"psi-bins",&psiBins,INT4_t,PARAM_FIXED);
-	
-	ppt=getProcParamVal(commandLine,"--time-bins");
-	INT4 timeBins;
-	if(ppt) timeBins=atoi(ppt->value);
-		else timeBins=1440;
-	addVariable(runState->algorithmParams,"time-bins",&timeBins,INT4_t,
-    PARAM_FIXED);
-
-	if(verbose) fprintf(stdout,"psi-bins = %i, time-bins =%i\n",psiBins,timeBins);
 
   /* Get chunk min and chunk max */
   ppt=getProcParamVal(commandLine,"--chunk-min");
@@ -500,10 +493,31 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 	REAL8 t0;
 	LALDetAndSource detAndSource;
 	
+        ppt=getProcParamVal(commandLine,"--psi-bins");
+        INT4 psiBins;
+        if(ppt) psiBins=atoi(ppt->value);
+                else psiBins=50;
+                
+        ppt=getProcParamVal(commandLine,"--time-bins");
+        INT4 timeBins;
+        if(ppt) timeBins=atoi(ppt->value);
+                else timeBins=1440;       
+        
+        if(verbose) fprintf(stdout,"psi-bins = %i, time-bins =%i\n",psiBins,timeBins);
+        
 	while(data){
 		REAL8Vector *sumData=NULL;
     UINT4Vector *chunkLength=NULL;
 
+    
+    addVariable(data->dataParams,"psiSteps",&psiBins,INT4_t,PARAM_FIXED);
+        
+        
+    addVariable(data->dataParams,"timeSteps",&timeBins,INT4_t,
+    PARAM_FIXED);
+
+        
+    
     t0=XLALGPSGetREAL8(&data->dataTimes->data[0]);
 		detAndSource.pDetector=data->detector;
 		detAndSource.pSource=source;
@@ -512,8 +526,8 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 
     LUfcross = gsl_matrix_alloc(psiBins, timeBins);
     response_lookup_table(t0, detAndSource, timeBins, psiBins, LUfplus, LUfcross);
-    addVariable(data->dataParams,"LU_Fplus",LUfplus,gslMatrix_t,PARAM_FIXED);
-    addVariable(data->dataParams,"LU_Fcross",LUfcross,gslMatrix_t,PARAM_FIXED);
+    addVariable(data->dataParams,"LU_Fplus",&LUfplus,gslMatrix_t,PARAM_FIXED);
+    addVariable(data->dataParams,"LU_Fcross",&LUfcross,gslMatrix_t,PARAM_FIXED);
 
     addVariable(data->dataParams,"chunkMin",&chunkMin,INT4_t,PARAM_FIXED);
     addVariable(data->dataParams,"chunkMax",&chunkMax,INT4_t,PARAM_FIXED);
@@ -577,11 +591,11 @@ void initialiseProposal(LALInferenceRunState *runState)
     }
 	  
     /* Add the prior variables */
-	  addMinMaxPrior(runState->priorArgs, tempPar, (void *)&low, (void *)&high,
+    addMinMaxPrior(runState->priorArgs, tempPar, (void *)&low, (void *)&high,
 type);
   }
   
-	return;
+  return;
 }
 
 void setupFromParFile(LALInferenceRunState *runState)
@@ -612,12 +626,15 @@ void setupFromParFile(LALInferenceRunState *runState)
   
 	/* Setup initial phase */
 	while(data){
-		phase_vector=get_phase_model(pulsar, data );
-		data->timeData=XLALCalloc(1,sizeof(REAL8TimeSeries));
-		data->timeData->data=phase_vector;
-		data->timeData->epoch=data->dataTimes->data[0];
-		data->timeData->sampleUnits=lalSecondUnit;
-		data=data->next;
+	  INT4 i=0;
+          phase_vector = get_phase_model(pulsar, data );
+	  data->timeData = NULL;
+          data->timeData = XLALCreateREAL8TimeSeries( "",&data->dataTimes->data[0] , 0.,
+1., &lalSecondUnit, phase_vector->length);
+          for (i=0; i<phase_vector->length; i++)
+            data->timeData->data->data[i] = phase_vector->data[i];
+          
+          data = data->next;
 	}
   
   runState->currentParams = XLALCalloc(1,sizeof(LALVariables));
@@ -627,67 +644,6 @@ void setupFromParFile(LALInferenceRunState *runState)
 
 	return;
 }
-
-
-void setupLivePointsArray(LALInferenceRunState *runState){
-/* Set up initial basket of live points, drawn from prior,
- by copying runState->currentParams to all entries in the array*/
-	
-	UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
-	UINT4 i;
-	LALVariableItem *current;
-	
-  REAL8 temp, mini, maxi; 
-  
-  REAL8 logZnoise=0.;
-  
-	/* Allocate the array */
-	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
-  runState->livePoints=XLALCalloc(1,sizeof(LALVariables *));
-  
-  for(i=0;i<Nlive;i++)
-	{
-		runState->livePoints[i]=XLALCalloc(1,sizeof(LALVariables));
-   
-    /* Copy the param structure */
-    copyVariables(runState->currentParams,runState->livePoints[i]);
-  
-                
-    /* Sprinkle the varying points among prior */
-    
-    for(current=runState->livePoints[i]->head ;current!=NULL;
-      current=current->next){
-			if(current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR)
-			{
-				switch (current->type){
-					case REAL4_t:
-					case REAL8_t:
-						{
-							REAL8 tmp;
-							REAL8 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name, 
-                (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						}
-						break;
-					case INT4_t:
-					case INT8_t:
-						{
-							INT4 tmp;
-							INT4 min,max;
-							getMinMaxPrior(runState->priorArgs,current->name,
-                (void *)&min,(void *)&max);
-							tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
-						}
-						break;
-					default:
-						fprintf(stderr,"Trying to randomise a non-numeric parameter!");
-				}
-			}
-		}
-	}
-}
-
 
 /* function to get the lengths of consecutive chunks of data */
 UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax ){
@@ -845,11 +801,13 @@ LALTemplateFunction *get_model ){
   exclamation = XLALCalloc(chunkMax+1, sizeof(REAL8));
   
   /* copy model parameters to data parameters */
-  copyVariables(data->modelParams, vars);
-  
+
+  /* copyVariables(data->modelParams, vars); */
+  copyVariables(vars, data->modelParams);
+
   /* get pulsar model */
   get_model( data );
-  
+
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -939,8 +897,8 @@ void get_pulsar_model( LALIFOData *data ){
   pars.f4 = *(REAL8*)getVariable( data->modelParams, "f4");
   pars.f5 = *(REAL8*)getVariable( data->modelParams, "f5");
   
-  pars.model = (CHAR*)getVariable( data->modelParams, "model");
-  
+  pars.model = *(CHAR**)getVariable( data->modelParams, "model");
+
   /* binary parameters */
   if( pars.model != NULL ){
     pars.e = *(REAL8*)getVariable( data->modelParams, "e");
@@ -994,6 +952,7 @@ void get_pulsar_model( LALIFOData *data ){
    
   /* get difference in phase and perform extra heterodyne with it */ 
   if ( (dphi = get_phase_model( pars, data )) != NULL){
+    
     for( i=0; i<length; i++ ){
       COMPLEX16 M;
       REAL8 dphit;
@@ -1029,9 +988,6 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
   BinaryPulsarOutput boutput;
 
   BarycenterInput *bary=NULL;
-  //EphemerisData *edat=NULL;
-  
-  //LALDetector det;
   
   REAL8Vector *phis=NULL;
 
@@ -1043,18 +999,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
   bary = (BarycenterInput*)XLALCalloc(1,sizeof(BarycenterInput));
   memcpy(&bary->site, data->detector, sizeof(LALDetector));
   
-  // printf("det.location[0] = %lf\n", det.location[0]);
-  
-  /*memcpy(&bary->site.location, &data->detector->location, 3*sizeof(REAL8));
-  memcpy(&bary->site.response, &data->detector->response, 9*sizeof(REAL4));
-  memcpy(&bary->site.type, &data->detector->type, sizeof(LALDetectorType));
-  memcpy(&bary->site.frDetector, &data->detector->frDetector, sizeof(LALFrDetector));*/
   bary->alpha = params.ra;
   bary->delta = params.dec;
-  
-  fprintf(stderr, "ra = %lf, dec = %lf\n", bary->alpha, bary->delta);
-  //edat = (EphemerisData*)XLALCalloc(1,sizeof(data->ephem));  
-  //edat = data->ephem;
   
    /* set the position and frequency epochs if not already set */
   if(params.pepoch == 0. && params.posepoch != 0.)
@@ -1066,11 +1012,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
-  printf("allocated memory for phis\n"); 
-  
-  fprintf(stderr, "data detector: %lf %lf %lf\n", data->detector->location[0], data->detector->location[1], data->detector->location[2]);
-  fprintf(stderr, "detector: %lf %lf %lf\n", bary->site.location[0], bary->site.location[1], bary->site.location[2]);
-  
+ 
   /* set 1/distance if parallax or distance value is given (1/sec) */
   if( params.px != 0. )
     bary->dInv = params.px*1e-3*LAL_C_SI/LAL_PC_SI;
@@ -1161,8 +1103,9 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   psteps = *(INT4*)getVariable( data->dataParams, "psiSteps" );
   tsteps = *(INT4*)getVariable( data->dataParams, "timeSteps" );
   
-  LU_Fplus = (gsl_matrix*)getVariable( data->dataParams, "LU_Fplus");
-  LU_Fcross = (gsl_matrix*)getVariable( data->dataParams, "LU_Fcross");
+  LU_Fplus = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fplus");
+  LU_Fcross = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fcross");
+ 
   
   /* allocate memory for amplitudes */
   amp = XLALCreateREAL8Vector( length );
@@ -1186,12 +1129,12 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   Xpcosphi = Xplus*cosphi;
   Xccosphi = Xcross*cosphi;
  
+  tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
+  
   for( i=0; i<length; i++ ){
     /* set the psi bin for the lookup table */
     psibin = (INT4)ROUND( ( pars.psi + LAL_PI/4. ) * ( psteps-1. )/LAL_PI_2 );
 
-    tstart = XLALGPSGetREAL8( &data->dataTimes->data[0] ); /*time of first B_k*/
-  
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/
     T = fmod(XLALGPSGetREAL8(&data->dataTimes->data[i]) - tstart,
@@ -1205,6 +1148,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
     data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
     data->compModelData->data->data[i].im = plus*Xpsinphi - cross*Xccosphi;
   }
+  
 }
 
 void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars ){

@@ -944,7 +944,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	REAL8Vector *logLs;
 	
 	LALVariableItem *current;
-	
+
 	/* Allocate the array */
 	/* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
 	runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *));
@@ -953,14 +953,15 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
 		exit(1);
 	}
-	
+
 	logLs=XLALCreateREAL8Vector(Nlive);
+
 	addVariable(runState->algorithmParams,"logLikelihoods",&logLs,REAL8Vector_t,PARAM_FIXED);
 	fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
 	for(i=0;i<Nlive;i++)
 	{
 		runState->livePoints[i]=XLALCalloc(1,sizeof(LALVariables));
-		
+                
 		/* Copy the param structure */
 		copyVariables(runState->currentParams,runState->livePoints[i]);
 		

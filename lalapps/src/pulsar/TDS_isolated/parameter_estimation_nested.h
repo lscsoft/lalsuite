@@ -96,8 +96,6 @@ void initialiseProposal(LALInferenceRunState *runState);
 
 void setupFromParFile(LALInferenceRunState *runState);
 
-void setupLivePointsArray(LALInferenceRunState *runState);
-
 REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
   LALTemplateFunction *get_pulsar_model );
 
