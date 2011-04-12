@@ -79,7 +79,7 @@ lalapps_ComputeFStatistic_v2_cuda_LDADD = $(LDADD) -lcudart
 
 lalapps_PredictFStat_SOURCES = PredictFStat.c ../transientCW_utils.c ../transientCW_utils.h ../ProbabilityDensity.c ../ProbabilityDensity.h
 # force linking in C++ mode for E@H
-eah_PredictFStat_SOURCES = PredictFStat.c ../hough/src2/EinsteinAtHome/win_lib.cpp
+eah_PredictFStat_SOURCES = $(lalapps_PredictFStat_SOURCES) ../hough/src2/EinsteinAtHome/win_lib.cpp
 
 lalapps_ComputeFStatAnalyticMonteCarloUpperLimit_SOURCES = ComputeFStatAnalyticMonteCarloUpperLimit.c
 
