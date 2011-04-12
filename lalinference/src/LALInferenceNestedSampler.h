@@ -28,7 +28,8 @@ REAL8 ang_dist(REAL8 a1, REAL8 a2);
 REAL8 ang_var(LALVariables **list,const char *pname, int N);
 
 /* Functions for proposal distributions */
-
+void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
+*parameter);
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter);
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariables *parameter);
 //Declared in LALInferencePrior.h instead:

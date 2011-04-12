@@ -400,10 +400,10 @@ void fprintSample(FILE *fp,LALVariables *sample){
 				fprintf(fp, "%ud", *(UINT4 *) ptr->value);
 				break;
 			case REAL4_t:
-				fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
+				fprintf(fp, "%9.5e", *(REAL4 *) ptr->value);
 				break;
 			case REAL8_t:
-				fprintf(fp, "%9.5lf", *(REAL8 *) ptr->value);
+				fprintf(fp, "%9.5le", *(REAL8 *) ptr->value);
 				break;
 			case COMPLEX8_t:
 				fprintf(fp, "%e + i*%e",
@@ -414,7 +414,7 @@ void fprintSample(FILE *fp,LALVariables *sample){
 						(REAL8) ((COMPLEX16 *) ptr->value)->re, (REAL8) ((COMPLEX16 *) ptr->value)->im);
 				break;
 			case string_t:
-				fprintf(fp, "%s",(char *)((CHAR **)ptr->value));
+				fprintf(fp, "%s", *((CHAR **)ptr->value));
 				break;
 			case gslMatrix_t:
 				fprintf(stdout, "<can't print matrix>");

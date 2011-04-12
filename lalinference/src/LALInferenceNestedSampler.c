@@ -176,6 +176,10 @@ void NestedSamplingAlgorithm(LALInferenceRunState *runState)
 	
           addVariable(runState->algorithmParams,"logZnoise",&logZnoise,REAL8_t,PARAM_FIXED);
         }
+        else{
+          logZnoise = 
+            *(REAL8 *)getVariable(runState->algorithmParams,"logZnoise");
+        }
         
         logLikelihoods=(REAL8 *)(*(REAL8Vector **)getVariable(runState->algorithmParams,"logLikelihoods"))->data;
 
@@ -366,6 +370,24 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 	return;
 }
 
+void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
+*parameter)
+{
+        REAL8 randnum;
+        REAL8 STUDENTTFRAC=0.0,
+              DIFFEVFRAC=1.0;
+
+        randnum=gsl_rng_uniform(runState->GSLrandom);
+        /* Choose a random type of jump to propose */
+        if(randnum<STUDENTTFRAC)
+                LALInferenceProposalMultiStudentT(runState, parameter);
+        else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
+                LALInferenceProposalDifferentialEvolution(runState,parameter);
+                               
+LALInferenceProposalDifferentialEvolution(runState,parameter);
+                       
+        return; 
+}
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALVariables *parameter)
 {

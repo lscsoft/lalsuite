@@ -86,7 +86,7 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
 
 REAL8 priorFunction(LALInferenceRunState *runState, LALVariables *params);
 
-LALIFOData *readPulsarData(int argc, char *argv[]);
+void readPulsarData(LALInferenceRunState *runState);
 
 void initialiseAlgorithm(LALInferenceRunState *runState);
 
