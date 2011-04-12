@@ -779,99 +779,110 @@ timeSteps, INT4 psiSteps, gsl_matrix *LUfplus, gsl_matrix *LUfcross){
    particular pulsar parameters */
 REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
 LALTemplateFunction *get_model ){
-  INT4 i=0, j=0, count=0, k=0, cl=0;
-  INT4 length=0, chunkMin, chunkMax;
-  REAL8 chunkLength=0.;
-
-  REAL8 tstart=0., T=0.;
-
-  COMPLEX16 model;
-  INT4 psibin=0, timebin=0;
-
-  REAL8 plus=0., cross=0.;
-  REAL8 sumModel=0., sumDataModel=0.;
-  REAL8 chiSquare=0.;
-  COMPLEX16 B, M;
-
-  REAL8 *exclamation=NULL; /* all factorials up to chunkMax */
-  REAL8 logOf2=log(2.);
-
   REAL8 loglike=0.; /* the log likelihood */
+  REAL8 logOf2=log(2.);
+  UINT4 i=0;
+  
+  while (data){
+    INT4 j=0, count=0, k=0, cl=0;
+    INT4 length=0, chunkMin, chunkMax;
+    REAL8 chunkLength=0.;
+    REAL8 logliketmp=0.;
+  
+    REAL8 tstart=0., T=0.;
 
-  INT4 first=0, through=0;
+    COMPLEX16 model;
+    INT4 psibin=0, timebin=0;
 
-  REAL8 phiIni=0., phi=0.;
-  
-  REAL8Vector *sumData=NULL;
-  UINT4Vector *chunkLengths=NULL;
+    REAL8 plus=0., cross=0.;
+    REAL8 sumModel=0., sumDataModel=0.;
+    REAL8 chiSquare=0.;
+    COMPLEX16 B, M;
 
-  sumData = *(REAL8Vector **)getVariable(data->dataParams, "sumData");
-  chunkLengths = *(UINT4Vector **)getVariable(data->dataParams, "chunkLength");
-  chunkMin = *(INT4*)getVariable(data->dataParams, "chunkMin");
-  chunkMax = *(INT4*)getVariable(data->dataParams, "chunkMax");
-  
-  exclamation = XLALCalloc(chunkMax+1, sizeof(REAL8));
-  
-  /* copy model parameters to data parameters */
-  copyVariables(vars, data->modelParams);
-  
-  /* get pulsar model */
-  get_model( data );
+    REAL8 *exclamation=NULL; /* all factorials up to chunkMax */
 
-  /* to save time get all log factorials up to chunkMax */
-  for( i = 0 ; i < chunkMax+1 ; i++ )
-    exclamation[i] = log_factorial(i);
+    INT4 first=0, through=0;
+
+    REAL8 phiIni=0., phi=0.;
   
-  length = data->compTimeData->data->length;
+    REAL8Vector *sumData=NULL;
+    UINT4Vector *chunkLengths=NULL;
+
+    sumData = *(REAL8Vector **)getVariable(data->dataParams, "sumData");
+    chunkLengths = *(UINT4Vector **)getVariable(data->dataParams,
+      "chunkLength");
+    chunkMin = *(INT4*)getVariable(data->dataParams, "chunkMin");
+    chunkMax = *(INT4*)getVariable(data->dataParams, "chunkMax");
   
-  for( i = 0 ; i < length ; i += chunkLength ){
-    chunkLength = (REAL8)chunkLengths->data[count];
+    exclamation = XLALCalloc(chunkMax+1, sizeof(REAL8));
+  
+    /* copy model parameters to data parameters */
+    copyVariables(vars, data->modelParams);
+  
+    /* get pulsar model */
+    get_model( data );
+
+    /* to save time get all log factorials up to chunkMax */
+    for( i = 0 ; i < chunkMax+1 ; i++ )
+      exclamation[i] = log_factorial(i);
+  
+    length = data->compTimeData->data->length;
+  
+    for( i = 0 ; i < length ; i += chunkLength ){
+      chunkLength = (REAL8)chunkLengths->data[count];
     
-    /* skip section of data if its length is less than the minimum allowed
-       chunk length */
-    if( chunkLength < chunkMin ){
-      count++;
+      /* skip section of data if its length is less than the minimum allowed
+        chunk length */
+      if( chunkLength < chunkMin ){
+        count++;
 
-      if( through == 0 ) first = 0;
+        if( through == 0 ) first = 0;
 
-      continue;
-    }
+        continue;
+      }
 
-    through = 1;
+      through = 1;
 
-    sumModel = 0.;
-    sumDataModel = 0.;
+      sumModel = 0.;
+      sumDataModel = 0.;
 
-    cl = i + (INT4)chunkLength;
+      cl = i + (INT4)chunkLength;
     
-    for( j = i ; j < cl ; j++){
-      B.re = data->compTimeData->data->data[j].re;
-      B.im = data->compTimeData->data->data[j].im;
+      for( j = i ; j < cl ; j++){
+        B.re = data->compTimeData->data->data[j].re;
+        B.im = data->compTimeData->data->data[j].im;
 
-      M.re = data->compModelData->data->data[j].re;
-      M.im = data->compModelData->data->data[j].im;
+        M.re = data->compModelData->data->data[j].re;
+        M.im = data->compModelData->data->data[j].im;
       
-      /* sum over the model */
-      sumModel += M.re*M.re + M.im*M.im;
+        /* sum over the model */
+        sumModel += M.re*M.re + M.im*M.im;
 
-      /* sum over that data and model */
-      sumDataModel += B.re*M.re + B.im*M.im;
-    }
+        /* sum over that data and model */
+        sumDataModel += B.re*M.re + B.im*M.im;
+      }
 
-    chiSquare = sumData->data[count];
-    chiSquare -= 2.*sumDataModel;
-    chiSquare += sumModel;
+      chiSquare = sumData->data[count];
+      chiSquare -= 2.*sumDataModel;
+      chiSquare += sumModel;
 
-    if( first == 0 ){
-      loglike = (chunkLength - 1.)*logOf2;
-      first++;
-    }
-    else loglike += (chunkLength - 1.)*logOf2;
+      if( first == 0 ){
+        logliketmp = (chunkLength - 1.)*logOf2;
+        first++;
+      }
+      else logliketmp += (chunkLength - 1.)*logOf2;
 
-    loglike += exclamation[(INT4)chunkLength];
-    loglike -= chunkLength*log(chiSquare);
+      logliketmp += exclamation[(INT4)chunkLength];
+      logliketmp -= chunkLength*log(chiSquare);
     
-    count++;
+      count++;
+    }
+  
+    loglike += logliketmp;
+  
+    data = data->next;
+  
+    XLALFree(exclamation);
   }
   
   return loglike;
@@ -982,6 +993,8 @@ void get_pulsar_model( LALIFOData *data ){
       data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
     }
   }
+  
+  XLALDestroyREAL8Vector(dphi);
 }
 
 REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
@@ -1090,13 +1103,13 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data ){
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
   }
 
+  XLALFree(bary);
+
   return phis;
 }
 
 void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   INT4 i=0, length;
-  
-  REAL8Vector *amp=NULL;
   
   REAL8 psteps, tsteps;
   INT4 psibin, timebin;
@@ -1117,10 +1130,6 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   
   LU_Fplus = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)getVariable( data->dataParams, "LU_Fcross");
- 
-  
-  /* allocate memory for amplitudes */
-  amp = XLALCreateREAL8Vector( length );
   
   sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
   
