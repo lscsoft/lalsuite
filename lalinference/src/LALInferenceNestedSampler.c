@@ -374,8 +374,8 @@ void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
 *parameter)
 {
         REAL8 randnum;
-        REAL8 STUDENTTFRAC=0.0,
-              DIFFEVFRAC=1.0;
+        REAL8 STUDENTTFRAC=0.8,
+              DIFFEVFRAC=0.2;
 
         randnum=gsl_rng_uniform(runState->GSLrandom);
         /* Choose a random type of jump to propose */
@@ -384,7 +384,7 @@ void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
         else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
                 LALInferenceProposalDifferentialEvolution(runState,parameter);
                                
-LALInferenceProposalDifferentialEvolution(runState,parameter);
+        LALInferenceProposalDifferentialEvolution(runState,parameter);
                        
         return; 
 }

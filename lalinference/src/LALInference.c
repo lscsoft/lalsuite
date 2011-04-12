@@ -1684,6 +1684,19 @@ void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
   return;
 }
 
+/* Function to remove the min and max values for the prior onto the priorArgs */
+void removeMinMaxPrior(LALVariables *priorArgs, const char *name){
+  char minName[VARNAME_MAX];
+  char maxName[VARNAME_MAX];
+  
+  sprintf(minName,"%s_min",name);
+  sprintf(maxName,"%s_max",name);
+  
+  removeVariable(priorArgs, minName);
+  removeVariable(priorArgs, maxName);
+  return;
+}
+
 /* Get the min and max values of the prior from the priorArgs list, given a name */
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
 {

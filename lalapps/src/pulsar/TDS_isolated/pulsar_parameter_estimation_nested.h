@@ -64,10 +64,15 @@ extern "C" {
 #define LOG_TRAPEZIUM(h1, h2, w) ( -0.693147180559945 + log(w) + PLUS(h1, h2) )
 
 #define MAXLENGTH 1000000
-#define MAXPARAMS 35
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
 #define TWENTYFOURTH 0.04166666666666666666666666666666666666666667L
+
+/* default values */
+#define CHUNKMIN 5
+#define CHUNKMAX 30
+#define PSIBINS 50
+#define TIMEBINS 1440
 
 /** define functions */
 	
@@ -78,7 +83,8 @@ UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax );
 
 REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data );
 
-void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars );
+void add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
+  BinaryPulsarParams pars );                                                   
 	
 REAL8Vector * sum_data( LALIFOData *data );
 

@@ -1,7 +1,7 @@
 /* functions to create the likelihood for a pulsar search to be used with the
 LALInference tools */
 
-#include "parameter_estimation_nested.h"
+#include "pulsar_parameter_estimation_nested.h"
 
 
 #define NUM_FACT 7
@@ -159,16 +159,11 @@ void readPulsarData(LALInferenceRunState *runState){
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *commandLine = runState->commandLine;
   
-  REAL8 tmp = 0.;
-  INT4 tmpi = 0;
-  CHAR *tmps = NULL;
-  
   CHAR *detectors=NULL;
   CHAR *pulsar=NULL;
   CHAR *inputdir=NULL;
   CHAR *fname=NULL;
   CHAR *outfile=NULL;
-  CHAR *propfile=NULL;
   CHAR *forcefile=NULL;
   
   CHAR *filestr=NULL;
@@ -178,8 +173,6 @@ void readPulsarData(LALInferenceRunState *runState){
   
   CHAR dets[MAXDETS][256];
   INT4 numDets=0, i=0;
- 
-  BinaryPulsarParams pars;
  
   LALIFOData *ifodata=NULL;
   LALIFOData *prev=NULL;
@@ -312,6 +305,7 @@ defined!\n");
     ifodata->modelDomain = timeDomain;
     ifodata->next = NULL;
     ifodata->dataParams = XLALCalloc(1,sizeof(LALVariables));
+    ifodata->scaleFactors = XLALCalloc(1,sizeof(LALVariables));
     
     if( i == 0 ) runState->data = ifodata;
     if( i > 0 ) prev->next = ifodata;
@@ -467,7 +461,10 @@ PARAM_FIXED);
       randomseed = tv.tv_sec + tv.tv_usec;
     } 
     else {
-      fread(&randomseed, sizeof(randomseed), 1, devrandom);
+      if( fread(&randomseed, sizeof(randomseed), 1, devrandom) != 1 ){
+        fprintf(stderr, "Error... could not read random seed\n");
+        exit(3);
+      }
       fclose(devrandom);
     }
   }
@@ -488,15 +485,12 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
   /* Get chunk min and chunk max */
   ppt = getProcParamVal(commandLine,"--chunk-min");
   if(ppt) chunkMin = atoi(ppt->value);
-  else chunkMin = 5;
+  else chunkMin = CHUNKMIN; /* default minimum chunk length */
     
   ppt = getProcParamVal(commandLine,"--chunk-max");
   if(ppt) chunkMax = atoi(ppt->value);
-  else chunkMax = 30; 
-  
-  if(verbose) fprintf(stdout,"Chunkmin = %i, chunkmax =%i\n", chunkMin,
-    chunkMax);
-  
+  else chunkMax = CHUNKMAX; /* default maximum chunk length */
+   
   LALIFOData *data=runState->data;
 
   gsl_matrix *LUfplus=NULL;
@@ -507,13 +501,13 @@ void setupLookupTables(LALInferenceRunState *runState, LALSource *source){
 	
   ppt = getProcParamVal(commandLine,"--psi-bins");
   INT4 psiBins;
-  if(ppt) psiBins = atoi(ppt->value);
-  else psiBins = 50;
+  if( ppt ) psiBins = atoi(ppt->value);
+  else psiBins = PSIBINS; /* default psi bins */
                 
   ppt = getProcParamVal(commandLine,"--time-bins");
   INT4 timeBins;
-  if(ppt) timeBins = atoi(ppt->value);
-  else timeBins = 1440;       
+  if( ppt ) timeBins = atoi(ppt->value);
+  else timeBins = TIMEBINS; /* default time bins */  
         
   if(verbose) fprintf(stdout,"psi-bins = %i, time-bins =%i\n",psiBins,timeBins);
         
@@ -559,7 +553,8 @@ void initialiseProposal(LALInferenceRunState *runState)
 /* sets up the parameters to be varied, and the extent of the proposal
    distributions from a proposal distribution file */
 {
-  CHAR *propfile;
+  CHAR *propfile = NULL;
+  ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine=runState->commandLine;
   FILE *fp=NULL;
   
@@ -569,17 +564,40 @@ void initialiseProposal(LALInferenceRunState *runState)
   BinaryPulsarParams pulsar;
   REAL8Vector *phase_vector;
   
-  propfile = (CHAR *)getProcParamVal(commandLine,"--prop-file")->value;
+  LALIFOData *data = runState->data;
   
+  ppt = getProcParamVal(commandLine,"--prop-file");
+  if( ppt ){
+  propfile =
+    XLALStringDuplicate( getProcParamVal(commandLine,"--prop-file")->value );
+  }
+  else{
+    fprintf(stderr, "Error... --prop-file is required.\n");
+    fprintf(stderr, USAGE, commandLine->program);
+    exit(0);
+  }
+    
   runState->priorArgs = XLALCalloc(1,sizeof(LALVariables));
   
   /* open file */
-  fp = fopen(propfile, "r");
+  if( (fp = fopen(propfile, "r")) == NULL ){
+    fprintf(stderr, "Error... Could not open proposal file %s.\n", propfile);
+    exit(3);
+  }
   
   while(fscanf(fp, "%s %lf %lf", tempPar, &low, &high) != EOF){
     REAL8 tempVar;
     VariableType type;
     REAL8 tempmin, tempmax;
+    
+    REAL8 scale=0.;
+    VariableType scaleType;
+    
+    if( high < low ){
+      fprintf(stderr, "Error... In %s the %s parameters ranges are wrongly \
+set.\n", propfile, tempPar);
+      exit(3);
+    }
     
     tempVar = *(REAL8*)getVariable(runState->currentParams, tempPar);
     type = getVariableType(runState->currentParams, tempPar);
@@ -587,8 +605,24 @@ void initialiseProposal(LALInferenceRunState *runState)
     /* remove variable value */
     removeVariable(runState->currentParams, tempPar);
     
+    /* set the scale factor to be the high value of the prior */
+    scaleType = getVariableType(runState->scaleFactors, tempPar);
+    removeVariable(runState->scaleFactors, tempPar);
+    scale = high;
+    
+    addVariable(runState->scaleFactors, tempPar, &scale, scaleType,
+PARAM_FIXED);
+    
+    /* scale variable and priors */
+    tempVar /= scale;
+    low /= scale;
+    high /= scale;
+    
     /* re-add variable */
     if(strstr(tempPar, "ra") || strstr(tempPar, "phi0")){
+      /* scale the variables by the max (high) prior range - this should allow
+         covariance matrices to stay positive definate */
+      
       addVariable(runState->currentParams, tempPar, &tempVar, type,
         PARAM_CIRCULAR);
     }
@@ -600,6 +634,13 @@ void initialiseProposal(LALInferenceRunState *runState)
     /* Add the prior variables */
     addMinMaxPrior(runState->priorArgs, tempPar, (void *)&low, (void *)&high,
 type);
+  }
+  
+  /* add scale factors to the data structure */
+  while(data){
+    data->scaleFactors = runState->scaleFactors;
+    
+    data = data->next; 
   }
   
   return;
@@ -646,13 +687,15 @@ void setupFromParFile(LALInferenceRunState *runState)
   }
   
   runState->currentParams = XLALCalloc(1,sizeof(LALVariables));
+  runState->scaleFactors = XLALCalloc(1,sizeof(LALVariables));
   
   /* if no binary model set the value to "None" */
   if ( pulsar.model == NULL )
     pulsar.model = XLALStringDuplicate("None");  
   
   /* Add initial (unchanging) variables for the model. */
-  add_initial_variables( runState->currentParams, pulsar );
+  add_initial_variables( runState->currentParams, runState->scaleFactors, 
+                         pulsar );
 
   return;
 }
@@ -784,8 +827,8 @@ LALTemplateFunction *get_model ){
   UINT4 i=0;
   
   while (data){
-    INT4 j=0, count=0, k=0, cl=0;
-    INT4 length=0, chunkMin, chunkMax;
+    UINT4 j=0, count=0, k=0, cl=0;
+    UINT4 length=0, chunkMin, chunkMax;
     REAL8 chunkLength=0.;
     REAL8 logliketmp=0.;
   
@@ -898,72 +941,126 @@ void get_pulsar_model( LALIFOData *data ){
   
   REAL8Vector *dphi=NULL;
   
-  /* set model parameters */
-  pars.h0 = *(REAL8*)getVariable( data->modelParams, "h0");
-  pars.cosiota = *(REAL8*)getVariable( data->modelParams, "cosiota");
-  pars.psi = *(REAL8*)getVariable( data->modelParams, "psi");
-  pars.phi0 = *(REAL8*)getVariable( data->modelParams, "phi0");
+  REAL8 rescale=1.;
+  
+  /* set model parameters (including rescaling) */
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "h0" );
+  pars.h0 = *(REAL8*)getVariable( data->modelParams, "h0") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "cosiota" );
+  pars.cosiota = *(REAL8*)getVariable( data->modelParams, "cosiota") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "psi" );
+  pars.psi = *(REAL8*)getVariable( data->modelParams, "psi") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "phi0" );
+  pars.phi0 = *(REAL8*)getVariable( data->modelParams, "phi0") * rescale;
   
   /* set the potentially variable parameters */
-  pars.pepoch = *(REAL8*)getVariable( data->modelParams, "pepoch");
-  pars.posepoch = *(REAL8*)getVariable( data->modelParams, "posepoch");
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "pepoch" );
+  pars.pepoch = *(REAL8*)getVariable( data->modelParams, "pepoch") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "posepoch" );
+  pars.posepoch = *(REAL8*)getVariable( data->modelParams, "posepoch") *
+    rescale;
   
-  pars.ra = *(REAL8*)getVariable( data->modelParams, "ra");
-  pars.pmra = *(REAL8*)getVariable( data->modelParams, "pmra");
-  pars.dec = *(REAL8*)getVariable( data->modelParams, "dec");
-  pars.pmdec = *(REAL8*)getVariable( data->modelParams, "pmdec");
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "ra" );
+  pars.ra = *(REAL8*)getVariable( data->modelParams, "ra") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "pmra" );
+  pars.pmra = *(REAL8*)getVariable( data->modelParams, "pmra") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "dec" );
+  pars.dec = *(REAL8*)getVariable( data->modelParams, "dec") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "pmdec" );
+  pars.pmdec = *(REAL8*)getVariable( data->modelParams, "pmdec") * rescale;
   
-  pars.f0 = *(REAL8*)getVariable( data->modelParams, "f0");
-  pars.f1 = *(REAL8*)getVariable( data->modelParams, "f1");
-  pars.f2 = *(REAL8*)getVariable( data->modelParams, "f2");
-  pars.f3 = *(REAL8*)getVariable( data->modelParams, "f3");
-  pars.f4 = *(REAL8*)getVariable( data->modelParams, "f4");
-  pars.f5 = *(REAL8*)getVariable( data->modelParams, "f5");
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f0" );
+  pars.f0 = *(REAL8*)getVariable( data->modelParams, "f0") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f1" );
+  pars.f1 = *(REAL8*)getVariable( data->modelParams, "f1") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f2" );
+  pars.f2 = *(REAL8*)getVariable( data->modelParams, "f2") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f3" );
+  pars.f3 = *(REAL8*)getVariable( data->modelParams, "f3") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f4" );
+  pars.f4 = *(REAL8*)getVariable( data->modelParams, "f4") * rescale;
+  rescale = *(REAL8*)getVariable( data->scaleFactors, "f5" );
+  pars.f5 = *(REAL8*)getVariable( data->modelParams, "f5") * rescale;
   
   pars.model = *(CHAR**)getVariable( data->modelParams, "model");
 
   /* binary parameters */
   if( pars.model != NULL ){
-    pars.e = *(REAL8*)getVariable( data->modelParams, "e");
-    pars.w0 = *(REAL8*)getVariable( data->modelParams, "w0");
-    pars.Pb = *(REAL8*)getVariable( data->modelParams, "Pb");
-    pars.x = *(REAL8*)getVariable( data->modelParams, "x");
-    pars.T0 = *(REAL8*)getVariable( data->modelParams, "T0");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "e" );
+    pars.e = *(REAL8*)getVariable( data->modelParams, "e") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "w0" );
+    pars.w0 = *(REAL8*)getVariable( data->modelParams, "w0") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "Pb" );
+    pars.Pb = *(REAL8*)getVariable( data->modelParams, "Pb") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "x" );
+    pars.x = *(REAL8*)getVariable( data->modelParams, "x") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "T0" );
+    pars.T0 = *(REAL8*)getVariable( data->modelParams, "T0") * rescale;
     
-    pars.e2 = *(REAL8*)getVariable( data->modelParams, "e2");
-    pars.w02 = *(REAL8*)getVariable( data->modelParams, "w02");
-    pars.Pb2 = *(REAL8*)getVariable( data->modelParams, "Pb2");
-    pars.x2 = *(REAL8*)getVariable( data->modelParams, "x2");
-    pars.T02 = *(REAL8*)getVariable( data->modelParams, "T02");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "e2" );
+    pars.e2 = *(REAL8*)getVariable( data->modelParams, "e2") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "w02" );
+    pars.w02 = *(REAL8*)getVariable( data->modelParams, "w02") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "Pb2" );
+    pars.Pb2 = *(REAL8*)getVariable( data->modelParams, "Pb2") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "x2" );
+    pars.x2 = *(REAL8*)getVariable( data->modelParams, "x2") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "T02" );
+    pars.T02 = *(REAL8*)getVariable( data->modelParams, "T02") * rescale;
     
-    pars.e3 = *(REAL8*)getVariable( data->modelParams, "e3");
-    pars.w03 = *(REAL8*)getVariable( data->modelParams, "w03");
-    pars.Pb3 = *(REAL8*)getVariable( data->modelParams, "Pb3");
-    pars.x3 = *(REAL8*)getVariable( data->modelParams, "x3");
-    pars.T03 = *(REAL8*)getVariable( data->modelParams, "T03");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "e3" );
+    pars.e3 = *(REAL8*)getVariable( data->modelParams, "e3") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "w03" );
+    pars.w03 = *(REAL8*)getVariable( data->modelParams, "w03") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "Pb3" );
+    pars.Pb3 = *(REAL8*)getVariable( data->modelParams, "Pb3") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "x3" );
+    pars.x3 = *(REAL8*)getVariable( data->modelParams, "x3") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "T03" );
+    pars.T03 = *(REAL8*)getVariable( data->modelParams, "T03") * rescale;
     
-    pars.xpbdot = *(REAL8*)getVariable( data->modelParams, "xpbdot");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "xpbdot" );
+    pars.xpbdot = *(REAL8*)getVariable( data->modelParams, "xpbdot") * rescale;
     
-    pars.eps1 = *(REAL8*)getVariable( data->modelParams, "eps1");    
-    pars.eps2 = *(REAL8*)getVariable( data->modelParams, "eps2");       
-    pars.eps1dot = *(REAL8*)getVariable( data->modelParams, "eps1dot");
-    pars.eps2dot = *(REAL8*)getVariable( data->modelParams, "eps2dot");
-    pars.Tasc = *(REAL8*)getVariable( data->modelParams, "Tasc");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "eps1" );
+    pars.eps1 = *(REAL8*)getVariable( data->modelParams, "eps1") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "eps2" );
+    pars.eps2 = *(REAL8*)getVariable( data->modelParams, "eps2") * rescale;     
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "eps1dot" );
+    pars.eps1dot = *(REAL8*)getVariable( data->modelParams, "eps1dot") *
+      rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "eps2dot" );
+    pars.eps2dot = *(REAL8*)getVariable( data->modelParams, "eps2dot") *
+      rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "Tasc" );
+    pars.Tasc = *(REAL8*)getVariable( data->modelParams, "Tasc") * rescale;
     
-    pars.wdot = *(REAL8*)getVariable( data->modelParams, "wdot"); 
-    pars.gamma = *(REAL8*)getVariable( data->modelParams, "gamma");
-    pars.Pbdot = *(REAL8*)getVariable( data->modelParams, "Pbdot");  
-    pars.xdot = *(REAL8*)getVariable( data->modelParams, "xdot");   
-    pars.edot = *(REAL8*)getVariable( data->modelParams, "edot");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "wdot" );
+    pars.wdot = *(REAL8*)getVariable( data->modelParams, "wdot") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "gamma" );
+    pars.gamma = *(REAL8*)getVariable( data->modelParams, "gamma") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "Pbdot" );
+    pars.Pbdot = *(REAL8*)getVariable( data->modelParams, "Pbdot") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "xdot" );
+    pars.xdot = *(REAL8*)getVariable( data->modelParams, "xdot") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "edot" );
+    pars.edot = *(REAL8*)getVariable( data->modelParams, "edot") * rescale;
     
-    pars.s = *(REAL8*)getVariable( data->modelParams, "s"); 
-    pars.dr = *(REAL8*)getVariable( data->modelParams, "dr");
-    pars.dth = *(REAL8*)getVariable( data->modelParams, "dth");   
-    pars.a0 = *(REAL8*)getVariable( data->modelParams, "a0");
-    pars.b0 = *(REAL8*)getVariable( data->modelParams, "b0"); 
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "s" );
+    pars.s = *(REAL8*)getVariable( data->modelParams, "s") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "dr" );
+    pars.dr = *(REAL8*)getVariable( data->modelParams, "dr") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "dth" );
+    pars.dth = *(REAL8*)getVariable( data->modelParams, "dth") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "a0" );
+    pars.a0 = *(REAL8*)getVariable( data->modelParams, "a0") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "b0" );
+    pars.b0 = *(REAL8*)getVariable( data->modelParams, "b0") * rescale; 
 
-    pars.M = *(REAL8*)getVariable( data->modelParams, "M"); 
-    pars.m2 = *(REAL8*)getVariable( data->modelParams, "m2");
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "M" );
+    pars.M = *(REAL8*)getVariable( data->modelParams, "M") * rescale;
+    rescale = *(REAL8*)getVariable( data->scaleFactors, "m2" );
+    pars.m2 = *(REAL8*)getVariable( data->modelParams, "m2") * rescale;
   }
 
   get_amplitude_model( pars, data );
@@ -1172,71 +1269,125 @@ void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data ){
   
 }
 
-void add_initial_variables( LALVariables *ini, BinaryPulsarParams pars ){
+void add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
+  BinaryPulsarParams pars ){
+  REAL8 scale = 1.;
+  
+  /* include a scale factor for scaling values */
+  
   /* amplitude model parameters */
   addVariable(ini, "h0", &pars.h0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "h0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "phi0", &pars.phi0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "phi0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "cosiota", &pars.cosiota, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "cosiota", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "psi", &pars.psi, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "psi", &scale, REAL8_t, PARAM_FIXED);
   
   /* phase model parameters */
   
   /* frequency */
   addVariable(ini, "f0", &pars.f0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "f1", &pars.f1, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f1", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "f2", &pars.f2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f2", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "f3", &pars.f3, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f3", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "f4", &pars.f4, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f4", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "f5", &pars.f5, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "f5", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "pepoch", &pars.pepoch, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "pepoch", &scale, REAL8_t, PARAM_FIXED);
   
   /* sky position */
   addVariable(ini, "ra", &pars.ra, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "ra", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "pmra", &pars.pmra, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "pmra", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "dec", &pars.dec, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "dec", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "pmdec", &pars.pmdec, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "pmdec", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "posepoch", &pars.posepoch, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "posepoch", &scale, REAL8_t, PARAM_FIXED);
   
   /* binary system parameters */
   addVariable(ini, "model", &pars.model, string_t, PARAM_FIXED);
   
   addVariable(ini, "Pb", &pars.Pb, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "Pb", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "e", &pars.e, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "e", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "eps1", &pars.eps1, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "eps1", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "eps2", &pars.eps2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "eps2", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "T0", &pars.T0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "T0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "Tasc", &pars.Tasc, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "Tasc", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "x", &pars.x, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "x", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "w0", &pars.w0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "w0", &scale, REAL8_t, PARAM_FIXED);
 
   addVariable(ini, "Pb2", &pars.Pb2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "Pb2", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "e2", &pars.e2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "e2", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "T02", &pars.T02, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "T02", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "x2", &pars.x2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "x2", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "w02", &pars.w02, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "w02", &scale, REAL8_t, PARAM_FIXED);
   
   addVariable(ini, "Pb3", &pars.Pb3, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "Pb3", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "e3", &pars.e3, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "e3", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "T03", &pars.T03, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "T03", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "x3", &pars.x3, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "x3", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "w03", &pars.w03, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "w03", &scale, REAL8_t, PARAM_FIXED);
   
   addVariable(ini, "xpbdot", &pars.xpbdot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "xpbdot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "eps1dot", &pars.eps1dot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "eps1dot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "eps2dot", &pars.eps2dot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "eps2dot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "wdot", &pars.wdot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "wdot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "gamma", &pars.gamma, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "gamma", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "Pbdot", &pars.Pbdot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "Pbdot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "xdot", &pars.xdot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "xdot", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "edot", &pars.edot, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "edot", &scale, REAL8_t, PARAM_FIXED);
   
   addVariable(ini, "s", &pars.s, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "s", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "dr", &pars.dr, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "dr", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "dth", &pars.dth, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "dth", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "a0", &pars.a0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "a0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "b0", &pars.b0, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "b0", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "M", &pars.M, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "M", &scale, REAL8_t, PARAM_FIXED);
   addVariable(ini, "m2", &pars.m2, REAL8_t,PARAM_FIXED);
+  addVariable(scaleFac, "m2", &scale, REAL8_t, PARAM_FIXED);
 }
 
 REAL8 log_factorial(INT4 num){
