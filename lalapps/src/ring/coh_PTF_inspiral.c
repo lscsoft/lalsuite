@@ -29,19 +29,24 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
 
 int main( int argc, char **argv )
 {
+
   /* Declarations of parameters */
   INT4 i,j,k;
   UINT4 ui,uj,sp;
+
   /* process structures */
   struct coh_PTF_params    *params                  = NULL;
   ProcessParamsTable       *procpar                 = NULL;
+
   /* sky position structures */
   UINT4                    numSkyPoints;
   struct coh_PTF_skyPoints *skyPoints               = NULL;
+
   /* FFT structures */
   REAL4FFTPlan             *fwdplan                 = NULL;
   REAL4FFTPlan             *revplan                 = NULL;
   COMPLEX8FFTPlan          *invPlan                 = NULL;
+
   /* input data and spectrum storage */
   UINT4                    numDetectors             = 0;
   UINT4                    singleDetector           = 0;
@@ -49,17 +54,21 @@ int main( int argc, char **argv )
   REAL4FrequencySeries     *invspec[LAL_NUM_IFO+1];
   RingDataSegments         *segments[LAL_NUM_IFO+1];
   INT4                     numSegments              = 0;
+
   /* template counters */
   INT4                     numTmplts                = 0;
   INT4                     numSpinTmplts            = 0;
   INT4                     numNoSpinTmplts          = 0;
+
   /* template indexes */
   INT4                     startTemplate            = -1;
   INT4                     stopTemplate             = -1;
+
   /* bank structures */
   UINT4                    UNUSED spinBank          = 0;
   char                     spinFileName[256];
   char                     noSpinFileName[256];
+
   /* template and findchirp data structures */
   InspiralTemplate         *PTFSpinTemplate         = NULL;
   InspiralTemplate         *PTFNoSpinTemplate       = NULL;
@@ -75,6 +84,7 @@ int main( int argc, char **argv )
   REAL8Array               *PTFM[LAL_NUM_IFO+1];
   REAL8Array               *PTFN[LAL_NUM_IFO+1];
   COMPLEX8VectorSequence   *PTFqVec[LAL_NUM_IFO+1];
+
   /* triggered sky position and sensitivity structures */
   LIGOTimeGPS              segStartTime;
   struct timeval           startTime;
@@ -85,6 +95,7 @@ int main( int argc, char **argv )
   REAL8                    *Fplustrig;
   REAL8                    *Fcrosstrig;
   REAL8                    detLoc[3];
+
   /* coherent statistic structures */
   REAL4TimeSeries          *cohSNR                  = NULL;
   REAL4TimeSeries          *pValues[10];
@@ -92,10 +103,12 @@ int main( int argc, char **argv )
   REAL4TimeSeries          *gammaBeta[2];
   REAL4TimeSeries          *nullSNR                 = NULL;
   REAL4TimeSeries          *traceSNR                = NULL;
+
   /* consistency test structures */
   REAL4TimeSeries          *bankVeto                = NULL;
   REAL4TimeSeries          *autoVeto                = NULL;
   REAL4TimeSeries          *chiSquare               = NULL;
+
   /* output event structures */
   MultiInspiralTable       *eventList               = NULL;
   MultiInspiralTable       *thisEvent               = NULL;
@@ -732,7 +745,7 @@ int main( int argc, char **argv )
           }
 
           verbose( "Made filters for ifo %d,segment %d, template %d at %ld \n", 
-              ifoNumber,j,i,timeval_subtract(&startTime));
+                   ifoNumber, j, i, timeval_subtract(&startTime) );
         }
       }
       /* If necessary calculate the null stream filters */
@@ -757,8 +770,6 @@ int main( int argc, char **argv )
               j,i,timeval_subtract(&startTime));
       }
       
-      /* FIXME: Sky location looping should go here.
-         Clustering may be required if we are doing this! */
       switch(params->skyLooping)
       {
         case SINGLE_SKY_POINT:
@@ -768,8 +779,10 @@ int main( int argc, char **argv )
           /* set 'segStartTime' to trigger time */
           segStartTime = params->trigTime;
 
-          verbose( "Begin loop over sky points at %ld \n", timeval_subtract(&startTime));
+          verbose( "Begin loop over sky points at %ld \n",
+                   timeval_subtract(&startTime) );
 
+          /* loop over sky points */
           for ( sp = 0; sp < numSkyPoints ; sp++ )
           {
 
@@ -810,7 +823,7 @@ int main( int argc, char **argv )
      
             verbose( "Made coherent statistic for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );      
 
-            // This function adds any loud events to the list of triggers 
+            /* This function construct triggers from loud events */
             eventId = coh_PTF_add_triggers( params, &eventList, &thisEvent,
                                             cohSNR, *PTFtemplate, eventId,
                                             spinTemplate, singleDetector,
@@ -819,14 +832,24 @@ int main( int argc, char **argv )
                                             autoVeto, chiSquare, PTFM );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
-            // Clustering can happen here. The clustering routine needs refining
-            // coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-            // verbose( "Clustered triggers for segment %d, template %d at %ld \n",
-            // j,i,time(NULL)-startTime);
+
           }
           break;
-      }
-      // Then we get a bunch of memory freeing statements
+        case ALL_SKY:
+        case TWO_DET_ALL_SKY:
+          error( "All sky code not implemented yet\n" ); 
+          break;
+        default:
+          error( "Oops. No sky type set, Ian done broke the code.\n" );
+          break;
+      } 
+
+      /* cluster triggers */
+      /* XLALClusterMultiInspiralTable( ); */
+      /* verbose( "Clustered triggers for segment %d, template %d at %ld \n",
+               j, i, time(NULL)-startTime ); */
+
+      /* Then we get a bunch of memory freeing statements */
       for ( k = 0 ; k < 10 ; k++ )
       {
         if (pValues[k])
@@ -980,21 +1003,24 @@ void coh_PTF_statistic(
 )
 
 {
-  verbose( "Entering the statistic loop at %ld \n",timeval_subtract(&startTime));
-// This function generates the SNR for every point in time and, where
-// appropriate calculates the desired signal based vetoes.
+  verbose( "Entering the statistic loop at %ld \n",
+           timeval_subtract(&startTime) );
 
-  UINT4 i, j, k, m, vecLength, vecLengthTwo, UNUSED vecLengthSquare, UNUSED vecLengthTwoSquare;
-  INT4 l;
-  INT4 timeOffsetPoints[LAL_NUM_IFO];
-  REAL4 deltaT = cohSNR->deltaT;
-  UINT4 numPoints = floor( params->segmentDuration * params->sampleRate + 0.5 );
+  /* This function generates the SNR for every point in time and, where
+   * appropriate calculates the desired signal based vetoes. */
+
+  UINT4  i, j, k, m, vecLength, vecLengthTwo;
+  INT4   l;
+  INT4   timeOffsetPoints[LAL_NUM_IFO];
+  REAL4  deltaT    = cohSNR->deltaT;
+  UINT4  numPoints = floor( params->segmentDuration * params->sampleRate\
+                            + 0.5 );
 
   struct bankDataOverlaps *chisqOverlaps = *chisqOverlapsP;
-  REAL4 *frequencyRangesPlus = *frequencyRangesPlusP;
-  REAL4 *frequencyRangesCross = *frequencyRangesCrossP; 
+  REAL4  *frequencyRangesPlus            = *frequencyRangesPlusP;
+  REAL4  *frequencyRangesCross           = *frequencyRangesCrossP; 
 
-  // Code works slightly differently if spin/non spin and single/coherent
+  /* Code works slightly differently if spin/non spin and single/coherent */
   if (spinTemplate)
     vecLength = 5;
   else
@@ -1003,36 +1029,38 @@ void coh_PTF_statistic(
     vecLengthTwo = vecLength;
   else
     vecLengthTwo = 2* vecLength;
-  vecLengthSquare = vecLength*vecLength;
-  vecLengthTwoSquare = vecLengthTwo * vecLengthTwo;
 
-  // These arrays are used to store the maximized quantities
-  // For non spin these are the 4 F-stat parameters (only 2 for one detector)
-  // For spin these are the P values
+  /* These arrays are used to store the maximized quantities
+   * For non spin these are the 4 F-stat parameters (only 2 for one detector)
+   * For spin these are the P values */
   for ( i = 0 ; i < vecLengthTwo ; i++ )
   {
-    pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue",
-          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-          &lalDimensionlessUnit,cohSNR->data->length);
+    pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch, 
+                                            cohSNR->f0, cohSNR->deltaT,
+                                            &lalDimensionlessUnit,
+                                            cohSNR->data->length );
   }
   if (! spinTemplate)
   {
     for ( i = vecLengthTwo ; i < 2*vecLengthTwo ; i++ )
     {
-      pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue",
-          &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-          &lalDimensionlessUnit,cohSNR->data->length);
+      pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch,
+                                              cohSNR->f0, cohSNR->deltaT,
+                                              &lalDimensionlessUnit,
+                                              cohSNR->data->length );
     }
   }
   if (spinTemplate)
   {
     /* These store a amplitude and phase information for PTF search */
-    gammaBeta[0] = XLALCreateREAL4TimeSeries( "Gamma",
-            &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-            &lalDimensionlessUnit,cohSNR->data->length);
-    gammaBeta[1] = XLALCreateREAL4TimeSeries( "Beta",
-            &cohSNR->epoch,cohSNR->f0,cohSNR->deltaT,
-            &lalDimensionlessUnit,cohSNR->data->length);
+    gammaBeta[0] = XLALCreateREAL4TimeSeries( "Gamma", &cohSNR->epoch,
+                                              cohSNR->f0, cohSNR->deltaT,
+                                              &lalDimensionlessUnit,
+                                              cohSNR->data->length );
+    gammaBeta[1] = XLALCreateREAL4TimeSeries( "Beta", &cohSNR->epoch,
+                                              cohSNR->f0, cohSNR->deltaT,
+                                              &lalDimensionlessUnit,
+                                              cohSNR->data->length);
   }
 
   /* FIXME: All the time series should be outputtable */
