@@ -39,6 +39,7 @@ REAL8 XLALInspiralFactorizedFlux(
 {
 
   REAL8 flux = 0.0;
+  REAL8 v;
   REAL8 omegaSq;
   COMPLEX16 hLM;
   INT4 l, m;
@@ -61,12 +62,18 @@ REAL8 XLALInspiralFactorizedFlux(
   /* Omegs is the derivative of phi */
   omegaSq = omega*omega;
 
+  v = cbrt( omega );
+
   for ( l = 2; l <= lMax; l++ )
   {
+    /*INT4 minM = l-3;
+    if ( minM < 1 )
+      minM = 1;*/
+
     for ( m = 1; m <= l; m++ )
     {
 
-      if ( XLALGetFactorizedWaveform( &hLM, values, omega, l, m, ak )
+      if ( XLALGetFactorizedWaveform( &hLM, values, v, l, m, ak )
              == XLAL_FAILURE )
       {
         XLAL_ERROR_REAL8( __func__, XLAL_EFUNC );

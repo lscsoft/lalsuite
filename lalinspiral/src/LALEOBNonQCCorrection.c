@@ -40,25 +40,25 @@
 static inline
 REAL8 GetNRPeakAmplitude( REAL8 eta )
 {
-  return eta * ( 1.43494 + 0.115275 * eta + 1.78719 * eta * eta );
+  return eta * ( 1.422 + 0.3013 * eta + 1.246 * eta * eta );
 }
 
 static inline
 REAL8 GetNRPeakADDot( REAL8 eta )
 {
-  return -0.01 * eta * ( 0.260034 + 0.0450257 * eta + 2.10027 * eta * eta );
+  return -0.01 * eta * ( 0.1679 + 1.44 * eta - 2.001 * eta * eta );
 }
 
 static inline 
 REAL8 GetNRPeakOmega( REAL8 eta )
 {
-  return 0.273207 + 0.240261 * eta + 0.425017 * eta * eta;
+  return 0.2733 + 0.2316 * eta + 0.4463 * eta * eta;
 }
 
 static inline 
 REAL8 GetNRPeakOmegaDot( REAL8 eta )
 {
-  return 0.00586032 + 0.0136607 * eta + 0.0317176 * eta * eta;
+  return 0.005862 + 0.01506 * eta + 0.02625 * eta * eta;
 }
 
 int  XLALEOBNonQCCorrection(
@@ -127,7 +127,7 @@ int XLALCalculateNQCCoefficients(
   REAL8Vector *q3LM = NULL; 
 
   REAL8 a, aDot, aDDot;
-  REAL8 omega/*, omegaDot*/;
+  REAL8 omega, omegaDot;
 
   /* Stuff for finding numerical derivatives */
   gsl_spline    *spline = NULL;
@@ -140,9 +140,6 @@ int XLALCalculateNQCCoefficients(
   gsl_vector *amps = NULL, *omegaVec = NULL;
 
   gsl_permutation *perm1 = NULL, *perm2 = NULL;
-
-  /* Temporary to get rid of unused warning */
-  p2->data[0] = p2->data[0];
 
   memset( coeffs, 0, sizeof( EOBNonQCCoeffs ) );
 
@@ -227,44 +224,36 @@ int XLALCalculateNQCCoefficients(
   /* Now we (should) have calculated the a values. Now we can do the b values */
 
   /* P1 */
-/*  gsl_spline_init( spline, time->data, p1->data, p1->length );
+  gsl_spline_init( spline, time->data, p1->data, p1->length );
   gsl_interp_accel_reset( acc );
   gsl_matrix_set( pMatrix, 0, 0, - gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
   gsl_matrix_set( pMatrix, 1, 0, - gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
-*/
+
   /* P2 */
-/*  gsl_spline_init( spline, time->data, p2->data, p2->length );
+  gsl_spline_init( spline, time->data, p2->data, p2->length );
   gsl_interp_accel_reset( acc );
   gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
   gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
-*/
+
   /* Phase */
   gsl_spline_init( spline, time->data, phase->data, phase->length );
   gsl_interp_accel_reset( acc );
   omega    = gsl_spline_eval_deriv( spline, time->data[peakIdx], acc );
-/*  omegaDot = gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc );*/
+  omegaDot = gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc );
 
-  /*gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
+  gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
   gsl_vector_set( omegaVec, 1, GetNRPeakOmegaDot( eta ) - omegaDot );
-*/
+
   /* And now solve for the b coefficients */
-/*  gsl_linalg_LU_decomp( pMatrix, perm2, &signum );
+  gsl_linalg_LU_decomp( pMatrix, perm2, &signum );
   gsl_linalg_LU_solve( pMatrix, perm2, omegaVec, bCoeff );
-*/
+
   /* We can now populate the coefficients structure */
   coeffs->a1 = gsl_vector_get( aCoeff, 0 );
   coeffs->a2 = gsl_vector_get( aCoeff, 1 );
   coeffs->a3 = gsl_vector_get( aCoeff, 2 );
-/*  coeffs->b1 = gsl_vector_get( bCoeff, 0 );
+  coeffs->b1 = gsl_vector_get( bCoeff, 0 );
   coeffs->b2 = gsl_vector_get( bCoeff, 1 );
-*/
-  /* We think the b-fixing might be dodgy - set b2 to zero, and find b1 */
-  coeffs->b2 = 0;
-
-  gsl_spline_init( spline, time->data, p1->data, p1->length );
-  gsl_interp_accel_reset( acc );
-
-  coeffs->b1 = ( omega - GetNRPeakOmega( eta ) ) / gsl_spline_eval_deriv( spline, time->data[peakIdx], acc );
 
   /* Free memory and exit */
   gsl_matrix_free( qMatrix );

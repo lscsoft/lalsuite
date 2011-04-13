@@ -14,6 +14,7 @@ extern "C" {
 #define UNUSED
 #endif
 
+#define LALEOB_MAX_MULTIPOLE 8
 
 /**
  *  Structure containing the coefficients for EOBNRv2 A potential function.
@@ -261,6 +262,19 @@ tagFacWaveformCoeffs
 }
 FacWaveformCoeffs;
 
+/**
+ * Structure containing all the terms of the Newtonian multipole which
+ * are constant over the course of the evolution, and can therefore be
+ * pre-computed. They are stored in a two-dimensional array, which is
+ * indexed as values[l][m]. Since m has to be <= l, this structure
+ * is larger than it needs to be; but it makes the coding a bit neater...
+ */
+typedef
+struct tagNewtonMultipolePrefixes
+{
+  COMPLEX16 values[LALEOB_MAX_MULTIPOLE+1][LALEOB_MAX_MULTIPOLE+1];
+}
+NewtonMultipolePrefixes;
 
 /**
  * Structure containing all the parameters needed for the EOB waveform.
@@ -275,8 +289,9 @@ struct tagEOBParams
   REAL8 omega;
   REAL8 m1;
   REAL8 m2;
-  EOBACoefficients  *aCoeffs;
-  FacWaveformCoeffs *hCoeffs;
+  EOBACoefficients        *aCoeffs;
+  FacWaveformCoeffs       *hCoeffs;
+  NewtonMultipolePrefixes *prefixes;
 }
 EOBParams;
 
@@ -314,7 +329,7 @@ INT4
 XLALGetFactorizedWaveform(
                       COMPLEX16             *hlm,
                       REAL8Vector           *values,
-                      const REAL8           Omega,
+                      const REAL8           v,
                       const INT4            l,
                       const INT4            m,
                       EOBParams             *params
@@ -344,6 +359,11 @@ int XLALCalcFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs,
           const REAL8               eta
           );
+
+int XLALComputeNewtonMultipolePrefixes(
+                NewtonMultipolePrefixes *prefix,
+                const REAL8             m1,
+                const REAL8             m2 );
 
 #ifdef  __cplusplus
 }

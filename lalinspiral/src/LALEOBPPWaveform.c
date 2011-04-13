@@ -224,7 +224,7 @@ NRCSID (LALEOBPPWAVEFORMC,
 
 INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 				REAL8Vector           * restrict values,
-                                const REAL8           Omega,
+                                const REAL8           v,
                                 const INT4            l,
                                 const INT4            m,
                                 EOBParams             * restrict params
@@ -237,7 +237,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         INT4 i;
 
         REAL8 eta;	
-	REAL8 r, pr, pp, v, v2, vh, vh3, k, hathatk, eulerlogxabs;
+	REAL8 r, pr, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;
 	REAL8 Hreal, Heff, Slm, deltalm, rholm, rholmPwrl;
 	COMPLEX16 Tlm;
         COMPLEX16 hNewton;
@@ -245,6 +245,10 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 
         /* Non-Keplerian velocity */
         REAL8 vPhi;
+
+        /* Non-quasicircular correction in dynamics */
+        REAL8 a1, a2, a3;
+        REAL8 hNQC = 1.0;
 
         /* Pre-computed coefficients */
         FacWaveformCoeffs *hCoeffs = params->hCoeffs;
@@ -276,8 +280,8 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 
 	Heff	= XLALEffectiveHamiltonian( eta, r, pr, pp, params->aCoeffs ); 
 	Hreal	= sqrt( 1.0 + 2.0 * eta * ( Heff - 1.0) );
-	v	= cbrt( Omega );
 	v2	= v * v;
+        Omega   = v2 * v;
         vh3     = Hreal * Omega;
 	vh	= cbrt(vh3);
 	eulerlogxabs = LAL_GAMMA + log( 2.0 * (REAL8)m * v );
@@ -333,6 +337,15 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	    switch( abs(m) )
 	    {
 	      case 2:
+
+                /* For 2,2 mode, calculate the NQC correction */
+                a1 = -4.559 + 18.76 * eta - 24.23 * eta*eta;
+                a2 = 37.68 - 201.5 * eta + 324.6 * eta*eta;
+                a3 = - 39.6 + 228.9 * eta - 387.2 * eta * eta;
+
+                hNQC = 1. + (pr*pr / (r*r*Omega*Omega)) * ( a1
+                       + a2 / r + a3 / (r*sqrt(r)) );
+
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
 			+ vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh))) 
 			+ hCoeffs->delta22v5 *v*v2*v2;
@@ -588,7 +601,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         }
 
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
-				     Slm*rholmPwrl );
+				     Slm*rholmPwrl*hNQC );
         *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
 
 	return XLAL_SUCCESS;
@@ -597,14 +610,13 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 static inline
 REAL8 XLALCalculateA5( const REAL8 eta )
 {
-  return - 82.5384 + 508.681 * eta - 787.826 * eta*eta;
+  return - 5.828 - 143.5 * eta + 447.0 * eta * eta;
 }
 
 static inline 
-REAL8 XLALCalculateA6( const REAL8 eta )
+REAL8 XLALCalculateA6( const REAL8 UNUSED eta )
 {
-
-  return 500. - 1800. * eta;
+  return 184.0;
 }
 
 
@@ -971,7 +983,7 @@ LALHCapDerivativesP4PN( double UNUSED t,
 
   dp = dvalues[2] = 0.5 * AoverSqrtD * u3 * (  2.0 * ( q2 + p4 * z3) * A
                      - r * ( q2 + r2 + p4 * z3 ) * dAdr ) / HeffHreal
-                     - AoverSqrtD * (p / q) * (flux / (eta * omega));
+                     - (p / q) * (flux / (eta * omega));
 
   dq = flux;
   /* This function can fail */
@@ -1404,9 +1416,9 @@ LALEOBPPWaveformEngine (
 
    /* Stuff for pre-computed EOB values */
    EOBParams eobParams;
-   EOBACoefficients  aCoeffs;
-   FacWaveformCoeffs hCoeffs;
-
+   EOBACoefficients        aCoeffs;
+   FacWaveformCoeffs       hCoeffs;
+   NewtonMultipolePrefixes prefixes;
 
    REAL8 (*rOfOmegaFunc)(REAL8, void *); /* Function to be used in root finding later */
 
@@ -1564,8 +1576,9 @@ LALEOBPPWaveformEngine (
    eobParams.eta = eta;
    eobParams.m1  = params->mass1;
    eobParams.m2  = params->mass2;
-   eobParams.aCoeffs = &aCoeffs;
-   eobParams.hCoeffs = &hCoeffs;
+   eobParams.aCoeffs  = &aCoeffs;
+   eobParams.hCoeffs  = &hCoeffs;
+   eobParams.prefixes = &prefixes;
 
    if ( XLALCalculateEOBACoefficients( &aCoeffs, eta ) == XLAL_FAILURE )
    {
@@ -1573,6 +1586,12 @@ LALEOBPPWaveformEngine (
    }
 
   if ( XLALCalcFacWaveformCoefficients( &hCoeffs, eta) == XLAL_FAILURE )
+  {
+    ABORTXLAL( status );
+  }
+
+  if ( XLALComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
+         == XLAL_FAILURE )
   {
     ABORTXLAL( status );
   }
@@ -1802,6 +1821,15 @@ LALEOBPPWaveformEngine (
    prVec.data   = dynamics->data+3*retLen;
    pPhiVec.data = dynamics->data+4*retLen;
 
+   FILE *out = fopen( "eobpf_adapt_10_10_dyn.dat", "w" );
+   for ( i = 0; i < (UINT4)retLen; i++ )
+   {
+     fprintf( out, "%e %e %e %e %e %e\n", dynamics->data[i], rVec.data[i], phiVec.data[i],
+               prVec.data[i], pPhiVec.data[i], XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs ) );
+   }
+   fclose( out );
+   out = NULL;
+
    dt = dt/(REAL8)resampFac;
    values->data[0] = rVec.data[hiSRndx];
    values->data[1] = phiVec.data[hiSRndx];
@@ -1822,6 +1850,8 @@ LALEOBPPWaveformEngine (
 
    /* We can now start calculating things for NQCs, and hiSR waveform */
    omegaOld = 0.0;
+
+   out = fopen( "eobpf_adapt_10_10_dyn_hi.dat", "w" );
    for ( i=0; i < (UINT4)retLen; i++ )
    {
      omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
@@ -1831,8 +1861,13 @@ LALEOBPPWaveformEngine (
      values->data[2] = p = prVecHi.data[i];
      values->data[3] = q = pPhiVecHi.data[i];
 
+     fprintf( out, "%e %e %e %e %e %e\n", dynamicsHi->data[i] + dynamics->data[hiSRndx],
+                rVecHi.data[i], phiVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], omega );
+
+     v = cbrt( omega ); 
+
      /* Only 2,2 mode for now */
-     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, omega, 2, 2, &eobParams );
+     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, 2, 2, &eobParams );
 
      ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
      sig1Hi->data[i] = (REAL4) ampl0 * hLM.re;
@@ -1851,12 +1886,17 @@ LALEOBPPWaveformEngine (
      omegaOld = omega;
    }
    finalIdx = retLen - 1;
+   fclose( out );
+   out = NULL;
 
   /* Set the coalescence time */
   t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx]);
 
   /* Calculate the NQC correction */
   XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, peakIdx, dt/m, eta, &nqcCoeffs );
+  fprintf( stderr, "NQC coefficients: a1 = %e, a2 = %e, a3 = %e, b1 = %e, b2 = %e\n", nqcCoeffs.a1,
+            nqcCoeffs.a2, nqcCoeffs.a3, nqcCoeffs.b1, nqcCoeffs.b2 );
+
 
   /* We can now calculate the waveform */
   i = 0;
@@ -1890,8 +1930,10 @@ LALEOBPPWaveformEngine (
      values->data[2] = p = prVec.data[i];
      values->data[3] = q = pPhiVec.data[i];
 
+     v = cbrt( omega );
+
      /* Only 2,2 mode for now */
-     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, omega, 2, 2, &eobParams );
+     xlalStatus = XLALGetFactorizedWaveform( &hLM, values, v, 2, 2, &eobParams );
 
      xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
      hLM = XLALCOMPLEX16Mul( hNQC, hLM );
@@ -1954,12 +1996,13 @@ LALEOBPPWaveformEngine (
 
    /*rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 );*/
    /* Experiment */
-   rdMatchPoint->data[0] = ceil( 3. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) < peakIdx ?
-       ceil( 3. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) : 0;
+   rdMatchPoint->data[0] = ceil( 5. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) < peakIdx ?
+       peakIdx - ceil( 5. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) : 0;
    rdMatchPoint->data[1] = peakIdx;
    rdMatchPoint->data[2] = finalIdx;
 
 
+   fprintf( stderr, "Ringdown gets attached at %e %e\n", dynamicsHi->data[rdMatchPoint->data[0]] + dynamics->data[hiSRndx], dynamicsHi->data[peakIdx] + dynamics->data[hiSRndx] );
    XLALPrintInfo("Matching points: %u %u %u; last idx in array = %d\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2], sig1Hi->length);
    XLALPrintInfo("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
    
@@ -2031,6 +2074,7 @@ LALEOBPPWaveformEngine (
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
+   out = fopen( "realAndImag.dat", "w" );
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
@@ -2038,7 +2082,10 @@ LALEOBPPWaveformEngine (
      x2 = sig2->data[i];
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
+     fprintf( out, "%e %e %e\n", (REAL8)i/(params->tSampling*m), x1, x2 );
    }
+   fclose( out );
+   out = NULL;
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
     * relevant arrays

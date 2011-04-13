@@ -48,6 +48,35 @@ XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
                          INT4  m,
                          REAL8 phi);
 
+static int
+CalculateThisMultipolePrefix(
+               COMPLEX16 *prefix,
+               const REAL8 m1,
+               const REAL8 m2,
+               const INT4 l,
+               const INT4 m );
+
+
+int XLALComputeNewtonMultipolePrefixes(
+                NewtonMultipolePrefixes *prefix,
+                const REAL8             m1,
+                const REAL8             m2 )
+{
+
+  INT4 l, m;
+
+  memset( prefix, 0, sizeof( NewtonMultipolePrefixes ) );
+
+  for ( l = 2; l <= LALEOB_MAX_MULTIPOLE; l++ )
+  {
+    for ( m = 1; m <= l; m++ )
+    {
+      CalculateThisMultipolePrefix( &(prefix->values[l][m]), m1, m2, l, m );
+    }
+  }
+  return XLAL_SUCCESS;
+}
+
 
 int
 XLALCalculateNewtonianMultipole(
@@ -62,76 +91,11 @@ XLALCalculateNewtonianMultipole(
 
    INT4 xlalStatus;
 
-   COMPLEX16 n;
-   REAL8 c;
    COMPLEX16 y;
 
-   REAL8 x1, x2; /* Scaled versions of component masses */
+   INT4 epsilon = (l + m) % 2;
 
-   REAL8 mult1, mult2;
-
-   REAL8 totalMass;
-   REAL8 eta;
-
-   INT4 epsilon;
-   INT4 sign; /* To give the sign of some additive terms */
-
-   n.re = n.im = 0;
-   y.re = y.im = 0;
-
-   epsilon = ( l + m )  % 2;
-
-   totalMass = params->m1 + params->m2; 
-   eta       = params->eta;
-
-   x1 = params->m1 / totalMass;
-   x2 = params->m2 / totalMass;
-
-   if  ( abs( m % 2 ) == 0 )
-   {
-     sign = 1;
-   }
-   else
-   {
-     sign = -1;
-   }
-
-   c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
-
-   /* Dependent on the value of epsilon, we get different n */
-   if ( epsilon == 0 )
-   {
-     
-     n.im = m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
-     
-     mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
-     mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
-     mult2 = sqrt(mult2);
-
-     n = XLALCOMPLEX16MulReal( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
-  }
-  else if ( epsilon == 1 )
-  {
-     
-     n.im = - m;
-     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
-
-     mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
-
-     mult2  = (REAL8)( (2*l + 1) * (l+2) * (l*l - m*m) );
-     mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l-1) );
-     mult2  = sqrt(mult2);
-
-     n = XLALCOMPLEX16MulImag( n, mult1 );
-     n = XLALCOMPLEX16MulReal( n, mult2 );
-  }
-  else
-  {
-    XLALPrintError( "Epsilon must be 0 or 1.\n");
-    XLAL_ERROR( __func__, XLAL_EINVAL );
-  }
+   y.re = y.im = 0.0;
 
   /* Calculate the necessary Ylm */
   xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
@@ -140,8 +104,7 @@ XLALCalculateNewtonianMultipole(
     XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
-  /* Now we can construct the final answer */
-  *multipole = XLALCOMPLEX16MulReal( n, eta * c*pow( x, (REAL8)(l+epsilon)/2.0) );
+  *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
   return XLAL_SUCCESS;
@@ -418,4 +381,91 @@ XLALAssociatedLegendreXIsZero( const int l,
   legendre *= sqrt( (REAL8)(2*l+1)*gsl_sf_fact( l-m ) / (4.*LAL_PI*gsl_sf_fact(l+m)));
 
   return legendre;
+}
+
+static int
+CalculateThisMultipolePrefix(
+               COMPLEX16 *prefix,
+               const REAL8 m1,
+               const REAL8 m2,
+               const INT4 l,
+               const INT4 m )
+
+{
+
+
+   COMPLEX16 n;
+   REAL8 c;
+
+   REAL8 x1, x2; /* Scaled versions of component masses */
+
+   REAL8 mult1, mult2;
+
+   REAL8 totalMass;
+   REAL8 eta;
+
+   INT4 epsilon;
+   INT4 sign; /* To give the sign of some additive terms */
+
+
+   n.re = n.im = 0.0;
+
+   totalMass = m1 + m2;
+ 
+   epsilon = ( l + m )  % 2;
+ 
+   x1 = m1 / totalMass;
+   x2 = m2 / totalMass;
+
+   eta = m1*m2/(totalMass*totalMass);
+
+   if  ( abs( m % 2 ) == 0 )
+   {
+     sign = 1;
+   }
+   else
+   {
+     sign = -1;
+   }
+
+   c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
+
+   /* Dependent on the value of epsilon, we get different n */
+   if ( epsilon == 0 )
+   {
+  
+     n.im = m;
+     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+  
+     mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
+     mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
+     mult2 = sqrt(mult2);
+
+     n = XLALCOMPLEX16MulReal( n, mult1 );
+     n = XLALCOMPLEX16MulReal( n, mult2 );
+  }
+  else if ( epsilon == 1 )
+  {
+  
+     n.im = - m;
+     n = XLALCOMPLEX16PowReal( n, (REAL8)l );
+
+     mult1 = 16.*LAL_PI / gsl_sf_doublefact( 2u*l + 1u );
+
+     mult2  = (REAL8)( (2*l + 1) * (l+2) * (l*l - m*m) );
+     mult2 /= (REAL8)( (2*l - 1) * (l+1) * l * (l-1) );
+     mult2  = sqrt(mult2);
+
+     n = XLALCOMPLEX16MulImag( n, mult1 );
+     n = XLALCOMPLEX16MulReal( n, mult2 );
+  }
+  else
+  {
+    XLALPrintError( "Epsilon must be 0 or 1.\n");
+    XLAL_ERROR( __func__, XLAL_EINVAL );
+  }
+
+  *prefix = XLALCOMPLEX16MulReal( n, eta * c );
+
+  return XLAL_SUCCESS;
 }
