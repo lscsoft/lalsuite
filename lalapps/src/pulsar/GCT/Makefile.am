@@ -17,7 +17,8 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
                           $(CFSsrc)/ComputeFStatistic.h $(CFSsrc)/Fstat_v3.c \
-			  ComputeFstat_RS.c ComputeFstat_RS.h
+			  ComputeFstat_RS.c ComputeFstat_RS.h \
+			  LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 

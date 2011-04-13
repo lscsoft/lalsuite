@@ -99,6 +99,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_EMEM 11
 #define HIERARCHICALSEARCH_ESFT 12
 #define HIERARCHICALSEARCH_ECG 13
+#define HIERARCHICALSEARCH_EXLAL 14
 
 #define HIERARCHICALSEARCH_MSGENORM    "Normal exit"
 #define HIERARCHICALSEARCH_MSGESUB     "Subroutine failed"
@@ -111,6 +112,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_MSGECHECKPT "Could not resume from checkpoint"
 #define HIERARCHICALSEARCH_MSGEMEM     "Out of memory"
 #define HIERARCHICALSEARCH_MSGESFT     "SFT validity check failed"
+#define HIERARCHICALSEARCH_MSGEXLAL    "XLAL function call failed"
 
 
 /* ******************************************************************

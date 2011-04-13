@@ -35,6 +35,8 @@
 
 #include "HierarchSearchGCT.h"
 
+#include "LineVeto.h"
+
 #ifdef GC_SSE2_OPT
 #include <gc_hotloop_sse2.h>
 #else
@@ -178,7 +180,7 @@ int MAIN( int argc, char *argv[]) {
   LALStatus status = blank_status;
 
   /* temp loop variables: generally k loops over segments and j over SFTs in a stack */
-  INT4 j;
+  UINT4 j;
   UINT4 k;
   UINT4 skyGridCounter; /* coarse sky position counter */
   UINT4 f1dotGridCounter; /* coarse f1dot position counter */
@@ -309,6 +311,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
   BOOLEAN uvar_SepDetVeto = FALSE;     /* Do separate detector analysis for the top candidate */
+  BOOLEAN uvar_outputFX = FALSE;       /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
 
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
@@ -446,6 +449,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "SepDetVeto",   0, UVAR_OPTIONAL,  "Separate detector veto with top candidate", &uvar_SepDetVeto), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0, UVAR_OPTIONAL,  "Additional analysis for toplist candidates, output 2F, 2FX", &uvar_outputFX), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
 
@@ -794,7 +798,7 @@ int MAIN( int argc, char *argv[]) {
   for (k = 0; k < nStacks; k++) {
 
     LogPrintf(LOG_DETAIL, "Segment %d ", k+1);
-    for ( j = 0; j < (INT4)stackMultiSFT.data[k]->length; j++) {
+    for ( j = 0; j < stackMultiSFT.data[k]->length; j++) {
 
       INT4 tmpVar = stackMultiSFT.data[k]->data[j]->length;
       LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
@@ -1415,6 +1419,21 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
+  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist, compare with TwoF results */
+  if ( uvar_outputFX ) {
+    xlalErrno = 0;
+    XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
+    if ( xlalErrno != 0 ) {
+      XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoForToplist.\n\n", "MAIN", __LINE__);
+      return(HIERARCHICALSEARCH_EXLAL);
+    }
+  }
+  else {
+    for (j = 0; j < semiCohToplist->elems; j++ ) { /* loop over toplist elements */
+      (*(GCTtopOutputEntry*)semiCohToplist->heap[j]).sumTwoFX = NULL;
+    }
+  }
+
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -1667,6 +1686,12 @@ int MAIN( int argc, char *argv[]) {
 
 
   /* free candidate toplist */
+  if ( uvar_outputFX ) {
+    UINT4 candcount;
+    for (candcount = 0; candcount < semiCohToplist->elems; candcount++ ) { /* loop over toplist elements */
+      if ( (*(GCTtopOutputEntry*)semiCohToplist->heap[candcount]).sumTwoFX ) XLALDestroyREAL4Vector ( (*(GCTtopOutputEntry*)semiCohToplist->heap[candcount]).sumTwoFX );
+    }
+  }
   free_gctFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);

@@ -75,7 +75,7 @@ gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
 gct_dFreq="0.000002" #"2.0e-6"
 gct_dF1dot="1.0e-10"
-gct_nCands="100000"
+gct_nCands="1000"
 
 noiseSqrtSh="0"
 
@@ -197,7 +197,10 @@ for ((x=1; x <= $Nsegments; x++))
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
     #echo "Segment: "$x"  "$startGPS" "$endGPS
     # construct pfs cmd
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+    if [ "$haveNoise" = false ]; then
+        pfs_CL="$pfs_CL --SignalOnly";
+    fi
 
     cmdline="$pfs_code $pfs_CL"
     echo "  "$cmdline
@@ -211,7 +214,10 @@ for ((x=1; x <= $Nsegments; x++))
 
     if [ -n "$SEPIFOVETO" ]; then
 	# H1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+        if [ "$haveNoise" = false ]; then
+            pfs_CL="$pfs_CL --SignalOnly";
+        fi
 	cmdline="$pfs_code $pfs_CL"
 	echo "  "$cmdline
 	if ! tmp=`eval $cmdline`; then
@@ -222,7 +228,10 @@ for ((x=1; x <= $Nsegments; x++))
 	TwoFsum1=$(echo "scale=6; ${TwoFsum1} + ${resPFS1}" | bc);
 
 	# L1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+        if [ "$haveNoise" = false ]; then
+            pfs_CL="$pfs_CL --SignalOnly";
+        fi
         cmdline="$pfs_code $pfs_CL"
         echo "  "$cmdline
         if ! tmp=`eval $cmdline`; then
@@ -265,7 +274,10 @@ fi
 
 outfile_gct1="__tmp_GCT1.dat"
 
-gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+gct_CL=" --useResamp --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+if [ "$haveNoise" = false ]; then
+    gct_CL="$gct_CL --SignalOnly";
+fi
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -294,7 +306,10 @@ fi
 
 outfile_gct2="__tmp_GCT2.dat"
 
-gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+gct_CL=" --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+if [ "$haveNoise" = false ]; then
+    gct_CL="$gct_CL --SignalOnly";
+fi
 
 if [ -n "$SEPIFOVETO" ]; then
     gct_CL=$gct_CL" --SepDetVeto"
