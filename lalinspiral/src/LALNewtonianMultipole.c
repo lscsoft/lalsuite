@@ -220,6 +220,16 @@ XLALAssociatedLegendreXIsZero( const int l,
   /* we will switch on the values of m and n */
   switch ( l )
   {
+    case 1:
+      switch ( m )
+      {
+        case 1:
+          legendre = - 1.;
+          break;
+        default:
+          XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+      }
+      break;
     case 2:
       switch ( m )
       {
@@ -375,6 +385,7 @@ XLALAssociatedLegendreXIsZero( const int l,
       }
       break;
     default:
+      XLALPrintError( "Unsupported (l, m): %d, %d\n", l, m );
       XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
   }
 
