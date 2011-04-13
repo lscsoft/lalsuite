@@ -718,7 +718,7 @@ void coh_PTF_sky_grid(
   REAL4 alpha,detalpha;
   alpha = 0;                         
   REAL4 angularResolution;          /* angular resolution of grid in radians */
-  double baseline,distance;
+  double baseline,lightTravelTime;
   REAL4 theta,phi;                  /* sky parameters */
   REAL4 raNp  = 0.;                 /* north */
   REAL4 decNp = LAL_PI / 2.;        /* pole */
@@ -753,18 +753,12 @@ void coh_PTF_sky_grid(
                                           params->declination,
                                           &params->trigTime );
 
-          distance = sqrt( pow( detectors[i]->location[0] - 
-                                detectors[j]->location[0], 2) +
-                           pow( detectors[i]->location[1] -
-                                detectors[j]->location[1], 2) +
-                           pow( detectors[i]->location[2] -
-                                detectors[j]->location[2], 2 ) );
-
-          /* convert to time */
-          distance = distance / LAL_C_SI;
+          /* get light travel time */
+          lightTravelTime = XLALLightTravelTime( detectors[i], detectors[j] );
+          lightTravelTime *= 1e-9;
 
           /* calculate opening angle */
-          angle  = acos( baseline/distance );
+          angle  = acos( baseline/lightTravelTime );
 
           /* generate angular window with sky error */
           lambdamin = angle-params->skyError;
@@ -783,7 +777,7 @@ void coh_PTF_sky_grid(
               lambda = lambdamax;
 
           /* calculate alpha */
-          detalpha = distance * sin( lambda );
+          detalpha = lightTravelTime * sin( lambda );
           if ( detalpha > alpha )
             alpha = detalpha;
     
@@ -866,9 +860,6 @@ void coh_PTF_sky_grid(
     phi   = atan2(rotPos[1],rotPos[0]);
     skyPoints->rightAscension[i] = phi;
     skyPoints->declination[i]    = LAL_PI / 2. - theta;
-
-    if ( skyPoints->declination[i] < 0. )
-      skyPoints->declination[i] += LAL_PI / 2.;
 
   }
 
