@@ -80,10 +80,11 @@ gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
 gct_dFreq="0.000002" #"2.0e-6"
 gct_dF1dot="1.0e-10"
-gct_nCands="1"  # number of candidates in output
+gct_nCands="10"  # number of candidates in output
 
 edat="earth05-09.dat"
 sdat="sun05-09.dat"
+RngMedWindow=101 # running median window, needs to be equal for HSGCT and CFS
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
@@ -95,7 +96,7 @@ Tsft="1800"
 startTime="852443819"
 refTime="862999869"
 Tsegment="90000"
-Nsegments="1"
+Nsegments="14"
 ## insert gaps between segments
 seggap=$(echo $Tsegment | awk '{printf "%f", $1 * 1.12345}');
 # midTime="853731034.5"
@@ -170,7 +171,7 @@ fi
 
 outfile_gct="HS_GCT_LV.dat"
 
-gct_CL=" -d1 --fnameout=$outfile_gct --gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --outputFX"
+gct_CL=" -d1 --fnameout=$outfile_gct --gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --outputFX --blocksRngMed=$RngMedWindow"
 
 cmdline="$gct_code $gct_CL > >(tee stdout.log) 2> >(tee stderr.log >&2)"
 echo $cmdline
@@ -207,7 +208,7 @@ for ((x=1; x <= $Nsegments; x++))
     echo "Segment: "$x"  "$startGPS" "$endGPS
 
     ## construct ComputeFStatistic command lines
-    cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='$outfile_cfs' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS --internalRefTime=$refTime"
+    cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='$outfile_cfs' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS --RngMedWindow=$RngMedWindow"
     cfs_CL1="$cfs_CL --Freq=$Freq --f1dot=$f1dot"
     cfs_CL2="$cfs_CL --Freq=$freqGCT --f1dot=$f1dotGCT"
 
@@ -322,8 +323,8 @@ reldev_cfs_LV=$(echo $twoFcfs $twoFGCTLV              | awk '{ if(($1-$2)>=0) {p
 reldev_cfs_LVX1=$(echo $twoFcfsX1 $twoFGCTLVX1        | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 reldev_cfs_LVX2=$(echo $twoFcfsX2 $twoFGCTLVX2        | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 ## get maximum deviations (over all candidates) of freq, Fstat between plain GCT and LV
-maxdev_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{if(max==""){max=($6-$7)/($6+$7)}; if($1!="100.123554") { if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } } END {printf "%.10f",max}' )
-maxdevfreq_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
+maxdev_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max=="") {max=($6-$7)/($6+$7)}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } END {printf "%.10f",max}' )
+maxdevfreq_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
 
 
 ## Check CFS Fstat at injection vs. GCT frequency
