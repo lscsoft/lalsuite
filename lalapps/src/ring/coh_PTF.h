@@ -219,8 +219,8 @@ RingDataSegments;
 
 struct coh_PTF_skyPoints {
   UINT4 numPoints;
-  REAL8 *rightAscension;
-  REAL8 *declination;
+  REAL4 *rightAscension;
+  REAL4 *declination;
 };
 
 /* ENUM for sky location looping */
@@ -290,7 +290,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
     REAL4TimeSeries         *chiSquare,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1]
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4                   rightAscension,
+    REAL4                   declination
 );
 void coh_PTF_cluster_triggers(
   MultiInspiralTable      **eventList,
