@@ -73,9 +73,9 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
 	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
 
 
-EXTRA_DIST = testHS.sh
+EXTRA_DIST = testHS.sh testGCTLV.sh
 
-TESTS = testHS.sh
+TESTS = testHS.sh testGCTLV.sh
 
 TESTS_ENVIRONMENT = \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
