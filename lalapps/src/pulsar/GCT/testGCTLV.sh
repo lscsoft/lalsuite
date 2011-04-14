@@ -64,6 +64,8 @@ f1dot="-1e-9"
 AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
+noiseSqrtSh="1.0"
+
 ## Produce skygrid file for the search
 skygridfile="tmpskygridfile.dat"
 echo $AlphaSearch" "$DeltaSearch > $skygridfile
@@ -75,12 +77,10 @@ gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
 gct_dFreq="0.000002" #"2.0e-6"
 gct_dF1dot="1.0e-10"
-gct_nCands="100"
+gct_nCands="1"
 
 edat="earth05-09.dat"
 sdat="sun05-09.dat"
-
-noiseSqrtSh="1"
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
@@ -92,9 +92,9 @@ Tsft="1800"
 startTime="852443819"
 refTime="862999869"
 Tsegment="90000"
-Nsegments="14"
+Nsegments="1"
 seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc)
-midTime="853731034.5"
+# midTime="853731034.5"
 tsfile="./timestamps.txt"
 segFile="./segments.txt"
 rm -rf $tsfile $segFile
@@ -149,7 +149,7 @@ else
 fi
 
 # construct MFD cmd for H1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0H1 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=H1 --refTime=$refTime --Tsft=$Tsft --randSeed=10400"
+mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0H1 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=H1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
 
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
@@ -163,7 +163,7 @@ if ! eval $cmdline; then
 fi
 
 # construct MFD cmd for L1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0L1 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=7001"
+mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0L1 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=1001"
 
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
@@ -176,82 +176,10 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-echo
-echo "----------------------------------------------------------------------"
-echo "STEP 2: run PredictFstat (perfect match) "
-echo "----------------------------------------------------------------------"
-echo
-
-
-TwoFsum="0"
-TwoFsum1="0"
-TwoFsum2="0"
-
-for ((x=1; x <= $Nsegments; x++))
-  do
-    outfile_pfs="__tmp_PFS.dat";
-
-    startGPS=${segs[${x}]}
-    endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
-    #echo "Segment: "$x"  "$startGPS" "$endGPS
-    # construct pfs cmd
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-    if [ "$haveNoise" = false ]; then
-        pfs_CL="$pfs_CL --SignalOnly";
-    fi
-
-    cmdline="$pfs_code $pfs_CL"
-    echo "  "$cmdline
-    if ! tmp=`eval $cmdline`; then
-	echo "Error.. something failed when running '$pfs_code' ..."
-	exit 1
-    fi
-    resPFS=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-    #resPFS=`echo $tmp | awk '{printf "%g", $1}'`
-    TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
-
-    # H1 only
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0H1 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-    if [ "$haveNoise" = false ]; then
-        pfs_CL="$pfs_CL --SignalOnly";
-    fi
-    cmdline="$pfs_code $pfs_CL"
-    echo "  "$cmdline
-    if ! tmp=`eval $cmdline`; then
-        echo "Error.. something failed when running '$pfs_code' ..."
-        exit 1
-    fi
-    resPFS1=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-    TwoFsum1=$(echo "scale=6; ${TwoFsum1} + ${resPFS1}" | bc);
-
-    # L1 only
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0L1 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-    if [ "$haveNoise" = false ]; then
-        pfs_CL="$pfs_CL --SignalOnly";
-    fi
-    cmdline="$pfs_code $pfs_CL"
-    echo "  "$cmdline
-    if ! tmp=`eval $cmdline`; then
-        echo "Error.. something failed when running '$pfs_code' ..."
-        exit 1
-    fi
-    resPFS2=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-    TwoFsum2=$(echo "scale=6; ${TwoFsum2} + ${resPFS2}" | bc);
-
-    echo "Segment: "$x"   2F: "$resPFS"    (H1 only: "$resPFS1"  L1 only: "$resPFS2")"
-    echo
-done
-TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
-
-TwoFsum1=$(echo "scale=6; ${TwoFsum1} / ${Nsegments}" | bc);
-TwoFsum2=$(echo "scale=6; ${TwoFsum2} / ${Nsegments}" | bc);
-echo
-echo "==>   Average 2F: "$TwoFsum"  in H1: "$TwoFsum1"  in L1: "$TwoFsum2
-
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT without Resampling (perfect match), with segment list file"
+echo " STEP 2: run HierarchSearchGCT"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -275,42 +203,66 @@ fi
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 4: run External ComputeFStat"
+echo " STEP 3: run External ComputeFStat"
 echo "----------------------------------------------------------------------"
 echo
 
 outfile_cfs="fstat_loudest.dat"
-cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='$outfile_cfs' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Freq=$Freq --f1dot=$f1dot --Alpha=$AlphaSearch --Delta=$DeltaSearch"
+twoFcfs="0"
+twoFcfsX1="0"
+twoFcfsX2="0"
+startGPS="0"
+endGPS="0"
 
-cmdline="$cfs_code -v0 $cfs_CL"
-echo $cmdline
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$cfs_code' ..."
-    exit 1
-fi
+for ((x=1; x <= $Nsegments; x++))
+  do
 
-twoFcfs=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    startGPS=${segs[${x}]}
+    endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
+    echo "Segment: "$x"  "$startGPS" "$endGPS
+
+    cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='$outfile_cfs' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Freq=$Freq --f1dot=$f1dot --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS --internalRefTime=$refTime"
+#     cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='fstat2.dat' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Freq=100.12345 --f1dot=$f1dot --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS --outputFstat='Fstat.dat' --FreqBand=0.00001 --dFreq=0.00000001"
+#     cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='fstat2.dat' --TwoFthreshold=0.0 --ephemYear=05-09 --Freq=100.1340116290 --f1dot=$f1dot --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS --internalRefTime=$refTime"
+
+    cmdline="$cfs_code -v0 $cfs_CL"
+    echo $cmdline
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$cfs_code' ..."
+        exit 1
+    fi
+
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfs=$(echo "scale=6; ${twoFcfs} + ${twoFcfs_seg}" | bc);
+
+#     cfs_CL="--DataFiles='$SFTfiles' --outputLoudest='$outfile_cfs' --TwoFthreshold=0.0 --ephemYear=05-09 --refTime=$refTime --Freq=$Freq --f1dot=$f1dot --Alpha=$AlphaSearch --Delta=$DeltaSearch --minStartTime=$startGPS --maxEndTime=$endGPS"
+
+    cmdline="$cfs_code -v0 $cfs_CL --IFO='H1'"
+    echo $cmdline
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$cfs_code' ..."
+        exit 1
+    fi
+
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfsX1=$(echo "scale=6; ${twoFcfsX1} + ${twoFcfs_seg}" | bc);
+
+    cmdline="$cfs_code -v0 $cfs_CL --IFO='L1'"
+    echo $cmdline
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$cfs_code' ..."
+        exit 1
+    fi
+
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfsX2=$(echo "scale=6; ${twoFcfsX2} + ${twoFcfs_seg}" | bc);
+
+done
+
 twoFcfs=$(echo "scale=11; ($twoFcfs/$Nsegments)" | bc | awk '{ printf "%.6f",$1}')
-
-cmdline="$cfs_code -v0 $cfs_CL --IFO='H1'"
-echo $cmdline
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$cfs_code' ..."
-    exit 1
-fi
-
-twoFcfsX1=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
 twoFcfsX1=$(echo "scale=11; ($twoFcfsX1/$Nsegments)" | bc | awk '{ printf "%.6f",$1}')
-
-cmdline="$cfs_code -v0 $cfs_CL --IFO='L1'"
-echo $cmdline
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$cfs_code' ..."
-    exit 1
-fi
-
-twoFcfsX2=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
 twoFcfsX2=$(echo "scale=11; ($twoFcfsX2/$Nsegments)" | bc | awk '{ printf "%.6f",$1}')
+
 
 echo "==>  CFS at f="$Freq": F ="$twoFcfs" F1="$twoFcfsX1" F2="$twoFcfsX2
 
@@ -339,8 +291,8 @@ for ((x=1; x <= $Nsegments; x++))
       exit 1
     fi
 
-    twoFcfs_gct_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_gct=$(echo "scale=6; ${twoFcfs_gct} + ${twoFcfs_gct_seg}" | bc);
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfs_gct=$(echo "scale=6; ${twoFcfs_gct} + ${twoFcfs_seg}" | bc);
 
     cmdline="$cfs_code -v0 $cfs_CL --IFO='H1'"
     echo $cmdline
@@ -349,8 +301,8 @@ for ((x=1; x <= $Nsegments; x++))
       exit 1
     fi
 
-    twoFcfs_gctX1_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_gctX1=$(echo "scale=6; ${twoFcfs_gctX1} + ${twoFcfs_gctX1_seg}" | bc);
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfs_gctX1=$(echo "scale=6; ${twoFcfs_gctX1} + ${twoFcfs_seg}" | bc);
 
     cmdline="$cfs_code -v0 $cfs_CL --IFO='L1'"
     echo $cmdline
@@ -359,8 +311,8 @@ for ((x=1; x <= $Nsegments; x++))
       exit 1
     fi
 
-    twoFcfs_gctX2_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_gctX2=$(echo "scale=6; ${twoFcfs_gctX2} + ${twoFcfs_gctX2_seg}" | bc);
+    twoFcfs_seg=$(echo | sed 's/\;//' $outfile_cfs | awk '{if($1=="twoF"){printf "%.6f",$3}}')
+    twoFcfs_gctX2=$(echo "scale=6; ${twoFcfs_gctX2} + ${twoFcfs_seg}" | bc);
 
 done
 
@@ -372,54 +324,37 @@ echo "==>  CFS at f="$freqGCT": F ="$twoFcfs_gct" F1="$twoFcfs_gctX1" F2="$twoFc
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 5: Comparing results"
+echo " STEP 4: Comparing results"
 echo "----------------------------------------------------------------------"
 echo
 
-# broad tolerance needed for comparison prediction, since data contains noise . Also do not exit for these, just warn. (if in doubt, run testHS.sh for plain GCT checks)
-Tolerance_pred=1e-1
-# but different implementations should be very similar
-Tolerance_lv=1e-5
+Tolerance=1e-5
 
 
 # Check relative error in frequency
-reldev_pred_freq=$(echo "scale=13; (($Freq - $freqGCT)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
-reldev_pred_freq_bins=$(echo "scale=13; (($Freq - $freqGCT)/${gct_dFreq})" | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
+reldev_freq=$(echo "scale=13; (($Freq - $freqGCT)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
+reldev_freq_bins=$(echo "scale=13; (($Freq - $freqGCT)/${gct_dFreq})" | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
 
 echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT
-if [ `echo $reldev_pred_freq" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT: Rel. dev. in frequency: "$reldev_pred_freq
+if [ `echo $reldev_freq" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT: Rel. dev. in frequency: "$reldev_freq
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT, no Resamp.  Rel. dev. in frequency: "$reldev_pred_freq"   OK."
-    echo "     offset as fraction of frequency bins: "$reldev_pred_freq_bins
+    echo "==>  GCT: Rel. dev. in frequency:          "$reldev_freq"   OK."
+    echo "     offset as fraction of frequency bins: "$reldev_freq_bins
 fi
 echo
 
 
-# Check predicted/recomputed 2F against plain GCT search code output
-echo "==>  Predicted              : F ="$TwoFsum" F1="$TwoFsum1" F2="$TwoFsum2
-reldev_pred_cfs=$(echo "scale=11; ($TwoFsum - $twoFcfs)/(0.5 * ($TwoFsum + $twoFcfs))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_cfsX1=$(echo "scale=11; ($TwoFsum1 - $twoFcfsX1)/(0.5 * ($TwoFsum1 + $twoFcfsX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_cfsX2=$(echo "scale=11; ($TwoFsum2 - $twoFcfsX2)/(0.5 * ($TwoFsum2 + $twoFcfsX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_cfsgct=$(echo "scale=11; ($TwoFsum - $twoFcfs_gct)/(0.5 * ($TwoFsum + $twoFcfs_gct))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_cfsgctX1=$(echo "scale=11; ($TwoFsum1 - $twoFcfs_gctX1)/(0.5 * ($TwoFsum1 + $twoFcfs_gctX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_cfsgctX2=$(echo "scale=11; ($TwoFsum2 - $twoFcfs_gctX2)/(0.5 * ($TwoFsum2 + $twoFcfs_gctX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
+# Check externally computed 2F against plain GCT search code output
 reldev_cfs_cfsgct=$(echo "scale=11; ($twoFcfs - $twoFcfs_gct)/(0.5 * ($twoFcfs + $twoFcfs_gct))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 reldev_cfs_cfsgctX1=$(echo "scale=11; ($twoFcfsX1 - $twoFcfs_gctX1)/(0.5 * ($twoFcfsX1 + $twoFcfs_gctX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 reldev_cfs_cfsgctX2=$(echo "scale=11; ($twoFcfsX2 - $twoFcfs_gctX2)/(0.5 * ($twoFcfsX2 + $twoFcfs_gctX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 echo "==>  CFS at f="$Freq" : F ="$twoFcfs" F1="$twoFcfsX1" F2="$twoFcfsX2
-if [ `echo $reldev_pred_cfs" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "                diff vs pred: "$reldev_pred_cfs",   "$reldev_pred_cfsX1",   "$reldev_pred_cfsX2
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-#     exit 2
-else
-    echo "                diff vs pred: "$reldev_pred_cfs",   "$reldev_pred_cfsX1",   "$reldev_pred_cfsX2"     OK."
-fi
 echo "==>  CFS at f="$freqGCT": F ="$twoFcfs_gct" F1="$twoFcfs_gctX1" F2="$twoFcfs_gctX2
-if [ `echo $reldev_cfs_cfsgct" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-echo "                diff vs prev: "$reldev_cfs_cfsgct",   "$reldev_cfs_cfsgctX1",   "$reldev_cfs_cfsgctX2
+if [ `echo $reldev_cfs_cfsgct" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+echo "                diff vs cfs1: "$reldev_cfs_cfsgct",   "$reldev_cfs_cfsgctX1",   "$reldev_cfs_cfsgctX2
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
 else
@@ -427,54 +362,54 @@ echo "                diff vs cfs1: "$reldev_cfs_cfsgct",   "$reldev_cfs_cfsgctX
 fi
 
 twoFGCT=$(cat $outfile_gct | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
-reldev_pred_gct=$(echo "scale=11; ($TwoFsum - $twoFGCT)/(0.5 * ($TwoFsum + $twoFGCT))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-if [ `echo $reldev_pred_gct" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT plain  : F ="$twoFGCT"  (dev vs pred: "$reldev_pred_gct")"
+reldev_cfsgct_gct=$(echo "scale=11; ($twoFcfs_gct - $twoFGCT)/(0.5 * ($twoFcfs_gct + $twoFGCT))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
+if [ `echo $reldev_cfsgct_gct" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT plain  : F ="$twoFGCT"  (diff vs cfs2: "$reldev_cfsgct_gct")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
 else
-    echo "==>  GCT plain  : F ="$twoFGCT"  (dev vs pred: "$reldev_pred_gct")     OK."
+    echo "==>  GCT plain  : F ="$twoFGCT"  (diff vs cfs2: "$reldev_cfsgct_gct")     OK."
 fi
 
-# Check recomputed 2F against previous value and single-detector F against prediction
+# Check recomputed 2F against previous value and single-detector F against external cfs
 twoFGCTLV=$(cat $outfile_gct | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $7}')
 twoFGCTLVX1=$(cat $outfile_gct | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $8}')
 twoFGCTLVX2=$(cat $outfile_gct | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $9}')
 reldev_gct_LV=$(echo "scale=11; ($twoFGCT - $twoFGCTLV)/(0.5 * ($twoFGCT + $twoFGCTLV))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_LVX1=$(echo "scale=11; ($TwoFsum1 - $twoFGCTLVX1)/(0.5 * ($TwoFsum1 + $twoFGCTLVX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-reldev_pred_LVX2=$(echo "scale=11; ($TwoFsum2 - $twoFGCTLVX2)/(0.5 * ($TwoFsum2 + $twoFGCTLVX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
+reldev_cfsgct_LVX1=$(echo "scale=11; ($twoFcfs_gctX1 - $twoFGCTLVX1)/(0.5 * ($twoFcfs_gctX1 + $twoFGCTLVX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
+reldev_cfsgct_LVX2=$(echo "scale=11; ($twoFcfs_gctX2 - $twoFGCTLVX2)/(0.5 * ($twoFcfs_gctX2 + $twoFGCTLVX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 maxdev_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{if(max==""){max=($6-$7)/($6+$7)}; if($1!="100.123554") { if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } } END {printf "%.10f",max}' )
 maxdevfreq_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
-if [ `echo $reldev_gct_LV" "$Tolerance_lv | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT LV     : F ="$twoFGCTLV"  (dev vs plain: "$reldev_gct_LV")"
+if [ `echo $reldev_gct_LV" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT LV     : F ="$twoFGCTLV"  (diff vs plain: "$reldev_gct_LV")"
     echo "                  (max dev: "$maxdev_gct_LV" at freq="$maxdevfreq_gct_LV")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
     exit 2
 else
-    echo "==>  GCT LV     : F ="$twoFGCTLV"  (dev vs plain: "$reldev_gct_LV")     OK."
+    echo "==>  GCT LV     : F ="$twoFGCTLV"  (diff vs plain: "$reldev_gct_LV")     OK."
     echo "                  (max dev: "$maxdev_gct_LV" at freq="$maxdevfreq_gct_LV")"
 fi
 
-if [ `echo $reldev_pred_LVX1" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT LV     : F1="$twoFGCTLVX1"  (dev vs pred: "$reldev_pred_LVX1")"
+if [ `echo $reldev_cfsgct_LVX1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT LV     : F1="$twoFGCTLVX1"  (diff vs cfs: "$reldev_cfsgct_LVX1")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
 else
-    echo "==>  GCT LV     : F1="$twoFGCTLVX1"  (dev vs pred: "$reldev_pred_LVX1")     OK."
+    echo "==>  GCT LV     : F1="$twoFGCTLVX1"  (diff vs cfs: "$reldev_cfsgct_LVX1")     OK."
 fi
 
-if [ `echo $reldev_pred_LVX2" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT LV     : F2="$twoFGCTLVX2"  (dev vs pred: "$reldev_pred_LVX2")"
+if [ `echo $reldev_cfsgct_LVX2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
+    echo "==>  GCT LV     : F2="$twoFGCTLVX2"  (diff vs cfs: "$reldev_cfsgct_LVX2")"
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
 else
-    echo "==>  GCT LV     : F2="$twoFGCTLVX2"  (dev vs pred: "$reldev_pred_LVX2")     OK."
+    echo "==>  GCT LV     : F2="$twoFGCTLVX2"  (diff vs cfs: "$reldev_cfsgct_LVX2")     OK."
 fi
 
 reldev_cfs_LV=$(echo "scale=11; ($twoFcfs - $twoFGCTLV)/(0.5 * ($twoFcfs + $twoFGCTLV))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 reldev_cfs_LVX1=$(echo "scale=11; ($twoFcfsX1 - $twoFGCTLVX1)/(0.5 * ($twoFcfsX1 + $twoFGCTLVX1))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
 reldev_cfs_LVX2=$(echo "scale=11; ($twoFcfsX2 - $twoFGCTLVX2)/(0.5 * ($twoFcfsX2 + $twoFGCTLVX2))" | bc | awk '{ if($1>=0) {printf "%.10f",$1} else {printf "%.10f",$1*(-1)}}')
-if [ `echo $reldev_cfs_LV" "$Tolerance_pred | awk '{if($1>$2) {print "1"}}'` ];then
+if [ `echo $reldev_cfs_LV" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
 echo "                diff vs cfs1: "$reldev_cfs_LV",   "$reldev_cfs_LVX1",   "$reldev_cfs_LVX2
     echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
 #     exit 2
