@@ -829,7 +829,9 @@ int main( int argc, char **argv )
                                             spinTemplate, singleDetector,
                                             pValues, gammaBeta, snrComps,
                                             nullSNR, traceSNR, bankVeto,
-                                            autoVeto, chiSquare, PTFM );
+                                            autoVeto, chiSquare, PTFM,
+                                            skyPoints->rightAscension[sp],
+                                            skyPoints->declination[sp] );
             verbose( "Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime) );
 
 
@@ -842,6 +844,7 @@ int main( int argc, char **argv )
         default:
           error( "Oops. No sky type set, Ian done broke the code.\n" );
           break;
+
       } 
 
       /* cluster triggers */
@@ -866,8 +869,14 @@ int main( int argc, char **argv )
           snrComps[k] = NULL;
         }
       }
-      if (gammaBeta[0]) XLALDestroyREAL4TimeSeries(gammaBeta[0]);
-      if (gammaBeta[1]) XLALDestroyREAL4TimeSeries(gammaBeta[1]);
+      for ( k = 0; k < 2; k++ )
+      {
+        if (gammaBeta[k])
+        {
+          XLALDestroyREAL4TimeSeries(gammaBeta[k]);
+          gammaBeta[k] = NULL;
+        }
+      }
       if (nullSNR) XLALDestroyREAL4TimeSeries(nullSNR);
       if (traceSNR) XLALDestroyREAL4TimeSeries(traceSNR);
       if (bankVeto) XLALDestroyREAL4TimeSeries(bankVeto);
@@ -1035,32 +1044,44 @@ void coh_PTF_statistic(
    * For spin these are the P values */
   for ( i = 0 ; i < vecLengthTwo ; i++ )
   {
-    pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch, 
-                                            cohSNR->f0, cohSNR->deltaT,
-                                            &lalDimensionlessUnit,
-                                            cohSNR->data->length );
-  }
-  if (! spinTemplate)
-  {
-    for ( i = vecLengthTwo ; i < 2*vecLengthTwo ; i++ )
+    if (!pValues[i])
     {
-      pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch,
+      pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch, 
                                               cohSNR->f0, cohSNR->deltaT,
                                               &lalDimensionlessUnit,
                                               cohSNR->data->length );
     }
   }
+  if (! spinTemplate)
+  {
+    for ( i = vecLengthTwo ; i < 2*vecLengthTwo ; i++ )
+    {
+      if (!pValues[i])
+      {
+        pValues[i] = XLALCreateREAL4TimeSeries( "Pvalue", &cohSNR->epoch,
+                                                cohSNR->f0, cohSNR->deltaT,
+                                                &lalDimensionlessUnit,
+                                                cohSNR->data->length );
+      }
+    }
+  }
   if (spinTemplate)
   {
-    /* These store a amplitude and phase information for PTF search */
-    gammaBeta[0] = XLALCreateREAL4TimeSeries( "Gamma", &cohSNR->epoch,
-                                              cohSNR->f0, cohSNR->deltaT,
-                                              &lalDimensionlessUnit,
-                                              cohSNR->data->length );
-    gammaBeta[1] = XLALCreateREAL4TimeSeries( "Beta", &cohSNR->epoch,
-                                              cohSNR->f0, cohSNR->deltaT,
-                                              &lalDimensionlessUnit,
-                                              cohSNR->data->length);
+    if (!gammaBeta[0])
+    {
+      /* These store a amplitude and phase information for PTF search */
+      gammaBeta[0] = XLALCreateREAL4TimeSeries( "Gamma", &cohSNR->epoch,
+                                                cohSNR->f0, cohSNR->deltaT,
+                                                &lalDimensionlessUnit,
+                                                cohSNR->data->length );
+    }
+    if (!gammaBeta[1])
+    {
+      gammaBeta[1] = XLALCreateREAL4TimeSeries( "Beta", &cohSNR->epoch,
+                                                cohSNR->f0, cohSNR->deltaT,
+                                                &lalDimensionlessUnit,
+                                                cohSNR->data->length);
+    }
   }
 
   /* FIXME: All the time series should be outputtable */
@@ -1779,7 +1800,9 @@ UINT8 coh_PTF_add_triggers(
     REAL4TimeSeries         *bankVeto,
     REAL4TimeSeries         *autoVeto,
     REAL4TimeSeries         *chiSquare,
-    REAL8Array              *PTFM[LAL_NUM_IFO+1]
+    REAL8Array              *PTFM[LAL_NUM_IFO+1],
+    REAL4                   rightAscension,
+    REAL4                   declination
 )
 {
   // This function adds a trigger to the event list
@@ -1838,6 +1861,8 @@ UINT8 coh_PTF_add_triggers(
         currEvent->mchirp = PTFTemplate.totalMass*pow(PTFTemplate.eta,3.0/5.0);
         currEvent->eta = PTFTemplate.eta;
         currEvent->end_time = trigTime;
+        currEvent->ra = rightAscension;
+        currEvent->dec = declination;
         if (params->doNullStream)
           currEvent->null_statistic = nullSNR->data->data[i];
         if (params->doTraceSNR)
