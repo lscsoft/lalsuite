@@ -182,7 +182,7 @@ if ! eval $cmdline; then
 fi
 
 ## get recovered signal frequency from GCT
-freqGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | awk '{printf "%.10f",$1}')
+freqGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | awk '{printf "%.16f",$1}')
 f1dotGCT=$(sed -e '/%/d;' $outfile_gct | sort -nr -k6,6 | head -1 | awk '{printf "%.10e",$4}')
 
 echo
@@ -283,8 +283,8 @@ reldev_cfs_LV=$(echo $twoFcfs $twoFGCTLV       | awk '{ if(($1-$2)>=0) {printf "
 reldev_cfs_LVX1=$(echo $twoFcfsX1 $twoFGCTLVX1 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 reldev_cfs_LVX2=$(echo $twoFcfsX2 $twoFGCTLVX2 | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 ## get maximum deviations (over all candidates) of freq, Fstat between plain GCT and LV
-maxdev_gct_LV=$(sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max=="") {max=($6-$7)/($6+$7)}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } END {printf "%.12f",max}' )
-maxdevfreq_gct_LV=$(sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
+maxdev_gct_LV=$(sed '/^%.*/d' $outfile_gct | awk 'BEGIN { maxDiff = 0; } { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff}; } END {printf "%.12f", maxDiff}' )
+maxdevfreq_gct_LV=$(sed '/^%.*/d' $outfile_gct | awk 'BEGIN { maxDiff = 0; maxFreq = 0;} { relDiff=($6-$7)/($6+$7); if( relDiff^2 > maxDiff^2 ) {maxDiff=relDiff; maxFreq=$1}; } END {printf "%.12f", maxFreq}' )
 
 
 echo "==>  CFS at f="$freqGCT" : F="$twoFcfs" F1="$twoFcfsX1" F2="$twoFcfsX2
