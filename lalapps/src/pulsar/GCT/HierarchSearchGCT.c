@@ -1419,18 +1419,13 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
-  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist, compare with TwoF results */
+  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
   if ( uvar_outputFX ) {
     xlalErrno = 0;
     XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
     if ( xlalErrno != 0 ) {
-      XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoForToplist.\n\n", "MAIN", __LINE__);
+      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EXLAL);
-    }
-  }
-  else {
-    for (j = 0; j < semiCohToplist->elems; j++ ) { /* loop over toplist elements */
-      (*(GCTtopOutputEntry*)semiCohToplist->heap[j]).sumTwoFX = NULL;
     }
   }
 
@@ -1684,14 +1679,6 @@ int MAIN( int argc, char *argv[]) {
     LALFree(coarsegrid.Uindex);
   }
 
-
-  /* free candidate toplist */
-  if ( uvar_outputFX ) {
-    UINT4 candcount;
-    for (candcount = 0; candcount < semiCohToplist->elems; candcount++ ) { /* loop over toplist elements */
-      if ( (*(GCTtopOutputEntry*)semiCohToplist->heap[candcount]).sumTwoFX ) XLALDestroyREAL4Vector ( (*(GCTtopOutputEntry*)semiCohToplist->heap[candcount]).sumTwoFX );
-    }
-  }
   free_gctFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
@@ -2273,6 +2260,12 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.F1dot = f1dot_tmp;
       line.nc = in->nc[ifine];
       line.sumTwoF = (in->sumTwoF[ifine]) / Nsegments; /* save the average 2F value */
+
+      /* initialize LV postprocessing entries to zero.
+       * This will be filled later, if user requested it.
+       */
+      line.sumTwoFnew = -1;    	/* sum of 2F-values as recomputed in LV postprocessing */
+      line.sumTwoFX = NULL; 	/* sum of 2F-values per detector, computed in LV postprocessing */
 
       debug = insert_into_gctFStat_toplist( list, line);
 
