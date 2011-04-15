@@ -581,7 +581,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4 a[LAL_NUM_IFO],
     REAL4 b[LAL_NUM_IFO],
-    REAL4 *frequencyRanges,
+    REAL4 *frequencyRangesPlus,
+    REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
     REAL4 *powerBinsCross,
     gsl_matrix *eigenvecs
