@@ -77,7 +77,9 @@ NRCSID( LALINSPIRALH, "$Id$" );
 # define fiveby8   0.625
 # define threeby4  0.75
 # define sevenby8  0.875
-#define  ninty4by3etc  18.687902694437592603 /* (94/3 -41/31*pi*pi) */
+# define ninty4by3etc 18.687902694437592603 /* (94/3 -41/31*pi*pi) */
+# define LALINSPIRAL_PNTHETA -11831.L/9240.L
+# define LALINRPIAL_PNLAMBDA -1987.L/3080.L
 /** \endcond */
 
 /**\name Error Codes */ /**@{*/
