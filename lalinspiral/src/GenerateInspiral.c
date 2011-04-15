@@ -411,6 +411,10 @@ LALGetApproximantFromString(
   }
   else if ( strstr(thisEvent, "SpinTaylorFrameless" ) )
   {
+	  *approximant = SpinTaylorFrameless;
+  }
+  else if ( strstr(thisEvent, "SpinTaylorT3" ) )
+  {
     *approximant = SpinTaylorT3;
   }
   else if ( strstr(thisEvent, "SpinTaylor" ) )

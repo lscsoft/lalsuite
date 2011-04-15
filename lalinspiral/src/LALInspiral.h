@@ -187,6 +187,7 @@ by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a f
                     Vallisneri including  spin effects\cite{BCV03b}. Outputs a frequency-domain wave.
 \item \texttt{SpinTaylorT3} Spinning case T3 models
 \item \texttt{SpinTaylor} Spinning case PN models (should replace SpinTaylorT3 in the future)
+\item \textt{SpinTaylorFrameless} Spinning case PN models (replace SpinTaylor by removing the coordinate singularity)
 \item \texttt{PhenSpinTaylorRD} Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown.
 \item \texttt{SpinQuadTaylor} Spinning case PN models with quadrupole-monopole and self-spin interaction.
 \item \texttt{FindChirpSP} The stationary phase templates implemented by FindChirpSPTemplate in the findchirp package (equivalent to TaylorF2 at twoPN order).
@@ -458,6 +459,7 @@ typedef enum {
    BCV,
    BCVSpin,
    SpinTaylorT3,
+   SpinTaylorFrameless,
    SpinTaylor,
    PhenSpinTaylorRD,
    PhenSpinTaylorRDF,

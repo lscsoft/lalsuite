@@ -404,7 +404,7 @@ LALInspiralWaveForInjection(
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
-      case SpinTaylorT3:
+      case SpinTaylorFrameless:
            LALSTPNWaveformFramelessForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
            break;
