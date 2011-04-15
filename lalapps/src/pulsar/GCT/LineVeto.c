@@ -95,21 +95,22 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
 
   /* set up temporary variables and structs */
   PulsarDopplerParams candidateDopplerParams = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
-  PulsarSpins fkdotTMP;
-  REAL8 deltaTau;  /* temporary variable to convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
+  PulsarSpins fkdotTMP; /* temporary spin parameters for XLALExtrapolatePulsarSpins */
+  REAL8 deltaTau;       /* temporary variable to convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
 
   /* initialize doppler parameters */
-  candidateDopplerParams.refTime = tMidGPS;
+  candidateDopplerParams.refTime = tMidGPS;  /* spin parameters will be given to ComputeFStat at this refTime */
   INIT_MEM( fkdotTMP );
   deltaTau = XLALGPSDiff( &candidateDopplerParams.refTime, &refTimeGPS );
 
   /* initialise LVcomponents structure and allocate memory */
-  UINT4          numDetectors;  /* number of different single detectors */
+  UINT4          numDetectors = multiSFTsV->data[0]->length;  /* number of different single detectors */
   LVcomponents   lineVeto;      /* struct containing multi-detector Fstat, single-detector Fstats, Line Veto stat */
-  numDetectors = multiSFTsV->data[0]->length;
-  lineVeto.TwoFX = XLALCreateREAL8Vector ( numDetectors );
+  if ( (lineVeto.TwoFX = XLALCreateREAL8Vector ( numDetectors )) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCreateREAL8Vector( %d )\n", fn, numDetectors );
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+  }
 
-  /* allocate FX vectors in toplist */
   UINT4 j;
   UINT4 numElements = list->elems;
   /* loop over toplist: re-compute sumTwoF and sumTwoFX for all candidates */
@@ -128,13 +129,13 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
       fkdotTMP[0] = elem->Freq;
       fkdotTMP[1] = elem->F1dot;
 
-      /* extrapolate pulsar spins to correct time (really constant for all candidates and segments?) */
+      /* extrapolate pulsar spins to correct time (more stable against large deltaTau than directly resetting refTime) */
       if ( XLALExtrapolatePulsarSpins( candidateDopplerParams.fkdot, fkdotTMP, deltaTau ) != XLAL_SUCCESS ) {
         XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", fn, __LINE__);
         XLAL_ERROR ( fn, XLAL_EFUNC );
       }
 
-      /* compute Line Veto statistic for this candidate by recalculating single-IFO Fstats for all segments */
+      /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
       XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, CFparams, SignalOnly );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", fn, __LINE__);
@@ -242,7 +243,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
 	    XLAL_ERROR ( fn, XLAL_EFUNC );
 	  }
 
-          if ( SignalOnly ) {                      /* normalization factor correction */
+          if ( SignalOnly ) {                      /* normalization factor correction (TwoF=2.0*F has been done before, this time!) */
             twoFX *= 4.0 / Tsft;
             twoFX += 4;
           }
@@ -302,6 +303,7 @@ REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detecto
   UINT4 alpha;
   UINT4 numSFTs = Fstat->multiFstatAtoms->data[X]->length;
 
+  /* sum up matrix elements and Fa, Fb */
   Fa.re = 0.0;
   Fa.im = 0.0;
   Fb.re = 0.0;
@@ -320,6 +322,7 @@ REAL8 XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,   /**< multi-detecto
 
     } /* for alpha < numSFTs */
 
+  /* compute determinant and final Fstat (not twoF!) */
   REAL8 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQUARE(mmatrixC) );
   FX = Dinv * ( mmatrixB * ( SQUARE(Fa.re) + SQUARE(Fa.im) ) + mmatrixA * ( SQUARE(Fb.re) + SQUARE(Fb.im) ) - 2.0 * mmatrixC * (Fa.re*Fb.re + Fa.im*Fb.im) );
 
