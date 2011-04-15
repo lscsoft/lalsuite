@@ -1,33 +1,24 @@
-ifelse(TYPE,`COMPLEX16',`define(`FRTYPE',`FR_VECT_16C')')
-ifelse(TYPE,`COMPLEX8',`define(`FRTYPE',`FR_VECT_8C')')
-ifelse(TYPE,`REAL8',`define(`FRTYPE',`FR_VECT_8R')')
-ifelse(TYPE,`REAL4',`define(`FRTYPE',`FR_VECT_4R')')
-ifelse(TYPE,`INT8',`define(`FRTYPE',`FR_VECT_8S')')
-ifelse(TYPE,`INT4',`define(`FRTYPE',`FR_VECT_4S')')
-ifelse(TYPE,`INT2',`define(`FRTYPE',`FR_VECT_2S')')
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
-ifelse(TYPE,`COMPLEX16',`define(`FRDATA',`dataD')')
-ifelse(TYPE,`COMPLEX8',`define(`FRDATA',`dataD')')
-ifelse(TYPE,`REAL8',`define(`FRDATA',`dataD')')
-ifelse(TYPE,`REAL4',`define(`FRDATA',`dataF')')
-ifelse(TYPE,`INT8',`define(`FRDATA',`dataL')')
-ifelse(TYPE,`INT4',`define(`FRDATA',`dataI')')
-ifelse(TYPE,`INT2',`define(`FRDATA',`dataS')')
+#define STYPE CONCAT2(TYPE,TimeSeries)
+#define FSTYPE CONCAT2(TYPE,FrequencySeries)
 
-define(`STYPE',`format(`%sTimeSeries',TYPE)')
-define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
-define(`FUNC',`format(`LALFrWrite%s',STYPE)')
-define(`FSFUNC',`format(`LALFrWrite%s',FSTYPE)')
-define(`XFUNC',`format(`XLALFrWrite%s',STYPE)')
-define(`XFSFUNC',`format(`XLALFrWrite%s',FSTYPE)')
+#define WFUNC CONCAT2(LALFrWrite,STYPE)
+#define FSWFUNC CONCAT2(LALFrWrite,FSTYPE)
+#define XWFUNC CONCAT2(XLALFrWrite,STYPE)
+#define XFSWFUNC CONCAT2(XLALFrWrite,FSTYPE)
 
 
-int XFUNC ( STYPE *series, int frnum )
+int XWFUNC ( STYPE *series, int frnum )
 {
-  static const char func[] = "XFUNC";
+  static const char func[] = STRING(XWFUNC);
   char fname[FILENAME_MAX];
   char tmpfname[FILENAME_MAX];
-  char comment[] = "XFUNC $Id$";
+  char comment[] = STRING(XWFUNC);
   char seconds[] = "s";
   char units[LALUnitTextSize];
   const int run = 0; /* this routine always sets run number to zero */
@@ -160,7 +151,7 @@ int XFUNC ( STYPE *series, int frnum )
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
-FUNC (
+WFUNC (
     LALStatus		*status,
     STYPE 	*series,
     FrOutPar		*params
@@ -168,7 +159,7 @@ FUNC (
 { /* </lalVerbatim> */
   TYPE 	*data;
   CHAR   seconds[] = "s";
-  CHAR   comment[] = "Created by FUNC $Id$";
+  CHAR   comment[] = "Created by " STRING(WFUNC);
   CHAR   source[FILENAME_MAX];
   CHAR   fname[FILENAME_MAX];
   CHAR   tmpfname[FILENAME_MAX];
@@ -180,7 +171,7 @@ FUNC (
   INT8 tend;
   INT4 dt;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );
+  INITSTATUS( status, STRING(WFUNC), FRAMESERIESC );
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ATTATCHSTATUSPTR( status );
@@ -267,7 +258,7 @@ FUNC (
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
-FSFUNC (
+FSWFUNC (
     LALStatus		*status,
     FSTYPE 	*series,
     FrOutPar		*params,
@@ -276,7 +267,7 @@ FSFUNC (
 { /* </lalVerbatim> */
   TYPE 	*data;
   CHAR   hertz[] = "Hz";
-  CHAR   comment[] = "Created by FSFUNC $Id$";
+  CHAR   comment[] = "Created by " STRING(FSWFUNC);
   CHAR   source[FILENAME_MAX];
   CHAR   fname[FILENAME_MAX];
   CHAR   tmpfname[FILENAME_MAX];
@@ -289,7 +280,7 @@ FSFUNC (
   INT8 tend;
   INT4 dt;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );
+  INITSTATUS( status, STRING(FSWFUNC), FRAMESERIESC );
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ATTATCHSTATUSPTR( status );

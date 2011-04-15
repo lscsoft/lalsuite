@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2007  Jolien Creighton, and Duncan Brown, and Xavier Siemens,
+ * and Kipp Cannon
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 /**** <lalVerbatim file="FrameSeriesCV">
  * Author: Jolien D. E. Creighton
  * $Id$
@@ -785,31 +804,65 @@ REAL8TimeSeries * XLALFrInputREAL8TimeSeries( FrStream *stream, const char *chan
 	return series;
 }
 
+#define TYPE COMPLEX16
+#define FRTYPE FR_VECT_16C
+#define FRDATA dataD
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`COMPLEX16')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE COMPLEX8
+#define FRTYPE FR_VECT_8C
+#define FRDATA dataF
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`COMPLEX8')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE REAL8
+#define FRTYPE FR_VECT_8R
+#define FRDATA dataD
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`REAL8')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE REAL4
+#define FRTYPE FR_VECT_4R
+#define FRDATA dataF
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`REAL4')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE INT8
+#define FRTYPE FR_VECT_8S
+#define FRDATA dataL
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`INT8')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE INT4
+#define FRTYPE FR_VECT_4S
+#define FRDATA dataI
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
 
-define(`TYPE',`INT4')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
-
-define(`TYPE',`INT2')
-include(`FrameSeriesRead.m4')
-include(`FrameSeriesWrite.m4')
+#define TYPE INT2
+#define FRTYPE FR_VECT_2S
+#define FRDATA dataS
+#include "FrameSeriesRead_source.c"
+#include "FrameSeriesWrite_source.c"
+#undef TYPE
+#undef FRTYPE
+#undef FRDATA
