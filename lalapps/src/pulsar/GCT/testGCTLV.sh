@@ -282,8 +282,8 @@ reldev_cfs_LV=$(echo $twoFcfs $twoFGCTLV              | awk '{ if(($1-$2)>=0) {p
 reldev_cfs_LVX1=$(echo $twoFcfsX1 $twoFGCTLVX1        | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 reldev_cfs_LVX2=$(echo $twoFcfsX2 $twoFGCTLVX2        | awk '{ if(($1-$2)>=0) {printf "%.12f", ($1-$2)/(0.5*($1+$2))} else {printf "%.12f", (-1)*($1-$2)/(0.5*($1+$2))}}');
 ## get maximum deviations (over all candidates) of freq, Fstat between plain GCT and LV
-maxdev_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max=="") {max=($6-$7)/($6+$7)}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } END {printf "%.12f",max}' )
-maxdevfreq_gct_LV=$(echo | sed '/^ *%%/d;s/%%.*//' $outfile_gct | awk '{ if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
+maxdev_gct_LV=$(cat $outfile_gct | sed '/^ *%%/d;s/%%.*//' | awk '{ if(max=="") {max=($6-$7)/($6+$7)}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7)}; } END {printf "%.12f",max}' )
+maxdevfreq_gct_LV=$(cat $outfile_gct | sed '/^ *%%/d;s/%%.*//' | awk '{ if(max==""){max=($6-$7)/($6+$7); maxfreq=$1}; if(($6-$7)/($6+$7)>max) {max=($6-$7)/($6+$7); maxfreq=$1}; } END {printf "%.10f",maxfreq}' )
 
 
 echo "==>  CFS at f="$freqGCT" : F="$twoFcfs" F1="$twoFcfsX1" F2="$twoFcfsX2
