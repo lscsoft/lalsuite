@@ -6,13 +6,13 @@ AM_CFLAGS = -std=gnu99
 LIBS += $(MPILIBS)
 
 if MPI
-mpi_progs = lalinference_mcmcmpi
-lalinference_mcmcmpi_SOURCES = \
+mpi_progs = lalinference_mcmc
+lalinference_mcmc_SOURCES = \
 	$(srcdir)/../LALInference.c \
 	$(srcdir)/../LALInferenceReadData.c \
 	$(srcdir)/../LALInferenceTemplate.c \
-	$(srcdir)/../LALInferenceMCMCMPI.c \
-	$(srcdir)/../LALInferenceMCMCMPISampler.c \
+	$(srcdir)/../LALInferenceMCMC.c \
+	$(srcdir)/../LALInferenceMCMCSampler.c \
 	$(srcdir)/../LALInferencePrior.c
 endif
 

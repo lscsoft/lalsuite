@@ -34,14 +34,14 @@
 #include <mpi.h>
 #include "LALInference.h"
 //#include "mpi.h"
-#include "LALInferenceMCMCMPISampler.h"
+#include "LALInferenceMCMCSampler.h"
 #include "LALInferencePrior.h"
 
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 
 RCSID("$Id$");
-#define PROGRAM_NAME "LALInferenceMCMCMPISampler.c"
+#define PROGRAM_NAME "LALInferenceMCMCSampler.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
