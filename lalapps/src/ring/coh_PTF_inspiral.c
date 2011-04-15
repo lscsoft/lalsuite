@@ -978,7 +978,7 @@ int main( int argc, char **argv )
       XLALDestroyREAL4TimeSeries(cohSNR);
       if (chisqOverlaps)
       {
-        for( uj = 0; uj < params->numChiSquareBins; uj++)
+        for( uj = 0; uj < 2*params->numChiSquareBins; uj++)
         {
           for( k = 0; k < LAL_NUM_IFO; k++)
           {
@@ -1302,7 +1302,7 @@ void coh_PTF_statistic(
   COMPLEX8VectorSequence *tempqVec = NULL;
   REAL4 *powerBinsPlus = NULL;
   REAL4 *powerBinsCross = NULL;
-  REAL4 fLow,fHigh;
+  REAL4 fLowPlus,fHighPlus,fLowCross,fHighCross;
 
   // Now we calculate all the extrinsic parameters and signal based vetoes
   // Only calculated if this will be a trigger
@@ -1773,34 +1773,42 @@ void coh_PTF_statistic(
               LALCalloc( params->numChiSquareBins, sizeof(REAL4) );
             powerBinsCross = (REAL4 *)
               LALCalloc( params->numChiSquareBins, sizeof(REAL4) );
-            coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,powerBinsPlus,powerBinsCross,Autoeigenvecs);
+            coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus,frequencyRangesCross,powerBinsPlus,powerBinsCross,Autoeigenvecs);
           }
           if (! tempqVec)
             tempqVec = XLALCreateCOMPLEX8VectorSequence ( 1, numPoints );
           if (! chisqOverlaps)
           {
-            chisqOverlaps = LALCalloc(params->numChiSquareBins,sizeof( *chisqOverlaps));
+            chisqOverlaps = LALCalloc(2*params->numChiSquareBins,sizeof( *chisqOverlaps));
             for( j = 0; j < params->numChiSquareBins; j++)
             {
               if (params->numChiSquareBins == 1)
               {
-                fLow = 0;
-                fHigh = 0;
+                fLowPlus = 0;
+                fHighPlus = 0;
+                fLowCross = 0;
+                fHighCross = 0;
               }
               else if (j == 0)
               {
-                fLow = 0;
-                fHigh = frequencyRangesPlus[0];
+                fLowPlus = 0;
+                fHighPlus = frequencyRangesPlus[0];
+                fLowCross = 0;
+                fHighCross = frequencyRangesCross[0];
               }
               else if (j == params->numChiSquareBins-1)
               {
-                fLow = frequencyRangesPlus[params->numChiSquareBins-2];
-                fHigh = 0;
+                fLowPlus = frequencyRangesPlus[params->numChiSquareBins-2];
+                fHighPlus = 0;
+                fLowCross = frequencyRangesCross[params->numChiSquareBins-2];
+                fHighCross = 0;
               }
               else
               {
-                fLow = frequencyRangesPlus[j-1];
-                fHigh = frequencyRangesPlus[j];
+                fLowPlus = frequencyRangesPlus[j-1];
+                fHighPlus = frequencyRangesPlus[j];
+                fLowCross = frequencyRangesCross[j-1];
+                fHighCross = frequencyRangesCross[j];
               }                 
               for( k = 0; k < LAL_NUM_IFO; k++)
               {
@@ -1811,10 +1819,21 @@ void coh_PTF_statistic(
                       3*numPoints/4 - numPoints/4 + 10000);
                   coh_PTF_bank_filters(params,fcTmplt,0,
                   &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
-                  chisqOverlaps[j].PTFqVec[k],fLow,fHigh);
+                  chisqOverlaps[j].PTFqVec[k],fLowPlus,fHighPlus);
+
+                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] =
+                      XLALCreateCOMPLEX8VectorSequence ( 1,
+                      3*numPoints/4 - numPoints/4 + 10000);
+                  coh_PTF_bank_filters(params,fcTmplt,0,
+                  &segments[k]->sgmnt[segmentNumber],invPlan,tempqVec,
+                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k],
+                  fLowCross,fHighCross);
                 }
                 else
+                {
                   chisqOverlaps[j].PTFqVec[k] = NULL;
+                  chisqOverlaps[j+params->numChiSquareBins].PTFqVec[k] = NULL;
+                }
               }
             }
           }
