@@ -18,6 +18,7 @@ check_PROGRAMS = \
 	InspiralSpinBankTest \
 	LALInspiralSpinningBHBinariesTest \
 	LALInspiralTest \
+	LALInspiralTaylorT3Test \
 	LALSTPNWaveformTest \
 	MetricTest \
 	MetricTestBCV \
