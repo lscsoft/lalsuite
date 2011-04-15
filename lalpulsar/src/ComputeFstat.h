@@ -170,7 +170,7 @@ extern const ComputeFBuffer empty_ComputeFBuffer;
 int
 XLALComputeFaFb ( Fcomponents *FaFb,
 		  const SFTVector *sfts,
-		  const PulsarSpins fkdot,
+		  constPulsarSpins fkdot,
 		  const SSBtimes *tSSB,
 		  const AMCoeffs *amcoe,
 		  const ComputeFParams *params);
@@ -178,14 +178,14 @@ XLALComputeFaFb ( Fcomponents *FaFb,
 int
 XLALComputeFaFbXavie ( Fcomponents *FaFb,
 		       const SFTVector *sfts,
-		       const PulsarSpins fkdot,
+		       constPulsarSpins fkdot,
 		       const SSBtimes *tSSB,
 		       const AMCoeffs *amcoe,
 		       const ComputeFParams *params);
 int
 XLALComputeFaFbCmplx ( Fcomponents *FaFb,
 		       const SFTVector *sfts,
-		       const PulsarSpins fkdot,
+		       constPulsarSpins fkdot,
 		       const SSBtimes *tSSB,
 		       const CmplxAMCoeffs *amcoe,
 		       const ComputeFParams *params);
@@ -249,7 +249,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,
 FstatAtomVector * XLALCreateFstatAtomVector ( UINT4 num );
 
 int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
-int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
+int XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp, constPulsarAmplitudeVect A_Mu );
 
 /* destructors */
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );

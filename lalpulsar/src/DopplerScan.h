@@ -133,7 +133,10 @@ typedef struct tagDopplerSkyGrid {
 } DopplerSkyGrid;
 
 /** initialization-structure passed to InitDopplerSkyScan() */
-typedef struct {
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerSkyScanInit::skyGridFile;
+#endif /* SWIG */
+typedef struct tagDopplerSkyScanInit {
   CHAR *skyRegionString;	/**< sky-region to search: format polygon '(a1,d1), (a2,d2), ..' */
   REAL8 Freq;			/**< Frequency for which to build the skyGrid */
   DopplerGridType gridType;	/**< which type of skygrid to generate */

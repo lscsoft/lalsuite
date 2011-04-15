@@ -42,7 +42,8 @@ extern "C" {
 xmlNodePtr XLALBinaryOrbitParams2VOTNode(const BinaryOrbitParams *const bop, const char *name);
 INT4 XLALVOTDoc2BinaryOrbitParamsByName(const xmlDocPtr xmlDocument, const char *name, BinaryOrbitParams *bop);
 
-xmlNodePtr XLALPulsarSpins2VOTNode(const PulsarSpins *const spins, const char *name);
+/* see PulsarDataTypes.h for explanation of constPulsarSpins type */
+xmlNodePtr XLALPulsarSpins2VOTNode(constPulsarSpins *const spins, const char *name);
 INT4 XLALVOTDoc2PulsarSpinsByName(const xmlDocPtr xmlDocument,
                                   const char *resourcePath,
                                   const char *paramName,

@@ -59,7 +59,10 @@ NRCSID( DOPPLERFULLSCANH, "$Id$" );
  */
 
 /** initialization struct for full InitDopplerScan() [UNDER CONSTRUCTION] */
-typedef struct {
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerFullScanInit::gridFile;
+#endif /* SWIG */
+typedef struct tagDopplerFullScanInit {
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */
