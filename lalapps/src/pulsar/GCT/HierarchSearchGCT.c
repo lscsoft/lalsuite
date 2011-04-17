@@ -661,13 +661,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
-  /* free segment list */
-  if ( usefulParams.segmentList )
-    if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
-  XLALFree ( usefulParams.segmentList );
-  usefulParams.segmentList = NULL;
-
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
@@ -683,14 +676,37 @@ int MAIN( int argc, char *argv[]) {
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
-  /* count the total number of SFTs used */
+  /* count the total and per-segment number of SFTs used */
   UINT4 iTS, nSFTs = 0;
   for ( iTS = 0; iTS < nStacks; iTS ++ )
     {
       UINT4 X;
+      UINT4 nSFTsInSeg = 0;
       for ( X=0; X < stackMultiSFT.data[iTS]->length; X ++ )
-        nSFTs += stackMultiSFT.data[iTS]->data[X]->length;
+        nSFTsInSeg += stackMultiSFT.data[iTS]->data[X]->length;
+      nSFTs += nSFTsInSeg;
+      /* if we have a segment-list: double-check number of SFTs */
+      if ( usefulParams.segmentList )
+        {
+          /* check the number of SFTs we found in this segment against the nominal value,
+           * stored in the segment list field 'id' */
+          UINT4 nSFTsExpected = usefulParams.segmentList->segs[iTS].id;
+          if ( nSFTsInSeg != nSFTsExpected ) {
+            XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iTS, nSFTsInSeg, nSFTsExpected );
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
+
+        } /* if have segmentList */
+
     } /* for iTS < nStacks */
+
+  /* free segment list */
+  if ( usefulParams.segmentList )
+    if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+  XLALFree ( usefulParams.segmentList );
+  usefulParams.segmentList = NULL;
+
 
   /* special treatment of SFTs if upsampling is used */
   if ( uvar_sftUpsampling > 1 )
@@ -2626,13 +2642,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
         } /* while true */
 
-      /* check the number of SFTs we found in this segment against the nominal value,
-       * stored in the segment list field 'id' */
       INT4 numSFTsInSeg = iSFT1 - iSFT0 + 1;
-      if ( numSFTsInSeg != thisSeg->id ) {
-        XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iSeg, numSFTsInSeg, thisSeg->id );
-        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
-      }
 
       /* ----- allocate and copy this range of SFTs into the segmented catalog */
       stacks->data[iSeg].length = (UINT4)numSFTsInSeg;
