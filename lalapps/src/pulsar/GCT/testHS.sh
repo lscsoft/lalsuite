@@ -30,7 +30,7 @@ else
 fi
 
 SFTdir="TestSFTs"
-SFTfiles="$SFTdir${dirsep}*"
+SFTfiles="$SFTdir${dirsep}*.sft"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -67,8 +67,9 @@ DeltaSearch=$Delta
 skygridfile="tmpskygridfile.dat"
 echo $AlphaSearch" "$DeltaSearch > $skygridfile
 
-mfd_FreqBand="2.0"
-mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
+mfd_FreqBand=0.20;
+mfd_fmin=100;
+numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
 
 gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
@@ -143,33 +144,40 @@ else
     rm -f $SFTdir/*;
 fi
 
-# construct MFD cmd for H1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=H1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
+FreqStep=`echo $mfd_FreqBand $numFreqBands | LC_ALL=C awk '{print $1 / $2}'`
+mfd_fBand=`echo $FreqStep $Tsft | LC_ALL=C awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
+iFreq=1
+while [ "$iFreq" -le "$numFreqBands" ]; do
+    mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | LC_ALL=C awk '{print $1 + ($2 - 1) * $3}'`
 
-if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
-fi
+    # construct common MFD cmd
+    mfd_CL_common=" --fmin=$mfd_fi --Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
 
-cmdline="$mfd_code $mfd_CL";
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
+    if [ "$haveNoise" = true ]; then
+        mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
+    fi
 
-# construct MFD cmd for L1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=1001"
+    # for H1:
+    outName="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft";
+    cmdline="$mfd_code $mfd_CL_common --IFO=H1 --outSFTbname=${outName}";
+    echo $cmdline;
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$mfd_code' ..."
+        exit 1
+    fi
 
-if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
-fi
+    # for L1:
+    outName="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft";
+    cmdline="$mfd_code $mfd_CL_common --IFO=L1 --outSFTbname=${outName}";
+    echo $cmdline;
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$mfd_code' ..."
+        exit 1
+    fi
 
-cmdline="$mfd_code $mfd_CL";
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
+    iFreq=$(( $iFreq + 1 ))
+
+done
 
 
 echo
