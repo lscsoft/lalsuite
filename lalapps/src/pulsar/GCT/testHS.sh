@@ -158,19 +158,17 @@ while [ "$iFreq" -le "$numFreqBands" ]; do
     fi
 
     # for H1:
-    outName="${SFTdir}${dirsep}H1-${mfd_fi}_${FreqStep}.sft";
-    cmdline="$mfd_code $mfd_CL_common --IFO=H1 --outSFTbname=${outName}";
-    echo $cmdline;
-    if ! eval $cmdline; then
+    cmdline="$mfd_code $mfd_CL_common --IFO=H1 --outSFTbname=${SFTdir}\\${dirsep}H1-${mfd_fi}_${FreqStep}.sft";
+    echo "$cmdline";
+    if ! eval "$cmdline"; then
         echo "Error.. something failed when running '$mfd_code' ..."
         exit 1
     fi
 
     # for L1:
-    outName="${SFTdir}${dirsep}L1-${mfd_fi}_${FreqStep}.sft";
-    cmdline="$mfd_code $mfd_CL_common --IFO=L1 --outSFTbname=${outName}";
-    echo $cmdline;
-    if ! eval $cmdline; then
+    cmdline="$mfd_code $mfd_CL_common --IFO=L1 --outSFTbname=${SFTdir}\\${dirsep}L1-${mfd_fi}_${FreqStep}.sft";
+    echo "$cmdline";
+    if ! eval "$cmdline"; then
         echo "Error.. something failed when running '$mfd_code' ..."
         exit 1
     fi
