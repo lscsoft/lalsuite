@@ -56,13 +56,6 @@ extern "C" {
 /** define macros */
 #define ROUND(x) (floor(x+0.5))
 
-/* macro to perform logarithmic addition log(exp(x) + exp(y)) */
-#define PLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
-
-/* macro to calculate the area of a trapezium for on logs */
-/* logarea = log(0.5) + log(width) + log(exp(logHeight1) + exp(logHeight2)) */
-#define LOG_TRAPEZIUM(h1, h2, w) ( -0.693147180559945 + log(w) + PLUS(h1, h2) )
-
 #define MAXLENGTH 1000000
 
 #define SIXTH 0.166666666666666666666666666666666666666667L
