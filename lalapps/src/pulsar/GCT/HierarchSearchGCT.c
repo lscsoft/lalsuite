@@ -2497,8 +2497,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
       REAL8 t0, t1, TspanHours;
       INT4 NSFT;
       LALSeg thisSeg;
-      if ( sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d\n", &t0, &t1, &TspanHours, &NSFT ) != 4 ) {
-        XLALPrintError ("%s: failed to parse data-line %d in segment-list %s: '%s'\n", fn, iSeg, fname, flines->lines->tokens[iSeg] );
+      int ret;
+      ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
+      if ( ret != 4 ) {
+        XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", fn, iSeg, ret, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
         XLALDestroyParsedDataFile ( &flines );
