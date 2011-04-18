@@ -61,7 +61,8 @@ void LALTaylorT4Waveform (
 
 void LALTaylorT4WaveformEngine (
   LALStatus        *status,
-  REAL4Vector      *signalvec,
+  REAL4Vector      *signalvec1,
+  REAL4Vector      *signalvec2,
   REAL4Vector      *a,
   REAL4Vector      *ff,
   REAL8Vector      *phi,
@@ -305,11 +306,55 @@ void LALTaylorT4Waveform (
 
    /* Call the engine function */
    LALTaylorT4WaveformEngine(status->statusPtr, signalvec,
-             NULL, NULL, NULL, &count, params, &paramsInit);
+             NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
+}
+
+void
+LALTaylorT4WaveformTemplates(
+   LALStatus        *status,
+   REAL4Vector      *signalvec1,
+   REAL4Vector      *signalvec2,
+   InspiralTemplate *params
+   )
+
+{
+
+  UINT4 count;
+
+  InspiralInit paramsInit;
+
+  INITSTATUS (status, "LALTaylorT4WaveformTemplates", LALTAYLORT4WAVEFORMC);
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(signalvec2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  /* Compute some parameters*/
+  LALInspiralInit(status->statusPtr, params, &paramsInit);
+  CHECKSTATUSPTR(status);
+
+  /* Initialise the waveforms to zero */
+  memset(signalvec1->data, 0, signalvec1->length * sizeof(REAL4));
+  memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
+
+  /* Call the engine function */
+  LALTaylorT4WaveformEngine(status->statusPtr, signalvec1, signalvec2, NULL, NULL,
+                             NULL, &count, params, &paramsInit);
+
+  CHECKSTATUSPTR(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 void
@@ -370,7 +415,7 @@ LALTaylorT4WaveformForInjection(
   }
 
   /* Call the engine function */
-  LALTaylorT4WaveformEngine(status->statusPtr, NULL, a, ff,
+  LALTaylorT4WaveformEngine(status->statusPtr, NULL, NULL, a, ff,
                              phi, &count, params, &paramsInit);
   BEGINFAIL( status )
   {
@@ -481,7 +526,8 @@ LALTaylorT4WaveformForInjection(
 void
 LALTaylorT4WaveformEngine (
                 LALStatus        *status,
-                REAL4Vector      *signalvec,
+                REAL4Vector      *signalvec1,
+                REAL4Vector      *signalvec2,
                 REAL4Vector      *a,
                 REAL4Vector      *ff,
                 REAL8Vector      *phiVec,
@@ -519,8 +565,14 @@ LALTaylorT4WaveformEngine (
    INITSTATUS(status, "LALTaylorT4WaveformEngine", LALTAYLORT4WAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT( signalvec || ( ff && a && phiVec ), status,
+   ASSERT( signalvec1 || ( ff && a && phiVec ), status,
             LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+
+   ASSERT( params->distance, status,
+            LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+
+   ASSERT( params->distance > 0, status,
+            LALINSPIRALH_EDIV0, LALINSPIRALH_MSGEDIV0 );
 
 /* Allocate all the memory required to dummy and then point the various
    arrays to dummy - this makes it easier to handle memory failures */
@@ -546,31 +598,28 @@ LALTaylorT4WaveformEngine (
    dyt.data       = &dummy.data[5*nn];
 
 
-   if ( a )
-   {
-      mTot   = params->mass1 + params->mass2;
-      etab   = params->mass1 * params->mass2;
-      etab  /= mTot;
-      etab  /= mTot;
-      unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
-      cosI   = cos( params->inclination );
-      mu     = etab * mTot;
-      fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-      f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
-      apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-      apFac *= 1.0 + cosI*cosI;
-      acFac *= 2.0*cosI;
-      params->nStartPad = 0;
-   }
+   mTot   = params->mass1 + params->mass2;
+   etab   = params->mass1 * params->mass2;
+   etab  /= mTot;
+   etab  /= mTot;
+   unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
+   cosI   = cos( params->inclination );
+   mu     = etab * mTot;
+   fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+   f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
+   apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+   apFac *= 1.0 + cosI*cosI;
+   acFac *= 2.0*cosI;
+   params->nStartPad = 0;
 
    /* Set dt to sampling interval specified by user */
 
    dt = 1./params->tSampling;
    ak   = paramsInit->ak;
    func = paramsInit->func;
-   if ( signalvec )
+   if ( signalvec1 )
    {
-     length = signalvec->length;
+     length = signalvec1->length;
    }
    else
    {
@@ -656,9 +705,13 @@ LALTaylorT4WaveformEngine (
       }
 
       h = 4 * m * eta * v*v * cos(2.*phi);
-      if ( signalvec )
+      if ( signalvec1 )
       {
-        signalvec->data[ndx] = h;
+        signalvec1->data[ndx] = apFac * v*v * cos(2.*phi);
+        if ( signalvec2 )
+        {
+          signalvec2->data[ndx] = apFac * v*v * cos(2.*phi + LAL_PI_2);
+        }
       }
       else if (a)
       {
