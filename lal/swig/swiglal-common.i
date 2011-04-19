@@ -1099,3 +1099,25 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 %define SWIGLAL_DYNAMIC_2DARRAY_END(TYPE, DATA, NI, NJ)
   swiglal_dynamic_matrix_end(TYPE, DATA, NJ, NJ)
 %enddef
+
+/////////////// Additional typemaps / interface code ///////////////
+
+// Make the wrapping of printf-style LAL functions a little
+// safer, as suggested in the SWIG 1.3 documentation (section 13.5).
+// These functions should now be safely able to print any string.
+%typemap(in, fragment="SWIG_AsCharPtrAndSize") (const char *format, ...) (char fmt[] = "%s", char *str = 0, int alloc = 0) {
+  $1 = fmt;
+  int ecode = SWIG_AsCharPtrAndSize($input, &str, NULL, &alloc);
+  if (!SWIG_IsOK(ecode)) {
+    %argument_fail(ecode, "const char*, ...", $symname, $argnum);
+  }
+  $2 = (void *) str;
+}
+%typemap(freearg, match="in") (const char *format, ...) {
+  if (SWIG_IsNewObj(alloc$argnum)) {
+    %delete_array(str$argnum);
+  }
+}
+// Assumes that all printf-style LAL functions name the format
+// string either "format" or "fmt" in the header files.
+%apply (const char *format, ...) { (const char *fmt, ...) };
