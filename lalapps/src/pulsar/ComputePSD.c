@@ -106,8 +106,8 @@ typedef struct
   REAL8 Freq;		/**< *physical* start frequency to compute PSD for (excluding rngmed wings) */
   REAL8 FreqBand;	/**< *physical* frequency band to compute PSD for (excluding rngmed wings) */
 
-  REAL8 startTime;
-  REAL8 endTime;
+  REAL8 startTime;	/**< earliest SFT-timestamp to include */
+  REAL8 endTime;	/**< last SFT-timestamp to include */
   CHAR *IFO;
   CHAR  *timeStampsFile;
   LALStringVector *linefiles;
@@ -594,8 +594,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregREALUserStruct  (Freq,              0,  UVAR_OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
   XLALregREALUserStruct  (FreqBand,          0,  UVAR_OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
 
-  XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS start time");
-  XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS end time");
+  XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS timestamp of earliest SFT to include");
+  XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS timestamp of last SFT to include (NOTE: this refers to the SFT start-time!)");
   XLALregSTRINGUserStruct(timeStampsFile,   't', UVAR_OPTIONAL, "Time-stamps file");
   XLALregSTRINGUserStruct(IFO,               0 , UVAR_OPTIONAL, "Detector filter");
 
@@ -1233,11 +1233,11 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
           XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
 
           int cmp1 = XLALGPSInSeg ( &gpsStart, &segment );
-          int cmp2 = XLALGPSInSeg ( &gpsStart, &segment );
+          int cmp2 = XLALGPSInSeg ( &gpsEnd, &segment );
 
-          if ( cmp2 < 0 )	/* SFT be segment => advance to the next one */
+          if ( cmp2 < 0 )	/* SFT-end before segment => advance to the next one */
             continue;
-          if ( cmp1 > 0 )	/* found SFT past end of segment: ==> terminate loop */
+          if ( cmp1 > 0 )	/* SFT-start past end of segment: ==> terminate loop */
             break;
 
           if ( (cmp1 == 0) && (cmp2 == 0) )	/* this SFT is inside segment */
