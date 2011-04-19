@@ -28,8 +28,7 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="ReadNoiseSpectrumHV">
+/* <lalVerbatim file="ReadNoiseSpectrumHV">
 Author: Brady, P. R.
 $Id$
 </lalVerbatim>
@@ -46,8 +45,7 @@ a frequency series.
 #include <lal/ReadNoiseSpectrum.h>
 \end{verbatim}
 
-</lalLaTeX>
-#endif
+</lalLaTeX> */
 
 #ifndef _READNOISESPECTRUMH_H
 #define _READNOISESPECTRUMH_H
@@ -91,12 +89,10 @@ void LALReadNoiseSpectrum(
     CHAR *fname
     );
 
-#if 0
-<lalLaTeX>
+/* <lalLaTeX>
 \vfill{\footnotesize\input{ReadNoiseSpectrumHV}}
 \newpage\input{ReadNoiseSpectrumC}
 </lalLaTeX> */
-#endif
 
 #if 0
 { /* so that editors will match succeeding brace */
