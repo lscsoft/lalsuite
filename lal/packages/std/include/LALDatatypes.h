@@ -1719,6 +1719,7 @@ sequence.
 
 </lalLaTeX> */
 
+#ifndef SWIG /* exclude from SWIG interface */
 typedef struct
 tagLALStatus
 {
@@ -1732,6 +1733,7 @@ tagLALStatus
   INT4                 level;
 }
 LALStatus;
+#endif /* SWIG */
 
 
 /* <lalLaTeX>

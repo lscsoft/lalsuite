@@ -24,23 +24,23 @@
 #include <LALVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalVCSVersion = LAL_VERSION;
-const char *lalVCSId = LAL_VCS_ID;
-const char *lalVCSDate = LAL_VCS_DATE;
-const char *lalVCSBranch = LAL_VCS_BRANCH;
-const char *lalVCSTag = LAL_VCS_TAG;
-const char *lalVCSAuthor = LAL_VCS_AUTHOR;
-const char *lalVCSCommitter = LAL_VCS_COMMITTER;
-const char *lalVCSStatus = LAL_VCS_STATUS;
+const char *const lalVCSVersion = LAL_VERSION;
+const char *const lalVCSId = LAL_VCS_ID;
+const char *const lalVCSDate = LAL_VCS_DATE;
+const char *const lalVCSBranch = LAL_VCS_BRANCH;
+const char *const lalVCSTag = LAL_VCS_TAG;
+const char *const lalVCSAuthor = LAL_VCS_AUTHOR;
+const char *const lalVCSCommitter = LAL_VCS_COMMITTER;
+const char *const lalVCSStatus = LAL_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalVCSIdentId = LAL_VCS_IDENT_ID;
-const char *lalVCSIdentDate = LAL_VCS_IDENT_DATE;
-const char *lalVCSIdentBranch = LAL_VCS_IDENT_BRANCH;
-const char *lalVCSIdentTag = LAL_VCS_IDENT_TAG;
-const char *lalVCSIdentAuthor = LAL_VCS_IDENT_AUTHOR;
-const char *lalVCSIdentCommitter = LAL_VCS_IDENT_COMMITTER;
-const char *lalVCSIdentStatus = LAL_VCS_IDENT_STATUS;
+const char *const lalVCSIdentId = LAL_VCS_IDENT_ID;
+const char *const lalVCSIdentDate = LAL_VCS_IDENT_DATE;
+const char *const lalVCSIdentBranch = LAL_VCS_IDENT_BRANCH;
+const char *const lalVCSIdentTag = LAL_VCS_IDENT_TAG;
+const char *const lalVCSIdentAuthor = LAL_VCS_IDENT_AUTHOR;
+const char *const lalVCSIdentCommitter = LAL_VCS_IDENT_COMMITTER;
+const char *const lalVCSIdentStatus = LAL_VCS_IDENT_STATUS;
 
 /* library vcs information structure */
 struct tagLALVCSInfo lalVCSInfo = { \

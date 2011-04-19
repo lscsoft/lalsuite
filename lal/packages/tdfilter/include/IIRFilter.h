@@ -160,6 +160,9 @@ gives the order of the filter.  The fields are:
 
 ******************************************************* </lalLaTeX> */
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL4IIRFilter::name;
+#endif /* SWIG */
 typedef struct tagREAL4IIRFilter{
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
@@ -168,6 +171,9 @@ typedef struct tagREAL4IIRFilter{
   REAL4Vector *history;    /* The previous values of w. */
 } REAL4IIRFilter;
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL8IIRFilter::name;
+#endif /* SWIG */
 typedef struct tagREAL8IIRFilter{
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */

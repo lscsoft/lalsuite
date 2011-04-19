@@ -311,6 +311,7 @@ LALParseUnitString ( LALStatus *status,
 		     LALUnit *output,
 		     const CHARVector *input );
 
+#ifndef SWIG /* exclude from SWIG interface */
 enum { LALUnitNameSize = sizeof("strain") };
 enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"s^-32768/32767 A^-32768/32767 "
@@ -318,6 +319,7 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"count^-32768/32767") };
 
 extern const CHAR lalUnitName[LALNumUnits][LALUnitNameSize];
+#endif /* SWIG */
 
 /*********************************************************
  *                                                       *

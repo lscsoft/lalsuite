@@ -56,7 +56,12 @@ typedef enum {
 
 /** This structure defines a config-variable to be read in using the
  * general-purpose reading function LALReadConfigVariable(). */
-typedef struct {
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::secName;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::varName;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALConfigVar::fmt;
+#endif /* SWIG */
+typedef struct tagLALConfigVar {
   const CHAR *secName;          /**< Section name within which to find varName.  May be NULL */
   const CHAR *varName;		/**< Variable-name to be read in the config-file */
   const CHAR *fmt;		/**< Format string for reading (<tt>sscanf()</tt>-style) */
