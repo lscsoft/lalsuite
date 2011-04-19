@@ -87,9 +87,10 @@ h_\times(t) & = & A_\times \sin\phi(t) \;.
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( GENERATETAYLORCWH, "$Id$" );
@@ -198,8 +199,9 @@ LALGenerateTaylorCW( LALStatus          *,
 \newpage\input{SimulateTaylorCWTestC}
 </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

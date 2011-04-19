@@ -23,6 +23,10 @@ liblalframe_la_SOURCES = \
 	LALFrameIO.c \
 	LALFrameVCSInfo.c
 
+noinst_HEADERS = \
+	FrameSeriesRead_source.c \
+	FrameSeriesWrite_source.c
+
 liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
@@ -79,16 +83,8 @@ lalframe-user-env.csh: Makefile
 
 EXTRA_DIST = \
 	generate_vcs_info.py \
-	FrameSeries.m4 \
-	FrameSeriesRead.m4 \
-	FrameSeriesWrite.m4 \
 	LALFrameConfig.h.in \
 	LALFrameVCSInfo.h.in
-
-MAINTAINERCLEANFILES = FrameSeries.c
-
-FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
-	cd $(srcdir) && m4 FrameSeries.m4 > FrameSeries.c
 
 LALFrameVCSInfo.h: ._vcsinfo
 

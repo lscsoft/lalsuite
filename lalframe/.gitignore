@@ -19,7 +19,6 @@ lalframe-*.tar.gz
 lalframe.pc
 lalframe.spec
 libtool
-src/FrameSeries.c
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
 src/lalframe-user-env.csh

@@ -39,9 +39,10 @@
 
 NRCSID( AUDIOH, "$Id$" );
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /** Records a time series as a .wav audio file */
@@ -56,8 +57,9 @@ int XLALAudioAURecordREAL4TimeSeries( FILE *fp, REAL4TimeSeries *series );
 /** Records a time series as a .au audio file */
 int XLALAudioAURecordREAL8TimeSeries( FILE *fp, REAL8TimeSeries *series );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

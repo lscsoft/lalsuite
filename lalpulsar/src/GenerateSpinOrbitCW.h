@@ -226,9 +226,10 @@ parabolic orbits, and negative (unbounded) for hyperbolic orbits.
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( GENERATESPINORBITCWH, "$Id$" );
@@ -409,8 +410,9 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
 %\newpage\input{SimulateSpinOrbitCWTestC}
 </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

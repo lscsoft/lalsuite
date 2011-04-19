@@ -41,9 +41,10 @@
 
 NRCSID (CALIBRATIONH,"$Id$");
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma } /** to match the previous brace **/
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 /**** <lalLaTeX>
@@ -363,8 +364,9 @@ int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
 
-#ifdef  __cplusplus
-#pragma { /** to match the next brace **/
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

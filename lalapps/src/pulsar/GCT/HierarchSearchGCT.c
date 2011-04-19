@@ -35,6 +35,8 @@
 
 #include "HierarchSearchGCT.h"
 
+#include "LineVeto.h"
+
 #ifdef GC_SSE2_OPT
 #include <gc_hotloop_sse2.h>
 #else
@@ -178,7 +180,7 @@ int MAIN( int argc, char *argv[]) {
   LALStatus status = blank_status;
 
   /* temp loop variables: generally k loops over segments and j over SFTs in a stack */
-  INT4 j;
+  UINT4 j;
   UINT4 k;
   UINT4 skyGridCounter; /* coarse sky position counter */
   UINT4 f1dotGridCounter; /* coarse f1dot position counter */
@@ -309,6 +311,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_useResamp = FALSE;      /* use resampling to compute F-statistic instead of SFT method */
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
   BOOLEAN uvar_SepDetVeto = FALSE;     /* Do separate detector analysis for the top candidate */
+  BOOLEAN uvar_outputFX = FALSE;       /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
 
   REAL8 uvar_dAlpha = DALPHA; 	/* resolution for flat or isotropic grids -- coarse grid*/
   REAL8 uvar_dDelta = DDELTA;
@@ -446,6 +449,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "SepDetVeto",   0, UVAR_OPTIONAL,  "Separate detector veto with top candidate", &uvar_SepDetVeto), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "outputFX",     0, UVAR_OPTIONAL,  "Additional analysis for toplist candidates, output 2F, 2FX", &uvar_outputFX), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
 
@@ -661,13 +665,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams), &status);
   LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
-  /* free segment list */
-  if ( usefulParams.segmentList )
-    if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
-      XLAL_ERROR ( fn, XLAL_EFUNC );
-  XLALFree ( usefulParams.segmentList );
-  usefulParams.segmentList = NULL;
-
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
@@ -683,14 +680,37 @@ int MAIN( int argc, char *argv[]) {
   firstSFT = &(stackMultiSFT.data[0]->data[0]->data[0]); /* use  first SFT from  first detector */
   Tsft = 1.0 / firstSFT->deltaF; /* define the length of an SFT (assuming 1/Tsft resolution) */
 
-  /* count the total number of SFTs used */
+  /* count the total and per-segment number of SFTs used */
   UINT4 iTS, nSFTs = 0;
   for ( iTS = 0; iTS < nStacks; iTS ++ )
     {
       UINT4 X;
+      UINT4 nSFTsInSeg = 0;
       for ( X=0; X < stackMultiSFT.data[iTS]->length; X ++ )
-        nSFTs += stackMultiSFT.data[iTS]->data[X]->length;
+        nSFTsInSeg += stackMultiSFT.data[iTS]->data[X]->length;
+      nSFTs += nSFTsInSeg;
+      /* if we have a segment-list: double-check number of SFTs */
+      if ( usefulParams.segmentList )
+        {
+          /* check the number of SFTs we found in this segment against the nominal value,
+           * stored in the segment list field 'id' */
+          UINT4 nSFTsExpected = usefulParams.segmentList->segs[iTS].id;
+          if ( nSFTsInSeg != nSFTsExpected ) {
+            XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iTS, nSFTsInSeg, nSFTsExpected );
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
+
+        } /* if have segmentList */
+
     } /* for iTS < nStacks */
+
+  /* free segment list */
+  if ( usefulParams.segmentList )
+    if ( XLALSegListClear( usefulParams.segmentList ) != XLAL_SUCCESS )
+      XLAL_ERROR ( fn, XLAL_EFUNC );
+  XLALFree ( usefulParams.segmentList );
+  usefulParams.segmentList = NULL;
+
 
   /* special treatment of SFTs if upsampling is used */
   if ( uvar_sftUpsampling > 1 )
@@ -778,7 +798,7 @@ int MAIN( int argc, char *argv[]) {
   for (k = 0; k < nStacks; k++) {
 
     LogPrintf(LOG_DETAIL, "Segment %d ", k+1);
-    for ( j = 0; j < (INT4)stackMultiSFT.data[k]->length; j++) {
+    for ( j = 0; j < stackMultiSFT.data[k]->length; j++) {
 
       INT4 tmpVar = stackMultiSFT.data[k]->data[j]->length;
       LogPrintfVerbatim(LOG_DETAIL, "%s: %d  ", stackMultiSFT.data[k]->data[j]->data[0].name, tmpVar);
@@ -909,8 +929,12 @@ int MAIN( int argc, char *argv[]) {
   }
 
 
-
-  REAL8 timeStart = XLALGetTimeOfDay();
+  /* timing */
+  REAL8 timeStart = 0.0, timeEnd = 0.0;
+  REAL8 coherentTime = 0.0, incoherentTime = 0.0, vetoTime = 0.0;
+  REAL8 timeStamp1, timeStamp2;
+  if ( uvar_outputTiming )
+    timeStart = XLALGetTimeOfDay();
 
  /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
@@ -1169,6 +1193,10 @@ int MAIN( int argc, char *argv[]) {
           u2win = df1dot;
           u2winInv = 1.0/u2win; */
 
+	  /* timing */
+	  if ( uvar_outputTiming )
+	    timeStamp1 = XLALGetTimeOfDay();
+
           /* ----------------------------------------------------------------- */
           /************************ Compute F-Statistic ************************/
 
@@ -1281,6 +1309,13 @@ int MAIN( int argc, char *argv[]) {
           /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
           /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
+	  /* timing */
+	  if ( uvar_outputTiming ) {
+	    timeStamp2 = XLALGetTimeOfDay();
+	    coherentTime += timeStamp2 - timeStamp1;
+	    timeStamp1 = timeStamp2;
+	  }
+
           /* ---------- Walk through fine grid and map to coarse grid --------------- */
           ifine = 0;
 
@@ -1338,6 +1373,13 @@ int MAIN( int argc, char *argv[]) {
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1));
 #endif
 #endif
+
+	  /* timing */
+	  if ( uvar_outputTiming ) {
+	    timeStamp2 = XLALGetTimeOfDay();
+	    incoherentTime += timeStamp2 - timeStamp1;
+	  }
+
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
         /* ############################################################### */
@@ -1382,8 +1424,34 @@ int MAIN( int argc, char *argv[]) {
   } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
-  REAL8 timeEnd = XLALGetTimeOfDay();
+  /* timing */
+  if ( uvar_outputTiming )
+    timeEnd = XLALGetTimeOfDay();
+
   UINT4 Nrefine = nf1dots_fg;
+
+  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
+
+  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
+  if ( uvar_outputFX ) {
+    /* timing */
+    if ( uvar_outputTiming )
+      timeStamp1 = XLALGetTimeOfDay();
+
+    xlalErrno = 0;
+    XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
+    if ( xlalErrno != 0 ) {
+      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
+      return(HIERARCHICALSEARCH_EXLAL);
+    }
+
+    /* timing */
+    if ( uvar_outputTiming ) {
+      timeStamp2 = XLALGetTimeOfDay();
+      vetoTime = timeStamp2 - timeStamp1;
+    }
+  }
+
   if ( uvar_outputTiming )
     {
       FILE *timing_fp = fopen ( uvar_outputTiming, "ab" );
@@ -1392,12 +1460,11 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       REAL8 tau = timeEnd - timeStart;
-      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f\n",
-                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
+      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f	%f	%f	%f\n",
+                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
+		nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime );
       fclose ( timing_fp );
     }
-
-  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
@@ -1649,8 +1716,6 @@ int MAIN( int argc, char *argv[]) {
     LALFree(coarsegrid.Uindex);
   }
 
-
-  /* free candidate toplist */
   free_gctFStat_toplist(&semiCohToplist);
 
   LAL_CALL (LALDestroyUserVars(&status), &status);
@@ -2233,6 +2298,12 @@ void UpdateSemiCohToplist(LALStatus *status,
       line.nc = in->nc[ifine];
       line.sumTwoF = (in->sumTwoF[ifine]) / Nsegments; /* save the average 2F value */
 
+      /* initialize LV postprocessing entries to zero.
+       * This will be filled later, if user requested it.
+       */
+      line.sumTwoFnew = -1;    	/* sum of 2F-values as recomputed in LV postprocessing */
+      line.sumTwoFX = NULL; 	/* sum of 2F-values per detector, computed in LV postprocessing */
+
       debug = insert_into_gctFStat_toplist( list, line);
 
       ifine++;
@@ -2481,8 +2552,10 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
       REAL8 t0, t1, TspanHours;
       INT4 NSFT;
       LALSeg thisSeg;
-      if ( sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d\n", &t0, &t1, &TspanHours, &NSFT ) != 4 ) {
-        XLALPrintError ("%s: failed to parse data-line %d in segment-list %s: '%s'\n", fn, iSeg, fname, flines->lines->tokens[iSeg] );
+      int ret;
+      ret = sscanf ( flines->lines->tokens[iSeg], "%lf %lf %lf %d", &t0, &t1, &TspanHours, &NSFT );
+      if ( ret != 4 ) {
+        XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", fn, iSeg, ret, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
         XLALDestroyParsedDataFile ( &flines );
@@ -2626,13 +2699,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
 
         } /* while true */
 
-      /* check the number of SFTs we found in this segment against the nominal value,
-       * stored in the segment list field 'id' */
       INT4 numSFTsInSeg = iSFT1 - iSFT0 + 1;
-      if ( numSFTsInSeg != thisSeg->id ) {
-        XLALPrintError ("%s: Segment list seems inconsistent with data read: segment %d contains %d SFTs, should hold %d SFTs\n", fn, iSeg, numSFTsInSeg, thisSeg->id );
-        XLAL_ERROR_NULL ( fn, XLAL_EDOM );
-      }
 
       /* ----- allocate and copy this range of SFTs into the segmented catalog */
       stacks->data[iSeg].length = (UINT4)numSFTsInSeg;

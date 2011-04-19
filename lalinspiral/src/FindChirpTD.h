@@ -60,9 +60,10 @@ and generate binary inspiral chirps using time domain waveforms.
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
@@ -158,8 +159,9 @@ LALFindChirpTDNormalize(
     );
 
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

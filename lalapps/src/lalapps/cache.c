@@ -24,7 +24,7 @@ int main( int argc, char *argv[] )
 		XLALDestroyCache( add );
 		XLALDestroyCache( tmp );
 	}
-	XLALCacheFileWrite( outfile ? outfile : lalstdout, cache );
+	XLALCacheFileWrite( outfile ? outfile : LALSTDOUT, cache );
 	XLALFileClose( outfile );
 	XLALDestroyCache( cache );
 	LALCheckMemoryLeaks();

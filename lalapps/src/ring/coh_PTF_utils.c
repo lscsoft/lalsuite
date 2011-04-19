@@ -946,8 +946,8 @@ void timeval_print(struct timeval *tv)
   char buffer[30];
   time_t curtime;
 
-  printf("%ld.%06ld", tv->tv_sec, tv->tv_usec);
+  printf("%ld.%06ld", (long)tv->tv_sec, (long)tv->tv_usec);
   curtime = tv->tv_sec;
   strftime(buffer, 30, "%m-%d-%Y  %T", localtime(&curtime));
-  printf(" = %s.%06ld\n", buffer, tv->tv_usec);
+  printf(" = %s.%06ld\n", buffer, (long)tv->tv_usec);
 }

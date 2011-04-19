@@ -48,9 +48,10 @@
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( FRAMESTREAMH, "$Id$" );
@@ -691,8 +692,9 @@ LALFrWriteCOMPLEX16FrequencySeries(
     INT4             subtype
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

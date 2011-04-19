@@ -23,7 +23,7 @@
 #include "GCTtoplist.h"
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
-
+#include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
@@ -205,8 +205,21 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
 
 /* frees the space occupied by the toplist */
 void free_gctFStat_toplist(toplist_t**l) {
+
+  /* special handling of sumTwoFX entries, which are REAL4Vectors
+   * and need to be free'ed first if they are non-NULL
+   */
+  UINT4 i;
+  for (i = 0; i < (*l)->elems; i++ )
+    {
+      GCTtopOutputEntry *elem = toplist_elem ( (*l), i );
+      XLALDestroyREAL4Vector ( elem->sumTwoFX );
+    } /* for cand < numCands */
+
+  /* free the rest of the toplist and the 'container' */
   free_toplist(l);
-}
+
+} /* free_gctFStat_toplist() */
 
 
 /* Inserts an element in to the toplist either if there is space left
@@ -235,21 +248,49 @@ void sort_gctFStat_toplist_strongest(toplist_t*l) {
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
-  return(snprintf(buf, buflen,
+  const char *fn = __func__;
+
+  /* add extra output-field containing sumTwoFnew and per-detector sumTwoFX if non-NULL */
+  char extraFStr[256] = "";	/* defaults to empty */
+  char buf0[256];
+  if ( fline.sumTwoFX )
+    {
+      snprintf ( extraFStr, sizeof(extraFStr), " %.6f", fline.sumTwoFnew );
+      UINT4 numDet = fline.sumTwoFX->length;
+      UINT4 X;
+      for ( X = 0; X < numDet ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX->data[X] );
+          UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( extraFStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
+            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( extraFStr, buf0 );
+        } /* for X < numDet */
+
+    } /* if sumTwoFX */
+
+  int len = snprintf(buf, buflen,
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.14f %.7f %.7f %.12g %d %.6f\n",
+                     "%.16f %.7f %.7f %.12g %d %.6f%s\n",
 #else
-                     "%.14g %.13g %.13g %.13g %d %.6f\n",
+                     "%.16g %.13g %.13g %.13g %d %.6f%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
                      fline.F1dot,
                      fline.nc,
-                     fline.sumTwoF));
-}
+                     fline.sumTwoF,
+                     extraFStr
+                 );
+
+  return len;
+
+} /* print_gctFStatline_to_str() */
 
 
 

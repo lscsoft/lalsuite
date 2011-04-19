@@ -1,51 +1,28 @@
-dnl $Id$
-dnl
-dnl Copyright (C) 2007  Jolien Creighton, and Duncan Brown, and Xavier Siemens,
-dnl and Kipp Cannon
-dnl
-dnl This program is free software; you can redistribute it and/or modify it
-dnl under the terms of the GNU General Public License as published by the
-dnl Free Software Foundation; either version 2 of the License, or (at your
-dnl option) any later version.
-dnl
-dnl This program is distributed in the hope that it will be useful, but
-dnl WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-dnl Public License for more details.
-dnl
-dnl You should have received a copy of the GNU General Public License along
-dnl with this program; if not, write to the Free Software Foundation, Inc.,
-dnl 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRING(a) #a
 
-ifelse(TYPE,`COMPLEX16',`define(`FRTYPE',`FR_VECT_16C')')
-ifelse(TYPE,`COMPLEX8',`define(`FRTYPE',`FR_VECT_8C')')
-ifelse(TYPE,`REAL8',`define(`FRTYPE',`FR_VECT_8R')')
-ifelse(TYPE,`REAL4',`define(`FRTYPE',`FR_VECT_4R')')
-ifelse(TYPE,`INT8',`define(`FRTYPE',`FR_VECT_8S')')
-ifelse(TYPE,`INT4',`define(`FRTYPE',`FR_VECT_4S')')
-ifelse(TYPE,`INT2',`define(`FRTYPE',`FR_VECT_2S')')
+#define STYPE CONCAT2(TYPE,TimeSeries)
+#define FSTYPE CONCAT2(TYPE,FrequencySeries)
 
-ifelse(TYPE,`COMPLEX16',`define(`FRDATA',`dataD')')
-ifelse(TYPE,`COMPLEX8',`define(`FRDATA',`dataF')')
-ifelse(TYPE,`REAL8',`define(`FRDATA',`dataD')')
-ifelse(TYPE,`REAL4',`define(`FRDATA',`dataF')')
-ifelse(TYPE,`INT8',`define(`FRDATA',`dataL')')
-ifelse(TYPE,`INT4',`define(`FRDATA',`dataI')')
-ifelse(TYPE,`INT2',`define(`FRDATA',`dataS')')
+#define XFUNC CONCAT2(XLALFrGet,STYPE)
+#define XFUNCM CONCAT3(XLALFrGet,STYPE,Metadata)
+#define FUNC CONCAT2(LALFrGet,STYPE)
+#define FUNCM CONCAT3(LALFrGet,STYPE,Metadata)
+#define XFSFUNC CONCAT2(XLALFrGet,FSTYPE)
+#define FSFUNC CONCAT2(LALFrGet,FSTYPE)
+#define XRFUNC CONCAT2(XLALFrRead,STYPE)
+#define XCFUNC CONCAT2(XLALCreate,STYPE)
+#define XDFUNC CONCAT2(XLALDestroy,STYPE)
+#define XREFUNC CONCAT2(XLALResize,STYPE)
 
-define(`STYPE',`format(`%sTimeSeries',TYPE)')
-define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
-define(`XFUNC',`format(`XLALFrGet%s',STYPE)')
-define(`XFUNCM',`format(`XLALFrGet%sMetadata',STYPE)')
-define(`FUNC',`format(`LALFrGet%s',STYPE)')
-define(`FUNCM',`format(`LALFrGet%sMetadata',STYPE)')
-define(`XFSFUNC',`format(`XLALFrGet%s',FSTYPE)')
-define(`FSFUNC',`format(`LALFrGet%s',FSTYPE)')
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 int XFSFUNC ( FSTYPE *series, FrStream *stream )
 { /* </lalVerbatim> */
-  static const char func[] = "XFSFUNC";
+  static const char func[] = STRING(XFSFUNC);
   struct FrVect	*vect;
 
   if ( stream->state & LAL_FR_ERR )
@@ -100,7 +77,7 @@ FSFUNC (
     )
 { /* </lalVerbatim> */
   struct FrVect	*vect;
-  INITSTATUS( status, "FSFUNC", FRAMESERIESC );
+  INITSTATUS( status, STRING(FSFUNC), FRAMESERIESC );
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! series->data, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -159,7 +136,7 @@ FSFUNC (
 
 int XFUNCM ( STYPE *series, FrStream *stream )
 {
-  static const char func[] = "XFUNCM";
+  static const char func[] = STRING(XFUNCM);
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 noff;
@@ -211,7 +188,7 @@ int XFUNCM ( STYPE *series, FrStream *stream )
 
 int XFUNC ( STYPE *series, FrStream *stream )
 {
-  static const char func[] = "XFUNC";
+  static const char func[] = STRING(XFUNC);
   const REAL8    fuzz = 0.1 / 16384.0; /* smallest discernable unit of time */
   struct FrVect	*vect;
   UINT4		 need;
@@ -411,7 +388,7 @@ FUNC (
   REAL8          rate;
   INT4           gap = 0;
 
-  INITSTATUS( status, "FUNC", FRAMESERIESC );
+  INITSTATUS( status, STRING(FUNC), FRAMESERIESC );
 
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -614,7 +591,7 @@ FUNCM (
 { /* </lalVerbatim> */
   void *sequence;
 
-  INITSTATUS (status, "FUNCM", FRAMESERIESC);
+  INITSTATUS (status, STRING(FUNCM), FRAMESERIESC);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
@@ -636,7 +613,7 @@ FUNCM (
 }
 
 
-STYPE *`XLALFrRead'STYPE (
+STYPE *XRFUNC (
 	FrStream *stream,
 	const char *chname,
 	const LIGOTimeGPS *start,
@@ -644,18 +621,18 @@ STYPE *`XLALFrRead'STYPE (
 	size_t lengthlimit
 )
 {
-	static const char func[] = "`XLALFrRead'STYPE";
+	static const char func[] = STRING(XRFUNC);
 	STYPE *series;
 	size_t length;
 
 	/* create and initialize a zero-length time series vector */
-	series = `XLALCreate'STYPE (chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
+	series = XCFUNC(chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
 	if(!series)
 		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 
 	/* get the time series meta-data */
-	if(`XLALFrGet'STYPE`Metadata' (series, stream)) {
-		`XLALDestroy'STYPE (series);
+	if(XFUNCM(series, stream)) {
+		XDFUNC(series);
 		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 	}
 
@@ -663,14 +640,14 @@ STYPE *`XLALFrRead'STYPE (
 	length = duration / series->deltaT;
 	if(lengthlimit && (lengthlimit < length))
 		length = lengthlimit;
-	if(!`XLALResize'STYPE (series, 0, length)) {
-		`XLALDestroy'STYPE (series);
+	if(!XREFUNC(series, 0, length)) {
+		XDFUNC(series);
 		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 	}
 
 	/* read the data */
-	if(XLALFrSeek (stream, start) || `XLALFrGet'STYPE (series, stream)) {
-		`XLALDestroy'STYPE (series);
+	if(XLALFrSeek (stream, start) || XFUNC(series, stream)) {
+		XDFUNC(series);
 		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 	}
 

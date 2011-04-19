@@ -30,7 +30,7 @@ else
 fi
 
 SFTdir="TestSFTs"
-SFTfiles="$SFTdir${dirsep}*"
+SFTfiles="$SFTdir${dirsep}*.sft"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -67,14 +67,15 @@ DeltaSearch=$Delta
 skygridfile="tmpskygridfile.dat"
 echo $AlphaSearch" "$DeltaSearch > $skygridfile
 
-mfd_FreqBand="2.0"
-mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
+mfd_FreqBand=0.20;
+mfd_fmin=100;
+numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
 
 gct_FreqBand="0.01"
 gct_F1dotBand="2.0e-10"
 gct_dFreq="0.000002" #"2.0e-6"
 gct_dF1dot="1.0e-10"
-gct_nCands="100000"
+gct_nCands="1000"
 
 noiseSqrtSh="0"
 
@@ -98,9 +99,9 @@ ic1="1"
 while [ "$ic1" -le "$Nsegments" ];
 do
     t0=$tmpTime
-    t1=`echo $t0 $Tsegment | awk '{print $1 + $2}'`
-    TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
-    NSFT=`echo $Tsegment $Tsft | awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+    t1=`echo $t0 $Tsegment | LC_ALL=C awk '{print $1 + $2}'`
+    TspanHours=`echo $Tsegment | LC_ALL=C awk '{printf "%.7f", $1 / 3600.0 }'`
+    NSFT=`echo $Tsegment $Tsft | LC_ALL=C awk '{print int(2.0 * $1 / $2 + 0.5) }'`
     echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
     segs[${ic1}]=$tmpTime # save seg's beginning for later use
     echo "Segment: "$ic1" of "$Nsegments"   GPS start time: "${segs[${ic1}]}
@@ -113,7 +114,7 @@ do
 	ic2=$(echo "scale=0; ${ic2} + ${Tsft}" | bc)
     done
 
-    tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | awk '{printf "%.0f",$1}')
+    tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | LC_ALL=C awk '{printf "%.0f",$1}')
     ic1=$(echo "scale=0; ${ic1} + 1" | bc)
 done
 
@@ -143,33 +144,38 @@ else
     rm -f $SFTdir/*;
 fi
 
-# construct MFD cmd for H1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=H1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000"
+FreqStep=`echo $mfd_FreqBand $numFreqBands | LC_ALL=C awk '{print $1 / $2}'`
+mfd_fBand=`echo $FreqStep $Tsft | LC_ALL=C awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
+iFreq=1
+while [ "$iFreq" -le "$numFreqBands" ]; do
+    mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | LC_ALL=C awk '{print $1 + ($2 - 1) * $3}'`
 
-if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
-fi
+    # construct common MFD cmd
+    mfd_CL_common=" --fmin=$mfd_fi --Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
 
-cmdline="$mfd_code $mfd_CL";
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
+    if [ "$haveNoise" = true ]; then
+        mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
+    fi
 
-# construct MFD cmd for L1:
-mfd_CL=" --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --IFO=L1 --refTime=$refTime --Tsft=$Tsft --randSeed=1001"
+    # for H1:
+    cmdline="$mfd_code $mfd_CL_common --IFO=H1 --outSFTbname=${SFTdir}\\${dirsep}H1-${mfd_fi}_${FreqStep}.sft";
+    echo "$cmdline";
+    if ! eval "$cmdline"; then
+        echo "Error.. something failed when running '$mfd_code' ..."
+        exit 1
+    fi
 
-if [ "$haveNoise" = true ]; then
-    mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
-fi
+    # for L1:
+    cmdline="$mfd_code $mfd_CL_common --IFO=L1 --outSFTbname=${SFTdir}\\${dirsep}L1-${mfd_fi}_${FreqStep}.sft";
+    echo "$cmdline";
+    if ! eval "$cmdline"; then
+        echo "Error.. something failed when running '$mfd_code' ..."
+        exit 1
+    fi
 
-cmdline="$mfd_code $mfd_CL";
-echo $cmdline;
-if ! eval $cmdline; then
-    echo "Error.. something failed when running '$mfd_code' ..."
-    exit 1
-fi
+    iFreq=$(( $iFreq + 1 ))
+
+done
 
 
 echo
@@ -191,7 +197,10 @@ for ((x=1; x <= $Nsegments; x++))
     endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
     #echo "Segment: "$x"  "$startGPS" "$endGPS
     # construct pfs cmd
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+    if [ "$haveNoise" = false ]; then
+        pfs_CL="$pfs_CL --SignalOnly";
+    fi
 
     cmdline="$pfs_code $pfs_CL"
     echo "  "$cmdline
@@ -205,7 +214,10 @@ for ((x=1; x <= $Nsegments; x++))
 
     if [ -n "$SEPIFOVETO" ]; then
 	# H1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+        if [ "$haveNoise" = false ]; then
+            pfs_CL="$pfs_CL --SignalOnly";
+        fi
 	cmdline="$pfs_code $pfs_CL"
 	echo "  "$cmdline
 	if ! tmp=`eval $cmdline`; then
@@ -216,7 +228,10 @@ for ((x=1; x <= $Nsegments; x++))
 	TwoFsum1=$(echo "scale=6; ${TwoFsum1} + ${resPFS1}" | bc);
 
 	# L1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS --SignalOnly"
+	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
+        if [ "$haveNoise" = false ]; then
+            pfs_CL="$pfs_CL --SignalOnly";
+        fi
         cmdline="$pfs_code $pfs_CL"
         echo "  "$cmdline
         if ! tmp=`eval $cmdline`; then
@@ -259,7 +274,10 @@ fi
 
 outfile_gct1="__tmp_GCT1.dat"
 
-gct_CL=" --useResamp --SignalOnly --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+gct_CL=" --useResamp --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+if [ "$haveNoise" = false ]; then
+    gct_CL="$gct_CL --SignalOnly";
+fi
 
 cmdline="$gct_code $gct_CL"
 echo $cmdline
@@ -288,7 +306,10 @@ fi
 
 outfile_gct2="__tmp_GCT2.dat"
 
-gct_CL=" --SignalOnly --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+gct_CL=" --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
+if [ "$haveNoise" = false ]; then
+    gct_CL="$gct_CL --SignalOnly";
+fi
 
 if [ -n "$SEPIFOVETO" ]; then
     gct_CL=$gct_CL" --SepDetVeto"

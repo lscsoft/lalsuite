@@ -58,9 +58,10 @@ LIGO light weight XML files.
 
 NRCSID( LIGOLWXMLH, "$Id$" );
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #if 0
@@ -219,8 +220,9 @@ int XLALCreateLIGODataFileName(
 </lalLaTeX> */
 #endif
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

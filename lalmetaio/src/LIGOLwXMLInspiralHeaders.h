@@ -66,9 +66,10 @@ defined in this file are
 
 NRCSID( LIFOLWXMLINSPIRALHEADERSH, "$Id$" );
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL(fp) ( \
@@ -372,8 +373,9 @@ fputs( "      <Stream Name=\"sim_inspiralgroup:sim_inspiral:table\" Type=\"Local
 #define SIM_INSPIRAL_ROW \
 "         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,\"%s\",%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%d,\"%s\",%d,\"%s\",%d,\"sim_inspiral:simulation_id:%" LAL_INT8_FORMAT "\""
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

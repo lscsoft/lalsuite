@@ -43,9 +43,10 @@
 #ifndef _FRAMECACHE_H
 #define _FRAMECACHE_H
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #include <lal/LALDatatypes.h>
@@ -202,8 +203,9 @@ LALFrCacheGenerate(
     const CHAR  *fnptrn
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

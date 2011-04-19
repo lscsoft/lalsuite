@@ -93,9 +93,10 @@ know.
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( PULSARCATH, "$Id$" );
@@ -379,8 +380,9 @@ LALReadPulsarCatLine( LALStatus     *status,
 \newpage\input{PulsarCatTestC}
 </lalLaTeX> */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
