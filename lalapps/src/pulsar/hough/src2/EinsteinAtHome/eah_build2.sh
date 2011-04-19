@@ -170,8 +170,8 @@ for i; do
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
 	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
 	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
-	    echo "  --appname         set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
-	    echo "  --appversion      set an application version (only used in --release builds, defaults to 0.00)"
+	    echo "  --appname=<name>  set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
+	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
@@ -252,8 +252,8 @@ fi
 
 # if --pather and not --altivec, make sure the binary runs on G3
 test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" -a ."$acc" = ."" &&
-CFLAGS="-mcpu=G3 $CFLAGS" &&
-CXXFLAGS="-mcpu=G3 $CXXFLAGS"
+    CFLAGS="-mcpu=G3 $CFLAGS" &&
+    CXXFLAGS="-mcpu=G3 $CXXFLAGS"
 
 if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
     export CFLAGS="-g0 $CFLAGS"

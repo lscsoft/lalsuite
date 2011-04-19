@@ -66,9 +66,10 @@
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( TIMEFREQFFTH, "$Id$" );
@@ -460,8 +461,9 @@ XLALPSDRegressorSetPSD(
     unsigned weight
 );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

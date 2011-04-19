@@ -32,6 +32,7 @@ FindChirpTemplate       *bankFcTmplts,
 UINT4                    subBankSize,
 UINT4                    numPoints)
 {
+  /* I think this function is now unused and can be removed */
   UINT4 i;
   srand(params->randomSeed);
 
@@ -54,7 +55,6 @@ UINT4                    numPoints)
     PTFBankTemplates[i].chi = rand()/(float)RAND_MAX*(maxchi-minchi)+minchi;
     PTFBankTemplates[i].kappa = rand()/(float)RAND_MAX*(maxkappa-minkappa)+minkappa;
     PTFBankTemplates[i].fLower = 38.;
-    fprintf(stderr,"Masses %e %e \n",PTFBankTemplates[i].mass1,PTFBankTemplates[i].mass2);
   }
 }
 
@@ -644,13 +644,14 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL4 a[LAL_NUM_IFO],
     REAL4 b[LAL_NUM_IFO],
-    REAL4 *frequencyRanges,
+    REAL4 *frequencyRangesPlus,
+    REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
     REAL4 *powerBinsCross,
     gsl_matrix *eigenvecs
 )
 {
-  UINT4 i,k,kmin,kmax,len,freqBin,numFreqBins;
+  UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
   REAL4 v1,v2,v3,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL4 SNRplusLast,SNRcrossLast;
   REAL8         f_min, deltaF, fFinal;
@@ -704,7 +705,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   v1 = 0;
   v2 = 0;
 
-  freqBin = 0;
+  freqBinPlus = 0;
+  freqBinCross = 0;
   SNRtempPlus = 0;
   SNRtempCross = 0;
   SNRplusLast = 0.;
@@ -727,19 +729,27 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     SNRtempCross = v2;
     if (SNRtempCross < 0) SNRtempCross = -SNRtempCross;
 
-    if (i * deltaF > frequencyRanges[freqBin] && freqBin < (numFreqBins-1))
+    if (i * deltaF > frequencyRangesPlus[freqBinPlus] && freqBinPlus < (numFreqBins-1))
     {
-      powerBinsPlus[freqBin] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
-      powerBinsCross[freqBin] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+      powerBinsPlus[freqBinPlus] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
       SNRplusLast = SNRtempPlus/SNRmaxPlus;
-      SNRcrossLast = SNRtempCross/SNRmaxCross;
-      freqBin++;
+      freqBinPlus++;
     }
+    if (i * deltaF > frequencyRangesCross[freqBinCross] && freqBinCross < (numFreqBins-1))
+    {
+      powerBinsCross[freqBinCross] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+      SNRcrossLast = SNRtempCross/SNRmaxCross;
+      freqBinCross++;
+    }
+
   }
-  if (freqBin == (numFreqBins-1))  
+  if (freqBinPlus == (numFreqBins-1))  
   {
-    powerBinsPlus[freqBin] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
-    powerBinsCross[freqBin] = SNRtempCross/SNRmaxCross - SNRcrossLast;
+    powerBinsPlus[freqBinPlus] = SNRtempPlus/SNRmaxPlus - SNRplusLast;
+  }
+  if (freqBinCross == (numFreqBins-1))
+  {
+    powerBinsCross[freqBinCross] = SNRtempCross/SNRmaxCross - SNRcrossLast;
   }   
 
   /* Ensure that the power Bins add to 1. This should already be true but
@@ -753,8 +763,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   }
   for ( i = 0 ; i < (numFreqBins); i++)
   {
-    powerBinsPlus[freqBin] = powerBinsPlus[freqBin]/SNRplusLast;
-    powerBinsCross[freqBin] = powerBinsCross[freqBin]/SNRcrossLast;
+    powerBinsPlus[i] = powerBinsPlus[i]/SNRplusLast;
+    powerBinsCross[i] = powerBinsCross[i]/SNRcrossLast;
   }
 }
 
@@ -774,12 +784,16 @@ REAL4 *powerBinsCross
 )
 {
   UINT4 i,halfNumPoints;
-  REAL4 *v1,*v2,*v1full,*v2full;
+  REAL4 *v1Plus,*v2Plus,*v1full,*v2full;
+  REAL4 *v1Cross,*v2Cross;
   REAL4 chiSq,SNRtemp,SNRexp;
   UINT4 numChiSquareBins = params->numChiSquareBins;
 
-  v1 = LALCalloc(2,sizeof(REAL4));
-  v2 = LALCalloc(2,sizeof(REAL4));
+  v1Plus = LALCalloc(2,sizeof(REAL4));
+  v2Plus = LALCalloc(2,sizeof(REAL4));
+  v1Cross = LALCalloc(2,sizeof(REAL4));
+  v2Cross = LALCalloc(2,sizeof(REAL4));
+
   v1full = LALCalloc(2,sizeof(REAL4));
   v2full = LALCalloc(2,sizeof(REAL4));
 
@@ -798,18 +812,24 @@ REAL4 *powerBinsCross
   for (i = 0; i < numChiSquareBins; i++ )
   {
     /* calculate SNR in this frequency bin */
-    coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1,v2,a,b,
-        timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
+    coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1Plus,
+        v2Plus,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
         position-numPoints/4+5000,1,2);
 
-    SNRtemp = pow((v1[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
-    SNRtemp += pow((v1[1] - v1full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
-    SNRtemp += pow((v2[0] - v2full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
-    SNRtemp += pow((v2[1] - v2full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
+    coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1Cross,
+        v2Cross,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
+        position-numPoints/4+5000,1,2);
+
+    SNRtemp= pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
+    SNRtemp+= pow((v1Cross[1]-v1full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
+    SNRtemp+= pow((v2Plus[0] - v2full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];
+    SNRtemp+= pow((v2Cross[1]-v2full[1]*powerBinsCross[i]),2)/powerBinsCross[i];
     chiSq += SNRtemp;
   }
-  LALFree(v1);
-  LALFree(v2);
+  LALFree(v1Plus);
+  LALFree(v2Plus);
+  LALFree(v1Cross);
+  LALFree(v2Cross);
   LALFree(v1full);
   LALFree(v2full);
   return chiSq;

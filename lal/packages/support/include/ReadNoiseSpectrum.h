@@ -28,8 +28,7 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="ReadNoiseSpectrumHV">
+/* <lalVerbatim file="ReadNoiseSpectrumHV">
 Author: Brady, P. R.
 $Id$
 </lalVerbatim>
@@ -46,8 +45,7 @@ a frequency series.
 #include <lal/ReadNoiseSpectrum.h>
 \end{verbatim}
 
-</lalLaTeX>
-#endif
+</lalLaTeX> */
 
 #ifndef _READNOISESPECTRUMH_H
 #define _READNOISESPECTRUMH_H
@@ -55,9 +53,10 @@ a frequency series.
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
@@ -90,15 +89,14 @@ void LALReadNoiseSpectrum(
     CHAR *fname
     );
 
-#if 0
-<lalLaTeX>
+/* <lalLaTeX>
 \vfill{\footnotesize\input{ReadNoiseSpectrumHV}}
 \newpage\input{ReadNoiseSpectrumC}
 </lalLaTeX> */
-#endif
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

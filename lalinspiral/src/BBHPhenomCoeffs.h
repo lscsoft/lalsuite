@@ -54,9 +54,10 @@ introduced by Ajith et al. in arXiv:0710.2335 [gr-qc]
 #ifndef _BBHPHENOMCOEFFSH_H
 #define _BBHPHENOMCOEFFSH_H
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID (BBHPHENOMCOEFFSH, "$Id$");
@@ -111,8 +112,9 @@ NRCSID (BBHPHENOMCOEFFSH, "$Id$");
 </lalLaTeX>
 #endif
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

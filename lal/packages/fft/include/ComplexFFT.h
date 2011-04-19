@@ -43,9 +43,10 @@
 
 #include <lal/LALDatatypes.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #ifdef  __cplusplus
@@ -499,8 +500,9 @@ LALCOMPLEX16VectorFFT (
 
 #undef RESTRICT
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
