@@ -974,7 +974,7 @@ XLALReadSFTs ( UINT4 *firstBin,			/**< [out] first PSD bin for output */
   /* ---------- figure out the right frequency-band to read from the SFTs, depending on user-input ----- */
   REAL8 fMin, fMax;
   UINT4 binsOffset; /* rngmed bin offset from start and end */
-  UINT4 binsBand;   /* width of physical FreqBand in bins */
+  UINT4 binsBand=0; /* width of physical FreqBand in bins */
   if ( have_Freq )
     {
       REAL8 dFreq = catalog->data[0].header.deltaF;
