@@ -939,3 +939,163 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, swiglal_fix_2Darray_ptr);
 fail: // SWIG doesn't add a fail label to a global variable '_get' function
 }
+
+/////////////// Dynamic vector / matrix type conversion ///////////////
+
+// The following macros deal with dynamically-allocated vectors / matrices
+// that are passed around as structs, of the form:
+//
+// typedef {
+//   size_t length;
+//   double *data;
+// } doubleArray;
+//
+// The macros provide code to convert *data to/from a native representation
+// in the scripting language. To activate this code, two lines of SWIG-specific
+// code need to be added to the struct, for example:
+//
+// typedef {
+// #ifdef SWIG
+//   SWIGLAL_DYNAMIC_1DARRAY_BEGIN(double, data, length)
+// #endif
+//   size_t length;
+//   double *data;
+// #ifdef SWIG
+//   SWIGLAL_DYNAMIC_1DARRAY_END(double, data)
+// #endif
+// } doubleArray;
+//
+// The macros arguments correspond to the arguments to the
+// swiglal_{vector,matrix}_convert_{in,out} macros defined above.
+
+// This macro sets up code for converting a dynamically-allocated
+// vector struct to/from a native scripting language representation.
+%define swiglal_dynamic_vector_begin(TYPE, DATA, NI, PTR_TO_DATA_I, FLAGS)
+
+  // Make the vector length read-only in the SWIG interface
+  %immutable NI;
+
+  // Extend the struct to add DATA_getel and DATA_setel accessor methods.
+  // The variable 'arg1' stores a pointer to the struct containing DATA,
+  // and the variable 'arg2' should be the I index.
+  %extend {
+    swiglal_vector_get_elem(TYPE, DATA, arg1->DATA, arg2, arg1->NI, PTR_TO_DATA_I);
+    swiglal_vector_set_elem(TYPE, DATA, arg1->DATA, arg2, arg1->NI, PTR_TO_DATA_I, FLAGS);
+  }
+
+  // Input typemap for DATA
+  %typemap(in, noblock=1) TYPE* DATA {
+    // The variable 'arg1' always stores a pointer to the struct containing DATA
+    if (arg1) {
+      // Check that DATA has been allocated
+      if (!swiglal_check_ptr(arg1->DATA)) {
+        swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
+      }
+      // Convert the $input scripting language vector to DATA
+      swiglal_vector_convert_in(TYPE, DATA, arg1->DATA, arg1->NI, PTR_TO_DATA_I, FLAGS);
+    }
+  }
+  // In the 'in' typemap, we only ever access DATA through the struct, i.e. as
+  // arg1->DATA, and never through the SWIG local variable which is created to
+  // contain the new value of DATA (in the 'in' typemap, this variable is named $1).
+  // By default, the 'memberin' typemap will assign DATA the value of $1, so we
+  // must override the 'memberin' typemap to prevent this.
+  %typemap(memberin) TYPE* DATA ""
+
+  // Output typemap for DATA
+  %typemap(out, noblock=1) TYPE* DATA {
+    // The variable 'arg1' always stores a pointer to the struct containing DATA
+    if (arg1) {
+      // Check that DATA has been allocated
+      if (!swiglal_check_ptr(arg1->DATA)) {
+        swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
+      }
+      // Convert DATA to the scripting language $result vector
+      swiglal_vector_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, PTR_TO_DATA_I);
+    }
+  }
+
+%enddef // swiglal_dynamic_vector_begin
+
+// This macros clears the features and typemaps applied by
+// swiglal_dynamic_vector_begin, so they can't be re-used.
+%define swiglal_dynamic_vector_end(TYPE, DATA, NI)
+  %clearimmutable NI;
+  %clear TYPE* DATA;
+%enddef
+
+// This macro sets up code for converting a dynamically-allocated
+// matrix struct to/from a native scripting language representation.
+%define swiglal_dynamic_matrix_begin(TYPE, DATA, NI, NJ, PTR_TO_DATA_IJ, FLAGS)
+
+  // Make the matrix dimensions read-only in the SWIG interface
+  %immutable NI;
+  %immutable NJ;
+
+  // Extend the struct to add DATA_getel and DATA_setel accessor methods.
+  // The variable 'arg1' stores a pointer to the struct containing DATA,
+  // and the variables 'arg2' and 'arg3' should be the I and J indices.
+  %extend {
+    swiglal_matrix_get_elem(TYPE, DATA, arg1->DATA, arg2, arg1->NI, arg3, arg1->NJ, PTR_TO_DATA_IJ);
+    swiglal_matrix_set_elem(TYPE, DATA, arg1->DATA, arg2, arg1->NI, arg3, arg1->NJ, PTR_TO_DATA_IJ, FLAGS);
+  }
+
+  // Input typemap for DATA
+  %typemap(in, noblock=1) TYPE* DATA {
+    // The variable 'arg1' always stores a pointer to the struct containing DATA
+    if (arg1) {
+      // Check that DATA has been allocated
+      if (!swiglal_check_ptr(arg1->DATA)) {
+        swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
+      }
+      // Convert the $input scripting language matrix to DATA
+      swiglal_matrix_convert_in(TYPE, DATA, arg1->DATA, arg1->NI, arg1->NJ, PTR_TO_DATA_IJ, FLAGS);
+    }
+  }
+  // See the explanation in swiglal_dynamic_vector_begin.
+  %typemap(memberin) TYPE* DATA ""
+
+  // Output typemap for DATA
+  %typemap(out, noblock=1) TYPE* DATA {
+    // The variable 'arg1' always stores a pointer to the struct containing DATA
+    if (arg1) {
+      // Check that DATA has been allocated
+      if (!swiglal_check_ptr(arg1->DATA)) {
+        swiglal_exception(SWIG_MemoryError, "unexpected NULL pointer '"<<#DATA<<"'");
+      }
+      // Convert DATA to the scripting language $result matrix
+      swiglal_matrix_convert_out(TYPE, DATA, arg1->DATA, arg1->NI, arg1->NJ, PTR_TO_DATA_IJ);
+    }
+  }
+
+%enddef // swiglal_dynamic_matrix_begin
+
+// This macros clears the features and typemaps applied by
+// swiglal_dynamic_matrix_begin, so they can't be re-used.
+%define swiglal_dynamic_matrix_end(TYPE, DATA, NI, NJ)
+  %clearimmutable NI;
+  %clearimmutable NJ;
+  %clear TYPE* DATA;
+%enddef
+
+// These macros can be used to apply the swiglal_dynamic_* conversion code
+// to a dynamically-allocated vector struct. SWIGLAL_DYNAMIC_1DARRAY_BEGIN
+// must appear just before the definition of the data/length variables,
+// and SWIGLAL_DYNAMIC_1DARRAY_END must appear immediately afterwards.
+%define SWIGLAL_DYNAMIC_1DARRAY_BEGIN(TYPE, DATA, NI)
+  swiglal_dynamic_vector_begin(TYPE, DATA, NI, swiglal_dyn_1Darray_ptr, SL_AV_LALALLOC)
+%enddef
+%define SWIGLAL_DYNAMIC_1DARRAY_END(TYPE, DATA, NI)
+  swiglal_dynamic_vector_end(TYPE, DATA, NI)
+%enddef
+
+// These macros can be used to apply the swiglal_dynamic_* conversion code
+// to a dynamically-allocated matrix struct. SWIGLAL_DYNAMIC_1DARRAY_BEGIN
+// must appear just before the definition of the data/length variables,
+// and SWIGLAL_DYNAMIC_1DARRAY_END must appear immediately afterwards.
+%define SWIGLAL_DYNAMIC_2DARRAY_BEGIN(TYPE, DATA, NI, NJ)
+  swiglal_dynamic_matrix_begin(TYPE, DATA, NI, NJ, swiglal_dyn_2Darray_ptr, SL_AV_LALALLOC)
+%enddef
+%define SWIGLAL_DYNAMIC_2DARRAY_END(TYPE, DATA, NI, NJ)
+  swiglal_dynamic_matrix_end(TYPE, DATA, NJ, NJ)
+%enddef

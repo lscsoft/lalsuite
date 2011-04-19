@@ -91,6 +91,59 @@ else:
         pass
     msg("passed static vector/matrix conversions")
 
+# check dynamic vector/matrix conversions
+def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
+    assert(ivl == 5)
+    iv.data = [1, 3, 2, 4, 3]
+    assert((iv.data == [1, 3, 2, 4, 3]).all())
+    iv.data_setel(3, 7)
+    assert(iv.data_getel(3) == 7)
+    assert(rvl == 5)
+    rv.data = [1.2, 3.4, 2.6, 4.8, 3.5]
+    assert((rv.data == [1.2, 3.4, 2.6, 4.8, 3.5]).all())
+    rv.data_setel(rvl - 1, 7.5)
+    assert(rv.data_getel(rvl - 1) == 7.5)
+    try:
+        rv.data_setel(rvl, 99.9)
+        raise error("expected exception")
+    except:
+        pass
+    try:
+        iv.data = rv.data
+        raise error("expected exception")
+    except:
+        pass
+    rv.data = iv.data
+    assert((rv.data == iv.data).all())
+    assert(cms1 == 4)
+    assert(cms2 == 6)
+    for i in range(0,cms1):
+        for j in range(0,cms2):
+            cm.data_setel(i, j, complex(i / 4.0, j / 2.0))
+    assert(cm.data_getel(2, 3) == complex(0.5, 1.5))
+    assert(cm.data_getel(3, 2) == complex(0.75, 1.0))
+    try:
+        iv.data_setel(0, cm.data_getel(2, 3))
+        raise error("expected exception")
+    except:
+        pass
+    try:
+        rv.data_setel(0, cm.data_getel(3, 2))
+        raise error("expected exception")
+    except:
+        pass
+# check LAL vector and matrix datatypes
+iv = XLALCreateINT4Vector(5)
+rv = XLALCreateREAL8Vector(5)
+cm = XLALCreateCOMPLEX8VectorSequence(4, 6)
+check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
+                            cm, cm.length, cm.vectorLength)
+XLALDestroyINT4Vector(iv)
+XLALDestroyREAL8Vector(rv)
+XLALDestroyCOMPLEX8VectorSequence(cm)
+LALCheckMemoryLeaks()
+msg("passed dynamic vector/matrix conversions (LAL)")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")
