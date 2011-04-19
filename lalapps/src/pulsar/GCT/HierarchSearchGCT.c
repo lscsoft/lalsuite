@@ -929,8 +929,12 @@ int MAIN( int argc, char *argv[]) {
   }
 
 
-
-  REAL8 timeStart = XLALGetTimeOfDay();
+  /* timing */
+  REAL8 timeStart = 0.0, timeEnd = 0.0;
+  REAL8 coherentTime = 0.0, incoherentTime = 0.0, vetoTime = 0.0;
+  REAL8 timeStamp1, timeStamp2;
+  if ( uvar_outputTiming )
+    timeStart = XLALGetTimeOfDay();
 
  /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
@@ -1189,6 +1193,10 @@ int MAIN( int argc, char *argv[]) {
           u2win = df1dot;
           u2winInv = 1.0/u2win; */
 
+	  /* timing */
+	  if ( uvar_outputTiming )
+	    timeStamp1 = XLALGetTimeOfDay();
+
           /* ----------------------------------------------------------------- */
           /************************ Compute F-Statistic ************************/
 
@@ -1301,6 +1309,13 @@ int MAIN( int argc, char *argv[]) {
           /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
           /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
+	  /* timing */
+	  if ( uvar_outputTiming ) {
+	    timeStamp2 = XLALGetTimeOfDay();
+	    coherentTime += timeStamp2 - timeStamp1;
+	    timeStamp1 = timeStamp2;
+	  }
+
           /* ---------- Walk through fine grid and map to coarse grid --------------- */
           ifine = 0;
 
@@ -1358,6 +1373,13 @@ int MAIN( int argc, char *argv[]) {
           fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1));
 #endif
 #endif
+
+	  /* timing */
+	  if ( uvar_outputTiming ) {
+	    timeStamp2 = XLALGetTimeOfDay();
+	    incoherentTime += timeStamp2 - timeStamp1;
+	  }
+
         } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
         /* ############################################################### */
@@ -1402,8 +1424,34 @@ int MAIN( int argc, char *argv[]) {
   } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
-  REAL8 timeEnd = XLALGetTimeOfDay();
+  /* timing */
+  if ( uvar_outputTiming )
+    timeEnd = XLALGetTimeOfDay();
+
   UINT4 Nrefine = nf1dots_fg;
+
+  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
+
+  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
+  if ( uvar_outputFX ) {
+    /* timing */
+    if ( uvar_outputTiming )
+      timeStamp1 = XLALGetTimeOfDay();
+
+    xlalErrno = 0;
+    XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
+    if ( xlalErrno != 0 ) {
+      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
+      return(HIERARCHICALSEARCH_EXLAL);
+    }
+
+    /* timing */
+    if ( uvar_outputTiming ) {
+      timeStamp2 = XLALGetTimeOfDay();
+      vetoTime = timeStamp2 - timeStamp1;
+    }
+  }
+
   if ( uvar_outputTiming )
     {
       FILE *timing_fp = fopen ( uvar_outputTiming, "ab" );
@@ -1412,22 +1460,11 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       REAL8 tau = timeEnd - timeStart;
-      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f\n",
-                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs, nStacks, Nrefine, tau );
+      fprintf ( timing_fp, "%d 	%d 	%d 	%d 	%d 	%d 	%d 	%f	%f	%f	%f\n",
+                thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
+		nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime );
       fclose ( timing_fp );
     }
-
-  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
-
-  /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
-  if ( uvar_outputFX ) {
-    xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, tMidGPS, uvar_SignalOnly );
-    if ( xlalErrno != 0 ) {
-      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", fn, __LINE__, xlalErrno );
-      return(HIERARCHICALSEARCH_EXLAL);
-    }
-  }
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   write_hfs_oputput(uvar_fnameout, semiCohToplist);
