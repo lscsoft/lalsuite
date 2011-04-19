@@ -139,6 +139,10 @@ testIniFile.checkOpts()
 if testIniFile.numberErrors() > 0 :
     testIniFile.printErrorList()
     os.abort()
+#Print Warnings
+if testIniFile.numberWarnings() > 0:
+    testIniFile.printWarningList()
+
 #Print memory use estimate!
 memoryEstimate=testIniFile.getMemoryUseEstimate()
 psdSmoothBandEstimate=testIniFile.getBandwithSmoothedEstimate()

@@ -33,6 +33,7 @@ import string
 import math
 import exceptions
 import ConfigParser
+import subprocess
 from tracksearchutils import determineDataPadding
 from glue import pipeline
 
@@ -162,10 +163,20 @@ class tracksearchCheckIniFile:
     def __init__(self,cp):
         self.iniOpts=cp
         self.errList=[]
+        self.warnList=[]
         self.memoryUseEstimate=int(0)
         self.smoothingWidthEstimate=float(0)
     #End init
 
+    def which(self,prog):
+        """
+        Method to do a which search at unix command line to find
+        codes. It then gives to error structure where the files were
+        found if found.
+        """
+        myWhich=subprocess.Popen(['which',prog],stdout=subprocess.PIPE,stderr=None)
+        return myWhich.stdout.read().strip()
+    
     def checkOpts(self):
         #Need to add simple check compare datafind:observatory
         #to multichannel:channel or tracksearchtime:channel
@@ -182,8 +193,15 @@ class tracksearchCheckIniFile:
                 optValue=newValue
             if str(optValue).__contains__('/'):
                 if not os.path.exists(str(optValue)):
-                    self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
-                    fileNotFound=True
+                    #Attempt to make on the substitution!
+                    potentialFile=self.which(os.path.basename(optValue))
+                    if not os.path.exists(str(potentialFile)):
+                        self.errList.append('Can not find :'+str(entry)+':'+str(optValue))
+                        fileNotFound=True
+                    else:
+                        self.iniOpts.set('condor',entry,potentialFile)
+                        fileNotFound=False
+                        self.warnList.append("Did not find %s using %s instead!"%(os.path.basename(optValue),str(potentialFile).strip('\n')))
         #Check the opts compared to condor-max-jobs
         if self.iniOpts.has_section('condor-max-jobs'):
             condorMaxJobOpts=self.iniOpts.options('condor-max-jobs')
@@ -198,7 +216,6 @@ class tracksearchCheckIniFile:
             for entry in LALpath.split(':'):
                 if (entry.__contains__('lal') and entry.__contains__('bin')):
                     self.errList.append(entry)
-                
         #Check [tracksearchbase] section
         lambdaH=0
         lambdaL=1
@@ -326,9 +343,17 @@ class tracksearchCheckIniFile:
         return self.smoothingWidthEstimate
     #End()
     
+    def numberWarnings(self):
+        return self.warnList.__len__()
+    
     def numberErrors(self):
         return self.errList.__len__()
     #end numberErrors def
+
+    def printWarningList(self):
+        sys.stdout.write(str(self.numberWarnings())+' INI Warnings Issued.\n')
+        for myWarning in self.warnList:
+            sys.stdout.write(myWarning+'\n')
 
     def printErrorList(self):
         sys.stderr.write(str(self.numberErrors())+' INI file Errors found!\n')
