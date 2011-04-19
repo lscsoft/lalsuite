@@ -384,7 +384,24 @@ void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALVariables
         else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
                 LALInferenceProposalDifferentialEvolution(runState,parameter);
                                
-        LALInferenceProposalDifferentialEvolution(runState,parameter);
+        return; 
+}
+
+
+/* MATT'S TEMPORARY FUNCTION */
+void LALInferenceProposalPulsarNS_MATT(LALInferenceRunState *runState,
+LALVariables *parameter)
+{
+        REAL8 randnum;
+        REAL8 STUDENTTFRAC=0.8,
+              DIFFEVFRAC=0.2;
+
+        randnum=gsl_rng_uniform(runState->GSLrandom);
+        /* Choose a random type of jump to propose */
+        if(randnum<STUDENTTFRAC)
+          LALInferenceProposalMultiStudentT_MATT(runState, parameter);
+        else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
+          LALInferenceProposalDifferentialEvolution_MATT(runState,parameter);
                        
         return; 
 }
@@ -663,6 +680,102 @@ void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALVariab
 	return;
 }
 
+/* MATT'S VERSION OF THIS FUNCTION WHICH ADDS IN THE NEW VARYTYPE */
+
+void LALInferenceProposalMultiStudentT_MATT(LALInferenceRunState *runState,
+LALVariables *parameter)
+{
+  gsl_matrix *covMat = *(gsl_matrix
+    **)getVariable(runState->proposalArgs,"LiveCVM");
+        
+  static LALStatus status;
+        
+  LALVariableItem *paraHead=NULL;
+  REAL4Vector  *step=NULL;
+  gsl_matrix *work=NULL; 
+  REAL8 aii, aij, ajj;
+  INT4 i, j, dim;
+  RandomParams *randParam;
+  UINT4 randomseed = gsl_rng_get(runState->GSLrandom);
+        
+
+  REAL8 proposal_scale = *(REAL8
+    *)getVariable(runState->proposalArgs,"proposal_scale");
+  randParam=XLALCreateRandomParams(randomseed);
+        
+  /* set some values */
+  dim=covMat->size1;
+        
+  /* draw the mutinormal deviates */
+  LALSCreateVector( &status, &step, dim);
+        
+  /* copy matrix into workspace and scale it appriopriately */
+  work =  gsl_matrix_alloc(dim,dim); 
+        
+  gsl_matrix_memcpy( work, covMat );
+  gsl_matrix_scale( work, proposal_scale);
+        
+  /* check if the matrix if positive definite */
+  while ( !LALInferenceCheckPositiveDefinite( work, dim) ) {
+    printf("WARNING: Matrix not positive definite!\n");
+    /* downweight the off-axis elements */
+    for (i=0; i<dim; ++i)
+    {
+      for (j=0; j<i; ++j)
+      {
+        aij=gsl_matrix_get( work, i, j);
+        aii=gsl_matrix_get( work, i, i);
+        ajj=gsl_matrix_get( work, j, j);  
+                                
+        if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
+        {
+          aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
+        }
+        gsl_matrix_set( work, i, j, aij);
+        gsl_matrix_set( work, j, i, aij);
+        printf(" %f", gsl_matrix_get( work, i, j));
+      }
+      printf("\n");
+    }
+    exit(0);
+  }
+    
+  /* draw multivariate student distribution with n=2 */
+  XLALMultiStudentDeviates( step, work, dim, 2, randParam); 
+        
+  /* loop over all parameters */
+  for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next)
+  { 
+                /*  if (inputMCMC->verbose)
+                 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal:
+%8.3f\n", 
+                 paraHead->core->name, paraHead->value, step->data[i] ,
+paraHead->value + step->data[i]);*/
+                /* only increment the varying parameters, and only increment the
+data pointer if it's been done*/
+    if( (paraHead->vary==PARAM_LINEAR || paraHead->vary==PARAM_CIRCULAR ||
+         paraHead->vary==PARAM_GAUSSIAN) &&
+         strcmp(paraHead->name,"rightascension") &&
+         strcmp(paraHead->name,"declination") && 
+         strcmp(paraHead->name,"time") ){
+      *(REAL8 *)paraHead->value += step->data[i];
+      i++;
+    }
+  }
+        
+  LALInferenceCyclicReflectiveBound_MATT(parameter,runState->priorArgs);
+  
+  /* destroy the vectors */
+  LALSDestroyVector(&status, &step);
+  gsl_matrix_free(work);
+        
+  XLALDestroyRandomParams(randParam);
+  /* Check boundary condition */
+
+  return;
+}
+
+
 void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 									   LALVariables *parameter)
 	{
@@ -697,6 +810,56 @@ void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
 		LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
 		return;
 	}
+	
+	
+/* MATTS TEMPORARY VERSIONS OF THE FUNCTION */
+void LALInferenceProposalDifferentialEvolution_MATT( LALInferenceRunState
+                                                     *runState, 
+                                                     LALVariables *parameter){
+  LALVariables **Live=runState->livePoints;
+  int i=0,j=0,dim=0,same=1;
+  INT4 Nlive = *(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+  LALVariableItem *paraHead=NULL;
+  LALVariableItem *paraA=NULL;
+  LALVariableItem *paraB=NULL;
+               
+  dim = parameter->dimension;
+  /* Select two other samples A and B*/
+  i=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
+  /* Draw two different samples from the basket. Will loop back
+    here if the original sample is chosen*/
+  drawtwo:
+  do {j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);}
+  while(j==i);
+  paraHead=parameter->head;
+  paraA=Live[i]->head; paraB=Live[j]->head;
+  /* Add the vector B-A */
+  same=1;
+               
+  for( paraHead = parameter->head, paraA=Live[i]->head, paraB=Live[j]->head;
+       paraHead ; paraHead = paraHead->next, paraB=paraB->next,
+       paraA=paraA->next)
+  {
+    if( paraHead->vary!=PARAM_LINEAR &&
+        paraHead->vary!=PARAM_CIRCULAR &&
+        paraHead->vary!=PARAM_GAUSSIAN ) continue;
+  
+    *(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
+    *(REAL8 *)paraHead->value-=*(REAL8 *)paraA->value;
+    
+    if( *(REAL8 *)paraHead->value!=*(REAL8 *)paraA->value &&
+        *(REAL8 *)paraHead->value!=*(REAL8 *)paraB->value &&
+        *(REAL8 *)paraA->value!=*(REAL8 *)paraB->value ) same=0;
+  }
+  if( same==1 ) goto drawtwo;
+   
+  /* Bring the sample back into bounds */
+  LALInferenceCyclicReflectiveBound_MATT(parameter,runState->priorArgs);
+   
+  return;
+}	
+
+
 
 void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
 {
@@ -1048,3 +1211,138 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 }
 
 
+/* MATTS TEMPORARY VERSION OF THIS FUNCTION */
+void LALInferenceSetupLivePointsArray_MATT(LALInferenceRunState *runState){
+/* Set up initial basket of live points, drawn from prior,
+   by copying runState->currentParams to all entries in the array*/
+  UINT4 Nlive=(UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+  UINT4 i;
+  REAL8Vector *logLs;
+        
+  LALVariableItem *current;
+
+  /* Allocate the array */
+  /* runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *)); */
+  runState->livePoints=XLALCalloc(Nlive,sizeof(LALVariables *));
+  if(runState->livePoints==NULL){
+    fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
+    exit(1);
+  }
+
+  logLs=XLALCreateREAL8Vector(Nlive);
+     
+  addVariable(runState->algorithmParams,"logLikelihoods",&logLs,REAL8Vector_t,
+              PARAM_FIXED);
+  fprintf(stdout,"Sprinkling %i live points, may take some time\n",Nlive);
+  for(i=0;i<Nlive;i++)
+  {
+    runState->livePoints[i]=XLALCalloc(1,sizeof(LALVariables));
+                
+    /* Copy the param structure */
+    copyVariables(runState->currentParams,runState->livePoints[i]);
+                
+    /* Sprinkle the varying points among prior */
+    do{
+      for(current=runState->livePoints[i]->head ;current!=NULL;
+          current=current->next){
+        if( current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR )
+        {
+          switch (current->type){
+            case REAL4_t:
+            {
+              REAL4 tmp;
+              REAL4 min,max;
+                                                       
+              getMinMaxPrior(runState->priorArgs,current->name, (void *)&min,
+                             (void *)&max);
+                                                       
+              tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable(runState->livePoints[i],current->name,&tmp);
+              break;
+            }
+            case REAL8_t:
+            {
+              REAL8 tmp;
+              REAL8 min,max;
+              
+              getMinMaxPrior(runState->priorArgs,current->name, (void *)&min,
+                             (void *)&max);
+                                                       
+              tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable(runState->livePoints[i],current->name,&tmp);
+              break;
+            }
+            case INT4_t:
+            {
+              INT4 tmp;
+              INT4 min,max;
+                                                       
+              getMinMaxPrior(runState->priorArgs,current->name, (void *)&min,
+                             (void *)&max);
+                                                       
+              tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable(runState->livePoints[i],current->name,&tmp);
+              break;
+            }
+            case INT8_t:
+            {
+              INT8 tmp;
+              INT8 min,max;
+                                                       
+              getMinMaxPrior(runState->priorArgs,current->name, (void *)&min,
+                             (void *)&max);
+                                                       
+              tmp=min+(max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable(runState->livePoints[i],current->name,&tmp);
+              break;
+            }
+            default:
+              fprintf(stderr,"Trying to randomise a non-numeric parameter!");
+          }
+        }
+        else if(current->vary == PARAM_GAUSSIAN){
+          switch (current->type){
+            case REAL4_t:
+            {
+              REAL4 tmp;
+              REAL4 mu, sigma;
+              
+              getGaussianPrior(runState->priorArgs, current->name, (void *)&mu,
+                               (void *)&sigma);
+                               
+              tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
+              setVariable(runState->livePoints[i], current->name, &tmp);
+              break;
+            }
+            case REAL8_t:
+            {
+              REAL8 tmp;
+              REAL8 mu, sigma;
+              
+              getGaussianPrior(runState->priorArgs, current->name, (void *)&mu, 
+                               (void *)&sigma);
+              tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
+              setVariable(runState->livePoints[i], current->name, &tmp);
+              break;
+            }
+            default:
+            { 
+              fprintf(stderr,"Trying to get Gaussian random variable from a \
+non-floating point parameter!");
+            }
+          }
+        }
+      }
+               
+    }while(runState->prior(runState,runState->livePoints[i])==-DBL_MAX);
+    /* Populate log likelihood */
+               
+    logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,
+                                        runState->template);
+  }
+        
+}

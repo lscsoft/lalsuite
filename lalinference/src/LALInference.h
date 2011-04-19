@@ -97,7 +97,8 @@ typedef enum {
 	PARAM_LINEAR,
 	PARAM_CIRCULAR,
 	PARAM_FIXED,    /* Never changes */
-	PARAM_OUTPUT    /* Changed by the inner code and passed out */
+	PARAM_OUTPUT,   /* Changed by the inner code and passed out */
+	PARAM_GAUSSIAN  /* Gaussian prior on parameter */
 } ParamVaryType;
 
 
@@ -217,9 +218,9 @@ tagLALInferenceRunState
   LALVariables              *currentParams,
     *priorArgs,
     *proposalArgs,
-    *algorithmParams, /* Parameters which control the running of the algorithm*/
-    *scaleFactors; /* scale factors for the parameters */
-  LALVariables				**livePoints; /* Array of live points for Nested Sampling */
+    *algorithmParams; /* Parameters which control the running of the algorithm*/
+  LALVariables				**livePoints; /* Array of live points
+for Nested Sampling */
   LALVariables **differentialPoints;
   size_t differentialPointsLength;
   REAL8						currentLikelihood;
@@ -258,7 +259,6 @@ tagLALIFOData
   LIGOTimeGPSVector         *dataTimes;
   LALVariables              *modelParams;
   LALVariables		    *dataParams; /* Optional data parameters */
-  LALVariables              *scaleFactors;
   LALDomain                 modelDomain;
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;
   REAL8TimeSeries           *timeDomainNoiseWeights; /* Roughly, InvFFT(1/Noise PSD). */
@@ -332,6 +332,12 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata);
 void addMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max, VariableType type);
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max);
 void removeMinMaxPrior(LALVariables *priorArgs, const char *name);
+
+void addGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
+  void *sigma, VariableType type);
+void getGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
+  void *sigma);
+void removeGaussianPrior(LALVariables *priorArgs, const char *name);
 
 LALVariableItem *getItem(LALVariables *vars,const char *name);
 LALVariableItem *getItemNr(LALVariables *vars, int index);

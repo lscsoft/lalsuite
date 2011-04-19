@@ -1713,6 +1713,50 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 }
 
 
+/* Function to add the min and max values for the prior onto the priorArgs */
+void addGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
+  void *sigma, VariableType type){
+  char meanName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+  
+  sprintf(meanName,"%s_mean",name);
+  sprintf(sigmaName,"%s_sigma",name);
+  
+  addVariable(priorArgs,meanName,mu,type,PARAM_FIXED);
+  addVariable(priorArgs,sigmaName,sigma,type,PARAM_FIXED);    
+  return;
+}
+
+/* Function to remove the min and max values for the prior onto the priorArgs */
+void removeGaussianPrior(LALVariables *priorArgs, const char *name){
+  char meanName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+  
+  sprintf(meanName,"%s_mean",name);
+  sprintf(sigmaName,"%s_sigma",name);
+  
+  removeVariable(priorArgs, meanName);
+  removeVariable(priorArgs, sigmaName);
+  return;
+}
+
+/* Get the min and max values of the prior from the priorArgs list, given a name
+*/
+void getGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
+  void *sigma)
+{
+  char meanName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+                
+  sprintf(meanName,"%s_mean",name);
+  sprintf(sigmaName,"%s_sigma",name);
+    
+  *(REAL8 *)mu=*(REAL8 *)getVariable(priorArgs,meanName);
+  *(REAL8 *)sigma=*(REAL8 *)getVariable(priorArgs,sigmaName);
+  return;
+                
+}
+
 REAL8 NullLogLikelihood(LALIFOData *data)
 /*Idential to FreqDomainNullLogLikelihood                        */
 {

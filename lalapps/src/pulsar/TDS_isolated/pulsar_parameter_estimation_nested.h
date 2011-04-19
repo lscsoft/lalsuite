@@ -68,42 +68,51 @@ extern "C" {
 #define TIMEBINS 1440
 
 /** define functions */
-	
-/* function to return the (REAL8) log factorial of an integer */
-REAL8 log_factorial(INT4 num);
 
-UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax );
+/* initialisation functions */
+void initialiseAlgorithm( LALInferenceRunState *runState );
 
-REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data );
+void readPulsarData( LALInferenceRunState *runState );
 
-void add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
-  BinaryPulsarParams pars );                                                   
-	
-REAL8Vector * sum_data( LALIFOData *data );
-
-void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
-
-REAL8 priorFunction(LALInferenceRunState *runState, LALVariables *params);
-
-void readPulsarData(LALInferenceRunState *runState);
-
-void initialiseAlgorithm(LALInferenceRunState *runState);
+void setupFromParFile( LALInferenceRunState *runState );
 
 void setupLookupTables(LALInferenceRunState *runState, LALSource *source);
 
-void initialiseProposal(LALInferenceRunState *runState);
+UINT4 add_initial_variables( LALVariables *ini, LALVariables *scaleFac,
+                             LALVariables *priorArgs, 
+                             BinaryPulsarParams pars ); 
+  
+UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale, 
+                                LALVariables *prior, const char *name, 
+                                REAL8 value, REAL8 sigma);
 
-void setupFromParFile(LALInferenceRunState *runState);
+void initialiseProposal( LALInferenceRunState *runState );
 
+/* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
-  LALTemplateFunction *get_pulsar_model );
+                             LALTemplateFunction *get_pulsar_model );
+                             
+REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params );
 
+/* model functions */
 void get_pulsar_model( LALIFOData *data );
 
-void response_lookup_table(REAL8 t0, LALDetAndSource detAndSource,
-  INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus, gsl_matrix *LUfcross);
+REAL8Vector *get_phase_model( BinaryPulsarParams params, LALIFOData *data );
+
+void get_amplitude_model( BinaryPulsarParams pars, LALIFOData *data );
   
 REAL8 noise_only_model( LALIFOData *data );
+  
+/* helper functions */
+UINT4Vector *get_chunk_lengths( LALIFOData *data, INT4 chunkMax );
+
+REAL8Vector * sum_data( LALIFOData *data );
+
+void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
+                            INT4 timeSteps, INT4 psiSteps, gsl_matrix *LUfplus,
+                            gsl_matrix *LUfcross );
+                            
+REAL8 log_factorial(UINT4 num);
 
 #ifdef __cplusplus
 }
