@@ -79,6 +79,12 @@ extern "C" {
     REAL8Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
   } LVcomponents;
 
+  /** Type containing a vector of IFO name strings */
+  typedef struct tagNameList {
+    UINT4 length;                         /**< length (maximal number of entries) of the list (how many detectors expected in theory?) */
+    UINT4 elems;                          /**< number of elements really in the list (how many detectors where found in segment SFTs?) */
+    CHAR  **data;                         /**< name strings of the ifos */
+  } NameList;
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
@@ -101,6 +107,7 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const MultiSFTVectorSequence *multiSFTs,
 				    const MultiNoiseWeightsSequence *multiNoiseWeights,
 				    const MultiDetectorStateSeriesSequence *multiDetStates,
+				    const NameList *detectorIDs,
 				    const ComputeFParams *CFparams,
 				    const BOOLEAN SignalOnly);
 
@@ -113,6 +120,16 @@ XLALComputeLineVeto ( const REAL8 TwoF,
 		      const REAL8Vector *TwoFX,
 		      const REAL8 rhomax,
 		      const REAL8Vector *priorX );
+
+int
+XLALGetDetectorIDs ( NameList *detectorIDs,
+		     const MultiSFTVectorSequence *multiSFTsV );
+
+NameList
+*XLALCreateNameList ( UINT4 length );
+
+void
+XLALDestroyNameList ( NameList *list );
 
 #ifdef  __cplusplus
 }
