@@ -1375,7 +1375,8 @@ class tracksearch:
         if (self.sciSeg._ScienceSegment__chunks.__len__() < 1):
             sys.stdout.write("WARNING: Data to be analyzed not properly divided or absent!\n")
             sys.stdout.write("The input options must be WRONG!\n")
-        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+        #Note we need to test for LSCdataFind and ligo_data_find
+        if not str(self.cp.get('condor','datafind')).lower().__contains__(str('ligo_data_find').lower()):
             sys.stdout.write("Assuming we do not need standard data find job! Hardwiring in cache file to pipeline!\n")
             sys.stdout.write("Looking for ini option: condor,datafind_fixcache\n")
         # Pop first chunk off list to keep from repeating jobs!
@@ -1405,7 +1406,7 @@ class tracksearch:
             tracksearchTime_node=tracksearchTimeNode(tracksearchTime_job)
             #If executable name is anything but LSCdataFind we
             #assume that the cache file should be hard wired!
-            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('LSCdataFind').lower()):
+            if not str(self.cp.get('condor','datafind')).lower().__contains__(str('ligo_data_find').lower()):
                 fixCache=self.cp.get('condor','datafind_fixcache')
                 subCacheFile=self.__buildSubCacheFile__(fixCache,dataFindInitialDir,chunk.start(),chunk.end())
                 tracksearchTime_node.add_var_opt('cachefile',subCacheFile)
