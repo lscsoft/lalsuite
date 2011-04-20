@@ -256,6 +256,7 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 	s = gsl_odeiv_step_alloc(T, 2);
 	while (1) {
 		REAL8 dE;
+		++j;
 		gsl_odeiv_step_apply(s, j*deltaT, deltaT, y, yerr, NULL, NULL, &sys);
 		/* MECO termination condition */
 		dE = -E;
@@ -271,15 +272,14 @@ int XLALSimInspiralTaylorT4PNEvolveOrbit(
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", func);
 			break;
 		}
-		(*x)->data->data[j] = y[0];
-		(*phi)->data->data[j] = y[1];
-		++j;
 		if ( j >= (*x)->data->length ) {
 			if ( ! XLALResizeREAL8TimeSeries(*x, 0, (*x)->data->length + blocklen) )
 				XLAL_ERROR(func, XLAL_EFUNC);
 			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
 				XLAL_ERROR(func, XLAL_EFUNC);
 		}
+		(*x)->data->data[j] = y[0];
+		(*phi)->data->data[j] = y[1];
 	}
 	gsl_odeiv_step_free(s);
 
