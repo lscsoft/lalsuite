@@ -23,11 +23,10 @@ extern "C" {
 
 void
 LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
-                							 REAL4Vector *signalvec1,REAL4Vector *signalvec2,
-                							 REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
-                							 UINT4 *countback,
-                							 InspiralTemplate *params,InspiralInit *paramsInit
-														 );
+    REAL4Vector *signalvec1,REAL4Vector *signalvec2,
+    UINT4 *countback,
+    InspiralTemplate *params,InspiralInit *paramsInit
+    );
 
 #ifdef  __cplusplus
 #pragma {

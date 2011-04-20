@@ -293,14 +293,11 @@ LALSTPNWaveformFramelessForInjection (
 			    )
 {
   /* </lalVerbatim> */
- UINT4 count, i;
+ UINT4 count;
 
-  REAL4Vector *a=NULL;/* pointers to generated amplitude  data */
-  REAL4Vector *ff=NULL ;/* pointers to generated  frequency data */
-  REAL8Vector *phi=NULL;/* pointer to generated phase data */
-  REAL4Vector *shift=NULL;/* pointer to generated phase data */
+  REAL4Vector *hplus  = NULL;
+  REAL4Vector *hcross = NULL;
 
-  REAL8 phiC;/* phase at coalescence */
   InspiralInit paramsInit;
 
   CreateVectorSequenceIn in;
@@ -312,14 +309,8 @@ LALSTPNWaveformFramelessForInjection (
   /* Make sure parameter and waveform structures exist. */
   ASSERT( params, status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
   ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  /* Make sure waveform fields don't exist. */
-  ASSERT( !( waveform->a ), status,
-  	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status,
-  	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status,
-  	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->shift ), status,
+  /* Make sure waveform field doesn't exist. */
+  ASSERT( !( waveform->h ), status,
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
   /* Compute some parameters*/
@@ -333,40 +324,32 @@ LALSTPNWaveformFramelessForInjection (
     }
 
   /* Now we can allocate memory and vector for coherentGW structure*/
-  LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
+  LALSCreateVector(status->statusPtr, &hplus,  paramsInit.nbins);
   CHECKSTATUSPTR(status);
-  LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
-  CHECKSTATUSPTR(status);
-  LALDCreateVector(status->statusPtr, &phi, paramsInit.nbins);
-  CHECKSTATUSPTR(status);
-  LALSCreateVector(status->statusPtr, &shift, paramsInit.nbins);
+  LALSCreateVector(status->statusPtr, &hcross, paramsInit.nbins);
   CHECKSTATUSPTR(status);
 
 
   /* By default the waveform is empty */
-  memset(ff->data, 0, paramsInit.nbins * sizeof(REAL4));
-  memset(a->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
-  memset(phi->data, 0, paramsInit.nbins * sizeof(REAL8));
-  memset(shift->data, 0, paramsInit.nbins * sizeof(REAL4));
+  memset(hplus->data,  0, paramsInit.nbins * sizeof(REAL4));
+  memset(hcross->data, 0, paramsInit.nbins * sizeof(REAL4));
 
 
   /* Call the engine function */
-  LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, NULL, NULL, a, ff, phi, shift,&count, params, &paramsInit);
+  LALSTPNAdaptiveWaveformEngineFrameless(status->statusPtr, hplus, hcross, &count, params, &paramsInit);
 
   BEGINFAIL( status )
   {
-     LALSDestroyVector(status->statusPtr, &ff);
+     LALSDestroyVector(status->statusPtr, &hplus);
      CHECKSTATUSPTR(status);
-     LALSDestroyVector(status->statusPtr, &a);
-     CHECKSTATUSPTR(status);
-     LALDDestroyVector(status->statusPtr, &phi);
-     CHECKSTATUSPTR(status);
-     LALSDestroyVector(status->statusPtr, &shift);
+     LALSDestroyVector(status->statusPtr, &hcross);
      CHECKSTATUSPTR(status);
   }
   ENDFAIL( status );
 
-  /* Check an empty waveform hasn't been returned */
+  /* Check an empty waveform hasn't been returned
+     Is this something that we should actually check for?
+     If so, uncomment and switch to checking hplus 
   for (i = 0; i < a->length; i++)
   {
     if (a->data[i] != 0.0) break;
@@ -384,118 +367,59 @@ LALSTPNWaveformFramelessForInjection (
       DETATCHSTATUSPTR( status );
       RETURN( status );
     }
-  }
+  } */
 
-  {
-    phiC =  phi->data[count-1] ;
-
-/*    for (i=0; i<count;i++)
-      {
-	phi->data[i] =  -phiC + phi->data[i] +ppnParams->phi;
-      } */
 
     /* Allocate the waveform structures. */
-    if ( ( waveform->a = (REAL4TimeVectorSeries *)
+    if ( ( waveform->h = (REAL4TimeVectorSeries *)
 	   LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
       ABORT( status, LALINSPIRALH_EMEM,
 	     LALINSPIRALH_MSGEMEM );
     }
-    memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-
-    if ( ( waveform->f = (REAL4TimeSeries *)
-	   LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-      LALFree( waveform->a ); waveform->a = NULL;
-      ABORT( status, LALINSPIRALH_EMEM,
-	     LALINSPIRALH_MSGEMEM );
-    }
-    memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-
-    if ( ( waveform->phi = (REAL8TimeSeries *)
-	   LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-      LALFree( waveform->a ); waveform->a = NULL;
-      LALFree( waveform->f ); waveform->f = NULL;
-      ABORT( status, LALINSPIRALH_EMEM,
-	     LALINSPIRALH_MSGEMEM );
-    }
-    memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-
-    if ( ( waveform->shift = (REAL4TimeSeries *)
-	   LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-      LALFree( waveform->a ); waveform->a = NULL;
-      LALFree( waveform->f ); waveform->f = NULL;
-      LALFree( waveform->phi ); waveform->phi = NULL;
-      ABORT( status, LALINSPIRALH_EMEM,
-	     LALINSPIRALH_MSGEMEM );
-    }
-    memset( waveform->shift, 0, sizeof(REAL4TimeSeries) );
-
+    memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
 
 
     in.length = (UINT4)count;
     in.vectorLength = 2;
     LALSCreateVectorSequence( status->statusPtr,
-			      &( waveform->a->data ), &in );
-    CHECKSTATUSPTR(status);
-    LALSCreateVector( status->statusPtr,
-		      &( waveform->f->data ), count);
-    CHECKSTATUSPTR(status);
-    LALDCreateVector( status->statusPtr,
-		      &( waveform->phi->data ), count );
-    CHECKSTATUSPTR(status);
-
-    LALSCreateVector( status->statusPtr,
-		      &( waveform->shift->data ), count );
+			      &( waveform->h->data ), &in );
     CHECKSTATUSPTR(status);
 
 
-    memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
-    memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
-    memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
-    memcpy(waveform->shift->data->data ,shift->data, count*(sizeof(REAL4)));
+    memcpy(waveform->h->data->data,
+             hplus->data, count*(sizeof(REAL4)));
+    memcpy(waveform->h->data->data + count,
+             hcross->data, count*(sizeof(REAL4)));
 
-    waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT = waveform->shift->deltaT
-      = 1./params->tSampling;
-
-    waveform->a->sampleUnits = lalStrainUnit;
-    waveform->f->sampleUnits = lalHertzUnit;
-    waveform->phi->sampleUnits = lalDimensionlessUnit;
-    waveform->shift->sampleUnits 	= lalDimensionlessUnit;
+    waveform->h->deltaT = 1./params->tSampling;
+    waveform->h->sampleUnits = lalStrainUnit;
 
     waveform->position = ppnParams->position;
     waveform->psi = ppnParams->psi;
 
 
-    snprintf( waveform->a->name, 	LALNameLength, "STPN inspiral amplitudes" );
-    snprintf( waveform->f->name, 	LALNameLength, "STPN inspiral frequency" );
-    snprintf( waveform->phi->name, 	LALNameLength, "STPN inspiral phase" );
-    snprintf( waveform->shift->name, LALNameLength, "STPN inspiral polshift" );
+    snprintf( waveform->h->name, 	LALNameLength, "STPN inspiral strain" );
 
 
     /* --- fill some output ---*/
     ppnParams->tc     = (double)(count-1) / params->tSampling ;
     ppnParams->length = count;
-    ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
+    /*ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1]
 				 - waveform->f->data->data[count-2]))
-      * ppnParams->deltaT;
+      * ppnParams->deltaT; */
     ppnParams->fStop  = params->fFinal;
     ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
     ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
 
     ppnParams->fStart   = ppnParams->fStartIn;
-  } /* end phase condition*/
 
   /* --- free memory --- */
 
 
-  LALSDestroyVector(status->statusPtr, &ff);
+  LALSDestroyVector(status->statusPtr, &hplus);
   CHECKSTATUSPTR(status);
-  LALSDestroyVector(status->statusPtr, &a);
+  LALSDestroyVector(status->statusPtr, &hcross);
   CHECKSTATUSPTR(status);
-  LALDDestroyVector(status->statusPtr, &phi);
-  CHECKSTATUSPTR(status);
-  LALSDestroyVector(status->statusPtr, &shift);
-  CHECKSTATUSPTR(status);
-
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -505,7 +429,6 @@ LALSTPNWaveformFramelessForInjection (
 void
 LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
         REAL4Vector *signalvec1,REAL4Vector *signalvec2,
-        REAL4Vector *a,REAL4Vector *ff,REAL8Vector *phi,REAL4Vector *shift,
         UINT4 *countback,
         InspiralTemplate *params,InspiralInit *paramsInit )
 {	/* </lalVerbatim> */
@@ -605,99 +528,66 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
      							 params->inclination);
 	}
 	
-	/* check that we're not above Nyquist */
+	/* check that we're not above Nyquist
+           Need to find a way to pass this information along without creating GB worth of warnings. a --no-warning flag?
 	if (yinit[1]/unitHz > 0.5 * params->tSampling) {
-    //Need to find a way to pass this information along without creating GB worth of warnings. a --no-warning flag?
-		//fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
-	}
+		fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
+	} */
 	
 	/* if we have enough space, compute the waveform components; otherwise abort */
-  if ((signalvec1 && len >= signalvec1->length) || (ff && len >= ff->length)) {
-		if (signalvec1) {
-			fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
-		} else if (ff) {
-			fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in ff: %d vs. %d\n",len,ff->length);
-		} else {
-			fprintf(stderr,"LALSTPNWaveformFrameless: no space to write anywhere!\n");
-		}
-		ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  } else {		
-		/* set up some aliases for the returned arrays; note vector 0 is time */
-	
-  //  REAL8 *thet = yout->data;
-		REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
-		REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len];	REAL8 *LNhz  = &yout->data[5*len];
-
-		/* these are not needed for the waveforms:
-		REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];	
-		REAL8 *S2x  = &yout->data[9*len]; REAL8 *S2y   = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];	*/
-
-		REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y  = &yout->data[13*len];	REAL8 *E1z  = &yout->data[14*len];
-
-		*countback = len;
-
-    if (signalvec1) { /* return polarizations */
-        printf("Frameless STPN generating hplus.\n");
-        REAL8 v, amp;
-		
-        for(unsigned int i=0;i<len;i++) {
-            v = pow(omega[i],oneby3);
-            amp = params->signalAmplitude * (v*v);
-
-            E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
-            E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
-            E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
-
-            /* Polarization tensors projected into viewer's frame */
-            hpluscos  = 0.5 * (E1x[i]*E1x[i] - E1y[i]*E1y[i] - E2x*E2x + E2y*E2y);
-            hplussin  = E1x[i]*E2x - E1y[i]*E2y;
-
-            signalvec1->data[i] = (REAL4) ( -1.0 * amp * \
-                ( hpluscos * cos(2*vphi[i]) + hplussin * sin(2*vphi[i]) ) );
-
-            if (signalvec2) {
-                printf("Frameless STPN generating hcross.\n");
-                hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
-                hcrosssin = E1y[i]*E2x + E1x[i]*E2y;
-
-                signalvec2->data[i] = (REAL4) ( -1.0 * amp * \
-                    ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
-            }
-        }
-		
-        params->fFinal = pow(v,3.0)/(LAL_PI*m);
-	params->tC = yout->data[len-1];	/* In the original code, this is only done if signalvec2 doesn't exist. I don't see a reason for that, so I removed it. */
-    } else if (a) {	/* return coherentGW components */
-        //printf("Frameless STPN generating a, phi, etc.\n");
-        REAL8 apcommon, f2a;
-
-        /* (minus) amplitude for distance in m; should be (1e6 * LAL_PC_SI * params->distance) for distance in Mpc */
-        apcommon = -4.0 * params->mu * LAL_MRSUN_SI/(params->distance);
-        apcommon = sqrt(2.0) * apcommon; /* Rescale so we can set phi to 45 degrees and just store hplus and hcross in a1 and a2. This should work, but it's awkward. The CoherentGW convention is not good; we're just playing along. */	
-        for(unsigned int i=0;i<len;i++) {
-            f2a = pow(omega[i],twoby3);
-
-            E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i];
-            E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
-            E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
-
-            hpluscos  = 0.5 * (E1x[i]*E1x[i] - E1y[i]*E1y[i] - E2x*E2x + E2y*E2y);
-            hplussin  = E1x[i]*E2x - E1y[i]*E2y;
-            hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
-            hcrosssin = E1y[i]*E2x + E1x[i]*E2y;
-
-            ff->data[i]    = (REAL4)(omega[i]/unitHz);
-            a->data[2*i]   = (REAL4)( apcommon * f2a * \
-                ( hpluscos * cos(2*vphi[i]) + hplussin * sin(2*vphi[i]) ) );
-            a->data[2*i+1] = (REAL4)( apcommon * f2a * \
-                ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
-            phi->data[i]   = (REAL8) 0.7853981633974483; /* pi/4 so get both a1 and a2 */
-            shift->data[i] = (REAL4) 0.0;
-	}
-	
-	params->fFinal = ff->data[len-1];
-    }
+  if (signalvec1 && len >= signalvec1->length) {
+      fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec1: %d vs. %d\n",len,signalvec1->length);
+      ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   }
+  if (signalvec2 && len >= signalvec2->length) {
+      fprintf(stderr,"LALSTPNWaveformFrameless: no space to write in signalvec2: %d vs. %d\n",len,signalvec2->length);
+      ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  }
+
+  /* set up some aliases for the returned arrays; note vector 0 is time */
+	
+  REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
+  REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len]; REAL8 *LNhz = &yout->data[5*len];
+
+  /* these are not needed for the waveforms:
+  REAL8 *S1x  = &yout->data[6*len]; REAL8 *S1y   = &yout->data[7*len];  REAL8 *S1z   = &yout->data[8*len];	
+  REAL8 *S2x  = &yout->data[9*len]; REAL8 *S2y   = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];	*/
+
+  REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len]; REAL8 *E1z = &yout->data[14*len];
+
+  *countback = len;
+
+  REAL8 v, amp;
+		
+  for(unsigned int i=0;i<len;i++) {
+      v = pow(omega[i],oneby3);
+      amp = params->signalAmplitude * (v*v);
+
+      E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
+      E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
+      E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
+
+      if (signalvec1) {
+          /* Hplus polarization tensor projected into viewer's frame */
+          hpluscos  = 0.5 * (E1x[i]*E1x[i] - E1y[i]*E1y[i] - E2x*E2x + E2y*E2y);
+          hplussin  = E1x[i]*E2x - E1y[i]*E2y;
+
+          signalvec1->data[i] = (REAL4) ( -1.0 * amp * \
+              ( hpluscos * cos(2*vphi[i]) + hplussin * sin(2*vphi[i]) ) );
+      }
+
+      if (signalvec2) {
+          /* Polarization tensors projected into viewer's frame */
+          hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
+          hcrosssin = E1y[i]*E2x + E1x[i]*E2y;
+
+          signalvec2->data[i] = (REAL4) ( -1.0 * amp * \
+              ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
+      }
+  }
+      
+  params->fFinal = (REAL4)(omega[len-1]/unitHz);
+  params->tC = yout->data[len-1];	/* In the original code, this is only done if signalvec2 doesn't exist. I don't see a reason for that, so I removed it. */
 
   if (yout) XLALDestroyREAL8Array(yout);
 
