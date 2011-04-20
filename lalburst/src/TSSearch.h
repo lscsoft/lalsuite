@@ -146,6 +146,9 @@ extern "C" {
 					     * of input time series
 					     * data
 					     */
+    REAL8             HeterodyneFrequency; /* If used to adjust f0 */
+    REAL8             HeterodyneSamplingRate; /*New effect fSamp*/
+    INT4              dcDetrend; /*Blocksize(pts) detrend variable DC offset*/
     LIGOTimeGPS       Tlength;/*Data set time length*/
     TimeFreqRepType   TransformType;/*Type of TF rep to make */
     INT4              LineWidth;/* Sigma-convolution kernel width*/

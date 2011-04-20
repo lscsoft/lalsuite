@@ -30,9 +30,18 @@ import ConfigParser
 import time
 from glue import pipeline
 from lalapps import tracksearch
-from lalapps.tracksearch import buildDir
-from lalapps.tracksearchutils import progressSpinner
-from lalapps.tracksearchutils import generateFileList
+try:
+    from lalapps.tracksearch import buildDir
+except:
+    from tracksearch import buildDir
+try:
+    from lalapps.tracksearchutils import progressSpinner
+except:
+     from tracksearchutils import progressSpinner
+try:
+    from lalapps.tracksearchutils import generateFileList
+except:
+    from tracksearchutils import generateFileList
 
 
 #Parse in command line inputs
