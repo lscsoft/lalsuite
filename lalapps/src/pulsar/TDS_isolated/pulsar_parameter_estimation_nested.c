@@ -763,7 +763,7 @@ UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale,
   
   /* if the sigma is non-zero then set a Gaussian prior */
   if ( sigma != 0. ){
-    vary = PARAM_GAUSSIAN;
+    vary = PARAM_LINEAR;
     
     /* set the prior to a Gaussian prior with mean value and sigma */
     addGaussianPrior( prior, name, (void *)&value, (void *)&sigma, REAL8_t );
@@ -821,7 +821,8 @@ void initialiseProposal( LALInferenceRunState *runState )
     REAL8 scale = 0.;
     VariableType scaleType;
     CHAR tempParScale[VARNAME_MAX] = "";
-    
+    CHAR tempParPrior[VARNAME_MAX] = "";
+ 
     LALIFOData *datatemp = data;
     
     ParamVaryType varyType;
@@ -833,7 +834,8 @@ set.\n", propfile, tempPar);
     }
     
     sprintf(tempParScale, "%s_scale", tempPar);
-    
+    sprintf(tempParPrior, "%s_gaussian_mean", tempPar);
+
     tempVar = *(REAL8*)getVariable( runState->currentParams, tempPar );
     type = getVariableType( runState->currentParams, tempPar );
     varyType = getVariableVaryType( runState->currentParams, tempPar );
@@ -843,7 +845,7 @@ set.\n", propfile, tempPar);
     
     /* if a Gaussian prior has already been defined (i.e. from the par file)
        remove this and overwrite with values from the propfile */
-    if ( varyType == PARAM_GAUSSIAN )
+    if (checkVariable(runState->priorArgs) /* varyType == PARAM_GAUSSIAN */)
       removeGaussianPrior( runState->priorArgs, tempPar );
     
     scale = high;
@@ -898,8 +900,11 @@ set.\n", propfile, tempPar);
     
     VariableType scaleType;
     CHAR tempParScale[VARNAME_MAX] = "";
-    
-    if ( checkPrior->vary == PARAM_GAUSSIAN ){
+    CHAR tempParPrior[VARNAME_MAX] = "";
+
+    sprintf(tempParPrior,"%s_gaussian_mean",checkPrior->name);
+
+    if ( checkVariable(runState->priorArgs, tempParPrior) /*checkPrior->vary == PARAM_GAUSSIAN*/ ){
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
@@ -1054,6 +1059,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
+    CHAR priorPar[VARNAME_MAX] = "";
     REAL8 scale;
     
     if( item->vary == PARAM_FIXED || item->vary == PARAM_OUTPUT ){ continue; }
@@ -1061,32 +1067,33 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
     sprintf(scalePar, "%s_scale", item->name);
     scale = *(REAL8 *)getVariable( data->dataParams, scalePar );
     
-    if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){  
-      getMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
-                      (void *)&max );
+    if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){
+      sprintf(priorPar, "%s_gaussian_mean", item->name);
+      /* Check for a gaussian */
+      if (checkVariable(runstate->priorArgs, priorPar)){
+        getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, (void *)&sigma );
+       /* if parameter value is outside of 10 sigma then return -DBL_MAX */
+       /* if( (*(REAL8 *)item->value) < mu-10.*sigma || 
+        (*(REAL8 *)item->value) > mu+10.*sigma ) return -DBL_MAX; */
       
+       value = (*(REAL8 *)item->value) * scale;
+       mu *= scale;
+       sigma *= scale;
+       prior -= log(sqrt(2.*LAL_PI)*sigma);
+       prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
+      }
+      /* Otherwise use a flat prior */
+      else{
+	getMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
+                      (void *)&max );
+
       if( (*(REAL8 *) item->value)*scale < min*scale || 
         (*(REAL8 *)item->value)*scale > max*scale ){
          return -DBL_MAX;
       }
       else prior -= log( (max - min) * scale );
     }
-    else if( item->vary == PARAM_GAUSSIAN ){
-      getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
-                        (void *)&sigma );
-      
-      /* if parameter value is outside of 10 sigma then return -DBL_MAX */
-      /* if( (*(REAL8 *)item->value) < mu-10.*sigma || 
-        (*(REAL8 *)item->value) > mu+10.*sigma ) return -DBL_MAX; */
-      
-      value = (*(REAL8 *)item->value) * scale;
-      mu *= scale;
-      sigma *= scale;
-      
-      prior -= log(sqrt(2.*LAL_PI)*sigma);
-      prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
     }
-  }
   return prior; 
 }
 

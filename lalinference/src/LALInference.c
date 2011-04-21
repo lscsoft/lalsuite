@@ -1719,8 +1719,8 @@ void addGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
   char meanName[VARNAME_MAX];
   char sigmaName[VARNAME_MAX];
   
-  sprintf(meanName,"%s_mean",name);
-  sprintf(sigmaName,"%s_sigma",name);
+  sprintf(meanName,"%s_gaussian_mean",name);
+  sprintf(sigmaName,"%s_gaussian_sigma",name);
   
   addVariable(priorArgs,meanName,mu,type,PARAM_FIXED);
   addVariable(priorArgs,sigmaName,sigma,type,PARAM_FIXED);    
@@ -1732,8 +1732,8 @@ void removeGaussianPrior(LALVariables *priorArgs, const char *name){
   char meanName[VARNAME_MAX];
   char sigmaName[VARNAME_MAX];
   
-  sprintf(meanName,"%s_mean",name);
-  sprintf(sigmaName,"%s_sigma",name);
+  sprintf(meanName,"%s_gaussian_mean",name);
+  sprintf(sigmaName,"%s_gaussian_sigma",name);
   
   removeVariable(priorArgs, meanName);
   removeVariable(priorArgs, sigmaName);
@@ -1748,8 +1748,8 @@ void getGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,
   char meanName[VARNAME_MAX];
   char sigmaName[VARNAME_MAX];
                 
-  sprintf(meanName,"%s_mean",name);
-  sprintf(sigmaName,"%s_sigma",name);
+  sprintf(meanName,"%s_gaussian_mean",name);
+  sprintf(sigmaName,"%s_gaussian_sigma",name);
     
   *(REAL8 *)mu=*(REAL8 *)getVariable(priorArgs,meanName);
   *(REAL8 *)sigma=*(REAL8 *)getVariable(priorArgs,sigmaName);
