@@ -98,7 +98,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   initialiseProposal( &runState );
   printf("Done initialiseProposal\n");
  
-  runState.proposal = LALInferenceProposalPulsarNS_MATT;
+  runState.proposal = LALInferenceProposalPulsarNS;
   
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( runState.data );
@@ -1807,8 +1807,6 @@ void rescaleOutput( LALInferenceRunState *runState ){
   
   fclose(fp);
   fclose(fptemp);
-  
-  return;
   
   /* move the temporary file name to the standard outfile name */
   rename( outfiletmp, outfile );

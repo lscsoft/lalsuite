@@ -97,8 +97,7 @@ typedef enum {
 	PARAM_LINEAR,
 	PARAM_CIRCULAR,
 	PARAM_FIXED,    /* Never changes */
-	PARAM_OUTPUT,   /* Changed by the inner code and passed out */
-	PARAM_GAUSSIAN  /* Gaussian prior on parameter */
+	PARAM_OUTPUT    /* Changed by the inner code and passed out */
 } ParamVaryType;
 
 
