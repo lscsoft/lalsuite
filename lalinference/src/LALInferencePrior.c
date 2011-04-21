@@ -38,8 +38,10 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALVariables *pa
 	/* Check boundaries */
 	for(;item;item=item->next)
 	{
-		//if(item->vary!=PARAM_LINEAR || item->vary!=PARAM_CIRCULAR) continue;
-		if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT) continue;
+		if(item->vary!=PARAM_LINEAR && item->vary!=PARAM_CIRCULAR)
+                        continue;
+		/* if(item->vary==PARAM_FIXED || item->vary==PARAM_OUTPUT)
+continue; */
 		else
 		{
 			getMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
@@ -125,43 +127,52 @@ void LALInferenceCyclicReflectiveBound(LALVariables *parameter, LALVariables *pr
 STANDARD FUNCTION ABOVE IF IT DOES NOT CAUSE PROBLEMS */
 void LALInferenceCyclicReflectiveBound_MATT(LALVariables *parameter,
 LALVariables *priorArgs){
-        /* Apply cyclic and reflective boundaries to parameter to bring it back
-within
-         the prior */
-        LALVariableItem *paraHead=NULL;
-        REAL8 delta;
-        REAL8 min,max;
-        for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
-        {
-                if( paraHead->vary==PARAM_FIXED || 
-                    paraHead->vary==PARAM_OUTPUT ||
-                    paraHead->vary==PARAM_GAUSSIAN )
-continue;
-                getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void
-*)&max);
-                if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
-                {
-                        delta = max-min;
-                        while ( *(REAL8 *)paraHead->value > max) 
-                                *(REAL8 *)paraHead->value -= delta;
-                        while ( *(REAL8 *)paraHead->value < min) 
-                                *(REAL8 *)paraHead->value += delta;
-                }
-                else if(paraHead->vary==PARAM_LINEAR) /* Use reflective
-boundaries */
-                {
-                        while(max<*(REAL8 *)paraHead->value || min>*(REAL8
-*)paraHead->value){
-                                /*      printf("%s: max=%lf, min=%lf,
-val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
-                                if(max < *(REAL8 *)paraHead->value) *(REAL8
-*)paraHead->value-=2.0*(*(REAL8 *)paraHead->value - max);
-                                if(min > *(REAL8 *)paraHead->value) *(REAL8
-*)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
-                        }
-                }
-        }       
-        return;
+/* Apply cyclic and reflective boundaries to parameter to bring it back
+   within the prior */
+  LALVariableItem *paraHead=NULL;
+  REAL8 delta;
+  REAL8 min,max;
+  /* REAL8 mu, sigma; */
+  for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
+  {
+    if( paraHead->vary==PARAM_FIXED || 
+        paraHead->vary==PARAM_OUTPUT ||
+        paraHead->vary==PARAM_GAUSSIAN ) continue;
+      
+    /* if( paraHead->vary == PARAM_CIRCULAR || paraHead->vary==PARAM_LINEAR ) */
+    getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    
+    /* if parameter is Gaussian use reflective boundaries at mu +/- 10*sigma */
+    /* if( paraHead->vary == PARAM_GAUSSIAN ){
+      getGaussianPrior(priorArgs, paraHead->name, (void *)&mu, (void *)&sigma);
+      
+      max = mu + 10.*sigma;
+      min = mu - 10.*sigma;
+    } */
+      
+    if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
+    {
+       delta = max-min;
+       while ( *(REAL8 *)paraHead->value > max) 
+         *(REAL8 *)paraHead->value -= delta;
+    
+       while ( *(REAL8 *)paraHead->value < min) 
+         *(REAL8 *)paraHead->value += delta;
+     }
+     else if(paraHead->vary==PARAM_LINEAR)/* || paraHead->vary ==
+PARAM_GAUSSIAN) */    /* Use reflective boundaries */
+     {
+       while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
+       /*      printf("%s: max=%lf,
+min=%lf, val=%lf\n",paraHead->name,max,min,*(REAL8 *)paraHead->value); */
+         if(max < *(REAL8 *)paraHead->value)
+           *(REAL8 *)paraHead->value -= 2.0*(*(REAL8 *)paraHead->value - max);
+         if(min > *(REAL8 *)paraHead->value) 
+           *(REAL8 *)paraHead->value+=2.0*(min - *(REAL8 *)paraHead->value);
+       }
+     }
+   }
+   return;
 }
 
 /* Return the log Prior of the variables specified, for the non-spinning/spinning inspiral signal case */

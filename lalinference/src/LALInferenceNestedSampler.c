@@ -343,10 +343,12 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 	REAL8 logLmin=*(REAL8 *)getVariable(runState->algorithmParams,"logLmin");
 	REAL8 logPriorOld,logPriorNew,logLnew;
 	newParams=calloc(1,sizeof(LALVariables));
-	/* Make a copy of the parameters passed through currentParams */
+        
+        /* Make a copy of the parameters passed through currentParams */
 	copyVariables(runState->currentParams,newParams);
 	/* Evolve the sample until it is accepted */
 	logPriorOld=runState->prior(runState,runState->currentParams);
+ 
 	do{
 		mcmc_iter++;
 		runState->proposal(runState,newParams);
@@ -363,6 +365,7 @@ void NestedSamplingOneStep(LALInferenceRunState *runState)
 			runState->currentLikelihood=logLnew;
 		}
 	} while(mcmc_iter<Nmcmc);
+        
 	destroyVariables(newParams);
 	free(newParams);
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;

@@ -114,6 +114,8 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detAndSource,
                             
 REAL8 log_factorial(UINT4 num);
 
+void rescaleOutput( LALInferenceRunState *runState );
+
 #ifdef __cplusplus
 }
 #endif

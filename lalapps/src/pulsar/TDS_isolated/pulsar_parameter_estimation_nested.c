@@ -125,6 +125,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.algorithm( &runState );
   printf("Done nested sampling algorithm\n");
 
+  /* re-read in output samples and rescale appropriately */
+  rescaleOutput( &runState );
+  
   return 0;
 }
 
@@ -1046,36 +1049,41 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
   LALIFOData *data = runState->data;
   (void)runState;
   LALVariableItem *item = params->head;
-  REAL8 min, max, mu, sigma, prior = 0., value = 0.;
+  REAL8 min, max, mu, sigma, prior = 0, value = 0.;
   
   for(; item; item = item->next ){
     /* get scale factor */
     CHAR scalePar[VARNAME_MAX] = "";
     REAL8 scale;
     
-    if( item->vary != PARAM_LINEAR || item->vary != PARAM_CIRCULAR ||
-        item->vary != PARAM_GAUSSIAN ){ continue; }
+    if( item->vary == PARAM_FIXED || item->vary == PARAM_OUTPUT ){ continue; }
     
     sprintf(scalePar, "%s_scale", item->name);
     scale = *(REAL8 *)getVariable( data->dataParams, scalePar );
     
-    if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){
-      getMinMaxPrior( params, item->name, (void *)&min, (void *)&max );
+    if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){  
+      getMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
+                      (void *)&max );
       
       if( (*(REAL8 *) item->value)*scale < min*scale || 
         (*(REAL8 *)item->value)*scale > max*scale ){
-        return -DBL_MAX;
+         return -DBL_MAX;
       }
-      else prior = -log( (max - min) * scale );
+      else prior -= log( (max - min) * scale );
     }
     else if( item->vary == PARAM_GAUSSIAN ){
-      getGaussianPrior( params, item->name, (void *)&mu, (void *)&sigma );
+      getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
+                        (void *)&sigma );
+      
+      /* if parameter value is outside of 10 sigma then return -DBL_MAX */
+      /* if( (*(REAL8 *)item->value) < mu-10.*sigma || 
+        (*(REAL8 *)item->value) > mu+10.*sigma ) return -DBL_MAX; */
       
       value = (*(REAL8 *)item->value) * scale;
       mu *= scale;
       sigma *= scale;
       
-      prior = -log(sqrt(2.*LAL_PI)*sigma);
+      prior -= log(sqrt(2.*LAL_PI)*sigma);
       prior -= (value - mu)*(value - mu) / (2.*sigma*sigma);
     }
   }
@@ -1593,6 +1601,115 @@ REAL8 log_factorial( UINT4 num ){
   for( i=2 ; i <= num ; i++ ) logFac += log((REAL8)i);
   
   return logFac;
+}
+
+void rescaleOutput( LALInferenceRunState *runState ){
+  /* Open orginal output output file */
+  CHAR *outfile, outfiletmp[256] = "";
+  FILE *fp = NULL, *fptemp = NULL;
+  
+  LALVariables *current=XLALCalloc(1,sizeof(LALVariables));
+  
+  ProcessParamsTable *ppt = getProcParamVal(runState->commandLine,"--outfile");
+  if( !ppt ){
+    fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+    exit(1);
+  }
+  outfile = ppt->value;
+  
+  /* set temporary file for re-writing out samples */
+  sprintf(outfiletmp, "%s_tmp", outfile);
+  
+  /* open output file */
+  if( (fp = fopen(outfile, "r")) == NULL ){
+    fprintf(stderr, "Error... cannot open output file %s.\n", outfile);
+    exit(3);
+  }
+  
+  /* open tempoary output file for reading */
+  if( (fptemp = fopen(outfiletmp, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open temporary output file %s.\n",
+            outfile);
+    exit(3);
+  }
+ 
+  /* copy variables from runState to current (this seems to switch the order,
+     which is required! */
+  copyVariables(runState->currentParams, current);
+  
+  do{
+    LALVariableItem *item = current->head;
+    
+    CHAR line[1000];
+    CHAR value[128] = "";
+    UINT4 i=0;
+    
+    /* read in one line of the file */
+    if( fgets(line, 1000*sizeof(CHAR), fp) == NULL && !feof(fp) ){
+      fprintf(stderr, "Error... cannot read line from file %s.\n", outfile);
+      exit(3);
+    }
+    
+    if( feof(fp) ) break;
+    
+    /* scan through line, get value and reprint out scaled value to temporary
+       file */
+    while (item != NULL){
+      CHAR scalename[VARNAME_MAX] = "";
+      REAL8 scalefac = 1.;
+      
+      if( i == 0 ){
+        sprintf(value, "%s", strtok(line, "'\t'"));
+        i++;
+      }
+      else
+        sprintf(value, "%s", strtok(NULL, "'\t'"));
+      
+      sprintf(scalename, "%s_scale", item->name);
+      
+      if( strcmp(item->name, "model") ){
+        scalefac = *(REAL8 *)getVariable( runState->data->dataParams, 
+                                          scalename );
+      }
+      
+      switch (item->type) {
+        case INT4_t:
+          fprintf(fptemp, "%d", (INT4)(atoi(value)*scalefac));
+          break;
+        case REAL4_t:
+          fprintf(fptemp, "%e", atof(value)*scalefac);
+          break;
+        case REAL8_t:
+          fprintf(fptemp, "%le", atof(value)*scalefac);
+          break;
+        case string_t:
+          /* don't reprint out any string values */
+          break;
+        default:
+          fprintf(stderr, "No type specified for %s.\n", item->name);
+      }
+      
+      fprintf(fptemp, "\t");
+      
+      item = item->next;
+    }
+    
+    /* last item in the line should be the logLikelihood (which is not in the
+       currentParams structure) */
+    sprintf(value, "%s", strtok(NULL, "'\t'"));
+    fprintf(fptemp, "%lf\n", atof(value));
+    
+  }while( !feof(fp) );
+  
+  fclose(fp);
+  fclose(fptemp);
+  
+  return;
+  
+  /* move the temporary file name to the standard outfile name */
+  rename( outfiletmp, outfile );
+  
+  return;
 }
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
