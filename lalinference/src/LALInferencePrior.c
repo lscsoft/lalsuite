@@ -135,21 +135,16 @@ LALVariables *priorArgs){
   /* REAL8 mu, sigma; */
   for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
   {
-    if( paraHead->vary==PARAM_FIXED || 
-        paraHead->vary==PARAM_OUTPUT ||
-        paraHead->vary==PARAM_GAUSSIAN ) continue;
-      
-    /* if( paraHead->vary == PARAM_CIRCULAR || paraHead->vary==PARAM_LINEAR ) */
-    getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+    CHAR gp[VARNAME_MAX] = "";
     
-    /* if parameter is Gaussian use reflective boundaries at mu +/- 10*sigma */
-    /* if( paraHead->vary == PARAM_GAUSSIAN ){
-      getGaussianPrior(priorArgs, paraHead->name, (void *)&mu, (void *)&sigma);
-      
-      max = mu + 10.*sigma;
-      min = mu - 10.*sigma;
-    } */
-      
+    sprintf(gp, "%s_gaussian_mean", paraHead->name);
+    
+    if( paraHead->vary==PARAM_FIXED || 
+        paraHead->vary==PARAM_OUTPUT || 
+        checkVariable(priorArgs, gp) ) continue;
+
+    getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
+         
     if(paraHead->vary==PARAM_CIRCULAR) /* For cyclic boundaries */
     {
        delta = max-min;
@@ -159,8 +154,7 @@ LALVariables *priorArgs){
        while ( *(REAL8 *)paraHead->value < min) 
          *(REAL8 *)paraHead->value += delta;
      }
-     else if(paraHead->vary==PARAM_LINEAR)/* || paraHead->vary ==
-PARAM_GAUSSIAN) */    /* Use reflective boundaries */
+     else if(paraHead->vary==PARAM_LINEAR) /* Use reflective boundaries */
      {
        while(max<*(REAL8 *)paraHead->value || min>*(REAL8 *)paraHead->value){
        /*      printf("%s: max=%lf,

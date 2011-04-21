@@ -88,6 +88,8 @@ UINT4 add_variable_scale_prior( LALVariables *var, LALVariables *scale,
 
 void initialiseProposal( LALInferenceRunState *runState );
 
+void setupLivePointsArray( LALInferenceRunState *runState );
+
 /* likelihood and prior */
 REAL8 pulsar_log_likelihood( LALVariables *vars, LALIFOData *data,
                              LALTemplateFunction *get_pulsar_model );

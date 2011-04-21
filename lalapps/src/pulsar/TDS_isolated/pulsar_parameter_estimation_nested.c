@@ -107,7 +107,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   printf("Done setting noise likelihood\n");
   
   /* Create live points array and fill initial parameters */
-  LALInferenceSetupLivePointsArray_MATT( &runState );
+  setupLivePointsArray( &runState );
   printf("Done setupLivePointsArray\n");
   
   logLikelihoods = *(REAL8Vector **)getVariable( runState.algorithmParams,
@@ -219,7 +219,6 @@ void readPulsarData( LALInferenceRunState *runState ){
   ProcessParamsTable *commandLine = runState->commandLine;
   
   CHAR *detectors = NULL;
-  CHAR *pulsar = NULL;
   CHAR *outfile = NULL;
   CHAR *inputfile = NULL;
   
@@ -819,7 +818,7 @@ set.\n", propfile, tempPar);
     
     /* if a Gaussian prior has already been defined (i.e. from the par file)
        remove this and overwrite with values from the propfile */
-    if (checkVariable(runState->priorArgs) /* varyType == PARAM_GAUSSIAN */)
+    if ( checkVariable(runState->priorArgs, tempParPrior) )
       removeGaussianPrior( runState->priorArgs, tempPar );
     
     scale = high;
@@ -878,7 +877,7 @@ set.\n", propfile, tempPar);
 
     sprintf(tempParPrior,"%s_gaussian_mean",checkPrior->name);
 
-    if ( checkVariable(runState->priorArgs, tempParPrior) /*checkPrior->vary == PARAM_GAUSSIAN*/ ){
+    if ( checkVariable(runState->priorArgs, tempParPrior) ){
       tempVar = *(REAL8 *)checkPrior->value;
       
       /* get the mean and standard deviation of the Gaussian prior */
@@ -916,6 +915,130 @@ set.\n", propfile, tempPar);
   }
     
   return;
+}
+
+
+void setupLivePointsArray( LALInferenceRunState *runState ){
+/* Set up initial basket of live points, drawn from prior,
+   by copying runState->currentParams to all entries in the array*/
+  UINT4 Nlive = (UINT4)*(INT4 *)getVariable(runState->algorithmParams,"Nlive");
+  UINT4 i;
+  REAL8Vector *logLs;
+        
+  LALVariableItem *current;
+
+  /* Allocate the array */
+  runState->livePoints = XLALCalloc( Nlive, sizeof(LALVariables *) );
+  
+  if( runState->livePoints == NULL ){
+    fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
+    exit(1);
+  }
+
+  logLs = XLALCreateREAL8Vector( Nlive );
+     
+  addVariable( runState->algorithmParams, "logLikelihoods",
+               &logLs, REAL8Vector_t, PARAM_FIXED);
+               
+  fprintf(stdout, "Sprinkling %i live points, may take some time\n", Nlive);
+  
+  for( i=0; i<Nlive; i++){
+    runState->livePoints[i] = XLALCalloc( 1, sizeof(LALVariables) );
+                
+    /* Copy the param structure */
+    copyVariables( runState->currentParams, runState->livePoints[i] );
+    
+    /* Sprinkle the varying points among prior */
+    do{
+      for( current=runState->livePoints[i]->head; current!=NULL;
+           current=current->next){
+        CHAR tempParPrior[VARNAME_MAX] = "";
+        UINT4 gp = 0;
+      
+        sprintf(tempParPrior,"%s_gaussian_mean",current->name);
+      
+        if( checkVariable( runState->priorArgs, tempParPrior ) ) gp = 1;
+        
+        if( current->vary==PARAM_CIRCULAR || current->vary==PARAM_LINEAR )
+        {
+          switch (current->type){
+            case REAL4_t:
+            {
+              REAL4 tmp;
+              REAL4 min, max, mu, sigma;
+                                                       
+              if( gp ){
+                getGaussianPrior( runState->priorArgs, current->name, 
+                                  (void *)&mu, (void *)&sigma );
+                tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
+              }
+              else{
+                getMinMaxPrior( runState->priorArgs, current->name, 
+                                (void *)&min, (void *)&max );
+                tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
+              }
+                                                       
+              setVariable( runState->livePoints[i], current->name, &tmp );
+              break;
+            }
+            case REAL8_t:
+            {
+              REAL8 tmp;
+              REAL8 min, max, mu, sigma;
+                                                       
+              if( gp ){
+                getGaussianPrior( runState->priorArgs, current->name, 
+                                  (void *)&mu, (void *)&sigma );
+                tmp = mu + gsl_ran_gaussian(runState->GSLrandom, (double)sigma);
+              }
+              else{
+                getMinMaxPrior( runState->priorArgs, current->name, 
+                                (void *)&min, (void *)&max );
+                tmp = min + (max-min)*gsl_rng_uniform( runState->GSLrandom );
+              }
+                                                       
+              setVariable( runState->livePoints[i], current->name, &tmp );
+              break;
+            }
+            case INT4_t:
+            {
+              INT4 tmp;
+              INT4 min,max;
+                                                       
+              getMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
+                              (void *)&max );
+                                                       
+              tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable( runState->livePoints[i], current->name, &tmp );
+              break;
+            }
+            case INT8_t:
+            {
+              INT8 tmp;
+              INT8 min, max;
+                                                       
+              getMinMaxPrior( runState->priorArgs, current->name, (void *)&min,
+                              (void *)&max );
+                                                       
+              tmp = min + (max-min)*gsl_rng_uniform(runState->GSLrandom);
+                                                       
+              setVariable( runState->livePoints[i], current->name, &tmp);
+              break;
+            }
+            default:
+              fprintf(stderr,"Trying to randomise a non-numeric parameter!");
+          }
+        }
+      }
+               
+    }while( runState->prior( runState,runState->livePoints[i] ) == -DBL_MAX );
+    
+    /* Populate log likelihood */           
+    logLs->data[i] = runState->likelihood( runState->livePoints[i],
+                                           runState->data, runState->template);
+  }
+        
 }
 
 /*------------------- END INITIALISATION FUNCTIONS ---------------------------*/
@@ -1044,11 +1167,9 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
     if( item->vary == PARAM_LINEAR || item->vary == PARAM_CIRCULAR ){
       sprintf(priorPar, "%s_gaussian_mean", item->name);
       /* Check for a gaussian */
-      if (checkVariable(runstate->priorArgs, priorPar)){
-        getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, (void *)&sigma );
-       /* if parameter value is outside of 10 sigma then return -DBL_MAX */
-       /* if( (*(REAL8 *)item->value) < mu-10.*sigma || 
-        (*(REAL8 *)item->value) > mu+10.*sigma ) return -DBL_MAX; */
+      if ( checkVariable(runState->priorArgs, priorPar) ){
+        getGaussianPrior( runState->priorArgs, item->name, (void *)&mu, 
+                          (void *)&sigma );
       
        value = (*(REAL8 *)item->value) * scale;
        mu *= scale;
@@ -1061,13 +1182,14 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALVariables *params ){
 	getMinMaxPrior( runState->priorArgs, item->name, (void *)&min, 
                       (void *)&max );
 
-      if( (*(REAL8 *) item->value)*scale < min*scale || 
-        (*(REAL8 *)item->value)*scale > max*scale ){
-         return -DBL_MAX;
+        if( (*(REAL8 *) item->value)*scale < min*scale || 
+          (*(REAL8 *)item->value)*scale > max*scale ){
+          return -DBL_MAX;
+        }
+        else prior -= log( (max - min) * scale );
       }
-      else prior -= log( (max - min) * scale );
     }
-    }
+  }
   return prior; 
 }
 
@@ -1434,8 +1556,8 @@ REAL8 noise_only_model( LALIFOData *data ){
   chunkMin = *(INT4*)getVariable( data->dataParams, "chunkMin" );
   chunkMax = *(INT4*)getVariable( data->dataParams, "chunkMax" );
   
-  chunkLengths = *(UINT4Vector **)getVariable( data->dataParams, "chunkLength"
-);
+  chunkLengths = *(UINT4Vector **)getVariable( data->dataParams, 
+                                               "chunkLength" );
   sumData = *(REAL8Vector **)getVariable( data->dataParams, "sumData" );
   
   for (i=0; i<chunkLengths->length; i++){
