@@ -1697,6 +1697,17 @@ void removeMinMaxPrior(LALVariables *priorArgs, const char *name){
   return;
 }
 
+/* Check for a min/max prior set */
+int checkMinMaxPrior(LALVariables *priorArgs, const char *name)
+{
+	char minName[VARNAME_MAX];
+	char maxName[VARNAME_MAX];
+	sprintf(minName,"%s_min",name);
+	sprintf(maxName,"%s_max",name);
+	
+	return (checkVariable(priorArgs,minName) && checkVariable(priorArgs,maxName));
+}
+
 /* Get the min and max values of the prior from the priorArgs list, given a name */
 void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *max)
 {
@@ -1712,6 +1723,16 @@ void getMinMaxPrior(LALVariables *priorArgs, const char *name, void *min, void *
 		
 }
 
+/* Check for a Gaussian Prior of the standard form */
+int checkGaussianPrior(LALVariables *priorArgs, const char *name)
+{
+  char meanName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+  sprintf(meanName,"%s_gaussian_mean",name);
+  sprintf(sigmaName,"%s_gaussian_sigma",name);
+  return (checkVariable(priorArgs,meanName) && checkVariable(priorArgs,sigmaname));
+
+}
 
 /* Function to add the min and max values for the prior onto the priorArgs */
 void addGaussianPrior(LALVariables *priorArgs, const char *name, void *mu,

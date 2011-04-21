@@ -101,15 +101,9 @@ LALVariables *priorArgs){
   /* REAL8 mu, sigma; */
   for (paraHead=parameter->head;paraHead;paraHead=paraHead->next)
   {
-    CHAR gp[VARNAME_MAX] = "";
-    
-    /* check if there's a Gaussian prior defined and if so skip boundary
-       calculation */
-    sprintf(gp, "%s_gaussian_mean", paraHead->name);
-    
     if( paraHead->vary==PARAM_FIXED || 
         paraHead->vary==PARAM_OUTPUT || 
-        checkVariable(priorArgs, gp) ) continue;
+        !checkMinMaxPrior(priorArgs, paraHead->name) ) continue;
 
     getMinMaxPrior(priorArgs,paraHead->name, (void *)&min, (void *)&max);
          

@@ -169,6 +169,9 @@ void printVariables(LALVariables *var);
 /* Check for equality in two variables */
 int compareVariables(LALVariables *var1, LALVariables *var2);
 
+/* Check for types of standard prior */
+int checkMinMaxPrior(LALVariables *priorArgs, const char *name);
+int checkGaussianPrior(LALVariables *priorArgs, const char *name);
 
 //Wrapper for template computation 
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
