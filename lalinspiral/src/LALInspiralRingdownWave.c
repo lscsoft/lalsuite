@@ -138,8 +138,6 @@ INT4 XLALInspiralHybridRingdownWave (
   t5 = ((int)matchrange->data[0] - (int)matchrange->data[1]) * dt;
   rt = -t5 / 5.;
 
-  printf( "Ringdown rt = %e\n", rt );
-
   t4 = t5 + rt;
   t3 = t4 + rt;
   t2 = t3 + rt;
@@ -222,7 +220,7 @@ INT4 XLALInspiralHybridRingdownWave (
   }
 
   /* print ringdown-matching linear system: coefficient matrix and RHS vector */
-  
+#if 0  
   printf("matching matrix:\n");
   for (i = 0; i < 16; ++i)
   {
@@ -238,7 +236,7 @@ INT4 XLALInspiralHybridRingdownWave (
     printf("%e   ",gsl_vector_get(hderivs,i));
   }
   printf("\n");
-  
+#endif  
  
   /* Call gsl LU decomposition to solve the linear system */
   gslStatus = gsl_linalg_LU_decomp(coef, p, &s);
@@ -280,20 +278,6 @@ INT4 XLALInspiralHybridRingdownWave (
   gsl_permutation_free(p);
 
   /* Build ring-down waveforms */
-  {
-
-  REAL8 rdDeriv = 0;
-
-  for (i = 0; i < nmodes; i++ )
-  {
-     fprintf( stderr, "Mode %d: %e + i %e\n", i, modefreqs->data[i].re, modefreqs->data[i].im );
-
-     rdDeriv += ( - modefreqs->data[i].im - modefreqs->data[i].re ) * modeamps->data[i]
-                + ( - modefreqs->data[i].im + modefreqs->data[i].re ) * modeamps->data[i + nmodes ];
-  }
-/*  for (i=0; i < inspwave1->length * inspwave1->vectorLength; i++)
-    printf( "ringdown derivative = %e, inspiralDerivative = %e\n", rdDeriv, inspwave1->data[i] );*/
-  }
   for (j = 0; j < rdwave1->length; ++j)
   {
 	tj = j * dt;
@@ -501,8 +485,6 @@ INT4 XLALGenerateHybridWaveDerivatives (
   tlist[4] = tlist[3] + rt;
   tlist[5] = matchrange->data[1];
 
-  printf( "Derivatives rt = %e\n", rt * dt );
-
   /* Set the length of the interpolation vectors */
   vecLength = matchrange->data[2] + 1;
 
@@ -676,7 +658,6 @@ INT4 XLALGenerateWaveDerivatives (
   return errcode;
 }
 
-#if 0
 /* <lalVerbatim file="XLALGenerateQNMFreqCP">  */
 INT4 XLALGenerateQNMFreq(
 	COMPLEX8Vector		*modefreqs,
@@ -692,12 +673,8 @@ INT4 XLALGenerateQNMFreq(
   UINT4 i;
   REAL8 totalMass, finalMass, finalSpin;
   /* Fitting coefficients for QNM frequencies from PRD73, 064030 */
-  REAL4 BCWre[8][3] = { {1.5251, -1.1568,  0.1292}, {1.3673, -1.0260,  0.1628}, { 1.3223, -1.0257,  0.1860}, 
-			{ 1.25, -1.0257,  0.1860},{ 1.2, -1.0257,  0.1860},{ 1.15, -1.0257,  0.1860}, 
-			{ 1.1, -1.0257,  0.1860},{ 1.05, -1.0257,  0.1860} };
-  REAL4 BCWim[8][3] = { {0.7000,  1.4187, -0.4990}, {0.1000,  0.5436, -0.4731}, {-0.1000,  0.4206, -0.4256},
-			{-0.1000,  0.4206, -0.4156},{-0.1000,  0.4206, -0.4056},{-0.1000,  0.4206, -0.3956}, 
-			{-0.1000,  0.4206, -0.3856}, {-0.1000,  0.4206, -0.3756} };
+  REAL4 BCWre[8][3] = { {1.5251, -1.1568,  0.1292}, {1.3673, -1.0260,  0.1628}, { 1.3223, -1.0257,  0.1860} };
+  REAL4 BCWim[8][3] = { {0.7000,  1.4187, -0.4990}, {0.1000,  0.5436, -0.4731}, {-0.1000,  0.4206, -0.4256} };
 
   /* Get a local copy of the intrinstic parameters */
   totalMass = params->totalMass;
@@ -722,7 +699,6 @@ INT4 XLALGenerateQNMFreq(
   }
   return errcode;
 }
-#endif
 
 
 /**
@@ -730,7 +706,7 @@ INT4 XLALGenerateQNMFreq(
  * hole ringdown. However, this function is more general than the other function, which
  * only works for the (2,2) mode, and only the first three overtones. 
  */
-INT4 XLALGenerateQNMFreq(
+INT4 XLALGenerateQNMFreqV2(
         COMPLEX8Vector          *modefreqs,
         InspiralTemplate        *params,
         UINT4                   UNUSED l,
@@ -738,6 +714,9 @@ INT4 XLALGenerateQNMFreq(
         UINT4                   nmodes
         )
 {
+
+  /* Data for interpolating the quasinormal mode frequencies is taken from */
+  /* The webpage of Emanuele Berti, http://www.phy.olemiss.edu/~berti/qnms.html */
 
   static const double afinallist[15] = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.998};
 
@@ -758,14 +737,22 @@ INT4 XLALGenerateQNMFreq(
                                       {0.092822398, 0.12246772, 0.16611733, 0.20975295, 0.25504803, 0.30435388, 0.36008433, 0.39131906, 
                                        0.42553732, 0.46356655, 0.50665162, 0.55687406, 0.61879884, 0.71673712, 0.93708621}};
 
-  const double imomegaqnm22[8][15] = {{0.088962316, 0.088705699, 0.088311166, 0.087729272, 0.086881962, 0.085638835, 0.083765202, 0.08246182, 0.080792873, 0.078602544, 0.075629552, 0.071393306, 0.064869236, 0.053149008, 0.014533966},
-                                      {0.27391488, 0.27245211, 0.2705456, 0.26804857, 0.26473345, 0.26022455, 0.25384686, 0.24957997, 0.24423832, 0.23735737, 0.22814894, 0.21515199, 0.19525207, 0.1596868, 0.043604956},
-                                      {0.47827698, 0.47346308, 0.46787212, 0.46125969, 0.4532595, 0.44328686, 0.4303152, 0.42213116, 0.41226154, 0.39995695, 0.38389521, 0.36154981, 0.32751838, 0.26699789, 0.072684788},
-                                      {0.7051482, 0.6944809, 0.68262839, 0.66924293, 0.65380811, 0.63553649, 0.61315357, 0.59976369, 0.58430072, 0.56591037, 0.54288812, 0.51141591, 0.46286425, 0.37574114, 0.10177254},
-                                      {0.94684489, 0.92872504, 0.90884467, 0.88676436, 0.86173803, 0.83259475, 0.79752655, 0.77695669, 0.75379965, 0.72760503, 0.69796239, 0.66262211, 0.60329505, 0.48678255, 0.130859},
-                                      {1.1956081, 1.168248, 1.1387787, 1.106915, 1.0715254, 1.030673, 0.98126515, 0.9518251, 0.91794953, 0.87820149, 0.83080266, 0.7767326, 0.74872346, 0.72804394, 0.70819007},
-                                      {1.4479106, 1.4071149, 1.3668301, 1.3266175, 1.2834733, 1.233995, 1.1737642, 1.1375257, 1.0954075, 1.0451815, 0.98308361, 0.90139025, 0.77033698, 0.60152481, 0.39231616},
-                                       {1.7038413, 1.6389345, 1.5920622, 1.5489188, 1.5019035, 1.446567, 1.377806, 1.3359779, 1.2871194, 1.2287195, 1.1567076, 1.0636775, 0.93317832, 0.72183665, 0.3341267}};
+  const double imomegaqnm22[8][15] = {{0.088962316, 0.088705699, 0.088311166, 0.087729272, 0.086881962, 0.085638835, 0.083765202, 0.08246182,
+                                      0.080792873, 0.078602544, 0.075629552, 0.071393306, 0.064869236, 0.053149008, 0.014533966},
+                                      {0.27391488, 0.27245211, 0.2705456, 0.26804857, 0.26473345, 0.26022455, 0.25384686, 0.24957997, 
+                                      0.24423832, 0.23735737, 0.22814894, 0.21515199, 0.19525207, 0.1596868, 0.043604956},
+                                      {0.47827698, 0.47346308, 0.46787212, 0.46125969, 0.4532595, 0.44328686, 0.4303152, 0.42213116, 
+                                      0.41226154, 0.39995695, 0.38389521, 0.36154981, 0.32751838, 0.26699789, 0.072684788},
+                                      {0.7051482, 0.6944809, 0.68262839, 0.66924293, 0.65380811, 0.63553649, 0.61315357, 0.59976369, 
+                                      0.58430072, 0.56591037, 0.54288812, 0.51141591, 0.46286425, 0.37574114, 0.10177254},
+                                      {0.94684489, 0.92872504, 0.90884467, 0.88676436, 0.86173803, 0.83259475, 0.79752655, 0.77695669, 
+                                      0.75379965, 0.72760503, 0.69796239, 0.66262211, 0.60329505, 0.48678255, 0.130859},
+                                      {1.1956081, 1.168248, 1.1387787, 1.106915, 1.0715254, 1.030673, 0.98126515, 0.9518251, 0.91794953, 
+                                      0.87820149, 0.83080266, 0.7767326, 0.74872346, 0.72804394, 0.70819007},
+                                      {1.4479106, 1.4071149, 1.3668301, 1.3266175, 1.2834733, 1.233995, 1.1737642, 1.1375257, 1.0954075, 
+                                      1.0451815, 0.98308361, 0.90139025, 0.77033698, 0.60152481, 0.39231616},
+                                      {1.7038413, 1.6389345, 1.5920622, 1.5489188, 1.5019035, 1.446567, 1.377806, 1.3359779, 1.2871194, 
+                                      1.2287195, 1.1567076, 1.0636775, 0.93317832, 0.72183665, 0.3341267}};
 
 
   REAL8 totalMass, finalMass, finalSpin;
@@ -836,9 +823,8 @@ INT4 XLALFinalMassSpin(
   eta = params->eta;
   eta2 = eta * eta;
 
-  if ( params->approximant == EOBNR_PF )
+  if ( params->approximant == EOBNRv2 )
   {
-    fprintf( stderr, "Using the new fit for final mass/spin.\n");
     eta3 = eta2 * eta;
     /* Final mass and spin given by a fitting in Pan et al, in preparation */
     *finalMass = 1. + root9ovr8minus1 * eta - 0.4333 * eta2 - 0.4392 * eta3;
@@ -850,7 +836,6 @@ INT4 XLALFinalMassSpin(
     *finalMass = 1 - 0.057191 * eta - 0.498 * eta2;
     *finalSpin = 3.464102 * eta - 2.9 * eta2;
   }
-  fprintf( stderr, "Final mass = %e, final spin = %e\n", *finalMass, *finalSpin );
 
   return XLAL_SUCCESS;
 }
@@ -901,19 +886,12 @@ INT4 XLALInspiralHybridAttachRingdownWave (
         XLAL_ERROR( func, XLAL_ENOMEM );
       }
 
-      errcode = XLALGenerateQNMFreq( modefreqs, params, l, m, nmodes );
+      errcode = XLALGenerateQNMFreqV2( modefreqs, params, l, m, nmodes );
       if ( errcode != XLAL_SUCCESS )
       {
         XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFUNC );
       }
-
-      /*
-      fprintf(stderr, "f0=%e, f1=%e f2=%e\n",
-		      (modefreqs->data[0].re)/LAL_TWOPI,
-		      (modefreqs->data[1].re)/LAL_TWOPI,
-		      (modefreqs->data[2].re)/LAL_TWOPI);
-      */
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
@@ -1013,11 +991,6 @@ INT4 XLALInspiralHybridAttachRingdownWave (
         XLAL_ERROR( func, XLAL_EFUNC );
       }
 
-      /* Check that waveform values agree at the appropriate matching point */
-      printf( "Inspwave1 = %e, rd1 = %e, inspwave2 = %e, rd2 = %e\n",
-        signal1->data[matchrange->data[1]], rdwave1->data[0],
-        signal2->data[matchrange->data[1]], rdwave2->data[0] );
-
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
       for (j = 1; j < Nrdwave; ++j)
       {
@@ -1099,13 +1072,6 @@ INT4 XLALInspiralAttachRingdownWave (
         XLALDestroyCOMPLEX8Vector( modefreqs );
         XLAL_ERROR( func, XLAL_EFUNC );
       }
-
-      /*
-      fprintf(stderr, "f0=%e, f1=%e f2=%e\n",
-		      (modefreqs->data[0].re)/LAL_TWOPI,
-		      (modefreqs->data[1].re)/LAL_TWOPI,
-		      (modefreqs->data[2].re)/LAL_TWOPI);
-      */
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);

@@ -423,6 +423,10 @@ LALGetApproximantFromString(
   {
     *approximant = EOBNR;
   }
+  else if ( strstr(thisEvent, "EOBNRv2" ) )
+  {
+    *approximant = EOBNRv2;
+  }
   else if ( strstr(thisEvent, "EOB" ) )
   {
     *approximant = EOB;

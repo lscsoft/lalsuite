@@ -1,3 +1,35 @@
+/*
+*  Copyright (C) 2010 Craig Robinson 
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
+
+/**
+ * \author Craig Robinson
+ *
+ * \brief The functions contained within this file pre-compute the various
+ * coefficients which are required for calculating the factorized waveform
+ * in EOBNRv2. Note that for some of the higher modes, the coefficients
+ * are changed for the generation of the waveform compared to the generation
+ * of the flux. Thus we have a function which adds these additional 
+ * contributions to the already computed coefficients.
+ */
+
+
 #include <lal/LALEOBNRv2Waveform.h>
 
 int XLALCalcFacWaveformCoefficients(

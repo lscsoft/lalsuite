@@ -21,8 +21,12 @@
 /**
  * \author Craig Robinson
  *
- * \brief Function to compute the factorized flux as uses in the new EOBNR_PP
- * model. Flux function given by Phys.Rev.D79:064004,2009.
+ * \brief More recent versions of the EOB model, such as EOBNR_v2, utilise
+ * a non-quasicircular correction to bring the peak of the EOB frequency
+ * into agreement with that of NR simulations. This file contains the functions
+ * used to calculate these NQC corrections. The fits to NR peak amplitude,
+ * frequency, and their derivatives, are taken from Pan et al, in preparation.
+ * 
  */
 
 #include <complex.h>
@@ -240,6 +244,18 @@ int XLALCalculateNQCCoefficients(
   gsl_interp_accel_reset( acc );
   omega    = gsl_spline_eval_deriv( spline, time->data[peakIdx], acc );
   omegaDot = gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc );
+
+  /* Since the phase can be decreasing, we need to take care not to have a -ve frequency */
+  if ( omega * omegaDot > 0.0 )
+  {
+    omega    = fabs( omega );
+    omegaDot = fabs( omegaDot );
+  }
+  else
+  {
+    omega    = fabs( omega );
+    omegaDot = - fabs( omegaDot );
+  }
 
   gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
   gsl_vector_set( omegaVec, 1, GetNRPeakOmegaDot( eta ) - omegaDot );

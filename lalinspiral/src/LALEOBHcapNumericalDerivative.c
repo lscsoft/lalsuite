@@ -21,9 +21,9 @@
 /**
  * \author Craig Robinson
  *
- * \brief In newer versions of the EOBNR approximant, such as EOBNR_PP, we
+ * \brief In newer versions of the EOBNR approximant, we
  * do not have an analytic expression for the derivative of the waveform.
- * As such, it is necessary ro calculate the derivatives numerically. This
+ * As such, it is necessary io calculate the derivatives numerically. This
  * function provides the means to do just that.
  * 
  */

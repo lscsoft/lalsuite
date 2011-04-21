@@ -82,6 +82,7 @@ int
 XLALCalculateNewtonianMultipole(
                             COMPLEX16 *multipole,
                             REAL8 x,
+                            REAL8 r,
                             REAL8 phi,
                             UINT4  l,
                             INT4  m,
@@ -104,7 +105,15 @@ XLALCalculateNewtonianMultipole(
     XLAL_ERROR( __func__, XLAL_EFUNC );
   }
 
-  *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
+
+  if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
+  {
+    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
+  }
+  else
+  {
+    *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
+  }
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
   return XLAL_SUCCESS;

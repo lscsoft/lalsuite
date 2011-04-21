@@ -294,7 +294,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
         vPhi *= Omega;
 
         /* Calculate the newtonian multipole */
-        status = XLALCalculateNewtonianMultipole( &hNewton, vPhi * vPhi,
+        status = XLALCalculateNewtonianMultipole( &hNewton, vPhi * vPhi, r,
                          values->data[1], (UINT4)l, m, params );
         if ( status == XLAL_FAILURE )
         {
@@ -339,9 +339,9 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 	      case 2:
 
                 /* For 2,2 mode, calculate the NQC correction */
-                a1 = -4.559 + 18.76 * eta - 24.23 * eta*eta;
-                a2 = 37.68 - 201.5 * eta + 324.6 * eta*eta;
-                a3 = - 39.6 + 228.9 * eta - 387.2 * eta * eta;
+                a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
+                a2 = 37.683 - 201.468 * eta + 324.591 * eta*eta;
+                a3 = - 39.6024 + 228.899 * eta - 387.222 * eta * eta;
 
                 hNQC = 1. + (pr*pr / (r*r*Omega*Omega)) * ( a1
                        + a2 / r + a3 / (r*sqrt(r)) );
@@ -610,7 +610,7 @@ INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 static inline
 REAL8 XLALCalculateA5( const REAL8 eta )
 {
-  return - 5.828 - 143.5 * eta + 447.0 * eta * eta;
+  return - 5.82827 - 143.486 * eta + 447.045 * eta * eta;
 }
 
 static inline 
@@ -1257,7 +1257,6 @@ LALEOBPPWaveformForInjection (
   REAL4Vector *h=NULL;/* pointers to generated polarization data */
 
   REAL8 UNUSED phiC;/* phase at coalescence */
-  CHAR message[256];
   InspiralInit paramsInit;
 
   INITSTATUS(status, "LALEOBPPWaveformForInjection", LALEOBPPWAVEFORMTEMPLATESC);
@@ -1280,8 +1279,7 @@ LALEOBPPWaveformForInjection (
   	LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
   params->ampOrder = 0;
-  sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
-  LALInfo(status, message);
+  XLALPrintWarning( "WARNING: Amp Order has been reset to %d\n", params->ampOrder);
 
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
@@ -1445,8 +1443,6 @@ LALEOBPPWaveformEngine (
    UINT4 resampPwr; /* Power of 2 for resampling */
    REAL8 resampEstimate;
 
-   CHAR message[256];
-
    /* For checking XLAL return codes */
    INT4 xlalStatus;
 
@@ -1488,6 +1484,9 @@ LALEOBPPWaveformEngine (
    UINT4                   peakIdx  = 0;
    UINT4                   finalIdx = 0;
 
+   /* Counter used in unwrapping the waveform phase for NQC correction */
+   INT4 phaseCounter;
+
    INITSTATUS(status, "LALEOBPPWaveformEngine", LALEOBPPWAVEFORMC);
    ATTATCHSTATUSPTR(status);
 
@@ -1501,8 +1500,7 @@ LALEOBPPWaveformEngine (
    /* Check order is consistent */
    if ( params->order != LAL_PNORDER_PSEUDO_FOUR )
    {
-     snprintf( message, 256, "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNR_PP." );
-     LALError( status, message );
+     XLALPrintError( "Order must be LAL_PNORDER_PSEUDO_FOUR for approximant EOBNRv2.\n" );
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE );
    }
 
@@ -1542,14 +1540,13 @@ LALEOBPPWaveformEngine (
    /* Check we get a sensible answer */
    if ( ampl0 == 0.0 )
    {
-     snprintf( message, 256, "Generating waveform of zero amplitude!!" );
-     LALWarning( status, message );
+     XLALPrintWarning( "Generating waveform of zero amplitude!!\n" );
    }
 
    /* Check that the 220 QNM freq. is less than the Nyquist freq. */
    /* Get QNM frequencies */
    modefreqs = XLALCreateCOMPLEX8Vector( 3 );
-   xlalStatus = XLALGenerateQNMFreq( modefreqs, params, 2, 2, 3 );
+   xlalStatus = XLALGenerateQNMFreqV2( modefreqs, params, 2, 2, 3 );
    if ( xlalStatus != XLAL_SUCCESS )
    {
      XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -1561,9 +1558,8 @@ LALEOBPPWaveformEngine (
    if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
    {
      XLALDestroyCOMPLEX8Vector( modefreqs );
-     snprintf( message, 256, "Ringdown freq less than Nyquist freq. "
+     XLALPrintError( "Ringdown freq greater than Nyquist freq. "
            "Increase sample rate or consider using EOB approximant.\n" );
-     LALError(status->statusPtr, message);
      ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
    }
 
@@ -1728,10 +1724,6 @@ LALEOBPPWaveformEngine (
    values->data[1] = s;
    values->data[2] = p;
    values->data[3] = q;
-#if 0
-   sprintf(message, "In EOB Initial values of r=%10.5e p=%10.5e q=%10.5e\n", r, p, q);
-   LALInfo(status, message);
-#endif
 
    /* Allocate memory for temporary arrays */
    sig1 = XLALCreateREAL4Vector ( length );
@@ -1821,15 +1813,6 @@ LALEOBPPWaveformEngine (
    prVec.data   = dynamics->data+3*retLen;
    pPhiVec.data = dynamics->data+4*retLen;
 
-   FILE *out = fopen( "eobpf_adapt_10_10_dyn.dat", "w" );
-   for ( i = 0; i < (UINT4)retLen; i++ )
-   {
-     fprintf( out, "%e %e %e %e %e %e\n", dynamics->data[i], rVec.data[i], phiVec.data[i],
-               prVec.data[i], pPhiVec.data[i], XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs ) );
-   }
-   fclose( out );
-   out = NULL;
-
    dt = dt/(REAL8)resampFac;
    values->data[0] = rVec.data[hiSRndx];
    values->data[1] = phiVec.data[hiSRndx];
@@ -1850,8 +1833,8 @@ LALEOBPPWaveformEngine (
 
    /* We can now start calculating things for NQCs, and hiSR waveform */
    omegaOld = 0.0;
+   phaseCounter = 0;
 
-   out = fopen( "eobpf_adapt_10_10_dyn_hi.dat", "w" );
    for ( i=0; i < (UINT4)retLen; i++ )
    {
      omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
@@ -1861,9 +1844,6 @@ LALEOBPPWaveformEngine (
      values->data[2] = p = prVecHi.data[i];
      values->data[3] = q = pPhiVecHi.data[i];
 
-     fprintf( out, "%e %e %e %e %e %e\n", dynamicsHi->data[i] + dynamics->data[hiSRndx],
-                rVecHi.data[i], phiVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], omega );
-
      v = cbrt( omega ); 
 
      /* Only 2,2 mode for now */
@@ -1872,7 +1852,12 @@ LALEOBPPWaveformEngine (
      ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
      sig1Hi->data[i] = (REAL4) ampl0 * hLM.re;
      sig2Hi->data[i] = (REAL4) ampl0 * hLM.im;
-     phseHi->data[i] = 2.*s;
+     phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+     if ( i && phseHi->data[i] > phseHi->data[i-1] )
+     {
+       phaseCounter--;
+       phseHi->data[i] -= LAL_TWOPI;
+     }
      q1->data[i] = p*p / (r*r*omega*omega);
      q2->data[i] = q1->data[i] / r;
      q3->data[i] = q2->data[i] / sqrt(r);
@@ -1886,17 +1871,12 @@ LALEOBPPWaveformEngine (
      omegaOld = omega;
    }
    finalIdx = retLen - 1;
-   fclose( out );
-   out = NULL;
 
   /* Set the coalescence time */
   t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx]);
 
   /* Calculate the NQC correction */
   XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, peakIdx, dt/m, eta, &nqcCoeffs );
-  fprintf( stderr, "NQC coefficients: a1 = %e, a2 = %e, a3 = %e, b1 = %e, b2 = %e\n", nqcCoeffs.a1,
-            nqcCoeffs.a2, nqcCoeffs.a3, nqcCoeffs.b1, nqcCoeffs.b2 );
-
 
   /* We can now calculate the waveform */
   i = 0;
@@ -2001,8 +1981,6 @@ LALEOBPPWaveformEngine (
    rdMatchPoint->data[1] = peakIdx;
    rdMatchPoint->data[2] = finalIdx;
 
-
-   fprintf( stderr, "Ringdown gets attached at %e %e\n", dynamicsHi->data[rdMatchPoint->data[0]] + dynamics->data[hiSRndx], dynamicsHi->data[peakIdx] + dynamics->data[hiSRndx] );
    XLALPrintInfo("Matching points: %u %u %u; last idx in array = %d\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2], sig1Hi->length);
    XLALPrintInfo("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
    
@@ -2074,7 +2052,6 @@ LALEOBPPWaveformEngine (
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
-   out = fopen( "realAndImag.dat", "w" );
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
@@ -2082,10 +2059,7 @@ LALEOBPPWaveformEngine (
      x2 = sig2->data[i];
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);
-     fprintf( out, "%e %e %e\n", (REAL8)i/(params->tSampling*m), x1, x2 );
    }
-   fclose( out );
-   out = NULL;
    /*------------------------------------------------------
     * If required by the user copy other data sets to the
     * relevant arrays
