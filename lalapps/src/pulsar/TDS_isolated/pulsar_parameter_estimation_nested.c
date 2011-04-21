@@ -30,12 +30,7 @@ INT4 verbose=0;
                      (delimited by commas)\n"\
 " --pulsar            name of pulsar e.g. J0534+2200\n"\
 " --par-file          pulsar parameter (.par) file (full path) \n"\
-" --input-dir         directory containing the input data directories:\n\
-                       within this the files should be in a directory\n\
-                       strcuture with the format dataDETNAME, and have files\n\
-                       with names finehet_PSRNAME_DETNAME. If not in this\n\
-                       format use --force-file\n"\
-" --force-file        full paths and file names for the data for each\n\
+" --input-files       full paths and file names for the data for each\n\
                      detector in the list (must be in the same order)\n\
                      delimited by commas\n"\
 " --outfile           name of output data file\n"\
@@ -225,14 +220,16 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *detectors = NULL;
   CHAR *pulsar = NULL;
-  CHAR *inputdir = NULL;
   CHAR *outfile = NULL;
-  CHAR *forcefile = NULL;
+  CHAR *inputfile = NULL;
   
   CHAR *filestr = NULL;
   
   CHAR *efile = NULL;
   CHAR *sfile = NULL;
+  
+  CHAR *tempdets=NULL;
+  CHAR *tempdet=NULL;
   
   CHAR dets[MAXDETS][256];
   INT4 numDets = 0, i = 0;
@@ -253,23 +250,15 @@ void readPulsarData( LALInferenceRunState *runState ){
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
- 
-  /* get the input directory */
-  ppt = getProcParamVal( commandLine, "--input-dir" );
+  
+  ppt = getProcParamVal( commandLine,"--input-files" );
   if( ppt ){
-  inputdir = 
-    XLALStringDuplicate( getProcParamVal( commandLine, "--input-dir" )->value );
+    inputfile = 
+      XLALStringDuplicate(getProcParamVal(commandLine,"--input-files")->value);
   }
   
-  ppt = getProcParamVal( commandLine,"--force-file" );
-  if( ppt ){
-    forcefile = 
-      XLALStringDuplicate( getProcParamVal(commandLine,"--force-file")->value );
-  }
-  
-  if ( inputdir == NULL && forcefile == NULL ){
-    fprintf(stderr, "Error... either an input directory or input file need to \
-be set.\n");
+  if ( inputfile == NULL ){
+    fprintf(stderr, "Error... either an input file needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
@@ -300,20 +289,15 @@ be set.\n");
 
   /* count the number of detectors from command line argument of comma separated
      vales and set their names */
-  {
-    CHAR *tempdets=NULL;
-    CHAR *tempdet=NULL;
+  tempdets = XLALStringDuplicate( detectors );
     
-    tempdets = XLALStringDuplicate( detectors );
+  while(1){
+    tempdet = strsep( &tempdets, "," );
+    XLALStringCopy( dets[numDets], tempdet, strlen(tempdet)+1 );
     
-    while(1){
-      tempdet = strsep( &tempdets, "," );
-      XLALStringCopy( dets[numDets], tempdet, strlen(tempdet)+1 );
-      
-      numDets++;
-      
-      if( tempdets == NULL ) break;
-    }
+    numDets++;
+    
+    if( tempdets == NULL ) break;
   }
 
   /* check ephemeris files exist and if not output an error message */
@@ -323,15 +307,14 @@ defined!\n");
     exit(3);
   }
   
-  /* if file names are pre-defined (and seperated by comma, count the number of
-     input files (by counting commas) and check it's equal to the number of
-     detectors */
-  if ( forcefile != NULL ){
+  /* count the number of input files (by counting commas) and check it's equal
+     to the number of detectors */
+  {
     CHAR *inputstr = NULL;
     CHAR *tempstr = NULL;
     INT4 count = 0;
     
-    inputstr = XLALStringDuplicate( forcefile );
+    inputstr = XLALStringDuplicate( inputfile );
 
     /* count number of commas */
     while(1){
@@ -350,7 +333,7 @@ defined!\n");
   }
   
   /* reset filestr */
-  if ( forcefile != NULL ) filestr = XLALStringDuplicate( forcefile );
+  filestr = XLALStringDuplicate( inputfile );
   
   /* read in data */
   for( i = 0, prev=NULL ; i < numDets ; i++, prev=ifodata ){
@@ -359,7 +342,7 @@ defined!\n");
     LIGOTimeGPS gpstime;
     COMPLEX16 dataVals;
     REAL8Vector *temptimes = NULL;
-    INT4 j = 0, k = 0;
+    INT4 j = 0, k = 0, count = 0;
     
     FILE *fp = NULL;
     
@@ -376,22 +359,13 @@ defined!\n");
     ifodata->detector = XLALGetSiteInfo( dets[i] );
 
     /*============================ GET DATA ==================================*/
-    /* get detector B_ks data file in form finehet_JPSR_DET */
-    if ( forcefile == NULL ){
-      datafile = XLALMalloc( 256 ); /* allocate memory for file name */
-
-      sprintf(datafile, "%s/data%s/finehet_%s_%s", inputdir, dets[i],
-        pulsar, dets[i]);
-    }
-    else{ /* get i'th filename from the comma separated list */
-      INT4 count = 0;
-      while ( count <= i ){
-        datafile = strsep(&filestr, ",");
+    /* get i'th filename from the comma separated list */
+    while ( count <= i ){
+      datafile = strsep(&filestr, ",");
       
-        count++;
-      }
+      count++;
     }
-    
+   
     /* open data file */
     if( (fp = fopen(datafile, "r")) == NULL ){
       fprintf(stderr, "Error... can't open data file %s!\n", datafile);
@@ -1609,6 +1583,7 @@ REAL8 log_factorial( UINT4 num ){
   
   return logFac;
 }
+
 
 void rescaleOutput( LALInferenceRunState *runState ){
   /* Open orginal output output file */
