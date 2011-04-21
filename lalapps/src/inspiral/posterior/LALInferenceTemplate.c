@@ -1605,22 +1605,39 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
 			/* and other functions may time-shift template to where they want it: */
 			setVariable(IFOdata->modelParams, "time", &instant);
 			
-			for (i=0; i<IFOdata->timeData->data->length; i++){
-				if((i+1)>=(waveform.phi->data->length - 1)){
-					IFOdata->timeModelhPlus->data->data[i] = 0;
-					IFOdata->timeModelhCross->data->data[i] = 0;		
-				}
-				else{
-					a1		= waveform.a->data->data[2*i];
-					a2		= waveform.a->data->data[2*i+1];
-					phi     = waveform.phi->data->data[i];
-					if (waveform.shift) shift   = waveform.shift->data->data[i];
-					else shift = 0.0;
+			
+				if(waveform.a && waveform.phi){
+          for (i=0; i<IFOdata->timeData->data->length; i++){
+            if((i+1)>=(waveform.phi->data->length - 1)){
+              IFOdata->timeModelhPlus->data->data[i] = 0;
+              IFOdata->timeModelhCross->data->data[i] = 0;		
+            }else{
+              a1		= waveform.a->data->data[2*i];
+              a2		= waveform.a->data->data[2*i+1];
+              phi     = waveform.phi->data->data[i];
+              if (waveform.shift) shift   = waveform.shift->data->data[i];
+              else shift = 0.0;
 					
-					IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
-					IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
-				}
-				
+              IFOdata->timeModelhPlus->data->data[i] = a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi);
+              IFOdata->timeModelhCross->data->data[i]= a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi);
+            }
+          }
+				}else if(waveform.h){
+          for (i=0; i<IFOdata->timeData->data->length; i++){
+            if((i+1)>=((int)((waveform.h->data->length)/2.0) - 1)){
+              IFOdata->timeModelhPlus->data->data[i] = 0;
+              IFOdata->timeModelhCross->data->data[i] = 0;		
+            }else{
+              IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[i];
+              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[i+(int)((waveform.h->data->length)/2.0)];
+            }
+          }
+        }else{
+          for (i=0; i<IFOdata->timeData->data->length; i++){
+            IFOdata->timeModelhPlus->data->data[i] = 0;
+            IFOdata->timeModelhCross->data->data[i] = 0;
+          }
+					fprintf( stderr, " ERROR in templateLALGenerateInspiral(): no generated waveform.\n");
 			}
 		}
 
