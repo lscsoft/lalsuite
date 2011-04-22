@@ -221,7 +221,14 @@ LALGenerateInspiral(
     LALInfo( status, warnMsg );
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
-
+  if ( waveform->h == NULL && ( approximant == AmpCorPPN || approximant == PhenSpinTaylorRD || approximant == SpinTaylorFrameless ) )
+  {
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+             "No waveform generated (check lower frequency)\n");
+    LALInfo( status, warnMsg );
+    ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
+  }
+  
 
   /* If sampling problem. (AmpCorPPN may not be compatible) */
   if ( ppnParams->dfdt > 2.0 && approximant != AmpCorPPN )

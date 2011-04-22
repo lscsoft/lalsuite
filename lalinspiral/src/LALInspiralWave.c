@@ -407,18 +407,18 @@ LALInspiralWaveForInjection(
       case SpinTaylorFrameless:
            LALSTPNWaveformFramelessForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
-           break;
+     break;
       case SpinTaylor:
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
-           break;
+     break;
       case PhenSpinTaylorRD:
 	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
 	   break;
 	  case SpinQuadTaylor:
 		   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
-		   break;
+     break;
       case AmpCorPPN:
 	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
 	   CHECKSTATUSPTR(status);

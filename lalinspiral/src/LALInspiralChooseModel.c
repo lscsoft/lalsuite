@@ -506,6 +506,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -551,6 +552,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -594,6 +596,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -640,6 +643,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -690,6 +694,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -741,6 +746,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -792,6 +798,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -848,6 +855,7 @@ LALInspiralChooseModel(
          case TaylorT3:
          case TaylorF1:
          case TaylorF2:
+         case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
          case PhenSpinTaylorRD:
@@ -879,6 +887,7 @@ LALInspiralChooseModel(
    case PadeT1:
    case PadeF1:
    case TaylorF2:
+   case SpinTaylorFrameless:
    case SpinTaylorT3:
    case SpinTaylor:
    case PhenSpinTaylorRD:
