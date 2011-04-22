@@ -557,11 +557,11 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
 
   *countback = len;
 
-  REAL8 v, amp;
-		
+  REAL8 amp, f2a;
+  amp = -4.0 * params->mu * LAL_MRSUN_SI / (params->distance);	
   for(unsigned int i=0;i<len;i++) {
-      v = pow(omega[i],oneby3);
-      amp = params->signalAmplitude * (v*v);
+
+      f2a = pow(omega[i],2.0/3.0);
 
       E2x = LNhy[i]*E1z[i] - LNhz[i]*E1y[i]; /* E2 = LNhat x E1 */
       E2y = LNhz[i]*E1x[i] - LNhx[i]*E1z[i];
@@ -572,7 +572,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
           hpluscos  = 0.5 * (E1x[i]*E1x[i] - E1y[i]*E1y[i] - E2x*E2x + E2y*E2y);
           hplussin  = E1x[i]*E2x - E1y[i]*E2y;
 
-          signalvec1->data[i] = (REAL4) ( -1.0 * amp * \
+          signalvec1->data[i] = (REAL4) ( amp * f2a * \
               ( hpluscos * cos(2*vphi[i]) + hplussin * sin(2*vphi[i]) ) );
       }
 
@@ -581,7 +581,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
           hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
           hcrosssin = E1y[i]*E2x + E1x[i]*E2y;
 
-          signalvec2->data[i] = (REAL4) ( -1.0 * amp * \
+          signalvec2->data[i] = (REAL4) ( amp * f2a \
               ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
       }
   }
