@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 15
+# serial 16
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -129,6 +129,18 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   AC_SUBST(NIGHTLY_VERSION)
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
+[AC_ARG_ENABLE(
+  [all_lal],
+  AC_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
+  [ case "${enableval}" in
+      yes) all_lal=true;;
+      no) all_lal=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-all-lal) ;;
+    esac
+  ], [ all_lal= ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
 [AC_ARG_ENABLE(
   [lalframe],
@@ -138,7 +150,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
       no) lalframe=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalframe) ;;
     esac
-  ], [ lalframe=true ] )
+  ], [ lalframe=${all_lal:-true} ] )
 if test "$frame" = "false"; then
   lalframe=false
 fi
@@ -153,7 +165,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
       no) lalmetaio=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalmetaio) ;;
     esac
-  ], [ lalmetaio=true ] )
+  ], [ lalmetaio=${all_lal:-true} ] )
 if test "$metaio" = "false"; then
   lalmetaio=false
 fi
@@ -168,7 +180,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALXML],
       no) lalxml=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
     esac
-  ], [ lalxml=false ] )
+  ], [ lalxml=${all_lal:-false} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
@@ -180,7 +192,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALBURST],
       no) lalburst=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalburst) ;;
     esac
-  ], [ lalburst=true ] )
+  ], [ lalburst=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalburst=false
 fi])
@@ -194,7 +206,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
       no) lalinspiral=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
-  ], [ lalinspiral=true ] )
+  ], [ lalinspiral=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi
@@ -209,7 +221,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
       no) lalpulsar=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
     esac
-  ], [ lalpulsar=true ] )
+  ], [ lalpulsar=${all_lal:-true} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
@@ -221,7 +233,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
       no) lalstochastic=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalstochastic) ;;
     esac
-  ], [ lalstochastic=true ] )
+  ], [ lalstochastic=${all_lal:-true} ] )
 if test "$lalmetaio" = "false"; then
   lalstochastic=false
 fi
