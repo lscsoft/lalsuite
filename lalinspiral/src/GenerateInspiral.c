@@ -419,13 +419,13 @@ LALGetApproximantFromString(
   {
     *approximant = TaylorT3;
   }
-  else if ( strstr(thisEvent, "EOBNR" ) )
-  {
-    *approximant = EOBNR;
-  }
   else if ( strstr(thisEvent, "EOBNRv2" ) )
   {
     *approximant = EOBNRv2;
+  }
+  else if ( strstr(thisEvent, "EOBNR" ) )
+  {
+    *approximant = EOBNR;
   }
   else if ( strstr(thisEvent, "EOB" ) )
   {
