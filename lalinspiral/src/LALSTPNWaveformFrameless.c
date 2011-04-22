@@ -581,7 +581,7 @@ LALSTPNAdaptiveWaveformEngineFrameless( LALStatus *status,
           hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
           hcrosssin = E1y[i]*E2x + E1x[i]*E2y;
 
-          signalvec2->data[i] = (REAL4) ( amp * f2a \
+          signalvec2->data[i] = (REAL4) ( amp * f2a * \
               ( hcrosscos * cos(2*vphi[i]) + hcrosssin * sin(2*vphi[i]) ) );
       }
   }
