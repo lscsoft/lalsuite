@@ -1730,7 +1730,7 @@ int checkGaussianPrior(LALVariables *priorArgs, const char *name)
   char sigmaName[VARNAME_MAX];
   sprintf(meanName,"%s_gaussian_mean",name);
   sprintf(sigmaName,"%s_gaussian_sigma",name);
-  return (checkVariable(priorArgs,meanName) && checkVariable(priorArgs,sigmaname));
+  return (checkVariable(priorArgs,meanName) && checkVariable(priorArgs,sigmaName));
 
 }
 
