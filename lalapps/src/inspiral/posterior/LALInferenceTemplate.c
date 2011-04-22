@@ -1624,12 +1624,12 @@ void templateLALGenerateInspiral(LALIFOData *IFOdata)
           }
 				}else if(waveform.h){
           for (i=0; i<IFOdata->timeData->data->length; i++){
-            if((i+1)>=((int)((waveform.h->data->length)/2.0) - 1)){
+            if((i+1)>=((int)(waveform.h->data->length) - 1)){
               IFOdata->timeModelhPlus->data->data[i] = 0;
               IFOdata->timeModelhCross->data->data[i] = 0;		
             }else{
               IFOdata->timeModelhPlus->data->data[i] = waveform.h->data->data[i];
-              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[i+(int)((waveform.h->data->length)/2.0)];
+              IFOdata->timeModelhCross->data->data[i] = waveform.h->data->data[i+(int)(waveform.h->data->length)];
             }
           }
         }else{
