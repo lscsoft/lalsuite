@@ -220,23 +220,21 @@ INT4 XLALInspiralHybridRingdownWave (
   }
 
   /* print ringdown-matching linear system: coefficient matrix and RHS vector */
-#if 0  
-  printf("matching matrix:\n");
+  printf("\nRingdown matching matrix:\n");
   for (i = 0; i < 16; ++i)
   {
     for (j = 0; j < 16; ++j)
     {
-      printf("%8.2f ",gsl_matrix_get(coef,i,j));
+      printf("%.12e ",gsl_matrix_get(coef,i,j));
     }
     printf("\n");
   }
   printf("RHS:  ");
   for (i = 0; i < 16; ++i)
   {
-    printf("%e   ",gsl_vector_get(hderivs,i));
+    printf("%.12e   ",gsl_vector_get(hderivs,i));
   }
   printf("\n");
-#endif  
  
   /* Call gsl LU decomposition to solve the linear system */
   gslStatus = gsl_linalg_LU_decomp(coef, p, &s);
@@ -265,10 +263,13 @@ INT4 XLALInspiralHybridRingdownWave (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
+  fprintf( stderr, "\nRingdown mode amplitudes:\n" );
   for (i = 0; i < nmodes; ++i)
   {
 	modeamps->data[i] = gsl_vector_get(x, i);
 	modeamps->data[i + nmodes] = gsl_vector_get(x, i + nmodes);
+        fprintf( stderr, "Mode %d: %.12e\n", i, modeamps->data[i] );
+        fprintf( stderr, "Mode %d: %.12e\n", i + nmodes, modeamps->data[i + nmodes] );
   }
 
   /* Free all gsl linear algebra objects */

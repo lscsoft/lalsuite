@@ -939,7 +939,7 @@ LALInspiralChooseModel(
      in1.coeffs = ak;
 
      in2 = (void *) &in1;
-
+     printf( "vn = %e, v0 = %e\n", ak->vn, ak->v0 );
      LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
      CHECKSTATUSPTR(status);
 

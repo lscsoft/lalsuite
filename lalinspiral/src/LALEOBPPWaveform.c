@@ -1684,6 +1684,8 @@ LALEOBPPWaveformEngine (
    /* problems with the initial conditions. Therefore we force the code */
    /* to start at least at r = rmin (in units of M). */
 
+   if (r < rmin) printf("Starting r will be reset.\n");
+ 
    r = (r<rmin) ? rmin : r;
 
    rootIn3.xmax = 5;
@@ -1799,6 +1801,8 @@ LALEOBPPWaveformEngine (
 
    count = params->nStartPad;
 
+  printf( "ICs = %e, %e, %e, %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
+
    /* Use the new adaptive integrator */
    /* TODO: Implement error checking */
    retLen = XLALAdaptiveRungeKutta4( integrator, &eobParams, values->data, 0., tMax/m, dt/m, &dynamics );
@@ -1901,6 +1905,7 @@ LALEOBPPWaveformEngine (
   }
 
   /* Now create the (low-sampled) part of the waveform */
+  FILE *out = fopen( "dynamics.dat", "w" );
   while ( i < hiSRndx )
   {
      omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
@@ -1909,6 +1914,8 @@ LALEOBPPWaveformEngine (
      values->data[1] = s = phiVec.data[i];
      values->data[2] = p = prVec.data[i];
      values->data[3] = q = pPhiVec.data[i];
+
+    fprintf( out, "%.12e %.12e %.12e %.12e %.12e\n", dynamics->data[i], r, s, p, q );
 
      v = cbrt( omega );
 
@@ -1923,8 +1930,12 @@ LALEOBPPWaveformEngine (
 
      i++;
   }
+  fclose( out ); out = NULL;
 
   /* Now apply the NQC correction to the high sample part */
+  out = fopen( "dynamics_hi.dat", "w" );
+  FILE *out2 = fopen( "waveform_hi.dat", "w" );
+  FILE *out3 = fopen( "waveform_hi_nonqc.dat", "w" );
   for ( i = 0; i <= finalIdx; i++ )
   {
     omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
@@ -1935,16 +1946,24 @@ LALEOBPPWaveformEngine (
     values->data[2] = p = prVecHi.data[i];
     values->data[3] = q = pPhiVecHi.data[i];
 
+    fprintf( out, "%.12e %.12e %.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], r, s, p, q );
+
     xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
 
     hLM.re = sig1Hi->data[i];
     hLM.im = sig2Hi->data[i];
 
+    fprintf( out3, "%.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], hLM.re, hLM.im );
+
     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
     sig1Hi->data[i] = (REAL4) hLM.re;
     sig2Hi->data[i] = (REAL4) hLM.im;
-  }
 
+    fprintf( out2, "%.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], hLM.re, hLM.im );
+
+  }
+  fclose( out ); out = NULL;
+  fclose( out2 );
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/
@@ -1980,6 +1999,8 @@ LALEOBPPWaveformEngine (
        peakIdx - ceil( 5. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) : 0;
    rdMatchPoint->data[1] = peakIdx;
    rdMatchPoint->data[2] = finalIdx;
+
+   printf(" ringdown matching time = %e, next time  = %e\n", dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx], dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx+1] );
 
    XLALPrintInfo("Matching points: %u %u %u; last idx in array = %d\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2], sig1Hi->length);
    XLALPrintInfo("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
@@ -2052,13 +2073,15 @@ LALEOBPPWaveformEngine (
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
+   out = fopen( "realAndImag.dat", "w" );
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
+     fprintf( out, "%.12e %.12e %.12e\n", (REAL8)i/(m*params->tSampling), x1, x2);
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
-     sig2->data[i] = (x1 * z1) + (x2 * z2);
+     sig2->data[i] = (x1 * z1) + (x2 * z2);     
    }
    /*------------------------------------------------------
     * If required by the user copy other data sets to the

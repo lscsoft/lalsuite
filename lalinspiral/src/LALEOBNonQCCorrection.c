@@ -220,6 +220,24 @@ int XLALCalculateNQCCoefficients(
   gsl_vector_set( amps, 1, - aDot );
   gsl_vector_set( amps, 2, GetNRPeakADDot( eta ) - aDDot );
 
+  fprintf( stderr, "\nNon quasiCircular q Matrix:\n");
+  for ( i = 0; i < 3; i++ )
+  {
+    UINT4 j;
+    for ( j = 0; j < 3; j++ )
+    {
+      fprintf( stderr, "%.12e\t", gsl_matrix_get( qMatrix, i, j ) );
+    }
+    fprintf( stderr, "\n" );
+  }
+
+  fprintf( stderr, "\nRHS:\n");
+  for ( i = 0; i < 3; i++ )
+  {
+    fprintf( stderr, "%.12e\t", gsl_vector_get( amps, i ) );
+  }
+  fprintf(stderr, "\n" );
+
   /* We have now set up all the stuff to calculate the a coefficients */
   /* So let us do it! */
   gsl_linalg_LU_decomp( qMatrix, perm1, &signum );
@@ -260,6 +278,24 @@ int XLALCalculateNQCCoefficients(
   gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
   gsl_vector_set( omegaVec, 1, GetNRPeakOmegaDot( eta ) - omegaDot );
 
+  fprintf( stderr, "\nNon quasiCircular p Matrix:\n");
+  for ( i = 0; i < 2; i++ )
+  {
+    UINT4 j;
+    for ( j = 0; j < 2; j++ )
+    {
+      fprintf( stderr, "%.12e\t", gsl_matrix_get( pMatrix, i, j ) );
+    }
+    fprintf( stderr, "\n" );
+  }
+
+  fprintf( stderr, "\nRHS:\n");
+  for ( i = 0; i < 2; i++ )
+  {
+    fprintf( stderr, "%.12e\t", gsl_vector_get( omegaVec, i ) ); 
+  }
+  fprintf(stderr, "\n" );
+
   /* And now solve for the b coefficients */
   gsl_linalg_LU_decomp( pMatrix, perm2, &signum );
   gsl_linalg_LU_solve( pMatrix, perm2, omegaVec, bCoeff );
@@ -270,6 +306,9 @@ int XLALCalculateNQCCoefficients(
   coeffs->a3 = gsl_vector_get( aCoeff, 2 );
   coeffs->b1 = gsl_vector_get( bCoeff, 0 );
   coeffs->b2 = gsl_vector_get( bCoeff, 1 );
+
+  printf( "NQCs, a1 = %.12e, a2 = %.12e, a3 = %.12e, b1 = %.12e, b2 = %.12e\n",
+      coeffs->a1, coeffs->a2, coeffs->a3, coeffs->b1, coeffs->b2 );
 
   /* Free memory and exit */
   gsl_matrix_free( qMatrix );
