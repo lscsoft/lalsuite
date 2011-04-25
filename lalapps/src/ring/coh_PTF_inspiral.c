@@ -48,7 +48,6 @@ int main( int argc, char **argv )
   COMPLEX8FFTPlan          *invPlan                 = NULL;
 
   /* input data and spectrum storage */
-  UINT4                    numDetectors             = 0;
   UINT4                    singleDetector           = 0;
   REAL4TimeSeries          *channel[LAL_NUM_IFO+1];
   REAL4FrequencySeries     *invspec[LAL_NUM_IFO+1];
@@ -141,15 +140,6 @@ int main( int argc, char **argv )
 
   verbose( "Made fft plans %ld \n", timeval_subtract(&startTime) );
 
-  /* Determine if we are analyzing single or multiple ifo data */
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-  {
-    if ( params->haveTrig[ifoNumber] )
-    {
-      numDetectors++;
-    }
-  }
-
   /* NULL out pointers where necessary */
   for ( i = 0 ; i < 10 ; i++ )
   {
@@ -171,12 +161,12 @@ int main( int argc, char **argv )
   if ( params->noSpinBank )
     strncpy( noSpinFileName, params->noSpinBank, sizeof(noSpinFileName)-1 );
 
-  if (numDetectors == 0 )
+  if (params->numIFO == 0 )
   {
     fprintf( stderr, "You have not specified any detectors to analyse" );
     return 1;
   }
-  else if (numDetectors == 1 )
+  else if (params->numIFO == 1 )
   {
     fprintf( stdout, "You have only specified one detector, "
                      "why are you using the coherent code? \n" );
@@ -919,6 +909,8 @@ int main( int argc, char **argv )
       }
     }
   } // Main loop is ended here
+  /* calulate number of events */
+  params->numEvents = XLALCountMultiInspiral( eventList );
   coh_PTF_output_events_xml( params->outputFile, eventList, procpar, params );
 
   if (skyPoints->rightAscension)
@@ -1939,6 +1931,31 @@ UINT8 coh_PTF_add_triggers(
             currEvent->snr_dof = 2;
           else
             currEvent->snr_dof = 4;
+
+        /* store ifos */
+        if ( params->numIFO == 1 )
+        {
+          snprintf( currEvent->ifos, LIGOMETA_IFOS_MAX,\
+                    "%s", params->ifoName[0] );
+        }
+        else if( params->numIFO == 2 )
+        {
+          snprintf( currEvent->ifos, LIGOMETA_IFOS_MAX,\
+                    "%s%s", params->ifoName[0], params->ifoName[1] );
+        }
+        else if ( params->numIFO == 3 )
+        {
+          snprintf( currEvent->ifos, LIGOMETA_IFOS_MAX,\
+                    "%s%s%s", params->ifoName[0], params->ifoName[1],
+              params->ifoName[2] );
+        }
+        else if ( params->numIFO == 4 )
+        {
+          snprintf( currEvent->ifos, LIGOMETA_IFOS_MAX,\
+                    "%s%s%s%s", params->ifoName[0], params->ifoName[1],
+                    params->ifoName[2], params->ifoName[3]);
+        }
+
         }
       }
     }
