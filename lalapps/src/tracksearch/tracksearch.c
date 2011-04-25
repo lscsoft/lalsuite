@@ -1997,7 +1997,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (tempWindow->data->length * sizeof(REAL4)));
 	    lal_errhandler = LAL_ERR_RTRN;
 	    errcode=LAL_CALL( LALTfrSp(&status,signalSeries->data,tfmap,autoparams),
 			      &status);
@@ -2028,7 +2028,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 		   (params.windowsize * sizeof(REAL4)));
 	    memcpy(autoparams->windowF->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (tempWindow->data->length * sizeof(REAL4)));
 	    LAL_CALL( LALTfrPswv(&status,signalSeries->data,tfmap,autoparams),
 		      &status);
 	  }
@@ -2038,7 +2038,7 @@ LALappsDoTSeriesSearch(REAL4TimeSeries   *signalSeries,
 	    /* Required from deprication of LALWindow function */
 	    memcpy(autoparams->windowT->data,
 		   tempWindow->data->data,
-		   (windowParams.length * sizeof(REAL4)));
+		   (tempWindow->data->length * sizeof(REAL4)));
 	    LAL_CALL( LALTfrRsp(&status,signalSeries->data,tfmap,autoparams),
 		      &status);
 	  }
@@ -2513,8 +2513,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
       /*
        * Execute complete search and write results
        */
-      LALappsDoTSAMapSearch(status,
-			    currentMap,
+      LALappsDoTSAMapSearch(currentMap,
 			    &params,
 			    0);
       /*
@@ -2533,8 +2532,7 @@ LALappsDoTSAMapAnalysis(LALStatus        *status,
  */
 
 void
-LALappsDoTSAMapSearch(LALStatus          *status,
-		      TSAMap             *tfmap,
+LALappsDoTSAMapSearch(TSAMap             *tfmap,
 		      TSSearchParams     *params,
 		      INT4                callNum)
 {

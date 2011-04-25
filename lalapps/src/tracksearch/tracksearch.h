@@ -172,8 +172,7 @@ LALappsDoTimeSeriesAnalysis(TSSearchParams,
 			    CHARVector*);
 
 void
-LALappsDoTSAMapSearch(LALStatus*,
-		      TSAMap*,
+LALappsDoTSAMapSearch(TSAMap*,
 		      TSSearchParams*,
 		      INT4);
 
