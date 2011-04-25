@@ -76,6 +76,7 @@
 
 #define BUFFER_SIZE 256
 #define FILENAME_SIZE 256
+#define MAXIFO 4
 
 /* macro for testing validity of a condition that prints an error if invalid */
 #define sanity_check( condition ) \
@@ -107,7 +108,8 @@ struct coh_PTF_params {
   char        *cvsRevision;
   char        *cvsSource;
   char        *cvsDate;
-  char         ifoName[3];
+  char         ifoName[MAXIFO][LIGOMETA_IFO_MAX];
+  UINT4        numIFO;
   INT4         randomSeed;
   INT4         haveTrig[LAL_NUM_IFO];
   LIGOTimeGPS  startTime;

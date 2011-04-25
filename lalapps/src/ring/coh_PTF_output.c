@@ -221,7 +221,31 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
       LALAPPS_VCS_IDENT_ID,LALAPPS_VCS_IDENT_STATUS,LALAPPS_VCS_IDENT_DATE,0);
 
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
-  strncpy( processTable->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
+
+  /* store ifos */
+  if ( params->numIFO == 1 )
+  {
+    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+              "%s", params->ifoName[0] );
+  }
+  else if( params->numIFO == 2 )
+  {   
+    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s", params->ifoName[0], params->ifoName[1] );
+  }
+  else if ( params->numIFO == 3 )
+  {
+    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s%s", params->ifoName[0], params->ifoName[1],
+        params->ifoName[2] );
+  }
+  else if ( params->numIFO == 4 )
+  {
+    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s%s%s", params->ifoName[0], params->ifoName[1],
+              params->ifoName[2], params->ifoName[3]);
+  } 
+
   XLALGPSTimeNow(&processTable->end_time);
 
   return processTable;
@@ -260,11 +284,34 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
   searchSummary->in_start_time  = params->startTime;
   searchSummary->in_end_time    = params->endTime;
   searchSummary->out_start_time = outStartTime;
-  XLALGPSAdd( &searchSummary->out_start_time, -1.0 * params->padData );
+  /*XLALGPSAdd( &searchSummary->out_start_time, -1.0 * params->padData ); */
   searchSummary->out_end_time   = outEndTime;
-  XLALGPSAdd( &searchSummary->out_end_time, 1.0 * params->padData);
+  /*XLALGPSAdd( &searchSummary->out_end_time, 1.0 * params->padData); */
   searchSummary->nevents        = params->numEvents;
-  strncpy( searchSummary->ifos, params->ifoName, LIGOMETA_IFOS_MAX );
+
+  /* store ifos */
+  if ( params->numIFO == 1 )
+  {
+    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+              "%s", params->ifoName[0] );
+  }
+  else if( params->numIFO == 2 )
+  {
+    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s", params->ifoName[0], params->ifoName[1] );
+  }
+  else if ( params->numIFO == 3 )
+  {
+    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s%s", params->ifoName[0], params->ifoName[1],
+        params->ifoName[2] );
+  }
+  else if ( params->numIFO == 4 )
+  {
+    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+              "%s%s%s%s", params->ifoName[0], params->ifoName[1],
+              params->ifoName[2], params->ifoName[3]);
+  }
 
   return searchSummary;
 }
