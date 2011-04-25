@@ -932,7 +932,7 @@ int MAIN( int argc, char *argv[]) {
   /* timing */
   REAL8 timeStart = 0.0, timeEnd = 0.0;
   REAL8 coherentTime = 0.0, incoherentTime = 0.0, vetoTime = 0.0;
-  REAL8 timeStamp1, timeStamp2;
+  REAL8 timeStamp1 = 0.0, timeStamp2 = 0.0;
   if ( uvar_outputTiming )
     timeStart = XLALGetTimeOfDay();
 
