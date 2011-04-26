@@ -531,10 +531,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             f->dEnergy = dEt0;
             f->flux = Ft0;
-            f->phasing2 = &LALInspiralPhasing2_0PN;
-            f->timing2 = &LALInspiralTiming2_0PN;
-            f->phasing3 = &LALInspiralPhasing3_0PN;
-            f->frequency3 = &LALInspiralFrequency3_0PN;
+            f->phasing2 = &XLALInspiralPhasing2_0PN;
+            f->timing2 = &XLALInspiralTiming2_0PN;
+            f->phasing3 = &XLALInspiralPhasing3_0PN;
+            f->frequency3 = &XLALInspiralFrequency3_0PN;
             break;
          case PadeT1:
          case PadeF1:
@@ -580,10 +580,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft2;
-            f->phasing2 = &LALInspiralPhasing2_2PN;
-            f->timing2 = &LALInspiralTiming2_2PN;
-            f->phasing3 = &LALInspiralPhasing3_2PN;
-            f->frequency3 = &LALInspiralFrequency3_2PN;
+            f->phasing2 = &XLALInspiralPhasing2_2PN;
+            f->timing2 = &XLALInspiralTiming2_2PN;
+            f->phasing3 = &XLALInspiralPhasing3_2PN;
+            f->frequency3 = &XLALInspiralFrequency3_2PN;
             break;
          case PadeT1:
          case PadeF1:
@@ -625,10 +625,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt2;
             f->flux = Ft3;
-            f->phasing3 = &LALInspiralPhasing3_3PN;
-            f->frequency3 = &LALInspiralFrequency3_3PN;
-            f->phasing2 = &LALInspiralPhasing2_3PN;
-            f->timing2 = &LALInspiralTiming2_3PN;
+            f->phasing3 = &XLALInspiralPhasing3_3PN;
+            f->frequency3 = &XLALInspiralFrequency3_3PN;
+            f->phasing2 = &XLALInspiralPhasing2_3PN;
+            f->timing2 = &XLALInspiralTiming2_3PN;
             break;
          case PadeT1:
             ak->vn = ak->vlso = vlso = ak->vlsoP0;
@@ -674,10 +674,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt4;
             f->flux = Ft4;
-            f->phasing2 = &LALInspiralPhasing2_4PN;
-            f->timing2 = &LALInspiralTiming2_4PN;
-            f->phasing3 = &LALInspiralPhasing3_4PN;
-            f->frequency3 = &LALInspiralFrequency3_4PN;
+            f->phasing2 = &XLALInspiralPhasing2_4PN;
+            f->timing2 = &XLALInspiralTiming2_4PN;
+            f->phasing3 = &XLALInspiralPhasing3_4PN;
+            f->frequency3 = &XLALInspiralFrequency3_4PN;
             break;
          case PadeT1:
          case EOB:
@@ -727,10 +727,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt4;
             f->flux = Ft5;
-            f->phasing2 = &LALInspiralPhasing2_5PN;
-            f->timing2 = &LALInspiralTiming2_5PN;
-            f->phasing3 = &LALInspiralPhasing3_5PN;
-            f->frequency3 = &LALInspiralFrequency3_5PN;
+            f->phasing2 = &XLALInspiralPhasing2_5PN;
+            f->timing2 = &XLALInspiralTiming2_5PN;
+            f->phasing3 = &XLALInspiralPhasing3_5PN;
+            f->frequency3 = &XLALInspiralFrequency3_5PN;
             break;
          case PadeT1:
          case EOB:
@@ -781,10 +781,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft6;
-            f->phasing2 = &LALInspiralPhasing2_6PN;
-            f->timing2 = &LALInspiralTiming2_6PN;
-            f->phasing3 = &LALInspiralPhasing3_6PN;
-            f->frequency3 = &LALInspiralFrequency3_6PN;
+            f->phasing2 = &XLALInspiralPhasing2_6PN;
+            f->timing2 = &XLALInspiralTiming2_6PN;
+            f->phasing3 = &XLALInspiralPhasing3_6PN;
+            f->frequency3 = &XLALInspiralFrequency3_6PN;
             break;
          case PadeT1:
          case EOB:
@@ -831,10 +831,10 @@ LALInspiralChooseModel(
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
             f->dEnergy = dEt6;
             f->flux = Ft7;
-            f->phasing2 = &LALInspiralPhasing2_7PN;
-            f->timing2 = &LALInspiralTiming2_7PN;
-            f->phasing3 = &LALInspiralPhasing3_7PN;
-            f->frequency3 = &LALInspiralFrequency3_7PN;
+            f->phasing2 = &XLALInspiralPhasing2_7PN;
+            f->timing2 = &XLALInspiralTiming2_7PN;
+            f->phasing3 = &XLALInspiralPhasing3_7PN;
+            f->frequency3 = &XLALInspiralFrequency3_7PN;
             break;
          case PadeT1:
          case EOB:
