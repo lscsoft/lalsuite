@@ -1304,11 +1304,21 @@ void LALInspiralPhasing2_0PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_0PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralPhasing2_1PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_1PN (
+      REAL8 v,
+      expnCoeffs *ak);
+#endif
 
 void LALInspiralPhasing2_2PN (
      LALStatus *status,
@@ -1316,11 +1326,19 @@ void LALInspiralPhasing2_2PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_2PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_3PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_3PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing2_4PN (
      LALStatus *status,
@@ -1328,11 +1346,19 @@ void LALInspiralPhasing2_4PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_4PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_5PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_5PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 void LALInspiralPhasing2_6PN (
      LALStatus *status,
@@ -1340,11 +1366,19 @@ void LALInspiralPhasing2_6PN (
      REAL8 v,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralPhasing2_6PN (
+      REAL8 v,
+      expnCoeffs *ak);
+
 void LALInspiralPhasing2_7PN (
      LALStatus *status,
      REAL8 *phase,
      REAL8 v,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralPhasing2_7PN (
+      REAL8 v,
+      expnCoeffs *ak);
 
 
 
