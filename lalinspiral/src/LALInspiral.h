@@ -1474,6 +1474,9 @@ void LALInspiralTofV (
      REAL8,
      void *);
 
+REAL8 XLALInspiralTofV (
+      REAL8,
+      void *);
 
 
 

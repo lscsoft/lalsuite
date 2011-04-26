@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -109,5 +109,66 @@ LALInspiralTofV (
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
+}
+
+
+
+REAL8
+XLALInspiralTofV (
+   REAL8 v,
+   void *params
+   )
+{
+   void *funcParams;
+   REAL8 (*function)(REAL8 x, void *params);
+   REAL8 xmin, xmax;
+   IntegralType type;
+   TofVIntegrandIn in2;
+   TofVIn *in1;
+   REAL8 answer;
+   REAL8 sign;
+
+
+   if (params == NULL)
+      XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+   if (v <= 0.)
+      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+   if (v >= 1.)
+      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+
+   sign = 1.0;
+
+
+   in1 = (TofVIn *) params;
+
+   function = XLALInspiralTofVIntegrand;
+   xmin = in1->v0;
+   xmax = v;
+   type = ClosedInterval;
+
+
+   in2.dEnergy = in1->dEnergy;
+   in2.flux = in1->flux;
+   in2.coeffs = in1->coeffs;
+
+   funcParams = (void *) &in2;
+
+   if (v==in1->v0)
+   {
+     return in1->t - in1->t0;
+   }
+
+   if(in1->v0 > v)
+   {
+      xmin = v;
+      xmax = in1->v0;
+      sign = -1.0;
+   }
+
+   answer = XLALREAL8RombergIntegrate (function, funcParams, xmin, xmax, type);
+   if (XLAL_IS_REAL8_FAIL_NAN(answer))
+      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+
+   return in1->t - in1->t0 + in1->totalmass*answer*sign;
 }
 
