@@ -898,6 +898,7 @@ class PTFInspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
+    self.set_zip_output(True)
 
   def set_spin_bank(self,bank):
     self.add_var_opt('spin-bank', bank)
