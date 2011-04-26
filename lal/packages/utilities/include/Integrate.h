@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -216,6 +216,16 @@ LALDRombergIntegrate (
     REAL8        *result,
     DIntegrateIn *input,
     void         *params
+    );
+
+
+REAL8
+XLALREAL8RombergIntegrate (
+    REAL8 (*f)(REAL8 x, void *params),
+    void *params,
+    REAL8 xmin,
+    REAL8 xmax,
+    IntegralType type
     );
 
 #if 0 /* autodoc block */
