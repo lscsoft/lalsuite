@@ -1549,11 +1549,21 @@ void LALInspiralFrequency3_0PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_0PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralFrequency3_1PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_1PN (
+      REAL8 td,
+      expnCoeffs *ak);
+#endif
 
 void LALInspiralFrequency3_2PN (
      LALStatus *status,
@@ -1561,11 +1571,19 @@ void LALInspiralFrequency3_2PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_2PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_3PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_3PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralFrequency3_4PN (
      LALStatus *status,
@@ -1573,11 +1591,19 @@ void LALInspiralFrequency3_4PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_4PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_5PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_5PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 void LALInspiralFrequency3_6PN (
      LALStatus *status,
@@ -1585,11 +1611,19 @@ void LALInspiralFrequency3_6PN (
      REAL8 td,
      expnCoeffs *ak);
 
+REAL8 XLALInspiralFrequency3_6PN (
+      REAL8 td,
+      expnCoeffs *ak);
+
 void LALInspiralFrequency3_7PN (
      LALStatus *status,
      REAL8 *frequency,
      REAL8 td,
      expnCoeffs *ak);
+
+REAL8 XLALInspiralFrequency3_7PN (
+      REAL8 td,
+      expnCoeffs *ak);
 
 REAL4 LALInspiralHPlusPolarization(
      REAL8 phase,

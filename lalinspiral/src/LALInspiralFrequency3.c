@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Duncan Brown
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Duncan Brown, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -75,21 +75,41 @@ LALInspiralFrequency3_0PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta3;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_0PN", "XLALInspiralFrequency3_0PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_0PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_0PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_0PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta3;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta3 = theta*theta*theta;
 
-  *frequency = theta3*ak->ftaN;
+  frequency = theta3*ak->ftaN;
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return frequency;
 }
 
 
@@ -102,24 +122,43 @@ LALInspiralFrequency3_2PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_2PN", "XLALInspiralFrequency3_2PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_2PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_2PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_2PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
   theta3 = theta2*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2);
 
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return frequency;
 }
 
 
@@ -132,23 +171,44 @@ LALInspiralFrequency3_3PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_3PN", "XLALInspiralFrequency3_3PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_3PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_3PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_3PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
   theta3 = theta2*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return frequency;
 }
 
 
@@ -161,25 +221,46 @@ LALInspiralFrequency3_4PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3,theta4;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_4PN", "XLALInspiralFrequency3_4PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_4PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_4PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_4PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3,theta4;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
   theta3 = theta2*theta;
   theta4 = theta3*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3
              + ak->fta4*theta4);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return frequency;
 }
 
 
@@ -192,13 +273,34 @@ LALInspiralFrequency3_5PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3,theta4,theta5;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_5PN", "XLALInspiralFrequency3_5PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_5PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_5PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_5PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3,theta4,theta5;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -206,13 +308,13 @@ LALInspiralFrequency3_5PN (
   theta4 = theta3*theta;
   theta5 = theta4*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return frequency;
 }
 
 
@@ -225,13 +327,34 @@ LALInspiralFrequency3_6PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3,theta4,theta5,theta6;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_6PN", "XLALInspiralFrequency3_6PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_6PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_6PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_6PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3,theta4,theta5,theta6;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -240,14 +363,14 @@ LALInspiralFrequency3_6PN (
   theta5 = theta4*theta;
   theta6 = theta5*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
              + (ak->fta6 + ak->ftl6*log(td))*theta6);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return frequency;
 }
 
 
@@ -260,13 +383,34 @@ LALInspiralFrequency3_7PN (
    expnCoeffs *ak
    )
 {
-
-  REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
+  XLALPrintDeprecationWarning("LALInspiralFrequency3_7PN", "XLALInspiralFrequency3_7PN");
 
   INITSTATUS (status, "LALInspiralFrequency3_7PN", LALINSPIRALFREQUENCY3C);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+  *frequency = XLALInspiralFrequency3_7PN(td, ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+REAL8
+XLALInspiralFrequency3_7PN (
+   REAL8       td,
+   expnCoeffs *ak
+   )
+{
+  REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;
+  REAL8 frequency;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
 
   theta = pow(td,-0.125);
   theta2 = theta*theta;
@@ -276,13 +420,13 @@ LALInspiralFrequency3_7PN (
   theta6 = theta5*theta;
   theta7 = theta6*theta;
 
-  *frequency = theta3*ak->ftaN * (1.
+  frequency = theta3*ak->ftaN * (1.
              + ak->fta2*theta2
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
              + (ak->fta6 + ak->ftl6*log(td))*theta6
              + ak->fta7*theta7);
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+
+  return frequency;
 }
