@@ -27,7 +27,7 @@ waveform generation.
 
 \heading{Prototypes}
 
-<tt>LALInspiralSetup()</tt>
+<tt>XLALInspiralSetup()</tt>
 <ul>
 <li> \c ak: Output containing PN expansion coefficients of various physical
 quantities such as energy, flux, frequency, phase and timing.</li>
@@ -71,7 +71,25 @@ LALInspiralSetup (
    InspiralTemplate *params
    )
 {
+   XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
 
+   INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
+   ATTATCHSTATUSPTR(status);
+
+   XLALInspiralSetup(ak, params);
+   if (xlalErrno)
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+}
+
+void
+XLALInspiralSetup (
+   expnCoeffs       *ak,
+   InspiralTemplate *params
+   )
+{
    INT4 ieta;
    /*INT4  pnorder=7;
     * */
@@ -84,18 +102,22 @@ LALInspiralSetup (
    REAL8 sigma = 0.L;
    REAL8 chi1, chi2;
 
-   INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
-   ATTATCHSTATUSPTR(status);
-
-   ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->mass1 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->mass2 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->fCutoff > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   /*   ASSERT (params->fCutoff > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
-   ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   if (ak == NULL)
+      XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+   if (params == NULL)
+      XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+   if (params->mass1 <= 0)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+   if (params->mass2 <= 0)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+   if (params->fLower <= 0)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+   if (params->fCutoff <= 0)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+   if (params->tSampling <= 0)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+   if (params->tSampling <= 2*params->fCutoff)
+      XLAL_ERROR_VOID(__func__, XLAL_EDOM);
 
    vpole = 0.0;
    ak->omegaS = params->OmegaS;
@@ -364,7 +386,8 @@ LALInspiralSetup (
          }
          break;
       default:
-         ABORT( status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER );
+         XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
+         XLAL_ERROR_VOID(__func__, XLAL_EINVAL);
          break;
    }
 
@@ -531,9 +554,6 @@ LALInspiralSetup (
    padecoeffs[3], padecoeffs[4], padecoeffs[5], padecoeffs[6], padecoeffs[7]);
 
 */
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
-
 }
 
 /* pade_coeffs.f -- translated by f2c (version 20000531).  */
