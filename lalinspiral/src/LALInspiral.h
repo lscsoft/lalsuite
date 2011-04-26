@@ -1268,6 +1268,10 @@ void LALInspiralVelocity (
      REAL8 *v,
      TofVIn *params);
 
+REAL8 XLALInspiralVelocity (
+      TofVIn *params);
+
+
 
 
 
