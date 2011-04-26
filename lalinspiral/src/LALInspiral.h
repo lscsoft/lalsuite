@@ -1464,11 +1464,21 @@ void LALInspiralTiming2_0PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_0PN (
+      REAL8 f,
+      void *params);
+
+#if 0 /* DO NOT EXIST */
 void LALInspiralTiming2_1PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_1PN (
+      REAL8 f,
+      void *params);
+#endif
 
 void LALInspiralTiming2_2PN (
      LALStatus *,
@@ -1476,11 +1486,19 @@ void LALInspiralTiming2_2PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_2PN (
+      REAL8 f,
+      void *params);
+
 void LALInspiralTiming2_3PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_3PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_4PN (
      LALStatus *,
@@ -1488,6 +1506,9 @@ void LALInspiralTiming2_4PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_4PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_5PN (
      LALStatus *,
@@ -1495,11 +1516,19 @@ void LALInspiralTiming2_5PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_5PN (
+      REAL8 f,
+      void *params);
+
 void LALInspiralTiming2_6PN (
      LALStatus *,
      REAL8 *toff,
      REAL8 f,
      void *params);
+
+REAL8 XLALInspiralTiming2_6PN (
+      REAL8 f,
+      void *params);
 
 void LALInspiralTiming2_7PN (
      LALStatus *,
@@ -1507,6 +1536,9 @@ void LALInspiralTiming2_7PN (
      REAL8 f,
      void *params);
 
+REAL8 XLALInspiralTiming2_7PN (
+      REAL8 f,
+      void *params);
 
 
 
