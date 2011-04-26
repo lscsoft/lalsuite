@@ -742,7 +742,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "summary-coinc-triggers", "sire-second-coinc", 
         "summary-single-ifo-triggers","write-script",
         "coherent-bank","coherent-inspiral","cohire",
-        "summary-coherent-inspiral-triggers","single-stage"]
+        "summary-coherent-inspiral-triggers"]
     else:
       hipe_args = ["coincidence","write-script"]
     for hipe_arg in hipe_args:
