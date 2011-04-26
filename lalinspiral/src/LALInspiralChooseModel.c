@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Duncan Brown, Riccardo Sturani,  Laszlo Vereb
+*  Copyright (C) 2007 David Churches, Jolien Creighton, David McKechan, B.S. Sathyaprakash, Thomas Cokelaer, Duncan Brown, Riccardo Sturani, Laszlo Vereb, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -440,10 +440,9 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
    return (flux);
 }
 
-/*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 /* Flux for the EOBNRv2 model */
 static REAL8 Fp8PP(REAL8 v, expnCoeffs *ak)
-{ /* </lalVerbatim>  */
+{
    REAL8 flux,v2,v4,v6,v8,v10, l6, l8;
    v2 = v*v;
    v4 = v2*v2;
@@ -946,8 +945,10 @@ LALInspiralChooseModel(
      in1.coeffs = ak;
 
      in2 = (void *) &in1;
-     LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
-     CHECKSTATUSPTR(status);
+
+     tofv = XLALInspiralTofV(ak->vn, in2);
+     if (XLAL_IS_REAL8_FAIL_NAN(tofv))
+       ABORTXLAL(status);
 
      ak->tn = -tofv - ak->samplinginterval;
      params->fCutoff = ak->fn = ak->vn * ak->vn * ak->vn/(LAL_PI * ak->totalmass);
