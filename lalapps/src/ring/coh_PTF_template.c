@@ -79,18 +79,29 @@ void coh_PTF_template (
     FindChirpTmpltParams       *params
     )
 {
-  if (params->approximant == FindChirpSP)
+  LALStatus status = blank_status;
+  switch ( params->approximant )
   {
-    coh_PTF_template_TaylorF2 (fcTmplt,InspTmplt,params);
-  }
-  else if (params->approximant == FindChirpPTF)
-  {
-    coh_PTF_template_PTF (fcTmplt,InspTmplt,params);
-  }
-  else
-  {
-    fprintf(stderr,"Waveform approximant not recognized at template generation\n");
-    exit(0);
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case GeneratePPN:
+    case PadeT1:
+    case EOB:
+    case EOBNR:
+    case IMRPhenomB:
+      LALFindChirpTDTemplate( &status,fcTmplt,InspTmplt,params );
+      break;
+    case FindChirpSP:
+      LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params );
+      break;
+    case FindChirpPTF:
+      coh_PTF_template_PTF(fcTmplt,InspTmplt,params);
+      break;
+    default:
+      fprintf(stderr,"Waveform approximant not recognized at template generation\n");
+      exit(1);
   }
 }
 
@@ -653,15 +664,4 @@ void coh_PTF_auto_veto_overlaps(
 
   XLALDestroyCOMPLEX8Vector( qtildeVec);
   XLALDestroyCOMPLEX8Vector( qVec );
-}
-
-void
-coh_PTF_template_TaylorF2 ( 
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *InspTmplt,
-    FindChirpTmpltParams       *params
-    )
-{
-  LALStatus status = blank_status;
-  LALFindChirpSPTemplate( &status,fcTmplt,InspTmplt,params);
 }

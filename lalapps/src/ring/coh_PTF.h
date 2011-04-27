@@ -45,6 +45,7 @@
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
@@ -424,12 +425,6 @@ void coh_PTF_template (
 );
 
 void coh_PTF_template_PTF (
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *InspTmplt,
-    FindChirpTmpltParams       *params
-);
-
-void coh_PTF_template_TaylorF2 (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params

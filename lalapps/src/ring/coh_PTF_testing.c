@@ -374,7 +374,7 @@ int main( int argc, char **argv )
     fcTmpltParams->PTFe1        = XLALCreateVectorSequence( 3, numPoints );
     fcTmpltParams->PTFe2        = XLALCreateVectorSequence( 3, numPoints );
   }
-  else
+  else if (params->approximant == FindChirpSP)
   {
     fcTmplt->PTFQtilde          =
         XLALCreateCOMPLEX8VectorSequence( 1, numPoints / 2 + 1 );
@@ -388,6 +388,14 @@ int main( int argc, char **argv )
     for (ui = 1; ui < fcTmpltParams->xfacVec->length; ++ui)
       xfac[ui] = pow( (REAL4) ui, xfacExponent );
   }
+  else
+  {
+    fcTmplt->PTFQtilde          =
+        XLALCreateCOMPLEX8VectorSequence( 1, numPoints / 2 + 1 );
+    fcTmplt->data               = XLALCreateCOMPLEX8Vector( numPoints / 2 + 1 );
+    fcTmpltParams->xfacVec      = XLALCreateVector(numPoints );
+  }
+
 
   fcTmpltParams->fwdPlan      = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
   fcTmpltParams->deltaT       = 1.0/params->sampleRate;
