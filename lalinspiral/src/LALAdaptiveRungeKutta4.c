@@ -178,6 +178,11 @@ XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 	XLAL_BEGINGSL;
 
   while(1) {
+
+     if (!integrator->stopontestonly && t >= tend) {
+                        break;
+     }
+
 		if (integrator->stop) {
       if ((status = integrator->stop(t,y,dydt_in,params)) != GSL_SUCCESS) {
 				integrator->returncode = status;
