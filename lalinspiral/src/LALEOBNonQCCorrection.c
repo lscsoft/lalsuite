@@ -108,7 +108,7 @@ int XLALCalculateNQCCoefficients(
                  REAL8Vector    * restrict q3,
                  REAL8Vector    * restrict p1,
                  REAL8Vector    * restrict p2,
-                 UINT4                     peakIdx,
+                 REAL8                     timePeak,
                  REAL8                     deltaT,
                  REAL8                     eta,
                  EOBNonQCCoeffs * restrict coeffs )
@@ -191,52 +191,34 @@ int XLALCalculateNQCCoefficients(
 
   /* Q1 */
   gsl_spline_init( spline, time->data, q1LM->data, q1LM->length );
-  gsl_matrix_set( qMatrix, 0, 0, gsl_spline_eval( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 1, 0, gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 2, 0, gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
+  gsl_matrix_set( qMatrix, 0, 0, gsl_spline_eval( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 0, gsl_spline_eval_deriv( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 0, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
 
   /* Q2 */
   gsl_spline_init( spline, time->data, q2LM->data, q2LM->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( qMatrix, 0, 1, gsl_spline_eval( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 1, 1, gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 2, 1, gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
+  gsl_matrix_set( qMatrix, 0, 1, gsl_spline_eval( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 1, gsl_spline_eval_deriv( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 1, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
 
   /* Q3 */
   gsl_spline_init( spline, time->data, q3LM->data, q3LM->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( qMatrix, 0, 2, gsl_spline_eval( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 1, 2, gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( qMatrix, 2, 2, gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
+  gsl_matrix_set( qMatrix, 0, 2, gsl_spline_eval( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 1, 2, gsl_spline_eval_deriv( spline, timePeak, acc ) );
+  gsl_matrix_set( qMatrix, 2, 2, gsl_spline_eval_deriv2( spline, timePeak, acc ) );
 
   /* Amplitude */
   gsl_spline_init( spline, time->data, amplitude->data, amplitude->length );
   gsl_interp_accel_reset( acc );
-  a     = gsl_spline_eval( spline, time->data[peakIdx], acc );
-  aDot  = gsl_spline_eval_deriv( spline, time->data[peakIdx], acc );
-  aDDot = gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc );
+  a     = gsl_spline_eval( spline, timePeak, acc );
+  aDot  = gsl_spline_eval_deriv( spline, timePeak, acc );
+  aDDot = gsl_spline_eval_deriv2( spline, timePeak, acc );
 
   gsl_vector_set( amps, 0, GetNRPeakAmplitude( eta ) - a );
   gsl_vector_set( amps, 1, - aDot );
   gsl_vector_set( amps, 2, GetNRPeakADDot( eta ) - aDDot );
-
-  fprintf( stderr, "\nNon quasiCircular q Matrix:\n");
-  for ( i = 0; i < 3; i++ )
-  {
-    UINT4 j;
-    for ( j = 0; j < 3; j++ )
-    {
-      fprintf( stderr, "%.12e\t", gsl_matrix_get( qMatrix, i, j ) );
-    }
-    fprintf( stderr, "\n" );
-  }
-
-  fprintf( stderr, "\nRHS:\n");
-  for ( i = 0; i < 3; i++ )
-  {
-    fprintf( stderr, "%.12e\t", gsl_vector_get( amps, i ) );
-  }
-  fprintf(stderr, "\n" );
 
   /* We have now set up all the stuff to calculate the a coefficients */
   /* So let us do it! */
@@ -248,20 +230,20 @@ int XLALCalculateNQCCoefficients(
   /* P1 */
   gsl_spline_init( spline, time->data, p1->data, p1->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( pMatrix, 0, 0, - gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( pMatrix, 1, 0, - gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
+  gsl_matrix_set( pMatrix, 0, 0, - gsl_spline_eval_deriv( spline, timePeak, acc ) );
+  gsl_matrix_set( pMatrix, 1, 0, - gsl_spline_eval_deriv2( spline, timePeak, acc ) );
 
   /* P2 */
   gsl_spline_init( spline, time->data, p2->data, p2->length );
   gsl_interp_accel_reset( acc );
-  gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, time->data[peakIdx], acc ) );
-  gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc ) );
+  gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, timePeak, acc ) );
+  gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, timePeak, acc ) );
 
   /* Phase */
   gsl_spline_init( spline, time->data, phase->data, phase->length );
   gsl_interp_accel_reset( acc );
-  omega    = gsl_spline_eval_deriv( spline, time->data[peakIdx], acc );
-  omegaDot = gsl_spline_eval_deriv2( spline, time->data[peakIdx], acc );
+  omega    = gsl_spline_eval_deriv( spline, timePeak, acc );
+  omegaDot = gsl_spline_eval_deriv2( spline, timePeak, acc );
 
   /* Since the phase can be decreasing, we need to take care not to have a -ve frequency */
   if ( omega * omegaDot > 0.0 )
@@ -278,24 +260,6 @@ int XLALCalculateNQCCoefficients(
   gsl_vector_set( omegaVec, 0, GetNRPeakOmega( eta ) - omega );
   gsl_vector_set( omegaVec, 1, GetNRPeakOmegaDot( eta ) - omegaDot );
 
-  fprintf( stderr, "\nNon quasiCircular p Matrix:\n");
-  for ( i = 0; i < 2; i++ )
-  {
-    UINT4 j;
-    for ( j = 0; j < 2; j++ )
-    {
-      fprintf( stderr, "%.12e\t", gsl_matrix_get( pMatrix, i, j ) );
-    }
-    fprintf( stderr, "\n" );
-  }
-
-  fprintf( stderr, "\nRHS:\n");
-  for ( i = 0; i < 2; i++ )
-  {
-    fprintf( stderr, "%.12e\t", gsl_vector_get( omegaVec, i ) ); 
-  }
-  fprintf(stderr, "\n" );
-
   /* And now solve for the b coefficients */
   gsl_linalg_LU_decomp( pMatrix, perm2, &signum );
   gsl_linalg_LU_solve( pMatrix, perm2, omegaVec, bCoeff );
@@ -306,9 +270,6 @@ int XLALCalculateNQCCoefficients(
   coeffs->a3 = gsl_vector_get( aCoeff, 2 );
   coeffs->b1 = gsl_vector_get( bCoeff, 0 );
   coeffs->b2 = gsl_vector_get( bCoeff, 1 );
-
-  printf( "NQCs, a1 = %.12e, a2 = %.12e, a3 = %.12e, b1 = %.12e, b2 = %.12e\n",
-      coeffs->a1, coeffs->a2, coeffs->a3, coeffs->b1, coeffs->b2 );
 
   /* Free memory and exit */
   gsl_matrix_free( qMatrix );

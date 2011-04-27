@@ -378,7 +378,7 @@ int XLALCalculateNQCCoefficients(
                  REAL8Vector    * restrict q3,
                  REAL8Vector    * restrict p1,
                  REAL8Vector    * restrict p2,
-                 UINT4                     peakIdx,
+                 REAL8                     timePeak,
                  REAL8                     deltaT,
                  REAL8                     eta,
                  EOBNonQCCoeffs * restrict coeffs );

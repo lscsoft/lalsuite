@@ -1044,12 +1044,12 @@ XLALFirstStoppingCondition(double UNUSED t,
 static int
 XLALHighSRStoppingCondition(double UNUSED t,
                            const double values[],
-                           double UNUSED dvalues[],
+                           double dvalues[],
                            void UNUSED *funcParams
                           )
 {
 
-  if ( values[0] <= 1.0 )
+  if ( values[0] <= 1.0 || isnan( dvalues[3] ) || isnan (dvalues[2]) )
   {
     return 1;
   }
@@ -1389,7 +1389,7 @@ LALEOBPPWaveformEngine (
 
    REAL4Vector             *sig1, *sig2, *freq;
    REAL8Vector             rVec, phiVec, prVec, pPhiVec;
-   REAL8Vector             rVecHi, phiVecHi, prVecHi, pPhiVecHi;
+   REAL8Vector             rVecHi, phiVecHi, prVecHi, pPhiVecHi, tVecHi;
 
    REAL8                   eta, m, r, s, p, q, dt, t, v, omega, f, ampl0;
    REAL8                   omegaOld;
@@ -1469,7 +1469,7 @@ LALEOBPPWaveformEngine (
 
    /* Stuff at higher sample rate */
    REAL4Vector             *sig1Hi, *sig2Hi, *amplHi, *freqHi;
-   REAL8Vector             *phseHi;
+   REAL8Vector             *phseHi, *omegaHi;
    UINT4                   lengthHiSR;
 
    /* Used in the calculation of the non-quasicircular correctlon */
@@ -1480,10 +1480,11 @@ LALEOBPPWaveformEngine (
    /* peakIdx is the index where omega is a maximum */
    /* finalIdx is the index of the last point before the */
    /* integration breaks */
-   UINT4Vector             *rdMatchPoint;
+   /* startIdx is the index at which the waveform crosses fLower */
+   REAL8Vector             *rdMatchPoint;
    UINT4                   peakIdx  = 0;
    UINT4                   finalIdx = 0;
-
+   UINT4                   startIdx = 0;
    /* Counter used in unwrapping the waveform phase for NQC correction */
    INT4 phaseCounter;
 
@@ -1684,8 +1685,6 @@ LALEOBPPWaveformEngine (
    /* problems with the initial conditions. Therefore we force the code */
    /* to start at least at r = rmin (in units of M). */
 
-   if (r < rmin) printf("Starting r will be reset.\n");
- 
    r = (r<rmin) ? rmin : r;
 
    rootIn3.xmax = 5;
@@ -1748,11 +1747,12 @@ LALEOBPPWaveformEngine (
 
    /* And their higher sample rate counterparts */
    /* Allocate memory for temporary arrays */
-   sig1Hi = XLALCreateREAL4Vector ( lengthHiSR );
-   sig2Hi = XLALCreateREAL4Vector ( lengthHiSR );
-   amplHi = XLALCreateREAL4Vector ( lengthHiSR*2 );
-   freqHi = XLALCreateREAL4Vector ( lengthHiSR );
-   phseHi = XLALCreateREAL8Vector ( lengthHiSR );
+   sig1Hi  = XLALCreateREAL4Vector ( lengthHiSR );
+   sig2Hi  = XLALCreateREAL4Vector ( lengthHiSR );
+   amplHi  = XLALCreateREAL4Vector ( lengthHiSR*2 );
+   freqHi  = XLALCreateREAL4Vector ( lengthHiSR );
+   phseHi  = XLALCreateREAL8Vector ( lengthHiSR );
+   omegaHi = XLALCreateREAL8Vector ( lengthHiSR );
 
    /* Allocate NQC vectors */
    ampNQC = XLALCreateREAL8Vector ( lengthHiSR );
@@ -1777,6 +1777,7 @@ LALEOBPPWaveformEngine (
    memset(amplHi->data, 0, amplHi->length * sizeof( REAL4 ));
    memset(freqHi->data, 0, freqHi->length * sizeof( REAL4 ));
    memset(phseHi->data, 0, phseHi->length * sizeof( REAL8 ));
+   memset(omegaHi->data, 0, omegaHi->length * sizeof( REAL8 ));
    memset(ampNQC->data, 0, ampNQC->length * sizeof( REAL8 ));
    memset(q1->data, 0, q1->length * sizeof( REAL8 ));
    memset(q2->data, 0, q2->length * sizeof( REAL8 ));
@@ -1795,13 +1796,13 @@ LALEOBPPWaveformEngine (
      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
    }
 
+   integrator->stopontestonly = 1;
+
    count = 0;
    if (h || signalvec2)
       params->nStartPad = 0; /* must be zero for templates and injection */
 
    count = params->nStartPad;
-
-  printf( "ICs = %e, %e, %e, %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
    /* Use the new adaptive integrator */
    /* TODO: Implement error checking */
@@ -1829,11 +1830,12 @@ LALEOBPPWaveformEngine (
    retLen = XLALAdaptiveRungeKutta4( integrator, &eobParams, values->data, 
      0, (lengthHiSR-1)*dt/m, dt/m, &dynamicsHi );
 
-   rVecHi.length  = phiVecHi.length = prVecHi.length = pPhiVecHi.length = retLen;
+   rVecHi.length  = phiVecHi.length = prVecHi.length = pPhiVecHi.length = tVecHi.length = retLen;
    rVecHi.data    = dynamicsHi->data+retLen;
    phiVecHi.data  = dynamicsHi->data+2*retLen;
    prVecHi.data   = dynamicsHi->data+3*retLen;
    pPhiVecHi.data = dynamicsHi->data+4*retLen;
+   tVecHi.data    = dynamicsHi->data;
 
    /* We can now start calculating things for NQCs, and hiSR waveform */
    omegaOld = 0.0;
@@ -1842,6 +1844,7 @@ LALEOBPPWaveformEngine (
    for ( i=0; i < (UINT4)retLen; i++ )
    {
      omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+     omegaHi->data[i] = omega;
      /* For now we re-populate values - there may be a better way to do this */
      values->data[0] = r = rVecHi.data[i];
      values->data[1] = s = phiVecHi.data[i];
@@ -1876,11 +1879,56 @@ LALEOBPPWaveformEngine (
    }
    finalIdx = retLen - 1;
 
-  /* Set the coalescence time */
-  t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx]);
+  /* Stuff to find the actual peak time */
+  gsl_spline    *spline = NULL;
+  gsl_interp_accel *acc = NULL;  
+  REAL8 omegaDeriv1, omegaDeriv2;
+  REAL8 time1, time2;
+  REAL8 timePeak, omegaDerivMid;
+
+  spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
+  acc    = gsl_interp_accel_alloc();
+
+  time1 = dynamicsHi->data[peakIdx];
+
+  gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
+  omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
+  if ( omegaDeriv1 > 0. )
+  {
+    time2 = dynamicsHi->data[peakIdx+1];
+    omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
+  }
+  else
+  {
+    omegaDeriv2 = omegaDeriv1;
+    time2 = time1;
+    time1 = dynamicsHi->data[peakIdx-1];
+    peakIdx--;
+    omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
+  }
+
+  do
+  {
+    timePeak = ( time1 + time2 ) / 2.;
+    omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
+
+    if ( omegaDerivMid * omegaDeriv1 < 0.0 )
+    {
+      omegaDeriv2 = omegaDerivMid;
+      time2 = timePeak;
+    }
+    else
+    {
+      omegaDeriv1 = omegaDerivMid;
+      time1 = timePeak;
+    }
+  }
+  while ( time2 - time1 > 1.0e-5 );
+
+  XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );
 
   /* Calculate the NQC correction */
-  XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, peakIdx, dt/m, eta, &nqcCoeffs );
+  XLALCalculateNQCCoefficients( ampNQC, phseHi, q1,q2,q3,p1,p2, timePeak, dt/m, eta, &nqcCoeffs );
 
   /* We can now calculate the waveform */
   i = 0;
@@ -1904,8 +1952,12 @@ LALEOBPPWaveformEngine (
     ABORT( status, LALINSPIRALH_ENOWAVEFORM, LALINSPIRALH_MSGENOWAVEFORM );
   }
 
+  startIdx = i;
+
+  /* Set the coalescence time */
+  t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
+
   /* Now create the (low-sampled) part of the waveform */
-  FILE *out = fopen( "dynamics.dat", "w" );
   while ( i < hiSRndx )
   {
      omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
@@ -1915,8 +1967,6 @@ LALEOBPPWaveformEngine (
      values->data[2] = p = prVec.data[i];
      values->data[3] = q = pPhiVec.data[i];
 
-    fprintf( out, "%.12e %.12e %.12e %.12e %.12e\n", dynamics->data[i], r, s, p, q );
-
      v = cbrt( omega );
 
      /* Only 2,2 mode for now */
@@ -1925,17 +1975,14 @@ LALEOBPPWaveformEngine (
      xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
      hLM = XLALCOMPLEX16Mul( hNQC, hLM );
 
-     sig1->data[i] = (REAL4) ampl0 * hLM.re;
-     sig2->data[i] = (REAL4) ampl0 * hLM.im;
+     sig1->data[count] = (REAL4) ampl0 * hLM.re;
+     sig2->data[count] = (REAL4) ampl0 * hLM.im;
 
+     count++;
      i++;
   }
-  fclose( out ); out = NULL;
 
   /* Now apply the NQC correction to the high sample part */
-  out = fopen( "dynamics_hi.dat", "w" );
-  FILE *out2 = fopen( "waveform_hi.dat", "w" );
-  FILE *out3 = fopen( "waveform_hi_nonqc.dat", "w" );
   for ( i = 0; i <= finalIdx; i++ )
   {
     omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
@@ -1946,24 +1993,17 @@ LALEOBPPWaveformEngine (
     values->data[2] = p = prVecHi.data[i];
     values->data[3] = q = pPhiVecHi.data[i];
 
-    fprintf( out, "%.12e %.12e %.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], r, s, p, q );
-
     xlalStatus = XLALEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
 
     hLM.re = sig1Hi->data[i];
     hLM.im = sig2Hi->data[i];
 
-    fprintf( out3, "%.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], hLM.re, hLM.im );
-
     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
     sig1Hi->data[i] = (REAL4) hLM.re;
     sig2Hi->data[i] = (REAL4) hLM.im;
-
-    fprintf( out2, "%.12e %.12e %.12e\n", dynamics->data[hiSRndx] + dynamicsHi->data[i], hLM.re, hLM.im );
-
   }
-  fclose( out ); out = NULL;
-  fclose( out2 );
+
+
    /*----------------------------------------------------------------------*/
    /* Record the final cutoff frequency of BD Waveforms for record keeping */
    /* ---------------------------------------------------------------------*/
@@ -1984,7 +2024,7 @@ LALEOBPPWaveformEngine (
    REAL8 tmpSamplingRate = params->tSampling;
    params->tSampling *= resampFac;
 
-   rdMatchPoint = XLALCreateUINT4Vector( 3 );
+   rdMatchPoint = XLALCreateREAL8Vector( 3 );
 
    /* Check the first matching point is sensible */
    if ( ceil( tStepBack * params->tSampling / 2.0 ) > peakIdx )
@@ -1993,24 +2033,12 @@ LALEOBPPWaveformEngine (
      ABORT( status, LALINSPIRALH_ESIZE , LALINSPIRALH_MSGESIZE );
    }
 
-   /*rdMatchPoint->data[0] = peakIdx - ceil( tStepBack * params->tSampling / 2.0 );*/
-   /* Experiment */
-   rdMatchPoint->data[0] = ceil( 5. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) < peakIdx ?
-       peakIdx - ceil( 5. * params->totalMass * LAL_MTSUN_SI * params->tSampling ) : 0;
-   rdMatchPoint->data[1] = peakIdx;
-   rdMatchPoint->data[2] = finalIdx;
-
-   printf(" ringdown matching time = %e, next time  = %e\n", dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx], dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx+1] );
-
-   XLALPrintInfo("Matching points: %u %u %u; last idx in array = %d\n", rdMatchPoint->data[0], rdMatchPoint->data[1], rdMatchPoint->data[2], sig1Hi->length);
-   XLALPrintInfo("Time after peak that integration blows up: %e M\n", (rdMatchPoint->data[2] - rdMatchPoint->data[1]) * dt / (params->totalMass * LAL_MTSUN_SI ));
-   
-   XLALPrintInfo( "Ringdown matching points: %e, %e\n", 
-           (REAL8)rdMatchPoint->data[0]/resampFac + (REAL8)hiSRndx, 
-           (REAL8)rdMatchPoint->data[1]/resampFac + (REAL8)hiSRndx );
+   rdMatchPoint->data[0] = 5. < timePeak ? timePeak - 5. : 0;
+   rdMatchPoint->data[1] = timePeak;
+   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
    xlalStatus = XLALInspiralHybridAttachRingdownWave(sig1Hi, sig2Hi,
-                   rdMatchPoint, params);
+                   &tVecHi, rdMatchPoint, params);
    if (xlalStatus != XLAL_SUCCESS )
    {
      XLALDestroyREAL4Vector( sig1 );
@@ -2019,7 +2047,7 @@ LALEOBPPWaveformEngine (
      ABORTXLAL( status );
    }
    params->tSampling = tmpSamplingRate;
-   count = hiSRndx;
+
    for(j=0; j<sig1Hi->length; j+=resampFac)
    {
      sig1->data[count] = sig1Hi->data[j];
@@ -2073,13 +2101,11 @@ LALEOBPPWaveformEngine (
    z2 =   MultSphHarmM.re - MultSphHarmP.re;
 
    /* Next, compute h+ and hx from h22, h22*, Y22, Y2-2 */
-   out = fopen( "realAndImag.dat", "w" );
    for ( i = 0; i < sig1->length; i++)
    {
      freq->data[i] /= unitHz;
      x1 = sig1->data[i];
      x2 = sig2->data[i];
-     fprintf( out, "%.12e %.12e %.12e\n", (REAL8)i/(m*params->tSampling), x1, x2);
      sig1->data[i] = (x1 * y_1) + (x2 * y_2);
      sig2->data[i] = (x1 * z1) + (x2 * z2);     
    }

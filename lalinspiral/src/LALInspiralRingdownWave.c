@@ -109,7 +109,7 @@ INT4 XLALInspiralHybridRingdownWave (
 	REAL4VectorSequence		*inspwave1,
 	REAL4VectorSequence		*inspwave2,
 	COMPLEX8Vector			*modefreqs,
-	UINT4Vector			*matchrange
+	REAL8Vector			*matchrange
 	)
 /* </lalVerbatim> */
 {
@@ -133,9 +133,11 @@ INT4 XLALInspiralHybridRingdownWave (
   REAL8Vector *modeamps;
   int s;
   REAL8 tj;
+  REAL8 m;
 
   dt = 1.0 / params -> tSampling;
-  t5 = ((int)matchrange->data[0] - (int)matchrange->data[1]) * dt;
+  m  = (params->mass1 + params->mass2) * LAL_MTSUN_SI;
+  t5 = (matchrange->data[0] - matchrange->data[1]) * m;
   rt = -t5 / 5.;
 
   t4 = t5 + rt;
@@ -219,6 +221,7 @@ INT4 XLALInspiralHybridRingdownWave (
 	}
   }
 
+#if 0
   /* print ringdown-matching linear system: coefficient matrix and RHS vector */
   printf("\nRingdown matching matrix:\n");
   for (i = 0; i < 16; ++i)
@@ -235,7 +238,8 @@ INT4 XLALInspiralHybridRingdownWave (
     printf("%.12e   ",gsl_vector_get(hderivs,i));
   }
   printf("\n");
- 
+ #endif
+
   /* Call gsl LU decomposition to solve the linear system */
   gslStatus = gsl_linalg_LU_decomp(coef, p, &s);
   if ( gslStatus == GSL_SUCCESS )
@@ -263,13 +267,10 @@ INT4 XLALInspiralHybridRingdownWave (
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
-  fprintf( stderr, "\nRingdown mode amplitudes:\n" );
   for (i = 0; i < nmodes; ++i)
   {
 	modeamps->data[i] = gsl_vector_get(x, i);
 	modeamps->data[i + nmodes] = gsl_vector_get(x, i + nmodes);
-        fprintf( stderr, "Mode %d: %.12e\n", i, modeamps->data[i] );
-        fprintf( stderr, "Mode %d: %.12e\n", i + nmodes, modeamps->data[i + nmodes] );
   }
 
   /* Free all gsl linear algebra objects */
@@ -279,9 +280,12 @@ INT4 XLALInspiralHybridRingdownWave (
   gsl_permutation_free(p);
 
   /* Build ring-down waveforms */
+
+  REAL8 timeOffset = fmod( matchrange->data[1], dt/m) * dt;
+
   for (j = 0; j < rdwave1->length; ++j)
   {
-	tj = j * dt;
+	tj = j * dt - timeOffset;
 	rdwave1->data[j] = 0;
 	rdwave2->data[j] = 0;
 	for (i = 0; i < nmodes; ++i)
@@ -450,8 +454,9 @@ INT4 XLALGenerateHybridWaveDerivatives (
 	REAL4Vector				*rwave,
 	REAL4Vector				*dwave,
 	REAL4Vector				*ddwave,
+        REAL8Vector				*time,
 	REAL4Vector				*wave,
-	UINT4Vector				*matchrange,
+	REAL8Vector				*matchrange,
 	InspiralTemplate			*params
 	)
 /* </lalVerbatim> */
@@ -467,17 +472,19 @@ INT4 XLALGenerateHybridWaveDerivatives (
   UINT4 j;
   UINT4 vecLength;
   REAL8 dt;
-  double *x, *y;
+  REAL8 m;
+  double *y;
   double ry, dy, dy2;
-  UINT4 rt;
-  UINT4 *tlist;
+  double rt;
+  double *tlist;
   gsl_interp_accel *acc;
   gsl_spline *spline;
 
   /* Sampling rate from input */
   dt = 1.0 / params -> tSampling;
+  m  = (params->mass1 + params->mass2) * LAL_MTSUN_SI;
 
-  tlist = (UINT4 *) LALMalloc(6 * sizeof(UINT4));
+  tlist = (double *) LALMalloc(6 * sizeof(double));
   rt = (matchrange->data[1] - matchrange->data[0]) / 5.;
   tlist[0] = matchrange->data[0];
   tlist[1] = tlist[0] + rt;
@@ -487,23 +494,19 @@ INT4 XLALGenerateHybridWaveDerivatives (
   tlist[5] = matchrange->data[1];
 
   /* Set the length of the interpolation vectors */
-  vecLength = matchrange->data[2] + 1;
+  vecLength = ( m * matchrange->data[2] / dt ) + 1;
 
   /* Getting interpolation and derivatives of the waveform using gsl spline routine */
   /* Initiate arrays and supporting variables for gsl */
-  x = (double *) LALMalloc(vecLength * sizeof(double));
   y = (double *) LALMalloc(vecLength * sizeof(double));
 
-  if ( !x || !y )
+  if ( !y )
   {
-    if ( x ) LALFree (x);
-    if ( y ) LALFree (y);
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
   for (j = 0; j < vecLength; ++j)
   {
-	x[j] = j;
 	y[j] = wave->data[j];
   }
 
@@ -514,18 +517,16 @@ INT4 XLALGenerateHybridWaveDerivatives (
   {
     if ( acc )    gsl_interp_accel_free(acc);
     if ( spline ) gsl_spline_free(spline);
-    LALFree( x );
     LALFree( y );
     XLAL_ERROR( func, XLAL_ENOMEM );
   }
 
   /* Gall gsl spline interpolation */
-  XLAL_CALLGSL( gslStatus = gsl_spline_init(spline, x, y, vecLength) );
+  gslStatus = gsl_spline_init(spline, time->data, y, vecLength);
   if ( gslStatus != GSL_SUCCESS )
   { 
     gsl_spline_free(spline);
     gsl_interp_accel_free(acc);
-    LALFree( x );
     LALFree( y );
     XLAL_ERROR( func, XLAL_EFUNC );
   }
@@ -543,20 +544,18 @@ INT4 XLALGenerateHybridWaveDerivatives (
     {
       gsl_spline_free(spline);
       gsl_interp_accel_free(acc);
-      LALFree( x );		
       LALFree( y );
       XLAL_ERROR( func, XLAL_EFUNC );
     }
     rwave->data[j]  = (REAL4)(ry);
-    dwave->data[j]  = (REAL4)(dy / dt);
-    ddwave->data[j] = (REAL4)(dy2 / dt / dt);
+    dwave->data[j]  = (REAL4)(dy/m);
+    ddwave->data[j] = (REAL4)(dy2/m/m);
 
   }
   
   /* Free gsl variables */
   gsl_spline_free(spline);
   gsl_interp_accel_free(acc);
-  LALFree(x);
   LALFree(y);
 
   return errcode;
@@ -845,7 +844,8 @@ INT4 XLALFinalMassSpin(
 INT4 XLALInspiralHybridAttachRingdownWave (
       REAL4Vector 	*signal1,
       REAL4Vector 	*signal2,
-      UINT4Vector	*matchrange,
+      REAL8Vector       *time,
+      REAL8Vector	*matchrange,
       InspiralTemplate 	*params)
 {
 
@@ -866,7 +866,8 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       REAL4VectorSequence	*inspwaves1;
       REAL4VectorSequence	*inspwaves2;
       REAL8 dt, c1;
-      UINT4 tmatch;
+      REAL8 tmatch;
+      REAL8 mTot; /* In geometric units */
 
    /* Attaching position set by omega_match */
    /* Omega_match is given by Eq.(37) of PRD 76, 104049 (2007) */
@@ -876,6 +877,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       tmatch = matchrange->data[1];
 
       c1 = 1./(LAL_PI*LAL_MTSUN_SI*params->totalMass);
+      mTot  = params->totalMass * LAL_MTSUN_SI;
 
       /* Create memory for the QNM frequencies */
       nmodes = 8;
@@ -898,7 +900,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       Nrdwave = (INT4) (10 / modefreqs->data[0].im / dt);
 
       /* Check the value of attpos, to prevent memory access problems later */
-      if ( matchrange->data[0] < 5 || matchrange->data[1] > matchrange->data[2] - 2 )
+      if ( matchrange->data[0] * mTot / dt < 5 || matchrange->data[1]*mTot/dt > matchrange->data[2] *mTot/dt - 2 )
       {
         XLALPrintError( "More inpiral points needed for ringdown matching.\n" );
         XLALDestroyCOMPLEX8Vector( modefreqs );
@@ -932,7 +934,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
 
       /* Generate derivatives of the last part of inspiral waves */
       /* Get derivatives of signal1 */
-      errcode = XLALGenerateHybridWaveDerivatives( rinspwave, dinspwave, ddinspwave, signal1, 
+      errcode = XLALGenerateHybridWaveDerivatives( rinspwave, dinspwave, ddinspwave, time, signal1, 
 									matchrange, params );
       if ( errcode != XLAL_SUCCESS )
       {
@@ -954,7 +956,7 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       }
 
       /* Get derivatives of signal2 */
-      errcode = XLALGenerateHybridWaveDerivatives( rinspwave, dinspwave, ddinspwave, signal2, 
+      errcode = XLALGenerateHybridWaveDerivatives( rinspwave, dinspwave, ddinspwave, time, signal2, 
 									matchrange, params );
       if ( errcode != XLAL_SUCCESS )
       {
@@ -993,10 +995,11 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       }
 
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
+      UINT4 attachIdx = matchrange->data[1] * mTot / dt;
       for (j = 1; j < Nrdwave; ++j)
       {
-	    signal1->data[j + matchrange->data[1] - 1] = rdwave1->data[j];
-	    signal2->data[j + matchrange->data[1] - 1] = rdwave2->data[j];
+	    signal1->data[j + attachIdx] = rdwave1->data[j];
+	    signal2->data[j + attachIdx] = rdwave2->data[j];
       }
 
       /* Free memory */

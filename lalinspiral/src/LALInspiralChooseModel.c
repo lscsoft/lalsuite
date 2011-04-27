@@ -909,7 +909,6 @@ LALInspiralChooseModel(
    case TaylorF1:
    case EOB:
    case EOBNR:
-   case EOBNRv2:
    case PadeT1:
    case PadeF1:
    case TaylorF2:
@@ -939,7 +938,6 @@ LALInspiralChooseModel(
      in1.coeffs = ak;
 
      in2 = (void *) &in1;
-     printf( "vn = %e, v0 = %e\n", ak->vn, ak->v0 );
      LALInspiralTofV(status->statusPtr, &tofv, ak->vn, in2);
      CHECKSTATUSPTR(status);
 
@@ -964,6 +962,7 @@ LALInspiralChooseModel(
  case IMRPhenomB:
  case IMRPhenomFA:
  case IMRPhenomFB:
+ case EOBNRv2:
    ak->tn = 5.*ak->totalmass/(256.*ak->eta*pow(ak->v0,8.)) + 1000.*ak->totalmass;
    break;
  case Eccentricity:

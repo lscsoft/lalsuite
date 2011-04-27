@@ -78,16 +78,12 @@ LALInspiralInit (LALStatus        *status,
 
   ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
-  printf("PC\n");
   LALInspiralParameterCalc(status->statusPtr,  params);
   CHECKSTATUSPTR(status);
-  printf("RA\n");
   LALInspiralRestrictedAmplitude(status->statusPtr, params);
   CHECKSTATUSPTR(status);
-  printf("IS\n");
   LALInspiralSetup(status->statusPtr, &(paramsInit->ak), params);
   CHECKSTATUSPTR(status);
-  printf("CM\n");
   LALInspiralChooseModel(status->statusPtr, &(paramsInit->func), &(paramsInit->ak), params);
   CHECKSTATUSPTR(status);
 
@@ -130,7 +126,7 @@ LALInspiralInit (LALStatus        *status,
 					     estimate the waveform length. */
     /*we add a minimal value and 10 % of overestimation */
     x	= (1.+ LALINSPIRALINIT_LENGTHOVERESTIMATION)
-      * (paramsInit->ak.tn + 10 ) * params->tSampling
+      * (paramsInit->ak.tn + 1 ) * params->tSampling
       + params->nStartPad + params->nEndPad ;
     ndx 	= ceil(log10(x)/log10(2.));
     paramsInit->nbins =  pow(2, ndx) ;
