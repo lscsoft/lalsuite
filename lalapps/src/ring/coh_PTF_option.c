@@ -198,11 +198,47 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         {
           localparams.approximant = FindChirpPTF;
         }
+        else if ( ! strcmp( "TaylorT1", optarg) )
+        {
+          localparams.approximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", optarg) )
+        {
+          localparams.approximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", optarg) )
+        {
+          localparams.approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorT4", optarg) )
+        {
+          localparams.approximant = TaylorT4;
+        }
+        else if ( ! strcmp( "GeneratePPN", optarg) )
+        {
+          localparams.approximant = GeneratePPN;
+        }
+        else if ( ! strcmp( "PadeT1", optarg) )
+        {
+          localparams.approximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", optarg) )
+        {
+          localparams.approximant = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", optarg) )
+        {
+          localparams.approximant = EOBNR;
+        }
+        else if ( ! strcmp( "IMRPhenomB", optarg) )
+        {
+          localparams.approximant = IMRPhenomB;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either FindChirpSP or FindChirpPTF)\n",
+              "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
