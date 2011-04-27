@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Thomas Cokelaer
+*  Copyright (C) 2007 Thomas Cokelaer, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -68,24 +68,46 @@ LALInspiralInit (LALStatus        *status,
 		 InspiralTemplate *params,
 		 InspiralInit     *paramsInit)
 {
-
-  UINT4 ndx;
-  REAL8 x;
-  CHAR message[256];
+  XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
 
   INITSTATUS (status, "LALInspiralInit", LALINSPIRALAMPLITUDEC );
   ATTATCHSTATUSPTR(status);
 
-  ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  XLALInspiralInit(params, paramsInit);
+  if (xlalErrno)
+    ABORTXLAL(status);
 
-  LALInspiralParameterCalc(status->statusPtr,  params);
-  CHECKSTATUSPTR(status);
-  LALInspiralRestrictedAmplitude(status->statusPtr, params);
-  CHECKSTATUSPTR(status);
-  LALInspiralSetup(status->statusPtr, &(paramsInit->ak), params);
-  CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &(paramsInit->func), &(paramsInit->ak), params);
-  CHECKSTATUSPTR(status);
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+void
+XLALInspiralInit (InspiralTemplate *params,
+		  InspiralInit     *paramsInit)
+{
+  UINT4 ndx;
+  REAL8 x;
+  CHAR message[256];
+
+
+  if (params == NULL)
+    XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+
+  XLALInspiralParameterCalc(params);
+  if (xlalErrno)
+    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+
+  XLALInspiralRestrictedAmplitude(params);
+  if (xlalErrno)
+    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+
+  XLALInspiralSetup(&(paramsInit->ak), params);
+  if (xlalErrno)
+    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+
+  XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params);
+  if (xlalErrno)
+    XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
 
   /* The parameters have been initialized now. However, we can have some problems
      with the LALInspiralChooseModel related to bad estimation of the length.
@@ -97,65 +119,38 @@ LALInspiralInit (LALStatus        *status,
   */
 
   if( params->fCutoff < params->fLower){
-    LALWarning(status,  LALINSPIRALH_MSGEFLOWER);
-    status->statusPtr->statusCode = 0;
+    XLALPrintWarning(LALINSPIRALH_MSGEFLOWER);
     paramsInit->nbins = 0;
 
     sprintf(message, "#Estimated Length (seconds) requested = %f | fCutoff = %f",
 	    paramsInit->ak.tn, params->fCutoff);
-    LALInfo(status, message);
+    XLALPrintInfo(message);
 
-
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+    return;
   }
 
   if( paramsInit->ak.tn <=0 || params->tC <= 0){
-    LALWarning(status,  LALINSPIRALH_MSGESIZE);
-    status->statusPtr->statusCode = 0;
+    XLALPrintWarning(LALINSPIRALH_MSGESIZE);
     paramsInit->nbins = 0;
     sprintf(message, "#Estimated Length (seconds) requested = %f ",
 	    paramsInit->ak.tn);
-    LALInfo(status, message);
+    XLALPrintInfo(message);
 
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
+    return;
   }
 
-  if (status->statusPtr->statusCode == 0){/* if everything is fine is ChooseModel then we
-					     estimate the waveform length. */
-    /*we add a minimal value and 10 % of overestimation */
-    x	= (1.+ LALINSPIRALINIT_LENGTHOVERESTIMATION)
-      * (paramsInit->ak.tn + 1 ) * params->tSampling
-      + params->nStartPad + params->nEndPad ;
-    ndx 	= ceil(log10(x)/log10(2.));
-    paramsInit->nbins =  pow(2, ndx) ;
+  /* if everything is fine is ChooseModel then we
+   * estimate the waveform length. */
+  /* we add a minimal value and 10 % of overestimation */
 
+  x = (1.+ LALINSPIRALINIT_LENGTHOVERESTIMATION)
+    * (paramsInit->ak.tn + 1 ) * params->tSampling
+    + params->nStartPad + params->nEndPad ;
+  ndx = ceil(log10(x)/log10(2.));
+  paramsInit->nbins = pow(2, ndx) ;
 
-    /*now we can free memory */
-    sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d",
-	    paramsInit->ak.tn,
-	    paramsInit->nbins);
-    LALInfo(status, message);
-
-
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-  }
-  else { /*otherwise size is zero */
-    sprintf(message,
-	    "Can't get size of the following waveform: totalMass = %f, fLower = %f, approximant = %d @ %fPN"
-	    , params->mass1 + params->mass2, params->fLower, params->approximant, params->order/2.);
-    LALWarning(status, message);
-
-    status->statusPtr->statusCode = 0;
-    paramsInit->nbins = 0;
-
-    /*now we can free memory */
-
-    DETATCHSTATUSPTR(status);
-    RETURN(status);
-  }
-
+  sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d",
+    paramsInit->ak.tn,
+    paramsInit->nbins);
+  XLALPrintInfo(message);
 }
-
