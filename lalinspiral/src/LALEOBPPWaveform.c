@@ -213,6 +213,7 @@ LALEOBPPWaveformEngine (
                 REAL4Vector      *signalvec1,
                 REAL4Vector      *signalvec2,
                 REAL4Vector      *h,
+                const REAL8      *phiC,
                 UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
@@ -1169,7 +1170,7 @@ LALEOBPPWaveform (
 
    /* Call the engine function */
    LALEOBPPWaveformEngine(status->statusPtr, signalvec, NULL, 
-			NULL, &count, params, &paramsInit);
+			NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -1230,7 +1231,7 @@ LALEOBPPWaveformTemplates (
 
    /* Call the engine function */
    LALEOBPPWaveformEngine(status->statusPtr, signalvec1, signalvec2, 
-			   NULL, &count, params, &paramsInit);
+			   NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
 
    DETATCHSTATUSPTR(status);
@@ -1256,7 +1257,7 @@ LALEOBPPWaveformForInjection (
 
   REAL4Vector *h=NULL;/* pointers to generated polarization data */
 
-  REAL8 UNUSED phiC;/* phase at coalescence */
+  REAL8 phiC;/* phase at coalescence */
   InspiralInit paramsInit;
 
   INITSTATUS(status, "LALEOBPPWaveformForInjection", LALEOBPPWAVEFORMTEMPLATESC);
@@ -1296,13 +1297,15 @@ LALEOBPPWaveformForInjection (
     ABORTXLAL( status );
   }
 
+  phiC = ppnParams->phi;
+
   /* By default the waveform is empty */
   memset(h->data, 0, 2 * paramsInit.nbins * sizeof(REAL4));
 
   /* Call the engine function */
   params->startPhase = ppnParams->phi;
   LALEOBPPWaveformEngine(status->statusPtr, NULL, NULL, h, 
-			   &count, params, &paramsInit);
+			   &phiC, &count, params, &paramsInit);
   BEGINFAIL( status )
   {
      XLALDestroyREAL4Vector( h );
@@ -1378,6 +1381,7 @@ LALEOBPPWaveformEngine (
                 REAL4Vector      *signalvec1,
                 REAL4Vector      *signalvec2,
                 REAL4Vector      *h,
+                const REAL8      *phiC,
                 UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
@@ -1422,7 +1426,7 @@ LALEOBPPWaveformEngine (
 
    /* Variables to allow the waveform to be generated */
    /* from a specific fLower */
-   REAL8                   sInit;  /* Initial phase, and phase to subtract */
+   REAL8                   sInit, sSub = 0.0;  /* Initial phase, and phase to subtract */
    
    REAL8                   rmin = 20;        /* Smallest value of r at which to generate the waveform */
    COMPLEX16  MultSphHarmP;    /* Spin-weighted spherical harmonics */
@@ -1635,7 +1639,7 @@ LALEOBPPWaveformEngine (
    v     = cbrt( omega );
 
    /* Then the initial phase */
-   s = params->startPhase;
+   s = params->startPhase / 2.;
    sInit = s;
 
    /* initial r as a function of omega - where to start evolution */
@@ -1818,6 +1822,14 @@ LALEOBPPWaveformEngine (
    prVec.data   = dynamics->data+3*retLen;
    pPhiVec.data = dynamics->data+4*retLen;
 
+   /* It is not easy to define an exact coalescence phase for this model */
+   /* Therefore we will just choose it to be the point where the peak was */
+   /* estimated to be here */
+   if ( phiC )
+   {
+     sSub = phiVec.data[retLen - 1] - (*phiC)/2.;
+   }
+
    dt = dt/(REAL8)resampFac;
    values->data[0] = rVec.data[hiSRndx];
    values->data[1] = phiVec.data[hiSRndx];
@@ -1847,7 +1859,7 @@ LALEOBPPWaveformEngine (
      omegaHi->data[i] = omega;
      /* For now we re-populate values - there may be a better way to do this */
      values->data[0] = r = rVecHi.data[i];
-     values->data[1] = s = phiVecHi.data[i];
+     values->data[1] = s = phiVecHi.data[i] - sSub;
      values->data[2] = p = prVecHi.data[i];
      values->data[3] = q = pPhiVecHi.data[i];
 
@@ -1966,7 +1978,7 @@ LALEOBPPWaveformEngine (
      omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
      /* For now we re-populate values - there may be a better way to do this */
      values->data[0] = r = rVec.data[i];
-     values->data[1] = s = phiVec.data[i];
+     values->data[1] = s = phiVec.data[i] - sSub;
      values->data[2] = p = prVec.data[i];
      values->data[3] = q = pPhiVec.data[i];
 
@@ -1992,7 +2004,7 @@ LALEOBPPWaveformEngine (
 
     /* For now we re-populate values - there may be a better way to do this */
     values->data[0] = r = rVecHi.data[i];
-    values->data[1] = s = phiVecHi.data[i];
+    values->data[1] = s = phiVecHi.data[i] - sSub;
     values->data[2] = p = prVecHi.data[i];
     values->data[3] = q = pPhiVecHi.data[i];
 
