@@ -1925,6 +1925,9 @@ LALEOBPPWaveformEngine (
   }
   while ( time2 - time1 > 1.0e-5 );
 
+  gsl_spline_free( spline );
+  gsl_interp_accel_free( acc );
+
   XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );
 
   /* Calculate the NQC correction */
