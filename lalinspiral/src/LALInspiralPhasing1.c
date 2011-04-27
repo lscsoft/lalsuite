@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -28,17 +28,17 @@ system is equal to \f$v.\f$
 
 \heading{Prototypes}
 
-<tt>LALInspiralPhasing1()</tt>
+<tt>XLALInspiralPhasing1()</tt>
 
 \heading{Description}
 
-The function \c LALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
+The function \c XLALInspiralPhasing1() calculates the phase \f$\phi(v)\f$ using
 the phasing formula,
 \anchor phiofv \f{equation}{
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{phiofv}
 \f}
-\c LALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
+\c XLALInspiralPhasing1() calculates \f$\phi(v)\f$, given \f$\phi_{0}\f$, \f$v_{0}\f$,
 \f$v\f$, \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.  The user can specify the phase to
 be of a particular value at an arbitrary point on the waveform when the
 post-Newtonian evolution variable \f$v\f$ reaches a specific value. Choosing
@@ -50,7 +50,7 @@ so on.
 Numerical integration.
 
 \heading{Uses}
-LALDRombergIntegrate()
+XLALDRombergIntegrate()
 \heading{Notes}
 
 */
@@ -71,30 +71,51 @@ LALInspiralPhasing1 (
    void      *params
    )
 {
-
-   void *funcParams;
-   DIntegrateIn intinp;
-   PhiofVIntegrandIn in2;
-   InspiralPhaseIn *in1;
-   REAL8 sign;
-   REAL8 answer;
+   XLALPrintDeprecationWarning("LALInspiralPhasing1", "XLALInspiralPhasing1");
 
    INITSTATUS (status, "LALInspiralPhasing1", LALINSPIRALPHASING1C);
    ATTATCHSTATUSPTR (status);
 
    ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+   *phiofv = XLALInspiralPhasing1(v, params);
+   if (XLAL_IS_REAL8_FAIL_NAN(*phiofv))
+      ABORTXLAL(status);
+
+   DETATCHSTATUSPTR (status);
+   RETURN (status);
+}
+
+REAL8
+XLALInspiralPhasing1 (
+   REAL8     v,
+   void      *params
+   )
+{
+   void *funcParams;
+   REAL8 (*function)(REAL8 x, void *params);
+   REAL8 xmin, xmax;
+   IntegralType type;
+   PhiofVIntegrandIn in2;
+   InspiralPhaseIn *in1;
+   REAL8 sign;
+   REAL8 answer, phiofv;
+
+   if (params == NULL)
+      XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+   if (v <= 0.)
+      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
+   if (v >= 1.)
+      XLAL_ERROR_REAL8(__func__, XLAL_EDOM);
 
    sign = 1.0;
 
    in1 = (InspiralPhaseIn *) params;
 
-   intinp.function = LALInspiralPhiofVIntegrand;
-   intinp.xmin = in1->v0;
-   intinp.xmax = v;
-   intinp.type = ClosedInterval;
+   function = XLALInspiralPhiofVIntegrand;
+   xmin = in1->v0;
+   xmax = v;
+   type = ClosedInterval;
 
    in2.dEnergy = in1->dEnergy;
    in2.flux = in1->flux;
@@ -103,22 +124,20 @@ LALInspiralPhasing1 (
    funcParams = (void *) &in2;
 
    if (v==in1->v0) {
-      *phiofv = in1->phi0;
-      DETATCHSTATUSPTR (status);
-      RETURN (status);
+      return in1->phi0;
    }
 
    if(in1->v0 > v) {
-      intinp.xmin = v;
-      intinp.xmax = in1->v0;
+      xmin = v;
+      xmax = in1->v0;
       sign = -1.0;
    }
 
-   LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
-   CHECKSTATUSPTR (status);
+   answer = XLALREAL8RombergIntegrate (function, funcParams, xmin, xmax, type);
+   if (XLAL_IS_REAL8_FAIL_NAN(answer))
+      XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
 
-   *phiofv = in1->phi0 - 2.0*sign*answer;
+   phiofv = in1->phi0 - 2.0*sign*answer;
 
-   DETATCHSTATUSPTR (status);
-   RETURN (status);
+   return phiofv;
 }

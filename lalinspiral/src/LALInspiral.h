@@ -1316,6 +1316,11 @@ void LALInspiralPhasing1 (
      REAL8 v,
      void *params);
 
+REAL8 XLALInspiralPhasing1 (
+      REAL8 v,
+      void *params);
+
+
 
 
 
