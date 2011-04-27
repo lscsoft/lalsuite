@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Anand Sengupta, Thomas Cokelaer
+*  Copyright (C) 2007 Anand Sengupta, Thomas Cokelaer, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ a set of binary masses such as the two masses or the total mass and eta and (3)
 an amplitude which is arbitrary fixed to unity when templates are computed.
 
 However we might need to have a template with the physical amplitude (for instance
-to deal with injections). The function \c LALInspiralRestrictedAmplitude
-takes anInspiralTemplate structure as input/output to return the restricted
+to deal with injections). The function \c XLALInspiralRestrictedAmplitude
+takes an InspiralTemplate structure as input/output to return the restricted
 Newtonian amplitude by using the following formula.
 
 \f{equation}{
@@ -45,7 +45,7 @@ variable of the inspiral template structure.
 
 \heading{Uses}
 When appropriate this function calls:\\
-\c LALInspiralParameterCalc
+\c XLALInspiralParameterCalc
 
 */
 
@@ -59,25 +59,35 @@ void
 LALInspiralRestrictedAmplitude (LALStatus        *status,
 				InspiralTemplate *params )
 {
-
+  XLALPrintDeprecationWarning("LALInspiralRestrictedAmplitude", "XLALInspiralRestrictedAmplitude");
 
   INITSTATUS (status, "LALInspiralAmplitude", LALINSPIRALAMPLITUDEC );
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->massChoice <= 14, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-  if (params->massChoice != totalMassAndEta)
-    {
-      LALInspiralParameterCalc(status->statusPtr, params );
-      CHECKSTATUSPTR(status);
-    }
-
-
-  params->signalAmplitude = 4. * params->totalMass  * params->eta   /  (LAL_PC_SI * 1e6 *params->distance / LAL_MRSUN_SI);
+  XLALInspiralRestrictedAmplitude(params);
+  if (xlalErrno)
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
+void
+XLALInspiralRestrictedAmplitude (InspiralTemplate *params)
+{
+  if (params == NULL)
+    XLAL_ERROR_VOID(__func__, XLAL_EFAULT);
+  if ((INT4)params->massChoice < 0)
+    XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+  if ((INT4)params->massChoice > 15)
+    XLAL_ERROR_VOID(__func__, XLAL_EDOM);
+
+  if (params->massChoice != totalMassAndEta)
+  {
+    XLALInspiralParameterCalc(params);
+    if (xlalErrno)
+      XLAL_ERROR_VOID(__func__, XLAL_EFUNC);
+  }
+
+  params->signalAmplitude = 4. * params->totalMass  * params->eta   /  (LAL_PC_SI * 1e6 *params->distance / LAL_MRSUN_SI);
+}
