@@ -20,50 +20,6 @@
 NRCSID(LALSIMINSPIRALTAYLORT3H, "$Id$");
 
 /**
- * Estimates the time it takes to go from f_min to f_isco
- * for a given mass pair at a given post-Newtonian order.
- *
- * Estimate is computed by summing the chirp times associated
- * with different post-Newtonian orders.
- */
-REAL8 XLALInspiralPNCoalescenceTime(
-		REAL8 m1,    /**< mass of companion 1 */
-		REAL8 m2,    /**< mass of companion 2 */
-		REAL8 f_min, /**< start frequency */
-		int O        /**< twice post-Newtonian order */
-		);
-
-/**
- * Computes the post-Newtonian phase for a given time from coalesence.
- *
- * td = t * nu / (5. * m)
- * where t is the time before coalesnce in units of seconds,
- * nu is the symmetric mass ratio,
- * and m is the total mass in units of seconds 
- */
-REAL8 XLALSimInspiralTaylorT3Phasing(
-		REAL8 td, /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		);
-
-/**
- * Computes the post-Newtonian frequency for a given time from coalesence.
- *
- * td = t * nu / (5. * m)
- * where t is the time before coalesnce in units of seconds,
- * nu is the symmetric mass ratio,
- * and m is the total mass in units of seconds 
- */
-REAL8 XLALSimInspiralTaylorT3Frequency(
-		REAL8 td, /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		);
-
-/**
  * Evolves a post-Newtonian orbit using the Taylor T3 method.
  */
 int XLALSimInspiralTaylorT3PNEvolveOrbit(

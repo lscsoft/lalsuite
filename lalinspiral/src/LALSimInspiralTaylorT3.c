@@ -40,213 +40,32 @@
 
 NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
 
-/**
- * Estimates the time it takes to go from f_min to f_isco
- * for a given mass pair at a given post-Newtonian order.
- *
- * Estimate is computed by summing the chirp times associated
- * with different post-Newtonian orders.
- */
-REAL8 XLALInspiralPNCoalescenceTime(
-		REAL8 m1,    /**< mass of companion 1 */
-		REAL8 m2,    /**< mass of companion 2 */
-		REAL8 f_min, /**< start frequency */
-		int O        /**< twice post-Newtonian order */
-		)
+
+typedef struct
 {
-	static const char *func = "XLALInspiralPNCoalescenceTime";
-	REAL8 tc = 0;
-	REAL8 piFl = LAL_PI * f_min;
-	REAL8 m = m1 + m2;
-	REAL8 nu = m1 * m2 / m / m;
-	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 nu2 = nu * nu;
-	REAL8 nu3 = nu2 * nu;
-	REAL8 v = pow(piFl * m, oneby3);
-	REAL8 tN = 5.L/256.L / nu * m / pow(v,8.L);
-
-	switch (O) {
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_REAL8(func, XLAL_EINVAL);
-		case -1: /* use highest available pN order */
-		case 7:
-			tc += (-15419335.L / 127008.L - 75703.L / 756.L * nu + 14809.L / 378.L * nu2)
-				* LAL_PI * tN * pow(v, 7);
-		case 6:
-			tc += tN * ((-10052469856691. / 23471078400. + 128. / 3. * LAL_PI * LAL_PI
-					+ (15335597827.L / 15240960.L - 451.L / 12.L * LAL_PI * LAL_PI
-						+ 352. / 3. * LALINSPIRAL_PNTHETA
-						- 2464.L / 9.L * LALINRPIAL_PNLAMBDA) * nu
-					+ 6848.L / 105.L * LAL_GAMMA - 15211.L / 1728.L * nu2
-					+ 25565.L / 1296.L * nu3)
-				+ 6848.L / 105.L * log(4. * v)) * pow(v, 6);
-		case 5:
-			tc += -5. * (7729. / 252. - 13. / 3. * nu) / (256. * nu * f_min);
-		case 4:
-			tc += (5.0 / (128.0 * nu * pow(m, oneby3) * pow(piFl, fourby3)))
-				* (3058673. / 1016064. + 5429. * nu / 1008. + 617. * nu2 / 144.);
-		case 3:
-			tc += LAL_PI / (8.0 * nu * pow(m, twoby3) * pow(piFl, fiveby3));
-		case 2:
-			tc += (3715.0L + (4620.0L * nu)) / (64512.0 * nu * m * pow(piFl, 2.0));
-		case 1:
-		case 0:
-			tc += 5.0L / (256.0L * nu * pow(m, fiveby3) * pow(piFl, eightby3));
-	}
-
-	return tc;
+	REAL8 (*func)(REAL8 tC, expnCoeffs *ak);
+	expnCoeffs ak;
 }
+ChirptimeFromFreqIn;
 
-
-struct SimInspiralTaylorT3FrequencyParams {
-	REAL8 f0;
-	REAL8 m1;
-	REAL8 m2;
-	int O;
-};
-
-
-static REAL8 XLALSimInspiralTaylorT3FrequencyWrapper(REAL8 td, void *pars)
+static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
 {
-	struct SimInspiralTaylorT3FrequencyParams *in = pars;
+  static const char *func = "XLALInspiralFrequency3Wrapper";
 
-	return XLALSimInspiralTaylorT3Frequency(td, in->m1, in->m2, in->O) - in->f0;
-}
+  ChirptimeFromFreqIn *in;
+  REAL8 freq, f;
 
+  in = (ChirptimeFromFreqIn *) pars;
+  freq = in->func(tC, &(in->ak));
+  if (XLAL_IS_REAL8_FAIL_NAN(freq))
+    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+  f = freq - in->ak.f0;
 
-/**
- * Computes the post-Newtonian phase for a given time from coalesence.
- *
- * td = t * nu / (5. * m)
- * where t is the time before coalesnce in units of seconds,
- * nu is the symmetric mass ratio,
- * and m is the total mass in units of kilograms
- */
-REAL8 XLALSimInspiralTaylorT3Phasing(
-		REAL8 td, /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		)
-{
-	static const char *func = "XLALSimInspiralTaylorT3Phasing";
-	REAL8 m = m1 + m2;
-	REAL8 nu = m1 * m2 / m / m;
-	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 nu2 = nu * nu;
-	REAL8 nu3 = nu2 * nu;
-	REAL8 thetas[8];
-	thetas[0] = 1.;
-	thetas[1] = pow(td,-0.125);
-	thetas[2] = thetas[1] * thetas[1];
-	thetas[5] = thetas[2] * thetas[2] * thetas[1];
-	int i;
-	REAL8 ans = 0;
+  /*
+  fprintf(stderr, "Here freq=%e f=%e tc=%e f0=%e\n", freq, *f, tC, in->ak.f0);
+   */
 
-	for (i=1; i < O; i++) {
-		thetas[i + 1] = thetas[i] * thetas[1];
-	}
-
-	switch (O) {
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_REAL8(func, XLAL_EINVAL);
-		case -1: /* use highest available pN order */
-		case 7:
-			ans += thetas[7] * (1.88516689 / 1.73408256 + 488825. / 516096. * nu
-				- 141769. / 516096. * nu2) * LAL_PI;
-		case 6:
-			ans += thetas[6] * ((83.1032450749357 / 5.7682522275840 - 53. / 40. * LAL_PI * LAL_PI
-					- 107. / 56. * LAL_GAMMA + (-123.292747421 / 4.161798144
-						+ 2.255 / 2.048 * LAL_PI * LAL_PI
-						+ 385. / 48. * LALINRPIAL_PNLAMBDA
-						- 55. / 16. * LALINSPIRAL_PNTHETA) * nu
-					+ 1.54565 / 18.35008 * nu2 - 1.179625 / 1.769472 * nu3)
-				+ log(td / 256.) * (107. / 448.));
-		case 5:
-			/* FIXME: we need to get tn */
-			ans += thetas[5] * log(td / 2.977257) * (-(3.8645 / 17.2032 - 65. / 2048. * nu) * LAL_PI);
-		case 4:
-			ans += thetas[4] * (9.275495 / 14.450688 + 2.84875 / 2.58048 * nu
-				+ 1855. / 2048. * nu2);
-		case 3:
-			ans += thetas[3] * (-0.75) * LAL_PI;
-		case 2:
-			ans += thetas[2] * (3715. / 8064. + 55. / 96. * nu);
-		case 1:
-		case 0:
-			ans += 1.0;
-	}
-	ans *= -2. / nu / thetas[5];
-	return ans;
-}
-
-
-/**
- * Computes the post-Newtonian frequency for a given time from coalesence.
- *
- * td = t * nu / (5. * m)
- * where t is the time before coalesnce in units of seconds,
- * nu is the symmetric mass ratio,
- * and m is the total mass in units of kilograms
- */
-REAL8 XLALSimInspiralTaylorT3Frequency(
-		REAL8 td, /**< post-Newtonian parameter */
-	       	REAL8 m1, /**< mass of companion 1 */
-	       	REAL8 m2, /**< mass of companion 2 */
-	       	int O     /**< twice post-Newtonian order */
-		)
-{
-	static const char *func = "XLALSimInspiralTaylorT3Frequency";
-	REAL8 m = m1 + m2;
-	REAL8 nu = m1 * m2 / m / m;
-	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 nu2 = nu * nu;
-	REAL8 nu3 = nu2 * nu;
-	REAL8 thetas[8];
-	thetas[0] = 1.;
-	thetas[1] = pow(td, -0.125);
-	thetas[3] = thetas[1] * thetas[1] * thetas[1];
-	int i;
-	REAL8 ans = 0;
-
-	for (i=1; i < O; i++) {
-		thetas[i + 1] = thetas[i] * thetas[1];
-	}
-
-	switch (O) {
-		default: /* unsupported pN order */
-			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", func, O/2, O%2?".5":"" );
-			XLAL_ERROR_REAL8(func, XLAL_EINVAL);
-		case -1: /* use highest available pN order */
-		case 7:
-			ans += thetas[7] * (-1.88516689 / 4.33520640 - 97765. / 258048. * nu
-				+ 141769. / 1290240. * nu2) * LAL_PI;
-		case 6:
-			ans += thetas[6] * ((-7.20817631400877 / 2.88412611379200
-					+ (53. / 200.) * LAL_PI * LAL_PI + 1.07 / 2.80 * LAL_GAMMA
-					+ 1.07 / 2.80 * log(2.) + (1.23292747421 / .20808990720
-						- 4.51 / 20.48 * LAL_PI * LAL_PI
-						- 77. / 48. * LALINRPIAL_PNLAMBDA
-						+ 11. / 16. * LALINSPIRAL_PNTHETA) * nu
-					- 3.0913 / 183.5008 * nu2 + 2.35925 / 17.69472 * nu3)
-				+ log(td) * (-107. / 2240.));
-		case 5:
-			ans += thetas[5] * (-(7.729 / 21.504 - 13. / 256. * nu) * LAL_PI);
-		case 4:
-			ans += thetas[4] * (1.855099 / 14.450688 +  5.6975 / 25.8048 * nu
-				+ 3.71 / 20.48 * nu2);
-		case 3:
-			ans += thetas[3] * (-0.3) * LAL_PI;
-		case 2:
-			ans += thetas[2] * (743. / 2688. + 11. / 32. * nu);
-		case 1:
-		case 0:
-			ans += 1.0;
-	}
-	ans *= thetas[3] / (8. * LAL_PI * m);
-	return ans;
+  return f;
 }
 
 
@@ -271,11 +90,30 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	REAL8 m = m1 + m2;
 	REAL8 nu = m1 * m2 / m / m;
 	m *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m from kilograms to seconds */
-	REAL8 tC, c1, xmin, xmax, xacc, v, v2, phase, fOld, t, td;
+	REAL8 tC, c1, xmin, xmax, xacc, v, v2, phase, fOld, t, td, temp, tempMin = 0, tempMax = 0;
+	REAL8 (*function)(REAL8, void *);
 	UINT4 j;
 	REAL8 f;
-	struct SimInspiralTaylorT3FrequencyParams params;
 	void *pars;
+
+	InspiralTemplate tmpltParams;
+	InspiralInit paramsInit;
+	expnFunc expnfunc;
+	expnCoeffs ak;
+	ChirptimeFromFreqIn timeIn;
+
+	memset( &tmpltParams, 0, sizeof(InspiralTemplate) );
+	tmpltParams.approximant = TaylorT3;
+	tmpltParams.order = (LALPNOrder) O;
+	tmpltParams.ampOrder = LAL_PNORDER_NEWTONIAN;
+	tmpltParams.mass1 = m1 / LAL_MSUN_SI;
+	tmpltParams.mass2 = m2 / LAL_MSUN_SI;
+	tmpltParams.totalMass = tmpltParams.mass1 + tmpltParams.mass2;
+	tmpltParams.eta = nu;
+	tmpltParams.tSampling = 1. / deltaT;
+	tmpltParams.fCutoff = tmpltParams.tSampling / 2. - 1.;
+	tmpltParams.fLower = f_min;
+	tmpltParams.ieta = 1;
 
 	/* allocate memory */
 
@@ -285,36 +123,93 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 	if (!x || !phi)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	/* compute factor tranforming time to coalecense to pN parameter */
 
-	c1 = nu / (5. * m);
+	/* initialize InspiralInit structure */
 
-	/* estimate lenth of waveform */
+	XLALInspiralSetup(&(paramsInit.ak), &(tmpltParams));
+	if (xlalErrno)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), &(tmpltParams));
+	if (xlalErrno)
+		XLAL_ERROR(func, XLAL_EFUNC);
+	XLALInspiralParameterCalc(&(tmpltParams));
+	if (xlalErrno)
+		XLAL_ERROR(func, XLAL_EFUNC);
 
-	tC = XLALInspiralPNCoalescenceTime(m1, m2, f_min, O);
-	xmin = c1 * tC / 2.;
-	xmax = c1 * tC * 3. + 5.;
+	ak = paramsInit.ak;
+	expnfunc = paramsInit.func;
+
+	c1 = nu/(5.*m);
+
+	/*
+	 * In Jan 2003 we realized that the tC determined as a sum of chirp
+	 * times is not quite the tC that should enter the definition of Theta
+	 * in the expression for the frequency as a function of time (see DIS3,
+	 * 2000). This is because chirp times are obtained by inverting t(f).
+	 * Rather tC should be obtained by solving the equation f0 - f(tC) = 0.
+	 * This is what is implemented below.
+	 */
+
+	timeIn.func = expnfunc.frequency3;
+	timeIn.ak = ak;
+	function = &XLALInspiralFrequency3Wrapper;
+	xmin = c1*tmpltParams.tC/2.;
+	xmax = c1*tmpltParams.tC*2.;
 	xacc = 1.e-6;
+	pars = (void*) &timeIn;
+	/* tc is the instant of coalescence */
 
-	/* fill in parameters for XLALDBracketRoot and XLALDBisectionFindRoot */
+	/* we add 5 so that if tC is small then xmax
+	 * is always greater than a given value (here 5)*/
+	xmax = c1*tmpltParams.tC*3 + 5.;
 
-	params.m1 = m1;
-	params.m2 = m2;
-	params.f0 = f_min;
-	params.O = O;
-	pars = (void*) &params;
+	/* for x in [xmin, xmax], we search the value which gives the max
+	 * frequency.  and keep the corresponding rootIn.xmin. */
 
-	/* bracket root and find root */
+	for (tC = c1*tmpltParams.tC/1000.; tC < xmax; tC+=c1*tmpltParams.tC/1000.){
+		temp = XLALInspiralFrequency3Wrapper(tC , pars);
+		if (XLAL_IS_REAL8_FAIL_NAN(temp))
+			XLAL_ERROR(func, XLAL_EFUNC);
+		if (temp > tempMax) {
+			xmin = tC;
+			tempMax = temp;
+		}
+		if (temp < tempMin) {
+			tempMin = temp;
+		}
+	}
 
-	XLALDBracketRoot(XLALSimInspiralTaylorT3FrequencyWrapper, &xmin, &xmax, pars);
+	/* if we have found a value positive then everything should be fine in
+	 * the BissectionFindRoot function */
+	if (tempMax > 0  &&  tempMin < 0){
+		tC = XLALDBisectionFindRoot (function, xmin, xmax, xacc, pars);
+		if (XLAL_IS_REAL8_FAIL_NAN(tC))
+			XLAL_ERROR(func, XLAL_EFUNC);
+	}
+	else{
+		XLALPrintError(LALINSPIRALH_MSGEROOTINIT);
+		XLAL_ERROR(func, XLAL_EMAXITER);
+	}
 
-	td = XLALDBisectionFindRoot(XLALSimInspiralTaylorT3FrequencyWrapper, xmin, xmax, xacc, pars);
-	tC = td / c1;
+	tC /= c1;
+
+	/* Add user given startTime to instant of coalescence of the compact
+	 * objects */
+
+	tC += tmpltParams.startTime;
+
 
 	/* start waveform generation */
 
-	phase = XLALSimInspiralTaylorT3Phasing(td, m1, m2, O);
-	f = f_min;
+	t = 0.;
+	td = c1 * (tC - t);
+	phase = expnfunc.phasing3(td, &ak);
+	if (XLAL_IS_REAL8_FAIL_NAN(phase))
+		XLAL_ERROR(func, XLAL_EFUNC);
+	f = expnfunc.frequency3(td, &ak);
+	if (XLAL_IS_REAL8_FAIL_NAN(f))
+		XLAL_ERROR(func, XLAL_EFUNC);
+
 	v = pow(f * LAL_PI * m, oneby3);
 	v2 = v * v;
 	(*x)->data->data[0] = v2;
@@ -329,8 +224,12 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		fOld = f;
 		t = j * deltaT;
 		td = c1 * (tC - t);
-		phase = XLALSimInspiralTaylorT3Phasing(td, m1, m2, O);
-		f = XLALSimInspiralTaylorT3Frequency(td, m1, m2, O);
+		phase = expnfunc.phasing3(td, &ak);
+		if (XLAL_IS_REAL8_FAIL_NAN(phase))
+			XLAL_ERROR(func, XLAL_EFUNC);
+		f = expnfunc.frequency3(td, &ak);
+		if (XLAL_IS_REAL8_FAIL_NAN(f))
+			XLAL_ERROR(func, XLAL_EFUNC);
 		v = pow(f * LAL_PI * m, oneby3);
 		v2 = v * v;
 
