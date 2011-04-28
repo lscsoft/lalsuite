@@ -21,6 +21,7 @@ lalinspiralinclude_HEADERS = \
 	GeneratePPNInspiral.h \
 	GenerateRing.h \
 	InspiralInjectionParams.h \
+	LALAdaptiveRungeKutta4.h \
 	LALInspiral.h \
 	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
@@ -28,6 +29,7 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralRandomBank.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
+        LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
 	LALTrigScanCluster.h \
@@ -176,6 +178,7 @@ liblalinspiral_la_SOURCES = \
 	LALRandomInspiralSignal.c \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
+	LALAdaptiveRungeKutta4.c \
 	LALSTPNWaveform.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \

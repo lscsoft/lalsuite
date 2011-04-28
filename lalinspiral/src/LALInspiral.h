@@ -1295,14 +1295,12 @@ void LALPSpinInspiralRDForInjection(
                            InspiralTemplate *params,
                            PPNParamStruc  *ppnParams);
 
-void LALPSpinInspiralRDEngine (
-                LALStatus        *status,
-                REAL4Vector      *signalvec1,
-                REAL4Vector      *signalvec2,
-                REAL4Vector      *a,
-                REAL4Vector      *ff,
+int XLALPSpinInspiralRDEngine (
+                REAL8Vector      *signalvec1,
+                REAL8Vector      *signalvec2,
+                REAL8Vector      *h,
+                REAL8Vector      *f,
                 REAL8Vector      *phi,
-                REAL4Vector      *shift,
                 UINT4            *countback,
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
@@ -1747,17 +1745,17 @@ INT4 XLALInspiralAttachRingdownWave (
 
  
 INT4 XLALPSpinInspiralRingdownWave (
-       REAL4Vector             *rdwave,
+       REAL8Vector             *rdwave,
        InspiralTemplate        *params,
-       REAL4Vector             *inspwave,
+       REAL8Vector             *inspwave,
        COMPLEX8Vector          *modefreqs,
        UINT4                   nmodes
        );
 
-INT4 XLALPSpinGenerateWaveDerivative (
-       REAL4Vector             *dwave,
-       REAL4Vector             *wave,
-       InspiralTemplate        *params
+INT4 XLALGenerateWaveDerivative (
+	REAL8Vector		*dwave,
+	REAL8Vector	        *wave,
+	REAL8                    dt
        );
 
 INT4 XLALPSpinGenerateQNMFreq (
@@ -1779,7 +1777,7 @@ INT4 XLALPSpinFinalMassSpin(
        );
 
 INT4 XLALPSpinInspiralAttachRingdownWave (
-       REAL4Vector       *signalvec,
+       REAL8Vector       *signalvec,
        InspiralTemplate  *params,
        UINT4             *attpos,
        UINT4             nmodes,
