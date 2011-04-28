@@ -17,7 +17,11 @@
  *  MA  02111-1307  USA
  */
 
-/*
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Bernd Machenschalk, Bruce Allen
+ * \brief 
   This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
 
   This code links to the SFTReferenceLibrary. To compile, use somehting like
@@ -38,12 +42,6 @@
     * keep output files open (if there aren't too many)
     * obscure a mystery factor in command-line record even if given with long option --factor
 */
-
-/** \author Bernd Machenschalk
- * \file
- * \brief
- * This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
- */
 
 #include <math.h>
 #include <time.h>

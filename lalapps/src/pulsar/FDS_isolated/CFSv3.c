@@ -20,6 +20,7 @@
 /*********************************************************************************/
 /** \author R. Prix
  * \file
+ * \ingroup pulsarApps
  * \brief Calculate the Fourier transform over the total timespan from a set of SFTs
  *
  *********************************************************************************/

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -47,11 +47,20 @@ typedef struct
    REAL8 dfmin;
    REAL8 dfmax;
    REAL4 dopplerMultiplier;
+   REAL4 ihsfar;
+   REAL4 ihsfom;
+   REAL4 ihsfomfar;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 templatelength;
    INT4 rootFindingMethod;
-   LALDetector *det;
+   LALDetector det;
+   CHAR* sftType;
+   INT4 markBadSFTs;
+   INT4 FFTplanFlag;
+   INT4 keepOneIHS;
+   INT4 antennaOff;
+   INT4 noiseWeightOff;
 } inputParamsStruct;
 
 typedef struct
@@ -78,6 +87,8 @@ typedef struct
 typedef struct
 {
    REAL4Vector *maxima;
+   REAL4Vector *foms;
+   REAL4Vector *ihsForEachFbin;
    INT4Vector *locations;
    INT4 columns;
 } ihsMaximaStruct;
@@ -93,6 +104,7 @@ typedef struct
    REAL4Vector *ihsfar;
    REAL4Vector *ihsdistMean;
    REAL4Vector *ihsdistSigma;
+   REAL4Vector *fomfarthresh;
 } ihsfarStruct;
 
 typedef struct

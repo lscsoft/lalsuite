@@ -17,27 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTbinTest.c
- * Authors: Sintes, A.M., 
- *
- * Revision: $Id$
- *
- * History:   Created by Sintes May 21, 2003
- *            Modified...
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Alicia Sintes Olives, Badri Krishnan
  */
-/************************************ <lalVerbatim file="SFTbinTestCV">
-Author: Sintes, A.M.,
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include "./SFTbin.h"
 
@@ -45,7 +29,7 @@ NRCSID (SFTBINTESTC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="SFTBINTESTCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define SFTBINTESTC_ENORM 0
 #define SFTBINTESTC_ESUB  1
 #define SFTBINTESTC_EARG  2
@@ -57,7 +41,7 @@ NRCSID (SFTBINTESTC, "$Id$");
 #define SFTBINTESTC_MSGEARG  "Error parsing arguments"
 #define SFTBINTESTC_MSGEBAD  "Bad argument values"
 #define SFTBINTESTC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */

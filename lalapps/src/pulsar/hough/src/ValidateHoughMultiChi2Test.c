@@ -19,17 +19,13 @@
  */
 
 /**
- * \file ValidateHoughMulti.c
+ * \file
+ * \ingroup pulsarApps
  * \author Badri Krishnan, Alicia Sintes 
  * \brief Driver code for performing Hough transform search on non-demodulated
    data using SFTs from possible multiple IFOs
 
-   Revision: $Id$
- 
    History: Created by Sancho de la Jordana, Sintes and Krishnan December 15, 2006
-
-
-
 */
 
 

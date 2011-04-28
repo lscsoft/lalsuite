@@ -17,12 +17,21 @@
  *  MA  02111-1307  USA
  */
 
+#ifndef _LALSIMULATION_H
+#define _LALSIMULATION_H
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
 
 
 #include <lal/LALRCSID.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 NRCSID(LALSIMULATIONH, "$Id:");
 
 
@@ -46,3 +55,11 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	REAL8TimeSeries *h,
 	const COMPLEX16FrequencySeries *response
 );
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
+#endif /* _LALSIMULATION_H */

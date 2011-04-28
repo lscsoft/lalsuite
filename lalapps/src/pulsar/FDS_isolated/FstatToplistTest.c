@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ */
+
 #include <stdlib.h>
 #include "HeapToplist.h"
 #include "FstatToplist.h"

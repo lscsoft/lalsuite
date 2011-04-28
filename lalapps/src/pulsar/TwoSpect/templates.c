@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 */
 
 #include <math.h>
+#include <time.h>
 
 #include <gsl/gsl_sf_trig.h>
 #include <gsl/gsl_roots.h>
@@ -29,6 +30,7 @@
 
 #include "templates.h"
 #include "cdfwchisq.h"
+#include "statistics.h"
 
 //////////////////////////////////////////////////////////////
 // Allocate memory for farStruct struct  -- done
@@ -39,7 +41,7 @@ farStruct * new_farStruct(void)
    
    farStruct *farstruct = XLALMalloc(sizeof(*farstruct));
    if (farstruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*farstruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*farstruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -65,7 +67,7 @@ void free_farStruct(farStruct *farstruct)
 
 //////////////////////////////////////////////////////////////
 // Estimate the FAR of the R statistic from the weights
-void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
+void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
 {
    
    const CHAR *fn = __func__;
@@ -139,7 +141,7 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 
 //////////////////////////////////////////////////////////////
 // Numerically solve for the FAR of the R statistic from the weights
-void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 method)
+void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4 method)
 {
    
    const CHAR *fn = __func__;
@@ -151,9 +153,18 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    //Set up solver: method 0 is Brent's method, method 1 is Newton's method
    const gsl_root_fsolver_type *T1 = gsl_root_fsolver_brent;
    gsl_root_fsolver *s1 = gsl_root_fsolver_alloc(T1);
+   if (s1==NULL) {
+      fprintf(stderr,"%s: gsl_root_fsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function F;
    const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_newton;
+   //const gsl_root_fdfsolver_type *T0 = gsl_root_fdfsolver_steffenson;
    gsl_root_fdfsolver *s0 = gsl_root_fdfsolver_alloc(T0);
+   if (s0==NULL) {
+      fprintf(stderr,"%s: gsl_root_fdfsolver_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+   }
    gsl_function_fdf FDF;
    
    
@@ -171,29 +182,36 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
       FDF.params = &params;
    }
    
-   
    //Start off with an initial guess and set the solver at the beginning
-   REAL8 Rlow = 0.0, Rhigh = 1000.0, root = 10.0;
-   REAL8 initialroot = root;
+   REAL8 Rlow = 0.0, Rhigh = 10000.0, root = 400.0;
    if (method != 0) {
       if ( (gsl_root_fsolver_set(s1, &F, Rlow, Rhigh)) != 0 ) {
          fprintf(stderr,"%s: Unable to initialize root solver to bracketed positions.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       }
    } else {
-      if ( (gsl_root_fdfsolver_set(s0, &FDF, initialroot)) != 0 ) {
+      if ( (gsl_root_fdfsolver_set(s0, &FDF, root)) != 0 ) {
          fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
          XLAL_ERROR_VOID(fn, XLAL_EFUNC);
       } 
    }
    
    
+   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+      XLAL_ERROR_VOID(fn, XLAL_ENOMEM);
+   }
+   srand(time(NULL));
+   UINT8 randseed = rand();
+   gsl_rng_set(rng, randseed);
+   
    
    //And now find the root
    ii = 0;
-   INT4 max_iter = 100;
+   INT4 max_iter = 100, jj = 0, max_retries = 10;
    INT4 status = GSL_CONTINUE;
-   REAL8 prevroot;
+   REAL8 prevroot = 0.0;
    while (status==GSL_CONTINUE && ii<max_iter) {
       
       ii++;
@@ -206,6 +224,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
          }
          if (ii>0) prevroot = root;
          root = gsl_root_fsolver_root(s1);
+         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
          Rlow = gsl_root_fsolver_x_lower(s1);
          Rhigh = gsl_root_fsolver_x_upper(s1);
          status = gsl_root_test_interval(Rlow, Rhigh, 0.0, 0.001);
@@ -226,6 +245,21 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
             fprintf(stderr,"%s: gsl_root_test_delta() failed with code %d.\n", fn, status);
             XLAL_ERROR_VOID(fn, XLAL_EFUNC);
          }
+         
+         //If there is an issue that the root is negative, try a new initial guess
+         fprintf(stderr,"root = %g\n",root);    //TODO: remove this
+         if (root<0.0 && jj<max_retries) {
+            ii = 0;
+            jj++;
+            status = GSL_CONTINUE;
+            if ( (gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(rng)*Rhigh)) != 0 ) {
+               fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", fn);
+               XLAL_ERROR_VOID(fn, XLAL_EFUNC);
+            }
+         } else if (root<0.0 && jj==max_retries) {
+            status = GSL_FAILURE;
+         } //Up to here
+         
       }
       
    } /* while status==GSL_CONTINUE && ii < max_iter */
@@ -266,6 +300,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL4 thresh,
    //Cleanup
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
+   gsl_rng_free(rng);
    
    
 } /* numericFAR() */
@@ -274,7 +309,20 @@ REAL8 gsl_probR(REAL8 R, void *param)
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
    
-   REAL8 prob = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, &pars->errcode);
+   REAL8 dR = 0.005;
+   REAL8 R1 = (1.0+dR)*R;
+   REAL8 R2 = (1.0-dR)*R;
+   INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0;
+   
+   REAL8 prob = (probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R, &errcode1) + probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &errcode2) + probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &errcode3))/3.0;
+   
+   if (errcode1!=0) {
+      pars->errcode = errcode1;
+   } else if (errcode2!=0) {
+      pars->errcode = errcode2;
+   } else if (errcode3!=0) {
+      pars->errcode = errcode3;
+   }
    
    REAL8 returnval = prob - log10(pars->threshold);
    
@@ -286,22 +334,29 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
    
-   REAL8 dR = 0.001;
+   REAL8 dR = 0.005;
+   
+   INT4 errcode1 = 0, errcode2 = 0;
    
    //Explicit computation of slope
    REAL8 R1 = (1.0+dR)*R;
-   REAL8 R2 = R-(R1-R);
-   REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
-   REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
-   while (fabs(prob1-prob2)<10.0*LAL_REAL4_MIN) {
+   REAL8 R2 = (1.0-dR)*R;
+   //REAL8 prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &errcode1);
+   //REAL8 prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &errcode2);
+   REAL8 prob1 = gsl_probR(R1, pars);
+   REAL8 prob2 = gsl_probR(R2, pars);
+   while (fabs(prob1-prob2)<100.0*LAL_REAL8_EPS) {
       dR *= 2.0;
       R1 = (1.0+dR)*R;
-      R2 = R-(R1-R);
-      prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &pars->errcode);
-      prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &pars->errcode);
+      R2 = (1.0-dR)*R;
+      //prob1 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R1, &errcode1);
+      //prob2 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R2, &errcode2);
+      prob1 = gsl_probR(R1, pars);
+      prob2 = gsl_probR(R2, pars);
    }
    REAL8 diffR = R1 - R2;
    REAL8 slope = (prob1-prob2)/diffR;
+   //fprintf(stderr,"GSL derivative = %g\n", slope);
    
    //Added for improved resolution:
    /* REAL8 R3 = R-2.0*diffR;
@@ -310,6 +365,12 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    REAL8 prob4 = probR(pars->templatestruct, pars->ffplanenoise, pars->fbinaveratios, R4, &pars->errcode);
    
    slope = (8.0*(prob1-prob2)+prob3-prob4)/(12.0*diffR); */
+   
+   if (errcode1!=0) {
+      pars->errcode = errcode1;
+   } else if (errcode2!=0) {
+      pars->errcode = errcode2;
+   }
    
    return slope;
    
@@ -343,18 +404,18 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    }
    
    REAL8Vector *newweights = XLALCreateREAL8Vector((UINT4)numweights);
-   REAL8Vector *noncentrality = XLALCreateREAL8Vector((UINT4)numweights);
-   INT4Vector *dofs = XLALCreateINT4Vector((UINT4)numweights);
+   //REAL8Vector *noncentrality = XLALCreateREAL8Vector((UINT4)numweights);
+   //INT4Vector *dofs = XLALCreateINT4Vector((UINT4)numweights);
    INT4Vector *sorting = XLALCreateINT4Vector((UINT4)numweights);
    if (newweights==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-   } else if (noncentrality==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
-   } else if (dofs==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
-      XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   //} else if (noncentrality==NULL) {
+      //fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, numweights);
+      //XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+   //} else if (dofs==NULL) {
+      //fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
+      //XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
    } else if (sorting==NULL) {
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", fn, numweights);
       XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
@@ -363,35 +424,37 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    REAL8 Rpr = R;
    for (ii=0; ii<(INT4)newweights->length; ii++) {
       newweights->data[ii] = 0.5*templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
-      noncentrality->data[ii] = 0.0;
-      dofs->data[ii] = 2;
+      //noncentrality->data[ii] = 0.0;
+      //dofs->data[ii] = 2;
       Rpr += templatestruct->templatedata->data[ii]*ffplanenoise->data[ templatestruct->secondfftfrequencies->data[ii] ]*fbinaveratios->data[ templatestruct->firstfftfrequenciesofpixels->data[ii] ]/sumwsq;
+      sorting->data[ii] = ii;  //This is for the fact that a few steps later (before using Davies' algorithm, we sort the weights)
    }
    
-   //INT4 errcode;
    qfvars vars;
    vars.weights = newweights;
-   vars.noncentrality = noncentrality;
-   vars.dofs = dofs;
+   //vars.noncentrality = noncentrality;
+   //vars.dofs = dofs;
    vars.sorting = sorting;
+   vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
    vars.lim = 1000000;
    vars.c = Rpr;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 5.0e-6;   //(1e-5) don't change this value
+   REAL8 accuracy = 1.0e-12;   //(1e-5) old value
+   
+   //sort the weights here so we don't have to do it later (qsort)
+   sort_double_ascend(newweights);
    
    //cdfwchisq(algorithm variables, sigma, accuracy, error code)
-   prob = 1.0 - cdfwchisq(&vars, sigma, accuracy, errcode);
+   prob = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, errcode);
    
    //Large R values can cause a problem when computing the probability. We run out of accuracy quickly even using double precision
    //Potential fix: compute log10(prob) for smaller values of R, for when slope is linear between log10 probabilities
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
-   REAL8 logprobest;
+   REAL8 logprobest = 0.0;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-4) {
+   /* if (prob<=1.0e-4) {
       estimatedTheProb = 1;
       
-      //INT4 errcode1 = 0, errcode2 = 0, errcode3 = 0, errcode4 = 0, errcode5 = 0;
-      //REAL8 c1, c2, c3, c4, c5, logprob1, logprob2, logprob3, logprob4, logprob5, probslope, tempprob, tempprob2;
       INT4 errcode1 = 0, errcode2 = 0;
       REAL8 c1, c2, logprob1, logprob2, probslope, tempprob, tempprob2;
       
@@ -418,21 +481,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 deltac = c1 - c2;
       logprob2 = log10(tempprob2);
       
-      /* c3 = c2-deltac;
-      vars.c = c3;
-      logprob3 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode3));
-      
-      c4 = c3-deltac;
-      vars.c = c4;
-      logprob4 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode4));
-      
-      c5 = c4-deltac;
-      vars.c = c5;
-      logprob5 = log10(1.0-cdfwchisq(&vars, sigma, accuracy, &errcode5)); */
-      
       //If either point along the slope had a problem at the end, then better fail.
       //Otherwise, set errcode = 0;
-      //if (errcode1!=0 || errcode2!=0 || errcode3!=0 || errcode4!=0 || errcode5!=0) {
       if (errcode1!=0 || errcode2!=0) {
          fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
@@ -442,7 +492,6 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       
       //Calculating slope
       probslope = (logprob1-logprob2)/deltac;
-      //probslope = (8.0*(logprob2-logprob4)-logprob1+logprob5)/(12.0*deltac);
       if (probslope>=0.0) {
          fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
          XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
@@ -451,13 +500,90 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       //Find the log10(prob) of the original Rpr value
       logprobest = probslope*(Rpr-c1) + logprob1;
       //logprobest = probslope*(Rpr-c2) + logprob2;
-      //logprobest = probslope*(Rpr-c3) + logprob3;
       if (logprobest>-0.5) {
          fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
          XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
       }
       
-   } /* if prob <= 1e-4 */
+   } */ /* if prob<=1e-4 */
+   if (prob<=1.0e-9) {
+      estimatedTheProb = 1;
+      
+      INT4 errcode1 = 0, errcode2 = 0;
+      REAL8 probslope=0.0, tempprob, tempprob2, c1, c2, c = 0.0, logprobave = 0.0;
+      
+      gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+      if (rng==NULL) {
+         fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      gsl_rng_set(rng, 0);
+      
+      REAL8Vector *slopes = XLALCreateREAL8Vector(50);
+      if (slopes==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", fn, 50);
+         XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+      }
+      
+      REAL8 lowerend = 0.0;
+      REAL8 upperend = Rpr;
+      
+      for (ii=0; ii<(INT4)slopes->length; ii++) {
+         c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+         vars.c = c1;
+         tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         while (tempprob<=1.0e-9 || tempprob>=1.0e-7) {
+            if (tempprob<=1.0e-9) upperend = c1;
+            else if (tempprob>=1.0e-7) lowerend = c1;
+            c1 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+            vars.c = c1;
+            tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+         }
+         logprobave += log10(tempprob);
+         c += c1;
+         c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+         vars.c = c2;
+         tempprob2 = 1.0 - cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
+         while (tempprob2<=1.0e-9 || tempprob2>=1.0e-7 || fabs(c1-c2)<=100.0*LAL_REAL8_EPS) {
+            if (tempprob2<=1.0e-9) upperend = c2;
+            else if (tempprob2>=1.0e-7) lowerend = c2;
+            c2 = gsl_rng_uniform_pos(rng)*(upperend-lowerend)+lowerend;
+            vars.c = c2;
+            tempprob2 = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode2);
+         }
+         logprobave += log10(tempprob2);
+         c += c2;
+         
+         //If either point along the slope had a problem at the end, then better fail.
+         //Otherwise, set errcode = 0;
+         if (errcode1!=0 || errcode2!=0) {
+            fprintf(stderr,"%s: cdfwchisq() failed.\n", fn);
+            XLAL_ERROR_REAL8(fn, XLAL_EFUNC);
+         } else {
+            *errcode = errcode1;
+         }
+         
+         slopes->data[ii] = (log10(tempprob)-log10(tempprob2))/(c1-c2);
+         if (slopes->data[ii]>=0.0) {
+            fprintf(stderr, "%s: Slope calculation failed. Non-negative slope: %f", fn, probslope);
+            XLAL_ERROR_REAL8(fn, XLAL_EDIVERGE);
+         }
+      }
+      REAL8 cave = .5*c/(REAL8)slopes->length;
+      logprobave /= 2.0*slopes->length;
+      probslope = calcMeanD(slopes);
+      //REAL8 stddevprobslope = calcStddevD(slopes);
+      //fprintf(stderr,"Slope average = %g, Slope sigma = %g\n", probslope, stddevprobslope);
+      logprobest = probslope*(Rpr-cave) + logprobave;
+      if (logprobest>-0.5) {
+         fprintf(stderr, "%s: Failure calculating accurate interpolated value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      }
+      
+      gsl_rng_free(rng);
+      XLALDestroyREAL8Vector(slopes);
+      
+   }
    
    //If errcode is still != 0, better fail
    if (*errcode!=0) {
@@ -467,13 +593,24 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    //Cleanup
    XLALDestroyREAL8Vector(newweights);
-   XLALDestroyREAL8Vector(noncentrality);
-   XLALDestroyINT4Vector(dofs);
+   //XLALDestroyREAL8Vector(noncentrality);
+   //XLALDestroyINT4Vector(dofs);
    XLALDestroyINT4Vector(sorting);
    
    //return prob;
-   if (estimatedTheProb==1) return logprobest;
-   else return log10(prob);
+   if (estimatedTheProb==1) {
+      /* if (logprobest==0.0) {
+         fprintf(stderr, "%s: Failure calculating interpolated value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      } */
+      return logprobest;
+   } else {
+      /* if (log10(prob)==0.0) {
+         fprintf(stderr, "%s: Failure calculating correct false alarm probability value.\n", fn);
+         XLAL_ERROR_REAL8(fn, XLAL_ERANGE);
+      } */
+      return log10(prob);
+   }
    
 } /* probR() */
 
@@ -487,7 +624,7 @@ templateStruct * new_templateStruct(INT4 length)
    
    templateStruct *templatestruct = XLALMalloc(sizeof(*templatestruct));
    if (templatestruct==NULL) {
-      fprintf(stderr,"%s: XLALMalloc(%lu) failed.\n", fn, sizeof(*templatestruct));
+      fprintf(stderr,"%s: XLALMalloc(%zu) failed.\n", fn, sizeof(*templatestruct));
       XLAL_ERROR_NULL(fn, XLAL_ENOMEM);
    }
    
@@ -672,8 +809,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             dataval = scale->data[ii+fnumstart] * scale1 * 2.0 * LAL_TWOPI * s * s * exp(-s * s * LAL_TWOPI * LAL_TWOPI * fpr->data[jj] * fpr->data[jj]) * (cos(N * input.period * LAL_TWOPI * fpr->data[jj]) - 1.0) * (cos(phi_actual->data[ii+fnumstart] * LAL_TWOPI * fpr->data[jj]) + 1.0) / (cos(input.period * LAL_TWOPI * fpr->data[jj]) - 1.0);
          }
          
-         //Set any bin below 1e-7 to 0.0
-         if (dataval <= 1.0e-7) dataval = 0.0;
+         //Set any bin below 1e-8 to 0.0
+         if (dataval <= 1.0e-8) dataval = 0.0;
          
          //Sum up the weights in total
          sum += dataval;
@@ -701,7 +838,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
 
 //////////////////////////////////////////////////////////////
 // Make an template based on FFT of sinc squared functions  -- done
-void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, REAL4FFTPlan *plan)
+void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
 {
    
    const CHAR *fn = __func__;
@@ -730,13 +867,18 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
    for (ii=0; ii<numffts; ii++) {
-      REAL4 t = 0.5*params->Tcoh*ii;
+      REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
       REAL4 n0 = B*sin(LAL_TWOPI*periodf*t) + input.fsig*params->Tcoh;
-      for (jj=0; jj<numfbins; jj++) {
-         //Create windowed PSD values
-         if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
-         else psd1->data[ii*numfbins + jj] = 0.0;
-      } /* for jj < numfbins */
+      if (sftexist->data[ii]==1) {
+         for (jj=0; jj<numfbins; jj++) {
+            //Create windowed PSD values
+            if ( fabs(n0-freqbins->data[jj]) <= 5.0 ) psd1->data[ii*numfbins + jj] = 2.0/3.0*params->Tcoh*sincxoverxsqminusone(n0-freqbins->data[jj])*sincxoverxsqminusone(n0-freqbins->data[jj]);
+            else psd1->data[ii*numfbins + jj] = 0.0;
+         } /* for jj < numfbins */
+      } else {
+         for (jj=0; jj<numfbins; jj++) psd1->data[ii*numfbins + jj] = 0.0;
+      }
+
    } /* for ii < numffts */
    
    //Do the second FFT
@@ -792,7 +934,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       if (doSecondFFT==1) {
          for (jj=0; jj<(INT4)psd->length; jj++) {
             REAL4 correctedValue = (REAL4)(psd->data[jj]*winFactor/x->length*0.5*params->Tcoh);
-            if (correctedValue<=1.0e-7) correctedValue = 0.0;
+            if (correctedValue<=1.0e-8) correctedValue = 0.0;
             
             //Sum the total weights
             sum += correctedValue;

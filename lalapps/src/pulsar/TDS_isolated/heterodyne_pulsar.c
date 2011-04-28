@@ -17,9 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/*
-  Author: Pitkin, M. D.
-*/
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author M. D. Pitkin
+ * \brief
+ * lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
+ * parameters. The heterodyne is a 2 stage process with the code run for a coarse
+ * heterodyne (not taking into account the SSB and BSB time delays, but using the other frequency
+ * params) and then rerun for the fine heterodyne (taking into account SSB and BSB time delays). The
+ * code can also be used to update heterodyned data using new parameters (old and new parameter files
+ * are required) i.e. it will take the difference of the original heterodyne phase and the new phase
+ * and reheterodyne with this phase difference.
+ */
 
 /* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
 

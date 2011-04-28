@@ -1,4 +1,4 @@
-AC_INIT([lalframe],[1.0.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalframe],[1.0.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -18,6 +18,8 @@ AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
 
+LALSUITE_ARG_VAR
+
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library
 # 2. update the version information only immediately before a public
@@ -32,9 +34,9 @@ AC_CANONICAL_HOST
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[1])
+AC_SUBST([LIBCURRENT],[2])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[1])
+AC_SUBST([LIBAGE],[2])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # default install path

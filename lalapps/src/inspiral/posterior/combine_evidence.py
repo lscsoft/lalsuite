@@ -116,11 +116,11 @@ def combine_evidence(data,xflag,Nlive):
             outfile[:,-1]+=noise
 
     #Remapping Parameters#
-    for outfile in d:
-        outfile[:,0]=exp(outfile[:,0])
-        outfile[:,4]=exp(outfile[:,4])
-        if xflag:
-            outfile[:,8]=x2iota(outfile[:,8])
+    #for outfile in d:
+        #outfile[:,0]=exp(outfile[:,0])
+        #outfile[:,4]=exp(outfile[:,4])
+        #if xflag:
+            #outfile[:,8]=x2iota(outfile[:,8])
 
     #Posterior Samples
     weights=weightsamp(d,Nlive)

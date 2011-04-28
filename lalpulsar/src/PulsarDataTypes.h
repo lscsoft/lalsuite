@@ -74,13 +74,7 @@ typedef struct {
 } PulsarAmplitudeParams;
 
 /** Struct for 'canonical' coordinates in amplitude-params space A^mu = {A1, A2, A3, A4} */
-typedef struct {
-  REAL8 A1;
-  REAL8 A2;
-  REAL8 A3;
-  REAL8 A4;
-} PulsarAmplitudeVect;
-
+typedef REAL8 PulsarAmplitudeVect[4];
 
 /** Typedef for fixed-size array holding GW frequency and derivatives fk = d^k Freq/dt^k|(tau_ref) */
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];

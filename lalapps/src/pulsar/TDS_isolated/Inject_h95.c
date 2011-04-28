@@ -17,13 +17,19 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author R.J. Dupuis
+ * \brief This program injects a signal in the Bk's
+ */
+
 /****************************************************************************
 R.J. Dupuis 18 April, 2004
 This program injects a signal in the Bk's... 
 
 reads in (from inputs) S2_h95_inj.txt,and pulsar parameter file 
 *************************************************************************/
-/* $Id$ */
 
 #include <stdio.h>
 #include <math.h>

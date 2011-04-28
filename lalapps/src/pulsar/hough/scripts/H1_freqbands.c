@@ -17,6 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ */
+
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h> 

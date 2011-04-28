@@ -43,9 +43,20 @@
 
 #include <lal/LALDatatypes.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+#ifdef  __cplusplus
+#ifdef __GNUC__
+#define RESTRICT __restrict__
+#else
+#define RESTRICT
+#endif
+#else
+#define RESTRICT restrict
 #endif
 
 NRCSID( COMPLEXFFTH, "$Id$" );
@@ -231,7 +242,7 @@ void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
  *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
  *  .
  */
-int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * restrict output, COMPLEX8Vector * restrict input,
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector * RESTRICT output, COMPLEX8Vector * RESTRICT input,
     const COMPLEX8FFTPlan *plan );
 
 /*
@@ -364,7 +375,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  *  - [\c XLAL_ENOMEM] Insufficient storage space is available.
  *  .
  */
-int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * restrict output, COMPLEX16Vector * restrict input,
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * RESTRICT output, COMPLEX16Vector * RESTRICT input,
     const COMPLEX16FFTPlan *plan );
 
 /*
@@ -487,8 +498,11 @@ LALCOMPLEX16VectorFFT (
     );
 
 
-#ifdef  __cplusplus
-#pragma {
+#undef RESTRICT
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

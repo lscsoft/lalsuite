@@ -17,27 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTclean.c
- * Authors:  Krishnan, B. 
- *
- * Revision: $Id$
- *
- * History:   Created by Krishnan July 12, 2004
- *            Modified...
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan
  */
-/************************************ <lalVerbatim file="SFTbinTestCV">
-Author: Krishnan, B.  
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include <lal/SFTClean.h>
 #include <glob.h> 
@@ -47,7 +31,7 @@ RCSID ( "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="SFTCLEANCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define SFTCLEANC_ENORM 0
 #define SFTCLEANC_ESUB  1
 #define SFTCLEANC_EARG  2
@@ -59,13 +43,12 @@ RCSID ( "$Id$");
 #define SFTCLEANC_MSGEARG  "Error parsing arguments"
 #define SFTCLEANC_MSGEBAD  "Bad argument values"
 #define SFTCLEANC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */
 
 extern int lalDebugLevel;
-
 
 #define MAXFILENAMELENGTH 256
 /* defaults chosen for L1 */
@@ -76,8 +59,6 @@ extern int lalDebugLevel;
 #define WINDOWSIZE 100
 #define MAXBINS 20
 
-
-
 /* A global pointer for debugging. */
 #ifndef NDEBUG
 char *lalWatch;
@@ -85,8 +66,6 @@ char *lalWatch;
 
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-
 
 int main(int argc, char *argv[]){ 
 

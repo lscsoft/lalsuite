@@ -17,18 +17,12 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: TEMPOcomparsion.c
- * Authors:  C. Messenger
- *
- * Revision: $Id$
- *
- * History:   Created by Messenger
- *           
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Chris Messenger
  */
+
 #include <glob.h> 
 #include <stdlib.h>
 #include <math.h>

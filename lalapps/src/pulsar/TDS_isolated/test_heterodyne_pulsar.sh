@@ -367,14 +367,14 @@ echo Comparing outputs with reference values
 # correct heterodyne output (check current outputs are with a percent of these)
 REALT=875206650
 REALR=-1.304235E-26
-REALR=`echo "$REALR" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+REALR=`echo "$REALR" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
 REALI=-4.617799E-26
-REALI=`echo "$REALI" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+REALI=`echo "$REALI" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
 
 RPER=1.304235E-28
-RPER=`echo "$RPER" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+RPER=`echo "$RPER" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
 IPER=4.617799E-28
-IPER=`echo "$IPER" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+IPER=`echo "$IPER" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
 
 # file from coarse heterodyne output as binary file
 f1=875206560-875206680/finehet_J0000+0000_H1.bin
@@ -388,7 +388,7 @@ do
 		if [ $val == 0 ]; then
                 	arrvals[$val]=$tempval
 		else
-			arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+			arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
 		fi
 		((val++))
 	done
@@ -426,7 +426,7 @@ do
                 if [ $val == 0 ]; then
                         arrvals[$val]=$tempval
                 else
-                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                        arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
                 ((val++))
         done
@@ -472,7 +472,7 @@ do
                 if [ $val == 0 ]; then
                         arrvals[$val]=$tempval
                 else
-                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                        arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
                 ((val++))
         done
@@ -510,7 +510,7 @@ do
                 if [ $val == 0 ]; then
                         arrvals[$val]=$tempval
                 else
-                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                        arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
                 ((val++))
         done
@@ -548,7 +548,7 @@ do
                 if [ $val == 0 ]; then
                         arrvals[$val]=$tempval
                 else
-                        arrvals[$val]=`echo "$tempval" | awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                        arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
                 ((val++))
         done

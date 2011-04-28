@@ -84,9 +84,10 @@ defined in this file are
 
 NRCSID( LIFOLWXMLHEADERSH, "$Id$" );
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #define PRINT_LIGOLW_XML_HEADER(fp) ( \
@@ -369,8 +370,9 @@ fputs( "      <Stream Name=\"filtergroup:filter:table\" Type=\"Local\" Delimiter
 #define FILTER_ROW \
 "         \"process:process_id:0\",\"%s\",%d,\"%s\",\"%s\",\"filter:filter_id:%" LAL_UINT8_FORMAT "\""
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

@@ -56,6 +56,8 @@ Header file for the template generation codes.
 # include <lal/SimulateCoherentGW.h>
 # include <lal/GeneratePPNInspiral.h>
 # include <lal/LIGOMetadataTables.h>
+# include <lal/LALDatatypes.h>
+# include <lal/LALComplex.h>
 
 
 #ifdef  __cplusplus
@@ -1351,6 +1353,7 @@ void LALBBHPhenTimeDomEngine( LALStatus        *status,
 			      REAL4Vector      *a,
 			      REAL4Vector      *f,
 			      REAL8Vector      *phiOut,
+				  UINT4            *countback,
 			      InspiralTemplate *params);
 
 void LALBBHPhenWaveTimeDomForInjection (LALStatus        *status,
@@ -1799,6 +1802,41 @@ int XLALBandPassInspiralTemplate(
         REAL4          fSampling
         );
 
+int XLALInspiralGenerateIIRSet(
+	REAL8Vector         *amp,
+	REAL8Vector         *phase,
+	double                  epsilon,
+	double                  alpha,
+	double                  beta,
+	COMPLEX16Vector     **a1,
+	COMPLEX16Vector     **b0,
+	INT4Vector          **delay
+	);
+
+int XLALInspiralIIRSetResponse(
+	COMPLEX16Vector     *a1,
+	COMPLEX16Vector     *b0,
+	INT4Vector          *delay,
+	COMPLEX16Vector     *response
+	);
+
+int XLALInspiralGenerateIIRSetFourierTransform(
+	int                 j,
+	int                 jmax,
+	COMPLEX16           a1,
+	COMPLEX16           b0,
+	int                 delay,
+	COMPLEX16           *hfcos,
+	COMPLEX16           *hfsin
+	);
+
+int XLALInspiralCalculateIIRSetInnerProduct(
+	COMPLEX16Vector    *a1,
+	COMPLEX16Vector    *b0,
+	INT4Vector         *delay,
+	REAL8Vector        *psd,
+	double             *ip
+	);
 
 #ifdef  __cplusplus
 }

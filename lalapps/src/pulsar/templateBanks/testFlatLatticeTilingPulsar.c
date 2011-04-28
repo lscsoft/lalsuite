@@ -20,6 +20,7 @@
 /**
  * \author Karl Wette
  * \file
+ * \ingroup pulsarApps
  * \brief Test program for FlatLatticeTiling*
  */
 
@@ -37,10 +38,11 @@
 #include <lal/GSLSupport.h>
 #include <lal/BitField.h>
 #include <lal/DopplerFullScan.h>
-#include <lal/VeryBasicXMLOutput.h>
 #include <lal/FlatLatticeTiling.h>
 #include <lal/FlatLatticeTilingPulsar.h>
 #include <lalapps.h>
+
+#include "VeryBasicXMLOutput.h"
 
 RCSID("$Id$");
 
@@ -206,7 +208,7 @@ int main(int argc, char *argv[]) {
   case 1:
     {
       gsl_matrix *identity = NULL;
-      ALLOC_GSL_MATRIX(identity, tiling->dimensions, tiling->dimensions, LALAPPS_ERROR);
+      ALLOC_GSL_MATRIX(identity, tiling->dimensions, tiling->dimensions, EXIT_FAILURE);
       gsl_matrix_set_identity(identity);
       if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL))
 	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
@@ -252,8 +254,8 @@ int main(int argc, char *argv[]) {
       LALAPPS_ERROR("XLALCreateRandomParams failed", 0);
     
     /* Allocate memory */
-    ALLOC_GSL_VECTOR(inject_point, tiling->dimensions, LALAPPS_ERROR);
-    ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, LALAPPS_ERROR);
+    ALLOC_GSL_VECTOR(inject_point, tiling->dimensions, EXIT_FAILURE);
+    ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, EXIT_FAILURE);
 
     /* Initialise minimum mismatch */
     gsl_vector_set_all(inject_min_mismatch, GSL_POSINF);
@@ -263,7 +265,7 @@ int main(int argc, char *argv[]) {
   /* Generate and output templates and injections */
   fflush(xml.file);
   if (!only_count) {
-    ALLOC_GSL_VECTOR(temp, tiling->dimensions, LALAPPS_ERROR);
+    ALLOC_GSL_VECTOR(temp, tiling->dimensions, EXIT_FAILURE);
     XLAL_VBXMLO_BeginTag(&xml, "tiling");
   }
   while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS) {
@@ -326,7 +328,7 @@ int main(int argc, char *argv[]) {
     UINT4 inject_unmatched = 0;
 
     /* Allocate memory */
-    ALLOC_GSL_VECTOR_INT(inject_min_mismatch_hist, inject_min_mismatch_bins, LALAPPS_ERROR);
+    ALLOC_GSL_VECTOR_INT(inject_min_mismatch_hist, inject_min_mismatch_bins, EXIT_FAILURE);
 
     /* Iterate over injections */
     gsl_vector_int_set_zero(inject_min_mismatch_hist);

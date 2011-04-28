@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matt Pitkin, Réjean Dupuis
+ * \brief Time domain heterodyning code for known pulsars
+ */
+
 /*********************************************************************/
 /* 	Modified 24/06/04 to read binary info from a table, which has been
 		precreated containing all relevant pulsar params - like for isolated

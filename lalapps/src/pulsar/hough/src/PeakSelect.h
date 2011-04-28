@@ -28,42 +28,17 @@
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan Oct 2005
  *
- *-----------------------------------------------------------------------
- */
 
-/* *********************************** <lalVerbatim file="PeakSelectHV">
-Author: Sintes, A.M.,
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{PeakSelect.h}}
-\label{s:PeakSelect.h}
+\heading{Header \ref PeakSelect.h}
+\latexonly\label{s_PeakSelect_h}\endlatexonly
 From periodogram to peakgram
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
 
-\begin{verbatim}
+\heading{Synopsis}
+
+\code
 #include <lal/PeakSelect.h>
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{PeakSelectHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{PeakSelectHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{PeakSelectC}
-%%%%%%%%%% Test program. %%
-\newpage\input{PeakSelectTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
+\endcode
+*/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -115,7 +90,7 @@ NRCSID (PEAKSELECTH, "$Id$");
  *    inclusion in the documentation.
  */
 
-/* <lalErrTable file="PeakSelectHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 
 #define PEAKSELECTH_ENULL 1
 #define PEAKSELECTH_EVAL 5
@@ -123,7 +98,7 @@ NRCSID (PEAKSELECTH, "$Id$");
 #define PEAKSELECTH_MSGENULL "Null pointer"
 #define PEAKSELECTH_MSGEVAL  "Invalid value"
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************

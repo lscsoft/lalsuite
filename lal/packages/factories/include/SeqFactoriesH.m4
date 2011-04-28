@@ -186,9 +186,6 @@ REAL4VectorSequence * XLALCreateVectorSequence ( UINT4 length, UINT4 veclen );
 void XLALDestroyVectorSequence ( REAL4VectorSequence * vecseq );
 
 
-void LALCreateSequence(LALStatus *, REAL4Sequence **, UINT4);
-void LALDestroySequence(LALStatus *, REAL4Sequence **);
-
 void LALCreateVectorSequence(LALStatus *, REAL4VectorSequence **,
                              CreateVectorSequenceIn *);
 void LALDestroyVectorSequence(LALStatus *, REAL4VectorSequence**);

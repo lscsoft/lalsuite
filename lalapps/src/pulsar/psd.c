@@ -17,6 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author X. Siemens
+ * \brief Power Spectral Density Code
+ */
+
 /*********************************************************************************/
 /*                             Power Spectral Density Code                       */
 /*                                                                               */

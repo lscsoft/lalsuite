@@ -13,7 +13,8 @@ endif
 TSUTILSRCS = tfdat2pgm.c tracksearchToolbox.c tracksearch.h \
 	tracksearchAverager.h tracksearchToolbox.h
 TRACKSEARCHSRCS = tracksearch.c	tracksearchToolbox.c \
-	tracksearch.h tracksearchToolbox.h tracksearchAverager.h
+	tracksearch.h tracksearchToolbox.h tracksearchAverager.h \
+	FrameDataConvert.c FrameDataConvert.h 
 TSDATAGENSRCS = TSDatagen.c TSDatagen.h tracksearch.h \
 	tracksearchToolbox.h tracksearchAverager.h
 TRACKSEARCHAVGSRC = tracksearchAverager.c tracksearchToolbox.c \
@@ -60,11 +61,20 @@ lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_con
 	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
 	chmod +x lalapps_tracksearch_mapcachebuilder
 
+FrameDataConvert.c: $(srcdir)/CreateConverter.m4 $(srcdir)/FrameDataConvertREAL4C.m4
+	cd $(srcdir) && m4 FrameDataConvertREAL4C.m4 > FrameDataConvert.c
+
+FrameDataConvert.h: $(srcdir)/CreateConverterTypeDef.m4 $(srcdir)/FrameDataConvertREAL4H.m4
+	cd $(srcdir) && m4 FrameDataConvertREAL4H.m4 > FrameDataConvert.h
+
 pkgdata_DATA = tracksearch_pipeline_configuration.ini \
 	tracksearch_tuning_configuration.tun \
 	tracksearch_cutpipe_configuration.cut
+
 EXTRA_DIST = tsHandler.pyin tsPipe.pyin tsCutPipe.pyin \
 	tsHousekeeper.pyin tsTunePipe.pyin tsMapCacheBuilder.pyin \
+	CreateConverter.m4 FrameDataConvertREAL4C.m4 \
+	CreateConverterTypeDef.m4 FrameDataConvertREAL4H.m4 \
 	$(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps

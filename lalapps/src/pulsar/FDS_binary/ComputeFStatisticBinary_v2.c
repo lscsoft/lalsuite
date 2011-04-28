@@ -17,6 +17,14 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Y. Ioth, M.A. Papa, X. Siemens, R.Prix, C. Messenger
+ * \brief
+ * Version of ComputeFStatistic that has an input option to deal with Binary systems
+ */
+
 /*********************************************************************************/
 /*                    F-statistic generation code for known pulsars              */
 /*                                                                               */
@@ -88,10 +96,7 @@ void use_boinc_filename0(char* orig_name);
 /* #define FILE_SPRNG */  /* outputs frequency + <RngMed> */
 
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
+/** \name Error Codes */ /*@{*/
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
@@ -99,7 +104,7 @@ void use_boinc_filename0(char* orig_name);
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-/*************************************************** </lalErrTable> */
+/*@}*/
 
 
 /*----------------------------------------------------------------------

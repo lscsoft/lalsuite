@@ -18,11 +18,12 @@
 */
 
 /*********************************************************************************
- ** \file ComputeFStatistic.c
+ * \file
+ * \ingroup pulsarApps
+ * \author  B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
+ * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
- *                                                                          
- * \author  B. Allen, Y. Ioth, B. Machenschalk, M.A. Papa, R.Prix, X. Siemens
  *                                                                          
  *          Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
@@ -383,7 +384,7 @@ LALStatus global_status;
  */
 void
 ourREPORTSTATUS( LALStatus *status )
-{ /* </lalVerbatim> */
+{ 
   LALStatus *ptr;                                                    
   for ( ptr = status; ptr ; ptr = ptr->statusPtr )                  
   {                                                           

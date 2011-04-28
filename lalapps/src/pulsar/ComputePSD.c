@@ -18,18 +18,13 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: ComputePSD.c
- * Authors:  Krishnan, B.  ; Sintes, A. M.
- *
- * Revision: $Id$
- *
- * History:   Created by Krishnan
- *            Modified by Sintes
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan, Iraj Gholami, Reinhard Prix, Alicia Sintes, Karl Wette
+ * \brief Compute power spectral densities
  */
+
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>
@@ -49,6 +44,9 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
+#include <lal/Segments.h>
+#include <lal/FrequencySeries.h>
+#include <lal/Units.h>
 
 #include <lal/LogPrintf.h>
 
@@ -101,37 +99,56 @@ typedef struct
 {
   BOOLEAN help;
 
-  CHAR *inputData;    /* directory for unclean sfts */
-  CHAR *outputPSD;   /* directory for cleaned sfts */
+  CHAR *inputData;    	/**< directory for input sfts */
+  CHAR *outputPSD;    	/**< directory for output sfts */
   CHAR *outputSpectBname;
-  REAL8 fStart;
-  REAL8 fBand;
-  REAL8 startTime;
-  REAL8 endTime;
+
+  REAL8 Freq;		/**< *physical* start frequency to compute PSD for (excluding rngmed wings) */
+  REAL8 FreqBand;	/**< *physical* frequency band to compute PSD for (excluding rngmed wings) */
+
+  REAL8 startTime;	/**< earliest SFT-timestamp to include */
+  REAL8 endTime;	/**< last SFT-timestamp to include */
   CHAR *IFO;
   CHAR  *timeStampsFile;
   LALStringVector *linefiles;
-  INT4 blocksRngMed;
+  INT4 blocksRngMed;	/**< number of running-median bins to use */
   INT4 maxBinsClean;
 
-  INT4 PSDmthopSFTs;     /* for PSD, type of math. operation over SFTs */
-  INT4 PSDmthopIFOs;     /* for PSD, type of math. operation over IFOs */
-  BOOLEAN outputNormSFT; /* output normalised SFT power? */
-  INT4 nSFTmthopSFTs;    /* for norm. SFT, type of math. operation over SFTs */
-  INT4 nSFTmthopIFOs;    /* for norm. SFT, type of math. operation over IFOs */
+  INT4 PSDmthopSFTs;     /**< for PSD, type of math. operation over SFTs */
+  INT4 PSDmthopIFOs;     /**< for PSD, type of math. operation over IFOs */
+  BOOLEAN outputNormSFT; /**< output normalised SFT power? */
+  INT4 nSFTmthopSFTs;    /**< for norm. SFT, type of math. operation over SFTs */
+  INT4 nSFTmthopIFOs;    /**< for norm. SFT, type of math. operation over IFOs */
 
-  REAL8 binSizeHz;       /* output PSD bin size in Hz */
-  INT4  binSize;         /* output PSD bin size in no. of bins */ 
-  INT4  PSDmthopBins;    /* for PSD, type of math. operation over bins */
-  INT4  nSFTmthopBins;   /* for norm. SFT, type of math. operation over bins */
-  REAL8 binStepHz;       /* output PSD bin step in Hz */
-  INT4  binStep;         /* output PSD bin step in no. of bins */ 
-  BOOLEAN outFreqBinEnd; /* output the end frequency of each bin? */
+  REAL8 binSizeHz;       /**< output PSD bin size in Hz */
+  INT4  binSize;         /**< output PSD bin size in no. of bins */
+  INT4  PSDmthopBins;    /**< for PSD, type of math. operation over bins */
+  INT4  nSFTmthopBins;   /**< for norm. SFT, type of math. operation over bins */
+  REAL8 binStepHz;       /**< output PSD bin step in Hz */
+  INT4  binStep;         /**< output PSD bin step in no. of bins */
+  BOOLEAN outFreqBinEnd; /**< output the end frequency of each bin? */
+
+  BOOLEAN dumpMultiPSDVector; /**< output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) */
+  CHAR *outputQ;	/**< output the 'data-quality factor' Q(f) into this file */
+
+  REAL8 fStart;		/**< Start Frequency to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --Freq instead) */
+  REAL8 fBand;		/**< Frequency Band to load from SFT and compute PSD, including wings (it is RECOMMENDED to use --FreqBand instead) */
 
 } UserVariables_t;
 
+/** Config variables 'derived' from user-input
+ */
+typedef struct
+{
+  UINT4 firstBin;		/**< first PSD bin for output */
+  UINT4 lastBin;		/**< last PSD bin for output */
+  LALSeg dataSegment;		/**< the data-segment for which PSD was computed */
+} ConfigVariables_t;
+
+
 /*---------- empty structs for initializations ----------*/
 UserVariables_t empty_UserVariables;
+ConfigVariables_t empty_ConfigVariables;
 /* ---------- global variables ----------*/
 
 extern int vrbflg;
@@ -140,19 +157,25 @@ extern INT4 lalDebugLevel;
 
 /* ---------- local prototypes ---------- */
 int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
-void ReadTimeStampsFile (LALStatus *status, LIGOTimeGPSVector  *ts, CHAR *filename);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
 static REAL8 math_op(REAL8*, size_t, INT4);
+int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
+MultiSFTVector *XLALReadSFTs ( ConfigVariables_t *cfg, const UserVariables_t *uvar );
+
+int XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect, UINT4 firstBin, UINT4 lastBin );
+REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
+int XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series, const char *fname );
 
 /*============================================================
  * FUNCTION definitions
  *============================================================*/
-
 int
-main(int argc, char *argv[]){
-
+main(int argc, char *argv[])
+{
+  const char *fn = __func__;
   static LALStatus       status;  /* LALStatus pointer */
   UserVariables_t uvar = empty_UserVariables;
+  ConfigVariables_t cfg = empty_ConfigVariables;
 
   UINT4 k, numBins, numIFOs, maxNumSFTs, X, alpha;
   REAL8 Freq0, dFreq, normPSD;
@@ -162,15 +185,6 @@ main(int argc, char *argv[]){
   REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
   REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
   REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
-
-  SFTCatalog *catalog = NULL;
-  SFTConstraints constraints = empty_SFTConstraints;
-
-  MultiSFTVector *inputSFTs = NULL;
-  MultiPSDVector *multiPSD = NULL;
-
-  LIGOTimeGPS startTimeGPS, endTimeGPS;
-  LIGOTimeGPSVector inputTimeStampsVector;
 
   /* LALDebugLevel must be called before anything else */
   lalDebugLevel = 0;
@@ -192,47 +206,12 @@ main(int argc, char *argv[]){
   if (uvar.help)
     return EXIT_SUCCESS;
 
-  /* set detector constraint */
-  if (XLALUserVarWasSet(&uvar.IFO))
-    constraints.detector = uvar.IFO;
-  else
-    constraints.detector = NULL;
-
-  if ( XLALUserVarWasSet( &uvar.startTime ) ) {
-    XLALGPSSetREAL8(&startTimeGPS, uvar.startTime);
-    constraints.startTime = &startTimeGPS;
-  }
-
-  if ( XLALUserVarWasSet( &uvar.endTime ) ) {
-    XLALGPSSetREAL8(&endTimeGPS, uvar.endTime);
-    constraints.endTime = &endTimeGPS;
-  }
-
-  if ( XLALUserVarWasSet( &uvar.timeStampsFile ) ) {
-    LAL_CALL ( ReadTimeStampsFile ( &status, &inputTimeStampsVector, uvar.timeStampsFile), &status);
-    constraints.timestamps = &inputTimeStampsVector;
-  }
-
-  /* get sft catalog */
-  LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar.inputData, &constraints), &status);
-  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-  if ( (catalog == NULL) || (catalog->length == 0) ) {
-    fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar.inputData );
-    return EXIT_FAILURE;
-  }
-
-  /* now we can free the inputTimeStampsVector */
-  if ( XLALUserVarWasSet( &uvar.timeStampsFile ) ) {
-    LALFree( inputTimeStampsVector.data );
-  }
-
-  /* read the sfts */
-  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
-  LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, uvar.fStart, uvar.fStart + uvar.fBand), &status);
-  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  MultiSFTVector *inputSFTs = NULL;
+  if ( ( inputSFTs = XLALReadSFTs ( &cfg, &uvar ) ) == NULL )
+    {
+      XLALPrintError ("Call to XLALReadSFTs() failed with xlalErrno = %d\n", xlalErrno );
+      return EXIT_FAILURE;
+    }
 
   /* clean sfts if required */
   if ( XLALUserVarWasSet( &uvar.linefiles ) )
@@ -261,7 +240,13 @@ main(int argc, char *argv[]){
   LogPrintf (LOG_DEBUG, "Computing spectrogram and PSD ... ");
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
+  MultiPSDVector *multiPSD = NULL;
   LAL_CALL( LALNormalizeMultiSFTVect (&status, &multiPSD, inputSFTs, uvar.blocksRngMed), &status);
+  /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
+  if ( ( XLALCropMultiPSDVector ( multiPSD, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALCropMultiPSDVector (inputPSD, %d, %d) failed with xlalErrno = %d\n", fn, cfg.firstBin, cfg.lastBin, xlalErrno );
+    return EXIT_FAILURE;
+  }
 
   /* start frequency and frequency spacing */
   Freq0 = multiPSD->data[0]->data[0].f0;
@@ -314,14 +299,14 @@ main(int argc, char *argv[]){
       if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
 	return EXIT_FAILURE;
 
-    } /* over IFOs */
+    } /* for IFOs X */
 
     /* compute math. operation over IFOs for this frequency */
     finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
     if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
       return EXIT_FAILURE;
 
-  } /* over freq bins */
+  } /* for freq bins k */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /* compute normalised SFT power */
@@ -354,7 +339,7 @@ main(int argc, char *argv[]){
 	  return EXIT_FAILURE;
 
       } /* over IFOs */
-      
+
       /* compute math. operation over IFOs for this frequency */
       finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
       if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
@@ -369,6 +354,29 @@ main(int argc, char *argv[]){
     LAL_CALL ( LALfwriteSpectrograms ( &status, uvar.outputSpectBname, multiPSD ), &status );
   }
 
+  /* ---------- if user requested it, output complete MultiPSDVector over IFOs X, timestamps and freq-bins into ASCI file(s) */
+  if ( uvar.dumpMultiPSDVector ) {
+    if ( XLALDumpMultiPSDVector ( uvar.outputPSD, multiPSD ) != XLAL_SUCCESS ) {
+      XLALPrintError ("%s: XLALDumpMultiPSDVector() failed, xlalErrnor = %d\n", fn, xlalErrno );
+      return EXIT_FAILURE;
+    }
+  } /* if uvar.dumpMultiPSDVector */
+
+  /* ----- if requested, compute data-quality factor 'Q' -------------------- */
+  if ( uvar.outputQ )
+    {
+      REAL8FrequencySeries *Q;
+      if ( (Q = XLALComputeSegmentDataQ ( multiPSD, cfg.dataSegment )) == NULL ) {
+        XLALPrintError ("%s: XLALComputeSegmentDataQ() failed with xlalErrno = %d\n", fn, xlalErrno );
+        return EXIT_FAILURE;
+      }
+      if ( XLAL_SUCCESS != XLALWriteREAL8FrequencySeries_to_file ( Q, uvar.outputQ ) ) {
+        return EXIT_FAILURE;
+      }
+      XLALDestroyREAL8FrequencySeries ( Q );
+    } /* if outputQ */
+
+  /* ---------- BINNING if requested ---------- */
   /* work out bin size */
   if (XLALUserVarWasSet(&uvar.binSize)) {
     finalBinSize = uvar.binSize;
@@ -407,25 +415,25 @@ main(int argc, char *argv[]){
     LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
     for (k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
-      
+
       REAL8 f0 = Freq0 + b * dFreq;
       REAL8 f1 = f0 + finalBinStep * dFreq;
       fprintf(fpOut, "%f", f0);
       if (uvar.outFreqBinEnd)
-	fprintf(fpOut, "   %f", f1);	  
-      
+	fprintf(fpOut, "   %f", f1);
+
       REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
       if (XLALIsREAL8FailNaN( psd ))
 	return EXIT_FAILURE;
       fprintf(fpOut, "   %e", psd);
-      
+
       if (uvar.outputNormSFT) {
 	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
 	if (XLALIsREAL8FailNaN( nsft ))
 	  return EXIT_FAILURE;
 	fprintf(fpOut, "   %f", nsft);
       }
-      
+
       fprintf(fpOut, "\n");
     }
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -450,62 +458,6 @@ main(int argc, char *argv[]){
   return EXIT_SUCCESS;
 
 } /* main() */
-
-
-
-/* read timestamps file */
-void ReadTimeStampsFile (LALStatus          *status,
-			 LIGOTimeGPSVector  *ts,
-			 CHAR               *filename)
-{
-
-  FILE  *fp = NULL;
-  INT4  numTimeStamps, r;
-  UINT4 j;
-  REAL8 temp1, temp2;
-
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT(ts, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(ts->data == NULL, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(ts->length == 0, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-  ASSERT(filename, status, COMPUTEPSDC_ENULL,COMPUTEPSDC_MSGENULL);
-
-  if ( (fp = fopen(filename, "r")) == NULL) {
-    ABORT( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE);
-  }
-
-  /* count number of timestamps */
-  numTimeStamps = 0;
-
-  do {
-    r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-    /* make sure the line has the right number of entries or is EOF */
-    if (r==2) numTimeStamps++;
-  } while ( r != EOF);
-  rewind(fp);
-
-  ts->length = numTimeStamps;
-  ts->data = LALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));;
-  if ( ts->data == NULL ) {
-    fclose(fp);
-    ABORT( status, COMPUTEPSDC_ENULL, COMPUTEPSDC_MSGENULL);
-  }
-
-  for (j = 0; j < ts->length; j++)
-    {
-      r = fscanf(fp,"%lf%lf\n", &temp1, &temp2);
-      ts->data[j].gpsSeconds = (INT4)temp1;
-      ts->data[j].gpsNanoSeconds = (INT4)temp2;
-    }
-
-  fclose(fp);
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
 
 /** compute the various kinds of math. operation */
 REAL8 math_op(REAL8* data, size_t length, INT4 type) {
@@ -623,6 +575,7 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
   uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
+  uvar->dumpMultiPSDVector = FALSE;
 
   uvar->binSizeHz = 0.0;
   uvar->binSize   = 1;
@@ -635,12 +588,14 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregBOOLUserStruct  (help,             'h', UVAR_HELP,     "Print this message" );
   XLALregSTRINGUserStruct(inputData,        'i', UVAR_REQUIRED, "Input SFT pattern");
   XLALregSTRINGUserStruct(outputPSD,        'o', UVAR_OPTIONAL, "Output PSD into this file");
+  XLALregSTRINGUserStruct(outputQ,	     0,  UVAR_OPTIONAL, "Output the 'data-quality factor' Q(f) into this file");
   XLALregSTRINGUserStruct(outputSpectBname,  0 , UVAR_OPTIONAL, "Filename-base for (binary) spectrograms (one per IFO)");
 
-  XLALregREALUserStruct  (fStart,           'f', UVAR_OPTIONAL, "Frequency to start from (-1 = all freqs)");
-  XLALregREALUserStruct  (fBand,            'b', UVAR_OPTIONAL, "Frequency Band");
-  XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS start time");
-  XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS end time");
+  XLALregREALUserStruct  (Freq,              0,  UVAR_OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
+  XLALregREALUserStruct  (FreqBand,          0,  UVAR_OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
+
+  XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS timestamp of earliest SFT to include");
+  XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS timestamp of last SFT to include (NOTE: this refers to the SFT start-time!)");
   XLALregSTRINGUserStruct(timeStampsFile,   't', UVAR_OPTIONAL, "Time-stamps file");
   XLALregSTRINGUserStruct(IFO,               0 , UVAR_OPTIONAL, "Detector filter");
 
@@ -674,6 +629,14 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALregINTUserStruct   (maxBinsClean,     'm', UVAR_OPTIONAL, "Maximum Cleaning Bins");
   XLALregLISTUserStruct  (linefiles,         0 , UVAR_OPTIONAL, "Comma separated list of linefiles "
 								"(names must contain IFO name)");
+
+  XLALregBOOLUserStruct  (dumpMultiPSDVector,'d',UVAR_OPTIONAL, "Output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) '<outputPSD>-IFO'");
+
+  /* ----- developer options ---------- */
+  XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
+  XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
+
+
 
   /* read all command line variables */
   if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
@@ -832,3 +795,534 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   ABORT ( status, COMPUTEPSDC_EFILE, COMPUTEPSDC_MSGEFILE );
 
 } /* LALfwriteSpectrograms() */
+
+/** Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
+ *  per-IFO ASCII output-files <outbname-IFO>
+ *
+ */
+int
+XLALDumpMultiPSDVector ( const CHAR *outbname,			/**< output basename <outbname> */
+                         const MultiPSDVector *multiPSDVect	/**< multi-psd vector to output */
+                  )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( outbname == NULL ) {
+    XLALPrintError ("%s: NULL input 'outbname'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( multiPSDVect == NULL ) {
+    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( multiPSDVect->length == 0 || multiPSDVect->data==0 ) {
+    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  CHAR *fname;
+  FILE *fp;
+
+  UINT4 len = strlen ( outbname ) + 4;
+  if ( ( fname = XLALMalloc ( len * sizeof(CHAR) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, len );
+    XLAL_ERROR ( fn, XLAL_ENOMEM);
+  }
+
+  UINT4 numIFOs = multiPSDVect->length;
+  UINT4 X;
+  for ( X = 0; X < numIFOs; X ++ )
+    {
+      PSDVector *thisPSDVect = multiPSDVect->data[X];
+      char buf[100];
+
+      sprintf ( fname, "%s-%c%c", outbname, thisPSDVect->data[0].name[0], thisPSDVect->data[0].name[1] );
+
+      if ( ( fp = fopen( fname, "wb" ))  == NULL ) {
+        XLALPrintError ("%s: Failed to open PSDperSFT file '%s' for writing!\n", fn, fname );
+        XLALFree ( fname );
+        XLAL_ERROR ( fn, XLAL_ESYS );
+      }
+
+      REAL8 f0       = thisPSDVect->data[0].f0;
+      REAL8 dFreq    = thisPSDVect->data[0].deltaF;
+      UINT4 numFreqs = thisPSDVect->data[0].data->length;
+      UINT4 iFreq;
+
+      /* write comment header line into this output file */
+      /* FIXME: output code-version/cmdline/history info */
+      fprintf(fp,"%%%% first line holds frequencies [Hz] of PSD-Columns\n");
+      /* loop over frequency and output comnment-header markers */
+      fprintf(fp,"%%%%%-17s", "dummy");
+      for ( iFreq = 0; iFreq < numFreqs; iFreq ++ )
+        {
+          sprintf (buf, "f%d [Hz]", iFreq + 1 );
+          fprintf (fp, " %-21s", buf );
+        }
+      fprintf (fp, "\n");
+
+      /* write parseable header-line giving bin frequencies for PSDs */
+      fprintf (fp, "%-19d", -1 );
+      for (iFreq = 0; iFreq < numFreqs; iFreq++ )
+        fprintf (fp, " %-21.16g", f0 + iFreq * dFreq );
+      fprintf (fp, "\n\n\n");
+
+      /* output another header line describing the following format "ti[GPS] PSD(f1) ... " */
+      fprintf(fp,"%%%%%-17s", "ti[GPS]");
+      for ( iFreq = 0; iFreq < numFreqs; iFreq ++ )
+        {
+          sprintf (buf, "PSD(f%d)", iFreq + 1 );
+          fprintf (fp, " %-21s", buf );
+        }
+      fprintf (fp, "\n");
+
+      /* loop over timestamps: dump all PSDs over frequencies into one line */
+      UINT4 numTS = thisPSDVect->length;
+      UINT4 iTS;
+      for ( iTS = 0; iTS < numTS; iTS++ )
+        {
+          REAL8FrequencySeries *thisPSD = &thisPSDVect->data[iTS];
+
+          /* first output timestamp GPS time for this line */
+          REAL8 tGPS = XLALGPSGetREAL8( &thisPSD->epoch );
+          fprintf (fp, "%-19.18g", tGPS );
+
+          /* some internal consistency/paranoia checks */
+          if ( ( f0 != thisPSD->f0) || ( dFreq != thisPSD->deltaF ) || (numFreqs != thisPSD->data->length ) ) {
+            XLALPrintError ("%s: %d-th timestamp %f: inconsistent PSDVector: f0 = %g : %g,  dFreq = %g : %g, numFreqs = %d : %d \n",
+                            fn, iTS, tGPS, f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
+            XLALFree ( fname );
+            fclose ( fp );
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
+
+          /* loop over all frequencies and dump PSD-value */
+          for ( iFreq = 0; iFreq < numFreqs; iFreq ++ )
+            fprintf (fp, " %-21.16g", thisPSD->data->data[iFreq] );
+
+          fprintf (fp, "\n");
+
+        } /* for iTS < numTS */
+
+      fclose ( fp );
+
+    } /* for X < numIFOs */
+
+  XLALFree ( fname );
+
+  return XLAL_SUCCESS;
+
+} /* XLALDumpMultiPSDVector() */
+
+
+/** Load all SFTs according to user-input, returns multi-SFT vector.
+ *
+ * \return cfg:
+ * Returns 'effective' range of SFT-bins [firstBin, lastBin], which which the PSD will be estimated:
+ *   - if the user input {fStart, fBand} then these are loaded from SFTs and directly translated into bins
+ *   - if user input {Freq, FreqBand}, we load a wider frequency-band ADDING running-median/2 on either side
+ *     from the SFTs, and firstBind, lastBin correspond to {Freq,FreqBand} (rounded to closest bins)
+ * Also returns the 'data-segment' for which SFTs were loaded
+ *
+ */
+MultiSFTVector *
+XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration info (firstBin, lastBin, segment) */
+               const UserVariables_t *uvar	/**< [in] complete user-input */
+               )
+{
+  const char *fn = __func__;
+
+  SFTCatalog *catalog = NULL;
+  SFTConstraints constraints = empty_SFTConstraints;
+  LIGOTimeGPS startTimeGPS = {0,0}, endTimeGPS = {0,0};
+  LIGOTimeGPSVector *inputTimeStampsVector = NULL;
+
+  /* check input */
+  if ( !uvar || !uvar->inputData ) {
+    XLALPrintError ("%s: invalid NULL input 'uvar' or 'uvar->inputData'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( !cfg ) {
+    XLALPrintError ("%s: invalid NULL input 'cfg'", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  /* set detector constraint */
+  if ( XLALUserVarWasSet ( &uvar->IFO ) )
+    constraints.detector = uvar->IFO;
+  else
+    constraints.detector = NULL;
+
+  if ( XLALUserVarWasSet( &uvar->startTime ) ) {
+    XLALGPSSetREAL8 ( &startTimeGPS, uvar->startTime);
+    constraints.startTime = &startTimeGPS;
+  }
+
+  if ( XLALUserVarWasSet( &uvar->endTime ) ) {
+    XLALGPSSetREAL8 ( &endTimeGPS, uvar->endTime);
+    constraints.endTime = &endTimeGPS;
+  }
+
+  if ( XLALUserVarWasSet( &uvar->timeStampsFile ) ) {
+    if ( (inputTimeStampsVector = XLALReadTimestampsFile ( uvar->timeStampsFile )) == NULL )
+      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+
+    constraints.timestamps = inputTimeStampsVector;
+  }
+
+  /* get sft catalog */
+  LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
+  LALStatus status = blank_status;
+  LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
+  if ( status.statusCode != 0 ) {
+    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", fn, status.statusCode );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  if ( (catalog == NULL) || (catalog->length == 0) ) {
+    XLALPrintError ("%s: Unable to match any SFTs with pattern '%s'\n", fn, uvar->inputData );
+    XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+  }
+  LogPrintfVerbatim ( LOG_DEBUG, "done (found %i SFTs).\n", catalog->length);
+
+  /* now we can free the inputTimeStampsVector */
+  if ( inputTimeStampsVector )
+    XLALDestroyTimestampVector ( inputTimeStampsVector );
+
+  /* ----- some user-input consistency checks */
+  BOOLEAN have_fStart   = XLALUserVarWasSet ( &uvar->fStart );
+  BOOLEAN have_Freq     = XLALUserVarWasSet ( &uvar->Freq );
+  BOOLEAN have_fBand    = XLALUserVarWasSet ( &uvar->fBand );
+  BOOLEAN have_FreqBand = XLALUserVarWasSet ( &uvar->FreqBand );
+  if ( have_fStart && have_Freq ) {
+    XLALPrintError ("%s: use only one of --fStart OR --Freq (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( have_fBand && have_FreqBand ) {
+    XLALPrintError ("%s: use only one of --fBand OR --FreqBand (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( ( have_fStart && have_FreqBand ) || ( have_Freq && have_fBand ) ) {
+    XLALPrintError ("%s: don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  /* ---------- figure out the right frequency-band to read from the SFTs, depending on user-input ----- */
+  REAL8 fMin, fMax;
+  UINT4 binsOffset; /* rngmed bin offset from start and end */
+  UINT4 binsBand=0; /* width of physical FreqBand in bins */
+  if ( have_Freq )
+    {
+      REAL8 dFreq = catalog->data[0].header.deltaF;
+      binsOffset = uvar->blocksRngMed / 2 + 1;	/* truncates down plus add one bin extra safety! */
+      binsBand   = ceil ( (uvar->FreqBand - 1e-9) / dFreq ) + 1; /* round up ! */
+
+      REAL8 rngmedSideBand = binsOffset * dFreq;
+
+      fMin = uvar->Freq - rngmedSideBand;
+      fMax = uvar->Freq + uvar->FreqBand + rngmedSideBand;
+    }
+  else	/* NOTE: if no user-input on freq-band, we fall back to defaults on {fStart, fBand} */
+    {
+      fMin = uvar->fStart;
+      fMax = uvar->fStart + uvar->fBand;
+      binsOffset = 0;	/* no truncation of rngmed sidebands */
+    }
+
+  /* ----- figure out the data-segment span from the user-input and SFT-catalog ----- */
+  /* if used passed these, then 'startTimeGPS' and 'endTimeGPS' are already set */
+  if ( startTimeGPS.gpsSeconds == 0 )
+    startTimeGPS = catalog->data[0].header.epoch;
+  if ( endTimeGPS.gpsSeconds == 0 )
+    endTimeGPS = catalog->data[catalog->length-1].header.epoch;
+  /* SFT 'constraints' only refer to SFT *start-times*, for segment we need the end-time */
+  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
+  XLALGPSAdd ( &endTimeGPS, Tsft );
+
+  /* ---------- read the sfts ---------- */
+  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
+  MultiSFTVector *multi_sfts;
+  if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) == NULL ) {
+    XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", fn, fMin, fMax, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  XLALDestroySFTCatalog ( &catalog );
+  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+  /* ---------- end loading SFTs ---------- */
+
+  /* figure out effective PSD bin-boundaries for user */
+  UINT4 numBins = multi_sfts->data[0]->data[0].data->length;
+  INT4 bin0, bin1;
+  if ( have_Freq )
+    {
+      bin0 = 0 + binsOffset;
+      bin1 = bin0 + binsBand - 1;
+    }
+  else	/* output all bins loaded from SFTs (includes rngmed-sidebands) */
+    {
+      bin0 = 0;
+      bin1 = numBins - 1;
+    }
+
+  /* return results */
+  cfg->firstBin = (UINT4) bin0;
+  cfg->lastBin = (UINT4) bin1;
+  cfg->dataSegment.start = startTimeGPS;
+  cfg->dataSegment.end   = endTimeGPS;
+
+  XLALPrintInfo ("%s: loaded SFTs have %d bins, effective PSD output band is [%d, %d]\n", fn, numBins, bin0, bin1 );
+
+  return multi_sfts;
+
+} /* XLALReadSFTs() */
+
+/** Function that *truncates the PSD in place* to the requested frequency-bin interval [firstBin, lastBin] for the given multiPSDVector.
+ */
+int
+XLALCropMultiPSDVector ( MultiPSDVector *multiPSDVect,
+                         UINT4 firstBin,
+                         UINT4 lastBin
+                         )
+{
+  const char *fn = __func__;
+
+  /* check user input */
+  if ( !multiPSDVect ) {
+    XLALPrintError ("%s: invalid NULL input 'multiPSDVect'\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if ( lastBin < firstBin ) {
+    XLALPrintError ("%s: empty bin interval requested [%d, %d]\n", fn, firstBin, lastBin );
+    XLAL_ERROR ( fn, XLAL_EDOM );
+  }
+
+  UINT4 numIFOs = multiPSDVect->length;
+  UINT4 numBins = multiPSDVect->data[0]->data[0].data->length;
+
+  if ( (firstBin >= numBins) || (lastBin >= numBins ) ) {
+    XLALPrintError ("%s: requested bin-interval [%d, %d] outside of PSD bins [0, %d]\n", fn, firstBin, lastBin, 0, numBins - 1 );
+    XLAL_ERROR ( fn, XLAL_EDOM );
+  }
+
+  /* ----- check if there's anything to do at all? ----- */
+  if ( (firstBin == 0)  && (lastBin == numBins - 1) )
+    return XLAL_SUCCESS;
+
+  REAL8 f0    = multiPSDVect->data[0]->data[0].f0;
+  REAL8 dFreq = multiPSDVect->data[0]->data[0].deltaF;
+
+  /* ----- loop over detectors, timestamps, then crop each PSD ----- */
+  UINT4 X;
+  for ( X=0; X < numIFOs; X ++ )
+    {
+      PSDVector *thisPSDVect = multiPSDVect->data[X];
+      UINT4 numTS   = thisPSDVect->length;
+
+      UINT4 iTS;
+      for ( iTS = 0; iTS < numTS; iTS ++ )
+        {
+          REAL8FrequencySeries *thisPSD = &thisPSDVect->data[iTS];
+
+          if ( numBins != thisPSD->data->length ) {
+            XLALPrintError ("%s: inconsistent number of frequency-bins across multiPSDVector: X=%d, iTS=%d: numBins = %d != %d\n",
+                            fn, X, iTS, numBins, thisPSD->data->length );
+            XLAL_ERROR ( fn, XLAL_EDOM );
+          }
+
+          UINT4 numNewBins = lastBin - firstBin + 1;
+          /* now do some clever memory-sane cropping on this PSD */
+          if ( firstBin > 0 )
+            {
+              void *dest = thisPSD->data->data;	/* always copy to the beginning of array */
+              void *src  = thisPSD->data->data + firstBin;	/* we're copying from firstBin on ... */
+
+              if ( dest != memmove(dest, src, numNewBins * sizeof(*thisPSD->data->data)) ) { /* memmove() handles overlapping memory correctly */
+                XLALPrintError ("%s: something failed in moving PSD data with memmove()\n", fn );
+                XLAL_ERROR ( fn, XLAL_EFAILED );
+              }
+            }
+          /* truncate array to new size */
+          thisPSD->data->length = numNewBins;
+
+          /* set correct start-frequency in cropped PSD */
+          thisPSD->f0 = f0 + firstBin * dFreq;
+
+        } /* for iTS < numTS */
+
+    } /* for X < numIFOs */
+
+  /* that should be all ... */
+  return XLAL_SUCCESS;
+
+} /* XLALCropMultiPSDVector() */
+
+/** Compute the "data-quality factor" \f$\mathcal{Q}(f) = \sum_X \frac{\epsilon_X}{\mathcal{S}_X(f)}\f$ over the given SFTs.
+ *  The input \a multiPSD is a pre-computed PSD map \f$\mathcal{S}_{X,i}(f)\f$, over IFOs \f$X\f$, SFTs \f$i\f$
+ * and frequency \f$f\f$.
+ *
+ * \return the output is a vector \f$\mathcal{Q}(f)\f$.
+ *
+ */
+REAL8FrequencySeries *
+XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD map over IFOs, SFTs, and frequencies */
+                          LALSeg segment		  	/**< segment to compute Q for */
+                          )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( multiPSDVect == NULL ) {
+    XLALPrintError ("%s: NULL input 'multiPSDVect'\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+  if ( multiPSDVect->length == 0 || multiPSDVect->data==0 ) {
+    XLALPrintError ("%s: invalid multiPSDVect input (length=0 or data=NULL)\n", fn );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  REAL8 Tseg = XLALGPSDiff ( &segment.end, &segment.start );
+  if ( Tseg <= 0 ) {
+    XLALPrintError ("%s: negative segment-duration '%g'\n", fn, Tseg );
+    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+  }
+
+  REAL8 Tsft 	 = 1.0 / multiPSDVect->data[0]->data[0].deltaF;
+  REAL8 f0       = multiPSDVect->data[0]->data[0].f0;
+  REAL8 dFreq    = multiPSDVect->data[0]->data[0].deltaF;
+  UINT4 numFreqs = multiPSDVect->data[0]->data[0].data->length;
+
+  REAL8FrequencySeries *Q, *SXinv;
+  if ( (Q = XLALCreateREAL8FrequencySeries ( "Qfactor", &segment.start, f0, dFreq, &lalHertzUnit, numFreqs )) == NULL ) {
+    XLALPrintError ("%s: Q = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", fn, numFreqs, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  if ( (SXinv = XLALCreateREAL8FrequencySeries ( "SXinv", &segment.start, f0, dFreq, &lalHertzUnit, numFreqs )) == NULL ) {
+    XLALPrintError ("%s: SXinv = XLALCreateREAL8FrequencySeries(numFreqs=%d) failed with xlalErrno = %d\n", fn, numFreqs, xlalErrno );
+    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+  }
+  /* initialize Q-array to zero, as we'll keep adding to it */
+  memset ( Q->data->data, 0, Q->data->length * sizeof(Q->data->data[0]) );
+
+  /* ----- loop over IFOs ----- */
+  UINT4 numIFOs = multiPSDVect->length;
+  UINT4 X;
+  for ( X = 0; X < numIFOs; X ++ )
+    {
+      PSDVector *thisPSDVect = multiPSDVect->data[X];
+
+      /* initialize SXinv-array to zero, as we'll keep adding to it */
+      memset ( SXinv->data->data, 0, SXinv->data->length * sizeof(SXinv->data->data[0]) );
+      UINT4 numSFTsInSeg = 0;	/* reset counter of SFTs within this segment */
+
+      /* ----- loop over all timestamps ----- */
+      /* find SFTs inside segment, count them and combine their PSDs */
+      UINT4 numTS = thisPSDVect->length;
+      UINT4 iTS;
+      for ( iTS = 0; iTS < numTS; iTS++ )
+        {
+          REAL8FrequencySeries *thisPSD = &thisPSDVect->data[iTS];
+
+          /* some internal consistency/paranoia checks */
+          if ( ( f0 != thisPSD->f0) || ( dFreq != thisPSD->deltaF ) || (numFreqs != thisPSD->data->length ) ) {
+            XLALPrintError ("%s: %d-th timestamp %f: inconsistent PSDVector: f0 = %g : %g,  dFreq = %g : %g, numFreqs = %d : %d \n",
+                            fn, iTS, XLALGPSGetREAL8( &thisPSD->epoch ), f0, thisPSD->f0, dFreq, thisPSD->deltaF, numFreqs, thisPSD->data->length );
+            XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+          }
+
+          LIGOTimeGPS gpsStart = thisPSD->epoch;
+          LIGOTimeGPS gpsEnd   = gpsStart;
+          XLALGPSAdd( &gpsEnd, Tsft - 1e-3 );	/* subtract 1ms from end: segments are half-open intervals [t0, t1) */
+
+          int cmp1 = XLALGPSInSeg ( &gpsStart, &segment );
+          int cmp2 = XLALGPSInSeg ( &gpsEnd, &segment );
+
+          if ( cmp2 < 0 )	/* SFT-end before segment => advance to the next one */
+            continue;
+          if ( cmp1 > 0 )	/* SFT-start past end of segment: ==> terminate loop */
+            break;
+
+          if ( (cmp1 == 0) && (cmp2 == 0) )	/* this SFT is inside segment */
+            {
+              numSFTsInSeg ++;
+              /* add SXinv(f) += 1/SX_i(f) over all frequencies */
+              UINT4 iFreq;
+              for ( iFreq = 0; iFreq < numFreqs; iFreq++ )
+                SXinv->data->data[iFreq] += 1.0 / thisPSD->data->data[iFreq] ;
+
+            }	/* if SFT inside segment */
+
+        } /* for iTS < numTS */
+
+      /* compute duty-cycle eps_X = nX * Tsft / Tseg for this IFO */
+      REAL8 duty_X = numSFTsInSeg * Tsft / Tseg;
+      /* sanity check: eps in [0, 1]*/
+      if ( (duty_X < 0) && (duty_X > 1 ) ) {
+        XLALPrintError ("%s: something is WRONG: duty-cyle = %g not within [0,1]!\n", fn, duty_X );
+        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+      }
+
+      /* add duty_X-weighted SXinv to Q */
+      UINT4 iFreq;
+      for ( iFreq = 0; iFreq < numFreqs; iFreq ++ )
+        Q->data->data[iFreq] += duty_X * SXinv->data->data[iFreq] / numSFTsInSeg;
+
+    } /* for X < numIFOs */
+
+  /* clean up, free memory */
+  XLALDestroyREAL8FrequencySeries ( SXinv );
+
+
+  return Q;
+
+} /* XLALComputeSegmentDataQ() */
+
+/** Write given REAL8FrequencySeries into file
+ */
+int
+XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**< [in] frequency-series to write to file */
+                                        const char *fname			/**< [in] filename to write into */
+                                        )
+{
+  const char *fn = __func__;
+
+  /* check input consistency */
+  if ( !series || !fname ) {
+    XLALPrintError ("%s: invalid NULL input.\n", fn );
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+
+  FILE *fp;
+  if ( ( fp = fopen ( fname, "wb" )) == NULL ) {
+    XLALPrintError ("%s: failed to open file '%s' for writing.\n", fn, fname );
+    XLAL_ERROR ( fn, XLAL_ESYS );
+  }
+
+  /* write header info in comments */
+  if ( XLAL_SUCCESS != XLALOutputVersionString ( fp, 0 ) )
+    XLAL_ERROR ( fn, XLAL_EFUNC );
+
+  fprintf ( fp, "%%%% name = '%s'\n", series->name );
+  fprintf ( fp, "%%%% epoch = {%d, %d}\n", series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds );
+  fprintf ( fp, "%%%% f0 = %f Hz\n", series->f0 );
+  fprintf ( fp, "%%%% deltaF = %g Hz\n", series->deltaF );
+
+CHAR unitStr[1024];
+ if ( XLALUnitAsString( &unitStr[0], sizeof(unitStr)-1, &series->sampleUnits ) == NULL ) {
+   XLALPrintError ("%s: XLALUnitAsString() failed with xlalErrno = %d.\n", fn, xlalErrno );
+   XLAL_ERROR ( fn, XLAL_EFUNC );
+ }
+ fprintf ( fp, "%%%% Units = %s\n", unitStr );
+
+ fprintf ( fp, "%%%% Freq [Hz]           Data(Freq)\n");
+ UINT4 numBins = series->data->length;
+ UINT4 iFreq;
+ for ( iFreq = 0; iFreq < numBins; iFreq ++ )
+   {
+     REAL8 thisFreq = series->f0 + iFreq * series->deltaF;
+     fprintf (fp, "%20.16f  %20.16g\n", thisFreq, series->data->data[iFreq] );
+   }
+
+  fclose ( fp );
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteREAL8FrequencySeries_to_file() */

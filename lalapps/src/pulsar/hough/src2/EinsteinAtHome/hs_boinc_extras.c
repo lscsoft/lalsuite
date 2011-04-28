@@ -17,6 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Bernd Machenschalk, Reinhard Prix
+ */
+
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
 */
 
@@ -248,7 +254,7 @@ int try_load_dlls(const char*dlls, const char*mess) {
     based on LogPrintf()
  */
 void ReportStatus(LALStatus *status)
-{ /* </lalVerbatim> */
+{ 
   LALStatus *ptr;
   for ( ptr = status; ptr ; ptr = ptr->statusPtr ) {                                         
     fprintf(stderr, "\nLevel %i: %s\n", ptr->level, ptr->Id );
@@ -318,7 +324,7 @@ static void sighandler(int sig)
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fprintf(stderr, "\n");
+  fputs("\n-- signal handler called\n",stderr);
   fprintf(stderr, "APP DEBUG: Application caught signal %d.\n\n", sig );
 
   /* ignore TERM interrupts once  */
@@ -680,6 +686,18 @@ static void worker (void) {
 
     /* boinc_resolve and unzip skygrid file */
     else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
+      rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
+      if(!rargv[rarg]){
+	LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	boinc_finish(HIERARCHICALSEARCH_EMEM);
+      }
+      strncpy(rargv[rarg],argv[arg],l);
+      if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
+	res = HIERARCHICALSEARCH_EFILE;
+    }
+
+    /* boinc_resolve and unzip segment list */
+    else if (MATCH_START("--segmentList=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
@@ -1611,7 +1629,7 @@ void enable_floating_point_exceptions(void) {
     PRINT_FPU_EXCEPTION_MASK(fpstat);
     fprintf(stderr,"\n");
     */
-#ifdef ENABLE_SSE_EXCEPTIONS
+#if __SSE__
     set_sse_control_status(get_sse_control_status() & ~SSE_MASK_INVALID);
 #endif
   }

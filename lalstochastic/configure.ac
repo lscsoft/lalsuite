@@ -1,4 +1,4 @@
-AC_INIT([lalstochastic],[1.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalstochastic],[1.1.1.2],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -17,6 +17,8 @@ AC_CONFIG_FILES([ \
 AM_INIT_AUTOMAKE([foreign])
 
 AC_CANONICAL_HOST
+
+LALSUITE_ARG_VAR
 
 # set library api info
 # 1. start with version information of "0:0:0" for each libtool library

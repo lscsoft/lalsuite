@@ -1,11 +1,13 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{doxy_html_eqns}
 
+% use AMS math packages
+\RequirePackage{amsmath}
 \RequirePackage{amssymb}
 
 % remove equation numbers
-\def\@eqnnum{ }
+\def\@eqnnum{\relax}
+\def\maketag@@@#1{\relax}
 
 % make \label output the label name
-%%\def\label#1{\qquad\qquad\mathrm{(#1)}}
 \RequirePackage[right]{showlabels}

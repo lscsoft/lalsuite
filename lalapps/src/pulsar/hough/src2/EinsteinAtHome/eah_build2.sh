@@ -43,8 +43,8 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S5GC1HF
 test ".$appversion" = "." && appversion=0.00
-boinc_rev=-r22844
-#previous:-r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
+boinc_rev=-r23037
+#previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
 for i; do
     case "$i" in
@@ -85,6 +85,11 @@ for i; do
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
+	--32)
+	    CPPFLAGS="-m32 $CPPFLAGS"
+	    CXXFLAGS="-m32 $CXXFLAGS"
+	    CFLAGS="-m32 $CFLAGS"
+	    LDFLAGS="-m32 $LDFLAGS" ;;
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
@@ -112,12 +117,21 @@ for i; do
 	    export MACOSX_DEPLOYMENT_TARGET=10.3
 	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
 	    pflags="-arch ppc -D_NONSTD_SOURCE -isystem $SDKROOT"
-	    CPPFLAGS="$pflags $CPPFLAGS"
+	    CPPFLAGS="$pflags $CPPFLAGS -DMAC_OS_X_VERSION_MAX_ALLOWED=1030 -DMAC_OS_X_VERSION_MIN_REQUIRED=1030"
 	    CFLAGS="$pflags -Wno-long-double $CFLAGS"
 	    CXXFLAGS="$pflags -Wno-long-double $CXXFLAGS"
 	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
 	    export RELEASE_LDADD="./libstdc++.a"
 	    export CC=gcc-3.3 CXX=g++-3.3 ;;
+	--tiger)
+	    export MACOSX_DEPLOYMENT_TARGET=10.4
+	    export SDKROOT="/Developer/SDKs/MacOSX10.4u.sdk"
+	    pflags="-D_NONSTD_SOURCE -isystem $SDKROOT"
+	    CPPFLAGS="$pflags $CPPFLAGS -DMAC_OS_X_VERSION_MAX_ALLOWED=1040 -DMAC_OS_X_VERSION_MIN_REQUIRED=1040"
+	    CFLAGS="$pflags $CFLAGS"
+	    CXXFLAGS="$pflags $CXXFLAGS"
+	    LDFLAGS="$pflags -Wl,-syslibroot,$SDKROOT $LDFLAGS"
+	    export RELEASE_LDADD="/usr/lib/libstdc++-static.a" ;;
 	--with-ssl=*)
 	    WITH_SSL="$i"
 	    ssldir=`echo "$i" | sed 's/--with-ssl=//'`
@@ -141,8 +155,10 @@ for i; do
 	    echo "  --rebuild-lal     rebuild lalsuite"
 	    echo "  --rebuild-boinc   rebuild BOINC"
 	    echo "  --static          try to link statically"
+	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --panther         build to run on Mac OS 10.3.9"
+	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
@@ -154,8 +170,8 @@ for i; do
 	    echo "  --check-app=<app> only test the app specified, not necessarily the one just built"
 	    echo "  --release         use some dark magic to make the App most compatible and add remote debugging."
 	    echo "                    Implies --static and --rebuild and even more dirty hacks on Linux to work on Woody"
-	    echo "  --appname         set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
-	    echo "  --appversion      set an application version (only used in --release builds, defaults to 0.00)"
+	    echo "  --appname=<name>  set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
+	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
 	    echo "  --help            show this message and exit"
 	    exit ;;
@@ -205,7 +221,7 @@ if [ ."$build_win32" = ."true" ] ; then
 else
     case `uname -s` in
 	Darwin)
-            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ]; then
+            if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" -o ".$acc" = "._altivec" ] ; then
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
@@ -213,7 +229,17 @@ else
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
 	    LDFLAGS="-lpthread $LDFLAGS"
-	    platform=i686-pc-linux-gnu
+	    if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
+	        platform=x86_64-pc-linux-gnu
+	    else
+	        platform=i686-pc-linux-gnu
+	    fi
+	    if [ ".$WITH_SSL" = "." -a -d /usr/local/ssl ]; then
+	        ssldir=/usr/local/ssl
+		CPPFLAGS="$CPPFLAGS -I$ssldir/include"
+		LIBS="$LIBS -L$ssldir/lib"
+		WITH_SSL="--with-ssl=$ssldir"
+	    fi
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
@@ -226,8 +252,8 @@ fi
 
 # if --pather and not --altivec, make sure the binary runs on G3
 test ."$MACOSX_DEPLOYMENT_TARGET" = ."10.3" -a ."$acc" = ."" &&
-CFLAGS="-mcpu=G3 $CFLAGS" &&
-CXXFLAGS="-mcpu=G3 $CXXFLAGS"
+    CFLAGS="-mcpu=G3 $CFLAGS" &&
+    CXXFLAGS="-mcpu=G3 $CXXFLAGS"
 
 if [ ".$cuda" = ".true" -a ."$build_win32" = ."true" ]; then
     export CFLAGS="-g0 $CFLAGS"
@@ -454,7 +480,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --enable-boinc --disable-silent-rules $shared_copt $cross_copt --prefix=$INSTALL"
 test ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" &&
     lalsuite_copts="--disable-osx-version-check $lalsuite_copts"
 if test -z "$rebuild_lal" && pkg-config --exists lal; then

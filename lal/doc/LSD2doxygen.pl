@@ -312,12 +312,18 @@ sub cleanupLSD {
                    )$bbk?$bbr!!mgx;
         # one argument
         $text =~ s!\\(?:
-                   index|input|vfill|vspace
+                   input|vfill|vspace
                    )$bbr!!mgx;
         # no arguments
         $text =~ s!\\(?:
                    footnotesize|medskip|newpage|noindent
                   )$n*!!mgx;
+
+        # remove these LaTeX commands but leave argument:
+        # one argument
+        $text =~ s!\\(?:
+                   index
+                   )$wbbr!$1!mgx;
 
         # flag these environments for manual intervention
         $text =~ s!\\(begin|end)$n*{(

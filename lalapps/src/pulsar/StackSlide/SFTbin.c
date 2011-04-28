@@ -31,55 +31,34 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="SFTbinCV">
-Author: Sintes, A.M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
-
 /* REVISIONS: */
 /* 05/19/05 gam; if (nLinesOut == 0) still need outLine->nLines = nLinesOut; calling function needs to know this */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{MOdule \texttt{SFTbin.c}}
-\label{ss:SFTbin.c}
+/**
+\author Sintes, A.M., Krishnan, B.
+
+\heading{\ref SFTbin.c}
 Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SFTbinD}
-\index{\verb&ReadSFTbinHeader1()&}
-\index{\verb&ReadCOMPLEX8SFTbinData1()&}
-\index{\verb&ReadCOMPLEX16SFTbinData1()&}
-\index{\verb&COMPLEX8SFT2Periodogram1()&}
-\index{\verb&COMPLEX16SFT2Periodogram1()&}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Prototypes}
+<tt>ReadSFTbinHeader1()</tt>
+<tt>ReadCOMPLEX8SFTbinData1()</tt>
+<tt>ReadCOMPLEX16SFTbinData1()</tt>
+<tt>COMPLEX8SFT2Periodogram1()</tt>
+<tt>COMPLEX16SFT2Periodogram1()</tt>
+
+\heading{Description}
 
 the output of the periodogram should be properly normalized !!!
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTbinCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
+\endcode
+*/
 
 #include "./SFTbin.h"
-
-
 
 NRCSID (SFTBINC, "$Id$");
 
@@ -87,14 +66,12 @@ NRCSID (SFTBINC, "$Id$");
  * The functions that make up the guts of this module
  */
 
-
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-/* *******************************  <lalVerbatim file="SFTbinD"> */
 void ReadSFTbinHeader1 (LALStatus  *status,
                      SFTHeader1   *header,
                      CHAR          *fname)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
   
   FILE     *fp = NULL;
   SFTHeader1  header1;
@@ -132,11 +109,11 @@ void ReadSFTbinHeader1 (LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void ReadCOMPLEX8SFTbinData1(LALStatus  *status,
                    COMPLEX8SFTData1    *sft,
                    CHAR                *fname)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   FILE        *fp = NULL;
   SFTHeader1  header1;
@@ -212,11 +189,11 @@ void ReadCOMPLEX8SFTbinData1(LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void ReadCOMPLEX16SFTbinData1(LALStatus  *status,
                    COMPLEX16SFTData1    *sft,
                    CHAR                *fname)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   FILE        *fp = NULL;
   SFTHeader1  header1;
@@ -292,11 +269,11 @@ void ReadCOMPLEX16SFTbinData1(LALStatus  *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1     *peri,
 		   COMPLEX8SFTData1      *sft)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4       length;
   
@@ -354,11 +331,11 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
  
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1     *peri,
 		   COMPLEX16SFTData1      *sft)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4       length;
   
@@ -416,11 +393,11 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void SFT2Periodogram (LALStatus  *status,
                    REAL8Periodogram1     *peri,
 		   SFTtype      *sft)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4       length;
   REAL8      f0, deltaF;
@@ -483,11 +460,11 @@ void SFT2Periodogram (LALStatus  *status,
 
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
-/********************************* <lalVerbatim file="SFTbinD"> */
+
 void FindNumberHarmonics (LALStatus    *status,
 			  LineHarmonicsInfo   *harmonicInfo,
 			  CHAR         *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
  /* this function finds the number of harmonic sets in file "fname" and
     checks the file format */
 
@@ -529,11 +506,11 @@ void FindNumberHarmonics (LALStatus    *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void  ReadHarmonicsInfo (LALStatus          *status,
 			 LineHarmonicsInfo  *harmonicsInfo,
 			 CHAR               *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
   FILE    *fp = NULL;
@@ -585,11 +562,11 @@ void  ReadHarmonicsInfo (LALStatus          *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void  Harmonics2Lines (LALStatus          *status,
 		       LineNoiseInfo      *lineInfo,
 		       LineHarmonicsInfo  *harmonicsInfo)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
   
@@ -657,11 +634,11 @@ void  Harmonics2Lines (LALStatus          *status,
 
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void FindNumberLines (LALStatus          *status,
 		      LineNoiseInfo      *lineInfo,            
 		      CHAR               *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this function counts the number of lines present in the file "fname" and  
      checks that the format of the lines is correct */
 
@@ -699,11 +676,11 @@ void FindNumberLines (LALStatus          *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void  ReadLineInfo (LALStatus     *status,
 		    LineNoiseInfo *lineInfo,
 		    CHAR          *fname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
   FILE    *fp = NULL;
@@ -868,14 +845,14 @@ void CheckLines ( LALStatus           *status,
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
 		       INT4               width,       
 		       INT4               window,
 		       LineNoiseInfo      *lineInfo,
 		       RandomParams       *randPar)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
   /* function to clean the SFT based on the line information read earlier */
   
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k, tempk;
@@ -1046,12 +1023,12 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void CleanCOMPLEX16SFT (LALStatus                 *status,
 		       COMPLEX16FrequencySeries   *sft,
 		       INT4                       width,            
 		       LineNoiseInfo              *lineInfo)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* function to clean the SFT based on the line information read earlier */
   /* note: don't use this yet... the lal sftIO functions for complex16 are not there yet */
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k;
@@ -1176,11 +1153,11 @@ void CleanCOMPLEX16SFT (LALStatus                 *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void WriteCOMPLEX8SFT (LALStatus          *status,
 		       COMPLEX8SFTData1   *sft,
 		       CHAR               *outfname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* function to write an entire SFT to a file which has been read previously*/
   
   FILE  *fp = NULL;
@@ -1241,11 +1218,11 @@ void WriteCOMPLEX8SFT (LALStatus          *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void WriteCOMPLEX16SFT (LALStatus          *status,
 		       COMPLEX16SFTData1   *sft,
 		       CHAR               *outfname)
-{/*   *********************************************  </lalVerbatim> */
+{
   /* function to write entirely an SFT which has been previously read */
   
   FILE  *fp = NULL;

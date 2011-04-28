@@ -18,16 +18,11 @@
 */
 
 /**
- *
- * \file  HoughValidateAM.c
+ * \file
+ * \ingroup pulsarApps
  * \author Badri Krishnan and Alicia Sintes
-   \brief  Checking improvements in Hough if amplitude modulation is considered.
-
- * Revision: $Id$
- * 
- *
- * 
- ****************************************************/
+ * \brief  Checking improvements in Hough if amplitude modulation is considered.
+ */
 
 
 #include "../src/MCInjectHoughS2.h"

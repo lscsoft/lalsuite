@@ -1532,15 +1532,13 @@ LALEOBWaveformEngine (
        ABORTXLAL( status );
      }
 
-     /* If Nyquist freq. <  220 QNM freq., exit */
+     /* If 220 QNM freq. > Nyquist freq., print warning but continue */
      /* Note that we cancelled a factor of 2 occuring on both sides */
      if ( params->tSampling < modefreqs->data[0].re / LAL_PI )
      {
-       XLALDestroyCOMPLEX8Vector( modefreqs );
-       snprintf( message, 256, "Ringdown freq less than Nyquist freq. "
-             "Increase sample rate or consider using EOB approximant.\n" );
-       LALError(status->statusPtr, message);
-       ABORT( status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+       snprintf( message, 256, "Ringdown freq. greater than Nyquist freq. "
+             "Beware of aliasing! Consider increasing the sample rate.\n" );
+       LALWarning(status->statusPtr, message);
      }
      XLALDestroyCOMPLEX8Vector( modefreqs );
    }

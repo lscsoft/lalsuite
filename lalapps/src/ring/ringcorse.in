@@ -225,12 +225,11 @@ class Summaries(object):
 		self.categories = []
 
 	def add_livetime(self, connection, live_time_program, veto_segments_name = None, verbose = False):
-		# FIXME farutils doesn't know about ringdown vetoes, not that anything else does...
-		veto_segments = farutils.get_veto_segments(connection, live_time_program, veto_segments_name=veto_segments_name)
 		if verbose:
 			print >>sys.stderr, "\tcomputing livetimes:",
 
 		xmldoc = dbtables.get_xml(connection)
+		veto_segments = farutils.get_veto_segments(connection, live_time_program, xmldoc, veto_segments_name=veto_segments_name)
 		# check to see if a maxextent option was used in cafe/rinca land
 		coinc_end_time_seg_param = process.get_process_params(xmldoc, "ligolw_rinca", "--coinc-end-time-segment")
 		segs = farutils.get_segments(connection, xmldoc, "lalapps_ring").coalesce()

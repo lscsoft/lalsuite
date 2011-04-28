@@ -157,9 +157,10 @@ h_\times(t) & = & A_\times(t)\sin\phi(t) \; .
 #include <lal/SkyCoordinates.h>
 #include <lal/Random.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( GENERATEPPNINSPIRALH, "$Id$" );
@@ -302,9 +303,9 @@ description (above).
 
 /* <lalVerbatim file="LALInputAxisH">  */
 typedef enum {
+  TotalJ,
   View,
   OrbitalL,
-  TotalJ
  } InputAxis;
 /* </lalVerbatim>  */
 
@@ -433,9 +434,11 @@ LALGenerateInspiralSmooth( LALStatus            *,
 \newpage\input{GeneratePPNInspiralTestC}
 </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
 #endif /* _GENERATEPPNINSPIRAL_H */
+

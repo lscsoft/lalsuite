@@ -1252,7 +1252,8 @@ class candidateList:
         spinner.setTag('Writing')
         for entry in self.curves:
             CurveId,Length,Power=entry.getKurveHeader()
-            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+'\n'
+            snrEstimate=entry.getKurveSNR()
+            text="Curve number,length,power:"+str(CurveId)+','+str(Length)+','+str(Power)+','+str(snrEstimate)+'\n'
             output_fp.write(text)
             text=""
             data=[]
@@ -2222,6 +2223,61 @@ class candidateList:
             print entry,
     # End printSummary method
     
+    def applyPercentageThreshold(self,propertyString="P",percentile=0.05):
+        """
+        Uses the text label propertyString to give the top percentile
+        of that property. A '!' negates the expresion and gives the
+        result below that cutoff.
+        """
+        percentile=float(percentile)
+        #Load up curve elements and make a vector to find stats
+        if self.curves.__len__() < 1:
+            print "Warning no information to threshold."
+            return self
+        if propertyString.lower().strip() == "curveid":
+            print "Warning can not threashold on CURVEID"
+            return self
+        #Is negate symbol present?
+        topCut=True
+        if propertyString.__contains__("!"):
+            topCut=False
+            propertyString=propertyString.strip("!")
+        #If verbose call setup spinner
+        resultsList=[]
+        lineInfoVector=[[float(self.__getCurveField__(lineInfo,propertyString.lower().strip())[0]),
+                         lineInfo]
+                        for lineInfo in self.curves]
+        #Determine cutoff values
+        lineInfoVector.sort()
+        cutIndex=int(len(lineInfoVector)*(1-percentile))
+        #print "Len:",len(lineInfoVector),"Per:",percentile,"Cut_k:",cutIndex
+        #Extract lineInfo objects
+        #If want top percentile
+        if topCut:
+            if cutIndex < len(lineInfoVector):
+                resultsList=[lineInfo for val,lineInfo in lineInfoVector[cutIndex:len(lineInfoVector)]]
+            else:
+                resultList=self.curves
+        else:
+            if cutIndex-1 > 0:
+                resultsList=[lineInfo for val,lineInfo in lineInfoVector[0:cutIndex]]
+            else:
+                resultsList=self.curves
+        if self.verboseMode:
+            rCount=int(resultsList.__len__())
+            sCount=int(self.curves.__len__())
+            percentile=100*(rCount/float(sCount))
+            sys.stdout.write("There are %i candidates (%f %s) passing the %s threshold requested\n"%
+                             (rCount,percentile,"%",percentile))
+        outputObject=candidateList()
+        outputObject.__cloneCandidateList__(self)
+        outputObject.curves=copy.deepcopy(resultsList)
+        outputObject.totalCount=resultsList.__len__()
+        #Set the curve structure as valid here!
+        outputObject.validCurves=bool(True)
+        outputObject.createTraitSummary()
+        return outputObject
+    
     def applyArbitraryThresholds(self,expressionString):
         """
         This method takes in a string and uses it literally to construct a
@@ -2296,6 +2352,7 @@ class candidateList:
             ww=float(self.__getCurveField__(lineInfo,"ww")[0])
             ee=float(self.__getCurveField__(lineInfo,"ee")[0])
             rr=float(self.__getCurveField__(lineInfo,"rr")[0])
+            pp=float(self.__getCurveField__(lineInfo,"pp")[0])
             evalResult=False
             try:
                 evalResult=eval(testExp)
@@ -2556,7 +2613,7 @@ class candidateList:
         plotLabel=str(self.__getCurveField__('',triggerTrait)[1])
         pylab.xlabel(str(plotLabel))
         pylab.ylabel(str("Count"))
-        figTitle="Upper Percentile :%3f%% ,%s Threshold :%f"%(float(100)*topPercentage,plotLabel,transitionValue)
+        figTitle="Upper Percentile :%3f%% ,%s Threshold :%d"%(float(100)*topPercentage,plotLabel,transitionValue)
         pylab.figtext(0.01,0.95,figTitle)
         if ((filename.upper()=='') or (filename.upper()=='AUTO')):
             [name,extension]=os.path.splitext(self.filename[0])

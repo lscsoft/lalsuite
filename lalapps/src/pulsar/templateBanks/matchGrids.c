@@ -21,6 +21,7 @@
  * \author Reinhard Prix
  * \date 2005
  * \file 
+ * \ingroup pulsarApps
  * \brief Match two "equivalent" (i.e. corresponding to same parameters) sky-grids 
  *  at a given tolerance. This is to only meaningful for sky-grids which are identical
  * up to small numerical errors plus allowing for 'outlier'-points, which don't match up.
@@ -30,9 +31,6 @@
  *
  * This was originally implemented as an octave-script, which turned out to be way too slow
  * for large grids of order 1e5 points.
- *
- * $Id$
- *
  */
 
 

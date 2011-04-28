@@ -29,7 +29,7 @@ override lalsuite_version = $(shell \
    cd $(abs_lalsuite_srcdir) || exit 1; \
    lsv=$(PACKAGE_VERSION); \
    if test "x$(GIT)" != x && test -d .git; then \
-      lsv="$$lsv-"`$(GIT) log -1 --format="%h"`; \
+      lsv="$$lsv-"`$(GIT) log -1 --pretty="format:%h"`; \
       if $(GIT) diff --quiet HEAD; then \
          : ; \
       else \

@@ -17,27 +17,11 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: PeakSelectTest.c
- * Authors: Sintes, A.M.,
- *
- * Revision: $Id$
- *
- * History:   Created by Sintes May 21, 2003
- *            Modified...
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Alicia Sintes Olives
  */
-/************************************ <lalVerbatim file="PeakSelectTestCV">
-Author: Sintes, A.M.,
-$Id$
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include "./PeakSelect.h"
 
@@ -45,7 +29,7 @@ NRCSID (PEAKSELECTTESTC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="PEAKSELECTTESTCErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define PEAKSELECTTESTC_ENORM 0
 #define PEAKSELECTTESTC_ESUB  1
 #define PEAKSELECTTESTC_EARG  2
@@ -57,7 +41,7 @@ NRCSID (PEAKSELECTTESTC, "$Id$");
 #define PEAKSELECTTESTC_MSGEARG  "Error parsing arguments"
 #define PEAKSELECTTESTC_MSGEBAD  "Bad argument values"
 #define PEAKSELECTTESTC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
+/*@}*/
 
 
 /* Default parameters. */

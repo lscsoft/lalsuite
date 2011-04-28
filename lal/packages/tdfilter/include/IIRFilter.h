@@ -109,9 +109,10 @@ routines never actually use this coefficient.
 #include <lal/LALStdlib.h>
 #include <lal/ZPGFilter.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(IIRFILTERH,"$Id$");
@@ -281,8 +282,9 @@ LALDIIRFilterREAL4VectorR( LALStatus      *status,
 \newpage\input{IIRFilterTestC}
 </lalLaTeX> */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

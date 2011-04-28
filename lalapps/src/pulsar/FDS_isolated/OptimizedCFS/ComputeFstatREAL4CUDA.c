@@ -596,12 +596,12 @@ void RearrangeSFTData4CUDA(REAL4FrequencySeriesVector *fstatBandV,
 
         if ( (cfvBuffer->multiSSB4V = XLALCalloc ( numSegments, sizeof(*cfvBuffer->multiSSB4V) )) == NULL ) {
             XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numSegments, sizeof(*cfvBuffer->multiSSB4V) );
-            XLAL_ERROR ( fn, XLAL_ENOMEM );
+            XLAL_ERROR_VOID ( fn, XLAL_ENOMEM );
         }
         if ( (cfvBuffer->multiAMcoefV = XLALCalloc ( numSegments, sizeof(*cfvBuffer->multiAMcoefV) )) == NULL ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
             XLALPrintError ("%s: XLALCalloc ( %d, %d) failed.\n", fn, numSegments, sizeof(*cfvBuffer->multiAMcoefV) );
-            XLAL_ERROR ( fn, XLAL_ENOMEM );
+            XLAL_ERROR_VOID ( fn, XLAL_ENOMEM );
         }
 
         for ( n=0; n < numSegments; n ++ )
@@ -612,21 +612,21 @@ void RearrangeSFTData4CUDA(REAL4FrequencySeriesVector *fstatBandV,
             if ( (cfvBuffer->multiSSB4V[n] = XLALGetMultiSSBtimesREAL4 ( multiDetStatesV->data[n], doppler->Alpha, doppler->Delta, doppler->refTime)) == NULL ) {
                 XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
                 XLALPrintError ( "%s: XLALGetMultiSSBtimesREAL4() failed. xlalErrno = %d.\n", fn, xlalErrno );
-                XLAL_ERROR ( fn, XLAL_EFUNC );
+                XLAL_ERROR_VOID ( fn, XLAL_EFUNC );
             }
 
             LALGetMultiAMCoeffs ( &status, &(cfvBuffer->multiAMcoefV[n]), multiDetStatesV->data[n], skypos );
             if ( status.statusCode ) {
                 XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
                 XLALPrintError ("%s: LALGetMultiAMCoeffs() failed with statusCode=%d, '%s'\n", fn, status.statusCode, status.statusDescription );
-                XLAL_ERROR ( fn, XLAL_EFAILED );
+                XLAL_ERROR_VOID ( fn, XLAL_EFAILED );
             }
 
             /* apply noise-weights to Antenna-patterns and compute A,B,C */
             if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
                 XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
                 XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
-                XLAL_ERROR ( fn, XLAL_EFUNC );
+                XLAL_ERROR_VOID ( fn, XLAL_EFUNC );
             }
 
         } /* for n < numSegments */

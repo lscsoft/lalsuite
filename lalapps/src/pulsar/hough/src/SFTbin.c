@@ -33,51 +33,30 @@
 
 /** OBSOLETE -- Use LAL functions from SFTfileIO.c instead */
 
-/************************************ <lalVerbatim file="SFTbinCV">
-Author: Sintes, A.M., Krishnan, B.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author Sintes, A.M., Krishnan, B.
 
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{MOdule \texttt{SFTbin.c}}
-\label{ss:SFTbin.c}
+\heading{\ref SFTbin.c}
 Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SFTbinD}
-\index{\verb&ReadSFTbinHeader1()&}
-\index{\verb&ReadCOMPLEX8SFTbinData1()&}
-\index{\verb&ReadCOMPLEX16SFTbinData1()&}
-\index{\verb&COMPLEX8SFT2Periodogram1()&}
-\index{\verb&COMPLEX16SFT2Periodogram1()&}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
+\heading{Prototypes}
+<tt>ReadSFTbinHeader1()</tt>
+<tt>ReadCOMPLEX8SFTbinData1()</tt>
+<tt>ReadCOMPLEX16SFTbinData1()</tt>
+<tt>COMPLEX8SFT2Periodogram1()</tt>
+<tt>COMPLEX16SFT2Periodogram1()</tt>
+
+\heading{Description}
 
 the output of the periodogram should be properly normalized !!!
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTbinCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
+\endcode
+*/
 
 #include "./SFTbin.h"
-
-
 
 NRCSID (SFTBINC, "$Id$");
 
@@ -85,17 +64,12 @@ NRCSID (SFTBINC, "$Id$");
  * The functions that make up the guts of this module
  */
 
-
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
 void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1     *peri,
 		   COMPLEX8SFTData1      *sft)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4       length;
   
@@ -155,11 +129,11 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="SFTbinD"> */
+
 void SFT2Periodogram (LALStatus  *status,
                    REAL8Periodogram1     *peri,
 		   SFTtype      *sft)
-{ /*   *********************************************  </lalVerbatim> */
+{ 
 
   INT4       length;
   REAL8      f0, deltaF;

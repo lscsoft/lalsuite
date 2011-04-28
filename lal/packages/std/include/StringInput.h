@@ -69,9 +69,10 @@ fully LAL-compliant and use only LAL types, so they are included in
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( STRINGINPUTH, "$Id$");
@@ -243,8 +244,9 @@ LALStringToZ( LALStatus *status, COMPLEX16 *value, const CHAR *string, CHAR **en
 void
 LALStringToGPS( LALStatus *status, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

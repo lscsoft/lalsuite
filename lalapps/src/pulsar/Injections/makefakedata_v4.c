@@ -19,6 +19,12 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
+ */
+
 /*-----------------------------------------------------------------------
  *
  * File Name: makefakedata_v4.c
@@ -27,9 +33,6 @@
  *
  * This code is a descendant of an earlier implementation 'makefakedata_v2.[ch]'
  * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
- *
- * Revision: $Id$
- *
  *
  *-----------------------------------------------------------------------
  */
@@ -53,10 +56,12 @@
 
 #include <lalapps.h>
 
+#include "../transientCW_utils.h"
+
 RCSID ("$Id$");
 
 /* Error codes and messages */
-/* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
+/**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0
 #define MAKEFAKEDATAC_ESUB  	1
 #define MAKEFAKEDATAC_EARG  	2
@@ -76,7 +81,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
 #define MAKEFAKEDATAC_MSGEBINARYOUT "Error in writing binary-data to stdout"
 #define MAKEFAKEDATAC_MSGEREADFILE "Error reading in file"
-/* </lalErrTable> */
+/*@}*/
 
 /***************************************************/
 #define TRUE (1==1)
@@ -112,8 +117,10 @@ typedef struct
 
   INT4 randSeed;		/**< random-number seed: either taken from user or /dev/urandom */
 
+  transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
 } ConfigVars_t;
+
 
 /** Default year-span of ephemeris-files to be used */
 #define EPHEM_YEARS  "00-04"
@@ -240,7 +247,10 @@ BOOLEAN uvar_version;		/**< output version information */
 
 INT4 uvar_randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-CHAR *uvar_parfile;             /** option .par file path */ 
+CHAR *uvar_parfile;             /** option .par file path */
+CHAR *uvar_transientWindowType;	/**< name of transient window ('rect', 'exp',...) */
+REAL8 uvar_transientStartTime;	/**< GPS start-time of transient window */
+REAL8 uvar_transientTauDays;	/**< time-scale in days of transient window */
 
 /*----------------------------------------------------------------------*/
 
@@ -258,6 +268,7 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   UINT4 i_chunk, numchunks;
+  FILE *fpSingleSFT = NULL;
 
   UINT4 i;
 
@@ -329,6 +340,25 @@ main(int argc, char *argv[])
       break;
     } /* switch generationMode */
 
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* check that user isn't giving a directory */
+    if ( is_directory ( uvar_outSFTbname ) ) {
+      XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
+                     uvar_outSFTbname);
+      return MAKEFAKEDATAC_EBAD;
+    }
+    
+    /* open concatenated SFT file for writing */
+    if ( (fpSingleSFT = LALFopen ( uvar_outSFTbname, "wb" )) == NULL )
+      {
+        XLALPrintError ("\nERROR: Failed to open file '%s' for writing: %s\n\n", uvar_outSFTbname, strerror(errno));
+        return MAKEFAKEDATAC_EFILE;
+    }
+
+  }
+
   /* ----------
    * Main loop: produce time-series and turn it into SFTs,
    * either all-at-once or per-sft
@@ -352,6 +382,13 @@ main(int argc, char *argv[])
 	{
 	  LAL_CALL ( LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
 	}
+
+
+      if ( XLALApplyTransientWindow ( Tseries, GV.transientWindow ) ) {
+	XLALPrintError ("XLALApplyTransientWindow() failed!\n");
+	exit ( MAKEFAKEDATAC_ESUB );
+      }
+
 
       /* for HARDWARE-INJECTION:
        * before the first chunk we send magic number and chunk-length to stdout
@@ -488,18 +525,15 @@ main(int argc, char *argv[])
 	      /* if user requesting single concatenated SFT */
 	      if ( uvar_outSingleSFT ) {
 
-		/* check that user isn't giving a directory */
-		if ( is_directory ( uvar_outSFTbname ) ) {
-		  XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_EBAD;
+                /* write all SFTs to concatenated file */
+                for ( UINT4 k = 0; k < SFTs->length; k++ ) {
+                  if ( XLAL_SUCCESS != XLALWriteSFT2fp( &(SFTs->data[k]), fpSingleSFT, comment ) ) {
+                    XLALPrintError("\nXLALWriteSFT2fp() failed to write SFT to '%s'!\n",
+                                   uvar_outSFTbname);
+                    return MAKEFAKEDATAC_ESUB;
+                  }
 		}
-		if (XLAL_SUCCESS != XLALWriteSFTVector2File(SFTs, uvar_outSFTbname, comment)) {
-		  XLALPrintError("\nXLALWriteSFTVector2File failed to write SFTs to '%s'!\n",
-				 uvar_outSFTbname);
-		  return MAKEFAKEDATAC_ESUB;
-		}
-		
+
 	      }
 	      else {
 
@@ -537,6 +571,14 @@ main(int argc, char *argv[])
 
     } /* for i_chunk < numchunks */
 
+  /* if user requesting single concatenated SFT */
+  if ( uvar_outSingleSFT ) {
+    
+    /* close concatenated SFT */
+    LALFclose( fpSingleSFT );
+
+  }
+
   LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
 
   LALCheckMemoryLeaks();
@@ -551,7 +593,7 @@ main(int argc, char *argv[])
 void
 InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
-  static const char *fn = "InitMakefakedata()";
+  static const char *fn = __func__;
 
   CHAR *channelName = NULL;
   BinaryPulsarParams pulparams;
@@ -726,7 +768,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   /* ---------- prepare vector of spindown parameters ---------- */
   {
     UINT4 msp = 0;	/* number of spindown-parameters */
-    if ( have_parfile ) 
+    if ( have_parfile )
       {
 	uvar_f1dot = 2.*pulparams.f1;
 	uvar_f2dot = 2.*pulparams.f2;
@@ -877,14 +919,15 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     /* ----- load timestamps from file if given  */
     if ( haveTimestampsFile )
       {
-	LIGOTimeGPSVector *timestamps = NULL;
 	if ( haveStart || haveDuration || haveOverlap )
 	  {
 	    printf ( "\nUsing --timestampsFile is incompatible with either of --startTime, --duration or --SFToverlap\n\n");
 	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
-	TRY (LALReadTimestampsFile(status->statusPtr, &timestamps, uvar_timestampsFile), status);
-	cfg->timestamps = timestamps;
+	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
+          XLALPrintError ("%s: failed to read timestamps from file '%s'\n", fn, uvar_timestampsFile );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
 
       } /* if haveTimestampsFile */
 
@@ -1273,6 +1316,24 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   LALFree ( channelName );
 
+  /* ----- handle transient-signal window if given ----- */
+  if ( !LALUserVarWasSet ( &uvar_transientWindowType ) || !strcmp ( uvar_transientWindowType, "none") )
+    cfg->transientWindow.type = TRANSIENT_NONE;		/* default: no transient signal window */
+  else
+    {
+      if ( !strcmp ( uvar_transientWindowType, "rect" ) )
+	{
+	  cfg->transientWindow.type = TRANSIENT_RECTANGULAR;		/* rectangular window [t0, t0+tau] */
+	  XLALPrintError ("Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", uvar_transientWindowType);
+	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	}
+
+      cfg->transientWindow.t0   = uvar_transientStartTime;
+      cfg->transientWindow.tau  = uvar_transientTauDays * LAL_DAYSID_SI;
+
+    } /* if transient window != none */
+
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1320,8 +1381,8 @@ InitUserVars (LALStatus *status)
 
   uvar_logfile = NULL;
 
-  /* per default we generate the whole timeseries first (except for hardware-injections)*/
-  uvar_generationMode = GENERATE_ALL_AT_ONCE;
+  /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
+  uvar_generationMode = GENERATE_PER_SFT;
 
   uvar_window = NULL;	/* By default, use rectangular window */
 
@@ -1337,6 +1398,9 @@ InitUserVars (LALStatus *status)
   uvar_outSingleSFT = FALSE;
 
   uvar_randSeed = 0;
+#define DEFAULT_TRANSIENT "none"
+  uvar_transientWindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
+  strcpy ( uvar_transientWindowType, DEFAULT_TRANSIENT );
 
   /* ---------- register all our user-variable ---------- */
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
@@ -1363,7 +1427,7 @@ InitUserVars (LALStatus *status)
   /* start + duration of timeseries */
   LALregINTUserVar(status,   startTime,		'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
   LALregINTUserVar(status,   duration,	 	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "Timestamps file");
+  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* generation-mode of timeseries: all-at-once or per-sft */
   LALregINTUserVar(status,   generationMode, 	 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
@@ -1429,6 +1493,11 @@ InitUserVars (LALStatus *status)
   LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
+
+  /* transient signal window properties (name, start, duration) */
+  LALregSTRINGUserVar(status, transientWindowType, 0, UVAR_DEVELOPER, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserVar(status,   transientStartTime,  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserVar(status,   transientTauDays,    0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in days.");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

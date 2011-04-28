@@ -58,9 +58,10 @@ object.
 #include <lal/Date.h>
 #include <lal/TwoDMesh.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
@@ -206,15 +207,6 @@ LALXMGRCloseFile (
     );
 
 void
-LALXMGRTimeTitle (
-    LALStatus          *status,
-    CHARVector         *title,
-    LIGOTimeGPS        *startGPS,
-    LIGOTimeGPS        *stopGPS,
-    CHAR               *comment
-    );
-
-void
 LALXMGRCreateGraph (
     LALStatus          *status,
     XMGRGraphVector    *graphVec
@@ -241,8 +233,9 @@ LALXMGRPlotMesh(
 \newpage\input{LALXMGRInterfaceC}
 </lalLaTeX> */
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

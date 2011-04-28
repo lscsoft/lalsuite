@@ -30,6 +30,7 @@ lalinspiralinclude_HEADERS = \
 	LALNoiseModelsInspiral.h \
 	LALSBBH-Metric.h \
 	LALSimInspiral.h \
+	LALTrigScanCluster.h \
 	LIGOLwXMLInspiralRead.h \
 	LIGOLwXMLRingdownRead.h \
 	LIGOMetadataInspiralUtils.h \
@@ -125,6 +126,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralGetApproximantString.c \
 	LALInspiralHexagonalBank.c \
 	LALInspiralHybridHexagonalBank.c \
+	LALInspiralIIR.c \
 	LALInspiralInit.c \
 	LALInspiralLongestTemplateInBank.c \
 	LALInspiralMoments.c \

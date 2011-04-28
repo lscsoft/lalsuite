@@ -17,20 +17,16 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: Validation1.c
- *
- * Authors: Sintes, A.M., Krishnan, B.
- *
- * Revision: $Id$
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Badri Krishnan, Alicia Sintes 
  *
  * History:   Created by Sintes June 16, 2003
  *    to test part of the Hough-Driver code.
  *    Case: Non demodulated. Search with no spin-down, source frequency as the 
  *          first search frequency.
  *    No input from SFT data yet implemented here.
- *-----------------------------------------------------------------------
  */
 
 

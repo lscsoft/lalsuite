@@ -25,9 +25,10 @@
 
 NRCSID (COMPUTE_DATA_QUALITY_VECTORH,"$Id$");
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma } /** to match the previous brace **/
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 int XLALComputeDQ(REAL4* sv_data, int r_sv,
@@ -39,8 +40,9 @@ int XLALComputeDQ(REAL4* sv_data, int r_sv,
 
 
 
-#ifdef  __cplusplus
-#pragma { /** to match the next brace **/
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

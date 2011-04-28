@@ -1,4 +1,4 @@
-AC_INIT([lal],[6.5.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.5.0.2],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -93,6 +93,8 @@ AH_BOTTOM([
 ])
 
 AC_CANONICAL_HOST
+
+LALSUITE_ARG_VAR
 
 # set library api info - liblal
 # 1. start with version information of "0:0:0" for each libtool library

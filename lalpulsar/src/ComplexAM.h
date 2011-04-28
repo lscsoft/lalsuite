@@ -32,8 +32,8 @@
 #include <math.h>
 #include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
-#include <lal/ComputeFstat.h>
 #include <lal/LALBarycenter.h>
+#include <lal/DetectorStates.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,8 +41,10 @@ extern "C" {
 
 NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
 
+/* ---------- exported defines and macros -------------------- */
 
-/*----- Error-codes -----*/
+/** \name Error codes */
+/*@{*/
 #define COMPLEXAMC_ENULL 		1
 #define COMPLEXAMC_ENONULL 		2
 #define COMPLEXAMC_EINPUT   		3
@@ -58,16 +60,19 @@ NRCSID (COMPLEXAMH, "$Id: ComplexAM.h");
 #define COMPLEXAMC_MSGEXLAL	"XLAL function call failed"
 #define COMPLEXAMC_MSGEIEEE	"Floating point failure"
 #define COMPLEXAMC_MSGERAALISA	"RAA response only available for LISA"
+/*@}*/
 
-/** The 'detector tensor' for a GW-detector: symmetric 3x3 matrix, storing only the upper triangle.
- * The coordinate-system is SSB-fixed Cartesian coordinates, in particular EQUATORIAL coords for
- * Earth-based detectors and ECLIPTIC coords for LISA.
+/* ---------- exported data types -------------------- */
+
+/** This structure contains the AM coefficients \f$a\f$ and \f$b\f$
+ * in the case of a complex detector tensor, and some relevant scalar
+ * products. That is:
  */
-typedef struct
+typedef struct CmplxAMCoeffsTag
 {
-  SymmTensor3 re;	/**< tensor holding real-parts of all components */
-  SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
-} CmplxDetectorTensor;
+  COMPLEX8Vector     *a;          /**< the a coefficient evaluated at the relevant times */
+  COMPLEX8Vector     *b;          /**< the b coefficient evaluated at the relevant times  */
+} CmplxAMCoeffs;
 
 /** Convenience container for precomputed pi f L/c  and skyposition vector
 */
@@ -79,22 +84,48 @@ typedef struct
   SymmTensor3 eCross;	/**< eCross polarization tensor (skypos-dependent) */
 } FreqSkypos_t;
 
+/** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
+ * in terms of the multi-detector scalar product. This matrix can be shown to be expressible, in the case of complex AM co\"{e}fficients, as
+ * \f{equation}
+ * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c} A_d & C_d & 0 & -E_d \\ C_d & B_d & E_d & 0 \\ 0 & E_d & A_d & C_d \\ -E_d & 0 & C_d & B_d \\ \end{array}\right)\,,
+ * \f}
+ * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the multi-detector noise-floor, and
+ * \f{equation}
+ * A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\,,\quad
+ * B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha \,,\quad
+ * C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha \,,
+ * \f}
+ * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
+ * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
+ * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
+ *
+ * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd, \a Ed and the normalization-factor \a Sinv_Tsft separately
+ * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
+ * to use that fact.
+ */
+typedef struct {
+  REAL8 Ad; 		/**<  \f$A_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{a}^X_\alpha\f$ */
+  REAL8 Bd; 		/**<  \f$B_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{b}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Cd; 		/**<  \f$C_d \equiv \mathrm{Re} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Ed; 		/**<  \f$E_d \equiv \mathrm{Im} \sum_{X,\alpha} \widehat{a}^X_\alpha{}^* \widehat{b}^X_\alpha\f$ */
+  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 -E_d^2 \f$ */
+  REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
+} CmplxAntennaPatternMatrix;
+
+
+/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
+typedef struct {
+  UINT4 length;		/**< number of IFOs */
+  CmplxAMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
+  CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
+} MultiCmplxAMCoeffs;
+
 /*---------- exported prototypes [API] ----------*/
+void LALGetCmplxAMCoeffs( LALStatus *, CmplxAMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, const FreqSkypos_t *freq_skypos );
+void LALGetMultiCmplxAMCoeffs( LALStatus *, MultiCmplxAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, PulsarDopplerParams doppler );
 
-void
-LALGetCmplxAMCoeffs( LALStatus *,
-		     CmplxAMCoeffs *coeffs,
-		     const DetectorStateSeries *DetectorStates,
-		     const FreqSkypos_t *freq_skypos );
-
-void
-LALGetMultiCmplxAMCoeffs( LALStatus *,
-			  MultiCmplxAMCoeffs **multiAMcoef,
-			  const MultiDetectorStateSeries *multiDetStates,
-			  PulsarDopplerParams doppler );
-
-int
-XLALWeighMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
+int XLALWeighMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 /* destructors */
 void XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef );

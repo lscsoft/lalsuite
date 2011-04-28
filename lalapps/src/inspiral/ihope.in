@@ -657,10 +657,8 @@ if opts.complete_cache:
         for cacheFile in hipePlayVetoNode[category].get_output_files():
           cachelist.append(playDir + "/" + cacheFile)
         dag.add_node(hipePlayVetoNode[category])
-        if category==2 and opts.run_search: 
+        if category >= 2 and opts.run_search:
           hipePlayVetoNode[category].add_parent(hipePlayNode)
-        elif category>2: 
-          hipePlayVetoNode[category].add_parent(hipePlayVetoNode[category-1])
       elif not opts.run_search:
         if cp.get("pipeline","user-tag"):
           usertag = cp.get("pipeline", "user-tag") + "_" + playDir.upper()
@@ -688,11 +686,8 @@ if opts.complete_cache:
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append(fullDir + "/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
-        if category==2 and opts.run_search: 
+        if category >= 2 and opts.run_search:
           hipeAnalysisVetoNode[category].add_parent(hipeAnalysisNode)
-        elif category>2: 
-          hipeAnalysisVetoNode[category].add_parent( \
-              hipeAnalysisVetoNode[category-1])
       elif not opts.run_search:
         if cp.get("pipeline","user-tag"):
           usertag = cp.get("pipeline", "user-tag") + "_" + fullDir.upper()
@@ -722,11 +717,8 @@ if opts.complete_cache:
           for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[category][injDir])
-          if category==2 and opts.run_search: 
+          if category >= 2 and opts.run_search:
             hipeInjVetoNode[category][injDir].add_parent(hipeInjNode[injDir])
-          elif category>2: 
-            hipeInjVetoNode[category][injDir].add_parent(\
-                hipeInjVetoNode[category-1][injDir])
         elif not opts.run_search:
           if cp.get("pipeline","user-tag"):
             usertag = cp.get("pipeline", "user-tag") + "_" + injDir.upper()

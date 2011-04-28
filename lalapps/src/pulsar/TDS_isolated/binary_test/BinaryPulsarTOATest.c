@@ -1,7 +1,13 @@
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Matt Pitkin
+ * \brief
+ * Code to test my binary code against actual pulsar observations
+ */
+
 /* Matt Pitkin 2/05/05
    Code to test my binary code against actual pulsar observations */
-
-/* $Id$ */
 
 #include <stdlib.h>
 #include <stdio.h>

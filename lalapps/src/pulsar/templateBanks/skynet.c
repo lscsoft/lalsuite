@@ -17,15 +17,10 @@
 *  MA  02111-1307  USA
 */
 
-/*-----------------------------------------------------------------------
- *
- * File Name: skynet.c
- *
- * Authors: Essinger-Hileman, T. and Owen, B.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
+/**
+ * \file
+ * \ingroup pulsarApps
+ * \author Thomas Essinger-Hileman, Benjamin Owen
  */
 
 

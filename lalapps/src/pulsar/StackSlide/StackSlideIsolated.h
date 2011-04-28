@@ -17,10 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="StackSlideIsolatedHV">
-Author:  Mendell, G.
-$Id$
-************************************* </lalVerbatim> */
+/**
+\author G. Mendell
+*/
 
 /* REVISIONS: */
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */

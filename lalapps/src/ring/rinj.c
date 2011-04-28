@@ -87,7 +87,7 @@ RCSID( "$Id$" );
 "  --maximum-mass MAX       set the maximum componenet mass to MAX (236.8)\n"\
 "  --minimum-spin AMIN      set the minimum component of the dimensionless spin parameter (0)\n"\
 "  --maximum-spin AMAX      set the maximum component of the dimensionless spin parameter (0.994)\n"\
-"  --minimum-quality MIN    set minimum quality factor to MIN (2)\n"\
+"  --minimum-quality MIN    set minimum quality factor to MIN (2.1187)\n"\
 "  --maximum-quality MAX    set maximum quality factor to MAX (20)\n"\
 "  --minimum-frequency MIN  set minimum frequency to MIN (50)\n"\
 "  --maximum-frequency MAX  set maximum frequency to MAX (2000)\n"\
@@ -145,7 +145,7 @@ int main( int argc, char *argv[] )
   REAL4         maxSpin = 0.994;
   REAL4         minFreq = 50.0;
   REAL4         maxFreq = 2000.0;
-  REAL4         minQuality = 2;
+  REAL4         minQuality = 2.1187;
   REAL4         maxQuality = 20.0;
   REAL4         dmin = 1;
   REAL4         dmax = 200000;
@@ -433,10 +433,10 @@ int main( int argc, char *argv[] )
       case 'Q':
         /* maximum spin */
         maxSpin = (REAL4) atof( optarg );
-        if ( maxSpin > 1 )
+        if ( maxSpin > .994 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "spin parameter must be < 1: "
+              "equations unstable for spin parameter > .994: "
               "(%f specified)\n",
               long_options[option_index].name, maxSpin );
           exit( 1 );
@@ -479,10 +479,10 @@ int main( int argc, char *argv[] )
       case 'E':
         /* minimum quality factor */
         minQuality = (REAL4) atof( optarg );
-        if ( minQuality < 0 )
+        if ( minQuality < 2.1187 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "the minimum quality factor must be > 0: "
+              "the minimum quality factor must be > 2.1187: "
               "(%f specified)\n",
               long_options[option_index].name, minQuality );
           exit( 1 );
