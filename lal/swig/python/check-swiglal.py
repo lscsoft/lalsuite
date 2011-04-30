@@ -33,6 +33,13 @@ else:
     LALCheckMemoryLeaks()
     msg("passed memory allocation")
 
+# check complex number conversions
+assert(XLALCOMPLEX8Add(complex(1, 3), complex(2, -5)) == complex(3, -2))
+assert(XLALCOMPLEX8Sub(complex(4, 2), complex(10, 5)) == complex(-6, -3))
+assert(XLALCOMPLEX16Mul(complex(10, -7), complex(30, 17)) == complex(419, -40))
+assert(XLALCOMPLEX16Div(complex(111.75, -120.50), complex(5, 12)) == complex(-5.25, -11.5))
+msg("passed complex number conversions")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")

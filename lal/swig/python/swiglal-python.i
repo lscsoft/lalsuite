@@ -24,3 +24,11 @@
 // if so, SWIG_fail so that Python will generate an exception
 %exception "$action
 if (PyErr_Occurred()) SWIG_fail;"
+
+// Provide SWIG UTL conversion functions SWIG_From and SWIG_AsVal
+// between Python and LAL/GSL complex numbers.
+%include <pycomplex.swg>
+%swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
+%swig_cplxdbl_convn(gsl_complex, gsl_complex_rect, GSL_REAL, GSL_IMAG);
+%swig_cplxflt_convn(COMPLEX8, XLALCOMPLEX8Rect, LAL_REAL, LAL_IMAG);
+%swig_cplxdbl_convn(COMPLEX16, XLALCOMPLEX16Rect, LAL_REAL, LAL_IMAG);
