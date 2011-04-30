@@ -886,3 +886,56 @@ swiglal_conv_ctype(COMPLEX16);
                           arg1, sizeof(DATA) / sizeof(DATA[0]),
                           swiglal_fix_1Darray_ptr);
 %enddef
+
+/////////////// Static vector / matrix type conversion ///////////////
+
+// The following typemaps deal with statically-allocated 1-D arrays  (vectors)
+// and 2-D arrays (matrices). They provide conversions from their C representation
+// to/from a native representation in the scripting language. They should apply
+// to all function arguments, struct members, and global variables/constants.
+
+// This typemap returns the 'ltype' of the supplied type; it is used
+// as the type for temporary variables in the 'in' typemaps below.
+%typemap(swiglal_temp_type) SWIGTYPE "$ltype";
+
+// Map a C 1-D array function argument or struct member
+// to/from a native scripting language representation.
+%typemap(in, noblock=1) SWIGTYPE[ANY] {
+  $typemap(swiglal_temp_type, $1_basetype) temp$argnum[$1_dim0];
+  $1 = &temp$argnum[0];
+  swiglal_vector_convert_in($1_basetype, $symname, $1, $1_dim0, swiglal_fix_1Darray_ptr, SL_AV_LALALLOC);
+}
+%typemap(out, noblock=1) SWIGTYPE[ANY] {
+  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, swiglal_fix_1Darray_ptr);
+}
+
+// Map a C 1-D array global variable or constant
+// to/from a native scripting language representation.
+%typemap(varin, noblock=1) SWIGTYPE[ANY] {
+  swiglal_vector_convert_in($1_basetype, $symname, $1, $1_dim0, swiglal_fix_1Darray_ptr, SL_AV_LALALLOC);
+}
+%typemap(varout, noblock=1) SWIGTYPE[ANY] {
+  swiglal_vector_convert_out($1_basetype, $symname, $1, $1_dim0, swiglal_fix_1Darray_ptr);
+fail: // SWIG doesn't add a fail label to a global variable '_get' function
+}
+
+// Map a C 2-D array function argument or struct member
+// to/from a native scripting language representation.
+%typemap(in, noblock=1) SWIGTYPE[ANY][ANY] {
+  $typemap(swiglal_temp_type, $1_basetype) temp$argnum[$1_dim0][$1_dim1];
+  $1 = &temp$argnum[0];
+  swiglal_matrix_convert_in($1_basetype, $symname, $1, $1_dim0, $1_dim1, swiglal_fix_2Darray_ptr, SL_AV_LALALLOC);
+}
+%typemap(out, noblock=1) SWIGTYPE[ANY][ANY] {
+  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, swiglal_fix_2Darray_ptr);
+}
+
+// Map a C 2-D array global variable or constant
+// to/from a native scripting language representation.
+%typemap(varin, noblock=1) SWIGTYPE[ANY][ANY] {
+  swiglal_matrix_convert_in($1_basetype, $symname, $1, $1_dim0, $1_dim1, swiglal_fix_2Darray_ptr, SL_AV_LALALLOC);
+}
+%typemap(varout, noblock=1) SWIGTYPE[ANY][ANY] {
+  swiglal_matrix_convert_out($1_basetype, $symname, $1, $1_dim0, $1_dim1, swiglal_fix_2Darray_ptr);
+fail: // SWIG doesn't add a fail label to a global variable '_get' function
+}

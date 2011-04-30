@@ -55,6 +55,42 @@ for i in range(0,4):
 XLALDestroyStringVector(sv)
 msg("passed string conversions")
 
+# check static vector/matrix conversions
+if not cvar.swiglal_debug:
+    msg("skipping static vector/matrix conversions")
+else:
+    sts = swiglal_static_test_struct()
+    assert(len(sts.vector) == 3)
+    assert(len(sts.enum_vector) == 3)
+    assert(sts.matrix.shape == (2, 3))
+    assert(sts.enum_matrix.shape == (2, 3))
+    sts.vector = [3, 2, 1]
+    assert((sts.vector == [3, 2, 1]).all())
+    sts.matrix = [[4, 5, 6], (9, 8, 7)]
+    try:
+        sts.matrix = [[1.1, 2.3, 4.5], [6.5, 4.3, 2.1]]
+        raise error("expected exception")
+    except:
+        pass
+    assert((sts.matrix == [[4, 5, 6], [9, 8, 7]]).all())
+    for i in range(0,3):
+        sts.enum_vector_setel(i, 2*i + 3)
+        assert(sts.enum_vector_getel(i) == (2*i + 3))
+    del sts
+    assert(not cvar.swiglal_static_test_vector.any())
+    assert(not cvar.swiglal_static_test_matrix.any())
+    assert(not cvar.swiglal_static_test_enum_vector.any())
+    assert(not cvar.swiglal_static_test_enum_matrix.any())
+    cvar.swiglal_static_test_vector = cvar.swiglal_static_test_const_vector
+    assert((cvar.swiglal_static_test_vector == [1, 2, 4]).all())
+    assert(swiglal_static_test_const_vector_getel(2) == 4)
+    try:
+        swiglal_static_test_const_vector_getel(20)
+        raise error("expected exception")
+    except:
+        pass
+    msg("passed static vector/matrix conversions")
+
 # passed all tests!
 msg("================")
 msg("PASSED all tests")
